@@ -117,9 +117,12 @@ public class RunAboutGUI implements PeakListener {
     ClusterStatus clusterStatus;
     SeqPane seqPane;
     Group drawingGroup;
+    ClusterPane clusterPane;
+    Group clusterGroup;
     Map<String, ResidueLabel> residueLabelMap = new HashMap<>();
     Map<String, ResidueLabel> aaLabelMap = new HashMap<>();
     Map<Integer, String> chartTypes = new HashMap<>();
+    Map<String, ResidueLabel> clusterLabelMap = new HashMap<>();
 
     boolean useSpinSystem = false;
     Double[][] widths;
@@ -178,7 +181,7 @@ public class RunAboutGUI implements PeakListener {
                 if (polymer.isPeptide()) {
                     int nRes = polymer.getResidues().size();
                     double width = (resWidth * (10 + 1)) * nRes / 10.0;
-                    int rows = (int) Math.ceil(vBox.getWidth() / width);
+                    int rows = (int) Math.ceil(width / vBox.getWidth());
                     totalRows += rows;
 
                 }
@@ -191,9 +194,38 @@ public class RunAboutGUI implements PeakListener {
         public void layoutChildren() {
             setWidth(vBox.getWidth());
             int rows = getNRows();
-            setPrefHeight(rows * resWidth);
+            setHeight(rows * resWidth);
+            System.out.println("set seq pane " + rows + " " + (rows * resWidth) + " " + vBox.getWidth());
             super.layoutChildren();
             updateSeqCanvas();
+        }
+
+    }
+
+    class ClusterPane extends Pane {
+
+        double resWidth = 12.0;
+        Font font = Font.font(9.0);
+
+        int getNRows() {
+            int nSys = runAbout.getSpinSystems().getSize();
+            int rows = 0;
+            if (nSys > 0) {
+                double width = (resWidth * (10 + 1)) * nSys / 10.0;
+                rows = (int) Math.ceil(width / vBox.getWidth());
+            }
+            return rows;
+
+        }
+
+        @Override
+        public void layoutChildren() {
+            setWidth(vBox.getWidth());
+            int rows = getNRows();
+            setHeight(rows * resWidth);
+            System.out.println("set cluster pane " + rows + " " + (rows * resWidth) + vBox.getWidth());
+            super.layoutChildren();
+            updateClusterCanvas();
         }
 
     }
@@ -212,9 +244,16 @@ public class RunAboutGUI implements PeakListener {
         seqPane.setMinHeight(60.0);
         seqPane.setMinWidth(500.0);
 
+        clusterPane = new ClusterPane();
+        clusterGroup = new Group();
+        clusterPane.getChildren().add(clusterGroup);
+        clusterPane.setMinHeight(60.0);
+        clusterPane.setMinWidth(500.0);
+
         clusterStatus = new ClusterStatus();
 
         vBox.getChildren().add(clusterStatus.build());
+        vBox.getChildren().add(clusterPane);
         vBox.getChildren().add(seqPane);
 
         initPeakNavigator(navBar);
@@ -549,12 +588,17 @@ public class RunAboutGUI implements PeakListener {
             } else {
                 spinSys.unconfirm(spinMatch, prevState);
             }
-            Optional<SeqFragment> fragmentOpt = spinSys.getFragment();
-            Molecule molecule = Molecule.getActive();
+            updateFragment(spinSys);
+            updateClusterCanvas();
+        }
+
+        void updateFragment(SpinSystem spinSys) {
             for (ResidueLabel resLabel : residueLabelMap.values()) {
                 resLabel.setColor(Color.WHITE);
             }
+            Optional<SeqFragment> fragmentOpt = spinSys.getFragment();
             fragmentOpt.ifPresent(frag -> {
+                Molecule molecule = Molecule.getActive();
                 for (Polymer polymer : molecule.getPolymers()) {
                     List<ResidueSeqScore> resSeqScores = frag.scoreFragment(polymer);
                     for (ResidueSeqScore resSeqScore : resSeqScores) {
@@ -751,9 +795,13 @@ public class RunAboutGUI implements PeakListener {
         }
 
         ResidueLabel(Group group, char resChar) {
+            this(group, String.valueOf(resChar));
+        }
+
+        ResidueLabel(Group group, String label) {
             super();
             StackPane stack = this;
-            textItem = new Text(String.valueOf(resChar));
+            textItem = new Text(label);
             rect = new Rectangle(width, width, Color.WHITE);
             rect.setStroke(null);
             rect.setFill(Color.WHITE);
@@ -783,6 +831,81 @@ public class RunAboutGUI implements PeakListener {
         }
     }
 
+    void gotoResidue(ResidueLabel resLabel) {
+
+    }
+
+    void gotoCluster(ResidueLabel resLabel) {
+        int spinNum = Integer.parseInt(resLabel.textItem.getText());
+        currentSpinSystem = spinNum;
+        gotoSpinSystems();
+
+    }
+
+    void updateCluster(ResidueLabel resLabel, int i, SpinSystem spinSys) {
+        resLabel.setText(String.valueOf(spinSys.getRootPeak().getIdNum()));
+        resLabel.setOnMouseClicked(e -> gotoCluster(resLabel));
+        double width = 20.0;
+        double paneWidth = clusterPane.getWidth();
+        int nFit = (int) Math.floor(paneWidth / width) - 4;
+        int iX = i % nFit;
+        int jY = i / nFit;
+        double x = 25.0 + iX * width;
+        double y = 25.0 + jY * width;
+        resLabel.place(x, y);
+
+    }
+
+    int countSpinSysItems(List<SpinSystem> sortedSystems) {
+        int n = 0;
+        for (SpinSystem spinSys : sortedSystems) {
+            Optional<SeqFragment> fragmentOpt = spinSys.getFragment();
+            if (fragmentOpt.isPresent()) {
+                SeqFragment fragment = fragmentOpt.get();
+                n += fragment.getSpinSystemMatches().size() + 1;
+            } else {
+                n++;
+            }
+        }
+        return n;
+    }
+
+    void updateClusterCanvas() {
+        List<SpinSystem> sortedSystems = runAbout.getSpinSystems().getSortedSystems();
+        int n = countSpinSysItems(sortedSystems);
+        if (clusterGroup.getChildren().size() != n) {
+            clusterGroup.getChildren().clear();
+            for (int i = 0; i < n; i++) {
+                ResidueLabel resLabel = new ResidueLabel(clusterGroup, String.valueOf(i));
+            }
+        }
+        List<Node> nodes = clusterGroup.getChildren();
+
+        int i = 0;
+        Color color = Color.YELLOW;
+        for (SpinSystem spinSys : sortedSystems) {
+            Optional<SeqFragment> fragmentOpt = spinSys.getFragment();
+            if (fragmentOpt.isPresent()) {
+                SeqFragment fragment = fragmentOpt.get();
+                List<SpinSystemMatch> spinMatches = fragment.getSpinSystemMatches();
+                ResidueLabel resLabel = (ResidueLabel) nodes.get(i);
+                updateCluster(resLabel, i++, spinMatches.get(0).getSpinSystemA());
+                resLabel.setColor(color);
+                for (SpinSystemMatch spinMatch : spinMatches) {
+                    resLabel = (ResidueLabel) nodes.get(i);
+                    updateCluster(resLabel, i++, spinMatch.getSpinSystemB());
+                    resLabel.setColor(color);
+                }
+                color = color == Color.YELLOW ? Color.ORANGE : Color.YELLOW;
+            } else {
+                color = Color.WHITE;
+                ResidueLabel resLabel = (ResidueLabel) nodes.get(i);
+                updateCluster(resLabel, i++, spinSys);
+                resLabel.setColor(color);
+            }
+        }
+    }
+
     void updateSeqCanvas() {
         Molecule molecule = Molecule.getActive();
         if (molecule != null) {
@@ -804,6 +927,7 @@ public class RunAboutGUI implements PeakListener {
             int i = 0;
             for (Node node : drawingGroup.getChildren()) {
                 ResidueLabel resLabel = (ResidueLabel) node;
+                resLabel.setOnMouseClicked(e -> gotoResidue(resLabel));
                 if ((i % 10) == 0) {
                     x += width / 2.0;
                 }
@@ -1053,6 +1177,9 @@ public class RunAboutGUI implements PeakListener {
     public void gotoSpinSystems() {
         gotoSpinSystems(0, 0);
         clusterStatus.setLabels();
+        SpinSystem spinSys = runAbout.getSpinSystems().get(currentSpinSystem);
+        spinStatus.updateFragment(spinSys);
+
     }
 
     public void gotoSpinSystems(int pIndex, int sIndex) {
