@@ -38,14 +38,14 @@ def findRepresentative(mol, resNums='*',atomNames="ca,c,n,o,p,o5',c5',c4',c3',o3
     treeSet = TreeSet()
     structures = mol.getStructures()
     for structure in structures:
-        if structure != 0: 
+        if structure != 0:
             treeSet.add(structure)
     nFiles = treeSet.size()
 
     doSelections(mol, resNums,atomNames)
     sup = SuperMol(mol)
     mol.setActiveStructures(treeSet)
-    
+
     superResults = sup.doSuper(-1, -1, False)
     totalRMS = 0.0
     averageToI = {}
@@ -68,7 +68,7 @@ def findRepresentative(mol, resNums='*',atomNames="ca,c,n,o,p,o5',c5',c4',c3',o3
     avgRMS = totalRMS/len(superResults)
     return (minIndex, minRMS, avgRMS)
 
-def findCore(mol, minIndex,atomNames="ca,c,n,o,p,o5',c5',c4',c3',o3'"):
+def findCore(mol, minIndex, excludeRes, excludeAtoms, atomNames="ca,c,n,o,p,o5',c5',c4',c3',o3'"):
     atomNameList = atomNames.split(',')
     sup = SuperMol(mol)
     superResults = sup.doSuper(minIndex, -1, True)
@@ -76,17 +76,24 @@ def findCore(mol, minIndex,atomNames="ca,c,n,o,p,o5',c5',c4',c3',o3'"):
     polymers = mol.getPolymers()
     resRMSs = []
     resValues = []
+    excludeAtomsL = [atom.lower() for atom in excludeAtoms]
     for polymer in polymers:
         residues = polymer.getResidues()
+        chainCode = polymer.getName()
         for residue in residues:
+            if chainCode + "." + residue.getNumber() in excludeRes:
+                continue
             atoms = residue.getAtoms('*')
             resSum = 0.0
             nAtoms = 0
             for atom in atoms:
                 aName = atom.getName().lower()
+                if aName in excludeAtomsL:
+                    continue
                 if aName in atomNameList:
                     resSum += atom.getBFactor()
                     nAtoms += 1
+                # print aName, resSum, nAtoms
             if nAtoms > 0:
                 resRMS = resSum/nAtoms
                 resRMSs.append(resRMS)
@@ -98,11 +105,12 @@ def findCore(mol, minIndex,atomNames="ca,c,n,o,p,o5',c5',c4',c3',o3'"):
     state = "out"
     (polymer,lastNum,rms) = resValues[-1]
     for (polymer,num,rms) in resValues:
+        # print polymer, num, rms
         last = ""
         if rms < 2.0*med:
             newState = "in"
         else:
-            newState = "out"           
+            newState = "out"
         if state == "out":
             if newState == "out":
                 pass
@@ -149,13 +157,13 @@ def saveModels(mol, files):
         newFile = os.path.join(dir,newFileName)
         molio.savePDB(mol, newFile, i)
 
-def runSuper(files,newBase='super'):    
+def runSuper(excludeRes, excludeAtoms, files, newBase='super'):
     mol = loadPDBModels(files)
     polymers = mol.getPolymers()
     if len(polymers) > 0:
         (minI,rms,avgRMS) = findRepresentative(mol)
         print 'repModel',minI,'rms',rms,'avgrms',avgRMS
-        coreRes = findCore(mol, minI)
+        coreRes = findCore(mol, minI, excludeRes, excludeAtoms)
         print 'coreResidues',coreRes
         (minI,rms,avgRMS) = findRepresentative(mol, coreRes)
         print 'repModel',minI,'rms',rms,'avgrms',avgRMS
@@ -169,4 +177,3 @@ def runSuper(files,newBase='super'):
     (base,ext) = os.path.splitext(fileName)
 
     saveModels(mol, files)
-
