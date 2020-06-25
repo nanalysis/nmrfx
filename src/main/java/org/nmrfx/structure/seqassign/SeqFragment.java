@@ -44,6 +44,10 @@ public class SeqFragment {
 
     }
 
+    public List<SpinSystemMatch> getSpinSystemMatches() {
+        return spinSystemMatches;
+    }
+
     public void dump() {
         for (SpinSystemMatch match : spinSystemMatches) {
             System.out.println(match.toString());
