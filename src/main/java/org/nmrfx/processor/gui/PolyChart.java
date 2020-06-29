@@ -375,7 +375,7 @@ public class PolyChart implements PeakListener {
         MapChangeListener<String, PeakList> mapChangeListener = (MapChangeListener.Change<? extends String, ? extends PeakList> change) -> {
             purgeInvalidPeakListAttributes();
         };
-        MainApp.peakListTable.addListener(mapChangeListener);
+        MainApp.addPeakListListener(mapChangeListener);
         keyBindings = new KeyBindings(this);
         mouseBindings = new MouseBindings(this);
         gestureBindings = new GestureBindings(this);

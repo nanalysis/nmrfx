@@ -58,7 +58,7 @@ import org.nmrfx.project.GUIProject;
 import org.nmrfx.project.Project;
 import org.nmrfx.server.Server;
 import static javafx.application.Application.launch;
-import javafx.collections.FXCollections;
+import javafx.collections.MapChangeListener;
 import javafx.collections.ObservableMap;
 import javafx.scene.text.Font;
 
@@ -81,7 +81,7 @@ public class MainApp extends Application implements DatasetListener {
     Consumer<String> socketFunction = null;
     static NMRFxServer server = null;
     static Font defaultFont;
-    public static ObservableMap<String, PeakList> peakListTable = FXCollections.observableMap(PeakList.peakListTable);
+    public static ObservableMap<String, PeakList> peakListTable = (ObservableMap<String, PeakList>) PeakList.peakListTable;
 
     public static void setAnalyst() {
         isAnalyst = true;
@@ -129,6 +129,10 @@ public class MainApp extends Application implements DatasetListener {
     static void loadFont() {
         InputStream iStream = MainApp.class.getResourceAsStream("/LiberationSans-Regular.ttf");
         defaultFont = Font.loadFont(iStream, 12);
+    }
+
+    public static void addPeakListListener(MapChangeListener<String, PeakList> mapChangeListener) {
+        ((ObservableMap<String, PeakList>) PeakList.peakListTable).addListener(mapChangeListener);
     }
 
     @Override
