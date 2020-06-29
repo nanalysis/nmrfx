@@ -22,6 +22,8 @@ import org.nmrfx.processor.optimization.*;
 import org.nmrfx.processor.utilities.Util;
 import java.io.*;
 import static java.lang.Double.compare;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.*;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -91,7 +93,20 @@ public class PeakList {
     /**
      *
      */
-    public static Map<String, PeakList> peakListTable = new LinkedHashMap<>();
+    public static Map<String, PeakList> peakListTable;
+
+    static {
+
+        try {
+            Class c = Class.forName("javafx.collections.FXCollections");
+            Class[] argTypes = new Class[0];
+            Method m = c.getDeclaredMethod("observableHashMap", argTypes);
+            Object[] args = new Object[0];
+            peakListTable = (Map<String, PeakList>) m.invoke(args);
+        } catch (ClassNotFoundException | NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
+            peakListTable = new LinkedHashMap<>();
+        }
+    }
 
     /**
      *
@@ -173,7 +188,7 @@ public class PeakList {
             this.iDim = iDim;
             this.tol = tol;
         }
-        
+
         public int getDim() {
             return iDim;
         }
