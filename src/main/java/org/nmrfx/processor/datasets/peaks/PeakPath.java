@@ -437,7 +437,7 @@ public class PeakPath implements PeakListener {
                 String datasetName = datasetNames.get(i);
                 Dataset dataset = Dataset.getDataset(datasetName);
                 if (dataset == null) {
-                    throw new IllegalArgumentException("\"Dataset \" + datasetName + \" doesn't exist\"");
+                    throw new IllegalArgumentException("\"Dataset \"" + datasetName + "\" doesn't exist\"");
                 }
                 String peakListName = "";
                 PeakList peakList = PeakList.getPeakListForDataset(datasetName);
@@ -448,7 +448,7 @@ public class PeakPath implements PeakListener {
                     peakListName = peakList.getName();
                 }
                 if (peakList == null) {
-                    throw new IllegalArgumentException("\"PeakList \" + peakList + \" doesn't exist\"");
+                    throw new IllegalArgumentException("\"PeakList \"" + peakList + "\" doesn't exist\"");
                 }
                 peakListNames.add(peakListName);
                 x0[i] = x0List.get(i);
