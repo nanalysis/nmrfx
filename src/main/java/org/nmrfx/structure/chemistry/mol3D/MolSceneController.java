@@ -171,7 +171,7 @@ public class MolSceneController implements Initializable, MolSelectionListener, 
             updatePeakListMenu();
         };
 
-        MainApp.peakListTable.addListener(mapChangeListener);
+        MainApp.addPeakListListener(mapChangeListener);
         updatePeakListMenu();
         modeMenuButton.getItems().add(numbersCheckBox);
         modeMenuButton.getItems().add(activeCheckBox);

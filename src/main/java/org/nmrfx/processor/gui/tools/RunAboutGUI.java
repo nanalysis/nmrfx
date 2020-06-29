@@ -290,7 +290,7 @@ public class RunAboutGUI implements PeakListener {
         // prevent accidental activation when inspector gets focus after hitting space bar on peak in spectrum
         // a second space bar hit would activate
         deleteButton.setOnKeyPressed(e -> e.consume());
-        deleteButton.setOnAction(e -> navigator.setDeleteStatus(deleteButton));
+        deleteButton.setOnAction(e -> delete());
 
         for (Button button : buttons) {
             // button.getStyleClass().add("toolButton");
@@ -394,7 +394,7 @@ public class RunAboutGUI implements PeakListener {
             updatePeakListMenu();
         };
 
-        MainApp.peakListTable.addListener(mapChangeListener);
+        MainApp.addPeakListListener(mapChangeListener);
     }
 
     class ClusterStatus {
@@ -1189,6 +1189,22 @@ public class RunAboutGUI implements PeakListener {
             spinSystems.add(spinSystem);
         }
         setSpinSystems(spinSystems);
+    }
+
+    void delete() {
+        if (useSpinSystem) {
+
+        } else {
+            PeakList currList = currentPeak.getPeakList();
+            int peakIndex = currentPeak.getIndex();
+            currentPeak.setStatus(-1);
+            currList.compress();
+            currList.reNumber();
+            if (peakIndex >= refPeakList.size()) {
+                peakIndex = refPeakList.size() - 1;
+            }
+            setPeak(currList.getPeak(peakIndex));
+        }
     }
 
     void firstPeak() {

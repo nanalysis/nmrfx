@@ -231,7 +231,7 @@ public class StripController implements ControllerTool {
                 itemPeakListMenuButton, peakLabel,
                 offsetLabel, offsetBox, rowLabel, rowBox);
 
-        MainApp.peakListTable.addListener(mapChangeListener);
+        MainApp.addPeakListListener(mapChangeListener);
         updatePeakListMenu();
         updateDatasetNames();
         StripItem item = new StripItem();

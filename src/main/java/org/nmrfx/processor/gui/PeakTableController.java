@@ -127,7 +127,7 @@ public class PeakTableController implements PeakMenuTarget, PeakListener, Initia
             updatePeakListMenu();
         };
 
-        MainApp.peakListTable.addListener(mapChangeListener);
+        MainApp.addPeakListListener(mapChangeListener);
     }
 
     public void updatePeakListMenu() {
