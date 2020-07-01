@@ -58,7 +58,7 @@ def makeResList(resArg, chain):
             resList = [chain + "." + str(res) for res in range(firstRes, lastRes)]
         elif "," in resArg: #comma-separated individual residues (e.g. 2, 3, 4, 5)
             resListS = resArg.split(",")
-            resList = [chain + "." + str(res) for res in resListS if res != ""]
+            resList = [chain + "." + str(res).strip() for res in resListS if res != ""]
 
     return resList
 
