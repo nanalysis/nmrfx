@@ -99,15 +99,15 @@ def calcStructures(calcScript,startStructure,nStructures,dir,nProcesses=4, heapM
                     processes[i] = None
                     fOut[i].close()
             elif (processes[i] == None and errStatus):
-                # If a process hasn't been submitted for processing and error status is nonzero, 
+                # If a process hasn't been submitted for processing and error status is nonzero,
                 # then we have a problem...
-                # Thus, we have to set a signal to exit due to error. 
-                errExit = True 
+                # Thus, we have to set a signal to exit due to error.
+                errExit = True
 
         if errExit:
            # A job was not submitted for processing even though
            # there were more structures to calculate, and the error status
-           # was nonzero...So we must break 
+           # was nonzero...So we must break
            break
 
         if not gotProcess:
@@ -150,7 +150,7 @@ def keepStructures(nStructures,newName='final',rootName=''):
             outLine = "%-3s %-3s %s" % (str(iFile), structNum, (eLine+'\n'))
             fOut.write(outLine);
             iFile += 1
-   
+
         fOut.close()
 
 def parseArgs():
@@ -224,7 +224,9 @@ def parseArgs():
         else:
             files = glob.glob(os.path.join(finDir,'final*.pdb'))
         if len(files) > 1:
-            runSuper(files, base)
+            excludeRes = []
+            excludeAtoms = []
+            runSuper(excludeRes, excludeAtoms, files, base)
 
 parseArgs()
 
