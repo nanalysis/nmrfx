@@ -5,8 +5,8 @@ import argparse
 
 def parseArgs():
     parser = argparse.ArgumentParser(description="super options")
-    parser.add_argument("-r", dest="resList", default='', help="Core residues to exclude from comparison. Can specify semi-colon-separated chains and comma-separated residue ranges and individual values (e.g. A: 2, 3; B: 2-5, 10).")
-    parser.add_argument("-a", dest="atomList", default='', help="Core residue atoms to exclude from comparison.")
+    parser.add_argument("-r", dest="resList", default='', help="Residues to exclude from comparison. Can specify semi-colon-separated chains and comma-separated residue ranges and individual values (e.g. A: 2, 3; B: 2-5, 10).")
+    parser.add_argument("-a", dest="atomList", default='', help="Atoms to exclude from comparison.")
     parser.add_argument("fileNames",nargs="*")
     args = parser.parse_args()
 
