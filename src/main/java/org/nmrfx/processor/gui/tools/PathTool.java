@@ -8,6 +8,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.function.Consumer;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -58,6 +60,9 @@ import org.nmrfx.processor.optimization.Fitter;
  * @author Bruce Johnson
  */
 public class PathTool implements PeakNavigable {
+
+    static Color INACTIVE_COLOR = Color.web("#681A4A");
+    static Color ACTIVE_COLOR = Color.web("#EE442F");
 
     VBox vBox;
     FXMLController controller;
@@ -132,13 +137,13 @@ public class PathTool implements PeakNavigable {
         bButton.setOnAction(e -> lastDataset(e));
         dataButtons.add(bButton);
 
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.PLUS, "", iconSize, fontSize, ContentDisplay.GRAPHIC_ONLY);
-        bButton.setOnAction(e -> addPeakToPath());
-        dataButtons.add(bButton);
+        Button plusButton = GlyphsDude.createIconButton(FontAwesomeIcon.PLUS, "", iconSize, fontSize, ContentDisplay.GRAPHIC_ONLY);
+        plusButton.setOnAction(e -> addPeakToPath());
+        dataButtons.add(plusButton);
 
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS, "", iconSize, fontSize, ContentDisplay.GRAPHIC_ONLY);
-        bButton.setOnAction(e -> removePeakFromPath());
-        dataButtons.add(bButton);
+        Button minusButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS, "", iconSize, fontSize, ContentDisplay.GRAPHIC_ONLY);
+        minusButton.setOnAction(e -> removePeakFromPath());
+        dataButtons.add(minusButton);
 
         actionMenu = new MenuButton("Actions");
         MenuItem loadTitrationItem = new MenuItem("Load Titration Data...");
@@ -218,7 +223,21 @@ public class PathTool implements PeakNavigable {
         fitBar.getItems().addAll(fitButton, addButton, fillerf1);
         setActionMenuDisabled(true);
 
-//        controller.selPeaks.addListener(e -> setActivePeaks(controller.selPeaks.get()));
+        ChangeListener<List<Peak>> selPeakListener = new ChangeListener<List<Peak>>() {
+
+            @Override
+            public void changed(ObservableValue<? extends List<Peak>> observable, List<Peak> oldValue, List<Peak> newValue) {
+                boolean isEmpty = newValue.isEmpty();
+                plusButton.setDisable(isEmpty);
+                minusButton.setDisable(isEmpty);
+            }
+        };
+        controller.addSelectedPeakListener(selPeakListener);
+
+    }
+
+    void updateSelectedPeakButtons() {
+
     }
 
     void setActionMenuDisabled(boolean state) {
@@ -241,7 +260,7 @@ public class PathTool implements PeakNavigable {
             fitFields = new Label[nPars];
             for (int i = 0; i < fitFields.length; i++) {
                 fitFields[i] = new Label("");
-                fitFields[i].setPrefWidth(140);
+                fitFields[i].setPrefWidth(170);
                 fitFields[i].setBackground(bg);
                 Pane fillerf2 = new Pane();
                 fillerf2.setMinWidth(15);
@@ -286,9 +305,12 @@ public class PathTool implements PeakNavigable {
         FileChooser fileChooser = new FileChooser();
         File file = fileChooser.showOpenDialog(null);
         if (file != null) {
+            activePaths.clear();
             try {
                 peakPath = PeakPath.loadPathData(pathMode, file);
                 if (peakPath == null) {
+                    Alert alert = new Alert(Alert.AlertType.ERROR, "Error reading peak path file ");
+                    alert.showAndWait();
                     return;
                 }
             } catch (IOException ex) {
@@ -427,6 +449,7 @@ public class PathTool implements PeakNavigable {
                     if (path.getNValid() > 3) {
                         path.confirm();
                     }
+                    updatePathInfo(startPeak);
                 }
             }
             drawPath();
@@ -444,6 +467,8 @@ public class PathTool implements PeakNavigable {
                 }
             }
             drawPath();
+            updatePathInfo(startPeak);
+
         }
     }
 
@@ -562,6 +587,7 @@ checkLists(pp, 0.25, False)
 
     void findPaths() {
         if (peakPath != null) {
+            peakPath.clearPaths();
             int n = 10;
             double minRadius = 0.1;
             double maxRadius = Double.parseDouble(radiusField.getText());
@@ -635,7 +661,9 @@ checkLists(pp, 0.25, False)
             Collection<Path> paths = peakPath.getPaths();
 
             for (Path path : paths) {
-                if (path.confirmed()) {
+                int nValid = path.getNValid();
+                if (nValid > 2) {
+                    Color color = path.confirmed() ? ACTIVE_COLOR : INACTIVE_COLOR;
                     List<Double> x = new ArrayList<>();
                     List<Double> y = new ArrayList<>();
                     for (PeakDistance peakDist : path.getPeakDistances()) {
@@ -648,8 +676,9 @@ checkLists(pp, 0.25, False)
                     if (!x.isEmpty()) {
                         AnnoPolyLine annoPolyLine = new AnnoPolyLine(x, y,
                                 CanvasAnnotation.POSTYPE.WORLD, CanvasAnnotation.POSTYPE.WORLD);
-                        annoPolyLine.setStroke(Color.RED);
+                        annoPolyLine.setStroke(color);
                         annoPolyLine.setLineWidth(3.0);
+                        annoPolyLine.setClipInAxes(true);
                         chart.addAnnotation(annoPolyLine);
                     }
                 }
