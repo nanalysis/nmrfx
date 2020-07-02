@@ -72,4 +72,8 @@ public interface CanvasAnnotation {
         return null;
     }
 
+    public default boolean getClipInAxes() {
+        return false;
+    }
+
 }

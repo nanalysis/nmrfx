@@ -3328,10 +3328,23 @@ public class PolyChart implements PeakListener {
                 double[][] bounds = {{xPos + leftBorder, xPos + width - rightBorder}, {yPos + topBorder, yPos + height - bottomBorder}};
                 double[][] world = {{axes[0].getUpperBound(), axes[0].getLowerBound()},
                 {axes[1].getLowerBound(), axes[1].getUpperBound()}};
-                canvasAnnotations.forEach((anno) -> {
-                    anno.draw(gC, bounds, world);
-                });
+                boolean lastClipAxes = false;
 
+                for (CanvasAnnotation anno : canvasAnnotations) {
+                    if (anno.getClipInAxes() && !lastClipAxes) {
+                        gC.save();
+                        gC.rect(xPos + leftBorder, yPos + topBorder, xAxis.getWidth(), yAxis.getHeight());
+                        gC.clip();
+                        lastClipAxes = true;
+                    } else if (!anno.getClipInAxes() && lastClipAxes) {
+                        gC.restore();
+                        lastClipAxes = false;
+                    }
+                    anno.draw(gC, bounds, world);
+                }
+                if (lastClipAxes) {
+                    gC.restore();
+                }
             } catch (Exception gioE) {
             } finally {
                 gC.restore();
