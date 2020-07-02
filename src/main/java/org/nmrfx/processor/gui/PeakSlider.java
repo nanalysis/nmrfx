@@ -138,7 +138,7 @@ public class PeakSlider {
 
         controller.selPeaks.addListener(e -> setActivePeaks(controller.selPeaks.get()));
     }
-
+    
     public final void setupLists(final boolean state) {
         controller.charts.stream().forEach(chart -> {
             chart.getPeakListAttributes().stream().forEach(peakListAttr -> {
