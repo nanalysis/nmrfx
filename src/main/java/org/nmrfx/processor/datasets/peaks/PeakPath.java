@@ -967,7 +967,7 @@ public class PeakPath implements PeakListener {
         }
         for (Peak peak : firstList.peaks()) {
             if (peak.getStatus() == 0) {
-                System.out.print(peak.getName() + " ");
+//                System.out.print(peak.getName() + " ");
                 ArrayList<ArrayList<PeakDistance>> filteredLists
                         = getNearPeaks(peak, radius);
                 Path path = checkForUnambigous(filteredLists, useLast);
@@ -975,14 +975,9 @@ public class PeakPath implements PeakListener {
                 if (delta < 1.0) {
                     paths.put(path.getFirstPeak(), path);
                     System.out.println(path.toString());
-//                    for (PeakDistance pathPeak : path.peakDists) {
-//                        if (pathPeak != null) {
-//                            pathPeak.peak.setStatus(1);
-//                        }
-//                    }
-                    System.out.printf(" unam %.3f\n", delta);
+//                    System.out.printf(" unam %.3f\n", delta);
                 } else {
-                    System.out.println("");
+//                    System.out.println("");
                 }
             }
         }
