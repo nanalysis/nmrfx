@@ -2089,4 +2089,10 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         }
         statusBar.setIconState(iCross, jOrient, state);
     }
+
+    public void addSelectedPeakListener(ChangeListener listener) {
+        selPeaks.addListener(listener);
+        
+    }
+
 }
