@@ -45,7 +45,7 @@ public class Residue extends Compound {
         String[] standardResidues = {
             "ala", "a", "arg", "r", "asn", "n", "asp", "d", "cys", "c", "gln", "q", "glu", "e",
             "gly", "g", "his", "h", "ile", "i", "leu", "l", "lys", "k", "met", "m", "phe", "f",
-            "pro", "p", "ser", "s", "thr", "t", "trp", "w", "tyr", "y", "val", "v",
+            "pro", "p", "ser", "s", "thr", "t", "trp", "w", "tyr", "y", "val", "v", "mse", "m",
             "dade", "a", "dcyt", "c", "dgua", "g", "dthy", "t",
             "da", "a", "dc", "c", "dg", "g", "dt", "t",
             "rade", "a", "rcyt", "c", "rgua", "g", "rura", "u",

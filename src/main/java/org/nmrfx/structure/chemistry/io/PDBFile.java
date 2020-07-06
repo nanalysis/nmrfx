@@ -280,8 +280,12 @@ public class PDBFile {
                     break;
                 }
 
-                if (string.startsWith("ATOM  ")) {
+                if (string.startsWith("ATOM  ") || string.startsWith("HETATM ")) {
                     PDBAtomParser atomParse = new PDBAtomParser(string);
+                    
+                    if (string.startsWith("HETATM ") && !atomParse.resName.equals("MSE")){
+                        continue;
+                    }
 
                     String thisChain = "";
                     if (atomParse.segment.trim().equals("")) {
@@ -305,6 +309,9 @@ public class PDBFile {
                         lastRes = atomParse.resNum;
                         lastLoc = atomParse.loc;
                         atomParse.resName = atomParse.resName.toLowerCase();
+                        if (atomParse.resName.equals("mse")) {
+                            atomParse.resName = "met";
+                        }
                         residueList.add(atomParse.resName + " " + atomParse.resNum);
                     }
                     // fixme should we do anything here with MODEL
