@@ -80,6 +80,7 @@ public class PathTool implements PeakNavigable {
     TextField radiusField;
     TextField tolField;
     Label[] fitFields;
+    Label nField;
     Button fitButton;
     Button addButton;
     PeakPath peakPath;
@@ -210,7 +211,9 @@ public class PathTool implements PeakNavigable {
         toolBar.getItems().add(tolField);
 
         Pane fillerf1 = new Pane();
-        fillerf1.setMinWidth(20);
+        fillerf1.setMinWidth(5);
+        Pane fillerf2 = new Pane();
+        fillerf2.setMinWidth(20);
 
         fitButton = new Button("Fit");
         fitButton.setOnAction(e -> fitPath());
@@ -220,7 +223,10 @@ public class PathTool implements PeakNavigable {
         addButton.setOnAction(e -> addPathToTable());
         addButton.setDisable(true);
 
-        fitBar.getItems().addAll(fitButton, addButton, fillerf1);
+        nField = new Label("");
+        nField.setPrefWidth(100);
+
+        fitBar.getItems().addAll(nField, fillerf1, fitButton, addButton, fillerf2);
         setActionMenuDisabled(true);
 
         ChangeListener<List<Peak>> selPeakListener = new ChangeListener<List<Peak>>() {
@@ -299,6 +305,9 @@ public class PathTool implements PeakNavigable {
 
     void setupChart(List<String> datasetNames) {
         chart.updateDatasets(datasetNames);
+        for (PeakListAttributes peakAttr : chart.getPeakListAttributes()) {
+            peakAttr.setColorType(PeakDisplayParameters.ColorTypes.Status);
+        }
     }
 
     void loadPathData(PATHMODE pathMode) {
@@ -427,9 +436,9 @@ public class PathTool implements PeakNavigable {
 
     void clearPath() {
         if (peakPath != null) {
-
             Peak startPeak = peakNavigator.getPeak();
             if (startPeak != null) {
+                peakPath.clearPath(startPeak);
                 peakPath.initPath(startPeak);
             }
             drawPath();
@@ -645,6 +654,7 @@ checkLists(pp, 0.25, False)
                 List<PeakDistance> peakDists = peakPath.scan(startPeak, radius, 2.0, 4, lastPeak, true);
                 for (PeakDistance peakDist : peakDists) {
                     if (peakDist != null) {
+                        peakDist.getPeak().setStatus(1);
                         System.out.println(peakDist.getPeak());
                     }
                 }
@@ -698,8 +708,20 @@ checkLists(pp, 0.25, False)
         }
 
         Path path = peakPath.getPath(peak);
+        nField.setText("");
         if (path != null) {
-            System.out.println(path.toString());
+            //System.out.println(path.toString());
+            int nPeaks = path.getPeakDistances().size();
+            int nValid = path.getNValid();
+            boolean confirmed = path.confirmed();
+            boolean isComplete = path.isComplete();
+            boolean isFree = path.isFree();
+            nField.setText(String.format("%2d of %2d", nValid, nPeaks));
+            if (fitFields != null) {
+                for (Label label : fitFields) {
+                    label.setText("");
+                }
+            }
             if (pathUsable(path)) {
                 fitButton.setDisable(false);
                 addButton.setDisable(false);
@@ -728,9 +750,9 @@ checkLists(pp, 0.25, False)
                 String[] parNames = peakPath.getParNames();
                 if (fitPars != null) {
                     initFitFields(fitPars.length);
-                    for (int i = 0; i < fitPars.length; i++) {
-                        System.out.printf("%s= %.3f +/- %.3f\n", parNames[i], fitPars[i], fitErrs[i]);
-                    }
+//                    for (int i = 0; i < fitPars.length; i++) {
+//                        System.out.printf("%s= %.3f +/- %.3f\n", parNames[i], fitPars[i], fitErrs[i]);
+//                    }
                     for (int i = 0; i < fitPars.length; i++) {
                         fitFields[i].setText(String.format("%s= %.3f +/- %.3f", parNames[i], fitPars[i], fitErrs[i]));
                     }
