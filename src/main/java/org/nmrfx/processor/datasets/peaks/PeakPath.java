@@ -188,7 +188,7 @@ public class PeakPath implements PeakListener {
         public boolean isFree() {
             boolean free = true;
             for (PeakDistance peakDis : peakDists) {
-                if (peakDis == null) {
+                if (peakDis != null) {
                     if (peakDis.peak.getStatus() != 0) {
                         free = false;
                         break;
@@ -595,6 +595,15 @@ public class PeakPath implements PeakListener {
 
     public void clearPath(Peak startPeak) {
         Path path = paths.get(startPeak);
+        if (path != null) {
+            for (PeakDistance peakDist : path.peakDists) {
+                if (peakDist != null) {
+                    if (peakDist.peak.getStatus() > 0) {
+                        peakDist.peak.setStatus(0);
+                    }
+                }
+            }
+        }
 
     }
 
@@ -974,7 +983,7 @@ public class PeakPath implements PeakListener {
                 double delta = checkPath(path.peakDists);
                 if (delta < 1.0) {
                     paths.put(path.getFirstPeak(), path);
-                    System.out.println(path.toString());
+//                    System.out.println(path.toString());
 //                    System.out.printf(" unam %.3f\n", delta);
                 } else {
 //                    System.out.println("");
