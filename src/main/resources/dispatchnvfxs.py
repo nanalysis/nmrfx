@@ -21,9 +21,11 @@ if len(sys.argv) > 0:
         args = super.parseArgs()
         excludeRes = args[0]
         excludeAtoms = args[1]
-        files = args[2]
+        includeRes = args[2]
+        includeAtoms = args[3]
+        files = args[4]
         if len(files) > 1:
-            super.runSuper(excludeRes, excludeAtoms, files)
+            super.runSuper(excludeRes, excludeAtoms, includeRes, includeAtoms, files)
 
 
     elif sys.argv[0] == "train":
