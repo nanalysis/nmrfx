@@ -134,6 +134,8 @@ def getSequenceArray(indexing,seqString,linkers,polyType):
         raise IndexError('The indexing method cannot be applied to the given sequence string')
 
     seqArray = []
+    if linkers != None and len(linkers) > 0:
+        seqArray.append('-nocap')
     for i, resNum in enumerate(resNums):
         resString = ' '.join([resNames[i], str(resNum)])
         seqArray.append(resString)
@@ -392,6 +394,10 @@ class refine:
         grefine = GradientRefinement(self.dihedral)
         grefine.numericalDerivatives(delta,report)
 
+    def calcDerivError(self,delta):
+        grefine = GradientRefinement(self.dihedral)
+        return grefine.calcDerivError(delta)
+
     def setReportDump(self, value):
         self.reportDump = value
 
@@ -563,6 +569,7 @@ class refine:
                 sameEnt = startEntity == endEntity;
                 length = bondDict['length'] if 'length' in bondDict else 1.08
                 order = bondDict['order'] if 'order' in bondDict else 'SINGLE'
+
                 if not sameEnt:
                     global bondOrders
                     if (order < 0 or order > 4) and order not in bondOrders:
@@ -574,6 +581,9 @@ class refine:
                         order = order.upper()
                     self.molecule.createLinker(startAtom, endAtom, order, length)
                 else:
+                    atomName1, atomName2 = bondDict['atoms']
+                    startAtom = self.molecule.getAtomByName(atomName1)
+                    endAtom = self.molecule.getAtomByName(atomName2)
                     atomName1 = startAtom.getFullName()
                     atomName2 = endAtom.getFullName()
                     lower = length - .0001
@@ -582,13 +592,23 @@ class refine:
         else:
             self.molecule.createLinker(startAtom, endAtom, n, linkLen, valAngle, dihAngle)
 
+    def readBondDict(self,bondDict):
+        for bondInfo in bondDict:
+            distances = bondInfo['length'] if 'length' in bondInfo else 1.08
+            if not isinstance(distances,float):
+                lower,upper = distances
+            else:
+                lower = distances - 0.001
+                upper = distances + 0.001
+      
+            atomName1, atomName2 = bondInfo['atoms']
+            self.energyLists.addDistanceConstraint(atomName1, atomName2, lower, upper, True)
+
     def addCyclicBond(self, polymer):
         # to return a list atomName1, atomName2, distance
         distanceConstraints = polymer.getCyclicConstraints()
         for distanceConstraint in distanceConstraints:
             self.bondConstraints.append(distanceConstraint)
-            #atomName1, atomName2, distance = distanceConstraint.split()
-            #self.energyLists.addDistanceConstraint(atomName1, atomName2, distance - .0001, distance + .0001, True)
 
 
     def printPars(self):
@@ -978,6 +998,9 @@ class refine:
                     #Only one entity in the molecule
                     residues = ",".join(molData['residues'].split()) if 'residues' in molData else None
                     self.readMoleculeDict(seqReader, molData)
+                self.molecule = Molecule.getActive()
+                if 'edit' in molData:
+                    self.readMolEditDict(seqReader, molData['edit'])
 
         
         self.molecule = Molecule.getActive()
@@ -1030,6 +1053,9 @@ class refine:
                 distance = float(distance)
                 self.energyLists.addDistanceConstraint(atomName1, atomName2, distance - .0001, distance + .0001, True)
 
+        if 'bonds' in data:
+            self.readBondDict(data['bonds'])
+
         if 'shifts' in data:
             self.readShiftDict(data['shifts'],residues)
 
@@ -1043,6 +1069,22 @@ class refine:
         if 'anneal' in data:
             self.dOpt = self.readAnnealDict(data['anneal'])
         self.energy()
+
+    def readMolEditDict(self,seqReader, editDict):
+        for entry in editDict:
+            if 'remove' in entry:
+                atomToRemove = entry['remove']
+                atom = self.molecule.getAtomByName(atomToRemove)
+                entity = atom.getEntity()
+                entity.removeAtom(atom);
+            if 'cis' in entry:
+                resToChange = entry['cis']
+                atomToChange = resToChange+'.H'
+                atom = self.molecule.getAtomByName(atomToChange)
+                atom.setDihedral(180.0)
+        self.molecule.genCoords(False)
+        self.molecule.setupRotGroups()
+
 
     def readMoleculeDict(self,seqReader, molDict):
         linkLen = 5.0;

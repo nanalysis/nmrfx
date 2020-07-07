@@ -589,6 +589,10 @@ public class AtomParser {
         return resName;
     }
 
+    public static Set<String> getAANames() {
+        return map3To1.keySet();
+    }
+
     public static String convert1To3(String s) {
         return map1To3.get(s);
     }

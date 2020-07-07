@@ -387,8 +387,15 @@ public class PropertyGenerator {
             } else {
                 atoms[3] = residue.getAtom("CG");
             }
+            int iAtom = 0;
+            for (Atom atom : atoms) {
+                if (atom == null) {
+                    System.out.println(resName + residue.getNumber() + " " + iAtom);
+                    return Double.NaN;
+                }
+                iAtom++;
+            }
             if (atoms[3] == null) {
-                System.out.println(resName);
             }
             return Molecule.calcDihedral(atoms);
         }
