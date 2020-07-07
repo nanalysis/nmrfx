@@ -261,6 +261,7 @@ public class PeakNavigator implements PeakListener {
 
     public void setPeak(Peak peak) {
         currentPeak = peak;
+        setPeakIdField();
         peakNavigable.refreshPeakView(peak);
         if (peak != null) {
             if (peakList != peak.getPeakList()) {
@@ -271,7 +272,6 @@ public class PeakNavigator implements PeakListener {
             updateDeleteStatus();
         }
         updateAtomLabels(peak);
-        setPeakIdField();
     }
 
     void updateAtomLabels(Peak peak) {
