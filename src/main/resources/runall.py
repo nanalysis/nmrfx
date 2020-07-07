@@ -226,7 +226,9 @@ def parseArgs():
         if len(files) > 1:
             excludeRes = []
             excludeAtoms = []
-            runSuper(excludeRes, excludeAtoms, files, base)
+            includeRes = ['*']
+            includeAtoms = ['*']
+            runSuper(excludeRes, excludeAtoms, includeRes, includeAtoms, files, base)
 
 parseArgs()
 
