@@ -224,10 +224,10 @@ def parseArgs():
         else:
             files = glob.glob(os.path.join(finDir,'final*.pdb'))
         if len(files) > 1:
-            excludeRes = []
-            excludeAtoms = []
-            includeRes = ['*']
-            includeAtoms = ['*']
+            excludeRes = ''
+            excludeAtoms = ''
+            includeRes = '*'
+            includeAtoms = '*'
             runSuper(excludeRes, excludeAtoms, includeRes, includeAtoms, files, base)
 
 parseArgs()

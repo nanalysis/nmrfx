@@ -41,9 +41,7 @@ def parseArgs():
     parser.add_argument("-a", dest="atomListE", default='', help="Atoms to exclude from comparison.")
     parser.add_argument("-R", dest="resListI", default="*", help="Residues to include in comparison")
     parser.add_argument("-A", dest="atomListI", default="*", help="Atoms to include in comparison")
-    parser.add_argument("-f", dest="calcPDBList", help="Comma-separated list of calculated PDBs to compare to reference PDB (e.g. final1.pdb, final2.pdb). Use '*' to use all final PDBs.")
-    parser.add_argument("-F", dest="refPDBFile", help="Reference PDB file.")
-    # parser.add_argument("fileNames",nargs="*")
+    parser.add_argument("fileNames",nargs="*")
     args = parser.parse_args()
 
     resArgE = args.resListE
@@ -64,22 +62,11 @@ def parseArgs():
         print "Error: atoms", atomListEI, "cannot be both excluded and included in comparison."
         sys.exit()
 
-    fileArg = args.calcPDBList
-    if fileArg != None:
-        fileNames = makeFileList(fileArg)
-    else:
-        print "Error: Calculated structure PDB file(s) must be specified with the -f flag."
-        sys.exit()
-    refArg = args.refPDBFile
-    if refArg != None:
-        fileNames.append(args.refPDBFile)
-    else:
-        print "Error: Reference structure PDB file must be specified with the -F flag."
-        sys.exit()
+    fileNames = args.fileNames
 
     # print resListE, atomListE, resListI, atomListI, fileNames
 
-    return resListE, atomListE, resListI, atomListI, fileNames
+    return args.resListE, args.atomListE, args.resListI, args.atomListI, fileNames
 
 def getResList(resArg):
     if ";" in resArg: #multiple chains separated by ; (e.g. A: 2-5, 10; B: 1-4, 12)
@@ -185,14 +172,20 @@ def findCore(mol, minIndex, excludeRes, excludeAtoms, includeRes, includeAtoms, 
     polymers = mol.getPolymers()
     resRMSs = []
     resValues = []
-    excludeAtomsL = [atom.lower() for atom in excludeAtoms]
-    includeAtomsL = [atom.lower() for atom in includeAtoms]
+    excludeResList = getResList(excludeRes)
+    includeResList = getResList(includeRes)
+    atomListES = excludeAtoms.split(",")
+    excludeAtomsL = [atom.strip().lower() for atom in atomListES if atom != ""]
+    atomListIS = includeAtoms.split(",")
+    includeAtomsL = [atom.strip().lower() for atom in atomListIS if atom != ""]
+    # excludeAtomsL = [atom.lower() for atom in excludeAtoms]
+    # includeAtomsL = [atom.lower() for atom in includeAtoms]
     for polymer in polymers:
         residues = polymer.getResidues()
         chainCode = polymer.getName()
         for residue in residues:
             res = chainCode + "." + residue.getNumber()
-            if res in excludeRes or ("*" not in includeRes and res not in includeRes):
+            if res in excludeResList or ("*" not in includeResList and res not in includeResList):
                 continue
             atoms = residue.getAtoms('*')
             resSum = 0.0
@@ -249,6 +242,7 @@ def doSelections(mol, resSelects, atomSelect):
     polymer = 'A'
     mol.selectAtoms("*.*")
     mol.setAtomProperty(2,False)
+    print resSelects
     for resSelect in resSelects:
         selection = resSelect+'.'+atomSelect
         mol.selectAtoms(selection)
@@ -271,14 +265,24 @@ def saveModels(mol, files):
 def runSuper(excludeRes, excludeAtoms, includeRes, includeAtoms, files, newBase='super'):
     mol = loadPDBModels(files)
     polymers = mol.getPolymers()
+    print excludeRes, excludeAtoms, includeRes, includeAtoms
+    if excludeRes == '' and includeRes != '':
+        if "," in includeRes:
+            resSplit = includeRes.split(",")
+            resList = [resRange.strip() for resRange in resSplit]
+        else:
+            resList = [includeRes]
+    if excludeAtoms == '' and includeAtoms != '':
+        atoms = includeAtoms
+
     if len(polymers) > 0:
-        (minI,rms,avgRMS) = findRepresentative(mol)
+        (minI,rms,avgRMS) = findRepresentative(mol, resList, atoms)
         print 'repModel',minI,'rms',rms,'avgrms',avgRMS
         coreRes = findCore(mol, minI, excludeRes, excludeAtoms, includeRes, includeAtoms)
         print 'coreResidues',coreRes
-        (minI,rms,avgRMS) = findRepresentative(mol, coreRes)
+        (minI,rms,avgRMS) = findRepresentative(mol, coreRes, atoms)
         print 'repModel',minI,'rms',rms,'avgrms',avgRMS
-        superImpose(mol, minI, coreRes)
+        superImpose(mol, minI, coreRes, atoms)
     else:
         (minI,rms,avgRMS) = findRepresentative(mol,'*','c*,n*,o*,p*')
         print 'repModel',minI,'rms',rms,'avgrms',avgRMS
