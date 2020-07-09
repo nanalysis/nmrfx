@@ -80,16 +80,24 @@ import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.ContentDisplay;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Label;
+import javafx.scene.control.ListCell;
+import javafx.scene.control.ListView;
 import javafx.scene.control.RadioButton;
 import javafx.scene.control.SelectionMode;
 import javafx.scene.control.Slider;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.scene.control.ToggleGroup;
+import javafx.scene.effect.InnerShadow;
+import javafx.scene.input.ClipboardContent;
+import javafx.scene.input.DragEvent;
+import javafx.scene.input.Dragboard;
+import javafx.scene.input.TransferMode;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
 import javafx.scene.shape.Polygon;
+import javafx.util.Callback;
 import javafx.util.converter.IntegerStringConverter;
 import org.controlsfx.control.ListSelectionView;
 import org.controlsfx.control.PopOver;
@@ -340,7 +348,179 @@ public class SpecAttrWindowController implements Initializable {
         aspectSlider.setBlockIncrement(0.01);
         aspectSlider.setOnMousePressed(e -> shiftState = e.isShiftDown());
         aspectSlider.valueProperty().addListener(e -> updateAspectRatio());
+        datasetView.setCellFactory(new Callback<ListView<String>, ListCell<String>>() {
+            @Override
+            public ListCell<String> call(ListView<String> p) {
+                DatasetListCell<String> olc = new DatasetListCell<String>(datasetView) {
+                    @Override
+                    public void updateItem(String s, boolean empty) {
+                        super.updateItem(s, empty);
+                        if (empty || s == null) {
+                            setText(null);
+                            setGraphic(null);
+                        } else {
+                            setText(s);
+                        }
+                    }
+                };
+                return olc;
+            }
 
+        });
+    }
+    Integer startIndex = null;
+    boolean moveItemIsSelected = false;
+    Node startNode = null;
+    Node endNode = null;
+
+    class DatasetListCell<T> extends ListCell<T> implements ChangeListener<String> {
+
+        private DatasetListCell target;
+        private ListSelectionView<String> listView;
+
+        @Override
+        public void changed(ObservableValue<? extends String> observable, String oldValue, String newValue) {
+        }
+
+        DatasetListCell(ListSelectionView<String> listView) {
+            this.listView = listView;
+            this.setOnDragDetected(new EventHandler<MouseEvent>() {
+                @Override
+                public void handle(MouseEvent event) {
+                    startIndex = indexProperty().get();
+                    Dragboard db = startDragAndDrop(TransferMode.COPY);
+
+                    /* Put a string on a dragboard */
+                    ClipboardContent content = new ClipboardContent();
+                    String sourcetext = getText();
+                    moveItemIsSelected = isSelectedDataset(sourcetext);
+                    content.putString(getText());
+                    db.setContent(content);
+                    startNode = getParent();
+                    event.consume();
+                }
+            });
+            this.setOnDragDone(new EventHandler<DragEvent>() {
+                @Override
+                public void handle(DragEvent event) {
+                    ObservableList<String> listItems = listView.getTargetItems();
+                    event.consume();
+                }
+            });
+            this.setOnDragDropped(new EventHandler<DragEvent>() {
+                @Override
+                public void handle(DragEvent event) {
+                    Object target = event.getGestureTarget();
+                    if (target instanceof DatasetListCell) {
+                        DatasetListCell targetCell = (DatasetListCell) target;
+                        int index = targetCell.getIndex();
+                        String targetText = targetCell.getText();
+                        moveItem(index, targetText, getParent());
+                    }
+                    event.consume();
+                }
+            });
+            this.setOnDragEntered(new EventHandler<DragEvent>() {
+                @Override
+                public void handle(DragEvent event) {
+                    event.consume();
+                }
+            });
+            this.setOnDragExited(new EventHandler<DragEvent>() {
+                @Override
+                public void handle(DragEvent event) {
+                    //   System.out.println("exit " + event.toString());
+                    Object target = event.getTarget();
+                    if (target instanceof DatasetListCell) {
+                        DatasetListCell targetCell = (DatasetListCell) target;
+                        targetCell.setEffect(null);
+                    }
+                    event.consume();
+                }
+            });
+            this.setOnDragOver(new EventHandler<DragEvent>() {
+                @Override
+                public void handle(DragEvent event) {
+                    //  System.out.println("over " + event.toString());
+                    event.acceptTransferModes(TransferMode.COPY_OR_MOVE);
+                    Object target = event.getGestureTarget();
+                    if (target instanceof DatasetListCell) {
+                        DatasetListCell targetCell = (DatasetListCell) target;
+                        InnerShadow is = new InnerShadow();
+                        is.setOffsetX(1.0);
+                        is.setColor(Color.web("#666666"));
+                        is.setOffsetY(1.0);
+                        targetCell.setEffect(is);
+                    }
+                    event.consume();
+                }
+
+            });
+        }
+
+        boolean isSelectedDataset(String text) {
+            for (String item : listView.getTargetItems()) {
+                if (item.equals(text)) {
+                    return true;
+                }
+            }
+            return false;
+
+        }
+
+        void moveItem(int targetIndex, String targetText, Node endNode) {
+            datasetView.getTargetItems().removeListener(datasetTargetListener);
+            final boolean targetItemIsSelected;
+            List<String> moveFromItems;
+            List<String> moveToItems;
+            String startItem;
+            try {
+                if (moveItemIsSelected) {
+                    targetItemIsSelected = endNode == startNode;
+                } else {
+                    targetItemIsSelected = endNode != startNode;
+                }
+
+                if (moveItemIsSelected) {
+                    moveFromItems = listView.getTargetItems();
+                } else {
+                    moveFromItems = listView.getSourceItems();
+                }
+                if (targetItemIsSelected) {
+                    moveToItems = listView.getTargetItems();
+                } else {
+                    moveToItems = listView.getSourceItems();
+                }
+                startItem = moveFromItems.get(startIndex);
+                moveFromItems.remove(startIndex.intValue());
+            } finally {
+                datasetView.getTargetItems().addListener(datasetTargetListener);
+            }
+            if ((targetText == null) || (targetText.equals(""))) {
+                moveToItems.add(startItem);
+            } else {
+                int index = moveToItems.indexOf(targetText);
+                if (targetItemIsSelected == moveItemIsSelected) {
+                    if (index >= startIndex) {
+                        index++;
+                    }
+                }
+                moveToItems.add(index, startItem);
+            }
+            refreshAction();
+        }
+
+        void printEvent(DragEvent event) {
+//            System.out.println("acc obj " + event.getAcceptingObject());
+//            System.out.println("acc gsr " + event.getGestureSource());
+//            System.out.println("acc gtar " + event.getGestureTarget());
+//            System.out.println("acc tar " + event.getTarget());
+//            Object target = event.getGestureTarget();
+//            if (target instanceof DatasetListCell) {
+//                DatasetListCell targetCell = (DatasetListCell) target;
+//                System.out.println(targetCell.getIndex());
+//            }
+        }
     }
 
     void updateIntegralState() {
