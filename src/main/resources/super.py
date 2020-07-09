@@ -7,6 +7,8 @@ from org.nmrfx.structure.chemistry.io import PDBFile
 import molio
 from java.util import TreeSet
 import argparse
+from operator import itemgetter
+from itertools import groupby
 
 def median(values):
     values.sort()
@@ -104,15 +106,15 @@ def makeResList(resArg, chain):
                     resList1.append([res for res in range(firstRes, lastRes)])
                 else: #single residue
                     resList1.append([val.strip()])
-            resList = [chain + "." + str(item) for sublist in resList1 for item in sublist]
+            resList = ["{}.{}".format(chain, item) for sublist in resList1 for item in sublist]
         elif "-" in resArg: #single range of residues (e.g. 2-5)
             resArgSplit = resArg.split("-")
             firstRes = int(resArgSplit[0].strip())
             lastRes = int(resArgSplit[1].strip()) + 1
-            resList = [chain + "." + str(res) for res in range(firstRes, lastRes)]
+            resList = ["{}.{}".format(chain, res) for res in range(firstRes, lastRes)]
         elif "," in resArg: #comma-separated individual residues (e.g. 2, 3, 4, 5)
             resListS = resArg.split(",")
-            resList = [chain + "." + str(res).strip() for res in resListS if res != ""]
+            resList = ["{}.{}".format(chain, res) for res in resListS if res != ""]
 
     return resList
 
@@ -262,19 +264,44 @@ def saveModels(mol, files):
         newFile = os.path.join(dir,newFileName)
         molio.savePDB(mol, newFile, i)
 
-def runSuper(excludeRes, excludeAtoms, includeRes, includeAtoms, files, newBase='super'):
-    mol = loadPDBModels(files)
-    polymers = mol.getPolymers()
-    print excludeRes, excludeAtoms, includeRes, includeAtoms
+def makeResAtomLists(polymers, excludeRes, excludeAtoms, includeRes, includeAtoms):
+    allRes = polymers.get(0).getResidues() #fixme should account for multiple polymers
     if excludeRes == '' and includeRes != '':
         if "," in includeRes:
             resSplit = includeRes.split(",")
             resList = [resRange.strip() for resRange in resSplit]
         else:
             resList = [includeRes]
+    elif excludeRes != '':
+        allResNums = [res.getNumber() for res in allRes]
+        exclResSplit = excludeRes.split("-")
+        exclResNums = [str(num) for num in range(int(exclResSplit[0]), int(exclResSplit[1])+1)]
+        resNums = [int(resNum) for resNum in allResNums if resNum not in exclResNums]
+        resGroups = [map(itemgetter(1), g) for k, g in groupby(enumerate(resNums), lambda (i,x):i-x)]
+        resList = ['{}-{}'.format(list[0], list[-1]) for list in resGroups]
     if excludeAtoms == '' and includeAtoms != '':
-        atoms = includeAtoms
+        flagAtoms = includeAtoms
+    elif excludeAtoms != '':
+        flagAtoms = excludeAtoms
+    flagAtomSplit = flagAtoms.split(",")
+    flagAtoms = [atom.lower() for atom in flagAtomSplit]
+    flagAtomLists = [res.getAtoms(aFlag.upper()) for aFlag in flagAtoms for res in allRes if res.getAtoms(aFlag.upper()) != []]
+    allFlagAtoms = set([atom.getName().lower() for subList in flagAtomLists for atom in subList])
+    if excludeAtoms == '' and includeAtoms != '':
+        atoms = ','.join(allFlagAtoms)
+    elif excludeAtoms != '':
+        allAtomLists = [res.getAtoms() for res in allRes]
+        allUniqAtoms = set([j.getName().lower() for subList in allAtomLists for j in subList])
+        atomList = [aName for aName in allUniqAtoms if aName not in allFlagAtoms]
+        atoms = ','.join(atomList)
 
+    return resList, atoms
+
+def runSuper(excludeRes, excludeAtoms, includeRes, includeAtoms, files, newBase='super'):
+    mol = loadPDBModels(files)
+    polymers = mol.getPolymers()
+    print excludeRes, excludeAtoms, includeRes, includeAtoms
+    resList, atoms = makeResAtomLists(polymers, excludeRes, excludeAtoms, includeRes, includeAtoms)
     if len(polymers) > 0:
         (minI,rms,avgRMS) = findRepresentative(mol, resList, atoms)
         print 'repModel',minI,'rms',rms,'avgrms',avgRMS
