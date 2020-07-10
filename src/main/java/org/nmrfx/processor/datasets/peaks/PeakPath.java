@@ -50,6 +50,7 @@ public class PeakPath implements PeakListener {
         TITRATION,
         PRESSURE;
     }
+    boolean fit0 = false;
     OptFunction optFunction = new Quadratic10();
     ArrayList<PeakList> peakLists = new ArrayList<>();
 //    ArrayList<ArrayList<PeakDistance>> filteredLists = new ArrayList<>();
@@ -326,9 +327,9 @@ public class PeakPath implements PeakListener {
 
         public String toSTAR3ParString(int id, int pathID, int dim) {
             StringBuilder sBuilder = new StringBuilder();
-            int iConfirm = confirmed ? 1 : 0;
-            sBuilder.append(String.format("%4d %4d %d %d", id, pathID, dim + 1, iConfirm));
-            int nPars = 3;
+            sBuilder.append(String.format("%4d %4d %d %3s", id, pathID, dim + 1, (confirmed ? "yes" : "no")));
+            int nPars = pathMode == PATHMODE.PRESSURE ? 2 : 2;
+
             int start = dim * nPars;
             for (int i = 0; i < nPars; i++) {
                 sBuilder.append(" ");
@@ -473,6 +474,11 @@ public class PeakPath implements PeakListener {
         return peakPath;
     }
 
+    public String getUnits() {
+        String units = pathMode == PATHMODE.PRESSURE ? "bar" : "scaled_ppm";
+        return units;
+    }
+
     public List<String> getDatasetNames() {
         return datasetNames;
     }
@@ -512,17 +518,17 @@ public class PeakPath implements PeakListener {
 
     public List<String> getSTAR3PathLoopStrings() {
         List<String> strings = new ArrayList<>();
-        strings.add("_Path.ID");
+        strings.add("_Path.Index_ID");
         strings.add("_Path.Path_ID");
-        strings.add("_Path.Peaklist_ID");
+        strings.add("_Path.Spectral_peak_list_ID");
         strings.add("_Path.Peak_ID");
         return strings;
     }
 
     public List<String> getSTAR3LoopStrings() {
         List<String> strings = new ArrayList<>();
-        strings.add("_Peak_list.ID");
-        strings.add("_Peak_list.Name");
+        strings.add("_Peak_list.Spectral_peak_list_ID");
+        strings.add("_Peak_list.Spectral_peak_list_label");
         if (pathMode == PATHMODE.PRESSURE) {
             strings.add("_Peak_list.Pressure");
         } else {
@@ -546,8 +552,10 @@ public class PeakPath implements PeakListener {
             strings.add("_Par.C");
             strings.add("_Par.C_val_err");
         } else {
-            strings.add("_Par.A");
-            strings.add("_Par.A_val_err");
+            if (fit0) {
+                strings.add("_Par.A");
+                strings.add("_Par.A_val_err");
+            }
             strings.add("_Par.K");
             strings.add("_Par.K_val_err");
             strings.add("_Par.C");
@@ -558,8 +566,10 @@ public class PeakPath implements PeakListener {
 
     public String getSTAR3String(int i) {
         StringBuilder sBuilder = new StringBuilder();
-        sBuilder.append((i + 1)).append(" ").append(peakLists.get(i).getName());
-        int nVars = pathMode == PATHMODE.PRESSURE ? 1 : 2;
+        PeakList peakList = peakLists.get(i);
+        int id = peakList.getId();
+        sBuilder.append(id).append(" $").append(peakLists.get(i).getName());
+        int nVars = pathMode == PATHMODE.PRESSURE ? 1 : fit0 ? 3 : 2;
         String format = pathMode == PATHMODE.PRESSURE ? "%.1f" : "%.3f";
         for (int j = 0; j < nVars; j++) {
             sBuilder.append(" ").append(String.format(format, indVars[j][i]));
