@@ -6,7 +6,7 @@ from org.nmrfx.structure.chemistry import SuperMol
 from org.nmrfx.structure.chemistry.io import PDBFile
 import molio
 from java.util import TreeSet
-import argparse
+import argparse, re
 from operator import itemgetter
 from itertools import groupby
 
@@ -43,32 +43,16 @@ def parseArgs():
     parser.add_argument("-a", dest="atomListE", default='', help="Atoms to exclude from comparison.")
     parser.add_argument("-R", dest="resListI", default="*", help="Residues to include in comparison")
     parser.add_argument("-A", dest="atomListI", default="*", help="Atoms to include in comparison")
+    parser.add_argument("-F", dest="formatRMS", action='store_true', help='make formatted file from Terminal output file. Usage: super -F [outputFile] [formattedFile]')
     parser.add_argument("fileNames",nargs="*")
     args = parser.parse_args()
 
-    resArgE = args.resListE
-    resListE = getResList(resArgE)
-    resArgI = args.resListI
-    resListI = getResList(resArgI)
-    resListEI = [value for value in resListE if value in resListI]
-    if resListEI != []:
-        print "Error: residues", resListEI, "cannot be both excluded and included in comparison."
-        sys.exit()
-
-    atomListES = args.atomListE.split(",")
-    atomListE = [atom.strip() for atom in atomListES if atom != ""]
-    atomListIS = args.atomListI.split(",")
-    atomListI = [atom.strip() for atom in atomListIS if atom != ""]
-    atomListEI = [value for value in atomListE if value in atomListI]
-    if atomListEI != []:
-        print "Error: atoms", atomListEI, "cannot be both excluded and included in comparison."
-        sys.exit()
-
+    formatRMS = args.formatRMS
     fileNames = args.fileNames
 
     # print resListE, atomListE, resListI, atomListI, fileNames
 
-    return args.resListE, args.atomListE, args.resListI, args.atomListI, fileNames
+    return args.resListE, args.atomListE, args.resListI, args.atomListI, formatRMS, fileNames
 
 def getResList(resArg):
     if ";" in resArg: #multiple chains separated by ; (e.g. A: 2-5, 10; B: 1-4, 12)
@@ -298,24 +282,52 @@ def makeResAtomLists(polymers, excludeRes, excludeAtoms, includeRes, includeAtom
     return resList, atoms
 
 def runSuper(excludeRes, excludeAtoms, includeRes, includeAtoms, files, newBase='super'):
-    mol = loadPDBModels(files)
-    polymers = mol.getPolymers()
-    print excludeRes, excludeAtoms, includeRes, includeAtoms
-    resList, atoms = makeResAtomLists(polymers, excludeRes, excludeAtoms, includeRes, includeAtoms)
-    if len(polymers) > 0:
-        (minI,rms,avgRMS) = findRepresentative(mol, resList, atoms)
-        print 'repModel',minI,'rms',rms,'avgrms',avgRMS
-        coreRes = findCore(mol, minI, excludeRes, excludeAtoms, includeRes, includeAtoms)
-        print 'coreResidues',coreRes
-        (minI,rms,avgRMS) = findRepresentative(mol, coreRes, atoms)
-        print 'repModel',minI,'rms',rms,'avgrms',avgRMS
-        superImpose(mol, minI, coreRes, atoms)
-    else:
-        (minI,rms,avgRMS) = findRepresentative(mol,'*','c*,n*,o*,p*')
-        print 'repModel',minI,'rms',rms,'avgrms',avgRMS
-        coreRes = ['*']
-        superImpose(mol, minI, coreRes,'c*,n*,o*,p*')
-    (dir,fileName) = os.path.split(files[0])
-    (base,ext) = os.path.splitext(fileName)
+    refFile = files[-1]
+    for i in range(len(files)-1):
+        print '\n', files[i], refFile
+        filesToCompare = [files[i], refFile]
+        mol = loadPDBModels(filesToCompare)
+        polymers = mol.getPolymers()
+        print excludeRes, excludeAtoms, includeRes, includeAtoms
+        resList, atoms = makeResAtomLists(polymers, excludeRes, excludeAtoms, includeRes, includeAtoms)
+        if len(polymers) > 0:
+            (minI,rms,avgRMS) = findRepresentative(mol, resList, atoms)
+            print 'repModel',minI,'rms',rms,'avgrms',avgRMS
+            coreRes = findCore(mol, minI, excludeRes, excludeAtoms, includeRes, includeAtoms)
+            print 'coreResidues',coreRes
+            (minI,rms,avgRMS) = findRepresentative(mol, coreRes, atoms)
+            print 'repModel',minI,'rms',rms,'avgrms',avgRMS
+            superImpose(mol, minI, coreRes, atoms)
+        else:
+            (minI,rms,avgRMS) = findRepresentative(mol,'*','c*,n*,o*,p*')
+            print 'repModel',minI,'rms',rms,'avgrms',avgRMS
+            coreRes = ['*']
+            superImpose(mol, minI, coreRes,'c*,n*,o*,p*')
+        (dir,fileName) = os.path.split(files[0])
+        (base,ext) = os.path.splitext(fileName)
 
-    saveModels(mol, files)
+        saveModels(mol, files)
+
+def makeFormattedRMSFile(files):
+    rmsDict = {}
+    with open(files[0], 'r') as outFile: #file to read: contains Terminal output from super command.
+        lines = outFile.readlines()
+        inCore = False
+        for line in lines:
+            if len(line) > 0:
+                if 'pdb' in line:
+                    sNum = int(re.findall(r'\d+', line.split()[0])[0])
+                if "coreResidues" in line:
+                    inCore = True
+                if "rms" in line:
+                    if not inCore:
+                        allRMS = re.findall(r'\d+\.\d+', line)[0]
+                    elif inCore:
+                        coreRMS = re.findall(r'\d+\.\d+', line)[0]
+                        rmsDict[sNum] = [allRMS, coreRMS]
+                        inCore = False
+
+    with open(files[1], 'w') as formattedFile:
+        formattedFile.write("{}\t{}\t{}\n".format("Structure", "allRMS", "coreRMS"))
+        for key in sorted(rmsDict.keys()):
+            formattedFile.write("{}\t{}\t{}\n".format(key, rmsDict[key][0], rmsDict[key][1]))
