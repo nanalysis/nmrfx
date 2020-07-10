@@ -33,13 +33,15 @@ public class PeakPathWriter {
         chan.write("_NMRFx_peak_path.ID                          ");
         chan.write(id + "\n");
         chan.write("_NMRFx_peak_path.Type               ");
-        chan.write(peakPath.getPathMode().toString());
+        chan.write(peakPath.getPathMode().toString().toLowerCase());
         chan.write("\n");
         chan.write("_NMRFx_peak_path.Sample_ID                   ");
         chan.write(".\n");
         int nDim = firstList.nDim;
         chan.write("_NMRFx_peak_path.Number_of_spectral_dimensions ");
         chan.write(String.valueOf(nDim) + "\n");
+        chan.write("_NMRFx_peak_path.Units                       ");
+        chan.write(peakPath.getUnits() + "\n");
         chan.write("_NMRFx_peak_path.Details                       ");
         if (peakPath.getDetails().length() != 0) {
             chan.write(stringQuote + peakPath.getDetails() + stringQuote + "\n");
@@ -61,7 +63,7 @@ public class PeakPathWriter {
         chan.write("stop_\n");
         chan.write("\n");
 
-        String[] dimLoops = {"_Dim.ID", "_Dim.Weight", "_Dim.Tolerance"};
+        String[] dimLoops = {"_Applied.Spectral_dim_ID", "_Applied.Spectral_dim_Scale", "_Applied.Spectral_dim_Tolerance"};
         chan.write("loop_\n");
         for (String loopString : dimLoops) {
             chan.write(loopString + "\n");
@@ -88,13 +90,14 @@ public class PeakPathWriter {
         });
         for (PeakPath.Path path : paths) {
             List<PeakPath.PeakDistance> peakDists = path.getPeakDistances();
-            int listID = 1;
+            int iList = 0;
             for (PeakDistance peakDist : peakDists) {
+                PeakList peakList = peakLists.get(iList++);
                 chan.write(String.format("%4d", elem++));
                 chan.write(" ");
                 chan.write(String.format("%4d", iPath));
                 chan.write(" ");
-                chan.write(String.format("%4d", listID++));
+                chan.write(String.format("%4d", peakList.getId()));
                 chan.write(" ");
                 if (peakDist != null) {
                     chan.write(String.format("%5d", peakDist.getPeak().getIdNum()));
