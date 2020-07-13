@@ -85,9 +85,7 @@ public class PeakPathWriter {
         chan.write("\n");
         Collection<PeakPath.Path> paths = peakPath.getPaths();
         int elem = 1;
-        int iPath = 1;
-        paths.stream().sorted().forEach(path -> {
-        });
+
         for (PeakPath.Path path : paths) {
             List<PeakPath.PeakDistance> peakDists = path.getPeakDistances();
             int iList = 0;
@@ -95,7 +93,7 @@ public class PeakPathWriter {
                 PeakList peakList = peakLists.get(iList++);
                 chan.write(String.format("%4d", elem++));
                 chan.write(" ");
-                chan.write(String.format("%4d", iPath));
+                chan.write(String.format("%4d", path.getFirstPeak().getIdNum()));
                 chan.write(" ");
                 chan.write(String.format("%4d", peakList.getId()));
                 chan.write(" ");
@@ -106,7 +104,6 @@ public class PeakPathWriter {
                 }
                 chan.write("\n");
             }
-            iPath++;
         }
         chan.write("stop_\n");
         chan.write("\n");
@@ -117,18 +114,16 @@ public class PeakPathWriter {
             chan.write(loopString + "\n");
         }
         chan.write("\n");
-        iPath = 1;
         elem = 1;
         int useDims = peakPath.getPathMode() == PeakPath.PATHMODE.PRESSURE ? nDim : 1;
         for (PeakPath.Path path : paths) {
             if (path.hasPars()) {
                 for (int iDim = 0; iDim < useDims; iDim++) {
-                    chan.write(path.toSTAR3ParString(elem, iPath, iDim));
+                    chan.write(path.toSTAR3ParString(elem, path.getFirstPeak().getIdNum(), iDim));
                     chan.write("\n");
                     elem++;
                 }
             }
-            iPath++;
         }
         chan.write("stop_\n");
         chan.write("\n");
