@@ -247,6 +247,8 @@ public class Loop {
             for (String s : column) {
                 if (s.equals(".")) {
                     values.add(defaultValue);
+                } else if (s.equals("?")) {
+                    values.add(defaultValue);
                 } else {
                     values.add(Double.parseDouble(s));
                 }
@@ -264,6 +266,8 @@ public class Loop {
             values = new ArrayList<>();
             for (String s : column) {
                 if (s.equals(".")) {
+                    values.add(defaultValue);
+                } else if (s.equals("?")) {
                     values.add(defaultValue);
                 } else {
                     values.add(Integer.parseInt(s));
