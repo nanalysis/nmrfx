@@ -20,6 +20,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.ContentDisplay;
 import javafx.scene.control.Label;
+import javafx.scene.control.Menu;
 import javafx.scene.control.MenuButton;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.TextField;
@@ -71,6 +72,7 @@ public class PathTool implements PeakNavigable {
     ToolBar fitBar;
     Consumer closeAction;
     MenuButton actionMenu;
+    Menu selectMenu;
     Button drawButton;
     Button findButton;
     Button tweakFreezeButton;
@@ -155,9 +157,8 @@ public class PathTool implements PeakNavigable {
         loadPressureItem.setOnAction(e -> loadPathData(PATHMODE.PRESSURE));
         actionMenu.getItems().add(loadPressureItem);
 
-        MenuItem selectPathItem = new MenuItem("Select");
-        selectPathItem.setOnAction(e -> selectPathData());
-        actionMenu.getItems().add(selectPathItem);
+        selectMenu = new Menu("Select...");
+        actionMenu.getItems().add(selectMenu);
 
         MenuItem findPathMenuItem = new MenuItem("Find Paths");
         findPathMenuItem.setOnAction(e -> findPaths());
@@ -190,6 +191,8 @@ public class PathTool implements PeakNavigable {
         MenuItem clearPathMenuItem = new MenuItem("Clear Path");
         clearPathMenuItem.setOnAction(e -> clearPath());
         actionMenu.getItems().add(clearPathMenuItem);
+
+        actionMenu.showingProperty().addListener(e -> updatePathSelectMenu());
 
         Pane filler1 = new Pane();
         HBox.setHgrow(filler1, Priority.ALWAYS);
@@ -246,7 +249,14 @@ public class PathTool implements PeakNavigable {
 
     }
 
-    void updateSelectedPeakButtons() {
+    void updatePathSelectMenu() {
+        selectMenu.getItems().clear();
+        Collection<String> peakPathNames = PeakPath.getNames();
+        for (String name : peakPathNames) {
+            MenuItem menuItem = new MenuItem(name);
+            selectMenu.getItems().add(menuItem);
+            menuItem.setOnAction(e -> selectPathData(name));
+        }
 
     }
 
@@ -314,23 +324,19 @@ public class PathTool implements PeakNavigable {
         }
     }
 
-    void selectPathData() {
+    void selectPathData(String name) {
         activePaths.clear();
-        Collection<String> peakPathNames = PeakPath.getNames();
-        List<String> names = new ArrayList<>();
-        names.addAll(peakPathNames);
-        if (!names.isEmpty()) {
-            peakPath = PeakPath.get(names.get(0));
-            setupChart(peakPath.getDatasetNames());
-            setupPlotTable();
-            if (peakPath.getPathMode() == PATHMODE.PRESSURE) {
-                plotTool.show("Pressure", "Shift Delta");
-            } else {
-                plotTool.show("Concentration", "Shift Delta");
-            }
-            setActionMenuDisabled(false);
-            addActivePathsToTable();
+        peakPath = PeakPath.get(name);
+        setupChart(peakPath.getDatasetNames());
+        setupPlotTable();
+        if (peakPath.getPathMode() == PATHMODE.PRESSURE) {
+            plotTool.show("Pressure", "Shift Delta");
+        } else {
+            plotTool.show("Concentration", "Shift Delta");
         }
+        setActionMenuDisabled(false);
+        addActivePathsToTable();
+
     }
 
     void loadPathData(PATHMODE pathMode) {
