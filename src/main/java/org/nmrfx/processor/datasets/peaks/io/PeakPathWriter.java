@@ -117,12 +117,10 @@ public class PeakPathWriter {
         elem = 1;
         int useDims = peakPath.getPathMode() == PeakPath.PATHMODE.PRESSURE ? nDim : 1;
         for (PeakPath.Path path : paths) {
-            if (path.hasPars()) {
-                for (int iDim = 0; iDim < useDims; iDim++) {
-                    chan.write(path.toSTAR3ParString(elem, path.getFirstPeak().getIdNum(), iDim));
-                    chan.write("\n");
-                    elem++;
-                }
+            for (int iDim = 0; iDim < useDims; iDim++) {
+                chan.write(path.toSTAR3ParString(elem, path.getFirstPeak().getIdNum(), iDim));
+                chan.write("\n");
+                elem++;
             }
         }
         chan.write("stop_\n");

@@ -138,8 +138,8 @@ public class PeakPathReader {
                 List<List<Double>> errColumns = new ArrayList<>();
                 int jPar = 0;
                 for (String parName : peakPath.getBaseParNames()) {
-                    parColumns.add(loop.getColumnAsDoubleList(parName + "_val", 0.0));
-                    errColumns.add(loop.getColumnAsDoubleList(parName + "_val_err", 0.0));
+                    parColumns.add(loop.getColumnAsDoubleList(parName + "_val", null));
+                    errColumns.add(loop.getColumnAsDoubleList(parName + "_val_err", null));
                     jPar++;
                 }
                 int nPaths = parIDColumn.size();
@@ -147,14 +147,22 @@ public class PeakPathReader {
                 for (int i = 0; i < nPaths; i++) {
                     double[] pars = new double[nPars];
                     double[] errors = new double[nPars];
+                    boolean ok = true;
                     for (int iPar = 0; iPar < nPars; iPar++) {
+                        Double val = parColumns.get(iPar).get(i);
+                        if (val == null) {
+                            ok = false;
+                            break;
+                        }
                         pars[iPar] = parColumns.get(iPar).get(i);
                         errors[iPar] = errColumns.get(iPar).get(i);
                     }
                     int id = parPathIdColumn.get(i);
                     Path path = pathMap.get(id);
-                    path.setFitPars(pars);
-                    path.setFitErrs(errors);
+                    if (ok) {
+                        path.setFitPars(pars);
+                        path.setFitErrs(errors);
+                    }
                     if (parConfirmedColumn.get(i).equals("yes")) {
                         path.confirm();
                     }
