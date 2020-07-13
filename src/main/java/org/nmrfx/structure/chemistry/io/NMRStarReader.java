@@ -45,6 +45,7 @@ import org.nmrfx.processor.datasets.peaks.CouplingPattern;
 import org.nmrfx.processor.datasets.peaks.Multiplet;
 import org.nmrfx.processor.datasets.peaks.Resonance;
 import org.nmrfx.processor.datasets.peaks.SpectralDim;
+import org.nmrfx.processor.datasets.peaks.io.PeakPathReader;
 import org.nmrfx.processor.utilities.NvUtil;
 import org.nmrfx.structure.chemistry.io.Sequence.RES_POSITION;
 import org.nmrfx.structure.utilities.Util;
@@ -665,6 +666,18 @@ public class NMRStarReader {
             }
         }
         linkResonances();
+    }
+
+    public void buildPeakPaths() throws ParseException {
+        for (Saveframe saveframe : star3.getSaveFrames().values()) {
+            if (saveframe.getCategoryName().equals("nmrfx_peak_path")) {
+                if (DEBUG) {
+                    System.err.println("process nmrfx_peak_path " + saveframe.getName());
+                }
+                PeakPathReader peakPathReader = new PeakPathReader();
+                peakPathReader.processPeakPaths(saveframe);
+            }
+        }
     }
 
     public void buildResonanceLists() throws ParseException {
@@ -1686,6 +1699,10 @@ public class NMRStarReader {
                 System.err.println("process runabout");
             }
             buildRunAbout();
+            if (DEBUG) {
+                System.err.println("process paths");
+            }
+            buildPeakPaths();
             if (DEBUG) {
                 System.err.println("clean resonances");
             }
