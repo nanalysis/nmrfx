@@ -23,13 +23,9 @@ if len(sys.argv) > 0:
         excludeAtoms = args[1]
         includeRes = args[2]
         includeAtoms = args[3]
-        formatRMS = args[4]
-        files = args[5]
+        files = args[4]
         if len(files) > 1:
-            if formatRMS:
-                super.makeFormattedRMSFile(files)
-            elif not formatRMS:
-                super.runSuper(excludeRes, excludeAtoms, includeRes, includeAtoms, files)
+            super.runSuper(excludeRes, excludeAtoms, includeRes, includeAtoms, files)
 
 
     elif sys.argv[0] == "train":
