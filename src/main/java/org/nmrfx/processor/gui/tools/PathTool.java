@@ -155,6 +155,10 @@ public class PathTool implements PeakNavigable {
         loadPressureItem.setOnAction(e -> loadPathData(PATHMODE.PRESSURE));
         actionMenu.getItems().add(loadPressureItem);
 
+        MenuItem selectPathItem = new MenuItem("Select");
+        selectPathItem.setOnAction(e -> selectPathData());
+        actionMenu.getItems().add(selectPathItem);
+
         MenuItem findPathMenuItem = new MenuItem("Find Paths");
         findPathMenuItem.setOnAction(e -> findPaths());
         actionMenu.getItems().add(findPathMenuItem);
@@ -249,7 +253,7 @@ public class PathTool implements PeakNavigable {
     void setActionMenuDisabled(boolean state) {
         int i = 0;
         for (MenuItem item : actionMenu.getItems()) {
-            if (i > 1) {
+            if (i > 2) {
                 item.setDisable(state);
             }
             i++;
@@ -307,6 +311,25 @@ public class PathTool implements PeakNavigable {
         chart.updateDatasets(datasetNames);
         for (PeakListAttributes peakAttr : chart.getPeakListAttributes()) {
             peakAttr.setColorType(PeakDisplayParameters.ColorTypes.Status);
+        }
+    }
+
+    void selectPathData() {
+        activePaths.clear();
+        Collection<String> peakPathNames = PeakPath.getNames();
+        List<String> names = new ArrayList<>();
+        names.addAll(peakPathNames);
+        if (!names.isEmpty()) {
+            peakPath = PeakPath.get(names.get(0));
+            setupChart(peakPath.getDatasetNames());
+            setupPlotTable();
+            if (peakPath.getPathMode() == PATHMODE.PRESSURE) {
+                plotTool.show("Pressure", "Shift Delta");
+            } else {
+                plotTool.show("Concentration", "Shift Delta");
+            }
+            setActionMenuDisabled(false);
+            addActivePathsToTable();
         }
     }
 
@@ -428,10 +451,21 @@ public class PathTool implements PeakNavigable {
                 }
                 activePaths.add(path);
                 plotTool.updateTable(activePaths);
+                path.setActive(true);
+                plotTool.selectRow(path);
 
             }
         }
+    }
 
+    void addActivePathsToTable() {
+        activePaths.clear();
+        for (Path path : peakPath.getPaths()) {
+            if (path.isActive()) {
+                activePaths.add(path);
+            }
+        }
+        plotTool.updateTable(activePaths);
     }
 
     void clearPath() {
@@ -672,6 +706,7 @@ checkLists(pp, 0.25, False)
 
             for (Path path : paths) {
                 int nValid = path.getNValid();
+
                 if (nValid > 2) {
                     Color color = path.confirmed() ? ACTIVE_COLOR : INACTIVE_COLOR;
                     List<Double> x = new ArrayList<>();
@@ -768,6 +803,7 @@ checkLists(pp, 0.25, False)
                         }
                     }
                 }
+                plotTool.selectRow(path);
 
             } else {
                 fitButton.setDisable(true);
@@ -811,11 +847,11 @@ checkLists(pp, 0.25, False)
         double[] fitPars = path.getFitPars();
         double[] fitErrs = path.getFitErrs();
         if (fitPars != null) {
-            initFitFields(fitPars.length);
+//            initFitFields(fitPars.length);
 
-            for (int i = 0; i < fitPars.length; i++) {
-                fitFields[i].setText(String.format("%.3f +/- %.3f", fitPars[i], fitErrs[i]));
-            }
+//            for (int i = 0; i < fitPars.length; i++) {
+//                fitFields[i].setText(String.format("%.3f +/- %.3f", fitPars[i], fitErrs[i]));
+//            }
             double first = 0.0;
             double last = Fitter.getMaxValue(peakPath.getXValues()[0]);
             if (peakPath.getPathMode() == PATHMODE.TITRATION) {
@@ -857,6 +893,10 @@ checkLists(pp, 0.25, False)
     }
 
     public void removeActivePaths(List<PeakPath.Path> selPaths) {
+        for (Path path : peakPath.getPaths()) {
+            path.setActive(false);
+
+        }
         activePaths.removeAll(selPaths);
         plotTool.updateTable(activePaths);
     }
