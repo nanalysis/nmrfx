@@ -63,7 +63,7 @@ public class PeakPathWriter {
         chan.write("stop_\n");
         chan.write("\n");
 
-        String[] dimLoops = {"_Applied.Spectral_dim_ID", "_Applied.Spectral_dim_Scale", "_Applied.Spectral_dim_Tolerance"};
+        String[] dimLoops = {"_Fit_criteria.Spectral_dim_ID", "_Fit_criteria.Spectral_dim_Scale", "_Fit_criteria.Spectral_dim_Tolerance"};
         chan.write("loop_\n");
         for (String loopString : dimLoops) {
             chan.write(loopString + "\n");
