@@ -788,6 +788,10 @@ public class Atom implements IAtom {
     public boolean getProperty(int propIndex) {
         return spatialSet.getProperty(propIndex);
     }
+    
+    public void setDihedral(double value) {
+        dihedralAngle = (float) Math.toRadians(value);
+    }
 
     public static double calcDistance(Point3 pt1, Point3 pt2) {
         double x;
