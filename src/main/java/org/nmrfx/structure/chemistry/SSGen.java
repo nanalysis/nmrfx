@@ -36,7 +36,7 @@ public class SSGen {
     public SSGen(Molecule mol, String vienna) {
         molecule = mol;
         viennaSeq = vienna;
-        genRnaResidues();
+        genRNAResidues();
         pairTo();
         secondaryStructGen();
 
@@ -47,12 +47,12 @@ public class SSGen {
         char[] vSeq = RNAAnalysis.getViennaSequence(mol);
         String vienna = new String(vSeq);
         viennaSeq = vienna;
-        genRnaResidues();
+        genRNAResidues();
         pairTo();
         secondaryStructGen();
     }
 
-    public final void genRnaResidues() {
+    public final void genRNAResidues() {
         residues = new ArrayList<>();
         for (Polymer polymer : molecule.getPolymers()) {
             if (polymer.isRNA()) {
@@ -150,7 +150,7 @@ public class SSGen {
                     type = "bulge";
                 }
             }
-            if (add) { 
+            if (add) {
                 ssType.addAll(currentSS);
             }
             return ssType;
