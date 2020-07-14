@@ -192,6 +192,14 @@ public class PathTool implements PeakNavigable {
         clearPathMenuItem.setOnAction(e -> clearPath());
         actionMenu.getItems().add(clearPathMenuItem);
 
+        MenuItem fitAllPathsMenuItem = new MenuItem("Fit All Paths");
+        fitAllPathsMenuItem.setOnAction(e -> fitAllPathes());
+        actionMenu.getItems().add(fitAllPathsMenuItem);
+
+        MenuItem addAllPathsMenuItem = new MenuItem("Add All Paths");
+        addAllPathsMenuItem.setOnAction(e -> addAllPaths());
+        actionMenu.getItems().add(addAllPathsMenuItem);
+
         actionMenu.showingProperty().addListener(e -> updatePathSelectMenu());
 
         Pane filler1 = new Pane();
@@ -230,10 +238,13 @@ public class PathTool implements PeakNavigable {
         addButton.setOnAction(e -> addPathToTable());
         addButton.setDisable(true);
 
+        Button showButton = new Button("Show");
+        showButton.setOnAction(e -> showPlotTool());
+
         nField = new Label("");
         nField.setPrefWidth(100);
 
-        fitBar.getItems().addAll(nField, fillerf1, fitButton, addButton, fillerf2);
+        fitBar.getItems().addAll(nField, fillerf1, fitButton, addButton, showButton, fillerf2);
         setActionMenuDisabled(true);
 
         ChangeListener<List<Peak>> selPeakListener = new ChangeListener<List<Peak>>() {
@@ -336,7 +347,7 @@ public class PathTool implements PeakNavigable {
         }
         setActionMenuDisabled(false);
         addActivePathsToTable();
-
+        drawPath();
     }
 
     void loadPathData(PATHMODE pathMode) {
@@ -382,6 +393,41 @@ public class PathTool implements PeakNavigable {
 
     boolean pathUsable(Path path) {
         return path.getNValid() > 3;
+    }
+
+    void fitAllPathes() {
+        if (peakPath != null) {
+            for (Path path : peakPath.getPaths()) {
+                try {
+                    if (pathUsable(path)) {
+                        PathFitter fitPath = new PathFitter();
+                        fitPath.setup(peakPath, path);
+                        fitPath.fit();
+                    }
+                } catch (Exception ex) {
+                    ExceptionDialog eDialog = new ExceptionDialog(ex);
+                    eDialog.showAndWait();
+                    break;
+                }
+            }
+        }
+
+    }
+
+    void addAllPaths() {
+        if (peakPath != null) {
+            for (Path path : peakPath.getPaths()) {
+                if (pathUsable(path)) {
+                    if (path.hasPars()) {
+                        if (activePaths.contains(path)) {
+                            activePaths.remove(path);
+                        }
+                        activePaths.add(path);
+                    }
+                }
+            }
+            plotTool.updateTable(activePaths);
+        }
     }
 
     void fitPath() {
@@ -737,6 +783,17 @@ checkLists(pp, 0.25, False)
         }
         chart.refresh();
         chart.refresh();
+    }
+
+    void showPlotTool() {
+        if (peakPath == null) {
+            return;
+        }
+        if (peakPath.getPathMode() == PATHMODE.PRESSURE) {
+            plotTool.show("Pressure", "Shift Delta");
+        } else {
+            plotTool.show("Concentration", "Shift Delta");
+        }
     }
 
     void updatePathInfo(Peak peak) {
