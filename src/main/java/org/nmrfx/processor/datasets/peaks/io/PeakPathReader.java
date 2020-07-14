@@ -57,16 +57,16 @@ public class PeakPathReader {
         for (int i = 0; i < nDim; i++) {
             String value = null;
             int iDim = 0;
-            value = saveframe.getValueIfPresent("_Applied", "Spectral_dim_ID", i);
+            value = saveframe.getValueIfPresent("_Fit_criteria", "Spectral_dim_ID", i);
             if (value != null) {
                 iDim = NvUtil.toInt(value) - 1;
 
             }
-            value = saveframe.getValueIfPresent("_Applied", "Spectral_dim_Scale", i);
+            value = saveframe.getValueIfPresent("_Fit_criteria", "Spectral_dim_Scale", i);
             if (value != null) {
                 weights[iDim] = NvUtil.toDouble(value);
             }
-            value = saveframe.getValueIfPresent("_Applied", "Spectral_dim_Tolerance", i);
+            value = saveframe.getValueIfPresent("_Fit_criteria", "Spectral_dim_Tolerance", i);
             if (value != null) {
                 tols[iDim] = NvUtil.toDouble(value);
             }
