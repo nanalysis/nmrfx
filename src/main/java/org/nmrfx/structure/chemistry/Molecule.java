@@ -1191,6 +1191,7 @@ public class Molecule implements Serializable, ITree {
     public int selectAtoms(String selectionString, boolean append, boolean inverse) throws InvalidMoleculeException {
         MolFilter molFilter = new MolFilter(selectionString);
         List<SpatialSet> selected = matchAtoms(molFilter);
+//        System.out.println(selectionString + " " + molFilter + " " + selected.size());
         int nSelected = setSelected(selected, append, inverse);
         return nSelected;
     }
