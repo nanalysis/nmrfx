@@ -46,13 +46,15 @@ public class PathIterator implements Iterator {
             bonds[i] = ac.getBond(i);
             IAtom atom0 = bonds[i].getAtom(0);
             IAtom atom1 = bonds[i].getAtom(1);
-            int iAtom0 = (Integer) atomMap.get(atom0);
-            int iAtom1 = (Integer) atomMap.get(atom1);
-            String key01 = iAtom0 + " " + iAtom1;
-            String key10 = iAtom1 + " " + iAtom0;
-            Integer order = getBondOrder(bonds[i]);
-            bondMap.put(key01, order);
-            bondMap.put(key10, order);
+            if ((atom0.getAtomicNumber() >= 1) && (atom1.getAtomicNumber() >= 1)) {
+                int iAtom0 = (Integer) atomMap.get(atom0);
+                int iAtom1 = (Integer) atomMap.get(atom1);
+                String key01 = iAtom0 + " " + iAtom1;
+                String key10 = iAtom1 + " " + iAtom0;
+                Integer order = getBondOrder(bonds[i]);
+                bondMap.put(key01, order);
+                bondMap.put(key10, order);
+            }
         }
         this.nodeValidator.init(atoms.length);
         nPatterns = nodeValidator.patternCount();
@@ -344,19 +346,19 @@ public class PathIterator implements Iterator {
             if (pathLength < nodeValidator.pathSize(currentPattern)) {
                 List<IBond> bonds = ac.getConnectedBondsList(startAtom);
                 for (IBond bond : bonds) {
-                    IAtom atom = bond.getConnectedAtom(startAtom);
+                    IAtom sAtom = bond.getConnectedAtom(startAtom);
 
                     if (debug) {
-                        System.out.println("test atom " + getAtomIndex(atom));
+                        System.out.println("test atom " + getAtomIndex(sAtom));
                     }
-                    if (atom.getAtomicNumber() > 0) {
-                        if (!atom.getFlag(Atom.VISITED)) {
+                    if (sAtom.getAtomicNumber() > 0) {
+                        if (!sAtom.getFlag(Atom.VISITED)) {
                             if (debug) {
-                                System.out.println("add atom indexed " + getAtomIndex(atom) + " with symbol " + atom.getSymbol() + " to sphere at path pos " + pathPos);
+                                System.out.println("add atom indexed " + getAtomIndex(sAtom) + " with symbol " + sAtom.getSymbol() + " to sphere at path pos " + pathPos);
                             }
                             int bondNumber = ac.getBondNumber(bond);
                             if (bondNumber >= 0) {
-                                localSphere.add(ac.getAtomNumber(atom));
+                                localSphere.add(ac.getAtomNumber(sAtom));
                                 localBonds.add(ac.getBondNumber(bond));
                                 addedAtom = true;
                             }
