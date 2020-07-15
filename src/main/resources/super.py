@@ -121,7 +121,6 @@ def findRepresentative(mol, resNums='*',atomNames="ca,c,n,o,p,o5',c5',c4',c3',o3
         if structure != 0:
             treeSet.add(structure)
     nFiles = treeSet.size()
-
     doSelections(mol, resNums,atomNames)
     sup = SuperMol(mol)
     mol.setActiveStructures(treeSet)
@@ -148,71 +147,62 @@ def findRepresentative(mol, resNums='*',atomNames="ca,c,n,o,p,o5',c5',c4',c3',o3
     avgRMS = totalRMS/len(superResults)
     return (minIndex, minRMS, avgRMS)
 
-def findCore(mol, minIndex, excludeRes, excludeAtoms, includeRes, includeAtoms, atomNames="ca,c,n,o,p,o5',c5',c4',c3',o3'"):
-    atomNameList = atomNames.split(',')
+def findCore(mol, minIndex):
     sup = SuperMol(mol)
     superResults = sup.doSuper(minIndex, -1, True)
     mol.calcRMSD()
     polymers = mol.getPolymers()
     resRMSs = []
-    resValues = []
-    excludeResList = getResList(excludeRes)
-    includeResList = getResList(includeRes)
-    atomListES = excludeAtoms.split(",")
-    excludeAtomsL = [atom.strip().lower() for atom in atomListES if atom != ""]
-    atomListIS = includeAtoms.split(",")
-    includeAtomsL = [atom.strip().lower() for atom in atomListIS if atom != ""]
-    # excludeAtomsL = [atom.lower() for atom in excludeAtoms]
-    # includeAtomsL = [atom.lower() for atom in includeAtoms]
-    for polymer in polymers:
-        residues = polymer.getResidues()
-        chainCode = polymer.getName()
-        for residue in residues:
-            res = chainCode + "." + residue.getNumber()
-            if res in excludeResList or ("*" not in includeResList and res not in includeResList):
-                continue
-            atoms = residue.getAtoms('*')
-            resSum = 0.0
-            nAtoms = 0
-            for atom in atoms:
-                aName = atom.getName().lower()
-                if aName in excludeAtomsL or ("*" not in includeAtomsL and aName not in includeAtomsL):
-                    continue
-                if aName in atomNameList:
-                    resSum += atom.getBFactor()
-                    nAtoms += 1
-                # print aName, resSum, nAtoms
-            if nAtoms > 0:
-                resRMS = resSum/nAtoms
-                resRMSs.append(resRMS)
-                resValues.append((polymer.getName(),residue.getNumber(),resRMS))
+    polymerValues = {}
+    superAtoms = mol.getAtomsByProp(2)
+    residuesAtomRMS = {}
+    residueRMS = {}
+    for spSet in superAtoms:
+        atom = spSet.getAtom()
+        residue = atom.getEntity()
+        if not residue in residuesAtomRMS:
+            residuesAtomRMS[residue] = []
+        residuesAtomRMS[residue].append(atom.getBFactor())
+    resRMSs=[]
+    for residue in residuesAtomRMS:
+        rms = sum(residuesAtomRMS[residue])/len(residuesAtomRMS[residue])
+        resRMSs.append(rms)
+        residueRMS[residue] = rms
     med = median(resRMSs)
 
     coreRes = []
-    lastPolymer = ""
-    state = "out"
-    (polymer,lastNum,rms) = resValues[-1]
-    for (polymer,num,rms) in resValues:
-        # print polymer, num, rms
-        last = ""
-        if rms < 2.0*med:
-            newState = "in"
-        else:
-            newState = "out"
-        if state == "out":
-            if newState == "out":
-                pass
+    for polymer in polymers:
+        polyName = polymer.getName()
+        resValues = []
+        polymerValues[polymer.getName()] = resValues
+        residues = polymer.getResidues()
+        chainCode = polymer.getName()
+        state = 'out'
+        lastNum = len(residues)-1
+        for iRes,residue in enumerate(residues):
+            newState = 'out'
+            num = residue.getNumber()
+            rms = 0.0
+            if residue in residueRMS:
+                 rms = residueRMS[residue]
+                 if rms < 2.0*med:
+                     newState = 'in'
+            
+            if state == "out":
+                if newState == "out":
+                    pass
+                else:
+                    start = num
+                    #coreRes.append(num)
             else:
-                start = num
-                #coreRes.append(num)
-        else:
-            if newState == "out":
-                coreRes.append((start,lastRes))
-            elif num == lastNum:
-                coreRes.append((start,num))
-                #coreRes.append(num)
-        state = newState
-        lastRes = num
+                if newState == "out":
+                    coreRes.append((polyName+':'+start,lastRes))
+                elif iRes == lastNum:
+                    coreRes.append((polyName+':'+start,num))
+                    #coreRes.append(num)
+            state = newState
+            lastRes = num
+
 
     resSelect = []
     for (start,end) in coreRes:
@@ -223,13 +213,11 @@ def findCore(mol, minIndex, excludeRes, excludeAtoms, includeRes, includeAtoms, 
     return resSelect
 
 def doSelections(mol, resSelects, atomSelect):
-    polymer = 'A'
     mol.selectAtoms("*.*")
     mol.setAtomProperty(2,False)
-    print resSelects
     for resSelect in resSelects:
         selection = resSelect+'.'+atomSelect
-        mol.selectAtoms(selection)
+        nsel = mol.selectAtoms(selection)
         mol.setAtomProperty(2,True)
 
 
@@ -295,11 +283,14 @@ def runSuper(excludeRes, excludeAtoms, includeRes, includeAtoms, files, newBase=
     polymers = mol.getPolymers()
     print excludeRes, excludeAtoms, includeRes, includeAtoms
     resList, atoms = makeResAtomLists(polymers, excludeRes, excludeAtoms, includeRes, includeAtoms)
+    nCore = 5
     if len(polymers) > 0:
         (minI,rms,avgRMS) = findRepresentative(mol, resList, atoms)
         print 'repModel',minI,'rms',rms,'avgrms',avgRMS
-        coreRes = findCore(mol, minI, excludeRes, excludeAtoms, includeRes, includeAtoms)
-        print 'coreResidues',coreRes
+        for iCore in range(nCore):
+            coreRes = findCore(mol, minI)
+            print 'coreResidues',coreRes
+            doSelections(mol, coreRes,atoms)
         (minI,rms,avgRMS) = findRepresentative(mol, coreRes, atoms)
         print 'repModel',minI,'rms',rms,'avgrms',avgRMS
         superImpose(mol, minI, coreRes, atoms)
