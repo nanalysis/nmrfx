@@ -80,6 +80,10 @@ public class SpatialSet {
         ppms = new Vector(1);
         ppms.addElement(ppmv);
     }
+    
+    public Atom getAtom() {
+        return atom;
+    }
 
     public String getName() {
         String name = "";
