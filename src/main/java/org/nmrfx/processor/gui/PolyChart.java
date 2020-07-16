@@ -39,6 +39,7 @@ import javafx.collections.ObservableList;
 import javafx.scene.shape.Path;
 import javafx.scene.shape.Line;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -193,6 +194,7 @@ public class PolyChart implements PeakListener {
     Font peakFont = new Font(fontFamily, 12);
     boolean disabled = false;
     public ChartProperties chartProps = new ChartProperties(this);
+    FXMLController sliceController = null;
 
     int iVec = 0;
 //    Vec vec;
@@ -3529,6 +3531,63 @@ public class PolyChart implements PeakListener {
                 drawSlice(1, HORIZONTAL);
             }
         }
+    }
+
+    public void extractSlice(int iOrient) {
+        if (annoCanvas == null) {
+            return;
+        }
+        Dataset dataset = getDataset();
+        if (dataset == null) {
+            return;
+        }
+        int iCross = 0;
+        int nDim = dataset.getNDim();
+        if ((nDim > 1)) {
+            if (iOrient < nDim) {
+                int iSlice = 0;
+                List<String> sliceDatasets = new ArrayList<>();
+                for (DatasetAttributes dataAttr : datasetAttributesList) {
+                    Vec sliceVec = new Vec(32, false);
+                    sliceVec.setName(dataset.getName() + "_slice_" + iSlice);
+                    try {
+                        dataAttr.getSlice(sliceVec, iOrient, crossHairPositions[iCross][VERTICAL], crossHairPositions[iCross][HORIZONTAL]);
+                        Dataset sliceDataset = new Dataset(sliceVec);
+                        sliceDataset.setLabel(0, dataset.getLabel(dataAttr.dim[iOrient]));
+                        sliceDatasets.add(sliceDataset.getName());
+                    } catch (IOException ex) {
+                        Logger.getLogger(PolyChart.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                    iSlice++;
+                }
+                if ((sliceController == null)
+                        || (!FXMLController.getControllers().contains(sliceController))) {
+                    sliceController = FXMLController.create();
+                }
+                sliceController.getStage().show();
+                sliceController.getStage().toFront();
+                PolyChart newChart = sliceController.getActiveChart();
+                if (newChart == null) {
+                    sliceController.addChart();
+                    newChart = sliceController.getActiveChart();
+                }
+                newChart.clearDataAndPeaks();
+                newChart.updateDatasets(sliceDatasets);
+                sliceController.getStatusBar().setMode(controller.getStatusBar().getMode());
+                newChart.autoScale();
+                double lvl = newChart.getDatasetAttributes().get(0).getLvl();
+                double offset = newChart.getDatasetAttributes().get(0).getOffset();
+                int iAttr = 0;
+                for (DatasetAttributes dataAttr : newChart.getDatasetAttributes()) {
+                    dataAttr.setLvl(lvl);
+                    dataAttr.setOffset(offset);
+                    dataAttr.setPosColor(datasetAttributesList.get(iAttr).getPosColor());
+                    iAttr++;
+                }
+                newChart.refresh();
+            }
+        }
+
     }
 
     public void drawSlice(int iCross, int iOrient) {

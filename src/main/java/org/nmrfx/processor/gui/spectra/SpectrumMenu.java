@@ -202,6 +202,21 @@ public class SpectrumMenu extends ChartMenu {
         refMenu.getItems().addAll(setRefMenuItem, shiftRefMenuItem,
                 diagRefMenuItem, shiftPeaksMenuItem,
                 undoRefMenuItem, writeRefMenuItem);
+        Menu extractMenu = new Menu("Extract Slice");
+
+        MenuItem extractXMenuItem = new MenuItem("Extract-X");
+        extractXMenuItem.setOnAction((ActionEvent e) -> {
+            chart.extractSlice(0);
+        });
+        MenuItem extractYMenuItem = new MenuItem("Extract-Y");
+        extractYMenuItem.setOnAction((ActionEvent e) -> {
+            chart.extractSlice(1);
+        });
+        MenuItem extractZMenuItem = new MenuItem("Extract-Z");
+        extractZMenuItem.setOnAction((ActionEvent e) -> {
+            chart.extractSlice(2);
+        });
+        extractMenu.getItems().addAll(extractXMenuItem, extractYMenuItem, extractZMenuItem);
 
         chartMenu.getItems().add(attrItem);
         chartMenu.getItems().add(viewMenu);
@@ -209,5 +224,6 @@ public class SpectrumMenu extends ChartMenu {
         chartMenu.getItems().add(refMenu);
         chartMenu.getItems().add(baselineMenu);
         chartMenu.getItems().add(extractItem);
+        chartMenu.getItems().add(extractMenu);
     }
 }
