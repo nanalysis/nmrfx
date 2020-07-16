@@ -148,9 +148,10 @@ public class NMRNEFReader {
 
             }
             String resName = (String) residueNameColumn.get(i);
+            String resVariant = (String) variantColumn.get(i);
             String iRes = (String) seqCodeColumn.get(i);
             String mapID = chainCode + "." + iRes;
-            Residue residue = new Residue(iRes, resName.toUpperCase());
+            Residue residue = new Residue(iRes, resName.toUpperCase(), resVariant);
             residue.molecule = polymer.molecule;
             addCompound(mapID, residue);
             polymer.addResidue(residue);

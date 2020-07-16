@@ -86,6 +86,23 @@ public class Residue extends Compound {
 
         super.atomMap = new HashMap();
     }
+    
+    public Residue(String number, String name, String variant) {
+        this.number = number;
+        super.name = name;
+        super.label = variant;
+        if (standardResSet.containsKey(name.toLowerCase())) {
+            standard = true;
+        }
+        try {
+            resNum = Integer.valueOf(number);
+        } catch (NumberFormatException nfE) {
+            System.out.println(number);
+            resNum = null;
+        }
+
+        super.atomMap = new HashMap();
+    }
 
     @Override
     public void addAtom(final Atom atom) {
@@ -105,7 +122,7 @@ public class Residue extends Compound {
         super.removeAtom(atom);
         polymer.removeAtom(atom);
     }
-
+    
     @Override
     public Atom getAtom(String name) {
         return ((Atom) atomMap.get(name.toLowerCase()));
@@ -675,7 +692,7 @@ public class Residue extends Compound {
         return polymer.getName() + ":" + getName() + getNumber();
     }
     
-    public String toNEFSequenceString(Molecule molecule, String link, String resVar) {
+    public String toNEFSequenceString(Molecule molecule, String link) {
         //index and sequence code
         int number = 1;
         //chain ID
@@ -689,6 +706,9 @@ public class Residue extends Compound {
         if (resName.length() > 3) {
             resName = resName.substring(0, 3);
         }
+        
+        //residue variant
+        String resVar = this.label;
 
         return String.format("%8d %7s %7d %9s %-14s %-7s", number, chainID, number, resName, link, resVar);
     }
