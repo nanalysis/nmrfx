@@ -2454,7 +2454,7 @@ public class PeakList {
             }
         }
         CompleteLinkage linkage = new CompleteLinkage(proximity);
-        HierarchicalClustering clusterer = new HierarchicalClustering(linkage);
+        HierarchicalClustering clusterer = HierarchicalClustering.fit(linkage);
         int[] partition = clusterer.partition(limit);
         int nClusters = 0;
         for (int i = 0; i < n; i++) {
