@@ -51,6 +51,7 @@ public class PeakPath implements PeakListener {
         TITRATION,
         PRESSURE;
     }
+    boolean fit0 = false;
     OptFunction optFunction = new Quadratic10();
     ArrayList<PeakList> peakLists = new ArrayList<>();
 //    ArrayList<ArrayList<PeakDistance>> filteredLists = new ArrayList<>();
@@ -108,6 +109,7 @@ public class PeakPath implements PeakListener {
         List<PeakDistance> peakDists = new ArrayList<>();
         double radius;
         boolean confirmed = false;
+        boolean active = false;
         double[] pars = null;
         double[] parErrs = null;
 
@@ -166,6 +168,14 @@ public class PeakPath implements PeakListener {
             return confirmed;
         }
 
+        public void setActive(boolean state) {
+            active = state;
+        }
+
+        public boolean isActive() {
+            return active;
+        }
+
         @Override
         public int compareTo(Path o) {
             if (o == null) {
@@ -189,7 +199,7 @@ public class PeakPath implements PeakListener {
         public boolean isFree() {
             boolean free = true;
             for (PeakDistance peakDis : peakDists) {
-                if (peakDis == null) {
+                if (peakDis != null) {
                     if (peakDis.peak.getStatus() != 0) {
                         free = false;
                         break;
@@ -327,9 +337,10 @@ public class PeakPath implements PeakListener {
 
         public String toSTAR3ParString(int id, int pathID, int dim) {
             StringBuilder sBuilder = new StringBuilder();
-            int iConfirm = confirmed ? 1 : 0;
-            sBuilder.append(String.format("%4d %4d %d %d", id, pathID, dim + 1, iConfirm));
-            int nPars = 3;
+            sBuilder.append(String.format("%4d %4d %d %3s %3s", id, pathID, dim + 1,
+                    (confirmed ? "yes" : "no"), (active ? "yes" : "no")));
+            int nPars = pathMode == PATHMODE.PRESSURE ? 2 : 2;
+
             int start = dim * nPars;
             for (int i = 0; i < nPars; i++) {
                 sBuilder.append(" ");
@@ -376,29 +387,42 @@ public class PeakPath implements PeakListener {
         }
     }
 
-    public PeakPath(String name, final List<String> peakListNames, double[] concentrations, final double[] binderConcs, final double[] weights, PATHMODE pathMode) {
+    public PeakPath(String name, final List<PeakList> peakLists, double[] concentrations, final double[] binderConcs, final double[] weights, PATHMODE pathMode) {
+        this(name, peakLists, concentrations, binderConcs, weights, null, pathMode);
+    }
+
+    public PeakPath(String name, final List<PeakList> peakLists, double[] concentrations,
+            final double[] binderConcs, final double[] weights, double[] tols, PATHMODE pathMode) {
         this.name = name;
         this.pathMode = pathMode;
-        for (String peakListName : peakListNames) {
-            PeakList peakList = PeakList.get(peakListName);
-            if (peakList == null) {
-                throw new IllegalArgumentException("Unknown peaklist " + peakListName);
-            }
+        this.peakLists = new ArrayList<>();
+        this.datasetNames = new ArrayList<>();
+        for (PeakList peakList : peakLists) {
             peakList.registerListener(this);
-            peakLists.add(peakList);
+            this.peakLists.add(peakList);
+            this.datasetNames.add(peakList.getDatasetName());
         }
         firstList = peakLists.get(0);
-        tols = new double[weights.length];
-        int i = 0;
+        if (tols == null) {
+            tols = new double[weights.length];
+            int i = 0;
+            for (int peakDim : peakDims) {
+                DoubleSummaryStatistics dStat = firstList.widthStatsPPM(peakDim);
+                tols[i] = dStat.getAverage() / weights[i];
+                System.out.printf("tol %d %.3f\n", i, tols[i]);
+                i++;
+            }
+        }
         double tolSum = 0.0;
+        int i = 0;
         for (int peakDim : peakDims) {
-            DoubleSummaryStatistics dStat = firstList.widthStatsPPM(peakDim);
-            tols[i] = dStat.getAverage() / weights[i];
-            System.out.printf("tol %d %.3f\n", i, tols[i]);
             tolSum += tols[i] * tols[i];
             i++;
         }
         dTol = Math.sqrt(tolSum);
+
+        this.tols = tols;
+        parNames = pathMode == PATHMODE.PRESSURE ? PRESURE_NAMES : TITRATION_NAMES;
 
         this.indVars = new double[2][];
         this.indVars[0] = concentrations;
@@ -408,7 +432,7 @@ public class PeakPath implements PeakListener {
 
     public static PeakPath loadPathData(PATHMODE pathMode, File file) throws IOException, IllegalArgumentException {
         List<String> datasetNames = new ArrayList<>();
-        List<String> peakListNames = new ArrayList<>();
+        List<PeakList> peakLists = new ArrayList<>();
         PeakPath peakPath = null;
         if (file != null) {
             List<Double> x0List = new ArrayList<>();
@@ -451,7 +475,7 @@ public class PeakPath implements PeakListener {
                 if (peakList == null) {
                     throw new IllegalArgumentException("\"PeakList \"" + peakList + "\" doesn't exist\"");
                 }
-                peakListNames.add(peakListName);
+                peakLists.add(peakList);
                 x0[i] = x0List.get(i);
                 if (!x1List.isEmpty()) {
                     x1[i] = x1List.get(i);
@@ -465,13 +489,17 @@ public class PeakPath implements PeakListener {
             if (peakPathName.contains(".")) {
                 peakPathName = peakPathName.substring(0, peakPathName.indexOf("."));
             }
-            peakPath = new PeakPath(peakPathName, peakListNames, x0, x1, weights, pathMode);
-            peakPath.parNames = pathMode == PATHMODE.PRESSURE ? PRESURE_NAMES : TITRATION_NAMES;
+            peakPath = new PeakPath(peakPathName, peakLists, x0, x1, weights, pathMode);
             peakPath.store();
             peakPath.initPaths();
             peakPath.datasetNames = datasetNames;
         }
         return peakPath;
+    }
+
+    public String getUnits() {
+        String units = pathMode == PATHMODE.PRESSURE ? "bar" : "scaled_ppm";
+        return units;
     }
 
     public List<String> getDatasetNames() {
@@ -495,6 +523,10 @@ public class PeakPath implements PeakListener {
         return peakPaths.values();
     }
 
+    public static Collection<String> getNames() {
+        return peakPaths.keySet();
+    }
+
     public static PeakPath get(String name) {
         return peakPaths.get(name);
     }
@@ -513,17 +545,17 @@ public class PeakPath implements PeakListener {
 
     public List<String> getSTAR3PathLoopStrings() {
         List<String> strings = new ArrayList<>();
-        strings.add("_Path.ID");
+        strings.add("_Path.Index_ID");
         strings.add("_Path.Path_ID");
-        strings.add("_Path.Peaklist_ID");
+        strings.add("_Path.Spectral_peak_list_ID");
         strings.add("_Path.Peak_ID");
         return strings;
     }
 
     public List<String> getSTAR3LoopStrings() {
         List<String> strings = new ArrayList<>();
-        strings.add("_Peak_list.ID");
-        strings.add("_Peak_list.Name");
+        strings.add("_Peak_list.Spectral_peak_list_ID");
+        strings.add("_Peak_list.Spectral_peak_list_label");
         if (pathMode == PATHMODE.PRESSURE) {
             strings.add("_Peak_list.Pressure");
         } else {
@@ -533,34 +565,42 @@ public class PeakPath implements PeakListener {
         return strings;
     }
 
+    public List<String> getBaseParNames() {
+        List<String> parNames = new ArrayList<>();
+        if (pathMode == PATHMODE.PRESSURE) {
+            parNames.add("A");
+            parNames.add("B");
+        } else {
+            if (fit0) {
+                parNames.add("A");
+            }
+            parNames.add("K");
+            parNames.add("C");
+        }
+        return parNames;
+    }
+
     public List<String> getSTAR3ParLoopStrings() {
         List<String> strings = new ArrayList<>();
         strings.add("_Par.ID");
         strings.add("_Par.Path_ID");
         strings.add("_Par.Dim");
         strings.add("_Par.Confirmed");
-        if (pathMode == PATHMODE.PRESSURE) {
-            strings.add("_Par.A");
-            strings.add("_Par.A_val_err");
-            strings.add("_Par.B");
-            strings.add("_Par.B_val_err");
-            strings.add("_Par.C");
-            strings.add("_Par.C_val_err");
-        } else {
-            strings.add("_Par.A");
-            strings.add("_Par.A_val_err");
-            strings.add("_Par.K");
-            strings.add("_Par.K_val_err");
-            strings.add("_Par.C");
-            strings.add("_Par.C_val_err");
+        strings.add("_Par.Active");
+        List<String> parNames = getBaseParNames();
+        for (String parName : parNames) {
+            strings.add("_Par." + parName + "_val");
+            strings.add("_Par." + parName + "_val_err");
         }
         return strings;
     }
 
     public String getSTAR3String(int i) {
         StringBuilder sBuilder = new StringBuilder();
-        sBuilder.append((i + 1)).append(" ").append(peakLists.get(i).getName());
-        int nVars = pathMode == PATHMODE.PRESSURE ? 1 : 2;
+        PeakList peakList = peakLists.get(i);
+        int id = peakList.getId();
+        sBuilder.append(id).append(" $").append(peakLists.get(i).getName());
+        int nVars = pathMode == PATHMODE.PRESSURE ? 1 : fit0 ? 3 : 2;
         String format = pathMode == PATHMODE.PRESSURE ? "%.1f" : "%.3f";
         for (int j = 0; j < nVars; j++) {
             sBuilder.append(" ").append(String.format(format, indVars[j][i]));
@@ -596,7 +636,33 @@ public class PeakPath implements PeakListener {
 
     public void clearPath(Peak startPeak) {
         Path path = paths.get(startPeak);
+        if (path != null) {
+            for (PeakDistance peakDist : path.peakDists) {
+                if (peakDist != null) {
+                    if (peakDist.peak.getStatus() > 0) {
+                        peakDist.peak.setStatus(0);
+                    }
+                }
+            }
+        }
 
+    }
+
+    public Path addPath(List<Peak> peaks) {
+        Peak startPeak = peaks.get(0);
+        List<PeakDistance> peakDists = new ArrayList<>();
+        for (Peak peak : peaks) {
+            PeakDistance peakDist = null;
+            if (peak != null) {
+                double distance = calcDistance(startPeak, peak);
+                double[] deltas = calcDeltas(startPeak, peak);
+                peakDist = new PeakDistance(peak, distance, deltas);
+            }
+            peakDists.add(peakDist);
+        }
+        Path path = new Path(peakDists);
+        paths.put(path.getFirstPeak(), path);
+        return path;
     }
 
     public void initPath(Peak peak) {
@@ -975,7 +1041,7 @@ public class PeakPath implements PeakListener {
                 double delta = checkPath(path.peakDists);
                 if (delta < 1.0) {
                     paths.put(path.getFirstPeak(), path);
-                    System.out.println(path.toString());
+//                    System.out.println(path.toString());
 //                    System.out.printf(" unam %.3f\n", delta);
                 } else {
 //                    System.out.println("");
