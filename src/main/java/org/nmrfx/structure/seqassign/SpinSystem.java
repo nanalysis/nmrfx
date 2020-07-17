@@ -1029,10 +1029,12 @@ public class SpinSystem {
             i++;
         }
         KMeans kMeans = KMeans.lloyd(values, 2);
-        int[] labels = kMeans.getClusterLabel();
+//        int[] labels = kMeans.getClusterLabel();
+        int[] labels = kMeans.y;
         int origCluster = labels[0];
         int newCluster = origCluster == 0 ? 1 : 0;
-        double[][] centroids = kMeans.centroids();
+//        double[][] centroids = kMeans.centroids();
+        double[][] centroids = kMeans.centroids;
         Peak newRoot = rootPeak.peakList.getNewPeak();
         rootPeak.copyTo(newRoot);
         int j = 0;
