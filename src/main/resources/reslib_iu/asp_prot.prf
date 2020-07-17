@@ -11,12 +11,14 @@ ATOM   HB3    HC    1.08  109.47  -121.5  -0.01220
 ATOM   CG     CO    1.53  109.47  0.0     0.79940
 ATOM   OD1    O2    1.24  120.00  0.0     -0.80140
 ATOM   OD2    O2    1.24  120.00  180.0   -0.80140
+ATOM   HD2    HO    1.00  110.00  0.0     0.42750
 ATOM   C      C     1.53  109.47  120.0   0.53660
 ATOM   O      O     1.24  120.00  180.0   -0.58190
 FAMILY   -      N      H      CA     
 FAMILY   N      CA     C      CB     HA     
 FAMILY   CA     CB     CG     HB3    HB2    
-FAMILY   CB     CG     =OD1    OD2    
+FAMILY   CB     CG     =OD1    OD2 
+FAMILY   CG     OD2    HD2   
 FAMILY   CA     C      +      =O      
 ANGLE     CA      PHI 1
 ANGLE     CB     CHI1 2
