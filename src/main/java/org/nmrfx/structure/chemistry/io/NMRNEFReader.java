@@ -164,8 +164,25 @@ public class NMRNEFReader {
                 //residue.capLastResidue();
             }
             try {
-                if (!sequence.addResidue(reslibDir + "/" + Sequence.getAliased(resName.toLowerCase()) + ".prf", residue, resPos, "", false)) {
-                    throw new ParseException("Can't find residue \"" + resName + "\" in residue libraries or STAR file");
+                String extension = "";
+                if (resName.equals("HIS")) { 
+                    if (resVariant.equals(".")) {
+                        extension = "_deprotHE2";
+                    } else if (resVariant.contains("-H")) {
+                        extension = "_deprotHD1_protHE2";
+                    } else {
+                        extension = "";
+                    }
+                } else {
+                    if (resVariant.startsWith("+H")) {
+                        extension = "_prot";
+                    } else if (resVariant.startsWith("-H")) {
+                        extension = "_deprot";
+                    }
+                }
+                
+                if (!sequence.addResidue(reslibDir + "/" + Sequence.getAliased(resName.toLowerCase()) + extension + ".prf", residue, resPos, "", false)) {
+                    throw new ParseException("Can't find residue \"" + resName + extension + "\" in residue libraries or STAR file");
                 }
             } catch (MoleculeIOException psE) {
                 throw new ParseException(psE.getMessage());
