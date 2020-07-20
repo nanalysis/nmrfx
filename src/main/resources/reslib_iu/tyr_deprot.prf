@@ -14,7 +14,7 @@ ATOM   HD1    HA    1.08  120.00  180.0   0.16990
 ATOM   CE1    CA    1.38  121.29  180.0   -0.23410
 ATOM   HE1    HA    1.08  120.00  180.0   0.16560
 ATOM   CZ     C     1.37  119.40  0.0     0.32260
-ATOM   O      O     1.24  120.00  180.0   -0.56790
+ATOM   OH     OH    1.24  120.00  180.0   -0.80140
 ATOM   CE2    CA    1.38  120.28  180.0   -0.23410
 ATOM   HE2    HA    1.08  120.00  180.0   0.16560
 ATOM   CD2    CA    1.38  119.60  0.0     -0.19060
@@ -27,18 +27,17 @@ FAMILY   CA     CB     CG     HB3    HB2
 FAMILY   CB     CG     =CD1    -CD2   
 FAMILY   CG     CD1    CE1    HD1
 FAMILY   CD1    CE1    =CZ     HE1    
-FAMILY   CE1    CZ     O     CE2         
+FAMILY   CE1    CZ     OH     CE2                         
 FAMILY   CZ     CE2    =CD2    HE2    
 FAMILY   CE2    CD2    HD2    
 FAMILY   CA     C      +      =O      
 ANGLE     CA      PHI 1
 ANGLE     CB     CHI1 2
 ANGLE     CG     CHI2 3
-ANGLE     OH     CHI3 7
 ANGLE     C       PSI 1
 ATREE  CA  CB  C  
 ATREE  CB  CG  
-ATREE  CG  OH  
+ATREE  CG  OH
 ATREE  OH  
 ATREE  C  +  
 PSEUDO QB HB2 HB3
