@@ -1,0 +1,28 @@
+LNAME Cysteine
+SNAME cys
+RCHAR C
+ATOM   N      N     1.32  114.00  -120.0  -0.41570
+ATOM   H1     H1    1.00  123.00  0.0     0.27190
+ATOM   H2     H2    1.00  123.00  0.0     0.27190
+ATOM   CA     CX    1.47  123.00  180.0   0.02130
+ATOM   HA     H1    1.08  109.47  -120.0  0.11240
+ATOM   CB     2C    1.53  109.47  -121.5  -0.12310
+ATOM   HB2    H1    1.08  109.47  -120.0  0.11120
+ATOM   HB3    H1    1.08  109.47  -120.0  0.11120
+ATOM   SG     SH    1.86  109.47  0.0     -0.31190
+ATOM   HG     HS    1.06  109.47  0.0     0.19330
+ATOM   C      C     1.53  109.47  120.0   0.59730
+ATOM   O      O     1.24  121.00  180.0   -0.56790
+FAMILY   -      N      H1     H2     CA     
+FAMILY   N      CA     C      CB     HA     
+FAMILY   CA     CB     SG     HB3    HB2    
+FAMILY   CB     SG     HG
+FAMILY   CA     C      +      =O      
+ANGLE     CA      PHI 1
+ANGLE     CB     CHI1 2
+ANGLE     C       PSI 1
+ATREE  CA  CB  C  
+ATREE  CB  
+ATREE  C  +  
+PSEUDO QB HB2 HB3
+CRAD CB   3.5
