@@ -2,7 +2,11 @@ LNAME Tyrosine
 SNAME tyr
 RCHAR Y
 ATOM   N      N     1.32  114.00  -120.0  -0.41570
-ATOM   H      H     1.00  123.00  0.0     0.27190
+ATOM   H      H     1.00  123.00  0.0     0.27190 middle
+ATOM   H      H     1.00  123.00  0.0     0.27190 end
+ATOM   H1     H1    1.08  109.00  60.0    0.27190 start
+ATOM   H2     H2    1.08  109.00  60.0    0.27190 start
+ATOM   H3     H3    1.08  109.00  60.0    0.27190 start
 ATOM   CA     CX    1.47  123.00  180.0   -0.00140
 ATOM   HA     H1    1.08  109.47  -120.0  0.08760
 ATOM   CB     CT    1.53  109.47  -121.5  -0.01520
@@ -21,8 +25,13 @@ ATOM   HE2    HA    1.08  120.00  180.0   0.16560
 ATOM   CD2    CA    1.38  119.60  0.0     -0.19060
 ATOM   HD2    HA    1.08  120.00  180.0   0.16990
 ATOM   C      C     1.53  109.47  120.0   0.59730
-ATOM   O      O     1.24  120.00  180.0   -0.56790
-FAMILY   -      N      H      CA     
+ATOM   O      O     1.24  120.00  180.0   -0.56790 start
+ATOM   O      O     1.24  120.00  180.0   -0.56790 middle
+ATOM   O      O     1.24  180.00  120.0   -0.56790 end
+ATOM   OXT    OH    1.24  180.00  120.0   -0.56790 end
+FAMILY   -      N      H      CA    middle
+FAMILY   -      N      H      CA    end
+FAMILY   -      N      H1     H2     H3    CA    start   
 FAMILY   N      CA     C      CB     HA     
 FAMILY   CA     CB     CG     HB3    HB2    
 FAMILY   CB     CG     =CD1    -CD2   
@@ -32,7 +41,8 @@ FAMILY   CE1    CZ     OH     CE2
 FAMILY   CZ     OH     HH     
 FAMILY   CZ     CE2    =CD2    HE2    
 FAMILY   CE2    CD2    HD2    
-FAMILY   CA     C      +      =O      
+FAMILY   CA     C      +      =O   
+FAMILY   CA     C      OXT    =O  end   
 ANGLE     CA      PHI 1
 ANGLE     CB     CHI1 2
 ANGLE     CG     CHI2 3

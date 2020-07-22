@@ -6,7 +6,6 @@ ATOM   H      H     1.00  123.00  0.0     0.27190 middle
 ATOM   H      H     1.00  123.00  0.0     0.27190 end
 ATOM   H1     H1    1.08  109.00  60.0    0.27190 start
 ATOM   H2     H2    1.08  109.00  60.0    0.27190 start
-ATOM   H3     H3    1.08  109.00  60.0    0.27190 start
 ATOM   CA     CX    1.47  123.00  180.0   0.02130
 ATOM   HA     H1    1.08  109.47  -120.0  0.11240
 ATOM   CB     2C    1.53  109.47  -121.5  -0.12310
@@ -18,18 +17,19 @@ ATOM   O      O     1.24  121.00  180.0   -0.56790 start
 ATOM   O      O     1.24  121.00  180.0   -0.56790 middle
 ATOM   O      O     1.24  180.00  120.0   -0.56790 end
 ATOM   OXT    OH    1.24  180.00  120.0   -0.56790 end
+ATOM   HXT    HO    1.00  110.00  0.0     0.39920  end
 FAMILY   -      N      H      CA    middle
 FAMILY   -      N      H      CA    end
-FAMILY   -      N      H1     H2     H3    CA    start       
+FAMILY   -      N      H1     H2     CA    start      
 FAMILY   N      CA     C      CB     HA     
 FAMILY   CA     CB     SG     HB3    HB2    
-FAMILY   CA     C      +      =O  
-FAMILY   CA     C      OXT    =O  end      
+FAMILY   CA     C      +      =O 
+FAMILY   C      OXT    HXT    end
 ANGLE     CA      PHI 1
 ANGLE     CB     CHI1 2
 ANGLE     C       PSI 1
 ATREE  CA  CB  C  
 ATREE  CB  
-ATREE  C  +  
+ATREE  C  +   
 PSEUDO QB HB2 HB3
 CRAD CB   3.5
