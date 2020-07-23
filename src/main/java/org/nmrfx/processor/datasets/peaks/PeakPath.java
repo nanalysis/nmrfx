@@ -37,6 +37,7 @@ import smile.math.matrix.DenseMatrix;
 import smile.math.matrix.JMatrix;
 import smile.math.matrix.SVD;
 import smile.regression.GaussianProcessRegression;
+import smile.regression.KernelMachine;
 //import smile.interpolation.KrigingInterpolation;
 
 public class PeakPath implements PeakListener {
@@ -1554,7 +1555,8 @@ public class PeakPath implements PeakListener {
             weightValues[i] = dTol;
         }
         MercerKernel mKernel = new GaussianKernel(2000.0);
-        GaussianProcessRegression gRegr = new GaussianProcessRegression(xValues, yValues, mKernel, 0.001);
+//        GaussianProcessRegression gRegr = new GaussianProcessRegression(xValues, yValues, mKernel, 0.001);
+        KernelMachine gRegr = GaussianProcessRegression.fit(xValues, yValues, mKernel, 0.001);
         Variogram vGram = new PowerVariogram(xValues, yValues);
         KrigingInterpolation krig = new KrigingInterpolation(xValues, yValues, vGram, weightValues);
         //    KrigingInterpolation krig = new KrigingInterpolation(xValues, yValues);
