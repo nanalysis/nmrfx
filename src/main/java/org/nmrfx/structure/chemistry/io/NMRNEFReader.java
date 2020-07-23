@@ -148,9 +148,10 @@ public class NMRNEFReader {
 
             }
             String resName = (String) residueNameColumn.get(i);
+            String resVariant = (String) variantColumn.get(i);
             String iRes = (String) seqCodeColumn.get(i);
             String mapID = chainCode + "." + iRes;
-            Residue residue = new Residue(iRes, resName.toUpperCase());
+            Residue residue = new Residue(iRes, resName.toUpperCase(), resVariant);
             residue.molecule = polymer.molecule;
             addCompound(mapID, residue);
             polymer.addResidue(residue);
@@ -163,8 +164,27 @@ public class NMRNEFReader {
                 //residue.capLastResidue();
             }
             try {
-                if (!sequence.addResidue(reslibDir + "/" + Sequence.getAliased(resName.toLowerCase()) + ".prf", residue, resPos, "", false)) {
-                    throw new ParseException("Can't find residue \"" + resName + "\" in residue libraries or STAR file");
+                String extension = "";
+                if (resName.equals("HIS")) {
+                    if (resVariant.contains(".")) {
+                        extension = "_deprotHE2";
+                    } else if (resVariant.replace("-H3", "").contains("-H")) {
+                        extension = "_deprotHD1_protHE2";
+                    } else if (resVariant.replace("+HXT", "").contains("+H")) {
+                        extension = "";
+                    }
+                } else {
+                    if (resVariant.replace("+HXT", "").contains("+H")) {
+                        extension = "_prot";
+                    } else if (resVariant.replace("-H3", "").contains("-H")) {
+                        extension = "_deprot";
+                    }
+                }
+                if (resVariant.contains("-H3") || resVariant.contains("+HXT")) {
+                    extension += "_NCtermVar";
+                }
+                if (!sequence.addResidue(reslibDir + "/" + Sequence.getAliased(resName.toLowerCase()) + extension + ".prf", residue, resPos, "", false)) {
+                    throw new ParseException("Can't find residue \"" + resName + extension + "\" in residue libraries or STAR file");
                 }
             } catch (MoleculeIOException psE) {
                 throw new ParseException(psE.getMessage());
@@ -274,9 +294,9 @@ public class NMRNEFReader {
                     continue;
                 }
                 String fullAtom = chainCode + ":" + sequenceCode + "." + atomName;
-              //  System.out.println(fullAtom);
+                //  System.out.println(fullAtom);
                 List<Atom> atoms = Molecule.getNEFMatchedAtoms(new MolFilter(fullAtom), Molecule.getActive());
-               // System.out.println(atoms.toString());
+                // System.out.println(atoms.toString());
                 for (Atom atom : atoms) {
                     if (atom.isMethyl()) {
                         if (atomName.contains("x") || atomName.contains("y")) {
@@ -304,7 +324,7 @@ public class NMRNEFReader {
                     if (spSet == null) {
                         throw new ParseException("invalid spatial set in assignments saveframe \"" + mapID + "." + atomName + "\"");
                     }
-                  //  System.out.println(atom.getFullName() + " " + value);
+                    //  System.out.println(atom.getFullName() + " " + value);
                     try {
                         spSet.setPPM(structureNum, Double.parseDouble(value), false);
                         if (!valueErr.equals(".")) {

@@ -26,7 +26,6 @@ ATOM   HH21   H     1.00  120.00  0.0     0.44780
 ATOM   HH22   H     1.00  120.00  180.0   0.44780
 ATOM   NH1    N2    1.33  120.00  180.0   -0.86270
 ATOM   HH11   H     1.00  120.00  0.0     0.44780
-ATOM   HH12   H     1.00  120.00  180.0   0.44780
 ATOM   C      C     1.53  109.47  120.0   0.73410
 ATOM   O      O     1.24  121.00  180.0   -0.58940 start
 ATOM   O      O     1.24  121.00  180.0   -0.58940 middle
@@ -34,7 +33,7 @@ ATOM   O      O     1.24  180.00  120.0   -0.58940 end
 ATOM   OXT    OH    1.24  180.00  120.0   -0.58940 end
 FAMILY   -      N      H      CA    middle
 FAMILY   -      N      H      CA    end
-FAMILY   -      N      H1     H2     H3    CA    start    
+FAMILY   -      N      H1     H2     H3    CA    start   
 FAMILY   N      CA     C      CB     HA     
 FAMILY   CA     CB     CG     HB3    HB2    
 FAMILY   CB     CG     CD     HG3    HG2    
@@ -42,9 +41,9 @@ FAMILY   CG     CD     NE     HD3    HD2
 FAMILY   CD     NE     =CZ     HE     
 FAMILY   NE     CZ     NH2    NH1    
 FAMILY   CZ     NH2    HH21   HH22   
-FAMILY   CZ     NH1    HH11   HH12   
-FAMILY   CA     C      +      =O    
-FAMILY   CA     C      OXT    =O  end   
+FAMILY   CZ     NH1    HH11      
+FAMILY   CA     C      +      =O 
+FAMILY   CA     C      OXT    =O  end      
 ANGLE     CA      PHI 1
 ANGLE     CB     CHI1 2
 ANGLE     CG     CHI2 2

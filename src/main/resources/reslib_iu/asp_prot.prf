@@ -15,6 +15,7 @@ ATOM   HB3    HC    1.08  109.47  -121.5  -0.01220
 ATOM   CG     CO    1.53  109.47  0.0     0.79940
 ATOM   OD1    O2    1.24  120.00  0.0     -0.80140
 ATOM   OD2    O2    1.24  120.00  180.0   -0.80140
+ATOM   HD2    HO    1.00  110.00  0.0     0.42750
 ATOM   C      C     1.53  109.47  120.0   0.53660
 ATOM   O      O     1.24  120.00  180.0   -0.58190 start
 ATOM   O      O     1.24  120.00  180.0   -0.58190 middle
@@ -22,12 +23,13 @@ ATOM   O      O     1.24  180.00  120.0   -0.58190 end
 ATOM   OXT    OH    1.24  180.00  120.0   -0.58190 end
 FAMILY   -      N      H      CA    middle
 FAMILY   -      N      H      CA    end
-FAMILY   -      N      H1     H2     H3    CA    start      
+FAMILY   -      N      H1     H2     H3    CA    start       
 FAMILY   N      CA     C      CB     HA     
 FAMILY   CA     CB     CG     HB3    HB2    
-FAMILY   CB     CG     =OD1    OD2    
-FAMILY   CA     C      +      =O     
-FAMILY   CA     C      OXT    =O  end  
+FAMILY   CB     CG     =OD1    OD2 
+FAMILY   CG     OD2    HD2   
+FAMILY   CA     C      +      =O   
+FAMILY   CA     C      OXT    =O  end    
 ANGLE     CA      PHI 1
 ANGLE     CB     CHI1 2
 ANGLE     CG     CHI2 4
