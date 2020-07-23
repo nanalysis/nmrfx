@@ -87,6 +87,23 @@ public class Residue extends Compound {
         super.atomMap = new HashMap();
     }
 
+    public Residue(String number, String name, String variant) {
+        this.number = number;
+        super.name = name;
+        super.label = variant;
+        if (standardResSet.containsKey(name.toLowerCase())) {
+            standard = true;
+        }
+        try {
+            resNum = Integer.valueOf(number);
+        } catch (NumberFormatException nfE) {
+            System.out.println(number);
+            resNum = null;
+        }
+
+        super.atomMap = new HashMap();
+    }
+
     @Override
     public void addAtom(final Atom atom) {
         addAtom(null, atom);
@@ -529,7 +546,7 @@ public class Residue extends Compound {
 
     }
 
-    public void capFirstResidue() {
+    public void capFirstResidue(String resVariant) {
         List<Atom> firstResidueAtoms = getAtoms();
         if (firstResidueAtoms.size() > 2) {
             Atom firstAtom = getAtoms().get(0);
@@ -543,7 +560,7 @@ public class Residue extends Compound {
                 }
                 thirdAtom.valanceAngle = (float) (180.0 * Math.PI / 180.0);
                 thirdAtom.dihedralAngle = (float) (0.0 * Math.PI / 180.0);
-                Atom newAtom = firstAtom.add(newRoot + "3", "H", Order.SINGLE);
+                Atom newAtom = firstAtom.add(newRoot + "1", "H", Order.SINGLE);
                 newAtom.setType("H");
                 newAtom.bondLength = 1.08f;
                 newAtom.dihedralAngle = (float) (109.0 * Math.PI / 180.0);
@@ -553,11 +570,13 @@ public class Residue extends Compound {
                 newAtom.bondLength = 1.08f;
                 newAtom.dihedralAngle = (float) (109.0 * Math.PI / 180.0);
                 newAtom.valanceAngle = (float) (60.0 * Math.PI / 180.0);
-                newAtom = firstAtom.add(newRoot + "1", "H", Order.SINGLE);
-                newAtom.setType("H");
-                newAtom.bondLength = 1.08f;
-                newAtom.dihedralAngle = (float) (109.0 * Math.PI / 180.0);
-                newAtom.valanceAngle = (float) (60.0 * Math.PI / 180.0);
+                if (!resVariant.contains("-H3")) {
+                    newAtom = firstAtom.add(newRoot + "3", "H", Order.SINGLE);
+                    newAtom.setType("H");
+                    newAtom.bondLength = 1.08f;
+                    newAtom.dihedralAngle = (float) (109.0 * Math.PI / 180.0);
+                    newAtom.valanceAngle = (float) (60.0 * Math.PI / 180.0);
+                }
             }
             if (firstResidueAtoms.size() > 4) {
                 Atom fourthAtom = getAtoms().get(4);
@@ -572,7 +591,7 @@ public class Residue extends Compound {
         }
     }
 
-    public void capLastResidue() {
+    public void capLastResidue(String resVariant) {
         List<Atom> lastResidueAtoms = getAtoms();
         if (!lastResidueAtoms.isEmpty() && lastResidueAtoms.size() > 1) {
             Atom lastAtom = lastResidueAtoms.get(lastResidueAtoms.size() - 1);
@@ -596,7 +615,7 @@ public class Residue extends Compound {
                     newAtom.setType("O");
 
                     if (!isIUPACMode()) {
-                        newAtom = secondAtom.add(newRoot + "1", "O", Order.SINGLE);
+                        newAtom = secondAtom.add(newRoot + "XT", "O", Order.SINGLE);
                     } else {
                         newAtom = secondAtom.add(newRoot + "'", "O", Order.SINGLE);
                     }
@@ -604,6 +623,13 @@ public class Residue extends Compound {
                     newAtom.valanceAngle = (float) (120.0 * Math.PI / 180.0);
                     newAtom.dihedralAngle = (float) (180.0 * Math.PI / 180.0);
                     newAtom.setType("O");
+                    if (resVariant.contains("+HXT")) {
+                        Atom newAtomProt = newAtom.add("HXT", "H", Order.SINGLE);
+                        newAtomProt.bondLength = 1.00f;
+                        newAtomProt.valanceAngle = (float) (110.0 * Math.PI / 180.0);
+                        newAtomProt.dihedralAngle = (float) (0.0 * Math.PI / 180.0);
+                        newAtomProt.setType("H");
+                    }
                 }
             } else if (lastAtom.getName().equals("O3'")) {
                 Atom newAtom = lastAtom.add("HO3'", "H", Order.SINGLE);
@@ -674,8 +700,8 @@ public class Residue extends Compound {
     public String toString() {
         return polymer.getName() + ":" + getName() + getNumber();
     }
-    
-    public String toNEFSequenceString(Molecule molecule, String link, String resVar) {
+
+    public String toNEFSequenceString(Molecule molecule, String link) {
         //index and sequence code
         int number = 1;
         //chain ID
@@ -689,6 +715,9 @@ public class Residue extends Compound {
         if (resName.length() > 3) {
             resName = resName.substring(0, 3);
         }
+
+        //residue variant
+        String resVar = this.label;
 
         return String.format("%8d %7s %7d %9s %-14s %-7s", number, chainID, number, resName, link, resVar);
     }

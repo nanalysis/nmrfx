@@ -2,7 +2,11 @@ LNAME Glutamine
 SNAME gln
 RCHAR Q
 ATOM   N      N     1.32  114.00  -120.0  -0.41570
-ATOM   H      H     1.00  123.00  0.0     0.27190
+ATOM   H      H     1.00  123.00  0.0     0.27190 middle
+ATOM   H      H     1.00  123.00  0.0     0.27190 end
+ATOM   H1     H1    1.08  109.00  60.0    0.27190 start
+ATOM   H2     H2    1.08  109.00  60.0    0.27190 start
+ATOM   H3     H3    1.08  109.00  60.0    0.27190 start
 ATOM   CA     CX    1.47  123.00  180.0   -0.00310
 ATOM   HA     H1    1.08  109.47  -120.0  0.08500
 ATOM   CB     2C    1.53  109.47  -121.5  -0.00360
@@ -17,14 +21,20 @@ ATOM   NE2    N     1.32  114.00  180.0   -0.94070
 ATOM   HE21   H     1.00  120.00  0.0     0.42510
 ATOM   HE22   H     1.00  120.00  180.0   0.42510
 ATOM   C      C     1.53  109.47  120.0   0.59730
-ATOM   O      O     1.24  120.00  180.0   -0.56790
-FAMILY   -      N      H      CA     
+ATOM   O      O     1.24  120.00  180.0   -0.56790 start
+ATOM   O      O     1.24  120.00  180.0   -0.56790 middle
+ATOM   O      O     1.24  180.00  120.0   -0.56790 end
+ATOM   OXT    OH    1.24  180.00  120.0   -0.56790 end
+FAMILY   -      N      H      CA    middle
+FAMILY   -      N      H      CA    end
+FAMILY   -      N      H1     H2     H3    CA    start    
 FAMILY   N      CA     C      CB     HA     
 FAMILY   CA     CB     CG     HB3    HB2    
 FAMILY   CB     CG     CD     HG3    HG2    
 FAMILY   CG     CD     =OE1    NE2    
 FAMILY   CD     NE2    HE21   HE22   
-FAMILY   CA     C      +      =O      
+FAMILY   CA     C      +      =O    
+FAMILY   CA     C      OXT    =O  end   
 ANGLE     CA      PHI 1
 ANGLE     CB     CHI1 2
 ANGLE     CG     CHI2 2

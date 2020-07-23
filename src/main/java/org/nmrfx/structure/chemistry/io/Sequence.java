@@ -199,6 +199,8 @@ public class Sequence {
                         return;
                     } else if (fields[7].equals("start") && (resPos != RES_POSITION.START)) {
                         return;
+                    } else if (fields[7].equals("end") && (resPos != RES_POSITION.END)) {
+                        return;
                     }
                 }
                 Atom atom = Atom.genAtomWithType(aName, aType);
@@ -327,6 +329,8 @@ public class Sequence {
                     if (fields[4].equals("middle") && (resPos != RES_POSITION.MIDDLE)) {
                         return;
                     } else if (fields[4].equals("start") && (resPos != RES_POSITION.START)) {
+                        return;
+                    } else if (fields[4].equals("end") && (resPos != RES_POSITION.END)) {
                         return;
                     }
                 }
