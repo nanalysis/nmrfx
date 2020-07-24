@@ -788,7 +788,7 @@ public class Atom implements IAtom {
     public boolean getProperty(int propIndex) {
         return spatialSet.getProperty(propIndex);
     }
-    
+
     public void setDihedral(double value) {
         dihedralAngle = (float) Math.toRadians(value);
     }
@@ -1368,7 +1368,7 @@ public class Atom implements IAtom {
 
             // target value
             double target = distPair.getTargetValue();
-            sBuilder.append(String.format("%-8.2f", target));
+            sBuilder.append(String.format("%-8.3f", target));
 
             // target value uncertainty
             String targetErr = String.valueOf(distPair.getTargetError());
@@ -1379,11 +1379,11 @@ public class Atom implements IAtom {
 
             // lower limit
             double lower = distPair.getLower();
-            sBuilder.append(String.format("%-8.2f", lower));
+            sBuilder.append(String.format("%-8.3f", lower));
 
             // upper limit
             double upper = distPair.getUpper();
-            sBuilder.append(String.format("%-8.2f", upper));
+            sBuilder.append(String.format("%-8.3f", upper));
 
         }
 
@@ -1448,13 +1448,12 @@ public class Atom implements IAtom {
             sBuilder.append(String.format("%9.3f", targetErr));
 
             // lower limit
-            double lower1 = Math.toDegrees(bound.getLower());
-            double lower = Math.round(lower1 * 100000d) / 100000d;
+            double lower = Math.toDegrees(bound.getLower());
+            double upper = Math.toDegrees(bound.getUpper());
+
             sBuilder.append(String.format("%9.3f", lower));
 
             // upper limit
-            double upper1 = Math.toDegrees(bound.getUpper());
-            double upper = Math.round(upper1 * 100000d) / 100000d;
             sBuilder.append(String.format("%9.3f", upper));
 
             // name
