@@ -300,7 +300,10 @@ public class Sequence {
                         daughterAtom = residue.getAtom(atomName);
                     }
                     if (!connector && (daughterAtom == null)) {
-                        throw new MoleculeIOException("Can't find daughter atom \"" + atomName + "\"");
+                        throw new MoleculeIOException("Can't find daughter atom \""
+                                + atomName + "\"" + " while adding "
+                                + residue.getName() + residue.getNumber()
+                                + " " + resPos);
                     }
                     //                    if (!connector && daughterAtom.getName().startsWith("H")) {
                     if (!connector && !ringClosure) {
