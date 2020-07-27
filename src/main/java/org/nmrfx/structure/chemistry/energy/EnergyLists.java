@@ -367,21 +367,21 @@ public class EnergyLists {
 
     public void addDistanceConstraint(final String filterString1, final String filterString2, final double rLow,
             final double rUp) throws IllegalArgumentException {
-        addDistanceConstraint(filterString1, filterString2, rLow, rUp, false, 1.0, null, null);
+        addDistanceConstraint(filterString1, filterString2, rLow, rUp, false, 1.0, null, null, null, null);
     }
 
     public void addDistanceConstraint(final String filterString1, final String filterString2, final double rLow,
             final double rUp, boolean isBond) throws IllegalArgumentException {
-        addDistanceConstraint(filterString1, filterString2, rLow, rUp, isBond, 1.0, null, null);
+        addDistanceConstraint(filterString1, filterString2, rLow, rUp, isBond, 1.0, null, null, null, null);
     }
 
     public void addDistanceConstraint(final String filterString1, final String filterString2, final double rLow,
-            final double rUp, Double weight, Double targetValue, Double targetErr) throws IllegalArgumentException {
-        addDistanceConstraint(filterString1, filterString2, rLow, rUp, false, weight, targetValue, targetErr);
+            final double rUp, Double weight, Double targetValue, Double targetErr, List<Integer> aNameFlags1, List<Integer> aNameFlags2) throws IllegalArgumentException {
+        addDistanceConstraint(filterString1, filterString2, rLow, rUp, false, weight, targetValue, targetErr, aNameFlags1, aNameFlags2);
     }
 
     public void addDistanceConstraint(final String filterString1, final String filterString2, final double rLow,
-            final double rUp, boolean isBond, Double weight, Double targetValue, Double targetErr) throws IllegalArgumentException {
+            final double rUp, boolean isBond, Double weight, Double targetValue, Double targetErr, List<Integer> aNameFlags1, List<Integer> aNameFlags2) throws IllegalArgumentException {
         MolFilter molFilter1 = new MolFilter(filterString1);
         MolFilter molFilter2 = new MolFilter(filterString2);
 
@@ -409,8 +409,16 @@ public class EnergyLists {
         Atom[] atomsA2 = new Atom[atoms2m.size()];
         atoms1m.toArray(atomsA1);
         atoms2m.toArray(atomsA2);
+        int[] a1NameFlags = new int[aNameFlags1.size()];
+        int[] a2NameFlags = new int[aNameFlags2.size()];
+        for (int i=0; i<aNameFlags1.size(); i++) {
+            a1NameFlags[i] = aNameFlags1.get(i);
+        }
+        for (int i=0; i<aNameFlags2.size(); i++) {
+            a2NameFlags[i] = aNameFlags2.get(i);
+        }
         if (weight != null && targetValue != null && targetErr != null) {
-            distanceList.add(new DistancePair(atomsA1, atomsA2, rLow, rUp, isBond, weight, targetValue, targetErr));
+            distanceList.add(new DistancePair(atomsA1, atomsA2, rLow, rUp, isBond, weight, targetValue, targetErr, a1NameFlags, a2NameFlags));
         } else {
             distanceList.add(new DistancePair(atomsA1, atomsA2, rLow, rUp, isBond));
         }
@@ -420,11 +428,11 @@ public class EnergyLists {
 
     public void addDistanceConstraint(final List<String> filterStrings1, final List<String> filterStrings2,
             final double rLow, final double rUp) throws IllegalArgumentException {
-        addDistanceConstraint(filterStrings1, filterStrings2, rLow, rUp, 1.0, null, null);
+        addDistanceConstraint(filterStrings1, filterStrings2, rLow, rUp, 1.0, null, null, null, null);
     }
 
     public void addDistanceConstraint(final List<String> filterStrings1, final List<String> filterStrings2,
-            final double rLow, final double rUp, Double weight, Double targetValue, Double targetErr) throws IllegalArgumentException {
+            final double rLow, final double rUp, Double weight, Double targetValue, Double targetErr, List<Integer> aNameFlags1, List<Integer> aNameFlags2) throws IllegalArgumentException {
         if (filterStrings1.size() != filterStrings2.size()) {
             throw new IllegalArgumentException("atoms group 1 and atoms group 2 should be same size");
         }
@@ -455,13 +463,21 @@ public class EnergyLists {
         }
         Atom[] atomsA1 = new Atom[atoms1m.size()];
         Atom[] atomsA2 = new Atom[atoms2m.size()];
+        int[] a1NameFlags = new int[aNameFlags1.size()];
+        int[] a2NameFlags = new int[aNameFlags2.size()];
+        for (int i=0; i<aNameFlags1.size(); i++) {
+            a1NameFlags[i] = aNameFlags1.get(i);
+        }
+        for (int i=0; i<aNameFlags2.size(); i++) {
+            a2NameFlags[i] = aNameFlags2.get(i);
+        }
         if (atoms1m.size() != atoms2m.size()) {
             throw new IllegalArgumentException("atoms group 1 and atoms group 2 should be same size");
         }
         atoms1m.toArray(atomsA1);
         atoms2m.toArray(atomsA2);
         if (weight != null && targetValue != null && targetErr != null) {
-            distanceList.add(new DistancePair(atomsA1, atomsA2, rLow, rUp, false, weight, targetValue, targetErr));
+            distanceList.add(new DistancePair(atomsA1, atomsA2, rLow, rUp, false, weight, targetValue, targetErr, a1NameFlags, a2NameFlags));
         } else {
             distanceList.add(new DistancePair(atomsA1, atomsA2, rLow, rUp, false));
         }
