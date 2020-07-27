@@ -180,9 +180,9 @@ public class NMRNEFReader {
                         extension = "_deprot";
                     }
                 }
-                if (resVariant.contains("-H3") || resVariant.contains("+HXT")) {
-                    extension += "_NCtermVar";
-                }
+//                if (resVariant.contains("-H3") || resVariant.contains("+HXT")) {
+//                    extension += "_NCtermVar";
+//                }
                 if (!sequence.addResidue(reslibDir + "/" + Sequence.getAliased(resName.toLowerCase()) + extension + ".prf", residue, resPos, "", false)) {
                     throw new ParseException("Can't find residue \"" + resName + extension + "\" in residue libraries or STAR file");
                 }
@@ -453,9 +453,12 @@ public class NMRNEFReader {
         List<String> lowerColumn = loop.getColumnAsList("lower_limit");
         List<String> upperColumn = loop.getColumnAsList("upper_limit");
         ArrayList<String> atomNames[] = new ArrayList[2];
+        ArrayList<Integer> aNameFlags[] = new ArrayList[2];
 //        String[] resNames = new String[2];
         atomNames[0] = new ArrayList<>();
         atomNames[1] = new ArrayList<>();
+        aNameFlags[0] = new ArrayList<>();
+        aNameFlags[1] = new ArrayList<>();
 
         for (int i = 0; i < chainCodeColumns[0].size(); i++) {
             int restraintIDValue = restraintIDColumn.get(i);
@@ -471,6 +474,8 @@ public class NMRNEFReader {
             if (restraintIDValue != restraintIDValuePrev) {
                 atomNames[0].clear();
                 atomNames[1].clear();
+                aNameFlags[0].clear();
+                aNameFlags[1].clear();
                 if (restraintIDValue == restraintIDValueNext
                         && i > 0 && i < chainCodeColumns[0].size() - 1) {
                     addConstraint = false;
@@ -493,6 +498,11 @@ public class NMRNEFReader {
                 String resName = (String) residueNameColumns[iAtom].get(i);
                 String atomName = (String) atomNameColumns[iAtom].get(i);
                 atomNames[iAtom].add(chainCode + ":" + seqNum + "." + atomName);
+                if (atomName.contains("x") || atomName.contains("y")) {
+                    aNameFlags[iAtom].add(1);
+                } else {
+                    aNameFlags[iAtom].add(0);
+                }
 //                resNames[iAtom] = resName;
             }
             String weightValue = (String) weightColumn.get(i);
@@ -526,7 +536,7 @@ public class NMRNEFReader {
             Util.setStrictlyNEF(true);
             try {
                 if (addConstraint) {
-                    energyList.addDistanceConstraint(atomNames[0], atomNames[1], lower, upper, weight, target, targetErr);
+                    energyList.addDistanceConstraint(atomNames[0], atomNames[1], lower, upper, weight, target, targetErr, aNameFlags[0], aNameFlags[1]);
                 }
             } catch (IllegalArgumentException iaE) {
                 int index = indexColumn.get(i);

@@ -157,7 +157,7 @@ public class NMRNEFWriter {
             boolean firstAtom = true;
             for (Atom atom2 : shellAtoms) {
                 if (atom.getIndex() > atom2.getIndex()) {
-                    firstAtom = false;
+                        firstAtom = false;
                     break;
                 }
             }
@@ -294,6 +294,8 @@ public class NMRNEFWriter {
         for (int i = 0; i < distList.size(); i++) {
             DistancePair distPair = distList.get(i);
             AtomDistancePair[] pairAtoms = distPair.getAtomPairs();
+            int a1Flag = distPair.getA1NameFlags()[0];
+            int a2Flag = distPair.getA2NameFlags()[0];
             int nPairs = pairAtoms.length;
             int[][] collapse = new int[nPairs][2];
             boolean[] skipPair = new boolean[nPairs];
@@ -395,7 +397,7 @@ public class NMRNEFWriter {
                 }
                 Atom atom1 = pair.getAtoms1()[0];
                 Atom atom2 = pair.getAtoms2()[0];
-                result = Atom.toNEFDistanceString(idx, collapse[iPair], restraintID, ".", distPair, atom1, atom2);
+                result = Atom.toNEFDistanceString(idx, collapse[iPair], restraintID, ".", distPair, atom1, atom2, a1Flag, a2Flag);
                 chan.write(result + "\n");
                 idx++;
 

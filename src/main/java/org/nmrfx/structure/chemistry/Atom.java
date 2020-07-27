@@ -1182,18 +1182,21 @@ public class Atom implements IAtom {
      * Change atom names to NEF format.
      *
      * @param atom Atom to format.
+     * @param aFlag int Flag for x/y changes. 1 for x/y, 0 for all others.
      * @return writename. String. The formatted atom name.
      */
-    public static String formatNEFAtomName(Atom atom) {
+    public static String formatNEFAtomName(Atom atom, int aFlag) {
         String writeName = atom.name;
         if (!atom.isMethyl()) {
             if (atom.getStereo() == 0) { //x or y changes
                 Atom[] partners = atom.getPartners(1, 1);
                 if (partners.length == 1) {
-                    if (atom.getIndex() < partners[0].getIndex()) {
-                        writeName = atom.name.substring(0, atom.name.length() - 1) + "x";
-                    } else {
-                        writeName = atom.name.substring(0, atom.name.length() - 1) + "y";
+                    if (aFlag == 1) {
+                        if (atom.getIndex() < partners[0].getIndex()) {
+                            writeName = atom.name.substring(0, atom.name.length() - 1) + "x";
+                        } else {
+                            writeName = atom.name.substring(0, atom.name.length() - 1) + "y";
+                        } 
                     }
                 }
             }
@@ -1202,10 +1205,14 @@ public class Atom implements IAtom {
                 Atom parent = atom.getParent();
                 Optional<Atom> methylCarbonPartner = parent.getMethylCarbonPartner();
                 if (methylCarbonPartner.isPresent()) {
-                    if (atom.getParent().getIndex() < methylCarbonPartner.get().getIndex()) {
-                        writeName = atom.name.substring(0, atom.name.length() - 2) + "x%";
+                    if (aFlag == 1) {
+                        if (atom.getParent().getIndex() < methylCarbonPartner.get().getIndex()) {
+                            writeName = atom.name.substring(0, atom.name.length() - 2) + "x%";
+                        } else {
+                            writeName = atom.name.substring(0, atom.name.length() - 2) + "y%";
+                        }
                     } else {
-                        writeName = atom.name.substring(0, atom.name.length() - 2) + "y%";
+                        writeName = atom.name.substring(0, atom.name.length() - 1) + "%";
                     }
                 } else {
                     writeName = atom.name.substring(0, atom.name.length() - 1) + "%";
@@ -1312,8 +1319,9 @@ public class Atom implements IAtom {
      * @param atom2 Atom. Second atom in the AtomDistancePair object.
      * @return String in NEF format.
      */
-    public static String toNEFDistanceString(int index, int[] aCollapse, int restraintID, String restraintComboID, DistancePair distPair, Atom atom1, Atom atom2) {
+    public static String toNEFDistanceString(int index, int[] aCollapse, int restraintID, String restraintComboID, DistancePair distPair, Atom atom1, Atom atom2, int a1Flag, int a2Flag) {
         Atom[] atoms = {atom1, atom2};
+        int[] aFlags = {a1Flag, a2Flag};
 
         StringBuilder sBuilder = new StringBuilder();
         if (atom1.entity instanceof Residue && atom2.entity instanceof Residue) {
@@ -1348,14 +1356,14 @@ public class Atom implements IAtom {
                     if (collapse == 2) {
                         writeName = atoms[a].name.substring(0, atoms[a].name.length() - collapse) + "%";
                     } else {
-                        writeName = formatNEFAtomName(atoms[a]);
+                        writeName = formatNEFAtomName(atoms[a], aFlags[a]);
 
                     }
                 } else {
                     if (collapse > 0) {
                         writeName = atoms[a].name.substring(0, atoms[a].name.length() - collapse) + "%";
                     } else {
-                        writeName = formatNEFAtomName(atoms[a]);
+                        writeName = formatNEFAtomName(atoms[a], aFlags[a]);
                     }
                 }
 //                System.out.println(chainID + " " + seqCode + " " + resName + " " + atoms[a].name + " " + writeName);
@@ -1368,7 +1376,7 @@ public class Atom implements IAtom {
 
             // target value
             double target = distPair.getTargetValue();
-            sBuilder.append(String.format("%-8.2f", target));
+            sBuilder.append(String.format("%-8.3f", target));
 
             // target value uncertainty
             String targetErr = String.valueOf(distPair.getTargetError());
