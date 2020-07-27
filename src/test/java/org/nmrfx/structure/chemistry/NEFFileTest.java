@@ -37,12 +37,12 @@ public class NEFFileTest {
     // has ligand 6nbn
     
     // new files
-    // ok 1pqx 2jr2 (previously failed, now passes) 2juw 2k2e 2kcu 2kpu 2kw5
-    // distance rounding differences 2ko1
-    // dict key mismatches, written HE2% should be HE% 2loy 2kzn
-    // dict key mismatches, e.g. written HG% should be HGy 2png 2kko 2luz (previously passed, now fails)
-    // dict key mismatches, some incorrect chem shifts 2k07
-    // has unreadable residue ACD 6nbn
+    // OK 1pqx 2jr2 (previously failed, now passes) 2juw 2k2e 2kcu 2kpu 2kw5 2kko 2luz
+    // SEQUENCE has unreadable residue ACD 6nbn
+    // CHEM SHIFT dict key mismatches, e.g. written 56 HD1/2% should be HDx/y%, only one each of 90 HD% and HE% in written when 2 each in orig  2k07
+    // DISTANCE dict key mismatches, written HE2% should be HE% 2loy 2kzn
+    // DISTANCE dict key mismatches, e.g. written HG% should be HGy and HGx 2png (multiple lines w/ same restraint not getting split correctly)
+    // DIHEDRAL some incorrect values 2ko1
     List<List<Object>> orig = new ArrayList<>();
     List<List<Object>> written = new ArrayList<>();
 
@@ -61,11 +61,11 @@ public class NEFFileTest {
 //        loadData("2kzn");
 //        testAll();
 //    }
-//    @Test
-//    public void testFile2KKO() throws IOException {
-//        loadData("2kko");
-//        testAll();
-//    }
+    @Test
+    public void testFile2KKO() throws IOException {
+        loadData("2kko");
+        testAll();
+    }
     @Test
     public void testFile2JUW() throws IOException {
         loadData("2juw");
@@ -107,11 +107,11 @@ public class NEFFileTest {
 //        loadData("2loy");
 //        testAll();
 //    }
-//    @Test
-//    public void testFile2LUZ() throws IOException {
-//        loadData("2luz");
-//        testAll();
-//    }
+    @Test
+    public void testFile2LUZ() throws IOException {
+        loadData("2luz");
+        testAll();
+    }
     
 //    @Test
 //    public void testFile2K07() throws IOException {
