@@ -76,6 +76,8 @@ public class Util {
             partner = atom1.getMethylCarbonPartner();
         } else if ((atom.getAtomicNumber() == 6) && atom.isMethylCarbon()) {
             partner = atom.getMethylCarbonPartner();
+        } else if (atom.isAromaticFlippable()) {
+            partner = atom.getAromaticPartner();
         }
         if (partner.isPresent()) {
             Atom partnerAtom = partner.get();
@@ -102,6 +104,8 @@ public class Util {
                 partner = atom1.getMethylCarbonPartner();
             } else if ((atom.getAtomicNumber() == 6) && atom.isMethylCarbon()) {
                 partner = atom.getMethylCarbonPartner();
+            } else if (atom.isAromaticFlippable()) {
+                partner = atom.getAromaticPartner();
             }
             if (partner.isPresent()) {
                 Atom partnerAtom = partner.get();
