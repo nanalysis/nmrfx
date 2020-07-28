@@ -33,11 +33,9 @@ public class DistancePair {
     final double weight;
     final double targetValue;
     final double targetErr;
-    final int[] a1Flags;
-    final int[] a2Flags;
 
     public DistancePair(final Atom[] atoms1, final Atom[] atoms2, final double rLow, final double rUp, final boolean isBond,
-            final double weight, final double targetValue, final double targetErr, int[] a1NameFlags, int[] a2NameFlags) {
+            final double weight, final double targetValue, final double targetErr) {
         if (atoms1.length != atoms2.length) {
             throw new IllegalArgumentException("atom arrays are not of equal length");
         }
@@ -53,13 +51,11 @@ public class DistancePair {
         this.weight = weight;
         this.targetValue = targetValue;
         this.targetErr = targetErr;
-        this.a1Flags = a1NameFlags;
-        this.a2Flags = a2NameFlags;
     }
 
     public DistancePair(final Atom[] atoms1, final Atom[] atoms2, final double rLow, final double rUp, final boolean isBond) {
 
-        this(atoms1, atoms2, rLow, rUp, isBond, 1.0, (rLow + rUp) / 2.0, rUp - rLow, null, null);
+        this(atoms1, atoms2, rLow, rUp, isBond, 1.0, (rLow + rUp) / 2.0, rUp - rLow);
 
     }
 
@@ -111,13 +107,6 @@ public class DistancePair {
         return targetErr;
     }
     
-    public int[] getA1NameFlags() {
-        return a1Flags;
-    }
-    
-    public int[] getA2NameFlags() {
-        return a2Flags;
-    }
 
     public Map<String, Set<Atom>> getUniqueAtoms(AtomDistancePair[] pairs, int atomNum) {
         Map<String, Set<Atom>> atomsMap = new HashMap<>();
