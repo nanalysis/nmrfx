@@ -157,7 +157,7 @@ public class NMRNEFWriter {
             boolean firstAtom = true;
             for (Atom atom2 : shellAtoms) {
                 if (atom.getIndex() > atom2.getIndex()) {
-                    firstAtom = false;
+                        firstAtom = false;
                     break;
                 }
             }

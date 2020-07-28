@@ -106,6 +106,7 @@ public class DistancePair {
     public double getTargetError() {
         return targetErr;
     }
+    
 
     public Map<String, Set<Atom>> getUniqueAtoms(AtomDistancePair[] pairs, int atomNum) {
         Map<String, Set<Atom>> atomsMap = new HashMap<>();

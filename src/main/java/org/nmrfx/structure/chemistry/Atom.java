@@ -1194,7 +1194,7 @@ public class Atom implements IAtom {
                         writeName = atom.name.substring(0, atom.name.length() - 1) + "x";
                     } else {
                         writeName = atom.name.substring(0, atom.name.length() - 1) + "y";
-                    }
+                    } 
                 }
             }
         } else {
@@ -1453,11 +1453,10 @@ public class Atom implements IAtom {
 
             // lower limit
             double lower = Math.toDegrees(bound.getLower());
-            double upper = Math.toDegrees(bound.getUpper());
-
             sBuilder.append(String.format("%9.3f", lower));
 
             // upper limit
+            double upper = Math.toDegrees(bound.getUpper());
             sBuilder.append(String.format("%9.3f", upper));
 
             // name

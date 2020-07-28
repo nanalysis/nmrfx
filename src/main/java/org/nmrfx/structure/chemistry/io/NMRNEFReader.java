@@ -180,9 +180,9 @@ public class NMRNEFReader {
                         extension = "_deprot";
                     }
                 }
-                if (resVariant.contains("-H3") || resVariant.contains("+HXT")) {
-                    extension += "_NCtermVar";
-                }
+//                if (resVariant.contains("-H3") || resVariant.contains("+HXT")) {
+//                    extension += "_NCtermVar";
+//                }
                 if (!sequence.addResidue(reslibDir + "/" + Sequence.getAliased(resName.toLowerCase()) + extension + ".prf", residue, resPos, "", false)) {
                     throw new ParseException("Can't find residue \"" + resName + extension + "\" in residue libraries or STAR file");
                 }
