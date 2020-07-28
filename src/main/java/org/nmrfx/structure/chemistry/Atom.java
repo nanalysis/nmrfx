@@ -1198,7 +1198,9 @@ public class Atom implements IAtom {
                 }
             }
         } else {
-            if (atom.getParent().getStereo() == 0) {
+            if (atom.getStereo() == -1) {
+                writeName = atom.name.substring(0, atom.name.length() - 2) + "%";
+            } else if (atom.getParent().getStereo() == 0) {
                 Atom parent = atom.getParent();
                 Optional<Atom> methylCarbonPartner = parent.getMethylCarbonPartner();
                 if (methylCarbonPartner.isPresent()) {
@@ -1255,9 +1257,11 @@ public class Atom implements IAtom {
         String writeName;
         if (isMethyl()) {
             int nameLen = name.length();
-            if (collapse > 0) {
+            if (collapse == 1) {
                 String xy = name.charAt(nameLen - 2) == '2' ? "y" : "x";
                 writeName = name.substring(0, nameLen - 2) + xy + "%";
+            } else if (collapse == 2) {
+                writeName = name.substring(0, nameLen - 2) + "%";
             } else {
                 writeName = name.substring(0, nameLen - 1) + "%";
             }
@@ -1958,7 +1962,7 @@ public class Atom implements IAtom {
             Molecule.findEquivalentAtoms(entity);
         }
         int shells = 2;
-        if ((aNum == targetANum) && (equivAtoms != null) && (equivAtoms.size() > 0)) {
+        if (((targetANum == -1) || (aNum == targetANum)) && (equivAtoms != null) && (equivAtoms.size() > 0)) {
             for (int i = 0; (i < equivAtoms.size()) && (i < shells); i++) {
                 AtomEquivalency aEquiv = equivAtoms.get(i);
                 if (!aEquiv.getAtoms().isEmpty()) {
@@ -2010,6 +2014,48 @@ public class Atom implements IAtom {
         }
         return result;
     }
+
+    public boolean isAromaticFlippable() {
+        boolean result = false;
+        if (entity.getName().equalsIgnoreCase("tyr") || (entity.getName().equalsIgnoreCase("phe"))) {
+            if ((name.length() == 3)) {
+                char aChar = name.charAt(1);
+                if ((aChar == 'D') || (aChar == 'E')) {
+                    result = true;
+                }
+            }
+        }
+
+        return result;
+    }
+
+    public Optional<Atom> getAromaticPartner() {
+        Optional<Atom> result = Optional.empty();
+        if ((parent != null)) {
+            if (entity.getName().equalsIgnoreCase("tyr") || (entity.getName().equalsIgnoreCase("phe"))) {
+                if (name.length() == 3) {
+                    char aChar = name.charAt(1);
+                    if ((aChar == 'D') || (aChar == 'E')) {
+                        StringBuilder partnerBuilder = new StringBuilder();
+                        partnerBuilder.append(name.charAt(0));
+                        partnerBuilder.append(name.charAt(1));
+                        if (name.charAt(2) == '1') {
+                            partnerBuilder.append('2');
+                        } else {
+                            partnerBuilder.append('1');
+                        }
+                        Residue residue = (Residue) entity;
+                        Atom atom = residue.getAtom(partnerBuilder.toString());
+                        if (atom != null) {
+                            result = Optional.of(atom);
+                        }
+                    }
+                }
+            }
+        }
+        return result;
+    }
+
 //###################################################################
 //#       Chemical Shift Ambiguity Index Value Definitions          #
 //#                                                                 #
@@ -2030,7 +2076,6 @@ public class Atom implements IAtom {
 //#      9             Ambiguous, specific ambiguity not defined    #
 //#                                                                 #
 //###################################################################
-
     public int getBMRBAmbiguity() {
         if (!entity.hasEquivalentAtoms()) {
             Molecule.findEquivalentAtoms(entity);
