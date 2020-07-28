@@ -765,8 +765,7 @@ save_nef_chemical_shift_list_bmr6546.str
          A         56        LEU       HBx       1.830     0.020
          A         56        LEU       HBy       1.860     0.020
          A         56        LEU       HG        1.830     0.020
-         A         56        LEU       HDx%      0.910     0.020
-         A         56        LEU       HDy%      0.910     0.020
+         A         56        LEU       HD%       0.910     0.020
          A         56        LEU       CA        54.300    0.500
          A         56        LEU       CB        48.200    0.500
          A         56        LEU       CG        27.300    0.500
@@ -1136,16 +1135,16 @@ save_nef_chemical_shift_list_bmr6546.str
          A         90        TYR       HA        4.690     0.020
          A         90        TYR       HBx       2.760     0.020
          A         90        TYR       HBy       3.270     0.020
-         A         90        TYR       HD%       7.860     0.020
-         A         90        TYR       HD%       7.380     0.020
-         A         90        TYR       HE%       6.930     0.020
-         A         90        TYR       HE%       7.330     0.020
+         A         90        TYR       HDx       7.860     0.020
+         A         90        TYR       HDy       7.380     0.020
+         A         90        TYR       HEx       6.930     0.020
+         A         90        TYR       HEy       7.330     0.020
          A         90        TYR       CA        58.300    0.500
          A         90        TYR       CB        42.000    0.500
-         A         90        TYR       CD%       132.800   0.500
-         A         90        TYR       CD%       133.800   0.500
-         A         90        TYR       CE%       118.200   0.500
-         A         90        TYR       CE%       116.000   0.500
+         A         90        TYR       CDx       132.800   0.500
+         A         90        TYR       CDy       133.800   0.500
+         A         90        TYR       CEx       118.200   0.500
+         A         90        TYR       CEy       116.000   0.500
          A         90        TYR       N         128.000   0.500
          A         91        PRO       HA        3.550     0.020
          A         91        PRO       HBx       1.450     0.020
