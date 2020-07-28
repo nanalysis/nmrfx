@@ -51,11 +51,11 @@ public class NEFFileTest {
 //        loadData("2ko1");
 //        testAll();
 //    }
-    @Test
-    public void testFile2PNG() throws IOException {
-        loadData("2png");
-        testAll();
-    }
+//    @Test
+//    public void testFile2PNG() throws IOException {
+//        loadData("2png");
+//        testAll();
+//    }
 //    @Test
 //    public void testFile2KZN() throws IOException {
 //        loadData("2kzn");
@@ -66,41 +66,41 @@ public class NEFFileTest {
 //        loadData("2kko");
 //        testAll();
 //    }
-//    @Test
-//    public void testFile2JUW() throws IOException {
-//        loadData("2juw");
-//        testAll();
-//    }
-//
-//    @Test
-//    public void testFile2JR2() throws IOException {
-//        loadData("2jr2");
-//        testAll();
-//    }
-//
-//    @Test
-//    public void testFile1PQX() throws IOException {
-//        loadData("1pqx");
-//        testAll();
-//    }
-//
-//    @Test
-//    public void testFile2K2E() throws IOException {
-//        loadData("2k2e");
-//        testAll();
-//    }
-//
-//    @Test
-//    public void testFile2KPU() throws IOException {
-//        loadData("2kpu");
-//        testAll();
-//    }
-//
-//    @Test
-//    public void testFile2KW5() throws IOException {
-//        loadData("2kw5");
-//        testAll();
-//    }
+    @Test
+    public void testFile2JUW() throws IOException {
+        loadData("2juw");
+        testAll();
+    }
+
+    @Test
+    public void testFile2JR2() throws IOException {
+        loadData("2jr2");
+        testAll();
+    }
+
+    @Test
+    public void testFile1PQX() throws IOException {
+        loadData("1pqx");
+        testAll();
+    }
+
+    @Test
+    public void testFile2K2E() throws IOException {
+        loadData("2k2e");
+        testAll();
+    }
+
+    @Test
+    public void testFile2KPU() throws IOException {
+        loadData("2kpu");
+        testAll();
+    }
+
+    @Test
+    public void testFile2KW5() throws IOException {
+        loadData("2kw5");
+        testAll();
+    }
 
 //    @Test
 //    public void testFile2LOY() throws IOException {
@@ -112,17 +112,18 @@ public class NEFFileTest {
 //        loadData("2luz");
 //        testAll();
 //    }
+//    
 //    @Test
 //    public void testFile2K07() throws IOException {
 //        loadData("2k07");
 //        testAll();
 //    }
 
-//    @Test
-//    public void testFile2KCU() throws IOException {
-//        loadData("2kcu");
-//        testAll();
-//    }
+    @Test
+    public void testFile2KCU() throws IOException {
+        loadData("2kcu");
+        testAll();
+    }
     
 //    @Test
 //    public void testFile6NBN() throws IOException {
