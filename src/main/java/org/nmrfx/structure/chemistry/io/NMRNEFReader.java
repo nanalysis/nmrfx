@@ -296,15 +296,19 @@ public class NMRNEFReader {
                 String fullAtom = chainCode + ":" + sequenceCode + "." + atomName;
                 //  System.out.println(fullAtom);
                 List<Atom> atoms = Molecule.getNEFMatchedAtoms(new MolFilter(fullAtom), Molecule.getActive());
-                // System.out.println(atoms.toString());
+//                System.out.println(atoms.toString());
                 for (Atom atom : atoms) {
                     if (atom.isMethyl()) {
-                        if (atomName.contains("x") || atomName.contains("y")) {
-                            atom.getParent().setStereo(0);
-                        } else {
-                            atom.getParent().setStereo(1);
+                        if (atoms.size() == 3) {
+                            if (atomName.contains("x") || atomName.contains("y")) {
+                                atom.getParent().setStereo(0);
+                            } else {
+                                atom.getParent().setStereo(1);
+                            }
+                            atom.setStereo(0);
+                        } else if (atoms.size() == 6) {
+                            atom.setStereo(-1);
                         }
-                        atom.setStereo(0);
                     } else {
                         if (atomName.contains("x") || atomName.contains("y") || atomName.contains("%")) {
                             atom.setStereo(0);
@@ -453,12 +457,9 @@ public class NMRNEFReader {
         List<String> lowerColumn = loop.getColumnAsList("lower_limit");
         List<String> upperColumn = loop.getColumnAsList("upper_limit");
         ArrayList<String> atomNames[] = new ArrayList[2];
-        ArrayList<Integer> aNameFlags[] = new ArrayList[2];
 //        String[] resNames = new String[2];
         atomNames[0] = new ArrayList<>();
         atomNames[1] = new ArrayList<>();
-        aNameFlags[0] = new ArrayList<>();
-        aNameFlags[1] = new ArrayList<>();
 
         for (int i = 0; i < chainCodeColumns[0].size(); i++) {
             int restraintIDValue = restraintIDColumn.get(i);
@@ -474,8 +475,6 @@ public class NMRNEFReader {
             if (restraintIDValue != restraintIDValuePrev) {
                 atomNames[0].clear();
                 atomNames[1].clear();
-                aNameFlags[0].clear();
-                aNameFlags[1].clear();
                 if (restraintIDValue == restraintIDValueNext
                         && i > 0 && i < chainCodeColumns[0].size() - 1) {
                     addConstraint = false;
@@ -498,11 +497,6 @@ public class NMRNEFReader {
                 String resName = (String) residueNameColumns[iAtom].get(i);
                 String atomName = (String) atomNameColumns[iAtom].get(i);
                 atomNames[iAtom].add(chainCode + ":" + seqNum + "." + atomName);
-                if (atomName.contains("x") || atomName.contains("y")) {
-                    aNameFlags[iAtom].add(1);
-                } else {
-                    aNameFlags[iAtom].add(0);
-                }
 //                resNames[iAtom] = resName;
             }
             String weightValue = (String) weightColumn.get(i);
@@ -536,7 +530,7 @@ public class NMRNEFReader {
             Util.setStrictlyNEF(true);
             try {
                 if (addConstraint) {
-                    energyList.addDistanceConstraint(atomNames[0], atomNames[1], lower, upper, weight, target, targetErr, aNameFlags[0], aNameFlags[1]);
+                    energyList.addDistanceConstraint(atomNames[0], atomNames[1], lower, upper, weight, target, targetErr);
                 }
             } catch (IllegalArgumentException iaE) {
                 int index = indexColumn.get(i);

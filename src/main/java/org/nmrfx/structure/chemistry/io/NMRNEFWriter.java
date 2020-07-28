@@ -194,7 +194,7 @@ public class NMRNEFWriter {
         List<Atom> atomArray = molecule.getAtomArray();
         for (Atom atom : atomArray) {
             boolean writeLine = true;
-            int collapse = atom.getStereo() == 0 ? 1 : 0;
+            int collapse = atom.getStereo() <= 0 ? 1 : 0;
             int sameShift = 0;
             Optional<Atom> methylPartnerOpt = Optional.empty();
             Optional<Atom> partnerOpt = Optional.empty();
@@ -207,11 +207,30 @@ public class NMRNEFWriter {
                 if (methylPartnerOpt.isPresent()) {
                     if (atom.getParent().getStereo() == 0) {
                         collapse = 1;
+                    } else if (atom.getStereo() == -1) {
+                        collapse = 2;
                     }
                 }
+                if (collapse == 2) {
+                    if (atom.getParent().getID() > methylPartnerOpt.get().getID()) {
+                        continue;
+                    }
+                }
+                //collapse = atom.getStereo() == -1 ? 2 : atom.getStereo() == 0 ? 1 : 0;
+//                System.out.println("write  methyl  " + atom.getFullName() + " " + sameShift + " " + atom.getStereo() + " " + collapse);
             } else if (atom.isMethylene()) {
 //                System.out.println(atom.getFullName() + " " + atom.getPartners(1).toString());
                 List<List<Atom>> partners = atom.getPartners(1);
+                sameShift = checkPartnerShifts(atom, partners);
+                if (sameShift > 0) {
+                    if (!checkFirstPartner(atom, partners, sameShift)) {
+                        continue;
+                    }
+                }
+                //partnerOpt = atom.getMethylenePartner();
+            } else if (atom.isAromaticFlippable()) {
+//                System.out.println(atom.getFullName() + " " + atom.getPartners(1).toString());
+                List<List<Atom>> partners = atom.getPartners(-1);
                 sameShift = checkPartnerShifts(atom, partners);
                 if (sameShift > 0) {
                     if (!checkFirstPartner(atom, partners, sameShift)) {
@@ -294,8 +313,6 @@ public class NMRNEFWriter {
         for (int i = 0; i < distList.size(); i++) {
             DistancePair distPair = distList.get(i);
             AtomDistancePair[] pairAtoms = distPair.getAtomPairs();
-            int a1Flag = distPair.getA1NameFlags()[0];
-            int a2Flag = distPair.getA2NameFlags()[0];
             int nPairs = pairAtoms.length;
             int[][] collapse = new int[nPairs][2];
             boolean[] skipPair = new boolean[nPairs];
@@ -397,7 +414,7 @@ public class NMRNEFWriter {
                 }
                 Atom atom1 = pair.getAtoms1()[0];
                 Atom atom2 = pair.getAtoms2()[0];
-                result = Atom.toNEFDistanceString(idx, collapse[iPair], restraintID, ".", distPair, atom1, atom2, a1Flag, a2Flag);
+                result = Atom.toNEFDistanceString(idx, collapse[iPair], restraintID, ".", distPair, atom1, atom2);
                 chan.write(result + "\n");
                 idx++;
 

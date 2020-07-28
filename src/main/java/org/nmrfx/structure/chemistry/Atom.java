@@ -788,7 +788,7 @@ public class Atom implements IAtom {
     public boolean getProperty(int propIndex) {
         return spatialSet.getProperty(propIndex);
     }
-    
+
     public void setDihedral(double value) {
         dihedralAngle = (float) Math.toRadians(value);
     }
@@ -1182,37 +1182,32 @@ public class Atom implements IAtom {
      * Change atom names to NEF format.
      *
      * @param atom Atom to format.
-     * @param aFlag int Flag for x/y changes. 1 for x/y, 0 for all others.
      * @return writename. String. The formatted atom name.
      */
-    public static String formatNEFAtomName(Atom atom, int aFlag) {
+    public static String formatNEFAtomName(Atom atom) {
         String writeName = atom.name;
         if (!atom.isMethyl()) {
             if (atom.getStereo() == 0) { //x or y changes
                 Atom[] partners = atom.getPartners(1, 1);
                 if (partners.length == 1) {
-                    if (aFlag == 1) {
-                        if (atom.getIndex() < partners[0].getIndex()) {
-                            writeName = atom.name.substring(0, atom.name.length() - 1) + "x";
-                        } else {
-                            writeName = atom.name.substring(0, atom.name.length() - 1) + "y";
-                        } 
-                    }
+                    if (atom.getIndex() < partners[0].getIndex()) {
+                        writeName = atom.name.substring(0, atom.name.length() - 1) + "x";
+                    } else {
+                        writeName = atom.name.substring(0, atom.name.length() - 1) + "y";
+                    } 
                 }
             }
         } else {
-            if (atom.getParent().getStereo() == 0) {
+            if (atom.getStereo() == -1) {
+                writeName = atom.name.substring(0, atom.name.length() - 2) + "%";
+            } else if (atom.getParent().getStereo() == 0) {
                 Atom parent = atom.getParent();
                 Optional<Atom> methylCarbonPartner = parent.getMethylCarbonPartner();
                 if (methylCarbonPartner.isPresent()) {
-                    if (aFlag == 1) {
-                        if (atom.getParent().getIndex() < methylCarbonPartner.get().getIndex()) {
-                            writeName = atom.name.substring(0, atom.name.length() - 2) + "x%";
-                        } else {
-                            writeName = atom.name.substring(0, atom.name.length() - 2) + "y%";
-                        }
+                    if (atom.getParent().getIndex() < methylCarbonPartner.get().getIndex()) {
+                        writeName = atom.name.substring(0, atom.name.length() - 2) + "x%";
                     } else {
-                        writeName = atom.name.substring(0, atom.name.length() - 1) + "%";
+                        writeName = atom.name.substring(0, atom.name.length() - 2) + "y%";
                     }
                 } else {
                     writeName = atom.name.substring(0, atom.name.length() - 1) + "%";
@@ -1262,9 +1257,11 @@ public class Atom implements IAtom {
         String writeName;
         if (isMethyl()) {
             int nameLen = name.length();
-            if (collapse > 0) {
+            if (collapse == 1) {
                 String xy = name.charAt(nameLen - 2) == '2' ? "y" : "x";
                 writeName = name.substring(0, nameLen - 2) + xy + "%";
+            } else if (collapse == 2) {
+                writeName = name.substring(0, nameLen - 2) + "%";
             } else {
                 writeName = name.substring(0, nameLen - 1) + "%";
             }
@@ -1319,9 +1316,8 @@ public class Atom implements IAtom {
      * @param atom2 Atom. Second atom in the AtomDistancePair object.
      * @return String in NEF format.
      */
-    public static String toNEFDistanceString(int index, int[] aCollapse, int restraintID, String restraintComboID, DistancePair distPair, Atom atom1, Atom atom2, int a1Flag, int a2Flag) {
+    public static String toNEFDistanceString(int index, int[] aCollapse, int restraintID, String restraintComboID, DistancePair distPair, Atom atom1, Atom atom2) {
         Atom[] atoms = {atom1, atom2};
-        int[] aFlags = {a1Flag, a2Flag};
 
         StringBuilder sBuilder = new StringBuilder();
         if (atom1.entity instanceof Residue && atom2.entity instanceof Residue) {
@@ -1356,14 +1352,14 @@ public class Atom implements IAtom {
                     if (collapse == 2) {
                         writeName = atoms[a].name.substring(0, atoms[a].name.length() - collapse) + "%";
                     } else {
-                        writeName = formatNEFAtomName(atoms[a], aFlags[a]);
+                        writeName = formatNEFAtomName(atoms[a]);
 
                     }
                 } else {
                     if (collapse > 0) {
                         writeName = atoms[a].name.substring(0, atoms[a].name.length() - collapse) + "%";
                     } else {
-                        writeName = formatNEFAtomName(atoms[a], aFlags[a]);
+                        writeName = formatNEFAtomName(atoms[a]);
                     }
                 }
 //                System.out.println(chainID + " " + seqCode + " " + resName + " " + atoms[a].name + " " + writeName);
@@ -1387,11 +1383,11 @@ public class Atom implements IAtom {
 
             // lower limit
             double lower = distPair.getLower();
-            sBuilder.append(String.format("%-8.2f", lower));
+            sBuilder.append(String.format("%-8.3f", lower));
 
             // upper limit
             double upper = distPair.getUpper();
-            sBuilder.append(String.format("%-8.2f", upper));
+            sBuilder.append(String.format("%-8.3f", upper));
 
         }
 
@@ -1456,13 +1452,11 @@ public class Atom implements IAtom {
             sBuilder.append(String.format("%9.3f", targetErr));
 
             // lower limit
-            double lower1 = Math.toDegrees(bound.getLower());
-            double lower = Math.round(lower1 * 100000d) / 100000d;
+            double lower = Math.toDegrees(bound.getLower());
             sBuilder.append(String.format("%9.3f", lower));
 
             // upper limit
-            double upper1 = Math.toDegrees(bound.getUpper());
-            double upper = Math.round(upper1 * 100000d) / 100000d;
+            double upper = Math.toDegrees(bound.getUpper());
             sBuilder.append(String.format("%9.3f", upper));
 
             // name
@@ -1967,7 +1961,7 @@ public class Atom implements IAtom {
             Molecule.findEquivalentAtoms(entity);
         }
         int shells = 2;
-        if ((aNum == targetANum) && (equivAtoms != null) && (equivAtoms.size() > 0)) {
+        if (((targetANum == -1) || (aNum == targetANum)) && (equivAtoms != null) && (equivAtoms.size() > 0)) {
             for (int i = 0; (i < equivAtoms.size()) && (i < shells); i++) {
                 AtomEquivalency aEquiv = equivAtoms.get(i);
                 if (!aEquiv.getAtoms().isEmpty()) {
@@ -2019,6 +2013,48 @@ public class Atom implements IAtom {
         }
         return result;
     }
+
+    public boolean isAromaticFlippable() {
+        boolean result = false;
+        if (entity.getName().equalsIgnoreCase("tyr") || (entity.getName().equalsIgnoreCase("phe"))) {
+            if ((name.length() == 3)) {
+                char aChar = name.charAt(1);
+                if ((aChar == 'D') || (aChar == 'E')) {
+                    result = true;
+                }
+            }
+        }
+
+        return result;
+    }
+
+    public Optional<Atom> getAromaticPartner() {
+        Optional<Atom> result = Optional.empty();
+        if ((parent != null)) {
+            if (entity.getName().equalsIgnoreCase("tyr") || (entity.getName().equalsIgnoreCase("phe"))) {
+                if (name.length() == 3) {
+                    char aChar = name.charAt(1);
+                    if ((aChar == 'D') || (aChar == 'E')) {
+                        StringBuilder partnerBuilder = new StringBuilder();
+                        partnerBuilder.append(name.charAt(0));
+                        partnerBuilder.append(name.charAt(1));
+                        if (name.charAt(2) == '1') {
+                            partnerBuilder.append('2');
+                        } else {
+                            partnerBuilder.append('1');
+                        }
+                        Residue residue = (Residue) entity;
+                        Atom atom = residue.getAtom(partnerBuilder.toString());
+                        if (atom != null) {
+                            result = Optional.of(atom);
+                        }
+                    }
+                }
+            }
+        }
+        return result;
+    }
+
 //###################################################################
 //#       Chemical Shift Ambiguity Index Value Definitions          #
 //#                                                                 #
@@ -2039,7 +2075,6 @@ public class Atom implements IAtom {
 //#      9             Ambiguous, specific ambiguity not defined    #
 //#                                                                 #
 //###################################################################
-
     public int getBMRBAmbiguity() {
         if (!entity.hasEquivalentAtoms()) {
             Molecule.findEquivalentAtoms(entity);

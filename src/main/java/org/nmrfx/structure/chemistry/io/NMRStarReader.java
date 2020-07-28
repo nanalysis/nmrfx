@@ -1637,7 +1637,7 @@ public class NMRStarReader {
 
             Util.setStrictlyNEF(true);
             try {
-                energyList.addDistanceConstraint(atomNames[0], atomNames[1], lower, upper, null, null, null, null, null);
+                energyList.addDistanceConstraint(atomNames[0], atomNames[1], lower, upper, null, null, null);
             } catch (IllegalArgumentException iaE) {
                 int index = indexColumn.get(i);
                 throw new ParseException("Error parsing NEF distance constraints at index  \"" + index + "\" " + iaE.getMessage());
