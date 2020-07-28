@@ -92,7 +92,7 @@ public class NEFFileTest {
 //
 //    @Test
 //    public void testFile2KPU() throws IOException {
-//        loadData("2kpu"); 
+//        loadData("2kpu");
 //        testAll();
 //    }
 //
@@ -112,13 +112,12 @@ public class NEFFileTest {
 //        loadData("2luz");
 //        testAll();
 //    }
-    
 //    @Test
 //    public void testFile2K07() throws IOException {
 //        loadData("2k07");
 //        testAll();
 //    }
-    
+
 //    @Test
 //    public void testFile2KCU() throws IOException {
 //        loadData("2kcu");
@@ -315,20 +314,20 @@ public class NEFFileTest {
         }
     }
 
-    public boolean compareMaps(Map<String, List<Object>> origMap, Map<String, List<Object>> writtenMap) throws IOException {
+    public boolean compareMaps(String mode, Map<String, List<Object>> origMap, Map<String, List<Object>> writtenMap) throws IOException {
         try {
             boolean ok = true;
             for (Entry<String, List<Object>> entry : origMap.entrySet()) {
                 String key = entry.getKey();
                 if (!writtenMap.containsKey(key)) {
-                    System.out.println("key " + key + " not in written");
+                    System.out.println(mode + " key " + key + " not in written");
                     ok = false;
                 } else {
                     List<Object> origValues = entry.getValue();
                     List<Object> writtenValues = writtenMap.get(key);
                     for (int i = 0; i < origValues.size(); i++) {
                         if (!origValues.get(i).equals(writtenValues.get(i))) {
-                            System.out.println(key + " " + origValues.toString() + " " + writtenValues.toString());
+                            System.out.println(mode + " " + key + " " + origValues.toString() + " " + writtenValues.toString());
                             ok = false;
                         }
                     }
@@ -337,7 +336,7 @@ public class NEFFileTest {
             for (Entry<String, List<Object>> entry : writtenMap.entrySet()) {
                 String key = entry.getKey();
                 if (!origMap.containsKey(key)) {
-                    System.out.println("key " + key + " not in orig");
+                    System.out.println(mode + " key " + key + " not in orig");
                     ok = false;
                 }
             }
@@ -359,7 +358,7 @@ public class NEFFileTest {
         try {
             Map<String, List<Object>> origSeq = buildSequenceMap(orig);
             Map<String, List<Object>> writtenSeq = buildSequenceMap(written);
-            boolean ok = compareMaps(origSeq, writtenSeq);
+            boolean ok = compareMaps("seq", origSeq, writtenSeq);
             Assert.assertTrue(ok);
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -370,7 +369,7 @@ public class NEFFileTest {
         try {
             Map<String, List<Object>> origShift = buildChemShiftMap(orig);
             Map<String, List<Object>> writtenShift = buildChemShiftMap(written);
-            boolean ok = compareMaps(origShift, writtenShift);
+            boolean ok = compareMaps("shifts", origShift, writtenShift);
             Assert.assertTrue(ok);
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -381,22 +380,22 @@ public class NEFFileTest {
         try {
             Map<String, List<Object>> origDist = buildDistanceMap(orig);
             Map<String, List<Object>> writtenDist = buildDistanceMap(written);
-            boolean ok = compareMaps(origDist, writtenDist);
+            boolean ok = compareMaps("distance", origDist, writtenDist);
             Assert.assertTrue(ok);
         } catch (Exception ex) {
             ex.printStackTrace();
         }
     }
-    
+
     public void testDihedralBlock() throws IOException {
         try {
             Map<String, List<Object>> origDihedral = buildDihedralMap(orig);
             Map<String, List<Object>> writtenDihedral = buildDihedralMap(written);
-            boolean ok = compareMaps(origDihedral, writtenDihedral);
+            boolean ok = compareMaps("dihedral", origDihedral, writtenDihedral);
             Assert.assertTrue(ok);
         } catch (Exception ex) {
             ex.printStackTrace();
         }
     }
-  
+
 }
