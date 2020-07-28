@@ -296,15 +296,19 @@ public class NMRNEFReader {
                 String fullAtom = chainCode + ":" + sequenceCode + "." + atomName;
                 //  System.out.println(fullAtom);
                 List<Atom> atoms = Molecule.getNEFMatchedAtoms(new MolFilter(fullAtom), Molecule.getActive());
-                // System.out.println(atoms.toString());
+//                System.out.println(atoms.toString());
                 for (Atom atom : atoms) {
                     if (atom.isMethyl()) {
-                        if (atomName.contains("x") || atomName.contains("y")) {
-                            atom.getParent().setStereo(0);
-                        } else {
-                            atom.getParent().setStereo(1);
+                        if (atoms.size() == 3) {
+                            if (atomName.contains("x") || atomName.contains("y")) {
+                                atom.getParent().setStereo(0);
+                            } else {
+                                atom.getParent().setStereo(1);
+                            }
+                            atom.setStereo(0);
+                        } else if (atoms.size() == 6) {
+                            atom.setStereo(-1);
                         }
-                        atom.setStereo(0);
                     } else {
                         if (atomName.contains("x") || atomName.contains("y") || atomName.contains("%")) {
                             atom.setStereo(0);
