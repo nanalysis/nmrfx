@@ -18,14 +18,9 @@ if len(sys.argv) > 0:
         import predictor
     elif sys.argv[0] == "super":
         import super
-        args = super.parseArgs()
-        excludeRes = args[0]
-        excludeAtoms = args[1]
-        includeRes = args[2]
-        includeAtoms = args[3]
-        files = args[4]
+        files = [arg for arg in sys.argv if ".pdb" in arg]
         if len(files) > 1:
-            super.runSuper(excludeRes, excludeAtoms, includeRes, includeAtoms, files)
+            super.runSuper(files)
 
 
     elif sys.argv[0] == "train":
