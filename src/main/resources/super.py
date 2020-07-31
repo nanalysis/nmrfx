@@ -43,6 +43,7 @@ def parseArgs():
     parser.add_argument("-a", dest="atomListE", default='', help="Atoms to exclude from comparison.")
     parser.add_argument("-R", dest="resListI", default="*", help="Residues to include in comparison")
     parser.add_argument("-A", dest="atomListI", default="*", help="Atoms to include in comparison")
+    parser.add_argument("-c", dest="refCompare", action='store_true', default=False, help="Whether to compare all calculated structures to reference structure.")
     parser.add_argument("fileNames",nargs="*")
     args = parser.parse_args()
 
@@ -50,7 +51,7 @@ def parseArgs():
 
     # print resListE, atomListE, resListI, atomListI, fileNames
 
-    return args.resListE, args.atomListE, args.resListI, args.atomListI, fileNames
+    return args.resListE, args.atomListE, args.resListI, args.atomListI, args.refCompare, fileNames
 
 def getResList(resArg):
     if ";" in resArg: #multiple chains separated by ; (e.g. A: 2-5, 10; B: 1-4, 12)
@@ -187,7 +188,7 @@ def findCore(mol, minIndex):
                  rms = residueRMS[residue]
                  if rms < 2.0*med:
                      newState = 'in'
-            
+
             if state == "out":
                 if newState == "out":
                     pass
@@ -236,7 +237,8 @@ def saveModels(mol, files):
         molio.savePDB(mol, newFile, i)
 
 def makeResAtomLists(polymers, excludeRes, excludeAtoms, includeRes, includeAtoms):
-    allRes = polymers.get(0).getResidues() #fixme should account for multiple polymers
+    allRes1 = [polymers.get(i).getResidues() for i in range(len(polymers))]
+    allRes = set([res for subList in allRes1 for res in subList])
     if excludeRes == '' and includeRes != '':
         if "," in includeRes:
             resSplit = includeRes.split(",")
@@ -278,7 +280,14 @@ def makeFormattedRMSFile(files, rmsVals):
         for key in sorted(rmsDict.keys()):
             formattedFile.write("{}\t{}\n".format(key, rmsDict[key]))
 
-def runSuper(excludeRes, excludeAtoms, includeRes, includeAtoms, files, newBase='super'):
+def runSuper(files, parse=True, newBase='super', excludeRes='', excludeAtoms='', includeRes='*', includeAtoms='*', compareRef=False):
+    if parse:
+        args = parseArgs()
+        excludeRes = args[0]
+        excludeAtoms = args[1]
+        includeRes = args[2]
+        includeAtoms = args[3]
+        compareRef = args[4]
     mol = loadPDBModels(files)
     polymers = mol.getPolymers()
     print excludeRes, excludeAtoms, includeRes, includeAtoms
@@ -294,8 +303,9 @@ def runSuper(excludeRes, excludeAtoms, includeRes, includeAtoms, files, newBase=
         (minI,rms,avgRMS) = findRepresentative(mol, coreRes, atoms)
         print 'repModel',minI,'rms',rms,'avgrms',avgRMS
         superImpose(mol, minI, coreRes, atoms)
-        calcRefComparisons = superImpose(mol, len(files), coreRes, atoms)
-        makeFormattedRMSFile(files, calcRefComparisons)
+        if compareRef:
+            calcRefComparisons = superImpose(mol, len(files), coreRes, atoms)
+            makeFormattedRMSFile(files, calcRefComparisons)
     else:
         (minI,rms,avgRMS) = findRepresentative(mol,'*','c*,n*,o*,p*')
         print 'repModel',minI,'rms',rms,'avgrms',avgRMS

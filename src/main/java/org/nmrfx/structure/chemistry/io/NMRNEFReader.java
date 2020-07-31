@@ -468,9 +468,9 @@ public class NMRNEFReader {
             boolean addConstraint = true;
             if (i >= 1) {
                 restraintIDValuePrev = restraintIDColumn.get(i - 1);
-                if (i < chainCodeColumns[0].size() - 1) {
-                    restraintIDValueNext = restraintIDColumn.get(i + 1);
-                }
+            }
+            if (i < chainCodeColumns[0].size() - 1) {
+                restraintIDValueNext = restraintIDColumn.get(i + 1);
             }
             if (restraintIDValue != restraintIDValuePrev) {
                 atomNames[0].clear();
@@ -481,7 +481,7 @@ public class NMRNEFReader {
                 }
             } else if (restraintIDValue == restraintIDValuePrev
                     && restraintIDValue == restraintIDValueNext
-                    && i > 0 && i < chainCodeColumns[0].size() - 1) {
+                    && i >= 0 && i < chainCodeColumns[0].size() - 1) {
                 addConstraint = false;
             }
 
