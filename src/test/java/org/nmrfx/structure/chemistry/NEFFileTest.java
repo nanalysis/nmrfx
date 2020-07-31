@@ -87,6 +87,12 @@ public class NEFFileTest {
         loadData("1pqx");
         testAll();
     }
+    
+    @Test
+    public void testFile1PQX2() throws IOException {
+        loadData("1pqx_2");
+        testAll();
+    }
 
     @Test
     public void testFile2K2E() throws IOException {
