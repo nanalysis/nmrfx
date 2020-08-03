@@ -43,15 +43,13 @@ def parseArgs():
     parser.add_argument("-a", dest="atomListE", default='', help="Atoms to exclude from comparison.")
     parser.add_argument("-R", dest="resListI", default="*", help="Residues to include in comparison")
     parser.add_argument("-A", dest="atomListI", default="*", help="Atoms to include in comparison")
-    parser.add_argument("-c", dest="refCompare", action='store_true', default=False, help="Whether to compare all calculated structures to reference structure.")
+    parser.add_argument("--c", dest="refCompare", nargs="?", help="Optional: Whether to compare calculated structures to reference structure, with optional output to a specified file.")
     parser.add_argument("fileNames",nargs="*")
     args = parser.parse_args()
+    files = args.fileNames
+    if len(files) > 1:
+        runSuper(files, 'super', args.resListE, args.atomListE, args.resListI, args.atomListI, args.refCompare)
 
-    fileNames = args.fileNames
-
-    # print resListE, atomListE, resListI, atomListI, fileNames
-
-    return args.resListE, args.atomListE, args.resListI, args.atomListI, args.refCompare, fileNames
 
 def getResList(resArg):
     if ";" in resArg: #multiple chains separated by ; (e.g. A: 2-5, 10; B: 1-4, 12)
@@ -270,24 +268,20 @@ def makeResAtomLists(polymers, excludeRes, excludeAtoms, includeRes, includeAtom
 
     return resList, atoms
 
-def makeFormattedRMSFile(files, rmsVals):
-    with open('calcRefCoreRMS.txt', 'w') as formattedFile:
-        rmsDict = {}
+def makeRMSDict(files, rmsVals):
+    rmsDict = {}
+    for i in range(len(rmsVals)):
+        sNum = int(re.findall(r'\d+', files[i])[0])
+        rmsDict[sNum] = rmsVals[i]
+    return rmsDict
+
+def makeFormattedRMSFile(rmsDict, outFileName):
+    with open(outFileName, 'w') as formattedFile:
         formattedFile.write("{}\t{}\n".format("Structure", "RMS"))
-        for i in range(len(rmsVals)):
-            sNum = int(re.findall(r'\d+', files[i])[0])
-            rmsDict[sNum] = rmsVals[i]
         for key in sorted(rmsDict.keys()):
             formattedFile.write("{}\t{}\n".format(key, rmsDict[key]))
 
-def runSuper(files, parse=True, newBase='super', excludeRes='', excludeAtoms='', includeRes='*', includeAtoms='*', compareRef=False):
-    if parse:
-        args = parseArgs()
-        excludeRes = args[0]
-        excludeAtoms = args[1]
-        includeRes = args[2]
-        includeAtoms = args[3]
-        compareRef = args[4]
+def runSuper(files, newBase='super', excludeRes='', excludeAtoms='', includeRes='*', includeAtoms='*', compareRef=None):
     mol = loadPDBModels(files)
     polymers = mol.getPolymers()
     print excludeRes, excludeAtoms, includeRes, includeAtoms
@@ -303,9 +297,16 @@ def runSuper(files, parse=True, newBase='super', excludeRes='', excludeAtoms='',
         (minI,rms,avgRMS) = findRepresentative(mol, coreRes, atoms)
         print 'repModel',minI,'rms',rms,'avgrms',avgRMS
         superImpose(mol, minI, coreRes, atoms)
-        if compareRef:
+        if compareRef is not None: #--c included as last argument before PDB files
             calcRefComparisons = superImpose(mol, len(files), coreRes, atoms)
-            makeFormattedRMSFile(files, calcRefComparisons)
+            rmsDict = makeRMSDict(files, calcRefComparisons)
+            if ".pdb" in compareRef: #--c specified before PDB files with no output filename, i.e. do comparison but don't output to a file
+                print("{}\t{}".format("Structure", "RMS"))
+                for key in sorted(rmsDict.keys()):
+                    print("{}\t{}".format(key, rmsDict[key]))
+            elif ".pdb" not in compareRef: #--c specified with output filename
+                makeFormattedRMSFile(rmsDict, compareRef)
+                print "RMS comparisons to reference structure saved to file:", compareRef
     else:
         (minI,rms,avgRMS) = findRepresentative(mol,'*','c*,n*,o*,p*')
         print 'repModel',minI,'rms',rms,'avgrms',avgRMS
@@ -315,3 +316,6 @@ def runSuper(files, parse=True, newBase='super', excludeRes='', excludeAtoms='',
     (base,ext) = os.path.splitext(fileName)
 
     saveModels(mol, files)
+
+def runAllSuper(files, newBase='super', excludeRes='', excludeAtoms='', includeRes='*', includeAtoms="ca,c,n,o,p,o5',c5',c4',c3',o3'"):
+    runSuper(files, newBase, excludeRes, excludeAtoms, includeRes, includeAtoms)
