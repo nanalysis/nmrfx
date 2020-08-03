@@ -224,7 +224,7 @@ def parseArgs():
         else:
             files = glob.glob(os.path.join(finDir,'final*.pdb'))
         if len(files) > 1:
-            runSuper(files, False, base)
+            runAllSuper(files, base)
 
 parseArgs()
 
