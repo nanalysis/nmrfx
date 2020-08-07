@@ -553,6 +553,9 @@ public class PDBFile {
                     if (string.startsWith("HETATM") || ((compoundEntity != null) && (compoundEntity instanceof Compound))) {
                         hetAtom = true;
                     }
+                    if (compoundEntity == null) {
+                        hetAtom = false;
+                    }
                     Atom atom = null;
                     String thisChain;
 
