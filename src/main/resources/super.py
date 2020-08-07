@@ -43,14 +43,17 @@ def parseArgs():
     parser.add_argument("-a", dest="atomListE", default='', help="Atoms to exclude from comparison.")
     parser.add_argument("-R", dest="resListI", default="*", help="Residues to include in comparison")
     parser.add_argument("-A", dest="atomListI", default="*", help="Atoms to include in comparison")
+    parser.add_argument("-c", dest="refCompare", action='store_true', help="Whether to compare calculated structures to reference structure, and save output to a file.")
+    parser.add_argument("-s", dest="saveModels", action='store_true', help="Whether to save aligned models.")
+    parser.add_argument("-n", dest="nCore", default=5, type=int, help="Number of core residue cycles. Default is 5.")
     parser.add_argument("fileNames",nargs="*")
     args = parser.parse_args()
+    if (args.nCore <= 0):
+        print "Error: n must be > 0."
+        sys.exit()
+    if len(args.fileNames) > 1:
+        runSuper(args)
 
-    fileNames = args.fileNames
-
-    # print resListE, atomListE, resListI, atomListI, fileNames
-
-    return args.resListE, args.atomListE, args.resListI, args.atomListI, fileNames
 
 def getResList(resArg):
     if ";" in resArg: #multiple chains separated by ; (e.g. A: 2-5, 10; B: 1-4, 12)
@@ -187,7 +190,7 @@ def findCore(mol, minIndex):
                  rms = residueRMS[residue]
                  if rms < 2.0*med:
                      newState = 'in'
-            
+
             if state == "out":
                 if newState == "out":
                     pass
@@ -236,7 +239,8 @@ def saveModels(mol, files):
         molio.savePDB(mol, newFile, i)
 
 def makeResAtomLists(polymers, excludeRes, excludeAtoms, includeRes, includeAtoms):
-    allRes = polymers.get(0).getResidues() #fixme should account for multiple polymers
+    allRes1 = [polymers.get(i).getResidues() for i in range(len(polymers))]
+    allRes = set([res for subList in allRes1 for res in subList])
     if excludeRes == '' and includeRes != '':
         if "," in includeRes:
             resSplit = includeRes.split(",")
@@ -268,34 +272,42 @@ def makeResAtomLists(polymers, excludeRes, excludeAtoms, includeRes, includeAtom
 
     return resList, atoms
 
-def makeFormattedRMSFile(files, rmsVals):
-    with open('calcRefCoreRMS.txt', 'w') as formattedFile:
-        rmsDict = {}
+def makeRMSDict(files, rmsVals):
+    rmsDict = {}
+    for i in range(len(rmsVals)):
+        sNum = int(re.findall(r'\d+', files[i])[0])
+        rmsDict[sNum] = rmsVals[i]
+    return rmsDict
+
+def makeFormattedRMSFile(rmsDict, outFileName):
+    with open(outFileName, 'w') as formattedFile:
         formattedFile.write("{}\t{}\n".format("Structure", "RMS"))
-        for i in range(len(rmsVals)):
-            sNum = int(re.findall(r'\d+', files[i])[0])
-            rmsDict[sNum] = rmsVals[i]
         for key in sorted(rmsDict.keys()):
             formattedFile.write("{}\t{}\n".format(key, rmsDict[key]))
 
-def runSuper(excludeRes, excludeAtoms, includeRes, includeAtoms, files, newBase='super'):
+def runSuper(args):
+    files = args.fileNames
     mol = loadPDBModels(files)
     polymers = mol.getPolymers()
-    print excludeRes, excludeAtoms, includeRes, includeAtoms
-    resList, atoms = makeResAtomLists(polymers, excludeRes, excludeAtoms, includeRes, includeAtoms)
-    nCore = 5
+    # print files
+    print args.resListE, args.atomListE, args.resListI, args.atomListI
+    resList, atoms = makeResAtomLists(polymers, args.resListE, args.atomListE, args.resListI, args.atomListI)
     if len(polymers) > 0:
         (minI,rms,avgRMS) = findRepresentative(mol, resList, atoms)
         print 'repModel',minI,'rms',rms,'avgrms',avgRMS
-        for iCore in range(nCore):
+        for iCore in range(args.nCore):
             coreRes = findCore(mol, minI)
             print 'coreResidues',coreRes
             doSelections(mol, coreRes,atoms)
         (minI,rms,avgRMS) = findRepresentative(mol, coreRes, atoms)
         print 'repModel',minI,'rms',rms,'avgrms',avgRMS
         superImpose(mol, minI, coreRes, atoms)
-        calcRefComparisons = superImpose(mol, len(files), coreRes, atoms)
-        makeFormattedRMSFile(files, calcRefComparisons)
+        if args.refCompare:
+            calcRefComparisons = superImpose(mol, len(files), coreRes, atoms)
+            rmsDict = makeRMSDict(files, calcRefComparisons)
+            outFile = 'calcRefCoreRMS.txt'
+            makeFormattedRMSFile(rmsDict, outFile)
+            print "RMS comparisons to reference structure saved to file:", outFile
     else:
         (minI,rms,avgRMS) = findRepresentative(mol,'*','c*,n*,o*,p*')
         print 'repModel',minI,'rms',rms,'avgrms',avgRMS
@@ -303,5 +315,11 @@ def runSuper(excludeRes, excludeAtoms, includeRes, includeAtoms, files, newBase=
         superImpose(mol, minI, coreRes,'c*,n*,o*,p*')
     (dir,fileName) = os.path.split(files[0])
     (base,ext) = os.path.splitext(fileName)
+    if args.saveModels:
+        saveModels(mol, files)
 
-    saveModels(mol, files)
+def runAllSuper(files):
+    batchArgs = argparse.Namespace(atomListE='', atomListI="ca,c,n,o,p,o5',c5',c4',c3',o3'",
+                                fileNames=files, nCore=5, refCompare=False, resListE='',
+                                resListI='*', saveModels=True)
+    runSuper(batchArgs)
