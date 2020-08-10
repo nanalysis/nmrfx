@@ -39,7 +39,7 @@ def loadPDBModels(files):
 
 def parseArgs():
     parser = argparse.ArgumentParser(description="super options")
-    parser.add_argument("-r", dest="resListE", default='', help="Residues to exclude from comparison. Can specify semi-colon-separated chains and comma-separated residue ranges and individual values (e.g. A: 2, 3; B: 2-5, 10).")
+    parser.add_argument("-r", dest="resListE", default='', help="Residues to exclude from comparison. Can specify residue ranges and individual values (e.g. 2-5 or 10).")
     parser.add_argument("-a", dest="atomListE", default='', help="Atoms to exclude from comparison.")
     parser.add_argument("-R", dest="resListI", default="*", help="Residues to include in comparison")
     parser.add_argument("-A", dest="atomListI", default="*", help="Atoms to include in comparison")
@@ -54,68 +54,6 @@ def parseArgs():
     if len(args.fileNames) > 1:
         runSuper(args)
 
-
-def getResList(resArg):
-    if ";" in resArg: #multiple chains separated by ; (e.g. A: 2-5, 10; B: 1-4, 12)
-        resList1 = []
-        chainSplit = resArg.split(";")
-        for chainArgs in chainSplit:
-            chain = chainArgs.split(":")[0].strip();
-            resArgs = chainArgs.split(":")[1].strip();
-            resList1.append(makeResList(resArgs, chain))
-        resList = [item for sublist in resList1 for item in sublist]
-    else: #single chain
-        if ":" in resArg: #chain specified (e.g. B: 5-10)
-            chain = resArg.split(":")[0].strip();
-            resArgs = resArg.split(":")[1].strip();
-            resList = makeResList(resArgs, chain)
-        else: #chain not specified (e.g. 2-5). Defaults to chain A
-            resList = makeResList(resArg, "A")
-    return resList
-
-def makeResList(resArg, chain):
-    # print resArg
-    if resArg == "":
-        resList = []
-    elif resArg == "*":
-        resList = [resArg]
-    else:
-        if ("-" in resArg) and ("," in resArg): #comma-separated ranges (e.g. 2-5, 10-12) or ranges and individual residues (e.g. 2-5, 7, 10-12, 20)
-            resList1 = []
-            resArgSplit = resArg.split(",")
-            for val in resArgSplit:
-                if "-" in val: #range of residues
-                    valSplit = val.split("-")
-                    firstRes = int(valSplit[0].strip())
-                    lastRes = int(valSplit[1].strip()) + 1
-                    resList1.append([res for res in range(firstRes, lastRes)])
-                else: #single residue
-                    resList1.append([val.strip()])
-            resList = ["{}.{}".format(chain, item) for sublist in resList1 for item in sublist]
-        elif "-" in resArg: #single range of residues (e.g. 2-5)
-            resArgSplit = resArg.split("-")
-            firstRes = int(resArgSplit[0].strip())
-            lastRes = int(resArgSplit[1].strip()) + 1
-            resList = ["{}.{}".format(chain, res) for res in range(firstRes, lastRes)]
-        elif "," in resArg: #comma-separated individual residues (e.g. 2, 3, 4, 5)
-            resListS = resArg.split(",")
-            resList = ["{}.{}".format(chain, res) for res in resListS if res != ""]
-
-    return resList
-
-def makeFileList(fileArg):
-    # print fileArg
-    if fileArg == "":
-        fileList = []
-    elif fileArg == "*": #use all final.pdb files
-        fileList = glob.glob(os.path.join('final','final*.pdb'))
-    elif "," in fileArg: #comma-separated individual files (e.g. final1.pdb, final2.pdb)
-        fileListS = fileArg.split(",")
-        fileList = [os.path.join('final',file.strip()) for file in fileListS if file != ""]
-    else: #single final.pdb file
-        fileList = [os.path.join('final',fileArg.strip())]
-
-    return fileList
 
 def findRepresentative(mol, resNums='*',atomNames="ca,c,n,o,p,o5',c5',c4',c3',o3'"):
     treeSet = TreeSet()
@@ -244,13 +182,18 @@ def makeResAtomLists(polymers, excludeRes, excludeAtoms, includeRes, includeAtom
     if excludeRes == '' and includeRes != '':
         if "," in includeRes:
             resSplit = includeRes.split(",")
-            resList = [resRange.strip() for resRange in resSplit]
+            resList = [item.strip() for item in resSplit]
         else:
             resList = [includeRes]
     elif excludeRes != '':
         allResNums = [res.getNumber() for res in allRes]
-        exclResSplit = excludeRes.split("-")
-        exclResNums = [str(num) for num in range(int(exclResSplit[0]), int(exclResSplit[1])+1)]
+        if "," in excludeRes:
+            resSplit = excludeRes.split(",")
+            exclResSplit = [item.split("-") for item in resSplit]
+        else:
+            exclResSplit = [excludeRes.split("-")]
+        exclResNums1 = [[str(num) for num in range(int(split[0]), int(split[-1])+1)] for split in exclResSplit]
+        exclResNums = set([res for subList in exclResNums1 for res in subList])
         resNums = [int(resNum) for resNum in allResNums if resNum not in exclResNums]
         resGroups = [map(itemgetter(1), g) for k, g in groupby(enumerate(resNums), lambda (i,x):i-x)]
         resList = ['{}-{}'.format(list[0], list[-1]) for list in resGroups]
