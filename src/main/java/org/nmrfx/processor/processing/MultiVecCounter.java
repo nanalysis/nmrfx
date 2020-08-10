@@ -31,7 +31,7 @@ import org.apache.commons.math3.util.MultidimensionalCounter;
  */
 public class MultiVecCounter {
 
-    public static boolean showDebugInfo = true;
+    public static boolean showDebugInfo = false;
     int[] osizes;
     int[] isizes;
     int[] inPhases;
@@ -94,7 +94,6 @@ public class MultiVecCounter {
      */
     public MultiVecCounter(int[] tdSizes, int[] outSizes, boolean[] complex, String[] modes, int datasetNDim) {
         nDim = tdSizes.length;
-        System.out.println("ndim " + nDim);
         osizes = new int[(nDim - 1) * 2];
         isizes = new int[(nDim - 1) * 2];
         this.datasetNDim = datasetNDim;
@@ -103,7 +102,6 @@ public class MultiVecCounter {
 
     void init(int[] tdSizes, int[] outSizes, boolean[] complex, String[] modes) {
         int nIDim = tdSizes.length - 1;  // number of indirect dimensions
-        System.out.println("nidim " + nIDim);
 
         // the index of the values in the multi-dimensional counter that references the phase increment
         //  of the input data
@@ -184,24 +182,6 @@ public class MultiVecCounter {
                 }
             }
         }
-//        int[] isizeA = {1, 1, 310, 2};
-//        int[] iPtA = {0, 2};
-//        int[] iPhA = {1, 3};
-//        int[] osizeA = {310, 1, 2, 1};
-//        int[] oPtA = {1, 0};
-//        int[] oPhA = {3, 2};
-        int[] isizeA = {155, 1, 2, 1, 2, 1};
-        int[] iPtA = {2, 0, 1};
-        int[] iPhA = {5, 3, 4};
-        int[] osizeA = {155, 1, 2, 1, 2, 1};
-        int[] oPtA = {2, 0, 1};
-        int[] oPhA = {5, 3, 4};
-//        isizes = isizeA;
-//        osizes = osizeA;
-//        inPhases = iPhA;
-//        inPoints = iPtA;
-//        outPhases = oPhA;
-//        outPoints = oPtA;
         if (showDebugInfo) {
             System.out.println("  MultiVecCounter: ");
             for (int i = 0; i < outPhases.length; i++) {
