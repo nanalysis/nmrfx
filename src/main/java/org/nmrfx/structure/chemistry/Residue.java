@@ -697,6 +697,15 @@ public class Residue extends Compound {
         return type;
     }
 
+    public void toDStereo() {
+        Atom atomCB = getAtom("CB");
+        Atom atomHA = getAtom("HA");
+        if ((atomCB != null) && (atomHA != null)) {
+            atomCB.setDihedral(-atomCB.getDihedral());
+            atomHA.setDihedral(-atomHA.getDihedral());
+        }
+    }
+
     public String toString() {
         return polymer.getName() + ":" + getName() + getNumber();
     }
