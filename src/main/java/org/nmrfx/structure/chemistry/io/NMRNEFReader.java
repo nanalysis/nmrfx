@@ -165,20 +165,10 @@ public class NMRNEFReader {
             }
             try {
                 String extension = "";
-                if (resName.equals("HIS")) {
-                    if (resVariant.contains(".")) {
-                        extension = "_deprotHE2";
-                    } else if (resVariant.replace("-H3", "").contains("-H")) {
-                        extension = "_deprotHD1_protHE2";
-                    } else if (resVariant.replace("+HXT", "").contains("+H")) {
-                        extension = "";
-                    }
-                } else {
-                    if (resVariant.replace("+HXT", "").contains("+H")) {
-                        extension = "_prot";
-                    } else if (resVariant.replace("-H3", "").contains("-H")) {
-                        extension = "_deprot";
-                    }
+                if (resVariant.replace("-H3", "").contains("-H")) {
+                    extension = "_deprot";
+                } else if (resVariant.replace("+HXT", "").contains("+H")) {
+                    extension = "_prot";
                 }
 //                if (resVariant.contains("-H3") || resVariant.contains("+HXT")) {
 //                    extension += "_NCtermVar";
