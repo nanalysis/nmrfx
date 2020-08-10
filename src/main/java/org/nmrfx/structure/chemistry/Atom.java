@@ -793,6 +793,10 @@ public class Atom implements IAtom {
         dihedralAngle = (float) Math.toRadians(value);
     }
 
+    public double getDihedral() {
+        return Math.toDegrees(dihedralAngle);
+    }
+
     public static double calcDistance(Point3 pt1, Point3 pt2) {
         double x;
         double y;
@@ -1194,7 +1198,7 @@ public class Atom implements IAtom {
                         writeName = atom.name.substring(0, atom.name.length() - 1) + "x";
                     } else {
                         writeName = atom.name.substring(0, atom.name.length() - 1) + "y";
-                    } 
+                    }
                 }
             }
         } else {
