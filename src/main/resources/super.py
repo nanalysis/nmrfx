@@ -48,8 +48,8 @@ def parseArgs():
     parser.add_argument("-n", dest="nCore", default=5, type=int, help="Number of core residue cycles. Default is 5.")
     parser.add_argument("fileNames",nargs="*")
     args = parser.parse_args()
-    if (args.nCore <= 0):
-        print "Error: n must be > 0."
+    if (args.nCore < 0):
+        print "Error: n must be >= 0."
         sys.exit()
     if len(args.fileNames) > 1:
         runSuper(args)
@@ -238,10 +238,13 @@ def runSuper(args):
     if len(polymers) > 0:
         (minI,rms,avgRMS) = findRepresentative(mol, resList, atoms)
         print 'repModel',minI,'rms',rms,'avgrms',avgRMS
-        for iCore in range(args.nCore):
-            coreRes = findCore(mol, minI)
-            print 'coreResidues',coreRes
-            doSelections(mol, coreRes,atoms)
+        if args.nCore > 0:
+            for iCore in range(args.nCore):
+                coreRes = findCore(mol, minI)
+                print 'coreResidues',coreRes
+                doSelections(mol, coreRes,atoms)
+        else:
+            coreRes = resList
         (minI,rms,avgRMS) = findRepresentative(mol, coreRes, atoms)
         print 'repModel',minI,'rms',rms,'avgrms',avgRMS
         superImpose(mol, minI, coreRes, atoms)

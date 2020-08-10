@@ -16,6 +16,7 @@ ATOM   CG     CC   1.52  115.10     0.0  0.32544
 ATOM   CD2    CW   1.36  129.86   180.0 -0.25349
 ATOM   HD2    H4   1.08  120.00   180.0  0.17642
 ATOM   NE2    NA   1.39  109.32   180.0 -0.24062
+ATOM   HE2    H    1.00  126.44   180.0  0.36772
 ATOM   CE1    CR   1.32  105.83     0.0  0.105470
 ATOM   HE1    H5   1.08  120.00   180.0  0.15078
 ATOM   ND1    NA   1.34  110.98     0.0 -0.61168
@@ -27,16 +28,16 @@ ATOM   O      O     1.24  180.00  120.0   -0.63888 end
 ATOM   OXT    OH    1.24  180.00  120.0   -0.63888 end
 FAMILY   -      N      H      CA    middle
 FAMILY   -      N      H      CA    end
-FAMILY   -      N      H1     H2     H3    CA    start   
+FAMILY   -      N      H1     H2     H3    CA    start  
 FAMILY   N      CA     C      CB     HA     
 FAMILY   CA     CB     CG     HB3    HB2    
 FAMILY   CB     CG     =CD2    -ND1
 FAMILY   CG     CD2    NE2    HD2    
-FAMILY   CD2    NE2    =CE1    
+FAMILY   CD2    NE2    =CE1    HE2
 FAMILY   NE2    CE1    ND1    HE1    
 FAMILY   CE1    ND1    HD1    
-FAMILY   CA     C      +     =O     
-FAMILY   CA     C      OXT    =O  end  
+FAMILY   CA     C      +     =O  
+FAMILY   CA     C      OXT    =O  end     
 ANGLE     CA      PHI 1
 ANGLE     CB     CHI1 2
 ANGLE     CG     CHI2 3
