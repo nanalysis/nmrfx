@@ -621,7 +621,7 @@ public class Sequence {
         boolean setPolymerType = false;
         String iRes = "1";
         String[] stringArg = new String[3];
-        Pattern pattern = Pattern.compile("[-/\\w/\\.]+");
+        Pattern pattern = Pattern.compile("[-/\\w/\\.:]+");
         String coordSetName = molName;
         ArrayList<String> coordSetNames = new ArrayList<>();
         ArrayList<Polymer> polymers = new ArrayList<>();
@@ -761,6 +761,13 @@ public class Sequence {
                 resName = resName.substring(0, minus);
             }
             String resFileName = resName.toLowerCase();
+            int colonIndex = resName.indexOf(":");
+            String changeMode = "";
+            if (colonIndex != -1) {
+                changeMode = resName.substring(colonIndex + 1);
+                resName = resName.substring(0, colonIndex);
+                resFileName = resName;
+            }
             int underIndex = resName.indexOf("_");
             if (underIndex != -1) {
                 resName = resName.substring(0, underIndex);
@@ -797,6 +804,9 @@ public class Sequence {
                 polymer.setCapped(true);
             }
             addResidue(reslibDir + "/" + Sequence.getAliased(resFileName) + ".prf", residue, resPos, coordSetName, true);
+            if (changeMode.equalsIgnoreCase("d")) {
+                residue.toDStereo();
+            }
             resPos = RES_POSITION.MIDDLE;
             try {
                 String[] matches = iRes.split("[^\\-0-9]+");
