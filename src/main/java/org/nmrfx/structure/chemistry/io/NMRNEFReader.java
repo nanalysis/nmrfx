@@ -376,18 +376,17 @@ public class NMRNEFReader {
         }
         List<String> weightColumn = loop.getColumnAsList("weight");
         List<String> targetValueColumn = loop.getColumnAsList("target_value");
-        List<String> targetErrColumn = loop.getColumnAsList("target_value_uncertainty");
+        List<Double> targetErrColumn = loop.getColumnAsDoubleList("target_value_uncertainty", 0.0);
         List<String> lowerColumn = loop.getColumnAsList("lower_limit");
         List<String> upperColumn = loop.getColumnAsList("upper_limit");
-        List<String> nameColumn = loop.getColumnAsList("name");
+        List<String> nameColumn = loop.getColumnAsListIfExists("name");
         for (int i = 0; i < atomNameColumns[0].size(); i++) {
             int restraintID = restraintIDColumn.get(i);
             String weightValue = (String) weightColumn.get(i);
             String targetValue = (String) targetValueColumn.get(i);
-            String targetErrValue = (String) targetErrColumn.get(i);
             String upperValue = (String) upperColumn.get(i);
             String lowerValue = (String) lowerColumn.get(i);
-            String nameValue = (String) nameColumn.get(i);
+            String nameValue = nameColumn != null ? nameColumn.get(i) : "";
             double upper = Double.parseDouble(upperValue);
             double lower = Double.parseDouble(lowerValue);
             if (lower < -180) {
@@ -402,10 +401,7 @@ public class NMRNEFReader {
             if (!targetValue.equals(".")) {
                 target = Double.parseDouble(targetValue);
             }
-            double targetErr = 0.0;
-            if (!targetErrValue.equals(".")) {
-                targetErr = Double.parseDouble(targetErrValue);
-            }
+            double targetErr = targetErrColumn.get(i);
             String name = " ";
             if (!nameValue.equals(".")) {
                 name = nameValue;
@@ -451,9 +447,9 @@ public class NMRNEFReader {
         residueNameColumns[1] = loop.getColumnAsList("residue_name_2");
         atomNameColumns[1] = loop.getColumnAsList("atom_name_2");
 
-        List<String> weightColumn = loop.getColumnAsList("weight");
+        List<Double> weightColumn = loop.getColumnAsDoubleList("weight", 1.0);
         List<String> targetValueColumn = loop.getColumnAsList("target_value");
-        List<String> targetErrColumn = loop.getColumnAsList("target_value_uncertainty");
+        List<Double> targetErrColumn = loop.getColumnAsDoubleList("target_value_uncertainty", 0.0);
         List<String> lowerColumn = loop.getColumnAsList("lower_limit");
         List<String> upperColumn = loop.getColumnAsList("upper_limit");
         ArrayList<String> atomNames[] = new ArrayList[2];
@@ -499,9 +495,7 @@ public class NMRNEFReader {
                 atomNames[iAtom].add(chainCode + ":" + seqNum + "." + atomName);
 //                resNames[iAtom] = resName;
             }
-            String weightValue = (String) weightColumn.get(i);
             String targetValue = (String) targetValueColumn.get(i);
-            String targetErrValue = (String) targetErrColumn.get(i);
             String upperValue = (String) upperColumn.get(i);
             String lowerValue = (String) lowerColumn.get(i);
             double upper = 1000000.0;
@@ -514,18 +508,12 @@ public class NMRNEFReader {
             if (!lowerValue.equals(".")) {
                 lower = Double.parseDouble(lowerValue);
             }
-            double weight = 0.0;
-            if (!weightValue.equals(".")) {
-                weight = Double.parseDouble(weightValue);
-            }
+            double weight = weightColumn.get(i);
             double target = 0.0;
             if (!targetValue.equals(".")) {
                 target = Double.parseDouble(targetValue);
             }
-            double targetErr = 0.0;
-            if (!targetErrValue.equals(".")) {
-                targetErr = Double.parseDouble(targetErrValue);
-            }
+            double targetErr = targetErrColumn.get(i);
 
             Util.setStrictlyNEF(true);
             try {
