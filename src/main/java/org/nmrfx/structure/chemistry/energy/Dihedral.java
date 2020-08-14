@@ -34,6 +34,7 @@ import java.util.Random;
 import org.apache.commons.math3.optim.PointValuePair;
 import org.apache.commons.math3.optim.SimpleValueChecker;
 import org.apache.commons.math3.util.FastMath;
+import org.nmrfx.structure.chemistry.Residue;
 
 public class Dihedral {
 
@@ -72,6 +73,7 @@ public class Dihedral {
     static double initPseudoAngle = 18 * toRad;
     public static double backBoneScale = 4.0;
     static Map<String, List<AngleBoundary>> angleBoundariesNEF = new HashMap<>();
+    static List<Map<Residue, AngleProp>> torsionAngles = new ArrayList<>();
 
     double maxSigma = 20;
 
@@ -401,6 +403,14 @@ public class Dihedral {
         AngleBoundary angleBoundary = new AngleBoundary(atoms, lower, upper, scale);
         angleBoundaries.put(angleBoundary.getRefAtom().getFullName(), angleBoundary);
     }
+    
+    public void addTorsion(Map<Residue, AngleProp> torsionMap, final Residue res, double[] target, double[] sigma, double[] height) throws InvalidMoleculeException {
+        if (res == null) {
+            throw new IllegalArgumentException("Error adding torsion angle, invalid residue");
+        }
+        AngleProp angleProp = new AngleProp("torsion", target, sigma, height);
+        torsionMap.put(res, angleProp);
+    }
 
     public void addBoundary(final Atom[] atoms, double lower, double upper, double scale,
             double weight, double target, double targetErr, String name) throws InvalidMoleculeException {
@@ -429,6 +439,10 @@ public class Dihedral {
     public Map<String, List<AngleBoundary>> getAngleBoundariesNEF() {
         return angleBoundariesNEF;
     }
+    
+    public List<Map<Residue, AngleProp>> getTorsionAngles() {
+        return torsionAngles;
+    }
 
     public void clearBoundaries() {
         angleBoundaries.clear();
@@ -437,7 +451,7 @@ public class Dihedral {
     public void clearNEFBoundaries() {
         angleBoundariesNEF.clear();
     }
-
+     
     public void setBoundaries(final double sigma, boolean useDegrees) {
         setBoundaries(sigma, useDegrees, 2.0 * Math.PI);
     }

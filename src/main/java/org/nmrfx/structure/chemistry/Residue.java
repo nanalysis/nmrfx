@@ -730,5 +730,71 @@ public class Residue extends Compound {
 
         return String.format("%8d %7s %7d %9s %-14s %-7s", number, chainID, number, resName, link, resVar);
     }
+    
+    public String toMMCifSequenceString(Molecule molecule) {
+        //entity ID
+        String polymerName = this.polymer.getName();
+        char chainID = polymerName.charAt(0);
+        int entityIDNum = chainID - 'A' + 1;
+        
+        //number
+        int number = this.getIDNum();
+
+        //residue name
+        String resName = this.name;
+        if (resName.length() > 3) {
+            resName = resName.substring(0, 3);
+        }
+
+        //hetero
+        String hetero = this.label;
+
+        return String.format("%-2d %-3d %-4s %-2s", entityIDNum, number, resName, hetero);
+    }
+    
+    public String toMMCifTorsionString(double[] angles, int idx, int pdbModelNum) {
+
+        StringBuilder sBuilder = new StringBuilder();
+        if (this != null) {
+
+            //index
+            sBuilder.append(String.format("%-4d", idx));
+
+            //PDB model num
+            sBuilder.append(String.format("%-4d", pdbModelNum));
+
+            // residue name 
+            String resName = this.name;
+            sBuilder.append(String.format("%-6s", resName));
+
+            // chain code 
+            String polymerName = this.polymer.getName();
+            char chainID = polymerName.charAt(0);
+            sBuilder.append(String.format("%-4s", chainID));
+
+            // sequence code 
+            int seqCode = this.getIDNum();
+            sBuilder.append(String.format("%-4d", seqCode));
+
+            // PDB ins code
+            String code = "?"; //fixme need to get from file, not hard-code
+            sBuilder.append(String.format("%-2s", code));
+            
+            // label alt id
+            String altID = "?"; //fixme need to get from file, not hard-code
+            sBuilder.append(String.format("%-2s", altID));
+
+            // phi
+            double phi = angles[0];
+            sBuilder.append(String.format("%-8.2f", Math.toDegrees(phi)));
+
+            // psi
+            double psi = angles[1];
+            sBuilder.append(String.format("%-8.2f", Math.toDegrees(psi)));
+
+        }
+
+        return sBuilder.toString();
+    }
 
 }
