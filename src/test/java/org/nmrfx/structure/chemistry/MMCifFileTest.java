@@ -274,7 +274,7 @@ public class MMCifFileTest {
         return distMap;
     }
 
-    private Map<String, List<Object>> buildDihedralMap(List<List<Object>> dataArray) {
+    private Map<String, List<Object>> buildTorsionMap(List<List<Object>> dataArray) {
         Map<String, List<Object>> dihedralMap = new HashMap<>();
         boolean inDihedral = false;
         for (List<Object> line : dataArray) {
@@ -337,7 +337,7 @@ public class MMCifFileTest {
                     List<List<Object>> allValues = new ArrayList<>();
                     allValues.add(origValues);
                     allValues.add(writtenValues);
-                    if (mode.equals("dihedral")) {
+                    if (mode.equals("torsion")) {
                         for (int v=0; v<origValues.size(); v++) {
                             if ((v == 1 || v == 3 || v == 4) && 
                                     !origValues.get(v).equals(writtenValues.get(v))) {
@@ -381,7 +381,7 @@ public class MMCifFileTest {
         testSeqBlock();
         testAtomSitesBlock();
         testDistanceBlock();
-        testDihedralBlock();
+        testTorsionBlock();
     }
 
     public void testSeqBlock() throws IOException {
@@ -417,11 +417,11 @@ public class MMCifFileTest {
         }
     }
 
-    public void testDihedralBlock() throws IOException {
+    public void testTorsionBlock() throws IOException {
         try {
-            Map<String, List<Object>> origDihedral = buildDihedralMap(orig);
-            Map<String, List<Object>> writtenDihedral = buildDihedralMap(written);
-            boolean ok = compareMaps("dihedral", origDihedral, writtenDihedral);
+            Map<String, List<Object>> origDihedral = buildTorsionMap(orig);
+            Map<String, List<Object>> writtenDihedral = buildTorsionMap(written);
+            boolean ok = compareMaps("torsion", origDihedral, writtenDihedral);
             Assert.assertTrue(ok);
         } catch (Exception ex) {
             ex.printStackTrace();
