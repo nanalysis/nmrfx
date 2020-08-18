@@ -94,7 +94,7 @@ public class NMRNEFWriter {
                     } else {
                         link = "middle";
                     }
-                    String result = res.toNEFSequenceString(molecule, link);
+                    String result = res.toNEFSequenceString(link);
                     if (result != null) {
                         chan.write(result + "\n");
                     }

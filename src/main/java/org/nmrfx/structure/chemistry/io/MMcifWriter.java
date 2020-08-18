@@ -25,31 +25,26 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import org.nmrfx.processor.datasets.peaks.InvalidPeakException;
 import org.nmrfx.processor.star.ParseException;
 import org.nmrfx.structure.chemistry.Atom;
-import org.nmrfx.structure.chemistry.Compound;
 import org.nmrfx.structure.chemistry.Entity;
 import org.nmrfx.structure.chemistry.InvalidMoleculeException;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.structure.chemistry.Polymer;
 import org.nmrfx.structure.chemistry.Residue;
 import org.nmrfx.structure.chemistry.SpatialSet;
-import org.nmrfx.structure.chemistry.energy.AngleBoundary;
 import org.nmrfx.structure.chemistry.energy.AngleProp;
 import org.nmrfx.structure.chemistry.energy.AtomDistancePair;
 import org.nmrfx.structure.chemistry.energy.Dihedral;
 import org.nmrfx.structure.chemistry.energy.DistancePair;
 import org.nmrfx.structure.chemistry.energy.EnergyLists;
-import org.nmrfx.structure.utilities.Util;
 
 /**
  *
@@ -58,16 +53,25 @@ import org.nmrfx.structure.utilities.Util;
 public class MMcifWriter {
 
     private static final String[] SEQUENCE_LOOP_STRINGS = {"_entity_poly_seq.entity_id", "_entity_poly_seq.num", "_entity_poly_seq.mon_id", "_entity_poly_seq.hetero"};
+    private static final String[] CHEM_COMP_LOOP_STRINGS = {"_chem_comp.id", "_chem_comp.type", "_chem_comp.mon_nstd_flag", "_chem_comp.name", "_chem_comp.pdbx_synonyms", "_chem_comp.formula", "_chem_comp.formula_weight"};
+    private static final String[] PDB_TRANSF_MATRIX_STRINGS = {"_database_PDB_matrix.entry_id", "_database_PDB_matrix.origx[1][1]", "_database_PDB_matrix.origx[1][2]", "_database_PDB_matrix.origx[1][3]", "_database_PDB_matrix.origx[2][1]", "_database_PDB_matrix.origx[2][2]", "_database_PDB_matrix.origx[2][3]", "_database_PDB_matrix.origx[3][1]", "_database_PDB_matrix.origx[3][2]", "_database_PDB_matrix.origx[3][3]", "_database_PDB_matrix.origx_vector[1]", "_database_PDB_matrix.origx_vector[2]", "_database_PDB_matrix.origx_vector[3]"};
+    private static final String[] TRANSF_MATRIX_STRINGS = {"_atom_sites.entry_id", "_atom_sites.fract_transf_matrix[1][1]", "_atom_sites.fract_transf_matrix[1][2]", "_atom_sites.fract_transf_matrix[1][3]", "_atom_sites.fract_transf_matrix[2][1]", "_atom_sites.fract_transf_matrix[2][2]", "_atom_sites.fract_transf_matrix[2][3]", "_atom_sites.fract_transf_matrix[3][1]", "_atom_sites.fract_transf_matrix[3][2]", "_atom_sites.fract_transf_matrix[3][3]", "_atom_sites.fract_transf_vector[1]", "_atom_sites.fract_transf_vector[2]", "_atom_sites.fract_transf_vector[3]"};
     private static final String[] ATOM_SITE_LOOP_STRINGS = {"_atom_site.group_PDB", "_atom_site.id", "_atom_site.type_symbol", "_atom_site.label_atom_id", "_atom_site.label_alt_id", "_atom_site.label_comp_id", "_atom_site.label_asym_id", "_atom_site.label_entity_id", "_atom_site.label_seq_id", "_atom_site.pdbx_PDB_ins_code", "_atom_site.Cartn_x", "_atom_site.Cartn_y", "_atom_site.Cartn_z", "_atom_site.occupancy", "_atom_site.B_iso_or_equiv", "_atom_site.pdbx_formal_charge", "_atom_site.auth_seq_id", "_atom_site.auth_comp_id", "_atom_site.auth_asym_id", "_atom_site.auth_atom_id", "_atom_site.pdbx_PDB_model_num"};
+    private static final String[] PDBX_SEQUENCE_LOOP_STRINGS = {"_pdbx_poly_seq_scheme.asym_id", "_pdbx_poly_seq_scheme.entity_id", "_pdbx_poly_seq_scheme.seq_id", "_pdbx_poly_seq_scheme.mon_id", "_pdbx_poly_seq_scheme.ndb_seq_num", "_pdbx_poly_seq_scheme.pdb_seq_num", "_pdbx_poly_seq_scheme.auth_seq_num", "_pdbx_poly_seq_scheme.pdb_mon_id", "_pdbx_poly_seq_scheme.auth_mon_id", "_pdbx_poly_seq_scheme.pdb_strand_id", "_pdbx_poly_seq_scheme.pdb_ins_code", "_pdbx_poly_seq_scheme.hetero"};
     private static final String[] DISTANCE_LOOP_STRINGS = {"_pdbx_validate_close_contact.id", "_pdbx_validate_close_contact.PDB_model_num", "_pdbx_validate_close_contact.auth_atom_id_1", "_pdbx_validate_close_contact.auth_asym_id_1", "_pdbx_validate_close_contact.auth_comp_id_1", "_pdbx_validate_close_contact.auth_seq_id_1", "_pdbx_validate_close_contact.PDB_ins_code_1", "_pdbx_validate_close_contact.label_alt_id_1", "_pdbx_validate_close_contact.auth_atom_id_2", "_pdbx_validate_close_contact.auth_asym_id_2", "_pdbx_validate_close_contact.auth_comp_id_2", "_pdbx_validate_close_contact.auth_seq_id_2", "_pdbx_validate_close_contact.PDB_ins_code_2", "_pdbx_validate_close_contact.label_alt_id_2", "_pdbx_validate_close_contact.dist"};
     private static final String[] TORSION_LOOP_STRINGS = {"_pdbx_validate_torsion.id", "_pdbx_validate_torsion.PDB_model_num", "_pdbx_validate_torsion.auth_comp_id", "_pdbx_validate_torsion.auth_asym_id", "_pdbx_validate_torsion.auth_seq_id", "_pdbx_validate_torsion.PDB_ins_code", "_pdbx_validate_torsion.label_alt_id", "_pdbx_validate_torsion.phi", "_pdbx_validate_torsion.psi"};
 
-    static void writeMolSys(FileWriter chan) throws IOException, InvalidMoleculeException {
+    static void writeMolSys(FileWriter chan, boolean pdb) throws IOException, InvalidMoleculeException {
         chan.write("loop_\n");
-        for (String loopString : SEQUENCE_LOOP_STRINGS) {
+        String[] loopStrings = SEQUENCE_LOOP_STRINGS;
+        if (pdb) {
+            loopStrings = PDBX_SEQUENCE_LOOP_STRINGS;
+        } 
+        
+        for (String loopString : loopStrings) {
             chan.write(loopString + "\n");
         }
-      
+        
         Molecule molecule = Molecule.getActive();
         if (molecule == null) {
             throw new InvalidMoleculeException("No active mol");
@@ -78,12 +82,120 @@ public class MMcifWriter {
             if (entity instanceof Polymer) {
                 List<Residue> resList = ((Polymer) entity).getResidues();
                 for (Residue res : resList) {
-                    String result = res.toMMCifSequenceString(molecule);
+                    String result = res.toMMCifSequenceString(pdb);
                     if (result != null) {
                         chan.write(result + "\n");
                     }
                 }
             }
+        }
+        chan.write("#\n");
+    }
+    
+    static void writeChemComp(FileWriter chan) throws IOException, InvalidMoleculeException {
+        chan.write("loop_\n");
+        for (String loopString : CHEM_COMP_LOOP_STRINGS) {
+            chan.write(loopString + "\n");
+        }
+        
+        Molecule molecule = Molecule.getActive();
+        if (molecule == null) {
+            throw new InvalidMoleculeException("No active mol");
+        }
+        
+        Iterator entityIterator = molecule.entityLabels.values().iterator();
+        while (entityIterator.hasNext()) {
+            Entity entity = (Entity) entityIterator.next();
+            if (entity instanceof Polymer) {
+                List<Residue> resList = ((Polymer) entity).getResidues();
+//                Collections.sort(resList, (r1,r2) -> r1.name.compareTo(r2.name));
+                List<String> resNames = new ArrayList<>();
+                Set<Residue> resSet = new HashSet<>();
+                for (Residue res : resList) {
+                    if (!resSet.contains(res) && !resNames.contains(res.name)) {
+                        resSet.add(res);
+                        resNames.add(res.name);
+                    }
+                }
+//                List<Residue> sortResSet = Arrays.asList((Residue[]) resSet.toArray());
+//                Collections.sort(sortResSet, (r1,r2) -> r1.name.compareTo(r2.name));
+                for (Residue res : resSet) {
+                    String prfFile = String.join(File.separator, "src", "main", "resources", "reslib_iu", res.name.toLowerCase() + ".prf");
+                    BufferedReader reader = new BufferedReader(new FileReader(prfFile));
+                    String fullResName = "";
+                    while (true) {
+                        String line = reader.readLine();
+                        if (line == null) {
+                            break;
+                        }
+                        String lineS = line.trim();
+                        String match = "LNAME";
+                        if (lineS.startsWith(match)) {
+                            fullResName = lineS.substring(match.length()).trim();
+                            break;
+                        }
+                    }
+                    boolean lastRes = false;
+                    if (res.name.equals(resList.get(resList.size() - 1).name)) {
+                        lastRes = true;
+                    }
+                    String result = res.toMMCifChemCompString(lastRes, fullResName.toUpperCase());
+                    if (result != null) {
+                        chan.write(result + "\n");
+                    }
+                }
+            }
+        }
+        chan.write("#\n");
+    }
+    
+    static void writeTransfMatrix(FileWriter chan, boolean pdb) throws IOException, InvalidMoleculeException {
+        String id = "1PQX\n"; //fixme get id dynamically
+        String[] loopStrings = TRANSF_MATRIX_STRINGS;
+        String pdbFormat = "%-39s %-2s";
+        String mtxFormat = "%-39s %-2.6f\n";
+        String vecFormat = "%-39s %-2.5f\n";
+        if (pdb) {
+            loopStrings = PDB_TRANSF_MATRIX_STRINGS;
+            pdbFormat = "%-38s %-2s";
+            mtxFormat = "%-38s %-2.6f\n";
+            vecFormat = "%-38s %-2.5f\n";
+        } 
+        
+        chan.write(String.format(pdbFormat, loopStrings[0], id));
+        Double[][] transfMatrix = {{1.0, 0.0, 0.0}, {0.0, 1.0, 0.0}, {0.0, 0.0, 1.0}};
+        Double[] vector = {0.0, 0.0, 0.0};
+        for (int i=0; i<transfMatrix.length; i++) {
+            for (int j=0; j<transfMatrix[0].length; j++) {
+                chan.write(String.format(mtxFormat, loopStrings[transfMatrix.length*i + j + 1], transfMatrix[i][j]));
+            }
+        }
+        for (int v=0; v<vector.length; v++) {
+            chan.write(String.format(vecFormat, loopStrings[v + 10], vector[v]));
+        }
+        chan.write("#\n");
+    }
+    
+    static void writeAtomTypes(FileWriter chan) throws IOException, InvalidMoleculeException {
+        int i;
+        chan.write("loop_\n");
+        chan.write("_atom_type.symbol\n");
+        Molecule molecule = Molecule.getActive();
+        if (molecule == null) {
+            throw new InvalidMoleculeException("No active mol");
+        }
+        molecule.updateAtomArray();
+        List<Atom> atomArray = molecule.getAtomArray();
+        Set<String> aTypeSet = new HashSet<>();
+        for (Atom atom : atomArray) {
+            if (!aTypeSet.contains(atom.getSymbol())) {
+                aTypeSet.add(atom.getSymbol());
+            }
+        }
+//        List<String> sortATypeSet = Arrays.asList((String[]) aTypeSet.toArray());
+//        Collections.sort(sortATypeSet, (r1,r2) -> r1.compareTo(r2));
+        for (String aType : aTypeSet) {
+            chan.write(aType + "\n");
         }
         chan.write("#\n");
     }
@@ -94,7 +206,6 @@ public class MMcifWriter {
         for (String loopString : ATOM_SITE_LOOP_STRINGS) {
             chan.write(loopString + "\n");
         }
-        chan.write("\n");
         Molecule molecule = Molecule.getActive();
         if (molecule == null) {
             throw new InvalidMoleculeException("No active mol");
@@ -120,13 +231,12 @@ public class MMcifWriter {
         }
         chan.write("#\n");
     }
-
+    
     static void writeDistances(FileWriter chan) throws IOException, InvalidMoleculeException {
         chan.write("loop_\n");
         for (String loopString : DISTANCE_LOOP_STRINGS) {
             chan.write(loopString + "\n");
         }
-        chan.write("\n");
         Molecule molecule = Molecule.getActive();
         if (molecule == null) {
             throw new InvalidMoleculeException("No active mol");
@@ -156,12 +266,11 @@ public class MMcifWriter {
         chan.write("#\n");
     }
 
-    static void writeDihedrals(FileWriter chan) throws IOException, InvalidMoleculeException {
+    static void writeTorsions(FileWriter chan) throws IOException, InvalidMoleculeException {
         chan.write("loop_\n");
         for (String loopString : TORSION_LOOP_STRINGS) {
             chan.write(loopString + "\n");
         }
-        chan.write("\n");
         Molecule molecule = Molecule.getActive();
         if (molecule == null) {
             throw new InvalidMoleculeException("No active mol");
@@ -182,58 +291,12 @@ public class MMcifWriter {
                 }
             }
         }
-//        Map<String, List<AngleBoundary>> angleBoundsMap = dihedral.getAngleBoundariesNEF();
-//        List<AngleBoundary> angleBlock1 = new ArrayList<>();
-//        List<AngleBoundary> angleBlock2 = new ArrayList<>();
-//        for (List<AngleBoundary> boundList : angleBoundsMap.values()) {
-//            for (AngleBoundary bound : boundList) {
-//                if (bound.getTargetValue() % 1 == 0 || bound.getTargetValue() % 0.5 == 0) {
-//                    angleBlock1.add(bound);
-//                } else {
-//                    angleBlock2.add(bound);
-//                }
-//            }
-//        }
-//
-//        Comparator<AngleBoundary> aCmp = (AngleBoundary bound1, AngleBoundary bound2) -> { //sort atom1 sequence code
-//            int i = 0;
-//            int result = -1;
-//            //sort by successive atom ID numbers
-//            while (i >= 0 && i < 4) {
-//                int bound1AtomIDNum = bound1.getAtoms()[i].entity.getIDNum();
-//                int bound2AtomIDNum = bound2.getAtoms()[i].entity.getIDNum();
-//                result = Integer.compare(bound1AtomIDNum, bound2AtomIDNum);
-//                if (result == 0) {
-//                    i++;
-//                } else {
-//                    break;
-//                }
-//            }
-//            return result;
-//        };
-//
-//        Collections.sort(angleBlock1, aCmp);
-//        Collections.sort(angleBlock2, aCmp);
-//        List<List<AngleBoundary>> boundBlocks = new ArrayList<>();
-//        boundBlocks.add(angleBlock1);
-//        boundBlocks.add(angleBlock2);
-//        int i = 1;
-//        for (List<AngleBoundary> block : boundBlocks) {
-//            for (AngleBoundary bound : block) {
-//                Atom[] atoms = bound.getAtoms();
-//                String result = Atom.toNEFDihedralString(bound, atoms, i, i, ".");
-//                if (result != null) {
-//                    chan.write(result + "\n");
-//                    i++;
-//                }
-//            }
-//        }
         chan.write("#\n");
     }
 
     /**
-     * Write molecular system, chemical shift, distance, and dihedral
-     * information to a NEF formatted file.
+     * Write molecular system, chemical shift, distance, and torsion
+     * information to a mmCif formatted file.
      *
      * @param fileName String. Name of the file to write.
      * @throws IOException
@@ -251,8 +314,8 @@ public class MMcifWriter {
     }
 
     /**
-     * Write molecular system, chemical shift, distance, and dihedral
-     * information to a NEF formatted file.
+     * Write molecular system, chemical shift, distance, and torsion
+     * information to a mmCif formatted file.
      *
      * @param file File. File to write.
      * @throws IOException
@@ -267,8 +330,8 @@ public class MMcifWriter {
     }
 
     /**
-     * Write molecular system, chemical shift, distance, and dihedral
-     * information to a NEF formatted file.
+     * Write molecular system, chemical shift, distance, and torsion
+     * information to a mmCif formatted file.
      *
      * @param chan FileWriter. Writer used for writing the file.
      * @throws IOException
@@ -326,10 +389,15 @@ public class MMcifWriter {
 //        chan.write("\n");
         Molecule molecule = Molecule.getActive();
         if (molecule != null) {
-            writeMolSys(chan);
+            writeMolSys(chan, false);
+            writeChemComp(chan);
+            writeTransfMatrix(chan, true);
+            writeTransfMatrix(chan, false);
+            writeAtomTypes(chan);
             writeAtomSites(chan);
+            writeMolSys(chan, true);
             writeDistances(chan);
-            writeDihedrals(chan);
+            writeTorsions(chan);
         }
     }
 
