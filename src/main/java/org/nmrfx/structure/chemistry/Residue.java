@@ -710,7 +710,7 @@ public class Residue extends Compound {
         return polymer.getName() + ":" + getName() + getNumber();
     }
 
-    public String toNEFSequenceString(Molecule molecule, String link) {
+    public String toNEFSequenceString(String link) {
         //index and sequence code
         int number = 1;
         //chain ID
@@ -731,14 +731,16 @@ public class Residue extends Compound {
         return String.format("%8d %7s %7d %9s %-14s %-7s", number, chainID, number, resName, link, resVar);
     }
     
-    public String toMMCifSequenceString(Molecule molecule) {
-        //entity ID
+    public String toMMCifSequenceString(boolean pdb) {
+        //chain ID
         String polymerName = this.polymer.getName();
         char chainID = polymerName.charAt(0);
+        
+        //entity ID
         int entityIDNum = chainID - 'A' + 1;
         
-        //number
-        int number = this.getIDNum();
+        //seq ID
+        int seqID = this.getIDNum();
 
         //residue name
         String resName = this.name;
@@ -748,8 +750,76 @@ public class Residue extends Compound {
 
         //hetero
         String hetero = this.label;
+        
+        if (pdb){
+            return String.format("%-2s %-2d %-3d %-4s %-3d %-3d %-3d %-4s %-4s %-2s %-2s %-2s", chainID, entityIDNum, seqID, resName, seqID, seqID, seqID, resName, resName, chainID, ".", hetero);
+        } else {
+            return String.format("%-2d %-3d %-4s %-2s", entityIDNum, seqID, resName, hetero);
+        }
+    }
+    
+    public String toMMCifChemCompString(boolean lastRes, String fullResName) {
+        //residue name
+        String resName = this.name;
+        if (resName.length() > 3) {
+            resName = resName.substring(0, 3);
+        }
 
-        return String.format("%-2d %-3d %-4s %-2s", entityIDNum, number, resName, hetero);
+        //type #fixme should be read in from file
+        String type = "L-peptide linking";
+        
+        //flag #fixme should be read in from file
+        String flag = "y";
+        
+        //chem comp
+        Map<String, Integer> aCount = new HashMap<>();
+        List<Atom> aList = this.atoms;
+        List<String> aSymList = new ArrayList<>();
+        for (Atom atom : aList) {
+            String aSym = atom.getSymbol();
+            aSymList.add(aSym);
+        }
+        Set<String> aSymSet = new HashSet<>(aSymList);
+        for (String aSym : aSymSet) {
+            int nAType = Collections.frequency(aSymList, aSym);
+            if (aSym.equals("O")) {
+                nAType += 1;
+            } else if (aSym.equals("H") && this.getIDNum() > 1) {
+                nAType += 2;
+                if (lastRes) {
+                    nAType += 1;
+                }
+            }
+            aCount.put(aSym, nAType);
+        }
+        String chemComp = "";
+        for (String key : aCount.keySet()) {
+            int nAType = aCount.get(key);
+            if (nAType == 1) {
+                chemComp += key + " ";
+            } else {
+                chemComp += key + String.valueOf(nAType) + " ";
+            }
+        }      
+            
+        //molecular weight
+        Map<String, Double> weightMap = new HashMap<>();
+        //fixme should be able to use atom.mass, but atom.mass is always 0.
+        weightMap.put("H", 1.00794);
+        weightMap.put("C", 12.011);
+        weightMap.put("N", 14.0067);
+        weightMap.put("O", 15.9994);
+        weightMap.put("S", 32.066);
+        double weight = 0.0;
+        for (String key : aCount.keySet()) {
+            int nAType = aCount.get(key);
+            if (weightMap.containsKey(key)){
+                weight += nAType * weightMap.get(key);
+            }
+        }     
+        
+        return String.format("%-4s %-18s %-2s %-15s %-2s %-15s %-4.3f", resName, type, flag, fullResName, "?", chemComp, weight);
+        
     }
     
     public String toMMCifTorsionString(double[] angles, int idx, int pdbModelNum) {
