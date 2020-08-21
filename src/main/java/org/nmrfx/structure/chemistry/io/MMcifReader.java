@@ -30,6 +30,7 @@ import org.nmrfx.processor.star.Saveframe;
 import org.nmrfx.structure.chemistry.Atom;
 import org.nmrfx.structure.chemistry.Compound;
 import org.nmrfx.structure.chemistry.Entity;
+import org.nmrfx.structure.chemistry.Helix;
 import org.nmrfx.structure.chemistry.InvalidMoleculeException;
 import org.nmrfx.structure.chemistry.MolFilter;
 import org.nmrfx.structure.chemistry.Molecule;
@@ -53,6 +54,7 @@ public class MMcifReader {
     Map<String, Character> chainCodeMap = new HashMap<>();
     public static EnergyLists energyList;
     public static Dihedral dihedral;
+    public static Helix helix;
 
     public MMcifReader(final File starFile, final MMCIF star3) {
         this.mmcif = star3;
@@ -171,6 +173,58 @@ public class MMcifReader {
     void addCompound(String id, Compound compound) {
         Molecule.compoundMap.put(id, compound);
     }
+    
+    void buildChemComp(final Saveframe saveframe, Molecule molecule) throws ParseException {
+        Loop loop = saveframe.getLoop("_chem_comp");
+        if (loop == null) {
+            throw new ParseException("No \"_chem_comp\" loop");
+        } else {
+            List<String> idColumn = loop.getColumnAsList("id");
+            List<String> nameColumn = loop.getColumnAsList("name");
+            Iterator entityIterator = molecule.entityLabels.values().iterator();
+            while (entityIterator.hasNext()) {
+                Entity entity = (Entity) entityIterator.next();
+                if (entity instanceof Polymer) {
+                    List<Residue> resList = ((Polymer) entity).getResidues();
+                    for (Residue res : resList) {                  
+                        for (int i=0; i<idColumn.size(); i++) {
+                        String resName = idColumn.get(i);
+                        String resFullName = nameColumn.get(i);
+                        if (res.name.equals(resName) && resFullName.contains("ACID")) {
+                            res.label += ",+H";
+                        }
+                    }  
+                    }
+                }
+            }
+          
+        }
+    }
+    
+    void buildConformation(final Saveframe saveframe, Molecule molecule) throws ParseException {
+        Loop loop = saveframe.getLoop("_struct_conf");
+        if (loop == null) {
+            throw new ParseException("No \"_struct_conf\" loop");
+        } else {
+            List<String> idColumn = loop.getColumnAsList("id");
+            List<String> begAsymIDColumn = loop.getColumnAsList("beg_label_asym_id");
+            List<Integer> begSeqIDColumn = loop.getColumnAsIntegerList("beg_label_seq_id", 1);
+            List<Integer> endSeqIDColumn = loop.getColumnAsIntegerList("end_label_seq_id", 1);
+            List<Polymer> polymers = molecule.getPolymers();
+            List<Residue> helixResList = new ArrayList<>();
+            for (int i=0; i<idColumn.size(); i++) {
+                int iFirstRes = begSeqIDColumn.get(i) - 1;
+                int iLastRes = endSeqIDColumn.get(i) - 1;
+                char chainCode = begAsymIDColumn.get(i).charAt(0);
+                int iPolymer = chainCode - 'A';
+                Residue firstRes = polymers.get(iPolymer).getResidue(iFirstRes);
+                Residue lastRes = polymers.get(iPolymer).getResidue(iLastRes);
+                helixResList.add(firstRes);
+                helixResList.add(lastRes);
+            }
+            helix = new Helix(helixResList);
+        }
+    }
 
     void buildAtomSites(int fromSet, final int toSet) throws ParseException {
         Iterator iter = mmcif.getSaveFrames().values().iterator();
@@ -192,13 +246,13 @@ public class MMcifReader {
         }
     }
 
-    void buildNEFDihedralConstraints(Dihedral dihedral) throws ParseException {
+    void buildTorsions(Dihedral dihedral) throws ParseException {
         for (Saveframe saveframe : mmcif.getSaveFrames().values()) {
             if (saveframe.getCategoryName().equals(saveframe.getName())) {
                 if (DEBUG) {
                     System.err.println("process torsion angles " + saveframe.getName());
                 }
-                processNEFDihedralConstraints(saveframe, dihedral);
+                processTorsions(saveframe, dihedral);
             }
         }
     }
@@ -227,6 +281,8 @@ public class MMcifReader {
                 String molName = "noname";
                 molecule = new Molecule(molName);
                 buildChains(saveframe, molecule, molName);
+                buildConformation(saveframe, molecule);
+                buildChemComp(saveframe, molecule);
                 molecule.updateSpatialSets();
                 molecule.genCoords(false);
 
@@ -325,7 +381,7 @@ public class MMcifReader {
         }
     }
 
-    void processNEFDihedralConstraints(Saveframe saveframe, Dihedral dihedral) throws ParseException {
+    void processTorsions(Saveframe saveframe, Dihedral dihedral) throws ParseException {
         Loop loop = saveframe.getLoop("_pdbx_validate_torsion");
         if (loop == null) {
             throw new ParseException("No \"_pdbx_validate_torsion\" loop");
@@ -509,7 +565,7 @@ public class MMcifReader {
             if (DEBUG) {
                 System.err.println("process torsion angles");
             }
-            buildNEFDihedralConstraints(dihedral);
+            buildTorsions(dihedral);
         } else if ("shifts".startsWith(argv[2])) {
             int fromSet = Integer.parseInt(argv[3]);
             int toSet = Integer.parseInt(argv[4]);
