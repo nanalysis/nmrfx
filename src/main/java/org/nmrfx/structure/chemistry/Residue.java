@@ -750,6 +750,9 @@ public class Residue extends Compound {
 
         //hetero
         String hetero = this.label;
+        if (hetero.length() > 1) {
+            hetero = hetero.substring(0, 1);
+        }
         
         if (pdb){
             return String.format("%-2s %-2d %-3d %-4s %-3d %-3d %-3d %-4s %-4s %-2s %-2s %-2s", chainID, entityIDNum, seqID, resName, seqID, seqID, seqID, resName, resName, chainID, ".", hetero);
@@ -758,7 +761,7 @@ public class Residue extends Compound {
         }
     }
     
-    public String toMMCifChemCompString(boolean lastRes, String fullResName) {
+    public String toMMCifChemCompString(Map<String, Double> weightMap, boolean lastRes, String fullResName) {
         //residue name
         String resName = this.name;
         if (resName.length() > 3) {
@@ -770,6 +773,11 @@ public class Residue extends Compound {
         
         //flag #fixme should be read in from file
         String flag = "y";
+        
+        //full res name
+        if (this.label.contains("+H")) {
+            fullResName = fullResName.substring(0, fullResName.length() - 3) + "IC ACID";
+        }
         
         //chem comp
         Map<String, Integer> aCount = new HashMap<>();
@@ -786,14 +794,15 @@ public class Residue extends Compound {
                 nAType += 1;
             } else if (aSym.equals("H") && this.getIDNum() > 1) {
                 nAType += 2;
-                if (lastRes) {
+                if (lastRes || this.label.contains("+H")) {
                     nAType += 1;
                 }
             }
             aCount.put(aSym, nAType);
         }
         String chemComp = "";
-        for (String key : aCount.keySet()) {
+        SortedSet<String> keys = new TreeSet<>(aCount.keySet());
+        for (String key : keys) {
             int nAType = aCount.get(key);
             if (nAType == 1) {
                 chemComp += key + " ";
@@ -803,13 +812,6 @@ public class Residue extends Compound {
         }      
             
         //molecular weight
-        Map<String, Double> weightMap = new HashMap<>();
-        //fixme should be able to use atom.mass, but atom.mass is always 0.
-        weightMap.put("H", 1.00794);
-        weightMap.put("C", 12.011);
-        weightMap.put("N", 14.0067);
-        weightMap.put("O", 15.9994);
-        weightMap.put("S", 32.066);
         double weight = 0.0;
         for (String key : aCount.keySet()) {
             int nAType = aCount.get(key);
@@ -820,6 +822,57 @@ public class Residue extends Compound {
         
         return String.format("%-4s %-18s %-2s %-15s %-2s %-15s %-4.3f", resName, type, flag, fullResName, "?", chemComp, weight);
         
+    }
+    
+    public String toMMCifStructConfString(int idx, Residue lastRes) {
+        //type id
+        String typeID = "HELX_P";
+        
+        //id
+        String id = typeID + String.valueOf(idx);
+
+        //first chain ID
+        String polymerName = this.polymer.getName();
+        char chainID = polymerName.charAt(0);
+        
+        //first entity ID
+        int entityIDNum = chainID - 'A' + 1;
+        
+        //first seq ID
+        int seqID = this.getIDNum();
+
+        //first residue name
+        String resName = this.name;
+        if (resName.length() > 3) {
+            resName = resName.substring(0, 3);
+        }
+        
+        //last chain ID
+        String polymerName1 = lastRes.polymer.getName();
+        char chainID1 = polymerName1.charAt(0);
+        
+        //last seq ID
+        int seqID1 = lastRes.getIDNum();
+
+        //last residue name
+        String resName1 = lastRes.name;
+        if (resName1.length() > 3) {
+            resName1 = resName1.substring(0, 3);
+        }
+
+        //first PDB ins code
+        String insCode = "?";
+        
+        //last PDB ins code
+        String insCode1 = "?";
+        
+        //details
+        String details = "?";
+        
+        //length
+        int length = seqID1 - seqID + 1;
+        
+        return String.format("%-6s %-6s %-1d %-3s %-1s %-2d %-1s %-3s %-1s %-2d %-1s %-3s %-1s %-2d %-3s %-1s %-2d %-1d %-1s %-2s", typeID, id, idx, resName, chainID, seqID, insCode, resName1, chainID1, seqID1, insCode1, resName, chainID, seqID, resName1, chainID1, seqID1, entityIDNum, details, length);
     }
     
     public String toMMCifTorsionString(double[] angles, int idx, int pdbModelNum) {
