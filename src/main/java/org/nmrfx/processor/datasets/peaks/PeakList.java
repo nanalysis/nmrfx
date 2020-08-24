@@ -208,8 +208,9 @@ public class PeakList {
      *
      * @param name
      * @param n
+     * @param listNum
      */
-    public PeakList(String name, int n) {
+    public PeakList(String name, int n, Integer listNum) {
         listName = name;
         fileName = "";
         nDim = n;
@@ -227,11 +228,22 @@ public class PeakList {
         indexMap.clear();
 
         peakListTable.put(listName, this);
-        int listNum = 1;
-        while (get(listNum) != null) {
-            listNum++;
+        if (listNum == null) {
+            listNum = 1;
+            while (get(listNum) != null) {
+                listNum++;
+            }
         }
         this.listNum = listNum;
+    }
+
+    /**
+     *
+     * @param name
+     * @param n
+     */
+    public PeakList(String name, int n) {
+        this(name,n,null);
     }
 
     @Override
