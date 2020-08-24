@@ -828,10 +828,10 @@ public class PeakList {
         while (iter.hasNext()) {
             peakList = (PeakList) iter.next();
             if (listID == peakList.listNum) {
-                break;
+                return peakList;
             }
         }
-        return peakList;
+        return null;
     }
 
     /**
