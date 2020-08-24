@@ -227,7 +227,11 @@ public class PeakList {
         indexMap.clear();
 
         peakListTable.put(listName, this);
-        listNum = peakListTable.size();
+        int listNum = 1;
+        while (get(listNum) != null) {
+            listNum++;
+        }
+        this.listNum = listNum;
     }
 
     @Override
