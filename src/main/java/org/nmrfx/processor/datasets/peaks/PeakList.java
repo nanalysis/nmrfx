@@ -3806,7 +3806,7 @@ public class PeakList {
 
     /**
      *
-     * @param iDim
+     * @param name
      * @return
      */
     public SpectralDim getSpectralDim(String name) {
