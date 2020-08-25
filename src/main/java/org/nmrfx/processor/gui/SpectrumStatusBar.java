@@ -290,6 +290,17 @@ public class SpectrumStatusBar {
         toolButton.getItems().add(menuItem);
     }
 
+    public void addToToolMenu(String menuText, MenuItem newItem) {
+        for (MenuItem menuItem : toolButton.getItems()) {
+            if (menuItem.getText().equals(menuText)) {
+                if (menuItem instanceof Menu) {
+                    Menu menu = (Menu) menuItem;
+                    menu.getItems().add(newItem);
+                }
+            }
+        }
+    }
+
     public void setupTools() {
         Menu specToolMenu = new Menu("Spectrum Tools");
 
@@ -308,12 +319,10 @@ public class SpectrumStatusBar {
         compareMenuItem.setOnAction(e -> controller.showSpectrumComparator());
         MenuItem peakNavigatorMenuItem = new MenuItem("Show Peak Navigator");
         peakNavigatorMenuItem.setOnAction(e -> controller.showPeakNavigator());
-        MenuItem peakSliderMenuItem = new MenuItem("Show Peak Slider");
-        peakSliderMenuItem.setOnAction(e -> controller.showPeakSlider());
         MenuItem pathToolMenuItem = new MenuItem("Show Path Tool");
         pathToolMenuItem.setOnAction(e -> controller.showPathTool());
 
-        peakToolMenu.getItems().addAll(peakNavigatorMenuItem, peakSliderMenuItem,
+        peakToolMenu.getItems().addAll(peakNavigatorMenuItem,
                 pathToolMenuItem);
 
         addToToolMenu(peakToolMenu);
