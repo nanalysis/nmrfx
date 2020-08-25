@@ -981,8 +981,9 @@ public class RunAboutGUI implements PeakListener {
                     testList = attr.get(0).getPeakList();
                 }
             }
-            if (testList == null) {
-                testList = PeakList.get(0);
+            Optional<PeakList> firstListOpt = PeakList.getFirst();
+            if (firstListOpt.isPresent()) {
+                testList = firstListOpt.get();
             }
             setPeakList(testList);
         }
