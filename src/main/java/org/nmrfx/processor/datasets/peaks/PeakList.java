@@ -118,7 +118,7 @@ public class PeakList {
      *
      */
     public String fileName;
-    private final int listNum;
+    private final int listID;
 
     /**
      *
@@ -230,11 +230,11 @@ public class PeakList {
         peakListTable.put(listName, this);
         if (listNum == null) {
             listNum = 1;
-            while (get(listNum) != null) {
+            while (get(listNum).isPresent()) {
                 listNum++;
             }
         }
-        this.listNum = listNum;
+        this.listID = listNum;
     }
 
     /**
@@ -243,7 +243,7 @@ public class PeakList {
      * @param n
      */
     public PeakList(String name, int n) {
-        this(name,n,null);
+        this(name, n, null);
     }
 
     @Override
@@ -346,7 +346,7 @@ public class PeakList {
      * @return the ID number of the peak list.
      */
     public int getId() {
-        return listNum;
+        return listID;
     }
 
     /**
@@ -809,29 +809,40 @@ public class PeakList {
     }
 
     /**
+     * Returns the PeakList that has the specified name.
      *
-     * @param listName
-     * @return
+     * @param listName the name of the peak list
+     * @return the PeaKlist or null if no PeakList of that name exists
      */
     public static PeakList get(String listName) {
         return ((PeakList) peakListTable.get(listName));
     }
 
     /**
+     * Returns an Optional containing the PeakList that has the specified id
+     * number or empty value if no PeakList with that id exists.
      *
-     * @param listID
-     * @return
+     * @param listID the id of the peak list
+     * @return the Optional containing the PeaKlist or an empty value if no
+     * PeakList with that id exists
      */
-    public static PeakList get(int listID) {
-        Iterator iter = iterator();
-        PeakList peakList = null;
-        while (iter.hasNext()) {
-            peakList = (PeakList) iter.next();
-            if (listID == peakList.listNum) {
-                return peakList;
-            }
-        }
-        return null;
+    public static Optional<PeakList> get(int listID) {
+        Optional<PeakList> peakListOpt = PeakList.peakListTable.values().stream().
+                filter(p -> (p.listID == listID)).findFirst();
+        return peakListOpt;
+    }
+
+    /**
+     * Return an Optional containing the PeakList with lowest id number or an
+     * empty value if no PeakLists are present.
+     *
+     * @return Optional containing first peakList if any peak lists present or
+     * empty if no peak lists.
+     */
+    public static Optional<PeakList> getFirst() {
+        Optional<PeakList> peakListOpt = PeakList.peakListTable.values().stream().
+                sorted((o1, o2) -> Integer.compare(o1.listID, o2.listID)).findFirst();
+        return peakListOpt;
     }
 
     /**
