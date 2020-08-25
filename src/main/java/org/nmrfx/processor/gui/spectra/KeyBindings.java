@@ -225,7 +225,7 @@ public class KeyBindings {
                 break;
             case "ds":
                 if (chart.getController().hasSlider()) {
-                    chart.getController().getSlider().tweakPeaks();
+                    chart.getController().getSlider().tweakPeaks(false);
                 }
                 keyMonitor.clear();
                 break;
