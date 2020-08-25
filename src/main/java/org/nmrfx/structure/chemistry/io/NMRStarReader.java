@@ -799,7 +799,7 @@ public class NMRStarReader {
         }
         int nDim = NvUtil.toInt(nDimString);
 
-        PeakList peakList = new PeakList(listName, nDim,NvUtil.toInt(id));
+        PeakList peakList = new PeakList(listName, nDim, NvUtil.toInt(id));
 
         int nSpectralDim = saveframe.loopCount("_Spectral_dim");
         if (nSpectralDim > nDim) {
@@ -1536,7 +1536,10 @@ public class NMRStarReader {
                 } else {
                     try {
                         int peakListID = Integer.parseInt(peakListIDStr);
-                        peakList = PeakList.get(peakListID);
+                        Optional<PeakList> peakListOpt = PeakList.get(peakListID);
+                        if (peakListOpt.isPresent()) {
+                            peakList = peakListOpt.get();
+                        }
                     } catch (NumberFormatException nFE) {
                         throw new ParseException("Invalid peak list id (not int) \"" + peakListIDStr + "\"");
                     }
