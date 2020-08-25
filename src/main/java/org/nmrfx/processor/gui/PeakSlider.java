@@ -127,15 +127,16 @@ public class PeakSlider {
         Pane filler5 = new Pane();
         HBox.setHgrow(filler5, Priority.ALWAYS);
 
-        toolBar.getItems().add(closeButton);
-        toolBar.getItems().add(filler1);
-        toolBar.getItems().add(actionMenu);
-        toolBar.getItems().addAll(buttons);
-        toolBar.getItems().add(filler2);
-        toolBar.getItems().addAll(atomXFieldLabel, atomXLabel, filler3, atomYFieldLabel, atomYLabel, filler4, intensityFieldLabel, intensityLabel);
+        if (toolBar!=null) {
+            toolBar.getItems().add(closeButton);
+            toolBar.getItems().add(filler1);
+            toolBar.getItems().add(actionMenu);
+            toolBar.getItems().addAll(buttons);
+            toolBar.getItems().add(filler2);
+            toolBar.getItems().addAll(atomXFieldLabel, atomXLabel, filler3, atomYFieldLabel, atomYLabel, filler4, intensityFieldLabel, intensityLabel);
 
-        toolBar.getItems().add(filler5);
-
+            toolBar.getItems().add(filler5);
+        }
         controller.selPeaks.addListener(e -> setActivePeaks(controller.selPeaks.get()));
     }
 
