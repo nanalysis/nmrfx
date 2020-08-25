@@ -191,7 +191,6 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
     private FractionCanvas chartGroup;
 
     PeakNavigator peakNavigator;
-    PeakSlider peakSlider;
     SpectrumComparator spectrumComparator;
     PathTool pathTool;
     ListView datasetListView = new ListView();
@@ -337,14 +336,6 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
 
     public Stage getStage() {
         return stage;
-    }
-
-    public boolean hasSlider() {
-        return peakSlider != null;
-    }
-
-    public PeakSlider getSlider() {
-        return peakSlider;
     }
 
     @FXML
@@ -1531,45 +1522,12 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         }
     }
 
-    public void showPeakSlider() {
-        if (peakSlider!=null && peakSlider.getToolBar()==null) {
-            removePeakSlider(peakSlider);
-        }
-        if (peakSlider == null) {
-            ToolBar navBar = new ToolBar();
-            bottomBox.getChildren().add(navBar);
-            peakSlider = new PeakSlider(this, this::removePeakSlider);
-            peakSlider.initSlider(navBar);
-        }
-    }
-
-    public void initPeakSlider(boolean showToolbar) {
-        if (showToolbar) {
-            showPeakSlider();
-        } else {
-            if (peakSlider == null) {
-                peakSlider = new PeakSlider(this, this::removePeakSlider);
-                peakSlider.initSlider(null);
-            } else {
-                bottomBox.getChildren().remove(peakSlider.getToolBar());
-                peakSlider.sliderToolBar=null;
-            }
-        }
-    }
-
     public Peak getActivePeak() {
         Peak peak = null;
         if (peakNavigator != null) {
             peak = peakNavigator.getPeak();
         }
         return peak;
-    }
-
-    public void removePeakSlider(Object o) {
-        if (peakSlider != null) {
-            bottomBox.getChildren().remove(peakSlider.getToolBar());
-            peakSlider = null;
-        }
     }
 
     public void showPathTool() {
@@ -2109,7 +2067,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
 
     public void addSelectedPeakListener(ChangeListener listener) {
         selPeaks.addListener(listener);
-        
+
     }
 
 }
