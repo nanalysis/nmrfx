@@ -769,14 +769,14 @@ public class Residue extends Compound {
         }
 
         //type #fixme should be read in from file
-        String type = "L-peptide linking";
+        String type = "\"L-peptide linking\"";
         
         //flag #fixme should be read in from file
         String flag = "y";
         
         //full res name
         if (this.label.contains("+H")) {
-            fullResName = fullResName.substring(0, fullResName.length() - 3) + "IC ACID";
+            fullResName = "\"" + fullResName.substring(0, fullResName.length() - 3) + "IC ACID\"";
         }
         
         //chem comp
@@ -800,7 +800,7 @@ public class Residue extends Compound {
             }
             aCount.put(aSym, nAType);
         }
-        String chemComp = "";
+        String chemComp = "\"";
         SortedSet<String> keys = new TreeSet<>(aCount.keySet());
         for (String key : keys) {
             int nAType = aCount.get(key);
@@ -809,7 +809,9 @@ public class Residue extends Compound {
             } else {
                 chemComp += key + String.valueOf(nAType) + " ";
             }
-        }      
+        }  
+        chemComp = chemComp.trim();
+        chemComp += "\"";
             
         //molecular weight
         double weight = 0.0;
@@ -873,6 +875,45 @@ public class Residue extends Compound {
         int length = seqID1 - seqID + 1;
         
         return String.format("%-6s %-6s %-1d %-3s %-1s %-2d %-1s %-3s %-1s %-2d %-1s %-3s %-1s %-2d %-3s %-1s %-2d %-1d %-1s %-2s", typeID, id, idx, resName, chainID, seqID, insCode, resName1, chainID1, seqID1, insCode1, resName, chainID, seqID, resName1, chainID1, seqID1, entityIDNum, details, length);
+    }
+    
+    public String toMMCifSheetRangeString(int idx, Residue lastRes) {
+        //first chain ID
+        String polymerName = this.polymer.getName();
+        char chainID = polymerName.charAt(0);
+        
+        //first entity ID
+        int entityIDNum = chainID - 'A' + 1;
+        
+        //first seq ID
+        int seqID = this.getIDNum();
+
+        //first residue name
+        String resName = this.name;
+        if (resName.length() > 3) {
+            resName = resName.substring(0, 3);
+        }
+        
+        //last chain ID
+        String polymerName1 = lastRes.polymer.getName();
+        char chainID1 = polymerName1.charAt(0);
+        
+        //last seq ID
+        int seqID1 = lastRes.getIDNum();
+
+        //last residue name
+        String resName1 = lastRes.name;
+        if (resName1.length() > 3) {
+            resName1 = resName1.substring(0, 3);
+        }
+
+        //first PDB ins code
+        String insCode = "?";
+        
+        //last PDB ins code
+        String insCode1 = "?";
+        
+        return String.format("%-2s %-1d %-3s %-1s %-2d %-1s %-3s %-1s %-2d %-1s %-3s %-1s %-2d %-3s %-1s %-2d", chainID, idx, resName, chainID, seqID, insCode, resName1, chainID1, seqID1, insCode1, resName, chainID, seqID, resName1, chainID1, seqID1);
     }
     
     public String toMMCifTorsionString(double[] angles, int idx, int pdbModelNum) {
