@@ -1585,10 +1585,11 @@ public class PeakList {
      *
      * @param newPeak
      */
-    public void addPeak(Peak newPeak) {
+    public Peak addPeak(Peak newPeak) {
         newPeak.initPeakDimContribs();
         peaks.add(newPeak);
         clearIndex();
+        return newPeak;
     }
 
     /**
