@@ -41,12 +41,13 @@ import org.nmrfx.processor.optimization.PeakClusterMatcher;
 import org.nmrfx.processor.optimization.PeakCluster;
 import javafx.collections.ObservableList;
 import org.nmrfx.processor.gui.spectra.ConnectPeakAttributes;
+import org.nmrfx.processor.gui.spectra.KeyBindings;
 
 /**
  *
  * @author Bruce Johnson
  */
-public class PeakSlider {
+public class PeakSlider implements ControllerTool {
 
     ToolBar sliderToolBar;
     FXMLController controller;
@@ -67,7 +68,7 @@ public class PeakSlider {
     List<FreezeListener> listeners = new ArrayList<>();
     PeakClusterMatcher[] matchers = new PeakClusterMatcher[2];
 
-    public PeakSlider(FXMLController controller, Consumer closeAction) {
+    public PeakSlider(FXMLController controller, Consumer<PeakSlider> closeAction) {
         this.controller = controller;
         this.closeAction = closeAction;
         setupLists(true);
@@ -160,7 +161,7 @@ public class PeakSlider {
         Pane filler5 = new Pane();
         HBox.setHgrow(filler5, Priority.ALWAYS);
 
-        if (toolBar!=null) {
+        if (toolBar != null) {
             toolBar.getItems().add(closeButton);
             toolBar.getItems().add(filler1);
             toolBar.getItems().add(actionMenu);
@@ -171,6 +172,24 @@ public class PeakSlider {
             toolBar.getItems().add(filler5);
         }
         controller.selPeaks.addListener(e -> setActivePeaks(controller.selPeaks.get()));
+        for (PolyChart chart : controller.getCharts()) {
+            KeyBindings keyBindings = chart.getKeyBindings();
+            keyBindings.registerKeyAction("df", this::freezePeaks);
+            keyBindings.registerKeyAction("dt", this::thawPeaks);
+            keyBindings.registerKeyAction("ds", this::tweakPeaks);
+        }
+    }
+
+    public void freezePeaks(PolyChart chart) {
+        freezePeaks(false);
+    }
+
+    public void thawPeaks(PolyChart chart) {
+        thawPeaks(false);
+    }
+
+    public void tweakPeaks(PolyChart chart) {
+        tweakPeaks(false);
     }
 
     public final void setupLists(final boolean state) {
@@ -273,12 +292,12 @@ public class PeakSlider {
         controller.charts.stream().forEach(chart -> {
             List<Peak> selected = chart.getSelectedPeaks();
             selected.forEach((peak) -> {
-                tweakPeak(peak,useAllConditions);
+                tweakPeak(peak, useAllConditions);
             });
         });
     }
 
-    public void tweakPeak(Peak peak,boolean useAllConditions) {
+    public void tweakPeak(Peak peak, boolean useAllConditions) {
         Set<Peak> peakSet = new HashSet<>();
         int nDim = peak.getPeakList().getNDim();
         for (int i = 0; i < nDim; i++) {
@@ -801,6 +820,7 @@ public class PeakSlider {
         matchClusters(0, drawMatches);
         matchClusters(1, drawMatches);
     }
+
     public void matchClusters(int iDim, boolean drawMatches) {
         System.out.println("matchClusters(" + iDim + ")");
 

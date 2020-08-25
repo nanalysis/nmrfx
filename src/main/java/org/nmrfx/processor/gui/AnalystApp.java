@@ -548,6 +548,10 @@ public class AnalystApp extends MainApp {
         statusBar.addToToolMenu(oneDMenu);
         statusBar.addToToolMenu(molMenu);
 
+        MenuItem peakSliderMenuItem = new MenuItem("Show Peak Slider");
+        statusBar.addToToolMenu("Peak Tools", peakSliderMenuItem);
+        peakSliderMenuItem.setOnAction(e -> showPeakSlider());
+
     }
 
     static void showDocAction(ActionEvent event) {
@@ -1085,6 +1089,23 @@ public class AnalystApp extends MainApp {
             multipletTool.initialize(vBox);
             controller.addTool(multipletTool);
         }
+    }
+
+    public void showPeakSlider() {
+        FXMLController controller = FXMLController.getActiveController();
+        if (!controller.containsTool(PeakSlider.class)) {
+            ToolBar navBar = new ToolBar();
+            controller.getBottomBox().getChildren().add(navBar);
+            PeakSlider peakSlider = new PeakSlider(controller, this::removePeakSlider);
+            peakSlider.initSlider(navBar);
+            controller.addTool(peakSlider);
+        }
+    }
+
+    public void removePeakSlider(PeakSlider peakSlider) {
+        FXMLController controller = FXMLController.getActiveController();
+        controller.removeTool(PeakSlider.class);
+        controller.getBottomBox().getChildren().remove(peakSlider.getToolBar());
     }
 
     public MultipletTool getMultipletTool() {
