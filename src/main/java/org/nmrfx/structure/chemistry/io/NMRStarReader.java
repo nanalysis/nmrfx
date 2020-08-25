@@ -776,6 +776,7 @@ public class NMRStarReader {
     public void processSTAR3PeakList(Saveframe saveframe) throws ParseException {
         ResonanceFactory resFactory = PeakDim.resFactory;
         String listName = saveframe.getValue("_Spectral_peak_list", "Sf_framecode");
+        String id = saveframe.getValue("_Spectral_peak_list", "ID");
         String sampleLabel = saveframe.getLabelValue("_Spectral_peak_list", "Sample_label");
         String sampleConditionLabel = saveframe.getOptionalLabelValue("_Spectral_peak_list", "Sample_condition_list_label");
         String datasetName = saveframe.getLabelValue("_Spectral_peak_list", "Experiment_name");
@@ -798,7 +799,7 @@ public class NMRStarReader {
         }
         int nDim = NvUtil.toInt(nDimString);
 
-        PeakList peakList = new PeakList(listName, nDim);
+        PeakList peakList = new PeakList(listName, nDim, NvUtil.toInt(id));
 
         int nSpectralDim = saveframe.loopCount("_Spectral_dim");
         if (nSpectralDim > nDim) {
@@ -1535,7 +1536,10 @@ public class NMRStarReader {
                 } else {
                     try {
                         int peakListID = Integer.parseInt(peakListIDStr);
-                        peakList = PeakList.get(peakListID);
+                        Optional<PeakList> peakListOpt = PeakList.get(peakListID);
+                        if (peakListOpt.isPresent()) {
+                            peakList = peakListOpt.get();
+                        }
                     } catch (NumberFormatException nFE) {
                         throw new ParseException("Invalid peak list id (not int) \"" + peakListIDStr + "\"");
                     }
