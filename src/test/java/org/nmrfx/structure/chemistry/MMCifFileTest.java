@@ -21,8 +21,6 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.nmrfx.structure.chemistry.io.MMcifReader;
 import org.nmrfx.structure.chemistry.io.MMcifWriter;
-import org.nmrfx.structure.chemistry.io.NMRNEFReader;
-import org.nmrfx.structure.chemistry.io.NMRNEFWriter;
 
 /**
  *
@@ -234,6 +232,7 @@ public class MMCifFileTest {
         Map<String, List<Object>> distMap = new HashMap<>();
         Map<Integer, String> keys = new HashMap<>();
         boolean inDist = false;
+        List<Object> values = new ArrayList<>();
         for (List<Object> line : dataArray) {
             if (line.size() > 0) {
                 if (line.get(0).toString().contains("_pdbx_validate_close_contact")) {
@@ -251,17 +250,17 @@ public class MMCifFileTest {
                             keyParts[i] = line.get(iChain + 6 * i) + "." + line.get(iSeq + 6 * i).toString() + "." + line.get(iAtomName + 6 * i);
                         }
                         String key = String.join(";", keyParts);
-                        List<Object> values = new ArrayList<>();
-                        for (int i = iSeq + 6 * (nAtoms - 1) + 3; i < line.size(); i++) {
-                            values.add(line.get(i));
-                        }
                         if (keys.containsKey(pdbModelNum)) {
                             String oldKey = keys.get(pdbModelNum);
                             String newKey = oldKey + "_" + key;
                             keys.put(pdbModelNum, newKey);
                             distMap.remove(oldKey);
                         } else {
+                            values = new ArrayList<>();
                             keys.put(pdbModelNum, key);
+                        }
+                        for (int i = iSeq + 6 * (nAtoms - 1) + 3; i < line.size(); i++) {
+                            values.add(line.get(i));
                         }
                         key = keys.get(pdbModelNum);
                         distMap.put(key, values);
@@ -310,7 +309,7 @@ public class MMCifFileTest {
         if (!tmpDir.exists()) {
             Files.createDirectory(tmpDir.toPath());
         }
-        String outFile = String.join(File.separator, outPath, nefFileName + "_mmCif_outTest.txt");
+        String outFile = String.join(File.separator, outPath, nefFileName + "_mmCif_outTest.cif");
         try {
             if (orig.isEmpty()) {
                 MMcifReader.read(fileName);
