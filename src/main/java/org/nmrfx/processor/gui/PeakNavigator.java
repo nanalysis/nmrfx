@@ -224,7 +224,10 @@ public class PeakNavigator implements PeakListener {
                 }
             }
             if (testList == null) {
-                testList = PeakList.get(0);
+                Optional<PeakList> firstListOpt = PeakList.getFirst();
+                if (firstListOpt.isPresent()) {
+                    testList = firstListOpt.get();
+                }
             }
             setPeakList(testList);
         }
