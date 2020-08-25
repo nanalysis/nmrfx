@@ -34,6 +34,7 @@ import org.nmrfx.structure.chemistry.Helix;
 import org.nmrfx.structure.chemistry.InvalidMoleculeException;
 import org.nmrfx.structure.chemistry.MolFilter;
 import org.nmrfx.structure.chemistry.Molecule;
+import org.nmrfx.structure.chemistry.NonLoop;
 import org.nmrfx.structure.chemistry.Polymer;
 import org.nmrfx.structure.chemistry.Residue;
 import org.nmrfx.structure.chemistry.SpatialSet;
@@ -55,6 +56,7 @@ public class MMcifReader {
     public static EnergyLists energyList;
     public static Dihedral dihedral;
     public static Helix helix;
+    public static NonLoop sheets;
 
     public MMcifReader(final File starFile, final MMCIF star3) {
         this.mmcif = star3;
@@ -225,6 +227,31 @@ public class MMcifReader {
             helix = new Helix(helixResList);
         }
     }
+    
+    void buildSheetRange(final Saveframe saveframe, Molecule molecule) throws ParseException {
+        Loop loop = saveframe.getLoop("_struct_sheet_range");
+        if (loop == null) {
+            throw new ParseException("No \"_struct_sheet_range\" loop");
+        } else {
+            List<String> idColumn = loop.getColumnAsList("id");
+            List<String> begAsymIDColumn = loop.getColumnAsList("beg_label_asym_id");
+            List<Integer> begSeqIDColumn = loop.getColumnAsIntegerList("beg_label_seq_id", 1);
+            List<Integer> endSeqIDColumn = loop.getColumnAsIntegerList("end_label_seq_id", 1);
+            List<Polymer> polymers = molecule.getPolymers();
+            List<Residue> sheetResList = new ArrayList<>();
+            for (int i=0; i<idColumn.size(); i++) {
+                int iFirstRes = begSeqIDColumn.get(i) - 1;
+                int iLastRes = endSeqIDColumn.get(i) - 1;
+                char chainCode = begAsymIDColumn.get(i).charAt(0);
+                int iPolymer = chainCode - 'A';
+                Residue firstRes = polymers.get(iPolymer).getResidue(iFirstRes);
+                Residue lastRes = polymers.get(iPolymer).getResidue(iLastRes);
+                sheetResList.add(firstRes);
+                sheetResList.add(lastRes);
+            }
+            sheets = new NonLoop(sheetResList);
+        }
+    }
 
     void buildAtomSites(int fromSet, final int toSet) throws ParseException {
         Iterator iter = mmcif.getSaveFrames().values().iterator();
@@ -283,6 +310,7 @@ public class MMcifReader {
                 buildChains(saveframe, molecule, molName);
                 buildConformation(saveframe, molecule);
                 buildChemComp(saveframe, molecule);
+                buildSheetRange(saveframe, molecule);
                 molecule.updateSpatialSets();
                 molecule.genCoords(false);
 
@@ -472,7 +500,7 @@ public class MMcifReader {
 //        String[] resNames = new String[2];
         atomNames[0] = new ArrayList<>();
         atomNames[1] = new ArrayList<>();
-
+        ArrayList<Double> distList = new ArrayList<>();
         for (int i = 0; i < chainCodeColumns[0].size(); i++) {
             int pdbModelNum = pdbModelNumColumn.get(i);
             int pdbModelNumPrev = pdbModelNum;
@@ -487,6 +515,7 @@ public class MMcifReader {
             if (pdbModelNum != pdbModelNumPrev) {
                 atomNames[0].clear();
                 atomNames[1].clear();
+                distList.clear();
                 if (pdbModelNum == pdbModelNumNext
                         && i > 0 && i < chainCodeColumns[0].size() - 1) {
                     addConstraint = false;
@@ -517,11 +546,12 @@ public class MMcifReader {
             double weight = 1.0;
             double dist = distColumn.get(i);
             double distErr = upper - lower;
+            distList.add(dist);
 
             Util.setStrictlyNEF(true);
             try {
                 if (addConstraint) {
-                    energyList.addDistanceConstraint(atomNames[0], atomNames[1], lower, upper, weight, dist, distErr);
+                    energyList.addDistance(pdbModelNum, atomNames[0], atomNames[1], lower, upper, weight, distList, distErr);
                 }
             } catch (IllegalArgumentException iaE) {
                 int index = idColumn.get(i);
@@ -552,6 +582,7 @@ public class MMcifReader {
             molecule.setMethylRotationActive(true);
             energyList = new EnergyLists(molecule);
             dihedral = new Dihedral(energyList, false);
+            energyList.clearDistanceMap();
 
             energyList.makeCompoundList(molecule);
             if (DEBUG) {
