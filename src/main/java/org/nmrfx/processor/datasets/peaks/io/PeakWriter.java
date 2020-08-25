@@ -276,56 +276,7 @@ public class PeakWriter {
     }
 
     public void writePeaksSTAR3(FileWriter chan, PeakList peakList) throws IOException, InvalidPeakException {
-        char stringQuote = '"';
-        chan.write("save_" + peakList.getName() + "\n");
-        chan.write("_Spectral_peak_list.Sf_category                 ");
-        chan.write("spectral_peak_list\n");
-        chan.write("_Spectral_peak_list.Sf_framecode                 ");
-        chan.write(peakList.getName() + "\n");
-        chan.write("_Spectral_peak_list.ID                          ");
-        chan.write(peakList.getId() + "\n");
-        chan.write("_Spectral_peak_list.Data_file_name               ");
-        chan.write(".\n");
-        chan.write("_Spectral_peak_list.Sample_ID                   ");
-        chan.write(".\n");
-        chan.write("_Spectral_peak_list.Sample_label                 ");
-        if (peakList.getSampleLabel().length() != 0) {
-            chan.write("$" + peakList.getSampleLabel() + "\n");
-        } else {
-            chan.write(".\n");
-        }
-        chan.write("_Spectral_peak_list.Sample_condition_list_ID     ");
-        chan.write(".\n");
-        chan.write("_Spectral_peak_list.Sample_condition_list_label  ");
-        String sCond = peakList.getSampleConditionLabel();
-        if ((sCond.length() != 0) && !sCond.equals(".")) {
-            chan.write("$" + sCond + "\n");
-        } else {
-            chan.write(".\n");
-        }
-        chan.write("_Spectral_peak_list.Slidable                      ");
-        String slidable = peakList.isSlideable() ? "yes" : "no";
-        chan.write(slidable + "\n");
-        chan.write("_Spectral_peak_list.Scale ");
-        chan.write(String.valueOf(peakList.getScale()) + "\n");
-
-        chan.write("_Spectral_peak_list.Experiment_ID                 ");
-        chan.write(".\n");
-        chan.write("_Spectral_peak_list.Experiment_name               ");
-        if (peakList.fileName.length() != 0) {
-            chan.write("$" + peakList.fileName + "\n");
-        } else {
-            chan.write(".\n");
-        }
-        chan.write("_Spectral_peak_list.Number_of_spectral_dimensions ");
-        chan.write(String.valueOf(peakList.nDim) + "\n");
-        chan.write("_Spectral_peak_list.Details                       ");
-        if (peakList.getDetails().length() != 0) {
-            chan.write(stringQuote + peakList.getDetails() + stringQuote + "\n");
-        } else {
-            chan.write(".\n");
-        }
-        chan.write("\n");
+        peakList.writeSTAR3Header(chan);
         String[] loopStrings = SpectralDim.getSTAR3LoopStrings();
         chan.write("loop_\n");
         for (String loopString : loopStrings) {
