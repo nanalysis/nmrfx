@@ -710,7 +710,7 @@ public class Residue extends Compound {
         return polymer.getName() + ":" + getName() + getNumber();
     }
 
-    public String toNEFSequenceString(Molecule molecule, String link) {
+    public String toNEFSequenceString(String link) {
         //index and sequence code
         int number = 1;
         //chain ID
@@ -729,6 +729,236 @@ public class Residue extends Compound {
         String resVar = this.label;
 
         return String.format("%8d %7s %7d %9s %-14s %-7s", number, chainID, number, resName, link, resVar);
+    }
+    
+    public String toMMCifSequenceString(boolean pdb) {
+        //chain ID
+        String polymerName = this.polymer.getName();
+        char chainID = polymerName.charAt(0);
+        
+        //entity ID
+        int entityIDNum = chainID - 'A' + 1;
+        
+        //seq ID
+        int seqID = this.getIDNum();
+
+        //residue name
+        String resName = this.name;
+        if (resName.length() > 3) {
+            resName = resName.substring(0, 3);
+        }
+
+        //hetero
+        String hetero = this.label;
+        if (hetero.length() > 1) {
+            hetero = hetero.substring(0, 1);
+        }
+        
+        if (pdb){
+            return String.format("%-2s %-2d %-3d %-4s %-3d %-3d %-3d %-4s %-4s %-2s %-2s %-2s", chainID, entityIDNum, seqID, resName, seqID, seqID, seqID, resName, resName, chainID, ".", hetero);
+        } else {
+            return String.format("%-2d %-3d %-4s %-2s", entityIDNum, seqID, resName, hetero);
+        }
+    }
+    
+    public String toMMCifChemCompString(Map<String, Double> weightMap, boolean lastRes, String fullResName) {
+        //residue name
+        String resName = this.name;
+        if (resName.length() > 3) {
+            resName = resName.substring(0, 3);
+        }
+
+        //type #fixme should be read in from file
+        String type = "\"L-peptide linking\"";
+        
+        //flag #fixme should be read in from file
+        String flag = "y";
+        
+        //full res name
+        if (this.label.contains("+H")) {
+            fullResName = "\"" + fullResName.substring(0, fullResName.length() - 3) + "IC ACID\"";
+        }
+        
+        //chem comp
+        Map<String, Integer> aCount = new HashMap<>();
+        List<Atom> aList = this.atoms;
+        List<String> aSymList = new ArrayList<>();
+        for (Atom atom : aList) {
+            String aSym = atom.getSymbol();
+            aSymList.add(aSym);
+        }
+        Set<String> aSymSet = new HashSet<>(aSymList);
+        for (String aSym : aSymSet) {
+            int nAType = Collections.frequency(aSymList, aSym);
+            if (aSym.equals("O")) {
+                nAType += 1;
+            } else if (aSym.equals("H") && this.getIDNum() > 1) {
+                nAType += 2;
+                if (lastRes || this.label.contains("+H")) {
+                    nAType += 1;
+                }
+            }
+            aCount.put(aSym, nAType);
+        }
+        String chemComp = "\"";
+        SortedSet<String> keys = new TreeSet<>(aCount.keySet());
+        for (String key : keys) {
+            int nAType = aCount.get(key);
+            if (nAType == 1) {
+                chemComp += key + " ";
+            } else {
+                chemComp += key + String.valueOf(nAType) + " ";
+            }
+        }  
+        chemComp = chemComp.trim();
+        chemComp += "\"";
+            
+        //molecular weight
+        double weight = 0.0;
+        for (String key : aCount.keySet()) {
+            int nAType = aCount.get(key);
+            if (weightMap.containsKey(key)){
+                weight += nAType * weightMap.get(key);
+            }
+        }     
+        
+        return String.format("%-4s %-18s %-2s %-15s %-2s %-15s %-4.3f", resName, type, flag, fullResName, "?", chemComp, weight);
+        
+    }
+    
+    public String toMMCifStructConfString(int idx, Residue lastRes) {
+        //type id
+        String typeID = "HELX_P";
+        
+        //id
+        String id = typeID + String.valueOf(idx);
+
+        //first chain ID
+        String polymerName = this.polymer.getName();
+        char chainID = polymerName.charAt(0);
+        
+        //first entity ID
+        int entityIDNum = chainID - 'A' + 1;
+        
+        //first seq ID
+        int seqID = this.getIDNum();
+
+        //first residue name
+        String resName = this.name;
+        if (resName.length() > 3) {
+            resName = resName.substring(0, 3);
+        }
+        
+        //last chain ID
+        String polymerName1 = lastRes.polymer.getName();
+        char chainID1 = polymerName1.charAt(0);
+        
+        //last seq ID
+        int seqID1 = lastRes.getIDNum();
+
+        //last residue name
+        String resName1 = lastRes.name;
+        if (resName1.length() > 3) {
+            resName1 = resName1.substring(0, 3);
+        }
+
+        //first PDB ins code
+        String insCode = "?";
+        
+        //last PDB ins code
+        String insCode1 = "?";
+        
+        //details
+        String details = "?";
+        
+        //length
+        int length = seqID1 - seqID + 1;
+        
+        return String.format("%-6s %-6s %-1d %-3s %-1s %-2d %-1s %-3s %-1s %-2d %-1s %-3s %-1s %-2d %-3s %-1s %-2d %-1d %-1s %-2s", typeID, id, idx, resName, chainID, seqID, insCode, resName1, chainID1, seqID1, insCode1, resName, chainID, seqID, resName1, chainID1, seqID1, entityIDNum, details, length);
+    }
+    
+    public String toMMCifSheetRangeString(int idx, Residue lastRes) {
+        //first chain ID
+        String polymerName = this.polymer.getName();
+        char chainID = polymerName.charAt(0);
+        
+        //first entity ID
+        int entityIDNum = chainID - 'A' + 1;
+        
+        //first seq ID
+        int seqID = this.getIDNum();
+
+        //first residue name
+        String resName = this.name;
+        if (resName.length() > 3) {
+            resName = resName.substring(0, 3);
+        }
+        
+        //last chain ID
+        String polymerName1 = lastRes.polymer.getName();
+        char chainID1 = polymerName1.charAt(0);
+        
+        //last seq ID
+        int seqID1 = lastRes.getIDNum();
+
+        //last residue name
+        String resName1 = lastRes.name;
+        if (resName1.length() > 3) {
+            resName1 = resName1.substring(0, 3);
+        }
+
+        //first PDB ins code
+        String insCode = "?";
+        
+        //last PDB ins code
+        String insCode1 = "?";
+        
+        return String.format("%-2s %-1d %-3s %-1s %-2d %-1s %-3s %-1s %-2d %-1s %-3s %-1s %-2d %-3s %-1s %-2d", chainID, idx, resName, chainID, seqID, insCode, resName1, chainID1, seqID1, insCode1, resName, chainID, seqID, resName1, chainID1, seqID1);
+    }
+    
+    public String toMMCifTorsionString(double[] angles, int idx, int pdbModelNum) {
+
+        StringBuilder sBuilder = new StringBuilder();
+        if (this != null) {
+
+            //index
+            sBuilder.append(String.format("%-4d", idx));
+
+            //PDB model num
+            sBuilder.append(String.format("%-4d", pdbModelNum));
+
+            // residue name 
+            String resName = this.name;
+            sBuilder.append(String.format("%-6s", resName));
+
+            // chain code 
+            String polymerName = this.polymer.getName();
+            char chainID = polymerName.charAt(0);
+            sBuilder.append(String.format("%-4s", chainID));
+
+            // sequence code 
+            int seqCode = this.getIDNum();
+            sBuilder.append(String.format("%-4d", seqCode));
+
+            // PDB ins code
+            String code = "?"; //fixme need to get from file, not hard-code
+            sBuilder.append(String.format("%-2s", code));
+            
+            // label alt id
+            String altID = "?"; //fixme need to get from file, not hard-code
+            sBuilder.append(String.format("%-2s", altID));
+
+            // phi
+            double phi = angles[0];
+            sBuilder.append(String.format("%-8.2f", Math.toDegrees(phi)));
+
+            // psi
+            double psi = angles[1];
+            sBuilder.append(String.format("%-8.2f", Math.toDegrees(psi)));
+
+        }
+
+        return sBuilder.toString();
     }
 
 }

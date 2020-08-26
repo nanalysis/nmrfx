@@ -82,6 +82,7 @@ public class EnergyLists {
     boolean[] stochasticResidues = null;
     boolean constraintsSetup = false;
     public static double[][][] irpTable;
+    private Map<Integer, List<DistancePair>> distancePairMap = new HashMap<>();
 
     public EnergyLists() {
     }
@@ -469,9 +470,66 @@ public class EnergyLists {
         constraintsSetup = false;
 
     }
+    
+    public void addDistance(final int modelNum, final List<String> filterStrings1, final List<String> filterStrings2,
+            final double rLow, final double rUp, Double weight, List<Double> targetValues, Double targetErr) throws IllegalArgumentException {
+        if (filterStrings1.size() != filterStrings2.size()) {
+            throw new IllegalArgumentException("atoms group 1 and atoms group 2 should be same size");
+        }
+        ArrayList<Atom> atoms1m = new ArrayList<>();
+        ArrayList<Atom> atoms2m = new ArrayList<>();
+        for (int i = 0; i < filterStrings1.size(); i++) {
+            String filterString1 = filterStrings1.get(i);
+            String filterString2 = filterStrings2.get(i);
+            MolFilter molFilter1 = new MolFilter(filterString1);
+            MolFilter molFilter2 = new MolFilter(filterString2);
+
+            List<Atom> group1 = Molecule.getNEFMatchedAtoms(molFilter1, molecule);
+            List<Atom> group2 = Molecule.getNEFMatchedAtoms(molFilter2, molecule);
+
+            if (group1.size() == 0) {
+                throw new IllegalArgumentException("atoms1 null " + filterString1);
+            }
+            if (group2.size() == 0) {
+                throw new IllegalArgumentException("atoms2 null " + filterString2);
+            }
+
+            for (Atom atom1 : group1) {
+                for (Atom atom2 : group2) {
+                    atoms1m.add(atom1);
+                    atoms2m.add(atom2);
+                }
+            }
+        }
+        Atom[] atomsA1 = new Atom[atoms1m.size()];
+        Atom[] atomsA2 = new Atom[atoms2m.size()];
+        if (atoms1m.size() != atoms2m.size()) {
+            throw new IllegalArgumentException("atoms group 1 and atoms group 2 should be same size");
+        }
+        atoms1m.toArray(atomsA1);
+        atoms2m.toArray(atomsA2);
+        List<DistancePair> distList = new ArrayList<>();
+        for (int i=0; i<targetValues.size(); i++) {
+            Atom[] atomsA1a = {atomsA1[i]};
+            Atom[] atomsA2a = {atomsA2[i]};
+            distList.add(new DistancePair(atomsA1a, atomsA2a, rLow, rUp, false, weight, targetValues.get(i), targetErr));
+            distancePairMap.put(modelNum, distList);
+        }
+        distanceMap.clear();
+        constraintsSetup = false;
+
+    }
 
     public ArrayList<DistancePair> getDistanceList() {
         return distanceList;
+    }
+    
+    public Map<Integer, List<DistancePair>> getDistancePairMap() {
+        return distancePairMap;
+    }
+    
+    public void clearDistanceMap() {
+        distancePairMap.clear();
     }
 
     //calculates distance between center of the residues. If center is far away, no need to check atoms of residue
