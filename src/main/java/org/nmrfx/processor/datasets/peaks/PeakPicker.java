@@ -729,9 +729,13 @@ public class PeakPicker {
                         if (measurePeak(peakPickPar.level, checkPoint, peakPickPar.cpt, dim, pdim,
                                 peakPickPar.fixedPick, peak,
                                 peakPickPar.nPeakDim, peakPickPar.sDevN, sign, measurePeak)) {
-                            nPeaks++;
-                            peakList.addPeak(peak);
-                            lastPeakPicked = peak;
+                            Peak pickedPeak=peakList.addPeak(peak);
+                            if (pickedPeak!=null) {
+                                nPeaks++;
+                                lastPeakPicked = pickedPeak;
+                            } else {
+                                peakList.idLast--;
+                            }
                         } else {
                             peakList.idLast--;
                         }
