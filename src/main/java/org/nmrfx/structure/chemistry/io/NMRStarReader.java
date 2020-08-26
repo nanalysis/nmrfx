@@ -63,7 +63,7 @@ public class NMRStarReader {
 
     Map entities = new HashMap();
     boolean hasResonances = false;
-    Map<Long, List<PeakDim>> resMap = new HashMap<>();
+    List<PeakDim> peakDimsWithoutResonance = new ArrayList<>();
     public static boolean DEBUG = false;
 
     public NMRStarReader(final File starFile, final STAR3 star3) {
@@ -656,7 +656,7 @@ public class NMRStarReader {
     }
 
     public void buildPeakLists() throws ParseException {
-        resMap.clear();
+        peakDimsWithoutResonance.clear();
         for (Saveframe saveframe : star3.getSaveFrames().values()) {
             if (saveframe.getCategoryName().equals("spectral_peak_list")) {
                 if (DEBUG) {
@@ -665,8 +665,17 @@ public class NMRStarReader {
                 processSTAR3PeakList(saveframe);
             }
         }
-        linkResonances();
+        addMissingResonances();
     }
+
+    public void addMissingResonances() {
+        ResonanceFactory resFactory = PeakDim.resFactory;
+        for (PeakDim peakDim : peakDimsWithoutResonance) {
+            Resonance resonance = resFactory.build();
+            resonance.add(peakDim);
+        }
+    }
+
 
     public void buildPeakPaths() throws ParseException {
         for (Saveframe saveframe : star3.getSaveFrames().values()) {
@@ -744,33 +753,6 @@ public class NMRStarReader {
             }
         }
         return spg;
-    }
-
-    private void addResonance(long resID, PeakDim peakDim) {
-        List<PeakDim> peakDims = resMap.get(resID);
-        if (peakDims == null) {
-            peakDims = new ArrayList<>();
-            resMap.put(resID, peakDims);
-        }
-        peakDims.add(peakDim);
-    }
-
-    public void linkResonances() {
-        ResonanceFactory resFactory = PeakDim.resFactory;
-        for (Long resID : resMap.keySet()) {
-            List<PeakDim> peakDims = resMap.get(resID);
-            PeakDim firstPeakDim = peakDims.get(0);
-            Resonance resonance = resFactory.build(resID);
-            firstPeakDim.setResonance(resonance);
-            resonance.add(firstPeakDim);
-            if (peakDims.size() > 1) {
-                for (PeakDim peakDim : peakDims) {
-                    if (peakDim != firstPeakDim) {
-                        PeakList.linkPeakDims(firstPeakDim, peakDim);
-                    }
-                }
-            }
-        }
     }
 
     public void processSTAR3PeakList(Saveframe saveframe) throws ParseException {
@@ -928,8 +910,7 @@ public class NMRStarReader {
                 if ((value = NvUtil.getColumnValue(cornerColumn, i)) != null) {
                     peak.setCorner(value);
                 }
-                peakList.addPeak(peak);  // old code added without creating resonance, but that caused problems with new
-                // linking resonance code used here
+                peakList.addPeakWithoutResonance(peak);
             }
 
             loop = saveframe.getLoop("_Peak_general_char");
@@ -1045,14 +1026,12 @@ public class NMRStarReader {
                         }
                         Peak peak = peakList.getPeakByID(idNum);
                         PeakDim peakDim = peak.getPeakDim(sDim);
-                        if (resonanceID != -1) {
-                            addResonance(resonanceID, peakDim);
+                        if (resonanceID != -1L) {
+                            Resonance resonance = resFactory.build(resonanceID);
+                            resonance.add(peakDim);
+                        } else {
+                            peakDimsWithoutResonance.add(peakDim);
                         }
-//                    Resonance res = resFactory.get(resonanceID);
-//                    if (res == null) {
-//                        resFactory.build(resonanceID);
-//                    }
-//                    peakDim.setResonance(resonanceID);
                     }
                 } else {
                     System.out.println("No \"Assigned Peak Chem Shift\" loop");
