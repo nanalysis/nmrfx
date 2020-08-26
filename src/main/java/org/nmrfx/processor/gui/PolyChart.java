@@ -3309,6 +3309,10 @@ public class PolyChart implements PeakListener {
         canvasAnnotations.add(anno);
     }
 
+    public void removeAnnotation(CanvasAnnotation anno) {
+        canvasAnnotations.remove(anno);
+    }
+
     public void clearAnnoType(Class annoClass) {
         Iterator<CanvasAnnotation> iter = canvasAnnotations.iterator();
         while (iter.hasNext()) {
