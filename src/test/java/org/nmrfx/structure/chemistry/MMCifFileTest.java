@@ -76,11 +76,11 @@ public class MMCifFileTest {
 //        testAll();
 //    }
 
-//    @Test
-//    public void testFile2JR2() throws IOException {
-//        loadData("2jr2");
-//        testAll();
-//    }
+    @Test
+    public void testFile2JR2() throws IOException {
+        loadData("2jr2");
+        testAll();
+    }
 
     @Test
     public void testFile1PQX() throws IOException {
