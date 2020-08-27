@@ -82,17 +82,12 @@ public class MMcifWriter {
         if (molecule == null) {
             throw new InvalidMoleculeException("No active mol");
         }
-        Iterator entityIterator = molecule.entityLabels.values().iterator();
-        while (entityIterator.hasNext()) {
-            Entity entity = (Entity) entityIterator.next();
-            if (entity instanceof Polymer) {
-                List<Residue> resList = ((Polymer) entity).getResidues();
-                for (Residue res : resList) {
-                    String result = res.toMMCifSequenceString(pdb);
-                    if (result != null) {
-                        chan.write(result + "\n");
-                    }
-                }
+        Polymer polymer = molecule.getPolymers().get(0);
+        List<Residue> resList = polymer.getResidues();
+        for (Residue res : resList) {
+            String result = res.toMMCifSequenceString(pdb);
+            if (result != null) {
+                chan.write(result + "\n");
             }
         }
         chan.write("#\n");
@@ -296,7 +291,6 @@ public class MMcifWriter {
     }
 
     static void writeAtomSites(FileWriter chan) throws IOException, InvalidMoleculeException {
-        int i;
         chan.write("loop_\n");
         for (String loopString : ATOM_SITE_LOOP_STRINGS) {
             chan.write(loopString + "\n");
@@ -305,28 +299,24 @@ public class MMcifWriter {
         if (molecule == null) {
             throw new InvalidMoleculeException("No active mol");
         }
-        i = 0;
+        int i = 0;
         molecule.updateAtomArray();
-        List<Atom> atomArray = molecule.getAtomArray();
-        Atom a0 = atomArray.get(0);
-        Map<String, List<SpatialSet>> initSpSetMap = a0.getSpatialSetMap();
-        if (initSpSetMap != null) {
-            int nSpSets = initSpSetMap.get(a0.getFullName()).size();
-            for (int iSet = 0; iSet < nSpSets; iSet++)  {
-                for (Atom atom : atomArray) {
-                    Map<String, List<SpatialSet>> spSetMap = atom.getSpatialSetMap();
-                    List<SpatialSet> spSets = spSetMap.get(atom.getFullName());
-                    if (spSets != null) {
-                        SpatialSet spSet = spSets.get(iSet);
-                        String result = atom.atomSitesToMMCifString(spSet, iSet + 1, i);
-                        if (result != null) {
-                            chan.write(result + "\n");
-                            i++;
-                        }
-                    }
+        int[] structures = molecule.getActiveStructures();
+        for (int iStruct : structures) {
+            for (Atom atom : molecule.getAtomArray()) {
+                SpatialSet spSet = atom.spatialSet;
+                if (atom.isCoarse()) {
+                    continue;
+                }
+                
+                String result = spSet.toMMCifString(i, iStruct);
+
+                if (result != null) {
+                    chan.write(result + "\n");
+                    i++;
                 }
             }
-        } 
+        }
         chan.write("#\n");
     }
     

@@ -48,6 +48,8 @@ public class SpatialSet {
     public float green = 0.0f;
     public float blue = 0.0f;
     public Vector coords = new Vector();
+    public ArrayList<Double> occupancies = new ArrayList<>();
+    public ArrayList<Double> bFactors = new ArrayList<>();
 
     public SpatialSet(Atom atom) {
         this.atom = atom;
@@ -74,7 +76,7 @@ public class SpatialSet {
         PPMv ppmv = new PPMv(0.0);
         ppms.addElement(ppmv);
     }
-
+    
     public SpatialSet(double ppmValue) {
         PPMv ppmv = new PPMv(ppmValue);
         ppms = new Vector(1);
@@ -151,6 +153,18 @@ public class SpatialSet {
 
     public int getPointCount() {
         return points.size();
+    }
+    
+    public void addPoint(float x, float y, float z) {
+        points.add(new Point3(x, y, z));
+    }
+    
+    public void addOccupancy(double occupancy) {
+        occupancies.add(occupancy);
+    }
+    
+    public void addBFactor(double bFactor) {
+        bFactors.add(bFactor);
     }
 
     public boolean isStereo() {
@@ -542,6 +556,90 @@ public class SpatialSet {
         sBuild.append("    "); // segment??
         sBuild.append(String.format("%2s", eName));
         return sBuild.toString();
+    }
+    
+    public String toMMCifString(int iAtom, int iStruct) {
+        StringBuilder sBuilder = new StringBuilder();
+       
+        if (this.points.size() < 1) {
+            return null;
+        }
+        
+        if (atom.entity instanceof Residue) {
+            // group_PDB
+            String group = "ATOM";
+            sBuilder.append(String.format("%-5s", group));
+            
+            sBuilder.append(String.format("%-8d", iAtom + 1));
+
+            // type symbol
+            String aType = atom.name.substring(0, 1);
+            sBuilder.append(String.format("%-2s", aType));
+            
+            // atom ID
+            String aName = atom.name;
+            sBuilder.append(String.format("%-5s", aName));
+            
+            sBuilder.append(String.format("%-2s", "."));
+            
+            // residue name
+            String resName = ((Residue) atom.entity).name;
+            sBuilder.append(String.format("%-4s", resName));
+            
+            //  chain code
+            String polymerName = ((Residue) atom.entity).polymer.getName();
+            char chainID = polymerName.charAt(0);
+            sBuilder.append(String.format("%-2s", chainID));
+            
+            // entity ID
+            int entityID = chainID - 'A' + 1;
+            sBuilder.append(String.format("%-2d", entityID));
+
+            // sequence code
+            int seqCode = ((Residue) atom.entity).getIDNum();
+            sBuilder.append(String.format("%-3d", seqCode));
+
+            sBuilder.append(String.format("%-2s", "?"));
+            
+            // cartn x
+            double x = this.points.get(iStruct).getX();
+            sBuilder.append(String.format("%-8.3f", x));
+            
+            // cartn y
+            double y = this.points.get(iStruct).getY();
+            sBuilder.append(String.format("%-8.3f", y));
+            
+            // cartn z
+            double z = this.points.get(iStruct).getZ();
+            sBuilder.append(String.format("%-8.3f", z));
+
+            // occupancy
+            double occupancy = this.occupancies.get(iStruct);
+            sBuilder.append(String.format("%-5.2f", occupancy));
+
+            // B factor
+            double bFactor = this.bFactors.get(iStruct);
+            sBuilder.append(String.format("%-5.2f", bFactor));
+            
+            sBuilder.append(String.format("%-2s", "?"));
+            
+            //auth seq code #fixme get this from file instead of hard-coding it to be the same as earlier entry
+            sBuilder.append(String.format("%-3d", seqCode));
+            
+            //auth res name #fixme get this from file
+            sBuilder.append(String.format("%-5s", resName));
+            
+            //auth chain id #fixme get this from file
+            sBuilder.append(String.format("%-2s", chainID));
+            
+            //auth atom name
+            sBuilder.append(String.format("%-5s", aName));
+            
+            //PDB model num
+            sBuilder.append(String.format("%-2d", iStruct + 1));
+        }
+        
+        return sBuilder.toString();
     }
 
     public String toTERString(int iAtom) {
