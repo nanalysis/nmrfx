@@ -51,6 +51,7 @@ useContacts = True
 reportAtom = None
 reportAtom = "1:1.CA"
 lamVal = 0.005
+
 #select which group of atom types to generate attributes for
 atoms = ["MHB", "MHG", "MHD", "MHE", "MCB", "MCG", "MCD","MCE", "C", "CA", "CB", "CG", "CD", "CE", "CZ", "H", "HA", "HB", "HG", "HD", "HE", "HZ", "N"]
 aaS = ['ALA', 'ARG', 'ASN', 'ASP', 'CYS', 'GLU', 'GLN', 'GLY', 'HIS', 'ILE', 'LEU', 'LYS', 'MET', 'PHE', 'PRO', 'SER', 'THR', 'TRP', 'TYR', 'VAL']
@@ -1397,9 +1398,6 @@ def copyBaseAttrFiles(dir1, dir2, atom=None, aa=None):
 #fit() loads attrs into matrix, calls LASSO, generates map 2.0 (adds cols of experimental values, predicted values, delta)
 #work flow: gen --> init --> corr --> corr --> final
 
-parser = argparse.ArgumentParser(usage='')
-subparsers = parser.add_subparsers(title='subcommands')
-
 def prepData(args):
     #removes pdb and bmrb entries in the test set from the generated dataset
     pdbIds, bmrbIds = removeTest(args.filename)
@@ -1407,9 +1405,6 @@ def prepData(args):
     filterEntries(pdbIds, bmrbIds)
     #predicts based on existing coefficients, preliminary quality measure
 
-parser_prep = subparsers.add_parser('prep', help='filter unreadable entries and combine with test set, pass in paired pdb - bmrb entries, filename required')
-parser_prep.add_argument('filename', type=str)
-parser_prep.set_defaults(func=prepData)
 
 def gen(args):
     global bmrbHome
@@ -1427,27 +1422,12 @@ def gen(args):
     print homeDir, args.dataset, 'gen'
     genAttrsFromList(args.dataset)
 
-parser_gen = subparsers.add_parser('gen', help='generate base attributes, home dir')
-parser_gen.add_argument('homeDir', nargs='?', default=homeDir, type=str)
-parser_gen.add_argument('-dataset', default=datasetFileName, type=str)
-parser_gen.add_argument('-bmrb', type=str)
-parser_gen.add_argument('-pdb', type=str)
-parser_gen.add_argument('-pdbDir', type=str)
-parser_gen.set_defaults(func=gen)
-
 
 def cpAttrs(args):
     global homeDir
     homeDir = args.d
     newDir(homeDir)
     copyBaseAttrFiles(args.o, args.d, args.atom, args.res)
-
-parser_copy = subparsers.add_parser('copy', help='copy attrs from other directory, origin dir, destination dir, -atom, -res')
-parser_copy.add_argument('-o', type=str)
-parser_copy.add_argument('-d', type=str)
-parser_copy.add_argument('-atom', type=str)
-parser_copy.add_argument('-res', type=str)
-parser_copy.set_defaults(func=cpAttrs)
 
 def doAll(args):
     global bmrbHome
@@ -1469,17 +1449,6 @@ def doAll(args):
     doCorrection(args)
     finalProp(args)
 
-parser_doall = subparsers.add_parser('doall', help='run entire workflow, home dir, dataset, -bmrb, -pdb, -pdbDir,  -gen, -test')
-parser_doall.add_argument('homeDir', nargs='?', default=homeDir, type=str)
-parser_doall.add_argument('-dataset', default=datasetFileName, type=str)
-parser_doall.add_argument('-bmrb', type=str)
-parser_doall.add_argument('-pdb', type=str)
-parser_doall.add_argument('-pdbDir', type=str)
-parser_doall.add_argument('-gen', action='store_true')
-parser_doall.add_argument('-coefs', action='store_true')
-parser_doall.add_argument('-test', action='store_true', default=False)
-parser_doall.set_defaults(func=doAll)
-
 def initialProp(args):
     global homeDir
     homeDir = args.homeDir
@@ -1487,10 +1456,6 @@ def initialProp(args):
     combine()
     #initial fit to generate result files, subsequent trim and rereference is based on the delta value
     fitAll()
-
-parser_init = subparsers.add_parser('init', help='initial fit from base attr files, home dir')
-parser_init.add_argument('homeDir', nargs='?', default=homeDir, type=str)
-parser_init.set_defaults(func=initialProp)
 
 #initial ref error correction
 def doCorrection(args):
@@ -1505,9 +1470,6 @@ def doCorrection(args):
     #generates result files with rereferenced values and new delta
     fitAll()
 
-parser_corr = subparsers.add_parser('corr', help='trim and rereference, home dir')
-parser_corr.add_argument('homeDir', nargs='?', default=homeDir, type=str)
-parser_corr.set_defaults(func=doCorrection)
 
 def stdTrim(args):
     # trim based on std dev
@@ -1515,10 +1477,6 @@ def stdTrim(args):
     trimAgain = bigTrim(limits)
     #incorporate second trim (skips over trimmed atoms)
     combine(trimAgain)
-
-parser_stdTrim = subparsers.add_parser('stdTrim', help='standard deviation trim, int required')
-parser_stdTrim.add_argument('stdDev', default=3.0, type=float)
-parser_stdTrim.set_defaults(func=stdTrim)
 
 #perform fit on specific attr file
 def doSingleFit(args):
@@ -1533,13 +1491,6 @@ def doSingleFit(args):
 
     fit(attrFile, minSum, maxSum)
 
-parser_fit = subparsers.add_parser('fit', help='fit single attr file, home dir, atom, aa')
-parser_fit.add_argument('homeDir', nargs='?', default=homeDir, type=str)
-parser_fit.add_argument('atom', type=str)
-parser_fit.add_argument('aa', type=str)
-parser_fit.add_argument('-lambda', type=float,default=0.005)
-parser_fit.add_argument('-nocontacts', action='store_true', default=False)
-parser_fit.set_defaults(func=doSingleFit)
 
 #perform fit on all attr files
 def finalProp(args):
@@ -1557,13 +1508,7 @@ def finalProp(args):
         testMode = True
     fitAll(testMode, args.coefs)
 
-parser_fitAll = subparsers.add_parser('fitall', help='fit all attr files, home dir, -test, -coefs')
-parser_fitAll.add_argument('-test', action='store_true', default=False)
-parser_fitAll.add_argument('-coefs', action='store_true', default=False)
-parser_fitAll.add_argument('-lambda', type=float,default=0.005)
-parser_fitAll.add_argument('-nocontacts', action='store_true', default=False)
-parser_fitAll.add_argument('homeDir', nargs='?', default=homeDir, type=str)
-parser_fitAll.set_defaults(func=finalProp)
+
 
 def assess(args):
     global bmrbHome
@@ -1580,6 +1525,67 @@ def assess(args):
         assessPdbs(args.filename)
     if args.pdbid and args.bmrbid:
         assessPdbInternal(args.pdbid, args.bmrbid)
+
+parser = argparse.ArgumentParser(usage='')
+subparsers = parser.add_subparsers(title='subcommands')
+
+parser_prep = subparsers.add_parser('prep', help='filter unreadable entries and combine with test set, pass in paired pdb - bmrb entries, filename required')
+parser_prep.add_argument('filename', type=str)
+parser_prep.set_defaults(func=prepData)
+
+parser_gen = subparsers.add_parser('gen', help='generate base attributes, home dir')
+parser_gen.add_argument('homeDir', nargs='?', default=homeDir, type=str)
+parser_gen.add_argument('-dataset', default=datasetFileName, type=str)
+parser_gen.add_argument('-bmrb', type=str)
+parser_gen.add_argument('-pdb', type=str)
+parser_gen.add_argument('-pdbDir', type=str)
+parser_gen.set_defaults(func=gen)
+
+parser_copy = subparsers.add_parser('copy', help='copy attrs from other directory, origin dir, destination dir, -atom, -res')
+parser_copy.add_argument('-o', type=str)
+parser_copy.add_argument('-d', type=str)
+parser_copy.add_argument('-atom', type=str)
+parser_copy.add_argument('-res', type=str)
+parser_copy.set_defaults(func=cpAttrs)
+
+parser_doall = subparsers.add_parser('doall', help='run entire workflow, home dir, dataset, -bmrb, -pdb, -pdbDir,  -gen, -test')
+parser_doall.add_argument('homeDir', nargs='?', default=homeDir, type=str)
+parser_doall.add_argument('-dataset', default=datasetFileName, type=str)
+parser_doall.add_argument('-bmrb', type=str)
+parser_doall.add_argument('-pdb', type=str)
+parser_doall.add_argument('-pdbDir', type=str)
+parser_doall.add_argument('-gen', action='store_true')
+parser_doall.add_argument('-coefs', action='store_true')
+parser_doall.add_argument('-test', action='store_true', default=False)
+parser_doall.set_defaults(func=doAll)
+
+parser_init = subparsers.add_parser('init', help='initial fit from base attr files, home dir')
+parser_init.add_argument('homeDir', nargs='?', default=homeDir, type=str)
+parser_init.set_defaults(func=initialProp)
+
+parser_corr = subparsers.add_parser('corr', help='trim and rereference, home dir')
+parser_corr.add_argument('homeDir', nargs='?', default=homeDir, type=str)
+parser_corr.set_defaults(func=doCorrection)
+
+parser_stdTrim = subparsers.add_parser('stdTrim', help='standard deviation trim, int required')
+parser_stdTrim.add_argument('stdDev', default=3.0, type=float)
+parser_stdTrim.set_defaults(func=stdTrim)
+
+parser_fit = subparsers.add_parser('fit', help='fit single attr file, home dir, atom, aa')
+parser_fit.add_argument('homeDir', nargs='?', default=homeDir, type=str)
+parser_fit.add_argument('atom', type=str)
+parser_fit.add_argument('aa', type=str)
+parser_fit.add_argument('-lambda', type=float,default=0.005)
+parser_fit.add_argument('-nocontacts', action='store_true', default=False)
+parser_fit.set_defaults(func=doSingleFit)
+
+parser_fitAll = subparsers.add_parser('fitall', help='fit all attr files, home dir, -test, -coefs')
+parser_fitAll.add_argument('-test', action='store_true', default=False)
+parser_fitAll.add_argument('-coefs', action='store_true', default=False)
+parser_fitAll.add_argument('-lambda', type=float,default=0.005)
+parser_fitAll.add_argument('-nocontacts', action='store_true', default=False)
+parser_fitAll.add_argument('homeDir', nargs='?', default=homeDir, type=str)
+parser_fitAll.set_defaults(func=finalProp)
 
 parser_assess = subparsers.add_parser('assess', help='assess entries, -filename, -bmrb, -pdb')
 parser_assess.add_argument('-filename', type=str)
