@@ -82,17 +82,12 @@ public class MMcifWriter {
         if (molecule == null) {
             throw new InvalidMoleculeException("No active mol");
         }
-        Iterator entityIterator = molecule.entityLabels.values().iterator();
-        while (entityIterator.hasNext()) {
-            Entity entity = (Entity) entityIterator.next();
-            if (entity instanceof Polymer) {
-                List<Residue> resList = ((Polymer) entity).getResidues();
-                for (Residue res : resList) {
-                    String result = res.toMMCifSequenceString(pdb);
-                    if (result != null) {
-                        chan.write(result + "\n");
-                    }
-                }
+        Polymer polymer = molecule.getPolymers().get(0);
+        List<Residue> resList = polymer.getResidues();
+        for (Residue res : resList) {
+            String result = res.toMMCifSequenceString(pdb);
+            if (result != null) {
+                chan.write(result + "\n");
             }
         }
         chan.write("#\n");
@@ -125,46 +120,41 @@ public class MMcifWriter {
             }
         }
         
-        Iterator entityIterator = molecule.entityLabels.values().iterator();
-        while (entityIterator.hasNext()) {
-            Entity entity = (Entity) entityIterator.next();
-            if (entity instanceof Polymer) {
-                List<Residue> resList = ((Polymer) entity).getResidues();
-                List<String> resNames = new ArrayList<>();
-                Set<Residue> resSet = new HashSet<>();
-                for (Residue res : resList) {                    
-                    if (!resSet.contains(res) && !resNames.contains(res.name)) {
-                        resSet.add(res);
-                        resNames.add(res.name);
-                    }
+        Polymer polymer = molecule.getPolymers().get(0);
+        List<Residue> resList = polymer.getResidues();
+        List<String> resNames = new ArrayList<>();
+        Set<Residue> resSet = new HashSet<>();
+        for (Residue res : resList) {                    
+            if (!resSet.contains(res) && !resNames.contains(res.name)) {
+                resSet.add(res);
+                resNames.add(res.name);
+            }
+        }
+        List<Residue> sortResSet =  new ArrayList<>(resSet);
+        Collections.sort(sortResSet, (r1,r2) -> r1.name.compareTo(r2.name));
+        for (Residue res : sortResSet) {
+            String prfFile = String.join(File.separator, "src", "main", "resources", "reslib_iu", res.name.toLowerCase() + ".prf");
+            reader = new BufferedReader(new FileReader(prfFile));
+            String fullResName = "";
+            while (true) {
+                String line = reader.readLine();
+                if (line == null) {
+                    break;
                 }
-                List<Residue> sortResSet =  new ArrayList<>(resSet);
-                Collections.sort(sortResSet, (r1,r2) -> r1.name.compareTo(r2.name));
-                for (Residue res : sortResSet) {
-                    String prfFile = String.join(File.separator, "src", "main", "resources", "reslib_iu", res.name.toLowerCase() + ".prf");
-                    reader = new BufferedReader(new FileReader(prfFile));
-                    String fullResName = "";
-                    while (true) {
-                        String line = reader.readLine();
-                        if (line == null) {
-                            break;
-                        }
-                        String lineS = line.trim();
-                        String match = "LNAME";
-                        if (lineS.startsWith(match)) {
-                            fullResName = lineS.substring(match.length()).trim();
-                            break;
-                        }
-                    }
-                    boolean lastRes = false;
-                    if (res.name.equals(resList.get(resList.size() - 1).name)) {
-                        lastRes = true;
-                    }
-                    String result = res.toMMCifChemCompString(weightMap, lastRes, fullResName.toUpperCase());
-                    if (result != null) {
-                        chan.write(result + "\n");
-                    }
+                String lineS = line.trim();
+                String match = "LNAME";
+                if (lineS.startsWith(match)) {
+                    fullResName = lineS.substring(match.length()).trim();
+                    break;
                 }
+            }
+            boolean lastRes = false;
+            if (res.name.equals(resList.get(resList.size() - 1).name)) {
+                lastRes = true;
+            }
+            String result = res.toMMCifChemCompString(weightMap, lastRes, fullResName.toUpperCase());
+            if (result != null) {
+                chan.write(result + "\n");
             }
         }
         chan.write("#\n");
@@ -296,7 +286,6 @@ public class MMcifWriter {
     }
 
     static void writeAtomSites(FileWriter chan) throws IOException, InvalidMoleculeException {
-        int i;
         chan.write("loop_\n");
         for (String loopString : ATOM_SITE_LOOP_STRINGS) {
             chan.write(loopString + "\n");
@@ -305,28 +294,24 @@ public class MMcifWriter {
         if (molecule == null) {
             throw new InvalidMoleculeException("No active mol");
         }
-        i = 0;
+        int i = 0;
         molecule.updateAtomArray();
-        List<Atom> atomArray = molecule.getAtomArray();
-        Atom a0 = atomArray.get(0);
-        Map<String, List<SpatialSet>> initSpSetMap = a0.getSpatialSetMap();
-        if (initSpSetMap != null) {
-            int nSpSets = initSpSetMap.get(a0.getFullName()).size();
-            for (int iSet = 0; iSet < nSpSets; iSet++)  {
-                for (Atom atom : atomArray) {
-                    Map<String, List<SpatialSet>> spSetMap = atom.getSpatialSetMap();
-                    List<SpatialSet> spSets = spSetMap.get(atom.getFullName());
-                    if (spSets != null) {
-                        SpatialSet spSet = spSets.get(iSet);
-                        String result = atom.atomSitesToMMCifString(spSet, iSet + 1, i);
-                        if (result != null) {
-                            chan.write(result + "\n");
-                            i++;
-                        }
-                    }
+        int[] structures = molecule.getActiveStructures();
+        for (int iStruct : structures) {
+            for (Atom atom : molecule.getAtomArray()) {
+                SpatialSet spSet = atom.getSpatialSet();
+                if (atom.isCoarse()) {
+                    continue;
+                }
+                
+                String result = spSet.toMMCifString(i, iStruct);
+
+                if (result != null) {
+                    chan.write(result + "\n");
+                    i++;
                 }
             }
-        } 
+        }
         chan.write("#\n");
     }
     
