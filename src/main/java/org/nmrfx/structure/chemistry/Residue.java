@@ -768,15 +768,18 @@ public class Residue extends Compound {
             resName = resName.substring(0, 3);
         }
 
-        //type #fixme should be read in from file
-        String type = "\"L-peptide linking\"";
+        //type 
+        String type = "\'L-peptide linking\'";
+        if (this.name.equals("GLY")) {
+            type = "\'peptide linking\'";
+        }
         
         //flag #fixme should be read in from file
         String flag = "y";
         
         //full res name
         if (this.label.contains("+H")) {
-            fullResName = "\"" + fullResName.substring(0, fullResName.length() - 3) + "IC ACID\"";
+            fullResName = "\'" + fullResName.substring(0, fullResName.length() - 3) + "IC ACID\'";
         }
         
         //chem comp
@@ -793,14 +796,18 @@ public class Residue extends Compound {
             if (aSym.equals("O")) {
                 nAType += 1;
             } else if (aSym.equals("H") && this.getIDNum() > 1) {
-                nAType += 2;
+                if (this.name.equals("HIS")) {
+                    nAType += 1;
+                } else {
+                    nAType += 2;
+                }
                 if (lastRes || this.label.contains("+H")) {
                     nAType += 1;
                 }
             }
             aCount.put(aSym, nAType);
         }
-        String chemComp = "\"";
+        String chemComp = "\'";
         SortedSet<String> keys = new TreeSet<>(aCount.keySet());
         for (String key : keys) {
             int nAType = aCount.get(key);
@@ -810,8 +817,11 @@ public class Residue extends Compound {
                 chemComp += key + String.valueOf(nAType) + " ";
             }
         }  
+        if (this.name.equals("ARG") || this.name.equals("HIS") || this.name.equals("LYS")) {
+            chemComp += "1";
+        }
         chemComp = chemComp.trim();
-        chemComp += "\"";
+        chemComp += "\'";
             
         //molecular weight
         double weight = 0.0;
@@ -822,7 +832,7 @@ public class Residue extends Compound {
             }
         }     
         
-        return String.format("%-4s %-18s %-2s %-15s %-2s %-15s %-4.3f", resName, type, flag, fullResName, "?", chemComp, weight);
+        return String.format("%-4s %-19s %-2s %-15s %-2s %-16s %-4.3f", resName, type, flag, fullResName, "?", chemComp, weight);
         
     }
     
