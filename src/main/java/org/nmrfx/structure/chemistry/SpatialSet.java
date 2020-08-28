@@ -31,56 +31,55 @@ import java.util.*;
  */
 public class SpatialSet {
 
+    class Coords {
+
+        Point3 pt;
+        float occupancy = 1.0f;
+        float bfactor = 1.0f;
+        float order = 1.0f;
+
+        Coords() {
+            pt = new Point3(0.0, 0.0, 0.0);
+        }
+
+        Coords(double x, double y, double z, double occupancy, double bfactor) {
+            this.pt = new Point3(x, y, z);
+            this.occupancy = (float) occupancy;
+            this.bfactor = (float) this.bfactor;
+        }
+
+        Coords(Point3 pt) {
+            this.pt = new Point3(pt);
+        }
+
+        void setPoint(Point3 pt) {
+            this.pt = new Point3(pt);
+        }
+
+    }
+
     public Atom atom = null;
     public String altPos = null;
-    private Point3 pt = null;
-    public ArrayList<Point3> points;
     public Vector ppms;
+    List<Coords> coordsList;
     public List<PPMv> refPPMVs = null;
     public boolean[] properties;
-    public float occupancy = 1.0f;
-    public float bfactor = 1.0f;
-    public float order = 1.0f;
     public int selected = 0;
     public int labelStatus = 0;
     public int displayStatus = 0;
     public float red = 1.0f;
     public float green = 0.0f;
     public float blue = 0.0f;
-    public Vector coords = new Vector();
 
     public SpatialSet(Atom atom) {
         this.atom = atom;
-        points = new ArrayList<Point3>(4);
+        coordsList = new ArrayList<>();
         ppms = new Vector(1, 4);
         properties = new boolean[16];
-
-//        Point3 newPt = new Point3(0.0, 0.0, 0.0);
-//        points.add(newPt);
-//        pt = newPt;
         PPMv ppmv = new PPMv(0.0);
         ppms.addElement(ppmv);
     }
 
-    public SpatialSet(float x, float y, float z) {
-        points = new ArrayList<Point3>(4);
-        ppms = new Vector(1, 4);
-        properties = new boolean[16];
-
-        Point3 newPt = new Point3(x, y, z);
-        points.add(newPt);
-        pt = newPt;
-
-        PPMv ppmv = new PPMv(0.0);
-        ppms.addElement(ppmv);
-    }
-
-    public SpatialSet(double ppmValue) {
-        PPMv ppmv = new PPMv(ppmValue);
-        ppms = new Vector(1);
-        ppms.addElement(ppmv);
-    }
-    
     public Atom getAtom() {
         return atom;
     }
@@ -126,31 +125,64 @@ public class SpatialSet {
     }
 
     public void setOccupancy(float value) {
-        occupancy = value;
+        setOccupancy(0, value);
+    }
+
+    public void setOccupancy(int index, float value) {
+        if (getPointValidity(index)) {
+            Coords coords = coordsList.get(index);
+            coords.occupancy = value;
+        }
     }
 
     public float getOccupancy() {
-        return occupancy;
+        return getOccupancy(0);
+    }
+
+    public float getOccupancy(int index) {
+        return getPointValidity(index) ? coordsList.get(index).occupancy : 1.0f;
     }
 
     public void setBFactor(float value) {
-        bfactor = value;
+        setBFactor(0, value);
+    }
+
+    public void setBFactor(int index, float value) {
+        if (getPointValidity(index)) {
+            Coords coord = coordsList.get(index);
+            coord.bfactor = value;
+        }
     }
 
     public float getBFactor() {
-        return bfactor;
+        return getBFactor(0);
+    }
+
+    public float getBFactor(int index) {
+        return getPointValidity(index) ? coordsList.get(index).bfactor : 1.0f;
     }
 
     public void setOrder(float value) {
-        order = value;
+        setOrder(0, value);
+    }
+
+    public void setOrder(int index, float value) {
+        if (getPointValidity(index)) {
+            Coords coord = coordsList.get(index);
+            coord.order = value;
+        }
     }
 
     public float getOrder() {
-        return order;
+        return getOrder(0);
+    }
+
+    public float getOrder(int index) {
+        return getPointValidity(index) ? coordsList.get(index).order : 1.0f;
     }
 
     public int getPointCount() {
-        return points.size();
+        return coordsList.size();
     }
 
     public boolean isStereo() {
@@ -168,95 +200,80 @@ public class SpatialSet {
         }
     }
 
+    public void addCoords(double x, double y, double z,
+            double occupancy, double bfactor) {
+        Coords coords = new Coords(x, y, z, occupancy, bfactor);
+        coordsList.add(coords);
+    }
+
     public Point3 getPoint() {
-        return pt;
+        return getPoint(0);
     }
 
     public Point3 getPoint(int i) {
-        Point3 gPt;
-        if (i == 0) {
-            gPt = getPoint();
-        } else if (i >= points.size()) {
-            gPt = null;
-        } else {
-            gPt = points.get(i);
+        Point3 gPt = null;
+        if (i < coordsList.size()) {
+            Coords coord = coordsList.get(i);
+            if (coord != null) {
+                gPt = coord.pt;
+            }
         }
         return gPt;
     }
 
-    public boolean getPointValidity(int i) {
-        boolean valid = false;
-        if (i == 0) {
-            valid = getPointValidity();
-        } else if (points.size() > i) {
-            Point3 pt = points.get(i);
-            valid = (pt != null);
+    public Coords getCoords(int i) {
+        Coords coord = null;
+        if (i < coordsList.size()) {
+            coord = coordsList.get(i);
         }
-        return valid;
+        return coord;
+    }
+
+    public boolean getPointValidity(int i) {
+        return getPoint(i) != null;
     }
 
     public boolean getPointValidity() {
-        boolean valid = false;
-        if (pt != null) {
-            valid = true;
-        }
-        return valid;
+        return getPointValidity(0);
     }
 
     public void setPointValidity(int index, boolean validity) {
-        if (index == 0) {
-            setPointValidity(validity);
-        } else {
-            if (points.size() <= index) {
-                points.ensureCapacity(index + 1);
-                int size = points.size();
-                for (int i = size; i <= index; i++) {
-                    points.add(null);
-                }
-                Point3 pt = new Point3(0.0, 0.0, 0.0);
-                points.set(index, pt);
+
+        if (validity && (coordsList.size() <= index)) {
+            int size = coordsList.size();
+            for (int i = size; i <= index; i++) {
+                coordsList.add(null);
             }
-            Point3 setPt = points.get(index);
-            if (validity && (setPt == null)) {
-                setPt = new Point3(0, 0, 0);
-                points.set(index, setPt);
-            } else {
-                points.set(index, null);
-            }
-            atom.changed();
         }
+        if (validity) {
+            if (coordsList.get(index) == null) {
+                Coords coord = new Coords();
+                coordsList.set(index, coord);
+            }
+        } else if (index < coordsList.size()) {
+            coordsList.set(index, null);
+        }
+        atom.changed();
     }
 
     public void setPointValidity(boolean validity) {
-        if (pt != null) {
-            if (!validity) {
-                pt = null;
-            }
-        } else if (validity) {
-            pt = new Point3(0.0, 0.0, 0.0);
-        }
-        atom.changed();
+        setPointValidity(0, validity);
     }
 
     public void setPoint(int index, Point3 ptNew) {
-        if (index == 0) {
-            setPoint(ptNew);
+        setPointValidity(index, true);
+        Coords coord = coordsList.get(index);
+        if (coord == null) {
+            coord = new Coords(ptNew);
         } else {
-            if (points.size() <= index) {
-                points.ensureCapacity(index + 1);
-                int size = points.size();
-                for (int i = size; i <= index; i++) {
-                    points.add(null);
-                }
-            }
-            points.set(index, ptNew);
-            atom.changed();
+            coord.setPoint(ptNew);
         }
+        coordsList.set(index, coord);
+        atom.changed();
     }
 
     public void setPoint(Point3 ptNew) {
-        pt = ptNew;
-        atom.changed();
+        setPoint(0, ptNew);
     }
 
     public PPMv getRefPPM() {
@@ -457,7 +474,7 @@ public class SpatialSet {
     }
 
     public int pointCount() {
-        return points.size();
+        return coordsList.size();
     }
 
     public void setColor(float red, float green, float blue) {
@@ -490,8 +507,8 @@ public class SpatialSet {
 // ATOM      1  N   TYR A 104      23.779   2.277  46.922  1.00 16.26           N                   X
 // TER    1272      HIS A  80                                                      
     public String toPDBString(int iAtom, int structureNum) {
-        Point3 pt = getPoint(structureNum);
-        if (pt == null) {
+        Coords coord = getCoords(structureNum);
+        if (coord == null) {
             return null;
         }
         String eName = atom.getElementName();
@@ -533,11 +550,11 @@ public class SpatialSet {
         sBuild.append(chainID);
         sBuild.append(String.format("%4s", (((Compound) atom.entity).number)));
         sBuild.append("    ");
-        sBuild.append(String.format("%8.3f", pt.getX()));
-        sBuild.append(String.format("%8.3f", pt.getY()));
-        sBuild.append(String.format("%8.3f", pt.getZ()));
-        sBuild.append(String.format("%6.2f", occupancy));
-        sBuild.append(String.format("%6.2f", bfactor));
+        sBuild.append(String.format("%8.3f", coord.pt.getX()));
+        sBuild.append(String.format("%8.3f", coord.pt.getY()));
+        sBuild.append(String.format("%8.3f", coord.pt.getZ()));
+        sBuild.append(String.format("%6.2f", coord.occupancy));
+        sBuild.append(String.format("%6.2f", coord.bfactor));
         sBuild.append("      "); // or??
         sBuild.append("    "); // segment??
         sBuild.append(String.format("%2s", eName));
@@ -614,19 +631,17 @@ public class SpatialSet {
             int iStruct) {
         char sep = ' ';
 
-        Point3 pt;
-        pt = (Point3) getPoint(iStruct);
-
-        if (pt == null) {
+        Coords coord = getCoords(iStruct);
+        if (coord == null) {
             return false;
         } else {
-            result.append(pt.getX());
+            result.append(coord.pt.getX());
             result.append(sep);
-            result.append(pt.getY());
+            result.append(coord.pt.getY());
             result.append(sep);
-            result.append(pt.getZ());
+            result.append(coord.pt.getZ());
             result.append(" . . . "); // Cartn_x_esd etc.
-            result.append(occupancy);
+            result.append(coord.occupancy);
             result.append(" . . . . ");  // Occupancy_esd, uncertainty, ordered, footnote
         }
         return true;

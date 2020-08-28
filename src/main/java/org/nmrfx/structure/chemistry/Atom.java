@@ -533,32 +533,20 @@ public class Atom implements IAtom {
             }
         }
     }
-    
-    public void addSpatialSet(float x, float y, float z,
-            float occupancy, float bFactor) throws InvalidMoleculeException {
-            if (this == null) {
-                throw new IllegalArgumentException("Error adding dihedral boundary, invalid atom");
-            }
-        SpatialSet spSet = new SpatialSet(x, y, z);
-        spSet.setOccupancy(occupancy);
-        spSet.setBFactor(bFactor);
-        String key = this.getFullName();
-        if (!atomSpSets.containsKey(key)) {
-            atomSpSets.put(key, new ArrayList<>());
-        }
-        List<SpatialSet> spSetList = atomSpSets.get(key);
-        spSetList.add(spSet);
-        atomSpSets.put(key, spSetList);
+
+    public void addCoords(double x, double y, double z,
+            double occupancy, double bFactor) throws InvalidMoleculeException {
+        spatialSet.addCoords(x, y, z, occupancy, bFactor);
     }
-    
+
     public SpatialSet getSpatialSet() {
         return spatialSet;
     }
-    
+
     public Map<String, List<SpatialSet>> getSpatialSetMap() {
         return atomSpSets;
     }
-    
+
     public void setResonance(AtomResonance resonance) {
         AtomResonance current = this.resonance;
         if ((resonance == null) && (current != null)) {
@@ -1203,42 +1191,42 @@ public class Atom implements IAtom {
 
         return (sBuilder.toString());
     }
-    
+
     public String atomSitesToMMCifString(int iStruct, int iAtom) {
         return atomSitesToMMCifString(spatialSet, iStruct, iAtom);
     }
 
     public String atomSitesToMMCifString(SpatialSet spatialSet,
             int iStruct, int iAtom) {
-        
+
         StringBuilder sBuilder = new StringBuilder();
-       
+
         if (entity instanceof Residue) {
             // group_PDB
             String group = "ATOM";
             sBuilder.append(String.format("%-5s", group));
-            
+
             sBuilder.append(String.format("%-8d", iAtom + 1));
 
             // type symbol
             String aType = name.substring(0, 1);
             sBuilder.append(String.format("%-2s", aType));
-            
+
             // atom ID
             String aName = name;
             sBuilder.append(String.format("%-5s", aName));
-            
+
             sBuilder.append(String.format("%-2s", "."));
-            
+
             // residue name
             String resName = ((Residue) entity).name;
             sBuilder.append(String.format("%-4s", resName));
-            
+
             //  chain code
             String polymerName = ((Residue) entity).polymer.getName();
             char chainID = polymerName.charAt(0);
             sBuilder.append(String.format("%-2s", chainID));
-            
+
             // entity ID
             int entityID = chainID - 'A' + 1;
             sBuilder.append(String.format("%-2d", entityID));
@@ -1248,15 +1236,15 @@ public class Atom implements IAtom {
             sBuilder.append(String.format("%-3d", seqCode));
 
             sBuilder.append(String.format("%-2s", "?"));
-            
+
             // cartn x
             double x = spatialSet.getPoint().getX();
             sBuilder.append(String.format("%-8.3f", x));
-            
+
             // cartn y
             double y = spatialSet.getPoint().getY();
             sBuilder.append(String.format("%-8.3f", y));
-            
+
             // cartn z
             double z = spatialSet.getPoint().getZ();
             sBuilder.append(String.format("%-8.3f", z));
@@ -1268,28 +1256,28 @@ public class Atom implements IAtom {
             // B factor
             double bFactor = spatialSet.getBFactor();
             sBuilder.append(String.format("%-5.2f", bFactor));
-            
+
             sBuilder.append(String.format("%-2s", "?"));
-            
+
             //auth seq code #fixme get this from file instead of hard-coding it to be the same as earlier entry
             sBuilder.append(String.format("%-3d", seqCode));
-            
+
             //auth res name #fixme get this from file
             sBuilder.append(String.format("%-5s", resName));
-            
+
             //auth chain id #fixme get this from file
             sBuilder.append(String.format("%-2s", chainID));
-            
+
             //auth atom name
             sBuilder.append(String.format("%-5s", aName));
-            
+
             //PDB model num
             sBuilder.append(String.format("%-2d", iStruct));
         }
 
         return sBuilder.toString();
     }
-    
+
     public static String toMMCifDistanceString(int index, int pdbModelNum, DistancePair distPair, Atom atom1, Atom atom2) {
         Atom[] atoms = {atom1, atom2};
 
@@ -1301,11 +1289,10 @@ public class Atom implements IAtom {
             //PDB model num
             sBuilder.append(String.format("%-3d", pdbModelNum));
 
-
             for (int a = 0; a < atoms.length; a++) {
                 // atom name 
                 sBuilder.append(String.format("%-2s", atoms[a].name));
-                
+
                 // chain code 
                 String polymerName = ((Residue) atoms[a].entity).polymer.getName();
                 char chainID = polymerName.charAt(0);
@@ -1318,10 +1305,10 @@ public class Atom implements IAtom {
                 // sequence code 
                 int seqCode = ((Residue) atoms[a].entity).getIDNum();
                 sBuilder.append(String.format("%-3d", seqCode));
-                
+
                 //PDB ins code #fixme need to read this from the original file
                 sBuilder.append(String.format("%-2s", "?"));
-                
+
                 //label alt id #fixme need to read this from the original file
                 sBuilder.append(String.format("%-2s", "?"));
             }
