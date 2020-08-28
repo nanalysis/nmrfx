@@ -120,46 +120,41 @@ public class MMcifWriter {
             }
         }
         
-        Iterator entityIterator = molecule.entityLabels.values().iterator();
-        while (entityIterator.hasNext()) {
-            Entity entity = (Entity) entityIterator.next();
-            if (entity instanceof Polymer) {
-                List<Residue> resList = ((Polymer) entity).getResidues();
-                List<String> resNames = new ArrayList<>();
-                Set<Residue> resSet = new HashSet<>();
-                for (Residue res : resList) {                    
-                    if (!resSet.contains(res) && !resNames.contains(res.name)) {
-                        resSet.add(res);
-                        resNames.add(res.name);
-                    }
+        Polymer polymer = molecule.getPolymers().get(0);
+        List<Residue> resList = polymer.getResidues();
+        List<String> resNames = new ArrayList<>();
+        Set<Residue> resSet = new HashSet<>();
+        for (Residue res : resList) {                    
+            if (!resSet.contains(res) && !resNames.contains(res.name)) {
+                resSet.add(res);
+                resNames.add(res.name);
+            }
+        }
+        List<Residue> sortResSet =  new ArrayList<>(resSet);
+        Collections.sort(sortResSet, (r1,r2) -> r1.name.compareTo(r2.name));
+        for (Residue res : sortResSet) {
+            String prfFile = String.join(File.separator, "src", "main", "resources", "reslib_iu", res.name.toLowerCase() + ".prf");
+            reader = new BufferedReader(new FileReader(prfFile));
+            String fullResName = "";
+            while (true) {
+                String line = reader.readLine();
+                if (line == null) {
+                    break;
                 }
-                List<Residue> sortResSet =  new ArrayList<>(resSet);
-                Collections.sort(sortResSet, (r1,r2) -> r1.name.compareTo(r2.name));
-                for (Residue res : sortResSet) {
-                    String prfFile = String.join(File.separator, "src", "main", "resources", "reslib_iu", res.name.toLowerCase() + ".prf");
-                    reader = new BufferedReader(new FileReader(prfFile));
-                    String fullResName = "";
-                    while (true) {
-                        String line = reader.readLine();
-                        if (line == null) {
-                            break;
-                        }
-                        String lineS = line.trim();
-                        String match = "LNAME";
-                        if (lineS.startsWith(match)) {
-                            fullResName = lineS.substring(match.length()).trim();
-                            break;
-                        }
-                    }
-                    boolean lastRes = false;
-                    if (res.name.equals(resList.get(resList.size() - 1).name)) {
-                        lastRes = true;
-                    }
-                    String result = res.toMMCifChemCompString(weightMap, lastRes, fullResName.toUpperCase());
-                    if (result != null) {
-                        chan.write(result + "\n");
-                    }
+                String lineS = line.trim();
+                String match = "LNAME";
+                if (lineS.startsWith(match)) {
+                    fullResName = lineS.substring(match.length()).trim();
+                    break;
                 }
+            }
+            boolean lastRes = false;
+            if (res.name.equals(resList.get(resList.size() - 1).name)) {
+                lastRes = true;
+            }
+            String result = res.toMMCifChemCompString(weightMap, lastRes, fullResName.toUpperCase());
+            if (result != null) {
+                chan.write(result + "\n");
             }
         }
         chan.write("#\n");
@@ -304,7 +299,7 @@ public class MMcifWriter {
         int[] structures = molecule.getActiveStructures();
         for (int iStruct : structures) {
             for (Atom atom : molecule.getAtomArray()) {
-                SpatialSet spSet = atom.spatialSet;
+                SpatialSet spSet = atom.getSpatialSet();
                 if (atom.isCoarse()) {
                     continue;
                 }

@@ -532,13 +532,17 @@ public class Atom implements IAtom {
             }
         }
     }
-    
-    
+
+    public void addCoords(double x, double y, double z,
+            double occupancy, double bFactor) throws InvalidMoleculeException {
+        spatialSet.addCoords(x, y, z, occupancy, bFactor);
+    }
+
     public SpatialSet getSpatialSet() {
         return spatialSet;
     }
-    
-    
+
+
     public void setResonance(AtomResonance resonance) {
         AtomResonance current = this.resonance;
         if ((resonance == null) && (current != null)) {
@@ -1195,7 +1199,6 @@ public class Atom implements IAtom {
             //PDB model num
             sBuilder.append(String.format("%-3d", pdbModelNum));
 
-
             for (int a = 0; a < atoms.length; a++) {
                 // atom name 
                 sBuilder.append(String.format("%-4s", atoms[a].name));
@@ -1212,10 +1215,10 @@ public class Atom implements IAtom {
                 // sequence code 
                 int seqCode = ((Residue) atoms[a].entity).getIDNum();
                 sBuilder.append(String.format("%-3d", seqCode));
-                
+
                 //PDB ins code #fixme need to read this from the original file
                 sBuilder.append(String.format("%-2s", "?"));
-                
+
                 //label alt id #fixme need to read this from the original file
                 sBuilder.append(String.format("%-2s", "?"));
             }
