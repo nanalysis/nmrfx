@@ -70,11 +70,11 @@ public class MMCifFileTest {
 //        loadData("2kko");
 //        testAll();
 //    }
-//    @Test
-//    public void testFile2JUW() throws IOException {
-//        loadData("2juw");
-//        testAll();
-//    }
+    @Test
+    public void testFile2JUW() throws IOException {
+        loadData("2juw");
+        testAll();
+    }
 
     @Test
     public void testFile2JR2() throws IOException {
@@ -196,14 +196,14 @@ public class MMCifFileTest {
     }
 
     private Map<String, List<Object>> buildAtomSitesMap(List<List<Object>> dataArray) {
-        Map<String, List<Object>> shiftMap = new HashMap<>();
-        boolean inShift = false;
+        Map<String, List<Object>> siteMap = new HashMap<>();
+        boolean inSites = false;
         for (List<Object> line : dataArray) {
             if (line.size() > 0) {
                 if (line.get(0).toString().contains("_atom_site.")) {
-                    inShift = true;
+                    inSites = true;
                 }
-                if (inShift) {
+                if (inSites) {
                     int iChain = 6;
                     int iSeq = 8;
                     int iAtomName = 3;
@@ -214,10 +214,10 @@ public class MMCifFileTest {
                         for (int i = 9; i < line.size() - 1; i++) {
                             values.add(line.get(i));
                         }
-                        if (shiftMap.containsKey(key)) {
-                            shiftMap.put(key + "_dup", values);
+                        if (siteMap.containsKey(key)) {
+                            siteMap.put(key + "_dup", values);
                         } else {
-                            shiftMap.put(key, values);
+                            siteMap.put(key, values);
                         }
                     } else if (line.contains("#")) {
                         break;
@@ -225,7 +225,101 @@ public class MMCifFileTest {
                 }
             }
         }
-        return shiftMap;
+        return siteMap;
+    }
+    
+    private Map<String, List<Object>> buildChemCompMap(List<List<Object>> dataArray) {
+        Map<String, List<Object>> compMap = new HashMap<>();
+        boolean inComp = false;
+        for (List<Object> line : dataArray) {
+            if (line.size() > 0) {
+                if (line.get(0).toString().contains("_chem_comp.")) {
+                    inComp = true;
+                }
+                if (inComp) {
+                    int iRes = 0;
+                    if (line.size() > 1 && line.get(line.size() - 1) instanceof Double) {
+                        String key = line.get(iRes).toString();
+                        List<Object> values = new ArrayList<>();
+                        for (int i = 1; i < line.size(); i++) {
+                            values.add(line.get(i));
+                        }
+                        int iWeight = values.size() - 1;
+                        Double weight = (Double) values.get(iWeight);
+                        values.set(iWeight, Math.round(weight));
+                        if (compMap.containsKey(key)) {
+                            compMap.put(key + "_dup", values);
+                        } else {
+                            compMap.put(key, values);
+                        }
+                    } else if (line.contains("#")) {
+                        break;
+                    }
+                }
+            }
+        }
+        return compMap;
+    }
+    
+    private Map<String, List<Object>> buildStructConfMap(List<List<Object>> dataArray) {
+        Map<String, List<Object>> confMap = new HashMap<>();
+        boolean inConf = false;
+        List<Object> values = new ArrayList<>();
+        for (List<Object> line : dataArray) {
+            if (line.size() > 0) {
+                if (line.get(0).toString().contains("_struct_conf")) {
+                    inConf = true;
+                }
+                if (inConf) {
+                    int iChain = 4;
+                    int iSeq = 5;
+                    int iRes = 3;
+                    int nAtoms = 2;
+                    if (line.size() > 1 && line.get(2) instanceof Integer) {
+                        String[] keyParts = new String[nAtoms];
+                        for (int i = 0; i < keyParts.length; i++) {
+                            keyParts[i] = line.get(iChain + 4 * i) + "." + line.get(iSeq + 4 * i).toString() + "." + line.get(iRes + 4 * i);
+                        }
+                        String key = String.join(";", keyParts);
+                        values = new ArrayList<>();
+                        values.add(line.get(line.size() - 1));
+                        confMap.put(key, values);
+                    } else if (line.contains("#")) {
+                        break;
+                    }
+                }
+            }
+        }
+        return confMap;
+    }
+    
+    private Map<String, List<Object>> buildSheetMap(List<List<Object>> dataArray) {
+        Map<String, List<Object>> sheetMap = new HashMap<>();
+        boolean inSheet = false;
+        List<Object> values = new ArrayList<>();
+        for (List<Object> line : dataArray) {
+            if (line.size() > 0) {
+                if (line.get(0).toString().contains("_struct_sheet_range")) {
+                    inSheet = true;
+                }
+                if (inSheet) {
+                    int iChain = 3;
+                    int iSeq = 4;
+                    int iRes = 2;
+                    if (line.size() > 1 && line.get(1) instanceof Integer) {
+                        String key = line.get(iChain) + "." + line.get(iSeq).toString() + "." + line.get(iRes);
+                        values = new ArrayList<>();
+                        for (int i = 6; i < 9; i++) {
+                            values.add(line.get(i));
+                        }
+                        sheetMap.put(key, values);
+                    } else if (line.contains("#")) {
+                        break;
+                    }
+                }
+            }
+        }
+        return sheetMap;
     }
 
     private Map<String, List<Object>> buildDistanceMap(List<List<Object>> dataArray) {
@@ -378,6 +472,9 @@ public class MMCifFileTest {
 
     public void testAll() throws IOException {
         testSeqBlock();
+        testChemCompBlock();
+        testStructConfBlock();
+        testSheetBlock();
         testAtomSitesBlock();
         testDistanceBlock();
         testTorsionBlock();
@@ -399,6 +496,39 @@ public class MMCifFileTest {
             Map<String, List<Object>> origSites = buildAtomSitesMap(orig);
             Map<String, List<Object>> writtenSites = buildAtomSitesMap(written);
             boolean ok = compareMaps("atom sites", origSites, writtenSites);
+            Assert.assertTrue(ok);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+    }
+    
+    public void testChemCompBlock() throws IOException {
+        try {
+            Map<String, List<Object>> origComp = buildChemCompMap(orig);
+            Map<String, List<Object>> writtenComp = buildChemCompMap(written);
+            boolean ok = compareMaps("chem comp", origComp, writtenComp);
+            Assert.assertTrue(ok);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+    }
+    
+    public void testStructConfBlock() throws IOException {
+        try {
+            Map<String, List<Object>> origConf = buildStructConfMap(orig);
+            Map<String, List<Object>> writtenConf = buildStructConfMap(written);
+            boolean ok = compareMaps("struct conf", origConf, writtenConf);
+            Assert.assertTrue(ok);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+    }
+    
+    public void testSheetBlock() throws IOException {
+        try {
+            Map<String, List<Object>> origSheet = buildSheetMap(orig);
+            Map<String, List<Object>> writtenSheet = buildSheetMap(written);
+            boolean ok = compareMaps("sheet range", origSheet, writtenSheet);
             Assert.assertTrue(ok);
         } catch (Exception ex) {
             ex.printStackTrace();
