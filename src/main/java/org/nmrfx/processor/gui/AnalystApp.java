@@ -77,6 +77,7 @@ import org.nmrfx.utils.GUIUtils;
 import org.python.util.PythonInterpreter;
 import org.nmrfx.processor.gui.molecule.CanvasMolecule;
 import org.nmrfx.processor.gui.tools.RunAboutGUI;
+import org.nmrfx.structure.chemistry.io.MMcifReader;
 
 public class AnalystApp extends MainApp {
 
@@ -367,6 +368,9 @@ public class AnalystApp extends MainApp {
         MenuItem readPDBxyzItem = new MenuItem("Read PDB XYZ...");
         readPDBxyzItem.setOnAction(e -> readMolecule("pdbx"));
         molFileMenu.getItems().add(readPDBxyzItem);
+        MenuItem readMMCIFItem = new MenuItem("Read mmCIF...");
+        readMMCIFItem.setOnAction(e -> readMolecule("mmcif"));
+        molFileMenu.getItems().add(readMMCIFItem);
         MenuItem readMolItem = new MenuItem("Read Mol...");
         readMolItem.setOnAction(e -> readMolecule("mol"));
         molFileMenu.getItems().add(readMolItem);
@@ -981,12 +985,20 @@ public class AnalystApp extends MainApp {
                         Sequence seq = new Sequence();
                         seq.read(file.toString());
                         break;
+                    case "mmcif": {
+                        MMcifReader.read(file);
+                        System.out.println("read mol: " + file.toString());
+                        break;
+                    }
                     default:
                         break;
                 }
                 showMols();
             } catch (MoleculeIOException ioE) {
                 ExceptionDialog dialog = new ExceptionDialog(ioE);
+                dialog.showAndWait();
+            } catch (ParseException ex) {
+                ExceptionDialog dialog = new ExceptionDialog(ex);
                 dialog.showAndWait();
             }
 
