@@ -55,6 +55,7 @@ public class MMcifReader {
     public static Dihedral dihedral;
     public static Helix helix;
     public static NonLoop sheets;
+    Map<Integer, MMCIFEntity> entityMap = new HashMap<>();
 
     public MMcifReader(final File starFile, final MMCIF star3) {
         this.mmcif = star3;
@@ -91,18 +92,167 @@ public class MMcifReader {
 
     }
 
-    void buildChains(final Saveframe saveframe, Molecule molecule, final String nomenclature) throws ParseException {
+    void buildChains(final Saveframe saveframe, Molecule molecule, final String nomenclature, MMCIFPolymerEntity entity) throws ParseException {
         Loop loop = saveframe.getLoop("_entity_poly_seq");
         if (loop == null) {
             throw new ParseException("No \"_entity_poly_seq\" loop");
         } else {
-            // fixme ?? NEF specification says index column mandatory, but their xplor example doesn't have it
-            List<String> entityIDColumn = loop.getColumnAsList("entity_id");
-            List<String> numColumn = loop.getColumnAsList("num");
+            List<Integer> entityIDColumn = loop.getColumnAsIntegerList("entity_id", -1);
+            List<Integer> numColumn = loop.getColumnAsIntegerList("num", 0);
             List<String> monIDColumn = loop.getColumnAsList("mon_id");
             List<String> heteroColumn = loop.getColumnAsListIfExists("hetero");
-            addResidues(saveframe, molecule, entityIDColumn, numColumn, monIDColumn, heteroColumn);
+
+            List<Integer> startAndEnds = new ArrayList<>();
+            for (int i = 0; i < numColumn.size(); i++) {
+                if (entityIDColumn.get(i) == entity.id) {
+                    entity.add(numColumn.get(i), monIDColumn.get(i), heteroColumn.get(i).equals("y"));
+                }
+            }
         }
+    }
+
+    class MMCIFEntity {
+
+        int id;
+        String type;
+
+        public MMCIFEntity(int id, String type) {
+            this.id = id;
+            this.type = type;
+        }
+
+        public String toString() {
+            return id + " " + type;
+        }
+    }
+
+    class MMCIFPolymerEntity extends MMCIFEntity {
+
+        List<Integer> numbers = new ArrayList<>();
+        List<String> names = new ArrayList<>();
+        List<Boolean> hetero = new ArrayList<>();
+
+        public MMCIFPolymerEntity(int id, String type) {
+            super(id, type);
+        }
+
+        public void addChain(List<Integer> numColumn, List<String> nameColumn, List<Boolean> heteroColumn) {
+            numbers.addAll(numColumn);
+            names.addAll(nameColumn);
+            hetero.addAll(heteroColumn);
+
+        }
+
+        public void add(Integer num, String name, boolean isHetero) {
+            numbers.add(num);
+            names.add(name);
+            hetero.add(isHetero);
+        }
+
+        public void build(Molecule molecule, String asymName) throws ParseException {
+            String reslibDir = PDBFile.getReslibDir("IUPAC");
+            Sequence sequence = new Sequence(molecule);
+            sequence.newPolymer();
+            Polymer polymer = new Polymer(asymName, asymName);
+            polymer.setNomenclature("IUPAC");
+            polymer.setIDNum(id);
+            polymer.assemblyID = id;
+            entities.put(asymName, polymer);
+            molecule.addEntity(polymer, asymName, id);
+            System.out.println("mol build poly " + molecule.getPolymers().size() + " " + numbers.size());
+            for (int i = 0; i < numbers.size(); i++) {
+                String resName = names.get(i);
+                String iRes = numbers.get(i).toString();
+                Residue residue = new Residue(iRes, resName.toUpperCase());
+                residue.molecule = polymer.molecule;
+                String mapID = asymName + "." + iRes;
+                addCompound(mapID, residue);
+                polymer.addResidue(residue);
+                Sequence.RES_POSITION resPos = Sequence.RES_POSITION.MIDDLE;
+                if (i == 0) {
+                    resPos = Sequence.RES_POSITION.START;
+                } else if (i == numbers.size() - 1) {
+                    resPos = Sequence.RES_POSITION.END;
+                }
+
+                try {
+                    String extension = "";
+                    if (resName.equals("HIS")) {
+                        extension += "_prot";
+                    }
+                    if (!sequence.addResidue(reslibDir + "/" + Sequence.getAliased(resName.toLowerCase()) + extension + ".prf", residue, resPos, "", false)) {
+                        throw new ParseException("Can't find residue \"" + resName + extension + "\" in residue libraries or STAR file");
+                    }
+                } catch (MoleculeIOException psE) {
+                    throw new ParseException(psE.getMessage());
+                }
+            }
+        }
+
+    }
+
+    void buildEntities(final Saveframe saveframe) throws ParseException {
+        Loop loop = saveframe.getLoop("_entity");
+        System.out.println("build emtotoes " + loop);
+
+        if (loop == null) {
+            String type = saveframe.getValue("_entity", "type");
+            Integer entityID = saveframe.getIntegerValue("_entity", "id");
+            MMCIFEntity entity;
+            if (type.equals("polymer")) {
+                entity = new MMCIFPolymerEntity(entityID, type);
+                buildChains(saveframe, Molecule.activeMol, type, (MMCIFPolymerEntity) entity);
+            } else {
+                entity = new MMCIFEntity(entityID, type);
+            }
+            entityMap.put(entityID, entity);
+
+        } else {
+            List<String> typeColumn = loop.getColumnAsList("type");
+            List<Integer> entityIDColumn = loop.getColumnAsIntegerList("id", -1);
+            for (int i = 0; i < typeColumn.size(); i++) {
+                String type = typeColumn.get(i);
+                int entityID = entityIDColumn.get(i);
+                MMCIFEntity entity;
+                if (type.equals("polymer")) {
+                    entity = new MMCIFPolymerEntity(entityID, type);
+                    buildChains(saveframe, Molecule.activeMol, type, (MMCIFPolymerEntity) entity);
+                } else {
+                    entity = new MMCIFEntity(entityID, type);
+                }
+                entityMap.put(entityID, entity);
+            }
+        }
+        System.out.println("asym info " + entityMap.toString());
+
+    }
+
+    void buildAsym(final Saveframe saveframe, Molecule molecule) throws ParseException {
+        Loop loop = saveframe.getLoop("_struct_asym");
+        System.out.println("build asym " + loop);
+        final List<String> asymIDColumn;
+        final List<Integer> entityIDColumn;
+        if (loop == null) {
+            asymIDColumn = new ArrayList<>();
+            entityIDColumn = new ArrayList<>();
+            String asymID = saveframe.getValue("_struct_asym", "id");
+            Integer entityID = saveframe.getIntegerValue("_struct_asym", "entity_id");
+            asymIDColumn.add(asymID);
+            entityIDColumn.add(entityID);
+        } else {
+            asymIDColumn = loop.getColumnAsList("id");
+            entityIDColumn = loop.getColumnAsIntegerList("entity_id", -1);
+        }
+        for (int i = 0; i < asymIDColumn.size(); i++) {
+            String asymID = asymIDColumn.get(i);
+            int entityID = entityIDColumn.get(i);
+            MMCIFEntity entity = entityMap.get(entityID);
+            if (entity instanceof MMCIFPolymerEntity) {
+                MMCIFPolymerEntity polymerEntity = (MMCIFPolymerEntity) entity;
+                polymerEntity.build(molecule, asymID);
+            }
+        }
+        System.out.println("asym info " + asymIDColumn.toString() + " " + entityIDColumn.toString());
     }
 
     void addResidues(Saveframe saveframe, Molecule molecule, List<String> entityIDColumn, List<String> numColumn, List<String> monIDColumn, List<String> heteroColumn) throws ParseException {
@@ -220,26 +370,26 @@ public class MMcifReader {
                 int iLastRes = endSeqIDColumn.get(i) - 1;
                 char chainCode = begAsymIDColumn.get(i).charAt(0);
                 int iPolymer = chainCode - 'A';
-                if (iPolymer > polymers.size() - 1) {
-                    List<Residue> p0Res = polymers.get(0).getResidues();
-                    List<String> entityIDs = new ArrayList<>();
-                    List<String> nums = new ArrayList<>();
-                    List<String> names = new ArrayList<>();
-                    List<String> heteros = new ArrayList<>();
-                    for (int iRes = 0; iRes < p0Res.size(); iRes++) {
-                        entityIDs.add(String.valueOf(iPolymer + 1));
-                        nums.add(String.valueOf(p0Res.get(iRes).number));
-                        names.add(String.valueOf(p0Res.get(iRes).name));
-                        heteros.add(String.valueOf(p0Res.get(iRes).label));
-                    }
-                    addResidues(saveframe, molecule, entityIDs, nums, names, heteros);
-                    polymers = molecule.getPolymers();
-                    molecule.updateAtomArray();
-                }
-                Residue firstRes = polymers.get(iPolymer).getResidue(iFirstRes);
-                Residue lastRes = polymers.get(iPolymer).getResidue(iLastRes);
-                helixResList.add(firstRes);
-                helixResList.add(lastRes);
+//                if (iPolymer > polymers.size() - 1) {
+//                    List<Residue> p0Res = polymers.get(0).getResidues();
+//                    List<String> entityIDs = new ArrayList<>();
+//                    List<String> nums = new ArrayList<>();
+//                    List<String> names = new ArrayList<>();
+//                    List<String> heteros = new ArrayList<>();
+//                    for (int iRes = 0; iRes < p0Res.size(); iRes++) {
+//                        entityIDs.add(String.valueOf(iPolymer + 1));
+//                        nums.add(String.valueOf(p0Res.get(iRes).number));
+//                        names.add(String.valueOf(p0Res.get(iRes).name));
+//                        heteros.add(String.valueOf(p0Res.get(iRes).label));
+//                    }
+//                    addResidues(saveframe, molecule, entityIDs, nums, names, heteros);
+//                    polymers = molecule.getPolymers();
+//                    molecule.updateAtomArray();
+//                }
+//                Residue firstRes = polymers.get(iPolymer).getResidue(iFirstRes);
+//                Residue lastRes = polymers.get(iPolymer).getResidue(iLastRes);
+//                helixResList.add(firstRes);
+//                helixResList.add(lastRes);
             }
             helix = new Helix(helixResList);
             return molecule;
@@ -321,7 +471,8 @@ public class MMcifReader {
             }
             String molName = "noname";
             molecule = new Molecule(molName);
-            buildChains(saveframe, molecule, molName);
+            buildEntities(saveframe);
+            buildAsym(saveframe, molecule);
             molecule = buildConformation(saveframe, molecule);
             buildChemComp(saveframe, molecule);
             buildSheetRange(saveframe, molecule);
