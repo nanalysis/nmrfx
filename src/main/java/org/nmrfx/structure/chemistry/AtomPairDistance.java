@@ -15,7 +15,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package org.nmrfx.structure.chemistry;
 
 public class AtomPairDistance {
@@ -42,6 +41,7 @@ public class AtomPairDistance {
         return atom2;
     }
 
+    @Override
     public String toString() {
         return atom1.getFullName() + " " + atom2.getFullName() + " " + distance;
     }
