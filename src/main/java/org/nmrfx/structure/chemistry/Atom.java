@@ -1872,7 +1872,7 @@ public class Atom implements IAtom {
             Molecule.findEquivalentAtoms(entity);
         }
         List<Object> list = new ArrayList<>();
-        if ((equivAtoms == null) || equivAtoms.size() == 0) {
+        if ((equivAtoms == null) || equivAtoms.isEmpty()) {
             return list;
         } else {
 
@@ -1970,8 +1970,8 @@ public class Atom implements IAtom {
     }
 
     public Point3 getMethylCenter(int structNum) {
-        Atom parent = getParent();
-        List<Atom> children = parent.getChildren();
+        Atom atomsParent = getParent();
+        List<Atom> children = atomsParent.getChildren();
         Vector3D pt1 = ((Atom) children.get(0)).getPoint(structNum);
         pt1 = pt1.add(((Atom) children.get(1)).getPoint(structNum));
         pt1 = pt1.add(((Atom) children.get(2)).getPoint(structNum));
