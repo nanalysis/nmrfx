@@ -15,16 +15,18 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package org.nmrfx.structure.chemistry;
 
 import java.util.*;
 
 interface AtomIterator extends Iterator {
 
+    @Override
     public boolean hasNext();
 
+    @Override
     public Atom next();
 
+    @Override
     public void remove();
 }

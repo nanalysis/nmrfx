@@ -15,12 +15,20 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package org.nmrfx.structure.chemistry;
 
-public class Water extends Polymer {
+public class Water extends Entity {
+
+    String name;
 
     public Water(String name) {
-        super(name);
+        this.name = name;
+    }
+
+    public void addO(double x, double y, double z, double occupancy, double bfactor) throws InvalidMoleculeException {
+        String name = "O" + (atoms.size() + 1);
+        Atom atom = Atom.genAtomWithElement(name, "O");
+        atom.addCoords(x, y, z, occupancy, bfactor);
+        addAtom(null, atom);
     }
 }
