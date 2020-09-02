@@ -17,8 +17,6 @@
  */
 package org.nmrfx.structure.chemistry;
 
-import java.util.Arrays;
-
 /**
  *
  * @author bajlabuser
