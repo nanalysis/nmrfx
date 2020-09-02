@@ -50,26 +50,26 @@ public class MMCifFileTest {
     List<List<Object>> orig = new ArrayList<>();
     List<List<Object>> written = new ArrayList<>();
 
-//    @Test
-//    public void testFile2KO1() throws IOException {
-//        loadData("2ko1");
-//        testAll();
-//    }
-//    @Test
-//    public void testFile2PNG() throws IOException {
-//        loadData("2png");
-//        testAll();
-//    }
-//    @Test
-//    public void testFile2KZN() throws IOException {
-//        loadData("2kzn");
-//        testAll();
-//    }
-//    @Test
-//    public void testFile2KKO() throws IOException {
-//        loadData("2kko");
-//        testAll();
-//    }
+    @Test
+    public void testFile4HJ2() throws IOException {
+        loadData("4hj2");
+        testAll();
+    }
+    @Test
+    public void testFile4HJR() throws IOException {
+        loadData("4hjr");
+        testAll();
+    }
+    @Test
+    public void testFile4HIE() throws IOException {
+        loadData("4hie");
+        testAll();
+    }
+    @Test
+    public void testFile4HIW() throws IOException {
+        loadData("4hiw");
+        testAll();
+    }
     @Test
     public void testFile2JUW() throws IOException {
         loadData("2juw");
@@ -476,7 +476,7 @@ public class MMCifFileTest {
         testStructConfBlock();
         testSheetBlock();
         testAtomSitesBlock();
-        testDistanceBlock();
+//        testDistanceBlock();
         testTorsionBlock();
     }
 
