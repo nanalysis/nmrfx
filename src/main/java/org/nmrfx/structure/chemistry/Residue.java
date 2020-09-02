@@ -737,7 +737,8 @@ public class Residue extends Compound {
         char chainID = polymerName.charAt(0);
         
         //entity ID
-        int entityIDNum = chainID - 'A' + 1;
+//        int entityIDNum = chainID - 'A' + 1;
+        int entityIDNum = this.polymer.getIDNum();
         
         //seq ID
         int seqID = this.getIDNum();
@@ -749,7 +750,7 @@ public class Residue extends Compound {
         }
 
         //hetero
-        String hetero = this.label;
+        String hetero = this.label;        
         if (hetero.length() > 1) {
             hetero = hetero.substring(0, 1);
         }
