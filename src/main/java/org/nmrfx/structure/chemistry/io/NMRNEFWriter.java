@@ -305,7 +305,7 @@ public class NMRNEFWriter {
             throw new InvalidMoleculeException("No active mol");
         }
         molecule.updateAtomArray();
-        EnergyLists eLists = NMRNEFReader.energyList;
+        EnergyLists eLists = molecule.getEnergyLists();
         List<DistancePair> distList = eLists.getDistanceList();
         int idx = 1;
         int restraintID = 1;
@@ -451,7 +451,7 @@ public class NMRNEFWriter {
             throw new InvalidMoleculeException("No active mol");
         }
         molecule.updateAtomArray();
-        Dihedral dihedral = NMRNEFReader.dihedral;
+        Dihedral dihedral = molecule.getDihedrals();
         Map<String, List<AngleBoundary>> angleBoundsMap = dihedral.getAngleBoundariesNEF();
         List<AngleBoundary> angleBlock1 = new ArrayList<>();
         List<AngleBoundary> angleBlock2 = new ArrayList<>();

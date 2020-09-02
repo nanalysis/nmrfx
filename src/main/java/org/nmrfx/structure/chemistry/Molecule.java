@@ -224,6 +224,9 @@ public class Molecule implements Serializable, ITree {
     EnergyCoords eCoords = new EnergyCoords();
     Dihedral dihedrals = null;
     OrderSVD rdcResults = null;
+    EnergyLists energyList;
+    Helix helix;
+    NonLoop sheets;
 
     // fixme    public EnergyLists energyList = null;
     public Molecule(String name) {
@@ -554,6 +557,30 @@ public class Molecule implements Serializable, ITree {
 
     public Dihedral getDihedrals() {
         return dihedrals;
+    }
+    
+    public void setEnergyLists(EnergyLists eLists) {
+        this.energyList = eLists;
+    }
+
+    public EnergyLists getEnergyLists() {
+        return energyList;
+    }
+    
+    public void setHelix(Helix helix) {
+        this.helix = helix;
+    }
+
+    public Helix getHelix() {
+        return helix;
+    }
+    
+    public void setSheets(NonLoop sheets) {
+        this.sheets = sheets;
+    }
+
+    public NonLoop getSheets() {
+        return sheets;
     }
 
     public String getDotBracket() {

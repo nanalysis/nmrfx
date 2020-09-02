@@ -20,7 +20,6 @@ package org.nmrfx.structure.chemistry.io;
 import org.nmrfx.processor.star.ParseException;
 import java.io.*;
 import java.util.*;
-import org.nmrfx.processor.datasets.peaks.AtomResonanceFactory;
 import org.nmrfx.processor.datasets.peaks.PeakDim;
 import org.nmrfx.processor.star.Loop;
 import org.nmrfx.processor.star.MMCIF;
@@ -30,7 +29,6 @@ import org.nmrfx.structure.chemistry.Compound;
 import org.nmrfx.structure.chemistry.Entity;
 import org.nmrfx.structure.chemistry.Helix;
 import org.nmrfx.structure.chemistry.InvalidMoleculeException;
-import org.nmrfx.structure.chemistry.MolFilter;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.structure.chemistry.NonLoop;
 import org.nmrfx.structure.chemistry.Polymer;
@@ -51,10 +49,6 @@ public class MMcifReader {
     boolean hasResonances = false;
     Map<Long, List<PeakDim>> resMap = new HashMap<>();
     Map<String, Character> chainCodeMap = new HashMap<>();
-    public static EnergyLists energyList;
-    public static Dihedral dihedral;
-    public static Helix helix;
-    public static NonLoop sheets;
     Map<Integer, MMCIFEntity> entityMap = new HashMap<>();
 
     public MMcifReader(final File starFile, final MMCIF star3) {
@@ -99,13 +93,13 @@ public class MMcifReader {
         } else {
             List<Integer> entityIDColumn = loop.getColumnAsIntegerList("entity_id", -1);
             List<Integer> numColumn = loop.getColumnAsIntegerList("num", 0);
-            List<String> monIDColumn = loop.getColumnAsList("mon_id");
+            List<String> resNameColumn = loop.getColumnAsList("mon_id");
             List<String> heteroColumn = loop.getColumnAsListIfExists("hetero");
 
             List<Integer> startAndEnds = new ArrayList<>();
             for (int i = 0; i < numColumn.size(); i++) {
                 if (entityIDColumn.get(i) == entity.id) {
-                    entity.add(numColumn.get(i), monIDColumn.get(i), heteroColumn.get(i).equals("y"));
+                    entity.add(numColumn.get(i), resNameColumn.get(i), heteroColumn.get(i).equals("y"));
                 }
             }
         }
@@ -159,11 +153,16 @@ public class MMcifReader {
             polymer.assemblyID = id;
             entities.put(asymName, polymer);
             molecule.addEntity(polymer, asymName, id);
-            System.out.println("mol build poly " + molecule.getPolymers().size() + " " + numbers.size());
+//            System.out.println("mol build poly " + molecule.getPolymers().size() + " " + numbers.size());
             for (int i = 0; i < numbers.size(); i++) {
                 String resName = names.get(i);
                 String iRes = numbers.get(i).toString();
-                Residue residue = new Residue(iRes, resName.toUpperCase());
+                boolean hetBool = hetero.get(i);
+                String hetStr = "n";
+                if (hetBool) {
+                    hetStr = "y";
+                }
+                Residue residue = new Residue(iRes, resName.toUpperCase(), hetStr);
                 residue.molecule = polymer.molecule;
                 String mapID = asymName + "." + iRes;
                 addCompound(mapID, residue);
@@ -190,10 +189,10 @@ public class MMcifReader {
         }
 
     }
-
+    
     void buildEntities(final Saveframe saveframe) throws ParseException {
         Loop loop = saveframe.getLoop("_entity");
-        System.out.println("build emtotoes " + loop);
+//        System.out.println("build entities " + loop);
 
         if (loop == null) {
             String type = saveframe.getValue("_entity", "type");
@@ -223,13 +222,13 @@ public class MMcifReader {
                 entityMap.put(entityID, entity);
             }
         }
-        System.out.println("asym info " + entityMap.toString());
+//        System.out.println("asym info " + entityMap.toString());
 
     }
-
+    
     void buildAsym(final Saveframe saveframe, Molecule molecule) throws ParseException {
         Loop loop = saveframe.getLoop("_struct_asym");
-        System.out.println("build asym " + loop);
+//        System.out.println("build asym " + loop);
         final List<String> asymIDColumn;
         final List<Integer> entityIDColumn;
         if (loop == null) {
@@ -252,7 +251,7 @@ public class MMcifReader {
                 polymerEntity.build(molecule, asymID);
             }
         }
-        System.out.println("asym info " + asymIDColumn.toString() + " " + entityIDColumn.toString());
+//        System.out.println("asym info " + asymIDColumn.toString() + " " + entityIDColumn.toString());
     }
 
     void addResidues(Saveframe saveframe, Molecule molecule, List<String> entityIDColumn, List<String> numColumn, List<String> monIDColumn, List<String> heteroColumn) throws ParseException {
@@ -284,6 +283,7 @@ public class MMcifReader {
                 polymer.assemblyID = entityID++;
                 entities.put(chainCode, polymer);
                 molecule.addEntity(polymer, chainCode, chainID);
+                System.out.println("reader " + chainCode + " " + chainID);
 
             }
             String resName = (String) monIDColumn.get(i);
@@ -357,7 +357,7 @@ public class MMcifReader {
     Molecule buildConformation(final Saveframe saveframe, Molecule molecule) throws ParseException {
         Loop loop = saveframe.getLoop("_struct_conf");
         if (loop == null) {
-            throw new ParseException("No \"_struct_conf\" loop");
+            molecule.setHelix(null);
         } else {
             List<String> idColumn = loop.getColumnAsList("id");
             List<String> begAsymIDColumn = loop.getColumnAsList("beg_label_asym_id");
@@ -386,20 +386,20 @@ public class MMcifReader {
 //                    polymers = molecule.getPolymers();
 //                    molecule.updateAtomArray();
 //                }
-//                Residue firstRes = polymers.get(iPolymer).getResidue(iFirstRes);
-//                Residue lastRes = polymers.get(iPolymer).getResidue(iLastRes);
-//                helixResList.add(firstRes);
-//                helixResList.add(lastRes);
+                Residue firstRes = polymers.get(iPolymer).getResidue(iFirstRes);
+                Residue lastRes = polymers.get(iPolymer).getResidue(iLastRes);
+                helixResList.add(firstRes);
+                helixResList.add(lastRes);
             }
-            helix = new Helix(helixResList);
-            return molecule;
+            molecule.setHelix(new Helix(helixResList));
         }
+        return molecule;
     }
 
     void buildSheetRange(final Saveframe saveframe, Molecule molecule) throws ParseException {
         Loop loop = saveframe.getLoop("_struct_sheet_range");
         if (loop == null) {
-            sheets = null;
+            molecule.setSheets(null);
         } else {
             List<String> idColumn = loop.getColumnAsList("id");
             List<String> begAsymIDColumn = loop.getColumnAsList("beg_label_asym_id");
@@ -417,7 +417,7 @@ public class MMcifReader {
                 sheetResList.add(firstRes);
                 sheetResList.add(lastRes);
             }
-            sheets = new NonLoop(sheetResList);
+            molecule.setSheets(new NonLoop(sheetResList));
         }
     }
 
@@ -728,7 +728,7 @@ public class MMcifReader {
             throw new IllegalArgumentException("?shifts fromSet toSet?");
         }
 
-        dihedral = null;
+        Dihedral dihedral = null;
         if (argv.length == 0) {
             hasResonances = false;
             Molecule.compoundMap.clear();
@@ -737,8 +737,10 @@ public class MMcifReader {
             }
             Molecule molecule = buildMolecule();
             molecule.setMethylRotationActive(true);
-            energyList = new EnergyLists(molecule);
-            dihedral = new Dihedral(energyList, false);
+            molecule.setEnergyLists(new EnergyLists(molecule));
+            EnergyLists energyList = molecule.getEnergyLists();
+            molecule.setDihedrals(new Dihedral(energyList, false));
+            dihedral = molecule.getDihedrals();
             energyList.clearDistanceMap();
             dihedral.getTorsionAngles().clear();
 
@@ -750,7 +752,7 @@ public class MMcifReader {
             if (DEBUG) {
                 System.err.println("process distances");
             }
-            buildDistanceRestraints(energyList);
+//            buildDistanceRestraints(energyList);
             if (DEBUG) {
                 System.err.println("process torsion angles");
             }
