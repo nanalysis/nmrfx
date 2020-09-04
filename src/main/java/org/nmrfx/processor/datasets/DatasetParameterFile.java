@@ -115,6 +115,7 @@ public class DatasetParameterFile {
             pStream.printf("posneg %d\n", dataset.getPosneg());
             pStream.printf("lvl %f\n", dataset.getLvl());
             pStream.printf("scale %g\n", dataset.getScale());
+            pStream.printf("norm %g\n", dataset.getNorm());
             if (dataset.getNoiseLevel() != null) {
                 pStream.printf("noise %g\n", dataset.getNoiseLevel());
             }
@@ -218,6 +219,11 @@ public class DatasetParameterFile {
             case "scale": {
                 double value = Double.parseDouble(fields[1]);
                 dataset.setScale(value);
+                break;
+            }
+            case "norm": {
+                double value = Double.parseDouble(fields[1]);
+                dataset.setNorm(value);
                 break;
             }
             case "noise": {

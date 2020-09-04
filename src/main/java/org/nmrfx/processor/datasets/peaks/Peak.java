@@ -26,7 +26,6 @@ import static java.util.Comparator.comparing;
 import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javafx.scene.paint.Color;
 import org.nmrfx.processor.datasets.RegionData;
 import org.nmrfx.processor.utilities.ColorUtil;
 
@@ -65,6 +64,63 @@ public class Peak implements Comparable, PeakOrMulti {
         "_Peak_char.Detail",
         "_Peak_char.Coupling_detail",
         "_Peak_char.Frozen"};
+
+    static String spectralTransitionStrings[] = {
+        "_Spectral_transition.ID",
+        "_Spectral_transition.Peak_ID",
+        "_Spectral_transition.Figure_of_merit",
+        "_Spectral_transition.Details",};
+
+    static String spectralTransitionGeneralCharStrings[] = {
+        "_Spectral_transition_general_char.Spectral_transition_ID",
+        "_Spectral_transition_general_char.Peak_ID",
+        "_Spectral_transition_general_char.Intensity_val",
+        "_Spectral_transition_general_char.Intensity_val_err",
+        "_Spectral_transition_general_char.Measurement_method",};
+
+    static String spectralTransitionCharStrings[] = {
+        "_Spectral_transition_char.Spectral_transition_ID",
+        "_Spectral_transition_char.Peak_ID",
+        "_Spectral_transition_char.Spectral_dim_ID",
+        "_Spectral_transition_char.Chem_shift_val",
+        "_Spectral_transition_char.Chem_shift_val_err",
+        "_Spectral_transition_char.Bounding_box_val",
+        "_Spectral_transition_char.Bounding_box_val_err",
+        "_Spectral_transition_char.Line_width_val",
+        "_Spectral_transition_char.Line_width_val_err",
+        "_Spectral_transition_char.Phase_val",
+        "_Spectral_transition_char.Phase_val_err",
+        "_Spectral_transition_char.Decay_rate_val",
+        "_Spectral_transition_char.Decay_rate_val_err",
+        "_Spectral_transition_char.Derivation_method_ID",};
+
+    static String peakComplexCouplingStrings[] = {
+        "_Peak_complex_multiplet.ID",
+        "_Peak_complex_multiplet.Peak_ID",
+        "_Peak_complex_multiplet.Spectral_dim_ID",
+        "_Peak_complex_multiplet.Multiplet_component_ID",
+        "_Peak_complex_multiplet.Offset_val",
+        "_Peak_complex_multiplet.Offset_val_err",
+        "_Peak_complex_multiplet.Intensity_val",
+        "_Peak_complex_multiplet.Intensity_val_err",
+        "_Peak_complex_multiplet.Volume_val",
+        "_Peak_complex_multiplet.Volume_val_err",
+        "_Peak_complex_multiplet.Line_width_val",
+        "_Peak_complex_multiplet.Line_width_val_err"};
+    static String peakCouplingPatternStrings[] = {
+        "_Peak_coupling.ID",
+        "_Peak_coupling.Peak_ID",
+        "_Peak_coupling.Spectral_dim_ID",
+        "_Peak_coupling.Multiplet_component_ID",
+        "_Peak_coupling.Type",
+        "_Peak_coupling.Coupling_val",
+        "_Peak_coupling.Coupling_val_err",
+        "_Peak_coupling.Strong_coupling_effect_val",
+        "_Peak_coupling.Strong_coupling_effect_err",
+        "_Peak_coupling.Intensity_val",
+        "_Peak_coupling.Intensity_val_err",
+        "_Peak_coupling.Partner_Peak_coupling_ID"
+    };
     static final public int NFLAGS = 16;
     static final public int COMPOUND = 1;
     static final public int MINOR = 2;
@@ -78,7 +134,7 @@ public class Peak implements Comparable, PeakOrMulti {
     static final private int N_TYPES = 9;
     static private String[] peakTypes = new String[N_TYPES];
 
-    static final public Color[] FREEZE_COLORS = {Color.ORANGE, Color.MAGENTA, Color.RED};
+    static final public int[][] FREEZE_COLORS = {{255, 165, 0}, {255, 0, 255}, {255, 0, 0}};
 
     static {
         int j = 1;
@@ -100,7 +156,7 @@ public class Peak implements Comparable, PeakOrMulti {
     private float volume2Err;
     private int type = COMPOUND;
     private int status;
-    private Color color;
+    private int[] colorArray = null;
     private String comment;
     private boolean[] flag;
     private Optional<double[][]> measures = Optional.empty();
@@ -413,6 +469,26 @@ public class Peak implements Comparable, PeakOrMulti {
 
     public static String[] getSTAR3CharStrings() {
         return peakCharStrings;
+    }
+
+    public static String[] getSTAR3SpectralTransitionStrings() {
+        return spectralTransitionStrings;
+    }
+
+    public static String[] getSTAR3SpectralTransitionGeneralCharStrings() {
+        return spectralTransitionGeneralCharStrings;
+    }
+
+    public static String[] getSTAR3SpectralTransitionCharStrings() {
+        return spectralTransitionCharStrings;
+    }
+
+    public static String[] getSTAR3ComplexCouplingStrings() {
+        return peakComplexCouplingStrings;
+    }
+
+    public static String[] getSTAR3CouplingPatternStrings() {
+        return peakCouplingPatternStrings;
     }
 
     public static String[] getPeakTypes() {
@@ -848,6 +924,17 @@ public class Peak implements Comparable, PeakOrMulti {
         return result.toString();
     }
 
+    public String toSTAR3LoopSpectralTransitionString(int id) {
+        StringBuilder result = new StringBuilder();
+        String sep = " ";
+        char stringQuote = '"';
+        result.append(id).append(sep);
+        result.append(String.valueOf(getIdNum())).append(sep);
+        result.append(".").append(sep);
+        result.append(".");
+        return result.toString();
+    }
+
     public String toSTAR3LoopIntensityString(int mode) {
         StringBuilder result = new StringBuilder();
         String sep = " ";
@@ -1039,7 +1126,7 @@ public class Peak implements Comparable, PeakOrMulti {
         result.append(String.valueOf(getIntensityErr())).append(sep);
         result.append(String.valueOf(getType())).append(sep);
         result.append(String.valueOf(getComment())).append(sep);
-        String colorString = color == null ? "" : ColorUtil.toRGBCode(color);
+        String colorString = colorArray == null ? "" : ColorUtil.toRGBCode(colorArray);
         result.append(colorString).append(sep);
         result.append(getFlag2()).append(sep);
         result.append(String.valueOf(getStatus()));
@@ -1380,33 +1467,36 @@ public class Peak implements Comparable, PeakOrMulti {
         return status;
     }
 
-    public final void setStatus(int status) {
+    public void setStatus(int status) {
         this.status = status;
         peakUpdated(this);
     }
 
-    public Color getColor() {
-        return color;
-    }
-
     public String getColorName() {
-        return color == null ? "" : color.toString();
+        String colorString = colorArray == null ? "" : ColorUtil.toRGBCode(colorArray);
+        return colorString;
     }
 
-    public void setColor(Color color) {
-        this.color = color;
+    public int[] getColor() {
+        return colorArray;
+    }
+
+    public void setColorInt(int[] colors) {
+        if (colors != null) {
+            colorArray = colors.clone();
+        }
         peakUpdated(this);
     }
 
     public void setColor(String colorName) {
-        if (colorName != null && (colorName.length() != 0)) {
-            colorName = colorName.trim();
+        if (colorName != null) {
+            colorArray = ColorUtil.fromRGBCode(colorName);
         }
-        if ((colorName == null) || (colorName.length() == 0)) {
-            color = null;
-        } else {
-            color = Color.web(colorName);
-        }
+        peakUpdated(this);
+    }
+
+    public void unSetColor() {
+        colorArray = null;
         peakUpdated(this);
     }
 
@@ -1428,9 +1518,9 @@ public class Peak implements Comparable, PeakOrMulti {
             colorIndex += 2;
         }
         if (colorIndex == 0) {
-            color = null;
+            colorArray = null;
         } else {
-            color = FREEZE_COLORS[colorIndex - 1];
+            colorArray = FREEZE_COLORS[colorIndex - 1].clone();
         }
     }
 
