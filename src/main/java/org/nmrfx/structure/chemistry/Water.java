@@ -25,10 +25,9 @@ public class Water extends Entity {
         this.name = name;
     }
 
-    public void addO(double x, double y, double z, double occupancy, double bfactor) throws InvalidMoleculeException {
+    public void add() throws InvalidMoleculeException {
         String name = "O" + (atoms.size() + 1);
         Atom atom = Atom.genAtomWithElement(name, "O");
-        atom.addCoords(x, y, z, occupancy, bfactor);
         addAtom(null, atom);
     }
 }
