@@ -210,7 +210,22 @@ public class PeakList {
         peaks = new ArrayList<>();
         indexMap.clear();
         Project.getActive().addPeakList(this, listName);
-        listNum = Project.getActive().getPeakLists().size();
+        if (listNum == null) {
+            listNum = 1;
+            while (get(listNum).isPresent()) {
+                listNum++;
+            }
+        }
+        this.listID = listNum;
+    }
+
+    /**
+     *
+     * @param name
+     * @param n
+     */
+    public PeakList(String name, int n) {
+        this(name, n, null);
     }
 
     @Override
@@ -794,9 +809,7 @@ public class PeakList {
      * PeakList with that id exists
      */
     public static Optional<PeakList> get(int listID) {
-        Optional<PeakList> peakListOpt = PeakList.peakListTable.values().stream().
-                filter(p -> (p.listID == listID)).findFirst();
-        return peakListOpt;
+        return Project.getActive().getPeakList(listID);
     }
 
     /**
@@ -807,9 +820,7 @@ public class PeakList {
      * empty if no peak lists.
      */
     public static Optional<PeakList> getFirst() {
-        Optional<PeakList> peakListOpt = PeakList.peakListTable.values().stream().
-                sorted((o1, o2) -> Integer.compare(o1.listID, o2.listID)).findFirst();
-        return peakListOpt;
+        return Project.getActive().getFirstPeakList();
     }
 
     /**

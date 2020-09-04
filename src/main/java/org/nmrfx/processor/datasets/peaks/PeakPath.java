@@ -527,7 +527,7 @@ public class PeakPath implements PeakListener {
     }
 
     public static Collection<String> getNames() {
-        return peakPaths.keySet();
+        return peakPaths().keySet();
     }
 
     public static PeakPath get(String name) {
