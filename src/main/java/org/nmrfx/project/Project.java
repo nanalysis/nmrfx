@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.TreeSet;
 import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -30,6 +31,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.DatasetParameterFile;
+import org.nmrfx.processor.datasets.DatasetRegion;
 import org.nmrfx.processor.datasets.peaks.InvalidPeakException;
 import org.nmrfx.processor.datasets.peaks.PeakList;
 import org.nmrfx.processor.datasets.peaks.PeakPath;
@@ -316,6 +318,14 @@ public class Project {
 
                         try {
                             Dataset dataset = new Dataset(pathName, fileName, false, false);
+                            File regionFile = DatasetRegion.getRegionFile(path.toString());
+                            System.out.println("region " + regionFile.toString());
+                            if (regionFile.canRead()) {
+                                System.out.println("read");
+                                TreeSet<DatasetRegion> regions = DatasetRegion.loadRegions(regionFile);
+                                dataset.setRegions(regions);
+                            }
+
                         } catch (IOException ex) {
                             Logger.getLogger(Project.class.getName()).log(Level.SEVERE, null, ex);
                         }
@@ -346,6 +356,9 @@ public class Project {
                 }
                 String parFilePath = DatasetParameterFile.getParameterFileName(pathInProject.toString());
                 dataset.writeParFile(parFilePath);
+                TreeSet<DatasetRegion> regions = dataset.getRegions();
+                File regionFile = DatasetRegion.getRegionFile(pathInProject.toString());
+                DatasetRegion.saveRegions(regionFile, regions);
             }
         }
     }
