@@ -258,7 +258,7 @@ public class Project {
     }
 
     public boolean removeDataset(String datasetName) {
-        Dataset toRemove=datasetMap.get(datasetName);
+        Dataset toRemove = datasetMap.get(datasetName);
         boolean result = datasetMap.remove(datasetName) != null;
         datasets.remove(toRemove);
         return result;
@@ -445,6 +445,33 @@ public class Project {
 
     public PeakList getPeakList(String name) {
         return peakLists.get(name);
+    }
+
+    /**
+     * Returns an Optional containing the PeakList that has the specified id
+     * number or empty value if no PeakList with that id exists.
+     *
+     * @param listID the id of the peak list
+     * @return the Optional containing the PeaKlist or an empty value if no
+     * PeakList with that id exists
+     */
+    public Optional<PeakList> getPeakList(int listID) {
+        Optional<PeakList> peakListOpt = peakLists.values().stream().
+                filter(p -> (p.getId() == listID)).findFirst();
+        return peakListOpt;
+    }
+
+    /**
+     * Return an Optional containing the PeakList with lowest id number or an
+     * empty value if no PeakLists are present.
+     *
+     * @return Optional containing first peakList if any peak lists present or
+     * empty if no peak lists.
+     */
+    public Optional<PeakList> getFirstPeakList() {
+        Optional<PeakList> peakListOpt = peakLists.values().stream().
+                sorted((o1, o2) -> Integer.compare(o1.getId(), o2.getId())).findFirst();
+        return peakListOpt;
     }
 
     public void putPeakList(PeakList peakList) {
