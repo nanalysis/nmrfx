@@ -46,12 +46,14 @@ import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextAlignment;
 import javafx.scene.transform.Affine;
+import org.apache.commons.collections4.list.TreeList;
 import org.nmrfx.graphicsio.GraphicsContextInterface;
 import org.nmrfx.graphicsio.GraphicsContextProxy;
 import org.nmrfx.graphicsio.GraphicsIOException;
 import org.nmrfx.processor.datasets.peaks.AbsMultipletComponent;
 import org.nmrfx.processor.datasets.peaks.Peak.Corner;
 import org.nmrfx.processor.datasets.peaks.PeakDim;
+import org.nmrfx.processor.gui.utils.GUIColorUtils;
 
 /**
  *
@@ -121,7 +123,7 @@ public class DrawPeaks {
     HashSet[] regions = null;
     Color selectFill = new Color(1.0f, 1.0f, 0.0f, 0.4f);
     private boolean multipletMode = false;
-    Bounds lastTextBox = null;
+    List<Bounds> lastTextBoxes = new TreeList<>();
     GraphicsContextInterface g2;
 
     public DrawPeaks(PolyChart chart, Canvas peakCanvas) {
@@ -141,6 +143,10 @@ public class DrawPeaks {
         for (int i = 0; i < regions.length; i++) {
             regions[i].clear();
         }
+    }
+
+    public void clear1DBounds() {
+        lastTextBoxes.clear();
     }
 
 //    protected void setParameters(PeakDisplayParameters pdPar) {
@@ -561,8 +567,14 @@ public class DrawPeaks {
                 if (peak.peakList.scale > 0.0) {
                     normVal = multiplet.getVolume() / peak.peakList.scale;
                 }
-                label = Format.format2(normVal) + " " + multiplet.getMultiplicity() + " " + couplings
-                        + "\n" + Format.format3(multiplet.getCenter());
+                StringBuilder sBuilder = new StringBuilder();
+                sBuilder.append(Format.format2(normVal)).append(' ').
+                        append(multiplet.getMultiplicity()).append('\n');
+                if ((couplings != null) && (couplings.length() > 0)) {
+                    sBuilder.append(couplings).append('\n');
+                }
+                sBuilder.append((Format.format3(multiplet.getCenter())));
+                label = sBuilder.toString();
 
                 break;
             case PeakDisplayParameters.MULTIPLET_LABEL_PPM:
@@ -663,9 +675,9 @@ public class DrawPeaks {
         if (colorMode == 1) {
             color = peakAttr.getOffColor();
         }
-        Color peakColor = peak.getColor();
+        int[] peakColor = peak.getColor();
         if (peakColor != null) {
-            color = peakColor;
+            color = GUIColorUtils.toColor(peakColor);
         }
         g2.setStroke(color);
         return colorMode;
@@ -933,7 +945,10 @@ public class DrawPeaks {
                 i++;
             }
             if (!selected) {
-                renderMultipletLabel(g2, label, strokeColor, xM, yM, max);
+                try {
+                    renderMultipletLabel(g2, label, strokeColor, xM, yM, max);
+                } catch (Exception e) {
+                }
             }
 //            chart.myDrawLine(g2, xM, (yM + dY * (1.0 + max + 1.2)), xM, (yM + dY * (1.0 + max + 0.5)));
         }
@@ -989,6 +1004,8 @@ public class DrawPeaks {
 
         float xM = (float) multiplet.getCenter();
         float yM = (float) multiplet.getMax();
+        double range = yAxis.getRange();
+        yM += range * frOffset;
         ArrayList<Line2D> lines = multiplet.getSplittingGraph();
         double max = 0.0;
         treeOn = true;
@@ -1037,18 +1054,35 @@ public class DrawPeaks {
         double yText = y1 - deltaY;
         g2.setTextAlign(TextAlignment.CENTER);
         Bounds bounds = measureText(label, g2.getFont(), 0, x1, yText);
-        int nTries = 5;
-        if (lastTextBox != null) {
+        int nTries = 10;
+        boolean noOverlap = true;
+        if (!lastTextBoxes.isEmpty()) {
+            noOverlap = false;
+            int nBoxes = lastTextBoxes.size();
             for (int i = 0; i < nTries; i++) {
-                bounds = measureText(label, g2.getFont(), 0, x1, yText);
-                if (!lastTextBox.intersects(bounds)) {
+                boolean ok = true;
+                for (int iBox = nBoxes - 1; iBox >= 0; iBox--) {
+                    Bounds lastTextBox = lastTextBoxes.get(iBox);
+                    if (bounds.getMinX() > lastTextBox.getMaxX()) {
+                        break;
+                    }
+
+                    bounds = measureText(label, g2.getFont(), 0, x1, yText);
+                    if (lastTextBox.intersects(bounds)) {
+                        ok = false;
+                    }
+                }
+                if (!ok) {
+                    yText -= (1.5 * deltaY);
+                } else {
+                    noOverlap = true;
                     break;
                 }
-                yText -= bounds.getHeight();
+
             }
         }
-        if ((lastTextBox == null) || (!lastTextBox.intersects(bounds))) {
-            lastTextBox = bounds;
+        if (noOverlap) {
+            lastTextBoxes.add(bounds);
             g2.setTextBaseline(VPos.BOTTOM);
             String[] segments = label.split("\n");
             double lineIncr = g2.getFont().getSize();
@@ -1363,7 +1397,6 @@ public class DrawPeaks {
         double edge1y = yAxis.getLowerBound();
         double edge2y = yAxis.getUpperBound();
 
-
         if (ignoreLinkDrawn || !peakDim1.isLinkDrawn()) {
             List<PeakDim> linkedPeakDims = peakDim1.getLinkedPeakDims();
             if (linkedPeakDims.size() > 1) {
@@ -1386,7 +1419,7 @@ public class DrawPeaks {
                             maxX = Math.max(shiftX, maxX);
                             minYdiag = Math.min(shiftY, minYdiag);
                             maxYdiag = Math.max(shiftY, maxYdiag);
-                            if (peak0.getPeakDim(1)==peakDim) {
+                            if (peak0.getPeakDim(1) == peakDim) {
                                 sumY += shiftY;
                                 nY++;
                             } else {
@@ -1401,8 +1434,8 @@ public class DrawPeaks {
                 double x1 = xAxis.getDisplayPosition(minX);
                 double x2 = xAxis.getDisplayPosition(maxX);
 
-                if (peakDim1.isFrozen()) {
-                    g2.setStroke(Peak.FREEZE_COLORS[1]);
+                if (peakDim0.isFrozen()) {
+                    g2.setStroke(GUIColorUtils.toColor(Peak.FREEZE_COLORS[0]));
                 } else {
                     g2.setStroke(Color.BLACK);
 
@@ -1412,14 +1445,14 @@ public class DrawPeaks {
                 g2.lineTo(x2, posY);
                 g2.stroke();
 
-                if (nXdiag>0) {
+                if (nXdiag > 0) {
                     double posXdiag = xAxis.getDisplayPosition(sumXdiag / nXdiag);
                     double y1diag = yAxis.getDisplayPosition(minYdiag);
                     double y2diag = yAxis.getDisplayPosition(maxYdiag);
 
                     g2.beginPath();
-                    g2.moveTo(posXdiag,y1diag);
-                    g2.lineTo(posXdiag,y2diag);
+                    g2.moveTo(posXdiag, y1diag);
+                    g2.lineTo(posXdiag, y2diag);
                     g2.stroke();
                 }
             }
@@ -1446,7 +1479,7 @@ public class DrawPeaks {
                             maxY = Math.max(shiftY, maxY);
                             minXdiag = Math.min(shiftX, minXdiag);
                             maxXdiag = Math.max(shiftX, maxXdiag);
-                            if (peak1.getPeakDim(0)==peakDim) {
+                            if (peak1.getPeakDim(0) == peakDim) {
                                 sumX += shiftX;
                                 nX++;
                             } else {
@@ -1460,8 +1493,8 @@ public class DrawPeaks {
                 double y2 = yAxis.getDisplayPosition(maxY);
                 double posX = xAxis.getDisplayPosition(sumX / nX);
 
-                if (peakDim0.isFrozen()) {
-                    g2.setStroke(Peak.FREEZE_COLORS[0]);
+                if (peakDim1.isFrozen()) {
+                    g2.setStroke(GUIColorUtils.toColor(Peak.FREEZE_COLORS[1]));
                 } else {
                     g2.setStroke(Color.BLACK);
                 }
@@ -1469,7 +1502,7 @@ public class DrawPeaks {
                 g2.moveTo(posX, y1);
                 g2.lineTo(posX, y2);
                 g2.stroke();
-                if (nYdiag>0) {
+                if (nYdiag > 0) {
                     double x1diag = xAxis.getDisplayPosition(minXdiag);
                     double x2diag = xAxis.getDisplayPosition(maxXdiag);
                     double posYdiag = yAxis.getDisplayPosition(sumYdiag / nYdiag);
@@ -1505,34 +1538,38 @@ public class DrawPeaks {
     public static Bounds measureText(String s, Font font, double angle, double x, double y) {
         Text text = new Text(s);
         text.setFont(font);
-//        text.setTextAlignment(TextAlignment.CENTER);
-//        text.setTextOrigin(VPos.TOP);
+        text.setTextAlignment(TextAlignment.CENTER);
+        text.setTextOrigin(VPos.TOP);
+        // GUIUtils.getTextWidth(s, font);
         Bounds textBounds = text.getBoundsInLocal();
-        Rectangle stencil = new Rectangle(
-                textBounds.getMinX(), textBounds.getMinY(), textBounds.getWidth(), textBounds.getHeight()
-        );
-
-        Shape intersection = Shape.intersect(text, stencil);
-        Affine aT = new Affine();
-        aT.appendTranslation(x, y);
-        aT.appendRotation(angle);
-
-        Bounds trimBounds = intersection.getBoundsInLocal();
         Bounds useBounds;
         if (false) {
-            useBounds = textBounds;
+            Rectangle stencil = new Rectangle(
+                    textBounds.getMinX(), textBounds.getMinY(), textBounds.getWidth(), textBounds.getHeight()
+            );
+            Shape intersection = Shape.intersect(text, stencil);
+            useBounds = intersection.getBoundsInLocal();
         } else {
-            useBounds = trimBounds;
-        }
-        double xOffset = useBounds.getWidth() / 2.0;
-        double yOffset = textBounds.getHeight() - 3;
-        if (angle != 0.0) {
-            xOffset = -useBounds.getHeight() / 2.0;
-            yOffset = 0.0;
+            useBounds = textBounds;
         }
 
-        Bounds trBds = aT.transform(useBounds);
-        Bounds ab = new BoundingBox(trBds.getMinX() - xOffset, trBds.getMinY() + yOffset, trBds.getWidth(), trBds.getHeight());
+        double xOffset = useBounds.getWidth() / 2.0;
+        double yOffset = textBounds.getHeight() - 3;
+        Bounds ab;
+        if (angle != 0.0) {
+            Affine aT = new Affine();
+            aT.appendTranslation(x, y);
+            aT.appendRotation(angle);
+            xOffset = -useBounds.getHeight() / 2.0;
+            yOffset = 0.0;
+            Bounds trBds = aT.transform(useBounds);
+            ab = new BoundingBox(trBds.getMinX() - xOffset, trBds.getMinY() + yOffset, trBds.getWidth(), trBds.getHeight());
+        } else {
+            ab = new BoundingBox(x + useBounds.getMinX() - xOffset,
+                    y + useBounds.getMinY() - useBounds.getHeight() + yOffset,
+                    useBounds.getWidth(),
+                    useBounds.getHeight() * 1.2);
+        }
 
         return ab;
     }
@@ -1700,11 +1737,12 @@ public class DrawPeaks {
             g2.setLineWidth(peak1DStroke);
             double x1 = xAxis.getDisplayPosition(x);
             double y1 = yAxis.getDisplayPosition(height);
+            int lastBox = lastTextBoxes.size() - 1;
 
             if (peakAttr.getLabelType() == PPM) {
                 Bounds bounds = measureText(label, g2.getFont(), -90, x1, y1 + 35);
-                if ((lastTextBox == null) || (!lastTextBox.intersects(bounds))) {
-                    lastTextBox = bounds;
+                if (lastTextBoxes.isEmpty() || (!lastTextBoxes.get(lastBox).intersects(bounds))) {
+                    lastTextBoxes.add(bounds);
 
                     g2.save();
                     g2.setTextAlign(TextAlignment.LEFT);
@@ -1725,8 +1763,8 @@ public class DrawPeaks {
             } else {
                 g2.setTextAlign(TextAlignment.CENTER);
                 Bounds bounds = measureText(label, g2.getFont(), 0, x1, textY);
-                if ((lastTextBox == null) || (!lastTextBox.intersects(bounds))) {
-                    lastTextBox = bounds;
+                if (lastTextBoxes.isEmpty() || (!lastTextBoxes.get(lastBox).intersects(bounds))) {
+                    lastTextBoxes.add(bounds);
 
                     g2.setTextBaseline(VPos.TOP);
                     g2.fillText(label, x1, textY);

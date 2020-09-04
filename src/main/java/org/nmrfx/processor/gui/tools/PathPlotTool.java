@@ -52,6 +52,7 @@ import org.nmrfx.chart.DataSeries;
 import org.nmrfx.chart.XYCanvasChart;
 import org.nmrfx.chart.XYChartPane;
 import org.nmrfx.processor.datasets.peaks.PeakPath;
+import org.nmrfx.processor.datasets.peaks.PeakPath.Path;
 
 /**
  *
@@ -192,6 +193,11 @@ public class PathPlotTool {
             }
         }
         );
+    }
+
+    public void selectRow(Path path) {
+        tableView.getSelectionModel().clearSelection();
+        tableView.getSelectionModel().select(path);
     }
 
     List<PeakPath.Path> getSelected() {

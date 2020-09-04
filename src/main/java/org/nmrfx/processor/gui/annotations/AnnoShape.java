@@ -29,6 +29,7 @@ public abstract class AnnoShape implements CanvasAnnotation {
     Color stroke = Color.BLACK;
     Color fill = Color.BLACK;
     double lineWidth = 1.0;
+    boolean clipInAxes = false;
 
     /**
      * @return the stroke
@@ -70,6 +71,15 @@ public abstract class AnnoShape implements CanvasAnnotation {
      */
     public void setLineWidth(double lineWidth) {
         this.lineWidth = lineWidth;
+    }
+
+    @Override
+    public boolean getClipInAxes() {
+        return clipInAxes;
+    }
+
+    public void setClipInAxes(boolean state) {
+        clipInAxes = state;
     }
 
 }

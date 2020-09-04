@@ -15,26 +15,20 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.nmrfx.processor.gui.spectra;
+package org.nmrfx.processor.gui.utils;
 
-import javafx.event.ActionEvent;
-import javafx.scene.control.ContextMenu;
-import javafx.scene.control.MenuItem;
-import org.nmrfx.processor.gui.PolyChart;
+import javafx.scene.paint.Color;
 
 /**
  *
  * @author brucejohnson
  */
-public class RegionMenu extends ChartMenu {
+public class GUIColorUtils {
 
-    public RegionMenu(PolyChart chart) {
-        super(chart);
-    }
-
-    @Override
-    public void makeChartMenu() {
-        chartMenu = new ContextMenu();
+    public static Color toColor(int[] rgb) {
+        Color color = rgb.length == 3 ? Color.rgb(rgb[0], rgb[1], rgb[2])
+                : Color.rgb(rgb[0], rgb[1], rgb[2], rgb[3]);
+        return color;
     }
 
 }

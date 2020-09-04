@@ -226,7 +226,10 @@ public class PeakNavigator implements PeakListener {
                 }
             }
             if (testList == null) {
-                testList = PeakList.get(0);
+                Optional<PeakList> firstListOpt = PeakList.getFirst();
+                if (firstListOpt.isPresent()) {
+                    testList = firstListOpt.get();
+                }
             }
             setPeakList(testList);
         }
@@ -263,6 +266,7 @@ public class PeakNavigator implements PeakListener {
 
     public void setPeak(Peak peak) {
         currentPeak = peak;
+        setPeakIdField();
         peakNavigable.refreshPeakView(peak);
         if (peak != null) {
             if (peakList != peak.getPeakList()) {
@@ -273,7 +277,6 @@ public class PeakNavigator implements PeakListener {
             updateDeleteStatus();
         }
         updateAtomLabels(peak);
-        setPeakIdField();
     }
 
     void updateAtomLabels(Peak peak) {

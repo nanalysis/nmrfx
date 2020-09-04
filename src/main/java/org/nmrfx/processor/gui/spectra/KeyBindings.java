@@ -57,6 +57,15 @@ public class KeyBindings {
         globalKeyActionMap.put(keyString, action);
     }
 
+    public void registerKeyAction(String keyString, Consumer<PolyChart> action) {
+        // add firstchar so that key processing doesn't clear keyMonitor before a two key string is typed
+        String firstChar = keyString.substring(0, 1);
+        if (!keyActionMap.containsKey(firstChar)) {
+            keyActionMap.put(firstChar, null);
+        }
+        keyActionMap.put(keyString, action);
+    }
+
     public void keyPressed(KeyEvent keyEvent) {
         KeyCode code = keyEvent.getCode();
         if (null != code) {
@@ -208,42 +217,6 @@ public class KeyBindings {
                 }
                 keyMonitor.clear();
                 break;
-            case "d":
-                break;
-
-            case "df":
-                if (chart.getController().hasSlider()) {
-                    chart.getController().getSlider().freezePeaks(false);
-                }
-                keyMonitor.clear();
-                break;
-            case "dt":
-                if (chart.getController().hasSlider()) {
-                    chart.getController().getSlider().thawPeaks(false);
-                }
-                keyMonitor.clear();
-                break;
-            case "ds":
-                if (chart.getController().hasSlider()) {
-                    chart.getController().getSlider().tweakPeaks();
-                }
-                keyMonitor.clear();
-                break;
-
-            case "da":
-                if (!chart.getController().hasSlider()) {
-                    chart.getController().showPeakSlider();
-                }
-                keyMonitor.clear();
-                break;
-
-            case "dq":
-                if (chart.getController().hasSlider()) {
-                    chart.getController().removePeakSlider(null);
-                }
-                keyMonitor.clear();
-                break;
-
             case "p":
                 break;
             case "u":

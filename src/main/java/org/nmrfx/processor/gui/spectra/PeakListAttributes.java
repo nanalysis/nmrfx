@@ -49,6 +49,7 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import org.apache.commons.beanutils.PropertyUtils;
 import org.nmrfx.processor.datasets.Dataset;
+import org.nmrfx.processor.datasets.peaks.AbsMultipletComponent;
 import org.nmrfx.processor.datasets.peaks.ComplexCoupling;
 import org.nmrfx.processor.datasets.peaks.Coupling;
 import org.nmrfx.processor.datasets.peaks.CouplingPattern;
@@ -604,6 +605,11 @@ public class PeakListAttributes implements PeakListener {
         } else if (multiplet.isGenericMultiplet()) {
             Coupling coupling = multiplet.getCoupling();
             ComplexCoupling cPat = (ComplexCoupling) coupling;
+            List<AbsMultipletComponent> comps = cPat.getAbsComponentList();
+            AbsMultipletComponent activeComp = comps.get(mLine);
+            activeComp.setOffset(activeComp.getOffset() + delta);
+            comps.set(mLine, activeComp);
+            multiplet.updateCoupling(comps);
 //            PeakDim peakDim = multiplet.getPeakDims().get(mLine);
 //            double shift = peakDim.getChemShiftValue();
 //            peakDim.setChemShiftValue((float) (shift + delta));

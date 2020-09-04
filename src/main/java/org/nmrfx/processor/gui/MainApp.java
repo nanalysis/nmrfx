@@ -23,6 +23,7 @@ import de.codecentric.centerdevice.MenuToolkit;
 import de.codecentric.centerdevice.dialogs.about.AboutStageBuilder;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -52,12 +53,14 @@ import javafx.stage.FileChooser;
 import org.nmrfx.processor.datasets.DatasetListener;
 import org.nmrfx.processor.datasets.peaks.io.PeakReader;
 import org.nmrfx.processor.gui.controls.FractionCanvas;
-import org.nmrfx.processor.gui.tools.RunAboutGUI;
 import org.nmrfx.processor.utilities.WebConnect;
 import org.nmrfx.project.GUIProject;
 import org.nmrfx.project.Project;
 import org.nmrfx.server.Server;
 import static javafx.application.Application.launch;
+import javafx.collections.MapChangeListener;
+import javafx.collections.ObservableMap;
+import javafx.scene.text.Font;
 
 public class MainApp extends Application  {
 
@@ -65,7 +68,6 @@ public class MainApp extends Application  {
     public static PreferencesController preferencesController;
     public static DocWindowController docWindowController;
     public static DatasetsController datasetController;
-    public static AnalyzerController analyzerController;
     public static HostServices hostServices;
     private static String version = null;
     static String appName = "NMRFx Processor";
@@ -78,6 +80,8 @@ public class MainApp extends Application  {
     static boolean isAnalyst = false;
     Consumer<String> socketFunction = null;
     static NMRFxServer server = null;
+    static Font defaultFont;
+    public static ObservableMap<String, PeakList> peakListTable = (ObservableMap<String, PeakList>) PeakList.peakListTable;
 
     public static void setAnalyst() {
         isAnalyst = true;
@@ -122,6 +126,15 @@ public class MainApp extends Application  {
         return stages;
     }
 
+    static void loadFont() {
+        InputStream iStream = MainApp.class.getResourceAsStream("/LiberationSans-Regular.ttf");
+        defaultFont = Font.loadFont(iStream, 12);
+    }
+
+    public static void addPeakListListener(MapChangeListener<String, PeakList> mapChangeListener) {
+        ((ObservableMap<String, PeakList>) PeakList.peakListTable).addListener(mapChangeListener);
+    }
+
     @Override
     public void start(Stage stage) throws Exception {
         mainApp = this;
@@ -139,6 +152,10 @@ public class MainApp extends Application  {
         interpreter.exec("from pyproc import *\ninitLocal()\nfrom gscript import *\nnw=NMRFxWindowScripting()\nfrom dscript import *\nfrom pscript import *\nimport os");
         interpreter.set("argv", parameters.getRaw());
         interpreter.exec("parseArgs(argv)");
+        Dataset.addObserver(this);
+        if (defaultFont == null) {
+            loadFont();
+        }
     }
 
     public static boolean isMac() {
@@ -147,6 +164,9 @@ public class MainApp extends Application  {
 
     public static MenuBar getMenuBar() {
         return mainApp.makeMenuBar(appName);
+    }
+
+    public void addStatusBarTools(SpectrumStatusBar statusBar) {
     }
 
     public void quit() {
@@ -271,7 +291,7 @@ public class MainApp extends Application  {
         projectMenu.getItems().addAll(projectOpenMenuItem, recentProjectMenuItem, projectSaveMenuItem, projectSaveAsMenuItem);
 
         fileMenu.getItems().addAll(openMenuItem, openDatasetMenuItem, addMenuItem,
-                recentFIDMenuItem, recentDatasetMenuItem, newMenuItem, portMenuItem, new SeparatorMenuItem(), svgMenuItem, loadPeakListMenuItem);
+                recentFIDMenuItem, recentDatasetMenuItem, newMenuItem, portMenuItem, new SeparatorMenuItem(), pdfMenuItem, svgMenuItem, loadPeakListMenuItem);
 
         Menu spectraMenu = new Menu("Spectra");
         MenuItem copyItem = new MenuItem("Copy Spectrum as SVG Text");
@@ -298,15 +318,9 @@ public class MainApp extends Application  {
         arrangeMenu.getItems().addAll(horizItem, vertItem, gridItem, overlayItem, minimizeItem, normalizeItem);
         MenuItem alignMenuItem = new MenuItem("Align Spectra");
         alignMenuItem.setOnAction(e -> FXMLController.getActiveController().alignCenters());
-        MenuItem analyzeMenuItem = new MenuItem("Analyzer...");
-        analyzeMenuItem.setOnAction(e -> showAnalyzer(e));
-        MenuItem measureMenuItem = new MenuItem("Show Measure Bar");
-        measureMenuItem.setOnAction(e -> FXMLController.getActiveController().showSpectrumMeasureBar());
-        MenuItem compareMenuItem = new MenuItem("Show Comparator");
-        compareMenuItem.setOnAction(e -> FXMLController.getActiveController().showSpectrumComparator());
 
         spectraMenu.getItems().addAll(deleteItem, arrangeMenu, syncMenuItem,
-                alignMenuItem, analyzeMenuItem, measureMenuItem, compareMenuItem, copyItem);
+                alignMenuItem, copyItem);
 
         // Format (items TBD)
 //        Menu formatMenu = new Menu("Format");
@@ -335,21 +349,10 @@ public class MainApp extends Application  {
         MenuItem peakAttrMenuItem = new MenuItem("Show Peak Tool");
         peakAttrMenuItem.setOnAction(e -> FXMLController.getActiveController().showPeakAttrAction(e));
 
-        MenuItem peakNavigatorMenuItem = new MenuItem("Show Peak Navigator");
-        peakNavigatorMenuItem.setOnAction(e -> FXMLController.getActiveController().showPeakNavigator());
-        MenuItem runAboutMenuItem = new MenuItem("Show RunAbout");
-        runAboutMenuItem.setOnAction(e -> showRunAbout());
-
         MenuItem linkPeakDimsMenuItem = new MenuItem("Link by Labels");
         linkPeakDimsMenuItem.setOnAction(e -> FXMLController.getActiveController().linkPeakDims());
 
-        MenuItem peakSliderMenuItem = new MenuItem("Show Peak Slider");
-        peakSliderMenuItem.setOnAction(e -> FXMLController.getActiveController().showPeakSlider());
-
-        MenuItem pathToolMenuItem = new MenuItem("Show Path Tool");
-        pathToolMenuItem.setOnAction(e -> FXMLController.getActiveController().showPathTool());
-
-        peakMenu.getItems().addAll(peakAttrMenuItem, peakNavigatorMenuItem, linkPeakDimsMenuItem, peakSliderMenuItem, pathToolMenuItem);
+        peakMenu.getItems().addAll(peakAttrMenuItem, linkPeakDimsMenuItem);
 
         // Window Menu
         // TBD standard window menu items
@@ -507,10 +510,6 @@ public class MainApp extends Application  {
         });
     }
 
-    void showRunAbout() {
-        RunAboutGUI.create();
-    }
-
     public static InteractiveInterpreter getInterpreter() {
         return interpreter;
     }
@@ -591,16 +590,43 @@ public class MainApp extends Application  {
         }
     }
 
-    @FXML
-    private void showAnalyzer(ActionEvent event) {
-        if (analyzerController == null) {
-            analyzerController = new AnalyzerController();
+    @Override
+    public void datasetAdded(Dataset dataset) {
+        if (Platform.isFxApplicationThread()) {
+            FXMLController.updateDatasetList();
+        } else {
+            Platform.runLater(() -> {
+                FXMLController.updateDatasetList();
+            }
+            );
         }
-        try {
-            analyzerController.load();
-        } catch (IOException ex) {
-            ExceptionDialog dialog = new ExceptionDialog(ex);
-            dialog.showAndWait();
+    }
+
+    @Override
+    public void datasetModified(Dataset dataset) {
+    }
+
+    @Override
+    public void datasetRemoved(Dataset dataset) {
+        if (Platform.isFxApplicationThread()) {
+            FXMLController.updateDatasetList();
+        } else {
+            Platform.runLater(() -> {
+                FXMLController.updateDatasetList();
+            }
+            );
+        }
+    }
+
+    @Override
+    public void datasetRenamed(Dataset dataset) {
+        if (Platform.isFxApplicationThread()) {
+            FXMLController.updateDatasetList();
+        } else {
+            Platform.runLater(() -> {
+                FXMLController.updateDatasetList();
+            }
+            );
         }
     }
 

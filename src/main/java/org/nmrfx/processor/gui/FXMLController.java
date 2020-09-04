@@ -32,6 +32,7 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -115,7 +116,9 @@ import org.nmrfx.processor.datasets.peaks.PeakNeighbors;
 import org.nmrfx.processor.gui.controls.FractionCanvas;
 import org.nmrfx.processor.gui.controls.LayoutControlCanvas;
 import org.nmrfx.graphicsio.GraphicsIOException;
+import org.nmrfx.graphicsio.PDFGraphicsContext;
 import org.nmrfx.graphicsio.SVGGraphicsContext;
+import org.nmrfx.processor.datasets.peaks.PeakListAlign;
 import org.nmrfx.processor.gui.spectra.CanvasBindings;
 import org.nmrfx.processor.gui.spectra.ColorProperty;
 import org.nmrfx.processor.gui.spectra.CrossHairs;
@@ -187,7 +190,6 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
     private FractionCanvas chartGroup;
 
     PeakNavigator peakNavigator;
-    PeakSlider peakSlider;
     SpectrumComparator spectrumComparator;
     PathTool pathTool;
     ListView datasetListView = new ListView();
@@ -333,14 +335,6 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
 
     public Stage getStage() {
         return stage;
-    }
-
-    public boolean hasSlider() {
-        return peakSlider != null;
-    }
-
-    public PeakSlider getSlider() {
-        return peakSlider;
     }
 
     @FXML
@@ -856,10 +850,14 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         File selectedFile = fileChooser.showSaveDialog(null);
         if (selectedFile != null) {
             try {
-                getActiveChart().exportVectorGraphics(selectedFile.toString(), "pdf");
-            } catch (IOException ex) {
-                ExceptionDialog eDialog = new ExceptionDialog(ex);
-                eDialog.showAndWait();
+                PDFGraphicsContext pdfGC = new PDFGraphicsContext();
+                pdfGC.create(true, canvas.getWidth(), canvas.getHeight(), selectedFile.toString());
+                for (PolyChart chart : charts) {
+                    chart.exportVectorGraphics(pdfGC);
+                }
+                pdfGC.saveFile();
+            } catch (GraphicsIOException ex) {
+                Logger.getLogger(FXMLController.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
         stage.setResizable(true);
@@ -899,11 +897,11 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
             svgGC.saveFile();
             final Clipboard clipboard = Clipboard.getSystemClipboard();
             final ClipboardContent content = new ClipboardContent();
-//            DataFormat svgFormat = DataFormat.lookupMimeType("image/svg+xml");
-//            if (svgFormat == null) {
-//                svgFormat = new DataFormat("image/svg+xml");
-//            }
-//            content.put(svgFormat, stream.toString());
+            DataFormat svgFormat = DataFormat.lookupMimeType("image/svg+xml");
+            if (svgFormat == null) {
+                svgFormat = new DataFormat("image/svg+xml");
+            }
+            content.put(svgFormat, stream.toString().getBytes(StandardCharsets.UTF_8));
             content.put(DataFormat.PLAIN_TEXT, stream.toString());
             clipboard.setContent(content);
         } catch (GraphicsIOException ex) {
@@ -1445,10 +1443,11 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
 
         statusBar = new SpectrumStatusBar(this);
         statusBar.buildBar(btoolBar);
+        MainApp.getMainApp().addStatusBarTools(statusBar);
 
     }
 
-     List<PolyChart> getCharts(boolean all) {
+    List<PolyChart> getCharts(boolean all) {
         if (all) {
             return charts;
         } else {
@@ -1517,28 +1516,12 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         }
     }
 
-    public void showPeakSlider() {
-        if (peakSlider == null) {
-            ToolBar navBar = new ToolBar();
-            bottomBox.getChildren().add(navBar);
-            peakSlider = new PeakSlider(this, this::removePeakSlider);
-            peakSlider.initSlider(navBar);
-        }
-    }
-
     public Peak getActivePeak() {
         Peak peak = null;
         if (peakNavigator != null) {
             peak = peakNavigator.getPeak();
         }
         return peak;
-    }
-
-    public void removePeakSlider(Object o) {
-        if (peakSlider != null) {
-            bottomBox.getChildren().remove(peakSlider.getToolBar());
-            peakSlider = null;
-        }
     }
 
     public void showPathTool() {
@@ -1590,6 +1573,27 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         if (measureBar != null) {
             bottomBox.getChildren().remove(measureBar.getToolBar());
             measureBar = null;
+        }
+    }
+    AnalyzerBar analyzerBar = null;
+
+    public AnalyzerBar getSpectrumAnalyzerBar() {
+        return analyzerBar;
+    }
+
+    public void showAnalyzerBar() {
+        if (analyzerBar == null) {
+            GridPane navBar = new GridPane();
+            analyzerBar = new AnalyzerBar(this, this::removeAnalyzerBar);
+            analyzerBar.buildBar(navBar);
+            bottomBox.getChildren().add(navBar);
+        }
+    }
+
+    public void removeAnalyzerBar(Object o) {
+        if (analyzerBar != null) {
+            bottomBox.getChildren().remove(analyzerBar.getToolBar());
+            analyzerBar = null;
         }
     }
 
@@ -1851,6 +1855,26 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
 
     public void alignCenters() {
         DatasetAttributes activeAttr = (DatasetAttributes) activeChart.datasetAttributesList.get(0);
+        if (activeChart.peakListAttributesList.isEmpty()) {
+            alignCentersWithTempLists();
+        } else {
+            PeakList refList = activeChart.peakListAttributesList.get(0).getPeakList();
+            List<String> dimNames = new ArrayList<>();
+            dimNames.add(activeAttr.getLabel(0));
+            dimNames.add(activeAttr.getLabel(1));
+            List<PeakList> movingLists = new ArrayList<>();
+            for (PolyChart chart : charts) {
+                if (chart != activeChart) {
+                    PeakList movingList = chart.peakListAttributesList.get(0).getPeakList();
+                    movingLists.add(movingList);
+                }
+            }
+            PeakListAlign.alignCenters(refList, dimNames, movingLists);
+        }
+    }
+
+    public void alignCentersWithTempLists() {
+        DatasetAttributes activeAttr = (DatasetAttributes) activeChart.datasetAttributesList.get(0);
         // any peak lists created just for alignmnent should be deleted
         PeakList refList = PeakPicking.peakPickActive(activeChart, activeAttr, false, false, false, "refList");
         if (refList == null) {
@@ -2034,4 +2058,10 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         }
         statusBar.setIconState(iCross, jOrient, state);
     }
+
+    public void addSelectedPeakListener(ChangeListener listener) {
+        selPeaks.addListener(listener);
+
+    }
+
 }
