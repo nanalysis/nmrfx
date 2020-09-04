@@ -17,9 +17,20 @@
  */
 package org.nmrfx.processor.utilities;
 
-import javafx.scene.paint.Color;
-
 public class ColorUtil {
+
+    public static int[] fromRGBCode(String code) {
+        int[] rgba = null;
+        if ((code != null) && (code.trim().length() != 0)) {
+            rgba = new int[4];
+            rgba[0] = Integer.valueOf(code.substring(2, 4), 16);
+            rgba[1] = Integer.valueOf(code.substring(4, 6), 16);
+            rgba[2] = Integer.valueOf(code.substring(6, 8), 16);
+            rgba[3] = Integer.valueOf(code.substring(8, 10), 16);
+
+        }
+        return rgba;
+    }
 
     public static String toRGBCode(int red, int green, int blue, int opacity) {
         return String.format("0x%02X%02X%02X%02X", red, green, blue, opacity);
@@ -29,17 +40,8 @@ public class ColorUtil {
         return String.format("0x%02X%02X%02X%02X", red, green, blue, 255);
     }
 
-    public static String toRGBCode(Color color) {
-        return String.format("0x%02X%02X%02X%02X",
-                (int) (color.getRed() * 255),
-                (int) (color.getGreen() * 255),
-                (int) (color.getBlue() * 255),
-                (int) (color.getOpacity() * 255)
-        );
+    public static String toRGBCode(int[] colorInts) {
+        int opacity = colorInts.length == 4 ? colorInts[3] : 255;
+        return String.format("0x%02X%02X%02X%02X", colorInts[0], colorInts[1], colorInts[2], opacity);
     }
-
-    public static Color getColor(String colorString) {
-        return Color.web(colorString);
-    }
-
 }

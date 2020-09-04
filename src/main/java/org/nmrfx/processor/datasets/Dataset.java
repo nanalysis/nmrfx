@@ -3890,6 +3890,12 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
             if (rwVector.getSize() != dSize) {
                 rwVector.dwellTime *= (double) dSize / rwVector.getSize();
             }
+        } else {
+            int dSize = getSize(dim[0]);
+            if (rwVector.getSize() != dSize) {
+                rwVector.dwellTime *= (double) dSize / rwVector.getSize();
+            }
+
         }
         rwVector.setPh0(getPh0_r(dim[0]));
         rwVector.setPh1(getPh1_r(dim[0]));

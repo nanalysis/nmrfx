@@ -22,6 +22,8 @@ import org.nmrfx.processor.optimization.*;
 import org.nmrfx.processor.utilities.Util;
 import java.io.*;
 import static java.lang.Double.compare;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.*;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -43,8 +45,6 @@ import static java.util.Comparator.comparing;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableMap;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.nmrfx.processor.cluster.Clusters;
 import org.nmrfx.processor.cluster.Clusters.ClusterItem;
@@ -101,7 +101,7 @@ public class PeakList {
      *
      */
     public String fileName;
-    private final int listNum;
+    private final int listID;
 
     /**
      *
@@ -162,7 +162,7 @@ public class PeakList {
         }
     }
 
-    class SearchDim {
+    public class SearchDim {
 
         final int iDim;
         final double tol;
@@ -170,6 +170,10 @@ public class PeakList {
         SearchDim(int iDim, double tol) {
             this.iDim = iDim;
             this.tol = tol;
+        }
+
+        public int getDim() {
+            return iDim;
         }
     }
 
@@ -187,8 +191,9 @@ public class PeakList {
      *
      * @param name
      * @param n
+     * @param listNum
      */
-    public PeakList(String name, int n) {
+    public PeakList(String name, int n, Integer listNum) {
         listName = name;
         fileName = "";
         nDim = n;
@@ -308,7 +313,7 @@ public class PeakList {
      * @return the ID number of the peak list.
      */
     public int getId() {
-        return listNum;
+        return listID;
     }
 
     /**
@@ -345,6 +350,13 @@ public class PeakList {
      */
     public double getScale() {
         return scale;
+    }
+
+    /**
+     *
+     */
+    public void setScale(double scale) {
+        this.scale = scale;
     }
 
     /**
@@ -401,6 +413,10 @@ public class PeakList {
      */
     public void setDetails(String details) {
         this.details = details;
+    }
+
+    public List<SearchDim> getSearchDims() {
+        return searchDims;
     }
 
     /**
@@ -760,29 +776,40 @@ public class PeakList {
     }
 
     /**
+     * Returns the PeakList that has the specified name.
      *
-     * @param listName
-     * @return
+     * @param listName the name of the peak list
+     * @return the PeaKlist or null if no PeakList of that name exists
      */
     public static PeakList get(String listName) {
         return Project.getActive().getPeakList(listName);
     }
 
     /**
+     * Returns an Optional containing the PeakList that has the specified id
+     * number or empty value if no PeakList with that id exists.
      *
-     * @param listID
-     * @return
+     * @param listID the id of the peak list
+     * @return the Optional containing the PeaKlist or an empty value if no
+     * PeakList with that id exists
      */
-    public static PeakList get(int listID) {
-        Iterator iter = iterator();
-        PeakList peakList = null;
-        while (iter.hasNext()) {
-            peakList = (PeakList) iter.next();
-            if (listID == peakList.listNum) {
-                break;
-            }
-        }
-        return peakList;
+    public static Optional<PeakList> get(int listID) {
+        Optional<PeakList> peakListOpt = PeakList.peakListTable.values().stream().
+                filter(p -> (p.listID == listID)).findFirst();
+        return peakListOpt;
+    }
+
+    /**
+     * Return an Optional containing the PeakList with lowest id number or an
+     * empty value if no PeakLists are present.
+     *
+     * @return Optional containing first peakList if any peak lists present or
+     * empty if no peak lists.
+     */
+    public static Optional<PeakList> getFirst() {
+        Optional<PeakList> peakListOpt = PeakList.peakListTable.values().stream().
+                sorted((o1, o2) -> Integer.compare(o1.listID, o2.listID)).findFirst();
+        return peakListOpt;
     }
 
     /**
@@ -1536,10 +1563,11 @@ public class PeakList {
      *
      * @param newPeak
      */
-    public void addPeak(Peak newPeak) {
+    public Peak addPeak(Peak newPeak) {
         newPeak.initPeakDimContribs();
         peaks.add(newPeak);
         clearIndex();
+        return newPeak;
     }
 
     /**
@@ -2421,7 +2449,7 @@ public class PeakList {
             }
         }
         CompleteLinkage linkage = new CompleteLinkage(proximity);
-        HierarchicalClustering clusterer = new HierarchicalClustering(linkage);
+        HierarchicalClustering clusterer = HierarchicalClustering.fit(linkage);
         int[] partition = clusterer.partition(limit);
         int nClusters = 0;
         for (int i = 0; i < n; i++) {
@@ -3757,7 +3785,7 @@ public class PeakList {
 
     /**
      *
-     * @param iDim
+     * @param name
      * @return
      */
     public SpectralDim getSpectralDim(String name) {
@@ -3928,5 +3956,58 @@ public class PeakList {
      */
     public boolean requireSliderCondition() {
         return requireSliderCondition;
+    }
+
+    public void writeSTAR3Header(FileWriter chan) throws IOException {
+        char stringQuote = '"';
+        chan.write("save_" + getName() + "\n");
+        chan.write("_Spectral_peak_list.Sf_category                 ");
+        chan.write("spectral_peak_list\n");
+        chan.write("_Spectral_peak_list.Sf_framecode                 ");
+        chan.write(getName() + "\n");
+        chan.write("_Spectral_peak_list.ID                          ");
+        chan.write(getId() + "\n");
+        chan.write("_Spectral_peak_list.Data_file_name               ");
+        chan.write(".\n");
+        chan.write("_Spectral_peak_list.Sample_ID                   ");
+        chan.write(".\n");
+        chan.write("_Spectral_peak_list.Sample_label                 ");
+        if (getSampleLabel().length() != 0) {
+            chan.write("$" + getSampleLabel() + "\n");
+        } else {
+            chan.write(".\n");
+        }
+        chan.write("_Spectral_peak_list.Sample_condition_list_ID     ");
+        chan.write(".\n");
+        chan.write("_Spectral_peak_list.Sample_condition_list_label  ");
+        String sCond = getSampleConditionLabel();
+        if ((sCond.length() != 0) && !sCond.equals(".")) {
+            chan.write("$" + sCond + "\n");
+        } else {
+            chan.write(".\n");
+        }
+        chan.write("_Spectral_peak_list.Slidable                      ");
+        String slidable = isSlideable() ? "yes" : "no";
+        chan.write(slidable + "\n");
+        chan.write("_Spectral_peak_list.Scale ");
+        chan.write(String.valueOf(getScale()) + "\n");
+
+        chan.write("_Spectral_peak_list.Experiment_ID                 ");
+        chan.write(".\n");
+        chan.write("_Spectral_peak_list.Experiment_name               ");
+        if (fileName.length() != 0) {
+            chan.write("$" + fileName + "\n");
+        } else {
+            chan.write(".\n");
+        }
+        chan.write("_Spectral_peak_list.Number_of_spectral_dimensions ");
+        chan.write(String.valueOf(nDim) + "\n");
+        chan.write("_Spectral_peak_list.Details                       ");
+        if (getDetails().length() != 0) {
+            chan.write(stringQuote + getDetails() + stringQuote + "\n");
+        } else {
+            chan.write(".\n");
+        }
+        chan.write("\n");
     }
 }

@@ -23,9 +23,11 @@ import org.apache.commons.math3.util.MultidimensionalCounter;
  *
  * @author brucejohnson
  *
- * The MultiVecCounter class converts an index (from 0 to nGroups-1) to a VecIndex object that stores the input
- * positions in FID at which to read the vectors and the output positions in the dataset at which to write the vectors.
- * A group represents all the vectors that have the same time value in the indirect dimensions.
+ * The MultiVecCounter class converts an index (from 0 to nGroups-1) to a
+ * VecIndex object that stores the input positions in FID at which to read the
+ * vectors and the output positions in the dataset at which to write the
+ * vectors. A group represents all the vectors that have the same time value in
+ * the indirect dimensions.
  */
 public class MultiVecCounter {
 
@@ -44,17 +46,23 @@ public class MultiVecCounter {
     MultidimensionalCounter.Iterator iterator;
 
     /**
-     * Construct a new MultiVecCounter with specified parameters describing input and output data.
+     * Construct a new MultiVecCounter with specified parameters describing
+     * input and output data.
      *
-     * @param tdSizes an array of integers representing the size of the input data in each dimension. Output data sizes
-     * are set equal to the input data sizes.
-     * @param complex an array of booleans representing whether the input FID is complex in each dimension.
-     * @param modes an array of string values representing the order in which data was acquired. The first character of
-     * each mode is either a 'p', representing phase information, or 'd' representing time delay. The second character
-     * represents the dimension, with '1' representing the first indirect dimension. For example, "p1","p2","d1","d2"
-     * represents a typical Agilent 3D dataset with array value = "phase2,phase" and "p1","d1","p2","d2" would represent
-     * a typical Bruker 3D dataset.
-     * @param datasetNDim number of dimensions in final dataset, could be smaller than original data dimensions.
+     * @param tdSizes an array of integers representing the size of the input
+     * data in each dimension. Output data sizes are set equal to the input data
+     * sizes.
+     * @param complex an array of booleans representing whether the input FID is
+     * complex in each dimension.
+     * @param modes an array of string values representing the order in which
+     * data was acquired. The first character of each mode is either a 'p',
+     * representing phase information, or 'd' representing time delay. The
+     * second character represents the dimension, with '1' representing the
+     * first indirect dimension. For example, "p1","p2","d1","d2" represents a
+     * typical Agilent 3D dataset with array value = "phase2,phase" and
+     * "p1","d1","p2","d2" would represent a typical Bruker 3D dataset.
+     * @param datasetNDim number of dimensions in final dataset, could be
+     * smaller than original data dimensions.
      */
     public MultiVecCounter(int[] tdSizes, boolean[] complex, String[] modes, int datasetNDim) {
         nDim = tdSizes.length;
@@ -65,17 +73,24 @@ public class MultiVecCounter {
     }
 
     /**
-     * Construct a new MultiVecCounter with specified parameters describing input and output data.
+     * Construct a new MultiVecCounter with specified parameters describing
+     * input and output data.
      *
-     * @param tdSizes an array of integers representing the size of the input data in each dimension
-     * @param outSizes an array of integers representing the size of the output dataset in each dimension
-     * @param complex an array of booleans representing whether the input FID is complex in each dimension.
-     * @param modes an array of string values representing the order in which data was acquired. The first character of
-     * each mode is either a 'p', representing phase information, or 'd' representing time delay. The second character
-     * represents the dimension, with '1' representing the first indirect dimension. For example, "p1","p2","d1","d2"
-     * represents a typical Agilent 3D dataset with array value = "phase2,phase" and "p1","d1","p2","d2" would represent
-     * a typical Bruker 3D dataset.
-     * @param datasetNDim number of dimensions in final dataset, could be smaller than original data dimensions.
+     * @param tdSizes an array of integers representing the size of the input
+     * data in each dimension
+     * @param outSizes an array of integers representing the size of the output
+     * dataset in each dimension
+     * @param complex an array of booleans representing whether the input FID is
+     * complex in each dimension.
+     * @param modes an array of string values representing the order in which
+     * data was acquired. The first character of each mode is either a 'p',
+     * representing phase information, or 'd' representing time delay. The
+     * second character represents the dimension, with '1' representing the
+     * first indirect dimension. For example, "p1","p2","d1","d2" represents a
+     * typical Agilent 3D dataset with array value = "phase2,phase" and
+     * "p1","d1","p2","d2" would represent a typical Bruker 3D dataset.
+     * @param datasetNDim number of dimensions in final dataset, could be
+     * smaller than original data dimensions.
      */
     public MultiVecCounter(int[] tdSizes, int[] outSizes, boolean[] complex, String[] modes, int datasetNDim) {
         nDim = tdSizes.length;
@@ -215,8 +230,8 @@ public class MultiVecCounter {
     }
 
     /**
-     * Returns the size of a group of vectors that should be loaded together so that they can be combined together with
-     * various schemes.
+     * Returns the size of a group of vectors that should be loaded together so
+     * that they can be combined together with various schemes.
      *
      * @return the group size
      */
@@ -225,12 +240,13 @@ public class MultiVecCounter {
     }
 
     /**
-     * Converts an array of positions that represent output indices in the new dataset to the corresponding locations of
-     * the raw data in the FID file.
+     * Converts an array of positions that represent output indices in the new
+     * dataset to the corresponding locations of the raw data in the FID file.
      *
-     * @param counts an array of integers corresponding to output dataset indices (with a phase and time increment
-     * position for each dimension)
-     * @return an integer array of input positions at which to load vector from FID file.
+     * @param counts an array of integers corresponding to output dataset
+     * indices (with a phase and time increment position for each dimension)
+     * @return an integer array of input positions at which to load vector from
+     * FID file.
      */
     public int[] outToInCounter(int[] counts) {
         int[] icounts = new int[counts.length];
@@ -242,11 +258,12 @@ public class MultiVecCounter {
     }
 
     /**
-     * Converts an array of positions that represent output groups in the new dataset to the corresponding output
-     * positions (row, plane etc.) in the dataset.
+     * Converts an array of positions that represent output groups in the new
+     * dataset to the corresponding output positions (row, plane etc.) in the
+     * dataset.
      *
-     * @param counts an array of integers corresponding to output dataset indices (with a phase and time increment
-     * position for each dimension)
+     * @param counts an array of integers corresponding to output dataset
+     * indices (with a phase and time increment position for each dimension)
      * @return an array of output positions in dataset.
      */
     public int[] getOffsets(int[] counts) {
@@ -261,9 +278,10 @@ public class MultiVecCounter {
     }
 
     /**
-     * Returns a VecIndex object containing the output positions in new dataset and input positions in raw FID file that
-     * correspond to a particular group. A group represents all the vectors that have the same time value in the
-     * indirect dimensions.
+     * Returns a VecIndex object containing the output positions in new dataset
+     * and input positions in raw FID file that correspond to a particular
+     * group. A group represents all the vectors that have the same time value
+     * in the indirect dimensions.
      *
      * @param vecNum
      * @return VecIndex with positions corresponding to specified group number.

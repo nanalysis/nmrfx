@@ -38,7 +38,7 @@ public class VecIndex {
             }
             System.out.print(" out ");
             for (int ix = 0; ix < outVecs.length; ix++) {
-                for (int jx = 0; jx < outVecs[0].length; jx++) {
+                for (int jx = 1; jx < outVecs[0].length; jx++) {
                     System.out.printf(" %4d", outVecs[ix][jx][0]);
                 }
                 System.out.print("      ");

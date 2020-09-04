@@ -1441,7 +1441,8 @@ public class NMRPipeData implements NMRData {
         ByteOrder byteOrder = ByteOrder.LITTLE_ENDIAN;
         int[] indices = new int[3];
         int nBytes = dataSource.getSize(0) * Float.BYTES;
-        for (int iPlane = 0, nPlanes = dataSource.getSize(2); iPlane < nPlanes; iPlane++) {
+        int nPlanes = dataSource.getNDim() > 2 ? dataSource.getSize(2) : 1;
+        for (int iPlane = 0; iPlane < nPlanes; iPlane++) {
             indices[2] = iPlane;
             String fileName = getTemplateFile(iPlane);
             try (RandomAccessFile outFile = new RandomAccessFile(fileName, "rw")) {

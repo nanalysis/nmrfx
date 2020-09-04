@@ -67,6 +67,23 @@ public class CouplingPattern extends Coupling {
         // fixme  should count lines and make sure values.length, n.length and intensities.length are appropriate
     }
 
+    public CouplingPattern(final Multiplet multiplet, final List<Double> values, final List<String> types,  final List<Double> sin2thetas, final double intensity) {
+        this.multiplet = multiplet;
+
+        couplingItems = new CouplingItem[values.size()];
+        for (int i = 0; i < values.size(); i++) {
+            double sin2theta = 0.0;
+            if (i < sin2thetas.size()) {
+                sin2theta = sin2thetas.get(i);
+            }
+            int nSplits = COUPLING_CHARS.indexOf(types.get(i)) + 1;
+            couplingItems[i] = new CouplingItem(values.get(i), sin2theta, nSplits);
+        }
+        this.intensity = intensity;
+        multiplet.setIntensity(intensity);
+        // fixme  should count lines and make sure values.length, n.length and intensities.length are appropriate
+    }
+
     @Override
     public String getMultiplicity() {
         StringBuilder sBuilder = new StringBuilder();
@@ -79,6 +96,10 @@ public class CouplingPattern extends Coupling {
             }
         }
         return sBuilder.toString();
+    }
+
+    public static char toCouplingChar(int nSplits) {
+        return COUPLING_CHARS.charAt(nSplits - 1);
     }
 
     @Override
@@ -147,24 +168,19 @@ public class CouplingPattern extends Coupling {
 
     @Override
     public String getCouplingsAsString() {
-
-        if ((couplingItems.length == 1) && (couplingItems[0].getNSplits() == 2)) {
-            return String.valueOf(couplingItems[0].getCoupling());
-        } else {
-            StringBuilder sbuf = new StringBuilder();
-
-            for (int i = 0; i < couplingItems.length; i++) {
-                if (i > 0) {
-                    sbuf.append(" ");
-                }
-
-                sbuf.append(couplingItems[i].getCoupling());
+        StringBuilder sbuf = new StringBuilder();
+        for (int i = 0; i < couplingItems.length; i++) {
+            if (i > 0) {
                 sbuf.append(" ");
-                sbuf.append(couplingItems[i].getNSplits() - 1);
             }
 
-            return sbuf.toString();
+            sbuf.append(String.format("%.2f", couplingItems[i].getCoupling()));
+            sbuf.append(" ");
+            sbuf.append(couplingItems[i].getNSplits() - 1);
+            sbuf.append(" ");
+            sbuf.append(String.format("%.2f", couplingItems[i].getSin2Theta()));
         }
+        return sbuf.toString();
     }
 
     @Override
@@ -176,7 +192,7 @@ public class CouplingPattern extends Coupling {
                 sbuf.append(" ");
             }
 
-            sbuf.append(Format.format2(couplingItems[i].getCoupling()));
+            sbuf.append(Format.format1(couplingItems[i].getCoupling()));
 //            sbuf.append(" ");
 //            sbuf.append(couplingItems[i].getNSplits() - 1);
 //            sbuf.append(" ");

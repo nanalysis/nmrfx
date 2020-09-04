@@ -45,7 +45,7 @@ public class ComplexCoupling extends Coupling {
         return true;
     }
 
-    ComplexCoupling(final Multiplet multiplet, List<AbsMultipletComponent> absComponents) {
+    public ComplexCoupling(final Multiplet multiplet, List<AbsMultipletComponent> absComponents) {
         this.multiplet = multiplet;
         double sumpPPM = 0.0;
         double sumVolume = 0.0;
@@ -92,6 +92,28 @@ public class ComplexCoupling extends Coupling {
         sortByFreq();
     }
 
+    public ComplexCoupling(final Multiplet multiplet, final List<Double> offsets, final List<Double> intensities, final List<Double> volumes, final List<Double> lineWidths) {
+        this.multiplet = multiplet;
+        components = new ArrayList<>();
+        double max = Double.NEGATIVE_INFINITY;
+        double sum = 0.0;
+        for (int i = 0; i < offsets.size(); i++) {
+            if (intensities.get(i) > max) {
+                max = intensities.get(i);
+            }
+            sum += volumes.get(i);
+            RelMultipletComponent comp = new RelMultipletComponent(multiplet,
+                    offsets.get(i),
+                    intensities.get(i),
+                    volumes.get(i),
+                    lineWidths.get(i)
+            );
+            components.add(comp);
+        }
+        multiplet.setIntensity(max);
+        // fixme  should count lines and make sure values.length, n.length and intensities.length are appropriate
+    }
+
     @Override
     public String getCouplingsAsString() {
         return "m";
@@ -122,7 +144,7 @@ public class ComplexCoupling extends Coupling {
     }
 
     @Override
-    List<AbsMultipletComponent> getAbsComponentList() {
+    public List<AbsMultipletComponent> getAbsComponentList() {
         PeakDim peakDimRef = multiplet.getPeakDim();
         double sf = peakDimRef.getPeak().peakList.getSpectralDim(peakDimRef.getSpectralDim()).getSf();
         double centerPPM = peakDimRef.getChemShiftValue();
@@ -134,7 +156,7 @@ public class ComplexCoupling extends Coupling {
     }
 
     @Override
-    List<RelMultipletComponent> getRelComponentList() {
+    public List<RelMultipletComponent> getRelComponentList() {
         return components;
     }
 
