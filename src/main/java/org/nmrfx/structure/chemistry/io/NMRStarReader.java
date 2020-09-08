@@ -669,7 +669,7 @@ public class NMRStarReader {
     }
 
     public void addMissingResonances() {
-        ResonanceFactory resFactory = PeakDim.resFactory;
+        ResonanceFactory resFactory = PeakDim.resFactory();
         for (PeakDim peakDim : peakDimsWithoutResonance) {
             Resonance resonance = resFactory.build();
             resonance.add(peakDim);

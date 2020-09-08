@@ -189,7 +189,7 @@ public class NMRNEFReader {
     }
 
     void addCompound(String id, Compound compound) {
-        Molecule.compoundMap.put(id, compound);
+        Molecule.compoundMap().put(id, compound);
     }
 
     void buildNEFChemShifts(int fromSet, final int toSet) throws ParseException {
@@ -264,7 +264,7 @@ public class NMRNEFReader {
             List<String> atomColumn = loop.getColumnAsList("atom_name");
             List<String> valColumn = loop.getColumnAsList("value");
             List<String> valErrColumn = loop.getColumnAsList("value_uncertainty");
-            ResonanceFactory resFactory = PeakDim.resFactory;
+            ResonanceFactory resFactory = PeakDim.resFactory();
             for (int i = 0; i < chainCodeColumn.size(); i++) {
                 String sequenceCode = (String) sequenceCodeColumn.get(i);
                 String chainCode = (String) chainCodeColumn.get(i);
@@ -277,7 +277,7 @@ public class NMRNEFReader {
                     resIDStr = (String) resColumn.get(i);
                 }
                 String mapID = chainCode + "." + sequenceCode;
-                Compound compound = (Compound) Molecule.compoundMap.get(mapID);
+                Compound compound = (Compound) Molecule.compoundMap().get(mapID);
                 if (compound == null) {
                     //throw new ParseException("invalid compound in assignments saveframe \""+mapID+"\"");
                     System.err.println("invalid compound in assignments saveframe \"" + mapID + "\"");
@@ -542,11 +542,11 @@ public class NMRNEFReader {
         if ((argv.length != 0) && (argv.length != 3)) {
             throw new IllegalArgumentException("?shifts fromSet toSet?");
         }
-        AtomResonanceFactory resFactory = (AtomResonanceFactory) PeakDim.resFactory;
+        AtomResonanceFactory resFactory = (AtomResonanceFactory) PeakDim.resFactory();
         dihedral = null;
         if (argv.length == 0) {
             hasResonances = false;
-            Molecule.compoundMap.clear();
+            Molecule.compoundMap().clear();
             if (DEBUG) {
                 System.err.println("process molecule");
             }
