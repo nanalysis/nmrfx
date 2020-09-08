@@ -38,7 +38,7 @@ public class AtomProperty {
     private static final Color genericColor = new Color(1.0f, 0.1f, 0.6f);
     public static final AtomProperty X = new AtomProperty("X", 0.8f,
             genericColor, 0.0f);
-    public static final AtomProperty H = new AtomProperty("H", 1.2f, "white",
+    public static final AtomProperty H = new AtomProperty("H", 1.2f, "light green",
             0.0f);
     public static final AtomProperty He = new AtomProperty("He", 1.4f, "pink",
             0.0f);
@@ -49,7 +49,7 @@ public class AtomProperty {
     public static final AtomProperty Be = new AtomProperty("Be", 1.0f, "white",
             0.0f);
     public static final AtomProperty C = new AtomProperty("C", 1.7f,
-            "light gray", 0.0f);
+            "dark gray", 0.0f);
     public static final AtomProperty N = new AtomProperty("N", 1.55f,
             "light blue", 0.0f);
     public static final AtomProperty O = new AtomProperty("O", 1.52f, "red", 0.0f);

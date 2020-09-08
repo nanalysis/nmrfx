@@ -1,6 +1,7 @@
 import sys
 import os
 import runpy
+
 sys.argv.pop(0)
 if len(sys.argv) > 0:
     if sys.argv[0] == "batch":
@@ -15,11 +16,17 @@ if len(sys.argv) > 0:
         import gennvfx
     elif sys.argv[0] == "predict":
         import predictor
+    elif sys.argv[0] == "super":
+        import super
+        super.parseArgs()
     elif sys.argv[0] == "train":
         print sys.argv
         if (len(sys.argv) > 2) and (sys.argv[1] == "rna"):
             sys.argv.pop(0)
             import train_rna
+        elif (len(sys.argv) > 2) and (sys.argv[1] == "protein"):
+            sys.argv.pop(0)
+            import train_protein
     else:
         scriptName = sys.argv[0]
         runpy.run_path(scriptName)

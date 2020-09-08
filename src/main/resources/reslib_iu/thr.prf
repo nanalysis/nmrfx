@@ -2,7 +2,11 @@ LNAME Threonine
 SNAME thr
 RCHAR T
 ATOM   N      N     1.32  114.00  -120.0  -0.41570
-ATOM   H      H     1.00  123.00  0.0     0.27190
+ATOM   H      H     1.00  123.00  0.0     0.27190 middle
+ATOM   H      H     1.00  123.00  0.0     0.27190 end
+ATOM   H1     H1    1.08  109.00  60.0    0.27190 start
+ATOM   H2     H2    1.08  109.00  60.0    0.27190 start
+ATOM   H3     H3    1.08  109.00  60.0    0.27190 start
 ATOM   CA     CX    1.47  123.00  180.0   -0.03890
 ATOM   HA     H1    1.08  109.47  -120.0  0.10070
 ATOM   CB     3C    1.53  109.47  -121.5  0.36540
@@ -14,13 +18,19 @@ ATOM   HG23   HC    1.08  109.00  120.0   0.06420
 ATOM   OG1    OH    1.42  109.47  0.0     -0.67610
 ATOM   HG1    HO    1.00  110.00  0.0     0.41020
 ATOM   C      C     1.53  109.47  120.0   0.59730
-ATOM   O      O     1.24  121.00  180.0   -0.56790
-FAMILY   -      N      H     CA     
+ATOM   O      O     1.24  121.00  180.0   -0.56790 start
+ATOM   O      O     1.24  121.00  180.0   -0.56790 middle
+ATOM   O      O     1.24  180.00  120.0   -0.56790 end
+ATOM   OXT    OH    1.24  180.00  120.0   -0.56790 end
+FAMILY   -      N      H      CA    middle
+FAMILY   -      N      H      CA    end
+FAMILY   -      N      H1     H2     H3    CA    start   
 FAMILY   N      CA     C      CB     HA     
 FAMILY   CA     CB     OG1    CG2    HB     
 FAMILY   CB     CG2    HG23   HG22   HG21
 FAMILY   CB     OG1    HG1    
-FAMILY   CA     C      +      =O      
+FAMILY   CA     C      +      =O 
+FAMILY   CA     C      OXT    =O  end      
 ANGLE     CA      PHI 1
 ANGLE     CB     CHI1 2
 ANGLE     OG1    CHI21 6

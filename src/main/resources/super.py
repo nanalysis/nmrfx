@@ -6,6 +6,9 @@ from org.nmrfx.structure.chemistry import SuperMol
 from org.nmrfx.structure.chemistry.io import PDBFile
 import molio
 from java.util import TreeSet
+import argparse, re
+from operator import itemgetter
+from itertools import groupby
 
 def median(values):
     values.sort()
@@ -34,18 +37,35 @@ def loadPDBModels(files):
         iFile += 1
     return molecule
 
+def parseArgs():
+    parser = argparse.ArgumentParser(description="super options")
+    parser.add_argument("-r", dest="resListE", default='', help="Residues to exclude from comparison. Can specify residue ranges and individual values (e.g. 2-5 or 10).")
+    parser.add_argument("-a", dest="atomListE", default='', help="Atoms to exclude from comparison.")
+    parser.add_argument("-R", dest="resListI", default="*", help="Residues to include in comparison")
+    parser.add_argument("-A", dest="atomListI", default="*", help="Atoms to include in comparison")
+    parser.add_argument("-c", dest="refCompare", action='store_true', help="Whether to compare calculated structures to reference structure, and save output to a file.")
+    parser.add_argument("-s", dest="saveModels", action='store_true', help="Whether to save aligned models.")
+    parser.add_argument("-n", dest="nCore", default=5, type=int, help="Number of core residue cycles. Default is 5.")
+    parser.add_argument("fileNames",nargs="*")
+    args = parser.parse_args()
+    if (args.nCore < 0):
+        print "Error: n must be >= 0."
+        sys.exit()
+    if len(args.fileNames) > 1:
+        runSuper(args)
+
+
 def findRepresentative(mol, resNums='*',atomNames="ca,c,n,o,p,o5',c5',c4',c3',o3'"):
     treeSet = TreeSet()
     structures = mol.getStructures()
     for structure in structures:
-        if structure != 0: 
+        if structure != 0:
             treeSet.add(structure)
     nFiles = treeSet.size()
-
     doSelections(mol, resNums,atomNames)
     sup = SuperMol(mol)
     mol.setActiveStructures(treeSet)
-    
+
     superResults = sup.doSuper(-1, -1, False)
     totalRMS = 0.0
     averageToI = {}
@@ -68,55 +88,62 @@ def findRepresentative(mol, resNums='*',atomNames="ca,c,n,o,p,o5',c5',c4',c3',o3
     avgRMS = totalRMS/len(superResults)
     return (minIndex, minRMS, avgRMS)
 
-def findCore(mol, minIndex,atomNames="ca,c,n,o,p,o5',c5',c4',c3',o3'"):
-    atomNameList = atomNames.split(',')
+def findCore(mol, minIndex):
     sup = SuperMol(mol)
     superResults = sup.doSuper(minIndex, -1, True)
     mol.calcRMSD()
     polymers = mol.getPolymers()
     resRMSs = []
-    resValues = []
-    for polymer in polymers:
-        residues = polymer.getResidues()
-        for residue in residues:
-            atoms = residue.getAtoms('*')
-            resSum = 0.0
-            nAtoms = 0
-            for atom in atoms:
-                aName = atom.getName().lower()
-                if aName in atomNameList:
-                    resSum += atom.getBFactor()
-                    nAtoms += 1
-            if nAtoms > 0:
-                resRMS = resSum/nAtoms
-                resRMSs.append(resRMS)
-                resValues.append((polymer.getName(),residue.getNumber(),resRMS))
+    polymerValues = {}
+    superAtoms = mol.getAtomsByProp(2)
+    residuesAtomRMS = {}
+    residueRMS = {}
+    for spSet in superAtoms:
+        atom = spSet.getAtom()
+        residue = atom.getEntity()
+        if not residue in residuesAtomRMS:
+            residuesAtomRMS[residue] = []
+        residuesAtomRMS[residue].append(atom.getBFactor())
+    resRMSs=[]
+    for residue in residuesAtomRMS:
+        rms = sum(residuesAtomRMS[residue])/len(residuesAtomRMS[residue])
+        resRMSs.append(rms)
+        residueRMS[residue] = rms
     med = median(resRMSs)
 
     coreRes = []
-    lastPolymer = ""
-    state = "out"
-    (polymer,lastNum,rms) = resValues[-1]
-    for (polymer,num,rms) in resValues:
-        last = ""
-        if rms < 2.0*med:
-            newState = "in"
-        else:
-            newState = "out"           
-        if state == "out":
-            if newState == "out":
-                pass
+    for polymer in polymers:
+        polyName = polymer.getName()
+        resValues = []
+        polymerValues[polymer.getName()] = resValues
+        residues = polymer.getResidues()
+        chainCode = polymer.getName()
+        state = 'out'
+        lastNum = len(residues)-1
+        for iRes,residue in enumerate(residues):
+            newState = 'out'
+            num = residue.getNumber()
+            rms = 0.0
+            if residue in residueRMS:
+                 rms = residueRMS[residue]
+                 if rms < 2.0*med:
+                     newState = 'in'
+
+            if state == "out":
+                if newState == "out":
+                    pass
+                else:
+                    start = num
+                    #coreRes.append(num)
             else:
-                start = num
-                #coreRes.append(num)
-        else:
-            if newState == "out":
-                coreRes.append((start,lastRes))
-            elif num == lastNum:
-                coreRes.append((start,num))
-                #coreRes.append(num)
-        state = newState
-        lastRes = num
+                if newState == "out":
+                    coreRes.append((polyName+':'+start,lastRes))
+                elif iRes == lastNum:
+                    coreRes.append((polyName+':'+start,num))
+                    #coreRes.append(num)
+            state = newState
+            lastRes = num
+
 
     resSelect = []
     for (start,end) in coreRes:
@@ -127,12 +154,11 @@ def findCore(mol, minIndex,atomNames="ca,c,n,o,p,o5',c5',c4',c3',o3'"):
     return resSelect
 
 def doSelections(mol, resSelects, atomSelect):
-    polymer = 'A'
     mol.selectAtoms("*.*")
     mol.setAtomProperty(2,False)
     for resSelect in resSelects:
         selection = resSelect+'.'+atomSelect
-        mol.selectAtoms(selection)
+        nsel = mol.selectAtoms(selection)
         mol.setAtomProperty(2,True)
 
 
@@ -140,6 +166,7 @@ def superImpose(mol, target,resSelect,atomSelect="ca,c,n,o,p,o5',c5',c4',c3',o3'
     doSelections(mol, resSelect,atomSelect)
     sup = SuperMol(mol)
     superResults = sup.doSuper(target, -1, True)
+    return [result.getRms() for result in superResults]
 
 def saveModels(mol, files):
     active = mol.getActiveStructures()
@@ -149,17 +176,84 @@ def saveModels(mol, files):
         newFile = os.path.join(dir,newFileName)
         molio.savePDB(mol, newFile, i)
 
-def runSuper(files,newBase='super'):    
+def makeResAtomLists(polymers, excludeRes, excludeAtoms, includeRes, includeAtoms):
+    allRes1 = [polymers.get(i).getResidues() for i in range(len(polymers))]
+    allRes = set([res for subList in allRes1 for res in subList])
+    if excludeRes == '' and includeRes != '':
+        if "," in includeRes:
+            resSplit = includeRes.split(",")
+            resList = [item.strip() for item in resSplit]
+        else:
+            resList = [includeRes]
+    elif excludeRes != '':
+        allResNums = [res.getNumber() for res in allRes]
+        if "," in excludeRes:
+            resSplit = excludeRes.split(",")
+            exclResSplit = [item.split("-") for item in resSplit]
+        else:
+            exclResSplit = [excludeRes.split("-")]
+        exclResNums1 = [[str(num) for num in range(int(split[0]), int(split[-1])+1)] for split in exclResSplit]
+        exclResNums = set([res for subList in exclResNums1 for res in subList])
+        resNums = [int(resNum) for resNum in allResNums if resNum not in exclResNums]
+        resGroups = [map(itemgetter(1), g) for k, g in groupby(enumerate(resNums), lambda (i,x):i-x)]
+        resList = ['{}-{}'.format(list[0], list[-1]) for list in resGroups]
+    if excludeAtoms == '' and includeAtoms != '':
+        flagAtoms = includeAtoms
+    elif excludeAtoms != '':
+        flagAtoms = excludeAtoms
+    flagAtomSplit = flagAtoms.split(",")
+    flagAtoms = [atom.lower() for atom in flagAtomSplit]
+    flagAtomLists = [res.getAtoms(aFlag.upper()) for aFlag in flagAtoms for res in allRes if res.getAtoms(aFlag.upper()) != []]
+    allFlagAtoms = set([atom.getName().lower() for subList in flagAtomLists for atom in subList])
+    if excludeAtoms == '' and includeAtoms != '':
+        atoms = ','.join(allFlagAtoms)
+    elif excludeAtoms != '':
+        allAtomLists = [res.getAtoms() for res in allRes]
+        allUniqAtoms = set([j.getName().lower() for subList in allAtomLists for j in subList])
+        atomList = [aName for aName in allUniqAtoms if aName not in allFlagAtoms]
+        atoms = ','.join(atomList)
+
+    return resList, atoms
+
+def makeRMSDict(files, rmsVals):
+    rmsDict = {}
+    for i in range(len(rmsVals)):
+        sNum = int(re.findall(r'\d+', files[i])[0])
+        rmsDict[sNum] = rmsVals[i]
+    return rmsDict
+
+def makeFormattedRMSFile(rmsDict, outFileName):
+    with open(outFileName, 'w') as formattedFile:
+        formattedFile.write("{}\t{}\n".format("Structure", "RMS"))
+        for key in sorted(rmsDict.keys()):
+            formattedFile.write("{}\t{}\n".format(key, rmsDict[key]))
+
+def runSuper(args):
+    files = args.fileNames
     mol = loadPDBModels(files)
     polymers = mol.getPolymers()
+    # print files
+    print args.resListE, args.atomListE, args.resListI, args.atomListI
+    resList, atoms = makeResAtomLists(polymers, args.resListE, args.atomListE, args.resListI, args.atomListI)
     if len(polymers) > 0:
-        (minI,rms,avgRMS) = findRepresentative(mol)
+        (minI,rms,avgRMS) = findRepresentative(mol, resList, atoms)
         print 'repModel',minI,'rms',rms,'avgrms',avgRMS
-        coreRes = findCore(mol, minI)
-        print 'coreResidues',coreRes
-        (minI,rms,avgRMS) = findRepresentative(mol, coreRes)
+        if args.nCore > 0:
+            for iCore in range(args.nCore):
+                coreRes = findCore(mol, minI)
+                print 'coreResidues',coreRes
+                doSelections(mol, coreRes,atoms)
+        else:
+            coreRes = resList
+        (minI,rms,avgRMS) = findRepresentative(mol, coreRes, atoms)
         print 'repModel',minI,'rms',rms,'avgrms',avgRMS
-        superImpose(mol, minI, coreRes)
+        superImpose(mol, minI, coreRes, atoms)
+        if args.refCompare:
+            calcRefComparisons = superImpose(mol, len(files), coreRes, atoms)
+            rmsDict = makeRMSDict(files, calcRefComparisons)
+            outFile = 'calcRefCoreRMS.txt'
+            makeFormattedRMSFile(rmsDict, outFile)
+            print "RMS comparisons to reference structure saved to file:", outFile
     else:
         (minI,rms,avgRMS) = findRepresentative(mol,'*','c*,n*,o*,p*')
         print 'repModel',minI,'rms',rms,'avgrms',avgRMS
@@ -167,6 +261,11 @@ def runSuper(files,newBase='super'):
         superImpose(mol, minI, coreRes,'c*,n*,o*,p*')
     (dir,fileName) = os.path.split(files[0])
     (base,ext) = os.path.splitext(fileName)
+    if args.saveModels:
+        saveModels(mol, files)
 
-    saveModels(mol, files)
-
+def runAllSuper(files):
+    batchArgs = argparse.Namespace(atomListE='', atomListI="ca,c,n,o,p,o5',c5',c4',c3',o3'",
+                                fileNames=files, nCore=5, refCompare=False, resListE='',
+                                resListI='*', saveModels=True)
+    runSuper(batchArgs)

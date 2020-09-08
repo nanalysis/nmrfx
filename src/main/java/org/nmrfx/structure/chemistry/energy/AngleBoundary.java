@@ -43,12 +43,29 @@ public class AngleBoundary {
      */
     final double scale;
     /**
+     * weight
+     */
+    final Double weight;
+    /**
+     * target
+     */
+    final Double target;
+    /**
+     * target error
+     */
+    final Double targetErr;
+    /**
+     * name
+     */
+    final String name;
+    /**
      * Index to list of angles
      */
     private int index = -1;
     final static double toRad = Math.PI / 180.0;
 
-    public AngleBoundary(Atom[] atoms, double lower, double upper, final double scale) throws InvalidMoleculeException {
+    public AngleBoundary(Atom[] atoms, double lower, double upper, final double scale,
+            Double weight, Double target, Double targetErr, String name) throws InvalidMoleculeException {
         if (atoms.length != 4) {
             throw new IllegalArgumentException("Must specify 4 atoms in AngleBoundary constructor");
         }
@@ -82,11 +99,20 @@ public class AngleBoundary {
         this.lower = Dihedral.reduceAngle(lower * toRad);
         this.upper = Dihedral.reduceAngle(upper * toRad);
         this.scale = scale;
+        this.weight = weight;
+        this.target = target;
+        this.targetErr = targetErr;
+        this.name = name;
         this.atoms = new Atom[atoms.length];
         System.arraycopy(atoms, 0, this.atoms, 0, atoms.length);
     }
+    
+    public AngleBoundary(Atom[] atoms, double lower, double upper, final double scale) throws InvalidMoleculeException {
+        this(atoms, lower, upper, scale, 1.0, (lower + upper) / 2.0, upper - lower, "");
+    }
 
-    public AngleBoundary(List<Atom> atoms, double lower, double upper, final double scale) throws InvalidMoleculeException {
+    public AngleBoundary(List<Atom> atoms, double lower, double upper, final double scale,
+            Double weight, Double target, Double targetErr, String name) throws InvalidMoleculeException {
         for (Atom atom : atoms) {
             if (atom == null) {
                 throw new InvalidMoleculeException("null atom");
@@ -110,8 +136,16 @@ public class AngleBoundary {
         this.lower = lower * toRad;
         this.upper = upper * toRad;
         this.scale = scale;
+        this.weight = weight;
+        this.target = target;
+        this.targetErr = targetErr;
+        this.name = name;
         this.atoms = new Atom[atoms.size()];
         atoms.toArray(this.atoms);
+    }
+    
+    public AngleBoundary(List<Atom> atoms, double lower, double upper, final double scale) throws InvalidMoleculeException {
+        this(atoms, lower, upper, scale, 1.0, (lower + upper) / 2.0, upper - lower, "");
     }
 
     public static boolean allowRotation(List<String> atomNames) {
@@ -156,5 +190,34 @@ public class AngleBoundary {
                 atoms[2].getFullName(),
                 atoms[3].getFullName());
         return result;
+    }
+    
+
+    public double getWeight() {
+        return weight;
+    }
+
+    public double getTargetValue() {
+        return target;
+    }
+
+    public double getTargetError() {
+        return targetErr;
+    }
+    
+    public double getLower() {
+        return lower;
+    }
+
+    public double getUpper() {
+        return upper;
+    }
+
+    public double getScale() {
+        return scale;
+    }
+
+    public String getName() {
+        return name;
     }
 }
