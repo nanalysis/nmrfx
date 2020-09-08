@@ -58,6 +58,7 @@ import org.nmrfx.processor.datasets.peaks.FreezeListener;
 import org.nmrfx.processor.datasets.peaks.Peak;
 import org.nmrfx.processor.datasets.peaks.PeakList;
 import org.nmrfx.processor.gui.AtomController;
+import org.nmrfx.processor.gui.MainApp;
 import org.nmrfx.processor.gui.molecule.MoleculeCanvas;
 import org.nmrfx.processor.processing.ProgressUpdater;
 import org.nmrfx.project.Project;
