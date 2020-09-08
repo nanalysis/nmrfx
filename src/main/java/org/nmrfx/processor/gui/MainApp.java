@@ -62,7 +62,7 @@ import javafx.collections.MapChangeListener;
 import javafx.collections.ObservableMap;
 import javafx.scene.text.Font;
 
-public class MainApp extends Application  {
+public class MainApp extends Application {
 
     public static ArrayList<Stage> stages = new ArrayList<>();
     public static PreferencesController preferencesController;
@@ -81,7 +81,7 @@ public class MainApp extends Application  {
     Consumer<String> socketFunction = null;
     static NMRFxServer server = null;
     static Font defaultFont;
-    public static ObservableMap<String, PeakList> peakListTable = (ObservableMap<String, PeakList>) PeakList.peakListTable;
+//    public static ObservableMap<String, PeakList> peakListTable = (ObservableMap<String, PeakList>) PeakList.peakListTable;
 
     public static void setAnalyst() {
         isAnalyst = true;
@@ -131,9 +131,9 @@ public class MainApp extends Application  {
         defaultFont = Font.loadFont(iStream, 12);
     }
 
-    public static void addPeakListListener(MapChangeListener<String, PeakList> mapChangeListener) {
-        ((ObservableMap<String, PeakList>) PeakList.peakListTable).addListener(mapChangeListener);
-    }
+//    public static void addPeakListListener(MapChangeListener<String, PeakList> mapChangeListener) {
+//        ((ObservableMap<String, PeakList>) PeakList.peakListTable).addListener(mapChangeListener);
+//    }
 
     @Override
     public void start(Stage stage) throws Exception {
@@ -152,7 +152,7 @@ public class MainApp extends Application  {
         interpreter.exec("from pyproc import *\ninitLocal()\nfrom gscript import *\nnw=NMRFxWindowScripting()\nfrom dscript import *\nfrom pscript import *\nimport os");
         interpreter.set("argv", parameters.getRaw());
         interpreter.exec("parseArgs(argv)");
-        Dataset.addObserver(this);
+       // Dataset.addObserver(this);
         if (defaultFont == null) {
             loadFont();
         }
@@ -590,45 +590,45 @@ public class MainApp extends Application  {
         }
     }
 
-    @Override
-    public void datasetAdded(Dataset dataset) {
-        if (Platform.isFxApplicationThread()) {
-            FXMLController.updateDatasetList();
-        } else {
-            Platform.runLater(() -> {
-                FXMLController.updateDatasetList();
-            }
-            );
-        }
-    }
-
-    @Override
-    public void datasetModified(Dataset dataset) {
-    }
-
-    @Override
-    public void datasetRemoved(Dataset dataset) {
-        if (Platform.isFxApplicationThread()) {
-            FXMLController.updateDatasetList();
-        } else {
-            Platform.runLater(() -> {
-                FXMLController.updateDatasetList();
-            }
-            );
-        }
-    }
-
-    @Override
-    public void datasetRenamed(Dataset dataset) {
-        if (Platform.isFxApplicationThread()) {
-            FXMLController.updateDatasetList();
-        } else {
-            Platform.runLater(() -> {
-                FXMLController.updateDatasetList();
-            }
-            );
-        }
-    }
+//    @Override
+//    public void datasetAdded(Dataset dataset) {
+//        if (Platform.isFxApplicationThread()) {
+//            FXMLController.updateDatasetList();
+//        } else {
+//            Platform.runLater(() -> {
+//                FXMLController.updateDatasetList();
+//            }
+//            );
+//        }
+//    }
+//
+//    @Override
+//    public void datasetModified(Dataset dataset) {
+//    }
+//
+//    @Override
+//    public void datasetRemoved(Dataset dataset) {
+//        if (Platform.isFxApplicationThread()) {
+//            FXMLController.updateDatasetList();
+//        } else {
+//            Platform.runLater(() -> {
+//                FXMLController.updateDatasetList();
+//            }
+//            );
+//        }
+//    }
+//
+//    @Override
+//    public void datasetRenamed(Dataset dataset) {
+//        if (Platform.isFxApplicationThread()) {
+//            FXMLController.updateDatasetList();
+//        } else {
+//            Platform.runLater(() -> {
+//                FXMLController.updateDatasetList();
+//            }
+//            );
+//        }
+//    }
 
     private void newServer(ActionEvent event) {
         server = NMRFxServer.create();
