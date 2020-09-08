@@ -65,6 +65,7 @@ import static org.nmrfx.processor.gui.spectra.DatasetAttributes.AXMODE.PPM;
 import org.nmrfx.processor.gui.spectra.PeakDisplayParameters;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
 import org.nmrfx.processor.gui.utils.ToolBarUtils;
+import org.nmrfx.project.Project;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.structure.chemistry.Polymer;
 import org.nmrfx.structure.chemistry.Residue;
@@ -394,7 +395,7 @@ public class RunAboutGUI implements PeakListener {
             updatePeakListMenu();
         };
 
-        MainApp.addPeakListListener(mapChangeListener);
+        Project.getActive().addPeakListListener(mapChangeListener);
     }
 
     class ClusterStatus {
@@ -960,7 +961,7 @@ public class RunAboutGUI implements PeakListener {
             peakListMenuButton.getItems().add(spinSysMenuItem);
         }
 
-        for (String peakListName : PeakList.peakListTable.keySet()) {
+        for (String peakListName : Project.getActive().getPeakListNames()) {
             MenuItem menuItem = new MenuItem(peakListName);
             menuItem.setOnAction(e -> {
                 RunAboutGUI.this.setPeakList(peakListName);
