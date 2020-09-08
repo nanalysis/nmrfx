@@ -841,7 +841,8 @@ public class NMRStarWriter {
         PeakPathWriter pathWriter = new PeakPathWriter();
         int iPath = 0;
         for (PeakPath peakPath : PeakPath.get()) {
-            pathWriter.writeToSTAR3(chan, peakPath, iPath);
+            pathWriter.writeToSTAR3(chan, peakPath, iPath+1);
+            iPath++;
         }
     }
 

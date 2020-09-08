@@ -17,8 +17,8 @@ import org.nmrfx.structure.fastlinear.FastVector3D;
 public class EnergyDistancePairs extends EnergyPairs {
 
     double[] disSq;
-    double[] rLow2;
-    double[] rLow;
+    double[] rDis2;
+    double[] rDis;
 
     public EnergyDistancePairs(EnergyCoords eCoords) {
         super(eCoords);
@@ -29,18 +29,19 @@ public class EnergyDistancePairs extends EnergyPairs {
         if (i != j) {
             addPair(i, j, iUnit, jUnit);
             int iPair = nPairs - 1;
-            this.rLow[iPair] = r0;
-            rLow2[iPair] = r0 * r0;
+            this.rDis[iPair] = r0;
+            rDis2[iPair] = r0 * r0;
         }
     }
 
+    @Override
     void resize(int size) {
         if ((iAtoms == null) || (iAtoms.length < size)) {
             super.resize(size);
             int newSize = iAtoms.length;
             disSq = resize(disSq, newSize);
-            rLow = resize(rLow, newSize);
-            rLow2 = resize(rLow2, newSize);
+            rDis = resize(rDis, newSize);
+            rDis2 = resize(rDis2, newSize);
         }
     }
 
@@ -56,9 +57,9 @@ public class EnergyDistancePairs extends EnergyPairs {
             disSq[i] = r2;
             derivs[i] = 0.0;
             viol[i] = 0.0;
-            if (r2 <= rLow2[i]) {
+            if (r2 <= rDis2[i]) {
                 double r = FastMath.sqrt(r2);
-                double dif = rLow[i] - r;
+                double dif = rDis[i] - r;
                 viol[i] = weights[i] * weight * dif * dif;
                 sum += viol[i];
                 if (calcDeriv) {
@@ -82,15 +83,15 @@ public class EnergyDistancePairs extends EnergyPairs {
         double r2 = disSq[i];
         double r = FastMath.sqrt(r2);
         double dif = 0.0;
-        if (r2 <= rLow2[i]) {
+        if (r2 <= rDis2[i]) {
             r = FastMath.sqrt(r2);
-            dif = rLow[i] - r;
+            dif = rDis[i] - r;
         }
         String result = "";
         ViolationStats stat = null;
         if (Math.abs(dif) > limitVal) {
             double energy = weights[i] * weight * dif * dif;
-            stat = new ViolationStats(1, atoms[iAtom].getFullName(), atoms[jAtom].getFullName(), r, rLow[i], 0.0, energy, eCoords);
+            stat = new ViolationStats(1, atoms[iAtom].getFullName(), atoms[jAtom].getFullName(), r, rDis[i], 0.0, energy, eCoords);
         }
 
         return stat;

@@ -30,13 +30,7 @@ import org.nmrfx.structure.chemistry.SpatialSet;
 import org.nmrfx.structure.fastlinear.FastVector;
 import org.nmrfx.structure.fastlinear.FastVector3D;
 import java.io.BufferedOutputStream;
-import java.io.BufferedReader;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.LineNumberReader;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.io.PrintWriter;
@@ -88,6 +82,7 @@ public class EnergyLists {
     boolean[] stochasticResidues = null;
     boolean constraintsSetup = false;
     public static double[][][] irpTable;
+    private Map<Integer, List<DistancePair>> distancePairMap = new HashMap<>();
 
     public EnergyLists() {
     }
@@ -373,20 +368,30 @@ public class EnergyLists {
 
     public void addDistanceConstraint(final String filterString1, final String filterString2, final double rLow,
             final double rUp) throws IllegalArgumentException {
-        addDistanceConstraint(filterString1, filterString2, rLow, rUp, false);
+        addDistanceConstraint(filterString1, filterString2, rLow, rUp, false, 1.0, null, null);
     }
 
     public void addDistanceConstraint(final String filterString1, final String filterString2, final double rLow,
             final double rUp, boolean isBond) throws IllegalArgumentException {
+        addDistanceConstraint(filterString1, filterString2, rLow, rUp, isBond, 1.0, null, null);
+    }
+
+    public void addDistanceConstraint(final String filterString1, final String filterString2, final double rLow,
+            final double rUp, Double weight, Double targetValue, Double targetErr) throws IllegalArgumentException {
+        addDistanceConstraint(filterString1, filterString2, rLow, rUp, false, weight, targetValue, targetErr);
+    }
+
+    public void addDistanceConstraint(final String filterString1, final String filterString2, final double rLow,
+            final double rUp, boolean isBond, Double weight, Double targetValue, Double targetErr) throws IllegalArgumentException {
         MolFilter molFilter1 = new MolFilter(filterString1);
         MolFilter molFilter2 = new MolFilter(filterString2);
 
         ArrayList<Atom> atoms1 = Molecule.getMatchedAtoms(molFilter1, molecule);
         ArrayList<Atom> atoms2 = Molecule.getMatchedAtoms(molFilter2, molecule);
-        
+
         if (atoms1.size() == 0) {
             throw new IllegalArgumentException("atom null " + filterString1);
-        }        
+        }
         if (atoms2.size() == 0) {
             throw new IllegalArgumentException("atom null " + filterString2);
         }
@@ -405,13 +410,22 @@ public class EnergyLists {
         Atom[] atomsA2 = new Atom[atoms2m.size()];
         atoms1m.toArray(atomsA1);
         atoms2m.toArray(atomsA2);
-        distanceList.add(new DistancePair(atomsA1, atomsA2, rLow, rUp, isBond));
+        if (weight != null && targetValue != null && targetErr != null) {
+            distanceList.add(new DistancePair(atomsA1, atomsA2, rLow, rUp, isBond, weight, targetValue, targetErr));
+        } else {
+            distanceList.add(new DistancePair(atomsA1, atomsA2, rLow, rUp, isBond));
+        }
         distanceMap.clear();
         constraintsSetup = false;
     }
 
     public void addDistanceConstraint(final List<String> filterStrings1, final List<String> filterStrings2,
             final double rLow, final double rUp) throws IllegalArgumentException {
+        addDistanceConstraint(filterStrings1, filterStrings2, rLow, rUp, 1.0, null, null);
+    }
+
+    public void addDistanceConstraint(final List<String> filterStrings1, final List<String> filterStrings2,
+            final double rLow, final double rUp, Double weight, Double targetValue, Double targetErr) throws IllegalArgumentException {
         if (filterStrings1.size() != filterStrings2.size()) {
             throw new IllegalArgumentException("atoms group 1 and atoms group 2 should be same size");
         }
@@ -447,10 +461,75 @@ public class EnergyLists {
         }
         atoms1m.toArray(atomsA1);
         atoms2m.toArray(atomsA2);
-        distanceList.add(new DistancePair(atomsA1, atomsA2, rLow, rUp, false));
+        if (weight != null && targetValue != null && targetErr != null) {
+            distanceList.add(new DistancePair(atomsA1, atomsA2, rLow, rUp, false, weight, targetValue, targetErr));
+        } else {
+            distanceList.add(new DistancePair(atomsA1, atomsA2, rLow, rUp, false));
+        }
         distanceMap.clear();
         constraintsSetup = false;
 
+    }
+    
+    public void addDistance(final int modelNum, final List<String> filterStrings1, final List<String> filterStrings2,
+            final double rLow, final double rUp, Double weight, List<Double> targetValues, Double targetErr) throws IllegalArgumentException {
+        if (filterStrings1.size() != filterStrings2.size()) {
+            throw new IllegalArgumentException("atoms group 1 and atoms group 2 should be same size");
+        }
+        ArrayList<Atom> atoms1m = new ArrayList<>();
+        ArrayList<Atom> atoms2m = new ArrayList<>();
+        for (int i = 0; i < filterStrings1.size(); i++) {
+            String filterString1 = filterStrings1.get(i);
+            String filterString2 = filterStrings2.get(i);
+            MolFilter molFilter1 = new MolFilter(filterString1);
+            MolFilter molFilter2 = new MolFilter(filterString2);
+
+            List<Atom> group1 = Molecule.getNEFMatchedAtoms(molFilter1, molecule);
+            List<Atom> group2 = Molecule.getNEFMatchedAtoms(molFilter2, molecule);
+
+            if (group1.size() == 0) {
+                throw new IllegalArgumentException("atoms1 null " + filterString1);
+            }
+            if (group2.size() == 0) {
+                throw new IllegalArgumentException("atoms2 null " + filterString2);
+            }
+
+            for (Atom atom1 : group1) {
+                for (Atom atom2 : group2) {
+                    atoms1m.add(atom1);
+                    atoms2m.add(atom2);
+                }
+            }
+        }
+        Atom[] atomsA1 = new Atom[atoms1m.size()];
+        Atom[] atomsA2 = new Atom[atoms2m.size()];
+        if (atoms1m.size() != atoms2m.size()) {
+            throw new IllegalArgumentException("atoms group 1 and atoms group 2 should be same size");
+        }
+        atoms1m.toArray(atomsA1);
+        atoms2m.toArray(atomsA2);
+        List<DistancePair> distList = new ArrayList<>();
+        for (int i=0; i<targetValues.size(); i++) {
+            Atom[] atomsA1a = {atomsA1[i]};
+            Atom[] atomsA2a = {atomsA2[i]};
+            distList.add(new DistancePair(atomsA1a, atomsA2a, rLow, rUp, false, weight, targetValues.get(i), targetErr));
+            distancePairMap.put(modelNum, distList);
+        }
+        distanceMap.clear();
+        constraintsSetup = false;
+
+    }
+
+    public ArrayList<DistancePair> getDistanceList() {
+        return distanceList;
+    }
+    
+    public Map<Integer, List<DistancePair>> getDistancePairMap() {
+        return distancePairMap;
+    }
+    
+    public void clearDistanceMap() {
+        distancePairMap.clear();
     }
 
     //calculates distance between center of the residues. If center is far away, no need to check atoms of residue
@@ -609,7 +688,9 @@ public class EnergyLists {
         double repelEnergy = 0.0;
         int nRepel = 0;
         double distanceEnergy = 0.0;
+        double stackingEnergy = 0.0;
         int nDistance = 0;
+        int nStack = 0;
         double maxDis = 0.0;
         double irpEnergy = 0.0;
         int nIrp = 0;
@@ -707,6 +788,18 @@ public class EnergyLists {
                     }
                 }
             }
+            if (forceWeight.getStacking() > 0.0) {
+                EnergyCoords eCoords = molecule.getEnergyCoords();
+                stackingEnergy = eCoords.calcStacking(false, forceWeight.getStacking());
+                nStack = eCoords.getNStacking();
+                for (int i = 0; i < nStack; i++) {
+                    ViolationStats stat = eCoords.getStackError(i, limitVal, forceWeight.getStacking());
+                    if (stat != null) {
+                        String errMsg = stat.toString();
+                        writer.print(errMsg);
+                    }
+                }
+            }
             if (forceWeight.getDihedralProb() > 0.0) {
                 EnergyCoords eCoords = molecule.getEnergyCoords();
                 List<Polymer> polymers = molecule.getPolymers();
@@ -746,9 +839,9 @@ public class EnergyLists {
 
             double energySum = dihEnergy + robsonEnergy + repelEnergy + distanceEnergy + irpEnergy + shiftTotEnergy + probDih;
             writer.format(
-                    "Irp %5d %8.3f Dih %5d %8.3f Robson %5d %8.3f Repel %5d %8.3f Distance %5d %8.3f %8.3f Shift %5d %8.3f ProbT %5d %8.3f Total %8.3f\n",
+                    "Irp %5d %8.3f Dih %5d %8.3f Robson %5d %8.3f Repel %5d %8.3f Distance %5d %8.3f %8.3f Shift %5d %8.3f ProbT %5d %8.3f Stack %5d %8.3f Total %8.3f\n",
                     nIrp, irpEnergy, nDih, dihEnergy, nRobson, robsonEnergy, nRepel, repelEnergy, nDistance, distanceEnergy,
-                    maxDis, nShift, shiftTotEnergy, nRotamers, probDih, energySum);
+                    maxDis, nShift, shiftTotEnergy, nRotamers, probDih, nStack, stackingEnergy, energySum);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -1030,6 +1123,17 @@ public class EnergyLists {
         return energy;
     }
 
+    public double calcStackingFast(boolean calcDeriv) {
+        EnergyCoords eCoords = molecule.getEnergyCoords();
+        double weight = forceWeight.getStacking();
+        double energy = eCoords.calcStacking(calcDeriv, weight);
+        if (calcDeriv) {
+            eCoords.addStackingDerivs(branches);
+        }
+
+        return energy;
+    }
+
     public double calcNOE(boolean calcDeriv) {
         double totalEnergy = 0.0;
         for (DistancePair distancePair : distanceList) {
@@ -1225,6 +1329,9 @@ public class EnergyLists {
 
             if (forceWeight.getNOE() > 0.0) {
                 energyTotal += calcNOEFast(calcDeriv);
+            }
+            if (forceWeight.getStacking() > 0.0) {
+                energyTotal += calcStackingFast(calcDeriv);
             }
             if (calcDeriv) {
                 gradient = recurrentDerivative();
@@ -1607,7 +1714,7 @@ public class EnergyLists {
     }
 
     public void makeAtomListFast() {
-       // molecule.updateVecCoords();
+        // molecule.updateVecCoords();
         EnergyCoords eCoords = molecule.getEnergyCoords();
         if (!eCoords.fixedCurrent()) {
             if (molecule.getDihedrals() == null) {

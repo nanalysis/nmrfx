@@ -30,7 +30,7 @@ import org.nmrfx.processor.datasets.peaks.PeakDim;
 import org.nmrfx.processor.datasets.peaks.PeakList;
 import org.nmrfx.processor.datasets.peaks.ResonanceFactory;
 import org.nmrfx.processor.star.Loop;
- import org.nmrfx.processor.star.ParseException;
+import org.nmrfx.processor.star.ParseException;
 import org.nmrfx.processor.star.STAR3;
 import org.nmrfx.processor.star.Saveframe;
 import java.io.File;
@@ -39,8 +39,13 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.FileSystems;
 import java.util.*;
+import org.nmrfx.processor.datasets.peaks.AbsMultipletComponent;
+import org.nmrfx.processor.datasets.peaks.ComplexCoupling;
+import org.nmrfx.processor.datasets.peaks.CouplingPattern;
+import org.nmrfx.processor.datasets.peaks.Multiplet;
 import org.nmrfx.processor.datasets.peaks.Resonance;
 import org.nmrfx.processor.datasets.peaks.SpectralDim;
+import org.nmrfx.processor.datasets.peaks.io.PeakPathReader;
 import org.nmrfx.processor.utilities.NvUtil;
 import org.nmrfx.structure.chemistry.io.Sequence.RES_POSITION;
 import org.nmrfx.structure.utilities.Util;
@@ -58,7 +63,7 @@ public class NMRStarReader {
 
     Map entities = new HashMap();
     boolean hasResonances = false;
-    Map<Long, List<PeakDim>> resMap = new HashMap<>();
+    List<PeakDim> peakDimsWithoutResonance = new ArrayList<>();
     public static boolean DEBUG = false;
 
     public NMRStarReader(final File starFile, final STAR3 star3) {
@@ -134,8 +139,6 @@ public class NMRStarReader {
             for (Atom atom : compound.getAtoms()) {
                 if (atom.bonds == null) {
                     System.out.println("no bonds");
-                } else {
-                    System.out.println(atom.bonds.size());
                 }
             }
         }
@@ -653,7 +656,7 @@ public class NMRStarReader {
     }
 
     public void buildPeakLists() throws ParseException {
-        resMap.clear();
+        peakDimsWithoutResonance.clear();
         for (Saveframe saveframe : star3.getSaveFrames().values()) {
             if (saveframe.getCategoryName().equals("spectral_peak_list")) {
                 if (DEBUG) {
@@ -662,7 +665,28 @@ public class NMRStarReader {
                 processSTAR3PeakList(saveframe);
             }
         }
-        linkResonances();
+        addMissingResonances();
+    }
+
+    public void addMissingResonances() {
+        ResonanceFactory resFactory = PeakDim.resFactory;
+        for (PeakDim peakDim : peakDimsWithoutResonance) {
+            Resonance resonance = resFactory.build();
+            resonance.add(peakDim);
+        }
+    }
+
+
+    public void buildPeakPaths() throws ParseException {
+        for (Saveframe saveframe : star3.getSaveFrames().values()) {
+            if (saveframe.getCategoryName().equals("nmrfx_peak_path")) {
+                if (DEBUG) {
+                    System.err.println("process nmrfx_peak_path " + saveframe.getName());
+                }
+                PeakPathReader peakPathReader = new PeakPathReader();
+                peakPathReader.processPeakPaths(saveframe);
+            }
+        }
     }
 
     public void buildResonanceLists() throws ParseException {
@@ -731,36 +755,10 @@ public class NMRStarReader {
         return spg;
     }
 
-    private void addResonance(long resID, PeakDim peakDim) {
-        List<PeakDim> peakDims = resMap.get(resID);
-        if (peakDims == null) {
-            peakDims = new ArrayList<>();
-            resMap.put(resID, peakDims);
-        }
-        peakDims.add(peakDim);
-    }
-
-    public void linkResonances() {
-        ResonanceFactory resFactory = PeakDim.resFactory();
-        for (Long resID : resMap.keySet()) {
-            List<PeakDim> peakDims = resMap.get(resID);
-            PeakDim firstPeakDim = peakDims.get(0);
-            Resonance resonance = resFactory.build(resID);
-            firstPeakDim.setResonance(resonance);
-            resonance.add(firstPeakDim);
-            if (peakDims.size() > 1) {
-                for (PeakDim peakDim : peakDims) {
-                    if (peakDim != firstPeakDim) {
-                        PeakList.linkPeakDims(firstPeakDim, peakDim);
-                    }
-                }
-            }
-        }
-    }
-
     public void processSTAR3PeakList(Saveframe saveframe) throws ParseException {
         ResonanceFactory resFactory = PeakDim.resFactory();
         String listName = saveframe.getValue("_Spectral_peak_list", "Sf_framecode");
+        String id = saveframe.getValue("_Spectral_peak_list", "ID");
         String sampleLabel = saveframe.getLabelValue("_Spectral_peak_list", "Sample_label");
         String sampleConditionLabel = saveframe.getOptionalLabelValue("_Spectral_peak_list", "Sample_condition_list_label");
         String datasetName = saveframe.getLabelValue("_Spectral_peak_list", "Experiment_name");
@@ -768,6 +766,7 @@ public class NMRStarReader {
         String dataFormat = saveframe.getOptionalValue("_Spectral_peak_list", "Text_data_format");
         String details = saveframe.getOptionalValue("_Spectral_peak_list", "Details");
         String slidable = saveframe.getOptionalValue("_Spectral_peak_list", "Slidable");
+        String scaleStr = saveframe.getOptionalValue("_Spectral_peak_list", "Scale");
 
         if (dataFormat.equals("text")) {
             System.out.println("Aaaack, peak list is in text format, skipping list");
@@ -782,7 +781,7 @@ public class NMRStarReader {
         }
         int nDim = NvUtil.toInt(nDimString);
 
-        PeakList peakList = new PeakList(listName, nDim);
+        PeakList peakList = new PeakList(listName, nDim, NvUtil.toInt(id));
 
         int nSpectralDim = saveframe.loopCount("_Spectral_dim");
         if (nSpectralDim > nDim) {
@@ -794,6 +793,9 @@ public class NMRStarReader {
         peakList.setDatasetName(datasetName);
         peakList.setDetails(details);
         peakList.setSlideable(slidable.equals("yes"));
+        if (scaleStr.length() > 0) {
+            peakList.setScale(NvUtil.toDouble(scaleStr));
+        }
 
         for (int i = 0; i < nSpectralDim; i++) {
             SpectralDim sDim = peakList.getSpectralDim(i);
@@ -908,8 +910,7 @@ public class NMRStarReader {
                 if ((value = NvUtil.getColumnValue(cornerColumn, i)) != null) {
                     peak.setCorner(value);
                 }
-                peakList.addPeak(peak);  // old code added without creating resonance, but that caused problems with new
-                // linking resonance code used here
+                peakList.addPeakWithoutResonance(peak);
             }
 
             loop = saveframe.getLoop("_Peak_general_char");
@@ -1025,20 +1026,120 @@ public class NMRStarReader {
                         }
                         Peak peak = peakList.getPeakByID(idNum);
                         PeakDim peakDim = peak.getPeakDim(sDim);
-                        if (resonanceID != -1) {
-                            addResonance(resonanceID, peakDim);
+                        if (resonanceID != -1L) {
+                            Resonance resonance = resFactory.build(resonanceID);
+                            resonance.add(peakDim);
+                        } else {
+                            peakDimsWithoutResonance.add(peakDim);
                         }
-//                    Resonance res = resFactory.get(resonanceID);
-//                    if (res == null) {
-//                        resFactory.build(resonanceID);
-//                    }
-//                    peakDim.setResonance(resonanceID);
                     }
                 } else {
                     System.out.println("No \"Assigned Peak Chem Shift\" loop");
                 }
             }
+            loop = saveframe.getLoop("_Peak_coupling");
+            if (loop != null) {
+                List<Integer> peakIdColumn = loop.getColumnAsIntegerList("Peak_ID", null);
+                List<Integer> sdimColumn = loop.getColumnAsIntegerList("Spectral_dim_ID", null);
+                List<Integer> compIDColumn = loop.getColumnAsIntegerList("Multiplet_component_ID", null);
+                List<Double> couplingColumn = loop.getColumnAsDoubleList("Coupling_val", null);
+                List<Double> strongCouplingColumn = loop.getColumnAsDoubleList("Strong_coupling_effect_val", null);
+                List<Double> intensityColumn = loop.getColumnAsDoubleList("Intensity_val", null);
+                List<String> couplingTypeColumn = loop.getColumnAsList("Type");
+                int from = 0;
+                int to = 0;
+                for (int i = 0; i < peakIdColumn.size(); i++) {
+                    int currentID = peakIdColumn.get(from);
+                    int currentDim = sdimColumn.get(i) - 1;
+                    if ((i == (peakIdColumn.size() - 1))
+                            || (peakIdColumn.get(i + 1) != currentID)
+                            || (sdimColumn.get(i + 1) - 1 != currentDim)) {
+                        Peak peak = peakList.getPeakByID(currentID);
+                        to = i + 1;
+                        Multiplet multiplet = peak.getPeakDim(currentDim).getMultiplet();
+                        CouplingPattern couplingPattern = new CouplingPattern(multiplet,
+                                couplingColumn.subList(from, to),
+                                couplingTypeColumn.subList(from, to),
+                                strongCouplingColumn.subList(from, to),
+                                intensityColumn.get(from)
+                        );
+                        multiplet.setCoupling(couplingPattern);
+                        from = to;
+                    }
+                }
+            }
+            processTransitions(saveframe, peakList);
         }
+    }
+
+    void processTransitions(Saveframe saveframe, PeakList peakList) throws ParseException {
+        Loop loop = saveframe.getLoop("_Spectral_transition");
+        if (loop != null) {
+            List<Integer> idColumn = loop.getColumnAsIntegerList("ID", null);
+            List<Integer> peakIdColumn = loop.getColumnAsIntegerList("Peak_ID", null);
+            List<Double> fomColumn = loop.getColumnAsDoubleList("Figure_of_merit", null);
+
+            for (int i = 0, n = idColumn.size(); i < n; i++) {
+                int idNum = idColumn.get(i);
+                int peakIdNum = peakIdColumn.get(i);
+                Peak peak = peakList.getPeakByID(peakIdNum);
+                peak.setIdNum(idNum);
+            }
+            loop = saveframe.getLoop("_Spectral_transition_general_char");
+
+            if (loop != null) {
+                Map<Integer, Double> intMap = new HashMap<>();
+                Map<Integer, Double> volMap = new HashMap<>();
+                idColumn = loop.getColumnAsIntegerList("Spectral_transition_ID", null);
+                peakIdColumn = loop.getColumnAsIntegerList("Peak_ID", null);
+                List<Double> intensityColumn = loop.getColumnAsDoubleList("Intensity_val", null);
+                List<String> methodColumn = loop.getColumnAsList("Measurement_method");
+
+                for (int i = 0, n = idColumn.size(); i < n; i++) {
+                    int idNum = idColumn.get(i);
+                    Double value = intensityColumn.get(i);
+                    if (value != null) {
+                        String mode = methodColumn.get(i);
+                        if (mode.equals("height")) {
+                            intMap.put(idNum, value);
+                        } else {
+                            volMap.put(idNum, value);
+                        }
+                    }
+
+                }
+
+                loop = saveframe.getLoop("_Spectral_transition_char");
+                if (loop != null) {
+                    idColumn = loop.getColumnAsIntegerList("Spectral_transition_ID", null);
+                    peakIdColumn = loop.getColumnAsIntegerList("Peak_ID", null);
+                    List<Double> shiftColumn = loop.getColumnAsDoubleList("Chem_shift_val", null);
+                    List<Double> lwColumn = loop.getColumnAsDoubleList("Line_width_val", null);
+                    List<Integer> sdimColumn = loop.getColumnAsIntegerList("Spectral_dim_ID", null);
+
+                    List<AbsMultipletComponent> comps = new ArrayList<>();
+                    for (int i = 0; i < peakIdColumn.size(); i++) {
+                        int currentID = peakIdColumn.get(i);
+                        int transID = idColumn.get(i);
+                        int currentDim = sdimColumn.get(i) - 1;
+                        double sf = peakList.getSpectralDim(currentDim).getSf();
+                        Peak peak = peakList.getPeakByID(currentID);
+                        Multiplet multiplet = peak.getPeakDim(currentDim).getMultiplet();
+                        AbsMultipletComponent comp = new AbsMultipletComponent(
+                                multiplet, shiftColumn.get(i), intMap.get(transID), volMap.get(transID), lwColumn.get(i) / sf);
+                        comps.add(comp);
+                        if ((i == (peakIdColumn.size() - 1))
+                                || (peakIdColumn.get(i + 1) != currentID)
+                                || (sdimColumn.get(i + 1) - 1 != currentDim)) {
+                            ComplexCoupling complexCoupling = new ComplexCoupling(multiplet, comps);
+                            multiplet.setCoupling(complexCoupling);
+                            comps.clear();
+                        }
+                    }
+                }
+            }
+        }
+
     }
 
     public void processChemicalShifts(Saveframe saveframe, int ppmSet) throws ParseException {
@@ -1414,7 +1515,10 @@ public class NMRStarReader {
                 } else {
                     try {
                         int peakListID = Integer.parseInt(peakListIDStr);
-                        peakList = PeakList.get(peakListID);
+                        Optional<PeakList> peakListOpt = PeakList.get(peakListID);
+                        if (peakListOpt.isPresent()) {
+                            peakList = peakListOpt.get();
+                        }
                     } catch (NumberFormatException nFE) {
                         throw new ParseException("Invalid peak list id (not int) \"" + peakListIDStr + "\"");
                     }
@@ -1516,7 +1620,7 @@ public class NMRStarReader {
 
             Util.setStrictlyNEF(true);
             try {
-                energyList.addDistanceConstraint(atomNames[0], atomNames[1], lower, upper);
+                energyList.addDistanceConstraint(atomNames[0], atomNames[1], lower, upper, null, null, null);
             } catch (IllegalArgumentException iaE) {
                 int index = indexColumn.get(i);
                 throw new ParseException("Error parsing NEF distance constraints at index  \"" + index + "\" " + iaE.getMessage());
@@ -1579,6 +1683,10 @@ public class NMRStarReader {
             }
             buildRunAbout();
             if (DEBUG) {
+                System.err.println("process paths");
+            }
+            buildPeakPaths();
+            if (DEBUG) {
                 System.err.println("clean resonances");
             }
             resFactory.clean();
@@ -1617,6 +1725,7 @@ public class NMRStarReader {
             molecule.setMethylRotationActive(true);
             EnergyLists energyList = new EnergyLists(molecule);
             dihedral = new Dihedral(energyList, false);
+            dihedral.clearBoundaries();
 
             energyList.makeCompoundList(molecule);
 //            System.err.println("process peak lists");

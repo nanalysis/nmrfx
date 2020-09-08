@@ -18,6 +18,7 @@
 package org.nmrfx.structure.fastlinear;
 
 import org.apache.commons.math3.util.FastMath;
+import org.apache.commons.math3.util.MathArrays;
 
 /**
  *
@@ -130,4 +131,30 @@ public class FastVector3D extends FastVector {
         target.data[2] = data[2] - v2.getZ();
     }
 
+    public void crossProduct(FastVector3D v1, FastVector3D v2, FastVector3D target) {
+        target.data[0] = MathArrays.linearCombination(v1.data[1], v2.data[2], -v1.data[2], v2.data[1]);
+        target.data[1] = MathArrays.linearCombination(v1.data[2], v2.data[0], -v1.data[0], v2.data[2]);
+        target.data[2] = MathArrays.linearCombination(v1.data[0], v2.data[1], -v1.data[1], v2.data[0]);
+    }
+
+    public double norm() {
+        return Math.sqrt(
+                data[0] * data[0]
+                + data[1] * data[1]
+                + data[2] * data[2]);
+    }
+
+    public double dotProduct(FastVector3D v2) {
+        return MathArrays.linearCombination(
+                data[0], v2.data[0],
+                data[1], v2.data[1],
+                data[2], v2.data[2]);
+    }
+
+    public static double angle(FastVector3D v1, FastVector3D v2) {
+
+        double normProduct = v1.norm() * v2.norm();
+        double dot = v1.dotProduct(v2);
+        return Math.acos(dot / normProduct);
+    }
 }
