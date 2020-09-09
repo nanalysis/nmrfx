@@ -554,7 +554,7 @@ public class NMRNEFReader {
             molecule.setMethylRotationActive(true);
             energyList = new EnergyLists(molecule);
             dihedral = new Dihedral(energyList, false);
-            dihedral.clearNEFBoundaries();
+            dihedral.clearBoundaries();
 
             energyList.makeCompoundList(molecule);
             if (DEBUG) {
