@@ -201,7 +201,7 @@ public class MMcifReader {
             MMCIFEntity entity;
             if (type.equals("polymer")) {
                 entity = new MMCIFPolymerEntity(entityID, type);
-                buildChains(saveframe, Molecule.activeMol, type, (MMCIFPolymerEntity) entity);
+                buildChains(saveframe, Molecule.activeMol(), type, (MMCIFPolymerEntity) entity);
             } else {
                 entity = new MMCIFEntity(entityID, type);
             }
@@ -216,7 +216,7 @@ public class MMcifReader {
                 MMCIFEntity entity;
                 if (type.equals("polymer")) {
                     entity = new MMCIFPolymerEntity(entityID, type);
-                    buildChains(saveframe, Molecule.activeMol, type, (MMCIFPolymerEntity) entity);
+                    buildChains(saveframe, Molecule.activeMol(), type, (MMCIFPolymerEntity) entity);
                 } else {
                     entity = new MMCIFEntity(entityID, type);
                 }
