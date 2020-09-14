@@ -257,7 +257,7 @@ public class AngleTreeGenerator {
         if (itree instanceof Molecule) {
             mol = (Molecule) itree;
         } else {
-            mol = Molecule.activeMol;
+            mol = Molecule.activeMol();
         }
         ringFinder.findSmallestRings(mol);
         atomTree.forEach((branch) -> {

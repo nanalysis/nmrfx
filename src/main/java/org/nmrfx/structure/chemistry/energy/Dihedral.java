@@ -60,7 +60,6 @@ public class Dihedral {
     double[][] ranBoundaries = null;
     double[] inputSigma = null;
     public EnergyLists energyList;
-    static HashMap<String, AngleBoundary> angleBoundaries = new HashMap<String, AngleBoundary>();
     double lastEnergy = 0.0;
     static long startTime = 0;
     double bestEnergy = Double.MAX_VALUE;
@@ -72,7 +71,7 @@ public class Dihedral {
     static double initPuckerAmplitude = 45 * toRad;
     static double initPseudoAngle = 18 * toRad;
     public static double backBoneScale = 4.0;
-    static Map<String, List<AngleBoundary>> angleBoundariesNEF = new HashMap<>();
+    static Map<String, List<AngleBoundary>> angleBoundaries = new HashMap<>();
     static List<Map<Residue, AngleProp>> torsionAngles = new ArrayList<>();
 
     double maxSigma = 20;
@@ -373,7 +372,12 @@ public class Dihedral {
      * @param angleBoundary
      */
     public void addBoundary(final AngleBoundary angleBoundary) throws InvalidMoleculeException {
-        angleBoundaries.put(angleBoundary.getRefAtom().getFullName(), angleBoundary);
+        String key = angleBoundary.getRefAtom().getFullName();
+        if (!angleBoundaries.containsKey(key)) {
+            angleBoundaries.put(key, new ArrayList<>());
+        }
+        List<AngleBoundary> angleBoundList = angleBoundaries.get(key);
+        angleBoundList.add(angleBoundary);
     }
 
     public void addBoundary(final List<String> atomNames, double lower, double upper, double scale) throws InvalidMoleculeException {
@@ -401,9 +405,9 @@ public class Dihedral {
             }
         }
         AngleBoundary angleBoundary = new AngleBoundary(atoms, lower, upper, scale);
-        angleBoundaries.put(angleBoundary.getRefAtom().getFullName(), angleBoundary);
+        addBoundary(angleBoundary);
     }
-    
+
     public void addTorsion(Map<Residue, AngleProp> torsionMap, final Residue res, double[] target, double[] sigma, double[] height) throws InvalidMoleculeException {
         if (res == null) {
             throw new IllegalArgumentException("Error adding torsion angle, invalid residue");
@@ -423,23 +427,13 @@ public class Dihedral {
             }
         }
         AngleBoundary angleBoundary = new AngleBoundary(atoms, lower, upper, scale, weight, target, targetErr, name);
-        String key = angleBoundary.getRefAtom().getFullName();
-        if (!angleBoundariesNEF.containsKey(key)) {
-            angleBoundariesNEF.put(key, new ArrayList<>());
-        }
-        List<AngleBoundary> angleBoundList = angleBoundariesNEF.get(key);
-        angleBoundList.add(angleBoundary);
-        angleBoundariesNEF.put(key, angleBoundList);
+        addBoundary(angleBoundary);
     }
 
-    public HashMap<String, AngleBoundary> getAngleBoundaries() {
+    public Map<String, List<AngleBoundary>> getAngleBoundaries() {
         return angleBoundaries;
     }
 
-    public Map<String, List<AngleBoundary>> getAngleBoundariesNEF() {
-        return angleBoundariesNEF;
-    }
-    
     public List<Map<Residue, AngleProp>> getTorsionAngles() {
         return torsionAngles;
     }
@@ -447,11 +441,7 @@ public class Dihedral {
     public void clearBoundaries() {
         angleBoundaries.clear();
     }
-    
-    public void clearNEFBoundaries() {
-        angleBoundariesNEF.clear();
-    }
-     
+
     public void setBoundaries(final double sigma, boolean useDegrees) {
         setBoundaries(sigma, useDegrees, 2.0 * Math.PI);
     }
@@ -540,11 +530,14 @@ public class Dihedral {
             Atom atom = angleAtoms.get(i);
             atom.aAtom = i;
             String atomName = atom.getFullName();
-            AngleBoundary angleBoundary = angleBoundaries.get(atomName);
+            List<AngleBoundary> angleBoundaryList = angleBoundaries.get(atomName);
             //if angleBoundary is present for that atom, replace value at there respected indices
-            if (angleBoundary != null) {
-                angleBoundary.setIndex(i);
-                energyList.addAngleBoundary(angleBoundary);
+
+            if (angleBoundaryList != null) {
+                for (AngleBoundary angleBoundary : angleBoundaryList) {
+                    angleBoundary.setIndex(i);
+                    energyList.addAngleBoundary(angleBoundary);
+                }
             }
         }
     }

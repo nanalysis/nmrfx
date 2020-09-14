@@ -56,7 +56,9 @@ public class Molecule implements Serializable, ITree {
 
     public static List<Atom> atomList = null;
     public static final List<String> conditions = new ArrayList<>();
-    public static Molecule activeMol = null;
+    public static Molecule activeMol () {
+        return StructureProject.getActive().activeMol;
+    }
     public final Map<String, List<SpatialSet>> sites = new HashMap<>();
     public final List<SpatialSet> globalSelected = new ArrayList<>(1024);
     private final List<Bond> bselected = new ArrayList<>(1024);
@@ -92,7 +94,9 @@ public class Molecule implements Serializable, ITree {
     public static final LinkedHashSet colorTypes = new LinkedHashSet();
     public static final LinkedHashSet shapeTypes = new LinkedHashSet();
     //public static MoleculeTableModel molTableModel = null;
-    public static final Map compoundMap = new HashMap();
+    public static final Map compoundMap () {
+        return StructureProject.getActive().compoundMap;
+    }
     public Map<Atom, Map<Atom, Double>> ringClosures;
     List<List<Atom>> atomTree = null;
     HashMap<String, List> allowedSourcesMap = new HashMap<>();
@@ -243,7 +247,7 @@ public class Molecule implements Serializable, ITree {
         } catch (ClassNotFoundException | NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
             atoms = new ArrayList<>();
         }
-        activeMol = this;
+        setActive();
         storeMolecule();
     }
 
@@ -288,11 +292,11 @@ public class Molecule implements Serializable, ITree {
     }
 
     public static Molecule getActive() {
-        return activeMol;
+        return StructureProject.getActive().activeMol;
     }
 
     public void setActive() {
-        activeMol = this;
+        StructureProject.getActive().activeMol = this;
     }
 
     public void reName(Molecule molecule, Compound compound, String name1, String name2) {
@@ -333,7 +337,7 @@ public class Molecule implements Serializable, ITree {
         StructureProject.getActive().clearAllMolecules();
 
         conditions.clear();
-        activeMol = null;
+        StructureProject.getActive().activeMol = null;
     }
 
     public void remove() {
@@ -351,9 +355,9 @@ public class Molecule implements Serializable, ITree {
 
         Collection<Molecule> mols = StructureProject.getActive().getMolecules();
 
-        activeMol = null;
+        StructureProject.getActive().activeMol = null;
         for (Molecule mol : mols) {
-            activeMol = mol;
+            StructureProject.getActive().activeMol = mol;
             break;
         }
     }
@@ -2248,7 +2252,7 @@ public class Molecule implements Serializable, ITree {
         List<Bond> selected = new ArrayList<>(32);
         Atom atomB;
         Atom atomE;
-        Molecule molecule = activeMol;
+        Molecule molecule = activeMol();
 
         if (molecule == null) {
             throw new IllegalArgumentException("No active molecule ");
@@ -4316,7 +4320,7 @@ public class Molecule implements Serializable, ITree {
     }
 
     public static void writeXYZ() {
-        Molecule molecule = activeMol;
+        Molecule molecule = activeMol();
 
         if (molecule == null) {
             return;
@@ -4337,7 +4341,7 @@ public class Molecule implements Serializable, ITree {
         int iStruct = 0;
         String result = null;
 
-        Molecule molecule = activeMol;
+        Molecule molecule = activeMol();
 
         if (molecule == null) {
             throw new InvalidMoleculeException("No active molecule");
@@ -4465,7 +4469,7 @@ public class Molecule implements Serializable, ITree {
     public static void writeXYZToPDB(Writer chan, int whichStruct) throws InvalidMoleculeException, IOException {
         int i;
 
-        Molecule molecule = activeMol;
+        Molecule molecule = activeMol();
 
         if (molecule == null) {
             throw new InvalidMoleculeException("No active molecule");
