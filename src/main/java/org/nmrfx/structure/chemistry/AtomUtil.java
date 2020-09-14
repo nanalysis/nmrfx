@@ -79,12 +79,8 @@ public class AtomUtil {
                 atomPattern[i] = pattern[i].substring(dotPos + 1,
                         pattern[i].length()).toLowerCase();
 
-                if (resPattern[i].startsWith("i")
-                        || resPattern[i].startsWith("j")) {
-                    patternIsSym[i] = true;
-                } else {
-                    patternIsSym[i] = false;
-                }
+                patternIsSym[i] = resPattern[i].startsWith("i")
+                        || resPattern[i].startsWith("j");
             }
 
             for (iPass = 0; iPass < 2; iPass++) {

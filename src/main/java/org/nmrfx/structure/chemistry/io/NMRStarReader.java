@@ -369,7 +369,7 @@ public class NMRStarReader {
     }
 
     public void addCompound(String id, Compound compound) {
-        Molecule.compoundMap.put(id, compound);
+        Molecule.compoundMap().put(id, compound);
     }
 
     public void buildChemShifts(int fromSet, final int toSet) throws ParseException {
@@ -669,7 +669,7 @@ public class NMRStarReader {
     }
 
     public void addMissingResonances() {
-        ResonanceFactory resFactory = PeakDim.resFactory;
+        ResonanceFactory resFactory = PeakDim.resFactory();
         for (PeakDim peakDim : peakDimsWithoutResonance) {
             Resonance resonance = resFactory.build();
             resonance.add(peakDim);
@@ -733,7 +733,7 @@ public class NMRStarReader {
                 entityAssemblyID = "1";
             }
             String mapID = entityAssemblyID + "." + iEntity + "." + iRes;
-            Compound compound1 = (Compound) Molecule.compoundMap.get(mapID);
+            Compound compound1 = (Compound) Molecule.compoundMap().get(mapID);
             if (compound1 != null) {
                 //throw new ParseException("invalid compound in assignments saveframe \""+mapID+"\"");
                 if ((atomName.charAt(0) == 'Q') || (atomName.charAt(0) == 'M')) {
@@ -756,7 +756,7 @@ public class NMRStarReader {
     }
 
     public void processSTAR3PeakList(Saveframe saveframe) throws ParseException {
-        ResonanceFactory resFactory = PeakDim.resFactory;
+        ResonanceFactory resFactory = PeakDim.resFactory();
         String listName = saveframe.getValue("_Spectral_peak_list", "Sf_framecode");
         String id = saveframe.getValue("_Spectral_peak_list", "ID");
         String sampleLabel = saveframe.getLabelValue("_Spectral_peak_list", "Sample_label");
@@ -1153,7 +1153,7 @@ public class NMRStarReader {
             List<String> valColumn = loop.getColumnAsList("Val");
             List<String> valErrColumn = loop.getColumnAsList("Val_err");
             List<String> resColumn = loop.getColumnAsList("Resonance_ID");
-            ResonanceFactory resFactory = PeakDim.resFactory;
+            ResonanceFactory resFactory = PeakDim.resFactory();
             for (int i = 0; i < entityAssemblyIDColumn.size(); i++) {
                 String iEntity = (String) entityIDColumn.get(i);
                 String entityAssemblyID = (String) entityAssemblyIDColumn.get(i);
@@ -1173,7 +1173,7 @@ public class NMRStarReader {
                     entityAssemblyID = "1";
                 }
                 String mapID = entityAssemblyID + "." + iEntity + "." + iRes;
-                Compound compound = (Compound) Molecule.compoundMap.get(mapID);
+                Compound compound = (Compound) Molecule.compoundMap().get(mapID);
                 if (compound == null) {
                     //throw new ParseException("invalid compound in assignments saveframe \""+mapID+"\"");
                     System.err.println("invalid compound in assignments saveframe \"" + mapID + "\"");
@@ -1265,7 +1265,7 @@ public class NMRStarReader {
                 entityAssemblyID = "1";
             }
             String mapID = entityAssemblyID + "." + iEntity + "." + iRes;
-            Compound compound = (Compound) Molecule.compoundMap.get(mapID);
+            Compound compound = (Compound) Molecule.compoundMap().get(mapID);
             if (compound == null) {
                 //throw new ParseException("invalid compound in conformer saveframe \""+mapID+"\"");
                 System.err.println("invalid compound in conformer saveframe \"" + mapID + "\"");
@@ -1477,7 +1477,7 @@ public class NMRStarReader {
                     entityAssemblyID = "1";
                 }
                 String mapID = entityAssemblyID + "." + iEntity + "." + iRes;
-                Compound compound1 = (Compound) Molecule.compoundMap.get(mapID);
+                Compound compound1 = (Compound) Molecule.compoundMap().get(mapID);
                 if (compound1 == null) {
                     //throw new ParseException("invalid compound in distance constraints saveframe \""+mapID+"\"");
                     System.err.println("invalid compound in distance constraints saveframe \"" + mapID + "\"");
@@ -1641,10 +1641,10 @@ public class NMRStarReader {
         if (DEBUG) {
             System.out.println("nSave " + star3.getSaveFrameNames());
         }
-        AtomResonanceFactory resFactory = (AtomResonanceFactory) PeakDim.resFactory;
+        AtomResonanceFactory resFactory = (AtomResonanceFactory) PeakDim.resFactory();
         if (argv.length == 0) {
             hasResonances = false;
-            Molecule.compoundMap.clear();
+            Molecule.compoundMap().clear();
             buildExperiments();
             if (DEBUG) {
                 System.err.println("process molecule");
@@ -1712,11 +1712,11 @@ public class NMRStarReader {
         if (DEBUG) {
             System.out.println("nSave " + star3.getSaveFrameNames());
         }
-        AtomResonanceFactory resFactory = (AtomResonanceFactory) PeakDim.resFactory;
+        AtomResonanceFactory resFactory = (AtomResonanceFactory) PeakDim.resFactory();
         Dihedral dihedral = null;
         if (argv.length == 0) {
             hasResonances = false;
-            Molecule.compoundMap.clear();
+            Molecule.compoundMap().clear();
 //            buildExperiments();
             if (DEBUG) {
                 System.err.println("process molecule");
