@@ -452,7 +452,7 @@ public class NMRNEFWriter {
         }
         molecule.updateAtomArray();
         Dihedral dihedral = NMRNEFReader.dihedral;
-        Map<String, List<AngleBoundary>> angleBoundsMap = dihedral.getAngleBoundariesNEF();
+        Map<String, List<AngleBoundary>> angleBoundsMap = dihedral.getAngleBoundaries();
         List<AngleBoundary> angleBlock1 = new ArrayList<>();
         List<AngleBoundary> angleBlock2 = new ArrayList<>();
         for (List<AngleBoundary> boundList : angleBoundsMap.values()) {
