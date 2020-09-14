@@ -200,7 +200,7 @@ public class MMcifReader {
             MMCIFEntity entity;
             if (type.equals("polymer")) {
                 entity = new MMCIFPolymerEntity(entityID, type);
-                buildChains(saveframe, Molecule.activeMol, type, (MMCIFPolymerEntity) entity);
+                buildChains(saveframe, Molecule.activeMol(), type, (MMCIFPolymerEntity) entity);
             } else {
                 entity = new MMCIFEntity(entityID, type);
             }
@@ -215,7 +215,7 @@ public class MMcifReader {
                 MMCIFEntity entity;
                 if (type.equals("polymer")) {
                     entity = new MMCIFPolymerEntity(entityID, type);
-                    buildChains(saveframe, Molecule.activeMol, type, (MMCIFPolymerEntity) entity);
+                    buildChains(saveframe, Molecule.activeMol(), type, (MMCIFPolymerEntity) entity);
                 } else {
                     entity = new MMCIFEntity(entityID, type);
                 }
@@ -324,7 +324,7 @@ public class MMcifReader {
     }
 
     void addCompound(String id, Compound compound) {
-        Molecule.compoundMap.put(id, compound);
+        Molecule.compoundMap().put(id, compound);
     }
 
     void buildChemComp(final Saveframe saveframe, Molecule molecule) throws ParseException {
@@ -530,7 +530,7 @@ public class MMcifReader {
                 float occupancy = Float.parseFloat((String) occupancyColumn.get(i));
                 float bFactor = Float.parseFloat((String) bIsoColumn.get(i));
                 String mapID = chainCode + "." + sequenceCode;
-                Compound compound = (Compound) Molecule.compoundMap.get(mapID);
+                Compound compound = (Compound) Molecule.compoundMap().get(mapID);
                 if (compound == null) {
                     //throw new ParseException("invalid compound in assignments saveframe \""+mapID+"\"");
                     System.err.println("invalid compound in assignments saveframe \"" + mapID + "\"");
@@ -731,7 +731,7 @@ public class MMcifReader {
         Dihedral dihedral = null;
         if (argv.length == 0) {
             hasResonances = false;
-            Molecule.compoundMap.clear();
+            Molecule.compoundMap().clear();
             if (DEBUG) {
                 System.err.println("process molecule");
             }
