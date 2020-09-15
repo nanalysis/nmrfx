@@ -482,6 +482,16 @@ public class Project {
         peakLists.clear();
     }
 
+    public void clearAllDatasets() {
+        List<Dataset> removeDatasets = new ArrayList<>();
+        removeDatasets.addAll(datasets);
+        for (Dataset dataset : removeDatasets) {
+            dataset.close();
+        }
+        datasetMap.clear();
+        datasets.clear();
+    }
+
     public void removePeakList(String name) {
         peakLists.remove(name);
     }
