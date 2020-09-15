@@ -105,6 +105,10 @@ public class AnalystApp extends MainApp {
     RDCGUI rdcGUI = null;
 
     public static void closeAll() {
+        for (PolyChart chart:PolyChart.CHARTS) {
+            chart.clearDataAndPeaks();
+            chart.clearAnnotations();
+        }
         Stage mainStage = getMainStage();
         for (Stage stage : stages) {
             if (stage != mainStage) {
@@ -613,10 +617,10 @@ public class AnalystApp extends MainApp {
     void showDatasetsTable(ActionEvent event) {
         if (datasetController == null) {
             datasetController = DatasetsController.create();
-            GUIStructureProject project = (GUIStructureProject) Project.getActive();
-            ObservableList datasetObs = (ObservableList) project.getDatasets();
-            datasetController.setDatasetList(datasetObs);
         }
+        GUIStructureProject project = (GUIStructureProject) Project.getActive();
+        ObservableList datasetObs = (ObservableList) project.getDatasets();
+        datasetController.setDatasetList(datasetObs);
         datasetController.getStage().show();
         datasetController.getStage().toFront();
     }
