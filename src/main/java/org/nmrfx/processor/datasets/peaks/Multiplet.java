@@ -23,7 +23,6 @@
 package org.nmrfx.processor.datasets.peaks;
 
 import org.nmrfx.processor.utilities.Format;
-import java.awt.geom.Line2D;
 import java.util.ArrayList;
 import java.util.List;
 import org.nmrfx.processor.datasets.Dataset;
@@ -389,7 +388,7 @@ public class Multiplet implements PeakOrMulti, Comparable {
         return coupling.getRelComponentList();
     }
 
-    public ArrayList<Line2D> getSplittingGraph() {
+    public ArrayList<TreeLine> getSplittingGraph() {
         return coupling.getSplittingGraph();
     }
 

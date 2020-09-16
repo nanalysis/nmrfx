@@ -37,6 +37,10 @@ public class SimpleResonance implements Resonance {
         this.id = id;
     }
 
+    public void clearPeakDims() {
+        peakDims = null;
+    }
+
     @Override
     public void setName(List<String> newNames) {
         if (names == null) {
@@ -80,6 +84,10 @@ public class SimpleResonance implements Resonance {
         names.add(name);
     }
 
+    public void setAtomName(String aName) {
+        atomName = aName;
+    }
+
     @Override
     public String getAtomName() {
         return atomName;
@@ -90,7 +98,7 @@ public class SimpleResonance implements Resonance {
         return String.valueOf(id);
 
     }
-    
+
     @Override
     public void setID(long value) {
         id = value;

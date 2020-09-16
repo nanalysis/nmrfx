@@ -22,7 +22,6 @@
  */
 package org.nmrfx.processor.datasets.peaks;
 
-import java.awt.geom.Line2D;
 import java.util.ArrayList;
 import static java.util.Comparator.comparing;
 import java.util.List;
@@ -107,12 +106,12 @@ public class ComplexCoupling extends Coupling {
     }
 
     @Override
-    public ArrayList<Line2D> getSplittingGraph() {
-        ArrayList<Line2D> lines = new ArrayList<>();
+    public ArrayList<TreeLine> getSplittingGraph() {
+        ArrayList<TreeLine> lines = new ArrayList<>();
         PeakDim peakDimRef = multiplet.getPeakDim();
         double sf = peakDimRef.getPeak().peakList.getSpectralDim(peakDimRef.getSpectralDim()).getSf();
         components.stream().map((comp) -> (-comp.getOffset() / sf)).forEachOrdered((deltaPPM) -> {
-            lines.add(new Line2D.Double(0.0, 0.0, deltaPPM, 0.0));
+            lines.add(new TreeLine(0.0, 0.0, deltaPPM, 0.0));
         });
         return lines;
     }
