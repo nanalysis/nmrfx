@@ -44,7 +44,7 @@ public class Project {
     static String[] SUB_DIR_TYPES = {"star", "datasets", "molecules", "peaks", "shifts", "refshifts", "windows"};
     static final Map<String, Project> projects = new HashMap<>();
     static Project activeProject = null;
-    Path projectDir = null;
+    private Path projectDir = null;
     final String name;
     public final Map<String, PeakList> peakLists = new HashMap<>();
 
@@ -53,7 +53,7 @@ public class Project {
         setActive();
     }
 
-    class FileComparator implements Comparator<Path> {
+    public class FileComparator implements Comparator<Path> {
 
         @Override
         public int compare(Path p1, Path p2) {
@@ -93,7 +93,7 @@ public class Project {
         return projectDir != null;
     }
 
-    static Optional<Integer> getIndex(String s) {
+    public static Optional<Integer> getIndex(String s) {
         Optional<Integer> fileNum = Optional.empty();
         Matcher matcher = INDEX_PATTERN.matcher(s);
         if (matcher.matches()) {
@@ -305,6 +305,20 @@ public class Project {
 
     public void removePeakList(String name) {
         peakLists.remove(name);
+    }
+
+    /**
+     * @return the projectDir
+     */
+    public Path getProjectDir() {
+        return projectDir;
+    }
+
+    /**
+     * @param projectDir the projectDir to set
+     */
+    public void setProjectDir(Path projectDir) {
+        this.projectDir = projectDir;
     }
 
 }
