@@ -22,7 +22,6 @@
  */
 package org.nmrfx.processor.datasets.peaks;
 
-import java.awt.geom.Line2D;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -95,9 +94,9 @@ public class Singlet extends Coupling {
     }
 
     @Override
-    public ArrayList<Line2D> getSplittingGraph() {
-        ArrayList<Line2D> lines = new ArrayList<>();
-        lines.add(new Line2D.Double(0.0, 0.0, 0.0, 0.0));
+    public ArrayList<TreeLine> getSplittingGraph() {
+        ArrayList<TreeLine> lines = new ArrayList<>();
+        lines.add(new TreeLine(0.0, 0.0, 0.0, 0.0));
         return lines;
     }
 

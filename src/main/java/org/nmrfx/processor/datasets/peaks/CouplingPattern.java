@@ -23,7 +23,6 @@
 package org.nmrfx.processor.datasets.peaks;
 
 import org.nmrfx.processor.utilities.Format;
-import java.awt.geom.Line2D;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -299,9 +298,9 @@ public class CouplingPattern extends Coupling {
     }
 
     @Override
-    public ArrayList<Line2D> getSplittingGraph() {
+    public ArrayList<TreeLine> getSplittingGraph() {
 
-        ArrayList<Line2D> lines = new ArrayList<>();
+        ArrayList<TreeLine> lines = new ArrayList<>();
 
         int[] splitCount = getNValues();
 
@@ -331,7 +330,7 @@ public class CouplingPattern extends Coupling {
                         for (int k = 0; k < splitCount[i]; k++) {
                             double freq = freqs[current - j - 1] + offset;
                             freqs[last--] = freq;
-                            lines.add(new Line2D.Double(origin, i * 1.0, -freq, i * 1.0));
+                            lines.add(new TreeLine(origin, i * 1.0, -freq, i * 1.0));
                             offset -= (couplingItems[i].getCoupling() / sf);
                         }
                     }

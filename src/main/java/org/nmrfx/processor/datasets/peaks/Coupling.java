@@ -17,7 +17,6 @@
  */
 package org.nmrfx.processor.datasets.peaks;
 
-import java.awt.geom.Line2D;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -31,7 +30,7 @@ public abstract class Coupling {
 
     abstract List<RelMultipletComponent> getRelComponentList();
 
-    abstract ArrayList<Line2D> getSplittingGraph();
+    abstract ArrayList<TreeLine> getSplittingGraph();
 
     abstract String getCouplingsAsString();
 
