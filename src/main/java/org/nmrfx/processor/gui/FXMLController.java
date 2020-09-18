@@ -537,6 +537,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
             } catch (IllegalArgumentException iaE) {
                 ExceptionDialog eDialog = new ExceptionDialog(iaE);
                 eDialog.showAndWait();
+                return;
 
             }
             if (nmrData != null) {
@@ -550,6 +551,9 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
             }
             PreferencesController.saveRecentFIDs(filePath);
         } catch (IOException ioE) {
+            ExceptionDialog eDialog = new ExceptionDialog(ioE);
+            eDialog.showAndWait();
+            return;
         }
         undoManager.clear();
     }
