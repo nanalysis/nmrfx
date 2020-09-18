@@ -183,7 +183,7 @@ public class MMcifWriter {
                 String polymerName = ((Polymer) entity).getName();
                 char chainID = polymerName.charAt(0);
                 int entityID = ((Polymer) entity).getIDNum();
-                System.out.println("writer " + chainID + " " + entityID);
+//                System.out.println("writer " + chainID + " " + entityID);
                 String blankPDBflag = "N"; //fixme get from file
                 String pdbxMod = "N"; 
                 List<Residue> resList = ((Polymer) entity).getResidues();
@@ -476,7 +476,7 @@ public class MMcifWriter {
         Molecule molecule = Molecule.getActive();
         if (molecule != null) {
             writeMolSys(chan, false);
-            writeChemComp(chan);
+//            writeChemComp(chan);
             writeStructAsym(chan);
             writeStructConf(chan);
             writeSheetRange(chan);

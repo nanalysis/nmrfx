@@ -31,10 +31,13 @@ import org.nmrfx.structure.chemistry.Helix;
 import org.nmrfx.structure.chemistry.InvalidMoleculeException;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.structure.chemistry.NonLoop;
+import org.nmrfx.structure.chemistry.Point3;
 import org.nmrfx.structure.chemistry.Polymer;
 import org.nmrfx.structure.chemistry.Residue;
 import org.nmrfx.structure.chemistry.SpatialSet;
+import org.nmrfx.structure.chemistry.Water;
 import org.nmrfx.structure.chemistry.energy.AngleProp;
+import org.nmrfx.structure.chemistry.energy.AtomEnergyProp;
 import org.nmrfx.structure.chemistry.energy.Dihedral;
 import org.nmrfx.structure.chemistry.energy.EnergyLists;
 import static org.nmrfx.structure.chemistry.io.NMRNEFReader.DEBUG;
@@ -118,6 +121,27 @@ public class MMcifReader {
         public String toString() {
             return id + " " + type;
         }
+        
+//        public void build(Molecule molecule, String asymName) throws ParseException {
+//            Sequence sequence = new Sequence(molecule);
+//            sequence.newPolymer();
+//            Polymer polymer = new Polymer(asymName, asymName);
+//            polymer.setNomenclature("IUPAC");
+//            polymer.setIDNum(id);
+//            polymer.assemblyID = id;
+//            entities.put(asymName, polymer);
+//            if (type.equals("water")) {
+//                Water water = new Water(asymName);
+//                molecule.addEntity(water, asymName, id);
+//            } else {
+//                molecule.addEntity(polymer, asymName, id); 
+//            }
+//            String mapID = asymName + "." + ".";
+//            Compound ligand = new Compound(".", asymName);
+//            ligand.molecule = molecule;
+//            addCompound(mapID, ligand);        
+////            System.out.println("mol build poly " + molecule.getPolymers().size() + " " + numbers.size());
+//        }
     }
 
     class MMCIFPolymerEntity extends MMCIFEntity {
@@ -249,7 +273,9 @@ public class MMcifReader {
             if (entity instanceof MMCIFPolymerEntity) {
                 MMCIFPolymerEntity polymerEntity = (MMCIFPolymerEntity) entity;
                 polymerEntity.build(molecule, asymID);
-            }
+            } //else {
+////                entity.build(molecule, asymID);
+//            }
         }
 //        System.out.println("asym info " + asymIDColumn.toString() + " " + entityIDColumn.toString());
     }
@@ -283,7 +309,6 @@ public class MMcifReader {
                 polymer.assemblyID = entityID++;
                 entities.put(chainCode, polymer);
                 molecule.addEntity(polymer, chainCode, chainID);
-                System.out.println("reader " + chainCode + " " + chainID);
 
             }
             String resName = (String) monIDColumn.get(i);
@@ -549,7 +574,8 @@ public class MMcifReader {
                 //  System.out.println(atoms.toString());
 
                 if (atom == null) {
-                    throw new ParseException("invalid atom in assignments saveframe \"" + mapID + "." + atomName + "\"");
+                    System.out.println("invalid atom in assignments saveframe \"" + mapID + "." + atomName + "\"");
+//                    throw new ParseException("invalid atom in assignments saveframe \"" + mapID + "." + atomName + "\"");
                 }
 
                 SpatialSet spSet = atom.getSpatialSet();

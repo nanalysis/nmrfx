@@ -615,12 +615,12 @@ public class SpatialSet {
             sBuilder.append(String.format("%-2s", chainID));
             
             // entity ID
-            int entityID = chainID - 'A' + 1;
+            int entityID = ((Residue) atom.entity).polymer.entityID;
             sBuilder.append(String.format("%-2d", entityID));
 
             // sequence code
             int seqCode = ((Residue) atom.entity).getIDNum();
-            sBuilder.append(String.format("%-3d", seqCode));
+            sBuilder.append(String.format("%-4d", seqCode));
 
             sBuilder.append(String.format("%-2s", "?"));
             
@@ -642,12 +642,12 @@ public class SpatialSet {
 
             // B factor
             double bFactor = coord.bfactor;
-            sBuilder.append(String.format("%-5.2f", bFactor));
+            sBuilder.append(String.format("%-8.2f", bFactor));
             
             sBuilder.append(String.format("%-2s", "?"));
             
             //auth seq code #fixme get this from file instead of hard-coding it to be the same as earlier entry
-            sBuilder.append(String.format("%-3d", seqCode));
+            sBuilder.append(String.format("%-5d", seqCode));
             
             //auth res name #fixme get this from file
             sBuilder.append(String.format("%-5s", resName));
