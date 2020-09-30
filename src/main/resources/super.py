@@ -9,6 +9,8 @@ from java.util import TreeSet
 import argparse, re
 from operator import itemgetter
 from itertools import groupby
+from java.io import FileWriter;
+from org.nmrfx.structure.chemistry.io import MMcifWriter
 
 def median(values):
     values.sort()
@@ -168,13 +170,26 @@ def superImpose(mol, target,resSelect,atomSelect="ca,c,n,o,p,o5',c5',c4',c3',o3'
     superResults = sup.doSuper(target, -1, True)
     return [result.getRms() for result in superResults]
 
-def saveModels(mol, files):
+def saveModels(mol, files, type='cif'):
     active = mol.getActiveStructures()
-    for (i,file) in zip(active,files):
-        (dir,fileName) = os.path.split(file)
-        newFileName = 'sup_' + fileName
-        newFile = os.path.join(dir,newFileName)
-        molio.savePDB(mol, newFile, i)
+    if type == 'cif':
+        if 'final' not in files[-1]: #remove reference structure if included in file list
+            active = active[:-1]
+            treeSet = TreeSet()
+            for structureNum in active:
+                if structureNum != 0:
+                    treeSet.add(structureNum)
+            mol.setActiveStructures(treeSet)
+        molName = mol.getName()
+        cifFile = os.path.join(os.getcwd(), molName + ".cif")
+        out = FileWriter(cifFile)
+        MMcifWriter.writeAll(out)
+    elif type == 'pdb':
+        for (i,file) in zip(active,files):
+            (dir,fileName) = os.path.split(file)
+            newFileName = 'sup_' + fileName
+            newFile = os.path.join(dir,newFileName)
+            molio.savePDB(mol, newFile, i)
 
 def makeResAtomLists(polymers, excludeRes, excludeAtoms, includeRes, includeAtoms):
     allRes1 = [polymers.get(i).getResidues() for i in range(len(polymers))]

@@ -337,6 +337,12 @@ public class MMcifWriter {
         int i = 0;
         molecule.updateAtomArray();
         int[] structures = molecule.getActiveStructures();
+        if (structures[0] > 0) {
+            int sub = structures[0];
+            for (int s=0; s<structures.length; s++) {
+                structures[s] -= sub;
+            }
+        }
         for (int iStruct : structures) {
             for (Atom atom : molecule.getAtomArray()) {
                 SpatialSet spSet = atom.getSpatialSet();
@@ -356,10 +362,6 @@ public class MMcifWriter {
     }
 
     static void writeDistances(FileWriter chan) throws IOException, InvalidMoleculeException {
-        chan.write("loop_\n");
-        for (String loopString : DISTANCE_LOOP_STRINGS) {
-            chan.write(loopString + "\n");
-        }
         Molecule molecule = Molecule.getActive();
         if (molecule == null) {
             throw new InvalidMoleculeException("No active mol");
@@ -367,6 +369,10 @@ public class MMcifWriter {
         molecule.updateAtomArray();
         EnergyLists eLists = molecule.getEnergyLists();
         if (eLists != null) {
+            chan.write("loop_\n");
+            for (String loopString : DISTANCE_LOOP_STRINGS) {
+                chan.write(loopString + "\n");
+            }
             Map<Integer, List<DistancePair>> distMap = eLists.getDistancePairMap();
             int idx = 1;
 //            int pdbModelNum = 1;
@@ -386,16 +392,11 @@ public class MMcifWriter {
                     }
                 }
             }
+            chan.write("#\n");
         }
-
-        chan.write("#\n");
     }
 
     static void writeTorsions(FileWriter chan) throws IOException, InvalidMoleculeException {
-        chan.write("loop_\n");
-        for (String loopString : TORSION_LOOP_STRINGS) {
-            chan.write(loopString + "\n");
-        }
         Molecule molecule = Molecule.getActive();
         if (molecule == null) {
             throw new InvalidMoleculeException("No active mol");
@@ -403,6 +404,10 @@ public class MMcifWriter {
         molecule.updateAtomArray();
         Dihedral dihedral = molecule.getDihedrals();
         if (dihedral != null) {
+            chan.write("loop_\n");
+            for (String loopString : TORSION_LOOP_STRINGS) {
+                chan.write(loopString + "\n");
+            }
             List<Map<Residue, AngleProp>> torsionList = dihedral.getTorsionAngles();
             int idx = 1;
             for (int i = 0; i < torsionList.size(); i++) {
@@ -417,8 +422,8 @@ public class MMcifWriter {
                     }
                 }
             }
+            chan.write("#\n");
         }
-        chan.write("#\n");
     }
 
     /**
@@ -488,6 +493,7 @@ public class MMcifWriter {
             writeStructOper(chan);
             writeDistances(chan);
             writeTorsions(chan);
+            chan.flush();
         }
     }
 
