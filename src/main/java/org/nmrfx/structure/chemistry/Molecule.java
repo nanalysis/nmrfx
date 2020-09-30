@@ -4553,7 +4553,7 @@ public class Molecule implements Serializable, ITree {
             }
         }
     }
-
+    
     public void getAtomTypes() {
 
         updateAtomArray();
