@@ -382,7 +382,7 @@ public class Molecule implements Serializable, ITree {
             activeStructures[i++] = intStructure;
         }
     }
-    
+
     public void setActiveStructures() {
         activeStructures = new int[structures.size()];
         int i = 0;
