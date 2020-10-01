@@ -503,17 +503,20 @@ class MolPeakGen:
                         atom1, atom2 = row[3:5]
                         distance = float(row[7])
                         nInst = int(row[8])
+                        numScale = 1
                         if atom1[-1] == "'":
                             res1R = 'r'
+                            numScale = numScale * 2
                         else:
                             res1R = res1
                         if atom2[-1] == "'":
                             res2R = 'r'
+                            numScale = numScale * 2
                         else:
                             res2R = res2
                         keyR = (interType,atom1,atom2,res1R,res2R)
                         distance = sums[keyR] / nVals[keyR]
-                        nInst = nVals[keyR]
+                        nInst = nVals[keyR] / numScale
                         #if interType[0:2] == "SR":
                         #    if atom1 > atom2:
                         #        atom1, atom2 = (atom2, atom1)
