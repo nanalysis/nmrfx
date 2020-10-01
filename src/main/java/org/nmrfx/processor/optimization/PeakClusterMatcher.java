@@ -45,7 +45,12 @@ public class PeakClusterMatcher {
             double pIntMedian = pDStats.getPercentile(50);
             double scale = eIntMedian / pIntMedian;
             predPeakList.scale = scale;
+//            System.out.println(i + " " + eIntMedian + " " + pIntMedian + " " + scale + " " + predPeakList.getName());
         }
+    }
+
+    public void compareTest() {
+
     }
 
     public int getMatchDim() {
@@ -67,14 +72,18 @@ public class PeakClusterMatcher {
         return matchedClusters;
     }
 
+    public void setupClusters() {
+        Collection<List<Peak>> expLinks = PeakCluster.getFilteredClusters(expPeakLists, iDim);
+        Collection<List<Peak>> predLinks = PeakCluster.getFilteredClusters(predPeakLists, iDim);
+        expPeakClusters = PeakCluster.makePeakCluster(expLinks, iDim);
+        predPeakClusters = PeakCluster.makePeakCluster(predLinks, iDim);
+    }
+
     // main method to call
     public void runMatch() throws IllegalArgumentException {
         if (clusterMatch == null) {
             System.out.println("Running match method");
-            Collection<List<Peak>> expLinks = PeakCluster.getFilteredClusters(expPeakLists, iDim);
-            Collection<List<Peak>> predLinks = PeakCluster.getFilteredClusters(predPeakLists, iDim);
-            expPeakClusters = PeakCluster.makePeakCluster(expLinks, iDim);
-            predPeakClusters = PeakCluster.makePeakCluster(predLinks, iDim);
+            setupClusters();
             runBPClusterMatches(expPeakClusters, predPeakClusters);
         } else {
             for (PeakCluster peakCluster : expPeakClusters) {
@@ -122,6 +131,22 @@ public class PeakClusterMatcher {
             result.addAll(cluster.getPeakMatches(cluster.getPairedTo()));
         }
         return result;
+    }
+
+    public PeakCluster getClusterWithPeak(Peak peak) {
+        if (peak == null || predPeakClusters == null || expPeakClusters == null) {
+            return null;
+        }
+        PeakCluster cluster = null;
+        PeakCluster[] clusters = (peak.getPeakList().isSimulated())
+                ? predPeakClusters : expPeakClusters;
+        for (PeakCluster pc : clusters) {
+            if (pc.contains(peak)) {
+                cluster = pc;
+                break;
+            }
+        }
+        return cluster;
     }
 
     public PeakCluster getCluster(Peak peak) {
