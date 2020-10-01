@@ -56,7 +56,8 @@ public class Molecule implements Serializable, ITree {
 
     public static List<Atom> atomList = null;
     public static final List<String> conditions = new ArrayList<>();
-    public static Molecule activeMol () {
+
+    public static Molecule activeMol() {
         return StructureProject.getActive().activeMol;
     }
     public final Map<String, List<SpatialSet>> sites = new HashMap<>();
@@ -93,8 +94,9 @@ public class Molecule implements Serializable, ITree {
     public static final LinkedHashSet displayTypes = new LinkedHashSet();
     public static final LinkedHashSet colorTypes = new LinkedHashSet();
     public static final LinkedHashSet shapeTypes = new LinkedHashSet();
+
     //public static MoleculeTableModel molTableModel = null;
-    public static final Map compoundMap () {
+    public static final Map compoundMap() {
         return StructureProject.getActive().compoundMap;
     }
     public Map<Atom, Map<Atom, Double>> ringClosures;
@@ -380,7 +382,7 @@ public class Molecule implements Serializable, ITree {
             activeStructures[i++] = intStructure;
         }
     }
-
+    
     public void setActiveStructures() {
         activeStructures = new int[structures.size()];
         int i = 0;
@@ -4052,6 +4054,17 @@ public class Molecule implements Serializable, ITree {
             if (atom.entity == entity) {
                 if (atom.isMethyl() && !atom.isFirstInMethyl()) {
                     continue;
+                }
+                Atom parent = atom.getParent();
+                if (parent != null) {
+                    if (parent.getAtomicNumber() == 7) {
+                        if (atom.isMethylene()) {
+                            continue;
+                        }
+                    }
+                    if (parent.getAtomicNumber() == 8) {
+                        continue;
+                    }
                 }
                 hash.put(atom, Integer.valueOf(i));
                 eAtomList.add(atom);
