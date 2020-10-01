@@ -1680,7 +1680,6 @@ public class PeakList {
             DoubleSummaryStatistics jStats = widthStatsPPM(jDim);
             tol = Math.abs(tol) * Math.max(iStats.getAverage(), jStats.getAverage());
         }
-        System.out.println(iDim + " " + jDim + " " + tol);
         for (Peak peak : peaks) {
             double v1 = peak.getPeakDim(iDim).getChemShiftValue();
             double v2 = peak.getPeakDim(jDim).getChemShiftValue();
