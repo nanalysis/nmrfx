@@ -45,12 +45,7 @@ public class PeakClusterMatcher {
             double pIntMedian = pDStats.getPercentile(50);
             double scale = eIntMedian / pIntMedian;
             predPeakList.scale = scale;
-//            System.out.println(i + " " + eIntMedian + " " + pIntMedian + " " + scale + " " + predPeakList.getName());
         }
-    }
-
-    public void compareTest() {
-
     }
 
     public int getMatchDim() {
