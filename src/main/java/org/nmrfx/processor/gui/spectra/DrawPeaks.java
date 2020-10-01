@@ -1437,7 +1437,7 @@ public class DrawPeaks {
                 if (peakDim0.isFrozen()) {
                     g2.setStroke(GUIColorUtils.toColor(Peak.FREEZE_COLORS[0]));
                 } else {
-                    g2.setStroke(Color.BLACK);
+                    g2.setStroke(peakAttr.getOnColor());
 
                 }
                 g2.beginPath();
@@ -1496,7 +1496,7 @@ public class DrawPeaks {
                 if (peakDim1.isFrozen()) {
                     g2.setStroke(GUIColorUtils.toColor(Peak.FREEZE_COLORS[1]));
                 } else {
-                    g2.setStroke(Color.BLACK);
+                    g2.setStroke(peakAttr.getOnColor());
                 }
                 g2.beginPath();
                 g2.moveTo(posX, y1);
