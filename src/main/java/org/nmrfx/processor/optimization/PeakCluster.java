@@ -29,7 +29,8 @@ public class PeakCluster {
 
     private final double tol = 0.25; // tolerance value (in ppm)
     private final List<PeakCluster> clustersWithinTol = new ArrayList<>();
-    private final double ppm;
+    private final double origPPM;
+    private double ppm;
     public final int size;
     public final int iDim;
     private PeakCluster pairedTo = null;
@@ -41,7 +42,8 @@ public class PeakCluster {
         int shiftDim = iDim == 0 ? 1 : 0;
         this.rootPeak = linkedPeaks.size() > 0 ? getMaxShiftPeakInClus(linkedPeaks, shiftDim) : null;
         this.iDim = iDim;
-        this.ppm = rootPeak != null ? rootPeak.getPeakDim(iDim).getAverageShift() : -100.0;
+        this.origPPM = rootPeak != null ? rootPeak.getPeakDim(iDim).getAverageShift() : -100.0;
+        this.ppm = this.origPPM;
         this.size = linkedPeaks.size();
     }
 
@@ -54,6 +56,20 @@ public class PeakCluster {
             i++;
         }
         return peakClusters;
+    }
+
+    public void setShift(double newPPM) {
+        for (Peak peak : linkedPeaks) {
+            peak.getPeakDim(iDim).setChemShiftValue((float) newPPM);
+        }
+        ppm = newPPM;
+    }
+
+    public void restoreShift() {
+        for (Peak peak : linkedPeaks) {
+            peak.getPeakDim(iDim).setChemShiftValue((float) origPPM);
+        }
+
     }
 
     public static void prepareList(PeakList peakList, double[][] limits) {
@@ -89,13 +105,18 @@ public class PeakCluster {
         // CAVEAT: need to make sure peaks are linked
         // FIXME: place check to ensure peaks are linked
         for (PeakList peakList : peakLists) {
+            double tol = 1.0;
             peakList.peaks()
                     .forEach(p -> {
+                        String dimName = p.getPeakDim(iDim).getSpectralDimObj().getDimName();
+                        final double shift = p.getPeakDim(iDim).getChemShiftValue();
                         if (p.getStatus() == 1) {
-                            List<Peak> links = PeakList.getLinks(p, iDim).stream()
-                                    .filter(p2 -> p2.getIntensity() > 0.0)
-                                    .filter((p2 -> p2.getStatus() == 1))
-                                    .filter(p2 -> !p2.getPeakDim(iDim).isFrozen())
+                            List<Peak> links = PeakList.getLinkedPeakDims(p, iDim).stream()
+                                    .filter(p2 -> p2.getPeak().getIntensity() > 0.0)
+                                    .filter((p2 -> p2.getPeak().getStatus() == 1))
+                                    .filter(p2 -> !p2.getPeak().getPeakDim(iDim).isFrozen())
+                                    .filter(p2 -> dimName.equals(p2.getSpectralDimObj().getDimName()))
+                                    .map(p2 -> p2.getPeak())
                                     .collect(Collectors.toList());
                             linkHashSet.add(links);
                             links.forEach(lp -> lp.setStatus(0));
@@ -161,7 +182,7 @@ public class PeakCluster {
 
         // Print name of peaks
 //        System.out.println(String.format("E_Peak: %s, P_Peak: %s", peak1.getName(), peak2.getName()));
-        // Print intensity information
+      //   Print intensity information
 //        System.out.println(String.format("E_Intenisty: %f (log-> %f), P_Intensity: %f (log-> %f)", expInt, Math.log(expInt), predInt, Math.log(predInt)));
         expInt = Math.log(expInt);
         predInt = Math.log(predInt);
