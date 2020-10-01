@@ -220,18 +220,24 @@ public class PolyChart implements PeakListener {
     boolean useImmediateMode = true;
     private final List<ConnectPeakAttributes> peakPaths = new ArrayList<>();
     Consumer<DatasetRegion> newRegionConsumer = null;
+    static boolean listenToPeaks = true;
 
     @Override
     public void peakListChanged(final PeakEvent peakEvent) {
-        if (Platform.isFxApplicationThread()) {
-            respondToPeakListChange(peakEvent);
-        } else {
-            Platform.runLater(() -> {
+        if (listenToPeaks) {
+            if (Platform.isFxApplicationThread()) {
                 respondToPeakListChange(peakEvent);
+            } else {
+                Platform.runLater(() -> {
+                    respondToPeakListChange(peakEvent);
+                }
+                );
             }
-            );
         }
+    }
 
+    public static void setPeakListenerState(boolean state) {
+        listenToPeaks = state;
     }
 
     public void updateSelectedMultiplets() {
