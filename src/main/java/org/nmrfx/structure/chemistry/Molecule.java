@@ -184,7 +184,7 @@ public class Molecule implements Serializable, ITree {
         shapeTypes.add("triangle");
     }
     public Set<Integer> structures = new TreeSet();
-    private int[] activeStructures = null;
+    private List<Integer> activeStructures = null;
     public boolean labelsCurrent = false;
     public int nResidues;
     public int lastResNum;
@@ -374,21 +374,25 @@ public class Molecule implements Serializable, ITree {
         activeStructures = null;
     }
 
+    public void clearActiveStructure(int iStruct) {
+       activeStructures.remove(iStruct);
+    }
+ 
+
     public void setActiveStructures(TreeSet selSet) {
-        activeStructures = new int[selSet.size()];
-        Iterator e = selSet.iterator();
-        int i = 0;
-        while (e.hasNext()) {
-            Integer intStructure = (Integer) e.next();
-            activeStructures[i++] = intStructure;
+        if (activeStructures == null) {
+            activeStructures = new ArrayList<>();;
+        }
+        activeStructures.clear();
+        for (Object obj: selSet) {
+            activeStructures.add((Integer) obj);
         }
     }
 
     public void setActiveStructures() {
-        activeStructures = new int[structures.size()];
-        int i = 0;
+        activeStructures = new ArrayList<>();;
         for (int istruct : structures) {
-            activeStructures[i++] = istruct;
+            activeStructures.add(istruct);
         }
     }
 
@@ -398,12 +402,16 @@ public class Molecule implements Serializable, ITree {
 
     public int[] getActiveStructures() {
         if (activeStructures == null) {
-            activeStructures = new int[structures.size()];
-            for (int i = 0; i < activeStructures.length; i++) {
-                activeStructures[i] = i;
+            activeStructures = new ArrayList<>();;
+            for (int i = 0; i < structures.size(); i++) {
+                activeStructures.add(i);
             }
         }
-        return activeStructures.clone();
+        int[] structs = new int[activeStructures.size()];
+        for (int i=0;i<structs.length;i++) {
+            structs[i] = activeStructures.get(i);
+        }
+        return structs;
     }
 
     public Set<String> getCoordSetNames() {
