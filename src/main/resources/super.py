@@ -9,6 +9,8 @@ from java.util import TreeSet
 import argparse, re
 from operator import itemgetter
 from itertools import groupby
+from java.io import FileWriter;
+from org.nmrfx.structure.chemistry.io import MMcifWriter
 
 def median(values):
     values.sort()
@@ -31,7 +33,7 @@ def loadPDBModels(files):
         raise LookupError(errMsg)
     pdb = PDBFile()
     molecule = pdb.read(fileName)
-    iFile = 1
+    iFile = 0
     for file in files:
         pdb.readCoordinates(file,iFile,False, False)
         iFile += 1
@@ -56,19 +58,13 @@ def parseArgs():
 
 
 def findRepresentative(mol, resNums='*',atomNames="ca,c,n,o,p,o5',c5',c4',c3',o3'"):
-    treeSet = TreeSet()
-    structures = mol.getStructures()
-    for structure in structures:
-        if structure != 0:
-            treeSet.add(structure)
-    nFiles = treeSet.size()
     doSelections(mol, resNums,atomNames)
     sup = SuperMol(mol)
-    mol.setActiveStructures(treeSet)
-
+    mol.resetActiveStructures()
     superResults = sup.doSuper(-1, -1, False)
     totalRMS = 0.0
     averageToI = {}
+    nAvg = {}
     n = len(superResults)
     for superResult in superResults:
         iFix = superResult.getiFix()
@@ -77,11 +73,13 @@ def findRepresentative(mol, resNums='*',atomNames="ca,c,n,o,p,o5',c5',c4',c3',o3
         totalRMS += rms
         if iFix not in averageToI:
             averageToI[iFix] = 0.0
+            nAvg[iFix] = 0
         averageToI[iFix] += rms
+        nAvg[iFix] += 1
     minRMS = 1.0e6
-    #for i in range(1,nFiles+1):
-    for i in treeSet:
-        averageToI[i] /= nFiles-1
+    active = mol.getActiveStructures()
+    for i in active:
+        averageToI[i] /= nAvg[i]
         if averageToI[i] < minRMS:
             minRMS = averageToI[i]
             minIndex = i
@@ -168,13 +166,20 @@ def superImpose(mol, target,resSelect,atomSelect="ca,c,n,o,p,o5',c5',c4',c3',o3'
     superResults = sup.doSuper(target, -1, True)
     return [result.getRms() for result in superResults]
 
-def saveModels(mol, files):
+def saveModels(mol, files, type='pdb'):
     active = mol.getActiveStructures()
-    for (i,file) in zip(active,files):
-        (dir,fileName) = os.path.split(file)
-        newFileName = 'sup_' + fileName
-        newFile = os.path.join(dir,newFileName)
-        molio.savePDB(mol, newFile, i)
+    if type == 'cif':
+        mol.resetActiveStructures()
+        molName = mol.getName()
+        cifFile = os.path.join(os.getcwd(), molName + ".cif")
+        out = FileWriter(cifFile)
+        MMcifWriter.writeAll(out)
+    elif type == 'pdb':
+        for (i,file) in zip(active,files):
+            (dir,fileName) = os.path.split(file)
+            newFileName = 'sup_' + fileName
+            newFile = os.path.join(dir,newFileName)
+            molio.savePDB(mol, newFile, i)
 
 def makeResAtomLists(polymers, excludeRes, excludeAtoms, includeRes, includeAtoms):
     allRes1 = [polymers.get(i).getResidues() for i in range(len(polymers))]

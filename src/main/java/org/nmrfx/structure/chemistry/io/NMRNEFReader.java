@@ -49,8 +49,6 @@ public class NMRNEFReader {
     boolean hasResonances = false;
     Map<Long, List<PeakDim>> resMap = new HashMap<>();
     public static boolean DEBUG = false;
-    public static EnergyLists energyList;
-    public static Dihedral dihedral;
 
     public NMRNEFReader(final File nefFile, final STAR3 nef) {
         this.nef = nef;
@@ -542,8 +540,8 @@ public class NMRNEFReader {
         if ((argv.length != 0) && (argv.length != 3)) {
             throw new IllegalArgumentException("?shifts fromSet toSet?");
         }
-        AtomResonanceFactory resFactory = (AtomResonanceFactory) PeakDim.resFactory();
-        dihedral = null;
+        
+        Dihedral dihedral = null;
         if (argv.length == 0) {
             hasResonances = false;
             Molecule.compoundMap().clear();
@@ -552,8 +550,10 @@ public class NMRNEFReader {
             }
             Molecule molecule = buildNEFMolecule();
             molecule.setMethylRotationActive(true);
-            energyList = new EnergyLists(molecule);
-            dihedral = new Dihedral(energyList, false);
+            molecule.setEnergyLists(new EnergyLists(molecule));
+            EnergyLists energyList = molecule.getEnergyLists();
+            molecule.setDihedrals(new Dihedral(energyList, false));
+            dihedral = molecule.getDihedrals();
             dihedral.clearBoundaries();
 
             energyList.makeCompoundList(molecule);
