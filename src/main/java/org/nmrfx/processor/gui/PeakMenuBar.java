@@ -86,19 +86,34 @@ public class PeakMenuBar {
         duplicateMenuItem.setOnAction(e -> duplicatePeakList());
         editMenu.getItems().add(duplicateMenuItem);
 
-        MenuItem clusterMenuItem = new MenuItem("Cluster");
-        clusterMenuItem.setOnAction(e -> clusterPeakList());
-        editMenu.getItems().add(clusterMenuItem);
-
         MenuItem coupleMenuItems = new MenuItem("AutoCouple (2D 1H)");
         coupleMenuItems.setOnAction(e -> autoCouplePeakList());
         editMenu.getItems().add(coupleMenuItems);
+
+        MenuItem removeDiagonalMenuItem = new MenuItem("Remove Diagonal (2D 1H)");
+        removeDiagonalMenuItem.setOnAction(e -> removeDiagonal());
+        editMenu.getItems().add(removeDiagonalMenuItem);
 
         MenuItem mirrorMenuItem = new MenuItem("Mirror 2D List");
         mirrorMenuItem.setOnAction(e -> mirror2DList());
         editMenu.getItems().add(mirrorMenuItem);
 
         menuBar.getItems().add(editMenu);
+
+        MenuButton clusterMenu = new MenuButton("Cluster");
+        MenuItem clusterMenuItem = new MenuItem("Cluster...");
+        clusterMenuItem.setOnAction(e -> clusterPeakList());
+        clusterMenu.getItems().add(clusterMenuItem);
+
+        MenuItem clusterRowsMenuItem = new MenuItem("Cluster Rows");
+        clusterRowsMenuItem.setOnAction(e -> clusterPeakListDim(0));
+        clusterMenu.getItems().add(clusterRowsMenuItem);
+
+        MenuItem clusterColumnsMenuItem = new MenuItem("Cluster Columns");
+        clusterColumnsMenuItem.setOnAction(e -> clusterPeakListDim(1));
+        clusterMenu.getItems().add(clusterColumnsMenuItem);
+
+        menuBar.getItems().add(clusterMenu);
 
         MenuButton assignMenu = new MenuButton("Assign");
         MenuItem clearAssignMenuItem = new MenuItem("Clear All");
@@ -179,6 +194,20 @@ public class PeakMenuBar {
         PeakList peakList = getPeakList();
         if (peakList != null) {
             peakList.autoCoupleHomoNuclear();
+        }
+    }
+
+    void removeDiagonal() {
+        PeakList peakList = getPeakList();
+        if (peakList != null) {
+            peakList.removeDiagonalPeaks();
+        }
+    }
+
+    void clusterPeakListDim(int dim) {
+        PeakList peakList = getPeakList();
+        if ((peakList != null) && (peakList.getNDim() > dim)) {
+            peakList.clusterPeakColumns(dim);
         }
     }
 
