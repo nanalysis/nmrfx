@@ -337,12 +337,6 @@ public class MMcifWriter {
         int i = 0;
         molecule.updateAtomArray();
         int[] structures = molecule.getActiveStructures();
-        if (structures[0] > 0) {
-            int sub = structures[0];
-            for (int s=0; s<structures.length; s++) {
-                structures[s] -= sub;
-            }
-        }
         for (int iStruct : structures) {
             for (Atom atom : molecule.getAtomArray()) {
                 SpatialSet spSet = atom.getSpatialSet();
