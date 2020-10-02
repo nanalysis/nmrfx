@@ -2194,6 +2194,7 @@ public class PolyChart implements PeakListener {
             svgGC.strokeLine(xPos + width - rightBorder, yPos + topBorder, xPos + width - rightBorder, yPos + height - bottomBorder);
         }
         drawDatasets(svgGC);
+        drawSlices(svgGC);
         if (!datasetAttributesList.isEmpty()) {
             drawPeakLists(true, svgGC);
             drawSelectedPeaks(svgGC);
@@ -3528,19 +3529,24 @@ public class PolyChart implements PeakListener {
     }
 
     public void drawSlices() {
+        annoCanvas.setWidth(canvas.getWidth());
+        annoCanvas.setHeight(canvas.getHeight());
+        GraphicsContext annoGC = annoCanvas.getGraphicsContext2D();
+        GraphicsContextInterface gC = new GraphicsContextProxy(annoGC);
+        gC.clearRect(xPos, yPos, width, height);
+        drawSlices(gC);
+    }
+
+    public void drawSlices(GraphicsContextInterface gC) {
         if (annoCanvas != null) {
-            annoCanvas.setWidth(canvas.getWidth());
-            annoCanvas.setHeight(canvas.getHeight());
-            GraphicsContext annoGC = annoCanvas.getGraphicsContext2D();
-            annoGC.clearRect(xPos, yPos, width, height);
 
             if (sliceAttributes.slice1StateProperty().get()) {
-                drawSlice(0, VERTICAL);
-                drawSlice(0, HORIZONTAL);
+                drawSlice(gC, 0, VERTICAL);
+                drawSlice(gC, 0, HORIZONTAL);
             }
             if (sliceAttributes.slice2StateProperty().get()) {
-                drawSlice(1, VERTICAL);
-                drawSlice(1, HORIZONTAL);
+                drawSlice(gC, 1, VERTICAL);
+                drawSlice(gC, 1, HORIZONTAL);
             }
         }
     }
@@ -3602,8 +3608,8 @@ public class PolyChart implements PeakListener {
 
     }
 
-    public void drawSlice(int iCross, int iOrient) {
-        if (annoCanvas == null) {
+    public void drawSlice(GraphicsContextInterface gC, int iCross, int iOrient) {
+        if (gC == null) {
             return;
         }
         Dataset dataset = getDataset();
@@ -3625,7 +3631,6 @@ public class PolyChart implements PeakListener {
                 xOn = false;
             }
         }
-        GraphicsContext annoGC = annoCanvas.getGraphicsContext2D();
         if ((nDim > 1) && controller.sliceStatus.get() && sliceStatus.get()) {
             if (((iOrient == HORIZONTAL) && xOn) || ((iOrient == VERTICAL) && yOn)) {
                 for (DatasetAttributes datasetAttributes : datasetAttributesList) {
@@ -3637,15 +3642,15 @@ public class PolyChart implements PeakListener {
                     double[][] xy = drawSpectrum.getXY();
                     int nPoints = drawSpectrum.getNPoints();
                     if (sliceAttributes.useDatasetColorProperty().get()) {
-                        annoGC.setStroke(datasetAttributes.getPosColor());
+                        gC.setStroke(datasetAttributes.getPosColor());
                     } else {
                         if (iCross == 0) {
-                            annoGC.setStroke(sliceAttributes.getSlice1Color());
+                            gC.setStroke(sliceAttributes.getSlice1Color());
                         } else {
-                            annoGC.setStroke(sliceAttributes.getSlice2Color());
+                            gC.setStroke(sliceAttributes.getSlice2Color());
                         }
                     }
-                    annoGC.strokePolyline(xy[0], xy[1], nPoints);
+                    gC.strokePolyline(xy[0], xy[1], nPoints);
                 }
             }
         }
