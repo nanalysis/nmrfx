@@ -21,6 +21,7 @@ import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.peaks.PeakList;
 import de.codecentric.centerdevice.MenuToolkit;
 import de.codecentric.centerdevice.dialogs.about.AboutStageBuilder;
+import java.beans.PropertyChangeSupport;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
@@ -78,6 +79,7 @@ import org.nmrfx.utils.GUIUtils;
 import org.python.util.PythonInterpreter;
 import org.nmrfx.processor.gui.molecule.CanvasMolecule;
 import org.nmrfx.processor.gui.tools.RunAboutGUI;
+import org.nmrfx.processor.gui.utils.FxPropertyChangeSupport;
 import org.nmrfx.structure.chemistry.io.MMcifReader;
 
 public class AnalystApp extends MainApp {
@@ -105,7 +107,7 @@ public class AnalystApp extends MainApp {
     RDCGUI rdcGUI = null;
 
     public static void closeAll() {
-        for (PolyChart chart:PolyChart.CHARTS) {
+        for (PolyChart chart : PolyChart.CHARTS) {
             chart.clearDataAndPeaks();
             chart.clearAnnotations();
         }
@@ -161,6 +163,8 @@ public class AnalystApp extends MainApp {
         PeakMenuBar.addExtra("Add Residue Prefix", PeakLabeller::labelWithSingleResidueChar);
         PeakMenuBar.addExtra("Remove Residue Prefix", PeakLabeller::removeSingleResidueChar);
         KeyBindings.registerGlobalKeyAction("pa", this::assignPeak);
+        Project.setPCS(new FxPropertyChangeSupport(this));
+
     }
 
     private void updateScannerGUI(ScannerController scannerController) {

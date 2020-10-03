@@ -46,6 +46,7 @@ public class GUIStructureProject extends StructureProject {
         peakLists = FXCollections.observableHashMap();
         datasetMap = FXCollections.observableHashMap();
         datasets = FXCollections.observableArrayList();
+        setActive();
     }
 
     public static GUIStructureProject replace(String name, StructureProject project) {
