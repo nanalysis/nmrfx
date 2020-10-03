@@ -21,6 +21,7 @@ import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.peaks.PeakList;
 import de.codecentric.centerdevice.MenuToolkit;
 import de.codecentric.centerdevice.dialogs.about.AboutStageBuilder;
+import java.beans.PropertyChangeSupport;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -134,7 +135,6 @@ public class MainApp extends Application {
 //    public static void addPeakListListener(MapChangeListener<String, PeakList> mapChangeListener) {
 //        ((ObservableMap<String, PeakList>) PeakList.peakListTable).addListener(mapChangeListener);
 //    }
-
     @Override
     public void start(Stage stage) throws Exception {
         mainApp = this;
@@ -152,7 +152,8 @@ public class MainApp extends Application {
         interpreter.exec("from pyproc import *\ninitLocal()\nfrom gscript import *\nnw=NMRFxWindowScripting()\nfrom dscript import *\nfrom pscript import *\nimport os");
         interpreter.set("argv", parameters.getRaw());
         interpreter.exec("parseArgs(argv)");
-       // Dataset.addObserver(this);
+        Project.setPCS(new PropertyChangeSupport(this));
+        // Dataset.addObserver(this);
         if (defaultFont == null) {
             loadFont();
         }
@@ -629,7 +630,6 @@ public class MainApp extends Application {
 //            );
 //        }
 //    }
-
     private void newServer(ActionEvent event) {
         server = NMRFxServer.create();
     }

@@ -23,6 +23,8 @@
  */
 package org.nmrfx.processor.gui;
 
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.controls.FractionPane;
 import java.io.IOException;
@@ -70,12 +72,14 @@ import javafx.scene.control.ButtonType;
 import javafx.scene.control.Tooltip;
 import javafx.scene.shape.Polygon;
 import org.nmrfx.processor.gui.controls.FractionCanvas;
+import org.nmrfx.project.GUIProject;
+import org.nmrfx.project.Project;
 
 /**
  *
  * @author johnsonb
  */
-public class DatasetsController implements Initializable {
+public class DatasetsController implements Initializable, PropertyChangeListener {
 
     static final DecimalFormat formatter = new DecimalFormat();
 
@@ -117,6 +121,7 @@ public class DatasetsController implements Initializable {
 
             controller = loader.<DatasetsController>getController();
             controller.stage = stage;
+            Project.addPropertyChangeListener(controller);
             stage.setTitle("Datasets");
             stage.show();
         } catch (IOException ioE) {
@@ -164,6 +169,14 @@ public class DatasetsController implements Initializable {
             button.getStyleClass().add("toolButton");
         }
         toolBar.getItems().addAll(buttons);
+    }
+
+    @Override
+    public void propertyChange(PropertyChangeEvent evt) {
+        List<Dataset> datasetList = Project.getActive().getDatasets();
+        if (datasetList instanceof ObservableList) {
+            setDatasetList((ObservableList<Dataset>) datasetList);
+        }
     }
 
     class DatasetDoubleFieldTableCell extends TextFieldTableCell<Dataset, Double> {
@@ -418,6 +431,7 @@ public class DatasetsController implements Initializable {
             }
         };
         tableView.getSelectionModel().getSelectedIndices().addListener(listener);
+        setDatasetList((ObservableList<Dataset>) Project.getActive().getDatasets());
     }
 
     private int getDimNum() {
@@ -607,7 +621,7 @@ public class DatasetsController implements Initializable {
             }
         }
     }
-    
+
     void refresh() {
         tableView.refresh();
     }

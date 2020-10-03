@@ -5,6 +5,7 @@
  */
 package org.nmrfx.project;
 
+import java.beans.PropertyChangeListener;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.FileSystem;
@@ -36,6 +37,7 @@ import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.GUIScripter;
 import org.nmrfx.processor.gui.MainApp;
 import org.nmrfx.processor.gui.PreferencesController;
+import org.nmrfx.processor.gui.utils.FxPropertyChangeSupport;
 import org.python.util.PythonInterpreter;
 
 /**
@@ -45,6 +47,7 @@ import org.python.util.PythonInterpreter;
 public class GUIProject extends Project {
 
     Git git;
+    private FxPropertyChangeSupport pcs = new FxPropertyChangeSupport(this);
 
     private static boolean commitActive = false;
 
