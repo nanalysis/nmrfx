@@ -376,7 +376,7 @@ public class MMcifReader {
     Molecule buildConformation(final Saveframe saveframe, Molecule molecule) throws ParseException {
         Loop loop = saveframe.getLoop("_struct_conf");
         if (loop == null) {
-            molecule.setHelix(null);
+            molecule.setProteinHelix(null);
         } else {
             List<String> idColumn = loop.getColumnAsList("id");
             List<String> begAsymIDColumn = loop.getColumnAsList("beg_label_asym_id");
