@@ -46,12 +46,15 @@ def parseArgs():
     parser.add_argument("-R", dest="resListI", default="*", help="Residues to include in comparison")
     parser.add_argument("-A", dest="atomListI", default="*", help="Atoms to include in comparison")
     parser.add_argument("-c", dest="refCompare", action='store_true', help="Whether to compare calculated structures to reference structure, and save output to a file.")
-    parser.add_argument("-s", dest="saveModels", action='store_true', help="Whether to save aligned models.")
+    parser.add_argument("-s", dest="saveModels", default=None, help="Whether to save aligned models.")
     parser.add_argument("-n", dest="nCore", default=5, type=int, help="Number of core residue cycles. Default is 5.")
     parser.add_argument("fileNames",nargs="*")
     args = parser.parse_args()
     if (args.nCore < 0):
         print "Error: n must be >= 0."
+        sys.exit()
+    if args.saveModels is not None and args.saveModels != 'cif' and args.saveModels != 'pdb':
+        print "Error: save models file type must be cif or pdb."
         sys.exit()
     if len(args.fileNames) > 1:
         runSuper(args)
@@ -166,7 +169,7 @@ def superImpose(mol, target,resSelect,atomSelect="ca,c,n,o,p,o5',c5',c4',c3',o3'
     superResults = sup.doSuper(target, -1, True)
     return [result.getRms() for result in superResults]
 
-def saveModels(mol, files, type='pdb'):
+def saveModels(mol, files, type):
     active = mol.getActiveStructures()
     if type == 'cif':
         mol.resetActiveStructures()
@@ -266,11 +269,12 @@ def runSuper(args):
         superImpose(mol, minI, coreRes,'c*,n*,o*,p*')
     (dir,fileName) = os.path.split(files[0])
     (base,ext) = os.path.splitext(fileName)
-    if args.saveModels:
-        saveModels(mol, files)
+    if args.saveModels is not None:
+        type = args.saveModels
+        saveModels(mol, files, type)
 
 def runAllSuper(files):
     batchArgs = argparse.Namespace(atomListE='', atomListI="ca,c,n,o,p,o5',c5',c4',c3',o3'",
                                 fileNames=files, nCore=5, refCompare=False, resListE='',
-                                resListI='*', saveModels=True)
+                                resListI='*', saveModels='pdb')
     runSuper(batchArgs)

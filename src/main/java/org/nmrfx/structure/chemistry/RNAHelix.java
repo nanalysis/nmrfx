@@ -23,13 +23,13 @@ import java.util.*;
  *
  * @author bajlabuser
  */
-public class Helix extends SecondaryStructure {
+public class RNAHelix extends SecondaryStructure {
 
     public static int localCounter = 0;
     static String name = "Helix";
     public List<BasePair> basePairs = new ArrayList<BasePair>();
 
-    public Helix(List<Residue> residues) {
+    public RNAHelix(List<Residue> residues) {
         localIndex = localCounter++;
         globalIndex = globalCounter++;
         secResidues = residues;

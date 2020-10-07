@@ -36,18 +36,13 @@ import org.nmrfx.processor.datasets.peaks.InvalidPeakException;
 import org.nmrfx.processor.star.ParseException;
 import org.nmrfx.structure.chemistry.Atom;
 import org.nmrfx.structure.chemistry.Entity;
-import org.nmrfx.structure.chemistry.Helix;
 import org.nmrfx.structure.chemistry.InvalidMoleculeException;
 import org.nmrfx.structure.chemistry.Molecule;
-import org.nmrfx.structure.chemistry.NonLoop;
 import org.nmrfx.structure.chemistry.Polymer;
+import org.nmrfx.structure.chemistry.ProteinHelix;
 import org.nmrfx.structure.chemistry.Residue;
+import org.nmrfx.structure.chemistry.Sheet;
 import org.nmrfx.structure.chemistry.SpatialSet;
-import org.nmrfx.structure.chemistry.energy.AngleProp;
-import org.nmrfx.structure.chemistry.energy.AtomDistancePair;
-import org.nmrfx.structure.chemistry.energy.Dihedral;
-import org.nmrfx.structure.chemistry.energy.DistancePair;
-import org.nmrfx.structure.chemistry.energy.EnergyLists;
 
 /**
  *
@@ -205,7 +200,7 @@ public class MMcifWriter {
         if (molecule == null) {
             throw new InvalidMoleculeException("No active mol");
         }
-        Helix conf = molecule.getHelix();
+        ProteinHelix conf = molecule.getProteinHelix();
         if ((conf != null) && !conf.secResidues.isEmpty()) {
             chan.write("loop_\n");
             for (String loopString : STRUCT_CONF_LOOP_STRINGS) {
@@ -232,7 +227,7 @@ public class MMcifWriter {
         if (molecule == null) {
             throw new InvalidMoleculeException("No active mol");
         }
-        NonLoop sheets = molecule.getSheets();
+        Sheet sheets = molecule.getSheets();
         if (sheets != null) {
             chan.write("loop_\n");
             for (String loopString : STRUCT_SHEET_RANGE_LOOP_STRINGS) {
@@ -315,8 +310,8 @@ public class MMcifWriter {
         List<Atom> atomArray = molecule.getAtomArray();
         SortedSet<String> aTypeSet = new TreeSet<>();
         for (Atom atom : atomArray) {
-            if (!aTypeSet.contains(atom.getSymbol())) {
-                aTypeSet.add(atom.getSymbol());
+            if (!aTypeSet.contains(atom.getType())) {
+                aTypeSet.add(atom.getType());
             }
         }
         for (String aType : aTypeSet) {
@@ -353,71 +348,6 @@ public class MMcifWriter {
             }
         }
         chan.write("#\n");
-    }
-
-    static void writeDistances(FileWriter chan) throws IOException, InvalidMoleculeException {
-        Molecule molecule = Molecule.getActive();
-        if (molecule == null) {
-            throw new InvalidMoleculeException("No active mol");
-        }
-        molecule.updateAtomArray();
-        EnergyLists eLists = molecule.getEnergyLists();
-        if (eLists != null) {
-            chan.write("loop_\n");
-            for (String loopString : DISTANCE_LOOP_STRINGS) {
-                chan.write(loopString + "\n");
-            }
-            Map<Integer, List<DistancePair>> distMap = eLists.getDistancePairMap();
-            int idx = 1;
-//            int pdbModelNum = 1;
-            String result;
-            for (Integer pdbModelNum : distMap.keySet()) {
-                List<DistancePair> distList = distMap.get(pdbModelNum);
-                for (DistancePair distPair : distList) {
-                    AtomDistancePair[] pairAtoms = distPair.getAtomPairs();
-                    int nPairs = pairAtoms.length;
-                    for (int iPair = 0; iPair < nPairs; iPair++) {
-                        AtomDistancePair pair = pairAtoms[iPair];
-                        Atom atom1 = pair.getAtoms1()[0];
-                        Atom atom2 = pair.getAtoms2()[0];
-                        result = Atom.toMMCifDistanceString(idx, pdbModelNum, distPair, atom1, atom2);
-                        chan.write(result + "\n");
-                        idx++;
-                    }
-                }
-            }
-            chan.write("#\n");
-        }
-    }
-
-    static void writeTorsions(FileWriter chan) throws IOException, InvalidMoleculeException {
-        Molecule molecule = Molecule.getActive();
-        if (molecule == null) {
-            throw new InvalidMoleculeException("No active mol");
-        }
-        molecule.updateAtomArray();
-        Dihedral dihedral = molecule.getDihedrals();
-        if (dihedral != null) {
-            chan.write("loop_\n");
-            for (String loopString : TORSION_LOOP_STRINGS) {
-                chan.write(loopString + "\n");
-            }
-            List<Map<Residue, AngleProp>> torsionList = dihedral.getTorsionAngles();
-            int idx = 1;
-            for (int i = 0; i < torsionList.size(); i++) {
-                Map<Residue, AngleProp> torsionMap = torsionList.get(i);
-                for (Residue res : torsionMap.keySet()) {
-                    AngleProp aProp = torsionMap.get(res);
-                    double[] angles = aProp.getTarget();
-                    String result = res.toMMCifTorsionString(angles, idx, i + 1);
-                    if (result != null) {
-                        chan.write(result + "\n");
-                        idx++;
-                    }
-                }
-            }
-            chan.write("#\n");
-        }
     }
 
     /**
@@ -485,8 +415,6 @@ public class MMcifWriter {
             writeAtomSites(chan);
             writeMolSys(chan, true);
             writeStructOper(chan);
-            writeDistances(chan);
-            writeTorsions(chan);
             chan.flush();
         }
     }
