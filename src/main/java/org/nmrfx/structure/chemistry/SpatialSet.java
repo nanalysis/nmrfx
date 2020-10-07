@@ -591,7 +591,10 @@ public class SpatialSet {
         if (atom.entity instanceof Residue) {
             // group_PDB
             String group = "ATOM";
-            sBuilder.append(String.format("%-5s", group));
+            if (atom.getResidueName().equals("MSE")) {
+                group = "HETATM";
+            }
+            sBuilder.append(String.format("%-7s", group));
             
             sBuilder.append(String.format("%-8d", iAtom + 1));
 
@@ -620,7 +623,7 @@ public class SpatialSet {
 
             // sequence code
             int seqCode = ((Residue) atom.entity).getIDNum();
-            sBuilder.append(String.format("%-4d", seqCode));
+            sBuilder.append(String.format("%-6d", seqCode));
 
             sBuilder.append(String.format("%-2s", "?"));
             
@@ -646,17 +649,37 @@ public class SpatialSet {
             
             sBuilder.append(String.format("%-2s", "?"));
             
-            //auth seq code #fixme get this from file instead of hard-coding it to be the same as earlier entry
-            sBuilder.append(String.format("%-5d", seqCode));
+            //auth seq code
+            Object authSeq = atom.getProperty("authSeqID");
+            if (authSeq != null) {
+                sBuilder.append(String.format("%-5d", (Integer) authSeq));
+            } else {
+                sBuilder.append(String.format("%-5d", seqCode));
+            }
             
-            //auth res name #fixme get this from file
-            sBuilder.append(String.format("%-5s", resName));
+            //auth res name 
+            Object authResName = atom.getProperty("authResName");
+            if (authResName != null) {
+                sBuilder.append(String.format("%-5s", (String) authResName));
+            } else {
+                sBuilder.append(String.format("%-5s", resName));
+            }
             
-            //auth chain id #fixme get this from file
-            sBuilder.append(String.format("%-2s", chainID));
+            //auth chain id 
+            Object authChainID = atom.getProperty("authChainCode");
+            if (authChainID != null) {
+                sBuilder.append(String.format("%-2s", (String) authChainID));
+            } else {
+                sBuilder.append(String.format("%-2s", chainID));
+            }
             
             //auth atom name
-            sBuilder.append(String.format("%-5s", aName));
+            Object authAName = atom.getProperty("authAtomName");
+            if (authAName != null) {
+                sBuilder.append(String.format("%-5s", (String) authAName));
+            } else {
+                sBuilder.append(String.format("%-5s", aName));
+            }
             
             //PDB model num
             sBuilder.append(String.format("%-2d", iStruct + 1));

@@ -27,21 +27,14 @@ import org.nmrfx.processor.star.Saveframe;
 import org.nmrfx.structure.chemistry.Atom;
 import org.nmrfx.structure.chemistry.Compound;
 import org.nmrfx.structure.chemistry.Entity;
-import org.nmrfx.structure.chemistry.Helix;
+import org.nmrfx.structure.chemistry.ProteinHelix;
 import org.nmrfx.structure.chemistry.InvalidMoleculeException;
 import org.nmrfx.structure.chemistry.Molecule;
-import org.nmrfx.structure.chemistry.NonLoop;
-import org.nmrfx.structure.chemistry.Point3;
 import org.nmrfx.structure.chemistry.Polymer;
 import org.nmrfx.structure.chemistry.Residue;
+import org.nmrfx.structure.chemistry.Sheet;
 import org.nmrfx.structure.chemistry.SpatialSet;
-import org.nmrfx.structure.chemistry.Water;
-import org.nmrfx.structure.chemistry.energy.AngleProp;
-import org.nmrfx.structure.chemistry.energy.AtomEnergyProp;
-import org.nmrfx.structure.chemistry.energy.Dihedral;
-import org.nmrfx.structure.chemistry.energy.EnergyLists;
 import static org.nmrfx.structure.chemistry.io.NMRNEFReader.DEBUG;
-import org.nmrfx.structure.utilities.Util;
 
 public class MMcifReader {
 
@@ -279,7 +272,8 @@ public class MMcifReader {
         }
 //        System.out.println("asym info " + asymIDColumn.toString() + " " + entityIDColumn.toString());
     }
-
+    
+    //Note: currently not used.
     void addResidues(Saveframe saveframe, Molecule molecule, List<String> entityIDColumn, List<String> numColumn, List<String> monIDColumn, List<String> heteroColumn) throws ParseException {
         String reslibDir = PDBFile.getReslibDir("IUPAC");
         Polymer polymer = null;
@@ -395,28 +389,12 @@ public class MMcifReader {
                 int iLastRes = endSeqIDColumn.get(i) - 1;
                 char chainCode = begAsymIDColumn.get(i).charAt(0);
                 int iPolymer = chainCode - 'A';
-//                if (iPolymer > polymers.size() - 1) {
-//                    List<Residue> p0Res = polymers.get(0).getResidues();
-//                    List<String> entityIDs = new ArrayList<>();
-//                    List<String> nums = new ArrayList<>();
-//                    List<String> names = new ArrayList<>();
-//                    List<String> heteros = new ArrayList<>();
-//                    for (int iRes = 0; iRes < p0Res.size(); iRes++) {
-//                        entityIDs.add(String.valueOf(iPolymer + 1));
-//                        nums.add(String.valueOf(p0Res.get(iRes).number));
-//                        names.add(String.valueOf(p0Res.get(iRes).name));
-//                        heteros.add(String.valueOf(p0Res.get(iRes).label));
-//                    }
-//                    addResidues(saveframe, molecule, entityIDs, nums, names, heteros);
-//                    polymers = molecule.getPolymers();
-//                    molecule.updateAtomArray();
-//                }
                 Residue firstRes = polymers.get(iPolymer).getResidue(iFirstRes);
                 Residue lastRes = polymers.get(iPolymer).getResidue(iLastRes);
                 helixResList.add(firstRes);
                 helixResList.add(lastRes);
             }
-            molecule.setHelix(new Helix(helixResList));
+            molecule.setProteinHelix(new ProteinHelix(helixResList));
         }
         return molecule;
     }
@@ -442,7 +420,7 @@ public class MMcifReader {
                 sheetResList.add(firstRes);
                 sheetResList.add(lastRes);
             }
-            molecule.setSheets(new NonLoop(sheetResList));
+            molecule.setSheets(new Sheet(sheetResList));
         }
     }
 
@@ -464,24 +442,6 @@ public class MMcifReader {
                 break;
             }
             iSet++;
-        }
-    }
-
-    void buildTorsions(Dihedral dihedral) throws ParseException {
-        for (Saveframe saveframe : mmcif.getSaveFrames().values()) {
-            if (DEBUG) {
-                System.err.println("process torsion angles " + saveframe.getName());
-            }
-            processTorsions(saveframe, dihedral);
-        }
-    }
-
-    void buildDistanceRestraints(EnergyLists energyList) throws ParseException {
-        for (Saveframe saveframe : mmcif.getSaveFrames().values()) {
-            if (DEBUG) {
-                System.err.println("process distances " + saveframe.getName());
-            }
-            processDistanceRestraints(saveframe, energyList);
         }
     }
 
@@ -527,7 +487,7 @@ public class MMcifReader {
             List<String> occupancyColumn = loop.getColumnAsList("occupancy");
             List<String> bIsoColumn = loop.getColumnAsList("B_iso_or_equiv");
             List<Double> pdbFormalChargeColumn = loop.getColumnAsDoubleList("pdbx_formal_charge", 0.0);
-            List<String> authSeqIDColumn = loop.getColumnAsList("auth_seq_id");
+            List<Integer> authSeqIDColumn = loop.getColumnAsIntegerList("auth_seq_id", 0);
             List<String> authCompIDColumn = loop.getColumnAsList("auth_comp_id");
             List<String> authAsymIDColumn = loop.getColumnAsList("auth_asym_id");
             List<String> authAtomIDColumn = loop.getColumnAsList("auth_atom_id");
@@ -570,14 +530,23 @@ public class MMcifReader {
                 }
 
                 Atom atom = Molecule.getAtomByName(fullAtom);
+                int authSeq = authSeqIDColumn.get(i);
+                String authComp = authCompIDColumn.get(i);
+                String authAsym = authAsymIDColumn.get(i);
+                String authAtom = authAtomIDColumn.get(i);
 //                System.out.println(fullAtom + " " + atoms);
                 //  System.out.println(atoms.toString());
 
                 if (atom == null) {
                     System.out.println("invalid atom in assignments saveframe \"" + mapID + "." + atomName + "\"");
 //                    throw new ParseException("invalid atom in assignments saveframe \"" + mapID + "." + atomName + "\"");
-                }
-
+                } 
+                
+                atom.setProperty("authSeqID", authSeq);
+                atom.setProperty("authResName", authComp);
+                atom.setProperty("authChainCode", authAsym);
+                atom.setProperty("authAtomName", authAtom);
+                
                 SpatialSet spSet = atom.getSpatialSet();
                 if (molecule.getActiveStructures().length == 1) {
                     spSet.clearCoords();
@@ -595,166 +564,16 @@ public class MMcifReader {
             }
         }
     }
-
-    void processTorsions(Saveframe saveframe, Dihedral dihedral) throws ParseException {
-        Loop loop = saveframe.getLoop("_pdbx_validate_torsion");
-        if (loop == null) {
-            throw new ParseException("No \"_pdbx_validate_torsion\" loop");
-        }
-
-        List<Integer> pdbModelNumColumn = loop.getColumnAsIntegerList("PDB_model_num", 1);
-        List<String> chainCodeColumn = loop.getColumnAsList("auth_asym_id");
-        List<String> sequenceCodeColumn = loop.getColumnAsList("auth_seq_id");
-        List<String> resNameColumn = loop.getColumnAsList("auth_comp_id");
-        List<Double> phiColumn = loop.getColumnAsDoubleList("phi", 0.0);
-        List<Double> psiColumn = loop.getColumnAsDoubleList("psi", 0.0);
-
-        Molecule molecule = Molecule.getActive();
-        List<Residue> resList = new ArrayList<>();
-        List<String> resNames = new ArrayList<>();
-        List<Polymer> polymers = molecule.getPolymers();
-        for (Polymer polymer : polymers) {
-            resList.addAll(polymer.getResidues());
-        }
-        for (Residue res : resList) {
-            resNames.add(res.polymer.getName() + ":" + res.name + res.getIDNum());
-        }
-        int pdbModelNumPrev = 1;
-        Map<Residue, AngleProp> torsionMap = new HashMap<>();
-        for (int i = 0; i < pdbModelNumColumn.size(); i++) {
-            int pdbModelNum = pdbModelNumColumn.get(i);
-            int pdbModelNumNext = pdbModelNum;
-            if (i < pdbModelNumColumn.size() - 1) {
-                pdbModelNumNext = pdbModelNumColumn.get(i + 1);
-            }
-            if (pdbModelNum > pdbModelNumPrev) {
-                torsionMap = new HashMap<>();
-            }
-            Double phiValue = phiColumn.get(i);
-            Double psiValue = psiColumn.get(i);
-            double[] target = {phiValue, psiValue};
-            double[] sigma = {0.0, 0.0};
-
-            String resName = (String) resNameColumn.get(i);
-            String chainCode = (String) chainCodeColumn.get(i);
-            String sequenceCode = (String) sequenceCodeColumn.get(i);
-            String resFull = chainCode + ":" + resName + sequenceCode;
-            Residue res = resList.get(resNames.indexOf(resFull));
-
-            try {
-                dihedral.addTorsion(torsionMap, res, target, sigma, null);
-            } catch (InvalidMoleculeException imE) {
-
-            }
-
-            if (pdbModelNumNext > pdbModelNum || i == pdbModelNumColumn.size() - 1) {
-                dihedral.getTorsionAngles().add(torsionMap);
-            }
-            pdbModelNumPrev = pdbModelNum;
-
-        }
-    }
-
-    void processDistanceRestraints(Saveframe saveframe, EnergyLists energyList) throws ParseException {
-        Loop loop = saveframe.getLoop("_pdbx_validate_close_contact");
-        if (loop == null) {
-            throw new ParseException("No \"_pdbx_validate_close_contact\" loop");
-        }
-        List<String>[] chainCodeColumns = new ArrayList[2];
-        List<String>[] sequenceColumns = new ArrayList[2];
-        List<String>[] residueNameColumns = new ArrayList[2];
-        List<String>[] atomNameColumns = new ArrayList[2];
-
-        List<Integer> idColumn = loop.getColumnAsIntegerList("id", 0);
-        List<Integer> pdbModelNumColumn = loop.getColumnAsIntegerList("PDB_model_num", 0);
-
-        chainCodeColumns[0] = loop.getColumnAsList("auth_asym_id_1");
-        sequenceColumns[0] = loop.getColumnAsList("auth_seq_id_1");
-        residueNameColumns[0] = loop.getColumnAsList("auth_comp_id_1");
-        atomNameColumns[0] = loop.getColumnAsList("auth_atom_id_1");
-
-        chainCodeColumns[1] = loop.getColumnAsList("auth_asym_id_2");
-        sequenceColumns[1] = loop.getColumnAsList("auth_seq_id_2");
-        residueNameColumns[1] = loop.getColumnAsList("auth_comp_id_2");
-        atomNameColumns[1] = loop.getColumnAsList("auth_atom_id_2");
-
-        List<Double> distColumn = loop.getColumnAsDoubleList("dist", 0.0);
-        ArrayList<String> atomNames[] = new ArrayList[2];
-//        String[] resNames = new String[2];
-        atomNames[0] = new ArrayList<>();
-        atomNames[1] = new ArrayList<>();
-        ArrayList<Double> distList = new ArrayList<>();
-        for (int i = 0; i < chainCodeColumns[0].size(); i++) {
-            int pdbModelNum = pdbModelNumColumn.get(i);
-            int pdbModelNumPrev = pdbModelNum;
-            int pdbModelNumNext = pdbModelNum;
-            boolean addConstraint = true;
-            if (i >= 1) {
-                pdbModelNumPrev = pdbModelNumColumn.get(i - 1);
-            }
-            if (i < chainCodeColumns[0].size() - 1) {
-                pdbModelNumNext = pdbModelNumColumn.get(i + 1);
-            }
-            if (pdbModelNum != pdbModelNumPrev) {
-                atomNames[0].clear();
-                atomNames[1].clear();
-                distList.clear();
-                if (pdbModelNum == pdbModelNumNext
-                        && i > 0 && i < chainCodeColumns[0].size() - 1) {
-                    addConstraint = false;
-                }
-            } else if (pdbModelNum == pdbModelNumPrev
-                    && pdbModelNum == pdbModelNumNext
-                    && i >= 0 && i < chainCodeColumns[0].size() - 1) {
-                addConstraint = false;
-            }
-
-            for (int iAtom = 0; iAtom < 2; iAtom++) {
-                String seqNum = (String) sequenceColumns[iAtom].get(i);
-                String chainCode = (String) chainCodeColumns[iAtom].get(i);
-                if (chainCode.equals(".")) {
-                    chainCode = "A";
-                }
-                if (seqNum.equals("?")) {
-                    continue;
-                }
-                String resName = (String) residueNameColumns[iAtom].get(i);
-                String atomName = (String) atomNameColumns[iAtom].get(i);
-                atomNames[iAtom].add(chainCode + ":" + seqNum + "." + atomName);
-//                resNames[iAtom] = resName;
-            }
-
-            double upper = 1000000.0;
-            double lower = 1.8;
-            double weight = 1.0;
-            double dist = distColumn.get(i);
-            double distErr = upper - lower;
-            distList.add(dist);
-
-            Util.setStrictlyNEF(true);
-            try {
-                if (addConstraint) {
-                    energyList.addDistance(pdbModelNum, atomNames[0], atomNames[1], lower, upper, weight, distList, distErr);
-                }
-            } catch (IllegalArgumentException iaE) {
-                int index = idColumn.get(i);
-                throw new ParseException("Error parsing mmCIF distances at index  \"" + index + "\" " + iaE.getMessage());
-            }
-            Util.setStrictlyNEF(false);
-        }
-    }
-
     void process() throws ParseException, IllegalArgumentException {
         String[] argv = {};
         process(argv);
     }
 
-    public Dihedral process(String[] argv) throws ParseException, IllegalArgumentException {
+    public void process(String[] argv) throws ParseException, IllegalArgumentException {
         if ((argv.length != 0) && (argv.length != 3)) {
             throw new IllegalArgumentException("?shifts fromSet toSet?");
         }
 
-        Dihedral dihedral = null;
         if (argv.length == 0) {
             hasResonances = false;
             Molecule.compoundMap().clear();
@@ -763,14 +582,7 @@ public class MMcifReader {
             }
             Molecule molecule = buildMolecule();
             molecule.setMethylRotationActive(true);
-            molecule.setEnergyLists(new EnergyLists(molecule));
-            EnergyLists energyList = molecule.getEnergyLists();
-            molecule.setDihedrals(new Dihedral(energyList, false));
-            dihedral = molecule.getDihedrals();
-            energyList.clearDistanceMap();
-            dihedral.getTorsionAngles().clear();
-
-            energyList.makeCompoundList(molecule);
+            
             if (DEBUG) {
                 System.err.println("process atom sites");
             }
@@ -782,13 +594,13 @@ public class MMcifReader {
             if (DEBUG) {
                 System.err.println("process torsion angles");
             }
-            buildTorsions(dihedral);
+            
         } else if ("shifts".startsWith(argv[2])) {
             int fromSet = Integer.parseInt(argv[3]);
             int toSet = Integer.parseInt(argv[4]);
             buildAtomSites(fromSet, toSet);
         }
-        return dihedral;
+        
     }
 
 }
