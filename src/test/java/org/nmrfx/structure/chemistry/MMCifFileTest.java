@@ -120,6 +120,37 @@ public class MMCifFileTest {
 //        loadData("6nbn");
 //        testAll();
 //    }
+    @Test
+    public void testFile3PUK() throws IOException { 
+        loadData("3puk");
+        testAll();
+    }
+    @Test
+    public void testFile3Q4F() throws IOException { 
+        loadData("3q4f");
+        testAll();
+    }
+    @Test
+    public void testFile6ACK() throws IOException { 
+        loadData("6ack");
+        testAll();
+    }
+    @Test
+    public void testFile6AJ4() throws IOException { 
+        loadData("6aj4");
+        testAll();
+    }
+    @Test
+    public void testFile2RF4() throws IOException { 
+        loadData("2rf4");
+        testAll();
+    }
+    @Test
+    public void testFile6J91() throws IOException { 
+        loadData("6j91");
+        testAll();
+    }
+    
     private List<List<Object>> convertFileLines(String filePath) throws FileNotFoundException, IOException {
         List<List<Object>> convertedLines = new ArrayList<>();
         BufferedReader reader = new BufferedReader(new FileReader(filePath));
@@ -301,80 +332,6 @@ public class MMCifFileTest {
         return sheetMap;
     }
 
-    private Map<String, List<Object>> buildDistanceMap(List<List<Object>> dataArray) {
-        Map<String, List<Object>> distMap = new HashMap<>();
-        Map<Integer, String> keys = new HashMap<>();
-        boolean inDist = false;
-        List<Object> values = new ArrayList<>();
-        for (List<Object> line : dataArray) {
-            if (line.size() > 0) {
-                if (line.get(0).toString().contains("_pdbx_validate_close_contact")) {
-                    inDist = true;
-                }
-                if (inDist) {
-                    int iChain = 3;
-                    int iSeq = 5;
-                    int iAtomName = 2;
-                    int nAtoms = 2;
-                    if (line.size() > 1 && line.get(0) instanceof Integer) {
-                        int pdbModelNum = (int) line.get(1);
-                        String[] keyParts = new String[nAtoms];
-                        for (int i = 0; i < keyParts.length; i++) {
-                            keyParts[i] = line.get(iChain + 6 * i) + "." + line.get(iSeq + 6 * i).toString() + "." + line.get(iAtomName + 6 * i);
-                        }
-                        String key = String.join(";", keyParts);
-                        if (keys.containsKey(pdbModelNum)) {
-                            String oldKey = keys.get(pdbModelNum);
-                            String newKey = oldKey + "_" + key;
-                            keys.put(pdbModelNum, newKey);
-                            distMap.remove(oldKey);
-                        } else {
-                            values = new ArrayList<>();
-                            keys.put(pdbModelNum, key);
-                        }
-                        for (int i = iSeq + 6 * (nAtoms - 1) + 3; i < line.size(); i++) {
-                            values.add(line.get(i));
-                        }
-                        key = keys.get(pdbModelNum);
-                        distMap.put(key, values);
-                    } else if (line.contains("#")) {
-                        break;
-                    }
-                }
-            }
-        }
-        return distMap;
-    }
-
-    private Map<String, List<Object>> buildTorsionMap(List<List<Object>> dataArray) {
-        Map<String, List<Object>> dihedralMap = new HashMap<>();
-        boolean inDihedral = false;
-        for (List<Object> line : dataArray) {
-            if (line.size() > 0) {
-                if (line.get(0).toString().contains("_pdbx_validate_torsion")) {
-                    inDihedral = true;
-                }
-                if (inDihedral) {
-                    int iStruct = 1;
-                    int iChain = 3;
-                    int iSeq = 4;
-                    int iResName = 2;
-                    if (line.size() > 1 && line.get(0) instanceof Integer) {
-                        String key = line.get(iStruct) + "." + line.get(iChain) + "." + line.get(iSeq).toString() + "." + line.get(iResName);
-                        List<Object> values = new ArrayList<>();
-                        for (int i = iSeq + 3; i < line.size(); i++) {
-                            values.add(line.get(i));
-                        }
-                        dihedralMap.put(key, values);
-                    } else if (line.contains("#")) {
-                        break;
-                    }
-                }
-            }
-        }
-        return dihedralMap;
-    }
-
     public void loadData(String nefFileName) throws IOException {
         String fileName = String.join(File.separator, "src", "test", "data", "ciffiles", nefFileName + ".cif");
         String outPath = "tmp";
@@ -458,8 +415,6 @@ public class MMCifFileTest {
         testStructConfBlock();
         testSheetBlock();
         testAtomSitesBlock();
-        testDistanceBlock();
-        testTorsionBlock();
     }
 
     public void testSeqBlock() throws IOException {
@@ -520,32 +475,6 @@ public class MMCifFileTest {
             Map<String, List<Object>> writtenSheet = buildSheetMap(written);
             if (!origSheet.isEmpty() && !writtenSheet.isEmpty()) {
                 boolean ok = compareMaps("sheet range", origSheet, writtenSheet);
-                Assert.assertTrue(ok);
-            }
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
-    }
-
-    public void testDistanceBlock() throws IOException {
-        try {
-            Map<String, List<Object>> origDist = buildDistanceMap(orig);
-            Map<String, List<Object>> writtenDist = buildDistanceMap(written);
-            if (!origDist.isEmpty() && !writtenDist.isEmpty()) {
-                boolean ok = compareMaps("distance", origDist, writtenDist);
-                Assert.assertTrue(ok);
-            }
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
-    }
-
-    public void testTorsionBlock() throws IOException {
-        try {
-            Map<String, List<Object>> origDihedral = buildTorsionMap(orig);
-            Map<String, List<Object>> writtenDihedral = buildTorsionMap(written);
-            if (!origDihedral.isEmpty() && !writtenDihedral.isEmpty()) {
-                boolean ok = compareMaps("torsion", origDihedral, writtenDihedral);
                 Assert.assertTrue(ok);
             }
         } catch (Exception ex) {
