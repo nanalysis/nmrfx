@@ -78,10 +78,17 @@ public class MMcifWriter {
         if (molecule == null) {
             throw new InvalidMoleculeException("No active mol");
         }
+        Set<Integer> entityIDSet = new HashSet<>();
         Iterator entityIterator = molecule.entityLabels.values().iterator();
         while (entityIterator.hasNext()) {
             Entity entity = (Entity) entityIterator.next();
             if (entity instanceof Polymer) {
+                int entityID = entity.getIDNum();
+                if (!entityIDSet.contains(entityID)) {
+                    entityIDSet.add(entityID);
+                } else {
+                    continue;
+                }
                 List<Residue> resList = ((Polymer) entity).getResidues();
                 for (Residue res : resList) {
                     String result = res.toMMCifSequenceString(pdb);
@@ -121,39 +128,24 @@ public class MMcifWriter {
             }
         }
 
-        Polymer polymer = molecule.getPolymers().get(0);
-        List<Residue> resList = polymer.getResidues();
-        List<String> resNames = new ArrayList<>();
         Set<Residue> resSet = new HashSet<>();
-        for (Residue res : resList) {
-            if (!resSet.contains(res) && !resNames.contains(res.name)) {
-                resSet.add(res);
-                resNames.add(res.name);
+        List<String> resNames = new ArrayList<>();
+        for (Polymer polymer : molecule.getPolymers()) {
+            List<Residue> resList = polymer.getResidues();
+            for (Residue res : resList) {
+                if (!resSet.contains(res) && !resNames.contains(res.name)) {
+                    resSet.add(res);
+                    resNames.add(res.name);
+                }
             }
         }
+        
         List<Residue> sortResSet = new ArrayList<>(resSet);
         Collections.sort(sortResSet, (r1, r2) -> r1.name.compareTo(r2.name));
         for (Residue res : sortResSet) {
-            String prfFile = String.join(File.separator, "src", "main", "resources", "reslib_iu", res.name.toLowerCase() + ".prf");
-            reader = new BufferedReader(new FileReader(prfFile));
-            String fullResName = "";
-            while (true) {
-                String line = reader.readLine();
-                if (line == null) {
-                    break;
-                }
-                String lineS = line.trim();
-                String match = "LNAME";
-                if (lineS.startsWith(match)) {
-                    fullResName = lineS.substring(match.length()).trim();
-                    break;
-                }
-            }
-            boolean lastRes = false;
-            if (res.name.equals(resList.get(resList.size() - 1).name)) {
-                lastRes = true;
-            }
-            String result = res.toMMCifChemCompString(weightMap, lastRes, fullResName.toUpperCase());
+            String[] resNameSplit = res.label.split(",");
+            String fullResName = resNameSplit[1];
+            String result = res.toMMCifChemCompString(weightMap, fullResName.toUpperCase());
             if (result != null) {
                 chan.write(result + "\n");
             }
@@ -309,9 +301,21 @@ public class MMcifWriter {
         molecule.updateAtomArray();
         List<Atom> atomArray = molecule.getAtomArray();
         SortedSet<String> aTypeSet = new TreeSet<>();
-        for (Atom atom : atomArray) {
-            if (!aTypeSet.contains(atom.getType())) {
-                aTypeSet.add(atom.getType());
+        int[] structures = molecule.getActiveStructures();
+        for (int iStruct : structures) {
+            for (Atom atom : atomArray) {
+                SpatialSet spSet = atom.getSpatialSet();
+                if (atom.isCoarse()) {
+                    continue;
+                }
+                if (spSet.getCoords(iStruct) == null) {
+                    continue;
+                }
+
+                String aType = atom.getSymbol().toUpperCase();
+                if (!aTypeSet.contains(aType)) {
+                    aTypeSet.add(aType);
+                }
             }
         }
         for (String aType : aTypeSet) {
@@ -355,17 +359,18 @@ public class MMcifWriter {
      * to a mmCif formatted file.
      *
      * @param fileName String. Name of the file to write.
+     * @param name String. The name of the dataset.
      * @throws IOException
      * @throws ParseException
      * @throws InvalidPeakException
      * @throws InvalidMoleculeException
      */
-    public static void writeAll(String fileName) throws IOException, ParseException, InvalidPeakException, InvalidMoleculeException {
+    public static void writeAll(String fileName, String name) throws IOException, ParseException, InvalidPeakException, InvalidMoleculeException {
         try (FileWriter writer = new FileWriter(fileName)) {
             File file = new File(fileName);
             file.getParentFile().mkdirs(); //create file if it doesn't already exist
             System.out.println("wrote " + fileName);
-            writeAll(writer);
+            writeAll(writer, name);
         }
     }
 
@@ -374,14 +379,15 @@ public class MMcifWriter {
      * to a mmCif formatted file.
      *
      * @param file File. File to write.
+     * @param name String. The name of the dataset.
      * @throws IOException
      * @throws ParseException
      * @throws InvalidPeakException
      * @throws InvalidMoleculeException
      */
-    public static void writeAll(File file) throws IOException, ParseException, InvalidPeakException, InvalidMoleculeException {
+    public static void writeAll(File file, String name) throws IOException, ParseException, InvalidPeakException, InvalidMoleculeException {
         try (FileWriter writer = new FileWriter(file)) {
-            writeAll(writer);
+            writeAll(writer, name);
         }
     }
 
@@ -390,22 +396,22 @@ public class MMcifWriter {
      * to a mmCif formatted file.
      *
      * @param chan FileWriter. Writer used for writing the file.
+     * @param name String. The name of the dataset.
      * @throws IOException
      * @throws ParseException
      * @throws InvalidPeakException
      * @throws InvalidMoleculeException
      */
-    public static void writeAll(FileWriter chan) throws IOException, ParseException, InvalidPeakException, InvalidMoleculeException {
+    public static void writeAll(FileWriter chan, String name) throws IOException, ParseException, InvalidPeakException, InvalidMoleculeException {
         //first line of the file must start with "data_"
         //otherwise can't load file in PyMOL, Chimera, etc.
-        String title = "data_1PQX"; //fixme should get name dynamically
-        String name = title.substring(5, title.length());
+        String title = "data_" + name;
         chan.write(title + "\n");
         chan.write("#\n");
         Molecule molecule = Molecule.getActive();
         if (molecule != null) {
             writeMolSys(chan, false);
-//            writeChemComp(chan);
+            writeChemComp(chan);
             writeStructAsym(chan);
             writeStructConf(chan);
             writeSheetRange(chan);

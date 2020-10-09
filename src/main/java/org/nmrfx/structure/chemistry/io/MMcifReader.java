@@ -20,6 +20,7 @@ package org.nmrfx.structure.chemistry.io;
 import org.nmrfx.processor.star.ParseException;
 import java.io.*;
 import java.util.*;
+import org.apache.commons.lang3.text.WordUtils;
 import org.nmrfx.processor.datasets.peaks.PeakDim;
 import org.nmrfx.processor.star.Loop;
 import org.nmrfx.processor.star.MMCIF;
@@ -199,6 +200,11 @@ public class MMcifReader {
                     if (!sequence.addResidue(reslibDir + "/" + Sequence.getAliased(resName.toLowerCase()) + extension + ".prf", residue, resPos, "", false)) {
                         throw new ParseException("Can't find residue \"" + resName + extension + "\" in residue libraries or STAR file");
                     }
+                    for (Atom atom : molecule.getAtomArray()) {
+                        if (atom.getAtomicNumber() == 0) {
+                            atom.setAtomicNumber(WordUtils.capitalizeFully(atom.name));
+                        }
+                    }
                 } catch (MoleculeIOException psE) {
                     throw new ParseException(psE.getMessage());
                 }
@@ -362,8 +368,8 @@ public class MMcifReader {
                         for (int i = 0; i < idColumn.size(); i++) {
                             String resName = idColumn.get(i);
                             String resFullName = nameColumn.get(i);
-                            if (res.name.equals(resName) && resFullName.contains("ACID")) {
-                                res.label += ",+H";
+                            if (res.name.equals(resName)) {
+                                res.label += "," + resFullName;
                             }
                         }
                     }
