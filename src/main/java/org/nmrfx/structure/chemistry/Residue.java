@@ -762,7 +762,7 @@ public class Residue extends Compound {
         }
     }
     
-    public String toMMCifChemCompString(Map<String, Double> weightMap, boolean lastRes, String fullResName) {
+    public String toMMCifChemCompString(Map<String, Double> weightMap, String fullResName) {
         //residue name
         String resName = this.name;
         if (resName.length() > 3) {
@@ -777,10 +777,13 @@ public class Residue extends Compound {
         
         //flag #fixme should be read in from file
         String flag = "y";
+        if (fullResName.equals("SELENOMETHIONINE")) {
+            flag = "n";
+        }
         
         //full res name
-        if (this.label.contains("+H")) {
-            fullResName = "\'" + fullResName.substring(0, fullResName.length() - 3) + "IC ACID\'";
+        if (fullResName.contains("ACID")) {
+            fullResName = "\'" + fullResName + "\'";
         }
         
         //chem comp
@@ -797,12 +800,8 @@ public class Residue extends Compound {
             if (aSym.equals("O")) {
                 nAType += 1;
             } else if (aSym.equals("H") && this.getIDNum() > 1) {
-                if (this.name.equals("HIS")) {
-                    nAType += 1;
-                } else {
-                    nAType += 2;
-                }
-                if (lastRes || this.label.contains("+H")) {
+                nAType += 2;
+                if (this.label.contains("ACID")) {
                     nAType += 1;
                 }
             }
@@ -825,6 +824,9 @@ public class Residue extends Compound {
         chemComp += "\'";
             
         //molecular weight
+        if (fullResName.equals("SELENOMETHIONINE")) {
+            weightMap.put("Se", 78.95999);
+        }
         double weight = 0.0;
         for (String key : aCount.keySet()) {
             int nAType = aCount.get(key);
@@ -833,7 +835,7 @@ public class Residue extends Compound {
             }
         }     
         
-        return String.format("%-4s %-19s %-2s %-15s %-2s %-16s %-4.3f", resName, type, flag, fullResName, "?", chemComp, weight);
+        return String.format("%-4s %-19s %-2s %-17s %-2s %-16s %-4.3f", resName, type, flag, fullResName, "?", chemComp, weight);
         
     }
     

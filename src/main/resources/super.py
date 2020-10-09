@@ -176,7 +176,7 @@ def saveModels(mol, files, type):
         molName = mol.getName()
         cifFile = os.path.join(os.getcwd(), molName + ".cif")
         out = FileWriter(cifFile)
-        MMcifWriter.writeAll(out)
+        MMcifWriter.writeAll(out, molName)
     elif type == 'pdb':
         for (i,file) in zip(active,files):
             (dir,fileName) = os.path.split(file)

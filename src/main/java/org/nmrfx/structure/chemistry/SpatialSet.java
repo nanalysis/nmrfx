@@ -596,11 +596,12 @@ public class SpatialSet {
             }
             sBuilder.append(String.format("%-7s", group));
             
+            //index
             sBuilder.append(String.format("%-8d", iAtom + 1));
 
             // type symbol
-            String aType = atom.name.substring(0, 1);
-            sBuilder.append(String.format("%-2s", aType));
+            String aType = atom.getSymbol().toUpperCase();
+            sBuilder.append(String.format("%-3s", aType));
             
             // atom ID
             String aName = atom.name;
