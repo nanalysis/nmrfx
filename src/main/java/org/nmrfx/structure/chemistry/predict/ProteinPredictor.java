@@ -27,7 +27,10 @@ public class ProteinPredictor {
     static {
         Collections.addAll(atomTypes, "MHB", "MHG", "MHD", "MHE", "MCB",
                 "MCG", "MCD", "MCE", "C", "CA", "CB", "N", "H", "HA", "HB", "HG", "HD",
-                "HE", "HZ", "CG", "CD", "CE", "CZ");
+                "HE", "HZ",
+                "AHD", "AHE", "AHZ",
+                "CG", "CD", "CE", "CZ",
+                "ACD", "ACE", "ACZ");
     }
     PropertyGenerator propertyGenerator;
     Map<String, Integer> aaMap = new HashMap<>();
@@ -131,6 +134,12 @@ public class ProteinPredictor {
             }
         } else if (atom.isMethylCarbon()) {
             useName = "MC" + aName.charAt(1);
+        } else if (atom.isAAAromatic()) {
+            if (atom.getAtomicNumber() == 1) {
+                useName = "AH" + aName.charAt(1);
+            } else {
+                useName = "AC" + aName.charAt(1);
+            }
         } else {
             int aLen = aName.length();
             if (aLen > 2) {
