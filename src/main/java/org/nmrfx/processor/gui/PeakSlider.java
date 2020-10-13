@@ -1234,7 +1234,10 @@ public class PeakSlider implements ControllerTool {
                 }
             }
             int[] matching = matcher.getMatching();
-            System.out.println("aligned");
+            double minWeight = matcher.getMinWeight();
+
+            double score = matcher.getMaxWtSum(matching, minWeight);
+            System.out.println("aligned " + score);
 
             for (int i = 0; i < sizeP; i++) {
                 int match = matching[i];
