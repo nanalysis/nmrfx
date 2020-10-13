@@ -310,27 +310,31 @@ public class RingCurrentShift {
 
     /**
      * Calculate the chemical shift contribution to this atom from ring current
-     * shifts of surrounding aromatic rings. The output of this method should
-     * be added to the calibrated reference shift for the atoms type. 
-     * Before calling this method the list of
-     * aromatic rings in the molecule needs to me set up.
+     * shifts of surrounding aromatic rings. The output of this method should be
+     * added to the calibrated reference shift for the atoms type. Before
+     * calling this method the list of aromatic rings in the molecule needs to
+     * me set up.
+     *
      * @see makeRingList
      * @param targetSpatialSet The spatial set for the target atom
      * @param iStruct The structure set to get coordinates from
-     * @param ringRatio An empirically calibrated ratio from our fitting algorithm
+     * @param ringRatio An empirically calibrated ratio from our fitting
+     * algorithm
      * @return
      */
     public double calcRingContributions(SpatialSet targetSpatialSet, int iStruct, final double ringRatio) {
         double targetFactor = 5.45 * ringRatio;  // 5.45 from Osapay & Case JACS 1991
         Vector3D targetPoint = targetSpatialSet.getPoint(iStruct);
         double sum = 0.0;
-        Atom parent = targetSpatialSet.atom.getParent();
-        if (parent != null) {
-            SpatialSet targetParent = parent.getSpatialSet();
-            for (FusedRing fusedRing : fusedRingList) {
-                if (!fusedRing.hasSpatialSet(targetParent)) {
-                    for (Ring ring : fusedRing.rings) {
-                        sum += calcRingContributions(ring, targetPoint, targetFactor, iStruct);
+        if (targetPoint != null) {
+            Atom parent = targetSpatialSet.atom.getParent();
+            if (parent != null) {
+                SpatialSet targetParent = parent.getSpatialSet();
+                for (FusedRing fusedRing : fusedRingList) {
+                    if (!fusedRing.hasSpatialSet(targetParent)) {
+                        for (Ring ring : fusedRing.rings) {
+                            sum += calcRingContributions(ring, targetPoint, targetFactor, iStruct);
+                        }
                     }
                 }
             }
