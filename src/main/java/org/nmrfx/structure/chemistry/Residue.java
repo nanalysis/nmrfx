@@ -750,7 +750,10 @@ public class Residue extends Compound {
         }
 
         //hetero
-        String hetero = this.label;        
+        String hetero = this.label;  
+        if (hetero.equals(this.name)) {
+            hetero = "n";
+        }
         if (hetero.length() > 1) {
             hetero = hetero.substring(0, 1);
         }
@@ -801,7 +804,7 @@ public class Residue extends Compound {
                 nAType += 1;
             } else if (aSym.equals("H") && this.getIDNum() > 1) {
                 nAType += 2;
-                if (this.label.contains("ACID")) {
+                if (fullResName.contains("ACID")) {
                     nAType += 1;
                 }
             }

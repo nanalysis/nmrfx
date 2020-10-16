@@ -63,6 +63,35 @@ public class MMcifWriter {
     private static final String[] DISTANCE_LOOP_STRINGS = {"_pdbx_validate_close_contact.id", "_pdbx_validate_close_contact.PDB_model_num", "_pdbx_validate_close_contact.auth_atom_id_1", "_pdbx_validate_close_contact.auth_asym_id_1", "_pdbx_validate_close_contact.auth_comp_id_1", "_pdbx_validate_close_contact.auth_seq_id_1", "_pdbx_validate_close_contact.PDB_ins_code_1", "_pdbx_validate_close_contact.label_alt_id_1", "_pdbx_validate_close_contact.auth_atom_id_2", "_pdbx_validate_close_contact.auth_asym_id_2", "_pdbx_validate_close_contact.auth_comp_id_2", "_pdbx_validate_close_contact.auth_seq_id_2", "_pdbx_validate_close_contact.PDB_ins_code_2", "_pdbx_validate_close_contact.label_alt_id_2", "_pdbx_validate_close_contact.dist"};
     private static final String[] TORSION_LOOP_STRINGS = {"_pdbx_validate_torsion.id", "_pdbx_validate_torsion.PDB_model_num", "_pdbx_validate_torsion.auth_comp_id", "_pdbx_validate_torsion.auth_asym_id", "_pdbx_validate_torsion.auth_seq_id", "_pdbx_validate_torsion.PDB_ins_code", "_pdbx_validate_torsion.label_alt_id", "_pdbx_validate_torsion.phi", "_pdbx_validate_torsion.psi"};
 
+    private static Map<String, Double> weightMap = new HashMap<>();
+
+    static String getMainDirectory() {
+        String[] classPathSplit = MMcifWriter.class.getResource("MMcifWriter.class").toString().split(":");
+        String classPath = classPathSplit[classPathSplit.length - 1];
+        int mainIdx = classPath.indexOf("nmrfxstructure");
+        return classPath.substring(0, mainIdx + "nmrfxstructure".length());
+    }
+    
+    static void makeWeightMap() throws IOException {
+        String mainDir = getMainDirectory();
+        String paramFile = String.join(File.separator, mainDir, "src", "main", "resources", "reslib_iu", "params.txt");
+        BufferedReader reader = new BufferedReader(new FileReader(paramFile));
+
+        while (true) {
+            String line = reader.readLine();
+            if (line == null) {
+                break;
+            }
+            String[] lineS = line.trim().split("\\s+");
+            if (!lineS[0].startsWith("AtomType")) {
+                String aName = lineS[0];
+                Double weight = Double.parseDouble(lineS[5]);
+                weightMap.put(aName, weight);
+            }
+        }
+    }
+
+    
     static void writeMolSys(FileWriter chan, boolean pdb) throws IOException, InvalidMoleculeException {
         chan.write("loop_\n");
         String[] loopStrings = SEQUENCE_LOOP_STRINGS;
@@ -112,22 +141,10 @@ public class MMcifWriter {
             throw new InvalidMoleculeException("No active mol");
         }
 
-        String paramFile = String.join(File.separator, "src", "main", "resources", "reslib_iu", "params.txt");
-        BufferedReader reader = new BufferedReader(new FileReader(paramFile));
-        Map<String, Double> weightMap = new HashMap<>();
-        while (true) {
-            String line = reader.readLine();
-            if (line == null) {
-                break;
-            }
-            String[] lineS = line.trim().split("\\s+");
-            if (!lineS[0].startsWith("AtomType")) {
-                String aName = lineS[0];
-                Double weight = Double.parseDouble(lineS[5]);
-                weightMap.put(aName, weight);
-            }
+        if (weightMap.isEmpty()) {
+            makeWeightMap();
         }
-
+        
         Set<Residue> resSet = new HashSet<>();
         List<String> resNames = new ArrayList<>();
         for (Polymer polymer : molecule.getPolymers()) {
@@ -143,8 +160,32 @@ public class MMcifWriter {
         List<Residue> sortResSet = new ArrayList<>(resSet);
         Collections.sort(sortResSet, (r1, r2) -> r1.name.compareTo(r2.name));
         for (Residue res : sortResSet) {
+            String fullResName = "";
             String[] resNameSplit = res.label.split(",");
-            String fullResName = resNameSplit[1];
+            if (resNameSplit.length > 1) {
+                fullResName = resNameSplit[1];
+            } else {
+                String mainDir = getMainDirectory();
+                String prfFile = String.join(File.separator, mainDir, "src", "main", "resources", "reslib_iu", res.name.toLowerCase() + ".prf");
+                BufferedReader reader = new BufferedReader(new FileReader(prfFile));
+                while (true) {
+                    String line = reader.readLine();
+                    if (line == null) {
+                        break;
+                    }
+                    String lineS = line.trim();
+                    String match = "LNAME";
+                    if (lineS.startsWith(match)) {
+                        fullResName = lineS.substring(match.length()).trim();
+                        if (res.name.equals("ASP")) {
+                            fullResName = "Aspartic Acid";
+                        } else if (res.name.equals("GLU")) {
+                            fullResName = "Glutamic Acid";
+                        }
+                        break;
+                    }
+                }
+            }
             String result = res.toMMCifChemCompString(weightMap, fullResName.toUpperCase());
             if (result != null) {
                 chan.write(result + "\n");
@@ -210,8 +251,8 @@ public class MMcifWriter {
                 }
                 idx++;
             }
+            chan.write("#\n");
         }
-        chan.write("#\n");
     }
 
     static void writeSheetRange(FileWriter chan) throws IOException, InvalidMoleculeException {
@@ -237,8 +278,8 @@ public class MMcifWriter {
                 }
                 idx++;
             }
+            chan.write("#\n");
         }
-        chan.write("#\n");
     }
 
     static void writeTransfMatrix(FileWriter chan, String name, boolean pdb) throws IOException, InvalidMoleculeException {
