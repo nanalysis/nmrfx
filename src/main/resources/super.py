@@ -164,17 +164,30 @@ def doSelections(mol, resSelects, atomSelect):
 
 
 def superImpose(mol, target,resSelect,atomSelect="ca,c,n,o,p,o5',c5',c4',c3',o3'"):
+    target = target - 1
     doSelections(mol, resSelect,atomSelect)
     sup = SuperMol(mol)
     superResults = sup.doSuper(target, -1, True)
     return [result.getRms() for result in superResults]
 
+def sortByStructNum(val):
+    sNumSearch = re.search(r'.*final(\d+)[.]pdb', val)
+    if sNumSearch is not None:
+        sNum = int(sNumSearch.group(1))
+    else: #make the reference structure, if there is one, the last item
+        sNum = sys.maxint
+    return sNum
+
 def saveModels(mol, files, type):
     active = mol.getActiveStructures()
     if type == 'cif':
         mol.resetActiveStructures()
+        if 'final' not in files[-1]: #don't write out reference structure if in file list
+            sNums = [i for i in range(len(files)-1)]
+            treeSet = TreeSet(sNums)
+            mol.setActiveStructures(treeSet)
         molName = mol.getName()
-        cifFile = os.path.join(os.getcwd(), molName + ".cif")
+        cifFile = os.path.join(os.getcwd(), molName + "_all.cif")
         out = FileWriter(cifFile)
         MMcifWriter.writeAll(out, molName)
     elif type == 'pdb':
@@ -238,6 +251,7 @@ def makeFormattedRMSFile(rmsDict, outFileName):
 
 def runSuper(args):
     files = args.fileNames
+    files.sort(key=sortByStructNum)
     mol = loadPDBModels(files)
     polymers = mol.getPolymers()
     # print files
