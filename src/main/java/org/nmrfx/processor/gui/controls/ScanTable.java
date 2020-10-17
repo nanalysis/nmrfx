@@ -60,7 +60,6 @@ import javafx.scene.control.SelectionMode;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
-import javafx.scene.control.TextInputDialog;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.input.DragEvent;
 import javafx.scene.input.Dragboard;
@@ -70,7 +69,6 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
-import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import org.controlsfx.control.PopOver;
@@ -89,6 +87,7 @@ import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.ProcessorController;
 import org.nmrfx.processor.gui.ScannerController;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
+import org.nmrfx.utils.GUIUtils;
 import org.python.util.PythonInterpreter;
 import org.renjin.primitives.vector.RowNamesVector;
 import org.renjin.sexp.AttributeMap;
@@ -373,8 +372,8 @@ public class ScanTable {
     }
 
     public void loadScanFiles(Stage stage) {
-        System.out.println("load " + getScanDirectory());
-        if (getScanDirectory() == null) {
+        if ((getScanDirectory() == null) || scanDir.trim().equals("")) {
+            GUIUtils.warn("Scanner Error", "No scan directory");
             return;
         }
         int beginIndex = scanDir.length() + 1;
@@ -385,10 +384,21 @@ public class ScanTable {
     }
 
     public void processScanDir(Stage stage, ChartProcessor chartProcessor, boolean combineFileMode) {
-        if (getScanDirectory() == null) {
+        if ((chartProcessor == null) || !chartProcessor.hasCommands()) {
+            GUIUtils.warn("Scanner Error", "Processing Script Not Configured");
             return;
         }
-        if (getScanOutputDirectory() == null) {
+
+        if ((getScanDirectory() == null) || scanDir.trim().equals("")) {
+            GUIUtils.warn("Scanner Error", "No scan directory");
+            return;
+        }
+        if ((getScanOutputDirectory() == null) || scanOutputDir.trim().equals("")) {
+            GUIUtils.warn("Scanner Error", "No scan output directory");
+            return;
+        }
+        ObservableList<FileTableItem> fileTableItems = tableView.getItems();
+        if (fileTableItems.isEmpty()) {
             return;
         }
         String combineFileName = scannerController.getOutputFileName();
@@ -407,69 +417,71 @@ public class ScanTable {
         PolyChart chart = scannerController.getChart();
         processingTable = true;
         try {
-            if (scanOutputDir != null) {
-                ObservableList<FileTableItem> fileTableItems = tableView.getItems();
-                List<String> fileNames = new ArrayList<>();
-                PythonInterpreter processInterp = new PythonInterpreter();
+            List<String> fileNames = new ArrayList<>();
+            PythonInterpreter processInterp = new PythonInterpreter();
 
-                int rowNum = 1;
-                for (FileTableItem fileTableItem : fileTableItems) {
-                    int nDim = fileTableItem.getNDim();
-                    File fidFile = new File(scanDir, fileTableItem.getFileName());
-                    String fidFilePath = fidFile.getAbsolutePath();
-                    File datasetFile = new File(scanOutputDir, fileRoot + rowNum + ".nv");
-                    String datasetFilePath = datasetFile.getAbsolutePath();
-                    String script = chartProcessor.buildScript(nDim, fidFilePath, datasetFilePath);
-                    processInterp.exec("from pyproc import *");
-                    processInterp.exec("useProcessor()");
-                    processInterp.exec(script);
-                    fileNames.add(datasetFilePath);
-                    fileTableItem.setRow(rowNum++);
-                    if (combineFileMode) {
-                        fileTableItem.setDatasetName(combineFileName);
-                    } else {
-                        fileTableItem.setDatasetName(datasetFile.getName());
-                    }
-                }
-                updateFilter();
+            String initScript = ChartProcessor.buildInitScript();
+            processInterp.exec(initScript);
+
+            int nDim = fileTableItems.get(0).getNDim();
+            String processScript = chartProcessor.buildScript(nDim);
+
+            int rowNum = 1;
+            for (FileTableItem fileTableItem : fileTableItems) {
+                File fidFile = new File(scanDir, fileTableItem.getFileName());
+                String fidFilePath = fidFile.getAbsolutePath();
+                File datasetFile = new File(scanOutputDir, fileRoot + rowNum + ".nv");
+                String datasetFilePath = datasetFile.getAbsolutePath();
+                String fileScript = ChartProcessor.buildFileScriptPart(fidFilePath, datasetFilePath);
+                processInterp.exec(fileScript);
+                processInterp.exec(processScript);
+                fileNames.add(datasetFilePath);
+                fileTableItem.setRow(rowNum++);
                 if (combineFileMode) {
-                    // merge datasets into single pseudo-nd dataset
-                    DatasetMerger merger = new DatasetMerger();
-                    File mergedFile = new File(scanOutputDir, combineFileName);
-                    String mergedFilepath = mergedFile.getAbsolutePath();
-                    try {
-                        // merge all the 1D files into a pseudo 2D file
-                        merger.merge(fileNames, mergedFilepath);
-                        // After merging, remove the 1D files
-                        for (String fileName : fileNames) {
-                            File file = new File(fileName);
-                            FXMLController.getActiveController().closeFile(file);
-                            Files.deleteIfExists(file.toPath());
-                            String parFileName = fileName.substring(0, fileName.lastIndexOf(".")) + ".par";
-                            File parFile = new File(parFileName);
-                            Files.deleteIfExists(parFile.toPath());
-                        }
-
-                        // load merged dataset
-                        FXMLController.getActiveController().openDataset(mergedFile, false);
-                        List<Integer> rows = new ArrayList<>();
-                        rows.add(0);
-                        chart.setDrawlist(rows);
-                    } catch (IOException | DatasetException ex) {
-                        ExceptionDialog eDialog = new ExceptionDialog(ex);
-                        eDialog.showAndWait();
-                    }
+                    fileTableItem.setDatasetName(combineFileName);
                 } else {
-                    // load first output dataset
-                    File datasetFile = new File(scanOutputDir, fileRoot + 1 + ".nv");
-                    FXMLController.getActiveController().openDataset(datasetFile, false);
+                    fileTableItem.setDatasetName(datasetFile.getName());
                 }
-                chart.full();
-                chart.autoScale();
-
-                File saveTableFile = new File(scanOutputDir, "scntbl.txt");
-                saveScanTable(saveTableFile);
             }
+            updateFilter();
+            if (combineFileMode) {
+                // merge datasets into single pseudo-nd dataset
+                DatasetMerger merger = new DatasetMerger();
+                File mergedFile = new File(scanOutputDir, combineFileName);
+                String mergedFilepath = mergedFile.getAbsolutePath();
+                try {
+                    // merge all the 1D files into a pseudo 2D file
+                    merger.merge(fileNames, mergedFilepath);
+                    // After merging, remove the 1D files
+                    for (String fileName : fileNames) {
+                        File file = new File(fileName);
+                        FXMLController.getActiveController().closeFile(file);
+                        Files.deleteIfExists(file.toPath());
+                        String parFileName = fileName.substring(0, fileName.lastIndexOf(".")) + ".par";
+                        File parFile = new File(parFileName);
+                        Files.deleteIfExists(parFile.toPath());
+                    }
+
+                    // load merged dataset
+                    FXMLController.getActiveController().openDataset(mergedFile, false);
+                    List<Integer> rows = new ArrayList<>();
+                    rows.add(0);
+                    chart.setDrawlist(rows);
+                } catch (IOException | DatasetException ex) {
+                    ExceptionDialog eDialog = new ExceptionDialog(ex);
+                    eDialog.showAndWait();
+                }
+            } else {
+                // load first output dataset
+                File datasetFile = new File(scanOutputDir, fileRoot + 1 + ".nv");
+                FXMLController.getActiveController().openDataset(datasetFile, false);
+            }
+            chart.full();
+            chart.autoScale();
+
+            File saveTableFile = new File(scanOutputDir, "scntbl.txt");
+            saveScanTable(saveTableFile);
+
         } finally {
             processingTable = false;
         }

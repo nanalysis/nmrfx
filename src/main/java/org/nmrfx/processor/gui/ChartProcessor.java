@@ -777,17 +777,31 @@ public class ChartProcessor {
         return scriptBuilder.toString();
     }
 
-    public String buildScript(int nDim, String fidFilePath, String datasetFilePath) {
+    public static String buildInitScript() {
+        StringBuilder scriptBuilder = new StringBuilder();
+        String lineSep = System.lineSeparator();
+        scriptBuilder.append("import os").append(lineSep);
+        scriptBuilder.append("from pyproc import *").append(lineSep);
+        scriptBuilder.append("useProcessor()").append(lineSep);
+        scriptBuilder.append("procOpts(nprocess=").append(PreferencesController.getNProcesses()).append(")").append(lineSep);
+        return scriptBuilder.toString();
+    }
+
+    public static String buildFileScriptPart(String fidFilePath, String datasetFilePath) {
+        StringBuilder scriptBuilder = new StringBuilder();
+        String lineSep = System.lineSeparator();
+        scriptBuilder.append("useProcessor()").append(lineSep);
+        scriptBuilder.append("FID('").append(fidFilePath.replace("\\", "/")).append("')").append(lineSep);
+        scriptBuilder.append("CREATE('").append(datasetFilePath.replace("\\", "/")).append("')").append(lineSep);
+        return scriptBuilder.toString();
+    }
+
+    public String buildScript(int nDim) {
         if (mapOpLists == null) {
             return "";
         }
         String lineSep = System.lineSeparator();
         StringBuilder scriptBuilder = new StringBuilder();
-        scriptBuilder.append("import os").append(lineSep);
-        scriptBuilder.append("from pyproc import *").append(lineSep);
-        scriptBuilder.append("procOpts(nprocess=").append(PreferencesController.getNProcesses()).append(")").append(lineSep);
-        scriptBuilder.append("FID('").append(fidFilePath.replace("\\", "/")).append("')").append(lineSep);
-        scriptBuilder.append("CREATE('").append(datasetFilePath.replace("\\", "/")).append("')").append(lineSep);
         String indent = "";
         scriptBuilder.append(processorController.refManager.getParString(nDim, indent));
         String scriptCmds = getScriptCmds(nDim, indent, true);
@@ -930,6 +944,10 @@ public class ChartProcessor {
             }
         }
         return result;
+    }
+
+    public boolean hasCommands() {
+        return !mapOpLists.isEmpty();
     }
 
     public String getScriptCmds(int nDim, String indent, boolean includeRun) {
