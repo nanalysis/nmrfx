@@ -60,6 +60,7 @@ import javafx.scene.control.SelectionMode;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
+import javafx.scene.control.TextInputDialog;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.input.DragEvent;
 import javafx.scene.input.Dragboard;
@@ -363,10 +364,7 @@ public class ScanTable {
         }
     }
 
-    public void setScanDirectory() {
-        DirectoryChooser directoryChooser = new DirectoryChooser();
-        directoryChooser.setTitle("Select Scan Directory");
-        File selectedDir = directoryChooser.showDialog(scannerController.getStage());
+    public void setScanDirectory(File selectedDir) {
         if (selectedDir != null) {
             scanDir = selectedDir.getPath();
         } else {
@@ -375,6 +373,7 @@ public class ScanTable {
     }
 
     public void loadScanFiles(Stage stage) {
+        System.out.println("load " + getScanDirectory());
         if (getScanDirectory() == null) {
             return;
         }
@@ -392,8 +391,19 @@ public class ScanTable {
         if (getScanOutputDirectory() == null) {
             return;
         }
-        String fileRoot = "process";
-        String combineFileName = "process.nv";
+        String combineFileName = scannerController.getOutputFileName();
+        if ((combineFileName == null) || combineFileName.equals("")) {
+            return;
+        }
+        if (!combineFileName.contains(".")) {
+            combineFileName += ".nv";
+        }
+
+        String fileRoot = combineFileName;
+        if (fileRoot.contains(".")) {
+            fileRoot = fileRoot.substring(0, fileRoot.lastIndexOf("."));
+        }
+
         PolyChart chart = scannerController.getChart();
         processingTable = true;
         try {
@@ -451,7 +461,7 @@ public class ScanTable {
                     }
                 } else {
                     // load first output dataset
-                    File datasetFile = new File(scanOutputDir, "process" + 1 + ".nv");
+                    File datasetFile = new File(scanOutputDir, fileRoot + 1 + ".nv");
                     FXMLController.getActiveController().openDataset(datasetFile, false);
                 }
                 chart.full();
@@ -525,16 +535,11 @@ public class ScanTable {
     }
 
     String getScanDirectory() {
-        if (scanDir == null) {
-            setScanDirectory();
-        }
+        scanDir = scannerController.getScanDirectory();
         return scanDir;
     }
 
-    public void setScanOutputDirectory() {
-        DirectoryChooser directoryChooser = new DirectoryChooser();
-        directoryChooser.setTitle("Select Scan Output Directory");
-        File selectedDir = directoryChooser.showDialog(scannerController.getStage());
+    public void setScanOutputDirectory(File selectedDir) {
         if (selectedDir != null) {
             scanOutputDir = selectedDir.getAbsolutePath();
         } else {
@@ -543,9 +548,7 @@ public class ScanTable {
     }
 
     String getScanOutputDirectory() {
-        if (scanOutputDir == null) {
-            setScanOutputDirectory();
-        }
+        scanOutputDir = scannerController.getOutputDirectory();
         return scanOutputDir;
     }
 
@@ -768,7 +771,7 @@ public class ScanTable {
             saveScanTable(file);
         }
     }
-    
+
     public TableView getTableView() {
         return tableView;
     }

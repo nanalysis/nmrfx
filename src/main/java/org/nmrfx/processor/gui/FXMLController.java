@@ -575,7 +575,6 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
     public ProcessorController getProcessorController(boolean createIfNull) {
         if ((processorController == null) && createIfNull) {
             processorController = ProcessorController.create(this, stage, getActiveChart());
-            processControllerVisible.set(true);
         }
         return processorController;
     }
@@ -668,7 +667,9 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         getActiveChart().removeAllDatasets();
         // removeAllDatasets in chart only stops displaying them, so we need to actually close the dataset
         Path path1 = target.toPath();
-        for (Dataset dataset : Dataset.datasets()) {
+        List<Dataset> currentDatasets = new ArrayList<>();
+        currentDatasets.addAll(Dataset.datasets());
+        for (Dataset dataset : currentDatasets) {
             File file = dataset.getFile();
             if (file != null) {
                 try {

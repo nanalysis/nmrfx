@@ -21,8 +21,6 @@
                     <items>
                         <MenuButton  mnemonicParsing="false" text="File">
                             <items>
-                                <MenuItem mnemonicParsing="false" onAction="#setScanDirAction" text="Set Scan Directory..." />
-                                <MenuItem mnemonicParsing="false" onAction="#setScanOutputDirAction" text="Set Scan Output Directory..." />
                                 <MenuItem mnemonicParsing="false" onAction="#scanDirAction" text="Scan Directory" />
                                 <MenuItem mnemonicParsing="false" onAction="#loadTableAction" text="Open Table..." />
                                 <MenuItem mnemonicParsing="false" onAction="#saveTableAction" text="Save Table..." />
@@ -55,14 +53,7 @@
                 </ToolBar>
             </top>
             <center>
-                <TabPane minWidth="400" minHeight="100" VBox.vgrow="ALWAYS">
-                    <Tab text="Table" closable="false">
-                        <VBox fx:id="opBox" VBox.vgrow="ALWAYS">
-                            <children>
-                                <TableView fx:id="tableView" prefHeight="0" minHeight="0.0"  VBox.vgrow="ALWAYS" onMouseClicked="#openSelectedListFile" />
-                            </children>
-                        </VBox>
-                    </Tab>
+                <TabPane fx:id="tabPane" minWidth="400" minHeight="100" VBox.vgrow="ALWAYS">
                     <Tab text="Parameters" closable="false">
                         <VBox>
                             <children>
@@ -70,6 +61,13 @@
                             
                             
                                 </PropertySheet>
+                            </children>
+                        </VBox>
+                    </Tab>
+                    <Tab text="Table" closable="false">
+                        <VBox fx:id="opBox" VBox.vgrow="ALWAYS">
+                            <children>
+                                <TableView fx:id="tableView" prefHeight="0" minHeight="0.0"  VBox.vgrow="ALWAYS" onMouseClicked="#openSelectedListFile" />
                             </children>
                         </VBox>
                     </Tab>
