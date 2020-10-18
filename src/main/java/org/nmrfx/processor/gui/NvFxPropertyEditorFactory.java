@@ -169,7 +169,9 @@ public class NvFxPropertyEditorFactory extends DefaultPropertyEditorFactory {
         } else if (type == FileOperationItem.class) {
             return createFileEditor(item, false);
         } else if (type == DirectoryOperationItem.class) {
-            return createFileEditor(item, true);
+            PropertyEditor editor = createFileEditor(item, true);
+            ((TextOperationItem) item).setEditor(editor);
+            return editor;
         } else if (type == TextOperationItem.class) {
             //System.out.println("text item");
             return Editors.createTextEditor(item);
