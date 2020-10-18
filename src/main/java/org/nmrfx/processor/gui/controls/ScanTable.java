@@ -316,6 +316,7 @@ public class ScanTable {
             final File file = db.getFiles().get(0);
             if (file.isDirectory()) {
                 scanDir = file.getAbsolutePath();
+                scannerController.updateScanDirectory(scanDir);
                 Platform.runLater(new Runnable() {
                     @Override
                     public void run() {
@@ -372,7 +373,7 @@ public class ScanTable {
     }
 
     public void loadScanFiles(Stage stage) {
-        if ((getScanDirectory() == null) || scanDir.trim().equals("")) {
+        if ((scanDir == null) || scanDir.trim().equals("")) {
             GUIUtils.warn("Scanner Error", "No scan directory");
             return;
         }
@@ -389,11 +390,11 @@ public class ScanTable {
             return;
         }
 
-        if ((getScanDirectory() == null) || scanDir.trim().equals("")) {
+        if ((scanDir == null) || scanDir.trim().equals("")) {
             GUIUtils.warn("Scanner Error", "No scan directory");
             return;
         }
-        if ((getScanOutputDirectory() == null) || scanOutputDir.trim().equals("")) {
+        if ((scanOutputDir == null) || scanOutputDir.trim().equals("")) {
             GUIUtils.warn("Scanner Error", "No scan output directory");
             return;
         }
@@ -490,7 +491,7 @@ public class ScanTable {
     public void openSelectedListFile() {
         int selItem = tableView.getSelectionModel().getSelectedIndex();
         if (selItem >= 0) {
-            if (getScanDirectory() == null) {
+            if ((scanDir == null) || scanDir.trim().equals("")) {
                 return;
             }
             ProcessorController processorController = scannerController.getFXMLController().getProcessorController(true);
@@ -546,22 +547,12 @@ public class ScanTable {
         }
     }
 
-    String getScanDirectory() {
-        scanDir = scannerController.getScanDirectory();
-        return scanDir;
-    }
-
     public void setScanOutputDirectory(File selectedDir) {
         if (selectedDir != null) {
             scanOutputDir = selectedDir.getAbsolutePath();
         } else {
             scanOutputDir = null;
         }
-    }
-
-    String getScanOutputDirectory() {
-        scanOutputDir = scannerController.getOutputDirectory();
-        return scanOutputDir;
     }
 
     public void loadFromDataset() {
@@ -634,6 +625,10 @@ public class ScanTable {
         boolean[] notDouble = null;
         boolean[] notInteger = null;
         String firstDatasetName = "";
+        if ((scanDir == null) || scanDir.trim().equals("")) {
+            setScanDirectory(file.getParentFile());
+            scannerController.updateScanDirectory(scanDir);
+        }
         try (BufferedReader br = new BufferedReader(new FileReader(file))) {
             String line;
             while ((line = br.readLine()) != null) {
@@ -696,7 +691,7 @@ public class ScanTable {
                             System.out.println("No path field or value");
                             return;
                         }
-                        if (getScanDirectory() == null) {
+                        if ((scanDir == null) || scanDir.trim().equals("")) {
                             return;
                         }
                         Path filePath = FileSystems.getDefault().getPath(scanDir, fileName);

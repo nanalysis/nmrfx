@@ -328,7 +328,7 @@ public class ScannerController implements Initializable {
 
         outputFileItem = new TextOperationItem(stringListener, "process.nv", "File Locations", "Output File", "Output FileName");
         scanDirItem = new DirectoryOperationItem(scanDirListener, getDatasetDirectory().getPath(), "File Locations", "Scan Dir", "Directory to scan for datasets");
-        outputDirItem = new DirectoryOperationItem(scanDirListener, getDatasetDirectory().getPath(), "File Locations", "Output Dir", "Directory to put output files in");
+        outputDirItem = new DirectoryOperationItem(outputDirListener, getDatasetDirectory().getPath(), "File Locations", "Output Dir", "Directory to put output files in");
 
         parSheet.getItems().addAll(scanDirItem, outputDirItem, outputFileItem, measureItem, offsetItem);
     }
@@ -414,6 +414,15 @@ public class ScannerController implements Initializable {
 
     public String getScanDirectory() {
         return scanDirItem.get();
+    }
+
+    public void setScanDirectory(String dirString) {
+        scanDirItem.setFromString(dirString);
+    }
+
+    public void updateScanDirectory(String dirString) {
+        scanDirItem.setFromString(dirString);
+        scanDirItem.updateEditor();
     }
 
     public String getOutputDirectory() {
