@@ -18,7 +18,7 @@ argFile = sys.argv[-1]
 def predictProtein(mol, tableMode=False):
     pred=ProteinPredictor()
     pred.init(mol)
-    pred.predict(0)
+    pred.predict(-1)
 
     polymers = mol.getPolymers()
     if tableMode:
