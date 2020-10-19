@@ -58,6 +58,7 @@ import static org.nmrfx.processor.gui.PreferencesController.getDatasetDirectory;
 import org.nmrfx.processor.gui.controls.FileTableItem;
 import org.nmrfx.processor.gui.controls.ScanTable;
 import org.nmrfx.processor.gui.tools.TRACTGUI;
+import org.nmrfx.utils.GUIUtils;
 import org.nmrfx.utils.properties.DirectoryOperationItem;
 import org.nmrfx.utils.properties.TextOperationItem;
 
@@ -468,27 +469,52 @@ public class ScannerController implements Initializable {
             double[] wppms = new double[2];
             wppms[0] = chart.getAxis(0).getLowerBound();
             wppms[1] = chart.getAxis(0).getUpperBound();
-            measureRegion(dataset, columnName, ppms, wppms, offsetItem.getValue(), measureItem.getValue());
+            int extra = 1;
+
+            Measure measure = new Measure(columnName, 0, ppms[0], ppms[1], wppms[0], wppms[1], extra, offsetItem.getValue(), measureItem.getValue());
+            String columnDescriptor = measure.getColumnDescriptor();
+            String columnPrefix = scanTable.getNextColumnName(columnName, columnDescriptor);
+            measure.setName(columnPrefix);
+            String newColumnName = columnPrefix + ":" + columnDescriptor;
+            List<Double> allValues = new ArrayList<>();
+            List<FileTableItem> items = scanTable.getItems();
+
+            for (FileTableItem item : items) {
+                String datasetName = item.getDatasetName();
+                Dataset itemDataset = Dataset.getDataset(datasetName);
+                if (itemDataset == null) {
+                    File datasetFile = new File(scanTable.getScanOutputDirectory(), datasetName);
+                    try {
+                        itemDataset = new Dataset(datasetFile.getPath(), datasetFile.getPath(), true, false);
+                    } catch (IOException ioE) {
+                        GUIUtils.warn("Measure", "Can't open dataset " + datasetFile.getPath());
+                        return;
+                    }
+                }
+
+                List<Double> values = measureRegion(itemDataset, measure);
+                if (values == null) {
+                    return;
+                }
+                allValues.addAll(values);
+                if (allValues.size() >= items.size()) {
+                    break;
+                }
+            }
+            setItems(newColumnName, allValues);
+            scanTable.addTableColumn(newColumnName, "D");
         }
     }
 
-    private void measureRegion(Dataset dataset, String name, double[] ppms, double[] wppms, OffsetTypes offsetType, MeasureTypes measureType) {
-        int extra = 1;
+    private List<Double> measureRegion(Dataset dataset, Measure measure) {
         List<Double> values;
-        Measure measure = new Measure(name, 0, ppms[0], ppms[1], wppms[0], wppms[1], extra, offsetType, measureType);
-        String columnDescriptor = measure.getColumnDescriptor();
-        String columnPrefix = scanTable.getNextColumnName(name, columnDescriptor);
-        measure.setName(columnPrefix);
-        String newColumnName = columnPrefix + ":" + columnDescriptor;
-
         try {
             values = measure.measure(dataset);
         } catch (IOException ex) {
             Logger.getLogger(ScannerController.class.getName()).log(Level.SEVERE, null, ex);
-            return;
+            return null;
         }
-        setItems(newColumnName, values);
-        scanTable.addTableColumn(newColumnName, "D");
+        return values;
     }
 
     public void setItems(String columnName, List<Double> values) {
@@ -503,7 +529,9 @@ public class ScannerController implements Initializable {
         for (int i = 0; i < values.size(); i++) {
             double value = values.get(i);
             FileTableItem item = map.get(i);
-            item.setExtra(columnName, value);
+            if (item != null) {
+                item.setExtra(columnName, value);
+            }
         }
     }
 
