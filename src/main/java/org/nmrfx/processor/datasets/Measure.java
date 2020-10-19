@@ -131,8 +131,8 @@ public class Measure {
 
     public List<Double> measure(Dataset dataset) throws IOException {
         int alongDim = iDim == 0 ? 1 : 0;
-        int size = dataset.getSize(alongDim);
         int nDim = dataset.getNDim();
+        int size = nDim == 1 ? 1 : dataset.getSize(alongDim);
         int[] dim = new int[nDim];
         int[][] pt = new int[nDim][2];
         int[] edge1 = new int[nDim];
@@ -167,8 +167,10 @@ public class Measure {
                 edge2[0] = pt2 - extra;
 
             }
-            pt[1][0] = i;
-            pt[1][1] = i;
+            if (nDim > 1) {
+                pt[1][0] = i;
+                pt[1][1] = i;
+            }
             for (int j = 0; j < nDim; j++) {
                 cpt[j] = (pt[j][0] + pt[j][1]) / 2;
                 width[j] = (double) Math.abs(pt[j][0] - pt[j][1]);
