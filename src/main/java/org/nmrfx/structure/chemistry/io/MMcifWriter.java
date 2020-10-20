@@ -116,7 +116,9 @@ public class MMcifWriter {
                 if (!entityIDSet.contains(entityID)) {
                     entityIDSet.add(entityID);
                 } else {
-                    continue;
+                    if (!pdb) {
+                       continue; 
+                    }
                 }
                 List<Residue> resList = ((Polymer) entity).getResidues();
                 for (Residue res : resList) {
@@ -130,69 +132,69 @@ public class MMcifWriter {
         chan.write("#\n");
     }
 
-    static void writeChemComp(FileWriter chan) throws IOException, InvalidMoleculeException {
-        chan.write("loop_\n");
-        for (String loopString : CHEM_COMP_LOOP_STRINGS) {
-            chan.write(loopString + "\n");
-        }
-
-        Molecule molecule = Molecule.getActive();
-        if (molecule == null) {
-            throw new InvalidMoleculeException("No active mol");
-        }
-
-        if (weightMap.isEmpty()) {
-            makeWeightMap();
-        }
-        
-        Set<Residue> resSet = new HashSet<>();
-        List<String> resNames = new ArrayList<>();
-        for (Polymer polymer : molecule.getPolymers()) {
-            List<Residue> resList = polymer.getResidues();
-            for (Residue res : resList) {
-                if (!resSet.contains(res) && !resNames.contains(res.name)) {
-                    resSet.add(res);
-                    resNames.add(res.name);
-                }
-            }
-        }
-        
-        List<Residue> sortResSet = new ArrayList<>(resSet);
-        Collections.sort(sortResSet, (r1, r2) -> r1.name.compareTo(r2.name));
-        for (Residue res : sortResSet) {
-            String fullResName = "";
-            String[] resNameSplit = res.label.split(",");
-            if (resNameSplit.length > 1) {
-                fullResName = resNameSplit[1];
-            } else {
-                String mainDir = getMainDirectory();
-                String prfFile = String.join(File.separator, mainDir, "src", "main", "resources", "reslib_iu", res.name.toLowerCase() + ".prf");
-                BufferedReader reader = new BufferedReader(new FileReader(prfFile));
-                while (true) {
-                    String line = reader.readLine();
-                    if (line == null) {
-                        break;
-                    }
-                    String lineS = line.trim();
-                    String match = "LNAME";
-                    if (lineS.startsWith(match)) {
-                        fullResName = lineS.substring(match.length()).trim();
-                        if (res.name.equals("ASP")) {
-                            fullResName = "Aspartic Acid";
-                        } else if (res.name.equals("GLU")) {
-                            fullResName = "Glutamic Acid";
-                        }
-                        break;
-                    }
-                }
-            }
-            String result = res.toMMCifChemCompString(weightMap, fullResName.toUpperCase());
-            if (result != null) {
-                chan.write(result + "\n");
-            }
-        }
-        chan.write("#\n");
-    }
+//    static void writeChemComp(FileWriter chan) throws IOException, InvalidMoleculeException {
+//        chan.write("loop_\n");
+//        for (String loopString : CHEM_COMP_LOOP_STRINGS) {
+//            chan.write(loopString + "\n");
+//        }
+//
+//        Molecule molecule = Molecule.getActive();
+//        if (molecule == null) {
+//            throw new InvalidMoleculeException("No active mol");
+//        }
+//
+//        if (weightMap.isEmpty()) {
+//            makeWeightMap();
+//        }
+//        
+//        Set<Residue> resSet = new HashSet<>();
+//        List<String> resNames = new ArrayList<>();
+//        for (Polymer polymer : molecule.getPolymers()) {
+//            List<Residue> resList = polymer.getResidues();
+//            for (Residue res : resList) {
+//                if (!resSet.contains(res) && !resNames.contains(res.name)) {
+//                    resSet.add(res);
+//                    resNames.add(res.name);
+//                }
+//            }
+//        }
+//        
+//        List<Residue> sortResSet = new ArrayList<>(resSet);
+//        Collections.sort(sortResSet, (r1, r2) -> r1.name.compareTo(r2.name));
+//        for (Residue res : sortResSet) {
+//            String fullResName = "";
+//            String[] resNameSplit = res.label.split(",");
+//            if (resNameSplit.length > 1) {
+//                fullResName = resNameSplit[1];
+//            } else {
+//                String mainDir = getMainDirectory();
+//                String prfFile = String.join(File.separator, mainDir, "src", "main", "resources", "reslib_iu", res.name.toLowerCase() + ".prf");
+//                BufferedReader reader = new BufferedReader(new FileReader(prfFile));
+//                while (true) {
+//                    String line = reader.readLine();
+//                    if (line == null) {
+//                        break;
+//                    }
+//                    String lineS = line.trim();
+//                    String match = "LNAME";
+//                    if (lineS.startsWith(match)) {
+//                        fullResName = lineS.substring(match.length()).trim();
+//                        if (res.name.equals("ASP")) {
+//                            fullResName = "Aspartic Acid";
+//                        } else if (res.name.equals("GLU")) {
+//                            fullResName = "Glutamic Acid";
+//                        }
+//                        break;
+//                    }
+//                }
+//            }
+//            String result = res.toMMCifChemCompString(weightMap, fullResName.toUpperCase());
+//            if (result != null) {
+//                chan.write(result + "\n");
+//            }
+//        }
+//        chan.write("#\n");
+//    }
 
     static void writeStructAsym(FileWriter chan) throws IOException, InvalidMoleculeException {
         chan.write("loop_\n");
@@ -221,6 +223,13 @@ public class MMcifWriter {
                         break;
                     }
                 }
+                String details = "?"; //fixme get from file
+                chan.write(String.format("%-2s %-2s %-2s %-2d %-2s\n", chainID, blankPDBflag, pdbxMod, entityID, details));
+            } else {
+                String chainID = entity.getName();
+                int entityID = entity.getIDNum();
+                String blankPDBflag = "N"; //fixme get from file
+                String pdbxMod = "N"; 
                 String details = "?"; //fixme get from file
                 chan.write(String.format("%-2s %-2s %-2s %-2d %-2s\n", chainID, blankPDBflag, pdbxMod, entityID, details));
             }
@@ -352,7 +361,7 @@ public class MMcifWriter {
                 if (spSet.getCoords(iStruct) == null) {
                     continue;
                 }
-
+                
                 String aType = atom.getSymbol().toUpperCase();
                 if (!aTypeSet.contains(aType)) {
                     aTypeSet.add(aType);
@@ -452,7 +461,7 @@ public class MMcifWriter {
         Molecule molecule = Molecule.getActive();
         if (molecule != null) {
             writeMolSys(chan, false);
-            writeChemComp(chan);
+//            writeChemComp(chan);
             writeStructAsym(chan);
             writeStructConf(chan);
             writeSheetRange(chan);

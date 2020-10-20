@@ -116,26 +116,16 @@ public class MMcifReader {
             return id + " " + type;
         }
         
-//        public void build(Molecule molecule, String asymName) throws ParseException {
-//            Sequence sequence = new Sequence(molecule);
-//            sequence.newPolymer();
-//            Polymer polymer = new Polymer(asymName, asymName);
-//            polymer.setNomenclature("IUPAC");
-//            polymer.setIDNum(id);
-//            polymer.assemblyID = id;
-//            entities.put(asymName, polymer);
-//            if (type.equals("water")) {
-//                Water water = new Water(asymName);
-//                molecule.addEntity(water, asymName, id);
-//            } else {
-//                molecule.addEntity(polymer, asymName, id); 
-//            }
-//            String mapID = asymName + "." + ".";
-//            Compound ligand = new Compound(".", asymName);
-//            ligand.molecule = molecule;
-//            addCompound(mapID, ligand);        
-////            System.out.println("mol build poly " + molecule.getPolymers().size() + " " + numbers.size());
-//        }
+        public void build(Molecule molecule, String asymName) throws ParseException {
+            String mapID = asymName + "." + "0";
+            Compound ligand = new Compound("0", asymName);
+            ligand.molecule = molecule;
+            addCompound(mapID, ligand); 
+            ligand.setIDNum(id);
+            ligand.assemblyID = id;
+            entities.put(asymName, ligand);
+            molecule.addEntity(ligand, asymName, id);
+        }
     }
 
     class MMCIFPolymerEntity extends MMCIFEntity {
@@ -272,9 +262,9 @@ public class MMcifReader {
             if (entity instanceof MMCIFPolymerEntity) {
                 MMCIFPolymerEntity polymerEntity = (MMCIFPolymerEntity) entity;
                 polymerEntity.build(molecule, asymID);
-            } //else {
-////                entity.build(molecule, asymID);
-//            }
+            } else {
+                entity.build(molecule, asymID);
+            }
         }
 //        System.out.println("asym info " + asymIDColumn.toString() + " " + entityIDColumn.toString());
     }
@@ -352,32 +342,43 @@ public class MMcifReader {
         Molecule.compoundMap().put(id, compound);
     }
 
-    void buildChemComp(final Saveframe saveframe, Molecule molecule) throws ParseException {
-        Loop loop = saveframe.getLoop("_chem_comp");
-        if (loop == null) {
-            throw new ParseException("No \"_chem_comp\" loop");
-        } else {
-            List<String> idColumn = loop.getColumnAsList("id");
-            List<String> nameColumn = loop.getColumnAsList("name");
-            Iterator entityIterator = molecule.entityLabels.values().iterator();
-            while (entityIterator.hasNext()) {
-                Entity entity = (Entity) entityIterator.next();
-                if (entity instanceof Polymer) {
-                    List<Residue> resList = ((Polymer) entity).getResidues();
-                    for (Residue res : resList) {
-                        for (int i = 0; i < idColumn.size(); i++) {
-                            String resName = idColumn.get(i);
-                            String resFullName = nameColumn.get(i);
-                            if (res.name.equals(resName)) {
-                                res.label += "," + resFullName;
-                            }
-                        }
-                    }
-                }
-            }
-
-        }
-    }
+//    void buildChemComp(final Saveframe saveframe, Molecule molecule) throws ParseException {
+//        Loop loop = saveframe.getLoop("_chem_comp");
+//        if (loop == null) {
+//            throw new ParseException("No \"_chem_comp\" loop");
+//        } else {
+//            List<String> idColumn = loop.getColumnAsList("id");
+//            List<String> typeColumn = loop.getColumnAsList("type");
+//            List<String> nameColumn = loop.getColumnAsList("name");
+//            Iterator entityIterator = molecule.entityLabels.values().iterator();
+//            while (entityIterator.hasNext()) {
+//                Entity entity = (Entity) entityIterator.next();
+//                for (int i = 0; i < idColumn.size(); i++) {
+//                    if (entity instanceof Polymer) {
+//                        List<Residue> resList = ((Polymer) entity).getResidues();
+//                        for (Residue res : resList) {
+//                            String resName = idColumn.get(i);
+//                            String resFullName = nameColumn.get(i);
+//                            if (res.name.equals(resName)) {
+//                                res.label += "," + resFullName;
+//                            }
+//                        }
+//                    } else {
+//                        String ligandName = idColumn.get(i);
+//                        String type = typeColumn.get(i);
+//                        String ligandFullName = nameColumn.get(i);
+//                        if (type.equals("non-polymer")) {
+//                            Compound compound = (Compound) entity;
+//                            if (compound.label.contains(ligandFullName)) {
+//                                compound.label = ligandName + "," + ligandFullName;
+//                            }
+//                        }
+//                    }
+//                }
+//            }
+//
+//        }
+//    }
 
     Molecule buildConformation(final Saveframe saveframe, Molecule molecule) throws ParseException {
         Loop loop = saveframe.getLoop("_struct_conf");
@@ -465,7 +466,7 @@ public class MMcifReader {
             buildEntities(saveframe);
             buildAsym(saveframe, molecule);
             molecule = buildConformation(saveframe, molecule);
-            buildChemComp(saveframe, molecule);
+//            buildChemComp(saveframe, molecule);
             buildSheetRange(saveframe, molecule);
             molecule.updateSpatialSets();
             molecule.genCoords(false);
@@ -514,6 +515,9 @@ public class MMcifReader {
                 String chainCode = (String) labelAsymIDColumn.get(i);
                 String entityID = (String) labelEntityIDColumn.get(i);
                 String sequenceCode = (String) labelSeqIDColumn.get(i);
+                if  (sequenceCode.equals(".")) {
+                    sequenceCode = "0";
+                }
                 int pdbModelNum = pdbModelNumColumn.get(i);
                 float xCoord = Float.parseFloat((String) cartnXColumn.get(i));
                 float yCoord = Float.parseFloat((String) cartnYColumn.get(i));
@@ -536,18 +540,37 @@ public class MMcifReader {
                 }
 
                 Atom atom = Molecule.getAtomByName(fullAtom);
+                
+                String pdbInsCode = pdbInsCodeColumn.get(i);
                 int authSeq = authSeqIDColumn.get(i);
                 String authComp = authCompIDColumn.get(i);
                 String authAsym = authAsymIDColumn.get(i);
                 String authAtom = authAtomIDColumn.get(i);
 //                System.out.println(fullAtom + " " + atoms);
                 //  System.out.println(atoms.toString());
-
+                
+                if (atom == null) {
+                    atom = Atom.genAtomWithElement(atomName, atomType);
+                    if (compound.label.equals(chainCode)) {
+                        compound.label = resIDStr;
+                    }
+                    compound.addAtom(atom);
+                    compound.updateNames();
+                    molecule.updateAtomArray();
+                    for (Atom atom1 : molecule.getAtomArray()) {
+                        if (atom1.getAtomicNumber() == 0) {
+                            atom1.setAtomicNumber(WordUtils.capitalizeFully(atom1.name));
+                        }
+                    }
+//                    throw new ParseException("invalid atom in assignments saveframe \"" + mapID + "." + atomName + "\"");
+                } 
+                
                 if (atom == null) {
                     System.out.println("invalid atom in assignments saveframe \"" + mapID + "." + atomName + "\"");
 //                    throw new ParseException("invalid atom in assignments saveframe \"" + mapID + "." + atomName + "\"");
                 } 
                 
+                atom.setProperty("pdbInsCode", pdbInsCode);
                 atom.setProperty("authSeqID", authSeq);
                 atom.setProperty("authResName", authComp);
                 atom.setProperty("authChainCode", authAsym);
