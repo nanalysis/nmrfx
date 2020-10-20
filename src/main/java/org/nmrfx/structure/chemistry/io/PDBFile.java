@@ -602,8 +602,8 @@ public class PDBFile {
                             //System.out.println(resi.getName() + " " + resi.getNumber());
                             //}
                             if (!atomParse.resName.equals("HOH")) {
-                                System.err.println("null residue " + atomParse.resNum + " for polymer " + polymerName);
-                                System.err.println(string);
+                               // System.err.println("null residue " + atomParse.resNum + " for polymer " + polymerName);
+                               // System.err.println(string);
                             }
                             continue;
                         }
