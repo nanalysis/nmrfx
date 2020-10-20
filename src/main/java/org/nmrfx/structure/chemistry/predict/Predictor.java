@@ -394,10 +394,17 @@ public class Predictor {
                             distPPM += shiftContrib;
                         }
                         double ppm = basePPM + distPPM;
+                        Double mae = getMAE(atom);
                         if (iRef < 0) {
                             atom.setRefPPM(-iRef - 1, ppm);
+                            if (mae != null) {
+                                atom.setRefError(-iRef - 1, mae);
+                            }
                         } else {
                             atom.setPPM(iRef, ppm);
+                            if (mae != null) {
+                                atom.setPPMError(-iRef - 1, mae);
+                            }
                         }
                     }
                 }
