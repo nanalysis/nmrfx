@@ -51,11 +51,26 @@ public class MMCifFileTest {
         loadData("2png");
         testAll();
     }
-//    @Test
-//    public void testFile4HIW() throws IOException { //fails at chem comp, missing water entry
-//        loadData("4hiw");
-//        testAll();
-//    }
+    @Test
+    public void testFile5LBM() throws IOException {
+        loadData("5lbm");
+        testAll();
+    }
+    @Test
+    public void testFile1G18() throws IOException {
+        loadData("1g18");
+        testAll();
+    }
+    @Test
+    public void testFile1FOC() throws IOException { 
+        loadData("1foc");
+        testAll();
+    }
+    @Test
+    public void testFile1G2M() throws IOException { 
+        loadData("1g2m");
+        testAll();
+    }
     @Test
     public void testFile2JUW() throws IOException {
         loadData("2juw");
@@ -301,6 +316,56 @@ public class MMCifFileTest {
         }
         return compMap;
     }
+    
+    private Map<String, List<Object>> buildStructAsymMap(List<List<Object>> dataArray) {
+        Map<String, List<Object>> asymMap = new HashMap<>();
+        boolean inAsym = false;
+        boolean sepBlock = false;
+        String key = "";
+        List<Object> values = new ArrayList<>();
+        for (List<Object> line : dataArray) {
+            if (line.size() > 0) {
+                if (line.get(0).toString().contains("_struct_asym")) {
+                    inAsym = true;
+                    if (line.size() == 1) {
+                        sepBlock = true;
+                    }
+                }
+                if (inAsym) {
+                    if (sepBlock) {
+                        int iChain = 0;
+                        int iEntity = 3;
+                        values = new ArrayList<>();
+                        if (line.size() > 1 && line.get(iEntity) instanceof Integer) {
+                            key = line.get(iChain).toString() + "." + line.get(iEntity).toString();
+                            values.add(line.get(iChain + 1));
+                            values.add(line.get(iChain + 2));
+                            values.add(line.get(iChain + 4));
+                            asymMap.put(key, values);
+                        } else if (line.contains("#")) {
+                            break;
+                        }
+                    } else {
+                        if (line.size() > 1) {
+                            if (line.get(0).toString().contains(".id")) {
+                                key = line.get(1).toString();
+                            } else if (line.get(0).toString().contains("entity_id")) {
+                                key += "." + line.get(1).toString();
+                            } else {
+                                values.add(line.get(1).toString());
+                            }
+                            if (key.contains(".")) {
+                                asymMap.put(key, values);
+                            }
+                        } else if (line.contains("#")) {
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        return asymMap;
+    }
 
     private Map<String, List<Object>> buildStructConfMap(List<List<Object>> dataArray) {
         Map<String, List<Object>> confMap = new HashMap<>();
@@ -391,9 +456,6 @@ public class MMCifFileTest {
                 if (!writtenMap.containsKey(key)) {
                     System.out.println(mode + " key " + key + " not in written");
                     ok = false;
-                    if (mode.equals("atom sites") && key.contains("..")) { //don't flag skipped waters
-                        ok = true;
-                    }
                 } else {
                     List<Object> origValues = entry.getValue();
                     List<Object> writtenValues = writtenMap.get(key);
@@ -442,7 +504,8 @@ public class MMCifFileTest {
 
     public void testAll() throws IOException {
         testSeqBlock();
-        testChemCompBlock();
+//        testChemCompBlock();
+        testStructAsymBlock();
         testStructConfBlock();
         testSheetBlock();
         testAtomTypesBlock();
@@ -501,6 +564,19 @@ public class MMCifFileTest {
         }
     }
 
+    public void testStructAsymBlock() throws IOException {
+        try {
+            Map<String, List<Object>> origAsym = buildStructAsymMap(orig);
+            Map<String, List<Object>> writtenAsym = buildStructAsymMap(written);
+            if (!origAsym.isEmpty() && !writtenAsym.isEmpty()) {
+                boolean ok = compareMaps("struct asym", origAsym, writtenAsym);
+                Assert.assertTrue(ok);
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+    }
+    
     public void testStructConfBlock() throws IOException {
         try {
             Map<String, List<Object>> origConf = buildStructConfMap(orig);
