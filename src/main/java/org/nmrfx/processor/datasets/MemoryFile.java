@@ -105,12 +105,18 @@ public class MemoryFile implements DatasetStorageInterface, Closeable {
     @Override
     public float getFloat(int... offsets) throws IOException {
         int p = (int) pointPosition(offsets);
+        if (p >= totalSize) {
+            throw new PositionException("Out of range in MemoryFile setFloat", totalSize, p, offsets);
+        }
         return floatBuffer.get(p);
     }
 
     @Override
     public void setFloat(float d, int... offsets) throws IOException {
         int p = (int) pointPosition(offsets);
+        if (p >= totalSize) {
+            throw new PositionException("Out of range in MemoryFile setFloat", totalSize, p, offsets);
+        }
         floatBuffer.put(p, d);
     }
 

@@ -20,26 +20,16 @@ package org.nmrfx.processor.datasets.peaks;
 import org.nmrfx.processor.star.STAR3;
 import org.nmrfx.processor.utilities.ConvUtil;
 import org.nmrfx.processor.utilities.Format;
+import org.nmrfx.project.Project;
 import java.util.ArrayList;
 import java.util.List;
 
 public class PeakDim {
 
-    public static ResonanceFactory resFactory;
-
-    static {
-        try {
-            Class c = Class.forName("org.nmrfx.processor.datasets.peaks.AtomResonanceFactory");
-            try {
-                resFactory = (ResonanceFactory) c.newInstance();
-            } catch (InstantiationException | IllegalAccessException ex) {
-                resFactory = new ResonanceFactory();
-            }
-        } catch (ClassNotFoundException ex) {
-            resFactory = new ResonanceFactory();
-        }
-        resFactory.init();
+    public static ResonanceFactory resFactory() {
+        return Project.getActive().resFactory;
     }
+
     public static List<PeakDim> EMPTY_LIST = new ArrayList<>();
 
     private int spectralDim = 0;
@@ -75,7 +65,7 @@ public class PeakDim {
     }
 
     public static void setResonanceFactory(ResonanceFactory newFactory) {
-        resFactory = newFactory;
+        Project.getActive().resFactory = newFactory;
     }
 
     public PeakDim copy(Peak peak) {
@@ -147,7 +137,7 @@ public class PeakDim {
     }
 
     public void initResonance() {
-        resonance = resFactory.build();
+        resonance = resFactory().build();
         resonance.add(this);
     }
 
@@ -205,7 +195,7 @@ public class PeakDim {
 
     public void setResonance(long resID) {
         remove();
-        resonance = resFactory.get(resID);
+        resonance = resFactory().get(resID);
     }
 
     public void setResonance(Resonance newResonance) {
@@ -261,13 +251,154 @@ public class PeakDim {
         result.append(getUser()); // fixme only quote if more than one
         result.append(stringQuote);
         result.append(sep);
-        result.append(stringQuote);
-        // result.append(getCouplingsAsString()); // fixme only quote if more than one
-        result.append("0.0");
-        result.append(stringQuote);
+        if (multiplet != null) {
+            Coupling coupling = multiplet.getCoupling();
+            if (coupling instanceof Singlet) {
+                result.append("s");
+            } else if (coupling instanceof ComplexCoupling) {
+                result.append("m");
+            } else {
+                result.append(stringQuote);
+                result.append(multiplet.getCouplingsAsString()); // fixme only quote if more than one
+                result.append(stringQuote);
+            }
+        } else {
+            result.append(".");
+        }
         result.append(sep);
         result.append(isFrozen() ? "1" : "0");
 
+        return result.toString();
+    }
+
+    /*
+        static String spectralTransitionCharStrings[] = {
+        "_Spectral_transition_char.Bounding_box_val",
+        "_Spectral_transition_char.Bounding_box_val_err",
+        "_Spectral_transition_char.Line_width_val",
+        "_Spectral_transition_char.Line_width_val_err",
+        "_Spectral_transition_char.Phase_val",
+        "_Spectral_transition_char.Phase_val_err",
+        "_Spectral_transition_char.Decay_rate_val",
+        "_Spectral_transition_char.Decay_rate_val_err",
+        "_Spectral_transition_char.Derivation_method_ID",};
+
+     */
+    public String toSTAR3LoopSpectralTransitionCharString(AbsMultipletComponent comp, int specTransID) {
+        StringBuilder result = new StringBuilder();
+        String sep = " ";
+        double sf = getSpectralDimObj().getSf();
+        result.append(specTransID).append(sep);
+        result.append(getPeak().getIdNum()).append(sep);
+        result.append((spectralDim + 1)).append(sep);
+        result.append(comp.offset).append(sep).append(".").append(sep);
+        result.append(".").append(sep).append(".").append(sep);
+        result.append(comp.lineWidth * sf).append(sep).append(".").append(sep);
+        result.append(".").append(sep).append(".").append(sep);
+        result.append(".").append(sep).append(".").append(sep);
+        result.append(".");
+        return result.toString();
+    }
+
+    /*
+            "_Spectral_transition_char.Spectral_transition_ID",
+        "_Spectral_transition_general_char.Peak_ID",
+        "_Spectral_transition_general_char.Intensity_val",
+        "_Spectral_transition_general_char.Intensity_val_err",
+        "_Spectral_transition_general_char.Measurement_method",};
+
+     */
+    public String toSTAR3LoopSpectralTransitionGeneralCharString(AbsMultipletComponent comp, int specTransID, boolean intensityMode) {
+        StringBuilder result = new StringBuilder();
+        String sep = " ";
+        result.append(specTransID).append(sep);
+        result.append(getPeak().getIdNum()).append(sep);
+        if (intensityMode) {
+            result.append(comp.intensity).append(sep).append(".").append(sep);
+            result.append("height");
+        } else {
+            result.append(comp.volume).append(sep).append(".").append(sep);
+            result.append("volume");
+
+        }
+        return result.toString();
+    }
+
+    public List<String> toSTAR3ComplexCouplingString(int index) {
+        List<String> values = new ArrayList<>();
+        Multiplet multiplet = getMultiplet();
+        if (multiplet != null) {
+            Coupling coupling = multiplet.getCoupling();
+            if ((coupling != null) && (coupling instanceof ComplexCoupling)) {
+                ComplexCoupling complexCoupling = (ComplexCoupling) coupling;
+                int nComps = coupling.getRelComponentList().size();
+                for (int iComp = 0; iComp < nComps; iComp++) {
+                    String s = toSTAR3LoopMultipletCharString(spectralDim, complexCoupling, iComp, index);
+                    values.add(s);
+                    index++;
+                }
+            }
+
+        }
+        return values;
+    }
+
+    public List<String> toSTAR3CouplingPatternString(int index) {
+        List<String> values = new ArrayList<>();
+        Multiplet multiplet = getMultiplet();
+        if (multiplet != null) {
+            Coupling coupling = multiplet.getCoupling();
+            if ((coupling != null) && (coupling instanceof CouplingPattern)) {
+                CouplingPattern couplingPattern = (CouplingPattern) coupling;
+                int nComps = couplingPattern.getNCouplingValues();
+                for (int iComp = 0; iComp < nComps; iComp++) {
+                    String s = toSTAR3LoopMultipletCharString(spectralDim, couplingPattern, iComp, index);
+                    values.add(s);
+                    index++;
+                }
+            }
+
+        }
+        return values;
+    }
+
+    public String toSTAR3LoopMultipletCharString(int contributionID, ComplexCoupling coupling, int iComp, int index) {
+        RelMultipletComponent comp = coupling.getRelComponentList().get(iComp);
+        StringBuilder result = new StringBuilder();
+        String sep = " ";
+        char stringQuote = '"';
+        result.append(index).append(sep);
+        result.append(getPeak().getIdNum()).append(sep);
+        result.append((spectralDim + 1)).append(sep);
+        result.append((iComp + 1)).append(sep);
+        result.append(STAR3.valueOf(comp.getOffset())).append(sep);
+        result.append(".").append(sep);
+        result.append(STAR3.valueOf(comp.getIntensity())).append(sep);
+        result.append(".").append(sep);
+        result.append(STAR3.valueOf(comp.getVolume())).append(sep);
+        result.append(".").append(sep);
+        result.append(STAR3.valueOf(comp.getLineWidth())).append(sep);
+        result.append(".");
+
+        return result.toString();
+    }
+
+    public String toSTAR3LoopMultipletCharString(int contributionID, CouplingPattern coupling, int iComp, int index) {
+        StringBuilder result = new StringBuilder();
+        String sep = " ";
+        char stringQuote = '"';
+        result.append(index).append(sep);
+        result.append(getPeak().getIdNum()).append(sep);
+        result.append((spectralDim + 1)).append(sep);
+        result.append((iComp + 1)).append(sep);
+        result.append(CouplingPattern.toCouplingChar(coupling.getNValue(iComp))).append(sep);
+        result.append(STAR3.valueOf(coupling.getValueAt(iComp))).append(sep);
+        result.append(".").append(sep);
+        result.append(STAR3.valueOf(coupling.getSin2Theta(iComp))).append(sep);
+        result.append(".").append(sep);
+        result.append(STAR3.valueOf(coupling.getIntensity())).append(sep);
+        result.append(".").append(sep);
+        result.append(".");
         return result.toString();
     }
 
@@ -648,6 +779,13 @@ public class PeakDim {
         return myPeak;
     }
 
+    public PeakList getPeakList() { return myPeak.peakList; }
+
+    public String getSampleConditionLabel() { return myPeak.peakList.getSampleConditionLabel(); }
+
+    public String getSampleLabel() { return myPeak.peakList.getSampleLabel(); }
+
+
     public boolean isLinked() {
         return (getLinkedPeakDims().size() > 2);
     }
@@ -753,8 +891,10 @@ public class PeakDim {
     void freezeDims(boolean useAllConditions) {
         List<PeakDim> links = getLinkedPeakDims();
         String condition = myPeak.peakList.getSampleConditionLabel();
+        String sample = myPeak.peakList.getSampleLabel();
         for (PeakDim peakDim : links) {
-            if ((peakDim != this) && (useAllConditions || peakDim.myPeak.peakList.getSampleConditionLabel().equals(condition))) {
+            if ((peakDim != this) && (useAllConditions || (peakDim.myPeak.peakList.getSampleConditionLabel().equals(condition) &&
+                    peakDim.myPeak.peakList.getSampleLabel().equals(sample)))) {
                 // use field so we don't fire recursive freezeDims
                 peakDim.frozen = frozen;
                 peakDim.myPeak.updateFrozenColor();

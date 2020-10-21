@@ -241,11 +241,13 @@ public class Loop {
         ArrayList<String> column = loopTags.get(tag);
         List<Double> values;
         if (column == null) {
-            values = Collections.nCopies(nRows, (Double) null);
+            values = Collections.nCopies(nRows, defaultValue);
         } else {
             values = new ArrayList<>();
             for (String s : column) {
                 if (s.equals(".")) {
+                    values.add(defaultValue);
+                } else if (s.equals("?")) {
                     values.add(defaultValue);
                 } else {
                     values.add(Double.parseDouble(s));
@@ -264,6 +266,8 @@ public class Loop {
             values = new ArrayList<>();
             for (String s : column) {
                 if (s.equals(".")) {
+                    values.add(defaultValue);
+                } else if (s.equals("?")) {
                     values.add(defaultValue);
                 } else {
                     values.add(Integer.parseInt(s));

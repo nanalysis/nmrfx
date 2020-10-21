@@ -34,7 +34,67 @@ import java.util.*;
  */
 public class Clusters extends Object {
 
-    public List<Datum> data = new ArrayList<>();
+    public static class ClusterItem {
+
+        double[] v;
+        int group;
+        List<Object> objects = new ArrayList<>();
+        boolean active = true;
+
+        public double getV0() {
+            return v[0];
+        }
+
+        public List<Object> getObjects() {
+            return objects;
+        }
+
+        public int getN() {
+            return objects.size();
+        }
+
+        public boolean isActive() {
+            return active;
+        }
+
+        public ClusterItem(Object obj, double[] v, int group) {
+            this.objects.add(obj);
+            this.v = v.clone();
+            this.group = group;
+        }
+
+        public ClusterItem(List<Object> objs, double[] v, int group) {
+            this.objects.addAll(objs);
+            this.v = v.clone();
+            this.group = group;
+        }
+
+        public void merge(ClusterItem item2) {
+            int iPfdim = v.length;
+            for (int ii = 0; ii < iPfdim; ii++) {
+                v[ii] = ((v[ii] * getN()) + (item2.v[ii] * item2.getN()))
+                        / (getN() + item2.getN());
+            }
+            objects.addAll(item2.objects);
+            item2.objects.clear();
+            item2.active = false;
+        }
+
+        public String toString() {
+            StringBuilder sBuilder = new StringBuilder();
+            for (int i = 0; i < objects.size(); i++) {
+                sBuilder.append(objects.get(i).toString());
+                sBuilder.append(" ");
+            }
+            for (int i = 0; i < v.length; i++) {
+                sBuilder.append(v[i]).append(" ");
+            }
+            sBuilder.append(group);
+            return sBuilder.toString();
+        }
+    }
+
+    public List<ClusterItem> data = new ArrayList<>();
 
     /**
      * Creates new Clusters
@@ -42,99 +102,35 @@ public class Clusters extends Object {
     public Clusters() {
     }
 
-    public void addDatum(Datum datum) {
-        data.add(datum);
+    public void dump() {
+        for (ClusterItem item : data) {
+            if (item.isActive()) {
+                System.out.println(item.toString());
+            }
+        }
     }
 
-//    public void clusterList(String[] argv)
-//            throws IllegalArgumentException {
-//        Datum iDatum;
-//
-//        if (argv == null) {
-//            throw new IllegalArgumentException("no tclObject in clusterList");
-//        }
-//        if (argv.length < 3) {
-//            throw new IllegalArgumentException("?-targetsize targetSize? \"tol1 tol2 ...\" data");
-//        }
-//
-//        double[] tol = null;
-//        int targetClusters = Integer.MAX_VALUE;
-//        int start = 1;
-//        if (argv[1].toString().equals("-targetsize")) {
-//            if (argv.length < 5) {
-//                throw new IllegalArgumentException("?-targetsize targetSize? \"tol1 tol2 ...\" data");
-//            }
-//            targetClusters = Integer.parseInt(argv[2]);
-//            start = 3;
-//        }
-//        for (int i = start; i < argv.length; i++) {
-//            TclObject[] argElems = TclList.getElements(argv[i]);
-//
-//            if (i == start) {
-//                tol = new double[argElems.length];
-//
-//                for (int j = 0; j < argElems.length; j++) {
-//                    tol[j] = Double.parseDouble(argElems[j]);
-//                }
-//            } else {
-//                if (argElems.length != tol.length) {
-//                    throw new TclException(interp,
-//                            "cluster element dimension not equal to number of tolerances");
-//                }
-//
-//                Datum datum = new Datum(tol.length);
-//
-//                for (int j = 0; j < argElems.length; j++) {
-//                    datum.v[j] = Double.parseDouble(argElems[j]);
-//                }
-//
-//                datum.act = true;
-//                datum.proto[0] = i - start - 1;
-//                datum.idNum = i - start - 1;
-//                data.add(datum);
-//            }
-//        }
-//
-//        doCluster(tol.length, tol, targetClusters);
-//
-//        int npeaks = data.size();
-//        TclObject linksList = TclList.newInstance();
-//        TclObject protoList = TclList.newInstance();
-//        TclObject jointList = TclList.newInstance();
-//
-//        int nClusts = -1;
-//
-//        for (int i = 0; i < npeaks; i++) {
-//            iDatum = (Datum) data.elementAt(i);
-//
-//            if (iDatum.act) {
-//                nClusts++;
-//            }
-//
-//            iDatum.proto[0] = nClusts;
-//        }
-//
-//        for (int i = 0; i < npeaks; i++) {
-//            iDatum = (Datum) data.elementAt(i);
-//
-//            if (iDatum.act) {
-//                TclList.append(protoList,
-//                        TclDouble.newInstance(iDatum.v[0]));
-//            }
-//        }
-//
-//        for (int i = 0; i < npeaks; i++) {
-//            iDatum = (Datum) data.elementAt(i);
-//            TclList.append(linksList,
-//                    TclInteger.newInstance(iDatum.proto[0]));
-//            TclList.append(linksList,
-//                    TclInteger.newInstance(iDatum.idNum));
-//        }
-//
-//        TclList.append(jointList, linksList);
-//        TclList.append(jointList, protoList);
-//        interp.setResult(jointList);
-//    }
+    public void testDuplicates() {
+        Set<Object> set = new HashSet<>();
+        for (ClusterItem item : data) {
+            if (item.isActive()) {
+                for (Object obj : item.objects) {
+                    if (set.contains(obj)) {
+                        System.out.println("duplicate " + obj.toString());
+                        System.out.println(item.toString());
+                    } else {
+                        set.add(obj);
+                    }
+                }
+            }
+        }
+
+    }
+
+    public void addDatum(ClusterItem item) {
+        data.add(item);
+    }
+
     public void doCluster(int iPfdim, double[] tol) {
         doCluster(iPfdim, tol, Integer.MAX_VALUE);
     }
@@ -155,22 +151,14 @@ public class Clusters extends Object {
         double delta1;
         double delta2;
 
-        Datum iDatum = null;
-        Datum jDatum = null;
-        int npeaks = data.size();
-        int nClusters = npeaks;
+        int nClusterItems = data.size();
+        int nClusters = nClusterItems;
 
-        if (npeaks < 2) {
+        if (nClusterItems < 2) {
             throw new IllegalArgumentException("Can't cluster less than 2 peaks");
         }
 
-        data.sort(comparing(Datum::getV0));
-
-        for (i = 0; i < npeaks; i++) {
-            iDatum = (Datum) data.get(i);
-            iDatum.last = i;
-            iDatum.proto[0] = i;
-        }
+        data.sort(comparing(ClusterItem::getV0));
 
         imin = 0;
 
@@ -180,10 +168,10 @@ public class Clusters extends Object {
             imin = -1;
             jmin = -1;
 
-            for (i = 0; i < (npeaks - 1); i++) {
-                iDatum = (Datum) data.get(i);
+            for (i = 0; i < (nClusterItems - 1); i++) {
+                ClusterItem iDatum = data.get(i);
 
-                if (!iDatum.act) {
+                if (!iDatum.active) {
                     continue;
                 }
 
@@ -192,53 +180,56 @@ public class Clusters extends Object {
 
                 do {
                     k++;
+                    ClusterItem jDatum = null;
 
-                    for (j = k; j < npeaks; j++) {
-                        jDatum = (Datum) data.get(j);
+                    for (j = k; j < nClusterItems; j++) {
+                        ClusterItem testDatum = data.get(j);
 
-                        if ((jDatum.group >= 0)
-                                && (jDatum.group == iDatum.group)) {
+                        if ((testDatum.group == 0) && (iDatum.group == 0)) {
                             continue;
                         }
 
-                        if (jDatum.act) {
+                        if (testDatum.active) {
+                            jDatum = testDatum;
                             break;
                         }
                     }
 
-                    if (j >= npeaks) {
+                    if (j >= nClusterItems) {
                         break;
                     }
 
-                    ok = true;
-                    dDeltaSum = 0.0;
+                    if (jDatum != null) {
+                        ok = true;
+                        dDeltaSum = 0.0;
 
-                    for (ii = 0; ii < iPfdim; ii++) {
-                        delta1 = (iDatum.n * (iDatum.v[ii] * iDatum.v[ii]))
-                                + (jDatum.n * (jDatum.v[ii] * jDatum.v[ii]));
-                        delta2 = (iDatum.n * iDatum.v[ii])
-                                + (jDatum.n * jDatum.v[ii]);
-                        delta2 = (delta2 * delta2) / (iDatum.n + jDatum.n);
+                        for (ii = 0; ii < iPfdim; ii++) {
+                            delta1 = (iDatum.getN() * (iDatum.v[ii] * iDatum.v[ii]))
+                                    + (jDatum.getN() * (jDatum.v[ii] * jDatum.v[ii]));
+                            delta2 = (iDatum.getN() * iDatum.v[ii])
+                                    + (jDatum.getN() * jDatum.v[ii]);
+                            delta2 = (delta2 * delta2) / (iDatum.getN() + jDatum.getN());
 
-                        delta = delta1 - delta2;
+                            delta = delta1 - delta2;
 
-                        if (delta < 0.0) {
-                            delta = 0.0;
+                            if (delta < 0.0) {
+                                delta = 0.0;
+                            }
+
+                            dDeltaSum += (delta / (tol[ii] * tol[ii]));
+
+                            if ((ii == 0) && (dDeltaSum > 2.0)) {
+                                ok1 = false;
+                            }
                         }
 
-                        dDeltaSum += (delta / (tol[ii] * tol[ii]));
-
-                        if ((ii == 0) && (dDeltaSum > 2.0)) {
-                            ok1 = false;
+                        if (dDeltaSum < min) {
+                            min = dDeltaSum;
+                            imin = i;
+                            jmin = j;
                         }
                     }
-
-                    if (dDeltaSum < min) {
-                        min = dDeltaSum;
-                        imin = i;
-                        jmin = j;
-                    }
-                } while ((k < (npeaks - 1)) && ok1);
+                } while ((k < (nClusterItems - 1)) && ok1);
             }
 
             if (ok) {
@@ -249,37 +240,14 @@ public class Clusters extends Object {
                 }
 
                 if (ok && (jmin >= 0) && (imin >= 0)) {
-                    iDatum = (Datum) data.get(imin);
-                    jDatum = (Datum) data.get(jmin);
-
-                    for (ii = 0; ii < iPfdim; ii++) {
-                        iDatum.v[ii] = ((iDatum.v[ii] * iDatum.n)
-                                + (jDatum.v[ii] * jDatum.n)) / (iDatum.n + jDatum.n);
+                    ClusterItem iDatum = data.get(imin);
+                    ClusterItem jDatum = data.get(jmin);
+                    if (iDatum.group == 0) {
+                        iDatum.merge(jDatum);
+                    } else {
+                        jDatum.merge(iDatum);
                     }
 
-                    iDatum.n += jDatum.n;
-                    jDatum.act = false;
-                    jDatum.proto[0] = iDatum.proto[0];
-
-                    if ((jDatum.group >= 0) && (iDatum.group < 0)) {
-                        iDatum.group = jDatum.group;
-                    }
-
-                    jDatum.group = iDatum.group;
-
-                    int next = jDatum.next;
-
-                    while (next != 0) {
-                        Datum nextDatum = (Datum) data.get(next);
-                        nextDatum.proto[0] = iDatum.proto[0];
-                        nextDatum.group = iDatum.group;
-                        next = nextDatum.next;
-                    }
-
-                    Datum lastDatum = (Datum) data.get(iDatum.last);
-
-                    lastDatum.next = jmin;
-                    iDatum.last = jDatum.last;
                     nClusters--;
                     if (nClusters == targetClusters) {
                         break;

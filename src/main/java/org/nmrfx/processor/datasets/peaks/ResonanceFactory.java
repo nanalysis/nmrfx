@@ -47,14 +47,18 @@ public class ResonanceFactory {
     }
 
     public Resonance build() {
-        lastID++;
+        while (map.get(lastID++)!=null);
         Resonance resonance = new SimpleResonance(lastID);
         map.put(lastID, resonance);
         return resonance;
     }
 
     public Resonance build(long id) {
-        Resonance resonance = new SimpleResonance(id);
+        Resonance resonance = get(id);
+        if (resonance == null) {
+            resonance = new SimpleResonance(id);
+            map.put(id,resonance);
+        }
         return resonance;
     }
 

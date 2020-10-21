@@ -17,13 +17,13 @@
  */
 package org.nmrfx.processor.datasets.peaks;
 
-import org.nmrfx.processor.cluster.Clusters;
-import org.nmrfx.processor.cluster.Datum;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.optimization.*;
 import org.nmrfx.processor.utilities.Util;
 import java.io.*;
 import static java.lang.Double.compare;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.*;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -46,12 +46,14 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
-import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
+import org.nmrfx.processor.cluster.Clusters;
+import org.nmrfx.processor.cluster.Clusters.ClusterItem;
 import org.nmrfx.processor.datasets.Nuclei;
 import org.nmrfx.processor.datasets.RegionData;
 import static org.nmrfx.processor.datasets.peaks.Peak.getMeasureFunction;
 import smile.clustering.HierarchicalClustering;
 import smile.clustering.linkage.CompleteLinkage;
+import org.nmrfx.project.Project;
 
 /**
  *
@@ -105,7 +107,7 @@ public class PeakList {
      *
      */
     public String fileName;
-    private final int listNum;
+    private final int listID;
 
     /**
      *
@@ -166,7 +168,7 @@ public class PeakList {
         }
     }
 
-    class SearchDim {
+    public class SearchDim {
 
         final int iDim;
         final double tol;
@@ -174,6 +176,10 @@ public class PeakList {
         SearchDim(int iDim, double tol) {
             this.iDim = iDim;
             this.tol = tol;
+        }
+
+        public int getDim() {
+            return iDim;
         }
     }
 
@@ -191,8 +197,9 @@ public class PeakList {
      *
      * @param name
      * @param n
+     * @param listNum
      */
-    public PeakList(String name, int n) {
+    public PeakList(String name, int n, Integer listNum) {
         listName = name;
         fileName = "";
         nDim = n;
@@ -208,9 +215,23 @@ public class PeakList {
 
         peaks = new ArrayList<>();
         indexMap.clear();
+        Project.getActive().addPeakList(this, listName);
+        if (listNum == null) {
+            listNum = 1;
+            while (get(listNum).isPresent()) {
+                listNum++;
+            }
+        }
+        this.listID = listNum;
+    }
 
-        peakListTable.put(listName, this);
-        listNum = peakListTable.size();
+    /**
+     *
+     * @param name
+     * @param n
+     */
+    public PeakList(String name, int n) {
+        this(name, n, null);
     }
 
     @Override
@@ -305,7 +326,7 @@ public class PeakList {
      * @return
      */
     public static Iterator iterator() {
-        return peakListTable.values().iterator();
+        return Project.getActive().getPeakLists().iterator();
     }
 
     /**
@@ -313,7 +334,7 @@ public class PeakList {
      * @return the ID number of the peak list.
      */
     public int getId() {
-        return listNum;
+        return listID;
     }
 
     /**
@@ -330,9 +351,10 @@ public class PeakList {
      * @param newName
      */
     public void setName(String newName) {
-        peakListTable.remove(listName);
+        Project project = Project.getActive();
+        project.removePeakList(listName);
         listName = newName;
-        peakListTable.put(newName, this);
+        project.addPeakList(this, newName);
     }
 
     /**
@@ -349,6 +371,13 @@ public class PeakList {
      */
     public double getScale() {
         return scale;
+    }
+
+    /**
+     *
+     */
+    public void setScale(double scale) {
+        this.scale = scale;
     }
 
     /**
@@ -405,6 +434,10 @@ public class PeakList {
      */
     public void setDetails(String details) {
         this.details = details;
+    }
+
+    public List<SearchDim> getSearchDims() {
+        return searchDims;
     }
 
     /**
@@ -535,7 +568,7 @@ public class PeakList {
      */
     public static boolean isAnyChanged() {
         boolean anyChanged = false;
-        for (PeakList checkList : peakListTable.values()) {
+        for (PeakList checkList : Project.getActive().getPeakLists()) {
             if (checkList.isChanged()) {
                 anyChanged = true;
                 break;
@@ -549,8 +582,8 @@ public class PeakList {
      *
      */
     public static void clearAllChanged() {
-        for (Object checkList : peakListTable.values()) {
-            ((PeakList) checkList).clearChanged();
+        for (PeakList checkList : Project.getActive().getPeakLists()) {
+            checkList.clearChanged();
         }
     }
 
@@ -718,7 +751,7 @@ public class PeakList {
             Peak peak = peaks.get(i);
             peak.setIdNum(i);
         }
-
+        idLast = peaks.size() - 1;
         reIndex();
     }
 
@@ -759,35 +792,41 @@ public class PeakList {
      *
      * @return
      */
-    public static List<PeakList> getLists() {
-        List<PeakList> peakLists = PeakList.peakListTable.values().stream().collect(Collectors.toList());
-        return peakLists;
+    public static Collection<PeakList> getLists() {
+        return Project.getActive().getPeakLists();
     }
 
     /**
+     * Returns the PeakList that has the specified name.
      *
-     * @param listName
-     * @return
+     * @param listName the name of the peak list
+     * @return the PeaKlist or null if no PeakList of that name exists
      */
     public static PeakList get(String listName) {
-        return ((PeakList) peakListTable.get(listName));
+        return Project.getActive().getPeakList(listName);
     }
 
     /**
+     * Returns an Optional containing the PeakList that has the specified id
+     * number or empty value if no PeakList with that id exists.
      *
-     * @param listID
-     * @return
+     * @param listID the id of the peak list
+     * @return the Optional containing the PeaKlist or an empty value if no
+     * PeakList with that id exists
      */
-    public static PeakList get(int listID) {
-        Iterator iter = iterator();
-        PeakList peakList = null;
-        while (iter.hasNext()) {
-            peakList = (PeakList) iter.next();
-            if (listID == peakList.listNum) {
-                break;
-            }
-        }
-        return peakList;
+    public static Optional<PeakList> get(int listID) {
+        return Project.getActive().getPeakList(listID);
+    }
+
+    /**
+     * Return an Optional containing the PeakList with lowest id number or an
+     * empty value if no PeakLists are present.
+     *
+     * @return Optional containing first peakList if any peak lists present or
+     * empty if no peak lists.
+     */
+    public static Optional<PeakList> getFirst() {
+        return Project.getActive().getFirstPeakList();
     }
 
     /**
@@ -795,7 +834,7 @@ public class PeakList {
      * @param listName
      */
     public static void remove(String listName) {
-        PeakList peakList = (PeakList) peakListTable.get(listName);
+        PeakList peakList = Project.getActive().getPeakList(listName);
         if (peakList != null) {
             peakList.remove();
         }
@@ -815,7 +854,7 @@ public class PeakList {
         peaks = null;
         schedExecutor.shutdown();
         schedExecutor = null;
-        peakListTable.remove(listName);
+        Project.getActive().removePeakList(listName);
     }
 
     void swap(double[] limits) {
@@ -905,7 +944,9 @@ public class PeakList {
             result.append(dimName).append(".F").append(sep);
         }
         result.append("volume").append(sep);
+        result.append("volume_err").append(sep);
         result.append("intensity").append(sep);
+        result.append("intensity_err").append(sep);
         result.append("type").append(sep);
         result.append("comment").append(sep);
         result.append("color").append(sep);
@@ -1012,7 +1053,7 @@ public class PeakList {
         return foldAmount;
     }
 
-    double foldPPM(double ppm, double fDelta, double min, double max) {
+    public static double foldPPM(double ppm, double fDelta, double min, double max) {
         if (min > max) {
             double hold = min;
             min = max;
@@ -1287,8 +1328,8 @@ public class PeakList {
 
         int lastDot = peakSpecifier.lastIndexOf('.');
 
-        PeakList peakList = (PeakList) peakListTable.get(peakSpecifier.substring(
-                0, dot));
+        PeakList peakList = Project.getActive().
+                getPeakList(peakSpecifier.substring(0, dot));
 
         if (peakList == null) {
             return null;
@@ -1327,8 +1368,8 @@ public class PeakList {
 
         int lastDot = peakSpecifier.lastIndexOf('.');
 
-        PeakList peakList = (PeakList) peakListTable.get(peakSpecifier.substring(
-                0, dot));
+        PeakList peakList = Project.getActive().
+                getPeakList(peakSpecifier.substring(0, dot));
 
         if (peakList == null) {
             return null;
@@ -1367,8 +1408,8 @@ public class PeakList {
 
         int lastDot = peakSpecifier.lastIndexOf('.');
 
-        PeakList peakList = (PeakList) peakListTable.get(peakSpecifier.substring(
-                0, dot));
+        PeakList peakList = Project.getActive().
+                getPeakList(peakSpecifier.substring(0, dot));
 
         if (peakList == null) {
             return null;
@@ -1496,8 +1537,8 @@ public class PeakList {
 
         int lastDot = peakSpecifier.lastIndexOf('.');
 
-        PeakList peakList = (PeakList) peakListTable.get(peakSpecifier.substring(
-                0, dot));
+        PeakList peakList = Project.getActive().
+                getPeakList(peakSpecifier.substring(0, dot));
 
         if (peakList == null) {
             return null;
@@ -1539,10 +1580,11 @@ public class PeakList {
      *
      * @param newPeak
      */
-    public void addPeak(Peak newPeak) {
+    public Peak addPeak(Peak newPeak) {
         newPeak.initPeakDimContribs();
         peaks.add(newPeak);
         clearIndex();
+        return newPeak;
     }
 
     /**
@@ -1649,6 +1691,36 @@ public class PeakList {
         }
         compress();
         reNumber();
+    }
+
+    public void addMirroredPeaks() {
+        if (getNDim() == 2) {
+            int n = peaks.size();
+            for (int i = 0; i < n; i++) {
+                Peak peak = peaks.get(i);
+                if (!peak.isDeleted()) {
+                    Peak newPeak = getNewPeak();
+                    peak.copyTo(newPeak);
+                    newPeak.getPeakDim(1).setChemShiftValue(peak.getPeakDim(0).getChemShiftValue());
+                    newPeak.getPeakDim(0).setChemShiftValue(peak.getPeakDim(1).getChemShiftValue());
+                    newPeak.getPeakDim(1).setLabel(peak.getPeakDim(0).getLabel());
+                    newPeak.getPeakDim(0).setLabel(peak.getPeakDim(1).getLabel());
+                }
+            }
+        }
+    }
+
+    public void autoCoupleHomoNuclear() {
+        if (getNDim() == 2) {
+            double min = 4.0 / getSpectralDim(0).getSf();
+            double max = 18.0 / getSpectralDim(0).getSf();
+            double[] minTol = {0.0, 0.0};
+            double[] maxTol = {max, min};
+            couple(minTol, maxTol, PhaseRelationship.INPHASE, 0);
+            maxTol[0] = min;
+            maxTol[1] = max;
+            couple(minTol, maxTol, PhaseRelationship.INPHASE, 1);
+        }
     }
 
     /**
@@ -2281,6 +2353,8 @@ public class PeakList {
         double[] tol = null;
 
         for (PeakList peakList : peakLists) {
+            // fixme  should remove unlink and properly support links below
+            peakList.unLinkPeaks();
             peakList.peaks.stream().filter(p -> p.getStatus() >= 0).forEach(p -> p.setStatus(0));
             int fDim = peakList.searchDims.size();
             if (fDim == 0) {
@@ -2288,11 +2362,10 @@ public class PeakList {
             }
         }
 
-        final int nGroups = peakLists.size();
-
         boolean firstList = true;
         int ii = 0;
         int fDim = 0;
+        int iList = 0;
         for (PeakList peakList : peakLists) {
 
             if (firstList) {
@@ -2314,65 +2387,53 @@ public class PeakList {
                 }
 
                 clustPeaks.add(peak);
-                final Datum datum = new Datum(peakList.searchDims.size());
-                datum.act = true;
-                datum.proto[0] = ii;
-                datum.idNum = ii;
-
-                if (firstList && (nGroups > 1)) {
-                    datum.group = 0;
-                }
 
                 ii++;
-
+                double[] v = new double[peakList.searchDims.size()];
                 for (int k = 0; k < peakList.searchDims.size(); k++) {
                     SearchDim sDim = peakList.searchDims.get(k);
-                    datum.v[k] = 0.0;
+                    v[k] = 0.0;
 
                     for (int iPeak = 0; iPeak < linkedPeaks.size(); iPeak++) {
                         Peak peak2 = linkedPeaks.get(iPeak);
                         peak2.setStatus(1);
-                        datum.v[k] += peak2.peakDims[sDim.iDim].getChemShiftValue();
+                        v[k] += peak2.peakDims[sDim.iDim].getChemShiftValue();
                     }
 
-                    datum.v[k] /= linkedPeaks.size();
+                    v[k] /= linkedPeaks.size();
 
                     //datum.n = linkedPeaks.size();
                     tol[k] = sDim.tol;
                 }
+                ClusterItem clusterItem = new ClusterItem(peak, v, iList);
 
-                clusters.data.add(datum);
+                clusters.addDatum(clusterItem);
             }
+            iList++;
             firstList = false;
         }
-
         clusters.doCluster(fDim, tol);
+        clusters.testDuplicates();
 
         int nClusters = 0;
         for (int i = 0; i < clusters.data.size(); i++) {
-            Datum iDatum = (Datum) clusters.data.get(i);
-
-            if (iDatum.act) {
-                nClusters++;
-                for (int j = 0; j < clusters.data.size(); j++) {
-                    if (i == j) {
-                        continue;
-                    }
-
-                    Datum jDatum = (Datum) clusters.data.get(j);
-
-                    if (iDatum.proto[0] == jDatum.proto[0]) {
-                        for (int iDim = 0; iDim < fDim; iDim++) {
-                            Peak iPeak = clustPeaks.get(iDatum.idNum);
-                            Peak jPeak = clustPeaks.get(jDatum.idNum);
-                            SearchDim iSDim = iPeak.peakList.searchDims.get(iDim);
-                            SearchDim jSDim = jPeak.peakList.searchDims.get(iDim);
-
-                            linkPeaks(iPeak, iSDim.iDim, jPeak, jSDim.iDim);
-                        }
+            ClusterItem iDatum = clusters.data.get(i);
+            if (iDatum.isActive()) {
+                List<Object> objs = iDatum.getObjects();
+                Peak iPeak = (Peak) objs.get(0);
+                PeakList.unLinkPeak(iPeak);
+                for (int iObj = 1; iObj < objs.size(); iObj++) {
+                    Peak jPeak = (Peak) objs.get(iObj);
+                    PeakList.unLinkPeak(jPeak);
+                    for (int iDim = 0; iDim < fDim; iDim++) {
+                        SearchDim iSDim = iPeak.peakList.searchDims.get(iDim);
+                        SearchDim jSDim = jPeak.peakList.searchDims.get(iDim);
+                        linkPeaks(iPeak, iSDim.iDim, jPeak, jSDim.iDim);
                     }
                 }
+                nClusters++;
             }
+
         }
         return nClusters;
     }
@@ -2405,7 +2466,7 @@ public class PeakList {
             }
         }
         CompleteLinkage linkage = new CompleteLinkage(proximity);
-        HierarchicalClustering clusterer = new HierarchicalClustering(linkage);
+        HierarchicalClustering clusterer = HierarchicalClustering.fit(linkage);
         int[] partition = clusterer.partition(limit);
         int nClusters = 0;
         for (int i = 0; i < n; i++) {
@@ -2817,20 +2878,23 @@ public class PeakList {
         int[] pdim = getDimsForDataset(dataset, true);
 
         peaks.stream().forEach(peak -> {
-            double[] values = new double[nPlanes];
+            double[][] values = new double[2][nPlanes];
             for (int i = 0; i < nPlanes; i++) {
                 planes[0] = i;
                 try {
-                    double value = peak.measurePeak(dataset, pdim, planes, f);
-                    values[i] = value;
+                    double[] value = peak.measurePeak(dataset, pdim, planes, f, mode);
+                    values[0][i] = value[0];
+                    values[1][i] = value[1];
                 } catch (IOException ex) {
                     System.out.println(ex.getMessage());
                 }
             }
             if (mode.contains("vol")) {
-                peak.setVolume1((float) values[0]);
+                peak.setVolume1((float) values[0][0]);
+                peak.setVolume1Err((float) values[1][0]);
             } else {
-                peak.setIntensity((float) values[0]);
+                peak.setIntensity((float) values[0][0]);
+                peak.setIntensityErr((float) values[1][0]);
             }
             peak.setMeasures(values);
         });
@@ -3352,10 +3416,10 @@ public class PeakList {
                         peak.setComment(String.format("T %.4f", values[index++]));
                     }
                 } else if (nPlanes > 1) {
-                    double[] measures = new double[nPlanes];
+                    double[][] measures = new double[2][nPlanes];
                     index--;
                     for (int iPlane = 0; iPlane < nPlanes; iPlane++) {
-                        measures[iPlane] = values[index++];
+                        measures[0][iPlane] = values[index++];
                     }
                     peak.setMeasures(measures);
                 }
@@ -3738,7 +3802,7 @@ public class PeakList {
 
     /**
      *
-     * @param iDim
+     * @param name
      * @return
      */
     public SpectralDim getSpectralDim(String name) {
@@ -3772,7 +3836,7 @@ public class PeakList {
      * @return
      */
     public static PeakList getPeakListForDataset(String datasetName) {
-        for (PeakList peakList : peakListTable.values()) {
+        for (PeakList peakList : Project.getActive().getPeakLists()) {
             if (peakList.fileName.equals(datasetName)) {
                 return peakList;
             }
@@ -3909,5 +3973,58 @@ public class PeakList {
      */
     public boolean requireSliderCondition() {
         return requireSliderCondition;
+    }
+
+    public void writeSTAR3Header(FileWriter chan) throws IOException {
+        char stringQuote = '"';
+        chan.write("save_" + getName() + "\n");
+        chan.write("_Spectral_peak_list.Sf_category                 ");
+        chan.write("spectral_peak_list\n");
+        chan.write("_Spectral_peak_list.Sf_framecode                 ");
+        chan.write(getName() + "\n");
+        chan.write("_Spectral_peak_list.ID                          ");
+        chan.write(getId() + "\n");
+        chan.write("_Spectral_peak_list.Data_file_name               ");
+        chan.write(".\n");
+        chan.write("_Spectral_peak_list.Sample_ID                   ");
+        chan.write(".\n");
+        chan.write("_Spectral_peak_list.Sample_label                 ");
+        if (getSampleLabel().length() != 0) {
+            chan.write("$" + getSampleLabel() + "\n");
+        } else {
+            chan.write(".\n");
+        }
+        chan.write("_Spectral_peak_list.Sample_condition_list_ID     ");
+        chan.write(".\n");
+        chan.write("_Spectral_peak_list.Sample_condition_list_label  ");
+        String sCond = getSampleConditionLabel();
+        if ((sCond.length() != 0) && !sCond.equals(".")) {
+            chan.write("$" + sCond + "\n");
+        } else {
+            chan.write(".\n");
+        }
+        chan.write("_Spectral_peak_list.Slidable                      ");
+        String slidable = isSlideable() ? "yes" : "no";
+        chan.write(slidable + "\n");
+        chan.write("_Spectral_peak_list.Scale ");
+        chan.write(String.valueOf(getScale()) + "\n");
+
+        chan.write("_Spectral_peak_list.Experiment_ID                 ");
+        chan.write(".\n");
+        chan.write("_Spectral_peak_list.Experiment_name               ");
+        if (fileName.length() != 0) {
+            chan.write("$" + fileName + "\n");
+        } else {
+            chan.write(".\n");
+        }
+        chan.write("_Spectral_peak_list.Number_of_spectral_dimensions ");
+        chan.write(String.valueOf(nDim) + "\n");
+        chan.write("_Spectral_peak_list.Details                       ");
+        if (getDetails().length() != 0) {
+            chan.write(stringQuote + getDetails() + stringQuote + "\n");
+        } else {
+            chan.write(".\n");
+        }
+        chan.write("\n");
     }
 }

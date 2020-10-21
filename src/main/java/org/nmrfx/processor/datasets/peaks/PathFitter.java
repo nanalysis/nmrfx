@@ -13,7 +13,10 @@ import org.nmrfx.processor.datasets.peaks.PeakPath.PATHMODE;
 import org.nmrfx.processor.datasets.peaks.PeakPath.Path;
 import org.nmrfx.processor.datasets.peaks.PeakPath.PeakDistance;
 import org.nmrfx.processor.optimization.Fitter;
+import smile.data.DataFrame;
+import smile.data.formula.Formula;
 import smile.regression.OLS;
+import smile.regression.LinearModel;
 
 /**
  *
@@ -154,8 +157,9 @@ public class PathFitter {
         int nSim = 100;
         int nPar = nDims * 3;
         int n = xValues[0].length;
-        double[][] x = new double[n][2];
-        double[] y = new double[n];
+        double[][] x = new double [n][3];
+//        double[][] x = new double[n][2];
+//        double[] y = new double[n];
         double[][] parValues = new double[nDims * 3][nSim];
         bestPars = new double[nDims * 3];
         parErrs = new double[nDims * 3];
@@ -165,12 +169,19 @@ public class PathFitter {
                 for (int iP = 0; iP < 2; iP++) {
                     x[i][iP] = Math.pow(p, iP + 1.0) / (iP + 1.0);
                 }
-                y[i] = yValues[iDim][i];
+//                y[i] = yValues[iDim][i];
+                x[i][2] = yValues[iDim][i];
+                  
             }
             System.out.println("ols");
-            OLS ols = new OLS(x, y);
-            System.out.println("ols " + ols.RSS());
-            double[][] ppars = ols.ttest();
+            String[] colNames = {"a", "b", "y"};
+            DataFrame dataframe = DataFrame.of(x, colNames);
+            Formula f = new Formula("y");
+//            OLS ols = new OLS(x, y);
+            LinearModel model = OLS.fit(f, dataframe);
+//            System.out.println("ols " + ols.RSS());
+//            double[][] ppars = ols.ttest();
+            double [][] ppars = model.ttest();
             bestPars[iDim * 3 + 1] = ppars[0][0];
             bestPars[iDim * 3 + 2] = ppars[1][0];
             bestPars[iDim * 3] = ppars[2][0];

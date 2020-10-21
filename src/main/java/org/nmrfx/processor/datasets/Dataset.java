@@ -28,7 +28,6 @@ import java.nio.FloatBuffer;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 import org.apache.commons.collections4.map.LRUMap;
 import org.apache.commons.math3.complex.Complex;
 import org.apache.commons.math3.linear.ArrayRealVector;
@@ -42,6 +41,8 @@ import org.nmrfx.processor.datasets.peaks.PeakList;
 import org.nmrfx.processor.math.MatrixType;
 import org.nmrfx.processor.operations.IDBaseline2;
 import org.nmrfx.processor.processing.LineShapeCatalog;
+import org.nmrfx.project.Project;
+
 
 /**
  * Instances of this class represent NMR datasets. The class is typically used
@@ -60,7 +61,6 @@ public class Dataset implements Comparable<Dataset> {
 //        } catch (IOException ioE) {
 //        }
 //    }
-    private static HashMap<String, Dataset> theFiles = new HashMap<>();
     public final static int NV_HEADER_SIZE = 2048;
     public final static int UCSF_HEADER_SIZE = 180;
     public final static int LABEL_MAX_BYTES = 16;
@@ -482,12 +482,7 @@ public class Dataset implements Comparable<Dataset> {
      * @return true if there is an open file with that name
      */
     public static boolean checkExistingName(final String name) {
-        boolean exists = false;
-        Dataset existingFile = (Dataset) theFiles.get(name);
-        if (existingFile != null) {
-            exists = true;
-        }
-        return exists;
+        return Project.getActive().isDatasetPresent(name);
     }
 
     /**
@@ -497,15 +492,9 @@ public class Dataset implements Comparable<Dataset> {
      * @return true if the file is open
      * @throws IOException if an I/O error occurs
      */
-    public static ArrayList<String> checkExistingFile(final String fullName) throws IOException {
+    public static boolean checkExistingFile(final String fullName) throws IOException {
         File file = new File(fullName);
-        String testPath;
-        testPath = file.getCanonicalPath();
-        ArrayList<String> names = new ArrayList<>();
-        theFiles.values().stream().filter((dataset) -> (dataset.canonicalName.equals(testPath))).forEach((dataset) -> {
-            names.add(dataset.getName());
-        });
-        return names;
+        return Project.getActive().isDatasetPresent(file);
     }
 
     /**
@@ -520,6 +509,7 @@ public class Dataset implements Comparable<Dataset> {
         int dot = fileName.lastIndexOf('.');
         String ext = "";
         String rootName = fileName;
+        List<String> datasetNames = Project.getActive().getDatasetNames();
         if (dot != -1) {
             ext = rootName.substring(dot);
             rootName = rootName.substring(0, dot);
@@ -528,7 +518,7 @@ public class Dataset implements Comparable<Dataset> {
         do {
             index++;
             newName = rootName + "_" + index + ext;
-        } while (theFiles.get(newName) != null);
+        } while (datasetNames.contains(newName));
         return newName;
     }
 
@@ -723,8 +713,8 @@ public class Dataset implements Comparable<Dataset> {
         return littleEndian ? ByteOrder.LITTLE_ENDIAN : ByteOrder.BIG_ENDIAN;
     }
 
-    private void addFile(String fileName) {
-        theFiles.put(fileName, this);
+    private void addFile(String datasetName) {
+        Project.getActive().addDataset(this, datasetName);
         for (DatasetListener observer : observers) {
             try {
                 observer.datasetAdded(this);
@@ -734,8 +724,8 @@ public class Dataset implements Comparable<Dataset> {
 
     }
 
-    private void removeFile(String fileName) {
-        theFiles.remove(fileName);
+    private void removeFile(String datasetName) {
+        Project.getActive().removeDataset(datasetName);
         for (DatasetListener observer : observers) {
             try {
                 observer.datasetRemoved(this);
@@ -751,10 +741,11 @@ public class Dataset implements Comparable<Dataset> {
      * @param newName the name to be used.
      */
     synchronized public void rename(String newName) {
-        if (null != theFiles.remove(fileName)) {
+        boolean removed = Project.getActive().removeDataset(fileName);
+        if (removed) {
             fileName = newName;
             title = fileName;
-            theFiles.put(newName, this);
+            Project.getActive().addDataset(this, newName);
             for (DatasetListener observer : observers) {
                 try {
                     observer.datasetRenamed(this);
@@ -1555,6 +1546,36 @@ public class Dataset implements Comparable<Dataset> {
 
     public double getFoldDown(int iDim) {
         return foldDown[iDim];
+    }
+
+    public double[] getLimits(int iDim) {
+        double[] limits = {
+            pointToPPM(iDim, size(iDim) - 1),
+            pointToPPM(iDim, 0)
+        };
+        return limits;
+    }
+
+    public static double foldPPM(double ppm, double[] foldLimits) {
+        double min = foldLimits[0];
+        double max = foldLimits[1];
+        if (min > max) {
+            double hold = min;
+            min = max;
+            max = hold;
+        }
+        if ((ppm < min) || (ppm > max)) {
+            double fDelta = max - min;
+            if (min != max) {
+                while (ppm > max) {
+                    ppm -= fDelta;
+                }
+                while (ppm < min) {
+                    ppm += fDelta;
+                }
+            }
+        }
+        return ppm;
     }
 
     /**
@@ -3437,7 +3458,7 @@ public class Dataset implements Comparable<Dataset> {
         if (fileName == null) {
             return null;
         } else {
-            return ((Dataset) theFiles.get(fileName));
+            return Project.getActive().getDataset(fileName);
         }
     }
 
@@ -3447,8 +3468,7 @@ public class Dataset implements Comparable<Dataset> {
      * @return List of names.
      */
     synchronized public static List<String> names() {
-        List<String> names = theFiles.keySet().stream().sorted().collect(Collectors.toList());
-        return names;
+        return Project.getActive().getDatasetNames();
     }
 
     /**
@@ -3456,9 +3476,8 @@ public class Dataset implements Comparable<Dataset> {
      *
      * @return List of datasets.
      */
-    synchronized public static List<Dataset> datasets() {
-        List<Dataset> datasets = theFiles.values().stream().collect(Collectors.toList());
-        return datasets;
+    synchronized public static Collection<Dataset> datasets() {
+        return Project.getActive().getDatasets();
     }
 
     /**
@@ -3503,8 +3522,9 @@ public class Dataset implements Comparable<Dataset> {
      */
     public static TreeSet getPropertyNames() {
         TreeSet nameSet = new TreeSet();
+        Collection<Dataset> datasets = Project.getActive().getDatasets();
 
-        for (Dataset dataset : theFiles.values()) {
+        for (Dataset dataset : datasets) {
             Iterator iter = dataset.properties.keySet().iterator();
             while (iter.hasNext()) {
                 String propName = (String) iter.next();
@@ -3830,6 +3850,12 @@ public class Dataset implements Comparable<Dataset> {
             if (rwVector.getSize() != dSize) {
                 rwVector.dwellTime *= (double) dSize / rwVector.getSize();
             }
+        } else {
+            int dSize = getSize(dim[0]);
+            if (rwVector.getSize() != dSize) {
+                rwVector.dwellTime *= (double) dSize / rwVector.getSize();
+            }
+
         }
         rwVector.setPh0(getPh0_r(dim[0]));
         rwVector.setPh1(getPh1_r(dim[0]));

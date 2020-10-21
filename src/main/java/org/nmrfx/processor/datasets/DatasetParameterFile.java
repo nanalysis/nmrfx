@@ -102,6 +102,7 @@ public class DatasetParameterFile {
                 pStream.printf("dlabel %d %s\n", (i + 1), dataset.getDlabel(i));
                 pStream.printf("nucleus %d %s\n", (i + 1), dataset.getNucleus(i).getNameNumber());
                 pStream.printf("complex %d %d\n", (i + 1), dataset.getComplex(i) ? 1 : 0);
+                pStream.printf("fdomain %d %d\n", (i + 1), dataset.getFreqDomain(i) ? 1 : 0);
                 double[] values = dataset.getValues(i);
                 if (values != null) {
                     pStream.printf("values %d", (i + 1));
@@ -114,6 +115,10 @@ public class DatasetParameterFile {
             pStream.printf("posneg %d\n", dataset.getPosneg());
             pStream.printf("lvl %f\n", dataset.getLvl());
             pStream.printf("scale %g\n", dataset.getScale());
+            pStream.printf("norm %g\n", dataset.getNorm());
+            if (dataset.getNoiseLevel() != null) {
+                pStream.printf("noise %g\n", dataset.getNoiseLevel());
+            }
             pStream.printf("rdims %d\n", dataset.getNFreqDims());
             pStream.printf("datatype %d\n", dataset.getDataType());
             pStream.printf("poscolor %s\n", dataset.getPosColor());
@@ -172,6 +177,12 @@ public class DatasetParameterFile {
                 dataset.setComplex(iDim, value == 1);
                 break;
             }
+            case "fdomain": {
+                int iDim = Integer.parseInt(fields[1]) - 1;
+                int value = Integer.parseInt(fields[2]);
+                dataset.setFreqDomain(iDim, value == 1);
+                break;
+            }
 
             case "nucleus": {
                 int iDim = Integer.parseInt(fields[1]) - 1;
@@ -208,6 +219,16 @@ public class DatasetParameterFile {
             case "scale": {
                 double value = Double.parseDouble(fields[1]);
                 dataset.setScale(value);
+                break;
+            }
+            case "norm": {
+                double value = Double.parseDouble(fields[1]);
+                dataset.setNorm(value);
+                break;
+            }
+            case "noise": {
+                double value = Double.parseDouble(fields[1]);
+                dataset.setNoiseLevel(value);
                 break;
             }
             case "rdims": {
