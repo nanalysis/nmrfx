@@ -15,12 +15,15 @@ import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.TreeSet;
 import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -28,10 +31,14 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.DatasetParameterFile;
+import org.nmrfx.processor.datasets.DatasetRegion;
 import org.nmrfx.processor.datasets.peaks.InvalidPeakException;
 import org.nmrfx.processor.datasets.peaks.PeakList;
+import org.nmrfx.processor.datasets.peaks.PeakPath;
 import org.nmrfx.processor.datasets.peaks.io.PeakReader;
 import org.nmrfx.processor.datasets.peaks.io.PeakWriter;
+import org.nmrfx.processor.datasets.peaks.ResonanceFactory;
+import java.util.stream.Collectors;
 
 /**
  *
@@ -46,15 +53,23 @@ public class Project {
     static Project activeProject = null;
     private Path projectDir = null;
     final String name;
-    public final Map<String, PeakList> peakLists = new HashMap<>();
+    protected Map<String, PeakList> peakLists;
+    protected Map<String, Dataset> datasetMap;
+    protected List<Dataset> datasets = new ArrayList<Dataset>();
+    public ResonanceFactory resFactory;
+    public Map<String, PeakPath> peakPaths;
 
     public Project(String name) {
         this.name = name;
+        this.datasetMap = new HashMap<>();
+        this.resFactory = getNewResFactory();
+        this.resFactory.init();
+        peakLists = new HashMap<>();
+        peakPaths = new HashMap<>();
         setActive();
     }
 
     public class FileComparator implements Comparator<Path> {
-
         @Override
         public int compare(Path p1, Path p2) {
             String s1 = p1.getFileName().toString();
@@ -89,8 +104,28 @@ public class Project {
 
     }
 
+    private ResonanceFactory getNewResFactory() {
+        ResonanceFactory resFact;
+        try {
+            Class c = Class.forName("org.nmrfx.processor.datasets.peaks.AtomResonanceFactory");
+            try {
+                resFact = (ResonanceFactory) c.newInstance();
+            } catch (InstantiationException | IllegalAccessException ex) {
+                resFact = new ResonanceFactory();
+            }
+        } catch (ClassNotFoundException ex) {
+            resFact = new ResonanceFactory();
+        }
+        return resFact;
+    }
+
+
     public boolean hasDirectory() {
         return projectDir != null;
+    }
+
+    public Path getDirectory() {
+        return projectDir;
     }
 
     public static Optional<Integer> getIndex(String s) {
@@ -118,7 +153,44 @@ public class Project {
     }
 
     public static Project getActive() {
-        return activeProject;
+        Project project = activeProject;
+        if (project == null) {
+            project = getNewProject("Untitled 1");
+        }
+        return project;
+    }
+
+    private static Project getNewProject(String name) {
+        Project project = null;
+        try {
+            Class c = Class.forName("org.nmrfx.project.GUIStructureProject");
+            project = (Project) c.getDeclaredConstructor(String.class).newInstance(name);
+        } catch (Exception ex) {
+            project = getNewStructureProject(name);
+        }
+        return project;
+    }
+
+    private static Project getNewStructureProject(String name) {
+        Project project = null;
+        try {
+            Class c = Class.forName("org.nmrfx.project.StructureProject");
+            project = (Project) c.getDeclaredConstructor(String.class).newInstance(name);
+        } catch (Exception ex) {
+            project = getNewGUIProject(name);
+        }
+        return project;
+    }
+
+    private static Project getNewGUIProject(String name) {
+        Project project = null;
+        try {
+            Class c = Class.forName("org.nmrfx.project.GUIProject");
+            project = (Project) c.getDeclaredConstructor(String.class).newInstance(name);
+        } catch (Exception ex) {
+            project = new Project(name);
+        }
+        return project;
     }
 
     public void createProject(Path projectDir) throws IOException {
@@ -144,6 +216,8 @@ public class Project {
     }
 
     public void loadProject(Path projectDir, String subDir) throws IOException, IllegalStateException {
+        Project currentProject = getActive();
+        setActive();
         FileSystem fileSystem = FileSystems.getDefault();
         if (projectDir != null) {
             Path subDirectory = fileSystem.getPath(projectDir.toString(), subDir);
@@ -162,14 +236,74 @@ public class Project {
 
         }
         this.projectDir = projectDir;
+        currentProject.setActive();
     }
 
     public void saveProject() throws IOException {
+        Project currentProject = getActive();
+        setActive();
         if (projectDir == null) {
             throw new IllegalArgumentException("Project directory not set");
         }
         savePeakLists();
         saveDatasets();
+        currentProject.setActive();
+    }
+
+    public void addDataset(Dataset dataset, String datasetName) {
+        datasetMap.put(datasetName, dataset);
+        if (!datasets.contains(dataset)) {
+            datasets.add(dataset);
+        }
+    }
+
+    public boolean removeDataset(String datasetName) {
+        Dataset toRemove = datasetMap.get(datasetName);
+        boolean result = datasetMap.remove(datasetName) != null;
+        datasets.remove(toRemove);
+        return result;
+    }
+
+    List<Dataset> getDatasetList() {
+        return datasetMap.values().stream().
+                sorted((a, b) -> a.getName().compareTo(b.getName())).
+                collect(Collectors.toList());
+    }
+
+    public List<Dataset> getDatasetsWithFile(File file) {
+        try {
+            String testPath = file.getCanonicalPath();
+            List<Dataset> datasetsWithFile = datasetMap.values().stream().
+                    filter((dataset) -> (dataset.getCanonicalFile().equals(testPath))).
+                    collect(Collectors.toList());
+            return datasetsWithFile;
+        } catch (IOException ex) {
+            return Collections.EMPTY_LIST;
+        }
+    }
+
+    public boolean isDatasetPresent(String name) {
+        return datasetMap.containsKey(name);
+    }
+
+    public boolean isDatasetPresent(Dataset dataset) {
+        return datasetMap.containsValue(dataset);
+    }
+
+    public boolean isDatasetPresent(File file) {
+        return !getDatasetsWithFile(file).isEmpty();
+    }
+
+    public Dataset getDataset(String name) {
+        return datasetMap.get(name);
+    }
+
+    public List<String> getDatasetNames() {
+        return datasetMap.keySet().stream().sorted().collect(Collectors.toList());
+    }
+
+    public List<Dataset> getDatasets() {
+        return datasets;
     }
 
     void loadDatasets(Path directory) throws IOException {
@@ -184,6 +318,14 @@ public class Project {
 
                         try {
                             Dataset dataset = new Dataset(pathName, fileName, false, false);
+                            File regionFile = DatasetRegion.getRegionFile(path.toString());
+                            System.out.println("region " + regionFile.toString());
+                            if (regionFile.canRead()) {
+                                System.out.println("read");
+                                TreeSet<DatasetRegion> regions = DatasetRegion.loadRegions(regionFile);
+                                dataset.setRegions(regions);
+                            }
+
                         } catch (IOException ex) {
                             Logger.getLogger(Project.class.getName()).log(Level.SEVERE, null, ex);
                         }
@@ -195,10 +337,9 @@ public class Project {
         if (projectDir == null) {
             throw new IllegalArgumentException("Project directory not set");
         }
-        List<Dataset> datasets = Dataset.datasets();
         Path datasetDir = projectDir.resolve("datasets");
 
-        for (Dataset dataset : datasets) {
+        for (Dataset dataset : datasetMap.values()) {
             File datasetFile = dataset.getFile();
             if (datasetFile != null) {
                 Path currentPath = datasetFile.toPath();
@@ -215,6 +356,9 @@ public class Project {
                 }
                 String parFilePath = DatasetParameterFile.getParameterFileName(pathInProject.toString());
                 dataset.writeParFile(parFilePath);
+                TreeSet<DatasetRegion> regions = dataset.getRegions();
+                File regionFile = DatasetRegion.getRegionFile(pathInProject.toString());
+                DatasetRegion.saveRegions(regionFile, regions);
             }
         }
     }
@@ -265,7 +409,7 @@ public class Project {
             }
         });
 
-        PeakList.peakListTable.values().stream().forEach(peakList -> {
+        peakLists.values().stream().forEach(peakList -> {
             Path peakFilePath = fileSystem.getPath(projectDir.toString(), "peaks", peakList.getName() + ".xpk2");
             Path measureFilePath = fileSystem.getPath(projectDir.toString(), "peaks", peakList.getName() + ".mpk2");
             // fixme should only write if file doesn't already exist or peaklist changed since read
@@ -287,12 +431,47 @@ public class Project {
         });
     }
 
+    public void addPeakList(PeakList peakList, String name) {
+        peakLists.put(name, peakList);
+    }
+
     public Collection<PeakList> getPeakLists() {
         return peakLists.values();
     }
 
+    public List<String> getPeakListNames() {
+        return peakLists.keySet().stream().sorted().collect(Collectors.toList());
+    }
+
     public PeakList getPeakList(String name) {
         return peakLists.get(name);
+    }
+
+    /**
+     * Returns an Optional containing the PeakList that has the specified id
+     * number or empty value if no PeakList with that id exists.
+     *
+     * @param listID the id of the peak list
+     * @return the Optional containing the PeaKlist or an empty value if no
+     * PeakList with that id exists
+     */
+    public Optional<PeakList> getPeakList(int listID) {
+        Optional<PeakList> peakListOpt = peakLists.values().stream().
+                filter(p -> (p.getId() == listID)).findFirst();
+        return peakListOpt;
+    }
+
+    /**
+     * Return an Optional containing the PeakList with lowest id number or an
+     * empty value if no PeakLists are present.
+     *
+     * @return Optional containing first peakList if any peak lists present or
+     * empty if no peak lists.
+     */
+    public Optional<PeakList> getFirstPeakList() {
+        Optional<PeakList> peakListOpt = peakLists.values().stream().
+                sorted((o1, o2) -> Integer.compare(o1.getId(), o2.getId())).findFirst();
+        return peakListOpt;
     }
 
     public void putPeakList(PeakList peakList) {
@@ -303,22 +482,28 @@ public class Project {
         peakLists.clear();
     }
 
+    public void clearAllDatasets() {
+        List<Dataset> removeDatasets = new ArrayList<>();
+        removeDatasets.addAll(datasets);
+        for (Dataset dataset : removeDatasets) {
+            dataset.close();
+        }
+        datasetMap.clear();
+        datasets.clear();
+    }
+
     public void removePeakList(String name) {
         peakLists.remove(name);
     }
 
-    /**
-     * @return the projectDir
-     */
-    public Path getProjectDir() {
-        return projectDir;
-    }
-
-    /**
-     * @param projectDir the projectDir to set
-     */
     public void setProjectDir(Path projectDir) {
         this.projectDir = projectDir;
+    }
+
+    public void addPeakListListener(Object mapChangeListener) {
+    }
+
+    public void addDatasetListListener(Object mapChangeListener) {
     }
 
 }
