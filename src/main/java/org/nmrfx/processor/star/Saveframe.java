@@ -47,10 +47,10 @@ public class Saveframe {
     /**
      * Creates a new instance of Saveframe
      */
-    class Category {
+    public class Category {
 
-        boolean isLoop = false;
-        final String name;
+        private boolean isLoop = false;
+        private final String name;
         final LinkedHashMap<String, String> tagMap = new LinkedHashMap<>();
 
         private Category(String name) {
@@ -61,11 +61,17 @@ public class Saveframe {
             tagMap.put(tag, value);
         }
 
-        String get(String tag) {
+        public String get(String tag) {
             return (String) tagMap.get(tag);
         }
 
-        boolean isLoop() {
+       public  List<String> getTags() {
+            List<String> list = new ArrayList<String>();
+            list.addAll(tagMap.keySet());
+            return list;
+        }
+
+        public boolean isLoop() {
             return isLoop;
         }
 
@@ -74,7 +80,7 @@ public class Saveframe {
         }
     }
 
-    Category getCategory(String name) {
+    public Category getCategory(String name) {
         Category category = (Category) categoryMap.get(name);
         if (category == null) {
             category = new Category(name);
@@ -197,6 +203,19 @@ public class Saveframe {
             result = value.substring(1);
         } else {
             result = value;
+        }
+        return result;
+    }
+
+    public String getOptionalLabelValue(String tagCategory, String tag) throws ParseException {
+        Category category = getCategory(tagCategory);
+        String value = (String) category.get(tag);
+        String result = "";
+        if (value != null) {
+            result = value;
+        }
+        if (value.startsWith("$")) {
+            result = value.substring(1);
         }
         return result;
     }

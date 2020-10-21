@@ -25,6 +25,7 @@ package org.nmrfx.processor.datasets.peaks;
 import org.nmrfx.processor.utilities.Format;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import org.nmrfx.processor.datasets.Dataset;
 
 /**
@@ -216,7 +217,7 @@ public class Multiplet implements PeakOrMulti, Comparable {
         }
     }
 
-    public Multiplet split(double ppm) {
+    public Optional<Multiplet> split(double ppm) {
         List<RelMultipletComponent> relComps = getRelComponentList();
         List<RelMultipletComponent> removeComps = new ArrayList<>();
         for (RelMultipletComponent comp : relComps) {
@@ -224,15 +225,18 @@ public class Multiplet implements PeakOrMulti, Comparable {
             if (absComp.getOffset() < ppm) {
                 removeComps.add(comp);
             }
-
         }
-        Peak peak = getOrigin();
-        PeakList peakList = peak.getPeakList();
-        Peak newPeak = peakList.getNewPeak();
-        PeakDim newPeakDim = newPeak.getPeakDim(0);
-        Multiplet newMultiplet = newPeakDim.getMultiplet();
-        newMultiplet.moveCouplings(removeComps);
-        return newMultiplet;
+        Optional<Multiplet> result = Optional.empty();
+        if (!removeComps.isEmpty()) {
+            Peak peak = getOrigin();
+            PeakList peakList = peak.getPeakList();
+            Peak newPeak = peakList.getNewPeak();
+            PeakDim newPeakDim = newPeak.getPeakDim(0);
+            Multiplet newMultiplet = newPeakDim.getMultiplet();
+            newMultiplet.moveCouplings(removeComps);
+            result = Optional.of(newMultiplet);
+        }
+        return result;
     }
 
     public void moveCouplings(List<RelMultipletComponent> relComps) {

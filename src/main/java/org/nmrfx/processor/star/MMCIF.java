@@ -66,7 +66,7 @@ public class MMCIF extends STAR3Base {
                 for (String catName : getCategories(name)) {
                     Category category = saveFrame.getCategory(catName);
                     //System.out.println("cat " + category + " " + category.isLoop);
-                    if (category.isLoop) {
+                    if (category.isLoop()) {
                         Loop loop = saveFrame.getLoop(catName);
                         STAR3Base.writeLoopStrings(fileWriter, catName, loop.tags);
                         int nRows = loop.getNRows();
