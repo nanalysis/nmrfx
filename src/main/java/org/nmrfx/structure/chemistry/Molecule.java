@@ -56,7 +56,10 @@ public class Molecule implements Serializable, ITree {
 
     public static List<Atom> atomList = null;
     public static final List<String> conditions = new ArrayList<>();
-    public static Molecule activeMol = null;
+
+    public static Molecule activeMol() {
+        return StructureProject.getActive().activeMol;
+    }
     public final Map<String, List<SpatialSet>> sites = new HashMap<>();
     public final List<SpatialSet> globalSelected = new ArrayList<>(1024);
     private final List<Bond> bselected = new ArrayList<>(1024);
@@ -86,12 +89,16 @@ public class Molecule implements Serializable, ITree {
     public static final int LABEL_NAME = 16;
     public static final int LABEL_HPPM = 17;
     public static final int LABEL_PPM = 18;
+    public static final int LABEL_NONHC = 19;
     public static final LinkedHashMap labelTypes = new LinkedHashMap();
     public static final LinkedHashSet displayTypes = new LinkedHashSet();
     public static final LinkedHashSet colorTypes = new LinkedHashSet();
     public static final LinkedHashSet shapeTypes = new LinkedHashSet();
+
     //public static MoleculeTableModel molTableModel = null;
-    public static final Map compoundMap = new HashMap();
+    public static final Map compoundMap() {
+        return StructureProject.getActive().compoundMap;
+    }
     public Map<Atom, Map<Atom, Double>> ringClosures;
     List<List<Atom>> atomTree = null;
     HashMap<String, List> allowedSourcesMap = new HashMap<>();
@@ -116,6 +123,7 @@ public class Molecule implements Serializable, ITree {
         labelTypes.put(Integer.valueOf(LABEL_NAME), "name");
         labelTypes.put(Integer.valueOf(LABEL_HPPM), "hppm");
         labelTypes.put(Integer.valueOf(LABEL_PPM), "ppm");
+        labelTypes.put(Integer.valueOf(LABEL_NONHC), "nonhc");
 
         labelTypes.put("none", Integer.valueOf(LABEL_NONE));
         labelTypes.put("fc", Integer.valueOf(LABEL_FC));
@@ -137,6 +145,7 @@ public class Molecule implements Serializable, ITree {
         labelTypes.put("name", Integer.valueOf(LABEL_NAME));
         labelTypes.put("hppm", Integer.valueOf(LABEL_HPPM));
         labelTypes.put("ppm", Integer.valueOf(LABEL_PPM));
+        labelTypes.put("nonhc", Integer.valueOf(LABEL_NONHC));
 
         displayTypes.add("none");
         displayTypes.add("wire");
@@ -177,7 +186,7 @@ public class Molecule implements Serializable, ITree {
         shapeTypes.add("triangle");
     }
     public Set<Integer> structures = new TreeSet();
-    private int[] activeStructures = null;
+    private List<Integer> activeStructures = null;
     public boolean labelsCurrent = false;
     public int nResidues;
     public int lastResNum;
@@ -221,6 +230,9 @@ public class Molecule implements Serializable, ITree {
     EnergyCoords eCoords = new EnergyCoords();
     Dihedral dihedrals = null;
     OrderSVD rdcResults = null;
+    EnergyLists energyList;
+    Helix helix;
+    NonLoop sheets;
 
     // fixme    public EnergyLists energyList = null;
     public Molecule(String name) {
@@ -240,7 +252,7 @@ public class Molecule implements Serializable, ITree {
         } catch (ClassNotFoundException | NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
             atoms = new ArrayList<>();
         }
-        activeMol = this;
+        setActive();
         storeMolecule();
     }
 
@@ -285,11 +297,11 @@ public class Molecule implements Serializable, ITree {
     }
 
     public static Molecule getActive() {
-        return activeMol;
+        return StructureProject.getActive().activeMol;
     }
 
     public void setActive() {
-        activeMol = this;
+        StructureProject.getActive().activeMol = this;
     }
 
     public void reName(Molecule molecule, Compound compound, String name1, String name2) {
@@ -330,7 +342,7 @@ public class Molecule implements Serializable, ITree {
         StructureProject.getActive().clearAllMolecules();
 
         conditions.clear();
-        activeMol = null;
+        StructureProject.getActive().activeMol = null;
     }
 
     public void remove() {
@@ -348,9 +360,9 @@ public class Molecule implements Serializable, ITree {
 
         Collection<Molecule> mols = StructureProject.getActive().getMolecules();
 
-        activeMol = null;
+        StructureProject.getActive().activeMol = null;
         for (Molecule mol : mols) {
-            activeMol = mol;
+            StructureProject.getActive().activeMol = mol;
             break;
         }
     }
@@ -364,21 +376,25 @@ public class Molecule implements Serializable, ITree {
         activeStructures = null;
     }
 
+    public void clearActiveStructure(int iStruct) {
+       activeStructures.remove(iStruct);
+    }
+ 
+
     public void setActiveStructures(TreeSet selSet) {
-        activeStructures = new int[selSet.size()];
-        Iterator e = selSet.iterator();
-        int i = 0;
-        while (e.hasNext()) {
-            Integer intStructure = (Integer) e.next();
-            activeStructures[i++] = intStructure;
+        if (activeStructures == null) {
+            activeStructures = new ArrayList<>();;
+        }
+        activeStructures.clear();
+        for (Object obj: selSet) {
+            activeStructures.add((Integer) obj);
         }
     }
 
     public void setActiveStructures() {
-        activeStructures = new int[structures.size()];
-        int i = 0;
+        activeStructures = new ArrayList<>();;
         for (int istruct : structures) {
-            activeStructures[i++] = istruct;
+            activeStructures.add(istruct);
         }
     }
 
@@ -388,12 +404,16 @@ public class Molecule implements Serializable, ITree {
 
     public int[] getActiveStructures() {
         if (activeStructures == null) {
-            activeStructures = new int[structures.size()];
-            for (int i = 0; i < activeStructures.length; i++) {
-                activeStructures[i] = i;
+            activeStructures = new ArrayList<>();;
+            for (int i = 0; i < structures.size(); i++) {
+                activeStructures.add(i);
             }
         }
-        return activeStructures.clone();
+        int[] structs = new int[activeStructures.size()];
+        for (int i=0;i<structs.length;i++) {
+            structs[i] = activeStructures.get(i);
+        }
+        return structs;
     }
 
     public Set<String> getCoordSetNames() {
@@ -552,6 +572,30 @@ public class Molecule implements Serializable, ITree {
     public Dihedral getDihedrals() {
         return dihedrals;
     }
+    
+    public void setEnergyLists(EnergyLists eLists) {
+        this.energyList = eLists;
+    }
+
+    public EnergyLists getEnergyLists() {
+        return energyList;
+    }
+    
+    public void setHelix(Helix helix) {
+        this.helix = helix;
+    }
+
+    public Helix getHelix() {
+        return helix;
+    }
+    
+    public void setSheets(NonLoop sheets) {
+        this.sheets = sheets;
+    }
+
+    public NonLoop getSheets() {
+        return sheets;
+    }
 
     public String getDotBracket() {
         String dotBracket = getProperty("vienna");
@@ -669,7 +713,7 @@ public class Molecule implements Serializable, ITree {
 
     }
 
-    public static double calcDihedral(MolFilter molFilter1, MolFilter molFilter2, MolFilter molFilter3,
+    public double calcDihedral(MolFilter molFilter1, MolFilter molFilter2, MolFilter molFilter3,
             MolFilter molFilter4) throws IllegalArgumentException {
         MolFilter[] molFilters = new MolFilter[4];
         molFilters[0] = molFilter1;
@@ -680,7 +724,7 @@ public class Molecule implements Serializable, ITree {
         Point3[] pts = new Point3[4];
         int i = 0;
         for (MolFilter molFilter : molFilters) {
-            spSets[i] = getSpatialSet(molFilter);
+            spSets[i] = findSpatialSet(molFilter);
             if (spSets[i] == null) {
                 throw new IllegalArgumentException("No atom for " + molFilter.getString());
             }
@@ -1133,6 +1177,22 @@ public class Molecule implements Serializable, ITree {
         return maxCount;
     }
 
+    public int getRefPPMSetCount() {
+        Iterator e = getSpatialSetIterator();
+        int maxCount = 1;
+        while (e.hasNext()) {
+            SpatialSet spatialSet = (SpatialSet) e.next();
+            if (spatialSet == null) {
+                continue;
+            }
+            int nSets = spatialSet.getRefPPMSetCount();
+            if (nSets > maxCount) {
+                maxCount = nSets;
+            }
+        }
+        return maxCount;
+    }
+
     public int selectResidues() {
         List<SpatialSet> selected = new ArrayList<>(256);
         TreeSet completedResidues = new TreeSet();
@@ -1172,6 +1232,7 @@ public class Molecule implements Serializable, ITree {
     public int selectAtoms(String selectionString, boolean append, boolean inverse) throws InvalidMoleculeException {
         MolFilter molFilter = new MolFilter(selectionString);
         List<SpatialSet> selected = matchAtoms(molFilter);
+//        System.out.println(selectionString + " " + molFilter + " " + selected.size());
         int nSelected = setSelected(selected, append, inverse);
         return nSelected;
     }
@@ -1897,7 +1958,7 @@ public class Molecule implements Serializable, ITree {
      * @return RealMatrix coordinates of the rotated axes
      */
     public RealMatrix calcSVDAxes(double[][] inputAxes) {
-        RealMatrix rotMat = getSVDRotationMatrix();
+        RealMatrix rotMat = getSVDRotationMatrix(true);
         RealMatrix inputAxesM = new Array2DRowRealMatrix(inputAxes);
         RealMatrix axes = rotMat.multiply(inputAxesM);
 
@@ -1912,20 +1973,43 @@ public class Molecule implements Serializable, ITree {
      * @return RealMatrix coordinates of the rotated axes
      */
     public RealMatrix getRDCAxes(double[][] inputAxes) {
-        RealMatrix rotMat = getRDCRotationMatrix();
-        RealMatrix inputAxesM = new Array2DRowRealMatrix(inputAxes);
-        RealMatrix axes = rotMat.multiply(inputAxesM);
-
-        return axes;
+        RealMatrix rotMat = getRDCRotationMatrix(true);
+        if (rotMat == null) {
+            return null;
+        } else {
+            RealMatrix inputAxesM = new Array2DRowRealMatrix(inputAxes);
+            RealMatrix axes = rotMat.multiply(inputAxesM);
+            return axes;
+        }
     }
 
-    public RealMatrix getRDCRotationMatrix() {
-        EigenDecomposition rdcEig = rdcResults.getEig();
-        RealMatrix rotMat = rdcEig.getVT();
-        return rotMat;
+    public RealMatrix getRDCRotationMatrix(boolean scaleMat) {
+        if (rdcResults == null) {
+            return null;
+        } else {
+            EigenDecomposition rdcEig = rdcResults.getEig();
+            double[] eigValues = rdcEig.getRealEigenvalues();
+            double maxEig = Double.NEGATIVE_INFINITY;
+            for (int i = 0; i < 3; i++) {
+                if (Math.abs(eigValues[i]) > maxEig) {
+                    maxEig = Math.abs(eigValues[i]);
+                }
+            }
+
+            RealMatrix rotMat = rdcEig.getVT().copy();
+            if (scaleMat) {
+                for (int i = 0; i < 3; i++) {
+                    double scale = eigValues[i] / maxEig;
+                    rotMat.setEntry(i, 0, rotMat.getEntry(i, 0) * scale);
+                    rotMat.setEntry(i, 1, rotMat.getEntry(i, 1) * scale);
+                    rotMat.setEntry(i, 2, rotMat.getEntry(i, 2) * scale);
+                }
+            }
+            return rotMat;
+        }
     }
 
-    public RealMatrix getSVDRotationMatrix() {
+    public RealMatrix getSVDRotationMatrix(boolean scaleMat) {
         Point3 pt;
         double[] c = new double[3];
         try {
@@ -1963,7 +2047,9 @@ public class Molecule implements Serializable, ITree {
         for (int i = 0; i < s.length; i++) {
             sMat.setEntry(i, i, sMat.getEntry(i, i) * maxX);
         }
-        rotMat = rotMat.preMultiply(sMat);
+        if (scaleMat) {
+            rotMat = rotMat.preMultiply(sMat);
+        }
         return rotMat;
     }
 
@@ -2203,7 +2289,7 @@ public class Molecule implements Serializable, ITree {
         List<Bond> selected = new ArrayList<>(32);
         Atom atomB;
         Atom atomE;
-        Molecule molecule = activeMol;
+        Molecule molecule = activeMol();
 
         if (molecule == null) {
             throw new IllegalArgumentException("No active molecule ");
@@ -2532,7 +2618,7 @@ public class Molecule implements Serializable, ITree {
                     for (Residue residueB : polymerB.getResidues()) {
                         if (residueA != residueB) {
 
-                            int paired = residueA.basePairType(residueB);
+                            int paired = residueA.getBasePairType(residueB);
                             if (paired != 0) {
                                 System.out.println(paired + " " + residueA.getName() + " " + residueB.getName());
                             }
@@ -2542,114 +2628,6 @@ public class Molecule implements Serializable, ITree {
                 }
             }
         }
-    }
-
-    public List<Residue> RNAresidues() { //list of only rna residues 
-        List<Residue> RNAresidues = new ArrayList();
-        for (Polymer polymer : getPolymers()) {
-            if (polymer.isRNA()) {
-                for (Residue res : polymer.getResidues()) {
-                    RNAresidues.add(res);
-                }
-            }
-        }
-        return RNAresidues;
-    }
-
-    public List<BasePair> pairList() { //for RNA only
-        List<BasePair> bpList = new ArrayList();
-        List<Residue> RNAresidues = RNAresidues();
-        for (Residue residueA : RNAresidues) {
-            for (Residue residueB : RNAresidues) {
-                if (residueA.getResNum() < residueB.getResNum()) {
-                    int type = residueA.basePairType(residueB);
-                    if (type == 1) {
-                        BasePair bp = new BasePair(residueA, residueB);
-                        bpList.add(bp);
-
-                    }
-                }
-            }
-        }
-        return bpList;
-    }
-
-    public HashMap<Integer, List<BasePair>> bpMap() {
-        HashMap<Integer, List<BasePair>> bpMap = new HashMap<Integer, List<BasePair>>();
-        BasePair currentBp = null;
-        int i = 0;
-        List<BasePair> crossedPairs = new ArrayList();
-        List<BasePair> bpList = pairList();
-        for (BasePair bp1 : bpList) {
-            for (BasePair bp2 : bpList) {
-                if (bp1.res1.iRes < bp2.res1.iRes && bp1.res2.iRes < bp2.res2.iRes && bp1.res2.iRes > bp2.res1.iRes) {
-                    if (currentBp != bp2) {
-                        bpMap.put(i, crossedPairs);
-                        i++;
-                        crossedPairs.clear();
-                        crossedPairs.add(bp1);
-                        currentBp = bp2;
-                        break;
-
-                    } else {
-                        crossedPairs.add(bp1);
-                        currentBp = bp2;
-                        break;
-                    }
-                }
-            }
-        }
-        return bpMap;
-    }
-
-    public char[] viennaSequence() { //pseudoknots
-        HashMap<Integer, List<BasePair>> bpMap = bpMap();
-        List<BasePair> bps = pairList();
-        List<Residue> RNAresidues = RNAresidues();
-        char[] vienna = new char[RNAresidues.size()];
-        String leftBrackets = "[{";
-        String rightBrackets = "]}";
-        for (int i = 0; i < vienna.length; i++) {
-            vienna[i] = '.';
-        }
-        for (BasePair bp : bps) {
-            vienna[bp.res1.iRes] = '(';
-            vienna[bp.res2.iRes] = ')';
-        }
-        if (!bpMap.isEmpty()) {
-            for (Map.Entry<Integer, List<BasePair>> crossMap : bpMap.entrySet()) {
-                for (BasePair bp : crossMap.getValue()) {
-                    vienna[bp.res1.iRes] = leftBrackets.charAt(crossMap.getKey());
-                    vienna[bp.res2.iRes] = rightBrackets.charAt(crossMap.getKey());
-                }
-
-            }
-        }
-        return vienna;
-    }
-
-    public char[] testViennaSequence() { //for testing
-        HashMap<Integer, List<BasePair>> bpMap = bpMap();
-        List<Residue> RNAresidues = RNAresidues();
-        char[] vienna = new char[RNAresidues.size()];
-        String leftBrackets = "[{";
-        String rightBrackets = "]}";
-        for (int i = 0; i < vienna.length; i++) {
-            vienna[i] = '.';
-        }
-        for (Residue residueA : RNAresidues) {
-            if (residueA.pairedTo != null && residueA.iRes < residueA.pairedTo.iRes) {
-                vienna[residueA.iRes] = '(';
-                vienna[residueA.pairedTo.iRes] = ')';
-            }
-        }
-        for (Map.Entry<Integer, List<BasePair>> crossMap : bpMap.entrySet()) {
-            for (BasePair bp : crossMap.getValue()) {
-                vienna[bp.res1.iRes] = leftBrackets.charAt(crossMap.getKey());
-                vienna[bp.res2.iRes] = rightBrackets.charAt(crossMap.getKey());
-            }
-        }
-        return vienna;
     }
 
     public void calcLCMB(final int iStruct) {
@@ -3686,22 +3664,19 @@ public class Molecule implements Serializable, ITree {
          */
     }
 
-    public static boolean isDisulfide(Atom sg1, int iStruct) {
+    public boolean isDisulfide(Atom sg1, int iStruct) {
         boolean result = false;
         if (sg1.getName().equals("SG")) {
-            if (Molecule.atomList == null) {
-                Molecule.makeAtomList();
-            }
             Point3 pt1 = sg1.getPoint(iStruct);
-
-            for (int i = 0; i < Molecule.atomList.size(); i++) {
-                Atom sg2 = Molecule.atomList.get(i);
+            for (Atom sg2 : atoms) {
                 if ((sg1 != sg2) && sg2.getName().equals("SG")) {
                     Point3 pt2 = sg2.getPoint(iStruct);
-                    double distance = Atom.calcDistance(pt1, pt2);
-                    if (distance < 3.0) {
-                        result = true;
-                        break;
+                    if (pt2 != null) {
+                        double distance = Atom.calcDistance(pt1, pt2);
+                        if (distance < 3.0) {
+                            result = true;
+                            break;
+                        }
                     }
                 }
             }
@@ -4115,6 +4090,17 @@ public class Molecule implements Serializable, ITree {
                 if (atom.isMethyl() && !atom.isFirstInMethyl()) {
                     continue;
                 }
+                Atom parent = atom.getParent();
+                if (parent != null) {
+                    if (parent.getAtomicNumber() == 7) {
+                        if (atom.isMethylene()) {
+                            continue;
+                        }
+                    }
+                    if (parent.getAtomicNumber() == 8) {
+                        continue;
+                    }
+                }
                 hash.put(atom, Integer.valueOf(i));
                 eAtomList.add(atom);
 
@@ -4382,7 +4368,7 @@ public class Molecule implements Serializable, ITree {
     }
 
     public static void writeXYZ() {
-        Molecule molecule = activeMol;
+        Molecule molecule = activeMol();
 
         if (molecule == null) {
             return;
@@ -4403,7 +4389,7 @@ public class Molecule implements Serializable, ITree {
         int iStruct = 0;
         String result = null;
 
-        Molecule molecule = activeMol;
+        Molecule molecule = activeMol();
 
         if (molecule == null) {
             throw new InvalidMoleculeException("No active molecule");
@@ -4531,7 +4517,7 @@ public class Molecule implements Serializable, ITree {
     public static void writeXYZToPDB(Writer chan, int whichStruct) throws InvalidMoleculeException, IOException {
         int i;
 
-        Molecule molecule = activeMol;
+        Molecule molecule = activeMol();
 
         if (molecule == null) {
             throw new InvalidMoleculeException("No active molecule");
@@ -4588,7 +4574,7 @@ public class Molecule implements Serializable, ITree {
             }
         }
     }
-
+    
     public void getAtomTypes() {
 
         updateAtomArray();
@@ -4805,6 +4791,17 @@ public class Molecule implements Serializable, ITree {
                         atom.label = atom.getName().substring(1);
                     } else {
                         atom.label = atom.getName();
+                    }
+
+                    break;
+                }
+                case LABEL_NONHC: {
+                    if (atom.aNum == 6) {
+                        atom.label = "";
+                    } else if (atom.aNum == 1) {
+                        atom.label = "";
+                    } else {
+                        atom.label = Atom.getElementName(atom.aNum);
                     }
 
                     break;

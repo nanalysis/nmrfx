@@ -199,6 +199,8 @@ public class Sequence {
                         return;
                     } else if (fields[7].equals("start") && (resPos != RES_POSITION.START)) {
                         return;
+                    } else if (fields[7].equals("end") && (resPos != RES_POSITION.END)) {
+                        return;
                     }
                 }
                 Atom atom = Atom.genAtomWithType(aName, aType);
@@ -298,7 +300,10 @@ public class Sequence {
                         daughterAtom = residue.getAtom(atomName);
                     }
                     if (!connector && (daughterAtom == null)) {
-                        throw new MoleculeIOException("Can't find daughter atom \"" + atomName + "\"");
+                        throw new MoleculeIOException("Can't find daughter atom \""
+                                + atomName + "\"" + " while adding "
+                                + residue.getName() + residue.getNumber()
+                                + " " + resPos);
                     }
                     //                    if (!connector && daughterAtom.getName().startsWith("H")) {
                     if (!connector && !ringClosure) {
@@ -327,6 +332,8 @@ public class Sequence {
                     if (fields[4].equals("middle") && (resPos != RES_POSITION.MIDDLE)) {
                         return;
                     } else if (fields[4].equals("start") && (resPos != RES_POSITION.START)) {
+                        return;
+                    } else if (fields[4].equals("end") && (resPos != RES_POSITION.END)) {
                         return;
                     }
                 }
@@ -614,7 +621,7 @@ public class Sequence {
         boolean setPolymerType = false;
         String iRes = "1";
         String[] stringArg = new String[3];
-        Pattern pattern = Pattern.compile("[-/\\w/\\.]+");
+        Pattern pattern = Pattern.compile("[-/\\w/\\.:]+");
         String coordSetName = molName;
         ArrayList<String> coordSetNames = new ArrayList<>();
         ArrayList<Polymer> polymers = new ArrayList<>();
@@ -754,6 +761,13 @@ public class Sequence {
                 resName = resName.substring(0, minus);
             }
             String resFileName = resName.toLowerCase();
+            int colonIndex = resName.indexOf(":");
+            String changeMode = "";
+            if (colonIndex != -1) {
+                changeMode = resName.substring(colonIndex + 1);
+                resName = resName.substring(0, colonIndex);
+                resFileName = resName;
+            }
             int underIndex = resName.indexOf("_");
             if (underIndex != -1) {
                 resName = resName.substring(0, underIndex);
@@ -790,6 +804,9 @@ public class Sequence {
                 polymer.setCapped(true);
             }
             addResidue(reslibDir + "/" + Sequence.getAliased(resFileName) + ".prf", residue, resPos, coordSetName, true);
+            if (changeMode.equalsIgnoreCase("d")) {
+                residue.toDStereo();
+            }
             resPos = RES_POSITION.MIDDLE;
             try {
                 String[] matches = iRes.split("[^\\-0-9]+");

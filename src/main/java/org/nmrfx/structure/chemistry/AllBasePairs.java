@@ -24,21 +24,27 @@ package org.nmrfx.structure.chemistry;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Scanner;
 
 public class AllBasePairs {
 
-    int type;
+    public int type;
     public String res1;
     public String res2;
-    String[] atomPairs;
+    public String[] atomPairs;
+    public String[] distances;
+    private final static Map<String, AllBasePairs> bpMap = new HashMap<>();
+    private final static List<AllBasePairs> basePairs = new ArrayList<>();
 
-    public AllBasePairs(int type, String res1, String res2, String[] atomPairs) {
+    public AllBasePairs(int type, String res1, String res2, String[] atomPairs, String[] distances) {
         this.res1 = res1;
         this.res2 = res2;
         this.type = type;
         this.atomPairs = atomPairs;
+        this.distances = distances;
 
     }
 
@@ -47,8 +53,24 @@ public class AllBasePairs {
         return type + ", " + res1 + ", " + res2 + ", " + Arrays.toString(atomPairs);
     }
 
-    public static List<AllBasePairs> basePairList() {
-        List<AllBasePairs> basePairs = new ArrayList<>();
+    public static AllBasePairs getBasePair(int type, String res1, String res2) {
+        if (bpMap.isEmpty()) {
+            loadBasePairs();
+        }
+        String strType = String.valueOf(type);
+        return bpMap.get(strType + res1 + res2);
+    }
+
+    public static List<AllBasePairs> getBasePairs() {
+        if (basePairs.isEmpty()) {
+            loadBasePairs();
+        }
+        return basePairs;
+    }
+
+    static void loadBasePairs() {
+        bpMap.clear();
+        basePairs.clear();
         ClassLoader cl = ClassLoader.getSystemClassLoader();
         InputStream istream = cl.getResourceAsStream("data/basepair.csv");
         Scanner inputStream = new Scanner(istream);
@@ -57,25 +79,36 @@ public class AllBasePairs {
             if (!data.isEmpty()) {
                 String[] arrOfStr = data.split(",");
                 if (arrOfStr.length >= 1) {
-
                     int type = Integer.parseInt(arrOfStr[0]);
                     String res1 = arrOfStr[1];
                     String res2 = arrOfStr[2];
-                    int nPairs = (arrOfStr.length - 3) / 2;
+                    int nPairs = (arrOfStr.length - 3) / 3;
                     String[] atomPairs = new String[nPairs]; ///populate list with basepairs
+                    String[] distances = new String[nPairs];
                     int firstindex = 3;
                     int secondindex = 4;
+                    String upperALim;
+                    String lowerALim;
+                    String upperPLim;
+                    String lowerPLim;
                     for (int i = 0; i < nPairs; i++) {
                         atomPairs[i] = arrOfStr[firstindex] + ":" + arrOfStr[secondindex];
-                        firstindex += 2;
-                        secondindex += 2;
+                        String[] restraints = arrOfStr[secondindex + 1].split("/");
+                        lowerALim = restraints[0];
+                        upperALim = restraints[1];
+                        lowerPLim = restraints[2];
+                        upperPLim = restraints[3];
+                        distances[i] = lowerALim + ":" + upperALim + ":" + lowerPLim + ":" + upperPLim;
+                        firstindex += 3;
+                        secondindex += 3;
                     }
-                    AllBasePairs bp = new AllBasePairs(type, res1, res2, atomPairs);
+                    String pair = type + res1 + res2;
+                    AllBasePairs bp = new AllBasePairs(type, res1, res2, atomPairs, distances);
+                    bpMap.put(pair, bp);
                     basePairs.add(bp);
                 }
             }
         }
-        return basePairs;
     }
 
 }

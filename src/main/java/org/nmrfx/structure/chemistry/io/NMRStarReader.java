@@ -39,8 +39,13 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.FileSystems;
 import java.util.*;
+import org.nmrfx.processor.datasets.peaks.AbsMultipletComponent;
+import org.nmrfx.processor.datasets.peaks.ComplexCoupling;
+import org.nmrfx.processor.datasets.peaks.CouplingPattern;
+import org.nmrfx.processor.datasets.peaks.Multiplet;
 import org.nmrfx.processor.datasets.peaks.Resonance;
 import org.nmrfx.processor.datasets.peaks.SpectralDim;
+import org.nmrfx.processor.datasets.peaks.io.PeakPathReader;
 import org.nmrfx.processor.utilities.NvUtil;
 import org.nmrfx.structure.chemistry.io.Sequence.RES_POSITION;
 import org.nmrfx.structure.utilities.Util;
@@ -58,7 +63,8 @@ public class NMRStarReader {
 
     Map entities = new HashMap();
     boolean hasResonances = false;
-    Map<Long, List<PeakDim>> resMap = new HashMap<>();
+    List<PeakDim> peakDimsWithoutResonance = new ArrayList<>();
+    public static boolean DEBUG = false;
 
     public NMRStarReader(final File starFile, final STAR3 star3) {
         this.star3 = star3;
@@ -66,17 +72,17 @@ public class NMRStarReader {
 //        PeakDim.setResonanceFactory(new AtomResonanceFactory());
     }
 
-    public static void read(String starFileName) throws ParseException {
+    public static STAR3 read(String starFileName) throws ParseException {
         File file = new File(starFileName);
-        read(file);
+        return read(file);
     }
 
-    public static void read(File starFile) throws ParseException {
+    public static STAR3 read(File starFile) throws ParseException {
         FileReader fileReader;
         try {
             fileReader = new FileReader(starFile);
         } catch (FileNotFoundException ex) {
-            return;
+            return null;
         }
         BufferedReader bfR = new BufferedReader(fileReader);
 
@@ -89,6 +95,7 @@ public class NMRStarReader {
         }
         NMRStarReader reader = new NMRStarReader(starFile, star);
         reader.process();
+        return star;
     }
 
     static void updateFromSTAR3ChemComp(Saveframe saveframe, Compound compound) throws ParseException {
@@ -132,8 +139,6 @@ public class NMRStarReader {
             for (Atom atom : compound.getAtoms()) {
                 if (atom.bonds == null) {
                     System.out.println("no bonds");
-                } else {
-                    System.out.println(atom.bonds.size());
                 }
             }
         }
@@ -180,12 +185,16 @@ public class NMRStarReader {
     public void finishSaveFrameProcessing(final Polymer polymer, final Saveframe saveframe, final String nomenclature, final boolean capped) throws ParseException {
         String lstrandID = saveframe.getOptionalValue("_Entity", "Polymer_strand_ID");
         if (lstrandID != null) {
-            System.out.println("set strand " + lstrandID);
+            if (DEBUG) {
+                System.out.println("set strand " + lstrandID);
+            }
             polymer.setStrandID(lstrandID);
         }
         String type = saveframe.getOptionalValue("_Entity", "Polymer_type");
         if (type != null) {
-            System.out.println("set polytype " + type);
+            if (DEBUG) {
+                System.out.println("set polytype " + type);
+            }
             polymer.setPolymerType(type);
         }
         Loop loop = saveframe.getLoop("_Entity_comp_index");
@@ -360,7 +369,7 @@ public class NMRStarReader {
     }
 
     public void addCompound(String id, Compound compound) {
-        Molecule.compoundMap.put(id, compound);
+        Molecule.compoundMap().put(id, compound);
     }
 
     public void buildChemShifts(int fromSet, final int toSet) throws ParseException {
@@ -369,7 +378,9 @@ public class NMRStarReader {
         while (iter.hasNext()) {
             Saveframe saveframe = (Saveframe) iter.next();
             if (saveframe.getCategoryName().equals("assigned_chemical_shifts")) {
-                System.err.println("process chem shifts " + saveframe.getName());
+                if (DEBUG) {
+                    System.err.println("process chem shifts " + saveframe.getName());
+                }
                 if (fromSet < 0) {
                     processChemicalShifts(saveframe, iSet);
                 } else if (fromSet == iSet) {
@@ -386,7 +397,9 @@ public class NMRStarReader {
         while (iter.hasNext()) {
             Saveframe saveframe = (Saveframe) iter.next();
             if (saveframe.getCategoryName().equals("conformer_family_coord_set")) {
-                System.err.println("process conformers " + saveframe.getName());
+                if (DEBUG) {
+                    System.err.println("process conformers " + saveframe.getName());
+                }
                 processConformer(saveframe);
             }
         }
@@ -401,7 +414,9 @@ public class NMRStarReader {
             datasetName = file.getAbsolutePath();
         }
         try {
-            System.err.println("open " + file.getAbsolutePath());
+            if (DEBUG) {
+                System.err.println("open " + file.getAbsolutePath());
+            }
             if (!file.exists()) {
                 file = FileSystems.getDefault().getPath(starFile.getParentFile().getParent(), "datasets", file.getName()).toFile();
             }
@@ -416,7 +431,9 @@ public class NMRStarReader {
         while (iter.hasNext()) {
             Saveframe saveframe = (Saveframe) iter.next();
             if (saveframe.getCategoryName().equals("torsion_angle_constraints")) {
-                System.err.println("process torsion angle constraints " + saveframe.getName());
+                if (DEBUG) {
+                    System.err.println("process torsion angle constraints " + saveframe.getName());
+                }
                 processDihedralConstraints(saveframe);
             }
         }
@@ -427,7 +444,9 @@ public class NMRStarReader {
         while (iter.hasNext()) {
             Saveframe saveframe = (Saveframe) iter.next();
             if (saveframe.getCategoryName().equals("nef_dihedral_restraint_list")) {
-                System.err.println("process nef_dihedral_restraint_list " + saveframe.getName());
+                if (DEBUG) {
+                    System.err.println("process nef_dihedral_restraint_list " + saveframe.getName());
+                }
                 processNEFDihedralConstraints(saveframe, dihedral);
             }
         }
@@ -438,7 +457,9 @@ public class NMRStarReader {
         while (iter.hasNext()) {
             Saveframe saveframe = (Saveframe) iter.next();
             if (saveframe.getCategoryName().equals("RDCs")) {
-                System.err.println("process RDC constraints " + saveframe.getName());
+                if (DEBUG) {
+                    System.err.println("process RDC constraints " + saveframe.getName());
+                }
                 processRDCConstraints(saveframe);
             }
         }
@@ -468,7 +489,9 @@ public class NMRStarReader {
         //int entityAssemblyID = Integer.parseInt(entityAssemblyIDString);
         // get entity saveframe
         String saveFrameName = "save_" + entitySaveFrameLabel;
-        System.err.println("process entity " + saveFrameName);
+        if (DEBUG) {
+            System.err.println("process entity " + saveFrameName);
+        }
         Saveframe saveframe = (Saveframe) star3.getSaveFrames().get(saveFrameName);
         if (saveframe != null) {
 
@@ -519,7 +542,9 @@ public class NMRStarReader {
         while (iter.hasNext()) {
             Saveframe saveframe = (Saveframe) iter.next();
             if (saveframe.getCategoryName().equals("experiment_list")) {
-                System.err.println("process experiments " + saveframe.getName());
+                if (DEBUG) {
+                    System.err.println("process experiments " + saveframe.getName());
+                }
                 int nExperiments = 0;
                 try {
                     nExperiments = saveframe.loopCount("_Experiment_file");
@@ -550,7 +575,9 @@ public class NMRStarReader {
         while (iter.hasNext()) {
             Saveframe saveframe = (Saveframe) iter.next();
             if (saveframe.getCategoryName().equals("general_distance_constraints")) {
-                System.err.println("process general distance constraints " + saveframe.getName());
+                if (DEBUG) {
+                    System.err.println("process general distance constraints " + saveframe.getName());
+                }
                 processGenDistConstraints(saveframe);
             }
         }
@@ -561,7 +588,9 @@ public class NMRStarReader {
         while (iter.hasNext()) {
             Saveframe saveframe = (Saveframe) iter.next();
             if (saveframe.getCategoryName().equals("nef_distance_restraint_list")) {
-                System.err.println("process nef_distance_restraint_list " + saveframe.getName());
+                if (DEBUG) {
+                    System.err.println("process nef_distance_restraint_list " + saveframe.getName());
+                }
                 processNEFDistanceRestraints(saveframe, energyList);
             }
         }
@@ -571,16 +600,22 @@ public class NMRStarReader {
         Iterator iter = star3.getSaveFrames().values().iterator();
         while (iter.hasNext()) {
             Saveframe saveframe = (Saveframe) iter.next();
-            System.err.println(saveframe.getCategoryName());
+            if (DEBUG) {
+                System.err.println(saveframe.getCategoryName());
+            }
             if (saveframe.getCategoryName().equals("assembly")) {
-                System.err.println("process molecule >>" + saveframe.getName() + "<<");
+                if (DEBUG) {
+                    System.err.println("process molecule >>" + saveframe.getName() + "<<");
+                }
                 String molName = saveframe.getValue("_Assembly", "Name");
                 if (molName.equals("?")) {
                     molName = "noname";
                 }
                 Molecule molecule = new Molecule(molName);
                 int nEntities = saveframe.loopCount("_Entity_assembly");
-                System.err.println("mol name " + molName + " nEntities " + nEntities);
+                if (DEBUG) {
+                    System.err.println("mol name " + molName + " nEntities " + nEntities);
+                }
                 for (int i = 0; i < nEntities; i++) {
                     Map map = saveframe.getLoopRowMap("_Entity_assembly", i);
                     buildEntity(molecule, map, i);
@@ -602,9 +637,13 @@ public class NMRStarReader {
     public Molecule buildNEFMolecule() throws ParseException {
         Molecule molecule = null;
         for (Saveframe saveframe : star3.getSaveFrames().values()) {
-            System.err.println(saveframe.getCategoryName());
+            if (DEBUG) {
+                System.err.println(saveframe.getCategoryName());
+            }
             if (saveframe.getCategoryName().equals("nef_molecular_system")) {
-                System.err.println("process molecule >>" + saveframe.getName() + "<<");
+                if (DEBUG) {
+                    System.err.println("process molecule >>" + saveframe.getName() + "<<");
+                }
                 String molName = "noname";
                 molecule = new Molecule(molName);
                 buildNEFChains(saveframe, molecule, molName);
@@ -617,14 +656,37 @@ public class NMRStarReader {
     }
 
     public void buildPeakLists() throws ParseException {
-        resMap.clear();
+        peakDimsWithoutResonance.clear();
         for (Saveframe saveframe : star3.getSaveFrames().values()) {
             if (saveframe.getCategoryName().equals("spectral_peak_list")) {
-                System.err.println("process peaklists " + saveframe.getName());
+                if (DEBUG) {
+                    System.err.println("process peaklists " + saveframe.getName());
+                }
                 processSTAR3PeakList(saveframe);
             }
         }
-        linkResonances();
+        addMissingResonances();
+    }
+
+    public void addMissingResonances() {
+        ResonanceFactory resFactory = PeakDim.resFactory();
+        for (PeakDim peakDim : peakDimsWithoutResonance) {
+            Resonance resonance = resFactory.build();
+            resonance.add(peakDim);
+        }
+    }
+
+
+    public void buildPeakPaths() throws ParseException {
+        for (Saveframe saveframe : star3.getSaveFrames().values()) {
+            if (saveframe.getCategoryName().equals("nmrfx_peak_path")) {
+                if (DEBUG) {
+                    System.err.println("process nmrfx_peak_path " + saveframe.getName());
+                }
+                PeakPathReader peakPathReader = new PeakPathReader();
+                peakPathReader.processPeakPaths(saveframe);
+            }
+        }
     }
 
     public void buildResonanceLists() throws ParseException {
@@ -633,7 +695,9 @@ public class NMRStarReader {
             Saveframe saveframe = (Saveframe) iter.next();
             if (saveframe.getCategoryName().equals("resonance_linker")) {
                 hasResonances = true;
-                System.err.println("process resonances " + saveframe.getName());
+                if (DEBUG) {
+                    System.err.println("process resonances " + saveframe.getName());
+                }
                 AtomResonance.processSTAR3ResonanceList(this, saveframe);
             }
         }
@@ -645,7 +709,9 @@ public class NMRStarReader {
             Saveframe saveframe = (Saveframe) iter.next();
             if (saveframe.getCategoryName().startsWith("nmrview_")) {
                 String toolName = saveframe.getCategoryName().substring(8);
-                System.err.println("process tool " + saveframe.getName());
+                if (DEBUG) {
+                    System.err.println("process tool " + saveframe.getName());
+                }
                 // interp.eval("::star3::setupTool " + toolName);
             }
         }
@@ -667,7 +733,7 @@ public class NMRStarReader {
                 entityAssemblyID = "1";
             }
             String mapID = entityAssemblyID + "." + iEntity + "." + iRes;
-            Compound compound1 = (Compound) Molecule.compoundMap.get(mapID);
+            Compound compound1 = (Compound) Molecule.compoundMap().get(mapID);
             if (compound1 != null) {
                 //throw new ParseException("invalid compound in assignments saveframe \""+mapID+"\"");
                 if ((atomName.charAt(0) == 'Q') || (atomName.charAt(0) == 'M')) {
@@ -719,13 +785,15 @@ public class NMRStarReader {
     public void processSTAR3PeakList(Saveframe saveframe) throws ParseException {
         ResonanceFactory resFactory = PeakDim.resFactory();
         String listName = saveframe.getValue("_Spectral_peak_list", "Sf_framecode");
+        String id = saveframe.getValue("_Spectral_peak_list", "ID");
         String sampleLabel = saveframe.getLabelValue("_Spectral_peak_list", "Sample_label");
-        String sampleConditionLabel = saveframe.getOptionalValue("_Spectral_peak_list", "Sample_condition_list_label");
+        String sampleConditionLabel = saveframe.getOptionalLabelValue("_Spectral_peak_list", "Sample_condition_list_label");
         String datasetName = saveframe.getLabelValue("_Spectral_peak_list", "Experiment_name");
         String nDimString = saveframe.getValue("_Spectral_peak_list", "Number_of_spectral_dimensions");
         String dataFormat = saveframe.getOptionalValue("_Spectral_peak_list", "Text_data_format");
         String details = saveframe.getOptionalValue("_Spectral_peak_list", "Details");
         String slidable = saveframe.getOptionalValue("_Spectral_peak_list", "Slidable");
+        String scaleStr = saveframe.getOptionalValue("_Spectral_peak_list", "Scale");
 
         if (dataFormat.equals("text")) {
             System.out.println("Aaaack, peak list is in text format, skipping list");
@@ -740,7 +808,7 @@ public class NMRStarReader {
         }
         int nDim = NvUtil.toInt(nDimString);
 
-        PeakList peakList = new PeakList(listName, nDim);
+        PeakList peakList = new PeakList(listName, nDim, NvUtil.toInt(id));
 
         int nSpectralDim = saveframe.loopCount("_Spectral_dim");
         if (nSpectralDim > nDim) {
@@ -752,6 +820,9 @@ public class NMRStarReader {
         peakList.setDatasetName(datasetName);
         peakList.setDetails(details);
         peakList.setSlideable(slidable.equals("yes"));
+        if (scaleStr.length() > 0) {
+            peakList.setScale(NvUtil.toDouble(scaleStr));
+        }
 
         for (int i = 0; i < nSpectralDim; i++) {
             SpectralDim sDim = peakList.getSpectralDim(i);
@@ -866,8 +937,7 @@ public class NMRStarReader {
                 if ((value = NvUtil.getColumnValue(cornerColumn, i)) != null) {
                     peak.setCorner(value);
                 }
-                peakList.addPeak(peak);  // old code added without creating resonance, but that caused problems with new
-                // linking resonance code used here
+                peakList.addPeakWithoutResonance(peak);
             }
 
             loop = saveframe.getLoop("_Peak_general_char");
@@ -875,7 +945,7 @@ public class NMRStarReader {
                 List<String> peakidColumn = loop.getColumnAsList("Peak_ID");
                 List<String> methodColumn = loop.getColumnAsList("Measurement_method");
                 List<String> intensityColumn = loop.getColumnAsList("Intensity_val");
-                //  fixme, unused: ArrayList errorColumn = loop.getColumnAsList("Intensity_val_err");
+                List<String> errorColumn = loop.getColumnAsList("Intensity_val_err");
                 for (int i = 0, n = peakidColumn.size(); i < n; i++) {
                     String value = null;
                     int idNum = 0;
@@ -900,6 +970,20 @@ public class NMRStarReader {
                         } else {
                             // FIXME throw error if don't know type, or add new type dynamically?
                             peak.setIntensity(iValue);
+                        }
+                    }
+                    if ((value = NvUtil.getColumnValue(errorColumn, i)) != null) {
+                        if (!value.equals(".")) {
+                            float iValue = NvUtil.toFloat(value);
+                            if (method.equals("height")) {
+                                peak.setIntensityErr(iValue);
+                            } else if (method.equals("volume")) {
+                                // FIXME should set volume/evolume 
+                                peak.setVolume1Err(iValue);
+                            } else {
+                                // FIXME throw error if don't know type, or add new type dynamically?
+                                peak.setIntensityErr(iValue);
+                            }
                         }
                     }
                     // FIXME set error value
@@ -969,20 +1053,120 @@ public class NMRStarReader {
                         }
                         Peak peak = peakList.getPeakByID(idNum);
                         PeakDim peakDim = peak.getPeakDim(sDim);
-                        if (resonanceID != -1) {
-                            addResonance(resonanceID, peakDim);
+                        if (resonanceID != -1L) {
+                            Resonance resonance = resFactory.build(resonanceID);
+                            resonance.add(peakDim);
+                        } else {
+                            peakDimsWithoutResonance.add(peakDim);
                         }
-//                    Resonance res = resFactory.get(resonanceID);
-//                    if (res == null) {
-//                        resFactory.build(resonanceID);
-//                    }
-//                    peakDim.setResonance(resonanceID);
                     }
                 } else {
                     System.out.println("No \"Assigned Peak Chem Shift\" loop");
                 }
             }
+            loop = saveframe.getLoop("_Peak_coupling");
+            if (loop != null) {
+                List<Integer> peakIdColumn = loop.getColumnAsIntegerList("Peak_ID", null);
+                List<Integer> sdimColumn = loop.getColumnAsIntegerList("Spectral_dim_ID", null);
+                List<Integer> compIDColumn = loop.getColumnAsIntegerList("Multiplet_component_ID", null);
+                List<Double> couplingColumn = loop.getColumnAsDoubleList("Coupling_val", null);
+                List<Double> strongCouplingColumn = loop.getColumnAsDoubleList("Strong_coupling_effect_val", null);
+                List<Double> intensityColumn = loop.getColumnAsDoubleList("Intensity_val", null);
+                List<String> couplingTypeColumn = loop.getColumnAsList("Type");
+                int from = 0;
+                int to = 0;
+                for (int i = 0; i < peakIdColumn.size(); i++) {
+                    int currentID = peakIdColumn.get(from);
+                    int currentDim = sdimColumn.get(i) - 1;
+                    if ((i == (peakIdColumn.size() - 1))
+                            || (peakIdColumn.get(i + 1) != currentID)
+                            || (sdimColumn.get(i + 1) - 1 != currentDim)) {
+                        Peak peak = peakList.getPeakByID(currentID);
+                        to = i + 1;
+                        Multiplet multiplet = peak.getPeakDim(currentDim).getMultiplet();
+                        CouplingPattern couplingPattern = new CouplingPattern(multiplet,
+                                couplingColumn.subList(from, to),
+                                couplingTypeColumn.subList(from, to),
+                                strongCouplingColumn.subList(from, to),
+                                intensityColumn.get(from)
+                        );
+                        multiplet.setCoupling(couplingPattern);
+                        from = to;
+                    }
+                }
+            }
+            processTransitions(saveframe, peakList);
         }
+    }
+
+    void processTransitions(Saveframe saveframe, PeakList peakList) throws ParseException {
+        Loop loop = saveframe.getLoop("_Spectral_transition");
+        if (loop != null) {
+            List<Integer> idColumn = loop.getColumnAsIntegerList("ID", null);
+            List<Integer> peakIdColumn = loop.getColumnAsIntegerList("Peak_ID", null);
+            List<Double> fomColumn = loop.getColumnAsDoubleList("Figure_of_merit", null);
+
+            for (int i = 0, n = idColumn.size(); i < n; i++) {
+                int idNum = idColumn.get(i);
+                int peakIdNum = peakIdColumn.get(i);
+                Peak peak = peakList.getPeakByID(peakIdNum);
+                peak.setIdNum(idNum);
+            }
+            loop = saveframe.getLoop("_Spectral_transition_general_char");
+
+            if (loop != null) {
+                Map<Integer, Double> intMap = new HashMap<>();
+                Map<Integer, Double> volMap = new HashMap<>();
+                idColumn = loop.getColumnAsIntegerList("Spectral_transition_ID", null);
+                peakIdColumn = loop.getColumnAsIntegerList("Peak_ID", null);
+                List<Double> intensityColumn = loop.getColumnAsDoubleList("Intensity_val", null);
+                List<String> methodColumn = loop.getColumnAsList("Measurement_method");
+
+                for (int i = 0, n = idColumn.size(); i < n; i++) {
+                    int idNum = idColumn.get(i);
+                    Double value = intensityColumn.get(i);
+                    if (value != null) {
+                        String mode = methodColumn.get(i);
+                        if (mode.equals("height")) {
+                            intMap.put(idNum, value);
+                        } else {
+                            volMap.put(idNum, value);
+                        }
+                    }
+
+                }
+
+                loop = saveframe.getLoop("_Spectral_transition_char");
+                if (loop != null) {
+                    idColumn = loop.getColumnAsIntegerList("Spectral_transition_ID", null);
+                    peakIdColumn = loop.getColumnAsIntegerList("Peak_ID", null);
+                    List<Double> shiftColumn = loop.getColumnAsDoubleList("Chem_shift_val", null);
+                    List<Double> lwColumn = loop.getColumnAsDoubleList("Line_width_val", null);
+                    List<Integer> sdimColumn = loop.getColumnAsIntegerList("Spectral_dim_ID", null);
+
+                    List<AbsMultipletComponent> comps = new ArrayList<>();
+                    for (int i = 0; i < peakIdColumn.size(); i++) {
+                        int currentID = peakIdColumn.get(i);
+                        int transID = idColumn.get(i);
+                        int currentDim = sdimColumn.get(i) - 1;
+                        double sf = peakList.getSpectralDim(currentDim).getSf();
+                        Peak peak = peakList.getPeakByID(currentID);
+                        Multiplet multiplet = peak.getPeakDim(currentDim).getMultiplet();
+                        AbsMultipletComponent comp = new AbsMultipletComponent(
+                                multiplet, shiftColumn.get(i), intMap.get(transID), volMap.get(transID), lwColumn.get(i) / sf);
+                        comps.add(comp);
+                        if ((i == (peakIdColumn.size() - 1))
+                                || (peakIdColumn.get(i + 1) != currentID)
+                                || (sdimColumn.get(i + 1) - 1 != currentDim)) {
+                            ComplexCoupling complexCoupling = new ComplexCoupling(multiplet, comps);
+                            multiplet.setCoupling(complexCoupling);
+                            comps.clear();
+                        }
+                    }
+                }
+            }
+        }
+
     }
 
     public void processChemicalShifts(Saveframe saveframe, int ppmSet) throws ParseException {
@@ -1016,7 +1200,7 @@ public class NMRStarReader {
                     entityAssemblyID = "1";
                 }
                 String mapID = entityAssemblyID + "." + iEntity + "." + iRes;
-                Compound compound = (Compound) Molecule.compoundMap.get(mapID);
+                Compound compound = (Compound) Molecule.compoundMap().get(mapID);
                 if (compound == null) {
                     //throw new ParseException("invalid compound in assignments saveframe \""+mapID+"\"");
                     System.err.println("invalid compound in assignments saveframe \"" + mapID + "\"");
@@ -1108,7 +1292,7 @@ public class NMRStarReader {
                 entityAssemblyID = "1";
             }
             String mapID = entityAssemblyID + "." + iEntity + "." + iRes;
-            Compound compound = (Compound) Molecule.compoundMap.get(mapID);
+            Compound compound = (Compound) Molecule.compoundMap().get(mapID);
             if (compound == null) {
                 //throw new ParseException("invalid compound in conformer saveframe \""+mapID+"\"");
                 System.err.println("invalid compound in conformer saveframe \"" + mapID + "\"");
@@ -1320,7 +1504,7 @@ public class NMRStarReader {
                     entityAssemblyID = "1";
                 }
                 String mapID = entityAssemblyID + "." + iEntity + "." + iRes;
-                Compound compound1 = (Compound) Molecule.compoundMap.get(mapID);
+                Compound compound1 = (Compound) Molecule.compoundMap().get(mapID);
                 if (compound1 == null) {
                     //throw new ParseException("invalid compound in distance constraints saveframe \""+mapID+"\"");
                     System.err.println("invalid compound in distance constraints saveframe \"" + mapID + "\"");
@@ -1358,7 +1542,10 @@ public class NMRStarReader {
                 } else {
                     try {
                         int peakListID = Integer.parseInt(peakListIDStr);
-                        peakList = PeakList.get(peakListID);
+                        Optional<PeakList> peakListOpt = PeakList.get(peakListID);
+                        if (peakListOpt.isPresent()) {
+                            peakList = peakListOpt.get();
+                        }
                     } catch (NumberFormatException nFE) {
                         throw new ParseException("Invalid peak list id (not int) \"" + peakListIDStr + "\"");
                     }
@@ -1460,7 +1647,7 @@ public class NMRStarReader {
 
             Util.setStrictlyNEF(true);
             try {
-                energyList.addDistanceConstraint(atomNames[0], atomNames[1], lower, upper);
+                energyList.addDistanceConstraint(atomNames[0], atomNames[1], lower, upper, null, null, null);
             } catch (IllegalArgumentException iaE) {
                 int index = indexColumn.get(i);
                 throw new ParseException("Error parsing NEF distance constraints at index  \"" + index + "\" " + iaE.getMessage());
@@ -1478,33 +1665,61 @@ public class NMRStarReader {
         if ((argv.length != 0) && (argv.length != 3)) {
             throw new IllegalArgumentException("?shifts fromSet toSet?");
         }
-        System.out.println("nSave " + star3.getSaveFrameNames());
+        if (DEBUG) {
+            System.out.println("nSave " + star3.getSaveFrameNames());
+        }
         AtomResonanceFactory resFactory = (AtomResonanceFactory) PeakDim.resFactory();
         if (argv.length == 0) {
             hasResonances = false;
-            Molecule.compoundMap.clear();
+            Molecule.compoundMap().clear();
             buildExperiments();
-            System.err.println("process molecule");
+            if (DEBUG) {
+                System.err.println("process molecule");
+            }
             buildMolecule();
-            System.err.println("process peak lists");
+            if (DEBUG) {
+                System.err.println("process peak lists");
+            }
             buildPeakLists();
-            System.err.println("process resonance lists");
+            if (DEBUG) {
+                System.err.println("process resonance lists");
+            }
             buildResonanceLists();
-            System.err.println("process chem shifts");
+            if (DEBUG) {
+                System.err.println("process chem shifts");
+            }
             buildChemShifts(-1, 0);
-            System.err.println("process conformers");
+            if (DEBUG) {
+                System.err.println("process conformers");
+            }
             buildConformers();
-            System.err.println("process dist constraints");
+            if (DEBUG) {
+                System.err.println("process dist constraints");
+            }
             buildGenDistConstraints();
-            System.err.println("process angle constraints");
+            if (DEBUG) {
+                System.err.println("process angle constraints");
+            }
             buildDihedralConstraints();
-            System.err.println("process rdc constraints");
+            if (DEBUG) {
+                System.err.println("process rdc constraints");
+            }
             buildRDCConstraints();
-            System.err.println("process runabout");
+            if (DEBUG) {
+                System.err.println("process runabout");
+            }
             buildRunAbout();
-            System.err.println("clean resonances");
+            if (DEBUG) {
+                System.err.println("process paths");
+            }
+            buildPeakPaths();
+            if (DEBUG) {
+                System.err.println("clean resonances");
+            }
             resFactory.clean();
-            System.err.println("process done");
+            if (DEBUG) {
+                System.err.println("process done");
+            }
         } else if ("shifts".startsWith(argv[2].toString())) {
             int fromSet = Integer.parseInt(argv[3]);
             int toSet = Integer.parseInt(argv[4]);
@@ -1521,18 +1736,23 @@ public class NMRStarReader {
         if ((argv.length != 0) && (argv.length != 3)) {
             throw new IllegalArgumentException("?shifts fromSet toSet?");
         }
-        System.out.println("nSave " + star3.getSaveFrameNames());
+        if (DEBUG) {
+            System.out.println("nSave " + star3.getSaveFrameNames());
+        }
         AtomResonanceFactory resFactory = (AtomResonanceFactory) PeakDim.resFactory();
         Dihedral dihedral = null;
         if (argv.length == 0) {
             hasResonances = false;
-            Molecule.compoundMap.clear();
+            Molecule.compoundMap().clear();
 //            buildExperiments();
-            System.err.println("process molecule");
+            if (DEBUG) {
+                System.err.println("process molecule");
+            }
             Molecule molecule = buildNEFMolecule();
             molecule.setMethylRotationActive(true);
             EnergyLists energyList = new EnergyLists(molecule);
             dihedral = new Dihedral(energyList, false);
+            dihedral.clearBoundaries();
 
             energyList.makeCompoundList(molecule);
 //            System.err.println("process peak lists");
@@ -1543,9 +1763,13 @@ public class NMRStarReader {
 //            buildChemShifts(-1, 0);
 //            System.err.println("process conformers");
 //            buildConformers();
-            System.err.println("process dist constraints");
+            if (DEBUG) {
+                System.err.println("process dist constraints");
+            }
             buildNEFDistanceRestraints(energyList);
-            System.err.println("process angle constraints");
+            if (DEBUG) {
+                System.err.println("process angle constraints");
+            }
             buildNEFDihedralConstraints(dihedral);
 //            System.err.println("process runabout");
 //            buildRunAbout();

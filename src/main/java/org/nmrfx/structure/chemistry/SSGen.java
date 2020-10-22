@@ -30,7 +30,7 @@ public class SSGen {
     public String viennaSeq;
     public Molecule molecule;
     public static String type;
-    public List<SecondaryStructure> structures = new ArrayList<SecondaryStructure>();
+    public List<SecondaryStructure> structures = new ArrayList<>();
     public List<Residue> residues;
 
     public SSGen(Molecule mol, String vienna) {
@@ -44,7 +44,7 @@ public class SSGen {
 
     public SSGen(Molecule mol) {
         molecule = mol;
-        char[] vSeq = mol.viennaSequence();
+        char[] vSeq = RNAAnalysis.getViennaSequence(mol);
         String vienna = new String(vSeq);
         viennaSeq = vienna;
         genRNAResidues();
@@ -52,19 +52,18 @@ public class SSGen {
         secondaryStructGen();
     }
 
-    public void genRNAResidues() {
-        List<Residue> resList = new ArrayList<>();
+    public final void genRNAResidues() {
+        residues = new ArrayList<>();
         for (Polymer polymer : molecule.getPolymers()) {
             if (polymer.isRNA()) {
                 for (Residue residue : polymer.getResidues()) {
-                    resList.add(residue);
+                    residues.add(residue);
                 }
             }
-            residues = resList;
         }
     }
 
-    public void pairTo() {
+    public final void pairTo() {
         SSLayout ssLay = new SSLayout(viennaSeq.length());
         ssLay.interpVienna(viennaSeq, residues);
     }
@@ -102,7 +101,7 @@ public class SSGen {
         return null;
     }
 
-    public List<Residue> resList() {
+    public List<Residue> genResList() {
         List<Residue> currentSS = new ArrayList<>();
         List<Residue> ssType = new ArrayList<>();
         boolean add = false;
@@ -117,16 +116,20 @@ public class SSGen {
             Residue lastRes = residues.get(residues.size() - 1);
             Residue resBefore = ssFirstRes.getPrevious();
             Residue resAfter = ssLastRes.getNext();
+            boolean samePoly = ssFirstRes.getPolymer() == ssLastRes.getPolymer();
 
             if (ssLastRes == lastRes || ssFirstRes == firstRes) { //last residue or first residue (string of non pairing all the way to end)
                 add = true;
                 type = "nonloop"; //instead of calling first residue, call last residue
-            } else if (resBefore.pairedTo == resAfter) { //loop
+            } else if (samePoly && (resBefore.pairedTo == resAfter)) { //loop
                 add = true;
                 type = "loop";
             } else if (resBefore.pairedTo.iRes < resAfter.pairedTo.iRes) { //junction
                 add = true;
                 type = "junction";
+            } else if (resBefore.pairedTo.getPrevious() == resAfter.pairedTo) {
+                add = true;
+                type = "bulge";
             } else if (resBefore.pairedTo.getPrevious().pairedTo == null && (resBefore.iRes < resBefore.pairedTo.iRes)) { //second half of internal loop
                 Residue otherLoopRes = resBefore.pairedTo.getPrevious();
                 while (otherLoopRes.pairedTo == null) {
@@ -135,15 +138,14 @@ public class SSGen {
                 }
                 add = true;
                 type = "internalLoop";
-            } else if (resBefore.iRes < resBefore.pairedTo.iRes) { //left side 
-                boolean leftBulge = resBefore.pairedTo.getPrevious().pairedTo != null;
-                if (leftBulge) {
-                    add = true;
-                    type = "bulge";
+            } else {
+                boolean hasType = true;
+                for (Residue res : currentSS) {
+                    if (res.secStruct == null) {
+                        hasType = false;
+                    }
                 }
-            } else if (resBefore.iRes > resBefore.pairedTo.iRes) { //right side
-                boolean rightBulge = resAfter.pairedTo.getNext().pairedTo != null;
-                if (rightBulge) {
+                if (!hasType) {
                     add = true;
                     type = "bulge";
                 }
@@ -152,9 +154,19 @@ public class SSGen {
                 ssType.addAll(currentSS);
             }
             return ssType;
-        } else if (residues.get(tracker).pairedTo != null) {
+        } else {
             while (tracker < residues.size() && residues.get(tracker).pairedTo != null) {
-                if (residues.get(tracker).iRes < residues.get(tracker).pairedTo.iRes) {
+                Residue res1 = residues.get(tracker);
+                Residue res2 = res1.pairedTo;
+                Polymer poly1 = res1.getPolymer();
+                Polymer poly2 = res2.getPolymer();
+                int polyID1 = poly1.getIDNum();
+                int polyID2 = poly2.getIDNum();
+                boolean firstInstance = polyID1 < polyID2;
+                if (polyID1 == polyID2) {
+                    firstInstance = res1.iRes < res2.iRes;
+                }
+                if (firstInstance) {
                     ssType.add(residues.get(tracker));
                     ssType.add(residues.get(tracker).pairedTo);
                     tracker++;
@@ -163,15 +175,13 @@ public class SSGen {
                 }
             }
             type = "helix";
-
             return ssType;
         }
-        return null;
     }
 
-    public void secondaryStructGen() {
+    public final void secondaryStructGen() {
         while (tracker < residues.size()) {
-            SecondaryStructure ss = classifyRes(resList());
+            SecondaryStructure ss = classifyRes(genResList());
             if (ss != null) {
                 for (Residue residues : ss.secResidues) {
                     residues.secStruct = ss;

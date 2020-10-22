@@ -54,6 +54,7 @@ public class Bond implements IBond, Serializable {
         properties = new boolean[16];
     }
 
+    @Override
     public String toString() {
         StringBuilder sBuilder = new StringBuilder();
         if (begin != null) {
@@ -83,6 +84,7 @@ public class Bond implements IBond, Serializable {
         return end;
     }
 
+    @Override
     public Atom getAtom(int index) {
         return index == 0 ? begin : end;
     }
@@ -97,6 +99,7 @@ public class Bond implements IBond, Serializable {
         }
     }
 
+    @Override
     public void setFlag(int flag, boolean state) throws IllegalArgumentException {
         if (flag > flags.length) {
             throw new IllegalArgumentException("Invalid flag");
@@ -104,6 +107,7 @@ public class Bond implements IBond, Serializable {
         flags[flag] = state;
     }
 
+    @Override
     public boolean getFlag(int flag) throws IllegalArgumentException {
         if (flag > flags.length) {
             throw new IllegalArgumentException("Invalid flag");
