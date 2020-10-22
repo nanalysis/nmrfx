@@ -176,7 +176,7 @@ public class PathFitter {
             System.out.println("ols");
             String[] colNames = {"a", "b", "y"};
             DataFrame dataframe = DataFrame.of(x, colNames);
-            Formula f = new Formula("y");
+            Formula f = Formula.lhs("y");
 //            OLS ols = new OLS(x, y);
             LinearModel model = OLS.fit(f, dataframe);
 //            System.out.println("ols " + ols.RSS());
