@@ -5,6 +5,9 @@
  */
 package org.nmrfx.project;
 
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeSupport;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -58,6 +61,7 @@ public class Project {
     protected List<Dataset> datasets = new ArrayList<Dataset>();
     public ResonanceFactory resFactory;
     public Map<String, PeakPath> peakPaths;
+    public static PropertyChangeSupport pcs = null;
 
     public Project(String name) {
         this.name = name;
@@ -66,10 +70,31 @@ public class Project {
         this.resFactory.init();
         peakLists = new HashMap<>();
         peakPaths = new HashMap<>();
+
         setActive();
     }
 
-    public class FileComparator implements Comparator<Path> {
+    public static void setPCS(PropertyChangeSupport newPCS) {
+        pcs = newPCS;
+    }
+
+    private ResonanceFactory getNewResFactory() {
+        ResonanceFactory resFact;
+        try {
+            Class c = Class.forName("org.nmrfx.processor.datasets.peaks.AtomResonanceFactory");
+            try {
+                resFact = (ResonanceFactory) c.newInstance();
+            } catch (InstantiationException | IllegalAccessException ex) {
+                resFact = new ResonanceFactory();
+            }
+        } catch (ClassNotFoundException ex) {
+            resFact = new ResonanceFactory();
+        }
+        return resFact;
+    }
+
+    public static class FileComparator implements Comparator<Path> {
+
         @Override
         public int compare(Path p1, Path p2) {
             String s1 = p1.getFileName().toString();
@@ -104,22 +129,6 @@ public class Project {
 
     }
 
-    private ResonanceFactory getNewResFactory() {
-        ResonanceFactory resFact;
-        try {
-            Class c = Class.forName("org.nmrfx.processor.datasets.peaks.AtomResonanceFactory");
-            try {
-                resFact = (ResonanceFactory) c.newInstance();
-            } catch (InstantiationException | IllegalAccessException ex) {
-                resFact = new ResonanceFactory();
-            }
-        } catch (ClassNotFoundException ex) {
-            resFact = new ResonanceFactory();
-        }
-        return resFact;
-    }
-
-
     public boolean hasDirectory() {
         return projectDir != null;
     }
@@ -149,7 +158,11 @@ public class Project {
     }
 
     public final void setActive() {
+        PropertyChangeEvent event = new PropertyChangeEvent(this, "project", null, this);
         activeProject = this;
+        if (pcs != null) {
+            pcs.firePropertyChange(event);
+        }
     }
 
     public static Project getActive() {
@@ -252,16 +265,19 @@ public class Project {
 
     public void addDataset(Dataset dataset, String datasetName) {
         datasetMap.put(datasetName, dataset);
-        if (!datasets.contains(dataset)) {
-            datasets.add(dataset);
-        }
+        refreshDatasetList();
     }
 
     public boolean removeDataset(String datasetName) {
         Dataset toRemove = datasetMap.get(datasetName);
         boolean result = datasetMap.remove(datasetName) != null;
-        datasets.remove(toRemove);
+        refreshDatasetList();
         return result;
+    }
+
+    public void refreshDatasetList() {
+        datasets.clear();
+        datasets.addAll(datasetMap.values());
     }
 
     List<Dataset> getDatasetList() {
@@ -331,6 +347,7 @@ public class Project {
                         }
                     });
         }
+        refreshDatasetList();
     }
 
     void saveDatasets() throws IOException {
@@ -504,6 +521,43 @@ public class Project {
     }
 
     public void addDatasetListListener(Object mapChangeListener) {
+    }
+
+    /**
+     * Add a PropertyChangeListener to the listener list. The listener is
+     * registered for all properties. The same listener object may be added more
+     * than once, and will be called as many times as it is added. If listener
+     * is null, no exception is thrown and no action is taken.
+     */
+    public static void addPropertyChangeListener(PropertyChangeListener listener) {
+        if (pcs != null) {
+            pcs.addPropertyChangeListener(listener);
+        }
+    }
+
+    /**
+     * Remove a PropertyChangeListener from the listener list. This removes a
+     * PropertyChangeListener that was registered for all properties. If
+     * listener was added more than once to the same event source, it will be
+     * notified one less time after being removed. If listener is null, or was
+     * never added, no exception is thrown and no action is taken.
+     */
+    public static void removePropertyChangeListener(PropertyChangeListener listener) {
+        if (pcs != null) {
+            pcs.removePropertyChangeListener(listener);
+        }
+    }
+
+    /**
+     * Returns an array of all the listeners that were added to the
+     * PropertyChangeSupport object with addPropertyChangeListener().
+     */
+    public static PropertyChangeListener[] getPropertyChangeListeners() {
+        if (pcs == null) {
+            return null;
+        } else {
+            return pcs.getPropertyChangeListeners();
+        }
     }
 
 }
