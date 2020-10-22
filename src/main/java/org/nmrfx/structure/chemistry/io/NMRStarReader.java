@@ -23,8 +23,8 @@ import org.nmrfx.structure.chemistry.constraints.*;
 import org.nmrfx.structure.chemistry.energy.Dihedral;
 import org.nmrfx.structure.chemistry.energy.EnergyLists;
 import org.nmrfx.processor.datasets.Dataset;
-import org.nmrfx.processor.datasets.peaks.AtomResonance;
-import org.nmrfx.processor.datasets.peaks.AtomResonanceFactory;
+import org.nmrfx.processor.datasets.peaks.atoms.AtomResonance;
+import org.nmrfx.processor.datasets.peaks.atoms.AtomResonanceFactory;
 import org.nmrfx.processor.datasets.peaks.Peak;
 import org.nmrfx.processor.datasets.peaks.PeakDim;
 import org.nmrfx.processor.datasets.peaks.PeakList;
@@ -699,7 +699,7 @@ public class NMRStarReader {
     }
 
     public void linkResonances() {
-        ResonanceFactory resFactory = PeakDim.resFactory;
+        ResonanceFactory resFactory = PeakDim.resFactory();
         for (Long resID : resMap.keySet()) {
             List<PeakDim> peakDims = resMap.get(resID);
             PeakDim firstPeakDim = peakDims.get(0);
@@ -717,7 +717,7 @@ public class NMRStarReader {
     }
 
     public void processSTAR3PeakList(Saveframe saveframe) throws ParseException {
-        ResonanceFactory resFactory = PeakDim.resFactory;
+        ResonanceFactory resFactory = PeakDim.resFactory();
         String listName = saveframe.getValue("_Spectral_peak_list", "Sf_framecode");
         String sampleLabel = saveframe.getLabelValue("_Spectral_peak_list", "Sample_label");
         String sampleConditionLabel = saveframe.getOptionalValue("_Spectral_peak_list", "Sample_condition_list_label");
@@ -996,7 +996,7 @@ public class NMRStarReader {
             List<String> valColumn = loop.getColumnAsList("Val");
             List<String> valErrColumn = loop.getColumnAsList("Val_err");
             List<String> resColumn = loop.getColumnAsList("Resonance_ID");
-            ResonanceFactory resFactory = PeakDim.resFactory;
+            ResonanceFactory resFactory = PeakDim.resFactory();
             for (int i = 0; i < entityAssemblyIDColumn.size(); i++) {
                 String iEntity = (String) entityIDColumn.get(i);
                 String entityAssemblyID = (String) entityAssemblyIDColumn.get(i);
@@ -1479,7 +1479,7 @@ public class NMRStarReader {
             throw new IllegalArgumentException("?shifts fromSet toSet?");
         }
         System.out.println("nSave " + star3.getSaveFrameNames());
-        AtomResonanceFactory resFactory = (AtomResonanceFactory) PeakDim.resFactory;
+        AtomResonanceFactory resFactory = (AtomResonanceFactory) PeakDim.resFactory();
         if (argv.length == 0) {
             hasResonances = false;
             Molecule.compoundMap.clear();
@@ -1522,7 +1522,7 @@ public class NMRStarReader {
             throw new IllegalArgumentException("?shifts fromSet toSet?");
         }
         System.out.println("nSave " + star3.getSaveFrameNames());
-        AtomResonanceFactory resFactory = (AtomResonanceFactory) PeakDim.resFactory;
+        AtomResonanceFactory resFactory = (AtomResonanceFactory) PeakDim.resFactory();
         Dihedral dihedral = null;
         if (argv.length == 0) {
             hasResonances = false;

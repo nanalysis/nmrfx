@@ -26,8 +26,8 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
-import org.nmrfx.processor.datasets.peaks.AtomResonance;
-import org.nmrfx.processor.datasets.peaks.AtomResonanceFactory;
+import org.nmrfx.processor.datasets.peaks.atoms.AtomResonance;
+import org.nmrfx.processor.datasets.peaks.atoms.AtomResonanceFactory;
 import org.nmrfx.processor.datasets.peaks.InvalidPeakException;
 import org.nmrfx.processor.datasets.peaks.PeakDim;
 import org.nmrfx.processor.datasets.peaks.PeakList;
@@ -817,7 +817,7 @@ public class NMRStarWriter {
             peakWriter.writePeaksSTAR3(chan, peakList);
         }
 
-        AtomResonanceFactory resFactory = (AtomResonanceFactory) PeakDim.resFactory;
+        AtomResonanceFactory resFactory = (AtomResonanceFactory) PeakDim.resFactory();
 
         resFactory.writeResonancesSTAR3(chan);
         if (molecule != null) {

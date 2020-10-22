@@ -16,16 +16,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/*
+ /*
  * AtomProperty.java
  *
  * Created on April 12, 2004, 11:02 PM
  */
 package org.nmrfx.structure.chemistry;
 
-import org.nmrfx.structure.utilities.NvUtil;
-import java.awt.Color;
 import java.util.*;
+import org.nmrfx.processor.utilities.NMRFxColor;
+import org.nmrfx.processor.utilities.NvUtil;
 
 /**
  *
@@ -35,7 +35,7 @@ public class AtomProperty {
 
     static HashMap map = new HashMap();
     static int nextAnum = 0;
-    private static final Color genericColor = new Color(1.0f, 0.1f, 0.6f);
+    private static final String genericColor = "gray";
     public static final AtomProperty X = new AtomProperty("X", 0.8f,
             genericColor, 0.0f);
     public static final AtomProperty H = new AtomProperty("H", 1.2f, "white",
@@ -287,17 +287,7 @@ public class AtomProperty {
         this.aNum = nextAnum++;
         this.radius = radius;
 
-        Color color = NvUtil.color(colorName);
-        this.red = color.getRed() / 255.0f;
-        this.green = color.getGreen() / 255.0f;
-        this.blue = color.getBlue() / 255.0f;
-        this.mass = mass;
-    }
-
-    private AtomProperty(String name, float radius, Color color, float mass) {
-        this.name = name;
-        this.aNum = nextAnum++;
-        this.radius = radius;
+        NMRFxColor color = NvUtil.color(colorName);
         this.red = color.getRed() / 255.0f;
         this.green = color.getGreen() / 255.0f;
         this.blue = color.getBlue() / 255.0f;

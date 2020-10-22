@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Vector;
-import org.nmrfx.processor.datasets.peaks.AtomResonance;
+import org.nmrfx.processor.datasets.peaks.atoms.AtomResonance;
 import org.nmrfx.processor.datasets.peaks.Peak;
 import org.nmrfx.processor.datasets.peaks.PeakDim;
 import org.nmrfx.processor.datasets.peaks.PeakList;
