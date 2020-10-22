@@ -11,9 +11,9 @@ import java.util.Comparator;
 import java.util.Collections;
 import java.util.Objects;
 import java.util.TreeSet;
-import org.apache.commons.collections.bag.HashBag;
 import java.nio.charset.Charset;
 import java.util.List;
+import org.apache.commons.collections4.bag.HashBag;
 
 public class HosePrediction {
 

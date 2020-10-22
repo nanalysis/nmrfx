@@ -1,8 +1,5 @@
 package org.nmrfx.structure.chemistry.miner;
 
-import java.awt.*;
-import java.awt.geom.GeneralPath;
-import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 
 class PMol {
@@ -66,40 +63,40 @@ class PMol {
         return newY;
     }
 
-    public void drawAtoms(Graphics2D g2) {
-        for (int i = 0, n = atoms.size(); i < n; i++) {
-            Atom atom = (Atom) atoms.get(i);
-            FontMetrics fm = g2.getFontMetrics();
-            String label = symbols[atom.element];
-            Rectangle2D rect2D = fm.getStringBounds(label, (Graphics) g2);
-            float dX = (float) (rect2D.getWidth() / 2);
-            float dY = (float) (fm.getAscent() / 2);
-            float x = getX(atom.x) - dX;
-            float y = getY(atom.y) + dY;
-            Rectangle rect = new Rectangle();
-            rect.setRect(rect2D);
-            rect.translate((int) x, (int) y);
-            g2.setColor(Color.WHITE);
-            g2.fill(rect);
-            g2.setColor(Color.BLACK);
-            g2.drawString(label, x, y);
-        }
-    }
-
-    GeneralPath genPath(int width, int height, double scale) {
-        GeneralPath gPath = new GeneralPath();
-        this.width = width;
-        this.height = height;
-        this.scale = scale;
-
-        for (int i = 0, n = bonds.size(); i < n; i++) {
-            Bond bond = (Bond) bonds.get(i);
-            gPath.moveTo(getX(bond.x1), getY(bond.y1));
-            gPath.lineTo(getX(bond.x2), getY(bond.y2));
-        }
-
-        return gPath;
-    }
+//    public void drawAtoms(Graphics2D g2) {
+//        for (int i = 0, n = atoms.size(); i < n; i++) {
+//            Atom atom = (Atom) atoms.get(i);
+//            FontMetrics fm = g2.getFontMetrics();
+//            String label = symbols[atom.element];
+//            Rectangle2D rect2D = fm.getStringBounds(label, (Graphics) g2);
+//            float dX = (float) (rect2D.getWidth() / 2);
+//            float dY = (float) (fm.getAscent() / 2);
+//            float x = getX(atom.x) - dX;
+//            float y = getY(atom.y) + dY;
+//            Rectangle rect = new Rectangle();
+//            rect.setRect(rect2D);
+//            rect.translate((int) x, (int) y);
+//            g2.setColor(Color.WHITE);
+//            g2.fill(rect);
+//            g2.setColor(Color.BLACK);
+//            g2.drawString(label, x, y);
+//        }
+//    }
+//
+//    GeneralPath genPath(int width, int height, double scale) {
+//        GeneralPath gPath = new GeneralPath();
+//        this.width = width;
+//        this.height = height;
+//        this.scale = scale;
+//
+//        for (int i = 0, n = bonds.size(); i < n; i++) {
+//            Bond bond = (Bond) bonds.get(i);
+//            gPath.moveTo(getX(bond.x1), getY(bond.y1));
+//            gPath.lineTo(getX(bond.x2), getY(bond.y2));
+//        }
+//
+//        return gPath;
+//    }
 
     class Atom {
 
