@@ -183,6 +183,10 @@ public class BipartiteMatcher {
         return weight;
 
     }
+    
+    public double getMinWeight() {
+        return minWeight;
+    }
 
     public double getMaxWtSum(int[] matches, double wMin) {
         boolean wtsChanged = wMin <= 0;
