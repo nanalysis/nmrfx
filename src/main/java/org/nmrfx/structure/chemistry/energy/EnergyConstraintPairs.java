@@ -59,8 +59,8 @@ public class EnergyConstraintPairs extends EnergyDistancePairs {
             iUnits[iPair] = iUnit;
             jUnits[iPair] = jUnit;
 
-            this.rLow[iPair] = rLow;
-            this.rLow2[iPair] = rLow * rLow;
+            this.rDis[iPair] = rLow;
+            this.rDis2[iPair] = rLow * rLow;
             this.rUp[iPair] = rUp;
             this.rUp2[iPair] = rUp * rUp;
             weights[iPair] = weight;
@@ -275,9 +275,9 @@ public class EnergyConstraintPairs extends EnergyDistancePairs {
         }
         final double dif;
         final double r;
-        if (r2Min <= rLow2[i]) {
+        if (r2Min <= rDis2[i]) {
             r = FastMath.sqrt(r2Min);
-            dif = rLow[i] - r;
+            dif = rDis[i] - r;
         } else if (r2 >= rUp2[i]) {
             r = FastMath.sqrt(r2);
             dif = rUp[i] - r;
@@ -317,9 +317,9 @@ public class EnergyConstraintPairs extends EnergyDistancePairs {
         double r2 = disSq[i];
         double r = FastMath.sqrt(r2);
         double dif = 0.0;
-        if (r2 <= rLow2[i]) {
+        if (r2 <= rDis2[i]) {
             r = FastMath.sqrt(r2);
-            dif = rLow[i] - r;
+            dif = rDis[i] - r;
         } else if (r2 >= rUp2[i]) {
             r = FastMath.sqrt(r2);
             dif = rUp[i] - r;
@@ -328,7 +328,7 @@ public class EnergyConstraintPairs extends EnergyDistancePairs {
         ViolationStats stat = null;
         if (Math.abs(dif) > limitVal) {
             double energy = weights[i] * weight * dif * dif;
-            stat = new ViolationStats(0, atoms[iAtom].getFullName(), atoms[jAtom].getFullName(), r, rLow[i], rUp[i], energy, eCoords);
+            stat = new ViolationStats(0, atoms[iAtom].getFullName(), atoms[jAtom].getFullName(), r, rDis[i], rUp[i], energy, eCoords);
         }
 
         return stat;
@@ -367,7 +367,7 @@ public class EnergyConstraintPairs extends EnergyDistancePairs {
                 //    wild = ijWild(prevIAtom, prevJAtom, iAtomName, jAtomName);
                 //}
                 // If there is a new write out the values, if not, make empty
-                String lower = newGroup ? doubFormatter.format(rLow[i]) : "";
+                String lower = newGroup ? doubFormatter.format(rDis[i]) : "";
                 String upper = newGroup ? doubFormatter.format(rUp[i]) : "";
                 String[] lineElements = {iIndex, iGroup, iAtomName, jAtomName, lower, upper};
 

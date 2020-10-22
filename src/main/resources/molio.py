@@ -2,6 +2,8 @@ from org.nmrfx.structure.chemistry.io import PDBFile
 from org.nmrfx.structure.chemistry.io import SDFile
 from org.nmrfx.structure.chemistry.io import Sequence
 from org.nmrfx.structure.chemistry import Molecule
+from org.nmrfx.structure.chemistry.io import MMcifReader
+
 from java.util import ArrayList
 from java.lang import ClassLoader
 from java.io import BufferedReader
@@ -13,6 +15,15 @@ def updateAtomArray():
     ''' Updates the molecule atom array '''
     mol = Molecule.getActive()
     mol.updateAtomArray()
+
+def readMMCIF(fileName):
+    ''' Reads a pdb file and modifies the static Molecule object.
+    '''
+    compound = None
+    MMcifReader.read(fileName)
+    mol = Molecule.getActive()
+    updateAtomArray()
+    return mol
 
 def readPDB(fileName, isCompound = False):
     ''' Reads a pdb file and modifies the static Molecule object.

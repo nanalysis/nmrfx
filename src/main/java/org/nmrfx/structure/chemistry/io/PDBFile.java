@@ -136,11 +136,12 @@ public class PDBFile {
                     Molecule.makeAtomList();
                     molecule.structures.add(Integer.valueOf(structureNumber));
                     Molecule.calcAllBonds();
+                    molecule.getAtomTypes();
                     lineReader.close();
                     return molecule;
                 }
 
-                if (string.startsWith("ATOM  ") ||  string.startsWith("HETATM")) {
+                if (string.startsWith("ATOM  ") || string.startsWith("HETATM")) {
                     PDBAtomParser atomParse = new PDBAtomParser(string);
 
                     if (!lastRes.equals(atomParse.resNum)) {
@@ -185,6 +186,7 @@ public class PDBFile {
                     Atom atom = new Atom(atomParse);
                     atom.setPointValidity(structureNumber, true);
                     atom.entity = residue;
+                    atom.setEnergyProp();
                     pt = atom.getPoint(structureNumber);
                     pt = new Point3(atomParse.x, atomParse.y, atomParse.z);
                     atom.setPoint(structureNumber, pt);
@@ -222,6 +224,7 @@ public class PDBFile {
                     }
 
                     Atom atom = new Atom(atomParse);
+                    atom.setEnergyProp();
                     atom.setPointValidity(structureNumber, true);
                     pt = atom.getPoint(structureNumber);
                     pt = new Point3(atomParse.x, atomParse.y, atomParse.z);
@@ -244,8 +247,8 @@ public class PDBFile {
 
 // fixme change capping atom names to new PDB standard H,H2  O,OXT,HXT
     public static void capPolymer(Polymer polymer) {
-        polymer.getFirstResidue().capFirstResidue();
-        polymer.getLastResidue().capLastResidue();
+        polymer.getFirstResidue().capFirstResidue("");
+        polymer.getLastResidue().capLastResidue("");
 
     }
 
@@ -277,8 +280,12 @@ public class PDBFile {
                     break;
                 }
 
-                if (string.startsWith("ATOM  ")) {
+                if (string.startsWith("ATOM  ") || string.startsWith("HETATM ")) {
                     PDBAtomParser atomParse = new PDBAtomParser(string);
+
+                    if (string.startsWith("HETATM ") && !atomParse.resName.equals("MSE")) {
+                        continue;
+                    }
 
                     String thisChain = "";
                     if (atomParse.segment.trim().equals("")) {
@@ -295,13 +302,16 @@ public class PDBFile {
                             polymerName = lastChain;
                         }
                         residueList.add("-polymer " + polymerName);
-                        residueList.add("-coordset " + molName);
+                        residueList.add("-coordset " + polymerName);
                     }
 
                     if (!lastRes.equals(atomParse.resNum)) {
                         lastRes = atomParse.resNum;
                         lastLoc = atomParse.loc;
                         atomParse.resName = atomParse.resName.toLowerCase();
+                        if (atomParse.resName.equals("mse")) {
+                            atomParse.resName = "met";
+                        }
                         residueList.add(atomParse.resName + " " + atomParse.resNum);
                     }
                     // fixme should we do anything here with MODEL
@@ -543,6 +553,9 @@ public class PDBFile {
                     if (string.startsWith("HETATM") || ((compoundEntity != null) && (compoundEntity instanceof Compound))) {
                         hetAtom = true;
                     }
+                    if (compoundEntity == null) {
+                        hetAtom = false;
+                    }
                     Atom atom = null;
                     String thisChain;
 
@@ -551,11 +564,14 @@ public class PDBFile {
                     } else {
                         thisChain = atomParse.segment.toLowerCase();
                     }
-                    if (!hetAtom) {
-
-                        if (!thisChain.equals(lastChain)) {
-                            lastChain = thisChain;
+                    if (!thisChain.equals(lastChain)) {
+                        lastChain = thisChain;
+                    } else {
+                        if (!atomParse.resName.equals("HOH")) {
+                            //hetAtom = false;
                         }
+                    }
+                    if (!hetAtom) {
 
                         if (lastChain.trim().equals("")) {
                             polymerName = molName;
@@ -564,7 +580,6 @@ public class PDBFile {
                         }
 
                         polymer = (Polymer) molecule.getEntity(polymerName);
-
 
                         if (polymer == null) {
                             polymer = (Polymer) molecule.getChain(polymerName);
@@ -583,8 +598,13 @@ public class PDBFile {
                         residue = polymer.getResidue(atomParse.resNum);
 
                         if (residue == null) {
-                            System.err.println("null residue " + atomParse.resNum + " for polymer " + polymerName);
-                            System.err.println(string);
+                            //for (Residue resi : polymer.getResidues()) {
+                            //System.out.println(resi.getName() + " " + resi.getNumber());
+                            //}
+                            if (!atomParse.resName.equals("HOH")) {
+                               // System.err.println("null residue " + atomParse.resNum + " for polymer " + polymerName);
+                               // System.err.println(string);
+                            }
                             continue;
                         }
                         if (!AtomParser.isResNameConsistant(residue.getName(), atomParse.resName)) {
@@ -1058,6 +1078,7 @@ public class PDBFile {
                 String atomNum = atomParse.atomNum;
                 String atomName = atomParse.atomName;
                 Atom atom = new Atom(atomParse);
+                atom.setEnergyProp();
                 atomMap.put(atomNum, atom);
                 atom.setPointValidity(structureNumber, true);
 

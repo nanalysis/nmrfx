@@ -40,6 +40,9 @@ public class PropertyGenerator {
     Map<String, Double> contactMap = null;
     Map<String, Double> valueMap = new HashMap<>();
     private Molecule molecule;
+    String[] residueNames = {"ALA", "ARG", "ASN", "ASP", "CYS", "GLU", "GLN",
+        "GLY", "HIS", "ILE", "LEU", "LYS", "MET", "PHE", "PRO", "SER", "THR",
+        "TRP", "TYR", "VAL"};
 
     static {
         formatter.setMinimumFractionDigits(4);
@@ -51,13 +54,13 @@ public class PropertyGenerator {
     public double calcDistance(String aname1, String aname2) throws MissingCoordinatesException, InvalidMoleculeException {
         MolFilter mf1 = new MolFilter(aname1);
         MolFilter mf2 = new MolFilter(aname2);
-        double distance = Molecule.calcDistance(mf1, mf2);
+        double distance = molecule.calcDistance(mf1, mf2);
         return distance;
     }
 
     public double calcRingShift(String aname1) {
         MolFilter mf1 = new MolFilter(aname1);
-        SpatialSet spSet = Molecule.getSpatialSet(mf1);
+        SpatialSet spSet = molecule.findSpatialSet(mf1);
         if (spSet == null) {
             System.out.println("no atom " + aname1);
             return 0.0;
@@ -97,7 +100,7 @@ public class PropertyGenerator {
     }
 
     public double calcHBondAngle(Map<String, HydrogenBond> hBondMap, String hydrogenAtom) {
-        Atom atom = Molecule.getAtomByName(hydrogenAtom);
+        Atom atom = molecule.findAtom(hydrogenAtom);
         double value = 0.0;
         if ((hBondMap != null) && (atom != null)) {
             HydrogenBond hBond = hBondMap.get(atom.getFullName());
@@ -171,6 +174,9 @@ public class PropertyGenerator {
 
     public double getContactSum(String aname1) {
         Double contactSum = contactMap.get(aname1);
+        if (contactSum == null) {
+            contactSum = 0.0;
+        }
         return contactSum;
     }
 
@@ -179,7 +185,7 @@ public class PropertyGenerator {
         MolFilter mf2 = new MolFilter(polyName + ":" + Integer.toString(res) + ".N");
         MolFilter mf3 = new MolFilter(polyName + ":" + Integer.toString(res) + ".CA");
         MolFilter mf4 = new MolFilter(polyName + ":" + Integer.toString(res) + ".C");
-        return Molecule.calcDihedral(mf1, mf2, mf3, mf4);
+        return molecule.calcDihedral(mf1, mf2, mf3, mf4);
     }
 
     public double calculatePhi(String polyName, Residue residue) throws MissingCoordinatesException {
@@ -188,7 +194,7 @@ public class PropertyGenerator {
         atoms[1] = residue.getAtom("N");
         atoms[2] = residue.getAtom("CA");
         atoms[3] = residue.next.getAtom("C");
-        return Molecule.calcDihedral(atoms);
+        return molecule.calcDihedral(atoms);
     }
 
     public double calculateOmega(String polyName, Residue residue) throws MissingCoordinatesException {
@@ -197,7 +203,7 @@ public class PropertyGenerator {
         atoms[1] = residue.previous.getAtom("C");
         atoms[2] = residue.getAtom("N");
         atoms[3] = residue.getAtom("CA");
-        return Molecule.calcDihedral(atoms);
+        return molecule.calcDihedral(atoms);
     }
 
     public double calculateOmega(String polyName, int res) {
@@ -205,7 +211,7 @@ public class PropertyGenerator {
         MolFilter mf2 = new MolFilter(polyName + ":" + Integer.toString(res - 1) + ".C");
         MolFilter mf3 = new MolFilter(polyName + ":" + Integer.toString(res) + ".N");
         MolFilter mf4 = new MolFilter(polyName + ":" + Integer.toString(res) + ".CA");
-        return Molecule.calcDihedral(mf1, mf2, mf3, mf4) + Math.PI;
+        return molecule.calcDihedral(mf1, mf2, mf3, mf4) + Math.PI;
     }
 
     public double calculatePsi(String polyName, Residue residue) throws MissingCoordinatesException {
@@ -214,7 +220,7 @@ public class PropertyGenerator {
         atoms[1] = residue.getAtom("CA");
         atoms[2] = residue.getAtom("C");
         atoms[3] = residue.next.getAtom("N");
-        return Molecule.calcDihedral(atoms);
+        return molecule.calcDihedral(atoms);
     }
 
     public double calculatePsi(String polyName, int res) {
@@ -222,7 +228,7 @@ public class PropertyGenerator {
         MolFilter mf2 = new MolFilter(polyName + ":" + Integer.toString(res) + ".CA");
         MolFilter mf3 = new MolFilter(polyName + ":" + Integer.toString(res) + ".C");
         MolFilter mf4 = new MolFilter(polyName + ":" + Integer.toString(res + 1) + ".n");
-        return Molecule.calcDihedral(mf1, mf2, mf3, mf4);
+        return molecule.calcDihedral(mf1, mf2, mf3, mf4);
     }
 
     public double[] calculatePsi(String polyName, int first, int last) {
@@ -235,11 +241,12 @@ public class PropertyGenerator {
 
     public double getPPM(String aname) {
         MolFilter molFilter = new MolFilter(aname);
-        SpatialSet spatialSet = Molecule.getSpatialSet(molFilter);
+        SpatialSet spatialSet = molecule.findSpatialSet(molFilter);
         if (spatialSet == null) {
             return Double.NaN;
         } else {
-            return spatialSet.getBFactor();
+            PPMv ppmV = spatialSet.getRefPPM();
+            return ppmV != null && ppmV.isValid() ? ppmV.getValue() : Double.NaN;
         }
     }
 
@@ -248,15 +255,19 @@ public class PropertyGenerator {
         if (spatialSet == null) {
             return Double.NaN;
         } else {
-            return spatialSet.getBFactor();
+            PPMv ppmV = spatialSet.getRefPPM();
+            return ppmV != null && ppmV.isValid() ? ppmV.getValue() : Double.NaN;
         }
     }
 
     public double getOccupancy(String name) {
         MolFilter molFilter = new MolFilter(name);
-        SpatialSet spatialSet = Molecule.getSpatialSet(molFilter);
-        return spatialSet.getOccupancy();
-
+        SpatialSet spatialSet = molecule.findSpatialSet(molFilter);
+        double occupancy = 0.0;
+        if (spatialSet != null) {
+            occupancy = spatialSet.getOccupancy();
+        }
+        return occupancy;
     }
 
     public int getFirstRes() {
@@ -290,7 +301,7 @@ public class PropertyGenerator {
         MolFilter mf2 = new MolFilter(s2);
         MolFilter mf3 = new MolFilter(s3);
         MolFilter mf4 = new MolFilter(s4);
-        return Molecule.calcDihedral(mf1, mf2, mf3, mf4);
+        return molecule.calcDihedral(mf1, mf2, mf3, mf4);
     }
 
     public boolean doesAtomExist(String polyName, int res, String atomName) {
@@ -341,7 +352,7 @@ public class PropertyGenerator {
                 mf4a = ".CG";
             }
             MolFilter mf4 = new MolFilter(rs + mf4a);
-            return Molecule.calcDihedral(mf1, mf2, mf3, mf4);
+            return molecule.calcDihedral(mf1, mf2, mf3, mf4);
         }
     }
 
@@ -376,75 +387,78 @@ public class PropertyGenerator {
             } else {
                 atoms[3] = residue.getAtom("CG");
             }
+            int iAtom = 0;
+            for (Atom atom : atoms) {
+                if (atom == null) {
+                    System.out.println(resName + residue.getNumber() + " " + iAtom);
+                    return Double.NaN;
+                }
+                iAtom++;
+            }
             if (atoms[3] == null) {
-                System.out.println(resName);
             }
             return Molecule.calcDihedral(atoms);
         }
     }
 
-    public double calculateChi2(String polyName, int res) {
-        String resName = molecule.findAtom(Integer.toString(res) + ".N").getEntity().name;
-        String rs = Integer.toString(res);
-        final MolFilter mf1;
-        final MolFilter mf2;
-        final MolFilter mf3;
-        final MolFilter mf4;
+    public double calculateChi2(Residue residue) throws MissingCoordinatesException {
+        String resName = residue.getName();
+        Atom[] atoms = new Atom[4];
         if (resName.equals("PHE")
                 || resName.equals("TRP")
                 || resName.equals("TYR")) {
-            mf1 = new MolFilter(rs + ".CA");
-            mf2 = new MolFilter(rs + ".CB");
-            mf3 = new MolFilter(rs + ".CG");
-            mf4 = new MolFilter(rs + ".CD1");
+            atoms[0] = residue.getAtom("CA");
+            atoms[1] = residue.getAtom("CB");
+            atoms[2] = residue.getAtom("CG");
+            atoms[3] = residue.getAtom("CD1");
         } else if (resName.equals("HIS")) {
-            mf1 = new MolFilter(rs + ".CA");
-            mf2 = new MolFilter(rs + ".CB");
-            mf3 = new MolFilter(rs + ".CG");
-            mf4 = new MolFilter(rs + ".CD2");
+            atoms[0] = residue.getAtom("CA");
+            atoms[1] = residue.getAtom("CB");
+            atoms[2] = residue.getAtom("CG");
+            atoms[3] = residue.getAtom("CD2");
         } else if (resName.equals("ASN")
                 || resName.equals("ASP")) {
-            mf1 = new MolFilter(rs + ".CA");
-            mf2 = new MolFilter(rs + ".CB");
-            mf3 = new MolFilter(rs + ".CG");
-            mf4 = new MolFilter(rs + ".OD1");
+            atoms[0] = residue.getAtom("CA");
+            atoms[1] = residue.getAtom("CB");
+            atoms[2] = residue.getAtom("CG");
+            atoms[3] = residue.getAtom("OD1");
         } else if (resName.equals("GLN")
                 || resName.equals("GLU")
                 || resName.equals("LYS")
                 || resName.equals("ARG")) {
-            mf1 = new MolFilter(rs + ".CA");
-            mf2 = new MolFilter(rs + ".CB");
-            mf3 = new MolFilter(rs + ".CG");
-            mf4 = new MolFilter(rs + ".CD");
+            atoms[0] = residue.getAtom("CA");
+            atoms[1] = residue.getAtom("CB");
+            atoms[2] = residue.getAtom("CG");
+            atoms[3] = residue.getAtom("CD");
         } else if (resName.equals("MET")) {
-            mf1 = new MolFilter(rs + ".CA");
-            mf2 = new MolFilter(rs + ".CB");
-            mf3 = new MolFilter(rs + ".CG");
-            mf4 = new MolFilter(rs + ".SD");
+            atoms[0] = residue.getAtom("CA");
+            atoms[1] = residue.getAtom("CB");
+            atoms[2] = residue.getAtom("CG");
+            atoms[3] = residue.getAtom("SD");
         } else if (resName.equals("ILE")) {
-            mf1 = new MolFilter(rs + ".CA");
-            mf2 = new MolFilter(rs + ".CB");
-            mf3 = new MolFilter(rs + ".CG1");
-            mf4 = new MolFilter(rs + ".CD1");
+            atoms[0] = residue.getAtom("CA");
+            atoms[1] = residue.getAtom("CB");
+            atoms[2] = residue.getAtom("CG1");
+            atoms[3] = residue.getAtom("CD1");
+
         } else if (resName.equals("LEU")) {
-            mf1 = new MolFilter(rs + ".CA");
-            mf2 = new MolFilter(rs + ".CB");
-            mf3 = new MolFilter(rs + ".CG");
-            mf4 = new MolFilter(rs + ".CD1");
+            atoms[0] = residue.getAtom("CA");
+            atoms[1] = residue.getAtom("CB");
+            atoms[2] = residue.getAtom("CG");
+            atoms[3] = residue.getAtom("CD1");
         } else {
             return Double.NaN;
         }
-        return Molecule.calcDihedral(mf1, mf2, mf3, mf4);
-    }
-
-    public static void initVars(String propFile) throws IOException {
-        properties = loadPropertyFile(propFile);
+        return Molecule.calcDihedral(atoms);
     }
 
     public void init(Molecule molecule) throws InvalidMoleculeException, IOException {
         //NvShell nvShell = new NvShell(interp);
+        if (properties == null) {
+            properties = loadPropertyFile();
+        }
         HashMap<String, TreeMap<Integer, LinkedHashMap<String, String>>> data = new HashMap<String, TreeMap<Integer, LinkedHashMap<String, String>>>();
-        offsetTable = loadCorrTable("corrtable.txt");
+        // offsetTable = loadCorrTable("corrtable.txt");
         this.molecule = molecule;
         contactMap = molecule.calcContactSum(0, true);
         hBondMap = new HashMap<>();
@@ -478,6 +492,10 @@ public class PropertyGenerator {
         Residue prevResidue = residue.previous;
         Residue nextResidue = residue.next;
         int resNum = residue.getResNum();
+        for (String residueName : residueNames) {
+            valueMap.put(residueName, 0.0);
+        }
+        valueMap.put(residue.getName(), 1.0);
         valueMap.put("N1", 0.0);
         valueMap.put("N2", 0.0);
         valueMap.put("C1", 0.0);
@@ -489,19 +507,19 @@ public class PropertyGenerator {
             valueMap.put("chiP", null);
             valueMap.put("psiP", null);
             valueMap.put("omega", null);
-            valueMap.put("phi", null);
-            valueMap.put("psi", null);
+            valueMap.put("phiC", null);
+            valueMap.put("psiC", null);
             valueMap.put("phiS", null);
             valueMap.put("chiS", null);
             valueMap.put("psiS", null);
             String[] suffixes = {"_P", "_S"};
             for (String suffix : suffixes) {
-                valueMap.put("HPHB" + suffix, null);
-                valueMap.put("BULK" + suffix, null);
-                valueMap.put("CHRG" + suffix, null);
-                valueMap.put("PRO" + suffix, null);
-                valueMap.put("ARO" + suffix, null);
-                valueMap.put("DIS" + suffix, null);
+                valueMap.put("HPHB" + suffix, 0.0);
+                valueMap.put("BULK" + suffix, 0.0);
+                valueMap.put("CHRG" + suffix, 0.0);
+                valueMap.put("PRO" + suffix, 0.0);
+                valueMap.put("ARO" + suffix, 0.0);
+                valueMap.put("DIS" + suffix, 0.0);
             }
 
             if (prevResidue != null) {
@@ -514,7 +532,7 @@ public class PropertyGenerator {
                 valueMap.put("psiP", calculatePsi(polyName, prevResidue));
                 valueMap.put("omega", calculateOmega(polyName, residue));
                 if (nextResidue != null) {
-                    valueMap.put("phi", calculatePhi(polyName, residue));
+                    valueMap.put("phiC", calculatePhi(polyName, residue));
                 }
                 if (!getResProps(prevResidue, "_P")) {
                     return false;
@@ -522,13 +540,13 @@ public class PropertyGenerator {
             } else {
                 valueMap.put("N1", 1.0);
             }
-            valueMap.put("chi", calculateChi(polyName, residue));
-            valueMap.put("chi2", calculateChi2(polyName, resNum));
+            valueMap.put("chiC", calculateChi(polyName, residue));
+            valueMap.put("chi2C", calculateChi2(residue));
             if (!getResProps(residue, "")) {
                 return false;
             }
             if (nextResidue != null) {
-                valueMap.put("psi", calculatePsi(polyName, residue));
+                valueMap.put("psiC", calculatePsi(polyName, residue));
                 valueMap.put("chiS", calculateChi(polyName, nextResidue));
                 if (nextResidue.next != null) {
                     valueMap.put("phiS", calculatePhi(polyName, nextResidue));
@@ -567,21 +585,30 @@ public class PropertyGenerator {
     }
 
     public boolean getAtomProperties(Polymer polymer, int res, String resName, String atomName) {
+        atomName = atomName.toUpperCase();
+        String atomSpec = polymer.getName() + ":" + Integer.toString(res) + "." + atomName;
+        Atom atom = molecule.findAtom(atomSpec);
+        return getAtomProperties(atom);
+
+    }
+
+    public boolean getAtomProperties(Atom atom) {
+        String atomName = atom.getName();
+        String atomSpec = atom.getFullName();
+        String hAtomSpec = "";
+        if (atomName.equals("N")) {
+            hAtomSpec = atomSpec.substring(0, atomSpec.length() - 1) + "H";
+        }
         try {
-            atomName = atomName.toUpperCase();
-            String polyName = polymer.getName();
-            String atomSpec = polyName + ":" + Integer.toString(res) + "." + atomName;
-            String hAtomSpec = polyName + ":" + Integer.toString(res) + "." + "H";
-            Atom atom = molecule.findAtom(atomSpec);
             double contactSum = getContactSum(atomSpec);
             valueMap.put("contacts", contactSum);
             valueMap.put("fRandom", getFRandom(atomName, contactSum));
-            valueMap.put("ringShift", calcRingShift(atomSpec));
+            valueMap.put("ring", calcRingShift(atomSpec));
             double eInteractionShift = 0.0;
             if (atomName.charAt(0) == 'H') {
                 eInteractionShift = calcEInteractionShift(eShiftMap, atomSpec);
             } else if (atomName.charAt(0) == 'N') {
-                eInteractionShift = calcEInteractionShift(eShiftMap, polyName + ":" + Integer.toString(res) + ".H");
+                eInteractionShift = calcEInteractionShift(eShiftMap, hAtomSpec);
             }
             valueMap.put("eshift", eInteractionShift);
             double hbondShift = 0.0;
@@ -632,17 +659,26 @@ public class PropertyGenerator {
             cs = getPPM(atomSpec);
             acs = getOccupancy(atomSpec);
             valueMap.put("cs", cs);
-            valueMap.put("acs", acs);
-            int firstRes = getFirstRes(polymer);
-            int lastRes = getLastRes(polymer);
-
-            acs = getCorrectedRandomShift(polyName, firstRes, res, lastRes, atomName);
             valueMap.put("acscorr", acs);
             double h3 = 0.0;
+            String resName = atom.getResidueName();
             if (atomName.startsWith("H") && !atom.isMethyl() && atomName.endsWith("3")) {
+                h3 = 1.0;
+            } else if (resName.equals("LEU") && atomName.startsWith("CD") && atom.isMethylCarbon() && (atomName.charAt(2) == '2')) {
+                h3 = 1.0;
+            } else if (resName.equals("LEU") && atomName.startsWith("HD") && atom.isMethyl() && (atomName.charAt(2) == '2')) {
+                h3 = 1.0;
+            } else if (resName.equals("VAL") && atomName.startsWith("CG") && atom.isMethylCarbon() && (atomName.charAt(2) == '2')) {
+                h3 = 1.0;
+            } else if (resName.equals("VAL") && atomName.startsWith("HG") && atom.isMethyl() && (atomName.charAt(2) == '2')) {
                 h3 = 1.0;
             }
             valueMap.put("h3", h3);
+            double methyl = 0.0;
+            if (atom.isMethyl()) {
+                methyl = 1.0;
+            }
+            valueMap.put("methyl", methyl);
         } catch (Exception e) {
             e.printStackTrace();
             return false;
@@ -768,8 +804,8 @@ public class PropertyGenerator {
         return value;
     }
 
-    public static double getCorrectedRandomShift(String polyName, int firstRes, int iRes, int lastRes, String aName) {
-        String resName = Molecule.getAtomByName(Integer.toString(iRes) + ".N").getEntity().name;
+    public double getCorrectedRandomShift(String polyName, int firstRes, int iRes, int lastRes, String aName) {
+        String resName = molecule.findAtom(polyName + ":" + Integer.toString(iRes) + ".N").getEntity().name;
         double corr = getRandomShift(aName, resName);
         //System.out.print(resName + " " + aName + " " + corr + " ");
         int[] offsets = {-2, -1, 1, 2};
@@ -778,7 +814,7 @@ public class PropertyGenerator {
             if ((kRes >= firstRes) && (kRes <= lastRes)) {
                 double offsetValue = 0.0;
                 try {
-                    resName = Molecule.getAtomByName(Integer.toString(kRes) + ".N").getEntity().name;
+                    resName = molecule.findAtom(polyName + ":" + Integer.toString(kRes) + ".N").getEntity().name;
                     offsetValue = getOffset(aName, resName, -offset);
                 } catch (Exception e) {
                 }
@@ -798,21 +834,28 @@ public class PropertyGenerator {
         return ret;
     }
 
-    private static HashMap<String, HashMap<String, Double>> loadPropertyFile(String fn) throws FileNotFoundException, IOException {
+    private static HashMap<String, HashMap<String, Double>> loadPropertyFile() throws FileNotFoundException, IOException {
+        InputStream iStream = PropertyGenerator.class.getResourceAsStream("/data/predict/protein/resprops.txt");
         HashMap<String, HashMap<String, Double>> properties = new HashMap<String, HashMap<String, Double>>();
-        BufferedReader b = new BufferedReader(new FileReader(fn));
-        String line = b.readLine();
-        String[] keys = line.split(",");
-// the first column is assumed to be the amino acid so we ignore its header
-        line = b.readLine();
-        while (line != null) {
-            HashMap<String, Double> map = new HashMap<String, Double>();
-            String[] values = line.split(",");
-            for (int i = 1; i < keys.length; ++i) {
-                map.put(keys[i].trim(), Double.parseDouble(values[i].trim()));
+
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(iStream))) {
+            String[] keys = null;
+            while (true) {
+                String line = reader.readLine();
+                if (line == null) {
+                    break;
+                }
+                if (keys == null) {
+                    keys = line.split("\t");
+                } else {
+                    HashMap<String, Double> map = new HashMap<String, Double>();
+                    String[] values = line.split("\t");
+                    for (int i = 1; i < keys.length; ++i) {
+                        map.put(keys[i].trim(), Double.parseDouble(values[i].trim()));
+                    }
+                    properties.put(values[0], map);
+                }
             }
-            properties.put(values[0], map);
-            line = b.readLine();
         }
         return properties;
     }

@@ -63,6 +63,8 @@ public class ViolationStats {
             modeType = "Rep";
         } else if (mode == 2) {
             modeType = "cFF";
+        } else if (mode == 3) {
+            modeType = "STK";
         }
         String result = String.format("%s: %10s %10s %5.2f %5.2f %5.2f %7.3f\n", modeType, aName1, aName2, constraintDis, dis, dif, energy);
         return result;

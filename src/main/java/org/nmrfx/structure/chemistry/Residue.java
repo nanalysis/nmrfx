@@ -45,7 +45,7 @@ public class Residue extends Compound {
         String[] standardResidues = {
             "ala", "a", "arg", "r", "asn", "n", "asp", "d", "cys", "c", "gln", "q", "glu", "e",
             "gly", "g", "his", "h", "ile", "i", "leu", "l", "lys", "k", "met", "m", "phe", "f",
-            "pro", "p", "ser", "s", "thr", "t", "trp", "w", "tyr", "y", "val", "v",
+            "pro", "p", "ser", "s", "thr", "t", "trp", "w", "tyr", "y", "val", "v", "mse", "m",
             "dade", "a", "dcyt", "c", "dgua", "g", "dthy", "t",
             "da", "a", "dc", "c", "dg", "g", "dt", "t",
             "rade", "a", "rcyt", "c", "rgua", "g", "rura", "u",
@@ -74,6 +74,23 @@ public class Residue extends Compound {
         this.number = number;
         super.name = name;
         super.label = name;
+        if (standardResSet.containsKey(name.toLowerCase())) {
+            standard = true;
+        }
+        try {
+            resNum = Integer.valueOf(number);
+        } catch (NumberFormatException nfE) {
+            System.out.println(number);
+            resNum = null;
+        }
+
+        super.atomMap = new HashMap();
+    }
+
+    public Residue(String number, String name, String variant) {
+        this.number = number;
+        super.name = name;
+        super.label = variant;
         if (standardResSet.containsKey(name.toLowerCase())) {
             standard = true;
         }
@@ -200,10 +217,11 @@ public class Residue extends Compound {
 
     public Atom[] getPseudo(String pseudoName) {
         pseudoName = pseudoName.toUpperCase();
-        if (pseudoName.charAt(0) == 'M') {
-            pseudoName = PSEUDO_MAP.get(name.toUpperCase() + ":" + pseudoName);
-        } else if (!pseudoMap.containsKey(pseudoName)) {
-            pseudoName = PSEUDO_MAP.get(name.toUpperCase() + ":" + pseudoName);
+        if (!pseudoMap.containsKey(pseudoName)) {
+            String testName = name.toUpperCase() + ":" + pseudoName;
+            if (PSEUDO_MAP.containsKey(testName)) {
+                pseudoName = PSEUDO_MAP.get(testName);
+            }
         }
         return pseudoName != null ? pseudoMap.get(pseudoName) : null;
     }
@@ -528,7 +546,7 @@ public class Residue extends Compound {
 
     }
 
-    public void capFirstResidue() {
+    public void capFirstResidue(String resVariant) {
         List<Atom> firstResidueAtoms = getAtoms();
         if (firstResidueAtoms.size() > 2) {
             Atom firstAtom = getAtoms().get(0);
@@ -542,7 +560,7 @@ public class Residue extends Compound {
                 }
                 thirdAtom.valanceAngle = (float) (180.0 * Math.PI / 180.0);
                 thirdAtom.dihedralAngle = (float) (0.0 * Math.PI / 180.0);
-                Atom newAtom = firstAtom.add(newRoot + "3", "H", Order.SINGLE);
+                Atom newAtom = firstAtom.add(newRoot + "1", "H", Order.SINGLE);
                 newAtom.setType("H");
                 newAtom.bondLength = 1.08f;
                 newAtom.dihedralAngle = (float) (109.0 * Math.PI / 180.0);
@@ -552,11 +570,13 @@ public class Residue extends Compound {
                 newAtom.bondLength = 1.08f;
                 newAtom.dihedralAngle = (float) (109.0 * Math.PI / 180.0);
                 newAtom.valanceAngle = (float) (60.0 * Math.PI / 180.0);
-                newAtom = firstAtom.add(newRoot + "1", "H", Order.SINGLE);
-                newAtom.setType("H");
-                newAtom.bondLength = 1.08f;
-                newAtom.dihedralAngle = (float) (109.0 * Math.PI / 180.0);
-                newAtom.valanceAngle = (float) (60.0 * Math.PI / 180.0);
+                if (!resVariant.contains("-H3")) {
+                    newAtom = firstAtom.add(newRoot + "3", "H", Order.SINGLE);
+                    newAtom.setType("H");
+                    newAtom.bondLength = 1.08f;
+                    newAtom.dihedralAngle = (float) (109.0 * Math.PI / 180.0);
+                    newAtom.valanceAngle = (float) (60.0 * Math.PI / 180.0);
+                }
             }
             if (firstResidueAtoms.size() > 4) {
                 Atom fourthAtom = getAtoms().get(4);
@@ -571,7 +591,7 @@ public class Residue extends Compound {
         }
     }
 
-    public void capLastResidue() {
+    public void capLastResidue(String resVariant) {
         List<Atom> lastResidueAtoms = getAtoms();
         if (!lastResidueAtoms.isEmpty() && lastResidueAtoms.size() > 1) {
             Atom lastAtom = lastResidueAtoms.get(lastResidueAtoms.size() - 1);
@@ -595,7 +615,7 @@ public class Residue extends Compound {
                     newAtom.setType("O");
 
                     if (!isIUPACMode()) {
-                        newAtom = secondAtom.add(newRoot + "1", "O", Order.SINGLE);
+                        newAtom = secondAtom.add(newRoot + "XT", "O", Order.SINGLE);
                     } else {
                         newAtom = secondAtom.add(newRoot + "'", "O", Order.SINGLE);
                     }
@@ -603,6 +623,13 @@ public class Residue extends Compound {
                     newAtom.valanceAngle = (float) (120.0 * Math.PI / 180.0);
                     newAtom.dihedralAngle = (float) (180.0 * Math.PI / 180.0);
                     newAtom.setType("O");
+                    if (resVariant.contains("+HXT")) {
+                        Atom newAtomProt = newAtom.add("HXT", "H", Order.SINGLE);
+                        newAtomProt.bondLength = 1.00f;
+                        newAtomProt.valanceAngle = (float) (110.0 * Math.PI / 180.0);
+                        newAtomProt.dihedralAngle = (float) (0.0 * Math.PI / 180.0);
+                        newAtomProt.setType("H");
+                    }
                 }
             } else if (lastAtom.getName().equals("O3'")) {
                 Atom newAtom = lastAtom.add("HO3'", "H", Order.SINGLE);
@@ -616,28 +643,28 @@ public class Residue extends Compound {
         }
     }
 
-    public int basePairType(Residue residue) {
-        int bpCount = 0;
+    public int getBasePairType(Residue residue) {
+        int bpCount;
         boolean valid = false;
-        List<AllBasePairs> basePairs = AllBasePairs.basePairList();
+        List<AllBasePairs> basePairs = new ArrayList<>();
+        if (!name.matches("[GCAU]") || !residue.name.matches("[GCAU]")) {
+            basePairs = AllBasePairs.getBasePairs();
+        } else {
+            for (int type = 0; type <= 12; type++) {
+                AllBasePairs bp = AllBasePairs.getBasePair(type, name, residue.name);
+                if (bp != null) {
+                    basePairs.add(bp);
+                }
+            }
+        }
         for (AllBasePairs bp : basePairs) {
             bpCount = 0;
-            for (int iPair = 0; iPair < bp.atomPairs.length; iPair++) {
-                String[] atoms = bp.atomPairs[iPair].split(":");
-                String[] atoms0 = atoms[0].split("/");
-                String[] atoms1 = atoms[1].split("/");
+            for (String atomPair : bp.atomPairs) {
+                String[] atomPairs = atomPair.split(":");
+                String[] atoms0 = atomPairs[0].split("/");
+                String[] atoms1 = atomPairs[1].split("/");
                 for (String atom1Str : atoms0) {
                     for (String atom2Str : atoms1) {
-                        if (!name.matches("[GCAU]")) {
-                            if (atom1Str.contains("H")) {
-                                atom1Str = atom1Str.replace("H", "HN");
-                            }
-                        }
-                        if (!residue.name.matches("[GCAU]")) {
-                            if (atom2Str.contains("H")) {
-                                atom2Str = atom2Str.replace("H", "HN");
-                            }
-                        }
                         Atom atom1 = getAtom(atom1Str);
                         Atom atom2 = residue.getAtom(atom2Str);
                         if (atom1 != null && atom2 != null) {
@@ -658,6 +685,291 @@ public class Residue extends Compound {
             }
         }
         return 0;
+    }
+
+    public String getSSType() {
+        String type;
+        if (secStruct != null) {
+            type = secStruct.getName();
+        } else {
+            type = "";
+        }
+        return type;
+    }
+
+    public void toDStereo() {
+        Atom atomCB = getAtom("CB");
+        Atom atomHA = getAtom("HA");
+        if ((atomCB != null) && (atomHA != null)) {
+            atomCB.setDihedral(-atomCB.getDihedral());
+            atomHA.setDihedral(-atomHA.getDihedral());
+        }
+    }
+
+    public String toString() {
+        return polymer.getName() + ":" + getName() + getNumber();
+    }
+
+    public String toNEFSequenceString(String link) {
+        //index and sequence code
+        int number = 1;
+        //chain ID
+        char chainID = ' ';
+        number = this.getIDNum();
+        String polymerName = this.polymer.getName();
+        chainID = polymerName.charAt(0);
+
+        //residue name
+        String resName = this.name;
+        if (resName.length() > 3) {
+            resName = resName.substring(0, 3);
+        }
+
+        //residue variant
+        String resVar = this.label;
+
+        return String.format("%8d %7s %7d %9s %-14s %-7s", number, chainID, number, resName, link, resVar);
+    }
+    
+    public String toMMCifSequenceString(boolean pdb) {
+        //chain ID
+        String polymerName = this.polymer.getName();
+        char chainID = polymerName.charAt(0);
+        
+        //entity ID
+//        int entityIDNum = chainID - 'A' + 1;
+        int entityIDNum = this.polymer.getIDNum();
+        
+        //seq ID
+        int seqID = this.getIDNum();
+
+        //residue name
+        String resName = this.name;
+        if (resName.length() > 3) {
+            resName = resName.substring(0, 3);
+        }
+
+        //hetero
+        String hetero = this.label;        
+        if (hetero.length() > 1) {
+            hetero = hetero.substring(0, 1);
+        }
+        
+        if (pdb){
+            return String.format("%-2s %-2d %-3d %-4s %-3d %-3d %-3d %-4s %-4s %-2s %-2s %-2s", chainID, entityIDNum, seqID, resName, seqID, seqID, seqID, resName, resName, chainID, ".", hetero);
+        } else {
+            return String.format("%-2d %-3d %-4s %-2s", entityIDNum, seqID, resName, hetero);
+        }
+    }
+    
+    public String toMMCifChemCompString(Map<String, Double> weightMap, boolean lastRes, String fullResName) {
+        //residue name
+        String resName = this.name;
+        if (resName.length() > 3) {
+            resName = resName.substring(0, 3);
+        }
+
+        //type 
+        String type = "\'L-peptide linking\'";
+        if (this.name.equals("GLY")) {
+            type = "\'peptide linking\'";
+        }
+        
+        //flag #fixme should be read in from file
+        String flag = "y";
+        
+        //full res name
+        if (this.label.contains("+H")) {
+            fullResName = "\'" + fullResName.substring(0, fullResName.length() - 3) + "IC ACID\'";
+        }
+        
+        //chem comp
+        Map<String, Integer> aCount = new HashMap<>();
+        List<Atom> aList = this.atoms;
+        List<String> aSymList = new ArrayList<>();
+        for (Atom atom : aList) {
+            String aSym = atom.getSymbol();
+            aSymList.add(aSym);
+        }
+        Set<String> aSymSet = new HashSet<>(aSymList);
+        for (String aSym : aSymSet) {
+            int nAType = Collections.frequency(aSymList, aSym);
+            if (aSym.equals("O")) {
+                nAType += 1;
+            } else if (aSym.equals("H") && this.getIDNum() > 1) {
+                if (this.name.equals("HIS")) {
+                    nAType += 1;
+                } else {
+                    nAType += 2;
+                }
+                if (lastRes || this.label.contains("+H")) {
+                    nAType += 1;
+                }
+            }
+            aCount.put(aSym, nAType);
+        }
+        String chemComp = "\'";
+        SortedSet<String> keys = new TreeSet<>(aCount.keySet());
+        for (String key : keys) {
+            int nAType = aCount.get(key);
+            if (nAType == 1) {
+                chemComp += key + " ";
+            } else {
+                chemComp += key + String.valueOf(nAType) + " ";
+            }
+        }  
+        if (this.name.equals("ARG") || this.name.equals("HIS") || this.name.equals("LYS")) {
+            chemComp += "1";
+        }
+        chemComp = chemComp.trim();
+        chemComp += "\'";
+            
+        //molecular weight
+        double weight = 0.0;
+        for (String key : aCount.keySet()) {
+            int nAType = aCount.get(key);
+            if (weightMap.containsKey(key)){
+                weight += nAType * weightMap.get(key);
+            }
+        }     
+        
+        return String.format("%-4s %-19s %-2s %-15s %-2s %-16s %-4.3f", resName, type, flag, fullResName, "?", chemComp, weight);
+        
+    }
+    
+    public String toMMCifStructConfString(int idx, Residue lastRes) {
+        //type id
+        String typeID = "HELX_P";
+        
+        //id
+        String id = typeID + String.valueOf(idx);
+
+        //first chain ID
+        String polymerName = this.polymer.getName();
+        char chainID = polymerName.charAt(0);
+        
+        //first entity ID
+        int entityIDNum = chainID - 'A' + 1;
+        
+        //first seq ID
+        int seqID = this.getIDNum();
+
+        //first residue name
+        String resName = this.name;
+        if (resName.length() > 3) {
+            resName = resName.substring(0, 3);
+        }
+        
+        //last chain ID
+        String polymerName1 = lastRes.polymer.getName();
+        char chainID1 = polymerName1.charAt(0);
+        
+        //last seq ID
+        int seqID1 = lastRes.getIDNum();
+
+        //last residue name
+        String resName1 = lastRes.name;
+        if (resName1.length() > 3) {
+            resName1 = resName1.substring(0, 3);
+        }
+
+        //first PDB ins code
+        String insCode = "?";
+        
+        //last PDB ins code
+        String insCode1 = "?";
+        
+        //details
+        String details = "?";
+        
+        //length
+        int length = seqID1 - seqID + 1;
+        
+        return String.format("%-6s %-6s %-1d %-3s %-1s %-2d %-1s %-3s %-1s %-2d %-1s %-3s %-1s %-2d %-3s %-1s %-2d %-1d %-1s %-2s", typeID, id, idx, resName, chainID, seqID, insCode, resName1, chainID1, seqID1, insCode1, resName, chainID, seqID, resName1, chainID1, seqID1, entityIDNum, details, length);
+    }
+    
+    public String toMMCifSheetRangeString(int idx, Residue lastRes) {
+        //first chain ID
+        String polymerName = this.polymer.getName();
+        char chainID = polymerName.charAt(0);
+        
+        //first entity ID
+        int entityIDNum = chainID - 'A' + 1;
+        
+        //first seq ID
+        int seqID = this.getIDNum();
+
+        //first residue name
+        String resName = this.name;
+        if (resName.length() > 3) {
+            resName = resName.substring(0, 3);
+        }
+        
+        //last chain ID
+        String polymerName1 = lastRes.polymer.getName();
+        char chainID1 = polymerName1.charAt(0);
+        
+        //last seq ID
+        int seqID1 = lastRes.getIDNum();
+
+        //last residue name
+        String resName1 = lastRes.name;
+        if (resName1.length() > 3) {
+            resName1 = resName1.substring(0, 3);
+        }
+
+        //first PDB ins code
+        String insCode = "?";
+        
+        //last PDB ins code
+        String insCode1 = "?";
+        
+        return String.format("%-2s %-1d %-3s %-1s %-2d %-1s %-3s %-1s %-2d %-1s %-3s %-1s %-2d %-3s %-1s %-2d", chainID, idx, resName, chainID, seqID, insCode, resName1, chainID1, seqID1, insCode1, resName, chainID, seqID, resName1, chainID1, seqID1);
+    }
+    
+    public String toMMCifTorsionString(double[] angles, int idx, int pdbModelNum) {
+
+        StringBuilder sBuilder = new StringBuilder();
+        if (this != null) {
+
+            //index
+            sBuilder.append(String.format("%-4d", idx));
+
+            //PDB model num
+            sBuilder.append(String.format("%-4d", pdbModelNum));
+
+            // residue name 
+            String resName = this.name;
+            sBuilder.append(String.format("%-6s", resName));
+
+            // chain code 
+            String polymerName = this.polymer.getName();
+            char chainID = polymerName.charAt(0);
+            sBuilder.append(String.format("%-4s", chainID));
+
+            // sequence code 
+            int seqCode = this.getIDNum();
+            sBuilder.append(String.format("%-4d", seqCode));
+
+            // PDB ins code
+            String code = "?"; //fixme need to get from file, not hard-code
+            sBuilder.append(String.format("%-2s", code));
+            
+            // label alt id
+            String altID = "?"; //fixme need to get from file, not hard-code
+            sBuilder.append(String.format("%-2s", altID));
+
+            // phi
+            double phi = angles[0];
+            sBuilder.append(String.format("%-8.2f", Math.toDegrees(phi)));
+
+            // psi
+            double psi = angles[1];
+            sBuilder.append(String.format("%-8.2f", Math.toDegrees(psi)));
+
+        }
+
+        return sBuilder.toString();
     }
 
 }

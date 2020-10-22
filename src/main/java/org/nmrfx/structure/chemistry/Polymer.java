@@ -47,6 +47,7 @@ public class Polymer extends Entity {
     ArrayList<AtomSpecifier> deletedAtoms = new ArrayList<AtomSpecifier>();
     ArrayList<BondSpecifier> addedBonds = new ArrayList<BondSpecifier>();
     static String[] cyclicClosers = {
+        "CA", "N", "2.5",
         "C", "N", "1.32",
         "C", "H", "2.044",
         "C", "CA", "2.452",
@@ -187,7 +188,9 @@ public class Polymer extends Entity {
     public String getPolymerType() {
         if ((polymerType == null) || (polymerType.equals(""))) {
             if (isRNA()) {
-                return "nucleicacid";
+                return "polyribonucleotide";
+            } else if (isDNA()) {
+                return "polynucleotide";
             } else {
                 return "polypeptide";
             }
@@ -282,7 +285,7 @@ public class Polymer extends Entity {
                 Atom.addBond(atom1, atom2, order, true);
             }
         }
-        
+
     }
 
     public void removeAtoms(List<String> compIndexIDColumn, List<String> atomIDColumn) {
@@ -302,6 +305,10 @@ public class Polymer extends Entity {
         });
         molecule.setupRotGroups();
         molecule.setupAngles();
+    }
+
+    public boolean isPeptide() {
+        return !isRNA() && !isDNA();
     }
 
     public boolean isRNA() {
@@ -349,9 +356,20 @@ public class Polymer extends Entity {
         for (int i = 0; i < cyclicClosers.length; i += 3) {
             Atom atom1 = getLastResidue().getAtom(cyclicClosers[i]);
             Atom atom2 = getFirstResidue().getAtom(cyclicClosers[i + 1]);
+            if (atom1 == null) {
+                System.out.println("no atom1 " + cyclicClosers[i]);
+                atom1 = getLastResidue().getAtom("H1");
+            }
+            if (atom2 == null) {
+                atom2 = getFirstResidue().getAtom("H1");
+            }
+            if (atom2 == null) {
+                System.out.println("no atom2 " + cyclicClosers[i + 1]);
+            }
             String distance = cyclicClosers[i + 2];
-            String constraint = atom1.getFullName() + " " + atom2.getFullName() + " " + distance;
+            String constraint = atom2.getFullName() + " " + atom1.getFullName() + " " + distance;
             constraints.add(constraint);
+
         }
         return constraints;
     }
