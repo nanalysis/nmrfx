@@ -1647,6 +1647,11 @@ public class PeakList {
         return nRemoved;
     }
 
+    public void removeDiagonalPeaks() {
+        removeDiagonalPeaks(-2.0);
+
+    }
+
     public void removeDiagonalPeaks(double tol) {
         int iDim = -1;
         int jDim = -1;
@@ -1677,13 +1682,13 @@ public class PeakList {
 
     public void removeDiagonalPeaks(int iDim, int jDim, double tol) {
         if (tol < 0.0) {
-            DescriptiveStatistics iStats = widthDStats(iDim);
-            DescriptiveStatistics jStats = widthDStats(jDim);
-            tol = 2.0 * Math.max(iStats.getMean(), jStats.getMean());
+            DoubleSummaryStatistics iStats = widthStatsPPM(iDim);
+            DoubleSummaryStatistics jStats = widthStatsPPM(jDim);
+            tol = Math.abs(tol) * Math.max(iStats.getAverage(), jStats.getAverage());
         }
         for (Peak peak : peaks) {
             double v1 = peak.getPeakDim(iDim).getChemShiftValue();
-            double v2 = peak.getPeakDim(iDim).getChemShiftValue();
+            double v2 = peak.getPeakDim(jDim).getChemShiftValue();
             double delta = Math.abs(v1 - v2);
             if (delta < tol) {
                 peak.setStatus(-1);
