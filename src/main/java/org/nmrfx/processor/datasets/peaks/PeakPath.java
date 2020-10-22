@@ -34,9 +34,8 @@ import smile.interpolation.variogram.PowerVariogram;
 import smile.interpolation.variogram.Variogram;
 import smile.math.kernel.GaussianKernel;
 import smile.math.kernel.MercerKernel;
-import smile.math.matrix.DenseMatrix;
-import smile.math.matrix.JMatrix;
-import smile.math.matrix.SVD;
+import smile.math.matrix.Matrix;
+import smile.math.matrix.Matrix.SVD;
 import smile.regression.GaussianProcessRegression;
 import smile.regression.KernelMachine;
 //import smile.interpolation.KrigingInterpolation;
@@ -914,17 +913,16 @@ public class PeakPath implements PeakListener {
             coef[0] = y[0] / x[0];
             return coef;
         }
-        DenseMatrix mat = new JMatrix(x.length, order);
+        Matrix mat = new Matrix(x.length, order);
         for (int i = 0; i < x.length; i++) {
             for (int j = 0; j < order; j++) {
                 mat.set(i, j, Math.pow(x[i], order + 1));
             }
         }
         SVD svd = mat.svd();
-        double[] coef = new double[order];
-        double[] s = svd.getSingularValues();
-        System.out.println(s.length + " " + svd.getV().nrows());
-        svd.solve(y, coef);
+        double[] s = svd.s;
+        System.out.println(s.length + " " + svd.V.nrows());
+        double[] coef = svd.solve(y);
         return coef;
     }
 
