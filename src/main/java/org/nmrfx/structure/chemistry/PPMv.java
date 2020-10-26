@@ -15,7 +15,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package org.nmrfx.structure.chemistry;
 
 import java.io.*;
@@ -39,8 +38,8 @@ public class PPMv implements Serializable {
         return ambigCode;
     }
 
-    public void setAmbigCode(short ambigCode) {
-        this.ambigCode = ambigCode;
+    public void setAmbigCode(int ambigCode) {
+        this.ambigCode = (short) ambigCode;
     }
 
     public boolean isValid() {
