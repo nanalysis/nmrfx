@@ -600,9 +600,9 @@ public class NMRStarWriter {
         result.append(".");
         result.append(sep);
         if ((ppmv != null) && ppmv.isValid()) {
-            int ambig = atom.getBMRBAmbiguity();
-            if (ppmv.getAmbigCode() == 1) {
-                ambig = 1;
+            int ambig = ppmv.getAmbigCode();
+            if (ambig < 1) {
+                ambig = atom.getBMRBAmbiguity();
             }
             result.append(ambig);
         } else {
@@ -841,7 +841,7 @@ public class NMRStarWriter {
         PeakPathWriter pathWriter = new PeakPathWriter();
         int iPath = 0;
         for (PeakPath peakPath : PeakPath.get()) {
-            pathWriter.writeToSTAR3(chan, peakPath, iPath+1);
+            pathWriter.writeToSTAR3(chan, peakPath, iPath + 1);
             iPath++;
         }
     }
