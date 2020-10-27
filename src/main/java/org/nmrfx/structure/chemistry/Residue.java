@@ -40,6 +40,7 @@ public class Residue extends Compound {
     public Residue pairedTo = null;
     public SecondaryStructure secStruct = null;
     public final static Map<String, String> PSEUDO_MAP = new HashMap<>();
+    Optional<Map<String, Object>> properties = Optional.empty();
 
     static {
         String[] standardResidues = {
@@ -168,6 +169,23 @@ public class Residue extends Compound {
             }
         }
         return atom;
+    }
+    
+    @Override
+    public void setPropertyObject(String name, Object value) {
+        if (!properties.isPresent()) {
+            properties = Optional.of(new HashMap<>());
+        }
+        properties.get().put(name, value);
+    }
+
+    @Override
+    public Object getPropertyObject(String name) {
+        Object propValue = null;
+        if (properties.isPresent()) {
+            propValue = properties.get().get(name);
+        }
+        return propValue;
     }
 
     public boolean isStandard() {
@@ -710,12 +728,11 @@ public class Residue extends Compound {
         return polymer.getName() + ":" + getName() + getNumber();
     }
 
-    public String toNEFSequenceString(String link) {
-        //index and sequence code
-        int number = 1;
+    public String toNEFSequenceString(int idx, String link) {
         //chain ID
         char chainID = ' ';
-        number = this.getIDNum();
+        //sequence code
+        int num = this.getIDNum();
         String polymerName = this.polymer.getName();
         chainID = polymerName.charAt(0);
 
@@ -728,7 +745,7 @@ public class Residue extends Compound {
         //residue variant
         String resVar = this.label;
 
-        return String.format("%8d %7s %7d %9s %-14s %-7s", number, chainID, number, resName, link, resVar);
+        return String.format("%8d %7s %7d %9s %-14s %-7s", idx, chainID, num, resName, link, resVar);
     }
     
     public String toMMCifSequenceString(boolean pdb) {

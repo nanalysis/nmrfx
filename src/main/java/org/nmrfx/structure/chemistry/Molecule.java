@@ -3258,7 +3258,7 @@ public class Molecule implements Serializable, ITree {
                                 }
                                 boolean nameMatches = Util.nefMatch(atom, atomName);
                                 if (isInverse) {
-                                    if (!nameMatches) {
+                                    if (!nameMatches && atom.getName().length() == atomName.length()) {
                                         SpatialSet spatialSet = atom.getSpatialSet();
                                         if (spatialSet != null) {
                                             validAtom = true;
@@ -3269,7 +3269,7 @@ public class Molecule implements Serializable, ITree {
                                         validAtom = false;
                                         break;
                                     }
-                                } else if (nameMatches) {
+                                } else if (nameMatches && atom.getName().length() == atomName.length()) {
                                     SpatialSet spatialSet = atom.getSpatialSet();
                                     if (spatialSet != null) {
                                         validAtom = true;
@@ -3295,7 +3295,7 @@ public class Molecule implements Serializable, ITree {
                         if (compound == lastResidue) {
                             break;
                         }
-
+                        
                         compound = ((Residue) compound).next;
                     } else {
                         break;

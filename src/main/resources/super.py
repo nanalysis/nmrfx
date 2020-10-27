@@ -290,5 +290,5 @@ def runSuper(args):
 def runAllSuper(files):
     batchArgs = argparse.Namespace(atomListE='', atomListI="ca,c,n,o,p,o5',c5',c4',c3',o3'",
                                 fileNames=files, nCore=5, refCompare=False, resListE='',
-                                resListI='*', saveModels='pdb')
+                                resListI='*', saveModels='cif')
     runSuper(batchArgs)

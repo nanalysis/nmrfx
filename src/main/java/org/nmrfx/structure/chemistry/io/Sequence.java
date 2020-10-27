@@ -528,7 +528,7 @@ public class Sequence {
                 addNonStandardResidue(residue);
             } else {
                 result = true;
-                System.out.print("cant read  " + fileName);
+                System.out.println("cant read  " + fileName);
             }
             // FIXME : What happens if first residue is an unnatural residue
             if (this.connectAtom != null) {

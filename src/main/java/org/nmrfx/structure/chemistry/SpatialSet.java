@@ -606,7 +606,7 @@ public class SpatialSet {
         // sequence code
         String seqCode = "1";
         //pdb ins code
-        Object pdbInsCode = atom.getProperty("pdbInsCode");
+        Object pdbInsCode = null;
         // cartn x
         double x = coord.pt.getX();
         // cartn y
@@ -618,13 +618,13 @@ public class SpatialSet {
         // B factor
         double bFactor = coord.bfactor;
         //auth seq code
-        Object authSeq = atom.getProperty("authSeqID");
+        Object authSeq = null;
         //auth res name 
-        Object authResName = atom.getProperty("authResName");
+        Object authResName = null;
         //auth chain id 
-        Object authChainID = atom.getProperty("authChainCode");
+        Object authChainID = null;
         //auth atom name
-        Object authAName = atom.getProperty("authAtomName");
+        Object authAName = null;
         
         if (atom.entity instanceof Residue) {
             if (atom.getResidueName().equals("MSE")) {
@@ -639,6 +639,10 @@ public class SpatialSet {
             entityID = ((Residue) atom.entity).polymer.entityID;
             // sequence code
             seqCode = String.valueOf(((Residue) atom.entity).getIDNum());
+            pdbInsCode = ((Residue) atom.entity).getPropertyObject("pdbInsCode");
+            authSeq = ((Residue) atom.entity).getPropertyObject("authSeqID");
+            authResName = ((Residue) atom.entity).getPropertyObject("authResName");
+            authChainID = ((Residue) atom.entity).getPropertyObject("authChainCode");
         } else if (atom.entity instanceof Compound) {
             group = "HETATM";
 //            String[] labelSplit = atom.entity.label.split(",");
@@ -649,6 +653,10 @@ public class SpatialSet {
             if (number.equals("0")) {
                 seqCode = ".";
             }
+            pdbInsCode = ((Compound) atom.entity).getPropertyObject("pdbInsCode");
+            authSeq = ((Compound) atom.entity).getPropertyObject("authSeqID");
+            authResName = ((Compound) atom.entity).getPropertyObject("authResName");
+            authChainID = ((Compound) atom.entity).getPropertyObject("authChainCode");
         }
         sBuilder.append(String.format("%-7s", group));
         sBuilder.append(String.format("%-8d", iAtom + 1)); //index
@@ -659,7 +667,11 @@ public class SpatialSet {
         sBuilder.append(String.format("%-2s", chainID));
         sBuilder.append(String.format("%-2d", entityID));
         sBuilder.append(String.format("%-6s", seqCode));
-        sBuilder.append(String.format("%-2s", (String) pdbInsCode));
+        if (pdbInsCode != null) {
+            sBuilder.append(String.format("%-2s", pdbInsCode.toString()));
+        } else {
+            sBuilder.append(String.format("%-2s", "?"));
+        }
         sBuilder.append(String.format("%-9.3f", x));
         sBuilder.append(String.format("%-9.3f", y));
         sBuilder.append(String.format("%-9.3f", z));
@@ -672,12 +684,12 @@ public class SpatialSet {
             sBuilder.append(String.format("%-5s", seqCode));
         }
         if (authResName != null) {
-            sBuilder.append(String.format("%-5s", (String) authResName));
+            sBuilder.append(String.format("%-5s", authResName.toString()));
         } else {
             sBuilder.append(String.format("%-5s", resName));
         }
         if (authChainID != null) {
-            sBuilder.append(String.format("%-2s", (String) authChainID));
+            sBuilder.append(String.format("%-2s", authChainID.toString()));
         } else {
             sBuilder.append(String.format("%-2s", chainID));
         }
@@ -688,7 +700,7 @@ public class SpatialSet {
             }
             sBuilder.append(String.format("%-7s", authANameS));
         } else {
-            sBuilder.append(String.format("%-5s", aName));
+            sBuilder.append(String.format("%-7s", aName));
         }
         sBuilder.append(String.format("%-2d", iStruct + 1)); //PDB model num
 
