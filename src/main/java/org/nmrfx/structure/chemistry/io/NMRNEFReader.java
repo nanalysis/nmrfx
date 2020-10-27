@@ -22,7 +22,6 @@ import org.nmrfx.structure.chemistry.*;
 import org.nmrfx.structure.chemistry.energy.Dihedral;
 import org.nmrfx.structure.chemistry.energy.EnergyLists;
 import org.nmrfx.processor.datasets.peaks.AtomResonance;
-import org.nmrfx.processor.datasets.peaks.AtomResonanceFactory;
 import org.nmrfx.processor.datasets.peaks.PeakDim;
 import org.nmrfx.processor.datasets.peaks.ResonanceFactory;
 import org.nmrfx.processor.star.Loop;
@@ -33,6 +32,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.util.*;
+import static org.nmrfx.structure.chemistry.io.MMcifWriter.getMainDirectory;
 import org.nmrfx.structure.chemistry.io.Sequence.RES_POSITION;
 import org.nmrfx.structure.utilities.Util;
 
@@ -44,15 +44,17 @@ public class NMRNEFReader {
 
     final STAR3 nef;
     final File nefFile;
+    final File cifFile;
 
     Map entities = new HashMap();
     boolean hasResonances = false;
     Map<Long, List<PeakDim>> resMap = new HashMap<>();
     public static boolean DEBUG = false;
 
-    public NMRNEFReader(final File nefFile, final STAR3 nef) {
+    public NMRNEFReader(final File nefFile, final File cifFile, final STAR3 nef) {
         this.nef = nef;
         this.nefFile = nefFile;
+        this.cifFile = cifFile;
 //        PeakDim.setResonanceFactory(new AtomResonanceFactory());
     }
 
@@ -60,11 +62,16 @@ public class NMRNEFReader {
      * Read a NEF formatted file.
      *
      * @param nefFileName String. Name of the file to read.
+     * @param cifFileName String. Name of optional cif file.
      * @throws ParseException
      */
-    public static void read(String nefFileName) throws ParseException {
+    public static void read(String nefFileName, String cifFileName) throws ParseException {
         File file = new File(nefFileName);
-        read(file);
+        File cifFile = null;
+        if (cifFileName != null) {
+            cifFile = new File(cifFileName);
+        }
+        read(file, cifFile);
         System.out.println("read " + nefFileName);
     }
 
@@ -74,7 +81,7 @@ public class NMRNEFReader {
      * @param nefFile File. File to read.
      * @throws ParseException
      */
-    public static void read(File nefFile) throws ParseException {
+    public static void read(File nefFile, File cifFile) throws ParseException {
         FileReader fileReader;
         try {
             fileReader = new FileReader(nefFile);
@@ -90,7 +97,7 @@ public class NMRNEFReader {
         } catch (ParseException parseEx) {
             throw new ParseException(parseEx.getMessage() + " " + star.getLastLine());
         }
-        NMRNEFReader reader = new NMRNEFReader(nefFile, star);
+        NMRNEFReader reader = new NMRNEFReader(nefFile, cifFile, star);
         reader.processNEF();
     }
 
@@ -147,9 +154,9 @@ public class NMRNEFReader {
             }
             String resName = (String) residueNameColumn.get(i);
             String resVariant = (String) variantColumn.get(i);
-            String iRes = (String) seqCodeColumn.get(i);
-            String mapID = chainCode + "." + iRes;
-            Residue residue = new Residue(iRes, resName.toUpperCase(), resVariant);
+            String seqCode = (String) seqCodeColumn.get(i);
+            String mapID = chainCode + "." + seqCode;
+            Residue residue = new Residue(seqCode, resName.toUpperCase(), resVariant);
             residue.molecule = polymer.molecule;
             addCompound(mapID, residue);
             polymer.addResidue(residue);
@@ -174,6 +181,29 @@ public class NMRNEFReader {
                 if (!sequence.addResidue(reslibDir + "/" + Sequence.getAliased(resName.toLowerCase()) + extension + ".prf", residue, resPos, "", false)) {
                     throw new ParseException("Can't find residue \"" + resName + extension + "\" in residue libraries or STAR file");
                 }
+                String mainDir = getMainDirectory();
+                File prfFile = new File(String.join(File.separator, mainDir, "src", "main", "resources", "reslib_iu", Sequence.getAliased(resName.toLowerCase()) + extension + ".prf"));
+                if (!prfFile.exists()) {
+                    try {
+                        String file = cifFile.toString();
+                        Molecule.compoundMap().remove(mapID);
+                        polymer.removeResidue(residue);
+                        Compound compound = new Compound(seqCode, resName, resVariant);
+                        compound.molecule = molecule;
+                        chainID++;
+                        chainCode = String.valueOf((char) (chainID + 'A' - 1));
+                        mapID = chainCode + "." + seqCode;
+                        addCompound(mapID, compound); 
+                        compound.setIDNum(entityID);
+                        compound.assemblyID = entityID;
+                        compound.setPropertyObject("chain", chainCode);
+                        entities.put(chainCode, compound);
+                        molecule.addEntity(compound, chainCode, entityID);
+                        MMcifReader.readChemComp(file, molecule, chainCode, seqCode);
+                    } catch (Exception ex) {
+                        ex.printStackTrace();
+                    }
+                } 
             } catch (MoleculeIOException psE) {
                 throw new ParseException(psE.getMessage());
             }
@@ -276,6 +306,16 @@ public class NMRNEFReader {
                 }
                 String mapID = chainCode + "." + sequenceCode;
                 Compound compound = (Compound) Molecule.compoundMap().get(mapID);
+                if (compound == null) {
+                    for (int e=1; e<=entities.size(); e++) {
+                        chainCode = String.valueOf((char) (e + 'A' - 1));
+                        mapID = chainCode + "." + sequenceCode;
+                        compound = (Compound) Molecule.compoundMap().get(mapID);
+                        if (compound != null) {
+                            break;
+                        }
+                    }
+                }
                 if (compound == null) {
                     //throw new ParseException("invalid compound in assignments saveframe \""+mapID+"\"");
                     System.err.println("invalid compound in assignments saveframe \"" + mapID + "\"");
@@ -400,6 +440,15 @@ public class NMRNEFReader {
                 String chainCode = (String) chainCodeColumns[atomIndex].get(i);
                 String sequenceCode = (String) sequenceCodeColumns[atomIndex].get(i);
                 String fullAtom = chainCode + ":" + sequenceCode + "." + atomName;
+                if ((Compound) Molecule.compoundMap().get(chainCode + "." + sequenceCode) == null) {
+                    for (int e=1; e<=entities.size(); e++) {
+                        chainCode = String.valueOf((char) (e + 'A' - 1));
+                        if ((Compound) Molecule.compoundMap().get(chainCode + "." + sequenceCode) != null) {
+                            fullAtom = chainCode + ":" + sequenceCode + "." + atomName;
+                            break;
+                        }
+                    }
+                }
                 atoms[atomIndex] = Molecule.getAtomByName(fullAtom);
             }
             double scale = 1.0;
@@ -480,7 +529,17 @@ public class NMRNEFReader {
                 }
                 String resName = (String) residueNameColumns[iAtom].get(i);
                 String atomName = (String) atomNameColumns[iAtom].get(i);
-                atomNames[iAtom].add(chainCode + ":" + seqNum + "." + atomName);
+                String fullAtomName = chainCode + ":" + seqNum + "." + atomName;
+                if ((Compound) Molecule.compoundMap().get(chainCode + "." + seqNum) == null) {
+                    for (int e=1; e<=entities.size(); e++) {
+                        chainCode = String.valueOf((char) (e + 'A' - 1));
+                        if ((Compound) Molecule.compoundMap().get(chainCode + "." + seqNum) != null) {
+                            fullAtomName = chainCode + ":" + seqNum + "." + atomName;
+                            break;
+                        }
+                    }
+                }
+                atomNames[iAtom].add(fullAtomName);
 //                resNames[iAtom] = resName;
             }
             String targetValue = (String) targetValueColumn.get(i);
