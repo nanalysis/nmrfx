@@ -37,16 +37,14 @@ public class NEFFileTest {
     // has ligand 6nbn
     
     // new files:
-    // OK 1pqx 2jr2 2juw 2k2e 2kcu 2kpu 2kw5 2ko1
+    // OK 1pqx 2jr2 2juw 2k2e 2kcu 2kko 2ko1 2kpu 2kw5 2kzn 2loy 2luz
 
     // MISTAKES IN ORIGINAL FILES
     // SEQUENCE 6nbn has unreadable residue ACD
-    // CHEM SHIFT 2k07 only one each of 90 HD% and HE% in written when 2 each in orig (HD/E% repeats mistake in original file, should be HD1/2, HE1/2, etc.)
-    // DISTANCE 2loy 2kzn dict key mismatches, written HE2% should be HE% (HE% mistake in original file, should be HE2%. GLN wildcards are HB%, HG%, and HE2%)
-    // DISTANCE 2k07 2kko 2luz (previously passed, now fails) dict key mismatches, e.g. written HDx/y% should be HD1/2% (based on response below, mistake in original file. HDx/y% is correct, not HD1/2%)
 
     // ISSUES TO BE ADDRESSED
-    // DISTANCE 2png dict key mismatches, e.g. written HG% should be HGy and HGx (multiple lines w/ same restraint not getting split correctly) 
+    // CHEM SHIFT 2k07 dict key mismatch: written A.32.CD% should be A.32.CDx and A.32.CDy (CDx and CDy have same chem shift in original file, so CD% ok)
+    // DISTANCE 2k07 2png dict key mismatches, e.g. written HG% should be HGy and HGx (multiple lines w/ same restraint not getting split correctly...maybe ok regardless?) 
     List<List<Object>> orig = new ArrayList<>();
     List<List<Object>> written = new ArrayList<>();
 
@@ -56,20 +54,20 @@ public class NEFFileTest {
         testAll();
     }
 //    @Test
-//    public void testFile2PNG() throws IOException {
+//    public void testFile2PNG() throws IOException { //fails b/c distances % collapsing mismatches
 //        loadData("2png");
 //        testAll();
 //    }
-//    @Test
-//    public void testFile2KZN() throws IOException {
-//        loadData("2kzn");
-//        testAll();
-//    }
-//    @Test
-//    public void testFile2KKO() throws IOException {
-//        loadData("2kko");
-//        testAll();
-//    }
+    @Test
+    public void testFile2KZN() throws IOException {
+        loadData("2kzn");
+        testAll();
+    }
+    @Test
+    public void testFile2KKO() throws IOException {
+        loadData("2kko");
+        testAll();
+    }
     @Test
     public void testFile2JUW() throws IOException {
         loadData("2juw");
@@ -112,19 +110,19 @@ public class NEFFileTest {
         testAll();
     }
 
+    @Test
+    public void testFile2LOY() throws IOException {
+        loadData("2loy");
+        testAll();
+    }
+    @Test
+    public void testFile2LUZ() throws IOException {
+        loadData("2luz");
+        testAll();
+    }
+    
 //    @Test
-//    public void testFile2LOY() throws IOException {
-//        loadData("2loy");
-//        testAll();
-//    }
-//    @Test
-//    public void testFile2LUZ() throws IOException {
-//        loadData("2luz");
-//        testAll();
-//    }
-//    
-//    @Test
-//    public void testFile2K07() throws IOException {
+//    public void testFile2K07() throws IOException { //fails b/c chem shift and distance % collapsing mismatches
 //        loadData("2k07");
 //        testAll();
 //    }
@@ -135,11 +133,11 @@ public class NEFFileTest {
         testAll();
     }
     
-//    @Test
-//    public void testFile6NBN() throws IOException {
-//        loadData("6nbn");
-//        testAll();
-//    }
+    @Test
+    public void testFile6NBN() throws IOException { //fails b/c ACD chain code should be A, not B
+        loadData("6nbn");
+        testAll();
+    }
 
     private List<List<Object>> convertFileLines(String filePath) throws FileNotFoundException, IOException {
         List<List<Object>> convertedLines = new ArrayList<>();
@@ -306,6 +304,10 @@ public class NEFFileTest {
 
     public void loadData(String nefFileName) throws IOException {
         String fileName = String.join(File.separator, "src", "test", "data", "neffiles", nefFileName + ".nef");
+        String cifFileName = null;
+        if (nefFileName.equals("6nbn")) {
+            cifFileName = String.join(File.separator, "src", "test", "data", "neffiles", "ACD.cif");
+        }
         String outPath = "tmp";
         File tmpDir = new File(outPath);
         if (!tmpDir.exists()) {
@@ -314,7 +316,7 @@ public class NEFFileTest {
         String outFile = String.join(File.separator, outPath, nefFileName + "_nef_outTest.txt");
         try {
             if (orig.isEmpty()) {
-                NMRNEFReader.read(fileName);
+                NMRNEFReader.read(fileName, cifFileName);
                 NMRNEFWriter.writeAll(outFile);
                 orig = convertFileLines(fileName);
                 written = convertFileLines(outFile);

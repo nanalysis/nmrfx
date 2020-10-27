@@ -1,4 +1,4 @@
-data_PDBStat_converted_file 
+data_PDBStat_converted_file
 
 save_nef_nmr_meta_data
     _nef_nmr_meta_data.sf_category           nef_nmr_meta_data
@@ -2647,17 +2647,26 @@ save_nef_distance_restraint_list_1pqx.mr
          1531    1531    .       A       84      LEU     HBx     A       85      GLU     H       1.0     4.000   .       1.800   5.000
          1532    1532    .       A       84      LEU     HBy     A       85      GLU     H       1.0     4.000   .       1.800   5.000
          1533    1533    .       A       84      LEU     HD2%    A       85      GLU     H       1.0     4.000   .       1.800   6.000
-         1534    1534    .       A       85      GLU     H       A       85      GLU     HA      1.0     3.000   .       1.800   3.500
-         1535    1535    .       A       85      GLU     H       A       85      GLU     HB%     1.0     3.000   .       1.800   4.500
-         1536    1536    .       A       85      GLU     H       A       85      GLU     HG%     1.0     4.000   .       1.800   6.000
-         1537    1537    .       A       85      GLU     HA      A       85      GLU     HG%     1.0     4.000   .       1.800   6.000
-         1538    1538    .       A       85      GLU     HA      A       86      HIS     H       1.0     4.000   .       1.800   5.000
-         1539    1539    .       A       85      GLU     HB%     A       86      HIS     H       1.0     4.000   .       1.800   6.000
-         1540    1540    .       A       85      GLU     HG%     A       86      HIS     H       1.0     4.000   .       1.800   6.000
-         1541    1541    .       A       86      HIS     H       A       86      HIS     HA      1.0     4.000   .       1.800   5.000
-         1542    1542    .       A       86      HIS     HB%     A       87      HIS     H       1.0     4.000   .       1.800   6.000
-         1543    1543    .       A       86      HIS     HB%     A       87      HIS     HA      1.0     4.000   .       1.800   6.000
-         1544    1544    .       A       87      HIS     H       A       87      HIS     HA      1.0     4.000   .       1.800   5.000
+         1534    1533    .       A       84      LEU     HD1%    A       85      GLU     HB%     1.0     4.000   .       1.800   6.000
+         1535    1534    .       A       85      GLU     H       A       85      GLU     HA      1.0     3.000   .       1.800   3.500
+         1536    1535    .       A       85      GLU     H       A       85      GLU     HB%     1.0     3.000   .       1.800   4.500
+         1537    1536    .       A       85      GLU     H       A       85      GLU     HG%     1.0     4.000   .       1.800   6.000
+         1538    1537    .       A       85      GLU     HA      A       85      GLU     HG%     1.0     4.000   .       1.800   6.000
+         1539    1537    .       A       85      GLU     HA      A       85      GLU     HB%     1.0     4.000   .       1.800   6.000
+         1540    1538    .       A       85      GLU     HA      A       86      HIS     H       1.0     4.000   .       1.800   5.000
+         1541    1539    .       A       85      GLU     HB%     A       86      HIS     H       1.0     4.000   .       1.800   6.000
+         1542    1539    .       A       84      LEU     HD2%    A       86      HIS     H       1.0     4.000   .       1.800   6.000
+         1543    1540    .       A       85      GLU     HG%     A       86      HIS     H       1.0     4.000   .       1.800   6.000
+         1544    1540    .       A       85      GLU     HG%     A       84      LEU     HD2%    1.0     4.000   .       1.800   6.000
+         1545    1541    .       A       86      HIS     H       A       86      HIS     HA      1.0     4.000   .       1.800   5.000
+         1546    1542    .       A       86      HIS     HB%     A       87      HIS     H       1.0     4.000   .       1.800   6.000
+         1547    1543    .       A       86      HIS     HB%     A       87      HIS     HA      1.0     4.000   .       1.800   6.000
+         1548    1544    .       A       87      HIS     H       A       87      HIS     HA      1.0     4.000   .       1.800   5.000
+         1549    1545    .       A       87      HIS     H       A       87      HIS     HA      1.0     4.000   .       1.800   5.000
+         1550    1545    .       A       87      HIS     H       A       85      GLU     HA      1.0     4.000   .       1.800   5.000
+         1551    1546    .       A       83      GLU     HBx     A       85      GLU     HA      1.0     4.000   .       1.800   5.000
+         1552    1546    .       A       83      GLU     HBy     A       87      HIS     HA      1.0     4.000   .       1.800   5.000
+         1553    1546    .       A       83      GLU     HB%     A       87      HIS     H       1.0     4.000   .       1.800   5.000
      stop_
 save_
 
