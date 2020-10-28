@@ -40,7 +40,6 @@ public class Residue extends Compound {
     public Residue pairedTo = null;
     public SecondaryStructure secStruct = null;
     public final static Map<String, String> PSEUDO_MAP = new HashMap<>();
-    Optional<Map<String, Object>> properties = Optional.empty();
 
     static {
         String[] standardResidues = {
@@ -173,19 +172,12 @@ public class Residue extends Compound {
     
     @Override
     public void setPropertyObject(String name, Object value) {
-        if (!properties.isPresent()) {
-            properties = Optional.of(new HashMap<>());
-        }
-        properties.get().put(name, value);
+        propertyObjectMap.put(name, value);
     }
 
     @Override
     public Object getPropertyObject(String name) {
-        Object propValue = null;
-        if (properties.isPresent()) {
-            propValue = properties.get().get(name);
-        }
-        return propValue;
+        return propertyObjectMap.get(name);
     }
 
     public boolean isStandard() {
