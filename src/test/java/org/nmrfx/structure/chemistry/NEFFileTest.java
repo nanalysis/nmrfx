@@ -138,6 +138,12 @@ public class NEFFileTest {
         loadData("6nbn");
         testAll();
     }
+    
+    @Test
+    public void testFile6NBN_2() throws IOException { //fails b/c of chem shift and distance key mismatches
+        loadData("6nbn_older");
+        testAll();
+    }
 
     private List<List<Object>> convertFileLines(String filePath) throws FileNotFoundException, IOException {
         List<List<Object>> convertedLines = new ArrayList<>();
@@ -305,7 +311,7 @@ public class NEFFileTest {
     public void loadData(String nefFileName) throws IOException {
         String fileName = String.join(File.separator, "src", "test", "data", "neffiles", nefFileName + ".nef");
         String cifFileName = null;
-        if (nefFileName.equals("6nbn")) {
+        if (nefFileName.equals("6nbn") || nefFileName.equals("6nbn_older")) {
             cifFileName = String.join(File.separator, "src", "test", "data", "neffiles", "ACD.cif");
         }
         String outPath = "tmp";
