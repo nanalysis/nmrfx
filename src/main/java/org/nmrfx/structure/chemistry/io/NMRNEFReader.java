@@ -120,6 +120,7 @@ public class NMRNEFReader {
     void addNEFResidues(Saveframe saveframe, Molecule molecule, List<String> indexColumn, List<String> chainCodeColumn, List<String> seqCodeColumn, List<String> residueNameColumn, List<String> linkingColumn, List<String> variantColumn) throws ParseException {
         String reslibDir = PDBFile.getReslibDir("IUPAC");
         Polymer polymer = null;
+        Compound compound = null;
         Sequence sequence = new Sequence(molecule);
         int entityID = 1;
         String lastChain = "";
@@ -136,78 +137,79 @@ public class NMRNEFReader {
                 chainCode = "A";
             }
             int chainID = chainCode.charAt(0) - 'A' + 1;
-            if ((polymer == null) || (!chainCode.equals(lastChain))) {
+            String resName = (String) residueNameColumn.get(i);
+            String resVariant = (String) variantColumn.get(i);
+            String seqCode = (String) seqCodeColumn.get(i);
+            String mapID = chainCode + "." + seqCode;
+            if (linkType.equals("start")) {
+                polymer = null;
+            } else if (linkType.equals("single")) {
+                compound = null;
+            }
+            if ((!chainCode.equals(lastChain))) {
                 lastChain = chainCode;
                 if (polymer != null) {
                     sequence.createLinker(9, linkLen, valAngle, dihAngle);
                     polymer.molecule.genCoords(false);
                     polymer.molecule.setupRotGroups();
                 }
-                sequence.newPolymer();
-                polymer = new Polymer(chainCode, chainCode);
-                polymer.setNomenclature("IUPAC");
-                polymer.setIDNum(entityID);
-                polymer.assemblyID = entityID++;
-                entities.put(chainCode, polymer);
-                molecule.addEntity(polymer, chainCode, chainID);
+                if (polymer == null) {
+                    sequence.newPolymer();
+                    polymer = new Polymer(chainCode, chainCode);
+                    polymer.setNomenclature("IUPAC");
+                    polymer.setIDNum(entityID);
+                    polymer.assemblyID = entityID++;
+                    entities.put(chainCode, polymer);
+                    molecule.addEntity(polymer, chainCode, chainID);
+                } else if (compound == null) {
+                    compound = new Compound(seqCode, resName, resVariant);
+                    compound.molecule = molecule;
+                    addCompound(mapID, compound); 
+                    compound.setIDNum(entityID);
+                    compound.assemblyID = entityID;
+                    compound.setPropertyObject("chain", chainCode);
+                    entities.put(chainCode, compound);
+                    molecule.addEntity(compound, chainCode, entityID);
+                }
 
-            }
-            String resName = (String) residueNameColumn.get(i);
-            String resVariant = (String) variantColumn.get(i);
-            String seqCode = (String) seqCodeColumn.get(i);
-            String mapID = chainCode + "." + seqCode;
-            Residue residue = new Residue(seqCode, resName.toUpperCase(), resVariant);
-            residue.molecule = polymer.molecule;
-            addCompound(mapID, residue);
-            polymer.addResidue(residue);
-            RES_POSITION resPos = Sequence.RES_POSITION.MIDDLE;
-            if (linkType.equals("start")) {
-                resPos = RES_POSITION.START;
-                //residue.capFirstResidue();
-            } else if (linkType.equals("end")) {
-                resPos = RES_POSITION.END;
-                //residue.capLastResidue();
-            }
-            try {
-                String extension = "";
-                if (resVariant.replace("-H3", "").contains("-H")) {
-                    extension = "_deprot";
-                } else if (resVariant.replace("+HXT", "").contains("+H")) {
-                    extension = "_prot";
+            } 
+            if (polymer != null && compound == null) {
+                Residue residue = new Residue(seqCode, resName.toUpperCase(), resVariant);
+                residue.molecule = polymer.molecule;
+                addCompound(mapID, residue);
+                polymer.addResidue(residue);
+                RES_POSITION resPos = Sequence.RES_POSITION.MIDDLE;
+                if (linkType.equals("start")) {
+                    resPos = RES_POSITION.START;
+                    //residue.capFirstResidue();
+                } else if (linkType.equals("end")) {
+                    resPos = RES_POSITION.END;
+                    //residue.capLastResidue();
                 }
-//                if (resVariant.contains("-H3") || resVariant.contains("+HXT")) {
-//                    extension += "_NCtermVar";
-//                }
-                if (!sequence.addResidue(reslibDir + "/" + Sequence.getAliased(resName.toLowerCase()) + extension + ".prf", residue, resPos, "", false)) {
-                    throw new ParseException("Can't find residue \"" + resName + extension + "\" in residue libraries or STAR file");
-                }
-                String mainDir = getMainDirectory();
-                File prfFile = new File(String.join(File.separator, mainDir, "src", "main", "resources", "reslib_iu", Sequence.getAliased(resName.toLowerCase()) + extension + ".prf"));
-                if (!prfFile.exists()) {
-                    try {
-                        String file = cifFile.toString();
-                        Molecule.compoundMap().remove(mapID);
-                        polymer.removeResidue(residue);
-                        Compound compound = new Compound(seqCode, resName, resVariant);
-                        compound.molecule = molecule;
-                        chainID++;
-                        chainCode = String.valueOf((char) (chainID + 'A' - 1));
-                        mapID = chainCode + "." + seqCode;
-                        addCompound(mapID, compound); 
-                        compound.setIDNum(entityID);
-                        compound.assemblyID = entityID;
-                        compound.setPropertyObject("chain", chainCode);
-                        entities.put(chainCode, compound);
-                        molecule.addEntity(compound, chainCode, entityID);
-                        MMcifReader.readChemComp(file, molecule, chainCode, seqCode);
-                    } catch (Exception ex) {
-                        ex.printStackTrace();
+                try {
+                    String extension = "";
+                    if (resVariant.replace("-H3", "").contains("-H")) {
+                        extension = "_deprot";
+                    } else if (resVariant.replace("+HXT", "").contains("+H")) {
+                        extension = "_prot";
                     }
-                } 
-            } catch (MoleculeIOException psE) {
-                throw new ParseException(psE.getMessage());
+    //                if (resVariant.contains("-H3") || resVariant.contains("+HXT")) {
+    //                    extension += "_NCtermVar";
+    //                }
+                    if (!sequence.addResidue(reslibDir + "/" + Sequence.getAliased(resName.toLowerCase()) + extension + ".prf", residue, resPos, "", false)) {
+                        throw new ParseException("Can't find residue \"" + resName + extension + "\" in residue libraries or STAR file");
+                    }
+                } catch (MoleculeIOException psE) {
+                    throw new ParseException(psE.getMessage());
+                }
+            } else if (compound != null) {
+                try {
+                    String file = cifFile.toString();
+                    MMcifReader.readChemComp(file, molecule, chainCode, seqCode);
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
             }
-
         }
         if (polymer != null) {
             polymer.molecule.genCoords(false);
@@ -440,10 +442,14 @@ public class NMRNEFReader {
                 String chainCode = (String) chainCodeColumns[atomIndex].get(i);
                 String sequenceCode = (String) sequenceCodeColumns[atomIndex].get(i);
                 String fullAtom = chainCode + ":" + sequenceCode + "." + atomName;
-                if ((Compound) Molecule.compoundMap().get(chainCode + "." + sequenceCode) == null) {
+                String mapID = chainCode + "." + sequenceCode;
+                Compound compound = (Compound) Molecule.compoundMap().get(mapID);
+                if (compound == null) {
                     for (int e=1; e<=entities.size(); e++) {
                         chainCode = String.valueOf((char) (e + 'A' - 1));
-                        if ((Compound) Molecule.compoundMap().get(chainCode + "." + sequenceCode) != null) {
+                        mapID = chainCode + "." + sequenceCode;
+                        compound = (Compound) Molecule.compoundMap().get(mapID);
+                        if (compound != null) {
                             fullAtom = chainCode + ":" + sequenceCode + "." + atomName;
                             break;
                         }
@@ -530,10 +536,14 @@ public class NMRNEFReader {
                 String resName = (String) residueNameColumns[iAtom].get(i);
                 String atomName = (String) atomNameColumns[iAtom].get(i);
                 String fullAtomName = chainCode + ":" + seqNum + "." + atomName;
-                if ((Compound) Molecule.compoundMap().get(chainCode + "." + seqNum) == null) {
+                String mapID = chainCode + "." + seqNum;
+                Compound compound = (Compound) Molecule.compoundMap().get(mapID);
+                if (compound == null) {
                     for (int e=1; e<=entities.size(); e++) {
                         chainCode = String.valueOf((char) (e + 'A' - 1));
-                        if ((Compound) Molecule.compoundMap().get(chainCode + "." + seqNum) != null) {
+                        mapID = chainCode + "." + seqNum;
+                        compound = (Compound) Molecule.compoundMap().get(mapID);
+                        if (compound != null) {
                             fullAtomName = chainCode + ":" + seqNum + "." + atomName;
                             break;
                         }

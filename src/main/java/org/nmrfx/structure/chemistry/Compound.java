@@ -27,7 +27,6 @@ public class Compound extends Entity implements AtomContainer {
     Integer resNum;
     public int iRes = 0;
     public int labelNum = 1;
-    Optional<Map<String, Object>> properties = Optional.empty();
 
     protected Compound() {
     }
@@ -77,21 +76,14 @@ public class Compound extends Entity implements AtomContainer {
     
     @Override
     public void setPropertyObject(String name, Object value) {
-        if (!properties.isPresent()) {
-            properties = Optional.of(new HashMap<>());
-        }
-        properties.get().put(name, value);
+        propertyObjectMap.put(name, value);
     }
 
     @Override
     public Object getPropertyObject(String name) {
-        Object propValue = null;
-        if (properties.isPresent()) {
-            propValue = properties.get().get(name);
-        }
-        return propValue;
+        return propertyObjectMap.get(name);
     }
-
+    
 
     public void removeAtom(Atom atom) {
         super.removeAtom(atom);

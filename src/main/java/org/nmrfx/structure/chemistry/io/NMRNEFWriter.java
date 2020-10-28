@@ -90,7 +90,7 @@ public class NMRNEFWriter {
                 for (Residue res : resList) {
                     if (res.equals(firstRes)) {
                         link = "start";
-                    } else if (res.equals(lastRes) && !entityIterator.hasNext()) {
+                    } else if (res.equals(lastRes)) {
                         link = "end";
                     } else {
                         link = "middle";
@@ -103,13 +103,7 @@ public class NMRNEFWriter {
                 }
             } else if (entity instanceof Compound) {
                 Compound compound = (Compound) entity;
-                if (idx == 1) {
-                    link = "start";
-                } else if (idx > 1 && !entityIterator.hasNext()) {
-                    link = "end";
-                } else {
-                    link = "middle";
-                }
+                link = "single";
                 String result = compound.toNEFSequenceString(idx, link);
                 if (result != null) {
                     chan.write(result + "\n");
