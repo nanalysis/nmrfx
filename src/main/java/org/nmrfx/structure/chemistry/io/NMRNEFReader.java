@@ -21,8 +21,6 @@ import java.io.BufferedReader;
 import org.nmrfx.structure.chemistry.*;
 import org.nmrfx.structure.chemistry.energy.Dihedral;
 import org.nmrfx.structure.chemistry.energy.EnergyLists;
-import org.nmrfx.processor.datasets.peaks.AtomResonance;
-import org.nmrfx.processor.datasets.peaks.AtomResonanceFactory;
 import org.nmrfx.processor.datasets.peaks.PeakDim;
 import org.nmrfx.processor.datasets.peaks.ResonanceFactory;
 import org.nmrfx.processor.star.Loop;
@@ -33,6 +31,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.util.*;
+import org.nmrfx.processor.datasets.peaks.atoms.AtomResonance;
 import org.nmrfx.structure.chemistry.io.Sequence.RES_POSITION;
 import org.nmrfx.structure.utilities.Util;
 

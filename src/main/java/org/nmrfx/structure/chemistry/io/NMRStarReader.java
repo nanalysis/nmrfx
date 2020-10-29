@@ -755,32 +755,32 @@ public class NMRStarReader {
         return spg;
     }
 
-    private void addResonance(long resID, PeakDim peakDim) {
-        List<PeakDim> peakDims = resMap.get(resID);
-        if (peakDims == null) {
-            peakDims = new ArrayList<>();
-            resMap.put(resID, peakDims);
-        }
-        peakDims.add(peakDim);
-    }
-
-    public void linkResonances() {
-        ResonanceFactory resFactory = PeakDim.resFactory();
-        for (Long resID : resMap.keySet()) {
-            List<PeakDim> peakDims = resMap.get(resID);
-            PeakDim firstPeakDim = peakDims.get(0);
-            Resonance resonance = resFactory.build(resID);
-            firstPeakDim.setResonance(resonance);
-            resonance.add(firstPeakDim);
-            if (peakDims.size() > 1) {
-                for (PeakDim peakDim : peakDims) {
-                    if (peakDim != firstPeakDim) {
-                        PeakList.linkPeakDims(firstPeakDim, peakDim);
-                    }
-                }
-            }
-        }
-    }
+//    private void addResonance(long resID, PeakDim peakDim) {
+//        List<PeakDim> peakDims = resMap.get(resID);
+//        if (peakDims == null) {
+//            peakDims = new ArrayList<>();
+//            resMap.put(resID, peakDims);
+//        }
+//        peakDims.add(peakDim);
+//    }
+//
+//    public void linkResonances() {
+//        ResonanceFactory resFactory = PeakDim.resFactory();
+//        for (Long resID : resMap.keySet()) {
+//            List<PeakDim> peakDims = resMap.get(resID);
+//            PeakDim firstPeakDim = peakDims.get(0);
+//            Resonance resonance = resFactory.build(resID);
+//            firstPeakDim.setResonance(resonance);
+//            resonance.add(firstPeakDim);
+//            if (peakDims.size() > 1) {
+//                for (PeakDim peakDim : peakDims) {
+//                    if (peakDim != firstPeakDim) {
+//                        PeakList.linkPeakDims(firstPeakDim, peakDim);
+//                    }
+//                }
+//            }
+//        }
+//    }
 
     public void processSTAR3PeakList(Saveframe saveframe) throws ParseException {
         ResonanceFactory resFactory = PeakDim.resFactory();

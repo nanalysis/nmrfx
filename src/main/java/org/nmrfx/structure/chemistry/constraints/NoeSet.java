@@ -23,7 +23,6 @@ import java.util.*;
 import java.util.Map.Entry;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
-import org.nmrfx.project.StructureProject;
 import org.nmrfx.structure.chemistry.Atom;
 import org.nmrfx.structure.chemistry.Entity;
 import org.nmrfx.structure.chemistry.Molecule;
@@ -32,6 +31,7 @@ import org.nmrfx.structure.chemistry.SpatialSetGroup;
 import static org.nmrfx.structure.chemistry.constraints.Noe.avgDistance;
 import static org.nmrfx.structure.chemistry.constraints.Noe.getAtoms;
 import static org.nmrfx.structure.chemistry.constraints.Noe.getProtons;
+import org.nmrfx.structure.project.StructureProject;
 import org.nmrfx.structure.utilities.Util;
 
 /**
