@@ -35,7 +35,7 @@ public class AtomProperty {
 
     static final HashMap map = new HashMap();
     static int nextAnum = 0;
-    private static final Color GENERIC_COLOR = new Color(1.0f, 0.1f, 0.6f);
+    private static final String GENERIC_COLOR = "gray";
     public static final AtomProperty X = new AtomProperty("X", 0.8f,
             GENERIC_COLOR, 0.0f);
     public static final AtomProperty H = new AtomProperty("H", 1.2f, "light green",
