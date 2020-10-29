@@ -22,7 +22,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.LineNumberReader;
-import org.nmrfx.project.StructureProject;
+import org.nmrfx.structure.project.StructureProject;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.structure.chemistry.Point3;
 import java.util.*;

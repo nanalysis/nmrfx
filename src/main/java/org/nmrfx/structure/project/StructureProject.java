@@ -24,6 +24,7 @@ import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.nmrfx.processor.datasets.peaks.InvalidPeakException;
+import org.nmrfx.processor.project.Project;
 import org.nmrfx.processor.star.ParseException;
 import org.nmrfx.structure.chemistry.InvalidMoleculeException;
 import org.nmrfx.structure.chemistry.Molecule;
@@ -37,7 +38,6 @@ import org.nmrfx.structure.chemistry.io.PDBFile;
 import org.nmrfx.structure.chemistry.io.PPMFiles;
 import org.nmrfx.structure.chemistry.io.SDFile;
 import org.nmrfx.structure.chemistry.io.Sequence;
-import org.nmrfx.project.Project;
 
 /**
  *
@@ -47,6 +47,7 @@ public class StructureProject extends Project {
 
     public final Map<String, Molecule> molecules = new HashMap<>();
     public Molecule activeMol;
+    static StructureProject activeProject = null;
 
     public final Map compoundMap;
 
@@ -61,6 +62,7 @@ public class StructureProject extends Project {
 
     public StructureProject(String name) {
         super(name);
+        activeProject = this;
         compoundMap = new HashMap();
         activeMol = null;
         NOE_SETS = new HashMap<String, NoeSet>();
@@ -72,11 +74,10 @@ public class StructureProject extends Project {
     }
 
     public static StructureProject getActive() {
-        Project project = Project.getActive();
-        if (project == null) {
-            project = new StructureProject("Untitled 1");
+        if (activeProject == null) {
+            activeProject = new StructureProject("Untitled 1");
         }
-        return (StructureProject) project;
+        return activeProject;
     }
 
     public Collection<Molecule> getMolecules() {
@@ -104,7 +105,7 @@ public class StructureProject extends Project {
     }
 
     public void loadStructureProject(Path projectDir) throws IOException, MoleculeIOException, IllegalStateException {
-        Project currentProject=getActive();
+        Project currentProject = getActive();
         setActive();
 
         loadProject(projectDir, "datasets");
@@ -164,7 +165,7 @@ public class StructureProject extends Project {
     }
 
     public void saveProject() throws IOException {
-        Project currentProject=getActive();
+        Project currentProject = getActive();
         setActive();
         try {
             if (projectDir == null) {
