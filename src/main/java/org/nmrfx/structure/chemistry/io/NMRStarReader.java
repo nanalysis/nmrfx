@@ -1180,6 +1180,7 @@ public class NMRStarReader {
             List<String> valColumn = loop.getColumnAsList("Val");
             List<String> valErrColumn = loop.getColumnAsList("Val_err");
             List<String> resColumn = loop.getColumnAsList("Resonance_ID");
+            List<Integer> ambigColumn = loop.getColumnAsIntegerList("Ambiguity_code", -1);
             ResonanceFactory resFactory = PeakDim.resFactory();
             for (int i = 0; i < entityAssemblyIDColumn.size(); i++) {
                 String iEntity = (String) entityIDColumn.get(i);
@@ -1229,6 +1230,7 @@ public class NMRStarReader {
                 }
                 try {
                     spSet.setPPM(structureNum, Double.parseDouble(value), false);
+                    spSet.getPPM(structureNum).setAmbigCode(ambigColumn.get(i));
                     if (!valueErr.equals(".")) {
                         spSet.setPPM(structureNum, Double.parseDouble(valueErr), true);
                     }
