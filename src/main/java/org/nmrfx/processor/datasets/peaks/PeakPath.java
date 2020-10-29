@@ -28,7 +28,7 @@ import java.util.Map.Entry;
 import org.apache.commons.math3.optimization.PointVectorValuePair;
 import org.apache.commons.math3.optimization.general.LevenbergMarquardtOptimizer;
 import org.nmrfx.processor.datasets.Dataset;
-import org.nmrfx.project.Project;
+import org.nmrfx.processor.project.Project;
 import smile.interpolation.KrigingInterpolation;
 import smile.interpolation.variogram.PowerVariogram;
 import smile.interpolation.variogram.Variogram;

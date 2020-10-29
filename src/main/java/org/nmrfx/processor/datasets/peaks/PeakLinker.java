@@ -10,7 +10,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.nmrfx.project.Project;
+import org.nmrfx.processor.project.Project;
 
 /**
  *

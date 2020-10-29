@@ -34,7 +34,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 import org.apache.commons.math3.complex.Complex;
-import org.nmrfx.project.Project;
+import org.nmrfx.processor.project.Project;
 
 /**
  * @author bfetler

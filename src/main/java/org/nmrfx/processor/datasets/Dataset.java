@@ -41,8 +41,7 @@ import org.nmrfx.processor.datasets.peaks.PeakList;
 import org.nmrfx.processor.math.MatrixType;
 import org.nmrfx.processor.operations.IDBaseline2;
 import org.nmrfx.processor.processing.LineShapeCatalog;
-import org.nmrfx.project.Project;
-
+import org.nmrfx.processor.project.Project;
 
 /**
  * Instances of this class represent NMR datasets. The class is typically used
