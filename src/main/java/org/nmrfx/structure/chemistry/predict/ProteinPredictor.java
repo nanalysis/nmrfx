@@ -24,14 +24,6 @@ public class ProteinPredictor {
 
     static final Set<String> atomTypes = new HashSet<>();
 
-    static {
-        Collections.addAll(atomTypes, "MHB", "MHG", "MHD", "MHE", "MCB",
-                "MCG", "MCD", "MCE", "C", "CA", "CB", "N", "H", "HA", "HB", "HG", "HD",
-                "HE", "HZ",
-                "AHD", "AHE", "AHZ",
-                "CG", "CD", "CE", "CZ",
-                "ACD", "ACE", "ACZ");
-    }
     PropertyGenerator propertyGenerator;
     Map<String, Integer> aaMap = new HashMap<>();
     Map<String, Double> rmsMap = new HashMap<>();
@@ -89,7 +81,6 @@ public class ProteinPredictor {
             }
         }
         initMinMax();
-        initRMS();
     }
 
     public static double calcDisorderScale(double contactSum, double[] minMax) {
@@ -125,15 +116,24 @@ public class ProteinPredictor {
     Optional<String> getAtomNameType(Atom atom) {
         Optional<String> atomType = Optional.empty();
         String aName = atom.getName();
+        int aLen = aName.length();
         String useName = null;
         if (atom.isMethyl()) {
             if (atom.getAtomicNumber() == 1) {
                 if (atom.isFirstInMethyl()) {
-                    useName = "MH" + aName.charAt(1);
+                    if (aLen == 4) {
+                        useName = "MH" + aName.substring(1, 3);
+                    } else {
+                        useName = "MH" + aName.charAt(1);
+                    }
                 }
             }
         } else if (atom.isMethylCarbon()) {
-            useName = "MC" + aName.charAt(1);
+            if (aLen == 3) {
+                useName = "MC" + aName.substring(1, 3);
+            } else {
+                useName = "MC" + aName.charAt(1);
+            }
         } else if (atom.isAAAromatic()) {
             if (atom.getAtomicNumber() == 1) {
                 useName = "AH" + aName.charAt(1);
@@ -141,11 +141,10 @@ public class ProteinPredictor {
                 useName = "AC" + aName.charAt(1);
             }
         } else {
-            int aLen = aName.length();
-            if (aLen > 2) {
-                aName = aName.substring(0, 2);
-            }
             useName = aName;
+        }
+        if (useName != null) {
+            useName += "_" + atom.getEntity().getName();
         }
         if ((useName != null) && atomTypes.contains(useName)) {
             atomType = Optional.of(useName);
@@ -164,17 +163,17 @@ public class ProteinPredictor {
                 Optional<String> atomTypeOpt = getAtomNameType(atom);
                 atomTypeOpt.ifPresent(atomType -> {
                     propertyGenerator.getAtomProperties(atom);
-                    String type = atomType + '_' + residue.getName();
+                    String type = atomType;
                     Integer jType = aaMap.get(type);
                     if (jType != null) {
                         double[] coefs = values[jType];
-                        double[] minMax = minMaxMap.get(atomType);
+                        double[] minMax = minMaxMap.get(type);
                         ProteinPredictorResult predResult
                                 = ProteinPredictorGen.predict(valueMap,
                                         coefs, minMax, reportAtom != null);
                         double value = predResult.ppm;
                         value = Math.round(value * 100) / 100.0;
-                        double rms = getRMS(atomType);
+                        double rms = getRMS(type);
                         if (iRef < 0) {
                             atom.setRefPPM(-iRef - 1, value);
                             atom.setRefError(-iRef - 1, rms);
@@ -201,19 +200,25 @@ public class ProteinPredictor {
     }
 
     private void initMinMax() throws IOException {
-        InputStream iStream = this.getClass().getResourceAsStream("/data/predict/protein/contact_minmax.txt");
+        InputStream iStream = this.getClass().getResourceAsStream("/data/predict/protein/fitOutput.txt");
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(iStream))) {
             while (true) {
                 String line = reader.readLine();
                 if (line == null) {
                     break;
                 }
+                if (line.contains("Avg")) {
+                    continue;
+                }
                 String[] fields = line.split("\t");
                 double[] minmax = new double[2];
-                String name = fields[0];
-                minmax[0] = Double.parseDouble(fields[1]);
-                minmax[1] = Double.parseDouble(fields[2]);
+                String name = fields[0].trim();
+                double rms = Double.parseDouble(fields[2]);
+                minmax[0] = Double.parseDouble(fields[4]);
+                minmax[1] = Double.parseDouble(fields[5]);
                 minMaxMap.put(name, minmax);
+                rmsMap.put(name, rms);
+                atomTypes.add(name);
             }
         }
     }
@@ -236,27 +241,6 @@ public class ProteinPredictor {
             }
         }
         return rms;
-    }
-
-    private void initRMS() throws IOException {
-        InputStream iStream = this.getClass().getResourceAsStream("/data/predict/protein/rms.txt");
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(iStream))) {
-            while (true) {
-                String line = reader.readLine();
-                if (line == null) {
-                    break;
-                }
-                line = line.trim();
-                if ((line.length() > 2) && !line.startsWith("#")) {
-                    String[] fields = line.split("\t");
-                    if (fields.length > 1) {
-                        String name = fields[0];
-                        Double rms = Double.parseDouble(fields[1]);
-                        rmsMap.put(name, rms);
-                    }
-                }
-            }
-        }
     }
 
 }
