@@ -53,7 +53,7 @@ import org.nmrfx.processor.datasets.RegionData;
 import static org.nmrfx.processor.datasets.peaks.Peak.getMeasureFunction;
 import smile.clustering.HierarchicalClustering;
 import smile.clustering.linkage.CompleteLinkage;
-import org.nmrfx.project.Project;
+import org.nmrfx.processor.project.Project;
 
 /**
  *

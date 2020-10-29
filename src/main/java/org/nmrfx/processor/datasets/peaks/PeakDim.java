@@ -20,7 +20,7 @@ package org.nmrfx.processor.datasets.peaks;
 import org.nmrfx.processor.star.STAR3;
 import org.nmrfx.processor.utilities.ConvUtil;
 import org.nmrfx.processor.utilities.Format;
-import org.nmrfx.project.Project;
+import org.nmrfx.processor.project.Project;
 import java.util.ArrayList;
 import java.util.List;
 
