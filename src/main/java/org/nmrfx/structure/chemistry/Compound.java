@@ -73,6 +73,17 @@ public class Compound extends Entity implements AtomContainer {
     public int getIDNum() {
         return entityID;
     }
+    
+    @Override
+    public void setPropertyObject(String name, Object value) {
+        propertyObjectMap.put(name, value);
+    }
+
+    @Override
+    public Object getPropertyObject(String name) {
+        return propertyObjectMap.get(name);
+    }
+    
 
     public void removeAtom(Atom atom) {
         super.removeAtom(atom);
@@ -162,6 +173,25 @@ public class Compound extends Entity implements AtomContainer {
             newMap.put(atom.name.toLowerCase(), atom);
         }
         atomMap = newMap;
+    }
+    
+    public String toNEFSequenceString(int idx, String link) {
+        //sequence code
+        int num = Integer.parseInt(this.getNumber());
+        //chain ID
+        String chainCode = this.getPropertyObject("chain").toString();
+        char chainID = chainCode.charAt(0);
+
+        //residue name
+        String resName = this.name;
+        if (resName.length() > 3) {
+            resName = resName.substring(0, 3);
+        }
+
+        //residue variant
+        String resVar = this.label;
+
+        return String.format("%8d %7s %7d %9s %-14s %-7s", idx, chainID, num, resName, link, resVar);
     }
 
 }

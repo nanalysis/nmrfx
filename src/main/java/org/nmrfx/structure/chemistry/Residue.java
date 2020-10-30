@@ -169,6 +169,16 @@ public class Residue extends Compound {
         }
         return atom;
     }
+    
+    @Override
+    public void setPropertyObject(String name, Object value) {
+        propertyObjectMap.put(name, value);
+    }
+
+    @Override
+    public Object getPropertyObject(String name) {
+        return propertyObjectMap.get(name);
+    }
 
     public boolean isStandard() {
         return standard;
@@ -710,12 +720,11 @@ public class Residue extends Compound {
         return polymer.getName() + ":" + getName() + getNumber();
     }
 
-    public String toNEFSequenceString(String link) {
-        //index and sequence code
-        int number = 1;
+    public String toNEFSequenceString(int idx, String link) {
         //chain ID
         char chainID = ' ';
-        number = this.getIDNum();
+        //sequence code
+        int num = this.getIDNum();
         String polymerName = this.polymer.getName();
         chainID = polymerName.charAt(0);
 
@@ -728,7 +737,7 @@ public class Residue extends Compound {
         //residue variant
         String resVar = this.label;
 
-        return String.format("%8d %7s %7d %9s %-14s %-7s", number, chainID, number, resName, link, resVar);
+        return String.format("%8d %7s %7d %9s %-14s %-7s", idx, chainID, num, resName, link, resVar);
     }
     
     public String toMMCifSequenceString(boolean pdb) {
@@ -750,7 +759,10 @@ public class Residue extends Compound {
         }
 
         //hetero
-        String hetero = this.label;        
+        String hetero = this.label;  
+        if (hetero.equals(this.name)) {
+            hetero = "n";
+        }
         if (hetero.length() > 1) {
             hetero = hetero.substring(0, 1);
         }
@@ -762,7 +774,7 @@ public class Residue extends Compound {
         }
     }
     
-    public String toMMCifChemCompString(Map<String, Double> weightMap, boolean lastRes, String fullResName) {
+    public String toMMCifChemCompString(Map<String, Double> weightMap, String fullResName) {
         //residue name
         String resName = this.name;
         if (resName.length() > 3) {
@@ -777,10 +789,13 @@ public class Residue extends Compound {
         
         //flag #fixme should be read in from file
         String flag = "y";
+        if (fullResName.equals("SELENOMETHIONINE")) {
+            flag = "n";
+        }
         
         //full res name
-        if (this.label.contains("+H")) {
-            fullResName = "\'" + fullResName.substring(0, fullResName.length() - 3) + "IC ACID\'";
+        if (fullResName.contains("ACID")) {
+            fullResName = "\'" + fullResName + "\'";
         }
         
         //chem comp
@@ -797,12 +812,8 @@ public class Residue extends Compound {
             if (aSym.equals("O")) {
                 nAType += 1;
             } else if (aSym.equals("H") && this.getIDNum() > 1) {
-                if (this.name.equals("HIS")) {
-                    nAType += 1;
-                } else {
-                    nAType += 2;
-                }
-                if (lastRes || this.label.contains("+H")) {
+                nAType += 2;
+                if (fullResName.contains("ACID")) {
                     nAType += 1;
                 }
             }
@@ -825,6 +836,9 @@ public class Residue extends Compound {
         chemComp += "\'";
             
         //molecular weight
+        if (fullResName.equals("SELENOMETHIONINE")) {
+            weightMap.put("Se", 78.95999);
+        }
         double weight = 0.0;
         for (String key : aCount.keySet()) {
             int nAType = aCount.get(key);
@@ -833,7 +847,7 @@ public class Residue extends Compound {
             }
         }     
         
-        return String.format("%-4s %-19s %-2s %-15s %-2s %-16s %-4.3f", resName, type, flag, fullResName, "?", chemComp, weight);
+        return String.format("%-4s %-19s %-2s %-17s %-2s %-16s %-4.3f", resName, type, flag, fullResName, "?", chemComp, weight);
         
     }
     
