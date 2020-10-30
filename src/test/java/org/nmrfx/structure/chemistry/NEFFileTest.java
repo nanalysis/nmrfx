@@ -310,10 +310,6 @@ public class NEFFileTest {
 
     public void loadData(String nefFileName) throws IOException {
         String fileName = String.join(File.separator, "src", "test", "data", "neffiles", nefFileName + ".nef");
-        String cifFileName = null;
-        if (nefFileName.equals("6nbn") || nefFileName.equals("6nbn_older")) {
-            cifFileName = String.join(File.separator, "src", "test", "data", "neffiles", "ACD.cif");
-        }
         String outPath = "tmp";
         File tmpDir = new File(outPath);
         if (!tmpDir.exists()) {
@@ -322,7 +318,7 @@ public class NEFFileTest {
         String outFile = String.join(File.separator, outPath, nefFileName + "_nef_outTest.txt");
         try {
             if (orig.isEmpty()) {
-                NMRNEFReader.read(fileName, cifFileName);
+                NMRNEFReader.read(fileName);
                 NMRNEFWriter.writeAll(outFile);
                 orig = convertFileLines(fileName);
                 written = convertFileLines(outFile);
