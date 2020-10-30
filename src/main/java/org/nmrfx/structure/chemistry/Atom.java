@@ -2126,6 +2126,20 @@ public class Atom implements IAtom {
         return result;
     }
 
+    public boolean isAAAromatic() {
+        boolean result = false;
+        if (entity.getName().equalsIgnoreCase("tyr") || entity.getName().equalsIgnoreCase("phe")
+                || entity.getName().equalsIgnoreCase("trp") || entity.getName().equalsIgnoreCase("his")) {
+            if ((name.length() == 2) && (name.equals("CG") || name.charAt(1) == 'Z')) {
+                result = true;
+            } else if ((name.length() == 3) && (name.charAt(1) != 'B')) {
+                result = true;
+            }
+        }
+
+        return result;
+    }
+
     public Optional<Atom> getAromaticPartner() {
         Optional<Atom> result = Optional.empty();
         if ((parent != null)) {

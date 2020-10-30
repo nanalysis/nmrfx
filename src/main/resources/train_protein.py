@@ -53,26 +53,34 @@ reportAtom = "1:1.CA"
 lamVal = 0.005
 
 #select which group of atom types to generate attributes for
-atoms = ["MHB", "MHG", "MHD", "MHE", "MCB", "MCG", "MCD","MCE", "C", "CA", "CB", "CG", "CD", "CE", "CZ", "H", "HA", "HB", "HG", "HD", "HE", "HZ", "N"]
+nativeAtoms = ["C", "CA", "CB", "CG", "CD", "CE", "CZ", "H", "HA", "HB", "HG", "HD", "HE", "HZ", "N"]
+atoms = ["MHB", "MHG", "MHD", "MHE", "MCB", "MCG", "MCD","MCE", "ACE","ACD","AHD","AHE","C", "CA", "CB", "CG", "CD", "CE", "ACZ", "H", "HA", "HB", "HG", "HD", "HE", "AHZ", "N"]
 aaS = ['ALA', 'ARG', 'ASN', 'ASP', 'CYS', 'GLU', 'GLN', 'GLY', 'HIS', 'ILE', 'LEU', 'LYS', 'MET', 'PHE', 'PRO', 'SER', 'THR', 'TRP', 'TYR', 'VAL']
-
 attrDir = 'baseAttrs'
 aaGroups = {}
 
 aaGroups['C'] = [['ASP', 'ASN'], ['GLU', 'GLN'], ['HIS', 'TRP', 'PHE', 'TYR'], ['ALA'], ['PRO'], ['GLY'], ['ILE', 'VAL', 'LEU'], ['THR'], ['CYS', 'SER'], ['ARG', 'LYS'], ['MET']]
 aaGroups['CA'] = [['ASP', 'ASN'], ['GLU', 'GLN'], ['HIS', 'TRP', 'PHE', 'TYR'], ['ALA'], ['PRO'], ['GLY'], ['ILE'], ['VAL'], ['LEU'], ['THR'], ['CYS', 'SER', 'MET'], ['ARG', 'LYS']]
 aaGroups['CB'] = [['ASP', 'ASN'], ['GLU', 'GLN'], ['HIS', 'TRP', 'PHE', 'TYR'],  ['PRO'], ['ILE'], ['VAL'], ['LEU'], ['THR'], ['CYS'], ['SER'], ['MET'], ['ARG', 'LYS']]
-aaGroups['CD'] = [['HIS', 'TRP', 'PHE', 'TYR'], ['LEU'], ['LYS'],['ARG'], ['PRO']]
-aaGroups['CE'] = [['PHE', 'TYR'],['HIS'],['LYS']]
-aaGroups['CZ'] = [['PHE', 'TYR']]
+aaGroups['CD'] = [['LYS'],['ARG'], ['PRO']]
+aaGroups['ACD'] = [['HIS'], ['TRP'],[ 'PHE', 'TYR']]
+aaGroups['ACD'] = [['TRP'], ['PHE', 'TYR']]
+aaGroups['CE'] = [['LYS']]
+aaGroups['ACE'] = [['PHE', 'TYR'],['HIS']]
+aaGroups['ACE'] = [['PHE', 'TYR']]
+aaGroups['ACZ'] = [['PHE']]
 aaGroups['CG'] = [['GLU'], ['GLN'], ['VAL'], ['LEU'], ['ILE'], ['PRO'], ['ARG'], ['LYS'], ['MET']]
 aaGroups['H'] = [['ALA', 'GLY'], ['ASP'], ['ASN'], ['GLU'], ['GLN'], ['HIS'], ['TRP'], ['PHE'], ['TYR'], ['ILE'], ['VAL'], ['LEU'], ['THR'], ['SER'], ['CYS'], ['ARG'], ['LYS'], ['MET']]
 aaGroups['HA'] = [['ALA', 'GLY'], ['ASP'], ['ASN'], ['GLU'], ['GLN'], ['HIS'], ['TRP'], ['PHE'], ['TYR'], ['ILE'], ['VAL'], ['LEU'], ['THR'], ['SER'], ['CYS'], ['ARG'], ['LYS'], ['MET'], ['PRO']]
 aaGroups['HB'] = [['ASP'], ['ASN'], ['GLU'], ['GLN'], ['HIS'], ['TRP'], ['PHE'], ['TYR'], ['ALA'], ['ILE'], ['VAL'], ['LEU'], ['THR'], ['SER'], ['CYS'], ['ARG'], ['LYS'], ['MET'], ['PRO']]
-aaGroups['HD'] = [['ARG'],  ['PRO'], ['HIS', 'PHE', 'TYR'], ['LEU'], ['LYS']]
-aaGroups['HE'] = [['ARG'], ['LYS'],  ['HIS'], ['PHE', 'TYR']]
+aaGroups['HD'] = [['ARG'],  ['PRO'], ['LEU'], ['LYS']]
+aaGroups['AHD'] = [['HIS'], ['TRP', 'PHE', 'TYR']]
+aaGroups['AHD'] = [['TRP'], ['PHE', 'TYR']]
+aaGroups['AHE'] = [['HIS'], ['PHE', 'TYR']]
+aaGroups['AHE'] = [['PHE', 'TYR']]
+aaGroups['HE'] = [['ARG'], ['LYS']]
 aaGroups['HG'] = [['GLU'], ['GLN'], ['VAL'], ['LEU'], ['ILE'], ['PRO'], ['ARG'], ['LYS'], ['MET']]
-aaGroups['HZ'] = [['PHE']]
+aaGroups['AHZ'] = [['PHE']]
 aaGroups['MCB'] = [['ALA']]
 aaGroups['MCD'] = [['ILE'], ['LEU']]
 aaGroups['MCG'] = [['ILE'], ['THR'], ['VAL']]
@@ -95,10 +103,14 @@ minMaxSums = {'N':[97.37,752.63],
     'HB':[500.0,2000.0],
     'HG':[500.0,2000.0],
     'HD':[500.0,2000.0],
+    'AHD':[500.0,2000.0],
     'HE':[500.0,2000.0],
+    'AHE':[500.0,2000.0],
     'CG':[500.0,2000.0],
     'CD':[500.0,2000.0],
+    'ACD':[500.0,2000.0],
     'CE':[500.0,2000.0],
+    'ACE':[500.0,2000.0],
     'MCB':[500.0,2000.0],
     'MCG':[500.0,2000.0],
     'MCD':[500.0,2000.0],
@@ -107,8 +119,8 @@ minMaxSums = {'N':[97.37,752.63],
     'MHG':[500.0,2000.0],
     'MHD':[500.0,2000.0],
     'MHE':[500.0,2000.0],
-    'CZ':[500.0,2000.0],
-    'HZ':[500.0,2000.0]}
+    'ACZ':[500.0,2000.0],
+    'AHZ':[500.0,2000.0]}
 
 #used in generating attr files
 iLine = 0
@@ -232,14 +244,14 @@ def filterAttr(fileName, outFileName, use, aName, aa, residues, errDict, trimDic
                    pdbID = fields[0]
                    atomName = fields[2]
                    #check whether atom should be trimmed
-                   if trimDict and [pdbID, atomName] in trimDict[aName]:
+                   if trimDict and (pdbID, atomName) in trimDict[aName]:
                       continue
                    v = PropVar2(headerFields, fields)
                    if (v.N1 > 0.1):
                        continue
                    if (v.C1 > 0.1):
                        continue
-                   if errDict:
+                   if errDict and pdbID in errDict:
                        v.cs -= float(errDict[pdbID])
                    a = getAttr(v, aa)
                    fields = []
@@ -582,7 +594,12 @@ def getAtomNameType(atom):
             if atom.isFirstInMethyl():
                 result = "MH" + aName[1]
     elif atom.isMethylCarbon():
-            result = "MC"+aName[1]
+        result = "MC"+aName[1]
+    elif atom.isAAAromatic():
+        if atom.getAtomicNumber() == 1:
+            result = "AH"+aName[1]
+        else:
+            result = "AC"+aName[1]
     else:
        if aLen > 2:
           aName = aName[0:2]
@@ -631,7 +648,6 @@ def doProtein(mol, chain, pg):
 
 #loads molecule object and generates attr file
 def doProteinOn(mol, chain, pg):
-    print 'do Protein'
     results = {}
     polymer = mol.getEntity(chain)
     residues = polymer.getResidues()
@@ -650,7 +666,7 @@ def doProteinOn(mol, chain, pg):
         if not pg.getResidueProperties(polymer, residue):
             print "skip", res, resName
             continue
-        for rootAName in atoms:
+        for rootAName in nativeAtoms:
             atomNames = [rootAName]
             if rootAName == "HA":
                 if resName == "GLY":
@@ -675,7 +691,6 @@ def doProteinOn(mol, chain, pg):
 
                 values = pg.getValues()
                 v = PropVar(values, resName, proP, proS)
-                print resName, atomName, v.cs
                 if v.cs > -90.0 and abs(v.cs) > 0.001:
                     baseAttr = getBaseAttr(values, resName, proP, proS)
                     results[atom] = baseAttr
@@ -854,8 +869,8 @@ def getAtomType(atom):
     return atomtype
 
 def doStdTrim(delta, atomType):
-    limitsStd = {'C':5.0,'CA':5.0,'CB':5.0,'CG':5.0,'CD':5.0,'CE':5.0,'CZ':5.0,
-                 'H':2.0,'HA':0.7,'HB':2.0,'HG':2.0,'HD':2.0,'HE':2.0,'HZ':2.0,
+    limitsStd = {'C':5.0,'CA':5.0,'CB':5.0,'CG':5.0,'CD':5.0,'CE':5.0,'ACZ':5.0,'ACD':5.0,'ACE':5.0,
+                 'H':2.0,'HA':0.7,'HB':2.0,'HG':2.0,'HD':2.0,'HE':2.0,'AHZ':2.0,'AHD':2.0,'AHE':2.0,
                  'MCB':5.0,'MCG':5.0,'MCD':5.0,'MCE':5.0,
                  'MHB':2.0,'MHG':2.0,'MHD':2.0,'MHE':2.0,
                  'N':10}
@@ -980,7 +995,6 @@ def combine(trimDict=None, reRef=False):
     cmode = 'all'
     for mode in ['sngl']:
         for aName in atoms:
-            print "atoms", atoms, "aaGroups", aaGroups
             for aaGroup in aaGroups[aName]:
                 groupName = '_'.join(aaGroup)
                 outFile = os.path.join(homeDir, 'attrs', cmode + '_' + aName + '_' + groupName + '.txt')
@@ -990,7 +1004,6 @@ def combine(trimDict=None, reRef=False):
                     os.remove(outFile)
                 for mapFile in mapFiles:
                     if os.path.exists(mapFile):
-                        print 'removing: ', mapFile
                         os.remove(mapFile)
     for mode in ['sngl']:
         for aName in atoms:
@@ -1002,9 +1015,7 @@ def combine(trimDict=None, reRef=False):
                     fileName = os.path.join(homeDir, attrDir, mode + '_' + aName + '_' + aa + '.txt')
                     if not os.path.exists(fileName):
                         continue
-                    print fileName
                     if reRef is True:
-                        print 'Rereferencing'
                         errDict = getCorr(aName)
                     else:
                         errDict = {}
@@ -1054,8 +1065,6 @@ def getMatrix(fileName, map, testMode=False):
             attrline = attrline.strip()
             fields = attrline.split('\t')
             if len(fields) != len(headerFields):
-                print fileName
-                print line
                 exit(0)
             values = [float(v) for v in fields]
             contacts = values[-1]
@@ -1206,6 +1215,7 @@ def fitAll(testMode=False, coefsSave=False, getRMS=False, optMinMax=False):
     print 'fitall', fitFilename
     with open(fitFilename, 'w') as fitFile:
         for atom in atoms:
+            print atom
             minSum, maxSum = minMaxSums[atom]
             sum = 0.0
             sumx = 0.0
@@ -1216,7 +1226,7 @@ def fitAll(testMode=False, coefsSave=False, getRMS=False, optMinMax=False):
             for filename in files:
                 rms, size, xrms = fit(filename, minSum, maxSum, testMode, coefsSave, optMinMax)
                 sum += rms * rms * size
-                if size > 100:
+                if size > 40:
                     sumx += xrms  * xrms  * size
                     totalx += size
                 total += size
@@ -1224,95 +1234,131 @@ def fitAll(testMode=False, coefsSave=False, getRMS=False, optMinMax=False):
                 xrms = math.sqrt(sumx / totalx)
             else:
                 xrms = 0.0
+            if total == 0:
+                print atom,attrsPath
             rmsDict[atom] = math.sqrt(sum / total)
             print atom, rmsDict[atom]
             fitFile.write('{}\t{}\t{}\t{}\n'.format(atom, rmsDict[atom], xrms, totalx))
     if getRMS:
         return rmsDict
 
+def getCorrType(atomName):
+    if len(atomName) == 1:
+        fileName = atomName
+    elif len(atomName) == 2:
+        if atomName == 'CA':
+            fileName = 'CACB'
+        elif atomName == 'CB':
+            fileName = 'CACB'
+        elif atomName == 'HA':
+            fileName = 'HAHB'
+        elif atomName == 'HB':
+            fileName = 'HAHB'
+        elif atomName[0] == 'H':
+            fileName = 'Hali'
+        else:
+            fileName = 'Cali'
+    else:
+        fileName = atomName[0:2]
+
+#    if atomName == 'CA':
+#        fileName = 'CACB'
+#    elif atomName == 'CB':
+#        fileName = 'CACB'
+#    else:
+#        fileName = atomName
+
+    return fileName
+
+
 #calculates chemical shift correction using delta value
 def calCorr(trimDict):
     global homeDir
     atomGroup = [["MHB"], ["MHG"], ["MHD"], ["MCB"], ["MCG"], ["MCD"], ['MCE'], ['MHE'], ["C"],
-                 ["CA", "CB"], ["N"], ["H"], ["HA"], ["HB"], ["HG"], ["HD"], ["HZ"],
-                 ["HE"], ["CG"], ["CD"], ["CE"], ["CZ"]]
+                 ["CA", "CB"], ["N"], ["H"], ["HA"], ["HB"], ["HG"], ["HD"], ["AHZ"],['AHD'],['AHE'],
+                 ["HE"], ["CG"], ["CD"], ["CE"], ["ACZ"],['ACD'],['ACE']]
 
+    refErrorDict = {}
     for atoms in atomGroup:
-        refErrorDict = {}
-        if len(atoms) > 1:
-            fileName = 'CACB'
-        else:
-            fileName = atoms[0]
-        refErrorFile = os.path.join(homeDir, 'refErrors', fileName + '.txt')
+        corrType = getCorrType(atoms[0])
+        if not corrType in refErrorDict:
+            refErrorDict[corrType] = {}
+        corrDict = refErrorDict[corrType]
+
         for atom in atoms:
             resultsPath = os.path.join(homeDir, 'results', 'all_' + atom + '_*.txt')
-
-            if os.path.exists(refErrorFile):
-                previousErrDict = getCorr(atom)
-            else:
-                previousErrDict = {}
-
             files = glob.glob(resultsPath)
             for filename in files:
                 print 'calculate ref error: ', atom, filename
                 with open(filename,'r') as f:
                     for line in f:
                         exp, pred, delta, pdbId, atomName = line.strip('\n').split('\t')
-                        if [pdbId, atomName] in trimDict[atom]:
+                        if (pdbId, atomName) in trimDict[atom]:
                             continue
-                        if pdbId not in refErrorDict.keys():
-                            if previousErrDict:
-                                prevErr = float(previousErrDict[pdbId])
-                            else:
-                                prevErr = 0.0
-                            refErrorDict[pdbId] = [float(delta), 1, prevErr]
-                        else:
-                            refErrorDict[pdbId][0] += float(delta)
-                            refErrorDict[pdbId][1] += 1
-
+                        if not pdbId in corrDict:
+                            corrDict[pdbId] = [0,0.0]
+                        currValues = corrDict[pdbId]
+                        currValues[0] += 1
+                        currValues[1] += float(delta)
+    
+    print refErrorDict                    
+    for corrType in refErrorDict:
+        refErrorFile = os.path.join(homeDir, 'refErrors', corrType + '.txt')
+        errDict = getCorrFromType(corrType)
         with open(refErrorFile, 'w') as f1:
-            for k, v in refErrorDict.items():
-                error = v[0] / v[1]
-                total = error + v[2]
-                f1.write('{}\t{}\t{}\n'.format(k, error, total))
-                #print 'pdbId', k, 'error', error, 'total', total
+            corrDict = refErrorDict[corrType]
+            print refErrorFile
+            for pdbId in corrDict:
+                values = corrDict[pdbId]
+                currValue = 0.0
+                hasCurr = 0
+                if pdbId in errDict:
+                    currValue = float(errDict[pdbId])
+                    hasCurr = 1
+                newCorr = 0.0
+                if values[0] > 20:
+                    newCorr = values[1] / values[0]
+                error = newCorr + currValue
+                f1.write('{}\t{}\t{}\t{}\n'.format(pdbId, error, values[0], hasCurr))
 
 #reads average reference error per atom type per pdbId
 def getCorr(aName):
+    corrType = getCorrType(aName)
+    return getCorrFromType(corrType)
+
+def getCorrFromType(corrType):
     global homeDir
-    if aName == 'CA' or aName == 'CB':
-        aName = 'CACB'
-    refErrorFile = os.path.join(homeDir, 'refErrors', aName + '.txt')
+    refErrorFile = os.path.join(homeDir, 'refErrors', corrType + '.txt')
     errDict = {}
     if os.path.exists(refErrorFile):
         with open(refErrorFile, 'r') as f:
             for line in f:
-                pdb, value, total = line.strip('\n').split('\t')
-                #errDict[pdb] = value
-                errDict[pdb] = total
+                pdb, value, n, hasCurr = line.strip('\n').split('\t')
+                errDict[pdb] = value
     return errDict
 
 #trims rows with delta(exp-pred) greater than set ppm limit
 def bigTrim(limits=None, readOnly=False):
     limitsStd = {'C':5.0,'CA':5.0,'CB':5.0,'CG':5.0,'H':2.0,'HA':0.7,'HB':2.0,
                  'HG':2.0,'N':10, 'MCB':5.0,'MCD':5.0,'MCG':5.0,'MHG':2.0,
-                 'MHD':2.0,'MHG':2.0,'MCE':5.0,'MHE':2.0,"CZ":5.0,"HZ":5.0}
+                 'MHD':2.0,'MHG':2.0,'MCE':5.0,'MHE':2.0,"ACZ":5.0,"AHZ":2.0,
+                 'AHD':2.0, 'AHE':2.0, 'ACD':5.0,'ACE':5.0}
 
     if limits == None:
         limits = limitsStd
 
-    trimDict = {'C':[],'CA':[],'CB':[],'CG':[],'CD':[],'CE':[],
-                'H':[],'HA':[],'HB':[],'HG':[],'HD':[],'HE':[],
-                'N':[],'MHB':[],'MHG':[],'MHD':[],'MCB':[],'MCG':[],
-                'MCD':[],'MCE':[],'MHE':[],"CZ":[],"HZ":[]}
+    trimDict = {'C':{},'CA':{},'CB':{},'CG':{},'CD':{},'CE':{},
+                'H':{},'HA':{},'HB':{},'HG':{},'HD':{},'HE':{},
+                'N':{},'MHB':{},'MHG':{},'MHD':{},'MCB':{},'MCG':{},
+                'MCD':{},'MCE':{},'MHE':{},"ACZ":{},"AHZ":{},'ACD':{},'ACE':{},'AHD':{},'AHE':{}}
 
     #read atoms from previous trim into dictionary
     trimPath = os.path.join(homeDir, 'trimmed.txt')
     if os.path.exists(trimPath):
         with open(trimPath, 'r') as trimFile:
             for line in trimFile:
-                atom, pdbId, atomName = line.strip('\n').split('\t')
-                trimDict[atom].append([pdbId, atomName])
+                atom, pdbId, atomName,delta = line.strip('\n').split('\t')
+                trimDict[atom][pdbId,atomName] = delta
     if readOnly:
         print 'read trim dict only'
         return trimDict
@@ -1329,15 +1375,17 @@ def bigTrim(limits=None, readOnly=False):
                     attrsFile.readline()
                     for resultLine, attrLine in izip(descriptFile, attrsFile):
                         exp, pred, delta, pdbId, atomName = resultLine.strip('\n').split('\t')
-                        if abs(float(delta)) > dLimit and [pdbId,atomName] not in trimDict[atom]:
+                        trimDict2 = trimDict[atom]
+                        if abs(float(delta)) > dLimit and (pdbId,atomName) not in trimDict2:
                             #print pdbId, atomName, 'exp ', exp, 'pred: ', pred, 'delta: ', delta, 'limit: ', dLimit
-                            trimDict[atom].append([pdbId,atomName])
+                            trimDict[atom][pdbId,atomName] = delta
 
     #write out new trim file
     with open(trimPath,'w') as trimFile:
         for k,v in trimDict.items():
-            for pdb, atomName in v:
-                trimFile.write('{}\t{}\t{}\n'.format(k, pdb, atomName))
+            for pdb,atomName in v:
+                delta = trimDict[k][pdb,atomName]
+                trimFile.write('{}\t{}\t{}\t{}\n'.format(k, pdb, atomName,delta))
     return trimDict
 
 def loadLimits(devValue):
@@ -1434,6 +1482,8 @@ def doAll(args):
     global pdbHome
     global pdbDir 
     global homeDir
+    global useContacts
+    global lamVal
     homeDir = args.homeDir
     if args.bmrb:
         bmrbHome = args.bmrb
@@ -1444,7 +1494,13 @@ def doAll(args):
     newDir(homeDir)
     if args.gen:
         gen(args)
+    lamVal = args.lambda
+    useContacts = not args.nocontacts
     initialProp(args)
+    errorGlob = os.path.join(homeDir, 'refErrors', '*.txt')
+    errorFiles = glob.glob(errorGlob)
+    for fileName in errorFiles:
+        os.remove(fileName)
     doCorrection(args)
     doCorrection(args)
     finalProp(args)
@@ -1462,7 +1518,9 @@ def doCorrection(args):
     global homeDir
     homeDir = args.homeDir
     #tight trim based on ppm limits set by shiftx2
+    print 'bigtrim'
     trimDict = bigTrim()
+    print 'bigtrimed'
     #generates txt files of reference errors by pdbID
     calCorr(trimDict)
     #rereference atoms and skip over trimmed atoms
@@ -1507,8 +1565,6 @@ def finalProp(args):
         testSet = args.test
         testMode = True
     fitAll(testMode, args.coefs)
-
-
 
 def assess(args):
     global bmrbHome
@@ -1556,6 +1612,8 @@ parser_doall.add_argument('-pdb', type=str)
 parser_doall.add_argument('-pdbDir', type=str)
 parser_doall.add_argument('-gen', action='store_true')
 parser_doall.add_argument('-coefs', action='store_true')
+parser_doall.add_argument('-lambda', type=float,default=0.005)
+parser_doall.add_argument('-nocontacts', action='store_true', default=False)
 parser_doall.add_argument('-test', action='store_true', default=False)
 parser_doall.set_defaults(func=doAll)
 

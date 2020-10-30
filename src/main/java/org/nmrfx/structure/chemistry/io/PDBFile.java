@@ -282,8 +282,8 @@ public class PDBFile {
 
                 if (string.startsWith("ATOM  ") || string.startsWith("HETATM ")) {
                     PDBAtomParser atomParse = new PDBAtomParser(string);
-                    
-                    if (string.startsWith("HETATM ") && !atomParse.resName.equals("MSE")){
+
+                    if (string.startsWith("HETATM ") && !atomParse.resName.equals("MSE")) {
                         continue;
                     }
 
@@ -302,7 +302,7 @@ public class PDBFile {
                             polymerName = lastChain;
                         }
                         residueList.add("-polymer " + polymerName);
-                        residueList.add("-coordset " + molName);
+                        residueList.add("-coordset " + polymerName);
                     }
 
                     if (!lastRes.equals(atomParse.resNum)) {
@@ -599,10 +599,12 @@ public class PDBFile {
 
                         if (residue == null) {
                             //for (Residue resi : polymer.getResidues()) {
-                                //System.out.println(resi.getName() + " " + resi.getNumber());
+                            //System.out.println(resi.getName() + " " + resi.getNumber());
                             //}
-                            System.err.println("null residue " + atomParse.resNum + " for polymer " + polymerName);
-                            System.err.println(string);
+                            if (!atomParse.resName.equals("HOH")) {
+                               // System.err.println("null residue " + atomParse.resNum + " for polymer " + polymerName);
+                               // System.err.println(string);
+                            }
                             continue;
                         }
                         if (!AtomParser.isResNameConsistant(residue.getName(), atomParse.resName)) {
