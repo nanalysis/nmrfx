@@ -53,11 +53,11 @@ public class NEFFileTest {
         loadData("2ko1");
         testAll();
     }
-//    @Test
-//    public void testFile2PNG() throws IOException { //fails b/c distances % collapsing mismatches
-//        loadData("2png");
-//        testAll();
-//    }
+    @Test
+    public void testFile2PNG() throws IOException { //fails b/c distances % collapsing mismatches
+        loadData("2png");
+        testAll();
+    }
     @Test
     public void testFile2KZN() throws IOException {
         loadData("2kzn");
@@ -121,11 +121,11 @@ public class NEFFileTest {
         testAll();
     }
     
-//    @Test
-//    public void testFile2K07() throws IOException { //fails b/c chem shift and distance % collapsing mismatches
-//        loadData("2k07");
-//        testAll();
-//    }
+    @Test
+    public void testFile2K07() throws IOException { //fails b/c chem shift and distance % collapsing mismatches
+        loadData("2k07");
+        testAll();
+    }
 
     @Test
     public void testFile2KCU() throws IOException {
@@ -134,7 +134,7 @@ public class NEFFileTest {
     }
     
     @Test
-    public void testFile6NBN() throws IOException { //fails b/c ACD chain code should be A, not B
+    public void testFile6NBN() throws IOException { //fails b/c of chem shift and distance key mismatches
         loadData("6nbn");
         testAll();
     }
