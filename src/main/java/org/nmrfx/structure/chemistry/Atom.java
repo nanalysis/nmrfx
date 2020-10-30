@@ -1338,7 +1338,11 @@ public class Atom implements IAtom {
         String line = "";
         char chainID = 'A';
         int seqCode = 1;
-        String resName = "";
+        String resName = entity.name;
+        if (resName.length() > 3) {
+            resName = resName.substring(0, 3);
+        }
+        
         if (entity instanceof Residue) {
             String polymerName = ((Residue) entity).polymer.getName();
             //  chain code
@@ -1346,27 +1350,16 @@ public class Atom implements IAtom {
 
             // sequence code
 //            System.out.println(((Residue) entity).getIDNum() + ": " + writeName);
-            seqCode = ((Residue) entity).getIDNum();
+            seqCode = Integer.parseInt(((Residue) entity).getNumber());
 
-            // residue name
-            resName = ((Residue) entity).name;
-            if (resName.length() > 3) {
-                resName = resName.substring(0, 3);
-            }
-            
         } else if (entity instanceof Compound) {
             //sequence code
             seqCode = Integer.parseInt(((Compound) entity).getNumber());
             
             //chain ID
-            String chainCode = ((Compound) entity).getPropertyObject("chain").toString();
+            String chainCode = entity.getPropertyObject("chain").toString();
             chainID = chainCode.charAt(0);
 
-            //residue name
-            resName = ((Compound) entity).name;
-            if (resName.length() > 3) {
-                resName = resName.substring(0, 3);
-            }
         }
         // value
         double shift = ppmv.getValue();
@@ -1424,7 +1417,7 @@ public class Atom implements IAtom {
 
             // sequence code 
             if (atom.entity instanceof Residue) {
-                seqCode = ((Residue) atom.entity).getIDNum();
+                seqCode = Integer.parseInt(((Residue) atom.entity).getNumber());
             } else if (atom.entity instanceof Compound) {
                 seqCode = Integer.parseInt(((Compound) atom.entity).getNumber());
             } 

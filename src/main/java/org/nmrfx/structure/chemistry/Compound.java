@@ -72,18 +72,7 @@ public class Compound extends Entity implements AtomContainer {
     @Override
     public int getIDNum() {
         return entityID;
-    }
-    
-    @Override
-    public void setPropertyObject(String name, Object value) {
-        propertyObjectMap.put(name, value);
-    }
-
-    @Override
-    public Object getPropertyObject(String name) {
-        return propertyObjectMap.get(name);
-    }
-    
+    }    
 
     public void removeAtom(Atom atom) {
         super.removeAtom(atom);
