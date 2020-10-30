@@ -738,7 +738,7 @@ public class MMcifReader {
                 }
 
                 try {
-                    System.out.println(atom);
+//                    System.out.println(atom);
                     atom.addCoords(xCoord, yCoord, zCoord, occupancy, bFactor);
                 } catch (InvalidMoleculeException imE) {
 
