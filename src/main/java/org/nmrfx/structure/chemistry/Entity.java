@@ -68,8 +68,8 @@ public class Entity implements AtomContainer, Serializable, ITree {
     public String magneticEquivalenceGroupCode = "?";
     public String role = "?";
     public String details = "?";
-    private HashMap<String, String> propertyMap = new HashMap<String, String>();
-    public Map<String, Object> propertyObjectMap= new HashMap<String, Object>();
+    HashMap<String, String> propertyMap = new HashMap<String, String>();
+    Map<String, Object> propertyObjectMap= new HashMap<String, Object>();
     ArrayList<EntityCommonName> commonNames = new ArrayList<>();
 
     @Override
