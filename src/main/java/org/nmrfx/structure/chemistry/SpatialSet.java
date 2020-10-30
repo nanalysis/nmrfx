@@ -606,7 +606,7 @@ public class SpatialSet {
         // sequence code
         String seqCode = "1";
         //pdb ins code
-        Object pdbInsCode = null;
+        Object pdbInsCode = atom.entity.getPropertyObject("pdbInsCode");
         // cartn x
         double x = coord.pt.getX();
         // cartn y
@@ -618,11 +618,11 @@ public class SpatialSet {
         // B factor
         double bFactor = coord.bfactor;
         //auth seq code
-        Object authSeq = null;
+        Object authSeq = atom.entity.getPropertyObject("authSeqID");
         //auth res name 
-        Object authResName = null;
+        Object authResName = atom.entity.getPropertyObject("authResName");
         //auth chain id 
-        Object authChainID = null;
+        Object authChainID = atom.entity.getPropertyObject("authChainCode");
         //auth atom name
         Object authAName = null;
         
@@ -639,10 +639,6 @@ public class SpatialSet {
             entityID = ((Residue) atom.entity).polymer.entityID;
             // sequence code
             seqCode = String.valueOf(((Residue) atom.entity).getIDNum());
-            pdbInsCode = ((Residue) atom.entity).getPropertyObject("pdbInsCode");
-            authSeq = ((Residue) atom.entity).getPropertyObject("authSeqID");
-            authResName = ((Residue) atom.entity).getPropertyObject("authResName");
-            authChainID = ((Residue) atom.entity).getPropertyObject("authChainCode");
         } else if (atom.entity instanceof Compound) {
             group = "HETATM";
 //            String[] labelSplit = atom.entity.label.split(",");
@@ -653,10 +649,6 @@ public class SpatialSet {
             if (number.equals("0")) {
                 seqCode = ".";
             }
-            pdbInsCode = ((Compound) atom.entity).getPropertyObject("pdbInsCode");
-            authSeq = ((Compound) atom.entity).getPropertyObject("authSeqID");
-            authResName = ((Compound) atom.entity).getPropertyObject("authResName");
-            authChainID = ((Compound) atom.entity).getPropertyObject("authChainCode");
         }
         sBuilder.append(String.format("%-7s", group));
         sBuilder.append(String.format("%-8d", iAtom + 1)); //index
