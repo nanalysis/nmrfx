@@ -634,17 +634,10 @@ public class MMcifReader {
                 } 
                 
                 Entity entity = atom.getEntity();
-                if (entity instanceof Residue) {
-                    ((Residue) entity).setPropertyObject("pdbInsCode", pdbInsCode);
-                    ((Residue) entity).setPropertyObject("authSeqID", authSeq);
-                    ((Residue) entity).setPropertyObject("authResName", authComp);
-                    ((Residue) entity).setPropertyObject("authChainCode", authAsym);
-                } else if (entity instanceof Compound) {
-                    ((Compound) entity).setPropertyObject("pdbInsCode", pdbInsCode);
-                    ((Compound) entity).setPropertyObject("authSeqID", authSeq);
-                    ((Compound) entity).setPropertyObject("authResName", authComp);
-                    ((Compound) entity).setPropertyObject("authChainCode", authAsym);
-                } 
+                entity.setPropertyObject("pdbInsCode", pdbInsCode);
+                entity.setPropertyObject("authSeqID", authSeq);
+                entity.setPropertyObject("authResName", authComp);
+                entity.setPropertyObject("authChainCode", authAsym);
                 
                 atom.setProperty("authAtomName", authAtom);
                 
