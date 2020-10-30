@@ -219,7 +219,7 @@ public class MMcifReader {
                     }
                     for (Atom atom : molecule.getAtomArray()) {
                         if (atom.getAtomicNumber() == 0) {
-                            atom.setAtomicNumber(atom.getElementName());
+                            atom.setAtomicNumber(atom.getElementNumber());
                         }
                     }
                 } catch (MoleculeIOException psE) {
@@ -738,6 +738,7 @@ public class MMcifReader {
                 }
 
                 try {
+                    System.out.println(atom);
                     atom.addCoords(xCoord, yCoord, zCoord, occupancy, bFactor);
                 } catch (InvalidMoleculeException imE) {
 
