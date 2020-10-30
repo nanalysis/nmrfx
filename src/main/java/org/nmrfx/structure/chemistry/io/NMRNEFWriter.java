@@ -79,14 +79,15 @@ public class NMRNEFWriter {
             throw new InvalidMoleculeException("No active mol");
         }
         Iterator entityIterator = molecule.entityLabels.values().iterator();
+        int idx = 1;
         while (entityIterator.hasNext()) {
             Entity entity = (Entity) entityIterator.next();
+            String link;
             if (entity instanceof Polymer) {
                 List<Residue> resList = ((Polymer) entity).getResidues();
                 Residue firstRes = ((Polymer) entity).getFirstResidue();
                 Residue lastRes = ((Polymer) entity).getLastResidue();
                 for (Residue res : resList) {
-                    String link;
                     if (res.equals(firstRes)) {
                         link = "start";
                     } else if (res.equals(lastRes)) {
@@ -94,11 +95,20 @@ public class NMRNEFWriter {
                     } else {
                         link = "middle";
                     }
-                    String result = res.toNEFSequenceString(link);
+                    String result = res.toNEFSequenceString(idx, link);
                     if (result != null) {
                         chan.write(result + "\n");
                     }
+                    idx++;
                 }
+            } else if (entity instanceof Compound) {
+                Compound compound = (Compound) entity;
+                link = "single";
+                String result = compound.toNEFSequenceString(idx, link);
+                if (result != null) {
+                    chan.write(result + "\n");
+                }
+                idx++;
             }
         }
         chan.write("    stop_\n");

@@ -588,80 +588,122 @@ public class SpatialSet {
             return null;
         }
         
+        // group_PDB
+        String group = "ATOM";
+        // type symbol
+        String aType = atom.getSymbol().toUpperCase();
+        // atom ID
+        String aName = atom.name;
+        if (aName.contains("'")){
+            aName = "\"" + aName + "\"";
+        }
+        // residue name
+        String resName = "";
+        //  chain code
+        char chainID = 'A';
+        // entity ID
+        int entityID = 1;
+        // sequence code
+        String seqCode = "1";
+        //pdb ins code
+        Object pdbInsCode = null;
+        // cartn x
+        double x = coord.pt.getX();
+        // cartn y
+        double y = coord.pt.getY();
+        // cartn z
+        double z = coord.pt.getZ();
+        // occupancy
+        double occupancy = coord.occupancy;
+        // B factor
+        double bFactor = coord.bfactor;
+        //auth seq code
+        Object authSeq = null;
+        //auth res name 
+        Object authResName = null;
+        //auth chain id 
+        Object authChainID = null;
+        //auth atom name
+        Object authAName = null;
+        
         if (atom.entity instanceof Residue) {
-            // group_PDB
-            String group = "ATOM";
-            sBuilder.append(String.format("%-5s", group));
-            
-            sBuilder.append(String.format("%-8d", iAtom + 1));
-
-            // type symbol
-            String aType = atom.name.substring(0, 1);
-            sBuilder.append(String.format("%-2s", aType));
-            
-            // atom ID
-            String aName = atom.name;
-            sBuilder.append(String.format("%-5s", aName));
-            
-            sBuilder.append(String.format("%-2s", "."));
-            
+            if (atom.getResidueName().equals("MSE")) {
+                group = "HETATM";
+            }            
             // residue name
-            String resName = ((Residue) atom.entity).name;
-            sBuilder.append(String.format("%-4s", resName));
-            
+            resName = ((Residue) atom.entity).name;
             //  chain code
             String polymerName = ((Residue) atom.entity).polymer.getName();
-            char chainID = polymerName.charAt(0);
-            sBuilder.append(String.format("%-2s", chainID));
-            
+            chainID = polymerName.charAt(0);
             // entity ID
-            int entityID = ((Residue) atom.entity).polymer.entityID;
-            sBuilder.append(String.format("%-2d", entityID));
-
+            entityID = ((Residue) atom.entity).polymer.entityID;
             // sequence code
-            int seqCode = ((Residue) atom.entity).getIDNum();
-            sBuilder.append(String.format("%-4d", seqCode));
-
-            sBuilder.append(String.format("%-2s", "?"));
-            
-            // cartn x
-            double x = coord.pt.getX();
-            sBuilder.append(String.format("%-9.3f", x));
-            
-            // cartn y
-            double y = coord.pt.getY();
-            sBuilder.append(String.format("%-9.3f", y));
-            
-            // cartn z
-            double z = coord.pt.getZ();
-            sBuilder.append(String.format("%-9.3f", z));
-
-            // occupancy
-            double occupancy = coord.occupancy;
-            sBuilder.append(String.format("%-5.2f", occupancy));
-
-            // B factor
-            double bFactor = coord.bfactor;
-            sBuilder.append(String.format("%-8.2f", bFactor));
-            
-            sBuilder.append(String.format("%-2s", "?"));
-            
-            //auth seq code #fixme get this from file instead of hard-coding it to be the same as earlier entry
-            sBuilder.append(String.format("%-5d", seqCode));
-            
-            //auth res name #fixme get this from file
-            sBuilder.append(String.format("%-5s", resName));
-            
-            //auth chain id #fixme get this from file
-            sBuilder.append(String.format("%-2s", chainID));
-            
-            //auth atom name
-            sBuilder.append(String.format("%-5s", aName));
-            
-            //PDB model num
-            sBuilder.append(String.format("%-2d", iStruct + 1));
+            seqCode = String.valueOf(((Residue) atom.entity).getIDNum());
+            pdbInsCode = ((Residue) atom.entity).getPropertyObject("pdbInsCode");
+            authSeq = ((Residue) atom.entity).getPropertyObject("authSeqID");
+            authResName = ((Residue) atom.entity).getPropertyObject("authResName");
+            authChainID = ((Residue) atom.entity).getPropertyObject("authChainCode");
+        } else if (atom.entity instanceof Compound) {
+            group = "HETATM";
+//            String[] labelSplit = atom.entity.label.split(",");
+            resName = atom.entity.label;//labelSplit[0];
+            chainID = ((Compound) atom.entity).getName().charAt(0);
+            entityID = ((Compound) atom.entity).getIDNum();
+            String number = ((Compound) atom.entity).getNumber(); 
+            if (number.equals("0")) {
+                seqCode = ".";
+            }
+            pdbInsCode = ((Compound) atom.entity).getPropertyObject("pdbInsCode");
+            authSeq = ((Compound) atom.entity).getPropertyObject("authSeqID");
+            authResName = ((Compound) atom.entity).getPropertyObject("authResName");
+            authChainID = ((Compound) atom.entity).getPropertyObject("authChainCode");
         }
-        
+        sBuilder.append(String.format("%-7s", group));
+        sBuilder.append(String.format("%-8d", iAtom + 1)); //index
+        sBuilder.append(String.format("%-3s", aType));
+        sBuilder.append(String.format("%-7s", aName));
+        sBuilder.append(String.format("%-2s", "."));
+        sBuilder.append(String.format("%-4s", resName));
+        sBuilder.append(String.format("%-2s", chainID));
+        sBuilder.append(String.format("%-2d", entityID));
+        sBuilder.append(String.format("%-6s", seqCode));
+        if (pdbInsCode != null) {
+            sBuilder.append(String.format("%-2s", pdbInsCode.toString()));
+        } else {
+            sBuilder.append(String.format("%-2s", "?"));
+        }
+        sBuilder.append(String.format("%-9.3f", x));
+        sBuilder.append(String.format("%-9.3f", y));
+        sBuilder.append(String.format("%-9.3f", z));
+        sBuilder.append(String.format("%-5.2f", occupancy));
+        sBuilder.append(String.format("%-8.2f", bFactor));
+        sBuilder.append(String.format("%-2s", "?"));
+        if (authSeq != null) {
+            sBuilder.append(String.format("%-5d", (Integer) authSeq));
+        } else {
+            sBuilder.append(String.format("%-5s", seqCode));
+        }
+        if (authResName != null) {
+            sBuilder.append(String.format("%-5s", authResName.toString()));
+        } else {
+            sBuilder.append(String.format("%-5s", resName));
+        }
+        if (authChainID != null) {
+            sBuilder.append(String.format("%-2s", authChainID.toString()));
+        } else {
+            sBuilder.append(String.format("%-2s", chainID));
+        }
+        if (authAName != null) {
+            String authANameS = authAName.toString();
+            if (authANameS.contains("'")) {
+                authANameS = "\"" + authANameS + "\"";
+            }
+            sBuilder.append(String.format("%-7s", authANameS));
+        } else {
+            sBuilder.append(String.format("%-7s", aName));
+        }
+        sBuilder.append(String.format("%-2d", iStruct + 1)); //PDB model num
+
         return sBuilder.toString();
     }
 
