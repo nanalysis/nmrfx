@@ -36,41 +36,49 @@ public class MMCifFileTest {
         loadData("2kko");
         testAll();
     }
+
     @Test
     public void testFile2KO1() throws IOException {
         loadData("2ko1");
         testAll();
     }
+
     @Test
     public void testFile2KZN() throws IOException {
         loadData("2kzn");
         testAll();
     }
+
     @Test
     public void testFile2PNG() throws IOException {
         loadData("2png");
         testAll();
     }
+
     @Test
     public void testFile5LBM() throws IOException {
         loadData("5lbm");
         testAll();
     }
+
     @Test
     public void testFile1G18() throws IOException {
         loadData("1g18");
         testAll();
     }
+
     @Test
-    public void testFile1FOC() throws IOException { 
+    public void testFile1FOC() throws IOException {
         loadData("1foc");
         testAll();
     }
+
     @Test
-    public void testFile1G2M() throws IOException { 
+    public void testFile1G2M() throws IOException {
         loadData("1g2m");
         testAll();
     }
+
     @Test
     public void testFile2JUW() throws IOException {
         loadData("2juw");
@@ -99,16 +107,19 @@ public class MMCifFileTest {
         loadData("2k2e");
         testAll();
     }
+
     @Test
     public void testFile2KPU() throws IOException {
         loadData("2kpu");
         testAll();
     }
+
     @Test
     public void testFile2KW5() throws IOException {
         loadData("2kw5");
         testAll();
     }
+
     @Test
     public void testFile2LOY() throws IOException {
         loadData("2loy");
@@ -120,11 +131,13 @@ public class MMCifFileTest {
 //        testAll();
 //    }
 //    
+
     @Test
     public void testFile2K07() throws IOException {
         loadData("2k07");
         testAll();
     }
+
     @Test
     public void testFile2KCU() throws IOException {
         loadData("2kcu");
@@ -135,37 +148,43 @@ public class MMCifFileTest {
 //        loadData("6nbn");
 //        testAll();
 //    }
+
     @Test
-    public void testFile3PUK() throws IOException { 
+    public void testFile3PUK() throws IOException {
         loadData("3puk");
         testAll();
     }
+
     @Test
-    public void testFile3Q4F() throws IOException { 
+    public void testFile3Q4F() throws IOException {
         loadData("3q4f");
         testAll();
     }
+
     @Test
-    public void testFile6ACK() throws IOException { 
+    public void testFile6ACK() throws IOException {
         loadData("6ack");
         testAll();
     }
+
     @Test
-    public void testFile6AJ4() throws IOException { 
+    public void testFile6AJ4() throws IOException {
         loadData("6aj4");
         testAll();
     }
+
     @Test
-    public void testFile2RF4() throws IOException { 
+    public void testFile2RF4() throws IOException {
         loadData("2rf4");
         testAll();
     }
+
     @Test
-    public void testFile6J91() throws IOException { 
+    public void testFile6J91() throws IOException {
         loadData("6j91");
         testAll();
     }
-    
+
     private List<List<Object>> convertFileLines(String filePath) throws FileNotFoundException, IOException {
         List<List<Object>> convertedLines = new ArrayList<>();
         BufferedReader reader = new BufferedReader(new FileReader(filePath));
@@ -174,7 +193,7 @@ public class MMCifFileTest {
             if (line == null) {
                 break;
             }
-            List<String> sLine = Arrays.asList(line.trim().split("\\s+"));
+            String[] sLine = line.trim().split("\\s+");
             List<Object> cLine = new ArrayList<>();
             for (String s : sLine) {
                 try {
@@ -223,7 +242,7 @@ public class MMCifFileTest {
         }
         return seqMap;
     }
-    
+
     private Map<String, List<Object>> buildAtomTypesMap(List<List<Object>> dataArray) {
         Map<String, List<Object>> typeMap = new HashMap<>();
         boolean inTypes = false;
@@ -316,7 +335,7 @@ public class MMCifFileTest {
         }
         return compMap;
     }
-    
+
     private Map<String, List<Object>> buildStructAsymMap(List<List<Object>> dataArray) {
         Map<String, List<Object>> asymMap = new HashMap<>();
         boolean inAsym = false;
@@ -438,10 +457,14 @@ public class MMCifFileTest {
         String outFile = String.join(File.separator, outPath, cifFileName + "_mmCif_outTest.cif");
         try {
             if (orig.isEmpty()) {
+                System.out.println("load");
                 MMcifReader.read(fileName);
+                System.out.println("write");
                 MMcifWriter.writeAll(outFile, cifFileName.toUpperCase());
                 orig = convertFileLines(fileName);
                 written = convertFileLines(outFile);
+                System.out.println("converted");
+
             }
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -503,6 +526,7 @@ public class MMCifFileTest {
     }
 
     public void testAll() throws IOException {
+        System.out.println("test");
         testSeqBlock();
 //        testChemCompBlock();
         testStructAsymBlock();
@@ -510,6 +534,7 @@ public class MMCifFileTest {
         testSheetBlock();
         testAtomTypesBlock();
         testAtomSitesBlock();
+        System.out.println("tested");
     }
 
     public void testSeqBlock() throws IOException {
@@ -524,7 +549,7 @@ public class MMCifFileTest {
             ex.printStackTrace();
         }
     }
-    
+
     public void testAtomTypesBlock() throws IOException {
         try {
             Map<String, List<Object>> origTypes = buildAtomTypesMap(orig);
@@ -576,7 +601,7 @@ public class MMCifFileTest {
             ex.printStackTrace();
         }
     }
-    
+
     public void testStructConfBlock() throws IOException {
         try {
             Map<String, List<Object>> origConf = buildStructConfMap(orig);
