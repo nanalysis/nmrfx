@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/*
+ /*
  * CoordSet.java
  *
  * Created on October 7, 2003, 11:13 AM
@@ -51,6 +51,10 @@ public class CoordSet {
 
     public String getName() {
         return name;
+    }
+
+    public int getID() {
+        return id;
     }
 
     public void addEntity(Entity entity) {

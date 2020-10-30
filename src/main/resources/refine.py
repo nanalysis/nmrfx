@@ -2175,9 +2175,9 @@ class refine:
         for polymer in self.molecule.getPolymers():
             if polymer.isRNA():
                 if  (typeRCDist.lower()=='dist'):
-                    predictor.predictRNAWithDistances(polymer, 0, 0, False)
+                    predictor.predictRNAWithDistances(polymer, 0, -1, False)
                 else:
-                    predictor.predictRNAWithRingCurrent(polymer, 0, 0)
+                    predictor.predictRNAWithRingCurrent(polymer, 0, -1)
 
         shifts = []
         atoms = self.molecule.getAtoms()
