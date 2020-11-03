@@ -169,16 +169,6 @@ public class Residue extends Compound {
         }
         return atom;
     }
-    
-    @Override
-    public void setPropertyObject(String name, Object value) {
-        propertyObjectMap.put(name, value);
-    }
-
-    @Override
-    public Object getPropertyObject(String name) {
-        return propertyObjectMap.get(name);
-    }
 
     public boolean isStandard() {
         return standard;
@@ -724,7 +714,7 @@ public class Residue extends Compound {
         //chain ID
         char chainID = ' ';
         //sequence code
-        int num = this.getIDNum();
+        int num = Integer.parseInt(this.getNumber());
         String polymerName = this.polymer.getName();
         chainID = polymerName.charAt(0);
 
