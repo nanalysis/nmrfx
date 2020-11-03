@@ -30,7 +30,7 @@
         <dependency>
             <groupId>org.nmrfx</groupId>
             <artifactId>structure</artifactId>
-            <version>10.3.84</version>
+            <version>10.3.100</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
