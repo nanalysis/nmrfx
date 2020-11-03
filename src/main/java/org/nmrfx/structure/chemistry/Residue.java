@@ -714,7 +714,7 @@ public class Residue extends Compound {
         //chain ID
         char chainID = ' ';
         //sequence code
-        int num = this.getIDNum();
+        int num = Integer.parseInt(this.getNumber());
         String polymerName = this.polymer.getName();
         chainID = polymerName.charAt(0);
 
