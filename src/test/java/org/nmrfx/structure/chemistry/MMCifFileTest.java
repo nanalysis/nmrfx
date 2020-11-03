@@ -457,13 +457,10 @@ public class MMCifFileTest {
         String outFile = String.join(File.separator, outPath, cifFileName + "_mmCif_outTest.cif");
         try {
             if (orig.isEmpty()) {
-                System.out.println("load");
                 MMcifReader.read(fileName);
-                System.out.println("write");
                 MMcifWriter.writeAll(outFile, cifFileName.toUpperCase());
                 orig = convertFileLines(fileName);
                 written = convertFileLines(outFile);
-                System.out.println("converted");
 
             }
         } catch (Exception ex) {
@@ -526,7 +523,6 @@ public class MMCifFileTest {
     }
 
     public void testAll() throws IOException {
-        System.out.println("test");
         testSeqBlock();
 //        testChemCompBlock();
         testStructAsymBlock();
@@ -534,7 +530,6 @@ public class MMCifFileTest {
         testSheetBlock();
         testAtomTypesBlock();
         testAtomSitesBlock();
-        System.out.println("tested");
     }
 
     public void testSeqBlock() throws IOException {
