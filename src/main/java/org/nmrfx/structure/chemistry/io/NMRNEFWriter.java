@@ -167,7 +167,7 @@ public class NMRNEFWriter {
             boolean firstAtom = true;
             for (Atom atom2 : shellAtoms) {
                 if (atom.getIndex() > atom2.getIndex()) {
-                        firstAtom = false;
+                    firstAtom = false;
                     break;
                 }
             }
@@ -212,13 +212,14 @@ public class NMRNEFWriter {
                 if (!atom.isFirstInMethyl()) {
                     continue;
                 }
+
                 collapse = 0;
                 methylPartnerOpt = atom.getParent().getMethylCarbonPartner();
                 if (methylPartnerOpt.isPresent()) {
-                    if (atom.getParent().getStereo() == 0) {
+                    if (atom.getStereo() == 0) {
                         collapse = 1;
-                    } else if (atom.getStereo() == -1) {
-                        collapse = 2;
+                    } else {
+                        collapse = 0;
                     }
                 }
                 if (collapse == 2) {

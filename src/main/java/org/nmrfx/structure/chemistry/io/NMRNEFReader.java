@@ -164,7 +164,7 @@ public class NMRNEFReader {
                 } else if (compound == null) {
                     compound = new Compound(seqCode, resName, resVariant);
                     compound.molecule = molecule;
-                    addCompound(mapID, compound); 
+                    addCompound(mapID, compound);
                     compound.setIDNum(entityID);
                     compound.assemblyID = entityID;
                     compound.setPropertyObject("chain", chainCode);
@@ -172,7 +172,7 @@ public class NMRNEFReader {
                     molecule.addEntity(compound, chainCode, entityID);
                 }
 
-            } 
+            }
             if (polymer != null && compound == null) {
                 Residue residue = new Residue(seqCode, resName.toUpperCase(), resVariant);
                 residue.molecule = polymer.molecule;
@@ -193,9 +193,9 @@ public class NMRNEFReader {
                     } else if (resVariant.replace("+HXT", "").contains("+H")) {
                         extension = "_prot";
                     }
-    //                if (resVariant.contains("-H3") || resVariant.contains("+HXT")) {
-    //                    extension += "_NCtermVar";
-    //                }
+                    //                if (resVariant.contains("-H3") || resVariant.contains("+HXT")) {
+                    //                    extension += "_NCtermVar";
+                    //                }
                     if (!sequence.addResidue(reslibDir + "/" + Sequence.getAliased(resName.toLowerCase()) + extension + ".prf", residue, resPos, "", false)) {
                         throw new ParseException("Can't find residue \"" + resName + extension + "\" in residue libraries or STAR file");
                     }
@@ -309,7 +309,7 @@ public class NMRNEFReader {
                 String mapID = chainCode + "." + sequenceCode;
                 Compound compound = (Compound) Molecule.compoundMap().get(mapID);
                 if (compound == null) {
-                    for (int e=1; e<=entities.size(); e++) {
+                    for (int e = 1; e <= entities.size(); e++) {
                         chainCode = String.valueOf((char) (e + 'A' - 1));
                         mapID = chainCode + "." + sequenceCode;
                         compound = (Compound) Molecule.compoundMap().get(mapID);
@@ -331,13 +331,12 @@ public class NMRNEFReader {
                     if (atom.isMethyl()) {
                         if (atoms.size() == 3) {
                             if (atomName.contains("x") || atomName.contains("y")) {
-                                atom.getParent().setStereo(0);
+                                atom.setStereo(0);
                             } else {
-                                atom.getParent().setStereo(1);
+                                atom.setStereo(1);
                             }
-                            atom.setStereo(0);
                         } else if (atoms.size() == 6) {
-                            atom.setStereo(-1);
+                            atom.setStereo(0);
                         }
                     } else {
                         if (atomName.contains("x") || atomName.contains("y") || atomName.contains("%")) {
@@ -445,7 +444,7 @@ public class NMRNEFReader {
                 String mapID = chainCode + "." + sequenceCode;
                 Compound compound = (Compound) Molecule.compoundMap().get(mapID);
                 if (compound == null) {
-                    for (int e=1; e<=entities.size(); e++) {
+                    for (int e = 1; e <= entities.size(); e++) {
                         chainCode = String.valueOf((char) (e + 'A' - 1));
                         mapID = chainCode + "." + sequenceCode;
                         compound = (Compound) Molecule.compoundMap().get(mapID);
@@ -539,7 +538,7 @@ public class NMRNEFReader {
                 String mapID = chainCode + "." + seqNum;
                 Compound compound = (Compound) Molecule.compoundMap().get(mapID);
                 if (compound == null) {
-                    for (int e=1; e<=entities.size(); e++) {
+                    for (int e = 1; e <= entities.size(); e++) {
                         chainCode = String.valueOf((char) (e + 'A' - 1));
                         mapID = chainCode + "." + seqNum;
                         compound = (Compound) Molecule.compoundMap().get(mapID);
@@ -609,7 +608,7 @@ public class NMRNEFReader {
         if ((argv.length != 0) && (argv.length != 3)) {
             throw new IllegalArgumentException("?shifts fromSet toSet?");
         }
-        
+
         Dihedral dihedral = null;
         if (argv.length == 0) {
             hasResonances = false;
