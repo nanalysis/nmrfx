@@ -1250,12 +1250,10 @@ public class Atom implements IAtom {
                 }
             }
         } else {
-            if (atom.getStereo() == -1) {
-                writeName = atom.name.substring(0, atom.name.length() - 2) + "%";
-            } else if (atom.getParent().getStereo() == 0) {
-                Atom parent = atom.getParent();
-                Optional<Atom> methylCarbonPartner = parent.getMethylCarbonPartner();
-                if (methylCarbonPartner.isPresent()) {
+            Atom parent = atom.getParent();
+            Optional<Atom> methylCarbonPartner = parent.getMethylCarbonPartner();
+            if (methylCarbonPartner.isPresent()) {
+                if (atom.getStereo() == 0) {
                     if (atom.getParent().getIndex() < methylCarbonPartner.get().getIndex()) {
                         writeName = atom.name.substring(0, atom.name.length() - 2) + "x%";
                     } else {
@@ -1266,10 +1264,8 @@ public class Atom implements IAtom {
                 }
             } else {
                 writeName = atom.name.substring(0, atom.name.length() - 1) + "%";
-
             }
         }
-
         return writeName;
     }
 
@@ -1353,11 +1349,11 @@ public class Atom implements IAtom {
             if (resName.length() > 3) {
                 resName = resName.substring(0, 3);
             }
-            
+
         } else if (entity instanceof Compound) {
             //sequence code
             seqCode = Integer.parseInt(((Compound) entity).getNumber());
-            
+
             //chain ID
             String chainCode = ((Compound) entity).getPropertyObject("chain").toString();
             chainID = chainCode.charAt(0);
@@ -1427,7 +1423,7 @@ public class Atom implements IAtom {
                 seqCode = ((Residue) atom.entity).getIDNum();
             } else if (atom.entity instanceof Compound) {
                 seqCode = Integer.parseInt(((Compound) atom.entity).getNumber());
-            } 
+            }
             sBuilder.append(String.format("%-8d", seqCode));
 
             // residue name
@@ -1435,7 +1431,7 @@ public class Atom implements IAtom {
                 resName = ((Residue) atom.entity).name;
             } else if (atom.entity instanceof Compound) {
                 resName = ((Compound) atom.entity).name;
-            } 
+            }
             if (resName.length() > 3) {
                 resName = resName.substring(0, 3);
             }
@@ -1530,7 +1526,7 @@ public class Atom implements IAtom {
                 seqCode = ((Residue) atom.entity).getIDNum();
             } else if (atom.entity instanceof Compound) {
                 seqCode = Integer.parseInt(((Compound) atom.entity).getNumber());
-            } 
+            }
             sBuilder.append(String.format("%6d", seqCode));
 
             // residue name 
@@ -1538,7 +1534,7 @@ public class Atom implements IAtom {
                 resName = ((Residue) atom.entity).name;
             } else if (atom.entity instanceof Compound) {
                 resName = ((Compound) atom.entity).name;
-            } 
+            }
             if (resName.length() > 3) {
                 resName = resName.substring(0, 3);
             }
