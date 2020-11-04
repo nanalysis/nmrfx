@@ -32,6 +32,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.nio.file.FileSystems;
 import java.util.*;
 import org.nmrfx.structure.chemistry.io.Sequence.RES_POSITION;
 import org.nmrfx.structure.utilities.Util;
@@ -44,17 +45,17 @@ public class NMRNEFReader {
 
     final STAR3 nef;
     final File nefFile;
-    final String nefDir;
+    final File nefDir;
 
     Map entities = new HashMap();
     boolean hasResonances = false;
     Map<Long, List<PeakDim>> resMap = new HashMap<>();
     public static boolean DEBUG = false;
 
-    public NMRNEFReader(final File nefFile, final String nefDir, final STAR3 nef) {
+    public NMRNEFReader(final File nefFile, final STAR3 nef) {
         this.nef = nef;
         this.nefFile = nefFile;
-        this.nefDir = nefDir;
+        this.nefDir = nefFile.getParentFile();
 //        PeakDim.setResonanceFactory(new AtomResonanceFactory());
     }
 
@@ -66,10 +67,7 @@ public class NMRNEFReader {
      */
     public static void read(String nefFileName) throws ParseException, IOException {
         File file = new File(nefFileName);
-        String nefPath = file.getCanonicalPath();
-        int sepIdx = nefPath.lastIndexOf(File.separator);
-        String nefDirName = nefPath.substring(0, sepIdx);
-        read(file, nefDirName);
+        read(file);
         System.out.println("read " + nefFileName);
     }
 
@@ -80,7 +78,7 @@ public class NMRNEFReader {
      * @param nefDir String. Directory of NEF file.
      * @throws ParseException
      */
-    public static void read(File nefFile, String nefDir) throws ParseException {
+    public static void read(File nefFile) throws ParseException {
         FileReader fileReader;
         try {
             fileReader = new FileReader(nefFile);
@@ -96,7 +94,7 @@ public class NMRNEFReader {
         } catch (ParseException parseEx) {
             throw new ParseException(parseEx.getMessage() + " " + star.getLastLine());
         }
-        NMRNEFReader reader = new NMRNEFReader(nefFile, nefDir, star);
+        NMRNEFReader reader = new NMRNEFReader(nefFile, star);
         reader.processNEF();
     }
 
@@ -198,7 +196,7 @@ public class NMRNEFReader {
                     if (!sequence.addResidue(reslibDir + "/" + Sequence.getAliased(resName.toLowerCase()) + extension + ".prf", residue, resPos, "", false)) {
                         System.out.println("Can't find residue \"" + resName + extension + "\" in residue libraries or STAR file");
                         try {
-                            String cifFile = String.join(File.separator, nefDir, resName + ".cif");
+                            String cifFile = FileSystems.getDefault().getPath(nefDir.toString(), resName + ".cif").toString();
                             System.out.println("read residue from " + cifFile);
                             MMcifReader.readChemComp(cifFile, molecule, chainCode, seqCode);
                         } catch (Exception ex) {
@@ -210,7 +208,7 @@ public class NMRNEFReader {
                 }
             } else if (compound != null) {
                 try {
-                    String cifFile = String.join(File.separator, nefDir, resName + ".cif");
+                    String cifFile = FileSystems.getDefault().getPath(nefDir.toString(), resName + ".cif").toString();
                     MMcifReader.readChemComp(cifFile, molecule, chainCode, seqCode);
                 } catch (Exception ex) {
                     ex.printStackTrace();
