@@ -35,6 +35,7 @@ import java.util.Optional;
 import java.util.Set;
 import org.nmrfx.processor.datasets.peaks.InvalidPeakException;
 import org.nmrfx.processor.star.ParseException;
+import org.nmrfx.processor.star.STAR3;
 import org.nmrfx.structure.chemistry.Atom;
 import org.nmrfx.structure.chemistry.Compound;
 import org.nmrfx.structure.chemistry.Entity;
@@ -47,6 +48,7 @@ import org.nmrfx.structure.chemistry.energy.AtomDistancePair;
 import org.nmrfx.structure.chemistry.energy.Dihedral;
 import org.nmrfx.structure.chemistry.energy.DistancePair;
 import org.nmrfx.structure.chemistry.energy.EnergyLists;
+import org.nmrfx.structure.utilities.NvUtil;
 import org.nmrfx.structure.utilities.Util;
 
 /**
@@ -524,12 +526,8 @@ public class NMRNEFWriter {
      * @throws InvalidMoleculeException
      */
     public static void writeAll(String fileName) throws IOException, ParseException, InvalidPeakException, InvalidMoleculeException {
-        try (FileWriter writer = new FileWriter(fileName)) {
-            File file = new File(fileName);
-            file.getParentFile().mkdirs(); //create file if it doesn't already exist
-            System.out.println("wrote " + fileName);
-            writeAll(writer);
-        }
+        File file = new File(fileName);
+        writeAll(file);
     }
 
     /**
@@ -544,7 +542,11 @@ public class NMRNEFWriter {
      */
     public static void writeAll(File file) throws IOException, ParseException, InvalidPeakException, InvalidMoleculeException {
         try (FileWriter writer = new FileWriter(file)) {
-            writeAll(writer);
+            String name = file.getName();
+            if (name.endsWith(".nef")) {
+                name = name.substring(0, name.length() - 4);
+            }
+            writeAll(writer, name);
         }
     }
 
@@ -558,34 +560,12 @@ public class NMRNEFWriter {
      * @throws InvalidPeakException
      * @throws InvalidMoleculeException
      */
-    public static void writeAll(FileWriter chan) throws IOException, ParseException, InvalidPeakException, InvalidMoleculeException {
+    public static void writeAll(FileWriter chan, String name) throws IOException, ParseException, InvalidPeakException, InvalidMoleculeException {
         Date date = new Date(System.currentTimeMillis());
-        String programName = NMRNEFWriter.class
-                .getPackage().getName();
-        String programVersion = NMRNEFWriter.class
-                .getPackage().getImplementationVersion();
 
-        String[] programNameS = programName.split("\\.");
-        int nameIdx1 = Arrays.asList(programNameS).indexOf("nmrfx");
-        int nameIdx2 = Arrays.asList(programNameS).indexOf("structure");
-        programName = programNameS[nameIdx1] + programNameS[nameIdx2];
-        if (programVersion == null) {
-            BufferedReader reader = new BufferedReader(new FileReader("pom.xml"));
-            while (true) {
-                String line = reader.readLine();
-                if (line == null) {
-                    break;
-                }
-                String lineS = line.trim();
-                String match = "<version>";
-                if (lineS.startsWith(match)) {
-                    programVersion = lineS.substring(match.length(), lineS.indexOf("/") - 1);
-                    break;
-                }
-            }
-        }
+        String programVersion = NvUtil.getVersion();
 
-        chan.write("\n");
+        chan.write("data_" + name + "\n\n");
         chan.write("save_nef_nmr_meta_data\n");
         chan.write("    _nef_nmr_meta_data.sf_category           ");
         chan.write("nef_nmr_meta_data\n");
@@ -596,16 +576,16 @@ public class NMRNEFWriter {
         chan.write("    _nef_nmr_meta_data.format_version        ");
         chan.write("1.1\n");
         chan.write("    _nef_nmr_meta_data.program_name          ");
-        chan.write(programName + "\n");
+        chan.write("NMRFx" + "\n");
         chan.write("    _nef_nmr_meta_data.program_version       ");
         chan.write(programVersion + "\n");
         chan.write("    _nef_nmr_meta_data.creation_date         ");
-        chan.write(date.toString() + "\n");
+        chan.write(STAR3.quote(date.toString()) + "\n");
         chan.write("    _nef_nmr_meta_data.uuid                  ");
         chan.write(".\n");
         chan.write("    _nef_nmr_meta_data.coordinate_file_name  ");
         chan.write(".\n");
-        chan.write("\n");
+        chan.write("save_\n\n");
         Molecule molecule = Molecule.getActive();
         if (molecule != null) {
             writeMolSys(chan);
