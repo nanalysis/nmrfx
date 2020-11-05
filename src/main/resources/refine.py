@@ -1008,7 +1008,13 @@ class refine:
 
         treeDict = data['tree'] if 'tree' in data else None
         linkerList = molData['link'] if 'link' in molData else None
+        nEntities = len(self.molecule.getEntities())
+        nPolymers = len(self.molecule.getPolymers())
 
+        # Check to auto add tree in case where there are ligands
+        if nEntities > nPolymers:
+            if not 'tree' in data:
+                data['tree'] = None
 
         if 'tree' in data:
             if len(self.molecule.getEntities()) > 1:
@@ -1016,7 +1022,7 @@ class refine:
             treeDict = self.setEntityEntryDict(linkerList, treeDict)
             self.measureTree()
         else:
-            if len(self.molecule.getEntities()) > 1:
+            if nEntities > 1:
 	        if not 'nef' in data:
                     self.molecule.invalidateAtomTree()
                     self.molecule.setupGenCoords()
