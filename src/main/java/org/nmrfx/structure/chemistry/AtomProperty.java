@@ -332,6 +332,10 @@ public class AtomProperty {
     }
 
     public static byte getElementNumber(String elemName) {
+        elemName = elemName.toUpperCase();
+        if (elemName.length() > 1) {
+            elemName = elemName.replace(elemName.substring(1), elemName.substring(1).toLowerCase());
+        }
         AtomProperty atomProp = (AtomProperty) map.get(elemName);
 
         if (atomProp != null) {
@@ -342,6 +346,10 @@ public class AtomProperty {
     }
 
     public static AtomProperty get(String elemName) {
+        elemName = elemName.toUpperCase();
+        if (elemName.length() > 1) {
+            elemName = elemName.replace(elemName.substring(1), elemName.substring(1).toLowerCase());
+        }
         AtomProperty atomProp = (AtomProperty) map.get(elemName);
 
         if (atomProp == null) {

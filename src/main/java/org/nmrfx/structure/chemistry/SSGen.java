@@ -90,7 +90,7 @@ public class SSGen {
                         return L;
                     }
                     case "helix": {
-                        SecondaryStructure H = new Helix(residues);
+                        SecondaryStructure H = new RNAHelix(residues);
                         return H;
                     }
                     default:
