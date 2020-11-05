@@ -124,6 +124,7 @@ public class NMRNEFReader {
         double linkLen = 5.0;
         double valAngle = 90.0;
         double dihAngle = 135.0;
+        Polymer lastPolymer = null;
         for (int i = 0; i < chainCodeColumn.size(); i++) {
             String linkType = linkingColumn.get(i);
             if (linkType.equals("dummy")) {
@@ -139,17 +140,14 @@ public class NMRNEFReader {
             String seqCode = (String) seqCodeColumn.get(i);
             String mapID = chainCode + "." + seqCode;
             if (linkType.equals("start")) {
+                lastPolymer = polymer;
                 polymer = null;
             } else if (linkType.equals("single")) {
+                lastPolymer = polymer;
                 compound = null;
             }
             if ((!chainCode.equals(lastChain))) {
                 lastChain = chainCode;
-                if (polymer != null) {
-                    sequence.createLinker(9, linkLen, valAngle, dihAngle);
-                    polymer.molecule.genCoords(false);
-                    polymer.molecule.setupRotGroups();
-                }
                 if (polymer == null) {
                     sequence.newPolymer();
                     polymer = new Polymer(chainCode, chainCode);
@@ -158,6 +156,11 @@ public class NMRNEFReader {
                     polymer.assemblyID = entityID++;
                     entities.put(chainCode, polymer);
                     molecule.addEntity(polymer, chainCode, chainID);
+                    if (lastPolymer != null) {
+                        sequence.createLinker(9, linkLen, valAngle, dihAngle);
+                        polymer.molecule.genCoords(false);
+                        polymer.molecule.setupRotGroups();
+                    }
                 } else if (compound == null) {
                     compound = new Compound(seqCode, resName, resVariant);
                     compound.molecule = molecule;
