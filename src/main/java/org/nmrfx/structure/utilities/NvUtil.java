@@ -15,18 +15,20 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package org.nmrfx.structure.utilities;
 
 import java.awt.Color;
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class NvUtil {
 
     static Hashtable colorTable = null;
     static Hashtable iColorTable = null;
+    static String VERSION = null;
 
     static {
         initColorTable();
@@ -934,4 +936,12 @@ public class NvUtil {
             }
         }
     }
+
+    public static String getVersion() {
+        if (VERSION == null) {
+            VERSION = NvUtil.class.getPackage().getImplementationVersion();
+        }
+        return VERSION;
+    }
+
 }
