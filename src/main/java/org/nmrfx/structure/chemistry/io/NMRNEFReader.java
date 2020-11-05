@@ -55,7 +55,7 @@ public class NMRNEFReader {
     public NMRNEFReader(final File nefFile, final STAR3 nef) {
         this.nef = nef;
         this.nefFile = nefFile;
-        this.nefDir = nefFile.getParentFile();
+        this.nefDir = nefFile.getAbsoluteFile().getParentFile();
 //        PeakDim.setResonanceFactory(new AtomResonanceFactory());
     }
 
@@ -210,12 +210,12 @@ public class NMRNEFReader {
                     throw new ParseException(psE.getMessage());
                 }
             } else if (compound != null) {
-                try {
-                    String cifFile = FileSystems.getDefault().getPath(nefDir.toString(), resName + ".cif").toString();
-                    MMcifReader.readChemComp(cifFile, molecule, chainCode, seqCode);
-                } catch (Exception ex) {
-                    ex.printStackTrace();
+                String cifFileName = FileSystems.getDefault().getPath(nefDir.toString(), resName + ".cif").toString();
+                File cifFile = new File(cifFileName);
+                if (!cifFile.exists()) {
+                    throw new ParseException("File " + cifFileName + " doesn't exist");
                 }
+                MMcifReader.readChemComp(cifFileName, molecule, chainCode, seqCode);
             }
         }
         if (polymer != null) {
