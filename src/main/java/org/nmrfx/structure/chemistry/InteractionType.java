@@ -45,11 +45,11 @@ public class InteractionType {
         boolean sameSS = (aResObj.secStruct == bResObj.secStruct);
         boolean basePair = aResObj.pairedTo == bResObj;
         boolean bothInLoop = aResObj.secStruct instanceof Loop && bResObj.secStruct instanceof Loop;
-        boolean bothInHelix = aResObj.secStruct instanceof Helix && bResObj.secStruct instanceof Helix;
+        boolean bothInHelix = aResObj.secStruct instanceof RNAHelix && bResObj.secStruct instanceof RNAHelix;
         boolean oneAwayBasePair = sameSS && bothInHelix && (aResObj.previous != null) && (bResObj == aResObj.previous.pairedTo);
-        boolean loopAndHelix = (aResObj.secStruct instanceof Helix && bResObj.secStruct instanceof Loop) || (aResObj.secStruct instanceof Loop && bResObj.secStruct instanceof Helix);
-        boolean bulgeAndHelix = (aResObj.secStruct instanceof Bulge && bResObj.secStruct instanceof Helix);
-        boolean helixAndBulge = (aResObj.secStruct instanceof Helix && bResObj.secStruct instanceof Bulge);
+        boolean loopAndHelix = (aResObj.secStruct instanceof RNAHelix && bResObj.secStruct instanceof Loop) || (aResObj.secStruct instanceof Loop && bResObj.secStruct instanceof RNAHelix);
+        boolean bulgeAndHelix = (aResObj.secStruct instanceof Bulge && bResObj.secStruct instanceof RNAHelix);
+        boolean helixAndBulge = (aResObj.secStruct instanceof RNAHelix && bResObj.secStruct instanceof Bulge);
         boolean bothInSameBulge = (aResObj.secStruct instanceof Bulge && bResObj.secStruct instanceof Bulge && sameSS);
         boolean inTetraLoop = (bothInLoop && sameSS && aResLoopType == 'T');
         boolean T12 = (inTetraLoop && (aResObj.secStruct.getResidues().get(0).equals(aResObj) && bResObj.secStruct.getResidues().get(1).equals(bResObj)));

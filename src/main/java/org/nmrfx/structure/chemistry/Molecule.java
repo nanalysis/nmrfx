@@ -231,8 +231,8 @@ public class Molecule implements Serializable, ITree {
     Dihedral dihedrals = null;
     OrderSVD rdcResults = null;
     EnergyLists energyList;
-    Helix helix;
-    NonLoop sheets;
+    ProteinHelix helix;
+    Sheet sheets;
 
     // fixme    public EnergyLists energyList = null;
     public Molecule(String name) {
@@ -581,19 +581,19 @@ public class Molecule implements Serializable, ITree {
         return energyList;
     }
     
-    public void setHelix(Helix helix) {
+    public void setProteinHelix(ProteinHelix helix) {
         this.helix = helix;
     }
 
-    public Helix getHelix() {
+    public ProteinHelix getProteinHelix() {
         return helix;
     }
     
-    public void setSheets(NonLoop sheets) {
+    public void setSheets(Sheet sheets) {
         this.sheets = sheets;
     }
 
-    public NonLoop getSheets() {
+    public Sheet getSheets() {
         return sheets;
     }
 
@@ -3295,7 +3295,7 @@ public class Molecule implements Serializable, ITree {
                         if (compound == lastResidue) {
                             break;
                         }
-
+                        
                         compound = ((Residue) compound).next;
                     } else {
                         break;

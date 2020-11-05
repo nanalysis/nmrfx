@@ -20,9 +20,12 @@ package org.nmrfx.structure.utilities;
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class NvUtil {
 
+    static String VERSION = null;
     public static int getStringPars(String[] pars, String searchPar, int subSize) {
         if (subSize > searchPar.length()) {
             subSize = searchPar.length();
@@ -143,5 +146,4 @@ public class NvUtil {
         return result;
 
     }
-
 }
