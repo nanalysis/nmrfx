@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package org.nmrfx.project;
+package org.nmrfx.processor.gui.project;
 
 import java.io.FileWriter;
 import java.io.IOException;
@@ -22,7 +22,6 @@ import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import javafx.concurrent.Task;
 
-import javafx.stage.Stage;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.Status;
 import org.eclipse.jgit.api.errors.GitAPIException;
@@ -32,6 +31,7 @@ import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.GUIScripter;
 import org.nmrfx.processor.gui.MainApp;
 import org.nmrfx.processor.gui.PreferencesController;
+import org.nmrfx.project.Project;
 import org.python.util.PythonInterpreter;
 
 /**
@@ -76,7 +76,7 @@ public class GUIProject extends Project {
 
     private void writeIgnore() {
         if (git != null) {
-            Path path = Paths.get(projectDir.toString(), ".gitignore");
+            Path path = Paths.get(getProjectDir().toString(), ".gitignore");
             try (FileWriter writer = new FileWriter(path.toFile())) {
                 writer.write("*.nv\n*.ucsf");
             } catch (IOException ioE) {
@@ -105,20 +105,20 @@ public class GUIProject extends Project {
 
             }
         }
-        this.projectDir = projectDir;
+        this.setProjectDir(projectDir);
         PreferencesController.saveRecentProjects(projectDir.toString());
 
     }
 
     @Override
     public void saveProject() throws IOException {
-        if (projectDir == null) {
+        if (getProjectDir() == null) {
             throw new IllegalArgumentException("Project directory not set");
         }
         super.saveProject();
         saveWindows();
         gitCommitOnThread();
-        PreferencesController.saveRecentProjects(projectDir.toString());
+        PreferencesController.saveRecentProjects(getProjectDir().toString());
 
     }
 
@@ -144,9 +144,9 @@ public class GUIProject extends Project {
         try {
             if (git == null) {
                 try {
-                    git = Git.open(projectDir.toFile());
+                    git = Git.open(getProjectDir().toFile());
                 } catch (IOException ioE) {
-                    git = Git.init().setDirectory(projectDir.toFile()).call();
+                    git = Git.init().setDirectory(getProjectDir().toFile()).call();
                     writeIgnore();
                     System.out.println("gitinited");
                 }
@@ -218,7 +218,7 @@ public class GUIProject extends Project {
     }
 
     void saveWindows() throws IOException {
-        if (projectDir == null) {
+        if (getProjectDir() == null) {
             throw new IllegalArgumentException("Project directory not set");
         }
         PythonInterpreter interp = MainApp.getInterpreter();
@@ -229,7 +229,7 @@ public class GUIProject extends Project {
         for (FXMLController controller : controllers) {
             GUIScripter.setController(controller);
             String fileName = i + "_stage.yaml";
-            Path path = Paths.get(projectDir.toString(), "windows", fileName);
+            Path path = Paths.get(getProjectDir().toString(), "windows", fileName);
             interp.exec("nwyaml.dumpYamlWin('" + path.toString() + "')");
             i++;
         }

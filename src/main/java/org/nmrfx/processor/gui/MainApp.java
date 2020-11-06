@@ -54,10 +54,12 @@ import org.nmrfx.processor.datasets.peaks.io.PeakReader;
 import org.nmrfx.processor.gui.controls.FractionCanvas;
 import org.nmrfx.processor.gui.tools.RunAboutGUI;
 import org.nmrfx.processor.utilities.WebConnect;
-import org.nmrfx.project.GUIProject;
+import org.nmrfx.processor.gui.project.GUIProject;
 import org.nmrfx.project.Project;
 import org.nmrfx.server.Server;
 import static javafx.application.Application.launch;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableMap;
 
 public class MainApp extends Application implements DatasetListener {
 
@@ -78,6 +80,7 @@ public class MainApp extends Application implements DatasetListener {
     static boolean isAnalyst = false;
     Consumer<String> socketFunction = null;
     static NMRFxServer server = null;
+    public static ObservableMap<String, PeakList> peakListTable = FXCollections.observableMap(PeakList.peakListTable);
 
     public static void setAnalyst() {
         isAnalyst = true;
@@ -525,7 +528,7 @@ public class MainApp extends Application implements DatasetListener {
         if (consoleController == null) {
             System.out.println(string);
         } else {
-            consoleController.writeOutput(string);
+            consoleController.write(string);
         }
     }
 

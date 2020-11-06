@@ -34,7 +34,7 @@ import org.nmrfx.utils.properties.DoubleRangeOperationItem;
 import org.nmrfx.utils.properties.DoubleOperationItem;
 import org.nmrfx.utils.properties.TextWaitingOperationItem;
 import org.nmrfx.utils.properties.ListOperationItemTypeSelector;
-import org.nmrfx.utils.properties.ComplexOperationItem;
+import org.nmrfx.utils.properties.complex.ComplexOperationItem;
 import org.nmrfx.utils.properties.IntChoiceOperationItem;
 import org.nmrfx.utils.properties.TextOperationItem;
 import org.nmrfx.processor.gui.spectra.SpecRegion;

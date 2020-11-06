@@ -53,7 +53,7 @@ import org.nmrfx.utils.properties.PropertySliderEditor;
 import org.nmrfx.utils.properties.ZoomSlider;
 import org.nmrfx.utils.properties.BooleanOperationItem;
 import org.nmrfx.utils.properties.ChoiceOperationItem;
-import org.nmrfx.utils.properties.ComplexOperationItem;
+import org.nmrfx.utils.properties.complex.ComplexOperationItem;
 import org.nmrfx.utils.properties.DirectoryOperationItem;
 import org.nmrfx.utils.properties.DoubleOperationItem;
 import org.nmrfx.utils.properties.DoubleRangeOperationItem;

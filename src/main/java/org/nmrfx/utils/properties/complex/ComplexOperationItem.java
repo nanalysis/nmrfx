@@ -21,7 +21,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package org.nmrfx.utils.properties;
+package org.nmrfx.utils.properties.complex;
 
 import javafx.beans.InvalidationListener;
 import javafx.beans.value.ChangeListener;
@@ -29,6 +29,7 @@ import javafx.beans.value.ObservableObjectValue;
 import org.apache.commons.math3.complex.Complex;
 import org.apache.commons.math3.complex.ComplexFormat;
 import org.apache.commons.math3.exception.MathParseException;
+import org.nmrfx.utils.properties.OperationItem;
 import org.python.core.PyComplex;
 
 /**
@@ -71,21 +72,6 @@ public class ComplexOperationItem extends OperationItem implements ObservableObj
     @Override
     public Class<?> getType() {
         return ComplexOperationItem.class;
-    }
-
-    @Override
-    public String getCategory() {
-        return category;
-    }
-
-    @Override
-    public String getName() {
-        return name;
-    }
-
-    @Override
-    public String getDescription() {
-        return description;
     }
 
     @Override
@@ -148,7 +134,7 @@ public class ComplexOperationItem extends OperationItem implements ObservableObj
 //    }
     @Override
     public void addListener(ChangeListener<? super String> listener) {
-        System.out.println("add Listener " + name);
+        System.out.println("add Listener " + getName());
         this.listener = listener;
     }
 

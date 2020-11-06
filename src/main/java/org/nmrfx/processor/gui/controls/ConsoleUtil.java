@@ -39,14 +39,11 @@ import javafx.scene.input.KeyCombination;
 import static javafx.scene.input.KeyCombination.CONTROL_DOWN;
 import javafx.scene.input.KeyEvent;
 import org.fxmisc.richtext.CodeArea;
-import org.fxmisc.richtext.Paragraph;
-import org.fxmisc.wellbehaved.event.EventHandlerHelper;
+import org.fxmisc.richtext.model.Paragraph;
 import static org.fxmisc.wellbehaved.event.EventPattern.keyPressed;
 import static org.fxmisc.wellbehaved.event.EventPattern.keyTyped;
 import org.python.util.InteractiveConsole;
 import org.python.util.InteractiveInterpreter;
-import org.renjin.script.RenjinScriptEngine;
-import org.renjin.script.RenjinScriptEngineFactory;
 
 /**
  *
@@ -55,7 +52,6 @@ import org.renjin.script.RenjinScriptEngineFactory;
 public class ConsoleUtil {
 
     static Clipboard clipBoard = Clipboard.getSystemClipboard();
-    public static RenjinScriptEngine renjinEngine = null;
 
     InteractiveInterpreter interpreter;
     CodeArea outputArea;
@@ -89,9 +85,9 @@ public class ConsoleUtil {
     }
 
     public void prompt() {
-            runOnFxThread(() -> outputArea.appendText(prompt));
-            runOnFxThread(() -> outputArea.positionCaret(outputArea.getLength()));
-        }
+        runOnFxThread(() -> outputArea.appendText(prompt));
+      //  runOnFxThread(() -> outputArea.caretPositionProperty(outputArea.getLength()));
+    }
 
     public void save() {
         System.out.println("save");
@@ -166,14 +162,6 @@ public class ConsoleUtil {
         clipBoard.setContent(content);
     }
 
-    public static RenjinScriptEngine getRenjin() {
-        if (renjinEngine == null) {
-            RenjinScriptEngineFactory renjinFactory = new RenjinScriptEngineFactory();
-            renjinEngine = renjinFactory.getScriptEngine();
-        }
-        return renjinEngine;
-    }
-
     public void enter() {
         int nParagraphs = outputArea.getParagraphs().size();
         Paragraph para = outputArea.getParagraph(nParagraphs - 1);
@@ -195,16 +183,7 @@ public class ConsoleUtil {
             renjinMode = false;
         } else {
             try {
-                if (renjinMode) {
-                    RenjinScriptEngine engine = getRenjin();
-                    Object result = engine.eval(command);
-                    if (result != null) {
-                        outputArea.appendText(result.toString());
-                        outputArea.appendText("\n");
-                    }
-                } else {
-                    boolean more = interpreter.runsource(command);
-                }
+                boolean more = interpreter.runsource(command);
             } catch (Exception e) {
                 System.out.println("err " + e.getMessage());
                 e.printStackTrace();
@@ -221,55 +200,55 @@ public class ConsoleUtil {
         interpreter.setOut(new ConsoleOutputStream());
         interpreter.setErr(new ConsoleOutputStream());
 
-        EventHandler<? super KeyEvent> ctrlS = EventHandlerHelper
-                .on(keyPressed(S, CONTROL_DOWN)).act(event -> save())
-                .create();
-
-        EventHandlerHelper.install(outputArea.onKeyPressedProperty(), ctrlS);
-
-        EventHandler<? super KeyEvent> enter = EventHandlerHelper
-                .on(keyPressed(ENTER)).act(event -> enter())
-                .create();
-
-        EventHandlerHelper.install(outputArea.onKeyPressedProperty(), enter);
-        EventHandler<? super KeyEvent> backSpace = EventHandlerHelper
-                .on(keyPressed(KeyCode.BACK_SPACE)).act(event -> delete())
-                .create();
-        EventHandler<? super KeyEvent> delete = EventHandlerHelper
-                .on(keyPressed(KeyCode.DELETE)).act(event -> delete())
-                .create();
-
-        EventHandlerHelper.install(outputArea.onKeyPressedProperty(), delete);
-        EventHandlerHelper.install(outputArea.onKeyPressedProperty(), backSpace);
-
-        EventHandler<? super KeyEvent> paste = EventHandlerHelper
-                .on(keyPressed(KeyCode.V, KeyCombination.SHORTCUT_DOWN)).act(event -> paste(event))
-                .create();
-
-        EventHandlerHelper.install(outputArea.onKeyPressedProperty(), paste);
-
-        EventHandler<? super KeyEvent> copy = EventHandlerHelper
-                .on(keyPressed(KeyCode.C, KeyCombination.SHORTCUT_DOWN)).act(event -> copy(event))
-                .create();
-
-        EventHandlerHelper.install(outputArea.onKeyPressedProperty(), copy);
-
-        EventHandler<? super KeyEvent> historyUp = EventHandlerHelper
-                .on(keyPressed(KeyCode.UP)).act(event -> historyUp())
-                .create();
-
-        EventHandlerHelper.install(outputArea.onKeyPressedProperty(), historyUp);
-
-        EventHandler<? super KeyEvent> historyDown = EventHandlerHelper
-                .on(keyPressed(KeyCode.DOWN)).act(event -> historyDown())
-                .create();
-
-        EventHandlerHelper.install(outputArea.onKeyPressedProperty(), historyDown);
-
-        EventHandler<? super KeyEvent> charTyped = EventHandlerHelper
-                .on(keyTyped()).act(event -> typed(event))
-                .create();
-        EventHandlerHelper.install(outputArea.onKeyTypedProperty(), charTyped);
+//        EventHandler<? super KeyEvent> ctrlS = EventHandlerHelper
+//                .on(keyPressed(S, CONTROL_DOWN)).act(event -> save())
+//                .create();
+//
+//        EventHandlerHelper.install(outputArea.onKeyPressedProperty(), ctrlS);
+//
+//        EventHandler<? super KeyEvent> enter = EventHandlerHelper
+//                .on(keyPressed(ENTER)).act(event -> enter())
+//                .create();
+//
+//        EventHandlerHelper.install(outputArea.onKeyPressedProperty(), enter);
+//        EventHandler<? super KeyEvent> backSpace = EventHandlerHelper
+//                .on(keyPressed(KeyCode.BACK_SPACE)).act(event -> delete())
+//                .create();
+//        EventHandler<? super KeyEvent> delete = EventHandlerHelper
+//                .on(keyPressed(KeyCode.DELETE)).act(event -> delete())
+//                .create();
+//
+//        EventHandlerHelper.install(outputArea.onKeyPressedProperty(), delete);
+//        EventHandlerHelper.install(outputArea.onKeyPressedProperty(), backSpace);
+//
+//        EventHandler<? super KeyEvent> paste = EventHandlerHelper
+//                .on(keyPressed(KeyCode.V, KeyCombination.SHORTCUT_DOWN)).act(event -> paste(event))
+//                .create();
+//
+//        EventHandlerHelper.install(outputArea.onKeyPressedProperty(), paste);
+//
+//        EventHandler<? super KeyEvent> copy = EventHandlerHelper
+//                .on(keyPressed(KeyCode.C, KeyCombination.SHORTCUT_DOWN)).act(event -> copy(event))
+//                .create();
+//
+//        EventHandlerHelper.install(outputArea.onKeyPressedProperty(), copy);
+//
+//        EventHandler<? super KeyEvent> historyUp = EventHandlerHelper
+//                .on(keyPressed(KeyCode.UP)).act(event -> historyUp())
+//                .create();
+//
+//        EventHandlerHelper.install(outputArea.onKeyPressedProperty(), historyUp);
+//
+//        EventHandler<? super KeyEvent> historyDown = EventHandlerHelper
+//                .on(keyPressed(KeyCode.DOWN)).act(event -> historyDown())
+//                .create();
+//
+//        EventHandlerHelper.install(outputArea.onKeyPressedProperty(), historyDown);
+//
+//        EventHandler<? super KeyEvent> charTyped = EventHandlerHelper
+//                .on(keyTyped()).act(event -> typed(event))
+//                .create();
+//        EventHandlerHelper.install(outputArea.onKeyTypedProperty(), charTyped);
 
     }
 }

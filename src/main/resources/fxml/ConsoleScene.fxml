@@ -18,17 +18,14 @@
     <top>
         <HBox>
             <children>
-                <Button text="Clear" onAction="#clearOutput"/>
                 <SegmentedButton>
                     <buttons>
-                        <ToggleButton text="R" onAction="#toggleInterp"/>
-                        <ToggleButton text="Jython" selected="true" onAction="#toggleInterp"/>
                     </buttons>
                 </SegmentedButton>
             </children>
         </HBox>
     </top>
     <center>
-        <InlineCssTextArea fx:id="consoleArea" prefHeight="400" minHeight="200.0" VBox.vgrow="ALWAYS"/>
+        <TextArea fx:id="textArea" prefHeight="400" minHeight="200.0" VBox.vgrow="ALWAYS"/>
     </center>
 </BorderPane>

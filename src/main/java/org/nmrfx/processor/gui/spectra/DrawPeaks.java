@@ -31,7 +31,6 @@ import org.nmrfx.processor.gui.spectra.PeakDisplayParameters.DisplayTypes;
 import org.nmrfx.processor.gui.spectra.PeakDisplayParameters.LabelTypes;
 import static org.nmrfx.processor.gui.spectra.PeakDisplayParameters.LabelTypes.PPM;
 import org.nmrfx.processor.utilities.Format;
-import java.awt.geom.Line2D;
 import java.util.*;
 import javafx.geometry.BoundingBox;
 import javafx.geometry.Bounds;
@@ -52,6 +51,8 @@ import org.nmrfx.graphicsio.GraphicsIOException;
 import org.nmrfx.processor.datasets.peaks.AbsMultipletComponent;
 import org.nmrfx.processor.datasets.peaks.Peak.Corner;
 import org.nmrfx.processor.datasets.peaks.PeakDim;
+import org.nmrfx.processor.datasets.peaks.TreeLine;
+import org.nmrfx.processor.gui.utils.GUIColorUtils;
 
 /**
  *
@@ -663,9 +664,9 @@ public class DrawPeaks {
         if (colorMode == 1) {
             color = peakAttr.getOffColor();
         }
-        Color peakColor = peak.getColor();
+        int[] peakColor = peak.getColor();
         if (peakColor != null) {
-            color = peakColor;
+            color = GUIColorUtils.toColor(peakColor);
         }
         g2.setStroke(color);
         return colorMode;
@@ -902,7 +903,7 @@ public class DrawPeaks {
         float yM = (float) multiplet.getMax();
         double range = yAxis.getRange();
         yM += range * frOffset;
-        ArrayList<Line2D> lines = multiplet.getSplittingGraph();
+        ArrayList<TreeLine> lines = multiplet.getSplittingGraph();
         double max = 0.0;
         treeOn = true;
         Color strokeColor;
@@ -914,7 +915,7 @@ public class DrawPeaks {
                 strokeColor = peakAttr.getOffColor();
             }
 
-            for (Line2D line : lines) {
+            for (TreeLine line : lines) {
                 if (line.getY1() > max) {
                     max = line.getY1();
                 }
@@ -923,7 +924,7 @@ public class DrawPeaks {
             if (lines.size() == 1) {
                 max = -1.0;
             }
-            for (Line2D line : lines) {
+            for (TreeLine line : lines) {
                 double xC = xM - line.getX1();
                 double xE = xM + line.getX2();
                 int index = generic ? i : (int) Math.round(line.getY1());
@@ -989,18 +990,18 @@ public class DrawPeaks {
 
         float xM = (float) multiplet.getCenter();
         float yM = (float) multiplet.getMax();
-        ArrayList<Line2D> lines = multiplet.getSplittingGraph();
+        ArrayList<TreeLine> lines = multiplet.getSplittingGraph();
         double max = 0.0;
         treeOn = true;
         boolean generic = multiplet.isGenericMultiplet();
         if (treeOn) {
-            for (Line2D line : lines) {
+            for (TreeLine line : lines) {
                 if (line.getY1() > max) {
                     max = line.getY1();
                 }
             }
             int i = 0;
-            for (Line2D line : lines) {
+            for (TreeLine line : lines) {
                 double xC = xM + line.getX1();
                 double xE = xM + line.getX2();
                 if (hitMultipletLine(xE, yM, max, line.getY1(), hitX, hitY)) {
@@ -1387,7 +1388,7 @@ public class DrawPeaks {
                 double x1 = xAxis.getDisplayPosition(minX);
                 double x2 = xAxis.getDisplayPosition(maxX);
                 if (peakDim0.isFrozen()) {
-                    g2.setStroke(Peak.FREEZE_COLORS[0]);
+                    g2.setStroke(GUIColorUtils.toColor(Peak.FREEZE_COLORS[0]));
                 } else {
                     g2.setStroke(Color.BLACK);
 
@@ -1425,7 +1426,7 @@ public class DrawPeaks {
                 double y2 = yAxis.getDisplayPosition(maxY);
                 double posX = xAxis.getDisplayPosition(sumX / nX);
                 if (peakDim1.isFrozen()) {
-                    g2.setStroke(Peak.FREEZE_COLORS[1]);
+                    g2.setStroke(GUIColorUtils.toColor(Peak.FREEZE_COLORS[1]));
                 } else {
                     g2.setStroke(Color.BLACK);
                 }

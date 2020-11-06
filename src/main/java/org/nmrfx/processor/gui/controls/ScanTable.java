@@ -23,7 +23,6 @@
  */
 package org.nmrfx.processor.gui.controls;
 
-import impl.org.controlsfx.table.ColumnFilter;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -44,7 +43,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.function.Function;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleIntegerProperty;
@@ -73,6 +71,7 @@ import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import org.controlsfx.control.PopOver;
+import org.controlsfx.control.table.ColumnFilter;
 import org.controlsfx.control.table.TableFilter;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.processor.datasets.Dataset;
@@ -81,24 +80,12 @@ import org.nmrfx.processor.datasets.DatasetMerger;
 import org.nmrfx.processor.datasets.vendor.NMRData;
 import org.nmrfx.processor.datasets.vendor.NMRDataUtil;
 import org.nmrfx.processor.gui.ChartProcessor;
-import org.nmrfx.processor.gui.ConsoleController;
 import org.nmrfx.processor.gui.FXMLController;
-import org.nmrfx.processor.gui.MainApp;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.ProcessorController;
 import org.nmrfx.processor.gui.ScannerController;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.python.util.PythonInterpreter;
-import org.renjin.primitives.vector.RowNamesVector;
-import org.renjin.sexp.AttributeMap;
-import org.renjin.sexp.DoubleVector;
-import org.renjin.sexp.Environment;
-import org.renjin.sexp.IntVector;
-import org.renjin.sexp.ListVector;
-import org.renjin.sexp.SEXP;
-import org.renjin.sexp.StringArrayVector;
-import org.renjin.sexp.StringVector;
-import org.renjin.sexp.Symbols;
 
 /**
  *
@@ -768,7 +755,7 @@ public class ScanTable {
             saveScanTable(file);
         }
     }
-    
+
     public TableView getTableView() {
         return tableView;
     }
@@ -947,6 +934,10 @@ public class ScanTable {
         }
     }
 
+    void updateDataFrame() {
+
+    }
+
     private void graphicChanged(TableColumn column) {
         Node node = column.getGraphic();
         boolean isFiltered = (node != null) && !(node instanceof StackPane);
@@ -1056,213 +1047,6 @@ public class ScanTable {
 
     public ObservableList<FileTableItem> getItems() {
         return fileListItems;
-    }
-
-    class DoubleColumnVector extends DoubleVector {
-
-        String name;
-        Function<FileTableItem, Double> getter;
-
-        public DoubleColumnVector(AttributeMap attributes) {
-            super(attributes);
-        }
-
-        DoubleColumnVector(String name, Function<FileTableItem, Double> getter) {
-            this.name = name;
-            this.getter = getter;
-        }
-
-        @Override
-        protected SEXP cloneWithNewAttributes(AttributeMap am) {
-            DoubleColumnVector clone = new DoubleColumnVector(am);
-            clone.name = name;
-            clone.getter = getter;
-            return clone;
-        }
-
-        @Override
-        public double getElementAsDouble(int i) {
-            FileTableItem item = fileListItems.get(i);
-            return getter.apply(item);
-        }
-
-        @Override
-        public int length() {
-            return fileListItems.size();
-        }
-
-        @Override
-        public boolean isConstantAccessTime() {
-            return true;
-        }
-
-    }
-
-    class IntColumnVector extends IntVector {
-
-        String name;
-        Function<FileTableItem, Integer> getter;
-
-        public IntColumnVector(AttributeMap attributes) {
-            super(attributes);
-        }
-
-        IntColumnVector(String name, Function<FileTableItem, Integer> getter) {
-            this.name = name;
-            this.getter = getter;
-        }
-
-        @Override
-        protected SEXP cloneWithNewAttributes(AttributeMap am) {
-            IntColumnVector clone = new IntColumnVector(am);
-            clone.name = name;
-            clone.getter = getter;
-            return clone;
-        }
-
-        @Override
-        public int getElementAsInt(int i) {
-            FileTableItem item = fileListItems.get(i);
-            return getter.apply(item);
-        }
-
-        @Override
-        public int length() {
-            return fileListItems.size();
-        }
-
-        @Override
-        public boolean isConstantAccessTime() {
-            return true;
-        }
-
-    }
-
-    class StringColumnVector extends StringVector {
-
-        String name;
-        Function<FileTableItem, String> getter;
-
-        public StringColumnVector(AttributeMap attributes) {
-            super(attributes);
-        }
-
-        public StringColumnVector(String name, Function<FileTableItem, String> getter) {
-            super(AttributeMap.EMPTY);
-            this.name = name;
-            this.getter = getter;
-        }
-
-        @Override
-        public int length() {
-            return fileListItems.size();
-        }
-
-        @Override
-        public boolean isConstantAccessTime() {
-            return true;
-        }
-
-        @Override
-        public String getElementAsString(int i) {
-            FileTableItem item = fileListItems.get(i);
-            if (item == null) {
-                System.out.println("null item " + i + " column " + name);
-                return NA;
-            }
-            return getter.apply(item);
-        }
-
-        @Override
-        protected StringColumnVector cloneWithNewAttributes(AttributeMap am) {
-            StringColumnVector clone = new StringColumnVector(am);
-            clone.name = name;
-            clone.getter = getter;
-            return clone;
-        }
-
-    }
-
-    public void updateDataFrame() {
-        getGroups();
-        ObservableList<TableColumn<FileTableItem, ?>> columns = tableView.getColumns();
-
-        ListVector.NamedBuilder builder = new ListVector.NamedBuilder();
-
-        int iCol = 0;
-        for (TableColumn column : columns) {
-            String fullName = column.getText();
-            int colonPos = fullName.indexOf(":");
-            final String name;
-            if (colonPos != -1) {
-                name = fullName.substring(0, colonPos);
-            } else {
-                name = fullName;
-            }
-            String type = columnTypes.get(fullName);
-            if (type == null) {
-                System.out.println("null type " + name);
-                type = "S";
-            }
-            switch (type) {
-                case "D": {
-                    DoubleColumnVector dVec = new DoubleColumnVector(name, item -> item.getDoubleExtra(fullName));
-                    builder.add(name, dVec);
-                    break;
-                }
-                case "I": {
-                    IntColumnVector iVec;
-                    if (name.equalsIgnoreCase("row")) {
-                        iVec = new IntColumnVector(name, item -> item.getRow());
-                    } else if (name.equalsIgnoreCase("ndim")) {
-                        iVec = new IntColumnVector(name, item -> item.getNDim());
-                    } else if (name.equalsIgnoreCase("etime")) {
-                        iVec = new IntColumnVector(name, item -> item.getDate().intValue());
-                    } else if (name.equalsIgnoreCase("group")) {
-                        iVec = new IntColumnVector(name, item -> item.getGroup());
-                    } else {
-                        iVec = new IntColumnVector(name, item -> item.getIntegerExtra(fullName));
-                    }
-                    builder.add(name, iVec);
-                    break;
-                }
-
-                case "S": {
-                    StringColumnVector sVec;
-                    if (name.equalsIgnoreCase("path")) {
-                        sVec = new StringColumnVector(name, item -> item.getFileName());
-                    } else if (name.equalsIgnoreCase("sequence")) {
-                        sVec = new StringColumnVector(name, item -> item.getSeqName());
-                    } else {
-                        sVec = new StringColumnVector(name, item -> item.getExtra(fullName));
-                    }
-                    builder.add(name, sVec);
-                    break;
-                }
-                default: {
-                    throw new IllegalArgumentException("Invalid column type");
-                }
-
-            }
-            iCol++;
-        }
-        builder.setAttribute(Symbols.ROW_NAMES, new RowNamesVector(fileListItems.size()));
-        builder.setAttribute(Symbols.CLASS, StringArrayVector.valueOf("data.frame"));
-
-        ListVector dFrame = builder.build();
-
-        ProcessorController processorController = scannerController.getFXMLController().getProcessorController(false);
-        ConsoleController consoleController = MainApp.getConsoleController();
-        if (consoleController == null) {
-            System.out.println("null proccon");
-        } else {
-            Environment env = consoleController.getREnvironment();
-            if (env == null) {
-                System.out.println("null env");
-            } else {
-                env.setVariableUnsafe("scntbl", dFrame);
-            }
-        }
     }
 
     public void makeGroupMap() {

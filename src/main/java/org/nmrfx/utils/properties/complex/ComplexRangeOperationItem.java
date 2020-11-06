@@ -21,7 +21,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package org.nmrfx.utils.properties;
+package org.nmrfx.utils.properties.complex;
 
 import javafx.beans.value.ChangeListener;
 import org.apache.commons.math3.complex.Complex;

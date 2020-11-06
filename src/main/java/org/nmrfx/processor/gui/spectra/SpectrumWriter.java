@@ -25,12 +25,9 @@ package org.nmrfx.processor.gui.spectra;
 
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes.AXMODE;
-import java.awt.print.PrinterException;
-import java.awt.print.PrinterJob;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import javax.swing.SwingUtilities;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
 import org.apache.pdfbox.printing.PDFPageable;
@@ -277,20 +274,20 @@ public class SpectrumWriter {
                 System.out.println(ioE.getMessage());
                 return;
             }
-            SwingUtilities.invokeLater(new Runnable() {
-                @Override
-                public void run() {
-                    final PrinterJob job = PrinterJob.getPrinterJob();
-                    if (job.printDialog()) {
-                        job.setPageable(new PDFPageable(doc));
-                        try {
-                            job.print();
-                        } catch (PrinterException pE) {
-                            System.out.println(pE.getMessage());
-                        }
-                    }
-                }
-            });
+//            SwingUtilities.invokeLater(new Runnable() {
+//                @Override
+//                public void run() {
+//                    final PrinterJob job = PrinterJob.getPrinterJob();
+//                    if (job.printDialog()) {
+//                        job.setPageable(new PDFPageable(doc));
+//                        try {
+//                            job.print();
+//                        } catch (PrinterException pE) {
+//                            System.out.println(pE.getMessage());
+//                        }
+//                    }
+//                }
+//            });
         }
     }
 }

@@ -246,7 +246,7 @@ public class RunAboutGUI implements PeakListener {
             updatePeakListMenu();
         };
 
-        PeakList.peakListTable.addListener(mapChangeListener);
+        MainApp.peakListTable.addListener(mapChangeListener);
 
     }
 
