@@ -26,6 +26,7 @@ package org.nmrfx.utils.properties;
 import javafx.beans.InvalidationListener;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableStringValue;
+import org.controlsfx.property.editor.PropertyEditor;
 
 /**
  *
@@ -36,6 +37,7 @@ public class TextOperationItem extends OperationItem implements ObservableString
     ChangeListener<? super String> listener;
     String value;
     String defaultValue;
+    PropertyEditor editor;
 
     public TextOperationItem(ChangeListener listener, String defaultValue, String category, String name, String description) {
         super(category, name, description);
@@ -46,6 +48,16 @@ public class TextOperationItem extends OperationItem implements ObservableString
 
     void addKeyHandler() {
 
+    }
+
+    public void setEditor(PropertyEditor editor) {
+        this.editor = editor;
+    }
+
+    public void updateEditor() {
+        if (editor != null) {
+            editor.setValue(value);
+        }
     }
 
     @Override
@@ -70,11 +82,13 @@ public class TextOperationItem extends OperationItem implements ObservableString
     @Override
     public void setFromString(String sValue) {
         // fixme  need general method to strip leading and trailing quotes
-        if (sValue.charAt(0) == '\'') {
-            sValue = sValue.substring(1, sValue.length() - 1);
-        }
-        if (sValue.charAt(0) == '"') {
-            sValue = sValue.substring(1, sValue.length() - 1);
+        if (sValue.length() > 0) {
+            if (sValue.charAt(0) == '\'') {
+                sValue = sValue.substring(1, sValue.length() - 1);
+            }
+            if (sValue.charAt(0) == '"') {
+                sValue = sValue.substring(1, sValue.length() - 1);
+            }
         }
         setValue(sValue);
     }
