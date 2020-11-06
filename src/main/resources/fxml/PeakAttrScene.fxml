@@ -30,9 +30,13 @@
                                 <GridPane BorderPane.alignment="CENTER">
                                     <columnConstraints>
                                         <ColumnConstraints hgrow="SOMETIMES" maxWidth="70.0" minWidth="70.0" prefWidth="70.0" />
-                                        <ColumnConstraints hgrow="SOMETIMES" maxWidth="460.0" minWidth="70.0" prefWidth="458.0" />
+                                        <ColumnConstraints hgrow="SOMETIMES" maxWidth="350.0" minWidth="70.0" prefWidth="350" />
+                                        <ColumnConstraints hgrow="NEVER" maxWidth="25.0" minWidth="25.0" prefWidth="25" />
+                                        <ColumnConstraints hgrow="SOMETIMES" maxWidth="200.0" minWidth="70.0" prefWidth="200" />
                                         <ColumnConstraints hgrow="SOMETIMES" maxWidth="70.0" minWidth="70.0" prefWidth="70.0" />
-                                        <ColumnConstraints hgrow="SOMETIMES" maxWidth="460.0" minWidth="70.0" prefWidth="458.0" />
+                                        <ColumnConstraints hgrow="SOMETIMES" maxWidth="350.0" minWidth="70.0" prefWidth="350" />
+                                        <ColumnConstraints hgrow="NEVER" maxWidth="25.0" minWidth="25.0" prefWidth="25" />
+                                        <ColumnConstraints hgrow="SOMETIMES" maxWidth="200.0" minWidth="70.0" prefWidth="200" />
                                     </columnConstraints>
                                     <rowConstraints>
                                         <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
@@ -41,10 +45,14 @@
                                     <children>
                                         <Label text="Intensity" GridPane.columnIndex="0" />
                                         <TextField fx:id="intensityField" GridPane.columnIndex="1" />
-                                        <Label text="Volume" GridPane.columnIndex="2" />
-                                        <TextField fx:id="volumeField" GridPane.columnIndex="3" />
+                                        <Label text="+/-" GridPane.columnIndex="2" />
+                                        <TextField fx:id="intensityErrField" GridPane.columnIndex="3" />
+                                        <Label text="Volume" GridPane.columnIndex="4" />
+                                        <TextField fx:id="volumeField" GridPane.columnIndex="5" />
+                                        <Label text="+/-" GridPane.columnIndex="6" />
+                                        <TextField fx:id="volumeErrField" GridPane.columnIndex="7" />
                                         <Label text="Comment" GridPane.columnIndex="0" GridPane.rowIndex="1" />
-                                        <TextField fx:id="commentField" GridPane.columnIndex="1" GridPane.columnSpan="3" GridPane.rowIndex="1" />
+                                        <TextField fx:id="commentField" GridPane.columnIndex="1" GridPane.columnSpan="7" GridPane.rowIndex="1" />
                                     </children>
                                 </GridPane>
                             </bottom>

@@ -15,26 +15,26 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.nmrfx.processor.gui.spectra;
+package org.nmrfx.processor.gui.utils;
 
-import javafx.event.ActionEvent;
-import javafx.scene.control.ContextMenu;
-import javafx.scene.control.MenuItem;
-import org.nmrfx.processor.gui.PolyChart;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeSupport;
+import javafx.application.Platform;
 
 /**
  *
  * @author brucejohnson
  */
-public class RegionMenu extends ChartMenu {
+public class FxPropertyChangeSupport extends PropertyChangeSupport {
 
-    public RegionMenu(PolyChart chart) {
-        super(chart);
+    public FxPropertyChangeSupport(Object obj) {
+        super(obj);
     }
 
     @Override
-    public void makeChartMenu() {
-        chartMenu = new ContextMenu();
+    public void firePropertyChange(PropertyChangeEvent event) {
+        if (Platform.isFxApplicationThread()) {
+            super.firePropertyChange(event);
+        }
     }
-
 }

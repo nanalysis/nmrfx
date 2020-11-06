@@ -18,13 +18,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.ResourceBundle;
-import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -37,6 +37,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
+import javafx.scene.control.TabPane;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextInputDialog;
 import javafx.scene.control.ToolBar;
@@ -53,9 +54,13 @@ import org.nmrfx.processor.datasets.DatasetRegion;
 import org.nmrfx.processor.datasets.Measure;
 import org.nmrfx.processor.datasets.Measure.MeasureTypes;
 import org.nmrfx.processor.datasets.Measure.OffsetTypes;
+import static org.nmrfx.processor.gui.PreferencesController.getDatasetDirectory;
 import org.nmrfx.processor.gui.controls.FileTableItem;
 import org.nmrfx.processor.gui.controls.ScanTable;
 import org.nmrfx.processor.gui.tools.TRACTGUI;
+import org.nmrfx.utils.GUIUtils;
+import org.nmrfx.utils.properties.DirectoryOperationItem;
+import org.nmrfx.utils.properties.TextOperationItem;
 
 /**
  * FXML Controller class
@@ -84,6 +89,8 @@ public class ScannerController implements Initializable {
     private TableView<FileTableItem> tableView;
     @FXML
     private PropertySheet parSheet;
+    @FXML
+    private TabPane tabPane;
 
     FXMLController fxmlController;
     PolyChart chart;
@@ -91,6 +98,11 @@ public class ScannerController implements Initializable {
     ScanTable scanTable;
     ChoicePropertyItem measureItem;
     OffsetPropertyItem offsetItem;
+    DirectoryOperationItem scanDirItem;
+    DirectoryOperationItem outputDirItem;
+    TextOperationItem outputFileItem;
+    ChangeListener<String> scanDirListener;
+    ChangeListener<String> outputDirListener;
     static Consumer createControllerAction = null;
     TRACTGUI tractGUI = null;
 
@@ -297,41 +309,55 @@ public class ScannerController implements Initializable {
     }
 
     private void initParSheet() {
-        measureItem = new ChoicePropertyItem("mode", "measure", "Measurement modes");
-        offsetItem = new OffsetPropertyItem("offset", "measure", "Offset modes");
-        parSheet.getItems().addAll(measureItem, offsetItem);
+        parSheet.setPropertyEditorFactory(new NvFxPropertyEditorFactory());
+        parSheet.setMode(PropertySheet.Mode.CATEGORY);
+        parSheet.setModeSwitcherVisible(false);
+        parSheet.setSearchBoxVisible(false);
+        measureItem = new ChoicePropertyItem("Mode", "Measure Parameters", "Measurement modes");
+        offsetItem = new OffsetPropertyItem("Offset", "Measure Parameters", "Offset modes");
+        ChangeListener stringListener = new ChangeListener<String>() {
+            @Override
+            public void changed(ObservableValue<? extends String> observableValue, String string, String string2) {
+            }
+        };
+        scanDirListener = (ObservableValue<? extends String> observableValue, String string, String string2) -> {
+            scanTable.setScanDirectory(new File(string2));
+        };
+        outputDirListener = (ObservableValue<? extends String> observableValue, String string, String string2) -> {
+            scanTable.setScanOutputDirectory(new File(string2));
+        };
+
+        outputFileItem = new TextOperationItem(stringListener, "process.nv", "File Locations", "Output File", "Output FileName");
+        scanDirItem = new DirectoryOperationItem(scanDirListener, getDatasetDirectory().getPath(), "File Locations", "Scan Dir", "Directory to scan for datasets");
+        outputDirItem = new DirectoryOperationItem(outputDirListener, getDatasetDirectory().getPath(), "File Locations", "Output Dir", "Directory to put output files in");
+
+        parSheet.getItems().addAll(scanDirItem, outputDirItem, outputFileItem, measureItem, offsetItem);
     }
 
     @FXML
     private void processScanDirAndCombine(ActionEvent event) {
         ChartProcessor chartProcessor = fxmlController.getChartProcessor();
         scanTable.processScanDir(stage, chartProcessor, true);
+        tabPane.getSelectionModel().select(1);
     }
 
     @FXML
     private void processScanDir(ActionEvent event) {
         ChartProcessor chartProcessor = fxmlController.getChartProcessor();
         scanTable.processScanDir(stage, chartProcessor, false);
+        tabPane.getSelectionModel().select(1);
     }
 
     @FXML
     private void scanDirAction(ActionEvent event) {
         scanTable.loadScanFiles(stage);
-    }
-
-    @FXML
-    private void setScanDirAction(ActionEvent event) {
-        scanTable.setScanDirectory();
-    }
-
-    @FXML
-    private void setScanOutputDirAction(ActionEvent event) {
-        scanTable.setScanOutputDirectory();
+        tabPane.getSelectionModel().select(1);
     }
 
     @FXML
     private void loadTableAction(ActionEvent event) {
         scanTable.loadScanTable();
+        tabPane.getSelectionModel().select(1);
     }
 
     @FXML
@@ -387,6 +413,27 @@ public class ScannerController implements Initializable {
         return scanTable;
     }
 
+    public String getScanDirectory() {
+        return scanDirItem.get();
+    }
+
+    public void setScanDirectory(String dirString) {
+        scanDirItem.setFromString(dirString);
+    }
+
+    public void updateScanDirectory(String dirString) {
+        scanDirItem.setFromString(dirString);
+        scanDirItem.updateEditor();
+    }
+
+    public String getOutputDirectory() {
+        return outputDirItem.get();
+    }
+
+    public String getOutputFileName() {
+        return outputFileItem.get();
+    }
+
     private boolean hasColumnName(String columnName) {
         List<String> headers = scanTable.getHeaders();
         boolean result = false;
@@ -422,27 +469,52 @@ public class ScannerController implements Initializable {
             double[] wppms = new double[2];
             wppms[0] = chart.getAxis(0).getLowerBound();
             wppms[1] = chart.getAxis(0).getUpperBound();
-            measureRegion(dataset, columnName, ppms, wppms, offsetItem.getValue(), measureItem.getValue());
+            int extra = 1;
+
+            Measure measure = new Measure(columnName, 0, ppms[0], ppms[1], wppms[0], wppms[1], extra, offsetItem.getValue(), measureItem.getValue());
+            String columnDescriptor = measure.getColumnDescriptor();
+            String columnPrefix = scanTable.getNextColumnName(columnName, columnDescriptor);
+            measure.setName(columnPrefix);
+            String newColumnName = columnPrefix + ":" + columnDescriptor;
+            List<Double> allValues = new ArrayList<>();
+            List<FileTableItem> items = scanTable.getItems();
+
+            for (FileTableItem item : items) {
+                String datasetName = item.getDatasetName();
+                Dataset itemDataset = Dataset.getDataset(datasetName);
+                if (itemDataset == null) {
+                    File datasetFile = new File(scanTable.getScanOutputDirectory(), datasetName);
+                    try {
+                        itemDataset = new Dataset(datasetFile.getPath(), datasetFile.getPath(), true, false);
+                    } catch (IOException ioE) {
+                        GUIUtils.warn("Measure", "Can't open dataset " + datasetFile.getPath());
+                        return;
+                    }
+                }
+
+                List<Double> values = measureRegion(itemDataset, measure);
+                if (values == null) {
+                    return;
+                }
+                allValues.addAll(values);
+                if (allValues.size() >= items.size()) {
+                    break;
+                }
+            }
+            setItems(newColumnName, allValues);
+            scanTable.addTableColumn(newColumnName, "D");
         }
     }
 
-    private void measureRegion(Dataset dataset, String name, double[] ppms, double[] wppms, OffsetTypes offsetType, MeasureTypes measureType) {
-        int extra = 1;
+    private List<Double> measureRegion(Dataset dataset, Measure measure) {
         List<Double> values;
-        Measure measure = new Measure(name, 0, ppms[0], ppms[1], wppms[0], wppms[1], extra, offsetType, measureType);
-        String columnDescriptor = measure.getColumnDescriptor();
-        String columnPrefix = scanTable.getNextColumnName(name, columnDescriptor);
-        measure.setName(columnPrefix);
-        String newColumnName = columnPrefix + ":" + columnDescriptor;
-
         try {
             values = measure.measure(dataset);
         } catch (IOException ex) {
             Logger.getLogger(ScannerController.class.getName()).log(Level.SEVERE, null, ex);
-            return;
+            return null;
         }
-        setItems(newColumnName, values);
-        scanTable.addTableColumn(newColumnName, "D");
+        return values;
     }
 
     public void setItems(String columnName, List<Double> values) {
@@ -457,7 +529,9 @@ public class ScannerController implements Initializable {
         for (int i = 0; i < values.size(); i++) {
             double value = values.get(i);
             FileTableItem item = map.get(i);
-            item.setExtra(columnName, value);
+            if (item != null) {
+                item.setExtra(columnName, value);
+            }
         }
     }
 

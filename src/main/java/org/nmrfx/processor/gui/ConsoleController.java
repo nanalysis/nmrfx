@@ -83,7 +83,7 @@ public class ConsoleController extends OutputStream implements Initializable {
             stage.toFront();
             stage.setY(screenSize.getHeight() - stage.getHeight());
             ConsoleController consoleController = controller;
-            stage.setOnCloseRequest(e -> consoleController.close());
+            stage.setOnCloseRequest(consoleController.close);
         } catch (IOException ioE) {
             ioE.printStackTrace();
             System.out.println(ioE.getMessage());

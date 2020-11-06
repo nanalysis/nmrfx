@@ -7,13 +7,11 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
 import javafx.application.Platform;
-import javafx.collections.FXCollections;
 import javafx.collections.MapChangeListener;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.geometry.Insets;
 import javafx.scene.control.Button;
-import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.ContentDisplay;
 import javafx.scene.control.Label;
 import javafx.scene.control.MenuButton;
@@ -29,10 +27,14 @@ import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
 import javafx.scene.paint.Color;
 import org.nmrfx.processor.datasets.peaks.Peak;
+import org.nmrfx.processor.datasets.peaks.PeakDim;
 import org.nmrfx.processor.datasets.peaks.PeakEvent;
 import org.nmrfx.processor.datasets.peaks.PeakList;
 import org.nmrfx.processor.datasets.peaks.PeakListener;
+import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
+import org.nmrfx.project.GUIProject;
+import org.nmrfx.project.Project;
 
 /*
  * To change this license header, choose License Headers in Project Properties.
@@ -196,14 +198,14 @@ public class PeakNavigator implements PeakListener {
             updatePeakListMenu();
         };
 
-        MainApp.peakListTable.addListener(mapChangeListener);
+        Project.getActive().addPeakListListener(mapChangeListener);
 
     }
 
     public void updatePeakListMenu() {
         peakListMenuButton.getItems().clear();
 
-        for (String peakListName : PeakList.peakListTable.keySet()) {
+        for (String peakListName : Project.getActive().getPeakListNames()) {
             MenuItem menuItem = new MenuItem(peakListName);
             menuItem.setOnAction(e -> {
                 PeakNavigator.this.setPeakList(peakListName);
@@ -224,7 +226,10 @@ public class PeakNavigator implements PeakListener {
                 }
             }
             if (testList == null) {
-                testList = PeakList.get(0);
+                Optional<PeakList> firstListOpt = PeakList.getFirst();
+                if (firstListOpt.isPresent()) {
+                    testList = firstListOpt.get();
+                }
             }
             setPeakList(testList);
         }
@@ -261,6 +266,7 @@ public class PeakNavigator implements PeakListener {
 
     public void setPeak(Peak peak) {
         currentPeak = peak;
+        setPeakIdField();
         peakNavigable.refreshPeakView(peak);
         if (peak != null) {
             if (peakList != peak.getPeakList()) {
@@ -271,17 +277,36 @@ public class PeakNavigator implements PeakListener {
             updateDeleteStatus();
         }
         updateAtomLabels(peak);
-        setPeakIdField();
     }
 
     void updateAtomLabels(Peak peak) {
         if (showAtoms) {
             if (peak != null) {
-                atomXLabel.setText(peak.getPeakDim(0).getLabel());
-                intensityLabel.setText(String.format("%.2f", peak.getIntensity()));
-                if (peak.getPeakDims().length > 1) {
-                    atomYLabel.setText(peak.getPeakDim(1).getLabel());
+                FXMLController controller = FXMLController.getActiveController();
+                PolyChart chart = controller.getActiveChart();
+                ObservableList<PeakListAttributes> peakAttrs = chart.getPeakListAttributes();
+                ObservableList<DatasetAttributes> dataAttrs = chart.getDatasetAttributes();
+                PeakDim peakDimX = null;
+                PeakDim peakDimY = null;
+                if (!peakAttrs.isEmpty()) {
+                    PeakListAttributes peakAttr = peakAttrs.get(0);
+                    int pdims[] = peakAttr.getPeakDim();
+                    peakDimX = peak.getPeakDim(pdims[0]);
+                    if (peak.getPeakDims().length > 1) {
+                        peakDimY = peak.getPeakDim(pdims[1]);
+                    }
+                } else if (!dataAttrs.isEmpty()) {
+                    DatasetAttributes dataAttr = dataAttrs.get(0);
+                    peakDimX = peak.getPeakDim(dataAttr.getLabel(0));
+                    if (peak.getPeakDims().length > 1) {
+                        peakDimY = peak.getPeakDim(dataAttr.getLabel(1));
+                    }
                 }
+                atomXLabel.setText(peakDimX.getLabel());
+                if (peakDimY != null) {
+                    atomYLabel.setText(peakDimY.getLabel());
+                }
+                intensityLabel.setText(String.format("%.2f", peak.getIntensity()));
             } else {
                 if (showAtoms) {
                     atomXLabel.setText("");

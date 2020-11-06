@@ -20,6 +20,7 @@ package org.nmrfx.processor.gui.spectra;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -41,19 +42,28 @@ public class KeyBindings {
     KeyMonitor keyMonitor = new KeyMonitor();
     PolyChart chart;
     Map<String, Consumer> keyActionMap = new HashMap<>();
-    static Map<String, Consumer> globalKeyActionMap = new HashMap<>();
+    static Map<String, BiConsumer<String, PolyChart>> globalKeyActionMap = new HashMap<>();
 
     public KeyBindings(PolyChart chart) {
         this.chart = chart;
     }
 
-    public static void registerGlobalKeyAction(String keyString, Consumer action) {
+    public static void registerGlobalKeyAction(String keyString, BiConsumer<String, PolyChart> action) {
         // add firstchar so that key processing doesn't clear keyMonitor before a two key string is typed
         String firstChar = keyString.substring(0, 1);
         if (!globalKeyActionMap.containsKey(firstChar)) {
             globalKeyActionMap.put(firstChar, null);
         }
         globalKeyActionMap.put(keyString, action);
+    }
+
+    public void registerKeyAction(String keyString, Consumer<PolyChart> action) {
+        // add firstchar so that key processing doesn't clear keyMonitor before a two key string is typed
+        String firstChar = keyString.substring(0, 1);
+        if (!keyActionMap.containsKey(firstChar)) {
+            keyActionMap.put(firstChar, null);
+        }
+        keyActionMap.put(keyString, action);
     }
 
     public void keyPressed(KeyEvent keyEvent) {
@@ -152,9 +162,9 @@ public class KeyBindings {
             }
             return;
         } else if (globalKeyActionMap.containsKey(shortString)) {
-            Consumer action = globalKeyActionMap.get(shortString);
+            BiConsumer<String, PolyChart> action = globalKeyActionMap.get(shortString);
             if (action != null) {
-                action.accept(chart);
+                action.accept(shortString, chart);
                 keyMonitor.clear();
             }
             return;
@@ -207,42 +217,6 @@ public class KeyBindings {
                 }
                 keyMonitor.clear();
                 break;
-            case "d":
-                break;
-
-            case "df":
-                if (chart.getController().hasSlider()) {
-                    chart.getController().getSlider().freezePeaks(false);
-                }
-                keyMonitor.clear();
-                break;
-            case "dt":
-                if (chart.getController().hasSlider()) {
-                    chart.getController().getSlider().thawPeaks(false);
-                }
-                keyMonitor.clear();
-                break;
-            case "ds":
-                if (chart.getController().hasSlider()) {
-                    chart.getController().getSlider().tweakPeaks();
-                }
-                keyMonitor.clear();
-                break;
-
-            case "da":
-                if (!chart.getController().hasSlider()) {
-                    chart.getController().showPeakSlider();
-                }
-                keyMonitor.clear();
-                break;
-
-            case "dq":
-                if (chart.getController().hasSlider()) {
-                    chart.getController().removePeakSlider(null);
-                }
-                keyMonitor.clear();
-                break;
-
             case "p":
                 break;
             case "u":
@@ -271,6 +245,14 @@ public class KeyBindings {
                 break;
             case "vo":
                 chart.zoom(0.8);
+                keyMonitor.clear();
+                break;
+            case "vs":
+                chart.swapView();
+                keyMonitor.clear();
+                break;
+            case "vp":
+                chart.popView();
                 keyMonitor.clear();
                 break;
             case "j":

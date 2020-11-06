@@ -39,12 +39,14 @@ import javafx.collections.ObservableList;
 import javafx.scene.shape.Path;
 import javafx.scene.shape.Line;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.function.DoubleFunction;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -90,6 +92,7 @@ import org.nmrfx.graphicsio.GraphicsContextInterface;
 import org.nmrfx.graphicsio.GraphicsContextProxy;
 import org.nmrfx.graphicsio.GraphicsIOException;
 import org.nmrfx.graphicsio.SVGGraphicsContext;
+import org.nmrfx.processor.datasets.Nuclei;
 import org.nmrfx.processor.datasets.peaks.PeakList.ARRAYED_FIT_MODE;
 import org.nmrfx.processor.gui.spectra.ChartMenu;
 import org.nmrfx.processor.gui.spectra.ConnectPeakAttributes;
@@ -106,6 +109,8 @@ import org.nmrfx.processor.gui.spectra.MultipletSelection;
 import org.nmrfx.processor.gui.spectra.PeakMenu;
 import org.nmrfx.processor.gui.spectra.RegionMenu;
 import org.nmrfx.processor.gui.undo.ChartUndoScale;
+import org.nmrfx.project.GUIProject;
+import org.nmrfx.project.Project;
 import org.nmrfx.utils.GUIUtils;
 
 public class PolyChart implements PeakListener {
@@ -187,9 +192,11 @@ public class PolyChart implements PeakListener {
     double bottomBorder = 0.0;
     double minLeftBorder = 0.0;
     double minBottomBorder = 0.0;
-    Font peakFont = new Font(12);
+    String fontFamily = "Liberation Sans";
+    Font peakFont = new Font(fontFamily, 12);
     boolean disabled = false;
     public ChartProperties chartProps = new ChartProperties(this);
+    FXMLController sliceController = null;
 
     int iVec = 0;
 //    Vec vec;
@@ -212,18 +219,25 @@ public class PolyChart implements PeakListener {
     double phaseFraction = 0.0;
     boolean useImmediateMode = true;
     private final List<ConnectPeakAttributes> peakPaths = new ArrayList<>();
+    Consumer<DatasetRegion> newRegionConsumer = null;
+    static boolean listenToPeaks = true;
 
     @Override
     public void peakListChanged(final PeakEvent peakEvent) {
-        if (Platform.isFxApplicationThread()) {
-            respondToPeakListChange(peakEvent);
-        } else {
-            Platform.runLater(() -> {
+        if (listenToPeaks) {
+            if (Platform.isFxApplicationThread()) {
                 respondToPeakListChange(peakEvent);
+            } else {
+                Platform.runLater(() -> {
+                    respondToPeakListChange(peakEvent);
+                }
+                );
             }
-            );
         }
+    }
 
+    public static void setPeakListenerState(boolean state) {
+        listenToPeaks = state;
     }
 
     public void updateSelectedMultiplets() {
@@ -371,7 +385,7 @@ public class PolyChart implements PeakListener {
         MapChangeListener<String, PeakList> mapChangeListener = (MapChangeListener.Change<? extends String, ? extends PeakList> change) -> {
             purgeInvalidPeakListAttributes();
         };
-        MainApp.peakListTable.addListener(mapChangeListener);
+        Project.getActive().addPeakListListener(mapChangeListener);
         keyBindings = new KeyBindings(this);
         mouseBindings = new MouseBindings(this);
         gestureBindings = new GestureBindings(this);
@@ -415,6 +429,12 @@ public class PolyChart implements PeakListener {
 
     public NMRAxis getYAxis() {
         return axes[1];
+    }
+
+    public void removeSelected() {
+        if (controller.charts.size() > 1) {
+            close();
+        }
     }
 
     public void close() {
@@ -578,6 +598,10 @@ public class PolyChart implements PeakListener {
         }
     }
 
+    public void setRegionConsumer(Consumer<DatasetRegion> consumer) {
+        newRegionConsumer = consumer;
+    }
+
     public void addRegion(double min, double max) {
         Dataset dataset = getDataset();
         if (dataset != null) {
@@ -589,6 +613,9 @@ public class PolyChart implements PeakListener {
             }
             chartProps.setRegions(false);
             chartProps.setIntegrals(true);
+            if (newRegionConsumer != null) {
+                newRegionConsumer.accept(newRegion);
+            }
         }
     }
 
@@ -641,7 +668,7 @@ public class PolyChart implements PeakListener {
                 List<Peak> peaks = peakAttr.selectPeaksInRegion(limits);
                 drawSelectedPeaks(peakAttr);
             }
-            if (controller == FXMLController.activeController) {
+            if (controller == FXMLController.activeController.get()) {
                 List<Peak> allSelPeaks = new ArrayList<>();
                 for (PolyChart chart : controller.charts) {
                     allSelPeaks.addAll(chart.getSelectedPeaks());
@@ -767,6 +794,44 @@ public class PolyChart implements PeakListener {
 //        setXAxis(limits[0], limits[1]);
     }
 
+    public void swapView() {
+        if (!is1D()) {
+            double minX = xAxis.getLowerBound();
+            double maxX = xAxis.getUpperBound();
+            double minY = yAxis.getLowerBound();
+            double maxY = yAxis.getUpperBound();
+            setXAxis(minY, maxY);
+            setYAxis(minX, maxX);
+            refresh();
+        }
+    }
+
+    public void popView() {
+        FXMLController newController = FXMLController.create();
+        PolyChart newChart = newController.getActiveChart();
+        copyTo(newChart);
+        newController.getStatusBar().setMode(controller.getStatusBar().getMode());
+        newChart.refresh();
+    }
+
+    public void copyTo(PolyChart newChart) {
+        for (DatasetAttributes dataAttr : datasetAttributesList) {
+            DatasetAttributes newDataAttr = newChart.setDataset(dataAttr.getDataset(), true);
+            dataAttr.copyTo(newDataAttr);
+        }
+        for (PeakListAttributes peakAttr : peakListAttributesList) {
+            PeakListAttributes newPeakAttr = newChart.setupPeakListAttributes(peakAttr.getPeakList());
+            peakAttr.copyTo(newPeakAttr);
+        }
+        for (int iAxis = 0; iAxis < axes.length; iAxis++) {
+            newChart.axModes[iAxis] = axModes[iAxis];
+            newChart.setAxis(iAxis, axes[iAxis].getLowerBound(), axes[iAxis].getUpperBound());
+            newChart.axes[iAxis].setLabel(axes[iAxis].getLabel());
+            axes[iAxis].copyTo(newChart.axes[iAxis]);
+        }
+        newChart.refresh();
+    }
+
     protected double[] getRange(int axis, double min, double max) {
         double[] limits = getRange(axis);
         if (min > limits[0]) {
@@ -818,11 +883,14 @@ public class PolyChart implements PeakListener {
         double center = (max + min) / 2.0;
 
         if (is1D()) {
-            center += y / scale;
-            min = center - range / 2.0;
-            max = center + range / 2.0;
-            double f = (0.0 - min) / (max - min);
-            setYAxis(min, max);
+            if (!datasetAttributesList.isEmpty()) {
+                datasetAttributesList.stream().forEach(dataAttr -> {
+                    double fOffset = dataAttr.getOffset();
+                    fOffset -= y / height;
+                    dataAttr.setOffset(fOffset);
+                });
+                setYAxisByLevel();
+            }
         } else {
             center -= y / scale;
             min = center - range / 2.0;
@@ -846,16 +914,10 @@ public class PolyChart implements PeakListener {
     protected void adjustScale(DatasetAttributes dataAttr, double factor) {
         Dataset dataset = dataAttr.getDataset();
         if (is1D()) {
-            double min = yAxis.getLowerBound();
-            double max = yAxis.getUpperBound();
-            double range = max - min;
-            double f = (0.0 - min) / range;
-            range = range * factor;
-            min = -f * range;
-            max = min + range;
             double oldLevel = dataAttr.getLvl();
-            dataAttr.setLvl(oldLevel * factor);
-            setYAxis(min, max);
+            double newLevel = oldLevel * factor;
+            dataAttr.setLvl(newLevel);
+            setYAxisByLevel();
         } else if (dataset != null) {
             double scale = factor;
             if (scale > 2.0) {
@@ -869,27 +931,20 @@ public class PolyChart implements PeakListener {
     }
 
     public void scaleY(double y) {
+        double factor = (y / 200.0 + 1.0);
+        if (factor > 2.0) {
+            factor = 2.0;
+        } else if (factor < 0.5) {
+            factor = 0.5;
+        }
+        final double scale = factor;
         datasetAttributesList.stream().forEach(dataAttr -> {
             Dataset dataset = dataAttr.getDataset();
             if (is1D()) {
-                double min = yAxis.getLowerBound();
-                double max = yAxis.getUpperBound();
-                double scale = yAxis.getScale();
-                double range = max - min;
-                double f = (0.0 - min) / range;
-                range -= y / scale;
-                min = -f * range;
-                max = min + range;
                 double oldLevel = dataAttr.getLvl();
                 dataAttr.setLvl(oldLevel * scale);
-                setYAxis(min, max);
+                setYAxisByLevel();
             } else if (dataset != null) {
-                double scale = (y / 100.0 + 1.0);
-                if (scale > 2.0) {
-                    scale = 2.0;
-                } else if (scale < 0.5) {
-                    scale = 0.5;
-                }
                 double oldLevel = dataAttr.getLvl();
                 dataAttr.setLvl(oldLevel * scale);
             }
@@ -948,8 +1003,6 @@ public class PolyChart implements PeakListener {
     }
 
     protected void setYAxis(double min, double max) {
-        double range = max - min;
-        double delta = range / 10;
         yAxis.setMinMax(min, max);
     }
 
@@ -1053,13 +1106,33 @@ public class PolyChart implements PeakListener {
         }
     }
 
+    public boolean isInView(int axis, double position, double edgeFrac) {
+        double lim1 = axes[axis].getLowerBound();
+        double lim2 = axes[axis].getUpperBound();
+        double lower;
+        double upper;
+        double range = Math.abs(lim2 - lim1);
+        if (lim1 < lim2) {
+            lower = lim1 + range * edgeFrac;
+            upper = lim2 - range * edgeFrac;
+        } else {
+            lower = lim2 + range * edgeFrac;
+            upper = lim1 - range * edgeFrac;
+        }
+        return position > lower && position < upper;
+    }
+
     protected void moveTo(Double[] positions) {
         for (int axis = 0; axis < positions.length; axis++) {
             if (positions[axis] != null) {
                 if (axis > 1) {
                     DatasetAttributes datasetAttributes = datasetAttributesList.get(0);
-                    int plane = AXMODE.PPM.getIndex(datasetAttributes, axis, positions[axis]);
-                    setAxis(axis, plane, plane);
+                    if (axModes[axis] == AXMODE.PTS) {
+                        int plane = AXMODE.PPM.getIndex(datasetAttributes, axis, positions[axis]);
+                        setAxis(axis, plane, plane);
+                    } else {
+                        setAxis(axis, positions[axis], positions[axis]);
+                    }
                 } else {
                     double lower = axes[axis].getLowerBound();
                     double upper = axes[axis].getUpperBound();
@@ -1078,7 +1151,12 @@ public class PolyChart implements PeakListener {
             if (positions[axis] != null) {
                 if (axis > 1) {
                     DatasetAttributes datasetAttributes = datasetAttributesList.get(0);
-                    setAxis(axis, positions[axis], positions[axis]);
+                    if (axModes[axis] == AXMODE.PTS) {
+                        int plane = AXMODE.PPM.getIndex(datasetAttributes, axis, positions[axis]);
+                        setAxis(axis, plane, plane);
+                    } else {
+                        setAxis(axis, positions[axis], positions[axis]);
+                    }
                 } else {
                     double range = widths[axis];
                     double newLower = positions[axis] - range / 2;
@@ -1205,9 +1283,12 @@ public class PolyChart implements PeakListener {
             }
             max += range / 20.0;
             min -= range / 20.0;
+
             double delta = max - min;
-            dataAttr.setLvl(delta / 10.0);
-            setYAxis(min, max);
+            double fOffset = (0.0 - min) / delta;
+            dataAttr.setOffset(fOffset);
+            dataAttr.setLvl(delta);
+            setYAxisByLevel();
         } else {
             Dataset dataset = dataAttr.getDataset();
             Double sdev = dataset.guessNoiseLevel();
@@ -1229,6 +1310,18 @@ public class PolyChart implements PeakListener {
                 level = value;
             }
         }
+    }
+
+    protected void setYAxisByLevel() {
+        if (!datasetAttributesList.isEmpty()) {
+            DatasetAttributes dataAttr = datasetAttributesList.get(0);
+            double delta = dataAttr.getLvl();
+            double fOffset = dataAttr.getOffset();
+            double min = -fOffset * delta;
+            double max = min + delta;
+            setYAxis(min, max);
+        }
+
     }
 
     protected void setPhaseDim(int phaseDim) {
@@ -1470,6 +1563,12 @@ public class PolyChart implements PeakListener {
         processorController.propertyManager.clearBaselineRegions();
     }
 
+    public void clearDataAndPeaks() {
+        datasetAttributesList.clear();
+        peakListAttributesList.clear();
+        refresh();
+    }
+
     public void updateDatasets(List<String> targets) {
         ObservableList<DatasetAttributes> datasetAttrs = getDatasetAttributes();
         List<DatasetAttributes> newList = new ArrayList<>();
@@ -1527,6 +1626,17 @@ public class PolyChart implements PeakListener {
 
     void setDataset(Dataset dataset) {
         setDataset(dataset, false);
+    }
+
+    public boolean containsDataset(Dataset dataset) {
+        boolean result = false;
+        for (DatasetAttributes dataAttr : datasetAttributesList) {
+            if (dataAttr.getDataset() == dataset) {
+                result = true;
+                break;
+            }
+        }
+        return result;
     }
 
     DatasetAttributes setDataset(Dataset dataset, boolean append) {
@@ -1827,7 +1937,44 @@ public class PolyChart implements PeakListener {
         borders[0] = Math.max(borders[0], chartProps.getLeftBorderSize());
         borders[2] = Math.max(borders[2], minBottomBorder);
         borders[2] = Math.max(borders[2], chartProps.getBottomBorderSize());
+        if (chartProps.getAspect() && !is1D()) {
+            adjustAspect(borders);
+        }
         return borders;
+    }
+
+    void adjustAspect(double[] borders) {
+        if ((axModes[0] == AXMODE.PPM) && (axModes[1] == AXMODE.PPM)) {
+            if (!datasetAttributesList.isEmpty()) {
+                DatasetAttributes dAttr = datasetAttributesList.get(0);
+                Dataset dataset = dAttr.getDataset();
+                if (dataset.getNDim() > 1) {
+                    Nuclei nuc0 = dataset.getNucleus(dAttr.getDim(0));
+                    Nuclei nuc1 = dataset.getNucleus(dAttr.getDim(1));
+                    if ((nuc0 != null) && (nuc1 != null)) {
+                        double fRatio0 = dataset.getNucleus(dAttr.getDim(0)).getFreqRatio();
+                        double fRatio1 = dataset.getNucleus(dAttr.getDim(1)).getFreqRatio();
+                        double dXAxis = Math.abs(xAxis.getUpperBound() - xAxis.getLowerBound());
+                        double dYAxis = Math.abs(yAxis.getUpperBound() - yAxis.getLowerBound());
+
+                        double ppmRatio = dXAxis / dYAxis;
+                        double ppmRatioF = fRatio1 / fRatio0;
+                        double chartAspectRatio = chartProps.getAspectRatio();
+                        double aspectRatio = chartAspectRatio * (ppmRatio / ppmRatioF);
+                        double dX = width - borders[0] - borders[1];
+                        double dY = height - (borders[2] + borders[3]);
+                        double newDX = dY * aspectRatio;
+
+                        if (newDX > dX) {
+                            double newDY = dX / aspectRatio;
+                            borders[3] = height - borders[2] - newDY;
+                        } else {
+                            borders[1] = width - borders[0] - newDX;
+                        }
+                    }
+                }
+            }
+        }
     }
 
     public void setDisable(boolean state) {
@@ -1896,7 +2043,9 @@ public class PolyChart implements PeakListener {
         GraphicsContext gCC = canvas.getGraphicsContext2D();
         GraphicsContextInterface gC = new GraphicsContextProxy(gCC);
         GraphicsContextInterface gCPeaks = new GraphicsContextProxy(peakCanvas.getGraphicsContext2D());
-
+        if (is1D()) {
+            setYAxisByLevel();
+        }
         try {
             gC.save();
             gC.clearRect(xPos, yPos, width, height);
@@ -2004,7 +2153,7 @@ public class PolyChart implements PeakListener {
         }
     }
 
-    protected void exportVectorGraphics(SVGGraphicsContext svgGC) throws GraphicsIOException {
+    protected void exportVectorGraphics(GraphicsContextInterface svgGC) throws GraphicsIOException {
         Color fillColor = Color.WHITE;
         if (chartProps.getBgColor() != null) {
             fillColor = chartProps.getBgColor();
@@ -2022,6 +2171,9 @@ public class PolyChart implements PeakListener {
             if (axesColorLocal == null) {
                 axesColorLocal = chooseBlackWhite(fillColor);
             }
+        }
+        if (is1D()) {
+            setYAxisByLevel();
         }
         svgGC.setStroke(axesColorLocal);
         xAxis.setColor(axesColorLocal);
@@ -2042,6 +2194,7 @@ public class PolyChart implements PeakListener {
             svgGC.strokeLine(xPos + width - rightBorder, yPos + topBorder, xPos + width - rightBorder, yPos + height - bottomBorder);
         }
         drawDatasets(svgGC);
+        drawSlices(svgGC);
         if (!datasetAttributesList.isEmpty()) {
             drawPeakLists(true, svgGC);
             drawSelectedPeaks(svgGC);
@@ -2055,6 +2208,8 @@ public class PolyChart implements PeakListener {
         updateDatasetAttributeBounds();
         int nDatasets = datasetAttributesList.size();
         int iTitle = 0;
+        double firstOffset = 0.0;
+        double firstLvl = 1.0;
         for (DatasetAttributes datasetAttributes : datasetAttributesList) {
             try {
                 DatasetAttributes firstAttr = datasetAttributesList.get(0);
@@ -2065,15 +2220,9 @@ public class PolyChart implements PeakListener {
                     if (datasetAttributes != firstAttr) {
                         datasetAttributes.syncDims(firstAttr);
                     } else {
+                        firstOffset = datasetAttributes.getOffset();
+                        firstLvl = datasetAttributes.getLvl();
                         updateAxisType();
-
-                        if (controller.getStatusBar() != null) {
-                            SpectrumStatusBar statusBar = controller.getStatusBar();
-                            for (int iDim = 2; iDim < datasetAttributes.nDim; iDim++) {
-                                int[] maxLimits = datasetAttributes.getMaxLimitsPt(iDim);
-                                controller.getStatusBar().setPlaneRanges(iDim, maxLimits[1]);
-                            }
-                        }
                     }
 
                     if (disDimProp.get() != DISDIM.TwoD) {
@@ -2101,7 +2250,7 @@ public class PolyChart implements PeakListener {
                                 boolean ok;
                                 do {
                                     bcPath.getElements().clear();
-                                    ok = drawSpectrum.draw1DSpectrum(datasetAttributes, HORIZONTAL, axModes[0], getPh0(), getPh1(), bcPath);
+                                    ok = drawSpectrum.draw1DSpectrum(datasetAttributes, firstLvl, firstOffset, HORIZONTAL, axModes[0], getPh0(), getPh1(), bcPath);
                                     double[][] xy = drawSpectrum.getXY();
                                     int nPoints = drawSpectrum.getNPoints();
                                     int rowIndex = drawSpectrum.getRowIndex();
@@ -2153,7 +2302,7 @@ public class PolyChart implements PeakListener {
                     gC.setFill(datasetAttributes.getPosColor());
                     String title = datasetAttributes.getDataset().getTitle();
                     gC.fillText(title, textX, textY);
-                    textX += GUIUtils.getTextWidth(title) + 10;
+                    textX += GUIUtils.getTextWidth(title, gC.getFont()) + 10;
                 }
             }
             if (gC instanceof GraphicsContextProxy) {
@@ -2463,15 +2612,17 @@ public class PolyChart implements PeakListener {
 
     }
 
-    void setupPeakListAttributes(PeakList peakList) {
+    PeakListAttributes setupPeakListAttributes(PeakList peakList) {
         purgeInvalidPeakListAttributes();
         boolean present = false;
         String listName = peakList.getName();
+        PeakListAttributes newPeakListAttr = null;
         for (PeakListAttributes peakListAttr : peakListAttributesList) {
             if (peakListAttr.peakListNameProperty().get().equals(listName)) {
                 if (peakListAttr.getPeakList().peaks() == null) {
                     peakListAttr.setPeakList(peakList);
                 }
+                newPeakListAttr = peakListAttr;
                 present = true;
                 break;
             }
@@ -2495,8 +2646,11 @@ public class PolyChart implements PeakListener {
                 PeakListAttributes peakListAttr = new PeakListAttributes(this, matchData, peakList);
                 peakListAttributesList.add(peakListAttr);
                 peakList.registerListener(this);
+                newPeakListAttr = peakListAttr;
+
             }
         }
+        return newPeakListAttr;
     }
 
     public void removeUnusedPeakLists(List<String> targets) {
@@ -2577,7 +2731,17 @@ public class PolyChart implements PeakListener {
                 refresh();
             }
         }
+    }
 
+    public void dragAnno(double[] dragStart, double x, double y, CanvasAnnotation anno) {
+        double[] dragPos = {x, y};
+        anno.move(dragStart, dragPos);
+        drawPeakLists(false);
+    }
+
+    public void finishAnno(double[] dragStart, double x, double y, CanvasAnnotation anno) {
+        double[] dragPos = {x, y};
+        anno.move(dragStart, dragPos);
     }
 
     public void dragPeak(double[] dragStart, double x, double y, boolean widthMode) {
@@ -2773,7 +2937,7 @@ public class PolyChart implements PeakListener {
                     peakGC.clearRect(xPos, yPos, width, height);
                 }
                 if (peakFont.getSize() != PreferencesController.getPeakFontSize()) {
-                    peakFont = new Font(PreferencesController.getPeakFontSize());
+                    peakFont = new Font(fontFamily, PreferencesController.getPeakFontSize());
                 }
                 peakGC.setFont(peakFont);
 
@@ -2799,6 +2963,7 @@ public class PolyChart implements PeakListener {
                 if (!peakPaths.isEmpty()) {
                     drawPeakPaths();
                 }
+                drawAnnotations(peakGC);
 
 //                peakGC.restore();
             } catch (Exception ioE) {
@@ -2876,7 +3041,7 @@ public class PolyChart implements PeakListener {
                 }
             }
         }
-        if (controller == FXMLController.activeController) {
+        if (controller == FXMLController.activeController.get()) {
             List<Peak> allSelPeaks = new ArrayList<>();
             for (PolyChart chart : controller.charts) {
                 allSelPeaks.addAll(chart.getSelectedPeaks());
@@ -2980,17 +3145,18 @@ public class PolyChart implements PeakListener {
                 for (int iDim = 2; iDim < dim.length; iDim++) {
                     limits[iDim] = getPlotLimits(dataAttr, iDim);
                 }
+                drawPeaks.clear1DBounds();
 
                 peaks.stream().filter(peak -> peak.getStatus() >= 0).forEach((peak) -> {
                     try {
                         for (int iDim = 2; iDim < dim.length; iDim++) {
                             offsets[iDim] = 0.0;
                             if (limits[iDim][0] == limits[iDim][1]) {
-                                if (dim[iDim] >=0) {
-                                double ppm = peak.getPeakDim(dim[iDim]).getChemShiftValue();
-                                double pt = dataAttr.getDataset().ppmToDPoint(dataAttr.dim[iDim], ppm);
-                                double deltaPt = Math.abs(limits[iDim][0] - pt);
-                                offsets[iDim] = deltaPt;
+                                if (dim[iDim] >= 0) {
+                                    double ppm = peak.getPeakDim(dim[iDim]).getChemShiftValue();
+                                    double pt = dataAttr.getDataset().ppmToDPoint(dataAttr.dim[iDim], ppm);
+                                    double deltaPt = Math.abs(limits[iDim][0] - pt);
+                                    offsets[iDim] = deltaPt;
                                 }
                             }
                         }
@@ -3014,12 +3180,14 @@ public class PolyChart implements PeakListener {
                 }
                 if (dim.length == 1) { // only draw multiples for 1D 
                     List<Peak> roots = new ArrayList<>();
+                    drawPeaks.clear1DBounds();
                     peaks.stream().filter(peak -> peak.getStatus() >= 0).forEach((peak) -> {
                         try {
                             drawPeaks.drawMultiplet(peakListAttr, gC, peak.getPeakDim(0).getMultiplet(), dim, offsets, false, 0);
                             roots.add(peak);
                         } catch (GraphicsIOException ex) {
                             System.out.println("draw peak exception " + ex.getMessage());
+                        } catch (Exception ex2) {
                         }
                     });
 
@@ -3131,6 +3299,17 @@ public class PolyChart implements PeakListener {
         }
     }
 
+    public Optional<CanvasAnnotation> hitAnnotation(double x, double y) {
+        Optional<CanvasAnnotation> result = Optional.empty();
+        for (CanvasAnnotation anno : canvasAnnotations) {
+            if (anno.hit(x, y)) {
+                result = Optional.of(anno);
+                break;
+            }
+        }
+        return result;
+    }
+
     public void clearAnnotations() {
         canvasAnnotations.clear();
     }
@@ -3139,21 +3318,48 @@ public class PolyChart implements PeakListener {
         canvasAnnotations.add(anno);
     }
 
+    public void removeAnnotation(CanvasAnnotation anno) {
+        canvasAnnotations.remove(anno);
+    }
+
+    public void clearAnnoType(Class annoClass) {
+        Iterator<CanvasAnnotation> iter = canvasAnnotations.iterator();
+        while (iter.hasNext()) {
+            CanvasAnnotation anno = iter.next();
+            if (anno.getClass() == annoClass) {
+                iter.remove();
+            }
+        }
+    }
+
     void drawAnnotations(GraphicsContextInterface gC) {
         if (!canvasAnnotations.isEmpty()) {
             gC.save();
             try {
                 gC.beginPath();
-                gC.rect(xPos + leftBorder, yPos + topBorder, xAxis.getWidth(), yAxis.getHeight());
+                gC.rect(xPos, yPos, xAxis.getWidth() + leftBorder + rightBorder, yAxis.getHeight() + topBorder + bottomBorder);
                 gC.clip();
                 gC.beginPath();
                 double[][] bounds = {{xPos + leftBorder, xPos + width - rightBorder}, {yPos + topBorder, yPos + height - bottomBorder}};
                 double[][] world = {{axes[0].getUpperBound(), axes[0].getLowerBound()},
                 {axes[1].getLowerBound(), axes[1].getUpperBound()}};
-                canvasAnnotations.forEach((anno) -> {
-                    anno.draw(gC, bounds, world);
-                });
+                boolean lastClipAxes = false;
 
+                for (CanvasAnnotation anno : canvasAnnotations) {
+                    if (anno.getClipInAxes() && !lastClipAxes) {
+                        gC.save();
+                        gC.rect(xPos + leftBorder, yPos + topBorder, xAxis.getWidth(), yAxis.getHeight());
+                        gC.clip();
+                        lastClipAxes = true;
+                    } else if (!anno.getClipInAxes() && lastClipAxes) {
+                        gC.restore();
+                        lastClipAxes = false;
+                    }
+                    anno.draw(gC, bounds, world);
+                }
+                if (lastClipAxes) {
+                    gC.restore();
+                }
             } catch (Exception gioE) {
             } finally {
                 gC.restore();
@@ -3323,25 +3529,87 @@ public class PolyChart implements PeakListener {
     }
 
     public void drawSlices() {
+        annoCanvas.setWidth(canvas.getWidth());
+        annoCanvas.setHeight(canvas.getHeight());
+        GraphicsContext annoGC = annoCanvas.getGraphicsContext2D();
+        GraphicsContextInterface gC = new GraphicsContextProxy(annoGC);
+        gC.clearRect(xPos, yPos, width, height);
+        drawSlices(gC);
+    }
+
+    public void drawSlices(GraphicsContextInterface gC) {
         if (annoCanvas != null) {
-            annoCanvas.setWidth(canvas.getWidth());
-            annoCanvas.setHeight(canvas.getHeight());
-            GraphicsContext annoGC = annoCanvas.getGraphicsContext2D();
-            annoGC.clearRect(xPos, yPos, width, height);
 
             if (sliceAttributes.slice1StateProperty().get()) {
-                drawSlice(0, VERTICAL);
-                drawSlice(0, HORIZONTAL);
+                drawSlice(gC, 0, VERTICAL);
+                drawSlice(gC, 0, HORIZONTAL);
             }
             if (sliceAttributes.slice2StateProperty().get()) {
-                drawSlice(1, VERTICAL);
-                drawSlice(1, HORIZONTAL);
+                drawSlice(gC, 1, VERTICAL);
+                drawSlice(gC, 1, HORIZONTAL);
             }
         }
     }
 
-    public void drawSlice(int iCross, int iOrient) {
+    public void extractSlice(int iOrient) {
         if (annoCanvas == null) {
+            return;
+        }
+        Dataset dataset = getDataset();
+        if (dataset == null) {
+            return;
+        }
+        int iCross = 0;
+        int nDim = dataset.getNDim();
+        if ((nDim > 1)) {
+            if (iOrient < nDim) {
+                int iSlice = 0;
+                List<String> sliceDatasets = new ArrayList<>();
+                for (DatasetAttributes dataAttr : datasetAttributesList) {
+                    Vec sliceVec = new Vec(32, false);
+                    sliceVec.setName(dataset.getName() + "_slice_" + iSlice);
+                    try {
+                        dataAttr.getSlice(sliceVec, iOrient, crossHairPositions[iCross][VERTICAL], crossHairPositions[iCross][HORIZONTAL]);
+                        Dataset sliceDataset = new Dataset(sliceVec);
+                        sliceDataset.setLabel(0, dataset.getLabel(dataAttr.dim[iOrient]));
+                        sliceDatasets.add(sliceDataset.getName());
+                    } catch (IOException ex) {
+                        Logger.getLogger(PolyChart.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                    iSlice++;
+                }
+                if ((sliceController == null)
+                        || (!FXMLController.getControllers().contains(sliceController))) {
+                    sliceController = FXMLController.create();
+                }
+                sliceController.getStage().show();
+                sliceController.getStage().toFront();
+                PolyChart newChart = sliceController.getActiveChart();
+                if (newChart == null) {
+                    sliceController.addChart();
+                    newChart = sliceController.getActiveChart();
+                }
+                newChart.clearDataAndPeaks();
+                newChart.updateDatasets(sliceDatasets);
+                sliceController.getStatusBar().setMode(controller.getStatusBar().getMode());
+                newChart.autoScale();
+                double lvl = newChart.getDatasetAttributes().get(0).getLvl();
+                double offset = newChart.getDatasetAttributes().get(0).getOffset();
+                int iAttr = 0;
+                for (DatasetAttributes dataAttr : newChart.getDatasetAttributes()) {
+                    dataAttr.setLvl(lvl);
+                    dataAttr.setOffset(offset);
+                    dataAttr.setPosColor(datasetAttributesList.get(iAttr).getPosColor());
+                    iAttr++;
+                }
+                newChart.refresh();
+            }
+        }
+
+    }
+
+    public void drawSlice(GraphicsContextInterface gC, int iCross, int iOrient) {
+        if (gC == null) {
             return;
         }
         Dataset dataset = getDataset();
@@ -3363,7 +3631,6 @@ public class PolyChart implements PeakListener {
                 xOn = false;
             }
         }
-        GraphicsContext annoGC = annoCanvas.getGraphicsContext2D();
         if ((nDim > 1) && controller.sliceStatus.get() && sliceStatus.get()) {
             if (((iOrient == HORIZONTAL) && xOn) || ((iOrient == VERTICAL) && yOn)) {
                 for (DatasetAttributes datasetAttributes : datasetAttributesList) {
@@ -3375,15 +3642,15 @@ public class PolyChart implements PeakListener {
                     double[][] xy = drawSpectrum.getXY();
                     int nPoints = drawSpectrum.getNPoints();
                     if (sliceAttributes.useDatasetColorProperty().get()) {
-                        annoGC.setStroke(datasetAttributes.getPosColor());
+                        gC.setStroke(datasetAttributes.getPosColor());
                     } else {
                         if (iCross == 0) {
-                            annoGC.setStroke(sliceAttributes.getSlice1Color());
+                            gC.setStroke(sliceAttributes.getSlice1Color());
                         } else {
-                            annoGC.setStroke(sliceAttributes.getSlice2Color());
+                            gC.setStroke(sliceAttributes.getSlice2Color());
                         }
                     }
-                    annoGC.strokePolyline(xy[0], xy[1], nPoints);
+                    gC.strokePolyline(xy[0], xy[1], nPoints);
                 }
             }
         }

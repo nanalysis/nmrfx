@@ -37,7 +37,7 @@ public class IntegralMenu extends ChartMenu {
     }
 
     @Override
-    void makeChartMenu() {
+    public void makeChartMenu() {
         chartMenu = new ContextMenu();
         for (int i = 1; i <= 6; i++) {
             final int iNorm = i;

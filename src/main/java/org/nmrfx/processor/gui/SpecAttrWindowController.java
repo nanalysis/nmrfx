@@ -66,6 +66,7 @@ import javafx.stage.StageStyle;
 import javafx.util.converter.DoubleStringConverter;
 import java.text.DecimalFormat;
 import java.text.ParseException;
+import java.util.Collections;
 import java.util.List;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
@@ -79,16 +80,24 @@ import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.ContentDisplay;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Label;
+import javafx.scene.control.ListCell;
+import javafx.scene.control.ListView;
 import javafx.scene.control.RadioButton;
 import javafx.scene.control.SelectionMode;
 import javafx.scene.control.Slider;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.scene.control.ToggleGroup;
+import javafx.scene.effect.InnerShadow;
+import javafx.scene.input.ClipboardContent;
+import javafx.scene.input.DragEvent;
+import javafx.scene.input.Dragboard;
+import javafx.scene.input.TransferMode;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
 import javafx.scene.shape.Polygon;
+import javafx.util.Callback;
 import javafx.util.converter.IntegerStringConverter;
 import org.controlsfx.control.ListSelectionView;
 import org.controlsfx.control.PopOver;
@@ -99,6 +108,7 @@ import org.nmrfx.processor.gui.PolyChart.DISDIM;
 import static org.nmrfx.processor.gui.PolyChart.DISDIM.OneDX;
 import static org.nmrfx.processor.gui.PolyChart.DISDIM.TwoD;
 import org.nmrfx.processor.gui.utils.ColorSchemes;
+import org.nmrfx.project.Project;
 import org.nmrfx.utilities.DictionarySort;
 
 /**
@@ -121,7 +131,12 @@ public class SpecAttrWindowController implements Initializable {
     @FXML
     private ToolBar styleToolBar;
     @FXML
+    private BorderPane datasetPane;
+    @FXML
     private TableView<DatasetAttributes> datasetTableView;
+    private HBox datasetTableParHBox = new HBox();
+    private Slider datasetTableParSlider = new Slider();
+    private ChoiceBox<String> datasetTableParChoice = new ChoiceBox<>();
     @FXML
     private TableView<PeakListAttributes> peakListTableView;
     @FXML
@@ -138,6 +153,12 @@ public class SpecAttrWindowController implements Initializable {
     private Label integralHighValue;
     @FXML
     private CheckBox regionCheckBox;
+    @FXML
+    CheckBox aspectCheckBox;
+    @FXML
+    Slider aspectSlider;
+    @FXML
+    Label aspectRatioValue;
     @FXML
     private TabPane tabPane;
     @FXML
@@ -216,6 +237,39 @@ public class SpecAttrWindowController implements Initializable {
     ListChangeListener<String> peakTargetListener;
     ListChangeListener<String> datasetTargetListener;
     Node columnMenuNode;
+    boolean shiftState = false;
+
+    ParSliderListener parSliderListener = new ParSliderListener();
+
+    public class ParSliderListener implements ChangeListener<Number> {
+
+        boolean active = true;
+
+        @Override
+        public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
+            if (active) {
+                List<DatasetAttributes> dataAttrs = datasetTableView.getSelectionModel().getSelectedItems();
+                if (dataAttrs.isEmpty()) {
+                    dataAttrs = datasetTableView.getItems();
+                }
+                String mode = datasetTableParChoice.getValue();
+                for (DatasetAttributes dataAttr : dataAttrs) {
+                    if (mode.equals("offset")) {
+                        dataAttr.setOffset(newValue.doubleValue());
+                    } else if (mode.equals("lvl")) {
+                        dataAttr.setLvl(newValue.doubleValue());
+                    } else if (mode.equals("clm")) {
+                        dataAttr.setClm(newValue.doubleValue());
+                    } else if (mode.equals("nlvl")) {
+                        dataAttr.setNlvls(newValue.intValue());
+                    }
+                }
+                datasetTableView.refresh();
+                chart.refresh();
+            }
+        }
+
+    }
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
@@ -224,6 +278,7 @@ public class SpecAttrWindowController implements Initializable {
         initViewToolBar();
         initStyleToolBar();
         initTable();
+        initParSlider();
         initPeakListTable();
         createViewGrid();
         datasetView = new ListSelectionView<>();
@@ -287,6 +342,186 @@ public class SpecAttrWindowController implements Initializable {
         integralCheckBox.selectedProperty().addListener(e -> updateIntegralState());
         regionCheckBox.selectedProperty().addListener(e -> updateIntegralState());
 
+        aspectCheckBox.selectedProperty().addListener(e -> updateAspectRatio());
+        aspectSlider.setMin(0.1);
+        aspectSlider.setMax(3.0);
+        aspectSlider.setValue(1.0);
+        aspectSlider.setBlockIncrement(0.01);
+        aspectSlider.setOnMousePressed(e -> shiftState = e.isShiftDown());
+        aspectSlider.valueProperty().addListener(e -> updateAspectRatio());
+        datasetView.setCellFactory(new Callback<ListView<String>, ListCell<String>>() {
+            @Override
+            public ListCell<String> call(ListView<String> p) {
+                DatasetListCell<String> olc = new DatasetListCell<String>(datasetView) {
+                    @Override
+                    public void updateItem(String s, boolean empty) {
+                        super.updateItem(s, empty);
+                        if (empty || s == null) {
+                            setText(null);
+                            setGraphic(null);
+                        } else {
+                            setText(s);
+                        }
+                    }
+                };
+                return olc;
+            }
+
+        });
+    }
+    Integer startIndex = null;
+    boolean moveItemIsSelected = false;
+    Node startNode = null;
+    Node endNode = null;
+
+    class DatasetListCell<T> extends ListCell<T> implements ChangeListener<String> {
+
+        private DatasetListCell target;
+        private ListSelectionView<String> listView;
+
+        @Override
+        public void changed(ObservableValue<? extends String> observable, String oldValue, String newValue) {
+        }
+
+        DatasetListCell(ListSelectionView<String> listView) {
+            this.listView = listView;
+            this.setOnDragDetected(new EventHandler<MouseEvent>() {
+                @Override
+                public void handle(MouseEvent event) {
+                    startIndex = indexProperty().get();
+                    Dragboard db = startDragAndDrop(TransferMode.COPY);
+
+                    /* Put a string on a dragboard */
+                    ClipboardContent content = new ClipboardContent();
+                    String sourcetext = getText();
+                    moveItemIsSelected = isSelectedDataset(sourcetext);
+                    content.putString(getText());
+                    db.setContent(content);
+                    startNode = getParent();
+                    event.consume();
+                }
+            });
+            this.setOnDragDone(new EventHandler<DragEvent>() {
+                @Override
+                public void handle(DragEvent event) {
+                    ObservableList<String> listItems = listView.getTargetItems();
+                    event.consume();
+                }
+            });
+            this.setOnDragDropped(new EventHandler<DragEvent>() {
+                @Override
+                public void handle(DragEvent event) {
+                    Object target = event.getGestureTarget();
+                    if (target instanceof DatasetListCell) {
+                        DatasetListCell targetCell = (DatasetListCell) target;
+                        int index = targetCell.getIndex();
+                        String targetText = targetCell.getText();
+                        moveItem(index, targetText, getParent());
+                    }
+                    event.consume();
+                }
+            });
+            this.setOnDragEntered(new EventHandler<DragEvent>() {
+                @Override
+                public void handle(DragEvent event) {
+                    event.consume();
+                }
+            });
+            this.setOnDragExited(new EventHandler<DragEvent>() {
+                @Override
+                public void handle(DragEvent event) {
+                    //   System.out.println("exit " + event.toString());
+                    Object target = event.getTarget();
+                    if (target instanceof DatasetListCell) {
+                        DatasetListCell targetCell = (DatasetListCell) target;
+                        targetCell.setEffect(null);
+                    }
+                    event.consume();
+                }
+            });
+            this.setOnDragOver(new EventHandler<DragEvent>() {
+                @Override
+                public void handle(DragEvent event) {
+                    //  System.out.println("over " + event.toString());
+                    event.acceptTransferModes(TransferMode.COPY_OR_MOVE);
+                    Object target = event.getGestureTarget();
+                    if (target instanceof DatasetListCell) {
+                        DatasetListCell targetCell = (DatasetListCell) target;
+                        InnerShadow is = new InnerShadow();
+                        is.setOffsetX(1.0);
+                        is.setColor(Color.web("#666666"));
+                        is.setOffsetY(1.0);
+                        targetCell.setEffect(is);
+                    }
+                    event.consume();
+                }
+
+            });
+        }
+
+        boolean isSelectedDataset(String text) {
+            for (String item : listView.getTargetItems()) {
+                if (item.equals(text)) {
+                    return true;
+                }
+            }
+            return false;
+
+        }
+
+        void moveItem(int targetIndex, String targetText, Node endNode) {
+            datasetView.getTargetItems().removeListener(datasetTargetListener);
+            final boolean targetItemIsSelected;
+            List<String> moveFromItems;
+            List<String> moveToItems;
+            String startItem;
+            try {
+                if (moveItemIsSelected) {
+                    targetItemIsSelected = endNode == startNode;
+                } else {
+                    targetItemIsSelected = endNode != startNode;
+                }
+
+                if (moveItemIsSelected) {
+                    moveFromItems = listView.getTargetItems();
+                } else {
+                    moveFromItems = listView.getSourceItems();
+                }
+                if (targetItemIsSelected) {
+                    moveToItems = listView.getTargetItems();
+                } else {
+                    moveToItems = listView.getSourceItems();
+                }
+                startItem = moveFromItems.get(startIndex);
+                moveFromItems.remove(startIndex.intValue());
+            } finally {
+                datasetView.getTargetItems().addListener(datasetTargetListener);
+            }
+            if ((targetText == null) || (targetText.equals(""))) {
+                moveToItems.add(startItem);
+            } else {
+                int index = moveToItems.indexOf(targetText);
+                if (targetItemIsSelected == moveItemIsSelected) {
+                    if (index >= startIndex) {
+                        index++;
+                    }
+                }
+                moveToItems.add(index, startItem);
+            }
+            refreshAction();
+        }
+
+        void printEvent(DragEvent event) {
+//            System.out.println("acc obj " + event.getAcceptingObject());
+//            System.out.println("acc gsr " + event.getGestureSource());
+//            System.out.println("acc gtar " + event.getGestureTarget());
+//            System.out.println("acc tar " + event.getTarget());
+//            Object target = event.getGestureTarget();
+//            if (target instanceof DatasetListCell) {
+//                DatasetListCell targetCell = (DatasetListCell) target;
+//                System.out.println(targetCell.getIndex());
+//            }
+        }
     }
 
     void updateIntegralState() {
@@ -299,6 +534,25 @@ public class SpecAttrWindowController implements Initializable {
         integralLowValue.setText(String.format("%.2f", lowValue));
         integralHighValue.setText(String.format("%.2f", highValue));
         chart.refresh();
+    }
+
+    List<PolyChart> getCharts(boolean all) {
+        if (all) {
+            return chart.getController().getCharts();
+        } else {
+            return Collections.singletonList(chart);
+        }
+    }
+
+    void updateAspectRatio() {
+        List<PolyChart> applyCharts = getCharts(shiftState);
+        for (PolyChart applyChart : applyCharts) {
+            applyChart.chartProps.setAspect(aspectCheckBox.isSelected());
+            double aspectRatio = aspectSlider.getValue();
+            applyChart.chartProps.setAspectRatio(aspectRatio);
+            aspectRatioValue.setText(String.format("%.2f", aspectRatio));
+            applyChart.refresh();
+        }
     }
 
     public boolean isShowing() {
@@ -437,7 +691,8 @@ public class SpecAttrWindowController implements Initializable {
     }
 
     public static SpecAttrWindowController create() {
-        FXMLLoader loader = new FXMLLoader(SpecAttrWindowController.class.getResource("/fxml/SpecAttrScene.fxml"));
+        FXMLLoader loader = new FXMLLoader(SpecAttrWindowController.class
+                .getResource("/fxml/SpecAttrScene.fxml"));
         Stage stage = new Stage(StageStyle.DECORATED);
         try {
             Pane pane = (Pane) loader.load();
@@ -460,7 +715,8 @@ public class SpecAttrWindowController implements Initializable {
     }
 
     public static SpecAttrWindowController createPane() {
-        FXMLLoader loader = new FXMLLoader(SpecAttrWindowController.class.getResource("/fxml/SpecAttrScene.fxml"));
+        FXMLLoader loader = new FXMLLoader(SpecAttrWindowController.class
+                .getResource("/fxml/SpecAttrScene.fxml"));
         SpecAttrWindowController controller = null;
         try {
             Pane pane = (Pane) loader.load();
@@ -561,12 +817,13 @@ public class SpecAttrWindowController implements Initializable {
             datasetsTarget.add(dataAttr.getDataset().getName());
         }
         DictionarySort<Dataset> sorter = new DictionarySort<>();
-        FXMLController.datasetList.stream().sorted(sorter).forEach(d -> {
+        Project.getActive().getDatasets().stream().sorted(sorter).forEach(d -> {
             if (!datasetsTarget.contains(d.getName())) {
                 datasetsSource.add(d.getName());
             }
         });
         datasetView.getTargetItems().addListener(datasetTargetListener);
+        updateParSlider();
     }
 
     public void setChart(PolyChart chart) {
@@ -678,6 +935,82 @@ public class SpecAttrWindowController implements Initializable {
             button.setMinWidth(50);
         }
         styleToolBar.getItems().addAll(buttons);
+    }
+
+    void initParSlider() {
+        datasetTableParChoice.getItems().addAll("lvl", "offset", "clm", "nlvl");
+        datasetTableParChoice.setValue("lvl");
+//        Button button = new Button("Close ");
+//        button.getStyleClass().add("toolButton");
+//        button.setOnAction(e -> hideParSlider());
+        Pane spacer1 = new Pane();
+        spacer1.setMinWidth(15.0);
+        Pane spacer2 = new Pane();
+        spacer2.setMinWidth(15.0);
+
+        datasetTableParHBox.getChildren().addAll(datasetTableParChoice, spacer2, datasetTableParSlider);
+        HBox.setHgrow(datasetTableParSlider, Priority.ALWAYS);
+        datasetTableParSlider.valueProperty().addListener(parSliderListener);
+        datasetTableParSlider.setOnMouseReleased(e -> updateParSlider());
+        datasetPane.setBottom(datasetTableParHBox);
+        datasetTableParChoice.setOnAction(e -> updateParSlider());
+    }
+
+    void updateParSlider() {
+        parSliderListener.active = false;
+        String type = datasetTableParChoice.getValue();
+        datasetPane.setBottom(datasetTableParHBox);
+        List<DatasetAttributes> dataAttrs = datasetTableView.getSelectionModel().getSelectedItems();
+        if (dataAttrs.isEmpty()) {
+            dataAttrs = datasetTableView.getItems();
+        }
+        if (!dataAttrs.isEmpty()) {
+            DatasetAttributes dataAttr = dataAttrs.get(0);
+            double min;
+            double max;
+            double value;
+            double incrValue;
+            switch (type) {
+                case "offset":
+                    min = 0.0;
+                    max = 1.0;
+                    incrValue = 0.01;
+                    value = dataAttr.getOffset();
+                    break;
+                case "clm":
+                    min = 1.01;
+                    max = 4.0;
+                    incrValue = 0.01;
+                    value = dataAttr.getClm();
+                    break;
+                case "lvl":
+                    value = dataAttr.getLvl();
+                    min = value / 10.0;
+                    max = value * 10.0;
+                    incrValue = value / 100.0;
+                    break;
+                case "nlvl":
+                    value = dataAttr.getNlvls();
+                    min = 1;
+                    max = 50;
+                    incrValue = 1.0;
+                    break;
+                default:
+                    return;
+            }
+            datasetTableParSlider.setMin(min);
+            datasetTableParSlider.setMax(max);
+            datasetTableParSlider.setBlockIncrement(incrValue);
+            datasetTableParSlider.setValue(value);
+        }
+        parSliderListener.active = true;
+    }
+
+    void datasetSelectionChanged() {
+        if (datasetPane.getBottom() != null) {
+            updateParSlider();
+        }
+
     }
 
     void initTable() {
@@ -881,6 +1214,7 @@ public class SpecAttrWindowController implements Initializable {
         positiveColumn.getColumns().setAll(posDrawOnCol, posColorCol, posLineWidthCol);
         negativeColumn.getColumns().setAll(negDrawOnCol, negColorCol, negLineWidthCol);
         datasetTableView.getColumns().setAll(fileNameCol, levelCol, offsetCol, nLevelsCol, clmCol, positiveColumn, negativeColumn);
+        datasetTableView.getSelectionModel().getSelectedIndices().addListener((ListChangeListener) e -> datasetSelectionChanged());
     }
 
     void initPeakListTable() {
@@ -1319,6 +1653,7 @@ public class SpecAttrWindowController implements Initializable {
         titlesCheckBox.setSelected(polyChart.chartProps.getTitles());
         DISDIM curDisDim = polyChart.disDimProp.get();
         disDimCombo.setValue(curDisDim);
+        aspectSlider.setValue(polyChart.chartProps.getAspectRatio());
         // polyChart.disDimProp.bindBidirectional(disDimCombo.valueProperty());
     }
 

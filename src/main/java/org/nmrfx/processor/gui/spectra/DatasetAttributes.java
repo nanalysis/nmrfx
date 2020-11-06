@@ -695,39 +695,45 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
         initialize(aFile, aFile.getFileName());
     }
 
+    public void copyTo(DatasetAttributes dAttr) {
+        dAttr.dim = getDims();
+        dAttr.setPosColor(getPosColor());
+        dAttr.setNegColor(getNegColor());
+        dAttr.setPosWidth(getPosWidth());
+        dAttr.setNegWidth(getNegWidth());
+        dAttr.setLvl(getLvl());
+        dAttr.clm = clm;
+        dAttr.setNlvls(getNlvls());
+        dAttr.nDim = nDim;
+        dAttr.fileName = fileName;
+        dAttr.theFile = theFile;
+        dAttr.setPos(getPos());
+        dAttr.setNeg(getNeg());
+        if (drawList.isEmpty()) {
+            dAttr.drawList = new ArrayList<>();
+        } else {
+            dAttr.drawList = new ArrayList<>();
+            dAttr.drawList.addAll(drawList);
+        }
+        if (selectionList != null) {
+            dAttr.selectionList = selectionList.clone();
+        }
+        dAttr.selected = selected;
+    }
+
     @Override
     public Object clone() {
-        Object o = null;
-
+        Object o;
+        DatasetAttributes dAttr = null;
         try {
             o = super.clone();
-            ((DatasetAttributes) o).setPosColor(getPosColor());
-            ((DatasetAttributes) o).setNegColor(getNegColor());
-            ((DatasetAttributes) o).setPosWidth(getPosWidth());
-            ((DatasetAttributes) o).setNegWidth(getNegWidth());
-            ((DatasetAttributes) o).setLvl(getLvl());
-            ((DatasetAttributes) o).clm = clm;
-            ((DatasetAttributes) o).setNlvls(getNlvls());
-            ((DatasetAttributes) o).nDim = nDim;
-            ((DatasetAttributes) o).fileName = fileName;
-            ((DatasetAttributes) o).theFile = theFile;
-            ((DatasetAttributes) o).setPos(getPos());
-            ((DatasetAttributes) o).setNeg(getNeg());
-            if (drawList.isEmpty()) {
-                ((DatasetAttributes) o).drawList = new ArrayList<>();
-            } else {
-                ((DatasetAttributes) o).drawList = new ArrayList<>();
-                ((DatasetAttributes) o).drawList.addAll(drawList);
-            }
-            if (selectionList != null) {
-                ((DatasetAttributes) o).selectionList = selectionList.clone();
-            }
-            ((DatasetAttributes) o).selected = selected;
+            dAttr = (DatasetAttributes) o;
+            copyTo(dAttr);
         } catch (CloneNotSupportedException e) {
             e.printStackTrace(System.err);
         }
 
-        return o;
+        return dAttr;
     }
 
     public void setHasLevel(boolean value) {

@@ -45,6 +45,7 @@ import javafx.scene.control.CheckBox;
 import javafx.scene.control.ContentDisplay;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
+import javafx.scene.control.Menu;
 import javafx.scene.control.MenuButton;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.Spinner;
@@ -88,6 +89,7 @@ public class SpectrumStatusBar {
     CheckBox sliceStatus = new CheckBox("Slices");
     CheckBox complexStatus = new CheckBox("Complex");
     CheckBox phaserStatus = new CheckBox("Phasing");
+    MenuButton toolButton = new MenuButton("Tools");
     private Spinner vecSpinner = new Spinner();
     TextField[] planePPMField = new TextField[maxSpinners];
     Spinner[] planeSpinner = new Spinner[maxSpinners];
@@ -110,6 +112,7 @@ public class SpectrumStatusBar {
     static Background errorBackground = new Background(new BackgroundFill(Color.ORANGE, CornerRadii.EMPTY, Insets.EMPTY));
     Background defaultBackground = null;
     boolean arrayMode = false;
+    int currentMode = 0;
 
     public SpectrumStatusBar(FXMLController controller) {
         this.controller = controller;
@@ -117,6 +120,7 @@ public class SpectrumStatusBar {
 
     public void buildBar(ToolBar btoolBar) {
         this.btoolBar = btoolBar;
+        setupTools();
         spinFactory = new SpinnerValueFactory.ListSpinnerValueFactory(FXCollections.observableArrayList());
         vecSpinner.setEditable(false);
         vecSpinner.setValueFactory(spinFactory);
@@ -282,6 +286,48 @@ public class SpectrumStatusBar {
         };
     }
 
+    public void addToToolMenu(MenuItem menuItem) {
+        toolButton.getItems().add(menuItem);
+    }
+
+    public void addToToolMenu(String menuText, MenuItem newItem) {
+        for (MenuItem menuItem : toolButton.getItems()) {
+            if (menuItem.getText().equals(menuText)) {
+                if (menuItem instanceof Menu) {
+                    Menu menu = (Menu) menuItem;
+                    menu.getItems().add(newItem);
+                }
+            }
+        }
+    }
+
+    public void setupTools() {
+        Menu specToolMenu = new Menu("Spectrum Tools");
+
+        MenuItem measureMenuItem = new MenuItem("Show Measure Bar");
+        measureMenuItem.setOnAction(e -> controller.showSpectrumMeasureBar());
+        MenuItem analyzerMenuItem = new MenuItem("Show Analyzer Bar");
+        analyzerMenuItem.setOnAction(e -> controller.showAnalyzerBar());
+        MenuItem compareMenuItem = new MenuItem("Show Comparator");
+
+        specToolMenu.getItems().addAll(measureMenuItem, analyzerMenuItem,
+                compareMenuItem);
+        addToToolMenu(specToolMenu);
+
+        Menu peakToolMenu = new Menu("Peak Tools");
+
+        compareMenuItem.setOnAction(e -> controller.showSpectrumComparator());
+        MenuItem peakNavigatorMenuItem = new MenuItem("Show Peak Navigator");
+        peakNavigatorMenuItem.setOnAction(e -> controller.showPeakNavigator());
+        MenuItem pathToolMenuItem = new MenuItem("Show Path Tool");
+        pathToolMenuItem.setOnAction(e -> controller.showPathTool());
+
+        peakToolMenu.getItems().addAll(peakNavigatorMenuItem,
+                pathToolMenuItem);
+
+        addToToolMenu(peakToolMenu);
+    }
+
     public void setCursor(Cursor cursor) {
         cursorMenuButton.setGraphic(cursorMap.get(cursor));
         for (PolyChart chart : controller.charts) {
@@ -392,7 +438,9 @@ public class SpectrumStatusBar {
                 int indexU = chart.axModes[axNum].getIndex(dataAttr, axNum, axis.getUpperBound());
 
                 int center = (indexL + indexU) / 2;
-
+                int dDim = dataAttr.dim[axNum];
+                int size = dataAttr.getDataset().getSize(dDim);
+                setPlaneRanges(axNum, size);
                 updatePlaneSpinner(center, axNum);
             }
         }
@@ -548,13 +596,19 @@ public class SpectrumStatusBar {
 
     }
 
+    public int getMode() {
+        return currentMode;
+    }
+
     public void setMode(int mode) {
+        currentMode = mode;
         arrayMode = false;
         List<Node> nodes = new ArrayList<>();
         if (mode == 0) {
             nodes.add(vecSpinner);
         } else {
             nodes.add(cursorMenuButton);
+            nodes.add(toolButton);
         }
         HBox.setHgrow(filler1, Priority.ALWAYS);
         HBox.setHgrow(filler2, Priority.ALWAYS);

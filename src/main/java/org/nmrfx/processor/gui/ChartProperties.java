@@ -57,6 +57,8 @@ public class ChartProperties {
     private BooleanProperty integrals;
     private DoubleProperty integralLowPos;
     private DoubleProperty integralHighPos;
+    private DoubleProperty aspectRatio;
+    private BooleanProperty aspect;
     private BooleanProperty titles;
 
     public ChartProperties(PolyChart chart) {
@@ -326,6 +328,36 @@ public class ChartProperties {
         return titlesProperty().get();
     }
 
+    public double getAspectRatio() {
+        return aspectRatioProperty().get();
+    }
+
+    public void setAspectRatio(double value) {
+        aspectRatioProperty().set(value);
+    }
+
+    public DoubleProperty aspectRatioProperty() {
+        if (aspectRatio == null) {
+            aspectRatio = new SimpleDoubleProperty(polyChart, "aspectRatio", 1.0);
+        }
+        return aspectRatio;
+    }
+
+    public BooleanProperty aspectProperty() {
+        if (aspect == null) {
+            aspect = new SimpleBooleanProperty(polyChart, "aspect", false);
+        }
+        return aspect;
+    }
+
+    public void setAspect(boolean value) {
+        aspectProperty().set(value);
+    }
+
+    public boolean getAspect() {
+        return aspectProperty().get();
+    }
+
     public void config(String name, Object value) {
         if (Platform.isFxApplicationThread()) {
             try {
@@ -351,7 +383,7 @@ public class ChartProperties {
             "axesColor", "cross0Color", "cross1Color", "grid",
             "leftBorderSize", "rightBorderSize",
             "topBorderSize", "bottomBorderSize", "regions", "integrals",
-            "integralLowPos", "integralHighPos", "titles"};
+            "integralLowPos", "integralHighPos", "titles", "aspect", "aspectRatio"};
         for (String beanName : beanNames) {
             try {
                 if (beanName.contains("Color")) {
@@ -369,4 +401,5 @@ public class ChartProperties {
         }
         return data;
     }
+
 }

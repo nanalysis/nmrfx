@@ -23,13 +23,8 @@
  */
 package org.nmrfx.processor.gui;
 
-import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ResourceBundle;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -72,7 +67,6 @@ import javafx.scene.control.TabPane;
 import javafx.scene.control.TableColumn.CellEditEvent;
 import javafx.scene.control.TablePosition;
 import javafx.scene.control.TextField;
-import javafx.scene.control.TextInputDialog;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.control.ToolBar;
 import javafx.scene.control.cell.TextFieldTableCell;
@@ -81,21 +75,17 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
-import javafx.stage.FileChooser;
 import javafx.util.StringConverter;
 import javafx.util.converter.FloatStringConverter;
 import javafx.util.converter.IntegerStringConverter;
-import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.Nuclei;
-import org.nmrfx.processor.datasets.peaks.InvalidPeakException;
 import org.nmrfx.processor.datasets.peaks.Peak;
 import org.nmrfx.processor.datasets.peaks.PeakDim;
 import org.nmrfx.processor.datasets.peaks.PeakList;
 import org.nmrfx.processor.datasets.peaks.SpectralDim;
-import org.nmrfx.processor.datasets.peaks.io.PeakReader;
-import org.nmrfx.processor.datasets.peaks.io.PeakWriter;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
+import org.nmrfx.project.Project;
 import org.python.util.PythonInterpreter;
 
 /**
@@ -118,7 +108,11 @@ public class PeakAttrController implements Initializable, PeakNavigable, PeakMen
     @FXML
     private TextField intensityField;
     @FXML
+    private TextField intensityErrField;
+    @FXML
     private TextField volumeField;
+    @FXML
+    private TextField volumeErrField;
     @FXML
     private TextField commentField;
     @FXML
@@ -359,8 +353,10 @@ public class PeakAttrController implements Initializable, PeakNavigable, PeakMen
                 peakTableView.setItems(peakDimList);
             }
             peakTableView.refresh();
-            intensityField.setText(String.valueOf(peak.getIntensity()));
-            volumeField.setText(String.valueOf(peak.getVolume1()));
+            intensityField.setText(String.format("%.5f", peak.getIntensity()));
+            intensityErrField.setText(String.format("%.5f", peak.getIntensityErr()));
+            volumeField.setText(String.format("%.5f", peak.getVolume1()));
+            volumeErrField.setText(String.format("%.5f", peak.getVolume1Err()));
             commentField.setText(peak.getComment());
             clearIt = false;
         }
@@ -377,7 +373,9 @@ public class PeakAttrController implements Initializable, PeakNavigable, PeakMen
             Series series = new Series<>();
             data.add(series);
             PEAK_NORM normMode = normChoice.getValue();
-            double[] yValues = currentPeak.getMeasures().get();
+            double[][] values = currentPeak.getMeasures().get();
+            double[] yValues = values[0];
+            double[] errs = values[1];
             double[] xValues = currentPeak.getPeakList().getMeasureValues();
             for (int i = 0; i < yValues.length; i++) {
                 double xValue = xValues != null ? xValues[i] : 1.0 * i;
@@ -386,7 +384,11 @@ public class PeakAttrController implements Initializable, PeakNavigable, PeakMen
                 }
                 Optional<Double> yValue = normMode.normalize(yValues[0], yValues[i]);
                 if (yValue.isPresent()) {
-                    XYChart.Data value = new XYChart.Data(xValue, yValue.get());
+                    double err = 0.0;
+                    if (normMode == PEAK_NORM.NO_NORM) {
+                        err = errs[i];
+                    }
+                    XYChart.Data value = new XYChart.Data(xValue, yValue.get(), err);
                     series.getData().add(value);
                 }
             }
@@ -408,7 +410,7 @@ public class PeakAttrController implements Initializable, PeakNavigable, PeakMen
 
     public void updateConditionNames() {
         conditionField.getItems().clear();
-        Set<String> conditions = PeakList.peakListTable.values().stream().
+        Set<String> conditions = Project.getActive().getPeakLists().stream().
                 map(peakList -> peakList.getSampleConditionLabel()).
                 filter(label -> label != null).collect(Collectors.toSet());
         conditions.stream().sorted().forEach(s -> {

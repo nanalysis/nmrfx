@@ -5,6 +5,7 @@
  */
 package org.nmrfx.processor.gui.project;
 
+import java.beans.PropertyChangeListener;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.FileSystem;
@@ -20,6 +21,9 @@ import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
+import javafx.collections.FXCollections;
+import javafx.collections.MapChangeListener;
+import javafx.collections.ObservableMap;
 import javafx.concurrent.Task;
 
 import org.eclipse.jgit.api.Git;
@@ -27,6 +31,8 @@ import org.eclipse.jgit.api.Status;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.dircache.DirCache;
 import org.eclipse.jgit.revwalk.RevCommit;
+import org.nmrfx.processor.datasets.Dataset;
+import org.nmrfx.processor.datasets.peaks.PeakList;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.GUIScripter;
 import org.nmrfx.processor.gui.MainApp;
@@ -41,15 +47,24 @@ import org.python.util.PythonInterpreter;
 public class GUIProject extends Project {
 
     Git git;
+    private FxPropertyChangeSupport pcs = new FxPropertyChangeSupport(this);
 
     private static boolean commitActive = false;
 
     public GUIProject(String name) {
         super(name);
+        peakLists = FXCollections.observableHashMap();
+        datasetMap = FXCollections.observableHashMap();
+        datasets = FXCollections.observableArrayList();
     }
 
     public static GUIProject replace(String name, GUIProject project) {
         GUIProject newProject = new GUIProject(name);
+        newProject.datasetMap.putAll(project.datasetMap);
+        newProject.peakLists.putAll(project.peakLists);
+
+        newProject.resFactory = project.resFactory;
+        newProject.peakPaths = project.peakPaths;
         return newProject;
     }
 
@@ -86,40 +101,51 @@ public class GUIProject extends Project {
     }
 
     public void loadGUIProject(Path projectDir) throws IOException, IllegalStateException {
+        Project currentProject = getActive();
+        setActive();
+
         loadProject(projectDir);
-        FileSystem fileSystem = FileSystems.getDefault();
 
-        String[] subDirTypes = {"windows"};
-        if (projectDir != null) {
-            for (String subDir : subDirTypes) {
-                Path subDirectory = fileSystem.getPath(projectDir.toString(), subDir);
-                if (Files.exists(subDirectory) && Files.isDirectory(subDirectory) && Files.isReadable(subDirectory)) {
-                    switch (subDir) {
-                        case "windows":
-                            loadWindows(subDirectory);
-                            break;
-                        default:
-                            throw new IllegalStateException("Invalid subdir type");
+        if (currentProject == this) {
+            FileSystem fileSystem = FileSystems.getDefault();
+
+            String[] subDirTypes = {"windows"};
+            if (projectDir != null) {
+                for (String subDir : subDirTypes) {
+                    Path subDirectory = fileSystem.getPath(projectDir.toString(), subDir);
+                    if (Files.exists(subDirectory) && Files.isDirectory(subDirectory) && Files.isReadable(subDirectory)) {
+                        switch (subDir) {
+                            case "windows":
+                                loadWindows(subDirectory);
+                                break;
+                            default:
+                                throw new IllegalStateException("Invalid subdir type");
+                        }
                     }
-                }
 
+                }
             }
         }
         this.setProjectDir(projectDir);
         PreferencesController.saveRecentProjects(projectDir.toString());
-
+        currentProject.setActive();
     }
 
     @Override
     public void saveProject() throws IOException {
-        if (getProjectDir() == null) {
+        Project currentProject = getActive();
+        setActive();
+
+        if (projectDir == null) {
             throw new IllegalArgumentException("Project directory not set");
         }
         super.saveProject();
-        saveWindows();
+        if (currentProject == this) {
+            saveWindows();
+        }
         gitCommitOnThread();
-        PreferencesController.saveRecentProjects(getProjectDir().toString());
-
+        PreferencesController.saveRecentProjects(projectDir.toString());
+        currentProject.setActive();
     }
 
     void gitCommitOnThread() {
@@ -236,4 +262,18 @@ public class GUIProject extends Project {
         GUIScripter.setController(activeController);
     }
 
+    public void addPeakListListener(Object mapChangeListener) {
+        ObservableMap obsMap = (ObservableMap) peakLists;
+        obsMap.addListener((MapChangeListener<String, PeakList>) mapChangeListener);
+    }
+
+    public void addDatasetListListener(Object mapChangeListener) {
+        ObservableMap obsMap = (ObservableMap) datasetMap;
+        obsMap.addListener((MapChangeListener<String, Dataset>) mapChangeListener);
+    }
+
+    public ObservableMap<String, Dataset> getObservableDatasetMap() {
+        ObservableMap obsMap = (ObservableMap) datasetMap;
+        return obsMap;
+    }
 }

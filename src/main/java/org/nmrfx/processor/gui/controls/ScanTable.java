@@ -67,7 +67,6 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
-import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import org.controlsfx.control.PopOver;
@@ -85,6 +84,7 @@ import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.ProcessorController;
 import org.nmrfx.processor.gui.ScannerController;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
+import org.nmrfx.utils.GUIUtils;
 import org.python.util.PythonInterpreter;
 
 /**
@@ -224,6 +224,12 @@ public class ScanTable {
                 showRows.addAll(selected);
             }
             PolyChart chart = scannerController.getChart();
+            Optional<Double> curLvl = Optional.empty();
+            if (!chart.getDatasetAttributes().isEmpty()) {
+                DatasetAttributes dataAttr = chart.getDatasetAttributes().get(0);
+                curLvl = Optional.of(dataAttr.getLvl());
+            }
+
             List<Integer> rows = new ArrayList<>();
             for (Integer index : showRows) {
                 FileTableItem fileTableItem = (FileTableItem) tableView.getItems().get(index);
@@ -253,13 +259,23 @@ public class ScanTable {
             }
 
             if (!chart.getDatasetAttributes().isEmpty()) {
-                chart.setDrawlist(rows);
                 DatasetAttributes dataAttr = chart.getDatasetAttributes().get(0);
+                if (curLvl.isPresent()) {
+                    dataAttr.setLvl(curLvl.get());
+                }
+                int nDim = dataAttr.nDim;
+                if (nDim > 1) {
+                    chart.setDrawlist(rows);
+                }
                 dataAttr.setMapColors(colorMap);
                 if (groupSet.size() > 1) {
                     dataAttr.setMapOffsets(offsetMap);
                 } else {
                     dataAttr.clearOffsets();
+                }
+                int curMode = chart.getController().getStatusBar().getMode();
+                if (curMode != nDim) {
+                    chart.getController().getStatusBar().setMode(nDim);
                 }
             }
             chart.refresh();
@@ -303,6 +319,7 @@ public class ScanTable {
             final File file = db.getFiles().get(0);
             if (file.isDirectory()) {
                 scanDir = file.getAbsolutePath();
+                scannerController.updateScanDirectory(scanDir);
                 Platform.runLater(new Runnable() {
                     @Override
                     public void run() {
@@ -350,10 +367,7 @@ public class ScanTable {
         }
     }
 
-    public void setScanDirectory() {
-        DirectoryChooser directoryChooser = new DirectoryChooser();
-        directoryChooser.setTitle("Select Scan Directory");
-        File selectedDir = directoryChooser.showDialog(scannerController.getStage());
+    public void setScanDirectory(File selectedDir) {
         if (selectedDir != null) {
             scanDir = selectedDir.getPath();
         } else {
@@ -362,91 +376,128 @@ public class ScanTable {
     }
 
     public void loadScanFiles(Stage stage) {
-        if (getScanDirectory() == null) {
+        if ((scanDir == null) || scanDir.trim().equals("")) {
+            GUIUtils.warn("Scanner Error", "No scan directory");
             return;
         }
         int beginIndex = scanDir.length() + 1;
         ArrayList<String> nmrFiles = NMRDataUtil.findNMRDirectories(scanDir);
         String[] headers = {};
-        updateTable(headers);
-        loadScanFiles(nmrFiles, beginIndex);
+        processingTable = true;
+        try {
+            updateTable(headers);
+            fileListItems.clear();
+            loadScanFiles(nmrFiles, beginIndex);
+        } catch (Exception e) {
+        } finally {
+            processingTable = false;
+        }
     }
 
     public void processScanDir(Stage stage, ChartProcessor chartProcessor, boolean combineFileMode) {
-        if (getScanDirectory() == null) {
+        if ((chartProcessor == null) || !chartProcessor.hasCommands()) {
+            GUIUtils.warn("Scanner Error", "Processing Script Not Configured");
             return;
         }
-        if (getScanOutputDirectory() == null) {
+
+        if ((scanDir == null) || scanDir.trim().equals("")) {
+            GUIUtils.warn("Scanner Error", "No scan directory");
             return;
         }
-        String fileRoot = "process";
-        String combineFileName = "process.nv";
+        if ((scanOutputDir == null) || scanOutputDir.trim().equals("")) {
+            GUIUtils.warn("Scanner Error", "No scan output directory");
+            return;
+        }
+        File scanOutputDirFile = new File(scanOutputDir);
+        if (!scanOutputDirFile.exists() || !scanOutputDirFile.isDirectory() || !scanOutputDirFile.canWrite()) {
+            GUIUtils.warn("Scanner Error", "Output dir is not a writable directory");
+            return;
+        }
+        ObservableList<FileTableItem> fileTableItems = tableView.getItems();
+        if (fileTableItems.isEmpty()) {
+            return;
+        }
+        String combineFileName = scannerController.getOutputFileName();
+        if ((combineFileName == null) || combineFileName.equals("")) {
+            return;
+        }
+        if (!combineFileName.contains(".")) {
+            combineFileName += ".nv";
+        }
+
+        String fileRoot = combineFileName;
+        if (fileRoot.contains(".")) {
+            fileRoot = fileRoot.substring(0, fileRoot.lastIndexOf("."));
+        }
+
         PolyChart chart = scannerController.getChart();
         processingTable = true;
         try {
-            if (scanOutputDir != null) {
-                ObservableList<FileTableItem> fileTableItems = tableView.getItems();
-                List<String> fileNames = new ArrayList<>();
-                PythonInterpreter processInterp = new PythonInterpreter();
+            List<String> fileNames = new ArrayList<>();
+            PythonInterpreter processInterp = new PythonInterpreter();
 
-                int rowNum = 1;
-                for (FileTableItem fileTableItem : fileTableItems) {
-                    int nDim = fileTableItem.getNDim();
-                    File fidFile = new File(scanDir, fileTableItem.getFileName());
-                    String fidFilePath = fidFile.getAbsolutePath();
-                    File datasetFile = new File(scanOutputDir, fileRoot + rowNum + ".nv");
-                    String datasetFilePath = datasetFile.getAbsolutePath();
-                    String script = chartProcessor.buildScript(nDim, fidFilePath, datasetFilePath);
-                    processInterp.exec("from pyproc import *");
-                    processInterp.exec("useProcessor()");
-                    processInterp.exec(script);
-                    fileNames.add(datasetFilePath);
-                    fileTableItem.setRow(rowNum++);
-                    if (combineFileMode) {
-                        fileTableItem.setDatasetName(combineFileName);
-                    } else {
-                        fileTableItem.setDatasetName(datasetFile.getName());
-                    }
-                }
-                updateFilter();
+            String initScript = ChartProcessor.buildInitScript();
+            processInterp.exec(initScript);
+
+            int nDim = fileTableItems.get(0).getNDim();
+            String processScript = chartProcessor.buildScript(nDim);
+
+            int rowNum = 1;
+            for (FileTableItem fileTableItem : fileTableItems) {
+                File fidFile = new File(scanDir, fileTableItem.getFileName());
+                String fidFilePath = fidFile.getAbsolutePath();
+                File datasetFile = new File(scanOutputDir, fileRoot + rowNum + ".nv");
+                String datasetFilePath = datasetFile.getAbsolutePath();
+                String fileScript = ChartProcessor.buildFileScriptPart(fidFilePath, datasetFilePath);
+                processInterp.exec(fileScript);
+                processInterp.exec(processScript);
+                fileNames.add(datasetFilePath);
+                fileTableItem.setRow(rowNum++);
                 if (combineFileMode) {
-                    // merge datasets into single pseudo-nd dataset
-                    DatasetMerger merger = new DatasetMerger();
-                    File mergedFile = new File(scanOutputDir, combineFileName);
-                    String mergedFilepath = mergedFile.getAbsolutePath();
-                    try {
-                        // merge all the 1D files into a pseudo 2D file
-                        merger.merge(fileNames, mergedFilepath);
-                        // After merging, remove the 1D files
-                        for (String fileName : fileNames) {
-                            File file = new File(fileName);
-                            FXMLController.getActiveController().closeFile(file);
-                            Files.deleteIfExists(file.toPath());
-                            String parFileName = fileName.substring(0, fileName.lastIndexOf(".")) + ".par";
-                            File parFile = new File(parFileName);
-                            Files.deleteIfExists(parFile.toPath());
-                        }
-
-                        // load merged dataset
-                        FXMLController.getActiveController().openDataset(mergedFile, false);
-                        List<Integer> rows = new ArrayList<>();
-                        rows.add(0);
-                        chart.setDrawlist(rows);
-                    } catch (IOException | DatasetException ex) {
-                        ExceptionDialog eDialog = new ExceptionDialog(ex);
-                        eDialog.showAndWait();
-                    }
+                    fileTableItem.setDatasetName(combineFileName);
                 } else {
-                    // load first output dataset
-                    File datasetFile = new File(scanOutputDir, "process" + 1 + ".nv");
-                    FXMLController.getActiveController().openDataset(datasetFile, false);
+                    fileTableItem.setDatasetName(datasetFile.getName());
                 }
-                chart.full();
-                chart.autoScale();
-
-                File saveTableFile = new File(scanOutputDir, "scntbl.txt");
-                saveScanTable(saveTableFile);
             }
+            updateFilter();
+            if (combineFileMode) {
+                // merge datasets into single pseudo-nd dataset
+                DatasetMerger merger = new DatasetMerger();
+                File mergedFile = new File(scanOutputDir, combineFileName);
+                String mergedFilepath = mergedFile.getAbsolutePath();
+                try {
+                    // merge all the 1D files into a pseudo 2D file
+                    merger.merge(fileNames, mergedFilepath);
+                    // After merging, remove the 1D files
+                    for (String fileName : fileNames) {
+                        File file = new File(fileName);
+                        FXMLController.getActiveController().closeFile(file);
+                        Files.deleteIfExists(file.toPath());
+                        String parFileName = fileName.substring(0, fileName.lastIndexOf(".")) + ".par";
+                        File parFile = new File(parFileName);
+                        Files.deleteIfExists(parFile.toPath());
+                    }
+
+                    // load merged dataset
+                    FXMLController.getActiveController().openDataset(mergedFile, false);
+                    List<Integer> rows = new ArrayList<>();
+                    rows.add(0);
+                    chart.setDrawlist(rows);
+                } catch (IOException | DatasetException ex) {
+                    ExceptionDialog eDialog = new ExceptionDialog(ex);
+                    eDialog.showAndWait();
+                }
+            } else {
+                // load first output dataset
+                File datasetFile = new File(scanOutputDir, fileRoot + 1 + ".nv");
+                FXMLController.getActiveController().openDataset(datasetFile, false);
+            }
+            chart.full();
+            chart.autoScale();
+
+            File saveTableFile = new File(scanOutputDir, "scntbl.txt");
+            saveScanTable(saveTableFile);
+
         } finally {
             processingTable = false;
         }
@@ -455,7 +506,7 @@ public class ScanTable {
     public void openSelectedListFile() {
         int selItem = tableView.getSelectionModel().getSelectedIndex();
         if (selItem >= 0) {
-            if (getScanDirectory() == null) {
+            if ((scanDir == null) || scanDir.trim().equals("")) {
                 return;
             }
             ProcessorController processorController = scannerController.getFXMLController().getProcessorController(true);
@@ -510,30 +561,17 @@ public class ScanTable {
             loadScanTable(file);
         }
     }
-
-    String getScanDirectory() {
-        if (scanDir == null) {
-            setScanDirectory();
-        }
-        return scanDir;
+    
+    public String getScanOutputDirectory() {
+        return scanOutputDir;
     }
 
-    public void setScanOutputDirectory() {
-        DirectoryChooser directoryChooser = new DirectoryChooser();
-        directoryChooser.setTitle("Select Scan Output Directory");
-        File selectedDir = directoryChooser.showDialog(scannerController.getStage());
+    public void setScanOutputDirectory(File selectedDir) {
         if (selectedDir != null) {
             scanOutputDir = selectedDir.getAbsolutePath();
         } else {
             scanOutputDir = null;
         }
-    }
-
-    String getScanOutputDirectory() {
-        if (scanOutputDir == null) {
-            setScanOutputDirectory();
-        }
-        return scanOutputDir;
     }
 
     public void loadFromDataset() {
@@ -596,9 +634,6 @@ public class ScanTable {
     }
 
     private void loadScanTable(File file) {
-
-        fileListItems.clear();
-
         long firstDate = Long.MAX_VALUE;
         int iLine = 0;
         String[] headers = null;
@@ -606,142 +641,154 @@ public class ScanTable {
         boolean[] notDouble = null;
         boolean[] notInteger = null;
         String firstDatasetName = "";
-        try (BufferedReader br = new BufferedReader(new FileReader(file))) {
-            String line;
-            while ((line = br.readLine()) != null) {
-                if (iLine == 0) {
-                    headers = line.split("\t");
-                    notDouble = new boolean[headers.length];
-                    notInteger = new boolean[headers.length];
-                } else {
-                    String[] fields = line.split("\t");
-                    for (int iField = 0; iField < fields.length; iField++) {
-                        fields[iField] = fields[iField].trim();
-                        try {
-                            int fieldValue = Integer.parseInt(fields[iField]);
-                        } catch (NumberFormatException nfE) {
-                            notInteger[iField] = true;
+        if ((scanDir == null) || scanDir.trim().equals("")) {
+            setScanDirectory(file.getParentFile());
+            scannerController.updateScanDirectory(scanDir);
+        }
+
+        processingTable = true;
+        try {
+            fileListItems.clear();
+            try (BufferedReader br = new BufferedReader(new FileReader(file))) {
+                String line;
+                while ((line = br.readLine()) != null) {
+                    if (iLine == 0) {
+                        headers = line.split("\t");
+                        notDouble = new boolean[headers.length];
+                        notInteger = new boolean[headers.length];
+                    } else {
+                        String[] fields = line.split("\t");
+                        for (int iField = 0; iField < fields.length; iField++) {
+                            fields[iField] = fields[iField].trim();
                             try {
-                                double fieldValue = Double.parseDouble(fields[iField]);
-                            } catch (NumberFormatException nfE2) {
-                                notDouble[iField] = true;
+                                int fieldValue = Integer.parseInt(fields[iField]);
+                            } catch (NumberFormatException nfE) {
+                                notInteger[iField] = true;
+                                try {
+                                    double fieldValue = Double.parseDouble(fields[iField]);
+                                } catch (NumberFormatException nfE2) {
+                                    notDouble[iField] = true;
+                                }
+                            }
+                            fieldMap.put(headers[iField], fields[iField]);
+                        }
+                        boolean hasAll = true;
+                        int nDim = 1;
+                        long eTime = 0;
+                        String sequence = "";
+                        int row = 0;
+                        for (String standardHeader : standardHeaders) {
+                            if (!fieldMap.containsKey(standardHeader)) {
+                                hasAll = false;
+                            } else {
+                                switch (standardHeader) {
+                                    case "ndim":
+                                        nDim = Integer.parseInt(fieldMap.get(standardHeader));
+                                        break;
+                                    case "row":
+                                        row = Integer.parseInt(fieldMap.get(standardHeader));
+                                        break;
+                                    case "etime":
+                                        eTime = Long.parseLong(fieldMap.get(standardHeader));
+                                        break;
+                                    case "sequence":
+                                        sequence = fieldMap.get(standardHeader);
+                                        break;
+                                }
                             }
                         }
-                        fieldMap.put(headers[iField], fields[iField]);
-                    }
-                    boolean hasAll = true;
-                    int nDim = 1;
-                    long eTime = 0;
-                    String sequence = "";
-                    int row = 0;
-                    for (String standardHeader : standardHeaders) {
-                        if (!fieldMap.containsKey(standardHeader)) {
-                            hasAll = false;
-                        } else {
-                            switch (standardHeader) {
-                                case "ndim":
-                                    nDim = Integer.parseInt(fieldMap.get(standardHeader));
-                                    break;
-                                case "row":
-                                    row = Integer.parseInt(fieldMap.get(standardHeader));
-                                    break;
-                                case "etime":
-                                    eTime = Long.parseLong(fieldMap.get(standardHeader));
-                                    break;
-                                case "sequence":
-                                    sequence = fieldMap.get(standardHeader);
-                                    break;
+                        String fileName = fieldMap.get("path");
+                        String datasetName = "";
+                        if (fieldMap.containsKey("dataset")) {
+                            datasetName = fieldMap.get("dataset");
+                            if (firstDatasetName.equals("")) {
+                                firstDatasetName = datasetName;
                             }
-                        }
-                    }
-                    String fileName = fieldMap.get("path");
-                    String datasetName = "";
-                    if (fieldMap.containsKey("dataset")) {
-                        datasetName = fieldMap.get("dataset");
-                        if (firstDatasetName.equals("")) {
-                            firstDatasetName = datasetName;
-                        }
-                    }
-
-                    if (!hasAll) {
-                        if ((fileName == null) || (fileName.length() == 0)) {
-                            System.out.println("No path field or value");
-                            return;
-                        }
-                        if (getScanDirectory() == null) {
-                            return;
-                        }
-                        Path filePath = FileSystems.getDefault().getPath(scanDir, fileName);
-
-                        NMRData nmrData = null;
-                        try {
-                            nmrData = NMRDataUtil.getNMRData(filePath.toString());
-                        } catch (IOException ioE) {
-                            return;
                         }
 
-                        if (nmrData != null) {
-                            if (!fieldMap.containsKey("etime")) {
-                                eTime = nmrData.getDate();
+                        if (!hasAll) {
+                            if ((fileName == null) || (fileName.length() == 0)) {
+                                System.out.println("No path field or value");
+                                return;
                             }
-                            if (!fieldMap.containsKey("sequence")) {
-                                sequence = nmrData.getSequence();
+                            if ((scanDir == null) || scanDir.trim().equals("")) {
+                                return;
                             }
-                            if (!fieldMap.containsKey("ndim")) {
-                                nDim = nmrData.getNDim();
+                            Path filePath = FileSystems.getDefault().getPath(scanDir, fileName);
+
+                            NMRData nmrData = null;
+                            try {
+                                nmrData = NMRDataUtil.getNMRData(filePath.toString());
+                            } catch (IOException ioE) {
+                                return;
+                            }
+
+                            if (nmrData != null) {
+                                if (!fieldMap.containsKey("etime")) {
+                                    eTime = nmrData.getDate();
+                                }
+                                if (!fieldMap.containsKey("sequence")) {
+                                    sequence = nmrData.getSequence();
+                                }
+                                if (!fieldMap.containsKey("ndim")) {
+                                    nDim = nmrData.getNDim();
+                                }
                             }
                         }
-                    }
-                    if (eTime < firstDate) {
-                        firstDate = eTime;
+                        if (eTime < firstDate) {
+                            firstDate = eTime;
+                        }
+
+                        fileListItems.add(new FileTableItem(fileName, sequence, nDim, eTime, row, datasetName, fieldMap));
                     }
 
-                    fileListItems.add(new FileTableItem(fileName, sequence, nDim, eTime, row, datasetName, fieldMap));
+                    iLine++;
                 }
+            } catch (IOException ioE) {
 
-                iLine++;
             }
-        } catch (IOException ioE) {
+            for (int i = 0; i < headers.length; i++) {
+                if (!notInteger[i]) {
+                    columnTypes.put(headers[i], "I");
+                } else if (!notDouble[i]) {
+                    columnTypes.put(headers[i], "D");
+                } else {
+                    columnTypes.put(headers[i], "S");
+                }
+            }
+            columnTypes.put("path", "S");
+            columnTypes.put("sequence", "S");
+            columnTypes.put("ndim", "I");
+            columnTypes.put("row", "I");
+            columnTypes.put("dataset", "S");
+            columnTypes.put("etime", "I");
 
-        }
-        for (int i = 0; i < headers.length; i++) {
-            if (!notInteger[i]) {
-                columnTypes.put(headers[i], "I");
-            } else if (!notDouble[i]) {
-                columnTypes.put(headers[i], "D");
-            } else {
-                columnTypes.put(headers[i], "S");
+            for (FileTableItem item : fileListItems) {
+                item.setDate(item.getDate() - firstDate);
+                item.setTypes(headers, notDouble, notInteger);
             }
-        }
-        columnTypes.put("path", "S");
-        columnTypes.put("sequence", "S");
-        columnTypes.put("ndim", "I");
-        columnTypes.put("row", "I");
-        columnTypes.put("dataset", "S");
-        columnTypes.put("etime", "I");
-
-        for (FileTableItem item : fileListItems) {
-            item.setDate(item.getDate() - firstDate);
-            item.setTypes(headers, notDouble, notInteger);
-        }
-        updateTable(headers);
-        fileTableFilter.resetFilter();
-        updateDataFrame();
-        if (firstDatasetName.length() > 0) {
-            String dirName = file.getParent();
-            if (scanOutputDir == null) {
-                scanOutputDir = dirName;
+            updateTable(headers);
+            fileTableFilter.resetFilter();
+            updateDataFrame();
+            if (firstDatasetName.length() > 0) {
+                String dirName = file.getParent();
+                if (scanOutputDir == null) {
+                    scanOutputDir = dirName;
+                }
+                Path path = FileSystems.getDefault().getPath(dirName, firstDatasetName);
+                FXMLController.getActiveController().openDataset(path.toFile(), false);
+                PolyChart chart = scannerController.getChart();
+                List<Integer> rows = new ArrayList<>();
+                rows.add(0);
+                chart.setDrawlist(rows);
+                chart.full();
+                chart.autoScale();
             }
-            Path path = FileSystems.getDefault().getPath(dirName, firstDatasetName);
-            FXMLController.getActiveController().openDataset(path.toFile(), false);
-            PolyChart chart = scannerController.getChart();
-            List<Integer> rows = new ArrayList<>();
-            rows.add(0);
-            chart.setDrawlist(rows);
-            chart.full();
-            chart.autoScale();
+            addGroupColumn();
+        } catch (Exception e) {
+        } finally {
+            processingTable = false;
         }
-        addGroupColumn();
     }
 
     public void saveScanTable() {

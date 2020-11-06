@@ -21,7 +21,6 @@ import javafx.event.ActionEvent;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
-import org.nmrfx.processor.datasets.peaks.PeakList;
 import org.nmrfx.processor.datasets.peaks.PeakList.ARRAYED_FIT_MODE;
 import org.nmrfx.processor.gui.PeakPicking;
 import org.nmrfx.processor.gui.PolyChart;
@@ -36,7 +35,7 @@ public class SpectrumMenu extends ChartMenu {
         super(chart);
     }
 
-    void makeChartMenu() {
+    public void makeChartMenu() {
         chartMenu = new ContextMenu();
         MenuItem attrItem = new MenuItem("Attributes");
         attrItem.setOnAction((ActionEvent e) -> {
@@ -65,6 +64,11 @@ public class SpectrumMenu extends ChartMenu {
             chart.zoom(0.8);
         });
         viewMenu.getItems().add(zoomOutItem);
+        MenuItem popOutItem = new MenuItem("Pop View Out");
+        popOutItem.setOnAction((ActionEvent e) -> {
+            chart.popView();
+        });
+        viewMenu.getItems().add(popOutItem);
 
         Menu baselineMenu = new Menu("Baseline");
         MenuItem addBaselineItem = new MenuItem("Add Baseline Region");
@@ -89,7 +93,6 @@ public class SpectrumMenu extends ChartMenu {
         baselineMenu.getItems().add(clearAllBaselineItem);
         Menu peakMenu = new Menu("Peaks");
         Menu peakFitMenu = new Menu("Fit");
-        Menu peakClusterMenu = new Menu("Cluster");
 
         MenuItem inspectPeakItem = new MenuItem("Inspect Peak");
         inspectPeakItem.setOnAction((ActionEvent e) -> {
@@ -117,7 +120,6 @@ public class SpectrumMenu extends ChartMenu {
         peakMenu.getItems().add(tweakListItem);
 
         peakMenu.getItems().add(peakFitMenu);
-        peakMenu.getItems().add(peakClusterMenu);
 
 //     fitPeakLists(int syncDim, boolean fitAll, boolean lsFit, boolean fitPlanes) {
         MenuItem fitListItem = new MenuItem("Fit");
@@ -156,18 +158,6 @@ public class SpectrumMenu extends ChartMenu {
         });
         peakFitMenu.getItems().add(fitLSItem);
 
-        MenuItem clusterRowItem = new MenuItem("Cluster Row");
-        clusterRowItem.setOnAction((ActionEvent e) -> {
-            chart.clusterPeakLists(1);
-        });
-        peakClusterMenu.getItems().add(clusterRowItem);
-
-        MenuItem clusterColumnItem = new MenuItem("Cluster Column");
-        clusterColumnItem.setOnAction((ActionEvent e) -> {
-            chart.clusterPeakLists(0);
-        });
-        peakClusterMenu.getItems().add(clusterColumnItem);
-
         Menu refMenu = new Menu("Reference");
 
         MenuItem diagRefMenuItem = new MenuItem("Adjust Diagonal");
@@ -198,6 +188,21 @@ public class SpectrumMenu extends ChartMenu {
         refMenu.getItems().addAll(setRefMenuItem, shiftRefMenuItem,
                 diagRefMenuItem, shiftPeaksMenuItem,
                 undoRefMenuItem, writeRefMenuItem);
+        Menu extractMenu = new Menu("Extract Slice");
+
+        MenuItem extractXMenuItem = new MenuItem("Extract-X");
+        extractXMenuItem.setOnAction((ActionEvent e) -> {
+            chart.extractSlice(0);
+        });
+        MenuItem extractYMenuItem = new MenuItem("Extract-Y");
+        extractYMenuItem.setOnAction((ActionEvent e) -> {
+            chart.extractSlice(1);
+        });
+        MenuItem extractZMenuItem = new MenuItem("Extract-Z");
+        extractZMenuItem.setOnAction((ActionEvent e) -> {
+            chart.extractSlice(2);
+        });
+        extractMenu.getItems().addAll(extractXMenuItem, extractYMenuItem, extractZMenuItem);
 
         chartMenu.getItems().add(attrItem);
         chartMenu.getItems().add(viewMenu);
@@ -205,5 +210,6 @@ public class SpectrumMenu extends ChartMenu {
         chartMenu.getItems().add(refMenu);
         chartMenu.getItems().add(baselineMenu);
         chartMenu.getItems().add(extractItem);
+        chartMenu.getItems().add(extractMenu);
     }
 }

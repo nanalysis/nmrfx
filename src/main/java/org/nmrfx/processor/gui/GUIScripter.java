@@ -19,7 +19,9 @@ import org.nmrfx.processor.gui.controls.ConsoleUtil;
 import org.nmrfx.processor.gui.controls.FractionCanvas;
 import org.nmrfx.processor.gui.controls.FractionPane;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
+import org.nmrfx.processor.gui.spectra.KeyBindings;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
+import org.python.util.InteractiveInterpreter;
 
 /**
  *
@@ -29,6 +31,7 @@ public class GUIScripter {
 
     final PolyChart useChart;
     static FXMLController controller = FXMLController.getActiveController();
+    static Map<String, String> keyActions = new HashMap<>();
 
     public GUIScripter() {
         useChart = null;
@@ -68,6 +71,18 @@ public class GUIScripter {
         if (useChart != null) {
             chart = useChart;
         } else {
+            if (getActiveController() == null) {
+                try {
+                    FutureTask<Boolean> future = new FutureTask(() -> {
+                        newStage();
+                        return true;
+                    });
+                    ConsoleUtil.runOnFxThread(future);
+                    future.get();
+                } catch (InterruptedException | ExecutionException iE) {
+
+                }
+            }
             chart = getActiveController().getActiveChart();
         }
         return chart;
@@ -499,6 +514,7 @@ public class GUIScripter {
         FractionCanvas.ORIENTATION orient = FractionCanvas.getOrientation(orientName);
         ConsoleUtil.runOnFxThread(() -> {
             controller.arrange(orient);
+            controller.draw();
         });
     }
 
@@ -515,6 +531,7 @@ public class GUIScripter {
             PolyChart chartActive = controller.charts.get(0);
             controller.setActiveChart(chartActive);
             controller.setChartDisable(false);
+            controller.draw();
         });
     }
 
@@ -529,7 +546,7 @@ public class GUIScripter {
             PolyChart chartActive = controller.charts.get(0);
             controller.setActiveChart(chartActive);
             controller.setChartDisable(false);
-
+            controller.draw();
         });
     }
 
@@ -705,6 +722,12 @@ public class GUIScripter {
         });
     }
 
+    public void setTitle(String title) {
+        ConsoleUtil.runOnFxThread(() -> {
+            getActiveController().getStage().setTitle(title);
+        });
+    }
+
     public static void showPeak(String peakSpecifier) {
         ConsoleUtil.runOnFxThread(() -> {
             FXMLController activeController = getActiveController();
@@ -738,4 +761,18 @@ public class GUIScripter {
 
     }
 
+    public void bindKeys(String keyStr, String actionStr) {
+        ConsoleUtil.runOnFxThread(() -> {
+            KeyBindings.registerGlobalKeyAction(keyStr, GUIScripter::chartCommand);
+            keyActions.put(keyStr, actionStr);
+        });
+    }
+
+    public static void chartCommand(String keyStr, PolyChart chart) {
+        PolyChart currentActive = PolyChart.getActiveChart();
+        chart.setActiveChart();
+        InteractiveInterpreter interp = MainApp.getInterpreter();
+        interp.exec(keyActions.get(keyStr));
+        currentActive.setActiveChart();
+    }
 }

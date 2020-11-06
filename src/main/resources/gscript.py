@@ -35,11 +35,20 @@ class NMRFxWindowScripting:
         chart=activeController.getActiveChart()
         return chart
 
+    def getActiveController(self):
+        return self.cmd.getController()
+
     def getCursor(self):
         return self.cmd.getCursor()
 
     def setCursor(self, name):
         self.cmd.setCursor(name)
+
+    def setTitle(self, title):
+        self.cmd.setTitle(title)
+
+    def bindKeys(self, keyStr, actionStr) :
+        self.cmd.bindKeys(keyStr, actionStr)
 
     def new(self):
         self.cmd.newStage()
@@ -273,6 +282,11 @@ class NMRFxWindowScripting:
                 datasets.append(dataset)
 
         self.strips(datasets, x, xwidth, dims=dims, row=row, z=z)
+
+    def stripTool(self):
+        aC=self.getActiveController() 
+        tool = aC.getTool("rg.nmrfx.processor.gui.StripController")
+        return tool
 
     def strips(self, datasets, x, xwidth=0.2, dims=None, row=0, **kwargs):
         nDatasets = len(datasets)

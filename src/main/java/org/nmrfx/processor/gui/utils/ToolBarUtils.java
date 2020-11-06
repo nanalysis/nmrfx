@@ -15,26 +15,25 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.nmrfx.processor.gui.spectra;
+package org.nmrfx.processor.gui.utils;
 
-import javafx.event.ActionEvent;
-import javafx.scene.control.ContextMenu;
-import javafx.scene.control.MenuItem;
-import org.nmrfx.processor.gui.PolyChart;
+import javafx.scene.control.ToolBar;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Pane;
+import javafx.scene.layout.Priority;
 
 /**
  *
  * @author brucejohnson
  */
-public class RegionMenu extends ChartMenu {
+public class ToolBarUtils {
 
-    public RegionMenu(PolyChart chart) {
-        super(chart);
-    }
-
-    @Override
-    public void makeChartMenu() {
-        chartMenu = new ContextMenu();
+    public static void addFiller(ToolBar toolBar, double min, double max) {
+        Pane filler = new Pane();
+        HBox.setHgrow(filler, Priority.ALWAYS);
+        filler.setMinWidth(min);
+        filler.setMaxWidth(max);
+        toolBar.getItems().add(filler);
     }
 
 }

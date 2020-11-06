@@ -499,8 +499,8 @@ public class DrawSpectrum {
                 try {
                     z = getData(fileData, iChunk, offset, z);
                     if (z != null) {
-                        double xOff = fileData.pt[0][0] - fileData.ptd[0][0];
-                        double yOff = fileData.pt[1][0] - fileData.ptd[1][0];
+                        double xOff = offset[0];
+                        double yOff = offset[1];
                         int[][] cells = new int[z.length][z[0].length];
                         for (int iPosNeg = 0; iPosNeg < 2; iPosNeg++) {
                             Contour contour = contours[iPosNeg];
@@ -858,7 +858,7 @@ public class DrawSpectrum {
         iChunk = dataAttributes.getLastChunk(0);
     }
 
-    public boolean draw1DSpectrum(DatasetAttributes dataAttributes, int orientation, AXMODE axMode, double ph0, double ph1, Path bcPath) {
+    public boolean draw1DSpectrum(DatasetAttributes dataAttributes, double firstLvl, double firstOffset, int orientation, AXMODE axMode, double ph0, double ph1, Path bcPath) {
         Vec specVec = new Vec(32);
         boolean drawReal = dataAttributes.getDrawReal();
         boolean offsetMode = true;
@@ -878,10 +878,11 @@ public class DrawSpectrum {
                 return false;
             }
         }
-        double offset = getOffset(dataAttributes);
+        double offset = getOffset(dataAttributes, firstOffset);
+        double lvlMult = dataAttributes.getLvl() / firstLvl;
         drawVector(specVec, orientation, 0, axMode, drawReal, ph0, ph1, bcPath,
                 (index, intensity) -> axes[0].getDisplayPosition(index),
-                (index, intensity) -> axes[1].getDisplayPosition(intensity) - offset, offsetMode, false);
+                (index, intensity) -> axes[1].getDisplayPosition(intensity / lvlMult) - offset, offsetMode, false);
 
         if (iChunk < 0) {
             return false;
@@ -890,10 +891,10 @@ public class DrawSpectrum {
 
     }
 
-    public double getOffset(DatasetAttributes dataAttributes) {
+    public double getOffset(DatasetAttributes dataAttributes, double firstOffset) {
         double height = axes[1].getHeight();
         double mapOffset = height * dataAttributes.getMapOffset(rowIndex);
-        double dataOffset = height * dataAttributes.getOffset();
+        double dataOffset = height * (dataAttributes.getOffset() - firstOffset);
         double offset = dataOffset + mapOffset;
         return offset;
     }
@@ -946,9 +947,10 @@ public class DrawSpectrum {
         result = Optional.of(integralValue);
         double scale = dataAttributes.getIntegralScale();
         double height = axes[1].getHeight();
+        double yOrigin = axes[1].getYOrigin();
         drawSubVector(specVec, orientation, 0, axMode,
                 (index, intensity) -> axes[0].getDisplayPosition(index),
-                (index, intensity) -> (1.0 - high) * height + (high - low) * height * (1.0 - (intensity / integralMax)), ppm1, ppm2);
+                (index, intensity) -> yOrigin - height + (1.0 - high) * height + (high - low) * height * (1.0 - (intensity / integralMax)), ppm1, ppm2);
 
         return result;
     }
@@ -1222,10 +1224,34 @@ public class DrawSpectrum {
         double width = axes[0].getWidth();
         double height = axes[1].getHeight();
         double delta = width / (end - start);
+        double xOrigin = axes[0].getXOrigin();
+        double yOrigin = axes[1].getYOrigin();
 
-        return speedSpectrum(ve, 0, start, annoEnd, 0.0, delta, 4, xy, (index, intensity) -> index,
-                (index, intensity) -> (1.0 - intensity) * height);
+        return drawFullLine(ve, start, annoEnd, 0.0, delta, xy,
+                (index, intensity) -> xOrigin + index,
+                (index, intensity) -> yOrigin - intensity * (height - 1) + 1);
 
+    }
+
+    public int drawFullLine(double[] ve, int start, int end, double dValue, double delta, double[][] xy, DoubleBinaryOperator xFunction, DoubleBinaryOperator yFunction) {
+
+        nPoints = 0;
+        int maxPoints = end - start + 1;
+        if ((xy[0] == null) || (xy[0].length < maxPoints)) {
+            xy[0] = new double[maxPoints];
+            xy[1] = new double[maxPoints];
+        }
+        int iLine = 0;
+        for (int i = start; i <= end; i++) {
+            double intensity = ve[i];
+            if (intensity != Double.MAX_VALUE) {
+                xy[0][iLine] = xFunction.applyAsDouble(dValue, intensity);
+                xy[1][iLine++] = yFunction.applyAsDouble(dValue, intensity);
+            }
+            dValue += delta;
+        }
+        nPoints = iLine;
+        return iLine;
     }
 
     static int speedSpectrum(double[] ve, int vStart, int start, int end, double dValue, double delta, int nIncr, double[][] xy, DoubleBinaryOperator xFunction, DoubleBinaryOperator yFunction) {
