@@ -15,26 +15,53 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.nmrfx.structure.chemistry;
+package org.nmrfx.structure.rna;
 
 import org.nmrfx.chemistry.Residue;
 
 import java.util.*;
+import org.nmrfx.structure.chemistry.SecondaryStructure;
 
 /**
  *
  * @author bajlabuser
  */
-public class InternalLoop extends SecondaryStructure {
+public class RNAHelix extends SecondaryStructure {
 
     public static int localCounter = 0;
-    public static String name = "InternalLoop";
+    static String name = "Helix";
+    public List<BasePair> basePairs = new ArrayList<BasePair>();
 
-    public InternalLoop(List<Residue> residues) {
+    public RNAHelix(List<Residue> residues) {
         localIndex = localCounter++;
         globalIndex = globalCounter++;
         secResidues = residues;
+        setBasePairs();
 
+    }
+
+    @Override
+    public void getInvolvedRes() {
+        int i = 0;
+        while (i < secResidues.size()) {
+            Residue res1 = secResidues.get(i);
+            Residue res2 = secResidues.get(i + 1);
+            System.out.print(res1.getPolymer().getName() + ":" + res1.getName()
+                    + res1.getResNum() + ":" + res2.getPolymer().getName()
+                    + ":" + res2.getName() + res2.getResNum() + " ");
+            i += 2;
+        }
+    }
+
+    public void setBasePairs() {
+        int i = 0;
+        while (i < secResidues.size()) {
+            Residue res1 = secResidues.get(i);
+            Residue res2 = secResidues.get(i + 1);
+            BasePair bp = new BasePair(res1, res2);
+            basePairs.add(bp);
+            i += 2;
+        }
     }
 
     @Override

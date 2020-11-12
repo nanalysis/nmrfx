@@ -15,31 +15,30 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.nmrfx.structure.chemistry;
+package org.nmrfx.structure.rna;
 
 import org.nmrfx.chemistry.Residue;
+
+import java.util.*;
+import org.nmrfx.structure.chemistry.SecondaryStructure;
 
 /**
  *
  * @author bajlabuser
  */
-public class BasePair {
-    public Residue res1;
-    public Residue res2;
-    
-    public BasePair(Residue res1, Residue res2){
-        this.res1 = res1;
-        this.res2 = res2;
+public class Bulge extends SecondaryStructure {
+
+    public static int localCounter = 0;
+    public static String name = "Bulge";
+
+    public Bulge(List<Residue> residues) {
+        localIndex = localCounter++;
+        globalIndex = globalCounter++;
+        secResidues = residues;
     }
-     @Override
-    public String toString() {
-        return res1.iRes + ":" + res2.iRes;
-    }
-    public static boolean isCanonical(Residue res1, Residue res2) {
-        boolean canon = false;
-        if (res1.getBasePairType(res2) == 1) {
-            canon = true;
-        }
-        return canon;
+
+    @Override
+    public String getName() {
+        return name;
     }
 }

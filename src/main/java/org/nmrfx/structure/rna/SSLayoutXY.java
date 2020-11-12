@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.nmrfx.structure.chemistry;
+package org.nmrfx.structure.rna;
 
 import org.apache.commons.math3.optim.nonlinear.scalar.noderiv.CMAESOptimizer;
 import org.apache.commons.math3.optim.SimpleValueChecker;
@@ -33,6 +33,7 @@ import org.apache.commons.math3.optim.PointValuePair;
 import org.apache.commons.math3.analysis.MultivariateFunction;
 import org.apache.commons.math3.geometry.euclidean.twod.Vector2D;
 import org.apache.commons.math3.geometry.euclidean.twod.Line;
+import org.nmrfx.structure.chemistry.OverlappingLines;
 
 public class SSLayoutXY implements MultivariateFunction {
 

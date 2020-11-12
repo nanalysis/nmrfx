@@ -15,13 +15,20 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.nmrfx.structure.chemistry;
+package org.nmrfx.structure.rna;
 
+import org.nmrfx.structure.rna.RNAAnalysis;
+import org.nmrfx.structure.rna.Loop;
+import org.nmrfx.structure.rna.RNAHelix;
+import org.nmrfx.structure.rna.NonLoop;
+import org.nmrfx.structure.rna.Bulge;
 import org.nmrfx.chemistry.Polymer;
 import org.nmrfx.chemistry.Residue;
 
 import java.util.ArrayList;
 import java.util.List;
+import org.nmrfx.structure.chemistry.Molecule;
+import org.nmrfx.structure.chemistry.SecondaryStructure;
 
 /**
  *
