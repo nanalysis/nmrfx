@@ -26,17 +26,16 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
-import org.nmrfx.processor.datasets.peaks.atoms.AtomResonance;
+import org.nmrfx.peaks.PeakDim;
+import org.nmrfx.peaks.PeakListBase;
 import org.nmrfx.processor.datasets.peaks.atoms.AtomResonanceFactory;
 import org.nmrfx.processor.datasets.peaks.InvalidPeakException;
-import org.nmrfx.processor.datasets.peaks.PeakDim;
 import org.nmrfx.processor.datasets.peaks.PeakList;
 import org.nmrfx.processor.datasets.peaks.PeakPath;
-import org.nmrfx.processor.datasets.peaks.ResonanceFactory;
 import org.nmrfx.processor.datasets.peaks.io.PeakPathWriter;
 import org.nmrfx.processor.datasets.peaks.io.PeakWriter;
-import org.nmrfx.processor.star.ParseException;
-import org.nmrfx.processor.star.STAR3;
+import org.nmrfx.star.ParseException;
+import org.nmrfx.star.STAR3;
 import org.nmrfx.structure.chemistry.Atom;
 import org.nmrfx.structure.chemistry.AtomProperty;
 import org.nmrfx.structure.chemistry.AtomSpecifier;
@@ -54,7 +53,6 @@ import org.nmrfx.structure.chemistry.Residue;
 import org.nmrfx.structure.chemistry.SpatialSet;
 import org.nmrfx.structure.chemistry.constraints.AngleConstraint;
 import org.nmrfx.structure.chemistry.constraints.ConstraintSet;
-import org.nmrfx.structure.chemistry.constraints.Noe;
 import org.nmrfx.structure.chemistry.constraints.NoeSet;
 import org.nmrfx.structure.utilities.Format;
 
@@ -817,7 +815,7 @@ public class NMRStarWriter {
             peakWriter.writePeaksSTAR3(chan, peakList);
         }
 
-        AtomResonanceFactory resFactory = (AtomResonanceFactory) PeakDim.resFactory();
+        AtomResonanceFactory resFactory = (AtomResonanceFactory) PeakListBase.resFactory();
 
         resFactory.writeResonancesSTAR3(chan);
         if (molecule != null) {

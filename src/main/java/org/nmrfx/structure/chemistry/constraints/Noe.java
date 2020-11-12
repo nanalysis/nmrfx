@@ -20,7 +20,6 @@ package org.nmrfx.structure.chemistry.constraints;
 import org.nmrfx.structure.chemistry.*;
 import org.nmrfx.processor.datasets.peaks.Peak;
 import org.nmrfx.processor.datasets.peaks.PeakList;
-import org.nmrfx.structure.utilities.Util;
 import java.io.Serializable;
 import java.util.*;
 import java.util.Map.Entry;
@@ -428,7 +427,7 @@ public class Noe implements Constraint, Serializable {
     public String getPeakListName() {
         String listName = "";
         if (peak != null) {
-            listName = peak.peakList.getName();
+            listName = peak.getPeakList().getName();
         }
         return listName;
     }
@@ -647,9 +646,9 @@ public class Noe implements Constraint, Serializable {
     }
 
     public static Atom[][] getAtoms(Peak peak) {
-        Atom[][] atoms = new Atom[peak.peakList.nDim][];
+        Atom[][] atoms = new Atom[peak.getPeakList().getNDim()][];
 
-        for (int i = 0; i < peak.peakList.nDim; i++) {
+        for (int i = 0; i < peak.getPeakList().getNDim();i++) {
             atoms[i] = null;
             String label = peak.peakDims[i].getLabel();
             String[] elems = label.split(" ");

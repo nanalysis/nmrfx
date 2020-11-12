@@ -25,7 +25,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.nmrfx.processor.datasets.peaks.InvalidPeakException;
 import org.nmrfx.processor.project.Project;
-import org.nmrfx.processor.star.ParseException;
+import org.nmrfx.star.ParseException;
 import org.nmrfx.structure.chemistry.InvalidMoleculeException;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.structure.chemistry.constraints.AngleConstraintSet;

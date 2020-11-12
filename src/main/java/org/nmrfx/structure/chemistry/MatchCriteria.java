@@ -18,7 +18,7 @@
 package org.nmrfx.structure.chemistry;
 
 import org.nmrfx.processor.datasets.peaks.Peak;
-import org.nmrfx.processor.datasets.peaks.PeakDim;
+
 
 public class MatchCriteria {
 

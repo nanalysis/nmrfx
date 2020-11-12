@@ -9,10 +9,10 @@ import java.util.Optional;
 import org.apache.commons.math3.util.MultidimensionalCounter;
 import org.apache.commons.math3.util.MultidimensionalCounter.Iterator;
 import org.nmrfx.processor.datasets.peaks.Peak;
-import org.nmrfx.processor.datasets.peaks.PeakDim;
+import org.nmrfx.peaks.PeakDim;
 import org.nmrfx.processor.datasets.peaks.PeakList;
 import org.nmrfx.processor.datasets.peaks.PeakList.SearchDim;
-import org.nmrfx.processor.datasets.peaks.SpectralDim;
+import org.nmrfx.peaks.SpectralDim;
 import org.nmrfx.structure.seqassign.RunAbout.TypeInfo;
 import static org.nmrfx.structure.seqassign.SpinSystems.comparePeaks;
 import static org.nmrfx.structure.seqassign.SpinSystems.matchDims;
@@ -1035,10 +1035,10 @@ public class SpinSystem {
         int newCluster = origCluster == 0 ? 1 : 0;
 //        double[][] centroids = kMeans.centroids();
         double[][] centroids = kMeans.centroids;
-        Peak newRoot = rootPeak.peakList.getNewPeak();
+        Peak newRoot = rootPeak.getPeakList().getNewPeak();
         rootPeak.copyTo(newRoot);
         int j = 0;
-        List<SearchDim> searchDims = rootPeak.peakList.getSearchDims();
+        List<SearchDim> searchDims = rootPeak.getPeakList().getSearchDims();
         for (SearchDim sDim : searchDims) {
             rootPeak.getPeakDim(sDim.getDim()).setChemShiftValue((float) centroids[origCluster][j]);
             newRoot.getPeakDim(sDim.getDim()).setChemShiftValue((float) centroids[newCluster][j]);
@@ -1053,11 +1053,11 @@ public class SpinSystem {
         for (PeakMatch peakMatch : oldPeaks) {
             if (peakMatch.peak != rootPeak) {
                 if (labels[i] == origCluster) {
-                    int[] aMatch = SpinSystems.matchDims(rootPeak.peakList, peakMatch.peak.peakList);
+                    int[] aMatch = SpinSystems.matchDims(rootPeak.getPeakList(), peakMatch.peak.getPeakList());
                     double f = SpinSystems.comparePeaks(rootPeak, peakMatch.peak, aMatch);
                     addPeak(peakMatch.peak, f);
                 } else {
-                    int[] aMatch = SpinSystems.matchDims(newRoot.peakList, peakMatch.peak.peakList);
+                    int[] aMatch = SpinSystems.matchDims(newRoot.getPeakList(), peakMatch.peak.getPeakList());
                     double f = SpinSystems.comparePeaks(newRoot, peakMatch.peak, aMatch);
                     newSys.addPeak(peakMatch.peak, f);
                 }

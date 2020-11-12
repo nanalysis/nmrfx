@@ -855,7 +855,7 @@ public class NoeSet implements ConstraintSet, Iterable {
     public HashMap<PeakList, List<Double>> calcMedian(String mMode, PeakList whichList) {
         Map<PeakList, List<Double>> valuesMap = new HashMap<>();
         for (Entry<Peak, List<Noe>> entry : getPeakMapEntries()) {
-            PeakList peakList = entry.getKey().peakList;
+            PeakList peakList = entry.getKey().getPeakList();
             if ((whichList != null) && (whichList != peakList)) {
                 continue;
             }
@@ -940,7 +940,7 @@ public class NoeSet implements ConstraintSet, Iterable {
         double fError = 0.125;
         double lower = 1.8;
         for (Entry<Peak, List<Noe>> entry : getPeakMapEntries()) {
-            PeakList peakList = entry.getKey().peakList;
+            PeakList peakList = entry.getKey().getPeakList();
             if ((whichList != null) && (whichList != peakList)) {
                 continue;
             }
@@ -962,7 +962,7 @@ public class NoeSet implements ConstraintSet, Iterable {
 
     public void updateNPossible(PeakList whichList) {
         for (Entry<Peak, List<Noe>> entry : getPeakMapEntries()) {
-            PeakList peakList = entry.getKey().peakList;
+            PeakList peakList = entry.getKey().getPeakList();
             if ((whichList != null) && (whichList != peakList)) {
                 continue;
             }
@@ -985,7 +985,7 @@ public class NoeSet implements ConstraintSet, Iterable {
             iNoe.symmetrical = false;
             Peak iPeak = iNoe.peak;
             if (iPeak != null) {
-                String listName = iPeak.peakList.getName();
+                String listName = iPeak.getPeakList().getName();
                 String spg1Name = iNoe.spg1.getFullName();
                 String spg2Name = iNoe.spg2.getFullName();
                 symMap.put(listName + "." + spg1Name + "." + spg2Name, iNoe);
@@ -995,7 +995,7 @@ public class NoeSet implements ConstraintSet, Iterable {
             Noe iNoe = get(i);
             Peak iPeak = iNoe.peak;
             if ((iPeak != null) && (!iNoe.symmetrical)) {
-                String listName = iPeak.peakList.getName();
+                String listName = iPeak.getPeakList().getName();
                 String spg1Name = iNoe.spg1.getFullName();
                 String spg2Name = iNoe.spg2.getFullName();
                 Noe jNoe = symMap.get(listName + "." + spg2Name + "." + spg1Name);

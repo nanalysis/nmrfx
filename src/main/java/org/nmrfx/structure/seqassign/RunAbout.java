@@ -14,9 +14,9 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.peaks.Peak;
-import org.nmrfx.processor.datasets.peaks.PeakDim;
+import org.nmrfx.peaks.PeakDim;
 import org.nmrfx.processor.datasets.peaks.PeakList;
-import org.nmrfx.processor.datasets.peaks.SpectralDim;
+import org.nmrfx.peaks.SpectralDim;
 import org.yaml.snakeyaml.Yaml;
 
 /**

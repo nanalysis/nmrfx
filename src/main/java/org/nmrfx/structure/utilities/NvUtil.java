@@ -146,4 +146,11 @@ public class NvUtil {
         return result;
 
     }
+
+    public static String getVersion() {
+        if (VERSION == null) {
+            VERSION = NvUtil.class.getPackage().getImplementationVersion();
+        }
+        return VERSION;
+    }
 }
