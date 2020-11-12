@@ -4,6 +4,7 @@ import java.util.Arrays;
 import java.util.List;
 import org.junit.Assert;
 import org.junit.Test;
+import org.nmrfx.chemistry.Atom;
 import org.nmrfx.structure.chemistry.io.MoleculeIOException;
 import org.nmrfx.structure.chemistry.io.Sequence;
 import org.nmrfx.structure.utilities.Util;
