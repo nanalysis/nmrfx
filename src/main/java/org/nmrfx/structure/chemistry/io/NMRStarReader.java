@@ -25,26 +25,27 @@ import org.nmrfx.structure.chemistry.energy.EnergyLists;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.peaks.atoms.AtomResonance;
 import org.nmrfx.processor.datasets.peaks.atoms.AtomResonanceFactory;
-import org.nmrfx.processor.datasets.peaks.Peak;
-import org.nmrfx.processor.datasets.peaks.PeakDim;
-import org.nmrfx.processor.datasets.peaks.PeakList;
-import org.nmrfx.processor.datasets.peaks.ResonanceFactory;
-import org.nmrfx.processor.star.Loop;
-import org.nmrfx.processor.star.ParseException;
-import org.nmrfx.processor.star.STAR3;
-import org.nmrfx.processor.star.Saveframe;
+import org.nmrfx.star.Loop;
+import org.nmrfx.star.ParseException;
+import org.nmrfx.star.STAR3;
+import org.nmrfx.star.Saveframe;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.FileSystems;
 import java.util.*;
-import org.nmrfx.processor.datasets.peaks.AbsMultipletComponent;
-import org.nmrfx.processor.datasets.peaks.ComplexCoupling;
-import org.nmrfx.processor.datasets.peaks.CouplingPattern;
-import org.nmrfx.processor.datasets.peaks.Multiplet;
-import org.nmrfx.processor.datasets.peaks.Resonance;
-import org.nmrfx.processor.datasets.peaks.SpectralDim;
+import org.nmrfx.peaks.AbsMultipletComponent;
+import org.nmrfx.peaks.ComplexCoupling;
+import org.nmrfx.peaks.CouplingPattern;
+import org.nmrfx.peaks.Multiplet;
+import org.nmrfx.peaks.PeakDim;
+import org.nmrfx.peaks.PeakListBase;
+import org.nmrfx.peaks.Resonance;
+import org.nmrfx.peaks.ResonanceFactory;
+import org.nmrfx.peaks.SpectralDim;
+import org.nmrfx.processor.datasets.peaks.Peak;
+import org.nmrfx.processor.datasets.peaks.PeakList;
 import org.nmrfx.processor.datasets.peaks.io.PeakPathReader;
 import org.nmrfx.processor.utilities.NvUtil;
 import org.nmrfx.structure.chemistry.io.Sequence.RES_POSITION;
@@ -669,7 +670,7 @@ public class NMRStarReader {
     }
 
     public void addMissingResonances() {
-        ResonanceFactory resFactory = PeakDim.resFactory();
+        ResonanceFactory resFactory = PeakListBase.resFactory();
         for (PeakDim peakDim : peakDimsWithoutResonance) {
             Resonance resonance = resFactory.build();
             resonance.add(peakDim);
@@ -783,7 +784,7 @@ public class NMRStarReader {
 //    }
 
     public void processSTAR3PeakList(Saveframe saveframe) throws ParseException {
-        ResonanceFactory resFactory = PeakDim.resFactory();
+        ResonanceFactory resFactory = PeakListBase.resFactory();
         String listName = saveframe.getValue("_Spectral_peak_list", "Sf_framecode");
         String id = saveframe.getValue("_Spectral_peak_list", "ID");
         String sampleLabel = saveframe.getLabelValue("_Spectral_peak_list", "Sample_label");
@@ -1181,7 +1182,7 @@ public class NMRStarReader {
             List<String> valErrColumn = loop.getColumnAsList("Val_err");
             List<String> resColumn = loop.getColumnAsList("Resonance_ID");
             List<Integer> ambigColumn = loop.getColumnAsIntegerList("Ambiguity_code", -1);
-            ResonanceFactory resFactory = PeakDim.resFactory();
+            ResonanceFactory resFactory = PeakListBase.resFactory();
             for (int i = 0; i < entityAssemblyIDColumn.size(); i++) {
                 String iEntity = (String) entityIDColumn.get(i);
                 String entityAssemblyID = (String) entityAssemblyIDColumn.get(i);
@@ -1670,7 +1671,7 @@ public class NMRStarReader {
         if (DEBUG) {
             System.out.println("nSave " + star3.getSaveFrameNames());
         }
-        AtomResonanceFactory resFactory = (AtomResonanceFactory) PeakDim.resFactory();
+        AtomResonanceFactory resFactory = (AtomResonanceFactory) PeakListBase.resFactory();
         if (argv.length == 0) {
             hasResonances = false;
             Molecule.compoundMap().clear();
@@ -1741,7 +1742,7 @@ public class NMRStarReader {
         if (DEBUG) {
             System.out.println("nSave " + star3.getSaveFrameNames());
         }
-        AtomResonanceFactory resFactory = (AtomResonanceFactory) PeakDim.resFactory();
+        AtomResonanceFactory resFactory = (AtomResonanceFactory) PeakListBase.resFactory();
         Dihedral dihedral = null;
         if (argv.length == 0) {
             hasResonances = false;

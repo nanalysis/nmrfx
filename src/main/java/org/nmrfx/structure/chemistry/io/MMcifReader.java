@@ -17,13 +17,13 @@
  */
 package org.nmrfx.structure.chemistry.io;
 
-import org.nmrfx.processor.star.ParseException;
 import java.io.*;
 import java.util.*;
-import org.nmrfx.processor.datasets.peaks.PeakDim;
-import org.nmrfx.processor.star.Loop;
-import org.nmrfx.processor.star.MMCIF;
-import org.nmrfx.processor.star.Saveframe;
+import org.nmrfx.peaks.PeakDim;
+import org.nmrfx.star.Loop;
+import org.nmrfx.star.MMCIF;
+import org.nmrfx.star.ParseException;
+import org.nmrfx.star.Saveframe;
 import org.nmrfx.structure.chemistry.Atom;
 import org.nmrfx.structure.chemistry.Bond;
 import org.nmrfx.structure.chemistry.Compound;

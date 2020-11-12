@@ -42,7 +42,7 @@ import org.nmrfx.structure.chemistry.constraints.RDCConstraintSet;
 import org.apache.commons.math3.geometry.euclidean.threed.Rotation;
 import org.apache.commons.math3.geometry.euclidean.threed.RotationConvention;
 import org.apache.commons.math3.geometry.euclidean.threed.RotationOrder;
-import org.nmrfx.processor.star.ParseException;
+import org.nmrfx.star.ParseException;
 import org.nmrfx.structure.chemistry.constraints.RDC;
 import org.python.core.*;
 import org.python.util.PythonInterpreter;

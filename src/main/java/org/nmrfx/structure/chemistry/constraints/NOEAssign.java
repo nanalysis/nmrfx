@@ -2,15 +2,14 @@ package org.nmrfx.structure.chemistry.constraints;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Vector;
+import org.nmrfx.peaks.PeakDim;
+import org.nmrfx.peaks.SpectralDim;
 import org.nmrfx.processor.datasets.peaks.atoms.AtomResonance;
 import org.nmrfx.processor.datasets.peaks.Peak;
-import org.nmrfx.processor.datasets.peaks.PeakDim;
 import org.nmrfx.processor.datasets.peaks.PeakList;
-import org.nmrfx.processor.datasets.peaks.SpectralDim;
 import org.nmrfx.structure.chemistry.Atom;
 import org.nmrfx.structure.chemistry.IdPeak;
 import org.nmrfx.structure.chemistry.IdResult;

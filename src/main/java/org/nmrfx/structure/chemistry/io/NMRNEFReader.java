@@ -18,22 +18,30 @@
 package org.nmrfx.structure.chemistry.io;
 
 import java.io.BufferedReader;
-import org.nmrfx.structure.chemistry.*;
 import org.nmrfx.structure.chemistry.energy.Dihedral;
 import org.nmrfx.structure.chemistry.energy.EnergyLists;
-import org.nmrfx.processor.datasets.peaks.PeakDim;
-import org.nmrfx.processor.datasets.peaks.ResonanceFactory;
-import org.nmrfx.processor.star.Loop;
-import org.nmrfx.processor.star.ParseException;
-import org.nmrfx.processor.star.STAR3;
-import org.nmrfx.processor.star.Saveframe;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.FileSystems;
 import java.util.*;
+import org.nmrfx.peaks.PeakDim;
+import org.nmrfx.peaks.PeakListBase;
+import org.nmrfx.peaks.ResonanceFactory;
 import org.nmrfx.processor.datasets.peaks.atoms.AtomResonance;
+import org.nmrfx.star.Loop;
+import org.nmrfx.star.ParseException;
+import org.nmrfx.star.STAR3;
+import org.nmrfx.star.Saveframe;
+import org.nmrfx.structure.chemistry.Atom;
+import org.nmrfx.structure.chemistry.Compound;
+import org.nmrfx.structure.chemistry.InvalidMoleculeException;
+import org.nmrfx.structure.chemistry.MolFilter;
+import org.nmrfx.structure.chemistry.Molecule;
+import org.nmrfx.structure.chemistry.Polymer;
+import org.nmrfx.structure.chemistry.Residue;
+import org.nmrfx.structure.chemistry.SpatialSet;
 import org.nmrfx.structure.chemistry.io.Sequence.RES_POSITION;
 import org.nmrfx.structure.utilities.Util;
 
@@ -305,7 +313,7 @@ public class NMRNEFReader {
             List<String> atomColumn = loop.getColumnAsList("atom_name");
             List<String> valColumn = loop.getColumnAsList("value");
             List<String> valErrColumn = loop.getColumnAsList("value_uncertainty");
-            ResonanceFactory resFactory = PeakDim.resFactory();
+            ResonanceFactory resFactory = PeakListBase.resFactory();
             for (int i = 0; i < chainCodeColumn.size(); i++) {
                 String sequenceCode = (String) sequenceCodeColumn.get(i);
                 String chainCode = (String) chainCodeColumn.get(i);
