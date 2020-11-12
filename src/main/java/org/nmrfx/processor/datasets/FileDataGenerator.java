@@ -18,10 +18,10 @@
 package org.nmrfx.processor.datasets;
 
 import org.nmrfx.processor.math.Vec;
-import org.nmrfx.processor.utilities.NvUtil;
+import org.nmrfx.utilities.NvUtil;
 import java.io.IOException;
 import java.util.*;
-import org.nmrfx.processor.utilities.NMRFxColor;
+import org.nmrfx.utilities.NMRFxColor;
 
 public class FileDataGenerator extends DataGenerator implements Cloneable {
 

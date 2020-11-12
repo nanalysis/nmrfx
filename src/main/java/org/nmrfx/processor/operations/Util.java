@@ -18,7 +18,7 @@
 package org.nmrfx.processor.operations;
 
 import org.nmrfx.processor.math.Vec;
-import org.nmrfx.processor.math.VecException;
+import org.nmrfx.math.VecException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;

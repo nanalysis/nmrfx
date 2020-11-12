@@ -34,7 +34,7 @@ import org.nmrfx.processor.datasets.parameters.LPParams;
 import org.nmrfx.processor.datasets.parameters.SinebellWt;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.processing.SampleSchedule;
-import org.nmrfx.processor.utilities.ByteConversion;
+import org.nmrfx.utilities.ByteConversion;
 
 /*
  * This class implements the "JeolDelta" command in Vendor.

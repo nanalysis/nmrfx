@@ -18,10 +18,9 @@
 package org.nmrfx.processor.operations;
 
 import org.nmrfx.processor.math.Vec;
-import org.nmrfx.processor.math.VecException;
+import org.nmrfx.math.VecException;
 import org.nmrfx.processor.processing.ProcessingException;
-import java.lang.reflect.Field;
-import java.util.ArrayList;
+
 import java.util.List;
 
 /**

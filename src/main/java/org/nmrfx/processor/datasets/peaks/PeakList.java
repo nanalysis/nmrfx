@@ -20,7 +20,7 @@ package org.nmrfx.processor.datasets.peaks;
 import org.nmrfx.peaks.*;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.optimization.*;
-import org.nmrfx.processor.utilities.Util;
+import org.nmrfx.utilities.Util;
 import java.io.*;
 import static java.lang.Double.compare;
 
@@ -48,7 +48,6 @@ import java.util.stream.Collectors;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.nmrfx.processor.cluster.Clusters;
 import org.nmrfx.processor.cluster.Clusters.ClusterItem;
-import org.nmrfx.datasets.Nuclei;
 import org.nmrfx.processor.datasets.RegionData;
 import static org.nmrfx.processor.datasets.peaks.Peak.getMeasureFunction;
 import smile.clustering.HierarchicalClustering;
@@ -59,7 +58,7 @@ import org.nmrfx.processor.project.Project;
  *
  * @author brucejohnson
  */
-public class PeakList extends org.nmrfx.peaks.PeakListBase {
+public class PeakList extends org.nmrfx.peaks.PeakListBase<Peak> {
 
     public static ResonanceFactory resFactory() {
         return Project.getActive().resFactory;
@@ -117,8 +116,6 @@ public class PeakList extends org.nmrfx.peaks.PeakListBase {
     public boolean inMem;
     List<SearchDim> searchDims = new ArrayList<>();
 
-    private List<Peak> peaks;
-    
     public PeakList(int n, Integer listNum) {
         super(n, listNum);
         nDim = n;
@@ -259,7 +256,7 @@ public class PeakList extends org.nmrfx.peaks.PeakListBase {
             }
         }
         for (int i = 0; i < peaks.size(); i++) {
-            Peak peak = peaks.get(i);
+            Peak peak = (Peak) peaks.get(i);
             Peak newPeak = peak.copy(newPeakList);
             if (!merge) {
                 newPeak.setIdNum(peak.getIdNum());
@@ -280,8 +277,8 @@ public class PeakList extends org.nmrfx.peaks.PeakListBase {
         newPeakList.reIndex();
         if (!merge && !allLinks) {
             for (int i = 0; i < peaks.size(); i++) {
-                Peak oldPeak = peaks.get(i);
-                Peak newPeak = newPeakList.getPeak(i);
+                PeakBase oldPeak = peaks.get(i);
+                PeakBase newPeak = newPeakList.getPeak(i);
                 for (int j = 0; j < oldPeak.peakDims.length; j++) {
                     List<PeakDim> linkedPeakDims = getLinkedPeakDims(oldPeak, j);
                     PeakDim newPeakDim = newPeak.peakDims[j];
@@ -299,14 +296,6 @@ public class PeakList extends org.nmrfx.peaks.PeakListBase {
             }
         }
         return newPeakList;
-    }
-
-    /**
-     *
-     * @return a peak list object.
-     */
-    public List<Peak> peaks() {
-        return peaks;
     }
 
     /**
@@ -630,7 +619,7 @@ public class PeakList extends org.nmrfx.peaks.PeakListBase {
      */
     public void setFOM(double noiseLevel) {
         for (int i = 0; i < peaks.size(); i++) {
-            Peak peak = peaks.get(i);
+            PeakBase peak = peaks.get(i);
             double devMul = Math.abs(peak.getIntensity() / noiseLevel);
             if (devMul > 20.0) {
                 devMul = 20.0;
@@ -651,36 +640,11 @@ public class PeakList extends org.nmrfx.peaks.PeakListBase {
      */
     public void reNumber() {
         for (int i = 0; i < peaks.size(); i++) {
-            Peak peak = peaks.get(i);
+            PeakBase peak = peaks.get(i);
             peak.setIdNum(i);
         }
         idLast = peaks.size() - 1;
         reIndex();
-    }
-
-    /**
-     *
-     */
-    public void reIndex() {
-        int i = 0;
-        indexMap.clear();
-        for (Peak peak : peaks) {
-            peak.setIndex(i++);
-            indexMap.put(peak.getIdNum(), peak);
-        }
-        peakListUpdated(this);
-    }
-
-    /**
-     *
-     * @return
-     */
-    public int size() {
-        if (peaks == null) {
-            return 0;
-        } else {
-            return peaks.size();
-        }
     }
 
     /**
@@ -744,7 +708,7 @@ public class PeakList extends org.nmrfx.peaks.PeakListBase {
     }
 
     public void remove() {
-        for (Peak peak : peaks) {
+        for (PeakBase peak : peaks) {
             for (PeakDim peakDim : peak.peakDims) {
                 peakDim.remove();
                 if (peakDim.hasMultiplet()) {
@@ -954,23 +918,6 @@ public class PeakList extends org.nmrfx.peaks.PeakListBase {
     public double getFoldAmount(int iDim) {
         double foldAmount = Math.abs(getSpectralDim(iDim).getSw() / getSpectralDim(iDim).getSf());
         return foldAmount;
-    }
-
-    public static double foldPPM(double ppm, double fDelta, double min, double max) {
-        if (min > max) {
-            double hold = min;
-            min = max;
-            max = hold;
-        }
-        if (min != max) {
-            while (ppm > max) {
-                ppm -= fDelta;
-            }
-            while (ppm < min) {
-                ppm += fDelta;
-            }
-        }
-        return ppm;
     }
 
     /**
@@ -1357,25 +1304,6 @@ public class PeakList extends org.nmrfx.peaks.PeakListBase {
 
     /**
      *
-     * @param s
-     * @return
-     */
-    public int getListDim(String s) {
-        int iDim = -1;
-
-        for (int i = 0; i < nDim; i++) {
-            if (getSpectralDim(i).getDimName().equalsIgnoreCase(s)) {
-                iDim = i;
-
-                break;
-            }
-        }
-
-        return iDim;
-    }
-
-    /**
-     *
      * @param peakSpecifier
      * @return
      */
@@ -1501,25 +1429,7 @@ public class PeakList extends org.nmrfx.peaks.PeakListBase {
         return (peak.getIdNum());
     }
 
-    /**
-     *
-     * @param i
-     * @return
-     */
-    public Peak getPeak(int i) {
-        if (peaks == null) {
-            return null;
-        }
-        if (indexMap.isEmpty()) {
-            reIndex();
-        }
 
-        if ((i >= 0) && (i < peaks.size())) {
-            return (peaks.get(i));
-        } else {
-            return null;
-        }
-    }
 
     /**
      *
@@ -2335,8 +2245,8 @@ public class PeakList extends org.nmrfx.peaks.PeakListBase {
                     Peak jPeak = (Peak) objs.get(iObj);
                     PeakList.unLinkPeak(jPeak);
                     for (int iDim = 0; iDim < fDim; iDim++) {
-                        SearchDim iSDim = iPeak.peakList.searchDims.get(iDim);
-                        SearchDim jSDim = jPeak.peakList.searchDims.get(iDim);
+                        SearchDim iSDim = iPeak.getPeakList().searchDims.get(iDim);
+                        SearchDim jSDim = jPeak.getPeakList().searchDims.get(iDim);
                         linkPeaks(iPeak, iSDim.iDim, jPeak, jSDim.iDim);
                     }
                 }
@@ -3715,16 +3625,6 @@ public class PeakList extends org.nmrfx.peaks.PeakListBase {
      * @param iDim
      * @return
      */
-    public DoubleSummaryStatistics widthStatsPPM(int iDim) {
-        DoubleSummaryStatistics stats = peaks.stream().filter(p -> p.getStatus() >= 0).mapToDouble(p -> p.peakDims[iDim].getLineWidth()).summaryStatistics();
-        return stats;
-    }
-
-    /**
-     *
-     * @param iDim
-     * @return
-     */
     public DescriptiveStatistics widthDStats(int iDim) {
         DescriptiveStatistics stats = new DescriptiveStatistics();
         peaks.stream().filter(p -> p.getStatus() >= 0).mapToDouble(p -> p.peakDims[iDim].getLineWidthHz()).forEach(v -> stats.addValue(v));
@@ -3796,20 +3696,6 @@ public class PeakList extends org.nmrfx.peaks.PeakListBase {
             shift += value;
             pDim.setChemShiftValue(shift);
         });
-    }
-
-    /**
-     *
-     * @return
-     */
-    public Nuclei[] guessNuclei() {
-        double[] sf = new double[nDim];
-        for (int i = 0; i < nDim; i++) {
-            SpectralDim sDim = getSpectralDim(i);
-            sf[i] = sDim.getSf();
-        }
-        Nuclei[] nuclei = Nuclei.findNuclei(sf);
-        return nuclei;
     }
 
     public void writeSTAR3Header(FileWriter chan) throws IOException {

@@ -17,6 +17,7 @@
  */
 package org.nmrfx.processor.math;
 
+import org.nmrfx.math.VecBase;
 import org.nmrfx.processor.processing.ProcessingException;
 import org.nmrfx.processor.processing.SampleSchedule;
 import org.apache.commons.math3.complex.Complex;
@@ -145,7 +146,7 @@ public class IstMath {
         }
         if (timeDomain) {
             orig = new Complex[len];
-            Vec.complexCopy(input, orig);
+            VecBase.complexCopy(input, orig);
         }
         // fixme is this necessary and does it work
         //Vec.arrayCheckPowerOfTwo(input);
@@ -167,14 +168,14 @@ public class IstMath {
             Vec.apache_ift(add);
             copyValues(orig, add);  // copy orig non-zero values
         }
-        Vec.complexCopy(add, input);
+        VecBase.complexCopy(add, input);
     }
 
     public void calculateWithHFT(Complex[] input) {
         int len = input.length;
         zeroSample(input); // might have done phase or could be demo
         Complex[] orig = new Complex[len];
-        Vec.complexCopy(input, orig);
+        VecBase.complexCopy(input, orig);
 
         double[] add = new double[len];
         double[] realResidual = new double[len];
@@ -186,14 +187,14 @@ public class IstMath {
             cutAboveThreshold(realResidual, add, loop);
             if (loop < loops - 1) {
                 Complex[] cutFID = VecUtil.hift(realResidual, realResidual.length, 0.5f);
-                Vec.complexCopy(cutFID, input);
+                VecBase.complexCopy(cutFID, input);
                 zeroSample(input);  // rezero initial schedule
             }
         }
 
         if (timeDomain) {
             Complex[] newFID = VecUtil.hift(add, realResidual.length, 0.5);
-            Vec.complexCopy(newFID, input);
+            VecBase.complexCopy(newFID, input);
             if (scaleValues) {
                 double scale = scale(orig, input, len / 2);
             }
@@ -202,7 +203,7 @@ public class IstMath {
             }
         } else {
             Complex[] complexAdd = VecUtil.hft(add, add.length);
-            Vec.complexCopy(complexAdd, input);
+            VecBase.complexCopy(complexAdd, input);
         }
     }
 

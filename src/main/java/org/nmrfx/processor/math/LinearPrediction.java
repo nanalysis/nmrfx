@@ -23,6 +23,7 @@
  */
 package org.nmrfx.processor.math;
 
+import org.nmrfx.math.VecException;
 import org.nmrfx.processor.math.apache.ComplexHouseholderQRDecomposition;
 import org.nmrfx.processor.math.apache.ComplexSingularValueDecomposition;
 import org.nmrfx.processor.math.apache.FieldDiagonalMatrix;
