@@ -18,7 +18,7 @@
 /**
  *
  */
-package org.nmrfx.structure.chemistry;
+package org.nmrfx.structure.rna;
 
 import java.io.InputStream;
 import java.util.ArrayList;

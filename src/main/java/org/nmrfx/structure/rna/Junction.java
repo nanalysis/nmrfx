@@ -15,28 +15,27 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.nmrfx.structure.chemistry;
+package org.nmrfx.structure.rna;
 
 import org.nmrfx.chemistry.Residue;
 
-import java.util.List;
+import java.util.*;
+import org.nmrfx.structure.chemistry.SecondaryStructure;
 
 /**
  *
- * @author bajlabuser, mbeckwith
+ * @author bajlabuser
  */
-public class Sheet extends SecondaryStructure {
+public class Junction extends SecondaryStructure {
 
     public static int localCounter = 0;
-    public static String name = "Sheet";
+    public static String name = "Junction";
 
-    public Sheet(List<Residue> residues) {
+    public Junction(List<Residue> residues) {
         localIndex = localCounter++;
         globalIndex = globalCounter++;
         secResidues = residues;
-
     }
-    
     @Override
     public String getName(){
         return name;

@@ -2,7 +2,7 @@
  * Copyright (c) 2004-2014 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  */
-package org.nmrfx.structure.chemistry;
+package org.nmrfx.structure.rna;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -24,6 +24,8 @@ import org.apache.commons.math3.geometry.euclidean.twod.Vector2D;
 import org.apache.commons.math3.geometry.euclidean.twod.Line;
 import org.nmrfx.chemistry.Polymer;
 import org.nmrfx.chemistry.Residue;
+import org.nmrfx.structure.chemistry.InvalidMoleculeException;
+import org.nmrfx.structure.chemistry.Molecule;
 
 public class SSLayout implements MultivariateFunction {
 

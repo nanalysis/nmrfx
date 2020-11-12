@@ -15,11 +15,12 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.nmrfx.structure.chemistry;
+package org.nmrfx.structure.rna;
 
 import org.nmrfx.chemistry.Residue;
 
 import java.util.*;
+import org.nmrfx.structure.chemistry.SecondaryStructure;
 
 /**
  *

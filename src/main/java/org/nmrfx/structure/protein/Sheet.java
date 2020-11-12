@@ -15,29 +15,31 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.nmrfx.structure.chemistry;
+package org.nmrfx.structure.protein;
 
 import org.nmrfx.chemistry.Residue;
 
-import java.util.*;
+import java.util.List;
+import org.nmrfx.structure.chemistry.SecondaryStructure;
 
 /**
  *
- * @author bajlabuser
+ * @author bajlabuser, mbeckwith
  */
-public class Bulge extends SecondaryStructure {
+public class Sheet extends SecondaryStructure {
 
     public static int localCounter = 0;
-    public static String name = "Bulge";
+    public static String name = "Sheet";
 
-    public Bulge(List<Residue> residues) {
+    public Sheet(List<Residue> residues) {
         localIndex = localCounter++;
         globalIndex = globalCounter++;
         secResidues = residues;
-    }
 
+    }
+    
     @Override
-    public String getName() {
+    public String getName(){
         return name;
     }
 }

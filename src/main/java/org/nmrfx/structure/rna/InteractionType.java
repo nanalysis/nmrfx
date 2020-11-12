@@ -3,11 +3,15 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package org.nmrfx.structure.chemistry;
+package org.nmrfx.structure.rna;
 
+import org.nmrfx.structure.rna.Loop;
+import org.nmrfx.structure.rna.RNAHelix;
+import org.nmrfx.structure.rna.Bulge;
 import org.nmrfx.chemistry.Residue;
 
 import java.util.*;
+import org.nmrfx.structure.chemistry.SecondaryStructure;
 
 /**
  *
