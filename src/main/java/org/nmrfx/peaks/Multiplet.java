@@ -22,12 +22,11 @@
  */
 package org.nmrfx.peaks;
 
-import org.nmrfx.processor.datasets.peaks.*;
-import org.nmrfx.processor.utilities.Format;
+import org.nmrfx.utilities.Format;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import org.nmrfx.processor.datasets.Dataset;
+import org.nmrfx.datasets.DatasetBase;
 
 /**
  *
@@ -549,7 +548,7 @@ public class Multiplet implements PeakOrMulti, Comparable {
      * @param width Array of doubles containing the widths of the peak in units
      * of dataset points. The width is determined by the peak linewidth
      */
-    public void getMultipletRegion(Dataset theFile, int[] pdim, int[][] p,
+    public void getMultipletRegion(DatasetBase theFile, int[] pdim, int[][] p,
             int[] cpt, double[] width) {
         double p1 = Double.NEGATIVE_INFINITY;
         double p2 = Double.MAX_VALUE;

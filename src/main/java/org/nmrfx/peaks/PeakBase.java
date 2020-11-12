@@ -1,9 +1,7 @@
 package org.nmrfx.peaks;
 
-import org.nmrfx.processor.datasets.peaks.Peak;
-import org.nmrfx.processor.datasets.peaks.PeakList;
-import org.nmrfx.processor.utilities.ColorUtil;
-import org.nmrfx.processor.utilities.Format;
+import org.nmrfx.utilities.ColorUtil;
+import org.nmrfx.utilities.Format;
 
 import java.util.List;
 import java.util.Optional;
@@ -147,7 +145,7 @@ public class PeakBase implements Comparable, PeakOrMulti {
     @Override
     public int compareTo(Object o) {
         int result = 1;
-        if (o instanceof Peak) {
+        if (o instanceof PeakBase) {
             PeakBase peak2 = (PeakBase) o;
             result = peakList.getName().compareTo(peak2.peakList.getName());
             if (result == 0) {
@@ -201,7 +199,7 @@ public class PeakBase implements Comparable, PeakOrMulti {
 
     @Override
     public PeakListBase getPeakList() {
-        return (PeakList) peakList;
+        return peakList;
     }
 
     public int getNDim() {
@@ -319,10 +317,10 @@ public class PeakBase implements Comparable, PeakOrMulti {
         this.setType(type);
 
         if ((flagLoc >= 0) && (flagLoc < NFLAGS)) {
-            List<Peak> lPeaks = PeakListBase.getLinks(this);
+            List<PeakBase> lPeaks = PeakListBase.getLinks(this);
 
             for (int i = 0, n = lPeaks.size(); i < n; i++) {
-                Peak lPeak = (Peak) lPeaks.get(i);
+                PeakBase lPeak = (PeakBase) lPeaks.get(i);
                 if (type != PeakBase.COMPOUND) {
                     lPeak.setFlag(flagLoc, true);
                 } else {

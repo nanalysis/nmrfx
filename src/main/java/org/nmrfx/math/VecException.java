@@ -20,19 +20,15 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-package org.nmrfx.peaks;
-
-import org.nmrfx.peaks.PeakListBase;
+package org.nmrfx.math;
 
 /**
  *
- * @author brucejohnson
+ * @author johnsonb
  */
-public interface PeakOrMulti {
+public class VecException extends RuntimeException {
 
-    public boolean isValid();
-
-    public int getStatus();
-
-    public PeakListBase getPeakList();
+    public VecException(String s) {
+        super(s);
+    }
 }

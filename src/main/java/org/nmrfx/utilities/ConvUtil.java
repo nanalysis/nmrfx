@@ -15,24 +15,12 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+package org.nmrfx.utilities;
 
- /*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
-package org.nmrfx.peaks;
+public class ConvUtil {
 
-import org.nmrfx.peaks.PeakListBase;
-
-/**
- *
- * @author brucejohnson
- */
-public interface PeakOrMulti {
-
-    public boolean isValid();
-
-    public int getStatus();
-
-    public PeakListBase getPeakList();
+    public static float getFloatValue(String value) throws NumberFormatException {
+        float fValue = Float.parseFloat(value);
+        return fValue;
+    }
 }

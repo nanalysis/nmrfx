@@ -1,12 +1,10 @@
 package org.nmrfx.peaks;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import org.nmrfx.processor.datasets.peaks.Peak;
+import java.util.*;
 
-public class PeakListBase {
+import org.nmrfx.datasets.Nuclei;
+
+public class PeakListBase<T extends PeakBase> {
 
     static ResonanceFactory resFactory = new ResonanceFactory();
     public int idLast;
@@ -15,8 +13,8 @@ public class PeakListBase {
     protected String details = "";
     protected String sampleLabel = "";
     protected String sampleConditionLabel = "";
-    protected List<PeakBase> peaks;
-    protected final Map<Integer, PeakBase> indexMap = new HashMap<>();
+    protected List<T> peaks;
+    protected final Map<Integer, T> indexMap = new HashMap<>();
     boolean slideable = false;
     boolean requireSliderCondition = false;
     static boolean globalRequireSliderCondition = false;
@@ -38,7 +36,7 @@ public class PeakListBase {
         nDim = n;
         spectralDims = new SpectralDim[nDim];
         scale = 1.0;
-        this.listID = listNum;
+        this.listID = listNum == null ? 0 : listNum;
     }
 
     public void peakListUpdated(Object object) {
@@ -159,9 +157,37 @@ public class PeakListBase {
 
     /**
      *
+     * @return a peak list object.
+     */
+    public List<T> peaks() {
+        return peaks;
+    }
+
+    /**
+     *
+     * @param i
+     * @return
+     */
+    public T getPeak(int i) {
+        if (peaks == null) {
+            return null;
+        }
+        if (indexMap.isEmpty()) {
+            reIndex();
+        }
+
+        if ((i >= 0) && (i < peaks.size())) {
+            return (peaks.get(i));
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     *
      * @param newPeak
      */
-    public PeakBase addPeak(PeakBase newPeak) {
+    public T addPeak(T newPeak) {
         newPeak.initPeakDimContribs();
         peaks.add(newPeak);
         clearIndex();
@@ -170,12 +196,73 @@ public class PeakListBase {
 
     /**
      *
+     * @param s
      * @return
      */
-    public PeakBase getNewPeak() {
+    public int getListDim(String s) {
+        int iDim = -1;
+
+        for (int i = 0; i < nDim; i++) {
+            if (getSpectralDim(i).getDimName().equalsIgnoreCase(s)) {
+                iDim = i;
+
+                break;
+            }
+        }
+
+        return iDim;
+    }
+
+    public static double foldPPM(double ppm, double fDelta, double min, double max) {
+        if (min > max) {
+            double hold = min;
+            min = max;
+            max = hold;
+        }
+        if (min != max) {
+            while (ppm > max) {
+                ppm -= fDelta;
+            }
+            while (ppm < min) {
+                ppm += fDelta;
+            }
+        }
+        return ppm;
+    }
+
+    /**
+     *
+     */
+    public void reIndex() {
+        int i = 0;
+        indexMap.clear();
+        for (T peak : peaks) {
+            peak.setIndex(i++);
+            indexMap.put(peak.getIdNum(), peak);
+        }
+        peakListUpdated(this);
+    }
+
+    /**
+     *
+     * @return
+     */
+    public int size() {
+        if (peaks == null) {
+            return 0;
+        } else {
+            return peaks.size();
+        }
+    }
+
+    /**
+     *
+     * @return
+     */
+    public T getNewPeak() {
         PeakBase peak = new PeakBase(this, nDim);
-        addPeak(peak);
-        return peak;
+        addPeak((T) peak);
+        return (T) peak;
     }
 
     /**
@@ -235,5 +322,29 @@ public class PeakListBase {
      */
     public boolean requireSliderCondition() {
         return requireSliderCondition;
+    }
+
+    /**
+     *
+     * @return
+     */
+    public Nuclei[] guessNuclei() {
+        double[] sf = new double[nDim];
+        for (int i = 0; i < nDim; i++) {
+            SpectralDim sDim = getSpectralDim(i);
+            sf[i] = sDim.getSf();
+        }
+        Nuclei[] nuclei = Nuclei.findNuclei(sf);
+        return nuclei;
+    }
+
+    /**
+     *
+     * @param iDim
+     * @return
+     */
+    public DoubleSummaryStatistics widthStatsPPM(int iDim) {
+        DoubleSummaryStatistics stats = peaks.stream().filter(p -> p.getStatus() >= 0).mapToDouble(p -> p.peakDims[iDim].getLineWidth()).summaryStatistics();
+        return stats;
     }
 }

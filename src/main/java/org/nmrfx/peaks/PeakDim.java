@@ -18,9 +18,8 @@
 package org.nmrfx.peaks;
 
 import org.nmrfx.star.STAR3;
-import org.nmrfx.processor.utilities.ConvUtil;
-import org.nmrfx.processor.utilities.Format;
-import org.nmrfx.processor.project.Project;
+import org.nmrfx.utilities.ConvUtil;
+import org.nmrfx.utilities.Format;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -58,10 +57,6 @@ public class PeakDim {
         myPeak = peak;
         setSpectralDim(iDim);
         //peakDimContribs = new ArrayList();
-    }
-
-    public static void setResonanceFactory(ResonanceFactory newFactory) {
-        Project.getActive().resFactory = newFactory;
     }
 
     public PeakDim copy(PeakBase peak) {

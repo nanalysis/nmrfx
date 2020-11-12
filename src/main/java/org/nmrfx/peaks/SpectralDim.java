@@ -30,7 +30,6 @@ import java.util.DoubleSummaryStatistics;
 import java.util.Optional;
 
 import org.nmrfx.datasets.Nuclei;
-import org.nmrfx.processor.datasets.peaks.PeakList;
 
 /**
  *
@@ -55,7 +54,7 @@ public class SpectralDim {
         "_Spectral_dim.Relation",
         "_Spectral_dim.Aliasing",
         "_Spectral_dim.Precision",};
-    private PeakList peakList = null;
+    private PeakListBase peakList = null;
 // fixme sf should come from dataset
     private double sf = 1.0;
     private double sw = 1.0;
@@ -90,7 +89,7 @@ public class SpectralDim {
      * @param peakList The Peak List that this spectral dimension is part of
      * @param iDim The dimension number of this spectral dimension
      */
-    public SpectralDim(PeakList peakList, int iDim) {
+    public SpectralDim(PeakListBase peakList, int iDim) {
         this.peakList = peakList;
         dataDim = iDim;
         magLinkage = iDim;
@@ -101,7 +100,7 @@ public class SpectralDim {
         }
     }
 
-    public SpectralDim copy(PeakList peakList) {
+    public SpectralDim copy(PeakListBase peakList) {
         SpectralDim newSpectralDim = new SpectralDim(peakList, dataDim);
         newSpectralDim.sf = sf;
         newSpectralDim.sw = sw;
@@ -133,7 +132,7 @@ public class SpectralDim {
         return loopStrings;
     }
 
-    public PeakList getPeakList() {
+    public PeakListBase getPeakList() {
         return peakList;
     }
 
