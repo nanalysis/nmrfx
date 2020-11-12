@@ -17,10 +17,11 @@
  */
 package org.nmrfx.processor.operations;
 
+import org.nmrfx.math.VecBase;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.math.MatrixND;
 import org.nmrfx.processor.math.GRINS;
-import org.nmrfx.processor.math.Vec;
+
 import static org.nmrfx.processor.operations.IstMatrix.genSrcTargetMap;
 import org.nmrfx.processor.processing.ProcessingException;
 import org.nmrfx.processor.processing.SampleSchedule;
@@ -80,7 +81,7 @@ public class DGRINSOp extends DatasetOperation {
         int[] matrixSizes = new int[pt.length - 1];
         for (int i = 0; i < pt.length - 1; i++) {
             int k = pt.length - i - 2;
-            matrixSizes[k] = Vec.checkPowerOf2(1 + pt[i][1]);
+            matrixSizes[k] = VecBase.checkPowerOf2(1 + pt[i][1]);
             writePt[i][1] = matrixSizes[pt.length - i - 2] - 1;
             System.out.print(writePt[i][1] + " ");
         }

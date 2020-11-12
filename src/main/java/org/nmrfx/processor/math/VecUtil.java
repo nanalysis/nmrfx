@@ -18,6 +18,8 @@
 package org.nmrfx.processor.math;
 
 import static org.nmrfx.processor.math.Vec.pascalrow;
+
+import org.nmrfx.math.VecException;
 import org.nmrfx.processor.operations.Asmooth;
 import org.nmrfx.processor.optimization.NNLSMat;
 import org.apache.commons.math3.complex.Complex;

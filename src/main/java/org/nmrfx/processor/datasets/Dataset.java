@@ -510,7 +510,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
      * @return Vec storing data or null if data file mode.
      */
     public Vec getVec() {
-        return vecMat;
+        return (Vec) vecMat;
     }
 
     /**

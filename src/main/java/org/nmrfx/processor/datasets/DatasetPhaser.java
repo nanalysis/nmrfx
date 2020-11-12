@@ -24,7 +24,7 @@
 package org.nmrfx.processor.datasets;
 
 import org.nmrfx.processor.math.Vec;
-import org.nmrfx.processor.math.Vec.IndexValue;
+import org.nmrfx.math.VecBase.IndexValue;
 import org.nmrfx.processor.operations.TestBasePoints;
 import org.nmrfx.processor.operations.Util;
 import java.io.IOException;

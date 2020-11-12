@@ -42,7 +42,6 @@ public class Peak extends org.nmrfx.peaks.PeakBase {
         }
     }
     
-    PeakList peakList;
 
     public Peak(int nDim) {
         super(nDim);
@@ -637,7 +636,7 @@ public class Peak extends org.nmrfx.peaks.PeakBase {
         Set<Peak> overlaps = new HashSet<>();
         int nDim = peakList.nDim;
         for (int i = 0; i < peakList.size(); i++) {
-            Peak peak = peakList.getPeak(i);
+            Peak peak = getPeakList().getPeak(i);
             if ((peak.getStatus() < 0) || (this == peak)) {
                 continue;
             }
@@ -656,7 +655,7 @@ public class Peak extends org.nmrfx.peaks.PeakBase {
     }
 
     public void fit() {
-        Dataset dataset = Dataset.getDataset(this.peakList.fileName);
+        Dataset dataset = Dataset.getDataset(this.getPeakList().fileName);
         try {
             PeakList.peakFit(dataset, this);
         } catch (IllegalArgumentException | IOException | PeakFitException ex) {

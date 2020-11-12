@@ -18,6 +18,8 @@
 package org.nmrfx.processor.processing;
 
 import java.io.File;
+
+import org.nmrfx.math.VecBase;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.DatasetException;
 import org.nmrfx.processor.processing.processes.ProcessOps;
@@ -998,8 +1000,8 @@ public class Processor {
             setEndOfFile();  // matrix is null
         } else {
             // zerofill matrix size for processing and writing
-            int nPlanes = Vec.checkPowerOf2(1 + pt[1][1]);
-            int nRows = Vec.checkPowerOf2(1 + pt[0][1]);
+            int nPlanes = VecBase.checkPowerOf2(1 + pt[1][1]);
+            int nRows = VecBase.checkPowerOf2(1 + pt[0][1]);
             int[][] writePt = calcPt(dim);
             writePt[1][1] = nPlanes - 1;
             writePt[0][1] = nRows - 1;
@@ -1034,7 +1036,7 @@ public class Processor {
             // size in points of valid data (used for apodizatin etc.)
             int[] vSizes = new int[pt.length - 1];
             for (int i = 0; i < pt.length - 1; i++) {
-                matrixSizes[i] = Vec.checkPowerOf2(1 + pt[i][1]);
+                matrixSizes[i] = VecBase.checkPowerOf2(1 + pt[i][1]);
                 vSizes[i] = (pt[i][1] + 1);
                 if (dataset.getComplex(dim[0])) {
                     vSizes[i] /= 2;

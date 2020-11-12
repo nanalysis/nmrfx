@@ -21,7 +21,7 @@ package org.nmrfx.processor.processing.processes;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.math.MatrixType;
 import org.nmrfx.processor.math.Vec;
-import org.nmrfx.processor.math.VecException;
+import org.nmrfx.math.VecException;
 import org.nmrfx.processor.operations.DatasetOperation;
 import org.nmrfx.processor.operations.MatrixOperation;
 import org.nmrfx.processor.operations.Operation;
@@ -34,10 +34,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
 import org.nmrfx.processor.operations.Apodization;
-import org.nmrfx.processor.operations.Extract;
 import org.nmrfx.processor.operations.Ft;
-import org.nmrfx.processor.operations.Phase;
-import org.nmrfx.processor.operations.TDCombine;
 import org.nmrfx.processor.operations.Zf;
 
 /**

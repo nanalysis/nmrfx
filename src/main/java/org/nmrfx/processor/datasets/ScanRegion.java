@@ -17,7 +17,7 @@
  */
 package org.nmrfx.processor.datasets;
 
-import org.nmrfx.processor.utilities.NvUtil;
+import org.nmrfx.utilities.NvUtil;
 import java.util.ArrayList;
 
 public class ScanRegion {

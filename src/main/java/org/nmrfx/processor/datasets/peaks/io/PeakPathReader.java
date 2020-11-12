@@ -28,7 +28,7 @@ import org.nmrfx.processor.datasets.peaks.PeakPath.Path;
 import org.nmrfx.star.Loop;
 import org.nmrfx.star.ParseException;
 import org.nmrfx.star.Saveframe;
-import org.nmrfx.processor.utilities.NvUtil;
+import org.nmrfx.utilities.NvUtil;
 
 /**
  *

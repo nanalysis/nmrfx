@@ -494,7 +494,7 @@ public class PeakPicker {
             }
         }
         if (!peaks.isEmpty()) {
-            peaks.get(0).peakList.compress();
+            peaks.get(0).getPeakList().compress();
         }
     }
 
@@ -519,13 +519,13 @@ public class PeakPicker {
 
         }
         if (!peaks.isEmpty()) {
-            peaks.get(0).peakList.compress();
+            peaks.get(0).getPeakList().compress();
         }
     }
 
     private void purgeNarrowPeaks(List<Peak> peaks) throws IOException {
         if (!peaks.isEmpty()) {
-            PeakList peakList = peaks.get(0).peakList;
+            PeakList peakList = peaks.get(0).getPeakList();
 
             for (int iDim = 0; iDim < peakList.getNDim(); iDim++) {
                 DescriptiveStatistics stats = peakList.widthDStats(iDim);

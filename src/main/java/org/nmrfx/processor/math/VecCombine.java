@@ -17,6 +17,8 @@
  */
 package org.nmrfx.processor.math;
 
+import org.nmrfx.math.VecBase;
+
 /**
  *
  * @author brucejohnson
@@ -45,7 +47,7 @@ public class VecCombine {
         for (int j = 0; j < nOut; j++) {
             outVec[j].resize(n, false);
             outVec[j].zeros();
-            Vec.copyRef(inVec[0], outVec[j]);
+            VecBase.copyRef(inVec[0], outVec[j]);
         }
 
         /* 1 0 0 0 0 0 1 0 */
