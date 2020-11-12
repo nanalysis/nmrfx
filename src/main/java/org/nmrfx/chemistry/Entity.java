@@ -20,7 +20,6 @@ package org.nmrfx.chemistry;
 import java.io.*;
 import java.util.*;
 
-import org.nmrfx.structure.chemistry.CoordSet;
 import org.nmrfx.structure.chemistry.CoordinateGenerator;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.structure.chemistry.energy.AngleTreeGenerator;

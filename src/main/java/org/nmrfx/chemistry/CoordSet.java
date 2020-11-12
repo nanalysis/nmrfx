@@ -16,40 +16,51 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+ /*
+ * CoordSet.java
+ *
+ * Created on October 7, 2003, 11:13 AM
+ */
 package org.nmrfx.chemistry;
 
-import org.nmrfx.chemistry.AtomSpecifier;
+import org.nmrfx.chemistry.Entity;
 
-public class BondSpecifier {
+import java.util.*;
 
-    private final AtomSpecifier atom1;
-    private final AtomSpecifier atom2;
-    private final Order order;
+/**
+ *
+ * @author Johnbruc
+ */
+public class CoordSet {
 
-    BondSpecifier(final AtomSpecifier atom1, final AtomSpecifier atom2, final Order order) {
-        this.atom1 = atom1;
-        this.atom2 = atom2;
-        this.order = order;
+    public Map<String, Entity> entities = new LinkedHashMap<String, Entity>();
+    private String name;
+    private int id = 0;
+
+    public CoordSet(String name, int id, Entity entity) {
+        this.name = name;
+        this.id = id;
+        addEntity(entity);
+        entity.coordSet = this;
     }
 
     /**
-     * @return the atom1
+     * Creates a new instance of CoordSet
      */
-    public AtomSpecifier getAtom1() {
-        return atom1;
+    public Map<String, Entity> getEntities() {
+        return entities;
     }
 
-    /**
-     * @return the atom2
-     */
-    public AtomSpecifier getAtom2() {
-        return atom2;
+    public String getName() {
+        return name;
     }
 
-    /**
-     * @return the order
-     */
-    public Order getOrder() {
-        return order;
+    public int getID() {
+        return id;
+    }
+
+    public void addEntity(Entity entity) {
+        entities.put(entity.getName(), entity);
+        entity.coordSet = this;
     }
 }
