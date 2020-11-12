@@ -17,6 +17,7 @@
  */
 package org.nmrfx.structure.chemistry;
 
+import org.nmrfx.chemistry.CoordSet;
 import org.nmrfx.chemistry.Entity;
 import org.nmrfx.structure.utilities.Util;
 import java.util.Vector;

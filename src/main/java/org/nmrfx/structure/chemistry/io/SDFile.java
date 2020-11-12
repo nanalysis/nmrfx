@@ -17,6 +17,8 @@
  */
 package org.nmrfx.structure.chemistry.io;
 
+import org.nmrfx.chemistry.CoordSet;
+import org.nmrfx.chemistry.Order;
 import org.nmrfx.chemistry.Atom;
 import org.nmrfx.chemistry.Bond;
 import org.nmrfx.chemistry.Compound;

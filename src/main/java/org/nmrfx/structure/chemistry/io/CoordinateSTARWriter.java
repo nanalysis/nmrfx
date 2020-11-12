@@ -21,7 +21,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Iterator;
 import org.nmrfx.chemistry.Atom;
-import org.nmrfx.structure.chemistry.CoordSet;
+import org.nmrfx.chemistry.CoordSet;
 import org.nmrfx.chemistry.Entity;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.chemistry.SpatialSet;

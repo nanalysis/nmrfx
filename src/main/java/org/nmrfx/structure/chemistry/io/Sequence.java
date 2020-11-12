@@ -17,6 +17,7 @@
  */
 package org.nmrfx.structure.chemistry.io;
 
+import org.nmrfx.chemistry.Order;
 import org.nmrfx.chemistry.*;
 import org.nmrfx.structure.chemistry.*;
 import java.io.*;

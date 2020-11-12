@@ -10,7 +10,7 @@ import org.nmrfx.chemistry.Bond;
 import org.nmrfx.chemistry.Entity;
 import org.nmrfx.chemistry.ITree;
 import org.nmrfx.structure.chemistry.Molecule;
-import org.nmrfx.structure.chemistry.Order;
+import org.nmrfx.chemistry.Order;
 import org.nmrfx.structure.chemistry.Point3;
 import org.nmrfx.chemistry.Polymer;
 import org.nmrfx.structure.chemistry.search.MNode;

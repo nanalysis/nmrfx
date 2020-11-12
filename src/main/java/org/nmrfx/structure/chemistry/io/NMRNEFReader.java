@@ -29,7 +29,7 @@ import java.util.*;
 import org.nmrfx.peaks.PeakDim;
 import org.nmrfx.peaks.PeakListBase;
 import org.nmrfx.peaks.ResonanceFactory;
-import org.nmrfx.processor.datasets.peaks.atoms.AtomResonance;
+import org.nmrfx.chemistry.AtomResonance;
 import org.nmrfx.star.Loop;
 import org.nmrfx.star.ParseException;
 import org.nmrfx.star.STAR3;
@@ -56,6 +56,7 @@ public class NMRNEFReader {
     final File nefDir;
 
     Map entities = new HashMap();
+    Map<String, Compound> compoundMap = new HashMap<>();
     boolean hasResonances = false;
     Map<Long, List<PeakDim>> resMap = new HashMap<>();
     public static boolean DEBUG = false;
@@ -238,7 +239,7 @@ public class NMRNEFReader {
     }
 
     void addCompound(String id, Compound compound) {
-        Molecule.compoundMap().put(id, compound);
+        compoundMap.put(id, compound);
     }
 
     void buildNEFChemShifts(int fromSet, final int toSet) throws ParseException {
@@ -326,12 +327,12 @@ public class NMRNEFReader {
                     resIDStr = (String) resColumn.get(i);
                 }
                 String mapID = chainCode + "." + sequenceCode;
-                Compound compound = (Compound) Molecule.compoundMap().get(mapID);
+                Compound compound = compoundMap.get(mapID);
                 if (compound == null) {
                     for (int e = 1; e <= entities.size(); e++) {
                         chainCode = String.valueOf((char) (e + 'A' - 1));
                         mapID = chainCode + "." + sequenceCode;
-                        compound = (Compound) Molecule.compoundMap().get(mapID);
+                        compound = compoundMap.get(mapID);
                         if (compound != null) {
                             break;
                         }
@@ -461,12 +462,12 @@ public class NMRNEFReader {
                 String sequenceCode = (String) sequenceCodeColumns[atomIndex].get(i);
                 String fullAtom = chainCode + ":" + sequenceCode + "." + atomName;
                 String mapID = chainCode + "." + sequenceCode;
-                Compound compound = (Compound) Molecule.compoundMap().get(mapID);
+                Compound compound = compoundMap.get(mapID);
                 if (compound == null) {
                     for (int e = 1; e <= entities.size(); e++) {
                         chainCode = String.valueOf((char) (e + 'A' - 1));
                         mapID = chainCode + "." + sequenceCode;
-                        compound = (Compound) Molecule.compoundMap().get(mapID);
+                        compound = compoundMap.get(mapID);
                         if (compound != null) {
                             fullAtom = chainCode + ":" + sequenceCode + "." + atomName;
                             break;
@@ -555,12 +556,12 @@ public class NMRNEFReader {
                 String atomName = (String) atomNameColumns[iAtom].get(i);
                 String fullAtomName = chainCode + ":" + seqNum + "." + atomName;
                 String mapID = chainCode + "." + seqNum;
-                Compound compound = (Compound) Molecule.compoundMap().get(mapID);
+                Compound compound = compoundMap.get(mapID);
                 if (compound == null) {
                     for (int e = 1; e <= entities.size(); e++) {
                         chainCode = String.valueOf((char) (e + 'A' - 1));
                         mapID = chainCode + "." + seqNum;
-                        compound = (Compound) Molecule.compoundMap().get(mapID);
+                        compound = compoundMap.get(mapID);
                         if (compound != null) {
                             fullAtomName = chainCode + ":" + seqNum + "." + atomName;
                             break;
@@ -631,7 +632,7 @@ public class NMRNEFReader {
         Dihedral dihedral = null;
         if (argv.length == 0) {
             hasResonances = false;
-            Molecule.compoundMap().clear();
+            compoundMap.clear();
             if (DEBUG) {
                 System.err.println("process molecule");
             }

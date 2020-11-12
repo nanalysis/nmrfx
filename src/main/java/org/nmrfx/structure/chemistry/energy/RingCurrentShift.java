@@ -19,7 +19,7 @@ package org.nmrfx.structure.chemistry.energy;
 
 import org.nmrfx.chemistry.Atom;
 import org.nmrfx.chemistry.Compound;
-import org.nmrfx.structure.chemistry.CoordSet;
+import org.nmrfx.chemistry.CoordSet;
 import org.nmrfx.chemistry.Entity;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.chemistry.PPMv;
