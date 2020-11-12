@@ -38,13 +38,14 @@ import org.apache.commons.math3.linear.EigenDecomposition;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
 import org.apache.commons.math3.linear.SingularValueDecomposition;
+import org.nmrfx.chemistry.Atom;
+import org.nmrfx.chemistry.SpatialSet;
 import org.nmrfx.structure.chemistry.constraints.RDCConstraintSet;
 import org.apache.commons.math3.geometry.euclidean.threed.Rotation;
 import org.apache.commons.math3.geometry.euclidean.threed.RotationConvention;
 import org.apache.commons.math3.geometry.euclidean.threed.RotationOrder;
 import org.nmrfx.star.ParseException;
 import org.nmrfx.structure.chemistry.constraints.RDC;
-import org.python.core.*;
 import org.python.util.PythonInterpreter;
 
 public class OrderSVD {

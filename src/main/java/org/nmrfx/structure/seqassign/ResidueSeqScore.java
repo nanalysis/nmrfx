@@ -6,7 +6,7 @@
 package org.nmrfx.structure.seqassign;
 
 import java.util.Collection;
-import org.nmrfx.structure.chemistry.Residue;
+import org.nmrfx.chemistry.Residue;
 
 /**
  *

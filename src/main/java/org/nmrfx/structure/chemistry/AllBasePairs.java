@@ -17,7 +17,6 @@
  */
 /**
  *
- * @author audriguejean-louis
  */
 package org.nmrfx.structure.chemistry;
 

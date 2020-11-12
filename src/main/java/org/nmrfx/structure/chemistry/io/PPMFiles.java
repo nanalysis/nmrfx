@@ -11,11 +11,11 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
-import org.nmrfx.structure.chemistry.Atom;
-import org.nmrfx.structure.chemistry.Compound;
-import org.nmrfx.structure.chemistry.Entity;
+import org.nmrfx.chemistry.Atom;
+import org.nmrfx.chemistry.Compound;
+import org.nmrfx.chemistry.Entity;
 import org.nmrfx.structure.chemistry.Molecule;
-import org.nmrfx.structure.chemistry.PPMv;
+import org.nmrfx.chemistry.PPMv;
 
 /**
  *

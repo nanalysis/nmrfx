@@ -17,7 +17,7 @@
  */
 package org.nmrfx.structure.chemistry.energy;
 
-import org.nmrfx.structure.chemistry.Atom;
+import org.nmrfx.chemistry.Atom;
 import org.nmrfx.structure.chemistry.InvalidMoleculeException;
 import org.nmrfx.structure.chemistry.Molecule;
 import java.io.FileNotFoundException;
@@ -34,7 +34,7 @@ import java.util.Random;
 import org.apache.commons.math3.optim.PointValuePair;
 import org.apache.commons.math3.optim.SimpleValueChecker;
 import org.apache.commons.math3.util.FastMath;
-import org.nmrfx.structure.chemistry.Residue;
+import org.nmrfx.chemistry.Residue;
 
 public class Dihedral {
 

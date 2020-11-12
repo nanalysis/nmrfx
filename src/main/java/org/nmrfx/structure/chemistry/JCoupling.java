@@ -17,6 +17,9 @@
  */
 package org.nmrfx.structure.chemistry;
 
+import org.nmrfx.chemistry.Atom;
+import org.nmrfx.chemistry.SpatialSet;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 

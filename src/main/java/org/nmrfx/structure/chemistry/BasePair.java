@@ -17,6 +17,8 @@
  */
 package org.nmrfx.structure.chemistry;
 
+import org.nmrfx.chemistry.Residue;
+
 /**
  *
  * @author bajlabuser

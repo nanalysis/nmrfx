@@ -18,7 +18,7 @@
 package org.nmrfx.structure.chemistry.energy;
 
 import java.io.IOException;
-import org.nmrfx.structure.chemistry.Atom;
+import org.nmrfx.chemistry.Atom;
 import org.nmrfx.structure.fastlinear.FastVector3D;
 import java.util.Arrays;
 import java.util.Map;
@@ -26,10 +26,7 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.nmrfx.structure.chemistry.Point3;
-import org.nmrfx.structure.chemistry.PPMv;
-import org.nmrfx.structure.chemistry.Residue;
-import org.nmrfx.structure.chemistry.predict.Predictor;
-import org.nmrfx.structure.chemistry.predict.RNAAttributes;
+import org.nmrfx.chemistry.Residue;
 
 /**
  *

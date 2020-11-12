@@ -17,7 +17,11 @@
  */
 package org.nmrfx.structure.chemistry;
 
+import org.nmrfx.chemistry.Atom;
+import org.nmrfx.chemistry.SpatialSet;
+
 import java.util.*;
+import org.nmrfx.chemistry.MoleculeBase;
 
 public class SuperMol {
 
@@ -27,9 +31,9 @@ public class SuperMol {
     double[] xCenter;
     double[] yCenter;
     double rms;
-    Molecule molecule;
+    MoleculeBase molecule;
 
-    public SuperMol(Molecule molecule) {
+    public SuperMol(MoleculeBase molecule) {
         this.molecule = molecule;
     }
 

@@ -18,6 +18,9 @@
 
 package org.nmrfx.structure.chemistry;
 
+import org.nmrfx.chemistry.Compound;
+import org.nmrfx.chemistry.Residue;
+import org.nmrfx.chemistry.SpatialSet;
 import org.nmrfx.structure.utilities.Format;
 
 public class IdResult {

@@ -17,6 +17,7 @@
  */
 package org.nmrfx.structure.chemistry.io;
 
+import org.nmrfx.chemistry.*;
 import org.nmrfx.structure.chemistry.*;
 import java.io.*;
 import java.nio.file.DirectoryStream;
@@ -135,7 +136,7 @@ public class PDBFile {
                 if ((string == null) || string.startsWith("ENDMDL")) {
                     Molecule.makeAtomList();
                     molecule.structures.add(Integer.valueOf(structureNumber));
-                    Molecule.calcAllBonds();
+                    molecule.calcAllBonds();
                     molecule.getAtomTypes();
                     lineReader.close();
                     return molecule;

@@ -17,6 +17,7 @@
  */
 package org.nmrfx.structure.chemistry;
 
+import org.nmrfx.chemistry.Entity;
 import org.nmrfx.structure.utilities.Util;
 import java.util.Vector;
 import java.util.regex.Matcher;
@@ -263,15 +264,15 @@ public class MolFilter {
     public boolean matchCoordSetAndEntity(CoordSet cSet, Entity entity) {
         boolean result = false;
         if (csAndE.checkOneName) {
-            if ((csAndE.oneID != -1) && ((csAndE.oneID == cSet.id) || (csAndE.oneID == entity.entityID))) {
+            if ((csAndE.oneID != -1) && ((csAndE.oneID == cSet.getID()) || (csAndE.oneID == entity.entityID))) {
                 result = true;
-            } else if ((csAndE.oneID == -1) && (Util.stringMatch(cSet.name, csAndE.oneName) || Util.stringMatch(entity.name, csAndE.oneName))) {
+            } else if ((csAndE.oneID == -1) && (Util.stringMatch(cSet.getName(), csAndE.oneName) || Util.stringMatch(entity.name, csAndE.oneName))) {
                 result = true;
             }
         } else {
 
-            boolean csMatch = (csAndE.coordID == cSet.id) || Util.stringMatch(cSet.name, csAndE.coordSetName);
-            boolean eMatch = (csAndE.entityID == entity.entityID) || Util.stringMatch(cSet.name, csAndE.entityName);
+            boolean csMatch = (csAndE.coordID == cSet.getID()) || Util.stringMatch(cSet.getName(), csAndE.coordSetName);
+            boolean eMatch = (csAndE.entityID == entity.entityID) || Util.stringMatch(cSet.getName(), csAndE.entityName);
 
             result = csMatch && eMatch;
         }

@@ -23,8 +23,8 @@ import java.io.InputStream;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import org.nmrfx.structure.chemistry.Atom;
-import org.nmrfx.structure.chemistry.PPMv;
+import org.nmrfx.chemistry.Atom;
+import org.nmrfx.chemistry.PPMv;
 
 /**
  *

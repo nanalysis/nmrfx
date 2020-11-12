@@ -18,6 +18,8 @@
 package org.nmrfx.structure.chemistry.io;
 
 import java.io.BufferedReader;
+
+import org.nmrfx.chemistry.*;
 import org.nmrfx.structure.chemistry.*;
 import org.nmrfx.structure.chemistry.constraints.*;
 import org.nmrfx.structure.chemistry.energy.Dihedral;

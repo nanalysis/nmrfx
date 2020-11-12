@@ -17,7 +17,7 @@
  */
 package org.nmrfx.structure.chemistry.constraints;
 
-import org.nmrfx.structure.chemistry.SpatialSet;
+import org.nmrfx.chemistry.SpatialSet;
 
 /**
  *

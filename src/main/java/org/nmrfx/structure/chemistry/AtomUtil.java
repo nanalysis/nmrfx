@@ -17,13 +17,15 @@
  */
 package org.nmrfx.structure.chemistry;
 
+import org.nmrfx.chemistry.Atom;
+import org.nmrfx.chemistry.Residue;
 import org.nmrfx.structure.utilities.Util;
 
 public class AtomUtil {
     // FIXME  modify to use new atom data expression  like i.c{int < 0}
 
     public static int checkPattern(Atom[] atoms,
-            String[] pattern, String[] relation) throws IllegalArgumentException {
+                                   String[] pattern, String[] relation) throws IllegalArgumentException {
         {
             int i;
             int idel;

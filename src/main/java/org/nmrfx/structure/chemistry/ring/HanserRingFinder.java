@@ -33,10 +33,9 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
-import org.nmrfx.structure.chemistry.Atom;
-import org.nmrfx.structure.chemistry.Bond;
-import org.nmrfx.structure.chemistry.ITree;
-import org.nmrfx.structure.chemistry.Molecule;
+import org.nmrfx.chemistry.Atom;
+import org.nmrfx.chemistry.Bond;
+import org.nmrfx.chemistry.ITree;
 
 /**
  * @author Richard L. Apodaca <rapodaca at metamolecular.com>

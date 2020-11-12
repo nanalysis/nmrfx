@@ -26,9 +26,8 @@
 package org.nmrfx.structure.chemistry.ring;
 
 import java.util.Collection;
-import java.util.List;
-import org.nmrfx.structure.chemistry.ITree;
-import org.nmrfx.structure.chemistry.Molecule;
+
+import org.nmrfx.chemistry.ITree;
 
 /**
  * @author Richard L. Apodaca <rapodaca at metamolecular.com>

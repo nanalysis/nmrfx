@@ -4,11 +4,11 @@ import java.util.ArrayList;
 import java.util.List;
 import org.nmrfx.processor.datasets.peaks.Peak;
 import org.nmrfx.processor.datasets.peaks.PeakList;
-import org.nmrfx.structure.chemistry.Atom;
+import org.nmrfx.chemistry.Atom;
 import org.nmrfx.structure.chemistry.Molecule;
-import org.nmrfx.structure.chemistry.PPMv;
-import org.nmrfx.structure.chemistry.Polymer;
-import org.nmrfx.structure.chemistry.Residue;
+import org.nmrfx.chemistry.PPMv;
+import org.nmrfx.chemistry.Polymer;
+import org.nmrfx.chemistry.Residue;
 
 /**
  *

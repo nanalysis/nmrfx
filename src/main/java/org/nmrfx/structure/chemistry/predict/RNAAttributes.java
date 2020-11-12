@@ -5,9 +5,9 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.List;
-import org.nmrfx.structure.chemistry.Atom;
+import org.nmrfx.chemistry.Atom;
 import org.nmrfx.structure.chemistry.Molecule;
-import org.nmrfx.structure.chemistry.Residue;
+import org.nmrfx.chemistry.Residue;
 
 /**
  *

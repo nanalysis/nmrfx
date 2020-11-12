@@ -18,6 +18,10 @@
 package org.nmrfx.structure.chemistry;
 
 import java.util.ArrayDeque;
+
+import org.nmrfx.chemistry.Atom;
+import org.nmrfx.chemistry.Bond;
+import org.nmrfx.chemistry.Entity;
 import org.nmrfx.structure.chemistry.search.MNode;
 import org.nmrfx.structure.chemistry.search.MTree;
 import java.util.List;
@@ -28,7 +32,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-import org.nmrfx.structure.chemistry.miner.IBond;
+import org.nmrfx.chemistry.IBond;
 
 /**
  *

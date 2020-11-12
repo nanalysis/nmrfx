@@ -18,7 +18,7 @@
 
 package org.nmrfx.structure.chemistry.energy;
 
-import org.nmrfx.structure.chemistry.Atom;
+import org.nmrfx.chemistry.Atom;
 
 /**
  * This class represents a bond pair between 2 atoms

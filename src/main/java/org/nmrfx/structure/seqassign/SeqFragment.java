@@ -3,8 +3,8 @@ package org.nmrfx.structure.seqassign;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import org.nmrfx.structure.chemistry.Polymer;
-import org.nmrfx.structure.chemistry.Residue;
+import org.nmrfx.chemistry.Polymer;
+import org.nmrfx.chemistry.Residue;
 
 /**
  *

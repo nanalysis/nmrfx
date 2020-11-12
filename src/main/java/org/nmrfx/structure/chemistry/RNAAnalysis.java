@@ -17,6 +17,9 @@
  */
 package org.nmrfx.structure.chemistry;
 
+import org.nmrfx.chemistry.Polymer;
+import org.nmrfx.chemistry.Residue;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -34,7 +37,7 @@ public class RNAAnalysis {
      * @param molecule
      * @return
      */
-    public static List<Residue> genRnaResidues(Molecule molecule) { //list of only rna residues 
+    public static List<Residue> genRnaResidues(Molecule molecule) { //list of only rna residues
         List<Residue> rnaResidues = new ArrayList();
         for (Polymer polymer : molecule.getPolymers()) {
             if (polymer.isRNA()) {

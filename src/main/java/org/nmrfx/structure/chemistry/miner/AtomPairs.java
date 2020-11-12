@@ -1,5 +1,8 @@
 package org.nmrfx.structure.chemistry.miner;
 
+import org.nmrfx.chemistry.AtomContainer;
+import org.nmrfx.chemistry.IAtom;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;

@@ -23,6 +23,8 @@
  */
 package org.nmrfx.structure.chemistry;
 
+import org.nmrfx.chemistry.Entity;
+
 import java.util.*;
 
 /**
@@ -32,8 +34,8 @@ import java.util.*;
 public class CoordSet {
 
     public Map<String, Entity> entities = new LinkedHashMap<String, Entity>();
-    String name;
-    int id = 0;
+    private String name;
+    private int id = 0;
 
     public CoordSet(String name, int id, Entity entity) {
         this.name = name;

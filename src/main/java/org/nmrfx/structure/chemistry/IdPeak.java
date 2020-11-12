@@ -17,6 +17,7 @@
  */
 package org.nmrfx.structure.chemistry;
 
+import org.nmrfx.chemistry.*;
 import org.nmrfx.structure.utilities.NvUtil;
 import org.nmrfx.structure.utilities.Util;
 import java.util.*;

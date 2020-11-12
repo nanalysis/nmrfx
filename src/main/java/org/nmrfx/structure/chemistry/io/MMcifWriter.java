@@ -32,15 +32,15 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import org.nmrfx.processor.datasets.peaks.InvalidPeakException;
 import org.nmrfx.star.ParseException;
-import org.nmrfx.structure.chemistry.Atom;
-import org.nmrfx.structure.chemistry.Entity;
+import org.nmrfx.chemistry.Atom;
+import org.nmrfx.chemistry.Entity;
 import org.nmrfx.structure.chemistry.InvalidMoleculeException;
 import org.nmrfx.structure.chemistry.Molecule;
-import org.nmrfx.structure.chemistry.Polymer;
+import org.nmrfx.chemistry.Polymer;
 import org.nmrfx.structure.chemistry.ProteinHelix;
-import org.nmrfx.structure.chemistry.Residue;
+import org.nmrfx.chemistry.Residue;
 import org.nmrfx.structure.chemistry.Sheet;
-import org.nmrfx.structure.chemistry.SpatialSet;
+import org.nmrfx.chemistry.SpatialSet;
 
 /**
  *

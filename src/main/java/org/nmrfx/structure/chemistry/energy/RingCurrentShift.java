@@ -17,16 +17,16 @@
  */
 package org.nmrfx.structure.chemistry.energy;
 
-import org.nmrfx.structure.chemistry.Atom;
-import org.nmrfx.structure.chemistry.Compound;
+import org.nmrfx.chemistry.Atom;
+import org.nmrfx.chemistry.Compound;
 import org.nmrfx.structure.chemistry.CoordSet;
-import org.nmrfx.structure.chemistry.Entity;
+import org.nmrfx.chemistry.Entity;
 import org.nmrfx.structure.chemistry.Molecule;
-import org.nmrfx.structure.chemistry.PPMv;
+import org.nmrfx.chemistry.PPMv;
 import org.nmrfx.structure.chemistry.Point3;
-import org.nmrfx.structure.chemistry.Polymer;
-import org.nmrfx.structure.chemistry.Residue;
-import org.nmrfx.structure.chemistry.SpatialSet;
+import org.nmrfx.chemistry.Polymer;
+import org.nmrfx.chemistry.Residue;
+import org.nmrfx.chemistry.SpatialSet;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;

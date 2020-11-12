@@ -17,6 +17,8 @@
  */
 package org.nmrfx.structure.chemistry;
 
+import org.nmrfx.chemistry.Atom;
+
 public class AtomPairDistance {
 
     final Atom atom1;

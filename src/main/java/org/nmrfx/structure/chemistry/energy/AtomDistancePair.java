@@ -18,7 +18,7 @@
 
 package org.nmrfx.structure.chemistry.energy;
 
-import org.nmrfx.structure.chemistry.Atom;
+import org.nmrfx.chemistry.Atom;
 import org.nmrfx.structure.chemistry.Point3;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math3.util.FastMath;

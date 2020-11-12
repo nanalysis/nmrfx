@@ -26,7 +26,7 @@
 package org.nmrfx.structure.chemistry.ring;
 
 import java.util.List;
-import org.nmrfx.structure.chemistry.Atom;
+import org.nmrfx.chemistry.Atom;
 
 /**
  * @author Bruce A. Johnson <bruce at onemoonscientific.com>

@@ -6,18 +6,17 @@ import java.io.InputStreamReader;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import org.nmrfx.structure.chemistry.Atom;
+import org.nmrfx.chemistry.Atom;
 import org.nmrfx.structure.chemistry.InvalidMoleculeException;
 import org.nmrfx.structure.chemistry.Molecule;
-import org.nmrfx.structure.chemistry.Polymer;
-import org.nmrfx.structure.chemistry.Residue;
+import org.nmrfx.chemistry.Polymer;
+import org.nmrfx.chemistry.Residue;
 import org.nmrfx.structure.chemistry.energy.PropertyGenerator;
 
 public class ProteinPredictor {

@@ -5,6 +5,8 @@
  */
 package org.nmrfx.structure.chemistry;
 
+import org.nmrfx.chemistry.Residue;
+
 import java.util.*;
 
 /**
