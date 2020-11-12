@@ -22,8 +22,7 @@
  */
 package org.nmrfx.peaks;
 
-import org.nmrfx.processor.datasets.peaks.TreeLine;
-import org.nmrfx.processor.utilities.Format;
+import org.nmrfx.utilities.Format;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;

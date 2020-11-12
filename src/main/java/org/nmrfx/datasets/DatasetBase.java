@@ -1,7 +1,7 @@
 package org.nmrfx.datasets;
 
 import org.apache.commons.lang3.StringUtils;
-import org.nmrfx.processor.math.Vec;
+import org.nmrfx.math.VecBase;
 import org.nmrfx.processor.project.Project;
 
 import java.io.File;
@@ -10,7 +10,7 @@ import java.util.*;
 
 public class DatasetBase {
     protected static List<DatasetListener> observers = new ArrayList<>();
-    protected Vec vecMat = null;
+    protected VecBase vecMat = null;
     protected String fileName;
     protected String canonicalName;
     protected String title;
@@ -1091,7 +1091,7 @@ public class DatasetBase {
         if (vecMat == null) {
             value = freqDomain[iDim];
         } else {
-            value = vecMat.freqDomain();
+            value = vecMat.getFreqDomain();
         }
         return value;
     }
@@ -1122,7 +1122,7 @@ public class DatasetBase {
         if (vecMat == null) {
             value = freqDomain_r[iDim];
         } else {
-            value = vecMat.freqDomain();
+            value = vecMat.getFreqDomain();
         }
         return value;
     }

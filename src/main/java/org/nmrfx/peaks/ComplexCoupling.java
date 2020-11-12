@@ -22,8 +22,6 @@
  */
 package org.nmrfx.peaks;
 
-import org.nmrfx.processor.datasets.peaks.TreeLine;
-
 import java.util.ArrayList;
 import static java.util.Comparator.comparing;
 import java.util.List;
