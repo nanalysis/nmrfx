@@ -23,7 +23,6 @@
  */
 package org.nmrfx.chemistry;
 
-import org.nmrfx.structure.chemistry.CoordSet;
 import org.nmrfx.structure.chemistry.Point3;
 
 import java.util.ArrayList;

@@ -1,7 +1,5 @@
 package org.nmrfx.chemistry;
 
-import org.nmrfx.structure.chemistry.Order;
-
 /**
  *
  * @author Bruce Johnson

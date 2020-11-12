@@ -19,7 +19,6 @@ package org.nmrfx.chemistry;
 
 import java.io.*;
 
-import org.nmrfx.structure.chemistry.Order;
 
 public class Bond implements IBond, Serializable {
 

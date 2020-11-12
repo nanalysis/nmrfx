@@ -22,7 +22,6 @@ import org.nmrfx.structure.chemistry.io.AtomParser;
 import java.util.*;
 import javax.vecmath.Point2d;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
-import org.nmrfx.processor.datasets.peaks.atoms.AtomResonance;
 import org.nmrfx.structure.chemistry.energy.AngleBoundary;
 import org.nmrfx.structure.chemistry.energy.AtomEnergyProp;
 import org.nmrfx.structure.chemistry.energy.DistancePair;

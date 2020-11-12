@@ -24,8 +24,8 @@
 package org.nmrfx.chemistry;
 
 import java.util.*;
-import org.nmrfx.processor.utilities.NMRFxColor;
-import org.nmrfx.processor.utilities.NvUtil;
+import org.nmrfx.utilities.NMRFxColor;
+import org.nmrfx.utilities.NvUtil;
 
 /**
  *
