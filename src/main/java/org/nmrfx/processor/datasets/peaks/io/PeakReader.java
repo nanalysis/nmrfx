@@ -31,9 +31,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.nmrfx.processor.datasets.peaks.Measures;
 import org.nmrfx.processor.datasets.peaks.Peak;
-import org.nmrfx.processor.datasets.peaks.PeakDim;
+import org.nmrfx.peaks.PeakDim;
 import org.nmrfx.processor.datasets.peaks.PeakList;
-import org.nmrfx.processor.datasets.peaks.SpectralDim;
+import org.nmrfx.peaks.SpectralDim;
 import org.python.util.PythonInterpreter;
 
 /**

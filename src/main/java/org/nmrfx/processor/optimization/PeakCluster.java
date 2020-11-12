@@ -11,6 +11,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.apache.commons.math3.special.Erf;
+import org.nmrfx.peaks.PeakBase;
 import org.nmrfx.processor.datasets.peaks.Peak;
 import org.nmrfx.processor.datasets.peaks.PeakList;
 
@@ -116,7 +117,7 @@ public class PeakCluster {
                                     .filter((p2 -> p2.getPeak().getStatus() == 1))
                                     .filter(p2 -> !p2.getPeak().getPeakDim(iDim).isFrozen())
                                     .filter(p2 -> dimName.equals(p2.getSpectralDimObj().getDimName()))
-                                    .map(p2 -> p2.getPeak())
+                                    .map(p2 -> (Peak) p2.getPeak())
                                     .collect(Collectors.toList());
                             linkHashSet.add(links);
                             links.forEach(lp -> lp.setStatus(0));

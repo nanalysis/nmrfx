@@ -9,6 +9,7 @@ import org.apache.commons.math3.linear.ArrayRealVector;
 import org.apache.commons.math3.linear.RealVector;
 import org.junit.Assert;
 import org.junit.Test;
+import org.nmrfx.peaks.CouplingItem;
 
 public class PeakFitTest {
 

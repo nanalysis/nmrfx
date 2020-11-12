@@ -17,6 +17,8 @@
  */
 package org.nmrfx.processor.datasets.peaks;
 
+import org.nmrfx.peaks.CouplingItem;
+import org.nmrfx.peaks.CouplingPattern;
 import org.nmrfx.processor.optimization.NNLSMat;
 import org.nmrfx.processor.optimization.SineSignal;
 import java.util.List;

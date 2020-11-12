@@ -18,6 +18,7 @@
 package org.nmrfx.processor.datasets.vendor;
 
 import org.nmrfx.processor.datasets.Dataset;
+import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.processor.datasets.parameters.FPMult;
 import org.nmrfx.processor.datasets.parameters.GaussianWt;
 import org.nmrfx.processor.datasets.parameters.LPParams;
@@ -605,10 +606,10 @@ public class NMRViewData implements NMRData {
         System.out.println("open data file " + datapath);
         File file = new File(datapath);
 
-        List<Dataset> currentDatasets = Project.getActive().getDatasetsWithFile(file);
+        List<DatasetBase> currentDatasets = Project.getActive().getDatasetsWithFile(file);
         if (!currentDatasets.isEmpty()) {
             System.out.println("already open");
-            dataset = currentDatasets.get(0);
+            dataset = (Dataset) currentDatasets.get(0);
         } else {
             dataset = new Dataset(datapath, datapath, true, false);
         }

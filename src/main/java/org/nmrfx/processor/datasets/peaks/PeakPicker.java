@@ -23,10 +23,10 @@
  */
 package org.nmrfx.processor.datasets.peaks;
 
+import org.nmrfx.peaks.SpectralDim;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.DimCounter;
 import java.io.IOException;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -35,7 +35,7 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
-import org.nmrfx.processor.datasets.Nuclei;
+import org.nmrfx.datasets.Nuclei;
 
 /**
  *

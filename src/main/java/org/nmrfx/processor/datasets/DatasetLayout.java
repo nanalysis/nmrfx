@@ -21,7 +21,7 @@ package org.nmrfx.processor.datasets;
  *
  * @author brucejohnson
  */
-class DatasetLayout {
+public class DatasetLayout {
 
     int fileHeaderSize;
     int blockHeaderSize;
