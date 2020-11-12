@@ -22,19 +22,17 @@ import java.io.IOException;
 import java.io.Writer;
 import java.util.List;
 import java.util.Map;
-import org.nmrfx.processor.datasets.peaks.AbsMultipletComponent;
-import org.nmrfx.processor.datasets.peaks.ComplexCoupling;
-import org.nmrfx.processor.datasets.peaks.Coupling;
-import org.nmrfx.processor.datasets.peaks.CouplingPattern;
+import org.nmrfx.peaks.AbsMultipletComponent;
+import org.nmrfx.peaks.ComplexCoupling;
+import org.nmrfx.peaks.Coupling;
+import org.nmrfx.peaks.CouplingPattern;
 import org.nmrfx.processor.datasets.peaks.InvalidPeakException;
-import org.nmrfx.processor.datasets.peaks.Multiplet;
+import org.nmrfx.peaks.Multiplet;
 import org.nmrfx.processor.datasets.peaks.Peak;
-import org.nmrfx.processor.datasets.peaks.PeakDim;
+import org.nmrfx.peaks.PeakDim;
 import org.nmrfx.processor.datasets.peaks.PeakList;
-import org.nmrfx.processor.datasets.peaks.RelMultipletComponent;
-import org.nmrfx.processor.datasets.peaks.Resonance;
-import org.nmrfx.processor.datasets.peaks.Singlet;
-import org.nmrfx.processor.datasets.peaks.SpectralDim;
+import org.nmrfx.peaks.Resonance;
+import org.nmrfx.peaks.SpectralDim;
 
 /**
  *

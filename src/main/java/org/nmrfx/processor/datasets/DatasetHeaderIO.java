@@ -5,6 +5,8 @@
  */
 package org.nmrfx.processor.datasets;
 
+import org.nmrfx.datasets.Nuclei;
+
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;

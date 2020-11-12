@@ -17,13 +17,13 @@
  */
 package org.nmrfx.processor.datasets.peaks;
 
+import org.nmrfx.peaks.*;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.optimization.*;
 import org.nmrfx.processor.utilities.Util;
 import java.io.*;
 import static java.lang.Double.compare;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
+
 import java.util.*;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -48,7 +48,7 @@ import java.util.stream.Collectors;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.nmrfx.processor.cluster.Clusters;
 import org.nmrfx.processor.cluster.Clusters.ClusterItem;
-import org.nmrfx.processor.datasets.Nuclei;
+import org.nmrfx.datasets.Nuclei;
 import org.nmrfx.processor.datasets.RegionData;
 import static org.nmrfx.processor.datasets.peaks.Peak.getMeasureFunction;
 import smile.clustering.HierarchicalClustering;
@@ -59,7 +59,11 @@ import org.nmrfx.processor.project.Project;
  *
  * @author brucejohnson
  */
-public class PeakList {
+public class PeakList extends org.nmrfx.peaks.PeakListBase {
+
+    public static ResonanceFactory resFactory() {
+        return Project.getActive().resFactory;
+    }
 
     public enum ARRAYED_FIT_MODE {
         SINGLE,
@@ -101,40 +105,30 @@ public class PeakList {
      *
      */
     public static PeakList clusterOrigin = null;
-    private String listName;
 
     /**
      *
      */
     public String fileName;
-    private final int listID;
-
-    /**
-     *
-     */
-    public int nDim;
 
     /**
      *
      */
     public boolean inMem;
-    private SpectralDim[] spectralDims = null;
     List<SearchDim> searchDims = new ArrayList<>();
 
-    /**
-     *
-     */
-    public double scale;
     private List<Peak> peaks;
+    
+    public PeakList(int n, Integer listNum) {
+        super(n, listNum);
+        nDim = n;
+        spectralDims = new SpectralDim[nDim];
+        scale = 1.0;
+    }
 
     /**
      *
      */
-    public int idLast;
-    private final Map<Integer, Peak> indexMap = new HashMap<>();
-    private String details = "";
-    private String sampleLabel = "";
-    private String sampleConditionLabel = "";
     static List<PeakListener> globalListeners = new ArrayList<>();
     List<PeakListener> listeners = new ArrayList<>();
     static List<FreezeListener> freezeListeners = new ArrayList<>();
@@ -144,11 +138,8 @@ public class PeakList {
     static boolean needToFireEvent = false;
     ScheduledThreadPoolExecutor schedExecutor = new ScheduledThreadPoolExecutor(2);
     ScheduledFuture futureUpdate = null;
-    boolean slideable = false;
     Optional<Measures> measures = Optional.empty();
     Map<String, String> properties = new HashMap<>();
-    boolean requireSliderCondition = false;
-    static boolean globalRequireSliderCondition = false;
 
     class UpdateTask implements Runnable {
 
@@ -200,11 +191,9 @@ public class PeakList {
      * @param listNum
      */
     public PeakList(String name, int n, Integer listNum) {
+        super(n, listNum);
         listName = name;
         fileName = "";
-        nDim = n;
-        spectralDims = new SpectralDim[nDim];
-        scale = 1.0;
         idLast = -1;
 
         int i;
@@ -222,7 +211,6 @@ public class PeakList {
                 listNum++;
             }
         }
-        this.listID = listNum;
     }
 
     /**
@@ -262,9 +250,9 @@ public class PeakList {
             newPeakList.searchDims.addAll(searchDims);
             newPeakList.fileName = fileName;
             newPeakList.scale = scale;
-            newPeakList.details = details;
+            newPeakList.setDetails(details);
             newPeakList.sampleLabel = sampleLabel;
-            newPeakList.sampleConditionLabel = sampleConditionLabel;
+            newPeakList.sampleConditionLabel = getSampleConditionLabel();
 
             for (int i = 0; i < nDim; i++) {
                 newPeakList.spectralDims[i] = spectralDims[i].copy(newPeakList);
@@ -298,7 +286,7 @@ public class PeakList {
                     List<PeakDim> linkedPeakDims = getLinkedPeakDims(oldPeak, j);
                     PeakDim newPeakDim = newPeak.peakDims[j];
                     for (PeakDim peakDim : linkedPeakDims) {
-                        Peak linkPeak = peakDim.getPeak();
+                        Peak linkPeak = (Peak) peakDim.getPeak();
                         if ((linkPeak != oldPeak) && (this == linkPeak.getPeakList())) {
                             int iPeakDim = peakDim.getSpectralDim();
                             int linkNum = linkPeak.getIdNum();
@@ -329,22 +317,7 @@ public class PeakList {
         return Project.getActive().getPeakLists().iterator();
     }
 
-    /**
-     *
-     * @return the ID number of the peak list.
-     */
-    public int getId() {
-        return listID;
-    }
-
-    /**
-     *
-     * @return the name of the peak list.
-     */
-    public String getName() {
-        return listName;
-    }
-
+ 
     /**
      * Rename the peak list.
      *
@@ -359,57 +332,10 @@ public class PeakList {
 
     /**
      *
-     * @return the number of dimensions of the peak list.
-     */
-    public int getNDim() {
-        return nDim;
-    }
-
-    /**
-     *
-     * @return
-     */
-    public double getScale() {
-        return scale;
-    }
-
-    /**
-     *
-     */
-    public void setScale(double scale) {
-        this.scale = scale;
-    }
-
-    /**
-     *
      * @param sampleLabel
      */
     public void setSampleLabel(String sampleLabel) {
         this.sampleLabel = sampleLabel;
-    }
-
-    /**
-     *
-     * @return
-     */
-    public String getSampleLabel() {
-        return sampleLabel;
-    }
-
-    /**
-     *
-     * @param sampleConditionLabel
-     */
-    public void setSampleConditionLabel(String sampleConditionLabel) {
-        this.sampleConditionLabel = sampleConditionLabel;
-    }
-
-    /**
-     *
-     * @return
-     */
-    public String getSampleConditionLabel() {
-        return sampleConditionLabel;
     }
 
     /**
@@ -428,28 +354,12 @@ public class PeakList {
         return fileName;
     }
 
-    /**
-     *
-     * @param details
-     */
-    public void setDetails(String details) {
-        this.details = details;
-    }
-
     public List<SearchDim> getSearchDims() {
         return searchDims;
     }
 
-    /**
-     *
-     * @return
-     */
-    public String getDetails() {
-        return details;
-    }
-
     public boolean isSimulated() {
-        return sampleConditionLabel.contains("sim");
+        return getSampleConditionLabel().contains("sim");
     }
 
     static void scanListsForUpdates() {
@@ -541,7 +451,7 @@ public class PeakList {
         }
     }
 
-    void peakListUpdated(Object object) {
+    public void peakListUpdated(Object object) {
         setUpdatedFlag(true);
         changed = true;
         startTimer();
@@ -712,13 +622,6 @@ public class PeakList {
         }
         SearchDim sDim = new SearchDim(iDim, tol);
         searchDims.add(sDim);
-    }
-
-    /**
-     *
-     */
-    public void clearIndex() {
-        indexMap.clear();
     }
 
     /**
@@ -1347,7 +1250,7 @@ public class PeakList {
             idNum = Integer.parseInt(peakSpecifier.substring(dot + 1, lastDot));
         }
 
-        Peak peak = peakList.indexMap.get(idNum);
+        Peak peak = (Peak) peakList.indexMap.get(idNum);
         return peak;
     }
 
@@ -1448,7 +1351,7 @@ public class PeakList {
         if (indexMap.isEmpty()) {
             reIndex();
         }
-        Peak peak = indexMap.get(idNum);
+        Peak peak = (Peak) indexMap.get(idNum);
         return peak;
     }
 
@@ -1561,6 +1464,7 @@ public class PeakList {
      *
      * @return
      */
+    @Override
     public Peak getNewPeak() {
         Peak peak = new Peak(this, nDim);
         addPeak(peak);
@@ -2129,7 +2033,7 @@ public class PeakList {
                 List<PeakDim> linkedPeakDims = getLinkedPeakDims(peak, dims[iDim]);
                 double ppmCenter = 0.0;
                 for (PeakDim peakDim : linkedPeakDims) {
-                    Peak peak2 = peakDim.getPeak();
+                    Peak peak2 = (Peak) peakDim.getPeak();
                     usedPeaks.add(peak2);
                     ppmCenter += peakDim.getChemShiftValue();
                 }
@@ -2501,8 +2405,8 @@ public class PeakList {
         List<PeakDim> peakDims = getLinkedPeakDims(peak, 0);
         ArrayList<Peak> peaks = new ArrayList(peakDims.size());
         for (PeakDim peakDim : peakDims) {
-            if (!requireSameList || (peakDim.myPeak.peakList == peak.peakList)) {
-                peaks.add(peakDim.myPeak);
+            if (!requireSameList || (peakDim.getPeak().peakList == peak.peakList)) {
+                peaks.add((Peak) peakDim.getPeak());
             }
         }
         return peaks;
@@ -2518,7 +2422,7 @@ public class PeakList {
         ArrayList peaks = new ArrayList(peakDims.size());
         for (int i = 0; i < peakDims.size(); i++) {
             PeakDim peakDim = (PeakDim) peakDims.get(i);
-            peaks.add(peakDim.myPeak);
+            peaks.add(peakDim.getPeak());
         }
         return peaks;
     }
@@ -2534,30 +2438,11 @@ public class PeakList {
         final List<Peak> peaks = new ArrayList<>(peakDims.size());
         for (int i = 0; i < peakDims.size(); i++) {
             PeakDim peakDim = (PeakDim) peakDims.get(i);
-            peaks.add(peakDim.myPeak);
+            peaks.add((Peak) peakDim.getPeak());
         }
         return peaks;
     }
 
-    /**
-     *
-     * @param peak
-     * @return
-     */
-    public static List<PeakDim> getLinkedPeakDims(Peak peak) {
-        return getLinkedPeakDims(peak, 0);
-    }
-
-    /**
-     *
-     * @param peak
-     * @param iDim
-     * @return
-     */
-    public static List<PeakDim> getLinkedPeakDims(Peak peak, int iDim) {
-        PeakDim peakDim = peak.getPeakDim(iDim);
-        return peakDim.getLinkedPeakDims();
-    }
 
     /**
      *
@@ -2654,22 +2539,6 @@ public class PeakList {
                 }
             }
         }
-    }
-
-    /**
-     *
-     * @return
-     */
-    public boolean isSlideable() {
-        return slideable;
-    }
-
-    /**
-     *
-     * @param state
-     */
-    public void setSlideable(boolean state) {
-        slideable = state;
     }
 
     /**
@@ -3549,8 +3418,8 @@ public class PeakList {
                 List<PeakDim> peakDims = getLinkedPeakDims(peak, iDim);
                 Set<Peak> firstLayer = new HashSet<>();
                 for (PeakDim peakDim : peakDims) {
-                    used.add(peakDim.getPeak());
-                    firstLayer.add(peakDim.getPeak());
+                    used.add((Peak) peakDim.getPeak());
+                    firstLayer.add((Peak) peakDim.getPeak());
                 }
                 List<Set<Peak>> column = new ArrayList<>();
                 column.add(firstLayer);
@@ -3794,35 +3663,6 @@ public class PeakList {
 
     /**
      *
-     * @param iDim
-     * @return
-     */
-    public SpectralDim getSpectralDim(int iDim) {
-        SpectralDim specDim = null;
-        if (iDim < spectralDims.length) {
-            specDim = spectralDims[iDim];
-        }
-        return specDim;
-    }
-
-    /**
-     *
-     * @param name
-     * @return
-     */
-    public SpectralDim getSpectralDim(String name) {
-        SpectralDim specDim = null;
-        for (SpectralDim sDim : spectralDims) {
-            if (sDim.getDimName().equals(name)) {
-                specDim = sDim;
-                break;
-            }
-        }
-        return specDim;
-    }
-
-    /**
-     *
      * @param datasetName
      * @return
      */
@@ -3894,7 +3734,7 @@ public class PeakList {
     public DescriptiveStatistics intensityDStats(int iDim) {
         DescriptiveStatistics stats = new DescriptiveStatistics();
         peaks.stream().filter(p -> p.getStatus() >= 0)
-                .mapToDouble(p -> p.getPeakDim(iDim).myPeak.getIntensity())
+                .mapToDouble(p -> p.getPeakDim(iDim).getPeak().getIntensity())
                 .forEach(v -> stats.addValue(v));
         return stats;
     }
@@ -3970,14 +3810,6 @@ public class PeakList {
         }
         Nuclei[] nuclei = Nuclei.findNuclei(sf);
         return nuclei;
-    }
-
-    /**
-     *
-     * @return
-     */
-    public boolean requireSliderCondition() {
-        return requireSliderCondition;
     }
 
     public void writeSTAR3Header(FileWriter chan) throws IOException {

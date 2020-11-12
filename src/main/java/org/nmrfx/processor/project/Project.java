@@ -33,6 +33,7 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.nmrfx.processor.datasets.Dataset;
+import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.processor.datasets.DatasetParameterFile;
 import org.nmrfx.processor.datasets.DatasetRegion;
 import org.nmrfx.processor.datasets.peaks.InvalidPeakException;
@@ -40,7 +41,7 @@ import org.nmrfx.processor.datasets.peaks.PeakList;
 import org.nmrfx.processor.datasets.peaks.PeakPath;
 import org.nmrfx.processor.datasets.peaks.io.PeakReader;
 import org.nmrfx.processor.datasets.peaks.io.PeakWriter;
-import org.nmrfx.processor.datasets.peaks.ResonanceFactory;
+import org.nmrfx.peaks.ResonanceFactory;
 import java.util.stream.Collectors;
 
 /**
@@ -57,8 +58,8 @@ public class Project {
     public Path projectDir = null;
     final String name;
     protected Map<String, PeakList> peakLists;
-    protected Map<String, Dataset> datasetMap;
-    protected List<Dataset> datasets = new ArrayList<Dataset>();
+    protected Map<String, DatasetBase> datasetMap;
+    protected List<DatasetBase> datasets = new ArrayList<>();
     public ResonanceFactory resFactory;
     public Map<String, PeakPath> peakPaths;
     public static PropertyChangeSupport pcs = null;
@@ -144,6 +145,9 @@ public class Project {
             fileNum = Optional.of(Integer.parseInt(matcher.group(1)));
         }
         return fileNum;
+    }
+    public String getName() {
+        return name;
     }
 
     static String getName(String s) {
@@ -263,13 +267,13 @@ public class Project {
         currentProject.setActive();
     }
 
-    public void addDataset(Dataset dataset, String datasetName) {
+    public void addDataset(DatasetBase dataset, String datasetName) {
         datasetMap.put(datasetName, dataset);
         refreshDatasetList();
     }
 
     public boolean removeDataset(String datasetName) {
-        Dataset toRemove = datasetMap.get(datasetName);
+        DatasetBase toRemove = datasetMap.get(datasetName);
         boolean result = datasetMap.remove(datasetName) != null;
         refreshDatasetList();
         return result;
@@ -280,16 +284,20 @@ public class Project {
         datasets.addAll(datasetMap.values());
     }
 
-    List<Dataset> getDatasetList() {
+    public Map<String, DatasetBase> getDatasetMap() {
+        return datasetMap;
+    }
+
+    List<DatasetBase> getDatasetList() {
         return datasetMap.values().stream().
                 sorted((a, b) -> a.getName().compareTo(b.getName())).
                 collect(Collectors.toList());
     }
 
-    public List<Dataset> getDatasetsWithFile(File file) {
+    public List<DatasetBase> getDatasetsWithFile(File file) {
         try {
             String testPath = file.getCanonicalPath();
-            List<Dataset> datasetsWithFile = datasetMap.values().stream().
+            List<DatasetBase> datasetsWithFile = datasetMap.values().stream().
                     filter((dataset) -> (dataset.getCanonicalFile().equals(testPath))).
                     collect(Collectors.toList());
             return datasetsWithFile;
@@ -310,7 +318,7 @@ public class Project {
         return !getDatasetsWithFile(file).isEmpty();
     }
 
-    public Dataset getDataset(String name) {
+    public DatasetBase getDataset(String name) {
         return datasetMap.get(name);
     }
 
@@ -318,7 +326,7 @@ public class Project {
         return datasetMap.keySet().stream().sorted().collect(Collectors.toList());
     }
 
-    public List<Dataset> getDatasets() {
+    public List<DatasetBase> getDatasets() {
         return datasets;
     }
 
@@ -356,7 +364,8 @@ public class Project {
         }
         Path datasetDir = projectDir.resolve("datasets");
 
-        for (Dataset dataset : datasetMap.values()) {
+        for (DatasetBase datasetBase : datasetMap.values()) {
+            Dataset dataset = (Dataset) datasetBase;
             File datasetFile = dataset.getFile();
             if (datasetFile != null) {
                 Path currentPath = datasetFile.toPath();
@@ -456,6 +465,10 @@ public class Project {
         return peakLists.values();
     }
 
+    public Map<String, PeakList> getPeakListMap() {
+        return peakLists;
+    }
+
     public List<String> getPeakListNames() {
         return peakLists.keySet().stream().sorted().collect(Collectors.toList());
     }
@@ -500,10 +513,10 @@ public class Project {
     }
 
     public void clearAllDatasets() {
-        List<Dataset> removeDatasets = new ArrayList<>();
+        List<DatasetBase> removeDatasets = new ArrayList<>();
         removeDatasets.addAll(datasets);
-        for (Dataset dataset : removeDatasets) {
-            dataset.close();
+        for (DatasetBase datasetBase : removeDatasets) {
+            datasetBase.close();
         }
         datasetMap.clear();
         datasets.clear();
