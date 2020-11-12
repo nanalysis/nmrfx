@@ -17,6 +17,7 @@
  */
 package org.nmrfx.chemistry;
 
+import org.nmrfx.structure.rna.AllBasePairs;
 import java.util.*;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math3.util.FastMath;
