@@ -17,6 +17,8 @@
  */
 package org.nmrfx.structure.chemistry;
 
+import org.nmrfx.chemistry.CoordSet;
+import org.nmrfx.chemistry.Order;
 import org.nmrfx.structure.protein.Sheet;
 import org.nmrfx.structure.protein.ProteinHelix;
 import org.nmrfx.chemistry.*;

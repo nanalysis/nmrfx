@@ -7,7 +7,7 @@ import java.util.Optional;
 import java.util.Vector;
 import org.nmrfx.peaks.PeakDim;
 import org.nmrfx.peaks.SpectralDim;
-import org.nmrfx.processor.datasets.peaks.atoms.AtomResonance;
+import org.nmrfx.chemistry.AtomResonance;
 import org.nmrfx.processor.datasets.peaks.Peak;
 import org.nmrfx.processor.datasets.peaks.PeakList;
 import org.nmrfx.chemistry.Atom;

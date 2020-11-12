@@ -15,7 +15,7 @@ import org.nmrfx.chemistry.AtomProperty;
 import org.nmrfx.chemistry.Bond;
 import org.nmrfx.chemistry.Compound;
 import org.nmrfx.structure.chemistry.Molecule;
-import org.nmrfx.structure.chemistry.Order;
+import org.nmrfx.chemistry.Order;
 
 public class NanoMol {
 

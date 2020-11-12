@@ -10,7 +10,7 @@ import org.nmrfx.chemistry.IAtom;
 import org.nmrfx.chemistry.IBond;
 import org.nmrfx.chemistry.Atom;
 import org.nmrfx.chemistry.Bond;
-import org.nmrfx.structure.chemistry.Order;
+import org.nmrfx.chemistry.Order;
 
 public class PartialChargeCalculator {
 

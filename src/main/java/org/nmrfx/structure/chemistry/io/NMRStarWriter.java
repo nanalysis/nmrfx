@@ -28,7 +28,7 @@ import java.util.List;
 import java.util.Set;
 
 import org.nmrfx.peaks.PeakListBase;
-import org.nmrfx.processor.datasets.peaks.atoms.AtomResonanceFactory;
+import org.nmrfx.chemistry.AtomResonanceFactory;
 import org.nmrfx.processor.datasets.peaks.InvalidPeakException;
 import org.nmrfx.processor.datasets.peaks.PeakList;
 import org.nmrfx.processor.datasets.peaks.PeakPath;
@@ -42,7 +42,7 @@ import org.nmrfx.chemistry.AtomSpecifier;
 import org.nmrfx.chemistry.Bond;
 import org.nmrfx.chemistry.BondSpecifier;
 import org.nmrfx.chemistry.Compound;
-import org.nmrfx.structure.chemistry.CoordSet;
+import org.nmrfx.chemistry.CoordSet;
 import org.nmrfx.chemistry.Entity;
 import org.nmrfx.structure.chemistry.InvalidMoleculeException;
 import org.nmrfx.structure.chemistry.MolFilter;

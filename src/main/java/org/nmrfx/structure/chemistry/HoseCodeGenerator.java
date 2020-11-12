@@ -17,6 +17,7 @@
  */
 package org.nmrfx.structure.chemistry;
 
+import org.nmrfx.chemistry.Order;
 import java.util.ArrayDeque;
 
 import org.nmrfx.chemistry.Atom;
