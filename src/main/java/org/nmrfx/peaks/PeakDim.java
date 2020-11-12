@@ -17,7 +17,7 @@
  */
 package org.nmrfx.peaks;
 
-import org.nmrfx.processor.star.STAR3;
+import org.nmrfx.star.STAR3;
 import org.nmrfx.processor.utilities.ConvUtil;
 import org.nmrfx.processor.utilities.Format;
 import org.nmrfx.processor.project.Project;
