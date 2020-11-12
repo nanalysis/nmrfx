@@ -28,7 +28,7 @@ package org.nmrfx.structure.chemistry.ring;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import org.nmrfx.structure.chemistry.Atom;
+import org.nmrfx.chemistry.Atom;
 
 /**
  * @author Richard L. Apodaca <rapodaca at metamolecular.com>

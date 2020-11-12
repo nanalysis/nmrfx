@@ -23,6 +23,8 @@
  */
 package org.nmrfx.structure.chemistry;
 
+import org.nmrfx.chemistry.Atom;
+
 import java.util.ArrayList;
 
 /**

@@ -17,16 +17,16 @@
  */
 package org.nmrfx.structure.chemistry.energy;
 
-import org.nmrfx.structure.chemistry.Atom;
-import org.nmrfx.structure.chemistry.AtomContainer;
-import org.nmrfx.structure.chemistry.Compound;
-import org.nmrfx.structure.chemistry.Entity;
+import org.nmrfx.chemistry.Atom;
+import org.nmrfx.chemistry.AtomIterable;
+import org.nmrfx.chemistry.Compound;
+import org.nmrfx.chemistry.Entity;
 import org.nmrfx.structure.chemistry.MolFilter;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.structure.chemistry.Point3;
-import org.nmrfx.structure.chemistry.Polymer;
-import org.nmrfx.structure.chemistry.Residue;
-import org.nmrfx.structure.chemistry.SpatialSet;
+import org.nmrfx.chemistry.Polymer;
+import org.nmrfx.chemistry.Residue;
+import org.nmrfx.chemistry.SpatialSet;
 import org.nmrfx.structure.fastlinear.FastVector;
 import org.nmrfx.structure.fastlinear.FastVector3D;
 import java.io.BufferedOutputStream;
@@ -291,7 +291,7 @@ public class EnergyLists {
         return volume;
     }
 
-    public Atom findClosestAtom(AtomContainer atomContainer, Point3 pt1) {
+    public Atom findClosestAtom(AtomIterable atomContainer, Point3 pt1) {
         double x = 0;
         double y = 0;
         double z = 0;
@@ -311,7 +311,7 @@ public class EnergyLists {
         return cAtom;
     }
 
-    public double getRadius(AtomContainer atomContainer, Point3 pt1) {
+    public double getRadius(AtomIterable atomContainer, Point3 pt1) {
         double x = 0;
         double y = 0;
         double z = 0;
@@ -329,7 +329,7 @@ public class EnergyLists {
         return maxDistance;
     }
 
-    public Point3 getCenter(AtomContainer atomContainer) {
+    public Point3 getCenter(AtomIterable atomContainer) {
         double x = 0;
         double y = 0;
         double z = 0;

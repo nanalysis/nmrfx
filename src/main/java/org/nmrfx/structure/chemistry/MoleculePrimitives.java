@@ -23,6 +23,9 @@
  */
 package org.nmrfx.structure.chemistry;
 
+import org.nmrfx.chemistry.Atom;
+import org.nmrfx.chemistry.AtomColors;
+
 /**
  *
  * @author Johnbruc

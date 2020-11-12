@@ -27,7 +27,7 @@ import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.structure.chemistry.Point3;
 import java.util.*;
 import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
-import org.nmrfx.structure.chemistry.Atom;
+import org.nmrfx.chemistry.Atom;
 
 /**
  *

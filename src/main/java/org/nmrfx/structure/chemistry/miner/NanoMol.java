@@ -3,14 +3,17 @@ package org.nmrfx.structure.chemistry.miner;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.List;
-import java.util.Vector;
 import java.util.zip.Adler32;
 import javax.vecmath.Point2d;
 import javax.vecmath.Point3d;
-import org.nmrfx.structure.chemistry.Atom;
-import org.nmrfx.structure.chemistry.AtomProperty;
-import org.nmrfx.structure.chemistry.Bond;
-import org.nmrfx.structure.chemistry.Compound;
+
+import org.nmrfx.chemistry.AtomContainer;
+import org.nmrfx.chemistry.IAtom;
+import org.nmrfx.chemistry.IBond;
+import org.nmrfx.chemistry.Atom;
+import org.nmrfx.chemistry.AtomProperty;
+import org.nmrfx.chemistry.Bond;
+import org.nmrfx.chemistry.Compound;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.structure.chemistry.Order;
 

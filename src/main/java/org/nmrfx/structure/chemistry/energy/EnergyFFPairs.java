@@ -6,7 +6,7 @@
 package org.nmrfx.structure.chemistry.energy;
 
 import org.apache.commons.math3.util.FastMath;
-import org.nmrfx.structure.chemistry.Atom;
+import org.nmrfx.chemistry.Atom;
 import org.nmrfx.structure.fastlinear.FastVector3D;
 
 /**

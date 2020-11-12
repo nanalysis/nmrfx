@@ -18,7 +18,7 @@
 
 package org.nmrfx.structure.chemistry.constraints;
 
-import org.nmrfx.structure.chemistry.Atom;
+import org.nmrfx.chemistry.Atom;
 import org.nmrfx.processor.datasets.peaks.Peak;
 import java.io.Serializable;
 import java.util.Vector;

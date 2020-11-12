@@ -17,7 +17,7 @@
  */
 package org.nmrfx.structure.chemistry.search;
 
-import org.nmrfx.structure.chemistry.Atom;
+import org.nmrfx.chemistry.Atom;
 import java.util.*;
 
 public class MNode implements Comparable, Comparator {

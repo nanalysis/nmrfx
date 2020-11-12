@@ -2,6 +2,8 @@ package org.nmrfx.structure.chemistry;
 
 import java.util.List;
 import org.apache.commons.math3.util.FastMath;
+import org.nmrfx.chemistry.Atom;
+import org.nmrfx.chemistry.Coordinates;
 
 public class CoordinateGenerator {
 

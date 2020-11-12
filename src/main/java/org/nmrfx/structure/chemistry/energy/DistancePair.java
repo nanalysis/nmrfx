@@ -17,12 +17,12 @@
  */
 package org.nmrfx.structure.chemistry.energy;
 
-import org.nmrfx.structure.chemistry.Atom;
+import org.nmrfx.chemistry.Atom;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import org.nmrfx.structure.chemistry.Residue;
+import org.nmrfx.chemistry.Residue;
 
 public class DistancePair {
 

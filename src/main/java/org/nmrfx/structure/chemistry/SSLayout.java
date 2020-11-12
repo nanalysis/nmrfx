@@ -22,7 +22,8 @@ import org.apache.commons.math3.optim.PointValuePair;
 import org.apache.commons.math3.analysis.MultivariateFunction;
 import org.apache.commons.math3.geometry.euclidean.twod.Vector2D;
 import org.apache.commons.math3.geometry.euclidean.twod.Line;
-import org.nmrfx.structure.chemistry.io.PDBAtomParser;
+import org.nmrfx.chemistry.Polymer;
+import org.nmrfx.chemistry.Residue;
 
 public class SSLayout implements MultivariateFunction {
 

@@ -17,6 +17,8 @@
  */
 package org.nmrfx.structure.chemistry;
 
+import org.nmrfx.chemistry.Residue;
+
 import java.util.*;
 
 /**
@@ -42,8 +44,8 @@ public class ProteinHelix extends SecondaryStructure {
             Residue res1 = secResidues.get(i);
             Residue res2 = secResidues.get(i + 1);
             System.out.print(res1.getPolymer().getName() + ":" + res1.getName()
-                    + res1.resNum + ":" + res2.getPolymer().getName()
-                    + ":" + res2.getName() + res2.resNum + " ");
+                    + res1.getResNum()+ ":" + res2.getPolymer().getName()
+                    + ":" + res2.getName() + res2.getResNum()+ " ");
             i += 2;
         }
     }

@@ -17,7 +17,7 @@
  */
 package org.nmrfx.structure.chemistry.energy;
 
-import org.nmrfx.structure.chemistry.Atom;
+import org.nmrfx.chemistry.Atom;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;

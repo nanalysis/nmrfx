@@ -17,6 +17,7 @@
  */
 package org.nmrfx.structure.chemistry.constraints;
 
+import org.nmrfx.chemistry.*;
 import org.nmrfx.structure.chemistry.*;
 import org.nmrfx.processor.datasets.peaks.Peak;
 import org.nmrfx.processor.datasets.peaks.PeakList;

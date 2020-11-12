@@ -27,6 +27,7 @@ import org.nmrfx.processor.datasets.peaks.InvalidPeakException;
 import org.nmrfx.processor.project.Project;
 import org.nmrfx.star.ParseException;
 import org.nmrfx.structure.chemistry.InvalidMoleculeException;
+import org.nmrfx.chemistry.MoleculeBase;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.structure.chemistry.constraints.AngleConstraintSet;
 import org.nmrfx.structure.chemistry.constraints.NoeSet;

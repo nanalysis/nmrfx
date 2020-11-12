@@ -4,6 +4,8 @@ import java.util.*;
 import java.io.*;
 import java.text.NumberFormat;
 import java.text.DecimalFormat;
+
+import org.nmrfx.chemistry.*;
 import org.nmrfx.structure.chemistry.*;
 
 /**

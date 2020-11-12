@@ -4,8 +4,12 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.nmrfx.structure.chemistry.Atom;
-import org.nmrfx.structure.chemistry.Bond;
+
+import org.nmrfx.chemistry.AtomContainer;
+import org.nmrfx.chemistry.IAtom;
+import org.nmrfx.chemistry.IBond;
+import org.nmrfx.chemistry.Atom;
+import org.nmrfx.chemistry.Bond;
 import org.nmrfx.structure.chemistry.Order;
 
 public class PartialChargeCalculator {

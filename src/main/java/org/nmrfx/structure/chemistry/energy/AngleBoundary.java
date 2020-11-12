@@ -18,7 +18,7 @@
 package org.nmrfx.structure.chemistry.energy;
 
 import java.util.List;
-import org.nmrfx.structure.chemistry.Atom;
+import org.nmrfx.chemistry.Atom;
 import org.nmrfx.structure.chemistry.InvalidMoleculeException;
 import org.nmrfx.structure.chemistry.Molecule;
 

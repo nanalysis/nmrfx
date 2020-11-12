@@ -17,13 +17,10 @@
  */
 package org.nmrfx.structure.chemistry.io;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
@@ -36,13 +33,13 @@ import java.util.Set;
 import org.nmrfx.processor.datasets.peaks.InvalidPeakException;
 import org.nmrfx.star.ParseException;
 import org.nmrfx.star.STAR3;
-import org.nmrfx.structure.chemistry.Atom;
-import org.nmrfx.structure.chemistry.Compound;
-import org.nmrfx.structure.chemistry.Entity;
+import org.nmrfx.chemistry.Atom;
+import org.nmrfx.chemistry.Compound;
+import org.nmrfx.chemistry.Entity;
 import org.nmrfx.structure.chemistry.InvalidMoleculeException;
 import org.nmrfx.structure.chemistry.Molecule;
-import org.nmrfx.structure.chemistry.Polymer;
-import org.nmrfx.structure.chemistry.Residue;
+import org.nmrfx.chemistry.Polymer;
+import org.nmrfx.chemistry.Residue;
 import org.nmrfx.structure.chemistry.energy.AngleBoundary;
 import org.nmrfx.structure.chemistry.energy.AtomDistancePair;
 import org.nmrfx.structure.chemistry.energy.Dihedral;

@@ -28,10 +28,10 @@ package org.nmrfx.structure.chemistry.ring;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import org.nmrfx.structure.chemistry.Atom;
-import org.nmrfx.structure.chemistry.Bond;
-import org.nmrfx.structure.chemistry.Entity;
-import org.nmrfx.structure.chemistry.ITree;
+import org.nmrfx.chemistry.Atom;
+import org.nmrfx.chemistry.Bond;
+import org.nmrfx.chemistry.Entity;
+import org.nmrfx.chemistry.ITree;
 import org.nmrfx.structure.chemistry.Molecule;
 
 /**

@@ -18,6 +18,9 @@
 
 package org.nmrfx.structure.chemistry.io;
 
+import org.nmrfx.chemistry.Atom;
+import org.nmrfx.chemistry.Polymer;
+import org.nmrfx.chemistry.Residue;
 import org.nmrfx.structure.chemistry.*;
 import java.io.BufferedReader;
 import java.io.File;

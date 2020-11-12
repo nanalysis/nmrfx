@@ -10,13 +10,13 @@ import org.nmrfx.peaks.SpectralDim;
 import org.nmrfx.processor.datasets.peaks.atoms.AtomResonance;
 import org.nmrfx.processor.datasets.peaks.Peak;
 import org.nmrfx.processor.datasets.peaks.PeakList;
-import org.nmrfx.structure.chemistry.Atom;
+import org.nmrfx.chemistry.Atom;
 import org.nmrfx.structure.chemistry.IdPeak;
 import org.nmrfx.structure.chemistry.IdResult;
 import org.nmrfx.structure.chemistry.InvalidMoleculeException;
 import org.nmrfx.structure.chemistry.MatchCriteria;
 import org.nmrfx.structure.chemistry.Molecule;
-import org.nmrfx.structure.chemistry.SpatialSet;
+import org.nmrfx.chemistry.SpatialSet;
 import org.nmrfx.structure.utilities.Util;
 
 /**

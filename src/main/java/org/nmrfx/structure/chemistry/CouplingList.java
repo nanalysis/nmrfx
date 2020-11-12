@@ -17,6 +17,8 @@
  */
 package org.nmrfx.structure.chemistry;
 
+import org.nmrfx.chemistry.Entity;
+
 import java.util.ArrayList;
 
 /**
@@ -30,7 +32,7 @@ public class CouplingList {
     ArrayList<JCoupling> hmbcLinks = new ArrayList<>();
 
     public void generateCouplings(Entity entity, int nShells, int minShells,
-            int tocsyShells, int hmbcShells) {
+                                  int tocsyShells, int hmbcShells) {
         jCouplings.clear();
         tocsyLinks.clear();
         hmbcLinks.clear();

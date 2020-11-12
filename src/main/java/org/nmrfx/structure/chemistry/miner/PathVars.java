@@ -1,5 +1,8 @@
 package org.nmrfx.structure.chemistry.miner;
 
+import org.nmrfx.chemistry.AtomContainer;
+import org.nmrfx.chemistry.IAtom;
+
 public class PathVars {
 
     String command = "";
