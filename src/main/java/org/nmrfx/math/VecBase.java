@@ -2374,6 +2374,7 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
      * Check if the size is a power of 2, if not resize the Vector so it is a
      * power of 2 in length
      */
+
     public void checkPowerOf2() {
         if (!ArithmeticUtils.isPowerOfTwo(size)) {
             int n = 1;
@@ -2382,6 +2383,15 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
             }
             resize(n);
         }
+    }
+    public static double phaseMin(double ph) {
+        while (ph > 180) {
+            ph -= 360.0;
+        }
+        while (ph < -180) {
+            ph += 360.0;
+        }
+        return ph;
     }
 
     /**
@@ -2473,7 +2483,7 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
 
                 }
             }
-            ph0 = Util.phaseMin(ph0 + p0);
+            ph0 = phaseMin(ph0 + p0);
 
             return (this);
         }
@@ -2519,7 +2529,7 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
                 ivec[i] = real * pImag + imag * pReal;
             }
         }
-        ph0 = Util.phaseMin(ph0 + p0);
+        ph0 = phaseMin(ph0 + p0);
         ph1 = ph1 + p1;
 
         return (this);
@@ -2576,7 +2586,7 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
                 ivec[i] = real * pImag[i] + imag * pReal[i];
             }
         }
-        ph0 = Util.phaseMin(ph0 + p0);
+        ph0 = phaseMin(ph0 + p0);
         ph1 = ph1 + p1;
 
         return (this);
