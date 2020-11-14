@@ -23,7 +23,7 @@
  */
 package org.nmrfx.math.units;
 
-import org.nmrfx.processor.math.Vec;
+import org.nmrfx.math.VecBase;
 
 /**
  * A Point is a Double specifying a point in a Vec.
@@ -44,7 +44,7 @@ public class Point extends Unit<Double> {
         return field + "";
     }
 
-    public double getDoublePosition(Vec vec) {
+    public double getDoublePosition(VecBase vec) {
         return vec.getDoublePosition(this);
     }
 }

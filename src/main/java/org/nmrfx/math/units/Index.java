@@ -23,7 +23,7 @@
  */
 package org.nmrfx.math.units;
 
-import org.nmrfx.processor.math.Vec;
+import org.nmrfx.math.VecBase;
 
 /**
  * An Index is an Integer index of a Vec.
@@ -44,7 +44,7 @@ public class Index extends Unit<Integer> {
         return field + "";
     }
 
-    public double getDoublePosition(Vec vec) {
+    public double getDoublePosition(VecBase vec) {
         return vec.getDoublePosition(this);
     }
 }

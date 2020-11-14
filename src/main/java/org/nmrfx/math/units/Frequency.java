@@ -23,7 +23,7 @@
  */
 package org.nmrfx.math.units;
 
-import org.nmrfx.processor.math.Vec;
+import org.nmrfx.math.VecBase;
 
 /**
  *
@@ -43,7 +43,7 @@ public class Frequency extends Unit<Double> {
         return field + "h";
     }
 
-    public double getDoublePosition(Vec vec) {
+    public double getDoublePosition(VecBase vec) {
         return vec.getDoublePosition(this);
     }
 }

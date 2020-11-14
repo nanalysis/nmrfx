@@ -23,7 +23,7 @@
  */
 package org.nmrfx.math.units;
 
-import org.nmrfx.processor.math.Vec;
+import org.nmrfx.math.VecBase;
 
 /**
  *
@@ -53,9 +53,9 @@ public abstract class Unit<T extends java.lang.Number> extends java.lang.Number 
         return field.doubleValue();
     }
 
-    public abstract double getDoublePosition(Vec vec);
+    public abstract double getDoublePosition(VecBase vec);
 
-    public double getDoubleDelta(Vec vec) {
+    public double getDoubleDelta(VecBase vec) {
         return getDoublePosition(vec);
     }
 
