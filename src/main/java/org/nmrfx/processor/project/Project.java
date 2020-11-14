@@ -7,6 +7,7 @@ package org.nmrfx.processor.project;
 
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.DirectoryIteratorException;
@@ -19,10 +20,16 @@ import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.TreeSet;
+import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
+import org.nmrfx.processor.datasets.Dataset;
+import org.nmrfx.processor.datasets.DatasetParameterFile;
+import org.nmrfx.processor.datasets.DatasetRegion;
 import org.nmrfx.processor.datasets.peaks.InvalidPeakException;
 import org.nmrfx.processor.datasets.peaks.PeakList;
 import org.nmrfx.processor.datasets.peaks.PeakPath;
@@ -71,15 +78,6 @@ public class Project extends ProjectBase {
             resFact = new ResonanceFactory();
         }
         return resFact;
-    }
-
-    public static Optional<Integer> getIndex(String s) {
-        Optional<Integer> fileNum = Optional.empty();
-        Matcher matcher = INDEX_PATTERN.matcher(s);
-        if (matcher.matches()) {
-            fileNum = Optional.of(Integer.parseInt(matcher.group(1)));
-        }
-        return fileNum;
     }
 
     private static Project getNewStructureProject(String name) {
@@ -267,4 +265,62 @@ public class Project extends ProjectBase {
         }
     }
 
+    public void loadDatasets(Path directory) throws IOException {
+        Pattern pattern = Pattern.compile("(.+)\\.(nv|ucsf)");
+        Predicate<String> predicate = pattern.asPredicate();
+        if (Files.isDirectory(directory)) {
+            Files.list(directory).sequential().filter(path -> predicate.test(path.getFileName().toString())).
+                    forEach(path -> {
+                        System.out.println("read dataset: " + path.toString());
+                        String pathName = path.toString();
+                        String fileName = path.getFileName().toString();
+
+                        try {
+                            Dataset dataset = new Dataset(pathName, fileName, false, false);
+                            File regionFile = DatasetRegion.getRegionFile(path.toString());
+                            System.out.println("region " + regionFile.toString());
+                            if (regionFile.canRead()) {
+                                System.out.println("read");
+                                TreeSet<DatasetRegion> regions = DatasetRegion.loadRegions(regionFile);
+                                dataset.setRegions(regions);
+                            }
+
+                        } catch (IOException ex) {
+                            Logger.getLogger(Project.class.getName()).log(Level.SEVERE, null, ex);
+                        }
+                    });
+        }
+        refreshDatasetList();
+    }
+
+    public void saveDatasets() throws IOException {
+        if (projectDir == null) {
+            throw new IllegalArgumentException("Project directory not set");
+        }
+        Path datasetDir = projectDir.resolve("datasets");
+
+        for (Object datasetBase : datasetMap.values()) {
+            Dataset dataset = (Dataset) datasetBase;
+            File datasetFile = dataset.getFile();
+            if (datasetFile != null) {
+                Path currentPath = datasetFile.toPath();
+                Path fileName = currentPath.getFileName();
+                Path pathInProject = datasetDir.resolve(fileName);
+                // fixme should we have option to copy file, rather than make  link
+                // or add text file with path to original
+                if (!Files.exists(pathInProject)) {
+                    try {
+                        Files.createLink(pathInProject, currentPath);
+                    } catch (IOException | UnsupportedOperationException | SecurityException ex) {
+                        Files.createSymbolicLink(pathInProject, currentPath);
+                    }
+                }
+                String parFilePath = DatasetParameterFile.getParameterFileName(pathInProject.toString());
+                dataset.writeParFile(parFilePath);
+                TreeSet<DatasetRegion> regions = dataset.getRegions();
+                File regionFile = DatasetRegion.getRegionFile(pathInProject.toString());
+                DatasetRegion.saveRegions(regionFile, regions);
+            }
+        }
+    }
 }
