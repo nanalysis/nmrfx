@@ -18,7 +18,7 @@
 package org.nmrfx.processor.operations;
 
 import org.nmrfx.processor.math.Matrix;
-import org.nmrfx.processor.math.MatrixType;
+import org.nmrfx.datasets.MatrixType;
 
 /**
  * Inverse 2D Fourier Transform.

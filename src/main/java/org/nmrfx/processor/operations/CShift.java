@@ -27,7 +27,7 @@ import java.util.Optional;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.processing.ProcessingException;
 import org.apache.commons.math3.complex.Complex;
-import org.nmrfx.processor.math.units.Unit;
+import org.nmrfx.math.units.Unit;
 
 /**
  *

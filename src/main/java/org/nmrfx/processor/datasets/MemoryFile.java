@@ -24,6 +24,7 @@ import java.nio.FloatBuffer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.apache.commons.math3.complex.Complex;
+import org.nmrfx.datasets.DatasetStorageInterface;
 import org.nmrfx.processor.math.Vec;
 
 public class MemoryFile implements DatasetStorageInterface, Closeable {

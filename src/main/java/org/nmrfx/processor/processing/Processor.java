@@ -29,7 +29,7 @@ import org.nmrfx.processor.datasets.vendor.NMRDataUtil;
 import org.nmrfx.processor.datasets.vendor.BrukerData;
 import org.nmrfx.processor.math.Matrix;
 import org.nmrfx.processor.math.MatrixND;
-import org.nmrfx.processor.math.MatrixType;
+import org.nmrfx.datasets.MatrixType;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.operations.Invertible;
 import org.nmrfx.processor.operations.Operation;

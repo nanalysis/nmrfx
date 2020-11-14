@@ -22,7 +22,7 @@
  */
 package org.nmrfx.processor.operations;
 
-import org.nmrfx.processor.math.MatrixType;
+import org.nmrfx.datasets.MatrixType;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.processing.ProcessingException;
 import org.python.core.PyObject;

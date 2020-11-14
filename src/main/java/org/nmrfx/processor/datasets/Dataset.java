@@ -19,6 +19,7 @@ package org.nmrfx.processor.datasets;
 
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.datasets.DatasetListener;
+import org.nmrfx.datasets.DatasetStorageInterface;
 import org.nmrfx.datasets.Nuclei;
 import org.nmrfx.processor.math.Matrix;
 import org.nmrfx.processor.math.MatrixND;
@@ -40,10 +41,10 @@ import org.apache.commons.math3.util.MultidimensionalCounter;
 import org.apache.commons.math3.stat.descriptive.rank.PSquarePercentile;
 import org.nmrfx.processor.datasets.peaks.Peak;
 import org.nmrfx.processor.datasets.peaks.PeakList;
-import org.nmrfx.processor.math.MatrixType;
+import org.nmrfx.datasets.MatrixType;
 import org.nmrfx.processor.operations.IDBaseline2;
 import org.nmrfx.processor.processing.LineShapeCatalog;
-import org.nmrfx.processor.project.Project;
+import org.nmrfx.project.ProjectBase;
 
 /**
  * Instances of this class represent NMR datasets. The class is typically used
@@ -541,6 +542,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
     public void setSize(final int iDim, final int size) {
         layout.setSize(iDim, size);
     }
+
     /**
      * Is data file in Big Endian mode
      *
@@ -595,7 +597,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
     }
 
     private void addFile(String datasetName) {
-        Project.getActive().addDataset(this, datasetName);
+        ProjectBase.getActive().addDataset(this, datasetName);
         for (DatasetListener observer : observers) {
             try {
                 observer.datasetAdded(this);
@@ -699,7 +701,6 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
 //        }
 //    }
 //    close $f1
-
     /**
      * Set the size of the dataset along the specified dimension.
      *
@@ -2030,7 +2031,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         if (fileName == null) {
             return null;
         } else {
-            return (Dataset) Project.getActive().getDataset(fileName);
+            return (Dataset) ProjectBase.getActive().getDataset(fileName);
         }
     }
 
@@ -2040,7 +2041,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
      * @return List of names.
      */
     synchronized public static List<String> names() {
-        return Project.getActive().getDatasetNames();
+        return ProjectBase.getActive().getDatasetNames();
     }
 
     /**

@@ -18,14 +18,13 @@
 package org.nmrfx.processor.operations;
 
 import org.nmrfx.processor.math.MatrixND;
-import org.nmrfx.processor.math.MatrixType;
+import org.nmrfx.datasets.MatrixType;
 import org.nmrfx.processor.math.GRINS;
 import org.nmrfx.processor.math.Vec;
 import static org.nmrfx.processor.operations.IstMatrix.genSrcTargetMap;
 import org.nmrfx.processor.processing.ProcessingException;
 import org.nmrfx.processor.processing.SampleSchedule;
 import java.io.File;
-import java.util.ArrayList;
 import java.util.List;
 
 /**

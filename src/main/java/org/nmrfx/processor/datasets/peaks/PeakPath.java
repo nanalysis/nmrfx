@@ -45,8 +45,9 @@ public class PeakPath implements PeakListener {
     static String[] PRESURE_NAMES = {"Ha", "Hb", "Hc", "Xa", "Xb", "Xc"};
     static String[] TITRATION_NAMES = {"K", "C"};
 
-    static Map<String, PeakPath> peakPaths () {
-        return Project.getActive().peakPaths;
+    static Map<String, PeakPath> peakPaths() {
+        Project project = (Project) Project.getActive();
+        return project.peakPaths;
     }
 
     public enum PATHMODE {

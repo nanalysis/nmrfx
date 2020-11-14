@@ -18,8 +18,7 @@
 package org.nmrfx.processor.operations;
 
 import org.nmrfx.processor.math.Vec;
-import org.nmrfx.processor.math.units.*;
-import java.util.ArrayList;
+import org.nmrfx.math.units.*;
 
 /**
  *
