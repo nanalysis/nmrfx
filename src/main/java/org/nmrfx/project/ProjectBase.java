@@ -31,8 +31,7 @@ public class ProjectBase<T extends PeakListBase> {
     public Path projectDir = null;
 
     protected static ProjectBase getNewProject(String name) {
-        ProjectBase project = new ProjectBase(name);
-        return project;
+        return new ProjectBase(name);
     }
 
     protected Map<String, DatasetBase> datasetMap = new HashMap<>();
