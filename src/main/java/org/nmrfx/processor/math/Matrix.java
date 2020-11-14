@@ -17,6 +17,7 @@
  */
 package org.nmrfx.processor.math;
 
+import org.nmrfx.datasets.MatrixType;
 import org.nmrfx.processor.processing.ProcessingException;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;

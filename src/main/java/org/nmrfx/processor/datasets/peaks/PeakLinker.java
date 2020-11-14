@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.nmrfx.peaks.PeakDim;
-import org.nmrfx.processor.project.Project;
+import org.nmrfx.project.ProjectBase;
 
 /**
  *
@@ -21,7 +21,7 @@ import org.nmrfx.processor.project.Project;
 public class PeakLinker {
 
     public void linkAllPeakListsByLabel() {
-        linkPeakListsByLabel(Project.getActive().getPeakLists());
+        linkPeakListsByLabel(ProjectBase.getActive().getPeakLists());
     }
 
     public void linkPeakListsByLabel(Collection<PeakList> peakLists) {

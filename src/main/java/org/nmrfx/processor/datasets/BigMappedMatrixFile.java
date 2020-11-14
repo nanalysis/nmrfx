@@ -17,6 +17,8 @@
  */
 package org.nmrfx.processor.datasets;
 
+import org.nmrfx.datasets.DatasetStorageInterface;
+
 import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;

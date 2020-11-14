@@ -383,7 +383,7 @@ class TestVec(VecTestCase):
     def testResize(self):
         #FIXME test vector.pt on resize of real / complex Vecs
         import warnings
-        import org.nmrfx.processor.math.IllegalVecState as IllegalVecState
+        import org.nmrfx.math.IllegalVecState as IllegalVecState
         warnings.warn("testResize doesn't test vector.pt on resize")
 
         v1 = Vec(1, False)

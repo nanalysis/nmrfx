@@ -19,7 +19,7 @@ package org.nmrfx.processor.processing.processes;
 
 //import org.nmrfx.processor.math.Matrix;
 import org.nmrfx.processor.datasets.Dataset;
-import org.nmrfx.processor.math.MatrixType;
+import org.nmrfx.datasets.MatrixType;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.math.VecException;
 import org.nmrfx.processor.operations.DatasetOperation;

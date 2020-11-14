@@ -18,7 +18,7 @@
 package org.nmrfx.processor.operations;
 
 import org.nmrfx.processor.math.MatrixND;
-import org.nmrfx.processor.math.MatrixType;
+import org.nmrfx.datasets.MatrixType;
 
 /**
  * Phase a 2D Matrix.

@@ -53,6 +53,7 @@ import static org.nmrfx.processor.datasets.peaks.Peak.getMeasureFunction;
 import smile.clustering.HierarchicalClustering;
 import smile.clustering.linkage.CompleteLinkage;
 import org.nmrfx.processor.project.Project;
+import org.nmrfx.project.ProjectBase;
 
 /**
  *
@@ -61,7 +62,8 @@ import org.nmrfx.processor.project.Project;
 public class PeakList extends org.nmrfx.peaks.PeakListBase<Peak> {
 
     public static ResonanceFactory resFactory() {
-        return Project.getActive().resFactory;
+        Project project = (Project) Project.getActive();
+        return project.resFactory;
     }
 
     public enum ARRAYED_FIT_MODE {
@@ -98,7 +100,6 @@ public class PeakList extends org.nmrfx.peaks.PeakListBase<Peak> {
      *
      */
     public static Map<String, PeakList> peakListTable = new LinkedHashMap<>();
-
 
     /**
      *
@@ -306,14 +307,13 @@ public class PeakList extends org.nmrfx.peaks.PeakListBase<Peak> {
         return Project.getActive().getPeakLists().iterator();
     }
 
- 
     /**
      * Rename the peak list.
      *
      * @param newName
      */
     public void setName(String newName) {
-        Project project = Project.getActive();
+        ProjectBase<PeakList> project = Project.getActive();
         project.removePeakList(listName);
         listName = newName;
         project.addPeakList(this, newName);
@@ -467,7 +467,8 @@ public class PeakList extends org.nmrfx.peaks.PeakListBase<Peak> {
      */
     public static boolean isAnyChanged() {
         boolean anyChanged = false;
-        for (PeakList checkList : Project.getActive().getPeakLists()) {
+        ProjectBase<PeakList> project = Project.getActive();
+        for (PeakList checkList : project.getPeakLists()) {
             if (checkList.isChanged()) {
                 anyChanged = true;
                 break;
@@ -481,7 +482,8 @@ public class PeakList extends org.nmrfx.peaks.PeakListBase<Peak> {
      *
      */
     public static void clearAllChanged() {
-        for (PeakList checkList : Project.getActive().getPeakLists()) {
+        ProjectBase<PeakList> project = Project.getActive();
+        for (PeakList checkList : project.getPeakLists()) {
             checkList.clearChanged();
         }
     }
@@ -659,7 +661,7 @@ public class PeakList extends org.nmrfx.peaks.PeakListBase<Peak> {
      *
      * @return
      */
-    public static Collection<PeakList> getLists() {
+    public static Collection<PeakList> peakLists() {
         return Project.getActive().getPeakLists();
     }
 
@@ -670,7 +672,8 @@ public class PeakList extends org.nmrfx.peaks.PeakListBase<Peak> {
      * @return the PeaKlist or null if no PeakList of that name exists
      */
     public static PeakList get(String listName) {
-        return Project.getActive().getPeakList(listName);
+        ProjectBase<PeakList> project = Project.getActive();
+        return project.getPeakList(listName);
     }
 
     /**
@@ -701,7 +704,8 @@ public class PeakList extends org.nmrfx.peaks.PeakListBase<Peak> {
      * @param listName
      */
     public static void remove(String listName) {
-        PeakList peakList = Project.getActive().getPeakList(listName);
+        ProjectBase<PeakList> project = Project.getActive();
+        PeakList peakList = project.getPeakList(listName);
         if (peakList != null) {
             peakList.remove();
         }
@@ -1178,7 +1182,8 @@ public class PeakList extends org.nmrfx.peaks.PeakListBase<Peak> {
 
         int lastDot = peakSpecifier.lastIndexOf('.');
 
-        PeakList peakList = Project.getActive().
+        ProjectBase<PeakList> project = Project.getActive();
+        PeakList peakList = project.
                 getPeakList(peakSpecifier.substring(0, dot));
 
         if (peakList == null) {
@@ -1218,7 +1223,8 @@ public class PeakList extends org.nmrfx.peaks.PeakListBase<Peak> {
 
         int lastDot = peakSpecifier.lastIndexOf('.');
 
-        PeakList peakList = Project.getActive().
+        ProjectBase<PeakList> project = Project.getActive();
+        PeakList peakList = project.
                 getPeakList(peakSpecifier.substring(0, dot));
 
         if (peakList == null) {
@@ -1258,7 +1264,8 @@ public class PeakList extends org.nmrfx.peaks.PeakListBase<Peak> {
 
         int lastDot = peakSpecifier.lastIndexOf('.');
 
-        PeakList peakList = Project.getActive().
+        ProjectBase<PeakList> project = Project.getActive();
+        PeakList peakList = project.
                 getPeakList(peakSpecifier.substring(0, dot));
 
         if (peakList == null) {
@@ -1368,7 +1375,8 @@ public class PeakList extends org.nmrfx.peaks.PeakListBase<Peak> {
 
         int lastDot = peakSpecifier.lastIndexOf('.');
 
-        PeakList peakList = Project.getActive().
+        ProjectBase<PeakList> project = Project.getActive();
+        PeakList peakList = project.
                 getPeakList(peakSpecifier.substring(0, dot));
 
         if (peakList == null) {
@@ -1428,8 +1436,6 @@ public class PeakList extends org.nmrfx.peaks.PeakListBase<Peak> {
         addPeak(peak);
         return (peak.getIdNum());
     }
-
-
 
     /**
      *
@@ -2352,7 +2358,6 @@ public class PeakList extends org.nmrfx.peaks.PeakListBase<Peak> {
         }
         return peaks;
     }
-
 
     /**
      *
@@ -3591,7 +3596,8 @@ public class PeakList extends org.nmrfx.peaks.PeakListBase<Peak> {
      * @return
      */
     public static PeakList getPeakListForDataset(String datasetName) {
-        for (PeakList peakList : Project.getActive().getPeakLists()) {
+        ProjectBase<PeakList> project = Project.getActive();
+        for (PeakList peakList : project.getPeakLists()) {
             if (peakList.fileName.equals(datasetName)) {
                 return peakList;
             }

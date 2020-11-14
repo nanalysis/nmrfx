@@ -23,9 +23,12 @@
  */
 package org.nmrfx.processor.cluster;
 
-import static java.util.Comparator.comparing;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
-import java.util.*;
+import static java.util.Comparator.comparing;
 
 /**
  *
