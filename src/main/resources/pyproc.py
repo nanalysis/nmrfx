@@ -5,12 +5,12 @@ import re
 import os.path
 import sys
 import subprocess
-from org.nmrfx.processor.math.units import Fraction
-from org.nmrfx.processor.math.units import Frequency
-from org.nmrfx.processor.math.units import Index
-from org.nmrfx.processor.math.units import PPM
-from org.nmrfx.processor.math.units import Point
-from org.nmrfx.processor.math.units import Time
+from org.nmrfx.math.units import Fraction
+from org.nmrfx.math.units import Frequency
+from org.nmrfx.math.units import Index
+from org.nmrfx.math.units import PPM
+from org.nmrfx.math.units import Point
+from org.nmrfx.math.units import Time
 from org.nmrfx.processor.operations import Add
 from org.nmrfx.processor.operations import Asmooth
 from org.nmrfx.processor.operations import AutoPhase
@@ -93,7 +93,7 @@ from org.nmrfx.processor.processing.processes import ProcessOps
 from org.nmrfx.processor.processing import Processor
 from org.nmrfx.processor.datasets.vendor import NMRDataUtil
 from org.nmrfx.processor.datasets.vendor import NMRData
-from org.nmrfx.processor.math.units import UnitFactory
+from org.nmrfx.math.units import UnitFactory
 from org.nmrfx.processor.math import Vec
 from org.nmrfx.processor.datasets import DatasetPhaser
 from java.util.concurrent import ConcurrentHashMap

@@ -2,13 +2,14 @@ package org.nmrfx.datasets;
 
 import org.apache.commons.lang3.StringUtils;
 import org.nmrfx.math.VecBase;
-import org.nmrfx.processor.project.Project;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
+import org.nmrfx.project.ProjectBase;
 
 public class DatasetBase {
+
     protected static List<DatasetListener> observers = new ArrayList<>();
     protected VecBase vecMat = null;
     protected String fileName;
@@ -70,7 +71,7 @@ public class DatasetBase {
      * @return true if there is an open file with that name
      */
     public static boolean checkExistingName(final String name) {
-        return Project.getActive().isDatasetPresent(name);
+        return ProjectBase.getActive().isDatasetPresent(name);
     }
 
     /**
@@ -82,18 +83,19 @@ public class DatasetBase {
      */
     public static boolean checkExistingFile(final String fullName) throws IOException {
         File file = new File(fullName);
-        return Project.getActive().isDatasetPresent(file);
+        return ProjectBase.getActive().isDatasetPresent(file);
     }
 
     public void close() {
 
     }
 
+
     /**
      * Get a a name that can be used for the file that hasn't already been used
      *
      * @param fileName The root part of the name. An integer number will be
-     *                 appended so that the name is unique among open files.
+     * appended so that the name is unique among open files.
      * @return the new name
      */
     public static String getUniqueName(final String fileName) {
@@ -101,7 +103,7 @@ public class DatasetBase {
         int dot = fileName.lastIndexOf('.');
         String ext = "";
         String rootName = fileName;
-        List<String> datasetNames = Project.getActive().getDatasetNames();
+        List<String> datasetNames = ProjectBase.getActive().getDatasetNames();
         if (dot != -1) {
             ext = rootName.substring(dot);
             rootName = rootName.substring(0, dot);
@@ -142,7 +144,7 @@ public class DatasetBase {
      * @return List of datasets.
      */
     synchronized public static Collection<DatasetBase> datasets() {
-        return Project.getActive().getDatasets();
+        return ProjectBase.getActive().getDatasets();
     }
 
     /**
@@ -152,7 +154,7 @@ public class DatasetBase {
      */
     public static TreeSet getPropertyNames() {
         TreeSet nameSet = new TreeSet();
-        Collection<DatasetBase> datasets = Project.getActive().getDatasets();
+        Collection<DatasetBase> datasets = ProjectBase.getActive().getDatasets();
 
         for (DatasetBase dataset : datasets) {
             Iterator iter = dataset.properties.keySet().iterator();
@@ -222,7 +224,7 @@ public class DatasetBase {
     }
 
     protected void removeFile(String datasetName) {
-        Project.getActive().removeDataset(datasetName);
+        ProjectBase.getActive().removeDataset(datasetName);
         for (DatasetListener observer : observers) {
             try {
                 observer.datasetRemoved(this);
@@ -238,11 +240,11 @@ public class DatasetBase {
      * @param newName the name to be used.
      */
     synchronized public void rename(String newName) {
-        boolean removed = Project.getActive().removeDataset(fileName);
+        boolean removed = ProjectBase.getActive().removeDataset(fileName);
         if (removed) {
             fileName = newName;
             title = fileName;
-            Project.getActive().addDataset(this, newName);
+            ProjectBase.getActive().addDataset(this, newName);
             for (DatasetListener observer : observers) {
                 try {
                     observer.datasetRenamed(this);
@@ -267,7 +269,7 @@ public class DatasetBase {
      * Convert width in points to width in PPM
      *
      * @param iDim dataset dimension index
-     * @param pt   width to convert
+     * @param pt width to convert
      * @return width in ppm
      */
     public double ptWidthToPPM(int iDim, double pt) {
@@ -278,7 +280,7 @@ public class DatasetBase {
      * Convert width in Hz to width in points
      *
      * @param iDim dataset dimension index
-     * @param hz   width in Hz
+     * @param hz width in Hz
      * @return width in points
      */
     public double hzWidthToPoints(int iDim, double hz) {
@@ -289,7 +291,7 @@ public class DatasetBase {
      * Convert width in points to width in Hz
      *
      * @param iDim dataset dimension index
-     * @param pts  width in points
+     * @param pts width in points
      * @return width in Hz
      */
     public double ptWidthToHz(int iDim, double pts) {
@@ -300,7 +302,7 @@ public class DatasetBase {
      * Convert dataset position in points to position in PPM
      *
      * @param iDim dataset dimension index
-     * @param pt   position in points
+     * @param pt position in points
      * @return position in PPM
      */
     public double pointToPPM(int iDim, double pt) {
@@ -328,7 +330,7 @@ public class DatasetBase {
      * Convert dataset position in PPM to rounded position in points
      *
      * @param iDim dataset dimension index
-     * @param ppm  position in PPM
+     * @param ppm position in PPM
      * @return position in points
      */
     public int ppmToPoint(int iDim, double ppm) {
@@ -359,7 +361,7 @@ public class DatasetBase {
      * so that it is within the size of the specified dimension.
      *
      * @param iDim Dataset dimension index
-     * @param ppm  position in PPM
+     * @param ppm position in PPM
      * @return position in points
      */
     public int ppmToFoldedPoint(int iDim, double ppm) {
@@ -382,7 +384,7 @@ public class DatasetBase {
      * Convert dataset position in PPM to position in points.
      *
      * @param iDim dataset dimension index
-     * @param ppm  position in PPM
+     * @param ppm position in PPM
      * @return position in points
      */
     public double ppmToDPoint(int iDim, double ppm) {
@@ -402,7 +404,7 @@ public class DatasetBase {
      * Convert dataset position in PPM to position in Hz
      *
      * @param iDim dataset dimension index
-     * @param ppm  position in PPM
+     * @param ppm position in PPM
      * @return position in Hz
      */
     public double ppmToHz(int iDim, double ppm) {
@@ -416,7 +418,7 @@ public class DatasetBase {
      * Convert dataset position in points to position in Hz
      *
      * @param iDim dataset dimension index
-     * @param pt   position in points
+     * @param pt position in points
      * @return position in Hz
      */
     public double pointToHz(int iDim, double pt) {
@@ -603,7 +605,7 @@ public class DatasetBase {
     /**
      * Set the first point extracted region.
      *
-     * @param iDim  Dataset dimension index
+     * @param iDim Dataset dimension index
      * @param point the point to set
      */
     public void setExtFirst(final int iDim, final int point) {
@@ -613,7 +615,7 @@ public class DatasetBase {
     /**
      * Set the last point extracted region.
      *
-     * @param iDim  Dataset dimension index
+     * @param iDim Dataset dimension index
      * @param point the point to set
      */
     public void setExtLast(final int iDim, final int point) {
@@ -653,7 +655,7 @@ public class DatasetBase {
      * Set the spectrometer frequency for the specified dimension.
      *
      * @param iDim Dataset dimension index
-     * @param sf   the sf to set
+     * @param sf the sf to set
      */
     public void setSf(final int iDim, final double sf) {
         this.sf[iDim] = sf;
@@ -682,7 +684,7 @@ public class DatasetBase {
      * Set the sweep width for the specified dimension.
      *
      * @param iDim Dataset dimension index
-     * @param sw   the sweep width to set
+     * @param sw the sweep width to set
      */
     public void setSw(final int iDim, final double sw) {
         this.sw[iDim] = sw;
@@ -712,7 +714,7 @@ public class DatasetBase {
      * Set the dataset point at which the reference value is set for the
      * specified dimension.
      *
-     * @param iDim  Dataset dimension index
+     * @param iDim Dataset dimension index
      * @param refPt the reference point to set
      */
     public void setRefPt(final int iDim, final double refPt) {
@@ -744,7 +746,7 @@ public class DatasetBase {
     /**
      * Set the reference value for the specified dimension
      *
-     * @param iDim     Dataset dimension index
+     * @param iDim Dataset dimension index
      * @param refValue the reference value to set
      */
     public void setRefValue(final int iDim, final double refValue) {
@@ -777,7 +779,7 @@ public class DatasetBase {
      * specified dimension
      *
      * @param iDim Dataset dimension index
-     * @param ph0  the phase value to set
+     * @param ph0 the phase value to set
      */
     public void setPh0(final int iDim, final double ph0) {
         this.ph0[iDim] = ph0;
@@ -808,7 +810,7 @@ public class DatasetBase {
      * specified dimension
      *
      * @param iDim Dataset dimension index
-     * @param ph1  the first order phase
+     * @param ph1 the first order phase
      */
     public void setPh1(final int iDim, final double ph1) {
         this.ph1[iDim] = ph1;
@@ -867,7 +869,7 @@ public class DatasetBase {
      * Set the dataset point at which the reference value is set for the
      * specified dimension.
      *
-     * @param iDim    Dataset dimension index
+     * @param iDim Dataset dimension index
      * @param refPt_r the reference point to set
      */
     public void setRefPt_r(final int iDim, final double refPt_r) {
@@ -898,7 +900,7 @@ public class DatasetBase {
     /**
      * Set the reference value for the specified dimension.
      *
-     * @param iDim       Dataset dimension index
+     * @param iDim Dataset dimension index
      * @param refValue_r the reference value to set
      */
     public void setRefValue_r(final int iDim, final double refValue_r) {
@@ -912,7 +914,7 @@ public class DatasetBase {
     /**
      * Set the folding up value for the specified dimension.
      *
-     * @param iDim  Dataset dimension index
+     * @param iDim Dataset dimension index
      * @param value the folding value to set
      */
     public void setFoldUp(final int iDim, final double value) {
@@ -929,8 +931,8 @@ public class DatasetBase {
 
     public double[] getLimits(int iDim) {
         double[] limits = {
-                pointToPPM(iDim, size(iDim) - 1),
-                pointToPPM(iDim, 0)
+            pointToPPM(iDim, size(iDim) - 1),
+            pointToPPM(iDim, 0)
         };
         return limits;
     }
@@ -938,7 +940,7 @@ public class DatasetBase {
     /**
      * Set the folding down value for the specified dimension.
      *
-     * @param iDim  Dataset dimension index
+     * @param iDim Dataset dimension index
      * @param value the folding value to set
      */
     public void setFoldDown(final int iDim, final double value) {
@@ -966,7 +968,7 @@ public class DatasetBase {
      * Set the zero order phase parameter that was used in processing the
      * specified dimension
      *
-     * @param iDim  Dataset dimension index
+     * @param iDim Dataset dimension index
      * @param ph0_r the zeroth order phase to set
      */
     public void setPh0_r(final int iDim, final double ph0_r) {
@@ -997,7 +999,7 @@ public class DatasetBase {
      * Set the first order phase parameter that was used in processing the
      * specified dimension
      *
-     * @param iDim  Dataset dimension index
+     * @param iDim Dataset dimension index
      * @param ph1_r the first order phase to set
      */
     public void setPh1_r(final int iDim, final double ph1_r) {
@@ -1020,7 +1022,7 @@ public class DatasetBase {
     /**
      * Set the units used for the reference value
      *
-     * @param iDim     Dataset dimension index
+     * @param iDim Dataset dimension index
      * @param refUnits the refUnits to set
      */
     public void setRefUnits(final int iDim, final int refUnits) {
@@ -1046,7 +1048,7 @@ public class DatasetBase {
     /**
      * Set the complex mode for the specified dimension.
      *
-     * @param iDim    Dataset dimension index
+     * @param iDim Dataset dimension index
      * @param complex the complex to set
      */
     public void setComplex(final int iDim, final boolean complex) {
@@ -1072,7 +1074,7 @@ public class DatasetBase {
     /**
      * Set the complex mode for the specified dimension.
      *
-     * @param iDim      Dataset dimension index
+     * @param iDim Dataset dimension index
      * @param complex_r the complex_r to set
      */
     public void setComplex_r(final int iDim, final boolean complex_r) {
@@ -1099,7 +1101,7 @@ public class DatasetBase {
     /**
      * Set the frequency domain mode of the specified dimension
      *
-     * @param iDim       Dataset dimension index
+     * @param iDim Dataset dimension index
      * @param freqDomain value to set
      */
     public void setFreqDomain(final int iDim, final boolean freqDomain) {
@@ -1130,7 +1132,7 @@ public class DatasetBase {
     /**
      * Set the frequency domain mode of the specified dimension
      *
-     * @param iDim         Dataset dimension index
+     * @param iDim Dataset dimension index
      * @param freqDomain_r the freqDomain_r to set
      */
     public void setFreqDomain_r(final int iDim, final boolean freqDomain_r) {
@@ -1154,7 +1156,7 @@ public class DatasetBase {
     /**
      * Set the display label to be used on the axis for this dataset dimension.
      *
-     * @param iDim   Dataset dimension index
+     * @param iDim Dataset dimension index
      * @param dlabel the display label to set
      */
     public void setDlabel(final int iDim, final String dlabel) {
@@ -1200,7 +1202,7 @@ public class DatasetBase {
     /**
      * Set the nucleus that was used for detection of this dataset dimension
      *
-     * @param iDim    Dataset dimension index
+     * @param iDim Dataset dimension index
      * @param nucleus the name of the nucleus to set
      */
     public void setNucleus(final int iDim, final String nucleus) {
@@ -1210,7 +1212,7 @@ public class DatasetBase {
     /**
      * Set the nucleus that was used for detection of this dataset dimension
      *
-     * @param iDim    Dataset dimension index
+     * @param iDim Dataset dimension index
      * @param nucleus the nucleus to set
      */
     public void setNucleus(final int iDim, final Nuclei nucleus) {
@@ -1407,7 +1409,7 @@ public class DatasetBase {
      * Set valid size for specified dimension. Normally used to track number of
      * rows, columns etc. that have had valid data written to.
      *
-     * @param iDim    Dataset dimension index
+     * @param iDim Dataset dimension index
      * @param newSize Valid size for dimension.
      */
     public void setVSize(int iDim, int newSize) {
@@ -1420,7 +1422,7 @@ public class DatasetBase {
      * Set valid size for specified dimension. Normally used to track number of
      * rows, columns etc. that have had valid data written to.
      *
-     * @param iDim    Dataset dimension index
+     * @param iDim Dataset dimension index
      * @param newSize Valid size for dimension
      */
     public void setVSize_r(int iDim, int newSize) {
@@ -1521,7 +1523,7 @@ public class DatasetBase {
     /**
      * Add a new property to this file
      *
-     * @param name  The name of the property
+     * @param name The name of the property
      * @param value The value for the property
      */
     public void addProperty(String name, String value) {
@@ -1549,7 +1551,7 @@ public class DatasetBase {
      * Get the default color to be used in displaying dataset.
      *
      * @param getPositive true if the color for positive values should be
-     *                    returned and false if the color for negative values should be returned
+     * returned and false if the color for negative values should be returned
      * @return the color
      */
     public String getColor(boolean getPositive) {
@@ -1564,8 +1566,8 @@ public class DatasetBase {
      * Set the default color.
      *
      * @param setPositive If true set the color for positive values, if false
-     *                    set the value for negative values.
-     * @param newColor    the new color
+     * set the value for negative values.
+     * @param newColor the new color
      */
     public void setColor(boolean setPositive, String newColor) {
         if (setPositive) {
@@ -1607,7 +1609,7 @@ public class DatasetBase {
     /**
      * Set the label for the specified axis
      *
-     * @param iDim  Dataset dimension index
+     * @param iDim Dataset dimension index
      * @param label the display label to set
      */
     public void setLabel(final int iDim, final String label) {
