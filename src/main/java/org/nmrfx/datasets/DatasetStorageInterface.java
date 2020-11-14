@@ -19,7 +19,7 @@ package org.nmrfx.datasets;
 
 import java.io.IOException;
 import org.apache.commons.math3.complex.Complex;
-import org.nmrfx.processor.math.Vec;
+import org.nmrfx.math.VecBase;
 
 /**
  * Interface for memory-mapped matrix files.
@@ -136,7 +136,7 @@ public interface DatasetStorageInterface {
      */
     public void force();
 
-    public default void writeVector(int first, int last, int[] point, int dim, double scale, Vec vector) throws IOException {
+    public default void writeVector(int first, int last, int[] point, int dim, double scale, VecBase vector) throws IOException {
         int j = 0;
         for (int i = first; i <= last; i++) {
             point[dim] = i;
@@ -154,7 +154,7 @@ public interface DatasetStorageInterface {
         }
     }
 
-    public default void readVector(int first, int last, int[] point, int dim, double scale, Vec vector) throws IOException {
+    public default void readVector(int first, int last, int[] point, int dim, double scale, VecBase vector) throws IOException {
 
         double dReal = 0.0;
         int j = 0;

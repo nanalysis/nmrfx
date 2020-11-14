@@ -4,11 +4,8 @@ import org.apache.commons.math3.complex.Complex;
 import org.apache.commons.math3.util.ArithmeticUtils;
 import org.apache.commons.math3.util.FastMath;
 import org.nmrfx.datasets.DatasetStorageInterface;
-//import org.nmrfx.processor.math.Interpolator;
 import org.nmrfx.datasets.MatrixType;
-//import org.nmrfx.processor.math.Vec;
 import org.nmrfx.math.units.*;
-import org.nmrfx.processor.operations.Util;
 import org.python.core.*;
 
 import java.io.FileInputStream;
