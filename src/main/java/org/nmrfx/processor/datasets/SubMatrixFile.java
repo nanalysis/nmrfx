@@ -17,6 +17,12 @@
  */
 package org.nmrfx.processor.datasets;
 
+import org.apache.commons.math3.complex.Complex;
+import org.nmrfx.datasets.DatasetStorageInterface;
+import org.nmrfx.processor.datasets.StorageCache.DatasetKey;
+import org.nmrfx.math.VecBase;
+import org.nmrfx.processor.math.Vec;
+
 import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
@@ -25,10 +31,6 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.apache.commons.math3.complex.Complex;
-import org.nmrfx.datasets.DatasetStorageInterface;
-import org.nmrfx.processor.datasets.StorageCache.DatasetKey;
-import org.nmrfx.processor.math.Vec;
 
 /**
  * Create a memory-mapped interface to a Dataset file
@@ -212,7 +214,7 @@ public class SubMatrixFile implements DatasetStorageInterface, Closeable {
         cache.io(key, offset, d, 1);
     }
 
-    public synchronized void blockVectorIO(int first, int last, int[] point, int dim, double scale, Vec vector, int mode) throws IOException {
+    public synchronized void blockVectorIO(int first, int last, int[] point, int dim, double scale, VecBase vector, int mode) throws IOException {
         int n = last - first + 1;
         double[] vec = new double[n];
         int[] offsets = new int[n];
@@ -303,12 +305,12 @@ public class SubMatrixFile implements DatasetStorageInterface, Closeable {
     }
 
     @Override
-    public void writeVector(int first, int last, int[] point, int dim, double scale, Vec vector) throws IOException {
+    public void writeVector(int first, int last, int[] point, int dim, double scale, VecBase vector) throws IOException {
         blockVectorIO(first, last, point, dim, scale, vector, 0);
     }
 
     @Override
-    public void readVector(int first, int last, int[] point, int dim, double scale, Vec vector) throws IOException {
+    public void readVector(int first, int last, int[] point, int dim, double scale, VecBase vector) throws IOException {
         blockVectorIO(first, last, point, dim, scale, vector, 1);
     }
 
