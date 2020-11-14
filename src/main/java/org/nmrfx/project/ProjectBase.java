@@ -5,25 +5,19 @@
  */
 package org.nmrfx.project;
 
+import org.nmrfx.datasets.DatasetBase;
+import org.nmrfx.peaks.PeakListBase;
+
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeSupport;
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.function.Predicate;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import org.nmrfx.datasets.DatasetBase;
-import org.nmrfx.peaks.PeakListBase;
-import org.nmrfx.processor.datasets.Dataset;
-import org.nmrfx.processor.datasets.DatasetParameterFile;
-import org.nmrfx.processor.datasets.DatasetRegion;
-import org.nmrfx.processor.project.Project;
 
 /**
  *
@@ -69,6 +63,15 @@ public class ProjectBase<T extends PeakListBase> {
             name = s;
         }
         return name;
+    }
+
+    public static Optional<Integer> getIndex(String s) {
+        Optional<Integer> fileNum = Optional.empty();
+        Matcher matcher = INDEX_PATTERN.matcher(s);
+        if (matcher.matches()) {
+            fileNum = Optional.of(Integer.parseInt(matcher.group(1)));
+        }
+        return fileNum;
     }
 
     public final void setActive() {
@@ -204,67 +207,8 @@ public class ProjectBase<T extends PeakListBase> {
         return projectDir;
     }
 
-    public boolean isDatasetPresent(Dataset dataset) {
+    public boolean isDatasetPresent(DatasetBase dataset) {
         return datasetMap.containsValue(dataset);
-    }
-
-    public void loadDatasets(Path directory) throws IOException {
-        Pattern pattern = Pattern.compile("(.+)\\.(nv|ucsf)");
-        Predicate<String> predicate = pattern.asPredicate();
-        if (Files.isDirectory(directory)) {
-            Files.list(directory).sequential().filter(path -> predicate.test(path.getFileName().toString())).
-                    forEach(path -> {
-                        System.out.println("read dataset: " + path.toString());
-                        String pathName = path.toString();
-                        String fileName = path.getFileName().toString();
-
-                        try {
-                            Dataset dataset = new Dataset(pathName, fileName, false, false);
-                            File regionFile = DatasetRegion.getRegionFile(path.toString());
-                            System.out.println("region " + regionFile.toString());
-                            if (regionFile.canRead()) {
-                                System.out.println("read");
-                                TreeSet<DatasetRegion> regions = DatasetRegion.loadRegions(regionFile);
-                                dataset.setRegions(regions);
-                            }
-
-                        } catch (IOException ex) {
-                            Logger.getLogger(Project.class.getName()).log(Level.SEVERE, null, ex);
-                        }
-                    });
-        }
-        refreshDatasetList();
-    }
-
-    public void saveDatasets() throws IOException {
-        if (projectDir == null) {
-            throw new IllegalArgumentException("Project directory not set");
-        }
-        Path datasetDir = projectDir.resolve("datasets");
-
-        for (Object datasetBase : datasetMap.values()) {
-            Dataset dataset = (Dataset) datasetBase;
-            File datasetFile = dataset.getFile();
-            if (datasetFile != null) {
-                Path currentPath = datasetFile.toPath();
-                Path fileName = currentPath.getFileName();
-                Path pathInProject = datasetDir.resolve(fileName);
-                // fixme should we have option to copy file, rather than make  link
-                // or add text file with path to original
-                if (!Files.exists(pathInProject)) {
-                    try {
-                        Files.createLink(pathInProject, currentPath);
-                    } catch (IOException | UnsupportedOperationException | SecurityException ex) {
-                        Files.createSymbolicLink(pathInProject, currentPath);
-                    }
-                }
-                String parFilePath = DatasetParameterFile.getParameterFileName(pathInProject.toString());
-                dataset.writeParFile(parFilePath);
-                TreeSet<DatasetRegion> regions = dataset.getRegions();
-                File regionFile = DatasetRegion.getRegionFile(pathInProject.toString());
-                DatasetRegion.saveRegions(regionFile, regions);
-            }
-        }
     }
 
     public void clearAllDatasets() {
@@ -294,8 +238,8 @@ public class ProjectBase<T extends PeakListBase> {
             String s1 = p1.getFileName().toString();
             String s2 = p2.getFileName().toString();
             int result;
-            Optional<Integer> f1 = Project.getIndex(s1);
-            Optional<Integer> f2 = Project.getIndex(s2);
+            Optional<Integer> f1 = getIndex(s1);
+            Optional<Integer> f2 = getIndex(s2);
             if (f1.isPresent() && !f2.isPresent()) {
                 result = 1;
             } else if (!f1.isPresent() && f2.isPresent()) {
