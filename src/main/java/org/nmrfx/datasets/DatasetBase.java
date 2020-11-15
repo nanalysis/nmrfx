@@ -2,13 +2,11 @@ package org.nmrfx.datasets;
 
 import org.apache.commons.lang3.StringUtils;
 import org.nmrfx.math.VecBase;
+import org.nmrfx.project.ProjectBase;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
-
-import org.nmrfx.processor.datasets.Dataset;
-import org.nmrfx.project.ProjectBase;
 
 public class DatasetBase {
 
@@ -526,7 +524,7 @@ public class DatasetBase {
      * Set the size of the dataset along the specified dimension.
      *
      * @param iDim Dataset dimension index
-     * @param size the size to set
+     * @param newSize the size to set
      */
     public void setSize(final int iDim, final int newSize) {
         size[iDim] = newSize;
