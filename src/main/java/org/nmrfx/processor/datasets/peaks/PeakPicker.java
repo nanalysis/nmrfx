@@ -23,6 +23,7 @@
  */
 package org.nmrfx.processor.datasets.peaks;
 
+import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.SpectralDim;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.DimCounter;
@@ -525,7 +526,7 @@ public class PeakPicker {
 
     private void purgeNarrowPeaks(List<Peak> peaks) throws IOException {
         if (!peaks.isEmpty()) {
-            PeakList peakList = peaks.get(0).getPeakList();
+            PeakList peakList = (PeakList) peaks.get(0).getPeakList();
 
             for (int iDim = 0; iDim < peakList.getNDim(); iDim++) {
                 DescriptiveStatistics stats = peakList.widthDStats(iDim);

@@ -18,6 +18,8 @@
 package org.nmrfx.processor.datasets.peaks;
 
 
+import org.nmrfx.peaks.Peak;
+
 /**
  *
  * @author Bruce Johnson

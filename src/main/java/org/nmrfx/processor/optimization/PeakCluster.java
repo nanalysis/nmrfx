@@ -11,8 +11,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.apache.commons.math3.special.Erf;
-import org.nmrfx.peaks.PeakBase;
-import org.nmrfx.processor.datasets.peaks.Peak;
+import org.nmrfx.peaks.Peak;
 import org.nmrfx.processor.datasets.peaks.PeakList;
 
 /**

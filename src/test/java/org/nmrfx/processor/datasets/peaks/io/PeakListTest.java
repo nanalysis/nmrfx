@@ -1,13 +1,12 @@
 package org.nmrfx.processor.datasets.peaks.io;
 
 import java.io.IOException;
-import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.junit.Assert;
 import org.junit.Test;
-import org.nmrfx.processor.datasets.peaks.Peak;
+import org.nmrfx.peaks.Peak;
 import org.nmrfx.processor.datasets.peaks.PeakList;
 
 public class PeakListTest {
