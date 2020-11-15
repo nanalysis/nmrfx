@@ -17,7 +17,6 @@
  */
 package org.nmrfx.processor.datasets.peaks;
 
-import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakDim;
 import org.nmrfx.processor.optimization.BipartiteMatcher;
 import java.util.ArrayList;
@@ -32,7 +31,7 @@ import org.apache.commons.math3.optim.SimpleBounds;
 import org.apache.commons.math3.optim.nonlinear.scalar.GoalType;
 import org.apache.commons.math3.optim.nonlinear.scalar.ObjectiveFunction;
 import org.apache.commons.math3.optim.nonlinear.scalar.noderiv.BOBYQAOptimizer;
-import org.nmrfx.peaks.PeakBase;
+import org.nmrfx.peaks.Peak;
 
 /**
  *
@@ -273,7 +272,7 @@ public class PeakNetworkMatch {
         int i = 0;
         for (PeakDim peakDim : iPeakDims) {
             if ((peakDim != iPeakDim) && (peakDim.getSpectralDim() == iDim)) {
-                PeakBase peak = peakDim.getPeak();
+                Peak peak = peakDim.getPeak();
                 PeakDim peakDim2 = peak.getPeakDim(iDim2);
                 MatchItem matchItem = new MatchItem(i, peakDim2.getChemShift());
 //System.out.println(i + " " + peak.getIdNum() + " " + peakDim2.getChemShift());
@@ -285,7 +284,7 @@ public class PeakNetworkMatch {
         List<MatchItem> jPPMs = new ArrayList<>();
         for (PeakDim peakDim : jPeakDims) {
             if ((peakDim != jPeakDim) && (peakDim.getSpectralDim() == jDim)) {
-                PeakBase peak = peakDim.getPeak();
+                Peak peak = peakDim.getPeak();
                 PeakDim peakDim2 = peak.getPeakDim(jDim2);
                 MatchItem matchItem = new MatchItem(i, peakDim2.getChemShift());
 //System.out.println(i + " " + peak.getIdNum() + " " + peakDim2.getChemShift());
@@ -358,7 +357,7 @@ public class PeakNetworkMatch {
                 List<PeakDim> linkedPeakDims = PeakList.getLinkedPeakDims(peak, dims[iDim]);
                 double ppmCenter = 0.0;
                 for (PeakDim peakDim : linkedPeakDims) {
-                    PeakBase peak2 = peakDim.getPeak();
+                    Peak peak2 = peakDim.getPeak();
                     usedPeaks.add(peak2);
                     ppmCenter += peakDim.getChemShiftValue();
                 }

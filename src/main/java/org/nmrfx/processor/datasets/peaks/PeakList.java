@@ -269,8 +269,8 @@ public class PeakList extends org.nmrfx.peaks.PeakListBase<Peak> {
         newPeakList.reIndex();
         if (!merge && !allLinks) {
             for (int i = 0; i < peaks.size(); i++) {
-                PeakBase oldPeak = peaks.get(i);
-                PeakBase newPeak = newPeakList.getPeak(i);
+                Peak oldPeak = peaks.get(i);
+                Peak newPeak = newPeakList.getPeak(i);
                 for (int j = 0; j < oldPeak.peakDims.length; j++) {
                     List<PeakDim> linkedPeakDims = getLinkedPeakDims(oldPeak, j);
                     PeakDim newPeakDim = newPeak.peakDims[j];
@@ -600,7 +600,7 @@ public class PeakList extends org.nmrfx.peaks.PeakListBase<Peak> {
      */
     public void setFOM(double noiseLevel) {
         for (int i = 0; i < peaks.size(); i++) {
-            PeakBase peak = peaks.get(i);
+            Peak peak = peaks.get(i);
             double devMul = Math.abs(peak.getIntensity() / noiseLevel);
             if (devMul > 20.0) {
                 devMul = 20.0;
@@ -621,7 +621,7 @@ public class PeakList extends org.nmrfx.peaks.PeakListBase<Peak> {
      */
     public void reNumber() {
         for (int i = 0; i < peaks.size(); i++) {
-            PeakBase peak = peaks.get(i);
+            Peak peak = peaks.get(i);
             peak.setIdNum(i);
         }
         idLast = peaks.size() - 1;
@@ -691,7 +691,7 @@ public class PeakList extends org.nmrfx.peaks.PeakListBase<Peak> {
     }
 
     public void remove() {
-        for (PeakBase peak : peaks) {
+        for (Peak peak : peaks) {
             for (PeakDim peakDim : peak.peakDims) {
                 peakDim.remove();
                 if (peakDim.hasMultiplet()) {
@@ -2378,7 +2378,7 @@ public class PeakList extends org.nmrfx.peaks.PeakListBase<Peak> {
 
     /**
      *
-     * @param theFile
+     * @param dataset
      * @param peakArray
      * @return
      * @throws IllegalArgumentException

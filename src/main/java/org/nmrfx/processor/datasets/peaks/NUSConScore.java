@@ -119,7 +119,7 @@ public class NUSConScore {
     }
 
     public static double intensityCorrelation(List<Peak> peaksM,
-            List<Peak> peaksR, int[] matching) {
+                                              List<Peak> peaksR, int[] matching) {
         int nM = peaksM.size();
         double[] intensitiesM = new double[nM];
         double[] intensitiesR = new double[nM];
@@ -140,7 +140,7 @@ public class NUSConScore {
     }
 
     public static int[] doBPMatch(List<Peak> peaksM,
-            List<Peak> peaksR, double[] scale, double dMax) {
+                                  List<Peak> peaksR, double[] scale, double dMax) {
         int nM = peaksM.size();
         int nR = peaksR.size();
         int nPeaks = nM + nR;
