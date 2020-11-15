@@ -4,12 +4,11 @@ import java.util.*;
 
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.datasets.Nuclei;
-import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.peaks.PeakList;
 import org.nmrfx.processor.project.Project;
 import org.nmrfx.project.ProjectBase;
 
-public class PeakListBase<T extends PeakBase> {
+public class PeakListBase<T extends Peak> {
 
     static ResonanceFactory resFactory = new ResonanceFactory();
     /**
@@ -56,7 +55,7 @@ public class PeakListBase<T extends PeakBase> {
      *
      * @param peak
      */
-    public static void unLinkPeak(PeakBase peak) {
+    public static void unLinkPeak(Peak peak) {
         for (int i = 0; i < peak.peakList.nDim; i++) {
             List<PeakDim> peakDims = getLinkedPeakDims(peak, i);
             PeakListBase.unLinkPeak(peak, i);
@@ -80,7 +79,7 @@ public class PeakListBase<T extends PeakBase> {
      * @param peak
      * @param iDim
      */
-    public static void unLinkPeak(PeakBase peak, int iDim) {
+    public static void unLinkPeak(Peak peak, int iDim) {
         PeakDim peakDim = peak.getPeakDim(iDim);
         if (peakDim != null) {
             peakDim.unLink();
@@ -416,7 +415,7 @@ public class PeakListBase<T extends PeakBase> {
      * @throws IllegalArgumentException
      */
     public static Peak getAPeak(String peakSpecifier,
-            Integer iDimInt) throws IllegalArgumentException {
+                                Integer iDimInt) throws IllegalArgumentException {
         int dot = peakSpecifier.indexOf('.');
 
         if (dot == -1) {
@@ -603,7 +602,7 @@ public class PeakListBase<T extends PeakBase> {
      * @return
      */
     public T getNewPeak() {
-        PeakBase peak = new PeakBase(this, nDim);
+        Peak peak = new Peak(this, nDim);
         addPeak((T) peak);
         return (T) peak;
     }
@@ -613,7 +612,7 @@ public class PeakListBase<T extends PeakBase> {
      * @param peak
      * @return
      */
-    public static List getLinks(PeakBase peak) {
+    public static List getLinks(Peak peak) {
         List peakDims = getLinkedPeakDims(peak, 0);
         List peaks = new ArrayList(peakDims.size());
         for (int i = 0; i < peakDims.size(); i++) {
@@ -628,7 +627,7 @@ public class PeakListBase<T extends PeakBase> {
      * @param peak
      * @return
      */
-    public static List<PeakDim> getLinkedPeakDims(PeakBase peak) {
+    public static List<PeakDim> getLinkedPeakDims(Peak peak) {
         return getLinkedPeakDims(peak, 0);
     }
 
@@ -638,7 +637,7 @@ public class PeakListBase<T extends PeakBase> {
      * @param iDim
      * @return
      */
-    public static List<PeakDim> getLinkedPeakDims(PeakBase peak, int iDim) {
+    public static List<PeakDim> getLinkedPeakDims(Peak peak, int iDim) {
         PeakDim peakDim = peak.getPeakDim(iDim);
         return peakDim.getLinkedPeakDims();
     }
