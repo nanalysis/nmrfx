@@ -28,7 +28,7 @@ import org.nmrfx.peaks.Coupling;
 import org.nmrfx.peaks.CouplingPattern;
 import org.nmrfx.processor.datasets.peaks.InvalidPeakException;
 import org.nmrfx.peaks.Multiplet;
-import org.nmrfx.processor.datasets.peaks.Peak;
+import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakDim;
 import org.nmrfx.processor.datasets.peaks.PeakList;
 import org.nmrfx.peaks.Resonance;

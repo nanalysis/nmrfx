@@ -17,10 +17,7 @@
  */
 package org.nmrfx.processor.datasets;
 
-import org.nmrfx.datasets.DatasetBase;
-import org.nmrfx.datasets.DatasetListener;
-import org.nmrfx.datasets.DatasetStorageInterface;
-import org.nmrfx.datasets.Nuclei;
+import org.nmrfx.datasets.*;
 import org.nmrfx.processor.math.Matrix;
 import org.nmrfx.processor.math.MatrixND;
 import org.nmrfx.processor.math.Vec;
@@ -39,9 +36,8 @@ import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.util.MultidimensionalCounter;
 import org.apache.commons.math3.stat.descriptive.rank.PSquarePercentile;
-import org.nmrfx.processor.datasets.peaks.Peak;
+import org.nmrfx.peaks.Peak;
 import org.nmrfx.processor.datasets.peaks.PeakList;
-import org.nmrfx.datasets.MatrixType;
 import org.nmrfx.processor.operations.IDBaseline2;
 import org.nmrfx.processor.processing.LineShapeCatalog;
 import org.nmrfx.project.ProjectBase;
@@ -959,8 +955,8 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         RegionData rData = new RegionData(this);
         for (pass2 = 0; pass2 < 2; pass2++) {
             if (pass2 == 1) {
-                rData.svar = 0.0;
-                rData.mean = rData.getVolume_r() / rData.getNpoints();
+                rData.setSVar(0.0);
+                rData.setMean(rData.getVolume_r() / rData.getNpoints());
                 threshold = threshRatio * rData.getCenter();
             }
             DimCounter counter = new DimCounter(counterSizes);
@@ -974,7 +970,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
                     }
                     iPointAbs[i] = points[i];
                 }
-                rData.value = readPoint(points, dim);
+                rData.setValue( readPoint(points, dim));
 
                 if (rData.getValue() == Double.MAX_VALUE) {
                     continue;
@@ -989,11 +985,11 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
             }
 
         }
-        rData.dmaxPoint = optCenter(rData.maxPoint, dim);
+        rData.setMaxDPoint(optCenter(rData.getMaxPoint(), dim));
         if (rData.getNpoints() == 1) {
-            rData.rms = 0.0;
+            rData.setRMS(0.0);
         } else {
-            rData.rms = Math.sqrt(rData.getSumSq() / (rData.getNpoints() - 1));
+            rData.setRMS(Math.sqrt(rData.getSumSq() / (rData.getNpoints() - 1)));
         }
         return rData;
     }

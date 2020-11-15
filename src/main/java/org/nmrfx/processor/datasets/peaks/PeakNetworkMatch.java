@@ -17,6 +17,7 @@
  */
 package org.nmrfx.processor.datasets.peaks;
 
+import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakDim;
 import org.nmrfx.processor.optimization.BipartiteMatcher;
 import java.util.ArrayList;

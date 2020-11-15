@@ -46,10 +46,11 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
+import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.processor.cluster.Clusters;
 import org.nmrfx.processor.cluster.Clusters.ClusterItem;
-import org.nmrfx.processor.datasets.RegionData;
-import static org.nmrfx.processor.datasets.peaks.Peak.getMeasureFunction;
+import org.nmrfx.datasets.RegionData;
+import static org.nmrfx.peaks.Peak.getMeasureFunction;
 import smile.clustering.HierarchicalClustering;
 import smile.clustering.linkage.CompleteLinkage;
 import org.nmrfx.processor.project.Project;
@@ -100,16 +101,6 @@ public class PeakList extends org.nmrfx.peaks.PeakListBase<Peak> {
      *
      */
     public static Map<String, PeakList> peakListTable = new LinkedHashMap<>();
-
-    /**
-     *
-     */
-    public static PeakList clusterOrigin = null;
-
-    /**
-     *
-     */
-    public String fileName;
 
     /**
      *
@@ -335,20 +326,8 @@ public class PeakList extends org.nmrfx.peaks.PeakListBase<Peak> {
         this.fileName = datasetName;
     }
 
-    /**
-     *
-     * @return
-     */
-    public String getDatasetName() {
-        return fileName;
-    }
-
     public List<SearchDim> getSearchDims() {
         return searchDims;
-    }
-
-    public boolean isSimulated() {
-        return getSampleConditionLabel().contains("sim");
     }
 
     static void scanListsForUpdates() {
@@ -1115,289 +1094,6 @@ public class PeakList extends org.nmrfx.peaks.PeakListBase<Peak> {
 
     /**
      *
-     * @param dataset
-     * @return
-     */
-    public int[] getDimsForDataset(Dataset dataset) {
-        return getDimsForDataset(dataset, false);
-    }
-
-    /**
-     *
-     * @param dataset
-     * @param looseMode
-     * @return
-     */
-    public int[] getDimsForDataset(Dataset dataset, boolean looseMode) {
-        int[] pdim = new int[nDim];
-        int dataDim = dataset.getNDim();
-        boolean[] used = new boolean[dataDim];
-        for (int j = 0; j < nDim; j++) {
-            boolean ok = false;
-            for (int i = 0; i < dataDim; i++) {
-                if (!used[i]) {
-                    if (getSpectralDim(j).getDimName().equals(dataset.getLabel(i))) {
-                        pdim[j] = i;
-                        used[i] = true;
-                        ok = true;
-                        break;
-                    }
-                }
-            }
-
-            if (!ok && looseMode) {
-                String pNuc = getSpectralDim(j).getNucleus();
-                for (int i = 0; i < dataDim; i++) {
-                    if (!used[i]) {
-                        String dNuc = dataset.getNucleus(i).getNumberName();
-                        if (dNuc.equals(pNuc)) {
-                            pdim[j] = i;
-                            used[i] = true;
-                            ok = true;
-                            break;
-                        }
-                    }
-                }
-            }
-            if (!ok) {
-                throw new IllegalArgumentException(
-                        "Can't find match for peak dimension \""
-                        + getSpectralDim(j).getDimName() + "\"");
-            }
-        }
-        return pdim;
-    }
-
-    /**
-     *
-     * @param peakSpecifier
-     * @return
-     */
-    public static Peak getAPeak(String peakSpecifier) {
-        int dot = peakSpecifier.indexOf('.');
-
-        if (dot == -1) {
-            return null;
-        }
-
-        int lastDot = peakSpecifier.lastIndexOf('.');
-
-        ProjectBase<PeakList> project = Project.getActive();
-        PeakList peakList = project.
-                getPeakList(peakSpecifier.substring(0, dot));
-
-        if (peakList == null) {
-            return null;
-        }
-
-        if (peakList.indexMap.isEmpty()) {
-            peakList.reIndex();
-        }
-
-        int idNum;
-
-        if (lastDot == dot) {
-            idNum = Integer.parseInt(peakSpecifier.substring(dot + 1));
-        } else {
-            idNum = Integer.parseInt(peakSpecifier.substring(dot + 1, lastDot));
-        }
-
-        Peak peak = (Peak) peakList.indexMap.get(idNum);
-        return peak;
-    }
-
-    /**
-     *
-     * @param peakSpecifier
-     * @param iDimInt
-     * @return
-     * @throws IllegalArgumentException
-     */
-    public static Peak getAPeak(String peakSpecifier,
-            Integer iDimInt) throws IllegalArgumentException {
-        int dot = peakSpecifier.indexOf('.');
-
-        if (dot == -1) {
-            return null;
-        }
-
-        int lastDot = peakSpecifier.lastIndexOf('.');
-
-        ProjectBase<PeakList> project = Project.getActive();
-        PeakList peakList = project.
-                getPeakList(peakSpecifier.substring(0, dot));
-
-        if (peakList == null) {
-            return null;
-        }
-
-        int idNum;
-
-        try {
-            if (lastDot == dot) {
-                idNum = Integer.parseInt(peakSpecifier.substring(dot + 1));
-            } else {
-                idNum = Integer.parseInt(peakSpecifier.substring(dot + 1,
-                        lastDot));
-            }
-        } catch (NumberFormatException numE) {
-            throw new IllegalArgumentException(
-                    "error parsing peak " + peakSpecifier + ": " + numE.toString());
-        }
-
-        return peakList.getPeakByID(idNum);
-    }
-
-    /**
-     *
-     * @param peakSpecifier
-     * @return
-     * @throws IllegalArgumentException
-     */
-    public static PeakDim getPeakDimObject(String peakSpecifier)
-            throws IllegalArgumentException {
-        int dot = peakSpecifier.indexOf('.');
-
-        if (dot == -1) {
-            return null;
-        }
-
-        int lastDot = peakSpecifier.lastIndexOf('.');
-
-        ProjectBase<PeakList> project = Project.getActive();
-        PeakList peakList = project.
-                getPeakList(peakSpecifier.substring(0, dot));
-
-        if (peakList == null) {
-            return null;
-        }
-
-        int idNum;
-
-        try {
-            if (lastDot == dot) {
-                idNum = Integer.parseInt(peakSpecifier.substring(dot + 1));
-            } else {
-                idNum = Integer.parseInt(peakSpecifier.substring(dot + 1,
-                        lastDot));
-            }
-        } catch (NumberFormatException numE) {
-            throw new IllegalArgumentException(
-                    "error parsing peak " + peakSpecifier + ": " + numE.toString());
-        }
-
-        Peak peak = peakList.getPeakByID(idNum);
-        if (peak == null) {
-            return null;
-        }
-        int iDim = peakList.getPeakDim(peakSpecifier);
-
-        return peak.peakDims[iDim];
-    }
-
-    /**
-     *
-     * @param idNum
-     * @return
-     * @throws IllegalArgumentException
-     */
-    public Peak getPeakByID(int idNum) throws IllegalArgumentException {
-        if (indexMap.isEmpty()) {
-            reIndex();
-        }
-        Peak peak = (Peak) indexMap.get(idNum);
-        return peak;
-    }
-
-    /**
-     *
-     * @param peakSpecifier
-     * @return
-     */
-    public static int getPeakDimNum(String peakSpecifier) {
-        int iDim = 0;
-        int dot = peakSpecifier.indexOf('.');
-
-        if (dot != -1) {
-            int lastDot = peakSpecifier.lastIndexOf('.');
-
-            if (dot != lastDot) {
-                String dimString = peakSpecifier.substring(lastDot + 1);
-                iDim = Integer.parseInt(dimString) - 1;
-            }
-        }
-
-        return iDim;
-    }
-
-    /**
-     *
-     * @param peakSpecifier
-     * @return
-     * @throws IllegalArgumentException
-     */
-    public int getPeakDim(String peakSpecifier)
-            throws IllegalArgumentException {
-        int iDim = 0;
-        int dot = peakSpecifier.indexOf('.');
-
-        if (dot != -1) {
-            int lastDot = peakSpecifier.lastIndexOf('.');
-
-            if (dot != lastDot) {
-                String dimString = peakSpecifier.substring(lastDot + 1);
-                iDim = getListDim(dimString);
-
-                if (iDim == -1) {
-                    try {
-                        iDim = Integer.parseInt(dimString) - 1;
-                    } catch (NumberFormatException nFE) {
-                        iDim = -1;
-                    }
-                }
-            }
-        }
-
-        if ((iDim < 0) || (iDim >= nDim)) {
-            throw new IllegalArgumentException(
-                    "Invalid peak dimension in \"" + peakSpecifier + "\"");
-        }
-
-        return iDim;
-    }
-
-    static Peak getAPeak2(String peakSpecifier) {
-        int dot = peakSpecifier.indexOf('.');
-
-        if (dot == -1) {
-            return null;
-        }
-
-        int lastDot = peakSpecifier.lastIndexOf('.');
-
-        ProjectBase<PeakList> project = Project.getActive();
-        PeakList peakList = project.
-                getPeakList(peakSpecifier.substring(0, dot));
-
-        if (peakList == null) {
-            return null;
-        }
-
-        int idNum;
-
-        if (dot == lastDot) {
-            idNum = Integer.parseInt(peakSpecifier.substring(dot + 1));
-        } else {
-            idNum = Integer.parseInt(peakSpecifier.substring(dot + 1, lastDot));
-        }
-
-        Peak peak = peakList.getPeak(idNum);
-
-        return (peak);
-    }
-
-    /**
-     *
      * @return
      */
     @Override
@@ -1447,24 +1143,6 @@ public class PeakList extends org.nmrfx.peaks.PeakListBase<Peak> {
         }
         peaks.remove(peak);
         reIndex();
-    }
-
-    /**
-     *
-     * @return
-     */
-    public int compress() {
-        int nRemoved = 0;
-        for (int i = (peaks.size() - 1); i >= 0; i--) {
-            if ((peaks.get(i)).getStatus() < 0) {
-                unLinkPeak(peaks.get(i));
-                (peaks.get(i)).markDeleted();
-                peaks.remove(i);
-                nRemoved++;
-            }
-        }
-        reIndex();
-        return nRemoved;
     }
 
     public void removeDiagonalPeaks() {
@@ -2246,13 +1924,13 @@ public class PeakList extends org.nmrfx.peaks.PeakListBase<Peak> {
             if (iDatum.isActive()) {
                 List<Object> objs = iDatum.getObjects();
                 Peak iPeak = (Peak) objs.get(0);
-                PeakList.unLinkPeak(iPeak);
+                PeakListBase.unLinkPeak(iPeak);
                 for (int iObj = 1; iObj < objs.size(); iObj++) {
                     Peak jPeak = (Peak) objs.get(iObj);
-                    PeakList.unLinkPeak(jPeak);
+                    PeakListBase.unLinkPeak(jPeak);
                     for (int iDim = 0; iDim < fDim; iDim++) {
-                        SearchDim iSDim = iPeak.getPeakList().searchDims.get(iDim);
-                        SearchDim jSDim = jPeak.getPeakList().searchDims.get(iDim);
+                        SearchDim iSDim = ((PeakList) iPeak.getPeakList()).searchDims.get(iDim);
+                        SearchDim jSDim = ((PeakList) jPeak.getPeakList()).searchDims.get(iDim);
                         linkPeaks(iPeak, iSDim.iDim, jPeak, jSDim.iDim);
                     }
                 }
@@ -2420,52 +2098,6 @@ public class PeakList extends org.nmrfx.peaks.PeakListBase<Peak> {
         Multiplet.merge(peakDimA, peakDimB);
         peakDimA.peakDimUpdated();
         peakDimB.peakDimUpdated();
-    }
-
-    /**
-     *
-     */
-    public void unLinkPeaks() {
-        int nPeaks = peaks.size();
-
-        for (int i = 0; i < nPeaks; i++) {
-            unLinkPeak(peaks.get(i));
-        }
-    }
-
-    /**
-     *
-     * @param peak
-     */
-    public static void unLinkPeak(Peak peak) {
-        for (int i = 0; i < peak.peakList.nDim; i++) {
-            List<PeakDim> peakDims = getLinkedPeakDims(peak, i);
-            unLinkPeak(peak, i);
-
-            for (PeakDim pDim : peakDims) {
-                if (pDim.getPeak() != peak) {
-                    if (pDim.isCoupled()) {
-                        if (peakDims.size() == 2) {
-                            pDim.getMultiplet().setSinglet();
-                        } else {
-                            pDim.getMultiplet().setGenericMultiplet();
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    /**
-     *
-     * @param peak
-     * @param iDim
-     */
-    public static void unLinkPeak(Peak peak, int iDim) {
-        PeakDim peakDim = peak.getPeakDim(iDim);
-        if (peakDim != null) {
-            peakDim.unLink();
-        }
     }
 
     /**
@@ -2753,8 +2385,9 @@ public class PeakList extends org.nmrfx.peaks.PeakListBase<Peak> {
      * @throws IOException
      * @throws PeakFitException
      */
-    public static List<Object> peakFit(Dataset theFile, Peak... peakArray)
+    public static List<Object> peakFit(DatasetBase dataset, Peak... peakArray)
             throws IllegalArgumentException, IOException, PeakFitException {
+        Dataset theFile = (Dataset) dataset;
         boolean doFit = true;
         int fitMode = FIT_ALL;
         boolean updatePeaks = true;
@@ -2922,7 +2555,7 @@ public class PeakList extends org.nmrfx.peaks.PeakListBase<Peak> {
             return peaksResult;
         }
         boolean fitC = false;
-        PeakList peakList = peaks.get(0).getPeakList();
+        PeakList peakList = (PeakList) peaks.get(0).getPeakList();
         int nPeakDim = peakList.getNDim();
         int dataDim = theFile.getNDim();
         int rowDim = dataDim - 1;

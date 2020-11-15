@@ -30,7 +30,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.nmrfx.processor.datasets.peaks.Measures;
-import org.nmrfx.processor.datasets.peaks.Peak;
+import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakDim;
 import org.nmrfx.processor.datasets.peaks.PeakList;
 import org.nmrfx.peaks.SpectralDim;

@@ -73,7 +73,7 @@ public class PeakFitter {
         peaks = new Peak[nPeaks];
         for (int iArg = 0, iPeak = 0; iArg < argv.length;
                 iArg++, iPeak++) {
-            peaks[iPeak] = PeakList.getAPeak(argv[iArg]);
+            peaks[iPeak] = PeakListBase.getAPeak(argv[iArg]);
 
             if (peaks[iPeak] == null) {
                 throw new IllegalArgumentException("Couln't find peak \"" + argv[iArg] + "\"");

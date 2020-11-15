@@ -4,7 +4,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.ArrayList;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
-import org.nmrfx.processor.datasets.peaks.Peak;
+import org.nmrfx.peaks.Peak;
 import org.nmrfx.processor.datasets.peaks.PeakList;
 
 /**

@@ -17,7 +17,7 @@ import org.apache.commons.math3.linear.SingularValueDecomposition;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.apache.commons.math3.util.MultidimensionalCounter;
 import org.nmrfx.processor.datasets.Dataset;
-import org.nmrfx.processor.datasets.RegionData;
+import org.nmrfx.datasets.RegionData;
 import org.nmrfx.processor.datasets.peaks.io.PeakReader;
 
 /**

@@ -20,6 +20,9 @@ package org.nmrfx.processor.datasets.peaks;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+
+import org.nmrfx.peaks.Peak;
+import org.nmrfx.peaks.PeakListBase;
 import org.nmrfx.processor.optimization.VecID;
 import org.nmrfx.processor.optimization.equations.OptFunction;
 import org.nmrfx.processor.optimization.equations.Quadratic10;
@@ -1484,11 +1487,11 @@ public class PeakPath implements PeakListener {
     }
 
     public ArrayList<Peak> scan2(final String startPeakName, double radius, double tolMul, int midListIndex, final String lastPeakName) {
-        Peak startPeak = PeakList.getAPeak(startPeakName);
+        Peak startPeak = PeakListBase.getAPeak(startPeakName);
         ArrayList<PeakDistance> peakDistances = new ArrayList<>();
         ArrayList<ArrayList<PeakDistance>> filteredLists;
         if (lastPeakName.length() != 0) {
-            Peak lastPeak = PeakList.getAPeak(lastPeakName);
+            Peak lastPeak = PeakListBase.getAPeak(lastPeakName);
             double distance = calcDistance(startPeak, lastPeak);
             double[] deltas = calcDeltas(startPeak, lastPeak);
             PeakDistance peakDis = new PeakDistance(lastPeak, distance, deltas);
