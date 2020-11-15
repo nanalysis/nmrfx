@@ -21,7 +21,6 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 
-import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakListBase;
 import org.nmrfx.processor.optimization.VecID;
 import org.nmrfx.processor.optimization.equations.OptFunction;
@@ -30,6 +29,7 @@ import java.util.*;
 import java.util.Map.Entry;
 import org.apache.commons.math3.optimization.PointVectorValuePair;
 import org.apache.commons.math3.optimization.general.LevenbergMarquardtOptimizer;
+import org.nmrfx.peaks.Peak;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.project.Project;
 import smile.interpolation.KrigingInterpolation;

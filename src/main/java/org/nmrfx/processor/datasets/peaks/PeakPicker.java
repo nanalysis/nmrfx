@@ -23,7 +23,6 @@
  */
 package org.nmrfx.processor.datasets.peaks;
 
-import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.SpectralDim;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.DimCounter;
@@ -37,6 +36,7 @@ import java.util.stream.Collectors;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
 import org.nmrfx.datasets.Nuclei;
+import org.nmrfx.peaks.Peak;
 
 /**
  *
@@ -191,8 +191,8 @@ public class PeakPicker {
     }
 
     public boolean measurePeak(double threshold, int[] pt, double[] cpt,
-            int[] dim, int[] pldim, boolean fixedPick, Peak peak, int nPeakDim,
-            double sDevN, int sign, boolean measurePeak) throws IOException {
+                               int[] dim, int[] pldim, boolean fixedPick, Peak peak, int nPeakDim,
+                               double sDevN, int sign, boolean measurePeak) throws IOException {
         double testValue = 0.0;
         int[] checkPoint = new int[nDim];
         int[] maxWidth = new int[nDim];

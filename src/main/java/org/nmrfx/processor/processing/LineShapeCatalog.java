@@ -350,7 +350,7 @@ public class LineShapeCatalog {
     }
 
     public void addToDataset(Dataset dataset,
-            Peak peak, double scale) throws IOException {
+                             Peak peak, double scale) throws IOException {
         int[] center = new int[dataset.getNDim()];
         int[] indices = new int[center.length];
         for (int i = 0; i < center.length; i++) {
@@ -376,7 +376,7 @@ public class LineShapeCatalog {
     }
 
     public boolean addToDatasetInterpolated(Dataset dataset,
-            Peak peak, double scale, Double lvl) throws IOException {
+                                            Peak peak, double scale, Double lvl) throws IOException {
         int[] center = new int[dataset.getNDim()];
         double[][] values = new double[center.length][];
         for (int i = 0; i < center.length; i++) {
