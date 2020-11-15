@@ -6,6 +6,8 @@ import org.nmrfx.math.VecBase;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
+
+import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.project.ProjectBase;
 
 public class DatasetBase {
@@ -90,6 +92,19 @@ public class DatasetBase {
 
     }
 
+    /**
+     * Return the Dataset object with the specified name.
+     *
+     * @param fileName name of Dataset to find
+     * @return the Dataset or null if it doesn't exist
+     */
+    synchronized public static DatasetBase getDataset(String fileName) {
+        if (fileName == null) {
+            return null;
+        } else {
+            return (DatasetBase) ProjectBase.getActive().getDataset(fileName);
+        }
+    }
 
     /**
      * Get a a name that can be used for the file that hasn't already been used
@@ -1636,4 +1651,9 @@ public class DatasetBase {
         }
         return iDim;
     }
+    synchronized public RegionData analyzeRegion(int[][] pt, int[] cpt, double[] width, int[] dim)
+            throws IOException{
+        return null;
+    }
+
 }
