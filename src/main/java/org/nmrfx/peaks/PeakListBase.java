@@ -2,12 +2,25 @@ package org.nmrfx.peaks;
 
 import java.util.*;
 
+import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.datasets.Nuclei;
+import org.nmrfx.processor.datasets.Dataset;
+import org.nmrfx.processor.datasets.peaks.PeakList;
+import org.nmrfx.processor.project.Project;
+import org.nmrfx.project.ProjectBase;
 
 public class PeakListBase<T extends PeakBase> {
 
     static ResonanceFactory resFactory = new ResonanceFactory();
+    /**
+     *
+     */
+    public static PeakList clusterOrigin = null;
     public int idLast;
+    /**
+     *
+     */
+    public String fileName;
     protected String listName;
     protected final int listID;
     protected String details = "";
@@ -37,6 +50,53 @@ public class PeakListBase<T extends PeakBase> {
         spectralDims = new SpectralDim[nDim];
         scale = 1.0;
         this.listID = listNum == null ? 0 : listNum;
+    }
+
+    /**
+     *
+     * @param peak
+     */
+    public static void unLinkPeak(PeakBase peak) {
+        for (int i = 0; i < peak.peakList.nDim; i++) {
+            List<PeakDim> peakDims = getLinkedPeakDims(peak, i);
+            PeakListBase.unLinkPeak(peak, i);
+
+            for (PeakDim pDim : peakDims) {
+                if (pDim.getPeak() != peak) {
+                    if (pDim.isCoupled()) {
+                        if (peakDims.size() == 2) {
+                            pDim.getMultiplet().setSinglet();
+                        } else {
+                            pDim.getMultiplet().setGenericMultiplet();
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     *
+     * @param peak
+     * @param iDim
+     */
+    public static void unLinkPeak(PeakBase peak, int iDim) {
+        PeakDim peakDim = peak.getPeakDim(iDim);
+        if (peakDim != null) {
+            peakDim.unLink();
+        }
+    }
+
+    /**
+     *
+     * @return
+     */
+    public String getDatasetName() {
+        return fileName;
+    }
+
+    public boolean isSimulated() {
+        return getSampleConditionLabel().contains("sim");
     }
 
     public void peakListUpdated(Object object) {
@@ -257,6 +317,289 @@ public class PeakListBase<T extends PeakBase> {
 
     /**
      *
+     * @param dataset
+     * @param looseMode
+     * @return
+     */
+    public int[] getDimsForDataset(DatasetBase dataset, boolean looseMode) {
+        int[] pdim = new int[nDim];
+        int dataDim = dataset.getNDim();
+        boolean[] used = new boolean[dataDim];
+        for (int j = 0; j < nDim; j++) {
+            boolean ok = false;
+            for (int i = 0; i < dataDim; i++) {
+                if (!used[i]) {
+                    if (getSpectralDim(j).getDimName().equals(dataset.getLabel(i))) {
+                        pdim[j] = i;
+                        used[i] = true;
+                        ok = true;
+                        break;
+                    }
+                }
+            }
+
+            if (!ok && looseMode) {
+                String pNuc = getSpectralDim(j).getNucleus();
+                for (int i = 0; i < dataDim; i++) {
+                    if (!used[i]) {
+                        String dNuc = dataset.getNucleus(i).getNumberName();
+                        if (dNuc.equals(pNuc)) {
+                            pdim[j] = i;
+                            used[i] = true;
+                            ok = true;
+                            break;
+                        }
+                    }
+                }
+            }
+            if (!ok) {
+                throw new IllegalArgumentException(
+                        "Can't find match for peak dimension \""
+                        + getSpectralDim(j).getDimName() + "\"");
+            }
+        }
+        return pdim;
+    }
+
+    /**
+     *
+     * @param dataset
+     * @return
+     */
+    public int[] getDimsForDataset(DatasetBase dataset) {
+        return getDimsForDataset(dataset, false);
+    }
+
+    /**
+     *
+     * @param peakSpecifier
+     * @return
+     */
+    public static Peak getAPeak(String peakSpecifier) {
+        int dot = peakSpecifier.indexOf('.');
+
+        if (dot == -1) {
+            return null;
+        }
+
+        int lastDot = peakSpecifier.lastIndexOf('.');
+
+        ProjectBase<PeakList> project = Project.getActive();
+        PeakList peakList = project.
+                getPeakList(peakSpecifier.substring(0, dot));
+
+        if (peakList == null) {
+            return null;
+        }
+
+        if (peakList.indexMap.isEmpty()) {
+            peakList.reIndex();
+        }
+
+        int idNum;
+
+        if (lastDot == dot) {
+            idNum = Integer.parseInt(peakSpecifier.substring(dot + 1));
+        } else {
+            idNum = Integer.parseInt(peakSpecifier.substring(dot + 1, lastDot));
+        }
+
+        Peak peak = (Peak) peakList.indexMap.get(idNum);
+        return peak;
+    }
+
+    /**
+     *
+     * @param peakSpecifier
+     * @param iDimInt
+     * @return
+     * @throws IllegalArgumentException
+     */
+    public static Peak getAPeak(String peakSpecifier,
+            Integer iDimInt) throws IllegalArgumentException {
+        int dot = peakSpecifier.indexOf('.');
+
+        if (dot == -1) {
+            return null;
+        }
+
+        int lastDot = peakSpecifier.lastIndexOf('.');
+
+        ProjectBase<PeakList> project = Project.getActive();
+        PeakList peakList = project.
+                getPeakList(peakSpecifier.substring(0, dot));
+
+        if (peakList == null) {
+            return null;
+        }
+
+        int idNum;
+
+        try {
+            if (lastDot == dot) {
+                idNum = Integer.parseInt(peakSpecifier.substring(dot + 1));
+            } else {
+                idNum = Integer.parseInt(peakSpecifier.substring(dot + 1,
+                        lastDot));
+            }
+        } catch (NumberFormatException numE) {
+            throw new IllegalArgumentException(
+                    "error parsing peak " + peakSpecifier + ": " + numE.toString());
+        }
+
+        return peakList.getPeakByID(idNum);
+    }
+
+    /**
+     *
+     * @param peakSpecifier
+     * @return
+     * @throws IllegalArgumentException
+     */
+    public static PeakDim getPeakDimObject(String peakSpecifier)
+            throws IllegalArgumentException {
+        int dot = peakSpecifier.indexOf('.');
+
+        if (dot == -1) {
+            return null;
+        }
+
+        int lastDot = peakSpecifier.lastIndexOf('.');
+
+        ProjectBase<PeakList> project = Project.getActive();
+        PeakList peakList = project.
+                getPeakList(peakSpecifier.substring(0, dot));
+
+        if (peakList == null) {
+            return null;
+        }
+
+        int idNum;
+
+        try {
+            if (lastDot == dot) {
+                idNum = Integer.parseInt(peakSpecifier.substring(dot + 1));
+            } else {
+                idNum = Integer.parseInt(peakSpecifier.substring(dot + 1,
+                        lastDot));
+            }
+        } catch (NumberFormatException numE) {
+            throw new IllegalArgumentException(
+                    "error parsing peak " + peakSpecifier + ": " + numE.toString());
+        }
+
+        Peak peak = peakList.getPeakByID(idNum);
+        if (peak == null) {
+            return null;
+        }
+        int iDim = peakList.getPeakDim(peakSpecifier);
+
+        return peak.peakDims[iDim];
+    }
+
+    /**
+     *
+     * @param idNum
+     * @return
+     * @throws IllegalArgumentException
+     */
+    public Peak getPeakByID(int idNum) throws IllegalArgumentException {
+        if (indexMap.isEmpty()) {
+            reIndex();
+        }
+        Peak peak = (Peak) indexMap.get(idNum);
+        return peak;
+    }
+
+    /**
+     *
+     * @param peakSpecifier
+     * @return
+     */
+    public static int getPeakDimNum(String peakSpecifier) {
+        int iDim = 0;
+        int dot = peakSpecifier.indexOf('.');
+
+        if (dot != -1) {
+            int lastDot = peakSpecifier.lastIndexOf('.');
+
+            if (dot != lastDot) {
+                String dimString = peakSpecifier.substring(lastDot + 1);
+                iDim = Integer.parseInt(dimString) - 1;
+            }
+        }
+
+        return iDim;
+    }
+
+    /**
+     *
+     * @param peakSpecifier
+     * @return
+     * @throws IllegalArgumentException
+     */
+    public int getPeakDim(String peakSpecifier)
+            throws IllegalArgumentException {
+        int iDim = 0;
+        int dot = peakSpecifier.indexOf('.');
+
+        if (dot != -1) {
+            int lastDot = peakSpecifier.lastIndexOf('.');
+
+            if (dot != lastDot) {
+                String dimString = peakSpecifier.substring(lastDot + 1);
+                iDim = getListDim(dimString);
+
+                if (iDim == -1) {
+                    try {
+                        iDim = Integer.parseInt(dimString) - 1;
+                    } catch (NumberFormatException nFE) {
+                        iDim = -1;
+                    }
+                }
+            }
+        }
+
+        if ((iDim < 0) || (iDim >= nDim)) {
+            throw new IllegalArgumentException(
+                    "Invalid peak dimension in \"" + peakSpecifier + "\"");
+        }
+
+        return iDim;
+    }
+
+    static Peak getAPeak2(String peakSpecifier) {
+        int dot = peakSpecifier.indexOf('.');
+
+        if (dot == -1) {
+            return null;
+        }
+
+        int lastDot = peakSpecifier.lastIndexOf('.');
+
+        ProjectBase<PeakList> project = Project.getActive();
+        PeakList peakList = project.
+                getPeakList(peakSpecifier.substring(0, dot));
+
+        if (peakList == null) {
+            return null;
+        }
+
+        int idNum;
+
+        if (dot == lastDot) {
+            idNum = Integer.parseInt(peakSpecifier.substring(dot + 1));
+        } else {
+            idNum = Integer.parseInt(peakSpecifier.substring(dot + 1, lastDot));
+        }
+
+        Peak peak = peakList.getPeak(idNum);
+
+        return (peak);
+    }
+
+    /**
+     *
      * @return
      */
     public T getNewPeak() {
@@ -346,5 +689,34 @@ public class PeakListBase<T extends PeakBase> {
     public DoubleSummaryStatistics widthStatsPPM(int iDim) {
         DoubleSummaryStatistics stats = peaks.stream().filter(p -> p.getStatus() >= 0).mapToDouble(p -> p.peakDims[iDim].getLineWidth()).summaryStatistics();
         return stats;
+    }
+
+    /**
+     *
+     * @return
+     */
+    public int compress() {
+        int nRemoved = 0;
+        for (int i = (peaks.size() - 1); i >= 0; i--) {
+            if ((peaks.get(i)).getStatus() < 0) {
+                PeakListBase.unLinkPeak(peaks.get(i));
+                (peaks.get(i)).markDeleted();
+                peaks.remove(i);
+                nRemoved++;
+            }
+        }
+        reIndex();
+        return nRemoved;
+    }
+
+    /**
+     *
+     */
+    public void unLinkPeaks() {
+        int nPeaks = peaks.size();
+
+        for (int i = 0; i < nPeaks; i++) {
+            PeakListBase.unLinkPeak(peaks.get(i));
+        }
     }
 }
