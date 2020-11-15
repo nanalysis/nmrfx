@@ -228,9 +228,9 @@ public class Multiplet implements PeakOrMulti, Comparable {
         }
         Optional<Multiplet> result = Optional.empty();
         if (!removeComps.isEmpty()) {
-            PeakBase peak = getOrigin();
+            Peak peak = getOrigin();
             PeakListBase peakList = peak.getPeakList();
-            PeakBase newPeak = peakList.getNewPeak();
+            Peak newPeak = peakList.getNewPeak();
             PeakDim newPeakDim = newPeak.getPeakDim(0);
             Multiplet newMultiplet = newPeakDim.getMultiplet();
             newMultiplet.moveCouplings(removeComps);
@@ -294,8 +294,8 @@ public class Multiplet implements PeakOrMulti, Comparable {
         return sBuilder.toString();
     }
 
-    public PeakBase getOrigin() {
-        PeakBase origin = myPeakDim.getPeak();
+    public Peak getOrigin() {
+        Peak origin = myPeakDim.getPeak();
         return origin;
     }
 

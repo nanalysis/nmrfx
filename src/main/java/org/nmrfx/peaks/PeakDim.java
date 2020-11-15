@@ -42,7 +42,7 @@ public class PeakDim {
 //    private Coupling coupling = null;
     private char[] error = {'+', '+'};
     private String user = "";
-    private PeakBase myPeak = null;
+    private Peak myPeak = null;
     private Resonance resonance;
     private boolean frozen = false;
     private boolean linksDrawn = false;  // used in drawing link lines
@@ -53,13 +53,13 @@ public class PeakDim {
         }
     }
 
-    public PeakDim(PeakBase peak, int iDim) {
+    public PeakDim(Peak peak, int iDim) {
         myPeak = peak;
         setSpectralDim(iDim);
         //peakDimContribs = new ArrayList();
     }
 
-    public PeakDim copy(PeakBase peak) {
+    public PeakDim copy(Peak peak) {
         PeakDim newPeakDim = new PeakDim(peak, spectralDim);
         newPeakDim.chemShift = chemShift;
         newPeakDim.chemShiftError = chemShiftError;
@@ -766,7 +766,7 @@ public class PeakDim {
         return linksDrawn;
     }
 
-    public PeakBase getPeak() {
+    public Peak getPeak() {
         return myPeak;
     }
 
