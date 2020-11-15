@@ -4,8 +4,6 @@ import java.util.*;
 
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.datasets.Nuclei;
-import org.nmrfx.processor.datasets.peaks.PeakList;
-import org.nmrfx.processor.project.Project;
 import org.nmrfx.project.ProjectBase;
 
 public class PeakListBase<T extends Peak> {
@@ -14,7 +12,7 @@ public class PeakListBase<T extends Peak> {
     /**
      *
      */
-    public static PeakList clusterOrigin = null;
+    public static PeakListBase clusterOrigin = null;
     public int idLast;
     /**
      *
@@ -383,8 +381,8 @@ public class PeakListBase<T extends Peak> {
 
         int lastDot = peakSpecifier.lastIndexOf('.');
 
-        ProjectBase<PeakList> project = Project.getActive();
-        PeakList peakList = project.
+        ProjectBase<PeakListBase> project = ProjectBase.getActive();
+        PeakListBase peakList = project.
                 getPeakList(peakSpecifier.substring(0, dot));
 
         if (peakList == null) {
@@ -424,8 +422,8 @@ public class PeakListBase<T extends Peak> {
 
         int lastDot = peakSpecifier.lastIndexOf('.');
 
-        ProjectBase<PeakList> project = Project.getActive();
-        PeakList peakList = project.
+        ProjectBase<PeakListBase> project = ProjectBase.getActive();
+        PeakListBase peakList = project.
                 getPeakList(peakSpecifier.substring(0, dot));
 
         if (peakList == null) {
@@ -465,8 +463,8 @@ public class PeakListBase<T extends Peak> {
 
         int lastDot = peakSpecifier.lastIndexOf('.');
 
-        ProjectBase<PeakList> project = Project.getActive();
-        PeakList peakList = project.
+        ProjectBase<PeakListBase> project = ProjectBase.getActive();
+        PeakListBase peakList = project.
                 getPeakList(peakSpecifier.substring(0, dot));
 
         if (peakList == null) {
@@ -576,8 +574,8 @@ public class PeakListBase<T extends Peak> {
 
         int lastDot = peakSpecifier.lastIndexOf('.');
 
-        ProjectBase<PeakList> project = Project.getActive();
-        PeakList peakList = project.
+        ProjectBase<PeakListBase> project = ProjectBase.getActive();
+        PeakListBase peakList = project.
                 getPeakList(peakSpecifier.substring(0, dot));
 
         if (peakList == null) {
