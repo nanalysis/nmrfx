@@ -58,6 +58,9 @@ public class PeakListBase {
     public PeakListBase(String name, int n, Integer listNum) {
         listName = name;
         fileName = "";
+        nDim = n;
+        spectralDims = new SpectralDim[nDim];
+        scale = 1.0;
         idLast = -1;
 
         int i;
@@ -75,7 +78,7 @@ public class PeakListBase {
                 listNum++;
             }
         }
-        listID = listNum;
+        this.listID = listNum;
     }
 
     /**
@@ -440,8 +443,11 @@ public class PeakListBase {
         }
         return newPeakList;
     }
+    synchronized void setUpdatedFlag(boolean value) {
+    }
 
     public void peakListUpdated(Object object) {
+        changed = true;
     }
 
     /**
