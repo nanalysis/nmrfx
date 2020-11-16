@@ -64,6 +64,30 @@ public class DatasetBase {
     private String posColor = "black";
     private String negColor = "red";
 
+    public DatasetBase() {
+
+    }
+    public DatasetBase(String fullName, String name, boolean writable, boolean useCacheFile) {
+        file = new File(fullName);
+
+        String newName;
+
+        if ((name == null) || name.equals("") || name.equals(fullName)) {
+            newName = file.getName();
+        } else {
+            newName = name;
+        }
+        newName = newName.replace(' ', '_');
+
+        canonicalName = file.getCanonicalPath();
+        fileName = newName;
+
+        if (!file.exists()) {
+            throw new IllegalArgumentException(
+                    "File " + fullName + " doesn't exist");
+        }
+    }
+
     /**
      * Check if there is an open file with the specified name.
      *
