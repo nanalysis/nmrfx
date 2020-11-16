@@ -7,15 +7,14 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.nmrfx.peaks.PeakListBase;
 import org.nmrfx.peaks.io.PeakReader;
-import org.nmrfx.processor.datasets.peaks.PeakList;
 
 public class PeakReaderTest2 {
 
     String peakListName = "src/test/resources/test.xpk2";
-    PeakList peakList1 = null;
+    PeakListBase peakList1 = null;
     PeakReader peakReader = null;
 
-    PeakList getPeakList() {
+    PeakListBase getPeakList() {
         if (peakList1 == null) {
             peakReader = new PeakReader(true);
             try {
@@ -29,21 +28,21 @@ public class PeakReaderTest2 {
 
     @Test
     public void testXPK2Reader() {
-        PeakList peakList = getPeakList();
+        PeakListBase peakList = getPeakList();
         Assert.assertNotNull(peakList);
         Assert.assertEquals(4, peakList.size());
     }
 
     @Test
     public void testXPK2ReaderDims() {
-        PeakList peakList = getPeakList();
+        PeakListBase peakList = getPeakList();
         Assert.assertNotNull(peakList);
         Assert.assertEquals(2, peakList.getNDim());
     }
 
     @Test
     public void testXPK2ReaderSF() {
-        PeakList peakList = getPeakList();
+        PeakListBase peakList = getPeakList();
         double[] sf = {600.0, 60.80411411};
         Assert.assertNotNull(peakList);
         for (int i = 0; i < sf.length; i++) {
@@ -53,7 +52,7 @@ public class PeakReaderTest2 {
 
     @Test
     public void testXPK2ReaderSW() {
-        PeakList peakList = getPeakList();
+        PeakListBase peakList = getPeakList();
         double[] sw = {7200.0, 2432.2};
         Assert.assertNotNull(peakList);
         for (int i = 0; i < sw.length; i++) {
@@ -63,7 +62,7 @@ public class PeakReaderTest2 {
 
     @Test
     public void testXPK2ReaderLabel() {
-        PeakList peakList = getPeakList();
+        PeakListBase peakList = getPeakList();
         String[] labels = {"H_1", "N_2"};
         Assert.assertNotNull(peakList);
         for (int i = 0; i < labels.length; i++) {
@@ -73,7 +72,7 @@ public class PeakReaderTest2 {
 
     @Test
     public void testXPK2ReaderPPM() {
-        PeakList peakList = getPeakList();
+        PeakListBase peakList = getPeakList();
         double[] ppms = {9.04322, 133.32071};
         Assert.assertNotNull(peakList);
         for (int i = 0; i < ppms.length; i++) {
@@ -83,7 +82,7 @@ public class PeakReaderTest2 {
 
     @Test
     public void testXPK2ReaderDimLabel() {
-        PeakList peakList = getPeakList();
+        PeakListBase peakList = getPeakList();
         String[] dimlabels = {"", ""};
         Assert.assertNotNull(peakList);
         for (int i = 0; i < dimlabels.length; i++) {
@@ -93,7 +92,7 @@ public class PeakReaderTest2 {
 
     @Test
     public void testXPK2ReaderWidth() {
-        PeakList peakList = getPeakList();
+        PeakListBase peakList = getPeakList();
         double[] widths = {16.98582, 16.26301};
         Assert.assertNotNull(peakList);
         for (int i = 0; i < widths.length; i++) {
@@ -103,7 +102,7 @@ public class PeakReaderTest2 {
 
     @Test
     public void testXPK2ReaderBoxWidth() {
-        PeakList peakList = getPeakList();
+        PeakListBase peakList = getPeakList();
         double[] bwidths = {51.52292, 49.98994};
         Assert.assertNotNull(peakList);
         for (int i = 0; i < bwidths.length; i++) {
@@ -113,7 +112,7 @@ public class PeakReaderTest2 {
 
     @Test
     public void testXPK2ReaderVolume() {
-        PeakList peakList = getPeakList();
+        PeakListBase peakList = getPeakList();
         double vol = 953.3195190429688;
         Assert.assertNotNull(peakList);
         Assert.assertEquals(vol, (double) peakList.getPeak(0).getVolume1(), 1.0e-5);
@@ -121,7 +120,7 @@ public class PeakReaderTest2 {
 
     @Test
     public void testXPK2ReaderIntensity() {
-        PeakList peakList = getPeakList();
+        PeakListBase peakList = getPeakList();
         double inten = 71.01772;
         Assert.assertNotNull(peakList);
         Assert.assertEquals(inten, (double) peakList.getPeak(0).getIntensity(), 1.0e-5);
@@ -129,7 +128,7 @@ public class PeakReaderTest2 {
 
     @Test
     public void testXPK2ReaderError() {
-        PeakList peakList = getPeakList();
+        PeakListBase peakList = getPeakList();
         char[][] errors = {{'+', '+'}, {'+', '+'}};
         Assert.assertNotNull(peakList);
         for (int i = 0; i < errors.length; i++) {
@@ -139,7 +138,7 @@ public class PeakReaderTest2 {
 
     @Test
     public void testXPK2ReaderFrozen() {
-        PeakList peakList = getPeakList();
+        PeakListBase peakList = getPeakList();
         boolean[] frozen = {false, false};
         Assert.assertNotNull(peakList);
         for (int i = 0; i < frozen.length; i++) {
@@ -149,7 +148,7 @@ public class PeakReaderTest2 {
 
     @Test
     public void testXPK2ReaderLinked() {
-        PeakList peakList = getPeakList();
+        PeakListBase peakList = getPeakList();
         Assert.assertNotNull(peakList);
         peakReader.linkResonances();
         Assert.assertTrue(PeakListBase.isLinked(peakList.getPeak(2), 0, peakList.getPeak(3)));
@@ -157,7 +156,7 @@ public class PeakReaderTest2 {
 
     @Test
     public void testXPK2ReaderNotLinked() {
-        PeakList peakList = getPeakList();
+        PeakListBase peakList = getPeakList();
         Assert.assertNotNull(peakList);
         peakReader.linkResonances();
         Assert.assertFalse(PeakListBase.isLinked(peakList.getPeak(1), 0, peakList.getPeak(3)));
@@ -165,7 +164,7 @@ public class PeakReaderTest2 {
 
     @Test
     public void testXPK2ReaderType() {
-        PeakList peakList = getPeakList();
+        PeakListBase peakList = getPeakList();
         double type = 1;
         Assert.assertNotNull(peakList);
         Assert.assertEquals(type, (double) peakList.getPeak(0).getType(), 1.0e-5);
@@ -173,7 +172,7 @@ public class PeakReaderTest2 {
 
     @Test
     public void testXPK2ReaderStatus() {
-        PeakList peakList = getPeakList();
+        PeakListBase peakList = getPeakList();
         double status = 0;
         Assert.assertNotNull(peakList);
         Assert.assertEquals(status, (double) peakList.getPeak(0).getStatus(), 1.0e-5);
@@ -181,7 +180,7 @@ public class PeakReaderTest2 {
 
     @Test
     public void testXPK2ReaderIdTol() {
-        PeakList peakList = getPeakList();
+        PeakListBase peakList = getPeakList();
         double[] idtol = {0.01, 0.16};
         Assert.assertNotNull(peakList);
         for (int i = 0; i < idtol.length; i++) {
@@ -191,7 +190,7 @@ public class PeakReaderTest2 {
 
     @Test
     public void testXPK2ReaderAbsPos() {
-        PeakList peakList = getPeakList();
+        PeakListBase peakList = getPeakList();
         boolean[] abspos = {false, false};
         Assert.assertNotNull(peakList);
         for (int i = 0; i < abspos.length; i++) {
@@ -201,7 +200,7 @@ public class PeakReaderTest2 {
 
     @Test
     public void testXPK2ReaderAcqDim() {
-        PeakList peakList = getPeakList();
+        PeakListBase peakList = getPeakList();
         boolean[] acqdim = {true, false};
         Assert.assertNotNull(peakList);
         for (int i = 0; i < acqdim.length; i++) {

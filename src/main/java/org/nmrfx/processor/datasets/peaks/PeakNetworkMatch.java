@@ -40,8 +40,8 @@ import org.nmrfx.peaks.Peak;
  */
 public class PeakNetworkMatch {
 
-    final PeakList iList;
-    final PeakList jList;
+    final PeakListBase iList;
+    final PeakListBase jList;
     final double[][] positions;
     double[] optOffset = null;
     MatchResult matchResult = null;
@@ -330,7 +330,7 @@ public class PeakNetworkMatch {
         }
     }
 
-    List<MatchItem> getMatchingItems(PeakList peakList, int[] dims, final double[][] boundary) {
+    List<MatchItem> getMatchingItems(PeakListBase peakList, int[] dims, final double[][] boundary) {
         List<MatchItem> matchList = new ArrayList<>();
         int nPeaks = peakList.size();
         HashSet usedPeaks = new HashSet();
