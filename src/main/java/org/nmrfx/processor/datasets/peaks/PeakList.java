@@ -60,7 +60,7 @@ import org.nmrfx.project.ProjectBase;
  *
  * @author brucejohnson
  */
-public class PeakList extends org.nmrfx.peaks.PeakListBase<Peak> {
+public class PeakList extends org.nmrfx.peaks.PeakListBase {
 
     public static ResonanceFactory resFactory() {
         Project project = (Project) Project.getActive();
@@ -106,7 +106,6 @@ public class PeakList extends org.nmrfx.peaks.PeakListBase<Peak> {
      *
      */
     public boolean inMem;
-    List<SearchDim> searchDims = new ArrayList<>();
 
     public PeakList(int n, Integer listNum) {
         super(n, listNum);
@@ -145,21 +144,6 @@ public class PeakList extends org.nmrfx.peaks.PeakListBase<Peak> {
                     startTimer();
                 }
             }
-        }
-    }
-
-    public class SearchDim {
-
-        final int iDim;
-        final double tol;
-
-        SearchDim(int iDim, double tol) {
-            this.iDim = iDim;
-            this.tol = tol;
-        }
-
-        public int getDim() {
-            return iDim;
         }
     }
 
@@ -296,38 +280,6 @@ public class PeakList extends org.nmrfx.peaks.PeakListBase<Peak> {
      */
     public static Iterator iterator() {
         return Project.getActive().getPeakLists().iterator();
-    }
-
-    /**
-     * Rename the peak list.
-     *
-     * @param newName
-     */
-    public void setName(String newName) {
-        ProjectBase<PeakList> project = Project.getActive();
-        project.removePeakList(listName);
-        listName = newName;
-        project.addPeakList(this, newName);
-    }
-
-    /**
-     *
-     * @param sampleLabel
-     */
-    public void setSampleLabel(String sampleLabel) {
-        this.sampleLabel = sampleLabel;
-    }
-
-    /**
-     *
-     * @param datasetName
-     */
-    public void setDatasetName(String datasetName) {
-        this.fileName = datasetName;
-    }
-
-    public List<SearchDim> getSearchDims() {
-        return searchDims;
     }
 
     static void scanListsForUpdates() {
@@ -532,100 +484,6 @@ public class PeakList extends org.nmrfx.peaks.PeakListBase<Peak> {
      */
     public Map<String, String> getProperties() {
         return properties;
-    }
-
-    /**
-     *
-     * @return
-     */
-    public boolean hasSearchDims() {
-        return !searchDims.isEmpty();
-    }
-
-    /**
-     *
-     */
-    public void clearSearchDims() {
-        searchDims.clear();
-    }
-
-    /**
-     *
-     * @param s
-     * @throws IllegalArgumentException
-     */
-    public void setSearchDims(String s) throws IllegalArgumentException {
-        String[] elements = s.split(" ");
-        if ((elements.length % 2) != 0) {
-            throw new IllegalArgumentException("Invalid search dim string: " + s);
-        }
-        clearSearchDims();
-        for (int i = 0; i < elements.length; i += 2) {
-            double tol = Double.parseDouble(elements[i + 1]);
-            addSearchDim(elements[i], tol);
-        }
-
-    }
-
-    /**
-     *
-     * @param dimName
-     * @param tol
-     */
-    public void addSearchDim(String dimName, double tol) {
-        int iDim = getListDim(dimName);
-        addSearchDim(iDim, tol);
-    }
-
-    /**
-     *
-     * @param iDim
-     * @param tol
-     */
-    public void addSearchDim(int iDim, double tol) {
-        Iterator<SearchDim> iter = searchDims.iterator();
-        while (iter.hasNext()) {
-            SearchDim sDim = iter.next();
-            if (sDim.iDim == iDim) {
-                iter.remove();
-            }
-        }
-        SearchDim sDim = new SearchDim(iDim, tol);
-        searchDims.add(sDim);
-    }
-
-    /**
-     *
-     * @param noiseLevel
-     */
-    public void setFOM(double noiseLevel) {
-        for (int i = 0; i < peaks.size(); i++) {
-            Peak peak = peaks.get(i);
-            double devMul = Math.abs(peak.getIntensity() / noiseLevel);
-            if (devMul > 20.0) {
-                devMul = 20.0;
-            }
-            double erf;
-            try {
-                erf = org.apache.commons.math3.special.Erf.erf(devMul / Math.sqrt(2.0));
-            } catch (MaxCountExceededException mathE) {
-                erf = 1.0;
-            }
-            float fom = (float) (0.5 * (1.0 + erf));
-            peak.setFigureOfMerit(fom);
-        }
-    }
-
-    /**
-     *
-     */
-    public void reNumber() {
-        for (int i = 0; i < peaks.size(); i++) {
-            Peak peak = peaks.get(i);
-            peak.setIdNum(i);
-        }
-        idLast = peaks.size() - 1;
-        reIndex();
     }
 
     /**
@@ -847,14 +705,14 @@ public class PeakList extends org.nmrfx.peaks.PeakListBase<Peak> {
 
         int i = 0;
         for (SearchDim sDim : searchDims) {
-            searchDim[i] = sDim.iDim;
+            searchDim[i] = sDim.getDim();
 
             if (searchDim[i] == -1) {
                 matched = false;
 
                 break;
             }
-            double tol = sDim.tol;
+            double tol = sDim.getTol();
             limits[i][1] = ppms[i] - tol;
             limits[i][0] = ppms[i] + tol;
             i++;
@@ -1107,42 +965,11 @@ public class PeakList extends org.nmrfx.peaks.PeakListBase<Peak> {
      *
      * @param newPeak
      */
-    public void addPeakWithoutResonance(Peak newPeak) {
-        peaks.add(newPeak);
-        clearIndex();
-    }
-
-    /**
-     *
-     * @param newPeak
-     */
     public Peak addPeak(Peak newPeak) {
         newPeak.initPeakDimContribs();
         peaks.add(newPeak);
         clearIndex();
         return newPeak;
-    }
-
-    /**
-     *
-     * @return
-     */
-    public int addPeak() {
-        Peak peak = new Peak(this, nDim);
-        addPeak(peak);
-        return (peak.getIdNum());
-    }
-
-    /**
-     *
-     * @param peak
-     */
-    public void removePeak(Peak peak) {
-        if (peaks.get(peaks.size() - 1) == peak) {
-            idLast--;
-        }
-        peaks.remove(peak);
-        reIndex();
     }
 
     public void removeDiagonalPeaks() {
