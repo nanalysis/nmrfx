@@ -6,7 +6,7 @@ import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.datasets.Nuclei;
 import org.nmrfx.project.ProjectBase;
 
-public class PeakListBase<T extends Peak> {
+public class PeakListBase {
 
     static ResonanceFactory resFactory = new ResonanceFactory();
     /**
@@ -23,8 +23,8 @@ public class PeakListBase<T extends Peak> {
     protected String details = "";
     protected String sampleLabel = "";
     protected String sampleConditionLabel = "";
-    protected List<T> peaks;
-    protected final Map<Integer, T> indexMap = new HashMap<>();
+    protected List<Peak> peaks;
+    protected final Map<Integer, Peak> indexMap = new HashMap<>();
     boolean slideable = false;
     boolean requireSliderCondition = false;
     static boolean globalRequireSliderCondition = false;
@@ -216,7 +216,7 @@ public class PeakListBase<T extends Peak> {
      *
      * @return a peak list object.
      */
-    public List<T> peaks() {
+    public List<Peak> peaks() {
         return peaks;
     }
 
@@ -225,7 +225,7 @@ public class PeakListBase<T extends Peak> {
      * @param i
      * @return
      */
-    public T getPeak(int i) {
+    public Peak getPeak(int i) {
         if (peaks == null) {
             return null;
         }
@@ -244,7 +244,7 @@ public class PeakListBase<T extends Peak> {
      *
      * @param newPeak
      */
-    public T addPeak(T newPeak) {
+    public Peak addPeak(Peak newPeak) {
         newPeak.initPeakDimContribs();
         peaks.add(newPeak);
         clearIndex();
@@ -293,7 +293,7 @@ public class PeakListBase<T extends Peak> {
     public void reIndex() {
         int i = 0;
         indexMap.clear();
-        for (T peak : peaks) {
+        for (Peak peak : peaks) {
             peak.setIndex(i++);
             indexMap.put(peak.getIdNum(), peak);
         }
@@ -599,10 +599,10 @@ public class PeakListBase<T extends Peak> {
      *
      * @return
      */
-    public T getNewPeak() {
+    public Peak getNewPeak() {
         Peak peak = new Peak(this, nDim);
-        addPeak((T) peak);
-        return (T) peak;
+        addPeak( peak);
+        return  peak;
     }
 
     /**
