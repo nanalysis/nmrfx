@@ -7,6 +7,7 @@ import java.util.logging.Logger;
 import org.junit.Assert;
 import org.junit.Test;
 import org.nmrfx.peaks.Peak;
+import org.nmrfx.peaks.io.PeakReader;
 import org.nmrfx.processor.datasets.peaks.PeakList;
 
 public class PeakListTest {
