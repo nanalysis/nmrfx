@@ -18,6 +18,7 @@
 package org.nmrfx.processor.datasets.peaks;
 
 import org.nmrfx.peaks.PeakDim;
+import org.nmrfx.peaks.PeakListBase;
 import org.nmrfx.processor.optimization.BipartiteMatcher;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -58,8 +59,8 @@ public class PeakNetworkMatch {
     }
 
     public PeakNetworkMatch(final String iListName, final String jListName) {
-        this.iList = PeakList.get(iListName);
-        this.jList = PeakList.get(jListName);
+        this.iList = PeakListBase.get(iListName);
+        this.jList = PeakListBase.get(jListName);
         this.positions = null;
     }
 

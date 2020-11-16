@@ -396,17 +396,6 @@ public class PeakList extends org.nmrfx.peaks.PeakListBase {
     }
 
     /**
-     * Returns the PeakList that has the specified name.
-     *
-     * @param listName the name of the peak list
-     * @return the PeaKlist or null if no PeakList of that name exists
-     */
-    public static PeakList get(String listName) {
-        ProjectBase<PeakList> project = Project.getActive();
-        return project.getPeakList(listName);
-    }
-
-    /**
      * Return an Optional containing the PeakList with lowest id number or an
      * empty value if no PeakLists are present.
      *
@@ -454,109 +443,6 @@ public class PeakList extends org.nmrfx.peaks.PeakListBase {
             limits[0] = limits[1];
             limits[1] = hold;
         }
-    }
-
-    /**
-     *
-     * @return
-     */
-    public String getXPKHeader() {
-        StringBuilder result = new StringBuilder();
-        String sep = " ";
-        //id  V I 
-//label dataset sw sf
-//HN N15
-//t1setV-01.nv
-//5257.86 2661.1
-//750.258 76.032
-//HN.L HN.P HN.W HN.B HN.E HN.J HN.U N15.L N15.P N15.W N15.B N15.E N15.J N15.U vol int stat comment flag0
-//0 {89.HN} 9.60672 0.01900 0.05700 ++ {0.0} {} {89.N} 121.78692 0.14700 0.32500 ++ {0.0} {} 0.0 1.3563 0 {} 0
-
-        result.append("label dataset sw sf\n");
-        for (int i = 0; i < nDim; i++) {
-            result.append(getSpectralDim(i).getDimName());
-            if (i != (nDim - 1)) {
-                result.append(sep);
-            }
-        }
-        result.append('\n');
-        result.append(getDatasetName()).append('\n');
-        for (int i = 0; i < nDim; i++) {
-            result.append(getSpectralDim(i).getSw());
-            if (i != (nDim - 1)) {
-                result.append(sep);
-            }
-        }
-        result.append('\n');
-        for (int i = 0; i < nDim; i++) {
-            result.append(getSpectralDim(i).getSf());
-            if (i != (nDim - 1)) {
-                result.append(sep);
-            }
-        }
-        result.append('\n');
-
-        for (int i = 0; i < nDim; i++) {
-            result.append(getSpectralDim(i).getDimName()).append(".L").append(sep);
-            result.append(getSpectralDim(i).getDimName()).append(".P").append(sep);
-            result.append(getSpectralDim(i).getDimName()).append(".W").append(sep);
-            result.append(getSpectralDim(i).getDimName()).append(".B").append(sep);
-        }
-        result.append("vol").append(sep);
-        result.append("int");
-        result.append('\n');
-
-        return (result.toString());
-    }
-
-    /**
-     *
-     * @return
-     */
-    public String getXPK2Header() {
-        StringBuilder result = new StringBuilder();
-        String sep = "\t";
-        result.append("id").append(sep);
-
-        for (int i = 0; i < nDim; i++) {
-            SpectralDim specDim = getSpectralDim(i);
-            String dimName = specDim.getDimName();
-            result.append(dimName).append(".L").append(sep);
-            result.append(dimName).append(".P").append(sep);
-            result.append(dimName).append(".WH").append(sep);
-            result.append(dimName).append(".BH").append(sep);
-            result.append(dimName).append(".E").append(sep);
-            result.append(dimName).append(".M").append(sep);
-            result.append(dimName).append(".m").append(sep);
-            result.append(dimName).append(".U").append(sep);
-            result.append(dimName).append(".r").append(sep);
-            result.append(dimName).append(".F").append(sep);
-        }
-        result.append("volume").append(sep);
-        result.append("volume_err").append(sep);
-        result.append("intensity").append(sep);
-        result.append("intensity_err").append(sep);
-        result.append("type").append(sep);
-        result.append("comment").append(sep);
-        result.append("color").append(sep);
-        result.append("flags").append(sep);
-        result.append("status");
-
-        return (result.toString());
-    }
-
-    /**
-     *
-     * @return
-     */
-    public String getSparkyHeader() {
-        StringBuilder result = new StringBuilder();
-        result.append("    Assignment");
-        for (int i = 0; i < getNDim(); i++) {
-            result.append("     w").append(i + 1);
-        }
-        result.append("   Data Height");
-        return result.toString();
     }
 
     /**
@@ -2793,35 +2679,6 @@ public class PeakList extends org.nmrfx.peaks.PeakListBase {
 
     /**
      *
-     * @param datasetName
-     * @return
-     */
-    public static String getNameForDataset(String datasetName) {
-        int lastIndex = datasetName.lastIndexOf(".");
-        String listName = datasetName;
-        if (lastIndex != -1) {
-            listName = datasetName.substring(0, lastIndex);
-        }
-        return listName;
-    }
-
-    /**
-     *
-     * @param datasetName
-     * @return
-     */
-    public static PeakList getPeakListForDataset(String datasetName) {
-        ProjectBase<PeakList> project = Project.getActive();
-        for (PeakList peakList : project.getPeakLists()) {
-            if (peakList.fileName.equals(datasetName)) {
-                return peakList;
-            }
-        }
-        return null;
-    }
-
-    /**
-     *
      * @param iDim
      * @return
      */
@@ -2919,56 +2776,4 @@ public class PeakList extends org.nmrfx.peaks.PeakListBase {
         });
     }
 
-    public void writeSTAR3Header(FileWriter chan) throws IOException {
-        char stringQuote = '"';
-        chan.write("save_" + getName() + "\n");
-        chan.write("_Spectral_peak_list.Sf_category                 ");
-        chan.write("spectral_peak_list\n");
-        chan.write("_Spectral_peak_list.Sf_framecode                 ");
-        chan.write(getName() + "\n");
-        chan.write("_Spectral_peak_list.ID                          ");
-        chan.write(getId() + "\n");
-        chan.write("_Spectral_peak_list.Data_file_name               ");
-        chan.write(".\n");
-        chan.write("_Spectral_peak_list.Sample_ID                   ");
-        chan.write(".\n");
-        chan.write("_Spectral_peak_list.Sample_label                 ");
-        if (getSampleLabel().length() != 0) {
-            chan.write("$" + getSampleLabel() + "\n");
-        } else {
-            chan.write(".\n");
-        }
-        chan.write("_Spectral_peak_list.Sample_condition_list_ID     ");
-        chan.write(".\n");
-        chan.write("_Spectral_peak_list.Sample_condition_list_label  ");
-        String sCond = getSampleConditionLabel();
-        if ((sCond.length() != 0) && !sCond.equals(".")) {
-            chan.write("$" + sCond + "\n");
-        } else {
-            chan.write(".\n");
-        }
-        chan.write("_Spectral_peak_list.Slidable                      ");
-        String slidable = isSlideable() ? "yes" : "no";
-        chan.write(slidable + "\n");
-        chan.write("_Spectral_peak_list.Scale ");
-        chan.write(String.valueOf(getScale()) + "\n");
-
-        chan.write("_Spectral_peak_list.Experiment_ID                 ");
-        chan.write(".\n");
-        chan.write("_Spectral_peak_list.Experiment_name               ");
-        if (fileName.length() != 0) {
-            chan.write("$" + fileName + "\n");
-        } else {
-            chan.write(".\n");
-        }
-        chan.write("_Spectral_peak_list.Number_of_spectral_dimensions ");
-        chan.write(String.valueOf(nDim) + "\n");
-        chan.write("_Spectral_peak_list.Details                       ");
-        if (getDetails().length() != 0) {
-            chan.write(stringQuote + getDetails() + stringQuote + "\n");
-        } else {
-            chan.write(".\n");
-        }
-        chan.write("\n");
-    }
 }

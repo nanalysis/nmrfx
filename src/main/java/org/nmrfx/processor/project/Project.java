@@ -190,7 +190,7 @@ public class Project extends ProjectBase {
             String fileName = path.getFileName().toString();
             if (fileName.endsWith(".xpk2") || fileName.endsWith(".mpk2")) {
                 String listName = fileName.substring(0, fileName.length() - 5);
-                if (PeakList.get(listName) == null) {
+                if (PeakListBase.get(listName) == null) {
                     try {
                         Files.delete(path);
                     } catch (IOException ex) {
