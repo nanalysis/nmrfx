@@ -30,7 +30,6 @@ import org.nmrfx.processor.datasets.DatasetParameterFile;
 import org.nmrfx.processor.datasets.DatasetRegion;
 import org.nmrfx.peaks.InvalidPeakException;
 import org.nmrfx.processor.datasets.peaks.PeakList;
-import org.nmrfx.processor.datasets.peaks.PeakPath;
 import org.nmrfx.peaks.io.PeakReader;
 import org.nmrfx.peaks.io.PeakWriter;
 import org.nmrfx.peaks.ResonanceFactory;
@@ -46,7 +45,6 @@ public class Project extends ProjectBase {
     static final Map<String, Project> projects = new HashMap<>();
     static Project activeProject = null;
     public ResonanceFactory resFactory;
-    public Map<String, PeakPath> peakPaths;
 
     public Project(String name) {
         super(name);
@@ -54,7 +52,6 @@ public class Project extends ProjectBase {
         this.resFactory = getNewResFactory();
         this.resFactory.init();
         peakLists = new HashMap<>();
-        peakPaths = new HashMap<>();
 
         setActive();
     }
