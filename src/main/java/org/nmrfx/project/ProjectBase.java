@@ -7,6 +7,7 @@ package org.nmrfx.project;
 
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.peaks.PeakListBase;
+import org.nmrfx.peaks.PeakPaths;
 
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeSupport;
@@ -29,6 +30,7 @@ public class ProjectBase<T extends PeakListBase> {
     static final public Predicate<String> INDEX_PREDICATE = INDEX_PATTERN.asPredicate();
     final String name;
     public Path projectDir = null;
+    public Map<String, PeakPaths> peakPaths;
 
     protected static ProjectBase getNewProject(String name) {
         return new ProjectBase(name);
@@ -42,6 +44,7 @@ public class ProjectBase<T extends PeakListBase> {
 
     public ProjectBase(String name) {
         this.name = name;
+        peakPaths = new HashMap<>();
     }
 
     public static ProjectBase getActive() {
