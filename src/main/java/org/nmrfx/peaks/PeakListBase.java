@@ -31,8 +31,58 @@ public class PeakListBase {
     static boolean globalRequireSliderCondition = false;
     protected List<SearchDim> searchDims = new ArrayList<>();
 
+    /**
+     *
+     * @param name
+     * @param n
+     * @param listNum
+     */
+    public PeakListBase(String name, int n, Integer listNum) {
+        listName = name;
+        fileName = "";
+        idLast = -1;
+
+        int i;
+
+        for (i = 0; i < nDim; i++) {
+            spectralDims[i] = new SpectralDim(this, i);
+        }
+
+        peaks = new ArrayList<>();
+        indexMap.clear();
+        ProjectBase.getActive().addPeakList(this, listName);
+        if (listNum == null) {
+            listNum = 1;
+            while (get(listNum).isPresent()) {
+                listNum++;
+            }
+        }
+        listID = listNum;
+    }
+
+    /**
+     *
+     * @param name
+     * @param n
+     */
+    public PeakListBase(String name, int n) {
+        this(name, n, null);
+    }
+
     public static ResonanceFactory resFactory() {
         return resFactory;
+    }
+
+    /**
+     * Returns an Optional containing the PeakList that has the specified id
+     * number or empty value if no PeakList with that id exists.
+     *
+     * @param listID the id of the peak list
+     * @return the Optional containing the PeaKlist or an empty value if no
+     * PeakList with that id exists
+     */
+    public static Optional<PeakListBase> get(int listID) {
+        return ProjectBase.getActive().getPeakList(listID);
     }
     /**
      *
@@ -43,13 +93,6 @@ public class PeakListBase {
      */
     public double scale;
     protected SpectralDim[] spectralDims = null;
-
-    public PeakListBase(int n, Integer listNum) {
-        nDim = n;
-        spectralDims = new SpectralDim[nDim];
-        scale = 1.0;
-        this.listID = listNum == null ? 0 : listNum;
-    }
 
     /**
      *
@@ -456,7 +499,7 @@ public class PeakListBase {
      * @throws IllegalArgumentException
      */
     public static Peak getAPeak(String peakSpecifier,
-                                Integer iDimInt) throws IllegalArgumentException {
+            Integer iDimInt) throws IllegalArgumentException {
         int dot = peakSpecifier.indexOf('.');
 
         if (dot == -1) {
@@ -738,8 +781,8 @@ public class PeakListBase {
      */
     public Peak getNewPeak() {
         Peak peak = new Peak(this, nDim);
-        addPeak( peak);
-        return  peak;
+        addPeak(peak);
+        return peak;
     }
 
     /**
@@ -889,6 +932,7 @@ public class PeakListBase {
         public int getDim() {
             return iDim;
         }
+
         public double getTol() {
             return tol;
         }
