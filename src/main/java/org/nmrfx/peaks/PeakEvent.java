@@ -17,22 +17,29 @@
  */
 
  /*
- * PeakListener.java
+ * PeakEvent.java
  *
- * Created on December 13, 2006, 11:47 AM
+ * Created on December 13, 2006, 11:39 AM
  *
  * To change this template, choose Tools | Template Manager
  * and open the template in the editor.
  */
 package org.nmrfx.peaks;
 
-import java.util.EventListener;
+import java.util.EventObject;
 
 /**
  *
  * @author brucejohnson
  */
-public interface PeakListener extends EventListener {
+public class PeakEvent extends EventObject {
 
-    public void peakListChanged(PeakEvent peakEvent);
+    /**
+     * Creates a new instance of PeakEvent
+     * @param object event object
+     */
+    public PeakEvent(Object object) {
+        super(object);
+
+    }
 }
