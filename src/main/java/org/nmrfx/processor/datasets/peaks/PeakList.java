@@ -67,6 +67,14 @@ public class PeakList extends org.nmrfx.peaks.PeakListBase {
         return project.resFactory;
     }
 
+    public PeakList(String name, int n, Integer listNum) {
+        super(name, n, listNum);
+    }
+
+    public PeakList(String name, int n) {
+        super(name, n);
+    }
+
     public enum ARRAYED_FIT_MODE {
         SINGLE,
         PLANES,
@@ -106,13 +114,6 @@ public class PeakList extends org.nmrfx.peaks.PeakListBase {
      *
      */
     public boolean inMem;
-
-    public PeakList(int n, Integer listNum) {
-        super(n, listNum);
-        nDim = n;
-        spectralDims = new SpectralDim[nDim];
-        scale = 1.0;
-    }
 
     /**
      *
@@ -155,44 +156,6 @@ public class PeakList extends org.nmrfx.peaks.PeakListBase {
             }
         }
 
-    }
-
-    /**
-     *
-     * @param name
-     * @param n
-     * @param listNum
-     */
-    public PeakList(String name, int n, Integer listNum) {
-        super(n, listNum);
-        listName = name;
-        fileName = "";
-        idLast = -1;
-
-        int i;
-
-        for (i = 0; i < nDim; i++) {
-            spectralDims[i] = new SpectralDim(this, i);
-        }
-
-        peaks = new ArrayList<>();
-        indexMap.clear();
-        Project.getActive().addPeakList(this, listName);
-        if (listNum == null) {
-            listNum = 1;
-            while (get(listNum).isPresent()) {
-                listNum++;
-            }
-        }
-    }
-
-    /**
-     *
-     * @param name
-     * @param n
-     */
-    public PeakList(String name, int n) {
-        this(name, n, null);
     }
 
     @Override
@@ -511,18 +474,6 @@ public class PeakList extends org.nmrfx.peaks.PeakListBase {
     public static PeakList get(String listName) {
         ProjectBase<PeakList> project = Project.getActive();
         return project.getPeakList(listName);
-    }
-
-    /**
-     * Returns an Optional containing the PeakList that has the specified id
-     * number or empty value if no PeakList with that id exists.
-     *
-     * @param listID the id of the peak list
-     * @return the Optional containing the PeaKlist or an empty value if no
-     * PeakList with that id exists
-     */
-    public static Optional<PeakList> get(int listID) {
-        return Project.getActive().getPeakList(listID);
     }
 
     /**
@@ -1727,13 +1678,13 @@ public class PeakList extends org.nmrfx.peaks.PeakListBase {
                     for (int iPeak = 0; iPeak < linkedPeaks.size(); iPeak++) {
                         Peak peak2 = linkedPeaks.get(iPeak);
                         peak2.setStatus(1);
-                        v[k] += peak2.peakDims[sDim.iDim].getChemShiftValue();
+                        v[k] += peak2.peakDims[sDim.getDim()].getChemShiftValue();
                     }
 
                     v[k] /= linkedPeaks.size();
 
                     //datum.n = linkedPeaks.size();
-                    tol[k] = sDim.tol;
+                    tol[k] = sDim.getTol();
                 }
                 ClusterItem clusterItem = new ClusterItem(peak, v, iList);
 
@@ -1758,7 +1709,7 @@ public class PeakList extends org.nmrfx.peaks.PeakListBase {
                     for (int iDim = 0; iDim < fDim; iDim++) {
                         SearchDim iSDim = ((PeakList) iPeak.getPeakList()).searchDims.get(iDim);
                         SearchDim jSDim = ((PeakList) jPeak.getPeakList()).searchDims.get(iDim);
-                        linkPeaks(iPeak, iSDim.iDim, jPeak, jSDim.iDim);
+                        linkPeaks(iPeak, iSDim.getDim(), jPeak, jSDim.getDim());
                     }
                 }
                 nClusters++;
