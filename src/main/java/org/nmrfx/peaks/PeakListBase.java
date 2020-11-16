@@ -504,7 +504,7 @@ public class PeakListBase<T extends Peak> {
         if (indexMap.isEmpty()) {
             reIndex();
         }
-        Peak peak = (Peak) indexMap.get(idNum);
+        Peak peak = indexMap.get(idNum);
         return peak;
     }
 
