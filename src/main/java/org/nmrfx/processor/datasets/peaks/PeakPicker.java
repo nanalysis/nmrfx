@@ -23,6 +23,7 @@
  */
 package org.nmrfx.processor.datasets.peaks;
 
+import org.nmrfx.peaks.PeakListBase;
 import org.nmrfx.peaks.SpectralDim;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.DimCounter;
@@ -454,7 +455,7 @@ public class PeakPicker {
         dataset.toBuffer("prepick");
         int[] rows = new int[dataset.getNDim()];  // only works if datset dims = peak list dims
         int nTries = 2;
-        PeakList peakList = PeakList.get(peakPickPar.listName);
+        PeakList peakList = PeakListBase.get(peakPickPar.listName);
         if (peakList != null) {
             for (int i = 0; i < nTries; i++) {
                 try {
@@ -568,7 +569,7 @@ public class PeakPicker {
                 pdim[i] = i;
             }
         }
-        PeakList peakList = PeakList.get(peakPickPar.listName);
+        PeakList peakList = PeakListBase.get(peakPickPar.listName);
         boolean listExists = (peakList != null);
         String mode = peakPickPar.mode;
         boolean alreadyPeaksInRegion = false;
@@ -759,7 +760,7 @@ public class PeakPicker {
 
     public boolean anyPeaksInRegion() {
         boolean foundAny = false;
-        PeakList peakList = PeakList.get(peakPickPar.listName);
+        PeakList peakList = PeakListBase.get(peakPickPar.listName);
         if ((peakList != null) && (peakList.peaks() != null)) {
             double[][] limits = new double[nDim][2];
             int[] dimMap = new int[nDim];
@@ -787,7 +788,7 @@ public class PeakPicker {
 
     public List<Peak> getPeaksInRegion() {
         List<Peak> peaks = Collections.EMPTY_LIST;
-        PeakList peakList = PeakList.get(peakPickPar.listName);
+        PeakList peakList = PeakListBase.get(peakPickPar.listName);
         if ((peakList != null) && (peakList.peaks() != null)) {
             double[][] limits = new double[nDim][2];
             for (int i = 0; i < nDim; i++) {
