@@ -5,8 +5,6 @@ import java.util.*;
 import org.apache.commons.math3.exception.MaxCountExceededException;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.datasets.Nuclei;
-import org.nmrfx.processor.datasets.peaks.PeakList;
-import org.nmrfx.processor.project.Project;
 import org.nmrfx.project.ProjectBase;
 
 public class PeakListBase {
@@ -106,7 +104,7 @@ public class PeakListBase {
      * @param newName
      */
     public void setName(String newName) {
-        ProjectBase<PeakListBase> project = Project.getActive();
+        ProjectBase<PeakListBase> project = ProjectBase.getActive();
         project.removePeakList(listName);
         listName = newName;
         project.addPeakList(this, newName);
