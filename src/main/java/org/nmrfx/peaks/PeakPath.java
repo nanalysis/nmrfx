@@ -1,6 +1,5 @@
 package org.nmrfx.peaks;
 
-import org.nmrfx.processor.datasets.peaks.PeakPathAnalyzer;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -76,6 +75,9 @@ public class PeakPath implements Comparable<PeakPath> {
         radius = maxDis;
     }
 
+    public PeakPaths getPeakPaths() {
+        return peakPaths;
+    }
     public void refresh() {
         for (int i = 0; i < peakDists.size(); i++) {
             PeakDistance peakDis = peakDists.get(i);
@@ -150,10 +152,6 @@ public class PeakPath implements Comparable<PeakPath> {
             }
         }
         return nValid;
-    }
-
-    public double check() {
-        return PeakPathAnalyzer.checkPath(peakPaths, peakDists);
     }
 
     public int getId() {
@@ -319,7 +317,7 @@ public class PeakPath implements Comparable<PeakPath> {
             }
         }
         sBuilder.append(" ");
-        sBuilder.append(String.format("%.3f %.3f %b", radius, check(), confirmed()));
+        sBuilder.append(String.format("%.3f %b", radius, confirmed()));
         return sBuilder.toString();
     }
 }

@@ -19,8 +19,6 @@ package org.nmrfx.peaks;
 
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.processor.datasets.peaks.PeakEvent;
-import org.nmrfx.peaks.PeakListBase;
-import org.nmrfx.processor.datasets.peaks.PeakListener;
 import org.nmrfx.processor.datasets.peaks.PeakPathAnalyzer;
 import org.nmrfx.project.ProjectBase;
 
@@ -281,7 +279,7 @@ public class PeakPaths implements PeakListener {
 
     public String getSTAR3String(int i) {
         StringBuilder sBuilder = new StringBuilder();
-        PeakList peakList = peakLists.get(i);
+        PeakListBase peakList = peakLists.get(i);
         int id = peakList.getId();
         sBuilder.append(id).append(" $").append(peakLists.get(i).getName());
         int nVars = pathMode == PATHMODE.PRESSURE ? 1 : fit0 ? 3 : 2;
@@ -307,7 +305,7 @@ public class PeakPaths implements PeakListener {
     }
 
     public void clearPaths() {
-        for (PeakList peakList : peakLists) {
+        for (PeakListBase peakList : peakLists) {
             for (Peak peak : peakList.peaks()) {
                 if (peak.getStatus() > 0) {
                     peak.setStatus(0);
@@ -403,7 +401,7 @@ public class PeakPaths implements PeakListener {
     public ArrayList<ArrayList<PeakDistance>> getNearPeaks(final Peak startPeak, final double radius) {
         int iList = -1;
         ArrayList<ArrayList<PeakDistance>> filteredLists = new ArrayList<>();
-        for (PeakList peakList : peakLists) {
+        for (PeakListBase peakList : peakLists) {
             ArrayList<PeakDistance> peakArray = new ArrayList<>();
             filteredLists.add(peakArray);
             iList++;
@@ -431,7 +429,7 @@ public class PeakPaths implements PeakListener {
     }
 
     static void filterLists(PeakPaths peakPath) {
-        for (PeakList peakList : peakPath.peakLists) {
+        for (PeakListBase peakList : peakPath.peakLists) {
             int nPeaks = peakList.size();
             for (int j = 0; j < nPeaks; j++) {
                 Peak peak = peakList.getPeak(j);
@@ -455,7 +453,7 @@ public class PeakPaths implements PeakListener {
             int iList = -1;
             boolean ok = true;
             ArrayList<Peak> minPeaks = new ArrayList<>();
-            for (PeakList peakList : peakPath.peakLists) {
+            for (PeakListBase peakList : peakPath.peakLists) {
                 iList++;
                 if (iList == 0) {
                     continue;
@@ -571,7 +569,7 @@ public class PeakPaths implements PeakListener {
         return paths;
     }
 
-    public PeakList getFirstList() {
+    public PeakListBase getFirstList() {
         return firstList;
     }
 
