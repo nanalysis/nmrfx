@@ -18,8 +18,6 @@
 package org.nmrfx.peaks;
 
 import org.nmrfx.datasets.DatasetBase;
-import org.nmrfx.processor.datasets.peaks.PeakEvent;
-import org.nmrfx.processor.datasets.peaks.PeakPathAnalyzer;
 import org.nmrfx.project.ProjectBase;
 
 import java.io.File;
@@ -37,6 +35,46 @@ public class PeakPaths implements PeakListener {
     static Map<String, PeakPaths> peakPaths() {
         ProjectBase project = ProjectBase.getActive();
         return project.peakPaths;
+    }
+
+    public static void purgePaths(PeakPaths peakPath) {
+        Iterator<Peak> keyIter = peakPath.getPathMap().keySet().iterator();
+        while (keyIter.hasNext()) {
+            Peak peak = keyIter.next();
+            if (peak.getStatus() < 0) {
+                keyIter.remove();
+            }
+        }
+        Iterator<Entry<Peak, PeakPath>> entryIter = peakPath.getPathMap().entrySet().iterator();
+        while (entryIter.hasNext()) {
+            Entry<Peak, PeakPath> entry = entryIter.next();
+            List<PeakDistance> newDists = new ArrayList<>();
+            boolean changed = false;
+            for (PeakDistance peakDist : entry.getValue().getPeakDistances()) {
+                if (peakDist == null) {
+                    newDists.add(null);
+                } else {
+                    if (peakDist.getPeak().getStatus() <= 0) {
+                        newDists.add(null);
+                        changed = true;
+                    } else {
+                        newDists.add(peakDist);
+                    }
+                }
+            }
+            if (changed) {
+                entry.setValue(new PeakPath(peakPath, newDists));
+            }
+        }
+        for (Peak peak : peakPath.getFirstList().peaks()) {
+            if (!peak.isDeleted()) {
+                if (!peakPath.getPathMap().containsKey(peak)) {
+                    peakPath.initPath(peak);
+                }
+            }
+
+        }
+
     }
 
     public enum PATHMODE {
@@ -65,7 +103,7 @@ public class PeakPaths implements PeakListener {
         Object source = peakEvent.getSource();
         if (source instanceof PeakListBase) {
             PeakListBase peakList = (PeakListBase) source;
-            PeakPathAnalyzer.purgePaths(this);
+            purgePaths(this);
         }
     }
 

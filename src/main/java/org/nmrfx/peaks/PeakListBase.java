@@ -10,9 +10,6 @@ import java.util.regex.Pattern;
 import org.apache.commons.math3.exception.MaxCountExceededException;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.datasets.Nuclei;
-import org.nmrfx.processor.datasets.peaks.PeakEvent;
-import org.nmrfx.processor.datasets.peaks.PeakList;
-import org.nmrfx.processor.project.Project;
 import org.nmrfx.project.ProjectBase;
 import org.nmrfx.utilities.Util;
 
@@ -1120,7 +1117,7 @@ public class PeakListBase {
      * @return the PeaKlist or null if no PeakList of that name exists
      */
     public static PeakListBase get(String listName) {
-        ProjectBase<PeakList> project = ProjectBase.getActive();
+        ProjectBase<PeakListBase> project = ProjectBase.getActive();
         return project.getPeakList(listName);
     }
 
@@ -1396,7 +1393,7 @@ public class PeakListBase {
      */
     public static boolean isAnyChanged() {
         boolean anyChanged = false;
-        ProjectBase<PeakListBase> project = Project.getActive();
+        ProjectBase<PeakListBase> project = ProjectBase.getActive();
         for (PeakListBase checkList : project.getPeakLists()) {
             if (checkList.isChanged()) {
                 anyChanged = true;
@@ -1411,8 +1408,8 @@ public class PeakListBase {
      *
      */
     public static void clearAllChanged() {
-        ProjectBase<PeakList> project = Project.getActive();
-        for (PeakList checkList : project.getPeakLists()) {
+        ProjectBase<PeakListBase> project = ProjectBase.getActive();
+        for (PeakListBase checkList : project.getPeakLists()) {
             checkList.clearChanged();
         }
     }
@@ -1456,7 +1453,7 @@ public class PeakListBase {
      * @param listName
      */
     public static void remove(String listName) {
-        ProjectBase<PeakListBase> project = Project.getActive();
+        ProjectBase<PeakListBase> project = ProjectBase.getActive();
         PeakListBase peakList = project.getPeakList(listName);
         if (peakList != null) {
             peakList.remove();
@@ -1477,7 +1474,7 @@ public class PeakListBase {
         peaks = null;
         schedExecutor.shutdown();
         schedExecutor = null;
-        Project.getActive().removePeakList(listName);
+        ProjectBase.getActive().removePeakList(listName);
     }
 
     /**
