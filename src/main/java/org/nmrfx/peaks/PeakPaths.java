@@ -19,7 +19,7 @@ package org.nmrfx.peaks;
 
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.processor.datasets.peaks.PeakEvent;
-import org.nmrfx.processor.datasets.peaks.PeakList;
+import org.nmrfx.peaks.PeakListBase;
 import org.nmrfx.processor.datasets.peaks.PeakListener;
 import org.nmrfx.processor.datasets.peaks.PeakPathAnalyzer;
 import org.nmrfx.project.ProjectBase;
@@ -46,12 +46,12 @@ public class PeakPaths implements PeakListener {
         PRESSURE;
     }
     boolean fit0 = false;
-    ArrayList<PeakList> peakLists = new ArrayList<>();
+    ArrayList<PeakListBase> peakLists = new ArrayList<>();
 //    ArrayList<ArrayList<PeakDistance>> filteredLists = new ArrayList<>();
     String name = "path1";
     String details = "";
     Map<Peak, PeakPath> paths = new HashMap<>();
-    final PeakList firstList;
+    final PeakListBase firstList;
     final double[][] indVars;
     int[] peakDims = {0, 1};
     final double[] weights;
@@ -65,23 +65,23 @@ public class PeakPaths implements PeakListener {
     @Override
     public void peakListChanged(PeakEvent peakEvent) {
         Object source = peakEvent.getSource();
-        if (source instanceof PeakList) {
-            PeakList peakList = (PeakList) source;
+        if (source instanceof PeakListBase) {
+            PeakListBase peakList = (PeakListBase) source;
             PeakPathAnalyzer.purgePaths(this);
         }
     }
 
-    public PeakPaths(String name, final List<PeakList> peakLists, double[] concentrations, final double[] binderConcs, final double[] weights, PATHMODE pathMode) {
+    public PeakPaths(String name, final List<PeakListBase> peakLists, double[] concentrations, final double[] binderConcs, final double[] weights, PATHMODE pathMode) {
         this(name, peakLists, concentrations, binderConcs, weights, null, pathMode);
     }
 
-    public PeakPaths(String name, final List<PeakList> peakLists, double[] concentrations,
+    public PeakPaths(String name, final List<PeakListBase> peakLists, double[] concentrations,
                      final double[] binderConcs, final double[] weights, double[] tols, PATHMODE pathMode) {
         this.name = name;
         this.pathMode = pathMode;
         this.peakLists = new ArrayList<>();
         this.datasetNames = new ArrayList<>();
-        for (PeakList peakList : peakLists) {
+        for (PeakListBase peakList : peakLists) {
             peakList.registerListener(this);
             this.peakLists.add(peakList);
             this.datasetNames.add(peakList.getDatasetName());
@@ -116,7 +116,7 @@ public class PeakPaths implements PeakListener {
 
     public static PeakPaths loadPathData(PATHMODE pathMode, File file) throws IOException, IllegalArgumentException {
         List<String> datasetNames = new ArrayList<>();
-        List<PeakList> peakLists = new ArrayList<>();
+        List<PeakListBase> peakLists = new ArrayList<>();
         PeakPaths peakPath = null;
         if (file != null) {
             List<Double> x0List = new ArrayList<>();
@@ -149,10 +149,10 @@ public class PeakPaths implements PeakListener {
                     throw new IllegalArgumentException("\"Dataset \"" + datasetName + "\" doesn't exist\"");
                 }
                 String peakListName = "";
-                PeakList peakList = PeakList.getPeakListForDataset(datasetName);
+                PeakListBase peakList = PeakListBase.getPeakListForDataset(datasetName);
                 if (peakList == null) {
-                    peakListName = PeakList.getNameForDataset(datasetName);
-                    peakList = PeakList.get(peakListName);
+                    peakListName = PeakListBase.getNameForDataset(datasetName);
+                    peakList = PeakListBase.get(peakListName);
                 } else {
                     peakListName = peakList.getName();
                 }
@@ -219,7 +219,7 @@ public class PeakPaths implements PeakListener {
         return name;
     }
 
-    public List<PeakList> getPeakLists() {
+    public List<PeakListBase> getPeakLists() {
         return peakLists;
     }
 

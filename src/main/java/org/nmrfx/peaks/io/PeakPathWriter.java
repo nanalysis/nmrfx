@@ -11,7 +11,7 @@ import java.util.Collection;
 import java.util.List;
 import org.nmrfx.peaks.InvalidPeakException;
 import org.nmrfx.peaks.PeakPath;
-import org.nmrfx.processor.datasets.peaks.PeakList;
+import org.nmrfx.peaks.PeakListBase;
 import org.nmrfx.peaks.PeakPaths;
 import org.nmrfx.peaks.PeakDistance;
 
@@ -23,8 +23,8 @@ public class PeakPathWriter {
 
     public void writeToSTAR3(FileWriter chan, PeakPaths peakPath, int id) throws IOException, InvalidPeakException {
         char stringQuote = '"';
-        List<PeakList> peakLists = peakPath.getPeakLists();
-        PeakList firstList = peakLists.get(0);
+        List<PeakListBase> peakLists = peakPath.getPeakLists();
+        PeakListBase firstList = peakLists.get(0);
 
         chan.write("save_" + peakPath.getName() + "\n");
         chan.write("_NMRFx_peak_path.Sf_category                 ");
@@ -91,7 +91,7 @@ public class PeakPathWriter {
             List<PeakDistance> peakDists = path.getPeakDistances();
             int iList = 0;
             for (PeakDistance peakDist : peakDists) {
-                PeakList peakList = peakLists.get(iList++);
+                PeakListBase peakList = peakLists.get(iList++);
                 chan.write(String.format("%4d", elem++));
                 chan.write(" ");
                 chan.write(String.format("%4d", path.getFirstPeak().getIdNum()));

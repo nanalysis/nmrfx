@@ -30,7 +30,7 @@ import org.nmrfx.peaks.InvalidPeakException;
 import org.nmrfx.peaks.Multiplet;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakDim;
-import org.nmrfx.processor.datasets.peaks.PeakList;
+import org.nmrfx.peaks.PeakListBase;
 import org.nmrfx.peaks.Resonance;
 import org.nmrfx.peaks.SpectralDim;
 
@@ -96,7 +96,7 @@ public class PeakWriter {
         "_Assigned_peak_chem_shift.Resonance_ID",
         "_Assigned_peak_chem_shift.Spectral_peak_list_ID",};
 
-    public static void writePeaksXPK2(String fileName, PeakList peakList) throws IOException, InvalidPeakException {
+    public static void writePeaksXPK2(String fileName, PeakListBase peakList) throws IOException, InvalidPeakException {
         try (FileWriter writer = new FileWriter(fileName)) {
             PeakWriter peakWriter = new PeakWriter();
             peakWriter.writePeaksXPK2(writer, peakList);
@@ -104,7 +104,7 @@ public class PeakWriter {
         }
     }
 
-    public void writePeaksXPK2(FileWriter chan, PeakList peakList) throws IOException, InvalidPeakException {
+    public void writePeaksXPK2(FileWriter chan, PeakListBase peakList) throws IOException, InvalidPeakException {
 
         Map<String, String> properties = peakList.getProperties();
         chan.write("peaklist\tdataset\tndim\tcondition\tscale");
@@ -159,7 +159,7 @@ public class PeakWriter {
         }
     }
 
-    public void writePeakMeasures(FileWriter chan, PeakList peakList) throws IOException, InvalidPeakException {
+    public void writePeakMeasures(FileWriter chan, PeakListBase peakList) throws IOException, InvalidPeakException {
         int nDim = peakList.nDim;
         StringBuilder result = new StringBuilder();
         String sep = "\t";
@@ -199,7 +199,7 @@ public class PeakWriter {
         }
     }
 
-    public void writePeaksXPK(FileWriter chan, PeakList peakList) throws IOException, IllegalArgumentException, InvalidPeakException {
+    public void writePeaksXPK(FileWriter chan, PeakListBase peakList) throws IOException, IllegalArgumentException, InvalidPeakException {
         if (chan == null) {
             throw new IllegalArgumentException("Channel null");
         }
@@ -214,7 +214,7 @@ public class PeakWriter {
         }
     }
 
-    public void writePeaks(FileWriter chan, PeakList peakList) throws IOException, IllegalArgumentException, InvalidPeakException {
+    public void writePeaks(FileWriter chan, PeakListBase peakList) throws IOException, IllegalArgumentException, InvalidPeakException {
         if (chan == null) {
             throw new IllegalArgumentException("Channel null");
         }
@@ -228,7 +228,7 @@ public class PeakWriter {
         }
     }
 
-    public void writePeaksNEF(FileWriter chan, PeakList peakList) throws IOException, InvalidPeakException {
+    public void writePeaksNEF(FileWriter chan, PeakListBase peakList) throws IOException, InvalidPeakException {
         char stringQuote = '"';
         chan.write("save_nef_nmr_spectrum_" + peakList.getName() + "\n");
         chan.write("_nef_nmr_spectrum.sf_category                 ");
@@ -273,7 +273,7 @@ public class PeakWriter {
         chan.write("\nsave_\n\n");
     }
 
-    public void writePeaksSTAR3(FileWriter chan, PeakList peakList) throws IOException, InvalidPeakException {
+    public void writePeaksSTAR3(FileWriter chan, PeakListBase peakList) throws IOException, InvalidPeakException {
         peakList.writeSTAR3Header(chan);
         String[] loopStrings = SpectralDim.getSTAR3LoopStrings();
         chan.write("loop_\n");
@@ -493,7 +493,7 @@ public class PeakWriter {
         chan.write("\nsave_\n\n");
     }
 
-    public void writePeaksToXML(FileWriter chan, PeakList peakList) throws IOException, IllegalArgumentException, InvalidPeakException {
+    public void writePeaksToXML(FileWriter chan, PeakListBase peakList) throws IOException, IllegalArgumentException, InvalidPeakException {
         int i;
         if (chan == null) {
             throw new IllegalArgumentException("Channel null");
@@ -508,7 +508,7 @@ public class PeakWriter {
         }
     }
 
-    public void writePeaksToSparky(Writer chan, PeakList peakList) throws IOException, IllegalArgumentException, InvalidPeakException {
+    public void writePeaksToSparky(Writer chan, PeakListBase peakList) throws IOException, IllegalArgumentException, InvalidPeakException {
         /*
                   Assignment       w1      w2      w3   Data Height
   

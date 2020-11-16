@@ -22,7 +22,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.nmrfx.peaks.Peak;
-import org.nmrfx.processor.datasets.peaks.PeakList;
+import org.nmrfx.peaks.PeakListBase;
 import org.nmrfx.peaks.PeakPaths;
 import org.nmrfx.peaks.PeakPath;
 import org.nmrfx.star.Loop;
@@ -81,8 +81,8 @@ public class PeakPathReader {
             int nConcs = idColumn.size();
             double[] binderConcs = new double[nConcs];
             double[] concentrations = new double[nConcs];
-            List<PeakList> peakLists = new ArrayList<>();
-            Map<Integer, PeakList> idMap = new HashMap<>();
+            List<PeakListBase> peakLists = new ArrayList<>();
+            Map<Integer, PeakListBase> idMap = new HashMap<>();
             for (int iConc = 0; iConc < nConcs; iConc++) {
                 int id = idColumn.get(iConc);
                 binderConcs[iConc] = macroMoleculeConc.get(iConc);
@@ -91,7 +91,7 @@ public class PeakPathReader {
                 if (peakListLabel.startsWith("$")) {
                     peakListLabel = peakListLabel.substring(1);
                 }
-                PeakList peakList = PeakList.get(peakListLabel);
+                PeakListBase peakList = PeakListBase.get(peakListLabel);
                 peakLists.add(peakList);
                 idMap.put(id, peakList);
             }
@@ -174,12 +174,12 @@ public class PeakPathReader {
         }
     }
 
-    PeakPath makePath(PeakPaths peakPath, List<Integer> listIDs, List<Integer> peakIDs, Map<Integer, PeakList> idMap) {
+    PeakPath makePath(PeakPaths peakPath, List<Integer> listIDs, List<Integer> peakIDs, Map<Integer, PeakListBase> idMap) {
         List<Peak> peaks = new ArrayList<>();
         for (int i = 0; i < listIDs.size(); i++) {
             int listID = listIDs.get(i);
             int peakID = peakIDs.get(i);
-            PeakList peakList = idMap.get(listID);
+            PeakListBase peakList = idMap.get(listID);
             Peak peak = peakID < 0 ? null : peakList.getPeakByID(peakID);
             peaks.add(peak);
         }
