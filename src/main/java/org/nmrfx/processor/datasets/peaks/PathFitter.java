@@ -9,9 +9,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BiFunction;
 import org.apache.commons.math3.optim.PointValuePair;
-import org.nmrfx.processor.datasets.peaks.PeakPath.PATHMODE;
-import org.nmrfx.processor.datasets.peaks.PeakPath.Path;
-import org.nmrfx.processor.datasets.peaks.PeakPath.PeakDistance;
+import org.nmrfx.peaks.PeakPaths;
+import org.nmrfx.peaks.PeakPaths.PATHMODE;
+import org.nmrfx.peaks.PeakPath;
+import org.nmrfx.peaks.PeakDistance;
 import org.nmrfx.processor.optimization.Fitter;
 import smile.data.DataFrame;
 import smile.data.formula.Formula;
@@ -25,7 +26,7 @@ import smile.regression.LinearModel;
 public class PathFitter {
 
     PATHMODE pathMode;
-    List<Path> currentPaths = new ArrayList<>();
+    List<PeakPath> currentPaths = new ArrayList<>();
     boolean fit0 = false;
     boolean fitLog = false;
     double[] bestPars;
@@ -214,7 +215,7 @@ public class PathFitter {
 //            parErrs[i] = dStat.getStandardDeviation();
 //        }        for (int iPath = 0; iPath < nPaths; iPath++) {
         for (int iPath = 0; iPath < nPaths; iPath++) {
-            Path path = currentPaths.get(iPath);
+            PeakPath path = currentPaths.get(iPath);
             path.setFitPars(bestPars);
             path.setFitErrs(parErrs);
         }
@@ -263,11 +264,11 @@ public class PathFitter {
         return yValues;
     }
 
-    public void setup(PeakPath peakPath, Path path) {
-        pathMode = peakPath.pathMode;
+    public void setup(PeakPaths peakPath, PeakPath path) {
+        pathMode = peakPath.getPathMode();
         currentPaths.clear();
         currentPaths.add(path);
-        double[][] iVars = peakPath.indVars;
+        double[][] iVars = peakPath.getXValues();
         List<PeakDistance> peakDists = path.getPeakDistances();
         int i = 0;
         double errValue = 0.1;
@@ -276,11 +277,11 @@ public class PathFitter {
         for (PeakDistance peakDist : peakDists) {
             if (peakDist != null) {
                 if (pathMode == PATHMODE.TITRATION) {
-                    double[] row = {iVars[0][i], iVars[1][i], peakDist.distance, errValue};
+                    double[] row = {iVars[0][i], iVars[1][i], peakDist.getDistance(), errValue};
 //                System.out.printf("%2d %.3f %.3f %.3f %.3f\n", i, row[0], row[1], row[2], row[3]);
                     values.add(row);
                 } else {
-                    double[] row = {iVars[0][i], peakDist.deltas[0], peakDist.deltas[1], errValue};
+                    double[] row = {iVars[0][i], peakDist.getDelta(0), peakDist.getDelta(1), errValue};
                     values.add(row);
                 }
             }
@@ -313,16 +314,16 @@ public class PathFitter {
         nPaths = 1;
     }
 
-    public void setup(PeakPath peakPath, List<Path> paths) {
-        pathMode = peakPath.pathMode;
+    public void setup(PeakPaths peakPath, List<PeakPath> paths) {
+        pathMode = peakPath.getPathMode();
         currentPaths.clear();
         currentPaths.addAll(paths);
-        double[][] iVars = peakPath.indVars;
+        double[][] iVars = peakPath.getXValues();
         List<double[]> values = new ArrayList<>();
         List<Integer> pathIndices = new ArrayList<>();
         int iPath = 0;
         int nX = pathMode == PATHMODE.PRESSURE ? 1 : 3;
-        for (Path path : paths) {
+        for (PeakPath path : paths) {
             List<PeakDistance> peakDists = path.getPeakDistances();
             int i = 0;
             double errValue = 0.1;
@@ -330,11 +331,11 @@ public class PathFitter {
             for (PeakDistance peakDist : peakDists) {
                 if (peakDist != null) {
                     if (pathMode == PATHMODE.TITRATION) {
-                        double[] row = {iVars[0][i], iVars[1][i], peakDist.distance, errValue};
+                        double[] row = {iVars[0][i], iVars[1][i], peakDist.getDistance(), errValue};
 //                System.out.printf("%2d %.3f %.3f %.3f %.3f\n", i, row[0], row[1], row[2], row[3]);
                         values.add(row);
                     } else {
-                        double[] row = {iVars[0][i], peakDist.deltas[0], peakDist.deltas[1], errValue};
+                        double[] row = {iVars[0][i], peakDist.getDelta(0), peakDist.getDelta(1), errValue};
                         values.add(row);
                     }
                     pathIndices.add(iPath);
@@ -413,7 +414,7 @@ public class PathFitter {
         bestPars = result.getPoint();
         parErrs = fitter.bootstrap(result.getPoint(), 300);
         for (int iPath = 0; iPath < nPaths; iPath++) {
-            Path path = currentPaths.get(iPath);
+            PeakPath path = currentPaths.get(iPath);
             double[] pars = {bestPars[0], bestPars[iPath + 1]};
             double[] errs = {parErrs[0], parErrs[iPath + 1]};
             path.setFitPars(pars);
