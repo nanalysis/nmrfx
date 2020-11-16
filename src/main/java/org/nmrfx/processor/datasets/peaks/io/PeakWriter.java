@@ -26,7 +26,7 @@ import org.nmrfx.peaks.AbsMultipletComponent;
 import org.nmrfx.peaks.ComplexCoupling;
 import org.nmrfx.peaks.Coupling;
 import org.nmrfx.peaks.CouplingPattern;
-import org.nmrfx.processor.datasets.peaks.InvalidPeakException;
+import org.nmrfx.peaks.InvalidPeakException;
 import org.nmrfx.peaks.Multiplet;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakDim;

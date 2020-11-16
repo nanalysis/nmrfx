@@ -9,7 +9,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
-import org.nmrfx.processor.datasets.peaks.InvalidPeakException;
+import org.nmrfx.peaks.InvalidPeakException;
 import org.nmrfx.processor.datasets.peaks.PeakList;
 import org.nmrfx.processor.datasets.peaks.PeakPath;
 import org.nmrfx.processor.datasets.peaks.PeakPath.PeakDistance;
