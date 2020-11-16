@@ -3,12 +3,21 @@ package org.nmrfx.peaks;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.commons.math3.exception.MaxCountExceededException;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.datasets.Nuclei;
+import org.nmrfx.processor.datasets.peaks.PeakEvent;
 import org.nmrfx.processor.datasets.peaks.PeakList;
+import org.nmrfx.processor.project.Project;
 import org.nmrfx.project.ProjectBase;
+import org.nmrfx.utilities.Util;
+
+import static java.lang.Double.compare;
+import static java.util.Comparator.comparing;
 
 public class PeakListBase {
 
@@ -17,6 +26,10 @@ public class PeakListBase {
      *
      */
     public static PeakListBase clusterOrigin = null;
+    /**
+     *
+     */
+    static List<PeakListener> globalListeners = new ArrayList<>();
     public int idLast;
     /**
      *
@@ -35,6 +48,9 @@ public class PeakListBase {
     protected List<SearchDim> searchDims = new ArrayList<>();
     Optional<Measures> measures = Optional.empty();
     Map<String, String> properties = new HashMap<>();
+    List<PeakListener> listeners = new ArrayList<>();
+    protected boolean changed = false;
+    protected ScheduledThreadPoolExecutor schedExecutor = new ScheduledThreadPoolExecutor(2);
 
     /**
      *
@@ -316,6 +332,116 @@ public class PeakListBase {
 
     public List<SearchDim> getSearchDims() {
         return searchDims;
+    }
+
+    /**
+     *
+     * @param oldListener
+     */
+    public void removeListener(PeakListener oldListener) {
+        listeners.remove(oldListener);
+    }
+
+    /**
+     *
+     * @param newListener
+     */
+    public void registerListener(PeakListener newListener) {
+        if (!listeners.contains(newListener)) {
+            listeners.add(newListener);
+        }
+    }
+
+    static void registerGlobalListener(PeakListener newListener) {
+        if (!globalListeners.contains(newListener)) {
+            globalListeners.add(newListener);
+        }
+    }
+
+    public void notifyListeners() {
+        for (PeakListener listener : listeners) {
+            listener.peakListChanged(new PeakEvent(this));
+        }
+    }
+
+    public static void notifyGlobalListeners() {
+        for (PeakListener listener : globalListeners) {
+            listener.peakListChanged(new PeakEvent("*"));
+        }
+    }
+
+    /**
+     * Copies an existing peak list.
+     *
+     * @param name a string with the name of an existing peak list.
+     * @param allLinks a boolean specifying whether or not to link peak
+     * dimensions.
+     * @param merge a boolean specifying whether or not to merge peak labels.
+     * @return a list that is a copy of the peak list with the input name.
+     * @throws IllegalArgumentException if a peak with the input name doesn't
+     * exist.
+     */
+    public PeakListBase copy(final String name, final boolean allLinks, boolean merge, boolean copyLabels) {
+        PeakListBase newPeakList;
+        if (merge) {
+            newPeakList = (PeakListBase) get(name);
+            if (newPeakList == null) {
+                throw new IllegalArgumentException("Peak list " + name + " doesn't exist");
+            }
+        } else {
+            newPeakList = new PeakListBase(name, nDim);
+            newPeakList.searchDims.addAll(searchDims);
+            newPeakList.fileName = fileName;
+            newPeakList.scale = scale;
+            newPeakList.setDetails(details);
+            newPeakList.sampleLabel = sampleLabel;
+            newPeakList.sampleConditionLabel = getSampleConditionLabel();
+
+            for (int i = 0; i < nDim; i++) {
+                newPeakList.spectralDims[i] = spectralDims[i].copy(newPeakList);
+            }
+        }
+        for (int i = 0; i < peaks.size(); i++) {
+            Peak peak = (Peak) peaks.get(i);
+            Peak newPeak = peak.copy(newPeakList);
+            if (!merge) {
+                newPeak.setIdNum(peak.getIdNum());
+            }
+            newPeakList.addPeak(newPeak);
+            if (merge || copyLabels) {
+                peak.copyLabels(newPeak);
+            }
+            if (!merge && allLinks) {
+                for (int j = 0; j < peak.peakDims.length; j++) {
+                    PeakDim peakDim1 = peak.peakDims[j];
+                    PeakDim peakDim2 = newPeak.peakDims[j];
+                    PeakListBase.linkPeakDims(peakDim1, peakDim2);
+                }
+            }
+        }
+        newPeakList.idLast = idLast;
+        newPeakList.reIndex();
+        if (!merge && !allLinks) {
+            for (int i = 0; i < peaks.size(); i++) {
+                Peak oldPeak = peaks.get(i);
+                Peak newPeak = newPeakList.getPeak(i);
+                for (int j = 0; j < oldPeak.peakDims.length; j++) {
+                    List<PeakDim> linkedPeakDims = getLinkedPeakDims(oldPeak, j);
+                    PeakDim newPeakDim = newPeak.peakDims[j];
+                    for (PeakDim peakDim : linkedPeakDims) {
+                        Peak linkPeak = (Peak) peakDim.getPeak();
+                        if ((linkPeak != oldPeak) && (this == linkPeak.getPeakList())) {
+                            int iPeakDim = peakDim.getSpectralDim();
+                            int linkNum = linkPeak.getIdNum();
+                            Peak targetPeak = newPeakList.getPeak(linkNum);
+                            PeakDim targetDim = targetPeak.getPeakDim(iPeakDim);
+                            PeakListBase.linkPeakDims(newPeakDim, targetDim);
+                        }
+                    }
+                }
+            }
+        }
+        return newPeakList;
     }
 
     public void peakListUpdated(Object object) {
@@ -1102,6 +1228,332 @@ public class PeakListBase {
     }
 
     /**
+     * Search peak list for peaks that match the specified chemical shifts.
+     * Before using, a search template needs to be set up.
+     *
+     * @param ppms An array of chemical shifts to search
+     * @return A list of matching peaks
+     * @throws IllegalArgumentException thrown if ppm length not equal to search
+     * template length or if peak labels don't match search template
+     */
+    public List<Peak> findPeaks(double[] ppms)
+            throws IllegalArgumentException {
+        if (ppms.length != searchDims.size()) {
+            throw new IllegalArgumentException("Search dimensions (" + ppms.length
+                    + ") don't match template dimensions (" + searchDims.size() + ")");
+        }
+
+        double[][] limits = new double[nDim][2];
+        int[] searchDim = new int[nDim];
+
+        for (int j = 0; j < nDim; j++) {
+            searchDim[j] = -1;
+        }
+
+        boolean matched = true;
+
+        int i = 0;
+        for (SearchDim sDim : searchDims) {
+            searchDim[i] = sDim.getDim();
+
+            if (searchDim[i] == -1) {
+                matched = false;
+
+                break;
+            }
+            double tol = sDim.getTol();
+            limits[i][1] = ppms[i] - tol;
+            limits[i][0] = ppms[i] + tol;
+            i++;
+        }
+
+        if (!matched) {
+            throw new IllegalArgumentException("Peak Label doesn't match template label");
+        }
+
+        return (locatePeaks(limits, searchDim));
+    }
+
+    /**
+     *
+     * @param limits
+     * @param dim
+     * @return
+     */
+    public List<Peak> locatePeaks(double[][] limits, int[] dim) {
+        return locatePeaks(limits, dim, null);
+    }
+
+    /**
+     * Locate what peaks are contained within certain limits.
+     *
+     * @param limits A multidimensional array of chemical shift plot limits to
+     * search.
+     * @param dim An array of which peak list dim corresponds to dim in the
+     * limit array.
+     * @param foldLimits An optional multidimensional array of plot limits where
+     * folded peaks should appear. Can be null.
+     * @return A list of matching peaks
+     */
+    public List<Peak> locatePeaks(double[][] limits, int[] dim, double[][] foldLimits) {
+        List<org.nmrfx.peaks.PeakDistance> foundPeaks = new ArrayList<>();
+//        final Vector peakDistance = new Vector();
+
+        int i;
+        int j;
+        Peak peak;
+        int nSearchDim = limits.length;
+        if (nSearchDim > nDim) {
+            nSearchDim = nDim;
+        }
+        double[] lCtr = new double[nSearchDim];
+        double[] width = new double[nSearchDim];
+
+        for (i = 0; i < nSearchDim; i++) {
+            //FIXME 10.0 makes no sense, need to use size of dataset
+            //System.out.println(i+" "+limits[i][0]+" "+limits[i][1]);
+            if (limits[i][0] == limits[i][1]) {
+                limits[i][0] = limits[i][0] - (getSpectralDim(i).getSw() / getSpectralDim(i).getSf() / 10.0);
+                limits[i][1] = limits[i][1] + (getSpectralDim(i).getSw() / getSpectralDim(i).getSf() / 10.0);
+            }
+
+            if (limits[i][0] < limits[i][1]) {
+                double hold = limits[i][0];
+                limits[i][0] = limits[i][1];
+                limits[i][1] = hold;
+            }
+
+//            System.out.println(i + " " + limits[i][0] + " " + limits[i][1]);
+//            System.out.println(i + " " + foldLimits[i][0] + " " + foldLimits[i][1]);
+            lCtr[i] = (limits[i][0] + limits[i][1]) / 2.0;
+            width[i] = Math.abs(limits[i][0] - limits[i][1]);
+        }
+
+        int nPeaks = size();
+
+        for (i = 0; i < nPeaks; i++) {
+            peak = peaks.get(i);
+            boolean ok = true;
+
+            double sumDistance = 0.0;
+
+            for (j = 0; j < nSearchDim; j++) {
+                if ((dim.length <= j) || (dim[j] == -1)) {
+                    continue;
+                }
+
+                double ctr = peak.peakDims[dim[j]].getChemShiftValue();
+                if ((foldLimits != null) && (foldLimits[j] != null)) {
+                    double fDelta = Math.abs(foldLimits[j][0] - foldLimits[j][1]);
+                    ctr = foldPPM(ctr, fDelta, foldLimits[j][0], foldLimits[j][1]);
+                }
+
+                if ((ctr >= limits[j][0]) || (ctr < limits[j][1])) {
+                    ok = false;
+
+                    break;
+                }
+
+                sumDistance += (((ctr - lCtr[j]) * (ctr - lCtr[j])) / (width[j] * width[j]));
+            }
+
+            if (!ok) {
+                continue;
+            }
+
+            double distance = Math.sqrt(sumDistance);
+            org.nmrfx.peaks.PeakDistance peakDis = new org.nmrfx.peaks.PeakDistance(peak, distance);
+            foundPeaks.add(peakDis);
+        }
+
+        foundPeaks.sort(comparing(org.nmrfx.peaks.PeakDistance::getDistance));
+        List<Peak> sPeaks = new ArrayList<>();
+        for (org.nmrfx.peaks.PeakDistance peakDis : foundPeaks) {
+            sPeaks.add(peakDis.peak);
+        }
+
+        return (sPeaks);
+    }
+
+    /**
+     *
+     * @return
+     */
+    public boolean isChanged() {
+        return changed;
+    }
+
+    /**
+     *
+     */
+    public void clearChanged() {
+        changed = false;
+    }
+
+    /**
+     *
+     * @return
+     */
+    public static boolean isAnyChanged() {
+        boolean anyChanged = false;
+        ProjectBase<PeakListBase> project = Project.getActive();
+        for (PeakListBase checkList : project.getPeakLists()) {
+            if (checkList.isChanged()) {
+                anyChanged = true;
+                break;
+
+            }
+        }
+        return anyChanged;
+    }
+
+    /**
+     *
+     */
+    public static void clearAllChanged() {
+        ProjectBase<PeakList> project = Project.getActive();
+        for (PeakList checkList : project.getPeakLists()) {
+            checkList.clearChanged();
+        }
+    }
+
+    /**
+     *
+     * @return
+     */
+    public boolean valid() {
+        return (peaks != null) && (get(listName) != null);
+    }
+
+    /**
+     *
+     * @param dim
+     * @param ascending
+     * @throws IllegalArgumentException
+     */
+    public void sortPeaks(int dim, boolean ascending) throws IllegalArgumentException {
+//        checkDim(dim);
+        PeakListBase.sortPeaks(peaks, dim, ascending);
+        reIndex();
+    }
+
+    /**
+     *
+     * @param peaks
+     * @param iDim
+     * @param ascending
+     */
+    public static void sortPeaks(final List<Peak> peaks, int iDim, boolean ascending) {
+        if (ascending) {
+            peaks.sort((Peak a, Peak b) -> compare(a.peakDims[iDim].getChemShift(), b.peakDims[iDim].getChemShift()));
+        } else {
+            peaks.sort((Peak a, Peak b) -> compare(b.peakDims[iDim].getChemShift(), a.peakDims[iDim].getChemShift()));
+        }
+    }
+
+    /**
+     *
+     * @param listName
+     */
+    public static void remove(String listName) {
+        ProjectBase<PeakListBase> project = Project.getActive();
+        PeakListBase peakList = project.getPeakList(listName);
+        if (peakList != null) {
+            peakList.remove();
+        }
+    }
+
+    public void remove() {
+        for (Peak peak : peaks) {
+            for (PeakDim peakDim : peak.peakDims) {
+                peakDim.remove();
+                if (peakDim.hasMultiplet()) {
+                    Multiplet multiplet = peakDim.getMultiplet();
+                }
+            }
+            peak.markDeleted();
+        }
+        peaks.clear();
+        peaks = null;
+        schedExecutor.shutdown();
+        schedExecutor = null;
+        Project.getActive().removePeakList(listName);
+    }
+
+    /**
+     *
+     * @param matchStrings
+     * @param useRegExp
+     * @param useOrder
+     * @return
+     */
+    public List<Peak> matchPeaks(final String[] matchStrings, final boolean useRegExp, final boolean useOrder) {
+        int j;
+        int k;
+        int l;
+        boolean ok = false;
+        List<Peak> result = new ArrayList<>();
+        Pattern[] patterns = new Pattern[matchStrings.length];
+        String[] simplePat = new String[matchStrings.length];
+        if (useRegExp) {
+            for (k = 0; k < matchStrings.length; k++) {
+                patterns[k] = Pattern.compile(matchStrings[k].toUpperCase().trim());
+            }
+        } else {
+            for (k = 0; k < matchStrings.length; k++) {
+                simplePat[k] = matchStrings[k].toUpperCase().trim();
+            }
+        }
+
+        for (Peak peak : peaks) {
+            if (peak.getStatus() < 0) {
+                continue;
+            }
+
+            for (k = 0; k < matchStrings.length; k++) {
+                ok = false;
+                if (useOrder) {
+                    if (useRegExp) {
+                        Matcher matcher = patterns[k].matcher(peak.peakDims[k].getLabel().toUpperCase());
+                        if (matcher.find()) {
+                            ok = true;
+                        }
+                    } else if (Util.stringMatch(peak.peakDims[k].getLabel().toUpperCase(), simplePat[k])) {
+                        ok = true;
+                    } else if ((simplePat[k].length() == 0) && (peak.peakDims[k].getLabel().length() == 0)) {
+                        ok = true;
+                    }
+                } else {
+                    for (l = 0; l < nDim; l++) {
+                        if (useRegExp) {
+                            Matcher matcher = patterns[k].matcher(peak.peakDims[l].getLabel().toUpperCase());
+                            if (matcher.find()) {
+                                ok = true;
+                                break;
+                            }
+                        } else if (Util.stringMatch(peak.peakDims[l].getLabel().toUpperCase(), simplePat[k])) {
+                            ok = true;
+                            break;
+                        } else if ((simplePat[k].length() == 0) && (peak.peakDims[l].getLabel().length() == 0)) {
+                            ok = true;
+                            break;
+                        }
+                    }
+                }
+                if (!ok) {
+                    break;
+                }
+            }
+
+            if (ok) {
+                result.add(peak);
+            }
+        }
+
+        return (result);
+    }
+
+    /**
      *
      * @return
      */
@@ -1316,6 +1768,21 @@ public class PeakListBase {
 
         public double getTol() {
             return tol;
+        }
+    }
+
+    class PeakDistance {
+
+        final Peak peak;
+        final double distance;
+
+        PeakDistance(Peak peak, double distance) {
+            this.peak = peak;
+            this.distance = distance;
+        }
+
+        double getDistance() {
+            return distance;
         }
     }
 }
