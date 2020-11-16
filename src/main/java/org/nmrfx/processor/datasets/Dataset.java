@@ -130,24 +130,8 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
     public Dataset(String fullName, String name, boolean writable, boolean useCacheFile)
             throws IOException {
         // fixme  FileUtil class needs to be public file = FileUtil.getFileObj(interp,fullName);
-        file = new File(fullName);
+        super(fullName, name, writable, useCacheFile);
 
-        String newName;
-
-        if ((name == null) || name.equals("") || name.equals(fullName)) {
-            newName = file.getName();
-        } else {
-            newName = name;
-        }
-        newName = newName.replace(' ', '_');
-
-        canonicalName = file.getCanonicalPath();
-        fileName = newName;
-
-        if (!file.exists()) {
-            throw new IllegalArgumentException(
-                    "File " + fullName + " doesn't exist");
-        }
         RandomAccessFile raFile;
         if (file.canWrite()) {
             raFile = new RandomAccessFile(file, "rw");
