@@ -19,45 +19,6 @@ import java.util.*;
 
 public class PeakPathAnalyzer {
     OptFunction optFunction = new Quadratic10();
-    public static void purgePaths(PeakPaths peakPath) {
-        Iterator<Peak> keyIter = peakPath.getPathMap().keySet().iterator();
-        while (keyIter.hasNext()) {
-            Peak peak = keyIter.next();
-            if (peak.getStatus() < 0) {
-                keyIter.remove();
-            }
-        }
-        Iterator<Map.Entry<Peak, PeakPath>> entryIter = peakPath.getPathMap().entrySet().iterator();
-        while (entryIter.hasNext()) {
-            Map.Entry<Peak, PeakPath> entry = entryIter.next();
-            List<PeakDistance> newDists = new ArrayList<>();
-            boolean changed = false;
-            for (PeakDistance peakDist : entry.getValue().getPeakDistances()) {
-                if (peakDist == null) {
-                    newDists.add(null);
-                } else {
-                    if (peakDist.getPeak().getStatus() <= 0) {
-                        newDists.add(null);
-                        changed = true;
-                    } else {
-                        newDists.add(peakDist);
-                    }
-                }
-            }
-            if (changed) {
-                entry.setValue(new PeakPath(peakPath, newDists));
-            }
-        }
-        for (Peak peak : peakPath.getFirstList().peaks()) {
-            if (!peak.isDeleted()) {
-                if (!peakPath.getPathMap().containsKey(peak)) {
-                    peakPath.initPath(peak);
-                }
-            }
-
-        }
-
-    }
 
     public static double[] quadFitter(OptFunction optFunction, double[] xValues, double[] pValues, double[] yValues) {
 
