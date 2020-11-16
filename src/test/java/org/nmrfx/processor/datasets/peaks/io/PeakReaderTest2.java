@@ -5,6 +5,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.junit.Assert;
 import org.junit.Test;
+import org.nmrfx.peaks.PeakListBase;
 import org.nmrfx.peaks.io.PeakReader;
 import org.nmrfx.processor.datasets.peaks.PeakList;
 
@@ -151,7 +152,7 @@ public class PeakReaderTest2 {
         PeakList peakList = getPeakList();
         Assert.assertNotNull(peakList);
         peakReader.linkResonances();
-        Assert.assertTrue(PeakList.isLinked(peakList.getPeak(2), 0, peakList.getPeak(3)));
+        Assert.assertTrue(PeakListBase.isLinked(peakList.getPeak(2), 0, peakList.getPeak(3)));
     }
 
     @Test
@@ -159,7 +160,7 @@ public class PeakReaderTest2 {
         PeakList peakList = getPeakList();
         Assert.assertNotNull(peakList);
         peakReader.linkResonances();
-        Assert.assertFalse(PeakList.isLinked(peakList.getPeak(1), 0, peakList.getPeak(3)));
+        Assert.assertFalse(PeakListBase.isLinked(peakList.getPeak(1), 0, peakList.getPeak(3)));
     }
 
     @Test

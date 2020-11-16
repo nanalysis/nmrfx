@@ -410,7 +410,7 @@ public class PeakFitter {
                     }
                 }
             }
-            List<Peak> linkedPeaks = PeakList.getLinks(peaks[iPeak], true);
+            List<Peak> linkedPeaks = PeakListBase.getLinks(peaks[iPeak], true);
             for (Peak lPeak : linkedPeaks) {
                 if (lPeak.getFlag(5)) {
                     fixWeakDoublet = false;

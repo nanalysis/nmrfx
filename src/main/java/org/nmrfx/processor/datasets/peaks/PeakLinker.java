@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.nmrfx.peaks.PeakDim;
+import org.nmrfx.peaks.PeakListBase;
 import org.nmrfx.project.ProjectBase;
 
 /**
@@ -51,7 +52,7 @@ public class PeakLinker {
                 PeakDim rootDim = dimList.get(0);
                 for (int i = 1, n = dimList.size(); i < n; i++) {
                     PeakDim linkDim = dimList.get(i);
-                    PeakList.linkPeakDims(rootDim, linkDim);
+                    PeakListBase.linkPeakDims(rootDim, linkDim);
                     System.out.println("link " + rootDim.getPeak().getName() + " " + linkDim.getPeak().getName());
                 }
             }
