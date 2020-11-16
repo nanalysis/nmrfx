@@ -49,6 +49,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.nmrfx.processor.datasets.MatrixTypeService;
+import org.nmrfx.utilities.ProgressUpdater;
 
 /**
  * The Processor contains all processes. It also contains the "current
