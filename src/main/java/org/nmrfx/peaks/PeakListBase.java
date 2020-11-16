@@ -30,6 +30,8 @@ public class PeakListBase {
     boolean requireSliderCondition = false;
     static boolean globalRequireSliderCondition = false;
     protected List<SearchDim> searchDims = new ArrayList<>();
+    Optional<Measures> measures = Optional.empty();
+    Map<String, String> properties = new HashMap<>();
 
     /**
      *
@@ -127,6 +129,117 @@ public class PeakListBase {
         if (peakDim != null) {
             peakDim.unLink();
         }
+    }
+
+    /**
+     *
+     * @param peak
+     * @return
+     */
+    public static List getLinks(Peak peak) {
+        List peakDims = getLinkedPeakDims(peak, 0);
+        ArrayList peaks = new ArrayList(peakDims.size());
+        for (int i = 0; i < peakDims.size(); i++) {
+            PeakDim peakDim = (PeakDim) peakDims.get(i);
+            peaks.add(peakDim.getPeak());
+        }
+        return peaks;
+    }
+
+    /**
+     *
+     * @param peak
+     * @param iDim
+     * @return
+     */
+    public static List<Peak> getLinks(final Peak peak, final int iDim) {
+        final List<PeakDim> peakDims = getLinkedPeakDims(peak, iDim);
+        final List<Peak> peaks = new ArrayList<>(peakDims.size());
+        for (int i = 0; i < peakDims.size(); i++) {
+            PeakDim peakDim = (PeakDim) peakDims.get(i);
+            peaks.add((Peak) peakDim.getPeak());
+        }
+        return peaks;
+    }
+
+    /**
+     *
+     * @param peakA
+     * @param dimA
+     * @param peakB
+     * @param dimB
+     */
+    public static void linkPeaks(Peak peakA, String dimA, Peak peakB, String dimB) {
+        PeakDim peakDimA = peakA.getPeakDim(dimA);
+        PeakDim peakDimB = peakB.getPeakDim(dimB);
+        if ((peakDimA != null) && (peakDimB != null)) {
+            PeakListBase.linkPeakDims(peakDimA, peakDimB);
+        }
+    }
+
+    /**
+     *
+     * @param peakA
+     * @param dimA
+     * @param peakB
+     * @param dimB
+     */
+    public static void linkPeaks(Peak peakA, int dimA, Peak peakB, int dimB) {
+        PeakDim peakDimA = peakA.getPeakDim(dimA);
+        PeakDim peakDimB = peakB.getPeakDim(dimB);
+        if ((peakDimA != null) && (peakDimB != null)) {
+            PeakListBase.linkPeakDims(peakDimA, peakDimB);
+        }
+    }
+
+    /**
+     *
+     * @param peakDimA
+     * @param peakDimB
+     */
+    public static void linkPeakDims(PeakDim peakDimA, PeakDim peakDimB) {
+        Resonance resonanceA = peakDimA.getResonance();
+        Resonance resonanceB = peakDimB.getResonance();
+
+        Resonance.merge(resonanceA, resonanceB);
+
+        peakDimA.peakDimUpdated();
+        peakDimB.peakDimUpdated();
+    }
+
+    /**
+     *
+     * @param peakDimA
+     * @param peakDimB
+     */
+    public static void couplePeakDims(PeakDim peakDimA, PeakDim peakDimB) {
+        Resonance resonanceA = peakDimA.getResonance();
+        Resonance resonanceB = peakDimB.getResonance();
+
+        Resonance.merge(resonanceA, resonanceB);
+
+        Multiplet.merge(peakDimA, peakDimB);
+        peakDimA.peakDimUpdated();
+        peakDimB.peakDimUpdated();
+    }
+
+    /**
+     *
+     * @param peak1
+     * @param dim1
+     * @param peak2
+     * @return
+     */
+    public static boolean isLinked(Peak peak1, int dim1, Peak peak2) {
+        boolean result = false;
+        List<PeakDim> peakDims = getLinkedPeakDims(peak1, dim1);
+        for (PeakDim peakDim : peakDims) {
+            if (peakDim.getPeak() == peak2) {
+                result = true;
+                break;
+            }
+        }
+        return result;
     }
 
     /**
@@ -779,6 +892,73 @@ public class PeakListBase {
      *
      * @return
      */
+    public boolean hasMeasures() {
+        return measures.isPresent();
+    }
+
+    /**
+     *
+     * @param measure
+     */
+    public void setMeasures(Measures measure) {
+        measures = Optional.of(measure);
+    }
+
+    /**
+     *
+     * @return
+     */
+    public double[] getMeasureValues() {
+        double[] values = null;
+        if (hasMeasures()) {
+            values = measures.get().getValues();
+        }
+        return values;
+    }
+
+    /**
+     *
+     * @param name
+     * @return
+     */
+    public String getProperty(String name) {
+        String result = "";
+        if (properties.containsKey(name)) {
+            result = properties.get(name);
+        }
+        return result;
+    }
+
+    /**
+     *
+     * @param name
+     * @return
+     */
+    public boolean hasProperty(String name) {
+        return properties.containsKey(name);
+    }
+
+    /**
+     *
+     * @param name
+     * @param value
+     */
+    public void setProperty(String name, String value) {
+        properties.put(name, value);
+    }
+
+    /**
+     *
+     * @return
+     */
+    public Map<String, String> getProperties() {
+        return properties;
+    }
+
+    /**
+     *
+     * @return
+     */
     public Peak getNewPeak() {
         Peak peak = new Peak(this, nDim);
         addPeak(peak);
@@ -810,14 +990,16 @@ public class PeakListBase {
     /**
      *
      * @param peak
+     * @param requireSameList
      * @return
      */
-    public static List getLinks(Peak peak) {
-        List peakDims = getLinkedPeakDims(peak, 0);
-        List peaks = new ArrayList(peakDims.size());
-        for (int i = 0; i < peakDims.size(); i++) {
-            PeakDim peakDim = (PeakDim) peakDims.get(i);
-            peaks.add(peakDim.getPeak());
+    public static List<Peak> getLinks(Peak peak, boolean requireSameList) {
+        List<PeakDim> peakDims = getLinkedPeakDims(peak, 0);
+        ArrayList<Peak> peaks = new ArrayList(peakDims.size());
+        for (PeakDim peakDim : peakDims) {
+            if (!requireSameList || (peakDim.getPeak().peakList == peak.peakList)) {
+                peaks.add((Peak) peakDim.getPeak());
+            }
         }
         return peaks;
     }
