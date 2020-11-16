@@ -29,6 +29,7 @@ import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.DatasetParameterFile;
 import org.nmrfx.processor.datasets.DatasetRegion;
 import org.nmrfx.peaks.InvalidPeakException;
+import org.nmrfx.peaks.PeakListBase;
 import org.nmrfx.processor.datasets.peaks.PeakList;
 import org.nmrfx.peaks.io.PeakReader;
 import org.nmrfx.peaks.io.PeakWriter;
@@ -162,7 +163,7 @@ public class Project extends ProjectBase {
                 for (Path f : fileStream) {
                     String filePath = f.toString();
                     System.out.println("read peaks: " + f.toString());
-                    PeakList peakList = peakReader.readXPK2Peaks(f.toString());
+                    PeakListBase peakList = peakReader.readXPK2Peaks(f.toString());
                     String mpk2File = filePath.substring(0, filePath.length() - 4) + "mpk2";
                     Path mpk2Path = fileSystem.getPath(mpk2File);
                     if (Files.exists(mpk2Path)) {

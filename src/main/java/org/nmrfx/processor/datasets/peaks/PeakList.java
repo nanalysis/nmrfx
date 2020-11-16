@@ -31,7 +31,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.apache.commons.math3.analysis.UnivariateFunction;
-import org.apache.commons.math3.exception.MaxCountExceededException;
 import org.apache.commons.math3.exception.TooManyEvaluationsException;
 import org.apache.commons.math3.optimization.ConvergenceChecker;
 import org.apache.commons.math3.optimization.GoalType;
@@ -127,8 +126,6 @@ public class PeakList extends org.nmrfx.peaks.PeakListBase {
     static boolean needToFireEvent = false;
     ScheduledThreadPoolExecutor schedExecutor = new ScheduledThreadPoolExecutor(2);
     ScheduledFuture futureUpdate = null;
-    Optional<Measures> measures = Optional.empty();
-    Map<String, String> properties = new HashMap<>();
 
     class UpdateTask implements Runnable {
 
@@ -208,7 +205,7 @@ public class PeakList extends org.nmrfx.peaks.PeakListBase {
                 for (int j = 0; j < peak.peakDims.length; j++) {
                     PeakDim peakDim1 = peak.peakDims[j];
                     PeakDim peakDim2 = newPeak.peakDims[j];
-                    PeakList.linkPeakDims(peakDim1, peakDim2);
+                    PeakListBase.linkPeakDims(peakDim1, peakDim2);
                 }
             }
         }
@@ -228,7 +225,7 @@ public class PeakList extends org.nmrfx.peaks.PeakListBase {
                             int linkNum = linkPeak.getIdNum();
                             Peak targetPeak = newPeakList.getPeak(linkNum);
                             PeakDim targetDim = targetPeak.getPeakDim(iPeakDim);
-                            PeakList.linkPeakDims(newPeakDim, targetDim);
+                            PeakListBase.linkPeakDims(newPeakDim, targetDim);
                         }
                     }
                 }
@@ -380,73 +377,6 @@ public class PeakList extends org.nmrfx.peaks.PeakListBase {
         for (PeakList checkList : project.getPeakLists()) {
             checkList.clearChanged();
         }
-    }
-
-    /**
-     *
-     * @return
-     */
-    public boolean hasMeasures() {
-        return measures.isPresent();
-    }
-
-    /**
-     *
-     * @param measure
-     */
-    public void setMeasures(Measures measure) {
-        measures = Optional.of(measure);
-    }
-
-    /**
-     *
-     * @return
-     */
-    public double[] getMeasureValues() {
-        double[] values = null;
-        if (hasMeasures()) {
-            values = measures.get().getValues();
-        }
-        return values;
-    }
-
-    /**
-     *
-     * @param name
-     * @return
-     */
-    public String getProperty(String name) {
-        String result = "";
-        if (properties.containsKey(name)) {
-            result = properties.get(name);
-        }
-        return result;
-    }
-
-    /**
-     *
-     * @param name
-     * @return
-     */
-    public boolean hasProperty(String name) {
-        return properties.containsKey(name);
-    }
-
-    /**
-     *
-     * @param name
-     * @param value
-     */
-    public void setProperty(String name, String value) {
-        properties.put(name, value);
-    }
-
-    /**
-     *
-     * @return
-     */
-    public Map<String, String> getProperties() {
-        return properties;
     }
 
     /**
@@ -1762,140 +1692,14 @@ public class PeakList extends org.nmrfx.peaks.PeakListBase {
             if (roots[cluster] == null) {
                 roots[cluster] = peaks.get(i);
             } else {
-                PeakList.linkPeaks(roots[cluster], iDim, peaks.get(i), iDim);
+                PeakListBase.linkPeaks(roots[cluster], iDim, peaks.get(i), iDim);
             }
         }
     }
 
-    /**
-     *
-     * @param peak
-     * @param requireSameList
-     * @return
-     */
-    public static List<Peak> getLinks(Peak peak, boolean requireSameList) {
-        List<PeakDim> peakDims = getLinkedPeakDims(peak, 0);
-        ArrayList<Peak> peaks = new ArrayList(peakDims.size());
-        for (PeakDim peakDim : peakDims) {
-            if (!requireSameList || (peakDim.getPeak().peakList == peak.peakList)) {
-                peaks.add((Peak) peakDim.getPeak());
-            }
-        }
-        return peaks;
-    }
-
-    /**
-     *
-     * @param peak
-     * @return
-     */
-    public static List getLinks(Peak peak) {
-        List peakDims = getLinkedPeakDims(peak, 0);
-        ArrayList peaks = new ArrayList(peakDims.size());
-        for (int i = 0; i < peakDims.size(); i++) {
-            PeakDim peakDim = (PeakDim) peakDims.get(i);
-            peaks.add(peakDim.getPeak());
-        }
-        return peaks;
-    }
-
-    /**
-     *
-     * @param peak
-     * @param iDim
-     * @return
-     */
-    public static List<Peak> getLinks(final Peak peak, final int iDim) {
-        final List<PeakDim> peakDims = getLinkedPeakDims(peak, iDim);
-        final List<Peak> peaks = new ArrayList<>(peakDims.size());
-        for (int i = 0; i < peakDims.size(); i++) {
-            PeakDim peakDim = (PeakDim) peakDims.get(i);
-            peaks.add((Peak) peakDim.getPeak());
-        }
-        return peaks;
-    }
-
-    /**
-     *
-     * @param peakA
-     * @param dimA
-     * @param peakB
-     * @param dimB
-     */
-    public static void linkPeaks(Peak peakA, String dimA, Peak peakB, String dimB) {
-        PeakDim peakDimA = peakA.getPeakDim(dimA);
-        PeakDim peakDimB = peakB.getPeakDim(dimB);
-        if ((peakDimA != null) && (peakDimB != null)) {
-            linkPeakDims(peakDimA, peakDimB);
-        }
-    }
-
-    /**
-     *
-     * @param peakA
-     * @param dimA
-     * @param peakB
-     * @param dimB
-     */
-    public static void linkPeaks(Peak peakA, int dimA, Peak peakB, int dimB) {
-        PeakDim peakDimA = peakA.getPeakDim(dimA);
-        PeakDim peakDimB = peakB.getPeakDim(dimB);
-        if ((peakDimA != null) && (peakDimB != null)) {
-            linkPeakDims(peakDimA, peakDimB);
-        }
-    }
     // FIXME should check to see that nucleus is same
 
-    /**
-     *
-     * @param peakDimA
-     * @param peakDimB
-     */
-    public static void linkPeakDims(PeakDim peakDimA, PeakDim peakDimB) {
-        Resonance resonanceA = peakDimA.getResonance();
-        Resonance resonanceB = peakDimB.getResonance();
-
-        Resonance.merge(resonanceA, resonanceB);
-
-        peakDimA.peakDimUpdated();
-        peakDimB.peakDimUpdated();
-    }
     // FIXME should check to see that nucleus is same
-
-    /**
-     *
-     * @param peakDimA
-     * @param peakDimB
-     */
-    public static void couplePeakDims(PeakDim peakDimA, PeakDim peakDimB) {
-        Resonance resonanceA = peakDimA.getResonance();
-        Resonance resonanceB = peakDimB.getResonance();
-
-        Resonance.merge(resonanceA, resonanceB);
-
-        Multiplet.merge(peakDimA, peakDimB);
-        peakDimA.peakDimUpdated();
-        peakDimB.peakDimUpdated();
-    }
-
-    /**
-     *
-     * @param peak1
-     * @param dim1
-     * @param peak2
-     * @return
-     */
-    public static boolean isLinked(Peak peak1, int dim1, Peak peak2) {
-        boolean result = false;
-        List<PeakDim> peakDims = getLinkedPeakDims(peak1, dim1);
-        for (PeakDim peakDim : peakDims) {
-            if (peakDim.getPeak() == peak2) {
-                result = true;
-                break;
-            }
-        }
-        return result;
-    }
 
     /**
      *
@@ -2115,7 +1919,7 @@ public class PeakList extends org.nmrfx.peaks.PeakListBase {
             }
         }
         Measures measure = new Measures(pValues);
-        measures = Optional.of(measure);
+        setMeasures(measure);
     }
 
     /**
