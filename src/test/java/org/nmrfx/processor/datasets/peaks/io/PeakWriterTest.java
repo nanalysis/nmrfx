@@ -8,7 +8,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.junit.Assert;
 import org.junit.Test;
-import org.nmrfx.processor.datasets.peaks.InvalidPeakException;
+import org.nmrfx.peaks.InvalidPeakException;
 import org.nmrfx.processor.datasets.peaks.PeakList;
 
 public class PeakWriterTest {
