@@ -140,9 +140,10 @@ public class PeakPathAnalyzer {
     }
 
     public static void setStatus(Map<Peak, PeakPath> paths, double radiusLimit, double checkLimit) {
+        //     public static double checkPath(PeakPaths peakPaths, List<PeakDistance> path) {
         paths.values().stream().sorted().forEach(path -> {
             if (path.isComplete() && path.isFree()) {
-                double check = path.check();
+                double check = checkPath(path.getPeakPaths(),path.getPeakDistances());
                 if ((path.getRadius() < radiusLimit) && (check < checkLimit)) {
                     path.confirm();
                     for (PeakDistance peakDist : path.getPeakDistances()) {
@@ -155,7 +156,7 @@ public class PeakPathAnalyzer {
     }
 
     public static void checkListsForUnambigous(PeakPaths peakPaths, double radius) {
-        PeakList firstList = peakPaths.getPeakLists().get(0);
+        PeakListBase firstList = peakPaths.getPeakLists().get(0);
         boolean useLast = true;
         for (PeakPath path : peakPaths.getPathMap().values()) {
             if (path.getPeakDistances().size() > 1) {
@@ -207,7 +208,7 @@ public class PeakPathAnalyzer {
     }
 
     public static void extendPaths(PeakPaths peakPath, double radius, double tol) {
-        PeakList firstList = peakPath.getPeakLists().get(0);
+        PeakListBase firstList = peakPath.getPeakLists().get(0);
         for (Peak peak : firstList.peaks()) {
             extendPath(peakPath, peak, radius, tol);
         }

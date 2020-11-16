@@ -7,16 +7,16 @@ import java.util.logging.Logger;
 import org.junit.Assert;
 import org.junit.Test;
 import org.nmrfx.peaks.Peak;
+import org.nmrfx.peaks.PeakListBase;
 import org.nmrfx.peaks.io.PeakReader;
-import org.nmrfx.processor.datasets.peaks.PeakList;
 
 public class PeakListTest {
 
     String peakListName1 = "src/test/resources/test.xpk";
     String peakListName2 = "src/test/resources/test.xpk2";
-    PeakList peakList1 = null;
+    PeakListBase peakList1 = null;
 
-    PeakList getPeakList(String peakListName) {
+    PeakListBase getPeakList(String peakListName) {
         if (peakList1 == null) {
             PeakReader peakReader = new PeakReader();
             try {
@@ -30,7 +30,7 @@ public class PeakListTest {
 
     @Test
     public void testFindPeaks() throws IllegalArgumentException {
-        PeakList peakList = getPeakList(peakListName1);
+        PeakListBase peakList = getPeakList(peakListName1);
         Assert.assertNotNull(peakList);
         
         peakList.setSearchDims("H1 0.1 N15 0.5");
@@ -55,18 +55,18 @@ public class PeakListTest {
     
     @Test
     public void testCopy() {
-        PeakList peakList0 = getPeakList(peakListName2);
-        PeakList peakList = new PeakList(peakListName2, peakList0.getNDim());
+        PeakListBase peakList0 = getPeakList(peakListName2);
+        PeakListBase peakList = new PeakListBase(peakListName2, peakList0.getNDim());
         Assert.assertNotNull(peakList);
         
         String name = peakList.getName();
-        PeakList peakListc = peakList.copy(name, true, true, false);
+        PeakListBase peakListc = peakList.copy(name, true, true, false);
         Assert.assertEquals(peakList, peakListc);
     }
     
     @Test
     public void testPeaks() {
-        PeakList peakList = getPeakList(peakListName2);
+        PeakListBase peakList = getPeakList(peakListName2);
         Assert.assertNotNull(peakList);
         
         List peaks = peakList.peaks();
@@ -87,7 +87,7 @@ public class PeakListTest {
 
     @Test
     public void testGetName() {
-        PeakList peakList = getPeakList(peakListName2);
+        PeakListBase peakList = getPeakList(peakListName2);
         Assert.assertNotNull(peakList);
         
         String name = "unknown";
@@ -96,7 +96,7 @@ public class PeakListTest {
     
     @Test
     public void testSetName() {
-        PeakList peakList = getPeakList(peakListName2);
+        PeakListBase peakList = getPeakList(peakListName2);
         Assert.assertNotNull(peakList);
         
         peakList.setName("new");
@@ -106,7 +106,7 @@ public class PeakListTest {
     
     @Test
     public void testGetScale() {
-        PeakList peakList = getPeakList(peakListName2);
+        PeakListBase peakList = getPeakList(peakListName2);
         Assert.assertNotNull(peakList);
         
         double scale = 1.0;
@@ -115,7 +115,7 @@ public class PeakListTest {
     
     @Test
     public void testGetSampleLabel() {
-        PeakList peakList = getPeakList(peakListName2);
+        PeakListBase peakList = getPeakList(peakListName2);
         Assert.assertNotNull(peakList);
         
         String label = "";
@@ -124,7 +124,7 @@ public class PeakListTest {
     
     @Test
     public void testGetSampleConditionLabel() {
-        PeakList peakList = getPeakList(peakListName2);
+        PeakListBase peakList = getPeakList(peakListName2);
         Assert.assertNotNull(peakList);
         
         String label = "";
@@ -133,7 +133,7 @@ public class PeakListTest {
     
     @Test
     public void testGetDatasetName() {
-        PeakList peakList = getPeakList(peakListName2);
+        PeakListBase peakList = getPeakList(peakListName2);
         Assert.assertNotNull(peakList);
         
         String label = "unknown.nv";
@@ -142,7 +142,7 @@ public class PeakListTest {
     
     @Test
     public void testGetDetails() {
-        PeakList peakList = getPeakList(peakListName2);
+        PeakListBase peakList = getPeakList(peakListName2);
         Assert.assertNotNull(peakList);
         
         String detail = "";
@@ -151,7 +151,7 @@ public class PeakListTest {
     
     @Test
     public void testIsChanged() {
-        PeakList peakList = getPeakList(peakListName2);
+        PeakListBase peakList = getPeakList(peakListName2);
         Assert.assertNotNull(peakList);
         
         boolean change = true;
@@ -160,7 +160,7 @@ public class PeakListTest {
     
     @Test
     public void testIsAnyChanged() {
-        PeakList peakList = getPeakList(peakListName2);
+        PeakListBase peakList = getPeakList(peakListName2);
         Assert.assertNotNull(peakList);
         
         boolean change = true;
@@ -169,7 +169,7 @@ public class PeakListTest {
     
     @Test
     public void testHasMeasures() {
-        PeakList peakList = getPeakList(peakListName2);
+        PeakListBase peakList = getPeakList(peakListName2);
         Assert.assertNotNull(peakList);
         
         boolean measures = false;
@@ -178,7 +178,7 @@ public class PeakListTest {
     
     @Test
     public void testGetMeasureValues() {
-        PeakList peakList = getPeakList(peakListName2);
+        PeakListBase peakList = getPeakList(peakListName2);
         Assert.assertNotNull(peakList);
         
         double[] measures = null;
@@ -187,7 +187,7 @@ public class PeakListTest {
     
     @Test
     public void testHasSearchDims() {
-        PeakList peakList = getPeakList(peakListName2);
+        PeakListBase peakList = getPeakList(peakListName2);
         Assert.assertNotNull(peakList);
         
         boolean search = false;
@@ -196,7 +196,7 @@ public class PeakListTest {
     
     @Test
     public void testSize() {
-        PeakList peakList = getPeakList(peakListName2);
+        PeakListBase peakList = getPeakList(peakListName2);
         Assert.assertNotNull(peakList);
         
         int size = 4;
@@ -205,7 +205,7 @@ public class PeakListTest {
     
     @Test
     public void testValid() {
-        PeakList peakList = getPeakList(peakListName2);
+        PeakListBase peakList = getPeakList(peakListName2);
         Assert.assertNotNull(peakList);
         
         boolean valid = true;
@@ -215,7 +215,7 @@ public class PeakListTest {
     
     @Test
     public void testGetPeakByID() {
-        PeakList peakList = getPeakList(peakListName2);
+        PeakListBase peakList = getPeakList(peakListName2);
         Assert.assertNotNull(peakList);
         
         Peak peak = peakList.getPeak(0); //peakList.getPeakByID(0);
@@ -224,7 +224,7 @@ public class PeakListTest {
     
     @Test
     public void testGetListDim() {
-        PeakList peakList = getPeakList(peakListName2);
+        PeakListBase peakList = getPeakList(peakListName2);
         Assert.assertNotNull(peakList);
         
         int dim = 1;
@@ -234,7 +234,7 @@ public class PeakListTest {
     
     @Test
     public void testIsSlideable() {
-        PeakList peakList = getPeakList(peakListName2);
+        PeakListBase peakList = getPeakList(peakListName2);
         Assert.assertNotNull(peakList);
         
         boolean slide = false;
@@ -243,7 +243,7 @@ public class PeakListTest {
     
     @Test
     public void testReNumber() {
-        PeakList peakList = getPeakList(peakListName2);
+        PeakListBase peakList = getPeakList(peakListName2);
         Assert.assertNotNull(peakList);
         int size0 = peakList.size();
         
@@ -258,7 +258,7 @@ public class PeakListTest {
     
     @Test
     public void testRemove() {
-        PeakList peakList = getPeakList(peakListName2);
+        PeakListBase peakList = getPeakList(peakListName2);
         Assert.assertNotNull(peakList.peaks());
         
         peakList.remove(peakList.getName());
@@ -267,7 +267,7 @@ public class PeakListTest {
     
     @Test
     public void testSortPeaks() throws IllegalArgumentException {
-        PeakList peakList = getPeakList(peakListName2);
+        PeakListBase peakList = getPeakList(peakListName2);
         Assert.assertNotNull(peakList);
         
         double[] ppm = {9.04322, 133.32071};
@@ -285,7 +285,7 @@ public class PeakListTest {
     
     @Test
     public void testLocatePeaks() {
-        PeakList peakList = getPeakList(peakListName2);
+        PeakListBase peakList = getPeakList(peakListName2);
         Assert.assertNotNull(peakList);
         
         double[][] limits = {{9,10}, {127, 128}};
@@ -302,7 +302,7 @@ public class PeakListTest {
     
     @Test
     public void testMatchPeaks() {
-        PeakList peakList = getPeakList(peakListName2);
+        PeakListBase peakList = getPeakList(peakListName2);
         Assert.assertNotNull(peakList);
         
         String[] strings = {"", ""};

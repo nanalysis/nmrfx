@@ -16,7 +16,7 @@ import org.nmrfx.processor.datasets.peaks.PeakList;
 public class LigandScannerInfo {
 
     private final Dataset dataset;
-    private PeakList peakList = null;
+    private PeakListBase peakList = null;
     private final int index;
     private final String group;
     private final String sample;
@@ -87,7 +87,7 @@ public class LigandScannerInfo {
     /**
      * @return the peakList
      */
-    public PeakList getPeakList() {
+    public PeakListBase getPeakList() {
         if ((peakList == null) && (dataset != null)) {
             peakList = PeakListBase.getPeakListForDataset(dataset.getName());
             if (peakList != null) {
@@ -104,7 +104,7 @@ public class LigandScannerInfo {
      */
     public int getNPeaks() {
         int nPeaks = 0;
-        PeakList peakList = getPeakList();
+        PeakListBase peakList = getPeakList();
         if (peakList != null) {
             nPeaks = peakList.size();
         }
