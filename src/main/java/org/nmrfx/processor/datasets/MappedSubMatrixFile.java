@@ -17,6 +17,7 @@
  */
 package org.nmrfx.processor.datasets;
 
+import org.nmrfx.datasets.DatasetHeaderIO;
 import org.nmrfx.datasets.DatasetLayout;
 import org.nmrfx.datasets.DatasetStorageInterface;
 

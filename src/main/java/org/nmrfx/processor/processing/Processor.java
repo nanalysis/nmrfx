@@ -19,6 +19,7 @@ package org.nmrfx.processor.processing;
 
 import java.io.File;
 
+import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.math.VecBase;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.DatasetException;
@@ -1421,7 +1422,7 @@ public class Processor {
             progressUpdater.updateProgress(1.0);
             progressUpdater.updateStatus("Done in " + String.format("%.1f", elapsedTime) + "s");
         }
-        if (dataset.fFormat == Dataset.FFORMAT.UCSF) {
+        if (dataset.fFormat == DatasetBase.FFORMAT.UCSF) {
             dataset.writeHeader(false);
         }
         if (!keepDatasetOpen) {
