@@ -20,15 +20,13 @@ package org.nmrfx.processor.datasets.peaks;
 import org.nmrfx.peaks.*;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.optimization.*;
-import org.nmrfx.utilities.Util;
+
 import java.io.*;
 
 import java.util.*;
 import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+
 import org.apache.commons.math3.analysis.UnivariateFunction;
 import org.apache.commons.math3.exception.TooManyEvaluationsException;
 import org.apache.commons.math3.optimization.ConvergenceChecker;
@@ -52,7 +50,6 @@ import static org.nmrfx.peaks.Peak.getMeasureFunction;
 import smile.clustering.HierarchicalClustering;
 import smile.clustering.linkage.CompleteLinkage;
 import org.nmrfx.processor.project.Project;
-import org.nmrfx.project.ProjectBase;
 
 /**
  *
@@ -113,7 +110,6 @@ public class PeakList extends org.nmrfx.peaks.PeakListBase {
      */
     public boolean inMem;
 
-    static List<FreezeListener> freezeListeners = new ArrayList<>();
     private boolean thisListUpdated = false;
     static boolean aListUpdated = false;
     static boolean needToFireEvent = false;
@@ -178,29 +174,6 @@ public class PeakList extends org.nmrfx.peaks.PeakListBase {
         }
     }
     // FIXME need to make safe
-
-    /**
-     *
-     * @param freezeListener
-     */
-    public static void registerFreezeListener(FreezeListener freezeListener) {
-        if (freezeListeners.contains(freezeListener)) {
-            freezeListeners.remove(freezeListener);
-        }
-        freezeListeners.add(freezeListener);
-    }
-
-    /**
-     *
-     * @param peak
-     * @param state
-     */
-    public static void notifyFreezeListeners(Peak peak, boolean state) {
-        for (FreezeListener listener : freezeListeners) {
-            listener.freezeHappened(peak, state);
-
-        }
-    }
 
     synchronized static void setAUpdatedFlag(boolean value) {
         aListUpdated = value;
