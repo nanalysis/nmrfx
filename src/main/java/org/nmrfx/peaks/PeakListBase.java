@@ -10,6 +10,7 @@ import java.util.regex.Pattern;
 import org.apache.commons.math3.exception.MaxCountExceededException;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.datasets.Nuclei;
+import org.nmrfx.processor.cluster.Clusters;
 import org.nmrfx.project.ProjectBase;
 import org.nmrfx.utilities.Util;
 
@@ -289,6 +290,122 @@ public class PeakListBase {
             }
         }
         return null;
+    }
+
+    /**
+     *
+     * @param peakListNames
+     * @return
+     * @throws IllegalArgumentException
+     */
+    public static int clusterPeaks(String[] peakListNames) throws IllegalArgumentException {
+        List<PeakListBase> peakLists = new ArrayList<>();
+        for (String peakListName : peakListNames) {
+            PeakListBase peakList = (PeakListBase) get(peakListName);
+            if (peakList == null) {
+                throw new IllegalArgumentException("Couldn't find peak list " + peakListName);
+            }
+            peakLists.add(peakList);
+        }
+        return PeakListBase.clusterPeaks(peakLists);
+    }
+
+    /**
+     *
+     * @param peakLists
+     * @return
+     * @throws IllegalArgumentException
+     */
+    public static int clusterPeaks(List<PeakListBase> peakLists)
+            throws IllegalArgumentException {
+        Clusters clusters = new Clusters();
+        List<Peak> clustPeaks = new ArrayList<>();
+        double[] tol = null;
+
+        for (PeakListBase peakList : peakLists) {
+            // fixme  should remove unlink and properly support links below
+            peakList.unLinkPeaks();
+            peakList.peaks.stream().filter(p -> p.getStatus() >= 0).forEach(p -> p.setStatus(0));
+            int fDim = peakList.searchDims.size();
+            if (fDim == 0) {
+                throw new IllegalArgumentException("List doesn't have search dimensions");
+            }
+        }
+
+        boolean firstList = true;
+        int ii = 0;
+        int fDim = 0;
+        int iList = 0;
+        for (PeakListBase peakList : peakLists) {
+
+            if (firstList) {
+                fDim = peakList.searchDims.size();
+                tol = new double[fDim];
+            } else if (fDim != peakList.searchDims.size()) {
+                throw new IllegalArgumentException("Peaklists have different search dimensions");
+            }
+
+            for (Peak peak : peakList.peaks) {
+                if (peak.getStatus() != 0) {
+                    continue;
+                }
+
+                List<Peak> linkedPeaks = getLinks(peak);
+
+                if (linkedPeaks == null) {
+                    continue;
+                }
+
+                clustPeaks.add(peak);
+
+                ii++;
+                double[] v = new double[peakList.searchDims.size()];
+                for (int k = 0; k < peakList.searchDims.size(); k++) {
+                    SearchDim sDim = peakList.searchDims.get(k);
+                    v[k] = 0.0;
+
+                    for (int iPeak = 0; iPeak < linkedPeaks.size(); iPeak++) {
+                        Peak peak2 = linkedPeaks.get(iPeak);
+                        peak2.setStatus(1);
+                        v[k] += peak2.peakDims[sDim.getDim()].getChemShiftValue();
+                    }
+
+                    v[k] /= linkedPeaks.size();
+
+                    //datum.n = linkedPeaks.size();
+                    tol[k] = sDim.getTol();
+                }
+                Clusters.ClusterItem clusterItem = new Clusters.ClusterItem(peak, v, iList);
+
+                clusters.addDatum(clusterItem);
+            }
+            iList++;
+            firstList = false;
+        }
+        clusters.doCluster(fDim, tol);
+        clusters.testDuplicates();
+
+        int nClusters = 0;
+        for (int i = 0; i < clusters.data.size(); i++) {
+            Clusters.ClusterItem iDatum = clusters.data.get(i);
+            if (iDatum.isActive()) {
+                List<Object> objs = iDatum.getObjects();
+                Peak iPeak = (Peak) objs.get(0);
+                PeakListBase.unLinkPeak(iPeak);
+                for (int iObj = 1; iObj < objs.size(); iObj++) {
+                    Peak jPeak = (Peak) objs.get(iObj);
+                    PeakListBase.unLinkPeak(jPeak);
+                    for (int iDim = 0; iDim < fDim; iDim++) {
+                        SearchDim iSDim = ((PeakListBase) iPeak.getPeakList()).searchDims.get(iDim);
+                        SearchDim jSDim = ((PeakListBase) jPeak.getPeakList()).searchDims.get(iDim);
+                        linkPeaks(iPeak, iSDim.getDim(), jPeak, jSDim.getDim());
+                    }
+                }
+                nClusters++;
+            }
+
+        }
+        return nClusters;
     }
 
     /**
@@ -1786,6 +1903,17 @@ public class PeakListBase {
             chan.write(".\n");
         }
         chan.write("\n");
+    }
+
+    /**
+     *
+     * @return @throws IllegalArgumentException
+     */
+    public int clusterPeaks() throws IllegalArgumentException {
+        List<PeakListBase> peakLists = new ArrayList<>();
+        peakLists.add(this);
+        return PeakListBase.clusterPeaks(peakLists);
+
     }
 
     public class SearchDim {
