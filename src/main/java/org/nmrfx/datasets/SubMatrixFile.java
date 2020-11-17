@@ -20,9 +20,6 @@ package org.nmrfx.datasets;
 import org.apache.commons.math3.complex.Complex;
 import org.nmrfx.datasets.StorageCache.DatasetKey;
 import org.nmrfx.math.VecBase;
-import org.nmrfx.processor.datasets.Dataset;
-import org.nmrfx.processor.datasets.DatasetHeaderIO;
-import org.nmrfx.processor.math.Vec;
 
 import java.io.Closeable;
 import java.io.File;
@@ -43,7 +40,7 @@ public class SubMatrixFile implements DatasetStorageInterface, Closeable {
     static StorageCache cache = new StorageCache();
     private RandomAccessFile raFile;
     FileChannel fc;
-    private final Dataset dataset;
+    private final DatasetBase dataset;
     private final File file;
     private long totalSize;
     private final int dataType;
@@ -63,7 +60,7 @@ public class SubMatrixFile implements DatasetStorageInterface, Closeable {
      * @param writable true if the mapping should be writable
      * @throws IOException if an I/O error occurs
      */
-    public SubMatrixFile(final Dataset dataset, File file, final DatasetLayout layout, final RandomAccessFile raFile, final boolean writable) throws IOException {
+    public SubMatrixFile(final DatasetBase dataset, File file, final DatasetLayout layout, final RandomAccessFile raFile, final boolean writable) throws IOException {
         this.raFile = raFile;
         this.dataset = dataset;
         this.file = file;
@@ -266,7 +263,7 @@ public class SubMatrixFile implements DatasetStorageInterface, Closeable {
         }
     }
 
-    public synchronized void vectorIO(int first, int last, int[] point, int dim, double scale, Vec vector, int mode) throws IOException {
+    public synchronized void vectorIO(int first, int last, int[] point, int dim, double scale, VecBase vector, int mode) throws IOException {
         if (mode == 0) {
             int j = 0;
             for (int i = first; i <= last; i++) {

@@ -14,8 +14,23 @@ import java.util.logging.Logger;
 
 public class DatasetBase {
 
+    //    private static final Logger LOGGER = LogManager.getLogger();
+    //    static {
+    //        try {
+    //            logger.addHandler(new FileHandler("%t/nmrview%g.log"));
+    //        } catch (IOException ioE) {
+    //        }
+    //    }
+        public final static int NV_HEADER_SIZE = 2048;
+    public final static int UCSF_HEADER_SIZE = 180;
+    public final static int LABEL_MAX_BYTES = 16;
+    public final static int SOLVENT_MAX_BYTES = 24;
     protected static List<DatasetListener> observers = new ArrayList<>();
     public DatasetLayout layout = null;
+    /**
+     *
+     */
+    public FFORMAT fFormat = FFORMAT.NMRVIEW;
     protected VecBase vecMat = null;
     protected String fileName;
     protected String canonicalName;
@@ -2034,6 +2049,30 @@ public class DatasetBase {
         }
     }
 
+    /**
+     * Set the size of the dataset along the specified dimension.
+     *
+     * @param iDim Dataset dimension index
+     * @param size the size to set
+     */
+    public void setFileDimSize(final int iDim, final int size) {
+        this.fileDimSizes[iDim] = size;
+    }
+
+    /**
+     * Get the size of the dataset along the specified dimension.
+     *
+     * @param iDim Dataset dimension index
+     * @return the size
+     */
+    public int getFileDimSize(int iDim) {
+        int value = fileDimSizes[iDim];
+        if (value == 0) {
+            value = layout.getSize(iDim);
+        }
+        return value;
+    }
+
     synchronized public RegionData analyzeRegion(int[][] pt, int[] cpt, double[] width, int[] dim)
             throws IOException{
         return null;
@@ -2063,5 +2102,21 @@ public class DatasetBase {
             Logger.getLogger(Dataset.class.getName()).log(Level.SEVERE, null, ex);
         }
         return newRegion;
+    }
+
+    /**
+     * Enum for possible file types consistent with structure available in the
+     * Dataset format
+     */
+    public static enum FFORMAT {
+
+        /**
+         * Indicates dataset is in NMRView format
+         */
+        NMRVIEW,
+        /**
+         * Indicates dataset is in UCSF format
+         */
+        UCSF;
     }
 }
