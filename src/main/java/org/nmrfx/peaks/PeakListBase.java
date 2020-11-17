@@ -10,7 +10,6 @@ import java.util.regex.Pattern;
 import org.apache.commons.math3.exception.MaxCountExceededException;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.datasets.Nuclei;
-import org.nmrfx.processor.project.Project;
 import org.nmrfx.project.ProjectBase;
 import org.nmrfx.utilities.Util;
 
