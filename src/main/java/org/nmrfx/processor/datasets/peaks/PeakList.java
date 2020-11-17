@@ -148,14 +148,6 @@ public class PeakList extends org.nmrfx.peaks.PeakListBase {
         return listName;
     }
 
-    /**
-     *
-     * @return
-     */
-    public static Iterator iterator() {
-        return Project.getActive().getPeakLists().iterator();
-    }
-
     static void scanListsForUpdates() {
         boolean anyUpdated = false;
         Iterator iter = iterator();
