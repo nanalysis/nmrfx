@@ -2098,7 +2098,7 @@ public class DatasetBase {
         try {
             newRegion.measure(this);
         } catch (IOException ex) {
-            Logger.getLogger(Dataset.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(DatasetBase.class.getName()).log(Level.SEVERE, null, ex);
         }
         return newRegion;
     }
