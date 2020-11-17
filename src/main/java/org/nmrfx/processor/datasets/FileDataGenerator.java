@@ -157,7 +157,7 @@ public class FileDataGenerator extends DataGenerator implements Cloneable {
 
     public boolean valid() {
         return !((Dataset.getDataset(theFile.getFileName()) == null)
-                || (theFile.getVec() == null) && (theFile.dataFile == null));
+                || (theFile.getVec() == null) && (theFile.getDataFile() == null));
     }
 
     public void setDrawListSize(final int size) {

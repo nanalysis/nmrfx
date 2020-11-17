@@ -17,6 +17,7 @@
  */
 package org.nmrfx.processor.datasets;
 
+import org.nmrfx.datasets.DatasetLayout;
 import org.nmrfx.utilities.NvUtil;
 import java.util.ArrayList;
 
