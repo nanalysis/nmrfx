@@ -50,17 +50,6 @@ import org.nmrfx.project.ProjectBase;
  */
 public class Dataset extends DatasetBase implements Comparable<Dataset> {
 
-//    private static final Logger LOGGER = LogManager.getLogger();
-//    static {
-//        try {
-//            logger.addHandler(new FileHandler("%t/nmrview%g.log"));
-//        } catch (IOException ioE) {
-//        }
-//    }
-    public final static int NV_HEADER_SIZE = 2048;
-    public final static int UCSF_HEADER_SIZE = 180;
-    public final static int LABEL_MAX_BYTES = 16;
-    public final static int SOLVENT_MAX_BYTES = 24;
     static boolean useCacheFile = false;
 
     private boolean initialized = false;
@@ -83,27 +72,6 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
     public int compareTo(Dataset o) {
         return getName().compareTo(o.getName());
     }
-
-    /**
-     * Enum for possible file types consistent with structure available in the
-     * Dataset format
-     */
-    public static enum FFORMAT {
-
-        /**
-         * Indicates dataset is in NMRView format
-         */
-        NMRVIEW,
-        /**
-         * Indicates dataset is in UCSF format
-         */
-        UCSF;
-    }
-
-    /**
-     *
-     */
-    public FFORMAT fFormat = FFORMAT.NMRVIEW;
 
     /**
      * Create a new Dataset object that refers to an existing random access file
@@ -594,29 +562,6 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
 //        }
 //    }
 //    close $f1
-    /**
-     * Set the size of the dataset along the specified dimension.
-     *
-     * @param iDim Dataset dimension index
-     * @param size the size to set
-     */
-    public void setFileDimSize(final int iDim, final int size) {
-        this.fileDimSizes[iDim] = size;
-    }
-
-    /**
-     * Get the size of the dataset along the specified dimension.
-     *
-     * @param iDim Dataset dimension index
-     * @return the size
-     */
-    public int getFileDimSize(int iDim) {
-        int value = fileDimSizes[iDim];
-        if (value == 0) {
-            value = layout.getSize(iDim);
-        }
-        return value;
-    }
 
     /**
      * Return whether dataset has a data file.

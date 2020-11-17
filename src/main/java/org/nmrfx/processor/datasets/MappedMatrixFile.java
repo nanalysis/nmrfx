@@ -25,6 +25,7 @@ import java.nio.FloatBuffer;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import org.apache.commons.math3.complex.Complex;
+import org.nmrfx.datasets.DatasetHeaderIO;
 import org.nmrfx.datasets.DatasetLayout;
 import org.nmrfx.datasets.DatasetStorageInterface;
 import org.nmrfx.processor.math.Vec;
