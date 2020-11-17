@@ -67,7 +67,7 @@ public class DatasetBase {
     public DatasetBase() {
 
     }
-    public DatasetBase(String fullName, String name, boolean writable, boolean useCacheFile) {
+    public DatasetBase(String fullName, String name, boolean writable, boolean useCacheFile) throws IOException {
         file = new File(fullName);
 
         String newName;
