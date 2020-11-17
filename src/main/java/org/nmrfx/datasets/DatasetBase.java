@@ -2,15 +2,20 @@ package org.nmrfx.datasets;
 
 import org.apache.commons.lang3.StringUtils;
 import org.nmrfx.math.VecBase;
+import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.project.ProjectBase;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.ByteOrder;
 import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class DatasetBase {
 
     protected static List<DatasetListener> observers = new ArrayList<>();
+    public DatasetLayout layout = null;
     protected VecBase vecMat = null;
     protected String fileName;
     protected String canonicalName;
@@ -54,7 +59,10 @@ public class DatasetBase {
     protected double scale = 1.0;
     protected int rdims;
     protected Double noiseLevel = null;
+    protected double[][] values;
     String details = "";
+    TreeSet<DatasetRegion> regions;
+    protected DatasetStorageInterface dataFile = null;
     private boolean lvlSet = false;
     private double norm = 1.0;
     private String solvent = null;
@@ -63,6 +71,8 @@ public class DatasetBase {
     private HashMap properties = new HashMap();
     private String posColor = "black";
     private String negColor = "red";
+    private boolean littleEndian = false;
+    private boolean gotByteOrder = false;
 
     public DatasetBase() {
 
@@ -110,8 +120,264 @@ public class DatasetBase {
         return ProjectBase.getActive().isDatasetPresent(file);
     }
 
+    /**
+     * Is data file in Big Endian mode
+     *
+     * @return true if Big Endian
+     */
+    public boolean isBigEndian() {
+        return littleEndian == false;
+    }
+
+    /**
+     * Is data file in Little Endian mode
+     *
+     * @return true if Little Endian
+     */
+    public boolean isLittleEndian() {
+        return littleEndian == true;
+    }
+
+    /**
+     * Set mode to be Big Endian. This does not change actual data file, so the
+     * existing data format must be consistent with this.
+     */
+    public void setBigEndian() {
+        littleEndian = false;
+    }
+
+    /**
+     * Set mode to be Little Endian This does not change actual data file, so
+     * the existing data format must be consistent with this.
+     */
+    public void setLittleEndian() {
+        littleEndian = true;
+    }
+
+    /**
+     * Set the byte order. This does not change the actual data file, so the
+     * existing data format must be consistent with the specified value.
+     *
+     * @param order Byte Order
+     */
+    public void setByteOrder(ByteOrder order) {
+        littleEndian = order == ByteOrder.LITTLE_ENDIAN;
+    }
+
+    /**
+     * Get the byte order for this dataset.
+     *
+     * @return the byte order
+     */
+    public ByteOrder getByteOrder() {
+        return littleEndian ? ByteOrder.LITTLE_ENDIAN : ByteOrder.BIG_ENDIAN;
+    }
+
     public void close() {
 
+    }
+
+    /**
+     * Set the number of dimensions for this dataset. Will reset all reference
+     * information.
+     *
+     * @param nDim Number of dataset dimensions
+     */
+    public final void setNDim(int nDim) {
+        this.nDim = nDim;
+        setNDim();
+    }
+
+    /**
+     * Will reset all reference fields so they are sized corresponding to
+     * current dataset dimension.
+     *
+     */
+    public final void setNDim() {
+        strides = new int[nDim];
+        fileDimSizes = new int[nDim];
+        vsize = new int[nDim];
+        vsize_r = new int[nDim];
+        tdSize = new int[nDim];
+        zfSize = new int[this.nDim];
+        extFirst = new int[this.nDim];
+        extLast = new int[this.nDim];
+        sf = new double[nDim];
+        sw = new double[nDim];
+        sw_r = new double[nDim];
+        refPt = new double[nDim];
+        refPt_r = new double[nDim];
+        refValue = new double[nDim];
+        refValue_r = new double[nDim];
+        refUnits = new int[nDim];
+        ph0 = new double[nDim];
+        ph0_r = new double[nDim];
+        ph1 = new double[nDim];
+        ph1_r = new double[nDim];
+        label = new String[nDim];
+        dlabel = new String[nDim];
+        nucleus = new Nuclei[nDim];
+
+        foldUp = new double[nDim];
+        foldDown = new double[nDim];
+        complex = new boolean[nDim];
+        complex_r = new boolean[nDim];
+        freqDomain = new boolean[nDim];
+        freqDomain_r = new boolean[nDim];
+        rmsd = new double[nDim][];
+        values = new double[nDim][];
+    }
+
+    /**
+     * Initialize headers to default values based on currently set number of
+     * dimensions
+     */
+    public final synchronized void newHeader() {
+        sf = new double[nDim];
+        sw = new double[nDim];
+        sw_r = new double[nDim];
+        refPt = new double[nDim];
+        refPt_r = new double[nDim];
+        refValue = new double[nDim];
+        refValue_r = new double[nDim];
+        refUnits = new int[nDim];
+        ph0 = new double[nDim];
+        ph0_r = new double[nDim];
+        ph1 = new double[nDim];
+        ph1_r = new double[nDim];
+
+        foldUp = new double[nDim];
+        foldDown = new double[nDim];
+        complex = new boolean[nDim];
+        complex_r = new boolean[nDim];
+        freqDomain = new boolean[nDim];
+        freqDomain_r = new boolean[nDim];
+        label = new String[nDim];
+        dlabel = new String[nDim];
+        nucleus = new Nuclei[nDim];
+        rmsd = new double[nDim][];
+        values = new double[nDim][];
+
+        int i;
+
+        for (i = 0; i < nDim; i++) {
+            refUnits[i] = 3;
+            sw[i] = 7000.0;
+            sw_r[i] = 7000.0;
+            sf[i] = 600.0;
+            refPt[i] = getSize(i) / 2;
+            refPt_r[i] = getSize(i) / 2;
+            refValue[i] = 4.73;
+            refValue_r[i] = 4.73;
+            complex[i] = true;
+            complex_r[i] = true;
+            freqDomain[i] = false;
+            freqDomain_r[i] = false;
+            label[i] = "D" + i;
+            nucleus[i] = null;
+        }
+
+        freqDomain[0] = true;
+        freqDomain_r[0] = true;
+        lvl = 0.0;
+        scale = 1.0;
+        rdims = nDim;
+        posneg = 1;
+
+        //rdims = 0;
+        //theFile.dataType = 0;
+    }
+
+    public DatasetStorageInterface getDataFile() {
+        return dataFile;
+    }
+
+    /**
+     * Get the value of the dataset at a specified point
+     *
+     * @param pt indices of point to read
+     * @return the dataset value
+     * @throws IOException if an I/O error occurs
+     * @throws IllegalArgumentException if point is outside the range of dataset
+     * ( less than 0 or greater than or equal to size)
+     */
+    public double readPoint(int[] pt) throws IOException, IllegalArgumentException {
+        int i;
+
+        if (vecMat != null) {
+            i = pt[0];
+            return vecMat.getReal(i) / scale;
+        }
+
+        for (i = 0; i < nDim; i++) {
+            if (pt[i] < 0) {
+                throw new IllegalArgumentException("point < 0 " + i + " " + pt[i]);
+            } else if (pt[i] >= getSize(i)) {
+                throw new IllegalArgumentException("point >= size " + i + " " + pt[i] + " " + getSize(i));
+            }
+        }
+        return dataFile.getFloat(pt) / scale;
+
+    }
+
+    /**
+     * Get the value of the dataset at a specified point
+     *
+     * @param pt indices of point to read
+     * @param dim dimension indices that used for the point values
+     * @return the dataset value
+     * @throws IOException if an I/O error occurs
+     * @throws IllegalArgumentException if point is outside range of dataset (
+     * less than 0 or greater than or equal to size)
+     */
+    public double readPoint(int[] pt, int[] dim) throws IOException, IllegalArgumentException {
+        int i;
+
+        if (vecMat != null) {
+            i = pt[0];
+            return vecMat.getReal(i) / scale;
+        }
+
+        for (i = 0; i < nDim; i++) {
+            if (pt[i] < 0) {
+                throw new IllegalArgumentException("pointd < 0 " + i + " " + pt[i]);
+            } else if (pt[i] >= getSize(dim[i])) {
+                throw new IllegalArgumentException("pointd >= size " + i + " " + dim[i] + " " + pt[i] + " " + getSize(dim[i]));
+            }
+        }
+        int[] rPt = new int[nDim];
+        for (i = 0; i < nDim; i++) {
+            rPt[dim[i]] = pt[i];
+        }
+        return dataFile.getFloat(rPt) / scale;
+
+    }
+
+    /**
+     * Write a value into the dataset at the specified point
+     *
+     * @param pt indices of point to write
+     * @param value to write
+     * @throws IOException if an I/O error occurs
+     * @throws IllegalArgumentException if point is outside range of dataset (
+     * less than 0 or greater than or equal to size)
+     */
+    public void writePoint(int[] pt, double value) throws IOException, IllegalArgumentException {
+        int i;
+
+        if (vecMat != null) {
+            i = pt[0];
+            vecMat.setReal(i, value * scale);
+        } else {
+            for (i = 0; i < nDim; i++) {
+                if (pt[i] < 0) {
+                    throw new IllegalArgumentException("point < 0 " + i + " " + pt[i]);
+                } else if (pt[i] >= getSize(i)) {
+                    throw new IllegalArgumentException("point >= size " + i + " " + pt[i] + " " + getSize(i));
+                }
+            }
+            dataFile.setFloat((float) (value * scale), pt);
+        }
     }
 
     /**
@@ -190,7 +456,7 @@ public class DatasetBase {
      * @return TreeSet containing the property names
      */
     public static TreeSet getPropertyNames() {
-        TreeSet nameSet = new TreeSet();
+        TreeSet<String> nameSet = new TreeSet<>();
         Collection<DatasetBase> datasets = ProjectBase.getActive().getDatasets();
 
         for (DatasetBase dataset : datasets) {
@@ -532,6 +798,32 @@ public class DatasetBase {
             value = vecMat.getSize();
         }
         return value;
+    }
+
+    /**
+     * Get the File object corresponding to the data file for this Dataset
+     *
+     * @return File object, null if data stored in Vec
+     */
+    public File getFile() {
+        return file;
+    }
+
+    public void readParFile() {
+        DatasetParameterFile parFile = new DatasetParameterFile(this, layout);
+        parFile.readFile();
+    }
+
+    public void writeParFile(String fileName) {
+        DatasetParameterFile parFile = new DatasetParameterFile(this, layout);
+        parFile.writeFile(fileName);
+    }
+
+    public void writeParFile() {
+        if (file != null) {
+            DatasetParameterFile parFile = new DatasetParameterFile(this, layout);
+            parFile.writeFile();
+        }
     }
 
     /**
@@ -967,11 +1259,10 @@ public class DatasetBase {
     }
 
     public double[] getLimits(int iDim) {
-        double[] limits = {
+        return new double[]{
             pointToPPM(iDim, size(iDim) - 1),
             pointToPPM(iDim, 0)
         };
-        return limits;
     }
 
     /**
@@ -1673,9 +1964,104 @@ public class DatasetBase {
         }
         return iDim;
     }
+
+    public double[] getNValues(int nValues) {
+        double[] pValues = null;
+        boolean ok = false;
+        for (int iDim = 0; iDim < getNDim(); iDim++) {
+            pValues = getValues(iDim);
+            if ((pValues != null) && (pValues.length == nValues)) {
+                ok = true;
+                break;
+            }
+        }
+        if (!ok) {
+            pValues = null;
+        }
+        return pValues;
+    }
+
+    /**
+     * Get the stored values for the specified dimension of this dataset
+     *
+     * @param iDim the dataset dimension
+     * @return values
+     */
+    public double[] getValues(int iDim) {
+        return values[iDim];
+    }
+
+    /**
+     * Store a set of values for a dimension of dataset
+     *
+     * @param iDim the dataset dimension
+     * @param values the values
+     */
+    public void setValues(int iDim, double[] values) {
+        if ((iDim < 0) || (iDim >= nDim)) {
+            throw new IllegalArgumentException("Invalid dimension in setValues");
+        }
+        if (values == null) {
+            this.values[iDim] = null;
+        } else {
+            if (values.length != getSize(iDim)) {
+                throw new IllegalArgumentException("Number of values (" + values.length + ") must equal dimension size (" + getSize(iDim) + ") for dim " + iDim);
+            }
+            this.values[iDim] = values.clone();
+        }
+    }
+
+    /**
+     * Store a set of values for a dimension of dataset
+     *
+     * @param iDim the dataset dimension
+     * @param values the values
+     */
+    public void setValues(int iDim, List<Double> values) {
+        if ((iDim < 0) || (iDim >= nDim)) {
+            throw new IllegalArgumentException("Invalid dimension in setValues");
+        }
+        if ((values == null) || values.isEmpty()) {
+            this.values[iDim] = null;
+        } else {
+            if (values.size() != getSize(iDim)) {
+                throw new IllegalArgumentException("Number of values (" + values.size() + ") must equal dimension size (" + getSize(iDim) + ") for dim " + iDim);
+            }
+            this.values[iDim] = new double[values.size()];
+            for (int i = 0; i < values.size(); i++) {
+                this.values[iDim][i] = values.get(i);
+            }
+        }
+    }
+
     synchronized public RegionData analyzeRegion(int[][] pt, int[] cpt, double[] width, int[] dim)
             throws IOException{
         return null;
     }
 
+    public void setRegions(TreeSet<DatasetRegion> regions) {
+        this.regions = regions;
+    }
+
+    public TreeSet<DatasetRegion> getRegions() {
+        return regions;
+    }
+
+    public DatasetRegion addRegion(double min, double max) {
+        TreeSet<DatasetRegion> regions = getRegions();
+        if (regions == null) {
+            regions = new TreeSet<>();
+            setRegions(regions);
+        }
+
+        DatasetRegion newRegion = new DatasetRegion(min, max);
+        newRegion.removeOverlapping(regions);
+        regions.add(newRegion);
+        try {
+            newRegion.measure(this);
+        } catch (IOException ex) {
+            Logger.getLogger(Dataset.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return newRegion;
+    }
 }

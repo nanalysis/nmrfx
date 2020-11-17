@@ -11,11 +11,10 @@ import org.nmrfx.peaks.PeakListBase;
 import org.nmrfx.peaks.PeakPaths;
 import org.nmrfx.peaks.io.PeakReader;
 import org.nmrfx.peaks.io.PeakWriter;
-import org.nmrfx.processor.datasets.Dataset;
-import org.nmrfx.processor.datasets.DatasetParameterFile;
-import org.nmrfx.processor.datasets.DatasetRegion;
-import org.nmrfx.processor.datasets.peaks.PeakList;
-import org.nmrfx.processor.project.Project;
+import org.nmrfx.datasets.DatasetBase;
+import org.nmrfx.datasets.DatasetRegion;
+import org.nmrfx.datasets.DatasetParameterFile;
+import org.nmrfx.peaks.PeakListBase;
 
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeSupport;
@@ -327,7 +326,7 @@ public class ProjectBase<T extends PeakListBase> {
                     try {
                         Files.delete(path);
                     } catch (IOException ex) {
-                        Logger.getLogger(Project.class.getName()).log(Level.SEVERE, null, ex);
+                        Logger.getLogger(ProjectBase.class.getName()).log(Level.SEVERE, null, ex);
                     }
                 }
 
@@ -335,7 +334,7 @@ public class ProjectBase<T extends PeakListBase> {
         });
 
         peakLists.values().stream().forEach(peakListObj -> {
-            PeakList peakList = (PeakList) peakListObj;
+            PeakListBase peakList = (PeakListBase) peakListObj;
             Path peakFilePath = fileSystem.getPath(projectDir.toString(), "peaks", peakList.getName() + ".xpk2");
             Path measureFilePath = fileSystem.getPath(projectDir.toString(), "peaks", peakList.getName() + ".mpk2");
             // fixme should only write if file doesn't already exist or peaklist changed since read
@@ -368,7 +367,7 @@ public class ProjectBase<T extends PeakListBase> {
                         String fileName = path.getFileName().toString();
 
                         try {
-                            Dataset dataset = new Dataset(pathName, fileName, false, false);
+                            DatasetBase dataset = new DatasetBase(pathName, fileName, false, false);
                             File regionFile = DatasetRegion.getRegionFile(path.toString());
                             System.out.println("region " + regionFile.toString());
                             if (regionFile.canRead()) {
@@ -378,7 +377,7 @@ public class ProjectBase<T extends PeakListBase> {
                             }
 
                         } catch (IOException ex) {
-                            Logger.getLogger(Project.class.getName()).log(Level.SEVERE, null, ex);
+                            Logger.getLogger(ProjectBase.class.getName()).log(Level.SEVERE, null, ex);
                         }
                     });
         }
@@ -392,7 +391,7 @@ public class ProjectBase<T extends PeakListBase> {
         Path datasetDir = projectDir.resolve("datasets");
 
         for (Object datasetBase : datasetMap.values()) {
-            Dataset dataset = (Dataset) datasetBase;
+            DatasetBase dataset = (DatasetBase) datasetBase;
             File datasetFile = dataset.getFile();
             if (datasetFile != null) {
                 Path currentPath = datasetFile.toPath();
