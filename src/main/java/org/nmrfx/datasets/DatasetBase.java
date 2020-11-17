@@ -2,7 +2,6 @@ package org.nmrfx.datasets;
 
 import org.apache.commons.lang3.StringUtils;
 import org.nmrfx.math.VecBase;
-import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.project.ProjectBase;
 
 import java.io.File;
