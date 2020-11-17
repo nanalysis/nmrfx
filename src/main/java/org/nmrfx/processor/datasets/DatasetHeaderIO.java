@@ -5,6 +5,7 @@
  */
 package org.nmrfx.processor.datasets;
 
+import org.nmrfx.datasets.DatasetLayout;
 import org.nmrfx.datasets.Nuclei;
 
 import java.io.ByteArrayInputStream;

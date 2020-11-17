@@ -7,32 +7,14 @@ package org.nmrfx.processor.project;
 
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
-import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.nio.file.DirectoryIteratorException;
-import java.nio.file.DirectoryStream;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.TreeSet;
-import java.util.function.Predicate;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.util.regex.Pattern;
 
-import org.nmrfx.processor.datasets.Dataset;
-import org.nmrfx.processor.datasets.DatasetParameterFile;
-import org.nmrfx.processor.datasets.DatasetRegion;
-import org.nmrfx.peaks.InvalidPeakException;
-import org.nmrfx.peaks.PeakListBase;
-import org.nmrfx.processor.datasets.peaks.PeakList;
-import org.nmrfx.peaks.io.PeakReader;
-import org.nmrfx.peaks.io.PeakWriter;
 import org.nmrfx.peaks.ResonanceFactory;
 import org.nmrfx.project.ProjectBase;
 
