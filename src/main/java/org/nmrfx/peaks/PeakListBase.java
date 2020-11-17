@@ -27,6 +27,7 @@ public class PeakListBase {
      *
      */
     static List<PeakListener> globalListeners = new ArrayList<>();
+    static List<FreezeListener> freezeListeners = new ArrayList<>();
     public int idLast;
     /**
      *
@@ -443,6 +444,30 @@ public class PeakListBase {
         }
         return newPeakList;
     }
+
+    /**
+     *
+     * @param freezeListener
+     */
+    public static void registerFreezeListener(FreezeListener freezeListener) {
+        if (freezeListeners.contains(freezeListener)) {
+            freezeListeners.remove(freezeListener);
+        }
+        freezeListeners.add(freezeListener);
+    }
+
+    /**
+     *
+     * @param peak
+     * @param state
+     */
+    public static void notifyFreezeListeners(Peak peak, boolean state) {
+        for (FreezeListener listener : freezeListeners) {
+            listener.freezeHappened(peak, state);
+
+        }
+    }
+
     synchronized void setUpdatedFlag(boolean value) {
     }
 
