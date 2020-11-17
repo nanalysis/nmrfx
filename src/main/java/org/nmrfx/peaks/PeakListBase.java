@@ -10,6 +10,7 @@ import java.util.regex.Pattern;
 import org.apache.commons.math3.exception.MaxCountExceededException;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.datasets.Nuclei;
+import org.nmrfx.processor.project.Project;
 import org.nmrfx.project.ProjectBase;
 import org.nmrfx.utilities.Util;
 
@@ -466,6 +467,14 @@ public class PeakListBase {
             listener.freezeHappened(peak, state);
 
         }
+    }
+
+    /**
+     *
+     * @return
+     */
+    public static Iterator iterator() {
+        return ProjectBase.getActive().getPeakLists().iterator();
     }
 
     synchronized void setUpdatedFlag(boolean value) {
