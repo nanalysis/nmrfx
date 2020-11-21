@@ -47,7 +47,7 @@ import org.nmrfx.chemistry.DistancePair;
 import org.nmrfx.chemistry.MoleculeBase;
 import org.nmrfx.chemistry.MoleculeFactory;
 import org.nmrfx.structure.chemistry.energy.EnergyLists;
-import org.nmrfx.structure.utilities.NvUtil;
+import org.nmrfx.chemistry.utilities.NvUtil;
 import org.nmrfx.chemistry.Util;
 
 /**
