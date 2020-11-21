@@ -26,11 +26,11 @@ import java.util.TreeMap;
 import org.nmrfx.peaks.PeakDim;
 import org.nmrfx.peaks.Resonance;
 import org.nmrfx.peaks.ResonanceFactory;
-import org.nmrfx.processor.datasets.peaks.FreezeListener;
-import org.nmrfx.processor.datasets.peaks.Peak;
-import org.nmrfx.processor.datasets.peaks.PeakList;
+import org.nmrfx.peaks.FreezeListener;
+import org.nmrfx.peaks.Peak;
+import org.nmrfx.peaks.PeakListBase;
 import static org.nmrfx.chemistry.AtomResonance.resonanceLoopStrings;
-import org.nmrfx.chemistry.Atom;
+
 import org.nmrfx.structure.chemistry.Molecule;
 
 /**
@@ -48,7 +48,7 @@ public class AtomResonanceFactory extends ResonanceFactory implements FreezeList
 
     @Override
     public void init() {
-        PeakList.registerFreezeListener(this);
+        PeakListBase.registerFreezeListener(this);
     }
 
     public Resonance build() {
@@ -199,7 +199,7 @@ public class AtomResonanceFactory extends ResonanceFactory implements FreezeList
                 if (peakDim.getPeak().getPeakList().getSampleConditionLabel().equals(condition)) {
                     if (peakDim.isFrozen()) {
                         Double ppmAvg = res.getPPMAvg(condition);
-                        Atom atom = Molecule.getAtomByName(peakDim.getLabel());
+                        Atom atom = MoleculeBase.getAtomByName(peakDim.getLabel());
                         if (atom != null) {
                             atom.setPPM(ppmAvg);
                             res.setAtomName(atom.getFullName());
@@ -221,8 +221,8 @@ public class AtomResonanceFactory extends ResonanceFactory implements FreezeList
             AtomResonance res = (AtomResonance) peakDim.getResonance();
             Double ppmAvg = res.getPPMAvg(condition);
             Atom atom=null;
-            if (Molecule.getActive()!=null) {
-                atom = Molecule.getAtomByName(peakDim.getLabel());
+            if (MoleculeFactory.getActive()!=null) {
+                atom = MoleculeBase.getAtomByName(peakDim.getLabel());
             }
             if (peakDim.isFrozen()) {
                 if (atom != null) {

@@ -15,18 +15,18 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+
+
 package org.nmrfx.chemistry;
 
-import java.util.*;
+/**
+ *
+ * @author Bruce Johnson
+ */
+public class InvalidMoleculeException extends Exception {
 
-interface AtomIterator extends Iterator {
-
-    @Override
-    public boolean hasNext();
-
-    @Override
-    public Atom next();
-
-    @Override
-    public void remove();
+    public InvalidMoleculeException(String message) {
+        super(message);
+    }
+    
 }

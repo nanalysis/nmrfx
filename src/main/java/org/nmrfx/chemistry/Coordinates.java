@@ -19,7 +19,6 @@
 package org.nmrfx.chemistry;
 
 import org.apache.commons.math3.util.FastMath;
-import org.nmrfx.structure.chemistry.Point3;
 
 public class Coordinates {
 

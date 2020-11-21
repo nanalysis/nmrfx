@@ -17,8 +17,6 @@
  */
 package org.nmrfx.chemistry;
 
-import org.nmrfx.chemistry.Atom;
-
 import java.io.*;
 
 public class PPMv implements Serializable {

@@ -15,18 +15,30 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 package org.nmrfx.chemistry;
 
-import java.util.*;
+public class EnergyPair {
 
-interface AtomIterator extends Iterator {
+    public final double a1;
+    public final double b1;
+    public final double c1;
+    public final double r;
+    public final double r2;
+    public final double rh;
+    public final double ea;
 
-    @Override
-    public boolean hasNext();
+    public EnergyPair(final double a1, final double b1, final double c1, final double r, final double r2, final double rh, final double ea) {
+        this.a1 = a1;
+        this.b1 = b1;
+        this.c1 = c1;
+        this.r = r;
+        this.r2 = r2;
+        this.rh = rh;
+        this.ea = ea;
+    }
 
-    @Override
-    public Atom next();
-
-    @Override
-    public void remove();
+    public double getRh() {
+        return rh;
+    }
 }

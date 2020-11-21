@@ -18,7 +18,5 @@
 
 package org.nmrfx.chemistry;
 
-import org.nmrfx.chemistry.Atom;
-
 public interface AtomIterable extends Iterable<Atom> {
 }

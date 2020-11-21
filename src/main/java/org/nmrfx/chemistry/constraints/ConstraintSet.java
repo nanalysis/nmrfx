@@ -15,18 +15,41 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.nmrfx.chemistry;
 
-import java.util.*;
+package org.nmrfx.chemistry.constraints;
 
-interface AtomIterator extends Iterator {
+import java.util.Iterator;
 
-    @Override
-    public boolean hasNext();
+/**
+ *
+ * @author brucejohnson
+ */
+public interface ConstraintSet {
 
-    @Override
-    public Atom next();
+    public String getName();
 
-    @Override
-    public void remove();
+    public int getSize();
+
+    public void clear();
+
+    public void add(Constraint constraint);
+
+    public Constraint get(int i);
+
+    public void setDirty();
+
+    public boolean isDirty();
+
+    public Iterator<Constraint> iterator();
+    // Following for STAR
+
+    public String getType();
+
+    public String getCategory();
+
+    public String getListType();
+
+    public String[] getLoopStrings();
+
+    public void resetWriting();
 }

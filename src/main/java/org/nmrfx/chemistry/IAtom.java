@@ -33,4 +33,10 @@ public interface IAtom {
     
     public List<IBond> getBonds();
 
+    Atom add(String name, String elementName, Order order);
+
+    String getType();
+
+    void setType(String name);
+
 }

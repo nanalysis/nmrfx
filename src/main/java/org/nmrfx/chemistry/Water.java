@@ -17,8 +17,6 @@
  */
 package org.nmrfx.chemistry;
 
-import org.nmrfx.structure.chemistry.InvalidMoleculeException;
-
 public class Water extends Entity {
 
     String name;

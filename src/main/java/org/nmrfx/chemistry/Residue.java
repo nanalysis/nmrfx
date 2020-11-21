@@ -17,13 +17,12 @@
  */
 package org.nmrfx.chemistry;
 
-import org.nmrfx.structure.rna.AllBasePairs;
-import java.util.*;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math3.util.FastMath;
-import org.nmrfx.structure.chemistry.*;
-import org.nmrfx.structure.chemistry.energy.AtomMath;
-import static org.nmrfx.structure.chemistry.io.PDBFile.isIUPACMode;
+
+import java.util.*;
+
+import static org.nmrfx.chemistry.io.PDBFile.isIUPACMode;
 
 public class Residue extends Compound {
 
@@ -69,6 +68,12 @@ public class Residue extends Compound {
         PSEUDO_MAP.put("VAL:QG2", "MG2");
         PSEUDO_MAP.put("VAL:QQG", "QG");
 
+    }
+
+    public enum RES_POSITION {
+        START,
+        MIDDLE,
+        END;
     }
 
     public Residue(String number, String name) {
@@ -515,7 +520,7 @@ public class Residue extends Compound {
         float refAngle = isProtein ? 180.0f : -116.4f;
         refAngle = 180.0f;
         refAngle *= (Math.PI / 180.0);
-        float dih = (float) (AtomMath.calcDihedral(pts[0], pts[1], pts[2], pts[3]) + refAngle);
+        float dih = (float) (AtomGeometry.calcDihedral(pts[0], pts[1], pts[2], pts[3]) + refAngle);
 
         float val = isProtein ? 123.0f : 104.3845f;  // comes from prf for CA/O5'
         val *= (Math.PI / 180.0);
@@ -642,50 +647,6 @@ public class Residue extends Compound {
         } else {
             System.out.println("\nUnable to get atoms for " + name);
         }
-    }
-
-    public int getBasePairType(Residue residue) {
-        int bpCount;
-        boolean valid = false;
-        List<AllBasePairs> basePairs = new ArrayList<>();
-        if (!name.matches("[GCAU]") || !residue.name.matches("[GCAU]")) {
-            basePairs = AllBasePairs.getBasePairs();
-        } else {
-            for (int type = 0; type <= 12; type++) {
-                AllBasePairs bp = AllBasePairs.getBasePair(type, name, residue.name);
-                if (bp != null) {
-                    basePairs.add(bp);
-                }
-            }
-        }
-        for (AllBasePairs bp : basePairs) {
-            bpCount = 0;
-            for (String atomPair : bp.atomPairs) {
-                String[] atomPairs = atomPair.split(":");
-                String[] atoms0 = atomPairs[0].split("/");
-                String[] atoms1 = atomPairs[1].split("/");
-                for (String atom1Str : atoms0) {
-                    for (String atom2Str : atoms1) {
-                        Atom atom1 = getAtom(atom1Str);
-                        Atom atom2 = residue.getAtom(atom2Str);
-                        if (atom1 != null && atom2 != null) {
-                            if (atom1Str.contains("H")) {
-                                valid = HydrogenBond.validateRNA(atom1.getSpatialSet(), atom2.getSpatialSet(), 0);
-                            } else if (atom2Str.contains("H")) {
-                                valid = HydrogenBond.validateRNA(atom2.getSpatialSet(), atom1.getSpatialSet(), 0);
-                            }
-                            if (valid) {
-                                bpCount++;
-                            }
-                        }
-                    }
-                }
-            }
-            if (bpCount == bp.atomPairs.length) {
-                return bp.type;
-            }
-        }
-        return 0;
     }
 
     public String getSSType() {
