@@ -18,6 +18,7 @@
 package org.nmrfx.chemistry;
 
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
+import org.nmrfx.chemistry.constraints.DistanceConstraint;
 import org.nmrfx.chemistry.io.AtomParser;
 
 import javax.vecmath.Point2d;
@@ -1343,7 +1344,7 @@ public class Atom implements IAtom {
      * @param atom2 Atom. Second atom in the AtomDistancePair object.
      * @return String in NEF format.
      */
-    public static String toNEFDistanceString(int index, int[] aCollapse, int restraintID, String restraintComboID, DistancePair distPair, Atom atom1, Atom atom2) {
+    public static String toNEFDistanceString(int index, int[] aCollapse, int restraintID, String restraintComboID, DistanceConstraint distPair, Atom atom1, Atom atom2) {
         Atom[] atoms = {atom1, atom2};
 
         StringBuilder sBuilder = new StringBuilder();
@@ -1416,7 +1417,7 @@ public class Atom implements IAtom {
         sBuilder.append(String.format("%-8.1f", weight));
 
         // target value
-        double target = distPair.getTargetValue();
+        double target = distPair.getTarget();
         sBuilder.append(String.format("%-8.3f", target));
 
         // target value uncertainty

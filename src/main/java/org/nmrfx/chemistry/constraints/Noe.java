@@ -51,7 +51,7 @@ enum DisTypes {
     }
 }
 
-public class Noe implements Constraint, Serializable {
+public class Noe extends DistanceConstraint implements Serializable {
 
     private static boolean useDistances = false;
     private static int nStructures = 0;

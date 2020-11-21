@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.nmrfx.chemistry;
+package org.nmrfx.chemistry.constraints;
 
 import org.nmrfx.chemistry.Atom;
 import org.nmrfx.chemistry.Point3;

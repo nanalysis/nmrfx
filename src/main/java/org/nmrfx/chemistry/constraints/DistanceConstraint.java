@@ -15,25 +15,28 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.nmrfx.chemistry;
+package org.nmrfx.chemistry.constraints;
 
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-public class DistancePair {
+import org.nmrfx.chemistry.Atom;
+import org.nmrfx.chemistry.Residue;
+
+public class DistanceConstraint implements Constraint {
 
     private final AtomDistancePair[] atomPairs;
-    private final double rLow;
-    private final double rUp;
+    private final double lower;
+    private final double upper;
     private final boolean isBond;
     private final double weight;
-    private final double targetValue;
+    private final double target;
     private final double targetErr;
 
-    public DistancePair(final Atom[] atoms1, final Atom[] atoms2, final double rLow, final double rUp, final boolean isBond,
-            final double weight, final double targetValue, final double targetErr) {
+    public DistanceConstraint(final Atom[] atoms1, final Atom[] atoms2, final double rLow, final double rUp, final boolean isBond,
+                              final double weight, final double targetValue, final double targetErr) {
         if (atoms1.length != atoms2.length) {
             throw new IllegalArgumentException("atom arrays are not of equal length");
         }
@@ -43,15 +46,15 @@ public class DistancePair {
             atomPairs[i] = atomPair;
         }
 
-        this.rLow = rLow;
-        this.rUp = rUp;
+        this.lower = rLow;
+        this.upper = rUp;
         this.isBond = isBond;
         this.weight = weight;
-        this.targetValue = targetValue;
+        this.target = targetValue;
         this.targetErr = targetErr;
     }
 
-    public DistancePair(final Atom[] atoms1, final Atom[] atoms2, final double rLow, final double rUp, final boolean isBond) {
+    public DistanceConstraint(final Atom[] atoms1, final Atom[] atoms2, final double rLow, final double rUp, final boolean isBond) {
 
         this(atoms1, atoms2, rLow, rUp, isBond, 1.0, (rLow + rUp) / 2.0, rUp - rLow);
 
@@ -65,13 +68,13 @@ public class DistancePair {
             sBuilder.append(aPair.toString());
             sBuilder.append(" ");
         }
-        sBuilder.append(rLow);
+        sBuilder.append(lower);
         sBuilder.append(" ");
-        sBuilder.append(rUp);
+        sBuilder.append(upper);
         sBuilder.append(" ");
         sBuilder.append(weight);
         sBuilder.append(" ");
-        sBuilder.append(targetValue);
+        sBuilder.append(target);
         sBuilder.append(" ");
         sBuilder.append(targetErr);
         return sBuilder.toString();
@@ -82,11 +85,11 @@ public class DistancePair {
     }
 
     public double getLower() {
-        return rLow;
+        return lower;
     }
 
     public double getUpper() {
-        return rUp;
+        return upper;
     }
 
     public boolean getIsBond() {
@@ -97,8 +100,8 @@ public class DistancePair {
         return weight;
     }
 
-    public double getTargetValue() {
-        return targetValue;
+    public double getTarget() {
+        return target;
     }
 
     public double getTargetError() {
@@ -129,19 +132,36 @@ public class DistancePair {
         return atomsMap;
     }
 
-    public double getrLow() {
-        return rLow;
-    }
-
-    public double getrUp() {
-        return rUp;
-    }
-
     public boolean isBond() {
         return isBond;
     }
 
     public double getTargetErr() {
         return targetErr;
+    }
+
+    @Override
+    public int getID() {
+        return 0;
+    }
+
+    @Override
+    public boolean isUserActive() {
+        return false;
+    }
+
+    @Override
+    public DistanceStat getStat() {
+        return null;
+    }
+
+    @Override
+    public double getValue() {
+        return 0;
+    }
+
+    @Override
+    public String toSTARString() {
+        return null;
     }
 }
