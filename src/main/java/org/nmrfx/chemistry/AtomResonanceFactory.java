@@ -17,21 +17,17 @@
  */
 package org.nmrfx.chemistry;
 
+import org.nmrfx.peaks.*;
+
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
-import org.nmrfx.peaks.PeakDim;
-import org.nmrfx.peaks.Resonance;
-import org.nmrfx.peaks.ResonanceFactory;
-import org.nmrfx.peaks.FreezeListener;
-import org.nmrfx.peaks.Peak;
-import org.nmrfx.peaks.PeakListBase;
+
 import static org.nmrfx.chemistry.AtomResonance.resonanceLoopStrings;
 
-import org.nmrfx.structure.chemistry.Molecule;
 
 /**
  *
