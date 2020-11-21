@@ -27,6 +27,7 @@ package org.nmrfx.structure.chemistry.ring;
 
 ;
 
+import org.nmrfx.chemistry.Ring;
 import org.nmrfx.chemistry.Atom;
 import java.util.ArrayList;
 import java.util.Collection;

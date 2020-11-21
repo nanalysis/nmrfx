@@ -12,7 +12,7 @@ import org.nmrfx.structure.chemistry.CoordinateGenerator;
 import org.nmrfx.chemistry.search.MNode;
 import org.nmrfx.chemistry.search.MTree;
 import org.nmrfx.structure.chemistry.ring.HanserRingFinder;
-import org.nmrfx.structure.chemistry.ring.Ring;
+import org.nmrfx.chemistry.Ring;
 
 /**
  *
