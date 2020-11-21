@@ -87,6 +87,6 @@ public class NoeCalibrationBin extends NoeCalibration {
         }
         noe.setUpper(bound);
         noe.setLower(lower);
-        noe.target = (noe.getLower() + noe.getUpper()) / 2.0;
+        noe.setTarget((noe.getLower() + noe.getUpper()) / 2.0);
     }
 }
