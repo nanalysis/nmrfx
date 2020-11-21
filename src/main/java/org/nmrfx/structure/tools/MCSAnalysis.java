@@ -2,8 +2,8 @@ package org.nmrfx.structure.tools;
 
 import java.util.ArrayList;
 import java.util.List;
-import org.nmrfx.processor.datasets.peaks.Peak;
-import org.nmrfx.processor.datasets.peaks.PeakList;
+import org.nmrfx.peaks.Peak;
+import org.nmrfx.peaks.PeakListBase;
 import org.nmrfx.chemistry.Atom;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.chemistry.PPMv;
@@ -16,15 +16,15 @@ import org.nmrfx.chemistry.Residue;
  */
 public class MCSAnalysis {
 
-    final PeakList peakList;
-    PeakList peakListRef = null;
+    final PeakListBase peakList;
+    PeakListBase peakListRef = null;
     final int[] iDims;
     final double[] alphas;
     final double[] tols;
     Molecule molecule = null;
     String[] aNames;
 
-    public MCSAnalysis(PeakList peakList, double[] tols, double[] alphas,
+    public MCSAnalysis(PeakListBase peakList, double[] tols, double[] alphas,
             String[] dimNames, Molecule molecule, String[] aNames) {
         this.molecule = molecule;
         this.peakList = peakList;
@@ -42,8 +42,8 @@ public class MCSAnalysis {
         }
     }
 
-    public MCSAnalysis(PeakList peakList, double[] tols, double[] alphas,
-            String[] dimNames, PeakList peakListRef) {
+    public MCSAnalysis(PeakListBase peakList, double[] tols, double[] alphas,
+            String[] dimNames, PeakListBase peakListRef) {
         this.peakList = peakList;
         this.peakListRef = peakListRef;
         this.alphas = alphas.clone();

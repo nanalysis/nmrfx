@@ -18,6 +18,7 @@
 package org.nmrfx.structure.chemistry;
 
 import org.nmrfx.chemistry.Atom;
+import org.nmrfx.chemistry.Point3;
 import org.nmrfx.chemistry.SpatialSet;
 
 /**

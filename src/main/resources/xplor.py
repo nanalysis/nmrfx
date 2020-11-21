@@ -1,8 +1,7 @@
 import re
-#from org.nmrfx.structure.chemistry.energy import EnergyLists
 from java.util import ArrayList
-from org.nmrfx.structure.chemistry.energy import AngleBoundary
-from org.nmrfx.structure.chemistry.io import AtomParser
+from org.nmrfx.chemistry import AngleBoundary
+from org.nmrfx.chemistry.io import AtomParser
 from java.lang import NullPointerException, IllegalArgumentException
 
 def getAtomPairs(atoms,mode='shuffle'):

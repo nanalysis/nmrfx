@@ -39,13 +39,16 @@ import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
 import org.apache.commons.math3.linear.SingularValueDecomposition;
 import org.nmrfx.chemistry.Atom;
+import org.nmrfx.chemistry.MoleculeBase;
+import org.nmrfx.chemistry.Point3;
 import org.nmrfx.chemistry.SpatialSet;
-import org.nmrfx.structure.chemistry.constraints.RDCConstraintSet;
+import org.nmrfx.chemistry.constraints.RDCConstraintSet;
 import org.apache.commons.math3.geometry.euclidean.threed.Rotation;
 import org.apache.commons.math3.geometry.euclidean.threed.RotationConvention;
 import org.apache.commons.math3.geometry.euclidean.threed.RotationOrder;
+import org.nmrfx.chemistry.MoleculeFactory;
 import org.nmrfx.star.ParseException;
-import org.nmrfx.structure.chemistry.constraints.RDC;
+import org.nmrfx.chemistry.constraints.RDC;
 import org.python.util.PythonInterpreter;
 
 public class OrderSVD {
@@ -617,7 +620,7 @@ public class OrderSVD {
      * @param results OrderSVD results object.
      */
     public void setSVDResults(OrderSVD results) {
-        Molecule mol = Molecule.getActive();
+        Molecule mol = (Molecule) MoleculeFactory.getActive();
         mol.setRDCResults(results);
     }
 
@@ -664,8 +667,8 @@ public class OrderSVD {
             v1 = new Point3(xyzCoords.get(0).get(0), xyzCoords.get(0).get(1), xyzCoords.get(0).get(2));
             v2 = new Point3(xyzCoords.get(1).get(0), xyzCoords.get(1).get(1), xyzCoords.get(1).get(2));
         } else {
-            Atom atom1 = Molecule.getAtomByName(atomName1);
-            Atom atom2 = Molecule.getAtomByName(atomName2);
+            Atom atom1 = MoleculeBase.getAtomByName(atomName1);
+            Atom atom2 = MoleculeBase.getAtomByName(atomName2);
             if (atom1 != null & atom2 != null) {
                 v1 = atom1.getPoint();
                 v2 = atom2.getPoint();
@@ -945,11 +948,12 @@ public class OrderSVD {
 
         return orderSVD;
     }
-    
+
     /**
      * Saves SVD RDC results to a file.
-     * 
-     * @param svdResults OrderSVD object with the results of the SVD RDC calculation.
+     *
+     * @param svdResults OrderSVD object with the results of the SVD RDC
+     * calculation.
      * @param resultsFile File to write.
      * @throws IOException
      */
@@ -1031,17 +1035,18 @@ public class OrderSVD {
             }
         }
     }
-    
+
     /**
-     * Reads experimental RDCs from XPLOR or CYANA files and updates the RDCSet object.
-     * 
+     * Reads experimental RDCs from XPLOR or CYANA files and updates the RDCSet
+     * object.
+     *
      * @param file File to read.
      * @param type String of the file format: "xplor" or "cyana".
      * @param rdcSetName String of the name of the RDC set.
      * @throws IOException
      * @throws ParseException
      */
-    public static void readRDCs(File file, String type, String rdcSetName) throws IOException, ParseException {
+    public static void readRDCs(MoleculeBase molecule, File file, String type, String rdcSetName) throws IOException, ParseException {
         ArrayList<String> atom1 = new ArrayList<>();
         ArrayList<String> atom2 = new ArrayList<>();
         ArrayList<String> rdc = new ArrayList<>();
@@ -1062,31 +1067,31 @@ public class OrderSVD {
                     }
                     if (line.startsWith("#")) {
                         continue;
-                    }      
+                    }
                     String[] fields = line.split("\\s+");
                     atom1.add(fields[0] + "." + fields[2]);
                     atom2.add(fields[3] + "." + fields[5]);
                     rdc.add(fields[6]);
                     err.add(fields[7]);
                 }
-                updateRDCSet(atom1, atom2, rdc, err, rdcSetName);
+                updateRDCSet(molecule, atom1, atom2, rdc, err, rdcSetName);
             }
         }
-    } 
-    
+    }
+
     /**
      * Updates the RDCSet object with RDCs read from XPLOR or CYANA files.
-     * 
+     *
      * @param atom1 List of atoms for the first atom in the RDC pair.
      * @param atom2 List of atoms for the second atom in the RDC pair.
      * @param rdc List of XPLOR or CYANA RDC values.
      * @param err List of XPLOR or CYANA RDC error values.
      * @param rdcSetName String of the name of the RDC set.
      */
-    public static void updateRDCSet(List<String> atom1, List<String> atom2, List<String> rdc, List<String> err, String rdcSetName) {
-        RDCConstraintSet rdcSet = RDCConstraintSet.getSet(rdcSetName);
+    public static void updateRDCSet(MoleculeBase molecule, List<String> atom1, List<String> atom2, List<String> rdc, List<String> err, String rdcSetName) {
+        RDCConstraintSet rdcSet = molecule.getMolecularConstraints().getRDCSet(rdcSetName);
         String[][] setAtoms = new String[2][rdcSet.getSize()];
-        for (int i=0; i<rdcSet.getSize(); i++) {
+        for (int i = 0; i < rdcSet.getSize(); i++) {
             RDC setRDC = rdcSet.get(i);
             SpatialSet[] spSets = setRDC.getSpSets();
             setAtoms[0][i] = spSets[0].getFullName().split(":")[1];
@@ -1105,8 +1110,8 @@ public class OrderSVD {
                 rdcSet.remove(newAtom1Ind);
                 rdcSet.add(newAtom1Ind, aCon);
             } else {
-                Atom a1 = Molecule.getAtomByName(newAtom1);
-                Atom a2 = Molecule.getAtomByName(newAtom2);
+                Atom a1 = MoleculeBase.getAtomByName(newAtom1);
+                Atom a2 = MoleculeBase.getAtomByName(newAtom2);
                 if (a1 != null & a2 != null) {
                     SpatialSet spSet1 = a1.getSpatialSet();
                     SpatialSet spSet2 = a2.getSpatialSet();

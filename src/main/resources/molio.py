@@ -1,7 +1,8 @@
-from org.nmrfx.structure.chemistry.io import PDBFile
-from org.nmrfx.structure.chemistry.io import SDFile
-from org.nmrfx.structure.chemistry.io import Sequence
+from org.nmrfx.chemistry.io import PDBFile
+from org.nmrfx.chemistry.io import SDFile
+from org.nmrfx.chemistry.io import Sequence
 from org.nmrfx.structure.chemistry import Molecule
+from org.nmrfx.chemistry import MoleculeFactory
 from org.nmrfx.structure.chemistry.io import MMcifReader
 
 from java.util import ArrayList
@@ -13,7 +14,7 @@ from java.io import InputStreamReader
 
 def updateAtomArray():
     ''' Updates the molecule atom array '''
-    mol = Molecule.getActive()
+    mol = MoleculeFactory.getActive()
     mol.updateAtomArray()
 
 def readMMCIF(fileName):
@@ -21,7 +22,7 @@ def readMMCIF(fileName):
     '''
     compound = None
     MMcifReader.read(fileName)
-    mol = Molecule.getActive()
+    mol = MoleculeFactory.getActive()
     updateAtomArray()
     return mol
 
@@ -41,9 +42,9 @@ def readPDB(fileName, isCompound = False):
     pdb = PDBFile()
     if not isCompound:
         pdb.readSequence(fileName,0)
-        mol = Molecule.getActive()
+        mol = MoleculeFactory.getActive()
     else:
-        mol = pdb.readResidue(fileName, None, Molecule.getActive(), None)
+        mol = pdb.readResidue(fileName, None, MoleculeFactory.getActive(), None)
     updateAtomArray()
     return mol
 
@@ -75,12 +76,12 @@ def readPDBXCoords(fileName, structNum, noComplain, genCoords):
     pdb = PDBFile()
     pdb.readCoordinates(fileName, structNum, False, True)
     updateAtomArray()
-    mol = Molecule.getActive()
+    mol = MoleculeFactory.getActive()
     return mol
 
 def readSDF(fileName, newMolecule = False):
     sdf = SDFile()
-    molecule = Molecule.getActive() if not newMolecule else None
+    molecule = MoleculeFactory.getActive() if not newMolecule else None
     compound = sdf.read(fileName, None, molecule, None)
     updateAtomArray()
     return compound
@@ -98,7 +99,7 @@ def readSequenceString(polymerName, sequence, seqReader=None):
     seqReader.newPolymer()
     seqReader.read(polymerName, seqAList, "")
     updateAtomArray()
-    mol = Molecule.getActive()
+    mol = MoleculeFactory.getActive()
     return mol
 
 
@@ -113,7 +114,7 @@ def readSequence(seqFile, convert=False, polymerName=None,seqReader=None):
     seqReader.newPolymer()
     seqReader.read(seqFile, polymerName) if polymerName else seqReader.read(seqFile)
     updateAtomArray()
-    mol = Molecule.getActive()
+    mol = MoleculeFactory.getActive()
     return mol
 
 def readYaml(file):

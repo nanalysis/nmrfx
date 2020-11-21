@@ -149,8 +149,8 @@ public class CmaesRefinement extends Refinement implements MultivariateFunction 
     }
 
     public void printAtomValues() {
-        ArrayList<Atom> pseudoAngleAtoms = molecule.getPseudoAngleAtoms();
-        ArrayList<Atom> angleAtoms = molecule.getAngleAtoms();
+        List<Atom> pseudoAngleAtoms = molecule.getPseudoAngleAtoms();
+        List<Atom> angleAtoms = molecule.getAngleAtoms();
 
         int nPseudoAngles = pseudoAngleAtoms.size() / 3;
         for (int i = 0; i < dihedrals.angleValues.length;) {

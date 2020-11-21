@@ -18,6 +18,8 @@
 package org.nmrfx.structure.chemistry.energy;
 
 import org.nmrfx.chemistry.Atom;
+import org.nmrfx.chemistry.AtomEnergyProp;
+import org.nmrfx.chemistry.Util;
 import org.nmrfx.structure.chemistry.MissingCoordinatesException;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.structure.chemistry.SuperMol;
@@ -29,7 +31,7 @@ import java.util.ArrayList;
 import java.util.List;
 import org.apache.commons.math3.util.FastMath;
 import java.util.Random;
-import org.nmrfx.processor.processing.ProgressUpdater;
+import org.nmrfx.utilities.ProgressUpdater;
 import org.python.core.PyFloat;
 import org.python.core.PyFunction;
 import org.python.core.PyObject;
@@ -196,7 +198,7 @@ public class RotationalDynamics {
                 System.out.println("daughter atom is null " + diAtom.getShortName());
             }
             daughter.dihedralAngle += delAngle;
-            daughter.dihedralAngle = (float) Dihedral.reduceAngle(daughter.dihedralAngle);
+            daughter.dihedralAngle = (float) Util.reduceAngle(daughter.dihedralAngle);
         }
         sumDeltaSq += FastMath.sqrt(sumSq / branches.size());
         sumMaxDelta += max;

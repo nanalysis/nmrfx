@@ -16,7 +16,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.nmrfx.structure.chemistry.constraints;
+package org.nmrfx.structure.noe;
+
+import org.nmrfx.chemistry.constraints.Noe;
+import org.nmrfx.structure.noe.NoeCalibration;
 
 /**
  *

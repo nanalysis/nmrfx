@@ -19,6 +19,8 @@
 package org.nmrfx.structure.chemistry.energy;
 
 import org.nmrfx.chemistry.Atom;
+import org.nmrfx.chemistry.AtomEnergyProp;
+import org.nmrfx.chemistry.EnergyPair;
 import org.nmrfx.chemistry.SpatialSet;
 import org.apache.commons.math3.util.FastMath;
 

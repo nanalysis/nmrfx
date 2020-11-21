@@ -5,7 +5,7 @@ from java.io import BufferedReader
 from java.io import InputStreamReader
 
 from org.nmrfx.processor.star import STAR3
-from org.nmrfx.structure.chemistry.io import NMRStarReader
+from org.nmrfx.chemistry.io import NMRStarReader
 from org.nmrfx.structure.chemistry import Molecule
 from org.nmrfx.structure.lambda import LambdaIO
 

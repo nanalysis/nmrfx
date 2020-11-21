@@ -19,7 +19,7 @@ package org.nmrfx.structure.chemistry;
 
 import org.nmrfx.chemistry.Atom;
 import org.nmrfx.chemistry.Residue;
-import org.nmrfx.structure.utilities.Util;
+import org.nmrfx.chemistry.Util;
 
 public class AtomUtil {
     // FIXME  modify to use new atom data expression  like i.c{int < 0}

@@ -20,7 +20,7 @@ package org.nmrfx.structure.protein;
 import org.nmrfx.chemistry.Residue;
 
 import java.util.List;
-import org.nmrfx.structure.chemistry.SecondaryStructure;
+import org.nmrfx.chemistry.SecondaryStructure;
 
 /**
  *
@@ -31,15 +31,21 @@ public class Sheet extends SecondaryStructure {
     public static int localCounter = 0;
     public static String name = "Sheet";
 
-    public Sheet(List<Residue> residues) {
+    public Sheet(Residue firstResidue, Residue lastResidue) {
         localIndex = localCounter++;
         globalIndex = globalCounter++;
-        secResidues = residues;
-
+        Residue residue = firstResidue;
+        while (residue != null) {
+            secResidues.add(residue);
+            if (residue == lastResidue) {
+                break;
+            }
+            residue = residue.next;
+        }
     }
-    
+
     @Override
-    public String getName(){
+    public String getName() {
         return name;
     }
 }

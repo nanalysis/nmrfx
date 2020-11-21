@@ -3,19 +3,20 @@ package org.nmrfx.structure.chemistry.miner;
 import java.io.*;
 import org.nmrfx.chemistry.Atom;
 import org.nmrfx.chemistry.Entity;
+import org.nmrfx.chemistry.MoleculeBase;
 import org.nmrfx.structure.chemistry.Molecule;
-import org.nmrfx.structure.chemistry.io.MoleculeIOException;
-import org.nmrfx.structure.chemistry.io.SDFile;
+import org.nmrfx.chemistry.io.MoleculeIOException;
+import org.nmrfx.chemistry.io.SDFile;
 
 public class TurboMol {
 
     String inputData = null;
     String inFileName = null;
     String outValue = null;
-    Molecule inMolecule = null;
+    MoleculeBase inMolecule = null;
     BufferedReader bufReader = null;
 
-    public Molecule getMolecule() {
+    public MoleculeBase getMolecule() {
         return inMolecule;
     }
 
@@ -215,7 +216,7 @@ public class TurboMol {
         outValue = toPDB(inMolecule);
     }
 
-    String toPDB(Molecule mol) {
+    String toPDB(MoleculeBase mol) {
 
         String result = "";
 
@@ -226,7 +227,7 @@ public class TurboMol {
         outValue = toMDL(inMolecule);
     }
 
-    String toMDL(Molecule mol) {
+    String toMDL(MoleculeBase mol) {
 
         String result = "";
 
@@ -249,7 +250,7 @@ public class TurboMol {
         outValue = generateSmiles(inMolecule);
     }
 
-    public String generateSmiles(Molecule molecule) {
+    public String generateSmiles(MoleculeBase molecule) {
         return "";
     }
 

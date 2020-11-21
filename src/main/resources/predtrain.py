@@ -9,7 +9,7 @@ import urllib2
 from org.nmrfx.structure.chemistry import Molecule
 from org.nmrfx.structure.chemistry import MolFilter
 from org.nmrfx.structure.chemistry.energy import RingCurrentShift
-from org.nmrfx.structure.chemistry.io import PDBFile
+from org.nmrfx.chemistry.io import PDBFile
 from org.apache.commons.math3.stat.descriptive import DescriptiveStatistics
 from org.apache.commons.math3.linear import Array2DRowRealMatrix
 from org.apache.commons.math3.linear import ArrayRealVector

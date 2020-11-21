@@ -17,10 +17,10 @@
  */
 package org.nmrfx.structure.chemistry;
 
-import org.nmrfx.processor.datasets.peaks.Peak;
+import org.nmrfx.peaks.Peak;
 
 
-public class MatchCriteria {
+public class MatchCriteria { 
 
     private final int dim;
     private final String relation;

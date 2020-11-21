@@ -17,9 +17,8 @@
  */
 package org.nmrfx.structure.chemistry.energy;
 
-import org.nmrfx.structure.chemistry.InvalidMoleculeException;
-import org.nmrfx.chemistry.Polymer;
-import org.nmrfx.chemistry.Residue;
+import org.nmrfx.chemistry.*;
+
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -28,7 +27,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import org.apache.commons.math3.util.FastMath;
-import org.nmrfx.chemistry.Atom;
 
 public class RNARotamer {
 

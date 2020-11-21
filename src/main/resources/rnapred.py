@@ -12,7 +12,7 @@ from difflib import SequenceMatcher
 from java.util import ArrayList
 from org.nmrfx.structure.chemistry import SVMPredict
 from org.nmrfx.structure.chemistry import SSLayout
-from org.nmrfx.structure.chemistry.io import Sequence
+from org.nmrfx.chemistry.io import Sequence
 from org.nmrfx.structure.chemistry import Molecule
 from org.nmrfx.structure.chemistry import RNALabels
 from org.nmrfx.processor.datasets.peaks import Peak

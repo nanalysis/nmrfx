@@ -13,7 +13,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import org.nmrfx.chemistry.PPMv;
-import org.nmrfx.structure.utilities.Util;
+import org.nmrfx.chemistry.Util;
 
 /**
  *

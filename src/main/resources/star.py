@@ -1,5 +1,5 @@
-from org.nmrfx.structure.chemistry.io import NMRStarReader
-from org.nmrfx.structure.chemistry.io import NMRStarWriter
+from org.nmrfx.chemistry.io import NMRStarReader
+from org.nmrfx.chemistry.io import NMRStarWriter
 from java.io import File
 
 def read(fileName):

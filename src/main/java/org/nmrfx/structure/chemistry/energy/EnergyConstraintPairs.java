@@ -356,7 +356,6 @@ public class EnergyConstraintPairs extends EnergyDistancePairs {
                 }
                 int iAtomIndex = iAtoms[i];
                 int jAtomIndex = jAtoms[i];
-                Molecule mol = Molecule.getActive();
                 Atom iAtom = atoms[iAtomIndex];
                 Atom jAtom = atoms[jAtomIndex];
 
