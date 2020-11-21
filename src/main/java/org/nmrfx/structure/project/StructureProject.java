@@ -23,28 +23,25 @@ import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import org.nmrfx.processor.datasets.peaks.InvalidPeakException;
-import org.nmrfx.processor.project.Project;
+import org.nmrfx.project.ProjectBase;
 import org.nmrfx.star.ParseException;
-import org.nmrfx.structure.chemistry.InvalidMoleculeException;
-import org.nmrfx.chemistry.MoleculeBase;
+import org.nmrfx.peaks.InvalidPeakException;
+import org.nmrfx.chemistry.InvalidMoleculeException;
+import org.nmrfx.chemistry.MoleculeFactory;
 import org.nmrfx.structure.chemistry.Molecule;
-import org.nmrfx.structure.chemistry.constraints.AngleConstraintSet;
-import org.nmrfx.structure.chemistry.constraints.NoeSet;
-import org.nmrfx.structure.chemistry.constraints.RDCConstraintSet;
-import org.nmrfx.structure.chemistry.io.MoleculeIOException;
-import org.nmrfx.structure.chemistry.io.NMRStarReader;
-import org.nmrfx.structure.chemistry.io.NMRStarWriter;
-import org.nmrfx.structure.chemistry.io.PDBFile;
-import org.nmrfx.structure.chemistry.io.PPMFiles;
-import org.nmrfx.structure.chemistry.io.SDFile;
-import org.nmrfx.structure.chemistry.io.Sequence;
+import org.nmrfx.chemistry.io.MoleculeIOException;
+import org.nmrfx.chemistry.io.NMRStarReader;
+import org.nmrfx.chemistry.io.NMRStarWriter;
+import org.nmrfx.chemistry.io.PDBFile;
+import org.nmrfx.chemistry.io.PPMFiles;
+import org.nmrfx.chemistry.io.SDFile;
+import org.nmrfx.chemistry.io.Sequence;
 
 /**
  *
  * @author Bruce Johnson
  */
-public class StructureProject extends Project {
+public class StructureProject extends ProjectBase {
 
     public final Map<String, Molecule> molecules = new HashMap<>();
     public Molecule activeMol;
@@ -52,26 +49,11 @@ public class StructureProject extends Project {
 
     public final Map compoundMap;
 
-    public final HashMap<String, NoeSet> NOE_SETS;
-    public NoeSet ACTIVE_SET;
-
-    public HashMap<String, AngleConstraintSet> angleSets;
-    public AngleConstraintSet activeSet;
-
-    public HashMap<String, RDCConstraintSet> rdcSets;
-    public RDCConstraintSet activeRDCSet;
-
     public StructureProject(String name) {
         super(name);
         activeProject = this;
         compoundMap = new HashMap();
         activeMol = null;
-        NOE_SETS = new HashMap<String, NoeSet>();
-        ACTIVE_SET = null;
-        angleSets = new HashMap<String, AngleConstraintSet>();
-        activeSet = AngleConstraintSet.addSet("default");
-        rdcSets = new HashMap<String, RDCConstraintSet>();
-        activeRDCSet = null;
     }
 
     public static StructureProject getActive() {
@@ -101,12 +83,16 @@ public class StructureProject extends Project {
         molecules.remove(name);
     }
 
+    public Molecule activeMol() {
+        return (Molecule) MoleculeFactory.getActive();
+    }
+
     public void loadStructureProject(String projectDir) throws IOException, MoleculeIOException, IllegalStateException {
         loadStructureProject(Paths.get(projectDir));
     }
 
     public void loadStructureProject(Path projectDir) throws IOException, MoleculeIOException, IllegalStateException {
-        Project currentProject = getActive();
+        ProjectBase currentProject = getActive();
         setActive();
 
         loadProject(projectDir, "datasets");
@@ -166,7 +152,7 @@ public class StructureProject extends Project {
     }
 
     public void saveProject() throws IOException {
-        Project currentProject = getActive();
+        ProjectBase currentProject = getActive();
         setActive();
         try {
             if (projectDir == null) {
@@ -218,8 +204,8 @@ public class StructureProject extends Project {
         if (sstructPath != null) {
             try {
                 List<String> content = Files.readAllLines(sstructPath);
-                if (Molecule.getActive() != null) {
-                    loadSecondaryStructure(Molecule.getActive(), content);
+                if (MoleculeFactory.getActive() != null) {
+                    loadSecondaryStructure((Molecule) MoleculeFactory.getActive(), content);
                 }
             } catch (IOException ioE) {
                 throw new MoleculeIOException(ioE.getMessage());
@@ -253,15 +239,15 @@ public class StructureProject extends Project {
             Sequence seq = new Sequence();
             seq.read(file.toString());
         }
-        if (Molecule.getActive() == null) {
+        if (MoleculeFactory.getActive() == null) {
             throw new MoleculeIOException("Couldn't open any molecules");
         }
-        System.out.println("active mol " + Molecule.getActive().getName());
+        System.out.println("active mol " + MoleculeFactory.getActive().getName());
     }
 
     void loadMoleculeEntities(Path directory) throws MoleculeIOException, IOException {
         String molName = directory.getFileName().toString();
-        Molecule mol = new Molecule(molName);
+        Molecule mol = (Molecule) MoleculeFactory.newMolecule(molName);
         PDBFile pdbReader = new PDBFile();
         Pattern pattern = Pattern.compile("(.+)\\.(seq|pdb|mol|sdf)");
         Predicate<String> predicate = pattern.asPredicate();
@@ -298,7 +284,7 @@ public class StructureProject extends Project {
     }
 
     void loadShiftFiles(Path directory, boolean refMode) throws MoleculeIOException, IOException {
-        Molecule mol = Molecule.getActive();
+        Molecule mol = activeMol();
         Pattern pattern = Pattern.compile("(.+)\\.(txt|ppm)");
         Predicate<String> predicate = pattern.asPredicate();
         if (Files.isDirectory(directory)) {
@@ -314,7 +300,7 @@ public class StructureProject extends Project {
     }
 
     void saveShifts(boolean refMode) throws IOException {
-        Molecule mol = Molecule.getActive();
+        Molecule mol = activeMol();
         if (mol == null) {
             return;
         }

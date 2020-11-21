@@ -17,11 +17,9 @@
  */
 package org.nmrfx.structure.chemistry.energy;
 
-import org.nmrfx.chemistry.Atom;
-import org.nmrfx.structure.chemistry.Point3;
+import org.nmrfx.chemistry.*;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math3.util.FastMath;
-import org.nmrfx.chemistry.PPMv;
 
 /**
  * This program performs various calculations with an atom
@@ -173,12 +171,12 @@ public class AtomMath {
     public static double calcDistanceSumAvg(DistancePair distancePair, double avgN) {
 // fixme
         final double distance;
-        if ((distancePair.atomPairs.length == 1)) {
-            distance = distancePair.atomPairs[0].getDistance();
+        if ((distancePair.getAtomPairs().length == 1)) {
+            distance = distancePair.getAtomPairs()[0].getDistance();
         } else {
             int nMono = 1;
             double sum = 0.0;
-            for (AtomDistancePair atomDistancePair : distancePair.atomPairs) {
+            for (AtomDistancePair atomDistancePair : distancePair.getAtomPairs()) {
                 double distance1 = atomDistancePair.getDistance();
                 sum += FastMath.pow(distance1, -avgN);
             }
@@ -344,13 +342,13 @@ public class AtomMath {
          * upper bounds for distance between two atoms atom cannot exceed this
          * distance - provided by NMR data
          */
-        double upper = distancePair.rUp;
+        double upper = distancePair.getrUp();
 
         /**
          * lower bounds for distance between two atoms atom cannot be lower than
          * this distance - provided by NMR data
          */
-        double lower = distancePair.rLow;
+        double lower = distancePair.getrLow();
         double noeWeight = forceWeight.getNOE();
         double bSwitch = 1.0;
         double aSwitch = 1.0;
@@ -454,7 +452,7 @@ public class AtomMath {
     }
 
     public static AtomEnergy calcDihedralEnergy(double dihedral, double lower, double upper, final ForceWeight forceWeight, final boolean calcDeriv) {
-        dihedral = Dihedral.reduceAngle(dihedral);
+        dihedral = Util.reduceAngle(dihedral);
 
         final AtomEnergy result;
 //        if (upper > Math.PI) {
@@ -529,7 +527,7 @@ public class AtomMath {
             result = AtomEnergy.ZERO;
         } else {
             double angle = atom.dihedralAngle;
-            angle = Dihedral.reduceAngle(angle);
+            angle = Util.reduceAngle(angle);
             double v = IrpParameters[irpIndex].v;
             double s = IrpParameters[irpIndex].s;
             double n = IrpParameters[irpIndex].n;

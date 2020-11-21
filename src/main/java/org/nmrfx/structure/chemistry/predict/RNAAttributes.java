@@ -6,7 +6,7 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.List;
 import org.nmrfx.chemistry.Atom;
-import org.nmrfx.structure.chemistry.Molecule;
+import org.nmrfx.chemistry.MoleculeBase;
 import org.nmrfx.chemistry.Residue;
 
 /**
@@ -69,7 +69,7 @@ public class RNAAttributes {
     }
 
     public static void putStats(String name, RNAStats stats) {
-        Atom atom = Molecule.getAtomByName(name);
+        Atom atom = MoleculeBase.getAtomByName(name);
         statMap.put(atom.getFullName(), stats);
     }
 

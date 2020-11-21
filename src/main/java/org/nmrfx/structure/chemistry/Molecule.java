@@ -26,7 +26,6 @@ import org.nmrfx.structure.chemistry.energy.Dihedral;
 import org.nmrfx.structure.chemistry.energy.EnergyCoords;
 import org.nmrfx.structure.chemistry.energy.EnergyLists;
 import org.nmrfx.structure.fastlinear.FastVector3D;
-import org.nmrfx.structure.utilities.Util;
 import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
@@ -41,7 +40,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -51,11 +49,15 @@ import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.SingularValueDecomposition;
 import org.nmrfx.structure.project.StructureProject;
 import org.nmrfx.structure.chemistry.energy.AngleTreeGenerator;
-import org.nmrfx.structure.chemistry.energy.AtomEnergyProp;
+import org.nmrfx.chemistry.AtomEnergyProp;
+import org.nmrfx.chemistry.io.Sequence;
 import org.nmrfx.structure.chemistry.predict.Predictor;
 import org.nmrfx.structure.chemistry.predict.RNAAttributes;
-import org.nmrfx.structure.chemistry.search.MNode;
-import org.nmrfx.structure.chemistry.search.MTree;
+import org.nmrfx.chemistry.search.MNode;
+import org.nmrfx.chemistry.search.MTree;
+import org.nmrfx.structure.chemistry.miner.NodeValidator;
+import org.nmrfx.structure.chemistry.miner.PathIterator;
+import org.nmrfx.structure.rna.BasePair;
 
 public class Molecule extends MoleculeBase {
 
@@ -158,9 +160,6 @@ public class Molecule extends MoleculeBase {
     }
 
     public boolean labelsCurrent = false;
-    public int nResidues;
-    public int lastResNum;
-    public String name;
     public String originalName = null;
     public String source = null;
     public String comment = null;
@@ -177,13 +176,8 @@ public class Molecule extends MoleculeBase {
     public String energyType = null;
     public boolean deleted = false;
     float bondSpace = 12.0f;
-    public boolean changed = false;
     // FIXME should be crystal object
     public String crystal = null;
-    public LinkedHashMap<String, Entity> entities;
-    public LinkedHashMap<String, Entity> chains;
-    public LinkedHashMap entityLabels = null;
-    private HashMap<String, String> propertyMap = new HashMap<String, String>();
     private ArrayList<Atom> angleAtoms = null;
     private ArrayList<Atom> pseudoAngleAtoms = null;
     List<Atom> treeAtoms;
@@ -200,10 +194,6 @@ public class Molecule extends MoleculeBase {
     public Molecule(String name) {
         super();
         this.name = name;
-        entities = new LinkedHashMap<>();
-        chains = new LinkedHashMap<>();
-        entityLabels = new LinkedHashMap();
-        nResidues = 0;
         Atom.resetLastAtom();
         try {
             Class c = Class.forName("javafx.collections.FXCollections");
@@ -217,43 +207,19 @@ public class Molecule extends MoleculeBase {
         setActive();
         storeMolecule();
     }
-    public static void makeAtomList() {
-        atomList = new ArrayList<>();
-        Collection<Molecule> molecules = StructureProject.getActive().getMolecules();
-
-        for (Molecule molecule : molecules) {
-            molecule.updateAtomArray();
-            for (Atom atom : molecule.atoms) {
-                atomList.add(atom);
-            }
-        }
-
-    }
 
     final void storeMolecule() {
-        StructureProject.getActive().putMolecule(this);
+        MoleculeFactory.putMolecule(this);
     }
 
     public void setTreeList(List<Atom> treeAtoms) {
         this.treeAtoms = treeAtoms;
     }
 
-    public void changed() {
-        changed = true;
-    }
-
-    public void clearChanged() {
-        changed = false;
-    }
-
-    public boolean isChanged() {
-        return changed;
-    }
-
     public static boolean isAnyChanged() {
         boolean anyChanged = false;
-        Collection<Molecule> molecules = StructureProject.getActive().getMolecules();
-        for (Molecule checkMol : molecules) {
+        Collection<MoleculeBase> molecules = MoleculeFactory.getMolecules();
+        for (MoleculeBase checkMol : molecules) {
             if (checkMol.isChanged()) {
                 anyChanged = true;
                 break;
@@ -264,26 +230,14 @@ public class Molecule extends MoleculeBase {
     }
 
     public static void clearAllChanged() {
-        Collection<Molecule> molecules = StructureProject.getActive().getMolecules();
-        for (Molecule checkMol : molecules) {
+        Collection<MoleculeBase> molecules = MoleculeFactory.getMolecules();
+        for (MoleculeBase checkMol : molecules) {
             checkMol.clearChanged();
         }
     }
 
     public void setActive() {
-        StructureProject.getActive().activeMol = this;
-    }
-
-    public void reName(Molecule molecule, Compound compound, String name1, String name2) {
-        molecule.name = name2;
-        StructureProject.getActive().removeMolecule(name1);
-
-        compound.name = molecule.name;
-        StructureProject.getActive().putMolecule(molecule);
-    }
-
-    public String getName() {
-        return name;
+        MoleculeFactory.setActive(this);
     }
 
     public void setTitle(final String value) {
@@ -305,21 +259,13 @@ public class Molecule extends MoleculeBase {
     public static void removeAll() {
         // fixme need to remove each molecule from list, rather than just settng molecules to new Hashtable?
         // should at least just clear molecules
-        if (atomList != null) {
-            atomList.clear();
-            atomList = null;
-        }
-        StructureProject.getActive().clearAllMolecules();
+        MoleculeFactory.clearAllMolecules();
 
         conditions.clear();
-        StructureProject.getActive().activeMol = null;
+        MoleculeFactory.setActive(null);
     }
 
     public void remove() {
-        if (atomList != null) {
-            atomList.clear();
-            atomList = null;
-        }
 
         StructureProject.getActive().removeMolecule(name);
         globalSelected.clear();
@@ -328,43 +274,12 @@ public class Molecule extends MoleculeBase {
         resetActiveStructures();
         conditions.clear();
 
-        Collection<Molecule> mols = StructureProject.getActive().getMolecules();
+        Collection<MoleculeBase> mols = MoleculeFactory.getMolecules();
 
-        StructureProject.getActive().activeMol = null;
-        for (Molecule mol : mols) {
-            StructureProject.getActive().activeMol = mol;
+        MoleculeFactory.setActive(null);
+        for (MoleculeBase mol : mols) {
+            MoleculeFactory.setActive(mol);
             break;
-        }
-    }
-
-    public void clearStructures() {
-        structures.clear();
-        activeStructures = null;
-    }
-
-    public void resetActiveStructures() {
-        activeStructures = null;
-    }
-
-    public void clearActiveStructure(int iStruct) {
-       activeStructures.remove(iStruct);
-    }
- 
-
-    public void setActiveStructures(TreeSet selSet) {
-        if (activeStructures == null) {
-            activeStructures = new ArrayList<>();;
-        }
-        activeStructures.clear();
-        for (Object obj: selSet) {
-            activeStructures.add((Integer) obj);
-        }
-    }
-
-    public void setActiveStructures() {
-        activeStructures = new ArrayList<>();;
-        for (int istruct : structures) {
-            activeStructures.add(istruct);
         }
     }
 
@@ -372,132 +287,9 @@ public class Molecule extends MoleculeBase {
         return structures;
     }
 
-    public Set<String> getCoordSetNames() {
-        return coordSets.keySet();
-    }
-
-    public boolean coordSetExists(String setName) {
-        CoordSet coordSet = (CoordSet) coordSets.get(setName);
-
-        return (coordSet != null);
-    }
-
-    public void addCoordSet(String setName, Entity entity) {
-        int id = coordSets.size() + 1;
-        addCoordSet(setName, id, entity);
-    }
-
-    public void addCoordSet(String setName, int id, Entity entity) {
-        CoordSet coordSet = (CoordSet) coordSets.get(setName);
-
-        if (coordSet == null) {
-            coordSet = new CoordSet(setName, id, entity);
-            coordSets.put(setName, coordSet);
-            coordSet.addEntity(entity);
-        } else {
-            coordSet.addEntity(entity);
-        }
-    }
-
-    public CoordSet getCoordSet(String name) {
-        if (name == null) {
-            return null;
-        } else {
-            return ((CoordSet) coordSets.get(name));
-        }
-    }
-
-    public CoordSet getFirstCoordSet() {
-        Iterator e = coordSets.values().iterator();
-        CoordSet coordSet = null;
-        while (e.hasNext()) {
-            coordSet = (CoordSet) e.next();
-            break;
-        }
-        return coordSet;
-    }
-
     public String getDefaultEntity() {
         Object[] keys = entities.keySet().toArray();
         return keys[0].toString();
-    }
-
-    public void addEntity(Entity entity) {
-        CoordSet coordSet = getFirstCoordSet();
-        int coordID;
-        final String coordSetName;
-        if (coordSet != null) {
-            coordSetName = coordSet.getName();
-            coordID = coordSet.getID();
-        } else {
-            coordSetName = "A";
-            coordID = 1;
-        }
-        addEntity(entity, coordSetName, coordID);
-    }
-
-    public void addEntity(Entity entity, String coordSetName, int coordID) {
-        entities.put(entity.name, entity);
-        entityLabels.put(entity.label, entity);
-        if (entity.entityID == 0) {
-            entity.setIDNum(entities.size());
-        }
-        entity.molecule = this;
-        addCoordSet(coordSetName, coordID, entity);
-        chains.put(entity.getPDBChain(), entity);
-    }
-
-    public void addEntity(Entity entity, String coordSetName) {
-        entities.put(entity.name, entity);
-        entityLabels.put(entity.label, entity);
-        if (entity.entityID == 0) {
-            entity.setIDNum(entities.size());
-        }
-        entity.molecule = this;
-        addCoordSet(coordSetName, entity);
-        chains.put(entity.getPDBChain(), entity);
-    }
-
-    public Entity getEntity(String name) {
-        if (name == null) {
-            return null;
-        } else {
-            return ((Entity) entities.get(name));
-        }
-    }
-
-    public Entity getChain(String name) {
-        if (name == null) {
-            return null;
-        } else {
-            return ((Entity) chains.get(name));
-        }
-    }
-
-    public ArrayList<Entity> getEntities() {
-        return new ArrayList(entities.values());
-    }
-
-    public List<Polymer> getPolymers() {
-        List<Polymer> polymers = new ArrayList<>();
-        for (Entity entity : entities.values()) {
-            if (entity instanceof Polymer) {
-                polymers.add((Polymer) entity);
-            }
-        }
-        return polymers;
-    }
-
-    public ArrayList<Compound> getLigands() {
-        ArrayList<Compound> compounds = new ArrayList<>();
-        for (Entity entity : entities.values()) {
-            if (entity instanceof Compound) {
-                if (!entity.getName().equals("HOH")) {
-                    compounds.add((Compound) entity);
-                }
-            }
-        }
-        return compounds;
     }
 
     public void sortByIndex() {
@@ -517,7 +309,7 @@ public class Molecule extends MoleculeBase {
         if (name == null) {
             return null;
         } else {
-            return StructureProject.getActive().getMolecule(name);
+            return (Molecule) MoleculeFactory.getMolecule(name);
         }
     }
 
@@ -528,7 +320,7 @@ public class Molecule extends MoleculeBase {
     public Dihedral getDihedrals() {
         return dihedrals;
     }
-    
+
     public void setEnergyLists(EnergyLists eLists) {
         this.energyList = eLists;
     }
@@ -536,15 +328,7 @@ public class Molecule extends MoleculeBase {
     public EnergyLists getEnergyLists() {
         return energyList;
     }
-    
-    public void setProteinHelix(ProteinHelix helix) {
-        this.helix = helix;
-    }
 
-    public ProteinHelix getProteinHelix() {
-        return helix;
-    }
-    
     public void setSheets(Sheet sheets) {
         this.sheets = sheets;
     }
@@ -748,21 +532,6 @@ public class Molecule extends MoleculeBase {
         }
     }
 
-    public void nullCoords() {
-        updateAtomArray();
-        int iStructure = 0;
-        for (Atom atom : atoms) {
-            atom.setPointValidity(iStructure, false);
-        }
-    }
-
-    public void nullCoords(int iStructure) {
-        updateAtomArray();
-        for (Atom atom : atoms) {
-            atom.setPointValidity(iStructure, false);
-        }
-    }
-
     public void setAtomTree(List<List<Atom>> aTree) {
         atomTree = aTree;
     }
@@ -790,7 +559,6 @@ public class Molecule extends MoleculeBase {
         }
         invalidateAtomArray();
         updateAtomArray();
-        makeAtomList();
         setupGenCoords();
         energyLists.makeAtomListFast();
         eCoords.setComplexFFMode(energyLists.getForceWeight().getRobson() > 0.0);
@@ -808,10 +576,9 @@ public class Molecule extends MoleculeBase {
             atomTree = aTreeGen.genTree(this, null, null);
         }
         nullCoords();
-        makeAtomList();
         //dumpCoordsGen();
         genVecs = CoordinateGenerator.setupCoords(atomTree);
-        CoordinateGenerator.prepareAtoms(atomList);
+        CoordinateGenerator.prepareAtoms(atoms);
     }
 
     public void dumpCoordsGen() {
@@ -842,6 +609,7 @@ public class Molecule extends MoleculeBase {
         return genCoordsFast(null, fillCoords, iStructure);
     }
 
+    @Override
     public int genCoords(boolean fillCoords) throws RuntimeException {
         return genCoordsFast(null, fillCoords, 0);
     }
@@ -957,9 +725,6 @@ public class Molecule extends MoleculeBase {
     }
 
     public void updateVecCoords() {
-        if (Molecule.atomList == null) {
-            Molecule.makeAtomList();
-        }
         int i = 0;
         Entity lastEntity = null;
         int resNum = -1;
@@ -1068,22 +833,6 @@ public class Molecule extends MoleculeBase {
         return hydrogens;
     }
 
-    public int getPPMSetCount() {
-        Iterator e = getSpatialSetIterator();
-        int maxCount = 1;
-        while (e.hasNext()) {
-            SpatialSet spatialSet = (SpatialSet) e.next();
-            if (spatialSet == null) {
-                continue;
-            }
-            int nSets = spatialSet.getPPMSetCount();
-            if (nSets > maxCount) {
-                maxCount = nSets;
-            }
-        }
-        return maxCount;
-    }
-
     public int getRefPPMSetCount() {
         Iterator e = getSpatialSetIterator();
         int maxCount = 1;
@@ -1178,11 +927,8 @@ public class Molecule extends MoleculeBase {
         }
 
         if (inverse) {
-            if (Molecule.atomList == null) {
-                Molecule.makeAtomList();
-            }
-            for (i = 0; i < Molecule.atomList.size(); i++) {
-                Atom atom = Molecule.atomList.get(i);
+            for (i = 0; i < atoms.size(); i++) {
+                Atom atom = atoms.get(i);
                 atom.spatialSet.setSelected(1);
             }
 
@@ -1193,8 +939,8 @@ public class Molecule extends MoleculeBase {
 
             globalSelected.clear();
 
-            for (i = 0; i < Molecule.atomList.size(); i++) {
-                Atom atom = Molecule.atomList.get(i);
+            for (i = 0; i < atoms.size(); i++) {
+                Atom atom = atoms.get(i);
                 spatialSet = atom.spatialSet;
                 if (spatialSet.getSelected() > 0) {
                     globalSelected.add(spatialSet);
@@ -1395,14 +1141,6 @@ public class Molecule extends MoleculeBase {
                 bond.unsetProperty(Bond.DISPLAY);
             }
         }
-    }
-
-    public void setProperty(String propName, String propValue) {
-        propertyMap.put(propName, propValue);
-    }
-
-    public String getProperty(String propName) {
-        return propertyMap.get(propName);
     }
 
     public void colorAtoms(float red, float green, float blue) {
@@ -2177,7 +1915,7 @@ public class Molecule extends MoleculeBase {
         List<Bond> selected = new ArrayList<>(32);
         Atom atomB;
         Atom atomE;
-        Molecule molecule = activeMol();
+        Molecule molecule = (Molecule) MoleculeFactory.getActive();
 
         if (molecule == null) {
             throw new IllegalArgumentException("No active molecule ");
@@ -2199,9 +1937,6 @@ public class Molecule extends MoleculeBase {
         return (selected);
     }
 
-    public void updateSpatialSets() {
-    }
-
     public List<Atom> getAtoms() {
         List<Atom> atomVector = new ArrayList<>(32);
         updateAtomArray();
@@ -2211,7 +1946,6 @@ public class Molecule extends MoleculeBase {
 
         return atomVector;
     }
-
 
     public void calcRMSD() {
         updateAtomArray();
@@ -2226,53 +1960,6 @@ public class Molecule extends MoleculeBase {
                 }
             }
         }
-    }
-
-    public int checkType() {
-        Set<String> atomSet = new TreeSet<String>();
-        Iterator e = entities.values().iterator();
-        while (e.hasNext()) {
-            Entity entity = (Entity) e.next();
-            Residue firstResidue = null;
-            Residue lastResidue = null;
-            Compound compound = null;
-            if (entity instanceof Polymer) {
-                Polymer polymer = (Polymer) entity;
-                firstResidue = polymer.getFirstResidue();
-                lastResidue = polymer.getLastResidue();
-                compound = (Compound) firstResidue;
-            } else {
-                compound = (Compound) entity;
-            }
-
-            while (compound != null) {
-                atomSet.clear();
-                String resName = compound.getName();
-                if (!resName.equals("ALA") && !resName.equals("GLY")) {
-                    for (Atom atom : compound.atoms) {
-                        atomSet.add(atom.getName());
-                    }
-                    if (atomSet.contains("CA") && atomSet.contains("CG")) {
-                        if (atomSet.contains("HB1") && atomSet.contains("HB2")) {
-                            return 1;
-                        } else if (atomSet.contains("HB2") && atomSet.contains("HB3")) {
-                            return 2;
-                        }
-
-                    }
-                }
-                if (entity instanceof Polymer) {
-                    if (compound == lastResidue) {
-                        break;
-                    }
-                    compound = ((Residue) compound).next;
-
-                } else {
-                    break;
-                }
-            }
-        }
-        return 0;
     }
 
     public ArrayList<HydrogenBond> hydrogenBonds(int[] structures) throws InvalidMoleculeException {
@@ -2373,7 +2060,7 @@ public class Molecule extends MoleculeBase {
                     for (Residue residueB : polymerB.getResidues()) {
                         if (residueA != residueB) {
 
-                            int paired = residueA.getBasePairType(residueB);
+                            int paired = BasePair.getBasePairType(residueA, residueB);
                             if (paired != 0) {
                                 System.out.println(paired + " " + residueA.getName() + " " + residueB.getName());
                             }
@@ -2602,463 +2289,9 @@ public class Molecule extends MoleculeBase {
 
     }
 
-    public static List<SpatialSet> matchAtoms(MolFilter molFilter) throws InvalidMoleculeException {
-        Molecule molecule = Molecule.getActive();
-
-        if (molecule == null) {
-            throw new InvalidMoleculeException("No active molecule");
-        }
-        return matchAtoms(molFilter, molecule);
-    }
-
-    public static List<SpatialSet> matchAtoms(MolFilter molFilter, Molecule molecule) {
-
-        List<SpatialSet> selected = new ArrayList<>(32);
-        if (molecule == null) {
-            return selected;
-        }
-
-        Residue firstResidue = null;
-        Residue lastResidue = null;
-        CoordSet coordSet;
-
-        boolean checkAll = false;
-
-        for (int iAtom = 0; iAtom < molFilter.atomNames.size(); iAtom++) {
-            String atomName = ((String) molFilter.atomNames.elementAt(iAtom));
-
-            if (atomName.charAt(0) == '!') {
-                checkAll = true;
-            }
-        }
-
-        Iterator e = molecule.coordSets.values().iterator();
-
-        while (e.hasNext()) {
-            coordSet = (CoordSet) e.next();
-            Iterator entIterator = coordSet.getEntities().values().iterator();
-
-            while (entIterator.hasNext()) {
-                Entity entity = (Entity) entIterator.next();
-                Compound compound = null;
-                if (!molFilter.matchCoordSetAndEntity(coordSet, entity)) {
-                    continue;
-                }
-                if (entity instanceof Polymer) {
-                    Polymer polymer = (Polymer) entity;
-                    if (molFilter.firstRes.equals("*")) {
-                        firstResidue = polymer.getFirstResidue();
-                    } else {
-                        firstResidue = (Residue) polymer.getResidue(molFilter.firstRes);
-                    }
-
-                    if (molFilter.lastRes.equals("*")) {
-                        lastResidue = polymer.getLastResidue();
-                    } else {
-                        lastResidue = (Residue) polymer.getResidue(molFilter.lastRes);
-                    }
-
-                    compound = (Compound) firstResidue;
-                } else {
-                    compound = (Compound) entity;
-                }
-
-                if (compound == null) {
-                    continue;
-                }
-
-                String atomName;
-
-                while (compound != null) {
-                    for (Atom atom : compound.atoms) {
-                        boolean validRes = true;
-
-                        if (!(entity instanceof Polymer)) {
-                            if (!molFilter.firstRes.equals("*") && (!molFilter.firstRes.equals(compound.number))) {
-                                validRes = false;
-                            }
-                        }
-
-                        if (validRes) {
-                            boolean validAtom = false;
-
-                            for (int iAtom = 0; iAtom < molFilter.atomNames.size(); iAtom++) {
-                                atomName = ((String) molFilter.atomNames.elementAt(iAtom)).toLowerCase();
-
-                                if (atomName.charAt(0) == '!') {
-                                    if (!Util.stringMatch(atom.name.toLowerCase(), atomName.substring(1))) {
-                                        SpatialSet spatialSet = atom.getSpatialSet();
-
-                                        if (spatialSet != null) {
-                                            validAtom = true;
-                                        } else {
-                                            validAtom = false;
-                                        }
-                                    } else {
-                                        validAtom = false;
-
-                                        break;
-                                    }
-                                } else if (Util.stringMatch(atom.name.toLowerCase(), atomName)) {
-                                    SpatialSet spatialSet = atom.getSpatialSet();
-
-                                    if (spatialSet != null) {
-                                        validAtom = true;
-                                    } else {
-                                        validAtom = false;
-                                        System.err
-                                                .println("null spatialset while matching atom " + atomName + " in coordset  " + coordSet.getName());
-                                    }
-
-                                    if (!checkAll) {
-                                        break;
-                                    }
-                                }
-                            }
-
-                            if (validAtom) {
-                                SpatialSet spatialSet = atom.getSpatialSet();
-                                selected.add(spatialSet);
-                            }
-                        }
-                    }
-
-                    if (entity instanceof Polymer) {
-                        if (compound == lastResidue) {
-                            break;
-                        }
-
-                        compound = ((Residue) compound).next;
-                    } else {
-                        break;
-                    }
-                }
-            }
-        }
-
-        return (selected);
-    }
-
     public ArrayList<Atom> getAtoms(String selection) {
         MolFilter molFilter = new MolFilter(selection);
         return getMatchedAtoms(molFilter, this);
-    }
-
-    public static ArrayList<Atom> getMatchedAtoms(MolFilter molFilter, Molecule molecule) {
-        ArrayList<Atom> selected = new ArrayList<Atom>(32);
-        if (molecule == null) {
-            return selected;
-        }
-
-        Residue firstResidue = null;
-        Residue lastResidue = null;
-        CoordSet coordSet;
-
-        boolean checkAll = false;
-
-        for (int iAtom = 0; iAtom < molFilter.atomNames.size(); iAtom++) {
-            String atomName = ((String) molFilter.atomNames.elementAt(iAtom));
-
-            if (atomName.charAt(0) == '!') {
-                checkAll = true;
-            }
-        }
-
-        Iterator e = molecule.coordSets.values().iterator();
-        while (e.hasNext()) {
-            coordSet = (CoordSet) e.next();
-            Iterator entIterator = coordSet.getEntities().values().iterator();
-
-            while (entIterator.hasNext()) {
-                Entity entity = (Entity) entIterator.next();
-//                if (molFilter.entityName != null && !entity.getName().equalsIgnoreCase(molFilter.entityName)) {
-//                    continue;
-//                };
-
-                Compound compound = null;
-                if (!molFilter.matchCoordSetAndEntity(coordSet, entity)) {
-                    continue;
-                }
-                if (entity instanceof Polymer) {
-                    Polymer polymer = (Polymer) entity;
-                    if (molFilter.firstRes.equals("*")) {
-                        firstResidue = polymer.getFirstResidue();
-                    } else {
-                        firstResidue = (Residue) polymer.getResidue(molFilter.firstRes);
-                    }
-
-                    if (molFilter.lastRes.equals("*")) {
-                        lastResidue = polymer.getLastResidue();
-                    } else {
-                        lastResidue = (Residue) polymer.getResidue(molFilter.lastRes);
-                    }
-
-                    compound = (Compound) firstResidue;
-                } else {
-                    compound = (Compound) entity;
-                }
-
-                if (compound == null) {
-                    continue;
-                }
-
-                String atomName;
-
-                while (compound != null) {
-                    String rNum = compound.getNumber();
-                    try {
-                        int rNumInt = Integer.parseInt(rNum);
-                        if (rNumInt > molecule.lastResNum) {
-                            molecule.lastResNum = rNumInt;
-                        }
-                    } catch (NumberFormatException nfE) {
-                    }
-                    for (Atom atom : compound.atoms) {
-                        boolean validRes = true;
-
-                        // fixme why is this inside atom loop
-                        if (!(entity instanceof Polymer)) {
-                            if (!molFilter.firstRes.equals("*") && (!molFilter.firstRes.equals(compound.number))) {
-                                validRes = false;
-                            }
-                        }
-
-                        if (validRes) {
-                            boolean validAtom = false;
-
-                            for (int iAtom = 0; iAtom < molFilter.atomNames.size(); iAtom++) {
-                                atomName = ((String) molFilter.atomNames.elementAt(iAtom)).toLowerCase();
-                                boolean isInverse = false;
-                                if (atomName.charAt(0) == '!') {
-                                    atomName = atomName.substring(1);
-                                    isInverse = true;
-                                }
-                                boolean isPseudo = false;
-                                if ((atomName.charAt(0) == 'm') || (atomName.charAt(0) == 'q')) {
-                                    if (compound instanceof Residue) {
-                                        Residue residue = (Residue) compound;
-                                        Atom[] pseudoAtoms = residue.getPseudo(atomName.toUpperCase());
-                                        if (pseudoAtoms == null) {
-                                            System.out.println(residue.getName() + " " + atomName);
-                                            System.exit(1);
-                                        }
-                                        for (Atom atom2 : pseudoAtoms) {
-                                            if (atom.name.equalsIgnoreCase(atom2.name)) {
-                                                if (!atom.isMethyl() || atom.isFirstInMethyl()) {
-                                                    selected.add(atom);
-                                                    break;
-                                                }
-                                            }
-
-                                        }
-                                        isPseudo = true;
-                                    }
-                                }
-                                if (isPseudo) {
-                                    continue;
-                                }
-                                boolean nameMatches = Util.stringMatch(atom.name.toLowerCase(), atomName);
-                                if (isInverse) {
-                                    if (!nameMatches) {
-                                        SpatialSet spatialSet = atom.getSpatialSet();
-                                        if (spatialSet != null) {
-                                            validAtom = true;
-                                        } else {
-                                            validAtom = false;
-                                        }
-                                    } else {
-                                        validAtom = false;
-                                        break;
-                                    }
-                                } else if (nameMatches) {
-                                    SpatialSet spatialSet = atom.getSpatialSet();
-                                    if (spatialSet != null) {
-                                        validAtom = true;
-                                    } else {
-                                        validAtom = false;
-                                        System.err
-                                                .println("null spatialset while matching atom " + atomName + " in coordset  " + coordSet.getName());
-                                    }
-
-                                    if (!checkAll) {
-                                        break;
-                                    }
-                                }
-                            }
-
-                            if (validAtom) {
-                                selected.add(atom);
-                            }
-                        }
-                    }
-
-                    if (entity instanceof Polymer) {
-                        if (compound == lastResidue) {
-                            break;
-                        }
-
-                        compound = ((Residue) compound).next;
-                    } else {
-                        break;
-                    }
-                }
-            }
-        }
-
-        return (selected);
-    }
-
-    public static ArrayList<Atom> getNEFMatchedAtoms(MolFilter molFilter, Molecule molecule) {
-        ArrayList<Atom> selected = new ArrayList<Atom>(32);
-        if (molecule == null) {
-            return selected;
-        }
-
-        Residue firstResidue = null;
-        Residue lastResidue = null;
-        CoordSet coordSet;
-
-        boolean checkAll = false;
-
-        for (int iAtom = 0; iAtom < molFilter.atomNames.size(); iAtom++) {
-            String atomName = ((String) molFilter.atomNames.elementAt(iAtom));
-
-            if (atomName.charAt(0) == '!') {
-                checkAll = true;
-            }
-        }
-
-        Iterator e = molecule.coordSets.values().iterator();
-        while (e.hasNext()) {
-            coordSet = (CoordSet) e.next();
-            Iterator entIterator = coordSet.getEntities().values().iterator();
-
-            while (entIterator.hasNext()) {
-                Entity entity = (Entity) entIterator.next();
-                Compound compound = null;
-                if (!molFilter.matchCoordSetAndEntity(coordSet, entity)) {
-                    continue;
-                }
-                if (entity instanceof Polymer) {
-                    Polymer polymer = (Polymer) entity;
-                    if (molFilter.firstRes.equals("*")) {
-                        firstResidue = polymer.getFirstResidue();
-                    } else {
-                        firstResidue = (Residue) polymer.getResidue(molFilter.firstRes);
-                    }
-
-                    if (molFilter.lastRes.equals("*")) {
-                        lastResidue = polymer.getLastResidue();
-                    } else {
-                        lastResidue = (Residue) polymer.getResidue(molFilter.lastRes);
-                    }
-
-                    compound = (Compound) firstResidue;
-                } else {
-                    compound = (Compound) entity;
-                }
-
-                if (compound == null) {
-                    continue;
-                }
-
-                String atomName;
-                while (compound != null) {
-                    boolean validRes = true;
-                    String rNum = compound.getNumber();
-                    try {
-                        int rNumInt = Integer.parseInt(rNum);
-                        if (rNumInt > molecule.lastResNum) {
-                            molecule.lastResNum = rNumInt;
-                        }
-                    } catch (NumberFormatException nfE) {
-                    }
-                    if (!(entity instanceof Polymer)) {
-                        if (!molFilter.firstRes.equals("*") && (!molFilter.firstRes.equals(compound.number))) {
-                            validRes = false;
-                        }
-                    }
-                    for (Atom atom : compound.atoms) {
-                        if (validRes) {
-                            boolean validAtom = false;
-
-                            for (int iAtom = 0; iAtom < molFilter.atomNames.size(); iAtom++) {
-                                atomName = ((String) molFilter.atomNames.elementAt(iAtom)).toLowerCase();
-                                boolean isInverse = false;
-                                if (atomName.charAt(0) == '!') {
-                                    atomName = atomName.substring(1);
-                                    isInverse = true;
-                                }
-                                boolean isPseudo = false;
-                                if ((atomName.charAt(0) == 'm') || (atomName.charAt(0) == 'q')) {
-                                    if (compound instanceof Residue) {
-                                        Residue residue = (Residue) compound;
-                                        Atom[] pseudoAtoms = residue.getPseudo(atomName.toUpperCase());
-                                        if (pseudoAtoms == null) {
-                                            System.out.println(residue.getName() + " " + atomName);
-                                            System.exit(1);
-                                        }
-                                        for (Atom atom2 : pseudoAtoms) {
-                                            if (atom.name.equalsIgnoreCase(atom2.name)) {
-                                                selected.add(atom);
-                                                break;
-                                            }
-
-                                        }
-                                        isPseudo = true;
-                                    }
-                                }
-                                if (isPseudo) {
-                                    continue;
-                                }
-                                boolean nameMatches = Util.nefMatch(atom, atomName);
-                                if (isInverse) {
-                                    if (!nameMatches) {
-                                        SpatialSet spatialSet = atom.getSpatialSet();
-                                        if (spatialSet != null) {
-                                            validAtom = true;
-                                        } else {
-                                            validAtom = false;
-                                        }
-                                    } else {
-                                        validAtom = false;
-                                        break;
-                                    }
-                                } else if (nameMatches) {
-                                    SpatialSet spatialSet = atom.getSpatialSet();
-                                    if (spatialSet != null) {
-                                        validAtom = true;
-                                    } else {
-                                        validAtom = false;
-                                        System.err
-                                                .println("null spatialset while matching atom " + atomName + " in coordset  " + coordSet.getName());
-                                    }
-
-                                    if (!checkAll) {
-                                        break;
-                                    }
-                                }
-                            }
-
-                            if (validAtom) {
-                                selected.add(atom);
-                            }
-                        }
-                    }
-
-                    if (entity instanceof Polymer) {
-                        if (compound == lastResidue) {
-                            break;
-                        }
-                        
-                        compound = ((Residue) compound).next;
-                    } else {
-                        break;
-                    }
-                }
-            }
-        }
-        return (selected);
     }
 
     public void updateNames() {
@@ -3098,95 +2331,7 @@ public class Molecule extends MoleculeBase {
         }
     }
 
-    public static Atom getAtomByName(String name) throws IllegalArgumentException {
-        Molecule molecule = Molecule.getActive();
-
-        if (molecule == null) {
-            throw new IllegalArgumentException("No active molecule");
-        }
-
-        return molecule.findAtom(name);
-
-    }
-
-    public Atom findAtom(String name) {
-        MolFilter molFilter = null;
-        molFilter = new MolFilter(name);
-        Atom atom = null;
-        SpatialSet spSet = findSpatialSet(molFilter);
-        if (spSet != null) {
-            atom = spSet.atom;
-        }
-        return atom;
-    }
-
-    public static Atom getAtom(MolFilter molFilter) throws InvalidMoleculeException {
-        ArrayList spatialSets = new ArrayList();
-        selectAtomsForTable(molFilter, spatialSets);
-        SpatialSet spSet = getSpatialSet(molFilter);
-        Atom atom = null;
-        if (spSet != null) {
-            atom = spSet.atom;
-        }
-
-        return atom;
-    }
-
-    public static SpatialSet getSpatialSet(MolFilter molFilter) throws IllegalArgumentException {
-        Molecule molecule = Molecule.getActive();
-
-        if (molecule == null) {
-            throw new IllegalArgumentException("No active molecule");
-        }
-        return molecule.findSpatialSet(molFilter);
-
-    }
-
-    public SpatialSet findSpatialSet(MolFilter molFilter) throws IllegalArgumentException {
-        Residue firstResidue = null;
-        Compound compound;
-        CoordSet coordSet;
-
-        Iterator e = coordSets.values().iterator();
-
-        while (e.hasNext()) {
-            coordSet = (CoordSet) e.next();
-            Iterator entIterator = coordSet.getEntities().values().iterator();
-
-            while (entIterator.hasNext()) {
-                Entity entity = (Entity) entIterator.next();
-                if (!molFilter.matchCoordSetAndEntity(coordSet, entity)) {
-                    continue;
-                }
-
-                if (entity instanceof Polymer) {
-                    Polymer polymer = (Polymer) entity;
-                    firstResidue = (Residue) polymer.getResidue(molFilter.firstRes);
-                    compound = (Compound) firstResidue;
-                } else {
-                    compound = (Compound) entity;
-
-                    if (!molFilter.firstRes.equals("*") && (!molFilter.firstRes.equals(compound.number))) {
-                        continue;
-                    }
-                }
-
-                Atom atom;
-
-                if (compound != null) {
-                    atom = compound.getAtomLoose((String) molFilter.atomNames.elementAt(0));
-                    if (atom != null) {
-                        return atom.getSpatialSet();
-                    } else {
-                        return null;
-                    }
-                }
-            }
-        }
-
-        return (null);
-    }
-
+    @Override
     public void setupRotGroups() {
         int rotUnit = 0;
         List<Atom> atomList;
@@ -3284,6 +2429,7 @@ public class Molecule extends MoleculeBase {
         setupAngles();
     }
 
+    @Override
     public void setMethylRotationActive(boolean state) {
         updateAtomArray();
         findEquivalentAtoms();
@@ -3299,11 +2445,12 @@ public class Molecule extends MoleculeBase {
         setupAngles();
     }
 
-    public ArrayList<Atom> getAngleAtoms() {
+    public List<Atom> getAngleAtoms() {
         return angleAtoms;
     }
 
-    public ArrayList<Atom> setupAngles() {
+    @Override
+    public List<Atom> setupAngles() {
         if (genVecs == null) {
             setupGenCoords();
         }
@@ -3527,231 +2674,10 @@ public class Molecule extends MoleculeBase {
         return pairs;
     }
 
-    public static void findEquivalentAtoms(String atomName) throws IllegalArgumentException {
-        Atom atom = getAtomByName(atomName);
-
-        if (atom == null) {
-            throw new IllegalArgumentException("Can't find atom \"" + atomName + "\"");
-        }
-
-        atom.getEquivalency();
-    }
-
-    public void findEquivalentAtoms() {
-        updateAtomArray();
-        ArrayList<Atom> atoms2 = new ArrayList<>(atoms);
-        for (Atom atom : atoms2) {
-            Entity entity = atom.entity;
-            if (!entity.hasEquivalentAtoms()) {
-                findEquivalentAtoms(entity);
-            }
-        }
-    }
-
-    public static void findEquivalentAtoms(Entity entity) {
-        Molecule molecule = entity.molecule;
-        molecule.getAtomTypes();
-
-        MTree mTree = new MTree();
-        Map<Atom, Integer> hash = new HashMap<>();
-        List<Atom> eAtomList = new ArrayList<>();
-        int i = 0;
-
-        for (Atom atom : entity.atoms) {
-            // entity check ensures that only atoms in same residue are used
-            if (atom.entity == entity) {
-                hash.put(atom, i);
-                eAtomList.add(atom);
-
-                MNode mNode = mTree.addNode();
-                mNode.setAtom(atom);
-                atom.equivAtoms = null;
-
-                //mNode.atom = atom;
-                i++;
-            }
-        }
-
-        for (Atom atom : entity.atoms) {
-            for (int iBond = 0; iBond < atom.bonds.size(); iBond++) {
-                Bond bond = atom.bonds.get(iBond);
-                Integer iNodeBegin = hash.get(bond.begin);
-                Integer iNodeEnd = hash.get(bond.end);
-
-                if ((iNodeBegin != null) && (iNodeEnd != null)) {
-                    mTree.addEdge(iNodeBegin, iNodeEnd);
-
-                }
-            }
-        }
-
-        class TreeGroup {
-
-            int iAtom = 0;
-            List<MNode> pathNodes = new ArrayList<>();
-            List<Integer> treeValues = new ArrayList<>();
-            List<Integer> shells = new ArrayList<>();
-
-            TreeGroup(int iAtom, List<MNode> pathNodes, List<Integer> treeValues, List<Integer> shells) {
-                this.iAtom = iAtom;
-                this.pathNodes.addAll(pathNodes);
-                this.treeValues.addAll(treeValues);
-                this.shells.addAll(shells);
-            }
-
-            public String toString() {
-                StringBuilder sBuilder = new StringBuilder();
-                sBuilder.append(iAtom).append("\n");
-                for (MNode node : pathNodes) {
-                    sBuilder.append(" ").append(node.getAtom().getName());
-                }
-                sBuilder.append("\n");
-                for (Integer treeValue : treeValues) {
-                    sBuilder.append(" ").append(treeValue);
-
-                }
-                sBuilder.append("\n");
-                for (Integer shell : shells) {
-                    sBuilder.append(" ").append(shell);
-
-                }
-                return sBuilder.toString();
-            }
-        }
-
-        ArrayList treeGroups = new ArrayList();
-
-        // get breadth first path from each atom
-        for (int j = 0, n = eAtomList.size(); j < n; j++) {
-            mTree.broad_path(j);
-            List<MNode> pathNodes = mTree.getPathNodes();
-            int numNodes = pathNodes.size();
-            int value;
-            int shell;
-            List<Integer> treeValues = new ArrayList<>(numNodes);
-            List<Integer> shells = new ArrayList<>(numNodes);
-
-            for (int k = 0; k < numNodes; k++) {
-                MNode cNode = pathNodes.get(k);
-                if (cNode.isRingClosure()) {
-                    continue;
-                }
-                Atom atom = cNode.getAtom();
-                shell = cNode.getShell();
-                value = (shell * 4096) + (16 * atom.aNum) + ((4 * atom.nPiBonds) / 2);
-                treeValues.add(value);
-                shells.add(shell);
-            }
-            Collections.sort(treeValues);
-            treeGroups.add(new TreeGroup(j, pathNodes, treeValues, shells));
-        }
-
-        ArrayList equivAtoms = new ArrayList();
-        Map<String, AtomEquivalency> groupHash = new TreeMap<>();
-        Map<String, Integer> uniqueMap = new TreeMap<>();
-        int nGroups = 0;
-
-        for (int j = 0; j < treeGroups.size(); j++) {
-            equivAtoms.clear();
-
-            TreeGroup jGroup = (TreeGroup) treeGroups.get(j);
-//            System.out.println(eAtomList.get(j).getName() + " " + jGroup.toString());
-
-            for (int k = 0; k < treeGroups.size(); k++) {
-                if (j == k) {
-                    continue;
-                }
-
-                TreeGroup kGroup = (TreeGroup) treeGroups.get(k);
-                boolean ok = false;
-
-                // atoms are equivalent only if all the atoms on each atoms tree are the same type
-                if (kGroup.treeValues.size() == jGroup.treeValues.size()) {
-                    ok = true;
-
-                    for (int kj = 0; kj < jGroup.treeValues.size(); kj++) {
-                        int kVal = (kGroup.treeValues.get(kj));
-                        int jVal = (jGroup.treeValues.get(kj));
-
-                        if (kVal != jVal) {
-                            ok = false;
-
-                            break;
-                        }
-                    }
-                }
-
-                if (ok) {
-                    Atom jAtom = jGroup.pathNodes.get(0).getAtom();
-                    Atom kAtom = kGroup.pathNodes.get(0).getAtom();
-//                    System.out.println(jAtom.getName() + " eq " + kAtom.getName());
-                    int shell = -1;
-
-                    for (int jj = 0; jj < kGroup.pathNodes.size(); jj++) {
-                        MNode nodeTest = kGroup.pathNodes.get(jj);
-                        Atom atomTest = nodeTest.getAtom();
-//                        System.out.println(jj + " " + kGroup.shells.get(jj) + " " + (atomTest == null ? "" : atomTest.getName()));
-
-                        if (atomTest != null && atomTest.getName().equals(jAtom.getName())) {
-                            shell = kGroup.shells.get(jj);
-                            break;
-                        }
-                    }
-
-                    String groupName = shell + "_" + jAtom.getName();
-//                    System.out.println(groupName);
-                    String jUniq = shell + "_" + jAtom.getName();
-                    String kUniq = shell + "_" + kAtom.getName();
-
-                    if (!uniqueMap.containsKey(jUniq) && !uniqueMap.containsKey(kUniq)) {
-                        nGroups++;
-                        uniqueMap.put(jUniq, nGroups);
-                        uniqueMap.put(kUniq, nGroups);
-                    } else if (!uniqueMap.containsKey(jUniq)) {
-                        uniqueMap.put(jUniq, uniqueMap.get(kUniq));
-                    } else if (!uniqueMap.containsKey(kUniq)) {
-                        uniqueMap.put(kUniq, uniqueMap.get(jUniq));
-                    }
-
-                    AtomEquivalency atomEquiv = groupHash.get(groupName);
-
-                    if (atomEquiv == null) {
-                        atomEquiv = new AtomEquivalency();
-                        atomEquiv.setShell(shell);
-                        atomEquiv.setIndex((uniqueMap.get(jUniq)));
-                        atomEquiv.setAtoms(new ArrayList<>());
-                        atomEquiv.getAtoms().add(jAtom);
-                        groupHash.put(groupName, atomEquiv);
-                    }
-
-//                    System.out.println("addatom " + groupName + " " + kAtom.getName());
-                    atomEquiv.getAtoms().add(kAtom);
-                }
-            }
-        }
-
-        for (Map.Entry<String, AtomEquivalency> entry : groupHash.entrySet()) {
-
-            nGroups++;
-            String key = entry.getKey();
-            AtomEquivalency atomEquiv = entry.getValue();
-            Atom eAtom = atomEquiv.getAtoms().get(0);
-//            System.out.println("add eq " + key + " " + eAtom.getName() + " " + atomEquiv.getAtoms().size());
-
-            if (eAtom.equivAtoms == null) {
-                eAtom.equivAtoms = new ArrayList(2);
-            }
-
-            eAtom.equivAtoms.add(atomEquiv);
-        }
-
-        entity.setHasEquivalentAtoms(true);
-    }
-
     public static void getCouplings(final Entity entity, final ArrayList<JCoupling> jCouplings,
             final ArrayList<JCoupling> tocsyLinks, final ArrayList<JCoupling> hmbcLinks,
             int nShells, int minShells, int tocsyShells, int hmbcShells) {
-        Molecule molecule = entity.molecule;
+        MoleculeBase molecule = entity.molecule;
         molecule.getAtomTypes();
 
         MTree mTree = new MTree();
@@ -4045,51 +2971,6 @@ public class Molecule extends MoleculeBase {
         return iStart;
     }
 
-    public void getAtomTypes() {
-
-        updateAtomArray();
-        for (Atom atom : atoms) {
-            atom.nPiBonds = 0;
-            atom.nonHydrogens = 0;
-            atom.hydrogens = 0;
-        }
-
-        for (Atom atom : atoms) {
-            for (int iBond = 0; iBond < atom.bonds.size(); iBond++) {
-                Bond bond = atom.bonds.get(iBond);
-                if ((bond.begin == atom) && (bond.end.aNum == 1)) {
-                    atom.hydrogens++;
-                } else if ((bond.end == atom) && (bond.begin.aNum == 1)) {
-                    atom.hydrogens++;
-                }
-
-                if (bond.begin.aNum > 1) {
-                    bond.end.nonHydrogens++;
-                }
-
-                if (bond.end.aNum > 1) {
-                    bond.begin.nonHydrogens++;
-                }
-
-                if (bond.order.getOrderNum() < 5) {
-                    bond.begin.nPiBonds += (2 * (bond.order.getOrderNum() - 1));
-                    bond.end.nPiBonds += (2 * (bond.order.getOrderNum() - 1));
-                } else if ((bond.order.getOrderNum() == 8)) {
-                    bond.begin.nPiBonds += 1;
-                    bond.end.nPiBonds += 1;
-                } else if ((bond.order.getOrderNum() == 7)) {
-                    bond.begin.nPiBonds += 1;
-                    bond.end.nPiBonds += 1;
-                }
-
-                //System.err.println (atom.name+" "+bond.begin.name + " " + bond.end.name);
-            }
-
-            //System.err.println (atom.name+" "+atom.nPiBonds);
-        }
-
-    }
-
     static Bond findBond(Atom atomB, Atom atomE) {
         Bond bond = null;
 
@@ -4153,10 +3034,6 @@ public class Molecule extends MoleculeBase {
             list.add((String) iter.next());
         }
         return list;
-    }
-
-    public Set<String> getPropertyNames() {
-        return propertyMap.keySet();
     }
 
     public void updateLabels() {
@@ -4317,18 +3194,6 @@ public class Molecule extends MoleculeBase {
         labelsCurrent = true;
     }
 
-    public static void selectAtomsForTable(MolFilter molFilter, List<Atom> selected) throws InvalidMoleculeException {
-        selected.clear();
-        List<SpatialSet> fselected = Molecule.matchAtoms(molFilter);
-
-        for (SpatialSet spatialSet : fselected) {
-            if (spatialSet.atom.isMethyl() && !spatialSet.atom.isFirstInMethyl()) {
-                continue;
-            }
-            selected.add(spatialSet.atom);
-        }
-    }
-
     public void copyStructure(int source, int target) {
         Point3 ptS;
         Point3 ptT;
@@ -4416,4 +3281,49 @@ public class Molecule extends MoleculeBase {
         }
         // setupAngles();
     }
+
+    @Override
+    public void addNonStandardResidue(Sequence sequence, Residue residue) {
+        boolean isProtein = residue.polymer.getPolymerType().equals("polypeptide");
+        residue.setNonStandard();
+        Atom startAtom;
+        if (residue.isCompliant()) {
+            residue.addConnectors();
+            startAtom = residue.getAtom("X");
+        } else {
+            if (residue.getFirstBackBoneAtom() != null) {
+                startAtom = residue.getFirstBackBoneAtom();
+            } else {
+                startAtom = isProtein ? residue.getAtom("CAX") : residue.getAtom("C3'X");
+            }
+        }
+        //molecule.updateBondArray();
+        residue.getLastBackBoneAtom().setProperty("connector", true);
+        PathIterator pI = new PathIterator(residue);
+        NodeValidator nV = new NodeValidator();
+        pI.init(nV);
+        pI.processPatterns();
+        pI.setProperties("ar", "AROMATIC");
+        pI.setProperties("res", "RESONANT");
+        pI.setProperties("r", "RING");
+        pI.setHybridization();
+        AngleTreeGenerator.genMeasuredTree(residue, startAtom);
+        residue.removeConnectors();
+
+        sequence.makeConnection(residue);
+
+        // fixme this needs to be changed for non-amino acid residue atoms
+        if (isProtein) {
+            Atom refAtom = residue.getAtom("O");
+            if (refAtom != null) {
+                residue.getAtom("O").dihedralAngle = (float) Math.PI;
+            } else {
+                List<Atom> atoms = residue.getLastBackBoneAtom().getChildren();
+                if (atoms.size() == 1) {
+                    atoms.get(0).dihedralAngle = (float) Math.PI;
+                }
+            }
+        }
+    }
+
 }

@@ -19,7 +19,8 @@ import java.util.logging.Logger;
 import org.nmrfx.chemistry.Atom;
 import org.nmrfx.chemistry.Entity;
 import org.nmrfx.structure.chemistry.HoseCodeGenerator;
-import org.nmrfx.structure.chemistry.InvalidMoleculeException;
+import org.nmrfx.chemistry.InvalidMoleculeException;
+import org.nmrfx.chemistry.MoleculeFactory;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.chemistry.PPMv;
 import org.nmrfx.chemistry.Polymer;
@@ -261,7 +262,7 @@ public class Predictor {
     }
 
     public void predictRNAWithAttributes(int ppmSet) {
-        Molecule molecule = Molecule.getActive();
+        Molecule molecule = (Molecule) MoleculeFactory.getActive();
         if (molecule != null) {
             if (!molecule.getDotBracket().equals("")) {
                 PythonInterpreter interp = new PythonInterpreter();
@@ -356,9 +357,10 @@ public class Predictor {
     }
 
     public void predictRNAWithDistances(Polymer polymer, int iStruct, int iRef, boolean eMode) throws InvalidMoleculeException {
+        Molecule molecule = (Molecule) polymer.molecule;
         if (eMode) {
-            polymer.molecule.updateVecCoords();
-            EnergyCoords eCoords = polymer.molecule.getEnergyCoords();
+            molecule.updateVecCoords();
+            EnergyCoords eCoords = molecule.getEnergyCoords();
             // eCoords.setCells(eCoords.getShiftPairs(), 10000, rMax, 0.0, true, 0.0, 0.0);
             System.out.println("pred");
             eCoords.calcDistShifts(false, getRMax(), intraScale, 1.0);
@@ -373,7 +375,7 @@ public class Predictor {
                     String nucName = atom.getEntity().getName();
                     int alphaType = getAlphaIndex(nucName, aName);
                     if (alphaType >= 0) {
-                        double[] distances = polymer.molecule.calcDistanceInputMatrixRow(iStruct, getRMax(), atom, getIntraScale());
+                        double[] distances = molecule.calcDistanceInputMatrixRow(iStruct, getRMax(), atom, getIntraScale());
                         double distPPM = 0.0;
                         double chi = ((Residue) atom.getEntity()).calcChi();
                         angleValues[0] = Math.cos(chi);

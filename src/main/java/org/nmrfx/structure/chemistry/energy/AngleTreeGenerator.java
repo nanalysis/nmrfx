@@ -5,16 +5,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import org.nmrfx.chemistry.Atom;
-import org.nmrfx.chemistry.Bond;
-import org.nmrfx.chemistry.Entity;
-import org.nmrfx.chemistry.ITree;
+
+import org.nmrfx.chemistry.*;
 import org.nmrfx.structure.chemistry.Molecule;
-import org.nmrfx.chemistry.Order;
-import org.nmrfx.structure.chemistry.Point3;
-import org.nmrfx.chemistry.Polymer;
-import org.nmrfx.structure.chemistry.search.MNode;
-import org.nmrfx.structure.chemistry.search.MTree;
+import org.nmrfx.structure.chemistry.CoordinateGenerator;
+import org.nmrfx.chemistry.search.MNode;
+import org.nmrfx.chemistry.search.MTree;
 import org.nmrfx.structure.chemistry.ring.HanserRingFinder;
 import org.nmrfx.structure.chemistry.ring.Ring;
 
@@ -28,6 +24,30 @@ public class AngleTreeGenerator {
     Map<Atom, Map<Atom, Double>> ringClosures;
     List<Bond> closureBonds = new ArrayList<>();
     List<Atom> atomPathList = new ArrayList<>();
+
+    public static void genCoordinates(Entity entity, Atom startAtom) {
+        AngleTreeGenerator aTreeGen = new AngleTreeGenerator();
+        List<List<Atom>> atomTree = aTreeGen.genTree(entity, startAtom, null);
+        List<Atom> atomList = aTreeGen.getPathList();
+        int[][] genVecs = CoordinateGenerator.setupCoords(atomTree);
+        CoordinateGenerator.prepareAtoms(atomList);
+        for (Atom atom : atomList) {
+            atom.setPointValidity(false);
+        }
+        CoordinateGenerator.genCoords(genVecs, atomList);
+    }
+
+    public static void genMeasuredTree(Entity entity, Atom startAtom) {
+        if (startAtom == null) {
+            startAtom = entity.atoms.get(0);
+        }
+        Molecule molecule = (Molecule) startAtom.entity.molecule;
+
+        AngleTreeGenerator aTreeGen = new AngleTreeGenerator();
+        List<List<Atom>> atomTree = aTreeGen.genTree(entity, startAtom, null);
+        aTreeGen.measureAtomTree(entity, atomTree);
+        molecule.setRingClosures(aTreeGen.getRingClosures());
+    }
 
     class BondSort implements Comparable<BondSort> {
 
@@ -257,7 +277,7 @@ public class AngleTreeGenerator {
         if (itree instanceof Molecule) {
             mol = (Molecule) itree;
         } else {
-            mol = Molecule.activeMol();
+            mol = (Molecule) MoleculeFactory.getActive();
         }
         ringFinder.findSmallestRings(mol);
         atomTree.forEach((branch) -> {
@@ -383,7 +403,7 @@ public class AngleTreeGenerator {
         }
         if (itree instanceof Molecule) {
             mol = (Molecule) itree;
-            Molecule.makeAtomList();
+            mol.updateAtomArray();
             mol.resetGenCoords();
             mol.setupRotGroups();
             mol.genCoords();

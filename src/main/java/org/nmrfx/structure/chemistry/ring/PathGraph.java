@@ -32,6 +32,7 @@ import org.nmrfx.chemistry.Atom;
 import org.nmrfx.chemistry.Bond;
 import org.nmrfx.chemistry.Entity;
 import org.nmrfx.chemistry.ITree;
+import org.nmrfx.chemistry.MoleculeBase;
 import org.nmrfx.structure.chemistry.Molecule;
 
 /**
@@ -127,9 +128,9 @@ public class PathGraph {
     }
 
     private void loadEdges(ITree itree) {
-        Molecule molecule;
-        if (itree instanceof Molecule){
-            molecule = (Molecule) itree;
+        MoleculeBase molecule;
+        if (itree instanceof MoleculeBase){
+            molecule = (MoleculeBase) itree;
         }  else {
             Entity entity = (Entity) itree;
             molecule = entity.molecule;

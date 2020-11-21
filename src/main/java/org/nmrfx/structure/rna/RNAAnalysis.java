@@ -74,7 +74,7 @@ public class RNAAnalysis {
         for (Residue residueA : rnaResidues) {
             for (Residue residueB : rnaResidues) {
                 if (residueA.getResNum() < residueB.getResNum()) {
-                    int type = residueA.getBasePairType(residueB);
+                    int type = BasePair.getBasePairType(residueA, residueB);
                     if (type == typeTarget) {
                         BasePair bp = new BasePair(residueA, residueB);
                         bpList.add(bp);

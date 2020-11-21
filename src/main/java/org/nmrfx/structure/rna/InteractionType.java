@@ -5,13 +5,10 @@
  */
 package org.nmrfx.structure.rna;
 
-import org.nmrfx.structure.rna.Loop;
-import org.nmrfx.structure.rna.RNAHelix;
-import org.nmrfx.structure.rna.Bulge;
 import org.nmrfx.chemistry.Residue;
 
 import java.util.*;
-import org.nmrfx.structure.chemistry.SecondaryStructure;
+import org.nmrfx.chemistry.SecondaryStructure;
 
 /**
  *

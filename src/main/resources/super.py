@@ -3,14 +3,14 @@ import glob
 import os.path
 from org.nmrfx.structure.chemistry import Molecule
 from org.nmrfx.structure.chemistry import SuperMol
-from org.nmrfx.structure.chemistry.io import PDBFile
+from org.nmrfx.chemistry.io import PDBFile
 import molio
 from java.util import TreeSet
 import argparse, re
 from operator import itemgetter
 from itertools import groupby
 from java.io import FileWriter;
-from org.nmrfx.structure.chemistry.io import MMcifWriter
+from org.nmrfx.chemistry.io import MMcifWriter
 
 def median(values):
     values.sort()

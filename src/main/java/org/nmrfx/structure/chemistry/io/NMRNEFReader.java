@@ -18,6 +18,9 @@
 package org.nmrfx.structure.chemistry.io;
 
 import java.io.BufferedReader;
+
+import org.nmrfx.chemistry.*;
+import org.nmrfx.chemistry.Residue.RES_POSITION;
 import org.nmrfx.structure.chemistry.energy.Dihedral;
 import org.nmrfx.structure.chemistry.energy.EnergyLists;
 import java.io.File;
@@ -26,24 +29,21 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.FileSystems;
 import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.nmrfx.peaks.PeakDim;
 import org.nmrfx.peaks.PeakListBase;
 import org.nmrfx.peaks.ResonanceFactory;
-import org.nmrfx.chemistry.AtomResonance;
 import org.nmrfx.star.Loop;
 import org.nmrfx.star.ParseException;
 import org.nmrfx.star.STAR3;
 import org.nmrfx.star.Saveframe;
-import org.nmrfx.chemistry.Atom;
-import org.nmrfx.chemistry.Compound;
-import org.nmrfx.structure.chemistry.InvalidMoleculeException;
-import org.nmrfx.structure.chemistry.MolFilter;
+import org.nmrfx.chemistry.MolFilter;
+import org.nmrfx.chemistry.constraints.AngleConstraint;
+import org.nmrfx.chemistry.io.MoleculeIOException;
+import org.nmrfx.chemistry.io.PDBFile;
+import org.nmrfx.chemistry.io.Sequence;
 import org.nmrfx.structure.chemistry.Molecule;
-import org.nmrfx.chemistry.Polymer;
-import org.nmrfx.chemistry.Residue;
-import org.nmrfx.chemistry.SpatialSet;
-import org.nmrfx.structure.chemistry.io.Sequence.RES_POSITION;
-import org.nmrfx.structure.utilities.Util;
 
 /**
  *
@@ -107,7 +107,7 @@ public class NMRNEFReader {
         reader.processNEF();
     }
 
-    void buildNEFChains(final Saveframe saveframe, Molecule molecule, final String nomenclature) throws ParseException {
+    void buildNEFChains(final Saveframe saveframe, MoleculeBase molecule, final String nomenclature) throws ParseException {
         Loop loop = saveframe.getLoop("_nef_sequence");
         if (loop == null) {
             throw new ParseException("No \"_nef_sequence\" loop");
@@ -123,7 +123,7 @@ public class NMRNEFReader {
         }
     }
 
-    void addNEFResidues(Saveframe saveframe, Molecule molecule, List<String> indexColumn, List<String> chainCodeColumn, List<String> seqCodeColumn, List<String> residueNameColumn, List<String> linkingColumn, List<String> variantColumn) throws ParseException {
+    void addNEFResidues(Saveframe saveframe, MoleculeBase molecule, List<String> indexColumn, List<String> chainCodeColumn, List<String> seqCodeColumn, List<String> residueNameColumn, List<String> linkingColumn, List<String> variantColumn) throws ParseException {
         String reslibDir = PDBFile.getReslibDir("IUPAC");
         Polymer polymer = null;
         Compound compound = null;
@@ -183,19 +183,19 @@ public class NMRNEFReader {
 
             }
             if (polymer != null && compound == null) {
-                Residue residue = new Residue(seqCode, resName.toUpperCase(), resVariant);
-                residue.molecule = polymer.molecule;
-                addCompound(mapID, residue);
-                polymer.addResidue(residue);
-                RES_POSITION resPos = Sequence.RES_POSITION.MIDDLE;
-                if (linkType.equals("start")) {
-                    resPos = RES_POSITION.START;
-                    //residue.capFirstResidue();
-                } else if (linkType.equals("end")) {
-                    resPos = RES_POSITION.END;
-                    //residue.capLastResidue();
-                }
                 try {
+                    Residue residue = new Residue(seqCode, resName.toUpperCase(), resVariant);
+                    residue.molecule = polymer.molecule;
+                    addCompound(mapID, residue);
+                    polymer.addResidue(residue);
+                    RES_POSITION resPos = RES_POSITION.MIDDLE;
+                    if (linkType.equals("start")) {
+                        resPos = RES_POSITION.START;
+                        //residue.capFirstResidue();
+                    } else if (linkType.equals("end")) {
+                        resPos = RES_POSITION.END;
+                        //residue.capLastResidue();
+                    }
                     String extension = "";
                     if (resVariant.replace("-H3", "").contains("-H")) {
                         extension = "_deprot";
@@ -215,8 +215,8 @@ public class NMRNEFReader {
                             ex.printStackTrace();
                         }
                     }
-                } catch (MoleculeIOException psE) {
-                    throw new ParseException(psE.getMessage());
+                } catch (MoleculeIOException ex) {
+                    Logger.getLogger(NMRNEFReader.class.getName()).log(Level.SEVERE, null, ex);
                 }
             } else if (compound != null) {
                 String cifFileName = FileSystems.getDefault().getPath(nefDir.toString(), resName + ".cif").toString();
@@ -284,8 +284,8 @@ public class NMRNEFReader {
         }
     }
 
-    Molecule buildNEFMolecule() throws ParseException {
-        Molecule molecule = null;
+    MoleculeBase buildNEFMolecule() throws ParseException {
+        MoleculeBase molecule = null;
         for (Saveframe saveframe : nef.getSaveFrames().values()) {
             if (DEBUG) {
                 System.err.println(saveframe.getCategoryName());
@@ -295,7 +295,7 @@ public class NMRNEFReader {
                     System.err.println("process molecule >>" + saveframe.getName() + "<<");
                 }
                 String molName = "noname";
-                molecule = new Molecule(molName);
+                molecule = MoleculeFactory.newMolecule(molName);
                 buildNEFChains(saveframe, molecule, molName);
                 molecule.updateSpatialSets();
                 molecule.genCoords(false);
@@ -345,7 +345,7 @@ public class NMRNEFReader {
                 }
                 String fullAtom = chainCode + ":" + sequenceCode + "." + atomName;
                 //  System.out.println(fullAtom);
-                List<Atom> atoms = Molecule.getNEFMatchedAtoms(new MolFilter(fullAtom), Molecule.getActive());
+                List<Atom> atoms = MoleculeBase.getNEFMatchedAtoms(new MolFilter(fullAtom), MoleculeFactory.getActive());
 //                System.out.println(atoms.toString());
                 for (Atom atom : atoms) {
                     if (atom.isMethyl()) {
@@ -474,7 +474,7 @@ public class NMRNEFReader {
                         }
                     }
                 }
-                atoms[atomIndex] = Molecule.getAtomByName(fullAtom);
+                atoms[atomIndex] = MoleculeBase.getAtomByName(fullAtom);
             }
             double scale = 1.0;
             try {
@@ -636,7 +636,11 @@ public class NMRNEFReader {
             if (DEBUG) {
                 System.err.println("process molecule");
             }
-            Molecule molecule = buildNEFMolecule();
+            MoleculeBase moleculeBase = buildNEFMolecule();
+            if (!(moleculeBase instanceof Molecule)) {
+                return null;
+            }
+            Molecule molecule = (Molecule) moleculeBase;
             molecule.setMethylRotationActive(true);
             molecule.setEnergyLists(new EnergyLists(molecule));
             EnergyLists energyList = molecule.getEnergyLists();

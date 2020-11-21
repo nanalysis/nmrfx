@@ -20,7 +20,7 @@ package org.nmrfx.structure.rna;
 import org.nmrfx.chemistry.Residue;
 
 import java.util.*;
-import org.nmrfx.structure.chemistry.SecondaryStructure;
+import org.nmrfx.chemistry.SecondaryStructure;
 
 /**
  *

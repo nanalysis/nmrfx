@@ -19,14 +19,16 @@ package org.nmrfx.structure.chemistry.energy;
 
 import java.io.IOException;
 import org.nmrfx.chemistry.Atom;
+import org.nmrfx.chemistry.AtomEnergyProp;
 import org.nmrfx.structure.fastlinear.FastVector3D;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.nmrfx.structure.chemistry.Point3;
+import org.nmrfx.chemistry.Point3;
 import org.nmrfx.chemistry.Residue;
+import org.nmrfx.structure.chemistry.Molecule;
 
 /**
  *
@@ -40,7 +42,6 @@ public class EnergyCoords {
     {1, 0, 1}, {1, 1, 1}, {0, 1, 1}, {-1, 1, 1}, {-1, 0, 1},
     {-1, -1, 1}, {0, -1, 1}, {1, -1, 1}
     };
-
     FastVector3D[] vecCoords = null;
     EnergyDistancePairs eDistancePairs;
     EnergyConstraintPairs eConstraintPairs;

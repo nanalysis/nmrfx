@@ -17,8 +17,7 @@
  */
 package org.nmrfx.structure.chemistry.energy;
 
-import org.nmrfx.chemistry.Atom;
-import org.nmrfx.structure.chemistry.InvalidMoleculeException;
+import org.nmrfx.chemistry.*;
 import org.nmrfx.structure.chemistry.Molecule;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -34,7 +33,6 @@ import java.util.Random;
 import org.apache.commons.math3.optim.PointValuePair;
 import org.apache.commons.math3.optim.SimpleValueChecker;
 import org.apache.commons.math3.util.FastMath;
-import org.nmrfx.chemistry.Residue;
 
 public class Dihedral {
 
@@ -130,8 +128,8 @@ public class Dihedral {
      */
     public void prepareAngles(final boolean usePseudo) {
         this.usePseudo = usePseudo;
-        ArrayList<Atom> angleAtoms = molecule.setupAngles();
-        ArrayList<Atom> pseudoAngleAtoms = molecule.setupPseudoAngles();
+        List<Atom> angleAtoms = molecule.setupAngles();
+        List<Atom> pseudoAngleAtoms = molecule.setupPseudoAngles();
         if (!usePseudo) {
             pseudoAngleAtoms.clear();
         }
@@ -222,9 +220,9 @@ public class Dihedral {
 
                 pseudoVals = calcPseudoAngle(v[2], v[3]);
                 //System.out.println("Get Dihedral PseudoAngle" + angleValues[i]);
-                angleValues[i++] = reduceAngle(pseudoVals[0]);
+                angleValues[i++] = Util.reduceAngle(pseudoVals[0]);
                 //System.out.println("Get Dihedral PuckerValue: " + angleValues[i]);
-                angleValues[i++] = reduceAngle(pseudoVals[1]);
+                angleValues[i++] = Util.reduceAngle(pseudoVals[1]);
 
                 //angleValues[i++] = reduceAngle(calcPseudoAngle(v[2], v[3]));
                 //angleValues[i++] = puckerAmplitude;
@@ -233,10 +231,10 @@ public class Dihedral {
             }
         }
         //List of all atoms with rotatable angles as specified in 
-        ArrayList<Atom> angleAtoms = molecule.getAngleAtoms();
+        List<Atom> angleAtoms = molecule.getAngleAtoms();
         for (Atom atom : angleAtoms) {
             //reducing angles so that value of each angle is >0 and <2pi 
-            angleValues[i++] = reduceAngle(atom.daughterAtom.dihedralAngle);
+            angleValues[i++] = Util.reduceAngle(atom.daughterAtom.dihedralAngle);
         }
     }
 
@@ -261,7 +259,7 @@ public class Dihedral {
                 fileOut.format("%s %.6f\n", atom.getFullName(), atom.dihedralAngle * toDeg);
             }
         }
-        ArrayList<Atom> angleAtoms = molecule.getAngleAtoms();
+        List<Atom> angleAtoms = molecule.getAngleAtoms();
         for (Atom atom : angleAtoms) {
             fileOut.format("%s %.6f\n", atom.getFullName(), atom.daughterAtom.dihedralAngle * toDeg);
         }
@@ -283,7 +281,7 @@ public class Dihedral {
                     break;
                 }
                 String[] fields = string.split(" ");
-                Atom atom = Molecule.getAtomByName(fields[0]);
+                Atom atom = MoleculeBase.getAtomByName(fields[0]);
                 double dihedral = Double.parseDouble(fields[1]);
                 atom.dihedralAngle = (float) (dihedral / toDeg);
             }
@@ -306,15 +304,15 @@ public class Dihedral {
         initPuckerAmplitude = maxTorsionAngle;
         ArrayList<Atom> pseudoAngleAtoms = molecule.setupPseudoAngles();
         for (int j = 0; j < pseudoAngleAtoms.size(); j += 3) {
-            double[] v = setSugarBonds(reduceAngle(angle), maxTorsionAngle);
+            double[] v = setSugarBonds(Util.reduceAngle(angle), maxTorsionAngle);
             Atom atom2 = pseudoAngleAtoms.get(j);
-            atom2.dihedralAngle = (float) reduceAngle(v[2]);
+            atom2.dihedralAngle = (float) Util.reduceAngle(v[2]);
             //atom2.dihAngle.angleValue = (float) reduceAngle(v[2]);
             Atom atom1 = pseudoAngleAtoms.get(j + 1);
-            atom1.dihedralAngle = (float) reduceAngle(v[1] + deltaV1);
+            atom1.dihedralAngle = (float) Util.reduceAngle(v[1] + deltaV1);
             //atom.dihAngle.angleValue = (float) reduceAngle(v[1] + deltaV1);
             Atom atom3 = pseudoAngleAtoms.get(j + 2);
-            atom3.dihedralAngle = (float) reduceAngle(v[3] + deltaV3);
+            atom3.dihedralAngle = (float) Util.reduceAngle(v[3] + deltaV3);
             //atom3.dihAngle.angleValue = (float) reduceAngle(v[3] + deltaV3);
         }
         molecule.genCoords(false, null);
@@ -339,24 +337,24 @@ public class Dihedral {
         if (usePseudo) {
             ArrayList<Atom> pseudoAngleAtoms = molecule.setupPseudoAngles();
             for (int j = 0; j < pseudoAngleAtoms.size(); j += 3) {
-                double[] v = setSugarBonds(reduceAngle(angleValues[i++]),
+                double[] v = setSugarBonds(Util.reduceAngle(angleValues[i++]),
                         angleValues[i++]);
                 Atom atom2 = pseudoAngleAtoms.get(j);
-                atom2.dihedralAngle = (float) reduceAngle(v[2]);
+                atom2.dihedralAngle = (float) Util.reduceAngle(v[2]);
                 //atom2.dihAngle.angleValue = (float) reduceAngle(v[2]);
                 Atom atom1 = pseudoAngleAtoms.get(j + 1);
-                atom1.dihedralAngle = (float) reduceAngle(v[1] + deltaV1);
+                atom1.dihedralAngle = (float) Util.reduceAngle(v[1] + deltaV1);
                 //atom1.dihAngle.angleValue = (float) reduceAngle(v[1] + deltaV1);
                 Atom atom3 = pseudoAngleAtoms.get(j + 2);
-                atom3.dihedralAngle = (float) reduceAngle(v[3] + deltaV3);
+                atom3.dihedralAngle = (float) Util.reduceAngle(v[3] + deltaV3);
                 //atom3.dihAngle.angleValue = (float) reduceAngle(v[3] + deltaV3);
                 //System.out.println("Put PuckerValue: " + angleValues[i]);
                 //System.out.println("Put Value: ")
             }
         }
-        ArrayList<Atom> angleAtoms = molecule.getAngleAtoms();
+        List<Atom> angleAtoms = molecule.getAngleAtoms();
         for (Atom atom : angleAtoms) {
-            atom.daughterAtom.dihedralAngle = (float) reduceAngle(angleValues[i++]);
+            atom.daughterAtom.dihedralAngle = (float) Util.reduceAngle(angleValues[i++]);
         }
         //molecule.genCoords(false, null);print
 
@@ -387,7 +385,7 @@ public class Dihedral {
         }
         Atom[] atoms = new Atom[4];
         for (int i = 0; i < arrayLength; i++) {
-            atoms[i] = Molecule.getAtomByName(atomNames.get(i));
+            atoms[i] = MoleculeBase.getAtomByName(atomNames.get(i));
             if (atoms[i] == null) {
                 throw new IllegalArgumentException("Error adding dihedral boundary, invalid atom " + atomNames.get(i));
             }
@@ -417,7 +415,7 @@ public class Dihedral {
     }
 
     public void addBoundary(final Atom[] atoms, double lower, double upper, double scale,
-            double weight, double target, double targetErr, String name) throws InvalidMoleculeException {
+                            double weight, double target, double targetErr, String name) throws InvalidMoleculeException {
         if (atoms.length != 4) {
             throw new IllegalArgumentException("Error adding dihedral boundary, must provide four atoms");
         }
@@ -447,8 +445,8 @@ public class Dihedral {
     }
 
     public void setBoundaries(final double sigma, boolean useDegrees, double maxRange) {
-        ArrayList<Atom> angleAtoms = molecule.getAngleAtoms();
-        ArrayList<Atom> pseudoAngleAtoms = molecule.getPseudoAngleAtoms();
+        List<Atom> angleAtoms = molecule.getAngleAtoms();
+        List<Atom> pseudoAngleAtoms = molecule.getPseudoAngleAtoms();
         if (!usePseudo) {
             pseudoAngleAtoms.clear();
         }
@@ -507,8 +505,8 @@ public class Dihedral {
          */
         for (int i = 0; i < boundaries[0].length; i++) {
             if (centerBoundaries) {
-                double angle = reduceAngle(angleValues[i]);
-                boundaries[0][i] = reduceAngle(angle - FastMath.PI / 2);
+                double angle = Util.reduceAngle(angleValues[i]);
+                boundaries[0][i] = Util.reduceAngle(angle - FastMath.PI / 2);
                 boundaries[1][i] = boundaries[0][i] + FastMath.PI;
             } else {
                 boundaries[0][i] = -1.0 * FastMath.PI;
@@ -524,7 +522,7 @@ public class Dihedral {
     }
 
     public void setupAngleRestraints() {
-        ArrayList<Atom> angleAtoms = molecule.getAngleAtoms();
+        List<Atom> angleAtoms = molecule.getAngleAtoms();
         energyList.clearAngleBoundaries();
         for (int i = 0; i < angleAtoms.size(); i++) {
             Atom atom = angleAtoms.get(i);
@@ -550,7 +548,7 @@ public class Dihedral {
         setBoundaries(0.1, false, Math.PI);
         for (int i = 0; i < angleValues.length; i++) {
             angleValues[i] = 2.0 * Math.PI * (rand.nextDouble() - 0.5);
-            angleValues[i] = reduceAngle(angleValues[i]);
+            angleValues[i] = Util.reduceAngle(angleValues[i]);
         }
         putDihedrals();
         molecule.genCoords();
@@ -622,7 +620,7 @@ public class Dihedral {
         }
         double normValue = f * (boundaries[1][i] - boundaries[0][i]) + boundaries[0][i];
         if (boundaries[1][i] > FastMath.PI) {
-            normValue = reduceAngle(normValue);
+            normValue = Util.reduceAngle(normValue);
         }
         return normValue;
     }
@@ -670,15 +668,6 @@ public class Dihedral {
         return sugarAngles;
     }
 
-    public static double reduceAngle(double x) {
-        if ((x > FastMath.PI) || (x < -FastMath.PI)) {
-            double sine = FastMath.sin(x);
-            double cosine = FastMath.cos(x);
-            x = FastMath.atan2(sine, cosine);
-        }
-        return (x);
-    }
-
     public static double[] calcPseudoAngle(double v2, double v3) {
         double puckerAmplitude = Math.sqrt(Math.pow(((v2 - v3 * Math.cos(4 * Math.PI / 5.0)) / (Math.sin(4 * Math.PI / 5.0))), 2) + v3 * v3);
         double cosValue = v2 / puckerAmplitude;
@@ -710,8 +699,8 @@ public class Dihedral {
     }
 
     public void putInitialAngles(boolean useRandom) {
-        ArrayList<Atom> angleAtoms = molecule.getAngleAtoms();
-        ArrayList<Atom> pseudoAngleAtoms = molecule.getPseudoAngleAtoms();
+        List<Atom> angleAtoms = molecule.getAngleAtoms();
+        List<Atom> pseudoAngleAtoms = molecule.getPseudoAngleAtoms();
         randomizeAngles();
         if (!useRandom) {
             int nPseudoAngles = pseudoAngleAtoms.size() / 3;
@@ -737,7 +726,7 @@ public class Dihedral {
 //                    }
 //                }
                 if (usePseudo == true && incrementByTwo == true) {
-                    angleValues[i++] = reduceAngle(initPseudoAngle);
+                    angleValues[i++] = Util.reduceAngle(initPseudoAngle);
                     angleValues[i++] = initPuckerAmplitude;
                 }
                 if (incrementByTwo == true) {
@@ -750,8 +739,8 @@ public class Dihedral {
     }
 
     public void printAngleTest() {
-        ArrayList<Atom> pseudoAngleAtoms = molecule.getPseudoAngleAtoms();
-        ArrayList<Atom> angleAtoms = molecule.getAngleAtoms();
+        List<Atom> pseudoAngleAtoms = molecule.getPseudoAngleAtoms();
+        List<Atom> angleAtoms = molecule.getAngleAtoms();
 
         System.out.println("Pseudo Angles + Boundaries");
         System.out.println("Pseudo Angle Atom Size: " + pseudoAngleAtoms.size());

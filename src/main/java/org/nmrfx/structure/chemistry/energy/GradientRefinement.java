@@ -30,7 +30,7 @@ import org.apache.commons.math3.optim.InitialGuess;
 import org.apache.commons.math3.optim.nonlinear.scalar.ObjectiveFunction;
 import org.apache.commons.math3.optim.MaxEval;
 import org.apache.commons.math3.optim.nonlinear.scalar.ObjectiveFunctionGradient;
-import org.nmrfx.processor.processing.ProgressUpdater;
+import org.nmrfx.utilities.ProgressUpdater;
 
 /**
  *

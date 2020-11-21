@@ -8,10 +8,10 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import org.apache.commons.math3.util.MultidimensionalCounter;
 import org.apache.commons.math3.util.MultidimensionalCounter.Iterator;
-import org.nmrfx.processor.datasets.peaks.Peak;
+import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakDim;
-import org.nmrfx.processor.datasets.peaks.PeakList;
-import org.nmrfx.processor.datasets.peaks.PeakList.SearchDim;
+import org.nmrfx.peaks.PeakListBase;
+import org.nmrfx.peaks.PeakListBase.SearchDim;
 import org.nmrfx.peaks.SpectralDim;
 import org.nmrfx.structure.seqassign.RunAbout.TypeInfo;
 import static org.nmrfx.structure.seqassign.SpinSystems.comparePeaks;
@@ -187,7 +187,7 @@ public class SpinSystem {
             return peak;
         }
 
-        public boolean isType(PeakList peakList, String aName, boolean intraMode) {
+        public boolean isType(PeakListBase peakList, String aName, boolean intraMode) {
             boolean ok = true;
             if (peak.getPeakList() != peakList) {
                 ok = false;
@@ -231,7 +231,7 @@ public class SpinSystem {
         return peakMatches;
     }
 
-    public int getNPeaksWithList(PeakList peakList) {
+    public int getNPeaksWithList(PeakListBase peakList) {
         int n = 0;
         for (PeakMatch match : peakMatches) {
             if (peakList == match.getPeak().getPeakList()) {
@@ -267,7 +267,7 @@ public class SpinSystem {
 
     }
 
-    public List<AtomPresent> getTypesPresent(TypeInfo typeInfo, PeakList peakList, int iDim) {
+    public List<AtomPresent> getTypesPresent(TypeInfo typeInfo, PeakListBase peakList, int iDim) {
         String[] names = typeInfo.getNames(iDim);
         List<AtomPresent> result = new ArrayList<>();
         boolean[] intraResidue = typeInfo.getIntraResidue(iDim);
@@ -392,7 +392,7 @@ public class SpinSystem {
         return fragment;
     }
 
-    public static int[] getCounts(PeakList peakList) {
+    public static int[] getCounts(PeakListBase peakList) {
         int nDim = peakList.getNDim();
         int[] counts = new int[nDim];
         for (int i = 0; i < nDim; i++) {
@@ -856,10 +856,10 @@ public class SpinSystem {
     }
 
     void getLinkedPeaks() {
-        PeakList refList = rootPeak.getPeakList();
-        for (Peak pkB : PeakList.getLinks(rootPeak, 0)) {// fixme calculate correct dim
+        PeakListBase refList = rootPeak.getPeakList();
+        for (Peak pkB : PeakListBase.getLinks(rootPeak, 0)) {// fixme calculate correct dim
             if (rootPeak != pkB) {
-                PeakList peakListB = pkB.getPeakList();
+                PeakListBase peakListB = pkB.getPeakList();
                 if (refList != peakListB) {
                     int[] aMatch = matchDims(refList, peakListB);
                     double f = comparePeaks(rootPeak, pkB, aMatch);
@@ -910,7 +910,7 @@ public class SpinSystem {
     void setUserFields(List<ResAtomPattern>[] resAtomPatterns, int[] pt) {
         StringBuilder sBuilder = new StringBuilder();
         String linkDim = RunAbout.getNDimName(rootPeak.getPeakList()); // fixme
-        List<Peak> linkedPeaks = PeakList.getLinks(rootPeak,
+        List<Peak> linkedPeaks = PeakListBase.getLinks(rootPeak,
                 rootPeak.getPeakList().getSpectralDim(linkDim).getDataDim());
         for (Peak peak : linkedPeaks) {
             for (PeakDim peakDim : peak.getPeakDims()) {
@@ -1018,7 +1018,7 @@ public class SpinSystem {
         int i = 0;
         for (PeakMatch peakMatch : peakMatches) {
             Peak peak = peakMatch.peak;
-            PeakList peakList = peak.getPeakList();
+            PeakListBase peakList = peak.getPeakList();
             List<SearchDim> searchDims = peakList.getSearchDims();
             values[i] = new double[searchDims.size()];
             int j = 0;

@@ -21,9 +21,8 @@ import org.nmrfx.chemistry.Atom;
 import org.nmrfx.chemistry.Compound;
 import org.nmrfx.chemistry.CoordSet;
 import org.nmrfx.chemistry.Entity;
-import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.chemistry.PPMv;
-import org.nmrfx.structure.chemistry.Point3;
+import org.nmrfx.chemistry.Point3;
 import org.nmrfx.chemistry.Polymer;
 import org.nmrfx.chemistry.Residue;
 import org.nmrfx.chemistry.SpatialSet;
@@ -34,6 +33,7 @@ import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math3.geometry.euclidean.threed.Plane;
 import org.apache.commons.math3.geometry.euclidean.threed.Line;
 import org.apache.commons.math3.util.FastMath;
+import org.nmrfx.chemistry.MoleculeBase;
 
 public class RingCurrentShift {
 
@@ -182,7 +182,7 @@ public class RingCurrentShift {
         makeBenzene();
     }
 
-    private Molecule molecule;
+    private MoleculeBase molecule;
 
     static void makeBenzene() {
         final String[] benAtoms0 = {"C1", "C2", "C3", "C4", "C5", "C6"};
@@ -215,11 +215,6 @@ public class RingCurrentShift {
     public static double getRingFactor(final String ringName) {
         RingType ringType = ringAtoms.get(ringName);
         return ringType.ringFactor;
-    }
-
-    public void makeRingList(final String molName) {
-        molecule = Molecule.get(molName);
-        makeRingList(molecule);
     }
 
     public static void setRingConformation(Ring ring, int iStruct) {
@@ -409,7 +404,7 @@ public class RingCurrentShift {
         return geoSum;
     }
 
-    public void makeRingList(Molecule molecule) {
+    public void makeRingList(MoleculeBase molecule) {
         Residue firstResidue;
         Residue lastResidue = null;
         Compound compound;

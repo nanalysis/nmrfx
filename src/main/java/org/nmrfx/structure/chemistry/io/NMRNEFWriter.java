@@ -30,23 +30,25 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import org.nmrfx.processor.datasets.peaks.InvalidPeakException;
+import org.nmrfx.peaks.InvalidPeakException;
 import org.nmrfx.star.ParseException;
 import org.nmrfx.star.STAR3;
 import org.nmrfx.chemistry.Atom;
 import org.nmrfx.chemistry.Compound;
 import org.nmrfx.chemistry.Entity;
-import org.nmrfx.structure.chemistry.InvalidMoleculeException;
+import org.nmrfx.chemistry.InvalidMoleculeException;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.chemistry.Polymer;
 import org.nmrfx.chemistry.Residue;
-import org.nmrfx.structure.chemistry.energy.AngleBoundary;
-import org.nmrfx.structure.chemistry.energy.AtomDistancePair;
+import org.nmrfx.chemistry.AngleBoundary;
+import org.nmrfx.chemistry.AtomDistancePair;
 import org.nmrfx.structure.chemistry.energy.Dihedral;
-import org.nmrfx.structure.chemistry.energy.DistancePair;
+import org.nmrfx.chemistry.DistancePair;
+import org.nmrfx.chemistry.MoleculeBase;
+import org.nmrfx.chemistry.MoleculeFactory;
 import org.nmrfx.structure.chemistry.energy.EnergyLists;
 import org.nmrfx.structure.utilities.NvUtil;
-import org.nmrfx.structure.utilities.Util;
+import org.nmrfx.chemistry.Util;
 
 /**
  *
@@ -59,7 +61,7 @@ public class NMRNEFWriter {
     private static final String[] DISTANCE_RESTRAINT_LOOP_STRINGS = {"_nef_distance_restraint.index", "_nef_distance_restraint.restraint_id", "_nef_distance_restraint.restraint_combination_id", "_nef_distance_restraint.chain_code_1", "_nef_distance_restraint.sequence_code_1", "_nef_distance_restraint.residue_name_1", "_nef_distance_restraint.atom_name_1", "_nef_distance_restraint.chain_code_2", "_nef_distance_restraint.sequence_code_2", "_nef_distance_restraint.residue_name_2", "_nef_distance_restraint.atom_name_2", "_nef_distance_restraint.weight", "_nef_distance_restraint.target_value", "_nef_distance_restraint.target_value_uncertainty", "_nef_distance_restraint.lower_limit", "_nef_distance_restraint.upper_limit"};
     private static final String[] DIHEDRAL_RESTRAINT_LOOP_STRINGS = {"_nef_dihedral_restraint.index", "_nef_dihedral_restraint.restraint_id", "_nef_dihedral_restraint.restraint_combination_id", "_nef_dihedral_restraint.chain_code_1", "_nef_dihedral_restraint.sequence_code_1", "_nef_dihedral_restraint.residue_name_1", "_nef_dihedral_restraint.atom_name_1", "_nef_dihedral_restraint.chain_code_2", "_nef_dihedral_restraint.sequence_code_2", "_nef_dihedral_restraint.residue_name_2", "_nef_dihedral_restraint.atom_name_2", "_nef_dihedral_restraint.chain_code_3", "_nef_dihedral_restraint.sequence_code_3", "_nef_dihedral_restraint.residue_name_3", "_nef_dihedral_restraint.atom_name_3", "_nef_dihedral_restraint.chain_code_4", "_nef_dihedral_restraint.sequence_code_4", "_nef_dihedral_restraint.residue_name_4", "_nef_dihedral_restraint.atom_name_4", "_nef_dihedral_restraint.weight", "_nef_dihedral_restraint.target_value", "_nef_dihedral_restraint.target_value_uncertainty", "_nef_dihedral_restraint.lower_limit", "_nef_dihedral_restraint.upper_limit", "_nef_dihedral_restraint.name"};
 
-    static void writeMolSys(FileWriter chan) throws IOException, InvalidMoleculeException {
+    static void writeMolSys(MoleculeBase molecule, FileWriter chan) throws IOException, InvalidMoleculeException {
         chan.write("\n\n");
         chan.write("save_nef_molecular_system\n");
         chan.write("    _nef_molecular_system.sf_category   ");
@@ -73,10 +75,6 @@ public class NMRNEFWriter {
             chan.write("         " + loopString + "\n");
         }
         chan.write("\n\n");
-        Molecule molecule = Molecule.getActive();
-        if (molecule == null) {
-            throw new InvalidMoleculeException("No active mol");
-        }
         Iterator entityIterator = molecule.entityLabels.values().iterator();
         int idx = 1;
         while (entityIterator.hasNext()) {
@@ -178,7 +176,7 @@ public class NMRNEFWriter {
         return isFirst;
     }
 
-    static void writePPM(FileWriter chan) throws IOException, InvalidMoleculeException {
+    static void writePPM(MoleculeBase molecule, FileWriter chan) throws IOException, InvalidMoleculeException {
         chan.write("\n");
         chan.write("save_nef_chemical_shift_list\n"); //fixme dynamically get framecode
         chan.write("    _nef_chemical_shift_list.sf_category                ");
@@ -193,10 +191,6 @@ public class NMRNEFWriter {
             chan.write("         " + loopString + "\n");
         }
         chan.write("\n");
-        Molecule molecule = Molecule.getActive();
-        if (molecule == null) {
-            throw new InvalidMoleculeException("No active mol");
-        }
         int iPPM = 0;
         i = 0;
         molecule.updateAtomArray();
@@ -292,7 +286,11 @@ public class NMRNEFWriter {
         chan.write("save_\n");
     }
 
-    static void writeDistances(FileWriter chan) throws IOException, InvalidMoleculeException {
+    static void writeDistances(MoleculeBase moleculeBase, FileWriter chan) throws IOException, InvalidMoleculeException {
+        if (!(moleculeBase instanceof Molecule)) {
+            return;
+        }
+        Molecule molecule = (Molecule) moleculeBase;
         chan.write("\n");
         chan.write("save_nef_distance_restraint_list\n"); //fixme dynamically get framecode
         chan.write("    _nef_distance_restraint_list.sf_category       ");
@@ -310,10 +308,6 @@ public class NMRNEFWriter {
             chan.write("         " + loopString + "\n");
         }
         chan.write("\n");
-        Molecule molecule = Molecule.getActive();
-        if (molecule == null) {
-            throw new InvalidMoleculeException("No active mol");
-        }
         molecule.updateAtomArray();
         EnergyLists eLists = molecule.getEnergyLists();
         List<DistancePair> distList = eLists.getDistanceList();
@@ -438,7 +432,11 @@ public class NMRNEFWriter {
                 "save_\n");
     }
 
-    static void writeDihedrals(FileWriter chan) throws IOException, InvalidMoleculeException {
+    static void writeDihedrals(MoleculeBase moleculeBase, FileWriter chan) throws IOException, InvalidMoleculeException {
+        if (!(moleculeBase instanceof Molecule)) {
+            return;
+        }
+        Molecule molecule = (Molecule) moleculeBase;
         chan.write("\n");
         chan.write("save_nef_dihedral_restraint_list\n"); //fixme dynamically get framecode
         chan.write("    _nef_dihedral_restraint_list.sf_category       ");
@@ -456,10 +454,6 @@ public class NMRNEFWriter {
             chan.write("          " + loopString + "\n");
         }
         chan.write("\n");
-        Molecule molecule = Molecule.getActive();
-        if (molecule == null) {
-            throw new InvalidMoleculeException("No active mol");
-        }
         molecule.updateAtomArray();
         Dihedral dihedral = molecule.getDihedrals();
         Map<String, List<AngleBoundary>> angleBoundsMap = dihedral.getAngleBoundaries();
@@ -583,12 +577,12 @@ public class NMRNEFWriter {
         chan.write("    _nef_nmr_meta_data.coordinate_file_name  ");
         chan.write(".\n");
         chan.write("save_\n\n");
-        Molecule molecule = Molecule.getActive();
+        MoleculeBase molecule = MoleculeFactory.getActive();
         if (molecule != null) {
-            writeMolSys(chan);
-            writePPM(chan);
-            writeDistances(chan);
-            writeDihedrals(chan);
+            writeMolSys(molecule, chan);
+            writePPM(molecule, chan);
+            writeDistances(molecule, chan);
+            writeDihedrals(molecule, chan);
         }
     }
 

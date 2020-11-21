@@ -1,5 +1,5 @@
-from org.nmrfx.structure.chemistry.io import MMcifReader
-#from org.nmrfx.structure.chemistry.io import MMcifWriter
+from org.nmrfx.chemistry.io import MMcifReader
+#from org.nmrfx.chemistry.io import MMcifWriter
 from java.io import File
 
 def read(fileName):

@@ -11,8 +11,9 @@ import os
 import pdb
 from org.nmrfx.structure.chemistry.energy import EnergyCoords
 from org.nmrfx.structure.chemistry import Molecule
-from org.nmrfx.structure.chemistry import SSGen
-from org.nmrfx.structure.chemistry import Atom
+from org.nmrfx.chemistry import MoleculeFactory
+from org.nmrfx.structure.rna import SSGen
+from org.nmrfx.chemistry import Atom
 from org.nmrfx.structure.chemistry.energy import EnergyLists
 from org.nmrfx.structure.chemistry.energy import ForceWeight
 from org.nmrfx.structure.chemistry.energy import Dihedral
@@ -21,13 +22,13 @@ from org.nmrfx.structure.chemistry.energy import StochasticGradientDescent
 from org.nmrfx.structure.chemistry.energy import CmaesRefinement
 #from org.nmrfx.structure.chemistry.energy import FireflyRefinement
 from org.nmrfx.structure.chemistry.energy import RNARotamer
-from org.nmrfx.structure.chemistry.io import PDBFile
-from org.nmrfx.structure.chemistry.io import SDFile
-from org.nmrfx.structure.chemistry.io import Sequence
+from org.nmrfx.chemistry.io import PDBFile
+from org.nmrfx.chemistry.io import SDFile
+from org.nmrfx.chemistry.io import Sequence
 from org.nmrfx.structure.chemistry.io import TrajectoryWriter
-from org.nmrfx.structure.chemistry import SSLayout
-from org.nmrfx.structure.chemistry import Polymer
-from org.nmrfx.structure.chemistry import AllBasePairs
+from org.nmrfx.structure.rna import SSLayout
+from org.nmrfx.chemistry import Polymer
+from org.nmrfx.structure.rna import AllBasePairs
 
 from org.nmrfx.structure.chemistry.miner import PathIterator
 from org.nmrfx.structure.chemistry.miner import NodeValidator
@@ -37,9 +38,9 @@ from org.nmrfx.structure.chemistry.energy import AngleTreeGenerator
 #from tcl.lang import Interp
 from java.lang import String, NullPointerException, IllegalArgumentException
 from java.util import ArrayList
-from org.nmrfx.structure.chemistry.constraints import RDC
-from org.nmrfx.structure.chemistry.constraints import RDCConstraintSet
-from org.nmrfx.structure.chemistry import SpatialSet
+from org.nmrfx.chemistry.constraints import RDC
+from org.nmrfx.chemistry.constraints import RDCConstraintSet
+from org.nmrfx.chemistry import SpatialSet
 
 #tclInterp = Interp()
 #tclInterp.eval("puts hello")
@@ -353,7 +354,7 @@ class refine:
         self.angleDelta = 30
         self.molecule = None
         self.trajectoryWriter = None
-        self.molecule = Molecule.getActive()
+        self.molecule = MoleculeFactory.getActive()
         self.entityEntryDict = {} # map of entity to linker atom
         self.reportDump = False
         if self.molecule != None:
@@ -998,12 +999,12 @@ class refine:
                     #Only one entity in the molecule
                     residues = ",".join(molData['residues'].split()) if 'residues' in molData else None
                     self.readMoleculeDict(seqReader, molData)
-                self.molecule = Molecule.getActive()
+                self.molecule = MoleculeFactory.getActive()
                 if 'edit' in molData:
                     self.readMolEditDict(seqReader, molData['edit'])
 
 
-        self.molecule = Molecule.getActive()
+        self.molecule = MoleculeFactory.getActive()
         self.molName = self.molecule.getName()
 
         treeDict = data['tree'] if 'tree' in data else None
@@ -1298,9 +1299,9 @@ class refine:
         from java.io import BufferedReader
         from java.io import File
         from org.nmrfx.processor.star import STAR3
-        from org.nmrfx.structure.chemistry.io import NMRStarReader
-        from org.nmrfx.structure.chemistry.io import NMRStarWriter
-        from org.nmrfx.structure.chemistry.io import NMRNEFReader
+        from org.nmrfx.chemistry.io import NMRStarReader
+        from org.nmrfx.chemistry.io import NMRStarWriter
+        from org.nmrfx.chemistry.io import NMRNEFReader
         fileReader = FileReader(fileName)
         bfR = BufferedReader(fileReader)
         star = STAR3(bfR,'star3')

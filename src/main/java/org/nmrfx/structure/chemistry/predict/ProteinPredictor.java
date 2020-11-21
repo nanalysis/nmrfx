@@ -13,7 +13,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import org.nmrfx.chemistry.Atom;
-import org.nmrfx.structure.chemistry.InvalidMoleculeException;
+import org.nmrfx.chemistry.InvalidMoleculeException;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.chemistry.Polymer;
 import org.nmrfx.chemistry.Residue;

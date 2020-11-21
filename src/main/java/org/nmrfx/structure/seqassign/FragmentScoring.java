@@ -8,7 +8,7 @@ import java.util.Optional;
 import org.nmrfx.chemistry.Atom;
 import org.nmrfx.chemistry.PPMv;
 import org.nmrfx.chemistry.Residue;
-import org.nmrfx.structure.chemistry.io.AtomParser;
+import org.nmrfx.chemistry.io.AtomParser;
 import org.nmrfx.structure.chemistry.predict.BMRBStats;
 import smile.stat.distribution.ChiSquareDistribution;
 import smile.stat.distribution.MultivariateGaussianDistribution;

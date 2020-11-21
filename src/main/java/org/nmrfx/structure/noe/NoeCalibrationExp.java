@@ -16,7 +16,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.nmrfx.structure.chemistry.constraints;
+package org.nmrfx.structure.noe;
+
+import org.nmrfx.chemistry.constraints.Noe;
+import org.nmrfx.structure.noe.NoeCalibration;
 
 /**
  *
@@ -33,7 +36,7 @@ public class NoeCalibrationExp extends NoeCalibration {
     final double fError;
     static final double floor = 1.0e-16;
 
-    NoeCalibrationExp(final String measurementMode, final double lower, final double referenceValue, final double referenceDist, final double expValue, final double minBound, final double maxBound, final double fError, final boolean removeRedundant) {
+    public NoeCalibrationExp(final String measurementMode, final double lower, final double referenceValue, final double referenceDist, final double expValue, final double minBound, final double maxBound, final double fError, final boolean removeRedundant) {
         this.mMode = MeasurementMode.select(measurementMode);
         this.referenceValue = referenceValue;
         this.referenceDist = referenceDist;

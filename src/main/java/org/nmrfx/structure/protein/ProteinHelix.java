@@ -20,7 +20,7 @@ package org.nmrfx.structure.protein;
 import org.nmrfx.chemistry.Residue;
 
 import java.util.*;
-import org.nmrfx.structure.chemistry.SecondaryStructure;
+import org.nmrfx.chemistry.SecondaryStructure;
 
 /**
  *
@@ -31,11 +31,17 @@ public class ProteinHelix extends SecondaryStructure {
     public static int localCounter = 0;
     static String name = "Helix";
 
-    public ProteinHelix(List<Residue> residues) {
+    public ProteinHelix(Residue firstResidue, Residue lastResidue) {
         localIndex = localCounter++;
         globalIndex = globalCounter++;
-        secResidues = residues;
-
+        Residue residue = firstResidue;
+        while (residue != null) {
+            secResidues.add(residue);
+            if (residue == lastResidue) {
+                break;
+            }
+            residue = residue.next;
+        }
     }
 
     @Override

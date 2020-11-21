@@ -20,13 +20,13 @@ package org.nmrfx.structure.chemistry;
 import org.nmrfx.chemistry.CoordSet;
 import org.nmrfx.chemistry.*;
 import org.nmrfx.structure.utilities.NvUtil;
-import org.nmrfx.structure.utilities.Util;
+import org.nmrfx.chemistry.Util;
 import java.util.*;
 
 public class IdPeak {
 
     static final int N_PEAK_ID = 500;
-    private Molecule molecule;
+    private MoleculeBase molecule;
     Vector atomList = new Vector();
     ArrayList[] protonList = new ArrayList[2];
     double keepThresh = 10000.0;
@@ -255,14 +255,14 @@ public class IdPeak {
     /**
      * @return the molecule
      */
-    public Molecule getMolecule() {
+    public MoleculeBase getMolecule() {
         return molecule;
     }
 
     /**
      * @param molecule the molecule to set
      */
-    public void setMolecule(Molecule molecule) {
+    public void setMolecule(MoleculeBase molecule) {
         this.molecule = molecule;
     }
 

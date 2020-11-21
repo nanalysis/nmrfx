@@ -30,15 +30,18 @@ import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
-import org.nmrfx.processor.datasets.peaks.InvalidPeakException;
+import org.nmrfx.peaks.InvalidPeakException;
 import org.nmrfx.star.ParseException;
 import org.nmrfx.chemistry.Atom;
 import org.nmrfx.chemistry.Entity;
-import org.nmrfx.structure.chemistry.InvalidMoleculeException;
+import org.nmrfx.chemistry.InvalidMoleculeException;
+import org.nmrfx.chemistry.MoleculeBase;
+import org.nmrfx.chemistry.MoleculeFactory;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.chemistry.Polymer;
 import org.nmrfx.structure.protein.ProteinHelix;
 import org.nmrfx.chemistry.Residue;
+import org.nmrfx.chemistry.SecondaryStructure;
 import org.nmrfx.structure.protein.Sheet;
 import org.nmrfx.chemistry.SpatialSet;
 
@@ -69,7 +72,7 @@ public class MMcifWriter {
         int mainIdx = classPath.indexOf("nmrfxstructure");
         return classPath.substring(0, mainIdx + "nmrfxstructure".length());
     }
-    
+
     static void makeWeightMap() throws IOException {
         String mainDir = getMainDirectory();
         String paramFile = String.join(File.separator, mainDir, "src", "main", "resources", "reslib_iu", "params.txt");
@@ -89,8 +92,7 @@ public class MMcifWriter {
         }
     }
 
-    
-    static void writeMolSys(FileWriter chan, boolean pdb) throws IOException, InvalidMoleculeException {
+    static void writeMolSys(MoleculeBase molecule, FileWriter chan, boolean pdb) throws IOException, InvalidMoleculeException {
         chan.write("loop_\n");
         String[] loopStrings = SEQUENCE_LOOP_STRINGS;
         if (pdb) {
@@ -101,10 +103,6 @@ public class MMcifWriter {
             chan.write(loopString + "\n");
         }
 
-        Molecule molecule = Molecule.getActive();
-        if (molecule == null) {
-            throw new InvalidMoleculeException("No active mol");
-        }
         Set<Integer> entityIDSet = new HashSet<>();
         Iterator entityIterator = molecule.entityLabels.values().iterator();
         while (entityIterator.hasNext()) {
@@ -115,7 +113,7 @@ public class MMcifWriter {
                     entityIDSet.add(entityID);
                 } else {
                     if (!pdb) {
-                       continue; 
+                        continue;
                     }
                 }
                 List<Residue> resList = ((Polymer) entity).getResidues();
@@ -193,17 +191,12 @@ public class MMcifWriter {
 //        }
 //        chan.write("#\n");
 //    }
-
-    static void writeStructAsym(FileWriter chan) throws IOException, InvalidMoleculeException {
+    static void writeStructAsym(MoleculeBase molecule, FileWriter chan) throws IOException, InvalidMoleculeException {
         chan.write("loop_\n");
         for (String loopString : STRUCT_ASYM_LOOP_STRINGS) {
             chan.write(loopString + "\n");
         }
 
-        Molecule molecule = Molecule.getActive();
-        if (molecule == null) {
-            throw new InvalidMoleculeException("No active mol");
-        }
         Iterator entityIterator = molecule.entityLabels.values().iterator();
         while (entityIterator.hasNext()) {
             Entity entity = (Entity) entityIterator.next();
@@ -213,7 +206,7 @@ public class MMcifWriter {
                 int entityID = ((Polymer) entity).getIDNum();
 //                System.out.println("writer " + chainID + " " + entityID);
                 String blankPDBflag = "N"; //fixme get from file
-                String pdbxMod = "N"; 
+                String pdbxMod = "N";
                 List<Residue> resList = ((Polymer) entity).getResidues();
                 for (Residue res : resList) {
                     if (!res.isStandard()) {
@@ -227,65 +220,71 @@ public class MMcifWriter {
                 String chainID = entity.getName();
                 int entityID = entity.getIDNum();
                 String blankPDBflag = "N"; //fixme get from file
-                String pdbxMod = "N"; 
+                String pdbxMod = "N";
                 String details = "?"; //fixme get from file
                 chan.write(String.format("%-2s %-2s %-2s %-2d %-2s\n", chainID, blankPDBflag, pdbxMod, entityID, details));
             }
         }
         chan.write("#\n");
     }
-    
-    static void writeStructConf(FileWriter chan) throws IOException, InvalidMoleculeException {
-        Molecule molecule = Molecule.getActive();
-        if (molecule == null) {
-            throw new InvalidMoleculeException("No active mol");
-        }
-        ProteinHelix conf = molecule.getProteinHelix();
-        if ((conf != null) && !conf.secResidues.isEmpty()) {
-            chan.write("loop_\n");
-            for (String loopString : STRUCT_CONF_LOOP_STRINGS) {
-                chan.write(loopString + "\n");
-            }
 
-            List<Residue> resList = conf.secResidues;
+    static void writeStructConf(MoleculeBase moleculeBase, FileWriter chan) throws IOException, InvalidMoleculeException {
+        if (!(moleculeBase instanceof Molecule)) {
+            return;
+        }
+        List<SecondaryStructure> secStruct = moleculeBase.getSecondaryStructure();
+        if (!secStruct.isEmpty()) {
             int idx = 1;
-            for (int i = 0; i < resList.size(); i += 2) {
-                Residue firstRes = resList.get(i);
-                Residue lastRes = resList.get(i + 1);
-                String result = firstRes.toMMCifStructConfString(idx, lastRes);
-                if (result != null) {
-                    chan.write(result + "\n");
+            for (SecondaryStructure secStructElem : secStruct) {
+                if (secStructElem instanceof ProteinHelix) {
+                    if (idx == 1) {
+                        chan.write("loop_\n");
+                        for (String loopString : STRUCT_CONF_LOOP_STRINGS) {
+                            chan.write(loopString + "\n");
+                        }
+                    }
+                    Residue firstResidue = secStructElem.firstResidue();
+                    Residue lastResidue = secStructElem.lastResidue();
+                    String result = firstResidue.toMMCifStructConfString(idx, lastResidue);
+                    if (result != null) {
+                        chan.write(result + "\n");
+                    }
+                    idx++;
                 }
-                idx++;
             }
-            chan.write("#\n");
+            if (idx > 1) {
+                chan.write("#\n");
+            }
         }
     }
 
-    static void writeSheetRange(FileWriter chan) throws IOException, InvalidMoleculeException {
-        Molecule molecule = Molecule.getActive();
-        if (molecule == null) {
-            throw new InvalidMoleculeException("No active mol");
+    static void writeSheetRange(MoleculeBase moleculeBase, FileWriter chan) throws IOException, InvalidMoleculeException {
+        if (!(moleculeBase instanceof Molecule)) {
+            return;
         }
-        Sheet sheets = molecule.getSheets();
-        if (sheets != null) {
-            chan.write("loop_\n");
-            for (String loopString : STRUCT_SHEET_RANGE_LOOP_STRINGS) {
-                chan.write(loopString + "\n");
-            }
-
-            List<Residue> resList = sheets.secResidues;
+        List<SecondaryStructure> secStruct = moleculeBase.getSecondaryStructure();
+        if (!secStruct.isEmpty()) {
             int idx = 1;
-            for (int i = 0; i < resList.size(); i += 2) {
-                Residue firstRes = resList.get(i);
-                Residue lastRes = resList.get(i + 1);
-                String result = firstRes.toMMCifSheetRangeString(idx, lastRes);
-                if (result != null) {
-                    chan.write(result + "\n");
+            for (SecondaryStructure secStructElem : secStruct) {
+                if (secStructElem instanceof Sheet) {
+                    if (idx == 1) {
+                        chan.write("loop_\n");
+                        for (String loopString : STRUCT_SHEET_RANGE_LOOP_STRINGS) {
+                            chan.write(loopString + "\n");
+                        }
+                    }
+                    Residue firstResidue = secStructElem.firstResidue();
+                    Residue lastResidue = secStructElem.lastResidue();
+                    String result = firstResidue.toMMCifSheetRangeString(idx, lastResidue);
+                    if (result != null) {
+                        chan.write(result + "\n");
+                    }
+                    idx++;
                 }
-                idx++;
             }
-            chan.write("#\n");
+            if (idx > 1) {
+                chan.write("#\n");
+            }
         }
     }
 
@@ -338,14 +337,10 @@ public class MMcifWriter {
         chan.write("#\n");
     }
 
-    static void writeAtomTypes(FileWriter chan) throws IOException, InvalidMoleculeException {
+    static void writeAtomTypes(MoleculeBase molecule, FileWriter chan) throws IOException, InvalidMoleculeException {
         int i;
         chan.write("loop_\n");
         chan.write("_atom_type.symbol\n");
-        Molecule molecule = Molecule.getActive();
-        if (molecule == null) {
-            throw new InvalidMoleculeException("No active mol");
-        }
         molecule.updateAtomArray();
         List<Atom> atomArray = molecule.getAtomArray();
         SortedSet<String> aTypeSet = new TreeSet<>();
@@ -359,7 +354,7 @@ public class MMcifWriter {
                 if (spSet.getCoords(iStruct) == null) {
                     continue;
                 }
-                
+
                 String aType = atom.getSymbol().toUpperCase();
                 if (!aTypeSet.contains(aType)) {
                     aTypeSet.add(aType);
@@ -372,14 +367,10 @@ public class MMcifWriter {
         chan.write("#\n");
     }
 
-    static void writeAtomSites(FileWriter chan) throws IOException, InvalidMoleculeException {
+    static void writeAtomSites(MoleculeBase molecule, FileWriter chan) throws IOException, InvalidMoleculeException {
         chan.write("loop_\n");
         for (String loopString : ATOM_SITE_LOOP_STRINGS) {
             chan.write(loopString + "\n");
-        }
-        Molecule molecule = Molecule.getActive();
-        if (molecule == null) {
-            throw new InvalidMoleculeException("No active mol");
         }
         int i = 0;
         molecule.updateAtomArray();
@@ -456,18 +447,18 @@ public class MMcifWriter {
         String title = "data_" + name;
         chan.write(title + "\n");
         chan.write("#\n");
-        Molecule molecule = Molecule.getActive();
+        MoleculeBase molecule = MoleculeFactory.getActive();
         if (molecule != null) {
-            writeMolSys(chan, false);
+            writeMolSys(molecule, chan, false);
 //            writeChemComp(chan);
-            writeStructAsym(chan);
-            writeStructConf(chan);
-            writeSheetRange(chan);
+            writeStructAsym(molecule, chan);
+            writeStructConf(molecule, chan);
+            writeSheetRange(molecule, chan);
             writeTransfMatrix(chan, name, true);
             writeTransfMatrix(chan, name, false);
-            writeAtomTypes(chan);
-            writeAtomSites(chan);
-            writeMolSys(chan, true);
+            writeAtomTypes(molecule, chan);
+            writeAtomSites(molecule, chan);
+            writeMolSys(molecule, chan, true);
             writeStructOper(chan);
             chan.flush();
         }
