@@ -20,6 +20,8 @@ package org.nmrfx.structure.chemistry.energy;
 import org.nmrfx.chemistry.*;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math3.util.FastMath;
+import org.nmrfx.chemistry.constraints.AtomDistancePair;
+import org.nmrfx.chemistry.constraints.DistanceConstraint;
 
 /**
  * This program performs various calculations with an atom
@@ -168,7 +170,7 @@ public class AtomMath {
         return Vector3D.distance(pt1, pt2);
     }
 
-    public static double calcDistanceSumAvg(DistancePair distancePair, double avgN) {
+    public static double calcDistanceSumAvg(DistanceConstraint distancePair, double avgN) {
 // fixme
         final double distance;
         if ((distancePair.getAtomPairs().length == 1)) {
@@ -327,7 +329,7 @@ public class AtomMath {
     }
 
     //Uses Distance Contraints to Calculate Energy
-    public static AtomEnergy calcDistanceEnergy(final DistancePair distancePair, final ForceWeight forceWeight, final boolean calcDeriv) {
+    public static AtomEnergy calcDistanceEnergy(final DistanceConstraint distancePair, final ForceWeight forceWeight, final boolean calcDeriv) {
         //distance between atoms
         double r = calcDistanceSumAvg(distancePair, sumAvgN);
 
@@ -342,13 +344,13 @@ public class AtomMath {
          * upper bounds for distance between two atoms atom cannot exceed this
          * distance - provided by NMR data
          */
-        double upper = distancePair.getrUp();
+        double upper = distancePair.getUpper();
 
         /**
          * lower bounds for distance between two atoms atom cannot be lower than
          * this distance - provided by NMR data
          */
-        double lower = distancePair.getrLow();
+        double lower = distancePair.getLower();
         double noeWeight = forceWeight.getNOE();
         double bSwitch = 1.0;
         double aSwitch = 1.0;
