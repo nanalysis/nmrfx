@@ -25,6 +25,7 @@
  */
 package org.nmrfx.structure.chemistry.ring;
 
+import org.nmrfx.chemistry.Ring;
 import java.util.Collection;
 
 import org.nmrfx.chemistry.ITree;
