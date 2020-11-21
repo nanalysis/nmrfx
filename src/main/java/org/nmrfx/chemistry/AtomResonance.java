@@ -18,7 +18,7 @@
 package org.nmrfx.chemistry;
 
 import org.nmrfx.chemistry.io.NMRStarReader;
-import org.nmrfx.structure.utilities.NvUtil;
+import org.nmrfx.chemistry.utilities.NvUtil;
 import java.util.List;
 import java.util.Map;
 
