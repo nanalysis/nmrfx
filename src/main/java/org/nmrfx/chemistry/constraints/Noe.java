@@ -67,9 +67,6 @@ public class Noe extends DistanceConstraint implements Serializable {
     public double atomScale = 1.0;
     public DistanceStat disStat = defaultStat;
     private DistanceStat disStatAvg = defaultStat;
-    private double lower = 0.0;
-    public double target = 0.0;
-    private double upper = 0.0;
     public int dcClass = 0;
     private double ppmError = 0.0;
     private short active = 1;
@@ -87,6 +84,7 @@ public class Noe extends DistanceConstraint implements Serializable {
     public static int ppmSet = 0;
 
     public Noe(Peak p, SpatialSet sp1, SpatialSet sp2, double newScale) {
+        super(sp1, sp2);
         SpatialSetGroup spg1t = new SpatialSetGroup(sp1);
         SpatialSetGroup spg2t = new SpatialSetGroup(sp2);
         this.spg1 = spg1t;
@@ -102,6 +100,7 @@ public class Noe extends DistanceConstraint implements Serializable {
     }
 
     public Noe(Peak p, SpatialSetGroup spg1, SpatialSetGroup spg2, double newScale) {
+        super(spg1, spg2);
         this.spg1 = spg1;
         this.spg2 = spg2;
         if (spg1.compare(spg2) > 0) {
@@ -148,7 +147,6 @@ public class Noe extends DistanceConstraint implements Serializable {
     public static void setTolerance(double value) {
         tolerance = value;
     }
-
 
 //    public void updateGenType(Map<String, NoeMatch> map, MatchCriteria[] matchCriteria) {
 //        if ((peak != null) && (peak.getStatus() >= 0)) {
@@ -522,7 +520,7 @@ public class Noe extends DistanceConstraint implements Serializable {
     public static Atom[][] getAtoms(Peak peak) {
         Atom[][] atoms = new Atom[peak.getPeakList().getNDim()][];
 
-        for (int i = 0; i < peak.getPeakList().getNDim();i++) {
+        for (int i = 0; i < peak.getPeakList().getNDim(); i++) {
             atoms[i] = null;
             String label = peak.peakDims[i].getLabel();
             String[] elems = label.split(" ");
@@ -646,6 +644,10 @@ public class Noe extends DistanceConstraint implements Serializable {
      */
     public void setUpper(double upper) {
         this.upper = upper;
+    }
+
+    public void setTarget(double target) {
+        this.target = target;
     }
 
     /**

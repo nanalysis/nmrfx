@@ -24,19 +24,21 @@ import java.util.Set;
 
 import org.nmrfx.chemistry.Atom;
 import org.nmrfx.chemistry.Residue;
+import org.nmrfx.chemistry.SpatialSet;
+import org.nmrfx.chemistry.SpatialSetGroup;
 
 public class DistanceConstraint implements Constraint {
 
     private final AtomDistancePair[] atomPairs;
-    private final double lower;
-    private final double upper;
     private final boolean isBond;
-    private final double weight;
-    private final double target;
-    private final double targetErr;
+    protected double lower;
+    protected double upper;
+    protected double weight;
+    protected double target;
+    protected double targetErr;
 
     public DistanceConstraint(final Atom[] atoms1, final Atom[] atoms2, final double rLow, final double rUp, final boolean isBond,
-                              final double weight, final double targetValue, final double targetErr) {
+            final double weight, final double targetValue, final double targetErr) {
         if (atoms1.length != atoms2.length) {
             throw new IllegalArgumentException("atom arrays are not of equal length");
         }
@@ -58,6 +60,43 @@ public class DistanceConstraint implements Constraint {
 
         this(atoms1, atoms2, rLow, rUp, isBond, 1.0, (rLow + rUp) / 2.0, rUp - rLow);
 
+    }
+
+    public DistanceConstraint(SpatialSet sp1, SpatialSet sp2) {
+        atomPairs = new AtomDistancePair[1];
+        int i = 0;
+        Atom atom1 = sp1.getAtom();
+        Atom atom2 = sp2.getAtom();
+        AtomDistancePair atomPair = new AtomDistancePair(atom1, atom2);
+        atomPairs[i++] = atomPair;
+        this.lower = 1.8;
+        this.upper = 5.0;
+        this.isBond = false;
+        this.weight = 1.0;
+        this.target = (lower + upper) / 2.0;
+        this.targetErr = (upper - lower) / 2.0;
+
+    }
+
+    public DistanceConstraint(SpatialSetGroup spg1, SpatialSetGroup spg2) {
+        Set<SpatialSet> spSets1 = spg1.getSpSets();
+        Set<SpatialSet> spSets2 = spg2.getSpSets();
+        atomPairs = new AtomDistancePair[spSets1.size() * spSets2.size()];
+        int i = 0;
+        for (SpatialSet sp1 : spSets1) {
+            for (SpatialSet sp2 : spSets2) {
+                Atom atom1 = sp1.getAtom();
+                Atom atom2 = sp2.getAtom();
+                AtomDistancePair atomPair = new AtomDistancePair(atom1, atom2);
+                atomPairs[i++] = atomPair;
+            }
+        }
+        this.lower = 1.8;
+        this.upper = 5.0;
+        this.isBond = false;
+        this.weight = 1.0;
+        this.target = (lower + upper) / 2.0;
+        this.targetErr = (upper - lower) / 2.0;
     }
 
     @Override
