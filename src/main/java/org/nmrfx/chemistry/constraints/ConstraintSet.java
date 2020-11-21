@@ -52,4 +52,7 @@ public interface ConstraintSet {
     public String[] getLoopStrings();
 
     public void resetWriting();
+
+    public MolecularConstraints getMolecularConstraints();
+
 }

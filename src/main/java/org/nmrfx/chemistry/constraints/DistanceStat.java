@@ -38,7 +38,7 @@ public class DistanceStat {
         fracInBound = 0.0;
     }
 
-    DistanceStat(final double min, final double max, final double mean, final double stdDev, final double fracInBound, final BitSet violStructures) {
+    public DistanceStat(final double min, final double max, final double mean, final double stdDev, final double fracInBound, final BitSet violStructures) {
         this.min = min;
         this.max = max;
         this.mean = mean;
