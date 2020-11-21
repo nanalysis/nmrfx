@@ -15,18 +15,16 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.nmrfx.chemistry;
 
-import java.util.*;
+package org.nmrfx.chemistry.io;
 
-interface AtomIterator extends Iterator {
+/**
+ *
+ * @author brucejohnson
+ */
+public class MoleculeIOException extends Exception {
 
-    @Override
-    public boolean hasNext();
-
-    @Override
-    public Atom next();
-
-    @Override
-    public void remove();
+    public MoleculeIOException(String message) {
+        super(message);
+    }
 }

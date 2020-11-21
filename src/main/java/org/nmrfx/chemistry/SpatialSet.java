@@ -23,8 +23,6 @@
  */
 package org.nmrfx.chemistry;
 
-import org.nmrfx.structure.chemistry.Point3;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;

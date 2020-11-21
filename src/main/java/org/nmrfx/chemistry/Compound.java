@@ -17,8 +17,6 @@
  */
 package org.nmrfx.chemistry;
 
-import org.nmrfx.structure.chemistry.Molecule;
-import org.nmrfx.structure.utilities.Util;
 import java.util.*;
 
 public class Compound extends Entity implements AtomIterable {
@@ -78,7 +76,7 @@ public class Compound extends Entity implements AtomIterable {
     public void removeAtom(Atom atom) {
         super.removeAtom(atom);
         atomMap.remove(atom.getName().toLowerCase());
-        Molecule.atomList = null;
+        molecule.invalidateAtomArray();
         setHasEquivalentAtoms(false);
     }
 
@@ -86,7 +84,7 @@ public class Compound extends Entity implements AtomIterable {
         super.addAtom(afterAtom, atom);
         atom.entity = this;
         atomMap.put(atom.name.toLowerCase(), atom);
-        Molecule.atomList = null;
+        molecule.invalidateAtomArray();
         setHasEquivalentAtoms(false);
     }
 

@@ -15,18 +15,23 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.nmrfx.chemistry;
 
-import java.util.*;
+/*
+ * CoordSet.java
+ *
+ * Created on October 3, 2003, 8:16 PM
+ */
+package org.nmrfx.chemistry.search;
 
-interface AtomIterator extends Iterator {
+/**
+ *
+ * @author Johnbruc
+ */
+public class CoordSet {
 
-    @Override
-    public boolean hasNext();
-
-    @Override
-    public Atom next();
-
-    @Override
-    public void remove();
+    /**
+     * Creates a new instance of CoordSet
+     */
+    public CoordSet() {
+    }
 }

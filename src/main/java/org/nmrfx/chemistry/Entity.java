@@ -17,12 +17,8 @@
  */
 package org.nmrfx.chemistry;
 
-import java.io.*;
+import java.io.Serializable;
 import java.util.*;
-
-import org.nmrfx.structure.chemistry.CoordinateGenerator;
-import org.nmrfx.structure.chemistry.Molecule;
-import org.nmrfx.structure.chemistry.energy.AngleTreeGenerator;
 
 public class Entity implements AtomContainer, Serializable, ITree {
 
@@ -54,7 +50,7 @@ public class Entity implements AtomContainer, Serializable, ITree {
     public String name = null;
     public String label = null;
     String pdbChain = "";
-    public Molecule molecule = null;
+    public MoleculeBase molecule = null;
     public List<Atom> atoms = new ArrayList<Atom>();
     public List<Bond> bonds = new ArrayList<Bond>();
     boolean hasEquivalentAtoms = false;
@@ -301,29 +297,6 @@ public class Entity implements AtomContainer, Serializable, ITree {
 
     public void sortByIndex() {
         Collections.sort(atoms, Atom::compareByIndex);
-    }
-
-    public void genCoordinates(Atom startAtom) {
-        AngleTreeGenerator aTreeGen = new AngleTreeGenerator();
-        List<List<Atom>> atomTree = aTreeGen.genTree(this, startAtom, null);
-        List<Atom> atomList = aTreeGen.getPathList();
-        int[][] genVecs = CoordinateGenerator.setupCoords(atomTree);
-        CoordinateGenerator.prepareAtoms(atomList);
-        for (Atom atom : atomList) {
-            atom.setPointValidity(false);
-        }
-        CoordinateGenerator.genCoords(genVecs, atomList);
-    }
-    
-    public void genMeasuredTree(Atom startAtom) {
-        if (startAtom == null) {
-            startAtom = atoms.get(0);
-        }
-
-        AngleTreeGenerator aTreeGen = new AngleTreeGenerator();
-        List<List<Atom>> atomTree = aTreeGen.genTree(this, startAtom, null);
-        aTreeGen.measureAtomTree(this, atomTree);
-        molecule.setRingClosures(aTreeGen.getRingClosures());
     }
 
 }

@@ -15,18 +15,19 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 package org.nmrfx.chemistry;
 
-import java.util.*;
+import java.io.*;
+import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 
-interface AtomIterator extends Iterator {
+public class Point3 extends Vector3D implements Serializable {
 
-    @Override
-    public boolean hasNext();
+    public Point3(final double x, final double y, final double z) {
+        super(x, y, z);
+    }
 
-    @Override
-    public Atom next();
-
-    @Override
-    public void remove();
+    public Point3(final Vector3D vec3D) {
+        super(vec3D.getX(), vec3D.getY(), vec3D.getZ());
+    }
 }

@@ -129,7 +129,6 @@ public class Polymer extends Entity {
         residue.next = null;
         residues.put(residue.number.toLowerCase(), residue);
         residues.put(residue.name.toLowerCase(), residue);
-        molecule.nResidues++;
         residueList.add(residue);
     }
 
@@ -148,7 +147,6 @@ public class Polymer extends Entity {
             residues.remove(residue.number.toLowerCase());
             residues.remove(residue.name.toLowerCase());
 
-            molecule.nResidues--;
             residueList.remove(residue);
             renumber();
         }
