@@ -41,9 +41,9 @@ import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.chemistry.Polymer;
 import org.nmrfx.chemistry.Residue;
 import org.nmrfx.chemistry.AngleBoundary;
-import org.nmrfx.chemistry.AtomDistancePair;
+import org.nmrfx.chemistry.constraints.AtomDistancePair;
 import org.nmrfx.structure.chemistry.energy.Dihedral;
-import org.nmrfx.chemistry.DistancePair;
+import org.nmrfx.chemistry.constraints.DistanceConstraint;
 import org.nmrfx.chemistry.MoleculeBase;
 import org.nmrfx.chemistry.MoleculeFactory;
 import org.nmrfx.structure.chemistry.energy.EnergyLists;
@@ -310,12 +310,12 @@ public class NMRNEFWriter {
         chan.write("\n");
         molecule.updateAtomArray();
         EnergyLists eLists = molecule.getEnergyLists();
-        List<DistancePair> distList = eLists.getDistanceList();
+        List<DistanceConstraint> distList = eLists.getDistanceList();
         int idx = 1;
         int restraintID = 1;
         String result;
         for (int i = 0; i < distList.size(); i++) {
-            DistancePair distPair = distList.get(i);
+            DistanceConstraint distPair = distList.get(i);
             AtomDistancePair[] pairAtoms = distPair.getAtomPairs();
             int nPairs = pairAtoms.length;
             int[][] collapse = new int[nPairs][2];
