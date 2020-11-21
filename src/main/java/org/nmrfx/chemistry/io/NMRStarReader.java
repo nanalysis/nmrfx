@@ -1408,7 +1408,7 @@ public class NMRStarReader {
                 noeSet.add(noe);
             }
         }
-        noeSet.updateNPossible(null);
+      //  noeSet.updateNPossible(null);
         noeSet.setCalibratable(false);
     }
 

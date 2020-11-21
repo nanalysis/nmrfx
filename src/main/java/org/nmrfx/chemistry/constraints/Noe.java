@@ -22,48 +22,6 @@ import org.nmrfx.peaks.Peak;
 import java.io.Serializable;
 import java.util.*;
 
-@SuppressWarnings({"UnusedDeclaration"})
-enum Flags {
-
-    REDUNDANT("redundant", 'r') {
-    },
-    FIXED("fixed", 'f') {
-    },
-    MAXAMBIG("maxamb", 'a') {
-    },
-    MINCONTRIB("mincontrib", 'c') {
-    },
-    DIAGONAL("diagonal", 'd') {
-    },
-    MINPPM("minppm", 'p') {
-    },
-    MAXVIOL("maxviol", 'v') {
-    },
-    LABEL("label", 'l') {
-    },
-    USER("user", 'u') {
-    };
-    private String description;
-    private char charDesc;
-
-    Flags(String description, char charDesc) {
-        this.description = description;
-        this.charDesc = charDesc;
-    }
-
-    void set(Noe noe) {
-        noe.inactivate(this);
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public char getCharDesc() {
-        return charDesc;
-    }
-}
-
 enum DisTypes {
 
     MINIMUM("minimum") {
@@ -123,7 +81,7 @@ public class Noe implements Constraint, Serializable {
     private boolean swapped = false;
     private boolean filterSwapped = false;
     public Map resMap = null;
-    EnumSet<Flags> activeFlags = null;
+    public EnumSet<Flags> activeFlags = null;
     private static DisTypes distanceType = DisTypes.MINIMUM;
     private GenTypes genType = GenTypes.MANUAL;
     public static int ppmSet = 0;
@@ -340,10 +298,6 @@ public class Noe implements Constraint, Serializable {
         noeSet.clear();
     }
 
-    public static synchronized List<Noe> getConstraints(NoeSet noeSet, boolean requireActive) {
-        return noeSet.getConstraints("", requireActive);
-    }
-
     public String getPeakListName() {
         String listName = "";
         if (peak != null) {
@@ -389,7 +343,7 @@ public class Noe implements Constraint, Serializable {
 
     }
 
-    static Atom[][] getProtons(Atom[][] atoms) {
+    public static Atom[][] getProtons(Atom[][] atoms) {
         Atom[][] protons = new Atom[2][0];
         if (atoms[0] != null) {
             protons[0] = new Atom[atoms[0].length];
