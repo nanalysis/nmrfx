@@ -519,6 +519,35 @@ class refine:
             except TypeError:
                 self.readLinkerDict(linkerList)
 
+    def getDistanceConstraintSet(self):
+        molConstraints = self.molecule.getMolecularConstraints()
+        optSet = molConstraints.activeDistanceSet()
+        disCon = None
+        if optSet.isPresent():
+            disCon = optSet.get()
+        else:
+            disCon = molConstraints.newDistanceSet("default")
+        return disCon
+
+    def addDistanceConstraint(self, atomName1,atomName2,lower,upper,bond=False):
+        if bond == False:
+            self.getDistanceConstraintSet().addDistanceConstraint(atomName1,atomName2,lower,upper)
+        else:
+            self.getDistanceConstraintSet().addDistanceConstraint(atomName1,atomName2,lower,upper,bond)
+
+    def getAngleConstraints(self):
+        molConstraints = self.molecule.getMolecularConstraints()
+        optSet = molConstraints.activeAngleSet()
+        angleCon = None
+        if optSet.isPresent():
+            angleCon = optSet.get()
+        else:
+            angleCon = molConstraints.newAngleSet("default")
+        return angleCon
+
+    def addAngleConstraint(self, atoms, lower, upper, scale):
+        self.getAngleConstraintSet().addAngleConstraint(atoms, lower, upper, scale)
+
     def readLinkerDict(self, linkerDict):
         entityNames = [entity.getName() for entity in self.molecule.getEntities()]
         if not linkerDict:
@@ -589,7 +618,7 @@ class refine:
                     atomName2 = endAtom.getFullName()
                     lower = length - .0001
                     upper = length + .0001
-                    self.energyLists.addDistanceConstraint(atomName1,atomName2,lower,upper,True)
+                    self.addDistanceConstraint(atomName1,atomName2,lower,upper,True)
         else:
             self.molecule.createLinker(startAtom, endAtom, n, linkLen, valAngle, dihAngle)
 
@@ -603,7 +632,7 @@ class refine:
                 upper = distances + 0.001
 
             atomName1, atomName2 = bondInfo['atoms']
-            self.energyLists.addDistanceConstraint(atomName1, atomName2, lower, upper, True)
+            self.addDistanceConstraint(atomName1, atomName2, lower, upper, True)
 
     def addCyclicBond(self, polymer):
         # to return a list atomName1, atomName2, distance
@@ -839,7 +868,7 @@ class refine:
                 self.constraints[firstAtomPair].addRDC(rdc, err);
 
     def addDisCon(self, atomName1, atomName2, lower, upper):
-        self.energyLists.addDistanceConstraint(atomName1,atomName2,lower,upper)
+        self.addDistanceConstraint(atomName1,atomName2,lower,upper)
 
     def getEntityTreeStartAtom(self, entity):
         ''' getEntityTreeStartAtom returns an atom that would be picked up
@@ -1058,7 +1087,7 @@ class refine:
             for bondConstraint in self.bondConstraints:
                 atomName1, atomName2, distance = bondConstraint.split()
                 distance = float(distance)
-                self.energyLists.addDistanceConstraint(atomName1, atomName2, distance - .0001, distance + .0001, True)
+                self.addDistanceConstraint(atomName1, atomName2, distance - .0001, distance + .0001, True)
 
         if 'bonds' in data:
             self.readBondDict(data['bonds'])
@@ -1261,7 +1290,7 @@ class refine:
                 atomName1 = self.getAtomName(residue, a1)
                 atomName2 = self.getAtomName(residue, a2)
                 try:
-                    self.energyLists.addDistanceConstraint(atomName1,atomName2,lower,upper,True)
+                    self.addDistanceConstraint(atomName1,atomName2,lower,upper,True)
                 except:
                     print 'error adding ribose restraint',atomName1,atomName2,lower,upper
 #DELTA: C5'-C4'-C3'-O3'            60 140
@@ -1704,7 +1733,7 @@ class refine:
                     if (resJName == "A"):
                         atomNameI = self.getAtomName(resINext,"H1'")
                         atomNameJ = self.getAtomName(resJ,"H2")
-                        self.energyLists.addDistanceConstraint(atomNameI, atomNameJ, 1.8, 5.0)
+                        self.addDistanceConstraint(atomNameI, atomNameJ, 1.8, 5.0)
 
 
     def addHelixPP(self, helixResidues):
@@ -1719,18 +1748,18 @@ class refine:
                 if (resI.getAtom("P") != None) and (resI3.getAtom("P") != None):
                     atomNameI = self.getAtomName(resI,"P")
                     atomNameI3 = self.getAtomName(resI3,"P")
-                    self.energyLists.addDistanceConstraint(atomNameI, atomNameI3, 16.5, 20.0)
+                    self.addDistanceConstraint(atomNameI, atomNameI3, 16.5, 20.0)
                 resJ3 = strandJ[i+3]
                 if (resJ3.getAtom("P") != None) and (resJ3.getAtom("P") != None):
                     atomNameJ = self.getAtomName(resJ,"P")
                     atomNameJ3 = self.getAtomName(resJ3,"P")
-                    self.energyLists.addDistanceConstraint(atomNameJ, atomNameJ3, 16.5, 20.0)
+                    self.addDistanceConstraint(atomNameJ, atomNameJ3, 16.5, 20.0)
             if ((i+5) < nRes):
                 resJ5 = strandJ[i+5]
                 if (resI.getAtom("P") != None) and (resJ5.getAtom("P") != None):
                     atomNameI = self.getAtomName(resI,"P")
                     atomNameJ5 = self.getAtomName(resJ5,"P")
-                    self.energyLists.addDistanceConstraint(atomNameI, atomNameJ5, 10, 12.0)
+                    self.addDistanceConstraint(atomNameI, atomNameJ5, 10, 12.0)
 
     def findHelices(self,vienna):
         polymers = self.molecule.getPolymers()
@@ -1787,19 +1816,19 @@ class refine:
 	    if atomI.startswith("H"):
 	        parentAtom = residueI.getAtom(atomI).parent.getName()
                 parentAtomName = self.getAtomName(residueI,parentAtom)
-		self.energyLists.addDistanceConstraint(parentAtomName, atom2Name ,lowAtomParentDis,atomParentDis)
+		self.addDistanceConstraint(parentAtomName, atom2Name ,lowAtomParentDis,atomParentDis)
 	    elif atomJ.startswith("H"):
 	        parentAtom = residueJ.getAtom(atomJ).parent.getName()
                 parentAtomName = self.getAtomName(residueJ,parentAtom)
-		self.energyLists.addDistanceConstraint(parentAtomName, atom1Name ,lowAtomParentDis,atomParentDis)
-	    self.energyLists.addDistanceConstraint(atom1Name, atom2Name ,lowAtomAtomDis,atomAtomDis)
+		self.addDistanceConstraint(parentAtomName, atom1Name ,lowAtomParentDis,atomParentDis)
+	    self.addDistanceConstraint(atom1Name, atom2Name ,lowAtomAtomDis,atomAtomDis)
         if type == 1:
             atomPI = residueI.getAtom("P")
             atomPJ = residueJ.getAtom("P")
             if (atomPI != None) and (atomPJ != None):
                 atomPIName = self.getAtomName(residueI, "P")
                 atomPJName = self.getAtomName(residueJ, "P")
-                self.energyLists.addDistanceConstraint(atomPIName, atomPJName ,14.0, 20.0)
+                self.addDistanceConstraint(atomPIName, atomPJName ,14.0, 20.0)
             if addPlanarity:
                 bpRes = resNameI+resNameJ
                 if bpRes in rnaBPPlanarity:
@@ -1807,7 +1836,7 @@ class refine:
                     for (aNameI,aNameJ,dis) in planeValues:
                         atomIName = self.getAtomName(residueI, aNameI)
                         atomJName = self.getAtomName(residueJ, aNameJ)
-                        self.energyLists.addDistanceConstraint(atomIName, atomJName ,0.0, dis)
+                        self.addDistanceConstraint(atomIName, atomJName ,0.0, dis)
 
 
 
@@ -1883,8 +1912,8 @@ class refine:
 		except:
 		    continue
 	    if len(atomList1) != 1:
-                self.energyLists.addDistanceConstraint(atomList1, atomList2, min(distances),max(distances))
-	        self.energyLists.addDistanceConstraint(parentAtomList1, parentAtomList2, min(parentDistances),max(parentDistances))
+                self.addDistanceConstraint(atomList1, atomList2, min(distances),max(distances))
+	        self.addDistanceConstraint(parentAtomList1, parentAtomList2, min(parentDistances),max(parentDistances))
 	    else:
 		atomPair = typeAtomPairs[0][0]
 		disRestraint = restraints[0][0]
@@ -1895,8 +1924,8 @@ class refine:
                 parentAtomList2.extend(atomLists[3])
 		distances.extend(atomLists[4])
 		parentDistances.extend(atomLists[5])
-		self.energyLists.addDistanceConstraint(atomList1, atomList2, min(distances),max(distances))
-                self.energyLists.addDistanceConstraint(parentAtomList1, parentAtomList2, min(parentDistances),max(parentDistances))
+		self.addDistanceConstraint(atomList1, atomList2, min(distances),max(distances))
+                self.addDistanceConstraint(parentAtomList1, parentAtomList2, min(parentDistances),max(parentDistances))
 
     def addStackPair(self, resI, resJ):
         resNameI = resI.getName()
@@ -1945,7 +1974,7 @@ class refine:
             lowerIntra = intra - 1.0
             atomNameI = polyI.getName()+':'+resNumI+'.'+aNameI
             atomNameJ = polyI.getName()+':'+resNumI+'.'+aNameJ
-            self.energyLists.addDistanceConstraint(atomNameI,atomNameJ,lowerIntra,intra)
+            self.addDistanceConstraint(atomNameI,atomNameJ,lowerIntra,intra)
 
         stacks = stackTo[resNameJ]
         for stack in stacks:
@@ -1953,7 +1982,7 @@ class refine:
             lowerInter = inter - 1.0
             atomNameI = polyI.getName()+':'+resNumI+'.'+aNameI
             atomNameJ = polyJ.getName()+':'+resNumJ+'.'+aNameJ
-            self.energyLists.addDistanceConstraint(atomNameI,atomNameJ,lowerInter,inter)
+            self.addDistanceConstraint(atomNameI,atomNameJ,lowerInter,inter)
 
         pairName = resNameI+resNameJ
         if not pairName in stackPairs:
@@ -1964,7 +1993,7 @@ class refine:
                 aNameI, aNameJ,lower,upper = pair
                 atomNameI = polyI.getName()+':'+resNumI+'.'+aNameI
                 atomNameJ = polyJ.getName()+':'+resNumJ+'.'+aNameJ
-                self.energyLists.addDistanceConstraint(atomNameI,atomNameJ,lower,upper)
+                self.addDistanceConstraint(atomNameI,atomNameJ,lower,upper)
 
     def measureTree(self):
         for entity in [entity for entity in self.molecule.getEntities()]:
@@ -2127,7 +2156,7 @@ class refine:
 	        errMsg += " for the atom pair seen above."
                 raise AssertionError(errMsg)
             try:
-                self.energyLists.addDistanceConstraint(atomNames1, atomNames2, lower, upper)
+                self.addDistanceConstraint(atomNames1, atomNames2, lower, upper)
             except IllegalArgumentException as IAE:
                 errMsg = "Illegal Argument received."
                 errMsg += "\nJava Error Msg : %s" % (IAE.getMessage())
@@ -2272,7 +2301,7 @@ class refine:
                 atomName1 = atom1.getFullName()
                 for atom2 in ringClosures[atom1]:
                     atomName2 = atom2.getFullName()
-                    self.energyLists.addDistanceConstraint(atomName1, atomName2, ringClosures[atom1][atom2]-.01, ringClosures[atom1][atom2]+.01, True)
+                    self.addDistanceConstraint(atomName1, atomName2, ringClosures[atom1][atom2]-.01, ringClosures[atom1][atom2]+.01, True)
 
 
     def prepare(self,steps=1000, gsteps=300, alg='cmaes'):
