@@ -40,15 +40,14 @@ import org.nmrfx.chemistry.InvalidMoleculeException;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.chemistry.Polymer;
 import org.nmrfx.chemistry.Residue;
-import org.nmrfx.chemistry.AngleBoundary;
+import org.nmrfx.chemistry.constraints.AngleConstraint;
 import org.nmrfx.chemistry.constraints.AtomDistancePair;
-import org.nmrfx.structure.chemistry.energy.Dihedral;
 import org.nmrfx.chemistry.constraints.DistanceConstraint;
 import org.nmrfx.chemistry.MoleculeBase;
 import org.nmrfx.chemistry.MoleculeFactory;
-import org.nmrfx.structure.chemistry.energy.EnergyLists;
 import org.nmrfx.chemistry.utilities.NvUtil;
 import org.nmrfx.chemistry.Util;
+import org.nmrfx.chemistry.constraints.AngleConstraintSet;
 import org.nmrfx.chemistry.constraints.DistanceConstraintSet;
 
 /**
@@ -310,7 +309,6 @@ public class NMRNEFWriter {
         }
         chan.write("\n");
         molecule.updateAtomArray();
-        EnergyLists eLists = molecule.getEnergyLists();
         int idx = 1;
         int restraintID = 1;
         String result;
@@ -432,7 +430,7 @@ public class NMRNEFWriter {
                 "save_\n");
     }
 
-    static void writeDihedrals(MoleculeBase moleculeBase, FileWriter chan) throws IOException, InvalidMoleculeException {
+    static void writeDihedrals(MoleculeBase moleculeBase, List<AngleConstraint> angleConstraints, FileWriter chan) throws IOException, InvalidMoleculeException {
         if (!(moleculeBase instanceof Molecule)) {
             return;
         }
@@ -455,21 +453,18 @@ public class NMRNEFWriter {
         }
         chan.write("\n");
         molecule.updateAtomArray();
-        Dihedral dihedral = molecule.getDihedrals();
-        Map<String, List<AngleBoundary>> angleBoundsMap = dihedral.getAngleBoundaries();
-        List<AngleBoundary> angleBlock1 = new ArrayList<>();
-        List<AngleBoundary> angleBlock2 = new ArrayList<>();
-        for (List<AngleBoundary> boundList : angleBoundsMap.values()) {
-            for (AngleBoundary bound : boundList) {
-                if (bound.getTargetValue() % 1 == 0 || bound.getTargetValue() % 0.5 == 0) {
-                    angleBlock1.add(bound);
-                } else {
-                    angleBlock2.add(bound);
-                }
+        List<AngleConstraint> angleBlock1 = new ArrayList<>();
+        List<AngleConstraint> angleBlock2 = new ArrayList<>();
+        for (AngleConstraint bound : angleConstraints) {
+            if (bound.getTargetValue() % 1 == 0 || bound.getTargetValue() % 0.5 == 0) {
+                angleBlock1.add(bound);
+            } else {
+                angleBlock2.add(bound);
             }
+
         }
 
-        Comparator<AngleBoundary> aCmp = (AngleBoundary bound1, AngleBoundary bound2) -> { //sort atom1 sequence code
+        Comparator<AngleConstraint> aCmp = (AngleConstraint bound1, AngleConstraint bound2) -> { //sort atom1 sequence code
             int i = 0;
             int result = -1;
             //sort by successive atom ID numbers
@@ -488,12 +483,12 @@ public class NMRNEFWriter {
 
         Collections.sort(angleBlock1, aCmp);
         Collections.sort(angleBlock2, aCmp);
-        List<List<AngleBoundary>> boundBlocks = new ArrayList<>();
+        List<List<AngleConstraint>> boundBlocks = new ArrayList<>();
         boundBlocks.add(angleBlock1);
         boundBlocks.add(angleBlock2);
         int i = 1;
-        for (List<AngleBoundary> block : boundBlocks) {
-            for (AngleBoundary bound : block) {
+        for (List<AngleConstraint> block : boundBlocks) {
+            for (AngleConstraint bound : block) {
                 Atom[] atoms = bound.getAtoms();
                 String result = Atom.toNEFDihedralString(bound, atoms, i, i, ".");
                 if (result != null) {
@@ -584,7 +579,9 @@ public class NMRNEFWriter {
             for (DistanceConstraintSet distanceSet : molecule.getMolecularConstraints().distanceSets()) {
                 writeDistances(molecule, distanceSet.get(), chan);
             }
-            writeDihedrals(molecule, chan);
+            for (AngleConstraintSet angleSet : molecule.getMolecularConstraints().angleSets()) {
+                writeDihedrals(molecule, angleSet.get(), chan);
+            }
         }
     }
 

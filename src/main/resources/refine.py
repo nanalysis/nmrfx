@@ -535,7 +535,7 @@ class refine:
         else:
             self.getDistanceConstraintSet().addDistanceConstraint(atomName1,atomName2,lower,upper,bond)
 
-    def getAngleConstraints(self):
+    def getAngleConstraintSet(self):
         molConstraints = self.molecule.getMolecularConstraints()
         optSet = molConstraints.activeAngleSet()
         angleCon = None
@@ -1337,8 +1337,17 @@ class refine:
         star.scanFile()
         file = File(fileName)
         reader = NMRNEFReader(file, star) # NMRStarReader(file, star)
-        self.dihedrals = reader.processNEF()
+        molecule = reader.processNEF()
+        self.molecule = molecule
+        molecule.setMethylRotationActive(True);
+        energyList = EnergyLists(molecule)
+        molecule.setEnergyLists(energyList)
+        dihedral = Dihedral(energyList, False)
+        molecule.setDihedrals(dihedral)
+        self.dihedral = molecule.getDihedrals();
+        self.dihedral.clearBoundaries();
         self.energyLists = self.dihedrals.energyList
+        self.energyLists.makeCompoundList(molecule)
 
     def readNMRFxDistanceConstraints(self, fileName, keepSetting=None):
 	"""
@@ -2093,7 +2102,7 @@ class refine:
         for file in self.xplorAngleFiles:
             xplorFile = xplor.XPLOR(file)
             resNames = self.getResNameLookUpDict()
-            xplorFile.readXPLORAngleConstraints(self.dihedral, resNames)
+            xplorFile.readXPLORAngleConstraints(self.molecule, resNames)
         for file in self.nvAngleFiles:
             self.loadDihedralsFromFile(file)
 

@@ -21,8 +21,6 @@ import java.io.BufferedReader;
 
 import org.nmrfx.chemistry.*;
 import org.nmrfx.chemistry.Residue.RES_POSITION;
-import org.nmrfx.structure.chemistry.energy.Dihedral;
-import org.nmrfx.structure.chemistry.energy.EnergyLists;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
@@ -39,6 +37,7 @@ import org.nmrfx.star.ParseException;
 import org.nmrfx.star.STAR3;
 import org.nmrfx.star.Saveframe;
 import org.nmrfx.chemistry.MolFilter;
+import org.nmrfx.chemistry.constraints.AngleConstraintSet;
 import org.nmrfx.chemistry.constraints.DistanceConstraintSet;
 import org.nmrfx.chemistry.io.MoleculeIOException;
 import org.nmrfx.chemistry.io.PDBFile;
@@ -262,13 +261,13 @@ public class NMRNEFReader {
         }
     }
 
-    void buildNEFDihedralConstraints(Dihedral dihedral) throws ParseException {
+    void buildNEFDihedralConstraints(MoleculeBase molecule) throws ParseException {
         for (Saveframe saveframe : nef.getSaveFrames().values()) {
             if (saveframe.getCategoryName().equals("nef_dihedral_restraint_list")) {
                 if (DEBUG) {
                     System.err.println("process nef_dihedral_restraint_list " + saveframe.getName());
                 }
-                processNEFDihedralConstraints(saveframe, dihedral);
+                processNEFDihedralConstraints(saveframe, molecule);
             }
         }
     }
@@ -406,7 +405,7 @@ public class NMRNEFReader {
         }
     }
 
-    void processNEFDihedralConstraints(Saveframe saveframe, Dihedral dihedral) throws ParseException {
+    void processNEFDihedralConstraints(Saveframe saveframe, MoleculeBase molecule) throws ParseException {
         Loop loop = saveframe.getLoop("_nef_dihedral_restraint");
         if (loop == null) {
             throw new ParseException("No \"_nef_dihedral_restraint\" loop");
@@ -429,6 +428,7 @@ public class NMRNEFReader {
         List<String> lowerColumn = loop.getColumnAsList("lower_limit");
         List<String> upperColumn = loop.getColumnAsList("upper_limit");
         List<String> nameColumn = loop.getColumnAsListIfExists("name");
+        AngleConstraintSet angleSet = molecule.getMolecularConstraints().newAngleSet(saveframe.getName());
         for (int i = 0; i < atomNameColumns[0].size(); i++) {
             int restraintID = restraintIDColumn.get(i);
             String weightValue = (String) weightColumn.get(i);
@@ -478,7 +478,7 @@ public class NMRNEFReader {
             }
             double scale = 1.0;
             try {
-                dihedral.addBoundary(atoms, lower, upper, scale, weight, target, targetErr, name);
+                angleSet.addAngleConstraint(atoms, lower, upper, scale, weight, target, targetErr, name);
             } catch (InvalidMoleculeException imE) {
 
             }
@@ -518,7 +518,7 @@ public class NMRNEFReader {
 //        String[] resNames = new String[2];
         atomNames[0] = new ArrayList<>();
         atomNames[1] = new ArrayList<>();
-        DistanceConstraintSet distanceSet = molecule.getMolecularConstraints().getDistanceSet(saveframe.getName());
+        DistanceConstraintSet distanceSet = molecule.getMolecularConstraints().newDistanceSet(saveframe.getName());
 
         for (int i = 0; i < chainCodeColumns[0].size(); i++) {
             int restraintIDValue = restraintIDColumn.get(i);
@@ -612,7 +612,7 @@ public class NMRNEFReader {
      * @throws ParseException
      * @throws IllegalArgumentException
      */
-    public Dihedral processNEF() throws ParseException, IllegalArgumentException {
+    public MoleculeBase processNEF() throws ParseException, IllegalArgumentException {
         String[] argv = {};
         return processNEF(argv);
     }
@@ -625,31 +625,23 @@ public class NMRNEFReader {
      * @throws ParseException
      * @throws IllegalArgumentException
      */
-    public Dihedral processNEF(String[] argv) throws ParseException, IllegalArgumentException {
+    public MoleculeBase processNEF(String[] argv) throws ParseException, IllegalArgumentException {
         if ((argv.length != 0) && (argv.length != 3)) {
             throw new IllegalArgumentException("?shifts fromSet toSet?");
         }
 
-        Dihedral dihedral = null;
+        MoleculeBase moleculeBase = null;
         if (argv.length == 0) {
             hasResonances = false;
             compoundMap.clear();
             if (DEBUG) {
                 System.err.println("process molecule");
             }
-            MoleculeBase moleculeBase = buildNEFMolecule();
+            moleculeBase = buildNEFMolecule();
             if (!(moleculeBase instanceof Molecule)) {
                 return null;
             }
             Molecule molecule = (Molecule) moleculeBase;
-            molecule.setMethylRotationActive(true);
-            molecule.setEnergyLists(new EnergyLists(molecule));
-            EnergyLists energyList = molecule.getEnergyLists();
-            molecule.setDihedrals(new Dihedral(energyList, false));
-            dihedral = molecule.getDihedrals();
-            dihedral.clearBoundaries();
-
-            energyList.makeCompoundList(molecule);
             if (DEBUG) {
                 System.err.println("process chem shifts");
             }
@@ -657,17 +649,17 @@ public class NMRNEFReader {
             if (DEBUG) {
                 System.err.println("process dist constraints");
             }
-            buildNEFDistanceRestraints(molecule);
+            buildNEFDistanceRestraints(moleculeBase);
             if (DEBUG) {
                 System.err.println("process angle constraints");
             }
-            buildNEFDihedralConstraints(dihedral);
+            buildNEFDihedralConstraints(moleculeBase);
         } else if ("shifts".startsWith(argv[2])) {
             int fromSet = Integer.parseInt(argv[3]);
             int toSet = Integer.parseInt(argv[4]);
             buildNEFChemShifts(fromSet, toSet);
         }
-        return dihedral;
+        return moleculeBase;
     }
 
 }

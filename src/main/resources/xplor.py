@@ -1,6 +1,6 @@
 import re
 from java.util import ArrayList
-from org.nmrfx.chemistry import AngleBoundary
+from org.nmrfx.chemistry.constraints import AngleConstraint
 from org.nmrfx.chemistry.io import AtomParser
 from java.lang import NullPointerException, IllegalArgumentException
 
@@ -229,15 +229,28 @@ class XPLOR:
             else:
                 self.s = temp
                 break
+    def getAngleConstraintSet(self, molecule):
+        molConstraints = molecule.getMolecularConstraints()
+        optSet = molConstraints.activeAngleSet()
+        angleCon = None
+        if optSet.isPresent():
+            angleCon = optSet.get()
+        else:
+            angleCon = molConstraints.newAngleSet("default")
+        return angleCon
 
-    def processAngleConstraints(self, dihedral, atomsSels, bounds, scale=1):
+    def addAngleConstraint(self, molecule,  atoms, lower, upper, scale):
+        self.getAngleConstraintSet(molecule).addAngleConstraint(atoms, lower, upper, scale)
+
+
+    def processAngleConstraints(self, molecule, atomsSels, bounds, scale=1):
         ''' processAngleConstraints verifies an angle boundary can exist between
             four provide atoms (atomsSels) and then adds in the constraint'''
         # EX: fullAtoms = ["2koc:1.C5'","2koc:1.C4'","2koc:1.C3'","2koc:1.O3'"]
 	try:
-            validAtomSelections = AngleBoundary.allowRotation(atomsSels)
+            validAtomSelections = AngleConstraint.allowRotation(atomsSels)
 	except NullPointerException:
-	    errMsg = "Couldn't read list of atom selections passed to 'AngleBoundary.allowRotation(...)': {}".format(atomsSels)
+	    errMsg = "Couldn't read list of atom selections passed to 'AngleConstraint.allowRotation(...)': {}".format(atomsSels)
 	    errMsg += "\nEvaluate the atom selections and ensure entity (if specified), residue, and atom name are properly being read."
 	    raise ValueError(errMsg)
 	except IllegalArgumentException as IAE:
@@ -252,7 +265,11 @@ class XPLOR:
             if (lower < -180) and (upper < 0.0):
                 lower += 360
                 upper += 360
-            dihedral.addBoundary(atomsSels, lower, upper, scale)
+            atoms = []
+            for atomSel in atomsSels:
+                atom = molecule.getAtomByName(atomSel)
+                atoms.append(atom)
+            self.addAngleConstraint(molecule, atoms, lower, upper, scale)
         else:
             self.invalidAtomSelections.append(atomsSels)
             #raise ValueError("Rotation about atom selections not permissible.")
@@ -355,15 +372,15 @@ class XPLOR:
 	"""
 	return map(lambda x: "(residue #: {0}, residue name: {1})".format(x.split('.')[0], x.split('.')[-1]), resName)
 
-    def readXPLORAngleConstraints(self, dihedral, resNames):
+    def readXPLORAngleConstraints(self, molecule, resNames):
         ''' readXPLORAngleConstraints parses an xplor angle file and adds in the
-            constraints directly into the provided dihedral object '''
+            constraints directly into the provided molecule object '''
         constraintInfo = self.parseXPLORFile(resNames, False)
         constraints = self.parseConstraints(constraintInfo,'angles')
         for constraint in constraints:
             atomSels = constraint['atomPairs']
             bounds = [constraint['lower'],constraint['upper']]
-            self.processAngleConstraints(dihedral, atomSels, bounds)
+            self.processAngleConstraints(molecule, atomSels, bounds)
 	# XXX: Could we maybe print out the line number too?
         if self.invalidAtomSelections:
             invalidAtoms = ''

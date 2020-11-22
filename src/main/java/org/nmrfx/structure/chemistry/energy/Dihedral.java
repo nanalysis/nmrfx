@@ -17,6 +17,7 @@
  */
 package org.nmrfx.structure.chemistry.energy;
 
+import org.nmrfx.chemistry.constraints.AngleConstraint;
 import org.nmrfx.chemistry.*;
 import org.nmrfx.structure.chemistry.Molecule;
 import java.io.FileNotFoundException;
@@ -26,13 +27,17 @@ import java.io.FileReader;
 import java.io.LineNumberReader;
 import java.io.BufferedReader;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.apache.commons.math3.optim.PointValuePair;
 import org.apache.commons.math3.optim.SimpleValueChecker;
 import org.apache.commons.math3.util.FastMath;
+import org.nmrfx.chemistry.constraints.AngleConstraintSet;
 
 public class Dihedral {
 
@@ -69,7 +74,7 @@ public class Dihedral {
     static double initPuckerAmplitude = 45 * toRad;
     static double initPseudoAngle = 18 * toRad;
     public static double backBoneScale = 4.0;
-    static Map<String, List<AngleBoundary>> angleBoundaries = new HashMap<>();
+    static Map<String, List<AngleConstraint>> angleBoundaries = new HashMap<>();
     static List<Map<Residue, AngleProp>> torsionAngles = new ArrayList<>();
 
     double maxSigma = 20;
@@ -369,41 +374,13 @@ public class Dihedral {
      * @param molFilterString
      * @param angleBoundary
      */
-    public void addBoundary(final AngleBoundary angleBoundary) throws InvalidMoleculeException {
+    public void addBoundary(final AngleConstraint angleBoundary) throws InvalidMoleculeException {
         String key = angleBoundary.getRefAtom().getFullName();
         if (!angleBoundaries.containsKey(key)) {
             angleBoundaries.put(key, new ArrayList<>());
         }
-        List<AngleBoundary> angleBoundList = angleBoundaries.get(key);
+        List<AngleConstraint> angleBoundList = angleBoundaries.get(key);
         angleBoundList.add(angleBoundary);
-    }
-
-    public void addBoundary(final List<String> atomNames, double lower, double upper, double scale) throws InvalidMoleculeException {
-        int arrayLength = atomNames.size();
-        if (arrayLength != 4) {
-            throw new IllegalArgumentException("Error adding dihedral boundary, must provide four atoms");
-        }
-        Atom[] atoms = new Atom[4];
-        for (int i = 0; i < arrayLength; i++) {
-            atoms[i] = MoleculeBase.getAtomByName(atomNames.get(i));
-            if (atoms[i] == null) {
-                throw new IllegalArgumentException("Error adding dihedral boundary, invalid atom " + atomNames.get(i));
-            }
-        }
-        addBoundary(atoms, lower, upper, scale);
-    }
-
-    public void addBoundary(final Atom[] atoms, double lower, double upper, double scale) throws InvalidMoleculeException {
-        if (atoms.length != 4) {
-            throw new IllegalArgumentException("Error adding dihedral boundary, must provide four atoms");
-        }
-        for (Atom atom : atoms) {
-            if (atom == null) {
-                throw new IllegalArgumentException("Error adding dihedral boundary, invalid atom");
-            }
-        }
-        AngleBoundary angleBoundary = new AngleBoundary(atoms, lower, upper, scale);
-        addBoundary(angleBoundary);
     }
 
     public void addTorsion(Map<Residue, AngleProp> torsionMap, final Residue res, double[] target, double[] sigma, double[] height) throws InvalidMoleculeException {
@@ -414,21 +391,7 @@ public class Dihedral {
         torsionMap.put(res, angleProp);
     }
 
-    public void addBoundary(final Atom[] atoms, double lower, double upper, double scale,
-                            double weight, double target, double targetErr, String name) throws InvalidMoleculeException {
-        if (atoms.length != 4) {
-            throw new IllegalArgumentException("Error adding dihedral boundary, must provide four atoms");
-        }
-        for (Atom atom : atoms) {
-            if (atom == null) {
-                throw new IllegalArgumentException("Error adding dihedral boundary, invalid atom");
-            }
-        }
-        AngleBoundary angleBoundary = new AngleBoundary(atoms, lower, upper, scale, weight, target, targetErr, name);
-        addBoundary(angleBoundary);
-    }
-
-    public Map<String, List<AngleBoundary>> getAngleBoundaries() {
+    public Map<String, List<AngleConstraint>> getAngleBoundaries() {
         return angleBoundaries;
     }
 
@@ -521,18 +484,30 @@ public class Dihedral {
         //}
     }
 
-    public void setupAngleRestraints() {
+    public void setupAngleRestraints()  {
+        angleBoundaries.clear();
         List<Atom> angleAtoms = molecule.getAngleAtoms();
+        Collection<AngleConstraintSet> angleSets = molecule.getMolecularConstraints().angleSets();
+        for (AngleConstraintSet angleSet : angleSets) {
+            for (AngleConstraint angleConstraint : angleSet.get()) {
+                try {
+                    addBoundary(angleConstraint);
+                } catch (InvalidMoleculeException ex) {
+                    Logger.getLogger(Dihedral.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
+        }
+
         energyList.clearAngleBoundaries();
         for (int i = 0; i < angleAtoms.size(); i++) {
             Atom atom = angleAtoms.get(i);
             atom.aAtom = i;
             String atomName = atom.getFullName();
-            List<AngleBoundary> angleBoundaryList = angleBoundaries.get(atomName);
+            List<AngleConstraint> angleBoundaryList = angleBoundaries.get(atomName);
             //if angleBoundary is present for that atom, replace value at there respected indices
 
             if (angleBoundaryList != null) {
-                for (AngleBoundary angleBoundary : angleBoundaryList) {
+                for (AngleConstraint angleBoundary : angleBoundaryList) {
                     angleBoundary.setIndex(i);
                     energyList.addAngleBoundary(angleBoundary);
                 }
@@ -698,7 +673,7 @@ public class Dihedral {
         return values;
     }
 
-    public void putInitialAngles(boolean useRandom) {
+    public void putInitialAngles(boolean useRandom) throws InvalidMoleculeException {
         List<Atom> angleAtoms = molecule.getAngleAtoms();
         List<Atom> pseudoAngleAtoms = molecule.getPseudoAngleAtoms();
         randomizeAngles();
@@ -765,7 +740,7 @@ public class Dihedral {
         }
     }
 
-    public RotationalDynamics getRotationalDyamics() {
+    public RotationalDynamics getRotationalDyamics() throws InvalidMoleculeException {
         prepareAngles(false);
         setBoundaries(0.1, false);
         energyList.setupDihedrals();
