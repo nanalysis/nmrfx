@@ -1225,9 +1225,12 @@ public class NMRStarReader {
         AngleConstraintSet angleSet = molecule.getMolecularConstraints().
                 newAngleSet(saveframe.getName().substring(5));
         for (int i = 0; i < entityAssemblyIDColumns[0].size(); i++) {
-            SpatialSet[] spSets = new SpatialSet[4];
+            Atom[] atoms = new Atom[4];
             for (int iAtom = 0; iAtom < 4; iAtom++) {
-                spSets[iAtom] = getSpatialSet(entityAssemblyIDColumns[iAtom], entityIDColumns[iAtom], compIdxIDColumns[iAtom], atomColumns[iAtom], resonanceColumns[iAtom], i).getFirstSet();
+                atoms[iAtom] = getSpatialSet(entityAssemblyIDColumns[iAtom],
+                        entityIDColumns[iAtom], compIdxIDColumns[iAtom],
+                        atomColumns[iAtom], resonanceColumns[iAtom], i).
+                        getFirstSet().atom;
             }
             String upperValue = (String) upperColumn.get(i);
             String lowerValue = (String) lowerColumn.get(i);
@@ -1237,7 +1240,12 @@ public class NMRStarReader {
             if (!lowerValue.equals(".")) {
                 lower = Double.parseDouble(lowerValue);
             }
-            AngleConstraint aCon = new AngleConstraint(angleSet, name, spSets, lower, upper);
+            try {
+                AngleConstraint aCon = new AngleConstraint(atoms, lower, upper, name);
+                angleSet.add(aCon);
+            } catch (InvalidMoleculeException ex) {
+                throw new ParseException(ex.getLocalizedMessage());
+            }
         }
     }
 
@@ -1408,7 +1416,7 @@ public class NMRStarReader {
                 noeSet.add(noe);
             }
         }
-      //  noeSet.updateNPossible(null);
+        //  noeSet.updateNPossible(null);
         noeSet.setCalibratable(false);
     }
 

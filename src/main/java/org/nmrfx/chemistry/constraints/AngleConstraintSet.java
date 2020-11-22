@@ -23,6 +23,7 @@ import org.nmrfx.chemistry.Point3;
 import java.util.*;
 
 import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
+import org.nmrfx.chemistry.InvalidMoleculeException;
 import org.nmrfx.chemistry.MoleculeBase;
 
 /**
@@ -31,7 +32,7 @@ import org.nmrfx.chemistry.MoleculeBase;
 public class AngleConstraintSet implements ConstraintSet, Iterable {
 
     private final MolecularConstraints molecularConstraints;
-    private ArrayList<AngleConstraint> constraints = new ArrayList<AngleConstraint>(64);
+    private ArrayList<AngleConstraint> constraints = new ArrayList<>();
     int nStructures = 0;
     private final String name;
     boolean dirty = true;
@@ -39,16 +40,32 @@ public class AngleConstraintSet implements ConstraintSet, Iterable {
     public static int ID = 1;
 
     private AngleConstraintSet(MolecularConstraints molecularConstraints,
-                               String name) {
+            String name) {
         this.name = name;
         this.molecularConstraints = molecularConstraints;
     }
 
     public static AngleConstraintSet newSet(MolecularConstraints molecularConstraints,
-                                            String name) {
+            String name) {
         AngleConstraintSet angleSet = new AngleConstraintSet(molecularConstraints,
                 name);
         return angleSet;
+    }
+
+    public void addAngleConstraint(Atom[] atoms, double lower, double upper, final double scale) throws InvalidMoleculeException {
+        AngleConstraint angleConstraint = new AngleConstraint(atoms, lower, upper, scale, 1.0, (lower + upper) / 2.0, upper - lower, "");
+        add(angleConstraint);
+    }
+
+    public void addAngleConstraint(Atom[] atoms, double lower, double upper, final double scale,
+            Double weight, Double target, Double targetErr, String name) throws InvalidMoleculeException {
+        AngleConstraint angleConstraint = new AngleConstraint(atoms, lower, upper, scale, weight, target, targetErr, name);
+        add(angleConstraint);
+    }
+
+    public void add(AngleConstraint constraint) {
+        constraint.idNum = getSize();
+        constraints.add(constraint);
     }
 
     public String getName() {
@@ -66,7 +83,6 @@ public class AngleConstraintSet implements ConstraintSet, Iterable {
     public String getType() {
         return "dihedral angle";
     }
-
 
     public int getSize() {
         return constraints.size();
@@ -132,9 +148,9 @@ public class AngleConstraintSet implements ConstraintSet, Iterable {
             boolean okPoint = true;
             for (int iStruct : structures) {
                 for (int i = 0; i < 4; i++) {
-                    pts[i] = aConstraint.getSpSets()[i].getPoint(iStruct);
+                    pts[i] = aConstraint.getSpSet(i).getPoint(iStruct);
                     if (pts[i] == null) {
-                        System.out.println(i + " " + aConstraint.getSpSets()[i].getFullName() + " has null point");
+                        System.out.println(i + " " + aConstraint.getSpSet(i).getFullName() + " has null point");
                         okPoint = false;
                     }
                 }
@@ -171,47 +187,47 @@ public class AngleConstraintSet implements ConstraintSet, Iterable {
     }
 
     private static String[] angleConstraintLoopStrings = {
-            "_Torsion_angle_constraint.ID",
-            "_Torsion_angle_constraint.Torsion_angle_name",
-            "_Torsion_angle_constraint.Assembly_atom_ID_1",
-            "_Torsion_angle_constraint.Entity_assembly_ID_1",
-            "_Torsion_angle_constraint.Entity_ID_1",
-            "_Torsion_angle_constraint.Comp_index_ID_1",
-            "_Torsion_angle_constraint.Seq_ID_1",
-            "_Torsion_angle_constraint.Comp_ID_1",
-            "_Torsion_angle_constraint.Atom_ID_1",
-            "_Torsion_angle_constraint.Atom_type_1",
-            "_Torsion_angle_constraint.Resonance_ID_1",
-            "_Torsion_angle_constraint.Assembly_atom_ID_2",
-            "_Torsion_angle_constraint.Entity_assembly_ID_2",
-            "_Torsion_angle_constraint.Entity_ID_2",
-            "_Torsion_angle_constraint.Comp_index_ID_2",
-            "_Torsion_angle_constraint.Seq_ID_2",
-            "_Torsion_angle_constraint.Comp_ID_2",
-            "_Torsion_angle_constraint.Atom_ID_2",
-            "_Torsion_angle_constraint.Atom_type_2",
-            "_Torsion_angle_constraint.Resonance_ID_2",
-            "_Torsion_angle_constraint.Assembly_atom_ID_3",
-            "_Torsion_angle_constraint.Entity_assembly_ID_3",
-            "_Torsion_angle_constraint.Entity_ID_3",
-            "_Torsion_angle_constraint.Comp_index_ID_3",
-            "_Torsion_angle_constraint.Seq_ID_3",
-            "_Torsion_angle_constraint.Comp_ID_3",
-            "_Torsion_angle_constraint.Atom_ID_3      _Torsion_angle_constraint.Atom_type_3",
-            "_Torsion_angle_constraint.Resonance_ID_3",
-            "_Torsion_angle_constraint.Assembly_atom_ID_4",
-            "_Torsion_angle_constraint.Entity_assembly_ID_4",
-            "_Torsion_angle_constraint.Entity_ID_4",
-            "_Torsion_angle_constraint.Comp_index_ID_4",
-            "_Torsion_angle_constraint.Seq_ID_4",
-            "_Torsion_angle_constraint.Comp_ID_4",
-            "_Torsion_angle_constraint.Atom_ID_4",
-            "_Torsion_angle_constraint.Atom_type_4",
-            "_Torsion_angle_constraint.Resonance_ID_4",
-            "_Torsion_angle_constraint.Angle_lower_bound_val",
-            "_Torsion_angle_constraint.Angle_upper_bound_val",
-            "_Torsion_angle_constraint.Entry_ID",
-            "_Torsion_angle_constraint.Gen_dist_constraint_list_ID",};
+        "_Torsion_angle_constraint.ID",
+        "_Torsion_angle_constraint.Torsion_angle_name",
+        "_Torsion_angle_constraint.Assembly_atom_ID_1",
+        "_Torsion_angle_constraint.Entity_assembly_ID_1",
+        "_Torsion_angle_constraint.Entity_ID_1",
+        "_Torsion_angle_constraint.Comp_index_ID_1",
+        "_Torsion_angle_constraint.Seq_ID_1",
+        "_Torsion_angle_constraint.Comp_ID_1",
+        "_Torsion_angle_constraint.Atom_ID_1",
+        "_Torsion_angle_constraint.Atom_type_1",
+        "_Torsion_angle_constraint.Resonance_ID_1",
+        "_Torsion_angle_constraint.Assembly_atom_ID_2",
+        "_Torsion_angle_constraint.Entity_assembly_ID_2",
+        "_Torsion_angle_constraint.Entity_ID_2",
+        "_Torsion_angle_constraint.Comp_index_ID_2",
+        "_Torsion_angle_constraint.Seq_ID_2",
+        "_Torsion_angle_constraint.Comp_ID_2",
+        "_Torsion_angle_constraint.Atom_ID_2",
+        "_Torsion_angle_constraint.Atom_type_2",
+        "_Torsion_angle_constraint.Resonance_ID_2",
+        "_Torsion_angle_constraint.Assembly_atom_ID_3",
+        "_Torsion_angle_constraint.Entity_assembly_ID_3",
+        "_Torsion_angle_constraint.Entity_ID_3",
+        "_Torsion_angle_constraint.Comp_index_ID_3",
+        "_Torsion_angle_constraint.Seq_ID_3",
+        "_Torsion_angle_constraint.Comp_ID_3",
+        "_Torsion_angle_constraint.Atom_ID_3      _Torsion_angle_constraint.Atom_type_3",
+        "_Torsion_angle_constraint.Resonance_ID_3",
+        "_Torsion_angle_constraint.Assembly_atom_ID_4",
+        "_Torsion_angle_constraint.Entity_assembly_ID_4",
+        "_Torsion_angle_constraint.Entity_ID_4",
+        "_Torsion_angle_constraint.Comp_index_ID_4",
+        "_Torsion_angle_constraint.Seq_ID_4",
+        "_Torsion_angle_constraint.Comp_ID_4",
+        "_Torsion_angle_constraint.Atom_ID_4",
+        "_Torsion_angle_constraint.Atom_type_4",
+        "_Torsion_angle_constraint.Resonance_ID_4",
+        "_Torsion_angle_constraint.Angle_lower_bound_val",
+        "_Torsion_angle_constraint.Angle_upper_bound_val",
+        "_Torsion_angle_constraint.Entry_ID",
+        "_Torsion_angle_constraint.Gen_dist_constraint_list_ID",};
 
     public String[] getLoopStrings() {
         return angleConstraintLoopStrings;
