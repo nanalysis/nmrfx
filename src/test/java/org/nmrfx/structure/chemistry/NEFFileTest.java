@@ -19,8 +19,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import org.junit.Assert;
 import org.junit.Test;
-import org.nmrfx.structure.chemistry.io.NMRNEFReader;
-import org.nmrfx.structure.chemistry.io.NMRNEFWriter;
+import org.nmrfx.chemistry.io.NMRNEFReader;
+import org.nmrfx.chemistry.io.NMRNEFWriter;
 
 /**
  *
