@@ -18,6 +18,9 @@ public class MolecularConstraints {
     public final Map<String, NoeSet> noeSets = new HashMap<>();
     Optional<NoeSet> activeNOESet = Optional.empty();
 
+    public final Map<String, DistanceConstraintSet> distanceSets = new HashMap<>();
+    Optional<DistanceConstraintSet> activeDistanceSet = Optional.empty();
+
     public final Map<String, AngleConstraintSet> angleSets = new HashMap<>();
     Optional<AngleConstraintSet> activeAngleSet = Optional.empty();
 
@@ -131,6 +134,45 @@ public class MolecularConstraints {
         }
         rdcSets.clear();
         newRDCSet("default");
+    }
+
+    public Optional<DistanceConstraintSet> activeDistanceSet() {
+        return activeDistanceSet;
+    }
+
+    public void activeDistanceSet(String name) {
+        activeDistanceSet = distanceSets.containsKey(name) ? Optional.of(distanceSets.get(name)) : Optional.empty();
+    }
+
+    public void addDistanceSet(DistanceConstraintSet distanceSet) {
+        distanceSets.put(distanceSet.getName(), distanceSet);
+    }
+
+    public DistanceConstraintSet newDistanceSet(String name) {
+        DistanceConstraintSet distanceSet = DistanceConstraintSet.newSet(this, name);
+        distanceSets.put(distanceSet.getName(), distanceSet);
+        activeDistanceSet(name);
+        return distanceSet;
+    }
+    
+    public Collection<DistanceConstraintSet> distanceSets() {
+        return distanceSets.values();
+    }
+
+    public Set<String> getDistanceSetNames() {
+        return distanceSets.keySet();
+    }
+
+    public DistanceConstraintSet getDistanceSet(String name) {
+        return distanceSets.get(name);
+    }
+
+    public void resetDistanceSets() {
+        for (Map.Entry<String, DistanceConstraintSet> cSet : distanceSets.entrySet()) {
+            cSet.getValue().clear();
+        }
+        distanceSets.clear();
+        newDistanceSet("default");
     }
 
 }
