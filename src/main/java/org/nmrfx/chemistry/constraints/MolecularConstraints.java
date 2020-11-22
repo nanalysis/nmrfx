@@ -93,6 +93,10 @@ public class MolecularConstraints {
         return angleSets.keySet();
     }
 
+    public AngleConstraintSet getAngleSet(String name) {
+        return angleSets.get(name);
+    }
+
     public void resetAngleSets() {
         for (Map.Entry<String, AngleConstraintSet> cSet : angleSets.entrySet()) {
             cSet.getValue().clear();
@@ -154,7 +158,7 @@ public class MolecularConstraints {
         activeDistanceSet(name);
         return distanceSet;
     }
-    
+
     public Collection<DistanceConstraintSet> distanceSets() {
         return distanceSets.values();
     }

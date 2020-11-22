@@ -17,6 +17,7 @@
  */
 package org.nmrfx.chemistry;
 
+import org.nmrfx.chemistry.constraints.AngleConstraint;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import org.nmrfx.chemistry.constraints.DistanceConstraint;
 import org.nmrfx.chemistry.io.AtomParser;
@@ -1449,7 +1450,7 @@ public class Atom implements IAtom {
      * ".".
      * @return String in NEF format.
      */
-    public static String toNEFDihedralString(AngleBoundary bound, Atom[] atoms, int iBound, int restraintID, String restraintComboID) {
+    public static String toNEFDihedralString(AngleConstraint bound, Atom[] atoms, int iBound, int restraintID, String restraintComboID) {
 
         StringBuilder sBuilder = new StringBuilder();
 

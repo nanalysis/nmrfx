@@ -17,69 +17,201 @@
  */
 package org.nmrfx.chemistry.constraints;
 
+import java.util.List;
+import org.nmrfx.chemistry.Atom;
+import org.nmrfx.chemistry.InvalidMoleculeException;
+import org.nmrfx.chemistry.MoleculeBase;
 import org.nmrfx.chemistry.SpatialSet;
+import org.nmrfx.chemistry.Util;
 
 /**
- *
- * @author brucejohnson
+ * This class determines if the angle boundary is valid - angle boundary for
+ * each bond. The angle must be between -180 degrees and 360 degrees
  */
 public class AngleConstraint implements Constraint {
 
     private static DistanceStat defaultStat = new DistanceStat();
 
+    protected int idNum = 0;
+
     /**
-     * @return the defaultStat
+     * Upper Angle Bound
      */
-    public static DistanceStat getDefaultStat() {
-        return defaultStat;
-    }
-    private static double tolerance = 5.0;
-    private AngleConstraintSet angleSet;
-    private int idNum = 0;
-    private final SpatialSet[] spSets;
-    private double lower;
-    private double upper;
-    private String name;
-    private DistanceStat disStat = defaultStat;
+    final double upper;
+    /**
+     * Lower Angle Bound
+     */
+    final double lower;
+
+    private Atom[] atoms = null;
+    /**
+     * Scale
+     */
+    final double scale;
+    /**
+     * weight
+     */
+    final Double weight;
+    /**
+     * target
+     */
+    final Double target;
+    /**
+     * target error
+     */
+    final Double targetErr;
+    /**
+     * name
+     */
+    final String name;
+    /**
+     * Index to list of angles
+     */
     private int active = 1;
+    private int index = -1;
+    private DistanceStat disStat = defaultStat;
+    final static double toRad = Math.PI / 180.0;
 
-    public AngleConstraint(AngleConstraintSet angleSet, final String name, final SpatialSet[] spSets, final double lower, final double upper) {
-        this.spSets = spSets;
-        this.lower = lower;
-        this.upper = upper;
+    public AngleConstraint(Atom[] atoms, double lower, double upper, final double scale,
+            Double weight, Double target, Double targetErr, String name) throws InvalidMoleculeException {
+        if (atoms.length != 4) {
+            throw new IllegalArgumentException("Must specify 4 atoms in AngleBoundary constructor");
+        }
+        if ((atoms[2].parent != atoms[1]) && (atoms[1].parent != atoms[2])) {
+            throw new IllegalArgumentException("Second atom must be parent of first atom, or vice versa");
+        }
+        this.lower = Util.reduceAngle(lower * toRad);
+        this.upper = Util.reduceAngle(upper * toRad);
+        this.scale = scale;
+        this.weight = weight;
+        this.target = target;
+        this.targetErr = targetErr;
         this.name = name;
-        this.angleSet = angleSet;
-        this.idNum = angleSet.getSize();
-        angleSet.add(this);
-        angleSet.setDirty();
+        this.atoms = new Atom[atoms.length];
+        System.arraycopy(atoms, 0, this.atoms, 0, atoms.length);
     }
 
-    public SpatialSet getSpatialSet(int i) {
-        return getSpSets()[i];
+    public AngleConstraint(Atom[] atoms, double lower, double upper, final double scale) throws InvalidMoleculeException {
+        this(atoms, lower, upper, scale, 1.0, (lower + upper) / 2.0, upper - lower, "");
     }
 
-    public int getID() {
-        return getIdNum();
+    public AngleConstraint(Atom[] atoms, double lower, double upper, String name) throws InvalidMoleculeException {
+        this(atoms, lower, upper, 1.0, 1.0, (lower + upper) / 2.0, upper - lower, name);
     }
 
-    public DistanceStat getStat() {
-        return getDisStat();
+    public AngleConstraint(List<Atom> atoms, double lower, double upper, final double scale,
+            Double weight, Double target, Double targetErr, String name) throws InvalidMoleculeException {
+        for (Atom atom : atoms) {
+            if (atom == null) {
+                throw new InvalidMoleculeException("null atom");
+            }
+        }
+        if (atoms.size() != 4) {
+            throw new IllegalArgumentException("Must specify 4 atoms in AngleBoundary constructor");
+        }
+        if ((atoms.get(2).parent != atoms.get(1)) && (atoms.get(1).parent != atoms.get(2))) {
+            throw new IllegalArgumentException("Second atom must be parent of first atom, or vice versa");
+        }
+        /*Changed from Original*/
+        if (((lower < -180.0) && (upper < 0.0)) || (upper > 360.0) || (upper < lower)) {
+            throw new IllegalArgumentException("Invalid angle bounds: " + lower + " " + upper);
+        }
+        if ((lower > 180) && (upper > 180)) {
+            lower = lower - 360.0;
+            upper = upper - 360.0;
+        }
+
+        this.lower = Util.reduceAngle(lower * toRad);
+        this.upper = Util.reduceAngle(upper * toRad);
+        this.scale = scale;
+        this.weight = weight;
+        this.target = target;
+        this.targetErr = targetErr;
+        this.name = name;
+        this.atoms = new Atom[atoms.size()];
+        atoms.toArray(this.atoms);
     }
 
-    public static double getTolerance() {
-        return tolerance;
+    public AngleConstraint(List<Atom> atoms, double lower, double upper, final double scale) throws InvalidMoleculeException {
+        this(atoms, lower, upper, scale, 1.0, (lower + upper) / 2.0, upper - lower, "");
     }
 
-    public static void setTolerance(double value) {
-        tolerance = value;
+    public static boolean allowRotation(List<String> atomNames) {
+
+        int arrayLength = atomNames.size();
+        if (arrayLength != 4) {
+            throw new IllegalArgumentException("Error adding dihedral boundary, must provide four atoms");
+        }
+        Atom[] atoms = new Atom[4];
+        for (int i = 0; i < arrayLength; i++) {
+            atoms[i] = MoleculeBase.getAtomByName(atomNames.get(i));
+        }
+
+        return !((atoms[2].parent != atoms[1]) && (atoms[1].parent != atoms[2]));
     }
 
-    public double getValue() {
-        return getDisStat().getMean();
+    public void setIndex(final int index) {
+        this.index = index;
     }
 
-    public boolean isUserActive() {
-        return getActive() > 0;
+    public int getIndex() {
+        return index;
+    }
+
+    public Atom getAtom() {
+        return atoms[atoms.length - 1];
+    }
+
+    public Atom[] getAtoms() {
+        return atoms;
+    }
+
+    public Atom getRefAtom() {
+        Atom refAtom = atoms[2].parent == atoms[1] ? atoms[2] : atoms[1];
+        return refAtom;
+    }
+
+    public String getAtomNames() {
+        return String.format("%10s %10s %10s %10s",
+                atoms[0].getFullName(),
+                atoms[1].getFullName(),
+                atoms[2].getFullName(),
+                atoms[3].getFullName());
+    }
+
+    /**
+     * @return the spSet
+     */
+    public SpatialSet getSpSet(int i) {
+        return atoms[i].spatialSet;
+    }
+
+    public double getWeight() {
+        return weight;
+    }
+
+    public double getTargetValue() {
+        return target;
+    }
+
+    public double getTargetError() {
+        return targetErr;
+    }
+
+    public double getLower() {
+        return lower;
+    }
+
+    public double getUpper() {
+        return upper;
+    }
+
+    public double getScale() {
+        return scale;
+    }
+
+    public String getName() {
+        return name;
     }
 
     public void setActive(int state) {
@@ -88,17 +220,6 @@ public class AngleConstraint implements Constraint {
 
     public int getActive() {
         return active;
-    }
-
-    public String getViolChars(DistanceStat dStat) {
-        for (int i = 0; i < AngleConstraintSet.violCharArray.length; i++) {
-            if (dStat.getViolStructures().get(i)) {
-                AngleConstraintSet.violCharArray[i] = (char) ((i % 10) + '0');
-            } else {
-                AngleConstraintSet.violCharArray[i] = '_';
-            }
-        }
-        return new String(AngleConstraintSet.violCharArray);
     }
 
     public double getViol(double angle) {
@@ -127,6 +248,41 @@ public class AngleConstraint implements Constraint {
         return viol;
     }
 
+    /**
+     * @return the disStat
+     */
+    public DistanceStat getDisStat() {
+        return disStat;
+    }
+
+    /**
+     * @param disStat the disStat to set
+     */
+    public void setDisStat(DistanceStat disStat) {
+        this.disStat = disStat;
+    }
+
+    @Override
+    public int getID() {
+        return idNum;
+    }
+
+    @Override
+    public boolean isUserActive() {
+        return getActive() > 0;
+    }
+
+    @Override
+    public DistanceStat getStat() {
+        return getDisStat();
+    }
+
+    @Override
+    public double getValue() {
+        return getDisStat().getMean();
+    }
+
+    @Override
     public String toSTARString() {
         StringBuilder result = new StringBuilder();
         char sep = ' ';
@@ -136,22 +292,22 @@ public class AngleConstraint implements Constraint {
         //      _Torsion_angle_constraint.Torsion_angle_name
         result.append(getName());
         result.append(sep);
-        getSpSets()[0].addToSTARString(result);
+        getSpSet(0).addToSTARString(result);
         result.append(sep);
         //FIXME result.append(atom.getIsotopeNumber());                //  Atom_isotope_number
         result.append(".");
         result.append(sep);
-        getSpSets()[1].addToSTARString(result);
+        getSpSet(1).addToSTARString(result);
         result.append(sep);
         //FIXME result.append(atom.getIsotopeNumber());                //  Atom_isotope_number
         result.append(".");
         result.append(sep);
-        getSpSets()[2].addToSTARString(result);
+        getSpSet(2).addToSTARString(result);
         result.append(sep);
         //FIXME result.append(atom.getIsotopeNumber());                //  Atom_isotope_number
         result.append(".");
         result.append(sep);
-        getSpSets()[3].addToSTARString(result);
+        getSpSet(3).addToSTARString(result);
         result.append(sep);
         //FIXME result.append(atom.getIsotopeNumber());                //  Atom_isotope_number
         result.append(".");
@@ -173,54 +329,5 @@ public class AngleConstraint implements Constraint {
         result.append(sep);
         result.append("1");
         return result.toString();
-    }
-
-    /**
-     * @return the idNum
-     */
-    public int getIdNum() {
-        return idNum;
-    }
-
-    /**
-     * @return the spSets
-     */
-    public SpatialSet[] getSpSets() {
-        return spSets;
-    }
-
-    /**
-     * @return the lower
-     */
-    public double getLower() {
-        return lower;
-    }
-
-    /**
-     * @return the upper
-     */
-    public double getUpper() {
-        return upper;
-    }
-
-    /**
-     * @return the name
-     */
-    public String getName() {
-        return name;
-    }
-
-    /**
-     * @return the disStat
-     */
-    public DistanceStat getDisStat() {
-        return disStat;
-    }
-
-    /**
-     * @param disStat the disStat to set
-     */
-    public void setDisStat(DistanceStat disStat) {
-        this.disStat = disStat;
     }
 }
