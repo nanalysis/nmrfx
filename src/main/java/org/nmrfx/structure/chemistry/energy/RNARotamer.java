@@ -17,6 +17,7 @@
  */
 package org.nmrfx.structure.chemistry.energy;
 
+import org.nmrfx.chemistry.constraints.AngleConstraint;
 import org.nmrfx.chemistry.*;
 
 import java.util.ArrayList;
@@ -641,12 +642,12 @@ public class RNARotamer {
         return rotamerScore;
     }
 
-    public static ArrayList<AngleBoundary> getAngleBoundaries(Polymer polymer, String residueNum, String rotamerName, double mul) throws IllegalArgumentException, InvalidMoleculeException {
+    public static ArrayList<AngleConstraint> getAngleBoundaries(Polymer polymer, String residueNum, String rotamerName, double mul) throws IllegalArgumentException, InvalidMoleculeException {
         RNARotamer rotamer = ROTAMERS.get(rotamerName);
         if (rotamer == null) {
             throw new IllegalArgumentException("Invalid rotamer name \"" + rotamerName + "\"");
         }
-        ArrayList<AngleBoundary> boundaries = new ArrayList<>();
+        ArrayList<AngleConstraint> boundaries = new ArrayList<>();
         int i = 0;
         for (String[] atomNames : suiteAtoms) {
             double mean = rotamer.angles[i];
@@ -700,7 +701,7 @@ public class RNARotamer {
                 }
             }
             if (ok) {
-                AngleBoundary angleBoundary = new AngleBoundary(angleAtomNames, lower, upper, 1.0);
+                AngleConstraint angleBoundary = new AngleConstraint(angleAtomNames, lower, upper, 1.0);
                 boundaries.add(angleBoundary);
             }
             i++;

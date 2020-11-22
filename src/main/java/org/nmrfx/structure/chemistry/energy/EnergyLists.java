@@ -17,6 +17,7 @@
  */
 package org.nmrfx.structure.chemistry.energy;
 
+import org.nmrfx.chemistry.constraints.AngleConstraint;
 import org.nmrfx.chemistry.*;
 import org.nmrfx.chemistry.MolFilter;
 import org.nmrfx.chemistry.constraints.AtomDistancePair;
@@ -31,6 +32,7 @@ import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Iterator;
@@ -39,6 +41,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math3.util.FastMath;
+import org.nmrfx.chemistry.constraints.AngleConstraintSet;
 import org.nmrfx.chemistry.constraints.DistanceConstraintSet;
 import org.nmrfx.structure.chemistry.energy.RNARotamer.RotamerScore;
 import org.nmrfx.structure.chemistry.predict.Predictor;
@@ -50,7 +53,7 @@ public class EnergyLists {
     public List<CompoundPair> compoundPairList = new ArrayList<>();
     private List<Atom> refAtoms = new ArrayList<>();
     private List<BondPair> bondList = new ArrayList<>();
-    private List<AngleBoundary> angleBoundList = new ArrayList<>();
+    private List<AngleConstraint> angleBoundList = new ArrayList<>();
     private Map<String, Double> distanceMap = new HashMap<>();
     private int iStruct = 0;
     private List<Atom> angleAtoms = new ArrayList<Atom>();
@@ -166,7 +169,7 @@ public class EnergyLists {
         return swapInterval;
     }
 
-    void addAngleBoundary(AngleBoundary angleBoundary) {
+    void addAngleBoundary(AngleConstraint angleBoundary) {
         angleBoundList.add(angleBoundary);
     }
 
@@ -543,7 +546,7 @@ public class EnergyLists {
             //                }
             //            }
             if (forceWeight.getDihedral() > 0.0) {
-                for (AngleBoundary angleBoundary : angleBoundList) {
+                for (AngleConstraint angleBoundary : angleBoundList) {
                     AtomEnergy energy = calcDihedralEnergy(angleBoundary, forceWeight, false);
                     dihEnergy += energy.getEnergy();
                     nDih++;
@@ -693,7 +696,7 @@ public class EnergyLists {
         double total = 0.0;
     }
 
-    public static double grabDihedral(AngleBoundary boundary) {
+    public static double grabDihedral(AngleConstraint boundary) {
         double dihedral;
         int atomListLength = boundary.getAtoms().length;
         switch (atomListLength) {
@@ -717,7 +720,7 @@ public class EnergyLists {
         }
     }
 
-    public static AtomEnergy calcDihedralEnergy(AngleBoundary boundary, final ForceWeight forceWeight,
+    public static AtomEnergy calcDihedralEnergy(AngleConstraint boundary, final ForceWeight forceWeight,
             final boolean calcDeriv) {
         double dihedral = grabDihedral(boundary);
         double upper = boundary.getUpper();
@@ -728,7 +731,7 @@ public class EnergyLists {
     public double calcDihedralEnergyFast(double[] gradient) {
         EnergyCoords eCoords = molecule.getEnergyCoords();
         double energyTotal = 0.0;
-        for (AngleBoundary angleBoundary : angleBoundList) {
+        for (AngleConstraint angleBoundary : angleBoundList) {
             double dihedral;
             Atom[] atoms = angleBoundary.getAtoms();
             if (atoms.length == 1) {
