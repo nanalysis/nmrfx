@@ -45,23 +45,21 @@ public class RDCConstraintSet implements ConstraintSet, Iterable {
     public static int ID = 1;
 
     private RDCConstraintSet(MolecularConstraints molecularConstraints,
-                             String name) {
+            String name) {
         this.name = name;
         this.molecularConstraints = molecularConstraints;
     }
 
     public static RDCConstraintSet newSet(MolecularConstraints molecularConstraints,
-                                          String name) {
+            String name) {
         RDCConstraintSet rdcSet = new RDCConstraintSet(molecularConstraints,
                 name);
         return rdcSet;
     }
 
-
     public String getName() {
         return name;
     }
-
 
     public String getCategory() {
         return "torsion_angle_constraints";
@@ -187,26 +185,26 @@ public class RDCConstraintSet implements ConstraintSet, Iterable {
     }
 
     private static String[] rdcConstraintLoopStrings = {
-            "_RDC.ID",
-            "_RDC.Entity_assembly_ID_1",
-            "_RDC.Entity_ID_1",
-            "_RDC.Comp_index_ID_1",
-            "_RDC.Seq_ID_1",
-            "_RDC.Comp_ID_1",
-            "_RDC.Atom_ID_1",
-            "_RDC.Atom_type_1",
-            "_RDC.Resonance_ID_1",
-            "_RDC.Entity_assembly_ID_2",
-            "_RDC.Entity_ID_2",
-            "_RDC.Comp_index_ID_2",
-            "_RDC.Seq_ID_2",
-            "_RDC.Comp_ID_2",
-            "_RDC.Atom_ID_2",
-            "_RDC.Atom_type_2",
-            "_RDC.Resonance_ID_2",
-            "_RDC.Val",
-            "_RDC.Val_err",
-            "_RDC.RDC_list_ID",};
+        "_RDC.ID",
+        "_RDC.Entity_assembly_ID_1",
+        "_RDC.Entity_ID_1",
+        "_RDC.Comp_index_ID_1",
+        "_RDC.Seq_ID_1",
+        "_RDC.Comp_ID_1",
+        "_RDC.Atom_ID_1",
+        "_RDC.Atom_type_1",
+        "_RDC.Resonance_ID_1",
+        "_RDC.Entity_assembly_ID_2",
+        "_RDC.Entity_ID_2",
+        "_RDC.Comp_index_ID_2",
+        "_RDC.Seq_ID_2",
+        "_RDC.Comp_ID_2",
+        "_RDC.Atom_ID_2",
+        "_RDC.Atom_type_2",
+        "_RDC.Resonance_ID_2",
+        "_RDC.Val",
+        "_RDC.Val_err",
+        "_RDC.RDC_list_ID",};
 
     public String[] getLoopStrings() {
         return rdcConstraintLoopStrings;
