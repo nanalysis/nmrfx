@@ -49,6 +49,7 @@ import org.nmrfx.chemistry.MoleculeFactory;
 import org.nmrfx.structure.chemistry.energy.EnergyLists;
 import org.nmrfx.chemistry.utilities.NvUtil;
 import org.nmrfx.chemistry.Util;
+import org.nmrfx.chemistry.constraints.DistanceConstraintSet;
 
 /**
  *
@@ -286,7 +287,7 @@ public class NMRNEFWriter {
         chan.write("save_\n");
     }
 
-    static void writeDistances(MoleculeBase moleculeBase, FileWriter chan) throws IOException, InvalidMoleculeException {
+    static void writeDistances(MoleculeBase moleculeBase, List<DistanceConstraint> distList, FileWriter chan) throws IOException, InvalidMoleculeException {
         if (!(moleculeBase instanceof Molecule)) {
             return;
         }
@@ -310,7 +311,6 @@ public class NMRNEFWriter {
         chan.write("\n");
         molecule.updateAtomArray();
         EnergyLists eLists = molecule.getEnergyLists();
-        List<DistanceConstraint> distList = eLists.getDistanceList();
         int idx = 1;
         int restraintID = 1;
         String result;
@@ -581,7 +581,9 @@ public class NMRNEFWriter {
         if (molecule != null) {
             writeMolSys(molecule, chan);
             writePPM(molecule, chan);
-            writeDistances(molecule, chan);
+            for (DistanceConstraintSet distanceSet : molecule.getMolecularConstraints().distanceSets()) {
+                writeDistances(molecule, distanceSet.get(), chan);
+            }
             writeDihedrals(molecule, chan);
         }
     }

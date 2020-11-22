@@ -39,7 +39,7 @@ import org.nmrfx.star.ParseException;
 import org.nmrfx.star.STAR3;
 import org.nmrfx.star.Saveframe;
 import org.nmrfx.chemistry.MolFilter;
-import org.nmrfx.chemistry.constraints.AngleConstraint;
+import org.nmrfx.chemistry.constraints.DistanceConstraintSet;
 import org.nmrfx.chemistry.io.MoleculeIOException;
 import org.nmrfx.chemistry.io.PDBFile;
 import org.nmrfx.chemistry.io.Sequence;
@@ -273,13 +273,13 @@ public class NMRNEFReader {
         }
     }
 
-    void buildNEFDistanceRestraints(EnergyLists energyList) throws ParseException {
+    void buildNEFDistanceRestraints(MoleculeBase molecule) throws ParseException {
         for (Saveframe saveframe : nef.getSaveFrames().values()) {
             if (saveframe.getCategoryName().equals("nef_distance_restraint_list")) {
                 if (DEBUG) {
                     System.err.println("process nef_distance_restraint_list " + saveframe.getName());
                 }
-                processNEFDistanceRestraints(saveframe, energyList);
+                processNEFDistanceRestraints(saveframe, molecule);
             }
         }
     }
@@ -486,7 +486,7 @@ public class NMRNEFReader {
         }
     }
 
-    void processNEFDistanceRestraints(Saveframe saveframe, EnergyLists energyList) throws ParseException {
+    void processNEFDistanceRestraints(Saveframe saveframe, MoleculeBase molecule) throws ParseException {
         Loop loop = saveframe.getLoop("_nef_distance_restraint");
         if (loop == null) {
             throw new ParseException("No \"_nef_distance_restraint\" loop");
@@ -518,6 +518,7 @@ public class NMRNEFReader {
 //        String[] resNames = new String[2];
         atomNames[0] = new ArrayList<>();
         atomNames[1] = new ArrayList<>();
+        DistanceConstraintSet distanceSet = molecule.getMolecularConstraints().getDistanceSet(saveframe.getName());
 
         for (int i = 0; i < chainCodeColumns[0].size(); i++) {
             int restraintIDValue = restraintIDColumn.get(i);
@@ -594,7 +595,7 @@ public class NMRNEFReader {
             Util.setStrictlyNEF(true);
             try {
                 if (addConstraint) {
-                    energyList.addDistanceConstraint(atomNames[0], atomNames[1], lower, upper, weight, target, targetErr);
+                    distanceSet.addDistanceConstraint(atomNames[0], atomNames[1], lower, upper, weight, target, targetErr);
                 }
             } catch (IllegalArgumentException iaE) {
                 int index = indexColumn.get(i);
@@ -656,7 +657,7 @@ public class NMRNEFReader {
             if (DEBUG) {
                 System.err.println("process dist constraints");
             }
-            buildNEFDistanceRestraints(energyList);
+            buildNEFDistanceRestraints(molecule);
             if (DEBUG) {
                 System.err.println("process angle constraints");
             }
