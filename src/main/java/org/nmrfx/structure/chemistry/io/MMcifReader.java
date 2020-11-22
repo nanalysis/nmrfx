@@ -32,7 +32,7 @@ import org.nmrfx.star.Saveframe;
 import org.nmrfx.structure.protein.ProteinHelix;
 import org.nmrfx.structure.protein.Sheet;
 
-import static org.nmrfx.structure.chemistry.io.NMRNEFReader.DEBUG;
+import static org.nmrfx.chemistry.io.NMRNEFReader.DEBUG;
 
 public class MMcifReader {
 
