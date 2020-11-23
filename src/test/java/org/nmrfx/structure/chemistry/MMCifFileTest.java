@@ -18,8 +18,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import org.junit.Assert;
 import org.junit.Test;
-import org.nmrfx.structure.chemistry.io.MMcifReader;
-import org.nmrfx.structure.chemistry.io.MMcifWriter;
+import org.nmrfx.chemistry.io.MMcifReader;
+import org.nmrfx.chemistry.io.MMcifWriter;
 
 /**
  *
