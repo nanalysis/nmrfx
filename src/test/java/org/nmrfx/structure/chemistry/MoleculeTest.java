@@ -18,7 +18,7 @@ public class MoleculeTest {
         Sequence seq = new Sequence();
         List<String> residueList = Arrays.asList("ALA", "GLY", "SER", "VAL");
         try {
-            Molecule.removeAll();
+            MoleculeBase.removeAll();
             mol = seq.read("test", residueList, null);
         } catch (MoleculeIOException ex) {
         }

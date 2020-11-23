@@ -329,13 +329,15 @@ public class MoleculeBase implements Serializable, ITree {
         entityLabels = new LinkedHashMap();
     }
 
-//    public static MoleculeBase activeMol() {
-//        return StructureProject.getActive().activeMol;
-//    }
-//
-//    public static MoleculeBase getActive() {
-//        return StructureProject.getActive().activeMol;
-//    }
+    public static void removeAll() {
+        // fixme need to remove each molecule from list, rather than just settng molecules to new Hashtable?
+        // should at least just clear molecules
+        MoleculeFactory.clearAllMolecules();
+
+        conditions.clear();
+        MoleculeFactory.setActive(null);
+    }
+
     public MolecularConstraints getMolecularConstraints() {
         return molecularConstraints;
     }
