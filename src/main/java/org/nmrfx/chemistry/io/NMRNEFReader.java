@@ -39,7 +39,6 @@ import org.nmrfx.star.Saveframe;
 import org.nmrfx.chemistry.MolFilter;
 import org.nmrfx.chemistry.constraints.AngleConstraintSet;
 import org.nmrfx.chemistry.constraints.DistanceConstraintSet;
-import org.nmrfx.structure.chemistry.Molecule;
 
 /**
  *
@@ -627,18 +626,14 @@ public class NMRNEFReader {
             throw new IllegalArgumentException("?shifts fromSet toSet?");
         }
 
-        MoleculeBase moleculeBase = null;
+        MoleculeBase molecule = null;
         if (argv.length == 0) {
             hasResonances = false;
             compoundMap.clear();
             if (DEBUG) {
                 System.err.println("process molecule");
             }
-            moleculeBase = buildNEFMolecule();
-            if (!(moleculeBase instanceof Molecule)) {
-                return null;
-            }
-            Molecule molecule = (Molecule) moleculeBase;
+            molecule = buildNEFMolecule();
             if (DEBUG) {
                 System.err.println("process chem shifts");
             }
@@ -646,17 +641,17 @@ public class NMRNEFReader {
             if (DEBUG) {
                 System.err.println("process dist constraints");
             }
-            buildNEFDistanceRestraints(moleculeBase);
+            buildNEFDistanceRestraints(molecule);
             if (DEBUG) {
                 System.err.println("process angle constraints");
             }
-            buildNEFDihedralConstraints(moleculeBase);
+            buildNEFDihedralConstraints(molecule);
         } else if ("shifts".startsWith(argv[2])) {
             int fromSet = Integer.parseInt(argv[3]);
             int toSet = Integer.parseInt(argv[4]);
             buildNEFChemShifts(fromSet, toSet);
         }
-        return moleculeBase;
+        return molecule;
     }
 
 }
