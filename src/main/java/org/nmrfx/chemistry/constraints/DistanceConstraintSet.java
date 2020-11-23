@@ -23,7 +23,6 @@ import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
 import org.nmrfx.chemistry.Atom;
 import org.nmrfx.chemistry.MolFilter;
 import org.nmrfx.chemistry.MoleculeBase;
-import org.nmrfx.structure.chemistry.Molecule;
 
 /**
  * @author brucejohnson
@@ -202,8 +201,8 @@ public class DistanceConstraintSet implements ConstraintSet, Iterable {
         MolFilter molFilter2 = new MolFilter(filterString2);
         MoleculeBase molecule = molecularConstraints.molecule;
 
-        ArrayList<Atom> atoms1 = Molecule.getMatchedAtoms(molFilter1, molecule);
-        ArrayList<Atom> atoms2 = Molecule.getMatchedAtoms(molFilter2, molecule);
+        ArrayList<Atom> atoms1 = MoleculeBase.getMatchedAtoms(molFilter1, molecule);
+        ArrayList<Atom> atoms2 = MoleculeBase.getMatchedAtoms(molFilter2, molecule);
 
         if (atoms1.size() == 0) {
             throw new IllegalArgumentException("atom null " + filterString1);
@@ -252,8 +251,8 @@ public class DistanceConstraintSet implements ConstraintSet, Iterable {
             MolFilter molFilter1 = new MolFilter(filterString1);
             MolFilter molFilter2 = new MolFilter(filterString2);
 
-            List<Atom> group1 = Molecule.getNEFMatchedAtoms(molFilter1, molecule);
-            List<Atom> group2 = Molecule.getNEFMatchedAtoms(molFilter2, molecule);
+            List<Atom> group1 = MoleculeBase.getNEFMatchedAtoms(molFilter1, molecule);
+            List<Atom> group2 = MoleculeBase.getNEFMatchedAtoms(molFilter2, molecule);
 
             if (group1.size() == 0) {
                 throw new IllegalArgumentException("atoms1 null " + filterString1);
@@ -298,8 +297,8 @@ public class DistanceConstraintSet implements ConstraintSet, Iterable {
             MolFilter molFilter1 = new MolFilter(filterString1);
             MolFilter molFilter2 = new MolFilter(filterString2);
 
-            List<Atom> group1 = Molecule.getNEFMatchedAtoms(molFilter1, molecule);
-            List<Atom> group2 = Molecule.getNEFMatchedAtoms(molFilter2, molecule);
+            List<Atom> group1 = MoleculeBase.getNEFMatchedAtoms(molFilter1, molecule);
+            List<Atom> group2 = MoleculeBase.getNEFMatchedAtoms(molFilter2, molecule);
 
             if (group1.size() == 0) {
                 throw new IllegalArgumentException("atoms1 null " + filterString1);
