@@ -40,7 +40,6 @@ import org.nmrfx.chemistry.MolFilter;
 import org.nmrfx.chemistry.constraints.AngleConstraintSet;
 import org.nmrfx.chemistry.constraints.DistanceConstraintSet;
 import org.nmrfx.structure.chemistry.Molecule;
-import org.nmrfx.structure.chemistry.io.MMcifReader;
 
 /**
  *
