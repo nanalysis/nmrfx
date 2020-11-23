@@ -256,15 +256,6 @@ public class Molecule extends MoleculeBase {
         //molTableModel = new MoleculeTableModel();
     }
 
-    public static void removeAll() {
-        // fixme need to remove each molecule from list, rather than just settng molecules to new Hashtable?
-        // should at least just clear molecules
-        MoleculeFactory.clearAllMolecules();
-
-        conditions.clear();
-        MoleculeFactory.setActive(null);
-    }
-
     public void remove() {
 
         StructureProject.getActive().removeMolecule(name);
