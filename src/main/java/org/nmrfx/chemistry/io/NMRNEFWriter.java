@@ -37,7 +37,6 @@ import org.nmrfx.chemistry.Atom;
 import org.nmrfx.chemistry.Compound;
 import org.nmrfx.chemistry.Entity;
 import org.nmrfx.chemistry.InvalidMoleculeException;
-import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.chemistry.Polymer;
 import org.nmrfx.chemistry.Residue;
 import org.nmrfx.chemistry.constraints.AngleConstraint;
@@ -286,11 +285,7 @@ public class NMRNEFWriter {
         chan.write("save_\n");
     }
 
-    static void writeDistances(MoleculeBase moleculeBase, List<DistanceConstraint> distList, FileWriter chan) throws IOException, InvalidMoleculeException {
-        if (!(moleculeBase instanceof Molecule)) {
-            return;
-        }
-        Molecule molecule = (Molecule) moleculeBase;
+    static void writeDistances(MoleculeBase molecule, List<DistanceConstraint> distList, FileWriter chan) throws IOException, InvalidMoleculeException {
         chan.write("\n");
         chan.write("save_nef_distance_restraint_list\n"); //fixme dynamically get framecode
         chan.write("    _nef_distance_restraint_list.sf_category       ");
@@ -430,11 +425,7 @@ public class NMRNEFWriter {
                 "save_\n");
     }
 
-    static void writeDihedrals(MoleculeBase moleculeBase, List<AngleConstraint> angleConstraints, FileWriter chan) throws IOException, InvalidMoleculeException {
-        if (!(moleculeBase instanceof Molecule)) {
-            return;
-        }
-        Molecule molecule = (Molecule) moleculeBase;
+    static void writeDihedrals(MoleculeBase molecule, List<AngleConstraint> angleConstraints, FileWriter chan) throws IOException, InvalidMoleculeException {
         chan.write("\n");
         chan.write("save_nef_dihedral_restraint_list\n"); //fixme dynamically get framecode
         chan.write("    _nef_dihedral_restraint_list.sf_category       ");
