@@ -88,6 +88,10 @@ public class MoleculeFactory {
             } catch (IllegalAccessException | InstantiationException | InvocationTargetException e) {
             }
         }
+        if (moleculeBase != null) {
+            molecules.put(molName, moleculeBase);
+            setActive(moleculeBase);
+        }
         return moleculeBase;
     }
 }
