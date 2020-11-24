@@ -322,7 +322,8 @@ public class MoleculeBase implements Serializable, ITree {
     MolecularConstraints molecularConstraints = new MolecularConstraints(this);
     List<SecondaryStructure> secondaryStructure = new ArrayList<>();
 
-    public MoleculeBase() {
+    public MoleculeBase(String name) {
+        this.name = name;
         coordSets = new LinkedHashMap<>();
         entities = new LinkedHashMap<>();
         chains = new LinkedHashMap<>();
