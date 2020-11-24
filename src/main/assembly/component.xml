@@ -36,11 +36,11 @@
     </fileSets>
     <files>
         <file>
-            <source>src/main/scripts/nmrfxp.bat</source>
+            <source>src/main/scripts/nmrfxc.bat</source>
             <filtered>true</filtered>
         </file>
         <file>
-            <source>src/main/scripts/nmrfxp</source>
+            <source>src/main/scripts/nmrfxc</source>
             <filtered>true</filtered>
             <fileMode>0744</fileMode>
         </file>
