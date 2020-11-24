@@ -1,4 +1,4 @@
-package org.nmrfx.structure.chemistry;
+package org.nmrfx.chemistry;
 
 import java.util.Arrays;
 import java.util.List;
