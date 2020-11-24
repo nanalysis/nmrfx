@@ -39,7 +39,7 @@ public class Atom implements IAtom {
         AMIDE(3),
         RING(4),
         RNABASE(5);
-        int index;
+        final int index;
 
         ATOMFLAGS(int index) {
             this.index = index;
@@ -103,7 +103,7 @@ public class Atom implements IAtom {
     public boolean rotActive = true;
     public int canonValue = 0;
     public Atom[] branchAtoms = new Atom[0];
-    boolean[] flags = new boolean[ATOMFLAGS.values().length];
+    final boolean[] flags = new boolean[ATOMFLAGS.values().length];
     Optional<Map<String, Object>> properties = Optional.empty();
     public Atom daughterAtom = null;
 
@@ -138,26 +138,26 @@ public class Atom implements IAtom {
     }
     public static Atom genAtomWithType(String name, String aType) {
         AtomEnergyProp atomEnergyProp = AtomEnergyProp.get(aType);
-        Atom atom = new Atom(name, atomEnergyProp);
-        return atom;
+        return new Atom(name, atomEnergyProp);
     }
 
     public static Atom genAtomWithElement(String name, String aType) {
         int aNum = AtomProperty.getElementNumber(aType);
         AtomEnergyProp eProp = AtomEnergyProp.getDefault(aNum);
-        Atom atom = new Atom(name, eProp);
-        return atom;
+        return new Atom(name, eProp);
     }
 
+    @Override
     public void setType(String name) {
         type = name;
     }
 
+    @Override
     public String getType() {
         return type;
     }
 
-    protected void initialize(AtomParser atomParse) {
+    protected final void initialize(AtomParser atomParse) {
         name = atomParse.atomName;
 
         if (!atomParse.elemName.equals("")) {
@@ -258,6 +258,7 @@ public class Atom implements IAtom {
         spatialSet.blue = blue;
     }
 
+    @Override
     public Atom add(String name, String elementName, Order order) {
         Atom newAtom = Atom.genAtomWithElement(name, elementName);
         newAtom.parent = this;
@@ -269,7 +270,7 @@ public class Atom implements IAtom {
         return newAtom;
     }
 
-    public class AtomComparator implements Comparator<Atom> {
+    public static class AtomComparator implements Comparator<Atom> {
 
         @Override
         public int compare(Atom atom1, Atom atom2) {
@@ -317,16 +318,14 @@ public class Atom implements IAtom {
 
     public void removeBonds() {
         List<Atom> connected = getConnected();
-        for (int i = 0; i < connected.size(); i++) {
-            Atom atom = (Atom) connected.get(i);
-            atom.removeBondTo(this);
+        for (Atom item : connected) {
+            item.removeBondTo(this);
         }
     }
 
     public void removeBondTo(Atom atom) {
         List<Bond> newBonds = new ArrayList<>(2);
-        for (int i = 0; i < bonds.size(); i++) {
-            Bond bond = bonds.get(i);
+        for (Bond bond : bonds) {
             Atom atomB = bond.begin;
             Atom atomE = bond.end;
             if ((atomB != atom) && (atomE != atom)) {
@@ -340,8 +339,7 @@ public class Atom implements IAtom {
 
     public List<Atom> getConnected() {
         List<Atom> connected = new ArrayList<>(4);
-        for (int i = 0; i < bonds.size(); i++) {
-            Bond bond = bonds.get(i);
+        for (Bond bond : bonds) {
             Atom atomB = bond.begin;
             Atom atomE = bond.end;
 
@@ -402,8 +400,7 @@ public class Atom implements IAtom {
 
     public Optional<Bond> getBond(Atom atom) {
         Optional<Bond> result = Optional.empty();
-        for (int i = 0; i < bonds.size(); i++) {
-            Bond bond = bonds.get(i);
+        for (Bond bond : bonds) {
             Atom atomB = bond.begin;
             Atom atomE = bond.end;
 
@@ -424,8 +421,7 @@ public class Atom implements IAtom {
 
     public boolean isBonded(Atom atom) {
         boolean bonded = false;
-        for (int i = 0; i < bonds.size(); i++) {
-            Bond bond = bonds.get(i);
+        for (Bond bond : bonds) {
             Atom atomB = bond.begin;
             Atom atomE = bond.end;
 
@@ -448,6 +444,7 @@ public class Atom implements IAtom {
         this.name = name;
     }
 
+    @Override
     public int getAtomicNumber() {
         return aNum;
     }
@@ -487,8 +484,7 @@ public class Atom implements IAtom {
 
     public Entity getTopEntity() {
         if (entity instanceof Residue) {
-            Polymer polymer = ((Residue) entity).polymer;
-            return polymer;
+            return ((Residue) entity).polymer;
         } else {
             return entity;
         }
@@ -523,7 +519,7 @@ public class Atom implements IAtom {
     public String getResidueName() {
         String result = "";
         if ((entity != null) && (entity instanceof Compound)) {
-            result = ((Compound) entity).getName();
+            result = entity.getName();
         }
         return result;
     }
@@ -533,7 +529,7 @@ public class Atom implements IAtom {
         if (entity instanceof Residue) {
             result = ((Residue) entity).polymer.getName();
         } else {
-            result = ((Compound) entity).getName();
+            result = entity.getName();
         }
         return result;
     }
@@ -684,8 +680,7 @@ public class Atom implements IAtom {
 
     public PPMv getPPM(int i) {
         PPMv ppmV = null;
-        if ((spatialSet == null) && isMethyl()) {
-        } else if (spatialSet != null) {
+        if ((spatialSet != null) && !isMethyl()) {
             ppmV = spatialSet.getPPM(i);
         }
 
@@ -703,8 +698,7 @@ public class Atom implements IAtom {
 
     public PPMv getRefPPM(int i) {
         PPMv ppmV = null;
-        if (spatialSet == null) {
-        } else if (spatialSet != null) {
+        if (spatialSet != null) {
             ppmV = spatialSet.getRefPPM(i);
         }
         return ppmV;
@@ -853,8 +847,7 @@ public class Atom implements IAtom {
         Vector3D j = b.subtract(d);
         Vector3D k = c.subtract(d);
         // triple product
-        double volume = Vector3D.dotProduct(i, Vector3D.crossProduct(j, k));
-        return volume;
+        return Vector3D.dotProduct(i, Vector3D.crossProduct(j, k));
     }
 
     public static double calcDihedral(Atom[] atoms) {
@@ -877,9 +870,6 @@ public class Atom implements IAtom {
     }
 
     public static double calcDihedral(Point3 pt1, Point3 pt2, Point3 pt3, Point3 pt4) {
-        double x;
-        double y;
-        double z;
         Vector3D a = new Vector3D(pt1.getX(), pt1.getY(), pt1.getZ());
         Vector3D b = new Vector3D(pt2.getX(), pt2.getY(), pt2.getZ());
         Vector3D c = new Vector3D(pt3.getX(), pt3.getY(), pt3.getZ());
@@ -917,7 +907,7 @@ public class Atom implements IAtom {
         double z;
         double sum = 0.0;
         int n = 0;
-        double distance = 0.0;
+        double distance;
         Set<SpatialSet> spSet1 = spg1.getSpSets();
         Set<SpatialSet> spSet2 = spg2.getSpSets();
         if ((spSet1.size() == 1) && (spSet2.size() == 1)) {
@@ -1075,7 +1065,7 @@ public class Atom implements IAtom {
             }
 
         }
-        int structures[] = entity.molecule.getActiveStructures();
+        int[] structures = entity.molecule.getActiveStructures();
         for (int iStruct : structures) {
             pt = spatialSet.getPoint(iStruct);
 
@@ -1112,7 +1102,7 @@ public class Atom implements IAtom {
     public String xyzToString(SpatialSet spatialSet,
             int iStruct, int iAtom) {
         Point3 pt;
-        pt = (Point3) spatialSet.getPoint(iStruct);
+        pt = spatialSet.getPoint(iStruct);
 
         if (pt == null) {
             return null;
@@ -1127,9 +1117,9 @@ public class Atom implements IAtom {
             } else {
                 strStruct = String.valueOf(iStruct);
             }
-            result = String.format("%5d %3s %s %5s %6s %-5s %c %8.3f %8.3f %8.3f",
-                    iAtom, strStruct, ((Residue) entity).polymer.name, ((Residue) entity).number, ((Residue) entity).name,
-                    name, name.substring(0, 1), pt.getX(), pt.getY(), pt.getZ());
+            result = String.format("%5d %3s %s %5s %6s %-5s %1s %8.3f %8.3f %8.3f",
+                    iAtom, strStruct, ((Residue) entity).polymer.name, ((Residue) entity).number, entity.name,
+                    name, name.charAt(0), pt.getX(), pt.getY(), pt.getZ());
         }
 
         return result;
@@ -1149,7 +1139,6 @@ public class Atom implements IAtom {
         StringBuilder sBuilder = new StringBuilder();
         char sepChar = '\t';
         if (entity instanceof Residue) {
-            String result = String.format("%5d %5s", iAtom, ((Residue) entity).number, ((Residue) entity).entityID);
             //"%5d %5s %6s %-5s %c %8.3f  .  %2d\n"
             //j, atoms[i].rnum, atoms[i].rname, atoms[i].aname, atoms[i].aname[0], NvGetAtomPPM (istPPM, i), AtmAmbig (i));
             // _Atom_shift_assign_ID
@@ -1161,11 +1150,11 @@ public class Atom implements IAtom {
             sBuilder.append(sepChar);
 
             // _Residue_seq_code
-            sBuilder.append(((Residue) entity).entityID);
+            sBuilder.append(entity.entityID);
             sBuilder.append(sepChar);
 
             // _Residue_label
-            sBuilder.append(((Residue) entity).name);
+            sBuilder.append(entity.name);
             sBuilder.append(sepChar);
 
             // _Atom_name
@@ -1173,7 +1162,7 @@ public class Atom implements IAtom {
             sBuilder.append(sepChar);
 
             // _Atom_type
-            sBuilder.append(name.substring(0, 1));
+            sBuilder.append(name.charAt(0));
             sBuilder.append(sepChar);
 
             // _Chem_shift_value
@@ -1293,7 +1282,6 @@ public class Atom implements IAtom {
             }
         }
 
-        String line = "";
         char chainID = 'A';
         int seqCode = 1;
         String resName = entity.name;
@@ -1326,9 +1314,7 @@ public class Atom implements IAtom {
         double shiftErr = ppmv.getError();
 
 //            System.out.println("wrote " + ((Residue) entity).getIDNum() + " " + writeName + " " + ppmv.getValue());
-        line = String.format("         %-9s %-9d %-9s %-9s %-9.3f %-4.3f", chainID, seqCode, resName, writeName, shift, shiftErr);
-
-        return line;
+        return String.format("         %-9s %-9d %-9s %-9s %-9.3f %-4.3f", chainID, seqCode, resName, writeName, shift, shiftErr);
     }
 
     /**
@@ -1368,7 +1354,7 @@ public class Atom implements IAtom {
             if (atom.entity instanceof Residue) {
                 polymerName = ((Residue) atom.entity).polymer.getName();
             } else if (atom.entity instanceof Compound) {
-                polymerName = ((Compound) atom.entity).getPropertyObject("chain").toString();
+                polymerName = atom.entity.getPropertyObject("chain").toString();
             }
             char chainID = polymerName.charAt(0);
             sBuilder.append(String.format("%-8s", chainID));
@@ -1383,9 +1369,9 @@ public class Atom implements IAtom {
 
             // residue name
             if (atom.entity instanceof Residue) {
-                resName = ((Residue) atom.entity).name;
+                resName = atom.entity.name;
             } else if (atom.entity instanceof Compound) {
-                resName = ((Compound) atom.entity).name;
+                resName = atom.entity.name;
             }
             if (resName.length() > 3) {
                 resName = resName.substring(0, 3);
@@ -1471,14 +1457,14 @@ public class Atom implements IAtom {
             if (atom.entity instanceof Residue) {
                 polymerName = ((Residue) atom.entity).polymer.getName();
             } else if (atom.entity instanceof Compound) {
-                polymerName = ((Compound) atom.entity).getPropertyObject("chain").toString();
+                polymerName = atom.entity.getPropertyObject("chain").toString();
             }
             char chainID = polymerName.charAt(0);
             sBuilder.append(String.format("%6s", chainID));
 
             // sequence code 
             if (atom.entity instanceof Residue) {
-                seqCode = ((Residue) atom.entity).getIDNum();
+                seqCode = atom.entity.getIDNum();
             } else if (atom.entity instanceof Compound) {
                 seqCode = Integer.parseInt(((Compound) atom.entity).getNumber());
             }
@@ -1486,9 +1472,9 @@ public class Atom implements IAtom {
 
             // residue name 
             if (atom.entity instanceof Residue) {
-                resName = ((Residue) atom.entity).name;
+                resName = atom.entity.name;
             } else if (atom.entity instanceof Compound) {
-                resName = ((Compound) atom.entity).name;
+                resName = atom.entity.name;
             }
             if (resName.length() > 3) {
                 resName = resName.substring(0, 3);
@@ -1535,7 +1521,7 @@ public class Atom implements IAtom {
             int iStruct, int iAtom) {
         StringBuilder result = new StringBuilder();
         Point3 pt;
-        pt = (Point3) spatialSet.getPoint(iStruct);
+        pt = spatialSet.getPoint(iStruct);
 
         if (pt == null) {
             return null;
@@ -1554,9 +1540,9 @@ public class Atom implements IAtom {
 
             result.append(" _Mol_system_component_name=\"").append(((Residue) entity).polymer.name).append("\"");
             result.append(" _Residue_seq_code=\"").append(((Residue) entity).number).append("\"");
-            result.append(" _Residue_label=\"").append(((Residue) entity).name).append("\"");
+            result.append(" _Residue_label=\"").append(entity.name).append("\"");
             result.append(" _Atom_name=\"").append(name).append("\"");
-            result.append(" _Atom_type=\"").append(name.substring(0, 1)).append("\"");
+            result.append(" _Atom_type=\"").append(name.charAt(0)).append("\"");
             result.append(" >\n");
             result.append("    <_Atom_coord_x>").append(pt.getX()).append("</_Atom_coord_x>\n");
             result.append("    <_Atom_coord_y>").append(pt.getY()).append("</_Atom_coord_y>\n");
@@ -1586,9 +1572,9 @@ public class Atom implements IAtom {
         if (entity instanceof Residue) {
             result.append(" _Atom_shift_assign_ID=\"").append(iAtom).append("\"");
             result.append(" _Residue_seq_code=\"").append(((Residue) entity).number).append("\"");
-            result.append(" _Residue_label=\"").append(((Residue) entity).name).append("\"");
+            result.append(" _Residue_label=\"").append(entity.name).append("\"");
             result.append(" _Atom_name=\"").append(name).append("\"");
-            result.append(" _Atom_type=\"").append(name.substring(0, 1)).append("\"");
+            result.append(" _Atom_type=\"").append(name.charAt(0)).append("\"");
             result.append(" >\n");
             result.append("    <_Chem_shift_value>").append(ppmv.getValue()).append("</_Chem_shift_value>\n");
             result.append("    <_Chem_shift_value_error>").append(ppmv.getError()).append("</_Chem_shift_value_error>\n");
@@ -1627,8 +1613,7 @@ public class Atom implements IAtom {
     public List<Atom> getChildren() {
         List<Atom> children = new ArrayList<>(4);
 
-        for (int i = 0; i < bonds.size(); i++) {
-            Bond bond = bonds.get(i);
+        for (Bond bond : bonds) {
             Atom atomB = bond.begin;
             Atom atomE = bond.end;
 
@@ -1648,8 +1633,7 @@ public class Atom implements IAtom {
 
     public int getTotalBondOrder() {
         int totalOrder = 0;
-        for (int iBond = 0; iBond < bonds.size(); iBond++) {
-            Bond bond = bonds.get(iBond);
+        for (Bond bond : bonds) {
             if (bond.order.getOrderNum() < 5) {
                 totalOrder += bond.order.getOrderNum();
             } else if ((bond.order.getOrderNum() == 8)) {
@@ -1877,19 +1861,15 @@ public class Atom implements IAtom {
             MoleculeBase.findEquivalentAtoms(entity);
         }
         List<Object> list = new ArrayList<>();
-        if ((equivAtoms == null) || equivAtoms.isEmpty()) {
-            return list;
-        } else {
-
-            for (int i = 0; i < equivAtoms.size(); i++) {
-                AtomEquivalency aEquiv = equivAtoms.get(i);
+        if ((equivAtoms != null) && !equivAtoms.isEmpty()) {
+            for (AtomEquivalency aEquiv : equivAtoms) {
                 List<String> list2 = new ArrayList<>();
                 list.add("c");
                 list.add(aEquiv.getIndex());
                 list.add(aEquiv.getShell());
 
                 for (int j = 0; j < aEquiv.getAtoms().size(); j++) {
-                    Atom atom = (Atom) aEquiv.getAtoms().get(j);
+                    Atom atom = aEquiv.getAtoms().get(j);
 
                     if (!atom.getName().equals(getName())) {
                         list2.add(atom.getName());
@@ -1899,8 +1879,8 @@ public class Atom implements IAtom {
                 list.add(list2);
             }
 
-            return list;
         }
+        return list;
     }
 
     public boolean isFirstInMethyl() {
@@ -1977,9 +1957,9 @@ public class Atom implements IAtom {
     public Point3 getMethylCenter(int structNum) {
         Atom atomsParent = getParent();
         List<Atom> children = atomsParent.getChildren();
-        Vector3D pt1 = ((Atom) children.get(0)).getPoint(structNum);
-        pt1 = pt1.add(((Atom) children.get(1)).getPoint(structNum));
-        pt1 = pt1.add(((Atom) children.get(2)).getPoint(structNum));
+        Vector3D pt1 = children.get(0).getPoint(structNum);
+        pt1 = pt1.add(children.get(1).getPoint(structNum));
+        pt1 = pt1.add(children.get(2).getPoint(structNum));
         pt1 = pt1.scalarMultiply(1.0 / 3.0);
 
         return new Point3(pt1);
@@ -2263,7 +2243,7 @@ public class Atom implements IAtom {
 
     @Override
     public void setProperty(String name, Object value) {
-        if (!properties.isPresent()) {
+        if (properties.isEmpty()) {
             properties = Optional.of(new HashMap<>());
         }
         properties.get().put(name, value);
@@ -2290,9 +2270,7 @@ public class Atom implements IAtom {
 
     @Override
     public List<IBond> getBonds() {
-        List<IBond> result = new ArrayList<>();
-        result.addAll(bonds);
-        return result;
+        return new ArrayList<>(bonds);
     }
 
     public static int compareByIndex(Atom a1, Atom a2) {
