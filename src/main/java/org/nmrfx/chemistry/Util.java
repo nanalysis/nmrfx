@@ -71,10 +71,12 @@ public class Util {
         String result;
         Atom atom1 = atom;
         String aName = atom.getName();
+        int nameOffset = 1;
         if (atom.isMethylene()) {
             partner = atom.getMethylenePartner();
         } else if ((atom.getAtomicNumber() == 1) && (atom.parent != null) && atom.parent.isMethylCarbon()) {
             atom1 = atom.parent;
+            nameOffset = 2;
             partner = atom1.getMethylCarbonPartner();
         } else if ((atom.getAtomicNumber() == 6) && atom.isMethylCarbon()) {
             partner = atom.getMethylCarbonPartner();
@@ -86,7 +88,7 @@ public class Util {
             boolean lessThan = atom1.getIndex() < partnerAtom.getIndex();
             String xy = lessThan ? "x" : "y";
             int nameLen = aName.length();
-            result = aName.substring(0, nameLen - 1) + xy;
+            result = aName.substring(0, nameLen - nameOffset) + xy;
         } else {
             result = aName;
         }
