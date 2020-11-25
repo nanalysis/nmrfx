@@ -314,7 +314,7 @@ public class MoleculeBase implements Serializable, ITree {
     public LinkedHashMap entityLabels = null;
     protected List<Integer> activeStructures = null;
     Map<String, Atom> atomMap = new HashMap<>();
-    protected List<Atom> atoms;
+    protected List<Atom> atoms = new ArrayList<>();
     protected List<Bond> bonds = new ArrayList<Bond>();
     //    ArrayList<Atom> atoms = new ArrayList<>();
     private boolean atomArrayValid = false;
