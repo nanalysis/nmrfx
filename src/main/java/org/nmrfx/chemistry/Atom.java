@@ -1262,7 +1262,7 @@ public class Atom implements IAtom {
             switch (collapse) {
                 case 1:
                     String xy = name.charAt(nameLen - 2) == '2' ? "y" : "x";
-                    writeName = name.substring(0, nameLen - 2) + xy + "%";
+                    writeName = Util.getXYName(this) + "%";
                     break;
                 case 2:
                     writeName = name.substring(0, nameLen - 2) + "%";
