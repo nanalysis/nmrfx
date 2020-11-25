@@ -148,7 +148,6 @@ public class RDCConstraintSet implements ConstraintSet, Iterable {
                 for (int i = 0; i < pts.length; i++) {
                     pts[i] = aConstraint.getSpSets()[i].getPoint(iStruct);
                     if (pts[i] == null) {
-                        System.out.println(i + " " + aConstraint.getSpSets()[i].getFullName() + " has null point");
                         okPoint = false;
                     }
                 }

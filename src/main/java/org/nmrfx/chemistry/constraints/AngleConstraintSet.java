@@ -150,7 +150,6 @@ public class AngleConstraintSet implements ConstraintSet, Iterable {
                 for (int i = 0; i < 4; i++) {
                     pts[i] = aConstraint.getSpSet(i).getPoint(iStruct);
                     if (pts[i] == null) {
-                        System.out.println(i + " " + aConstraint.getSpSet(i).getFullName() + " has null point");
                         okPoint = false;
                     }
                 }
