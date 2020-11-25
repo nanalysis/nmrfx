@@ -25,6 +25,7 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.nmrfx.chemistry.*;
@@ -760,6 +761,224 @@ public class NMRStarWriter {
         result.append(sep);
         result.append(entityID);
         return result.toString();
+    }
+
+    /**
+     * Write out the T1/T2 sections of the STAR file.
+     *
+     * @param chan FileWriter. The FileWriter to use
+     * @param molecule Molecule. The molecule to use
+     * @param nucName String. The nucleus, e.g. N.
+     * @param field int. The B0 field
+     * @param expType String. The experiment type, T1 or T2.
+     * @param frameName String. The name of the experiment.
+     * @param listID int. The number of the T1/T2 block in the file.
+     * @param allFitResults Map of the fit results. Only used if no molecule is
+     * present.
+     * @throws IOException
+     * @throws InvalidMoleculeException
+     */
+    public static void writeT1T2(FileWriter chan, MoleculeBase molecule, String nucName, int field, String expType, String frameName, int listID, Map<Integer, Map<Integer, Map<String, Double>>> allFitResults) throws IOException, InvalidMoleculeException {
+        chan.write("    ########################################\n");
+        chan.write("    #  Heteronuclear " + expType + " relaxation values  #\n");
+        chan.write("    ########################################\n");
+        chan.write("\n\n");
+        chan.write("save_" + frameName + "\n");
+        chan.write("   _Heteronucl_" + expType + "_list.Sf_category                    ");
+        chan.write("heteronucl_" + expType + "_relaxation\n");
+        chan.write("   _Heteronucl_" + expType + "_list.Sf_framecode                   ");
+        chan.write(frameName + "\n");
+        chan.write("   _Heteronucl_" + expType + "_list.Entry_ID                       ");
+        chan.write(".\n"); //fixme get dynamically
+        chan.write("   _Heteronucl_" + expType + "_list.ID                             ");
+        chan.write(listID + "\n");
+        chan.write("   _Heteronucl_" + expType + "_list.Sample_condition_list_ID       ");
+        chan.write(listID + "\n");
+        chan.write("   _Heteronucl_" + expType + "_list.Sample_condition_list_label    ");
+        chan.write("$sample_conditions_" + listID + "\n");
+        chan.write("   _Heteronucl_" + expType + "_list.Temp_calibration_method        ");
+        chan.write(STAR3.quote("no calibration applied") + "\n");
+        chan.write("   _Heteronucl_" + expType + "_list.Temp_control_method            ");
+        chan.write(STAR3.quote("no temperature control applied") + "\n");
+        chan.write("   _Heteronucl_" + expType + "_list.Spectrometer_frequency_1H      ");
+        chan.write(String.valueOf(field) + "\n");
+        chan.write("   _Heteronucl_" + expType + "_list." + expType + "_coherence_type              ");
+        chan.write("Sz" + "\n"); //fixme get dynamically
+        chan.write("   _Heteronucl_" + expType + "_list." + expType + "_val_units                   ");
+        chan.write("s-1" + "\n");
+        chan.write("   _Heteronucl_" + expType + "_list.Rex_units                      ");
+        chan.write(".\n");
+        chan.write("   _Heteronucl_" + expType + "_list.Details                        ");
+        chan.write(".\n");
+        chan.write("   _Heteronucl_" + expType + "_list.Text_data_format               ");
+        chan.write(".\n");
+        chan.write("   _Heteronucl_" + expType + "_list.Text_data                      ");
+        chan.write(".\n");
+
+        chan.write("\n");
+        chan.write("   loop_\n");
+        chan.write("      _Heteronucl_" + expType + "_experiment.Experiment_ID\n");
+        chan.write("      _Heteronucl_" + expType + "_experiment.Experiment_name\n");
+        chan.write("      _Heteronucl_" + expType + "_experiment.Sample_ID\n");
+        chan.write("      _Heteronucl_" + expType + "_experiment.Sample_label\n");
+        chan.write("      _Heteronucl_" + expType + "_experiment.Sample_state\n");
+        chan.write("      _Heteronucl_" + expType + "_experiment.Entry_ID\n");
+        chan.write("      _Heteronucl_" + expType + "_experiment.Heteronucl_" + expType + "_list_ID\n");
+        chan.write("\n");
+
+        String nmrExpType = "2D 1H-15N HSQC"; //fixme get dynamically
+        String sampleLabel = "$sample_" + listID; //fixme get dynamically
+        String result1 = String.format("%-2d %-7s %-7s %-9s %-2s %-2s %-2d", listID, STAR3.quote(nmrExpType), listID, sampleLabel, ".", ".", listID);
+        chan.write("      " + result1 + "\n");
+        chan.write("   stop_\n\n");
+
+        String[] loopStrings = {"ID", "Assembly_atom_ID", "Entity_assembly_ID", "Entity_ID", "Comp_index_ID", "Seq_ID",
+            "Comp_ID", "Atom_ID", "Atom_type", "Atom_isotope_number", "Val", "Val_err", "Resonance_ID", "Auth_entity_assembly_ID",
+            "Auth_seq_ID", "Auth_comp_ID", "Auth_atom_ID", "Entry_ID", "Heteronucl_" + expType + "_list_ID"};
+        if (expType.equals("T2")) {
+            String[] loopStrings2 = {"ID", "Assembly_atom_ID", "Entity_assembly_ID", "Entity_ID", "Comp_index_ID", "Seq_ID",
+                "Comp_ID", "Atom_ID", "Atom_type", "Atom_isotope_number", expType + "_val", expType + "_val_err", "Rex_val", "Rex_err",
+                "Resonance_ID", "Auth_entity_assembly_ID", "Auth_seq_ID", "Auth_comp_ID", "Auth_atom_ID", "Entry_ID", "Heteronucl_" + expType + "_list_ID"};
+            loopStrings = loopStrings2;
+        }
+        chan.write("   loop_\n");
+        for (String loopString : loopStrings) {
+            chan.write("      _" + expType + "." + loopString + "\n");
+        }
+        chan.write("\n");
+
+        int isotope = 1;
+        switch (nucName) {
+            case "C":
+                isotope = 13;
+                break;
+            case "N":
+                isotope = 15;
+                break;
+            case "F":
+                isotope = 19;
+                break;
+            case "P":
+                isotope = 31;
+                break;
+            default:
+                break;
+        }
+
+        int idx = 1;
+        if (molecule != null) {
+            Iterator entityIterator = molecule.entityLabels.values().iterator();
+            while (entityIterator.hasNext()) {
+                Entity entity = (Entity) entityIterator.next();
+                int entityID = entity.getIDNum();
+                if (entity instanceof Polymer) {
+                    String propKey = expType + "fitResults";
+                    List<Residue> resList = ((Polymer) entity).getResidues();
+                    //                Collections.sort(resList, (a, b) -> Integer.compare(a.getResNum(), b.getResNum()));
+                    for (Residue res : resList) {
+                        if (res.getPropertyObject(propKey) != null) {
+                            String resNum = res.getNumber();
+                            String resName = res.getName();
+                            String oneLetter = String.valueOf(res.getOneLetter());
+                            Map<Integer, Map<String, Double>> fitResFieldMap = (Map<Integer, Map<String, Double>>) res.getPropertyObject(propKey);
+                            Map<String, Double> parValues = fitResFieldMap.get(field);
+                            String outputLine = toStarT1T2String(idx, expType, listID, entityID, nucName, resNum, resName, oneLetter, isotope, parValues);
+                            if (outputLine != null) {
+                                chan.write("      " + outputLine + "\n");
+                                idx++;
+                            }
+                        }
+                    }
+                } else if (entity instanceof Compound) {
+                    Compound compound = (Compound) entity;
+                    String resName = compound.getName();
+                    String oneLetter = compound.getName();
+                    List<Integer> compoundRes = (List<Integer>) compound.getPropertyObject("compRes");
+                    for (int resNum : compoundRes) {
+                        String propKey = expType + String.valueOf(resNum) + "fitResults";
+                        if (compound.getPropertyObject(propKey) != null) {
+                            Map<Integer, Map<String, Double>> fitResFieldMap = (Map<Integer, Map<String, Double>>) compound.getPropertyObject(propKey);
+                            Map<String, Double> parValues = fitResFieldMap.get(field);
+                            String outputLine = toStarT1T2String(idx, expType, listID, entityID, nucName, String.valueOf(resNum), resName, oneLetter, isotope, parValues);
+                            if (outputLine != null) {
+                                chan.write("      " + outputLine + "\n");
+                                idx++;
+                            }
+                        }
+                    }
+                }
+            }
+        } else {
+            int entityID = 1;
+            String resName = ".";
+            String oneLetter = ".";
+            if (!allFitResults.isEmpty()) {
+                Set<Integer> resNums = allFitResults.keySet();
+                for (int resNum : resNums) {
+                    Map<Integer, Map<String, Double>> fitResFieldMap = allFitResults.get(resNum);
+                    Map<String, Double> parValues = fitResFieldMap.get(field);
+                    String outputLine = toStarT1T2String(idx, expType, listID, entityID, nucName, String.valueOf(resNum), resName, oneLetter, isotope, parValues);
+                    if (outputLine != null) {
+                        chan.write("      " + outputLine + "\n");
+                        idx++;
+                    }
+                }
+            }
+        }
+
+        chan.write("   stop_\n");
+        chan.write("save_\n\n");
+
+    }
+
+    /**
+     * Write the data lines in the T1/T2 blocks of the STAR file.
+     *
+     * @param idx int. The line index
+     * @param expType String. The experiment type, T1 or T2.
+     * @param listID int. The number of the T1/T2 block in the file.
+     * @param entityID int. The entity number in the molecule.
+     * @param nucName String. The nucleus, e.g. N.
+     * @param resNum String. The residue number.
+     * @param resName String. The residue name.
+     * @param oneLetter String. The residue one-letter code.
+     * @param isotope int. The isotope of the nucleus.
+     * @param parValues Map<String, Double>. Map of the fit parameter values.
+     * @return
+     */
+    public static String toStarT1T2String(int idx, String expType, int listID, int entityID, String nucName, String resNum, String resName, String oneLetter, int isotope, Map<String, Double> parValues) {
+
+        if (parValues.get("R") == null) {
+            return null;
+        }
+
+        StringBuilder sBuilder = new StringBuilder();
+        sBuilder.append(String.format("%-3d", idx));
+        sBuilder.append(String.format("%-3s", "."));
+        sBuilder.append(String.format("%-3d", entityID));
+        sBuilder.append(String.format("%-3d", entityID));
+        sBuilder.append(String.format("%-6s", resNum));
+        sBuilder.append(String.format("%-6s", resNum));
+        sBuilder.append(String.format("%-6s", resName)); //fixme writing out chainID, not compound name (e.g. B instead of SO4) when molecule loaded from CIF
+        sBuilder.append(String.format("%-4s", nucName));
+        sBuilder.append(String.format("%-4s", nucName));
+        sBuilder.append(String.format("%-4s", isotope));
+        sBuilder.append(String.format("%-8.3f", parValues.get("R")));
+        sBuilder.append(String.format("%-8.3f", parValues.get("R.sd")));
+        if (expType.equals("T2")) {
+            sBuilder.append(String.format("%-3s", ".")); //"%-10.3f", parValues.get("A")
+            sBuilder.append(String.format("%-3s", ".")); //"%-10.3f", parValues.get("A.sd")
+        }
+        sBuilder.append(String.format("%-3s", "."));
+        sBuilder.append(String.format("%-3s", "."));
+        sBuilder.append(String.format("%-6s", resNum));
+        sBuilder.append(String.format("%-4s", oneLetter));
+        sBuilder.append(String.format("%-4s", nucName));
+        sBuilder.append(String.format("%-10s", "."));
+        sBuilder.append(String.format("%-4d", listID));
+
+        return sBuilder.toString();
+
     }
 
     public static void writeAll(String fileName) throws IOException, ParseException, InvalidPeakException, InvalidMoleculeException {
