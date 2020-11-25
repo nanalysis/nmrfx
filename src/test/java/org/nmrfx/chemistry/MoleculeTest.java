@@ -35,7 +35,7 @@ public class MoleculeTest {
     public void testNEFMatchMethyleneX() {
         Atom atom = MoleculeBase.getAtomByName("3.HB3");
         Assert.assertNotNull(atom);
-        boolean matched = Util.nefMatch(atom, "HBx");
+        boolean matched = Util.nefMatch(atom, "HBy");
         Assert.assertTrue(matched);
     }
 
@@ -43,7 +43,7 @@ public class MoleculeTest {
     public void testNEFMatchMethyleneY() {
         Atom atom = MoleculeBase.getAtomByName("3.HB2");
         Assert.assertNotNull(atom);
-        boolean matched = Util.nefMatch(atom, "HBy");
+        boolean matched = Util.nefMatch(atom, "HBx");
         Assert.assertTrue(matched);
     }
 
@@ -52,7 +52,7 @@ public class MoleculeTest {
         Atom atom = MoleculeBase.getAtomByName("3.HB2");
         Assert.assertNotNull(atom);
         System.out.println(atom.getFullName() + " " + Util.nefMatch(atom, "HBx") + " " + Util.nefMatch(atom, "HBy"));
-        boolean matched = Util.nefMatch(atom, "HBx");
+        boolean matched = Util.nefMatch(atom, "HBy");
         Assert.assertTrue(!matched);
     }
 
@@ -60,7 +60,7 @@ public class MoleculeTest {
     public void testNEFMatchMethyl1y() {
         Atom atom1 = MoleculeBase.getAtomByName("4.HG11");
         Assert.assertNotNull(atom1);
-        boolean matched1y = Util.nefMatch(atom1, "HGy");
+        boolean matched1y = Util.nefMatch(atom1, "HGx");
         Assert.assertTrue(!matched1y);
     }
 
@@ -68,7 +68,7 @@ public class MoleculeTest {
     public void testNEFMatchMethyl1x() {
         Atom atom1 = MoleculeBase.getAtomByName("4.HG11");
         Assert.assertNotNull(atom1);
-        boolean matched1x = Util.nefMatch(atom1, "HGx");
+        boolean matched1x = Util.nefMatch(atom1, "HGy");
         Assert.assertTrue(matched1x);
     }
 
@@ -76,7 +76,7 @@ public class MoleculeTest {
     public void testNEFMatchMethyl2x() {
         Atom atom2 = MoleculeBase.getAtomByName("4.HG21");
         Assert.assertNotNull(atom2);
-        boolean matched2x = Util.nefMatch(atom2, "HGx");
+        boolean matched2x = Util.nefMatch(atom2, "HGy");
         Assert.assertTrue(!matched2x);
     }
 
@@ -84,7 +84,7 @@ public class MoleculeTest {
     public void testNEFMatchMethyl2y() {
         Atom atom2 = MoleculeBase.getAtomByName("4.HG21");
         Assert.assertNotNull(atom2);
-        boolean matched2y = Util.nefMatch(atom2, "HGy");
+        boolean matched2y = Util.nefMatch(atom2, "HGx");
         Assert.assertTrue(matched2y);
     }
 
