@@ -5,9 +5,7 @@
  */
 package org.nmrfx.project;
 
-import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.peaks.InvalidPeakException;
-import org.nmrfx.peaks.PeakListBase;
 import org.nmrfx.peaks.PeakPaths;
 import org.nmrfx.peaks.io.PeakReader;
 import org.nmrfx.peaks.io.PeakWriter;
