@@ -16,6 +16,7 @@ import org.nmrfx.utilities.Util;
 
 import static java.lang.Double.compare;
 import static java.util.Comparator.comparing;
+import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 
 public class PeakListBase {
 
@@ -502,12 +503,20 @@ public class PeakListBase {
     public PeakListBase copy(final String name, final boolean allLinks, boolean merge, boolean copyLabels) {
         PeakListBase newPeakList;
         if (merge) {
-            newPeakList = (PeakListBase) get(name);
+
+            newPeakList = PeakListBase.get(name);
             if (newPeakList == null) {
                 throw new IllegalArgumentException("Peak list " + name + " doesn't exist");
             }
         } else {
             newPeakList = new PeakListBase(name, nDim);
+        }
+        return newPeakList;
+    }
+
+    public PeakListBase copy(PeakListBase newPeakList, final boolean allLinks, boolean merge, boolean copyLabels) {
+
+        if (!merge) {
             newPeakList.searchDims.addAll(searchDims);
             newPeakList.fileName = fileName;
             newPeakList.scale = scale;
@@ -1914,6 +1923,78 @@ public class PeakListBase {
         peakLists.add(this);
         return PeakListBase.clusterPeaks(peakLists);
 
+    }
+
+    /**
+     *
+     * @param iDim
+     * @return
+     */
+    public DescriptiveStatistics shiftDStats(int iDim) {
+        DescriptiveStatistics stats = new DescriptiveStatistics();
+        peaks.stream().filter((p) -> p.getStatus() >= 0).mapToDouble((p) -> p.peakDims[iDim].getChemShiftValue()).forEach((v) -> stats.addValue(v));
+        return stats;
+    }
+
+    /**
+     *
+     * @param iDim
+     * @return
+     */
+    public DoubleSummaryStatistics shiftStats(int iDim) {
+        DoubleSummaryStatistics stats = peaks.stream().filter((p) -> p.getStatus() >= 0).mapToDouble((p) -> p.peakDims[iDim].getChemShift()).summaryStatistics();
+        return stats;
+    }
+
+    /**
+     *
+     * @param iDim
+     * @return
+     */
+    public DescriptiveStatistics widthDStats(int iDim) {
+        DescriptiveStatistics stats = new DescriptiveStatistics();
+        peaks.stream().filter((p) -> p.getStatus() >= 0).mapToDouble((p) -> p.peakDims[iDim].getLineWidthHz()).forEach((v) -> stats.addValue(v));
+        return stats;
+    }
+
+    /**
+     *
+     * @param iDim
+     * @return
+     */
+    public DoubleSummaryStatistics widthStats(int iDim) {
+        DoubleSummaryStatistics stats = peaks.stream().filter((p) -> p.getStatus() >= 0).mapToDouble((p) -> p.peakDims[iDim].getLineWidthHz()).summaryStatistics();
+        return stats;
+    }
+
+    public DescriptiveStatistics intensityDStats(int iDim) {
+        DescriptiveStatistics stats = new DescriptiveStatistics();
+        peaks.stream().filter((p) -> p.getStatus() >= 0).mapToDouble((p) -> p.getPeakDim(iDim).getPeak().getIntensity()).forEach((v) -> stats.addValue(v));
+        return stats;
+    }
+
+    /**
+     *
+     * @param iDim
+     * @param value
+     */
+    public void shiftPeak(final int iDim, final double value) {
+        peaks.stream().forEach((p) -> {
+            PeakDim pDim = p.peakDims[iDim];
+            float shift = pDim.getChemShift();
+            shift += value;
+            pDim.setChemShiftValue(shift);
+        });
+    }
+
+    /**
+     *
+     * @param iDim
+     * @return
+     */
+    public double getFoldAmount(int iDim) {
+        double foldAmount = Math.abs(getSpectralDim(iDim).getSw() / getSpectralDim(iDim).getSf());
+        return foldAmount;
     }
 
     public class SearchDim {
