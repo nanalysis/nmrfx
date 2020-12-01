@@ -211,37 +211,6 @@ public class PeakList extends org.nmrfx.peaks.PeakListBase {
         }
     }
 
-    /**
-     *
-     * @param iDim
-     * @return
-     */
-    public double getFoldAmount(int iDim) {
-        double foldAmount = Math.abs(getSpectralDim(iDim).getSw() / getSpectralDim(iDim).getSf());
-        return foldAmount;
-    }
-
-    /**
-     *
-     * @return
-     */
-    @Override
-    public Peak getNewPeak() {
-        Peak peak = new Peak(this, nDim);
-        addPeak(peak);
-        return peak;
-    }
-
-    /**
-     *
-     * @param newPeak
-     */
-    public Peak addPeak(Peak newPeak) {
-        newPeak.initPeakDimContribs();
-        peaks.add(newPeak);
-        clearIndex();
-        return newPeak;
-    }
 
     public void removeDiagonalPeaks() {
         removeDiagonalPeaks(-2.0);
@@ -961,9 +930,7 @@ public class PeakList extends org.nmrfx.peaks.PeakListBase {
     }
 
     // FIXME should check to see that nucleus is same
-
     // FIXME should check to see that nucleus is same
-
     /**
      *
      * @param signals
@@ -2059,57 +2026,6 @@ public class PeakList extends org.nmrfx.peaks.PeakListBase {
      * @param iDim
      * @return
      */
-    public DoubleSummaryStatistics shiftStats(int iDim) {
-        DoubleSummaryStatistics stats = peaks.stream().filter(p -> p.getStatus() >= 0).mapToDouble(p -> p.peakDims[iDim].getChemShift()).summaryStatistics();
-        return stats;
-
-    }
-
-    /**
-     *
-     * @param iDim
-     * @return
-     */
-    public DoubleSummaryStatistics widthStats(int iDim) {
-        DoubleSummaryStatistics stats = peaks.stream().filter(p -> p.getStatus() >= 0).mapToDouble(p -> p.peakDims[iDim].getLineWidthHz()).summaryStatistics();
-        return stats;
-    }
-
-    /**
-     *
-     * @param iDim
-     * @return
-     */
-    public DescriptiveStatistics widthDStats(int iDim) {
-        DescriptiveStatistics stats = new DescriptiveStatistics();
-        peaks.stream().filter(p -> p.getStatus() >= 0).mapToDouble(p -> p.peakDims[iDim].getLineWidthHz()).forEach(v -> stats.addValue(v));
-        return stats;
-    }
-
-    public DescriptiveStatistics intensityDStats(int iDim) {
-        DescriptiveStatistics stats = new DescriptiveStatistics();
-        peaks.stream().filter(p -> p.getStatus() >= 0)
-                .mapToDouble(p -> p.getPeakDim(iDim).getPeak().getIntensity())
-                .forEach(v -> stats.addValue(v));
-        return stats;
-    }
-
-    /**
-     *
-     * @param iDim
-     * @return
-     */
-    public DescriptiveStatistics shiftDStats(int iDim) {
-        DescriptiveStatistics stats = new DescriptiveStatistics();
-        peaks.stream().filter(p -> p.getStatus() >= 0).mapToDouble(p -> p.peakDims[iDim].getChemShiftValue()).forEach(v -> stats.addValue(v));
-        return stats;
-    }
-
-    /**
-     *
-     * @param iDim
-     * @return
-     */
     public double center(int iDim) {
         OptionalDouble avg = peaks.stream().filter(p -> p.getStatus() >= 0).mapToDouble(p -> p.peakDims[iDim].getChemShift()).average();
         return avg.getAsDouble();
@@ -2137,20 +2053,6 @@ public class PeakList extends org.nmrfx.peaks.PeakListBase {
             }
         }
         return deltas;
-    }
-
-    /**
-     *
-     * @param iDim
-     * @param value
-     */
-    public void shiftPeak(final int iDim, final double value) {
-        peaks.stream().forEach(p -> {
-            PeakDim pDim = p.peakDims[iDim];
-            float shift = pDim.getChemShift();
-            shift += value;
-            pDim.setChemShiftValue(shift);
-        });
     }
 
 }
