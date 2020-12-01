@@ -27,6 +27,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 
 import org.nmrfx.chemistry.*;
 import org.nmrfx.peaks.PeakListBase;
@@ -983,17 +984,22 @@ public class NMRStarWriter {
 
     public static void writeAll(String fileName) throws IOException, ParseException, InvalidPeakException, InvalidMoleculeException {
         try (FileWriter writer = new FileWriter(fileName)) {
-            writeAll(writer);
+            writeAll(writer, null);
         }
     }
 
     public static void writeAll(File file) throws IOException, ParseException, InvalidPeakException, InvalidMoleculeException {
         try (FileWriter writer = new FileWriter(file)) {
-            writeAll(writer);
+            writeAll(writer, null);
         }
     }
 
     public static void writeAll(FileWriter chan) throws IOException, ParseException, InvalidPeakException, InvalidMoleculeException {
+        writeAll(chan, null);
+    }
+
+    public static void writeAll(FileWriter chan, Map<String, List<Object>> expFitResults) throws IOException, ParseException, InvalidPeakException, InvalidMoleculeException {
+
         Date date = new Date(System.currentTimeMillis());
         chan.write("    ######################################\n");
         chan.write("    # Saved " + date.toString() + " #\n");
@@ -1038,6 +1044,47 @@ public class NMRStarWriter {
         for (PeakPaths peakPath : PeakPaths.get()) {
             pathWriter.writeToSTAR3(chan, peakPath, iPath + 1);
             iPath++;
+        }
+        if (molecule != null) {
+            Entity entity = molecule.getEntities().get(0);
+            TreeSet<String> expTypes = (TreeSet<String>) entity.getPropertyObject("expTypes");
+            if (expTypes != null) {
+//                Collections.sort(expTypes, (a, b) -> a.compareTo(b));
+                for (String expType : expTypes) {
+                    int listID = 1;
+                    String frameName = (String) molecule.getProperty(expType + "frameName");
+                    double[] fields = (double[]) entity.getPropertyObject(expType + "fields");
+                    String nucName = (String) molecule.getProperty(expType + "nucName");
+                    //        List<Double> fieldList = Arrays.asList(fields);
+                    //        Collections.sort(fields, (a, b) -> Double.compare(a, b));
+                    //        System.out.println(expType + " " + frameName);
+                    for (double dField : fields) {
+                        int field = (int) dField;
+                        writeT1T2(chan, molecule, nucName, field, expType, frameName, listID, null);
+                        listID++;
+                    }
+                }
+            }
+        } else {
+            Set<String> expTypes = expFitResults.keySet();
+            if (expTypes != null) {
+//                Collections.sort(expTypes, (a, b) -> a.compareTo(b));
+                for (String expType : expTypes) {
+                    int listID = 1;
+                    String frameName = (String) expFitResults.get(expType).get(0);
+                    String nucName = (String) expFitResults.get(expType).get(1);
+                    double[] fields = (double[]) expFitResults.get(expType).get(2);
+                    Map<Integer, Map<Integer, Map<String, Double>>> allFitResults = (Map<Integer, Map<Integer, Map<String, Double>>>) expFitResults.get(expType).get(3);
+                    //        List<Double> fieldList = Arrays.asList(fields);
+                    //        Collections.sort(fields, (a, b) -> Double.compare(a, b));
+                    //        System.out.println(expType + " " + frameName);
+                    for (double dField : fields) {
+                        int field = (int) dField;
+                        writeT1T2(chan, molecule, nucName, field, expType, frameName, listID, allFitResults);
+                        listID++;
+                    }
+                }
+            }
         }
     }
 
