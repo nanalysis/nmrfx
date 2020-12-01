@@ -22,7 +22,7 @@
  */
 package org.nmrfx.peaks;
 
-import org.nmrfx.peaks.PeakListBase;
+import org.nmrfx.peaks.PeakList;
 
 /**
  *
@@ -34,5 +34,5 @@ public interface PeakOrMulti {
 
     public int getStatus();
 
-    public PeakListBase getPeakList();
+    public PeakList getPeakList();
 }

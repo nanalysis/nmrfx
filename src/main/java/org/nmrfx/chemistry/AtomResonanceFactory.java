@@ -44,7 +44,7 @@ public class AtomResonanceFactory extends ResonanceFactory implements FreezeList
 
     @Override
     public void init() {
-        PeakListBase.registerFreezeListener(this);
+        PeakList.registerFreezeListener(this);
     }
 
     public Resonance build() {

@@ -18,13 +18,13 @@ import static java.util.Comparator.comparing;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.nmrfx.utilities.Updater;
 
-public class PeakListBase {
+public class PeakList {
 
     static ResonanceFactory resFactory = new ResonanceFactory();
     /**
      *
      */
-    public static PeakListBase clusterOrigin = null;
+    public static PeakList clusterOrigin = null;
     /**
      *
      */
@@ -58,7 +58,7 @@ public class PeakListBase {
      * @param n
      * @param listNum
      */
-    public PeakListBase(String name, int n, Integer listNum) {
+    public PeakList(String name, int n, Integer listNum) {
         listName = name;
         fileName = "";
         nDim = n;
@@ -89,7 +89,7 @@ public class PeakListBase {
      * @param name
      * @param n
      */
-    public PeakListBase(String name, int n) {
+    public PeakList(String name, int n) {
         this(name, n, null);
     }
 
@@ -105,7 +105,7 @@ public class PeakListBase {
      * @return the Optional containing the PeaKlist or an empty value if no
      * PeakList with that id exists
      */
-    public static Optional<PeakListBase> get(int listID) {
+    public static Optional<PeakList> get(int listID) {
         return ProjectBase.getActive().getPeakList(listID);
     }
     /**
@@ -125,7 +125,7 @@ public class PeakListBase {
     public static void unLinkPeak(Peak peak) {
         for (int i = 0; i < peak.peakList.nDim; i++) {
             List<PeakDim> peakDims = getLinkedPeakDims(peak, i);
-            PeakListBase.unLinkPeak(peak, i);
+            PeakList.unLinkPeak(peak, i);
 
             for (PeakDim pDim : peakDims) {
                 if (pDim.getPeak() != peak) {
@@ -195,7 +195,7 @@ public class PeakListBase {
         PeakDim peakDimA = peakA.getPeakDim(dimA);
         PeakDim peakDimB = peakB.getPeakDim(dimB);
         if ((peakDimA != null) && (peakDimB != null)) {
-            PeakListBase.linkPeakDims(peakDimA, peakDimB);
+            PeakList.linkPeakDims(peakDimA, peakDimB);
         }
     }
 
@@ -210,7 +210,7 @@ public class PeakListBase {
         PeakDim peakDimA = peakA.getPeakDim(dimA);
         PeakDim peakDimB = peakB.getPeakDim(dimB);
         if ((peakDimA != null) && (peakDimB != null)) {
-            PeakListBase.linkPeakDims(peakDimA, peakDimB);
+            PeakList.linkPeakDims(peakDimA, peakDimB);
         }
     }
 
@@ -283,9 +283,9 @@ public class PeakListBase {
      * @param datasetName
      * @return
      */
-    public static PeakListBase getPeakListForDataset(String datasetName) {
-        ProjectBase<PeakListBase> project = ProjectBase.getActive();
-        for (PeakListBase peakList : project.getPeakLists()) {
+    public static PeakList getPeakListForDataset(String datasetName) {
+        ProjectBase<PeakList> project = ProjectBase.getActive();
+        for (PeakList peakList : project.getPeakLists()) {
             if (peakList.fileName.equals(datasetName)) {
                 return peakList;
             }
@@ -300,15 +300,15 @@ public class PeakListBase {
      * @throws IllegalArgumentException
      */
     public static int clusterPeaks(String[] peakListNames) throws IllegalArgumentException {
-        List<PeakListBase> peakLists = new ArrayList<>();
+        List<PeakList> peakLists = new ArrayList<>();
         for (String peakListName : peakListNames) {
-            PeakListBase peakList = (PeakListBase) get(peakListName);
+            PeakList peakList = (PeakList) get(peakListName);
             if (peakList == null) {
                 throw new IllegalArgumentException("Couldn't find peak list " + peakListName);
             }
             peakLists.add(peakList);
         }
-        return PeakListBase.clusterPeaks(peakLists);
+        return PeakList.clusterPeaks(peakLists);
     }
 
     /**
@@ -317,13 +317,13 @@ public class PeakListBase {
      * @return
      * @throws IllegalArgumentException
      */
-    public static int clusterPeaks(List<PeakListBase> peakLists)
+    public static int clusterPeaks(List<PeakList> peakLists)
             throws IllegalArgumentException {
         Clusters clusters = new Clusters();
         List<Peak> clustPeaks = new ArrayList<>();
         double[] tol = null;
 
-        for (PeakListBase peakList : peakLists) {
+        for (PeakList peakList : peakLists) {
             // fixme  should remove unlink and properly support links below
             peakList.unLinkPeaks();
             peakList.peaks.stream().filter(p -> p.getStatus() >= 0).forEach(p -> p.setStatus(0));
@@ -337,7 +337,7 @@ public class PeakListBase {
         int ii = 0;
         int fDim = 0;
         int iList = 0;
-        for (PeakListBase peakList : peakLists) {
+        for (PeakList peakList : peakLists) {
 
             if (firstList) {
                 fDim = peakList.searchDims.size();
@@ -392,13 +392,13 @@ public class PeakListBase {
             if (iDatum.isActive()) {
                 List<Object> objs = iDatum.getObjects();
                 Peak iPeak = (Peak) objs.get(0);
-                PeakListBase.unLinkPeak(iPeak);
+                PeakList.unLinkPeak(iPeak);
                 for (int iObj = 1; iObj < objs.size(); iObj++) {
                     Peak jPeak = (Peak) objs.get(iObj);
-                    PeakListBase.unLinkPeak(jPeak);
+                    PeakList.unLinkPeak(jPeak);
                     for (int iDim = 0; iDim < fDim; iDim++) {
-                        SearchDim iSDim = ((PeakListBase) iPeak.getPeakList()).searchDims.get(iDim);
-                        SearchDim jSDim = ((PeakListBase) jPeak.getPeakList()).searchDims.get(iDim);
+                        SearchDim iSDim = ((PeakList) iPeak.getPeakList()).searchDims.get(iDim);
+                        SearchDim jSDim = ((PeakList) jPeak.getPeakList()).searchDims.get(iDim);
                         linkPeaks(iPeak, iSDim.getDim(), jPeak, jSDim.getDim());
                     }
                 }
@@ -427,7 +427,7 @@ public class PeakListBase {
      * @param newName
      */
     public void setName(String newName) {
-        ProjectBase<PeakListBase> project = ProjectBase.getActive();
+        ProjectBase<PeakList> project = ProjectBase.getActive();
         project.removePeakList(listName);
         listName = newName;
         project.addPeakList(this, newName);
@@ -489,21 +489,21 @@ public class PeakListBase {
      * @throws IllegalArgumentException if a peak with the input name doesn't
      * exist.
      */
-    public PeakListBase copy(final String name, final boolean allLinks, boolean merge, boolean copyLabels) {
-        PeakListBase newPeakList;
+    public PeakList copy(final String name, final boolean allLinks, boolean merge, boolean copyLabels) {
+        PeakList newPeakList;
         if (merge) {
 
-            newPeakList = PeakListBase.get(name);
+            newPeakList = PeakList.get(name);
             if (newPeakList == null) {
                 throw new IllegalArgumentException("Peak list " + name + " doesn't exist");
             }
         } else {
-            newPeakList = new PeakListBase(name, nDim);
+            newPeakList = new PeakList(name, nDim);
         }
         return newPeakList;
     }
 
-    public PeakListBase copy(PeakListBase newPeakList, final boolean allLinks, boolean merge, boolean copyLabels) {
+    public PeakList copy(PeakList newPeakList, final boolean allLinks, boolean merge, boolean copyLabels) {
 
         if (!merge) {
             newPeakList.searchDims.addAll(searchDims);
@@ -531,7 +531,7 @@ public class PeakListBase {
                 for (int j = 0; j < peak.peakDims.length; j++) {
                     PeakDim peakDim1 = peak.peakDims[j];
                     PeakDim peakDim2 = newPeak.peakDims[j];
-                    PeakListBase.linkPeakDims(peakDim1, peakDim2);
+                    PeakList.linkPeakDims(peakDim1, peakDim2);
                 }
             }
         }
@@ -551,7 +551,7 @@ public class PeakListBase {
                             int linkNum = linkPeak.getIdNum();
                             Peak targetPeak = newPeakList.getPeak(linkNum);
                             PeakDim targetDim = targetPeak.getPeakDim(iPeakDim);
-                            PeakListBase.linkPeakDims(newPeakDim, targetDim);
+                            PeakList.linkPeakDims(newPeakDim, targetDim);
                         }
                     }
                 }
@@ -892,8 +892,8 @@ public class PeakListBase {
 
         int lastDot = peakSpecifier.lastIndexOf('.');
 
-        ProjectBase<PeakListBase> project = ProjectBase.getActive();
-        PeakListBase peakList = project.
+        ProjectBase<PeakList> project = ProjectBase.getActive();
+        PeakList peakList = project.
                 getPeakList(peakSpecifier.substring(0, dot));
 
         if (peakList == null) {
@@ -933,8 +933,8 @@ public class PeakListBase {
 
         int lastDot = peakSpecifier.lastIndexOf('.');
 
-        ProjectBase<PeakListBase> project = ProjectBase.getActive();
-        PeakListBase peakList = project.
+        ProjectBase<PeakList> project = ProjectBase.getActive();
+        PeakList peakList = project.
                 getPeakList(peakSpecifier.substring(0, dot));
 
         if (peakList == null) {
@@ -974,8 +974,8 @@ public class PeakListBase {
 
         int lastDot = peakSpecifier.lastIndexOf('.');
 
-        ProjectBase<PeakListBase> project = ProjectBase.getActive();
-        PeakListBase peakList = project.
+        ProjectBase<PeakList> project = ProjectBase.getActive();
+        PeakList peakList = project.
                 getPeakList(peakSpecifier.substring(0, dot));
 
         if (peakList == null) {
@@ -1085,8 +1085,8 @@ public class PeakListBase {
 
         int lastDot = peakSpecifier.lastIndexOf('.');
 
-        ProjectBase<PeakListBase> project = ProjectBase.getActive();
-        PeakListBase peakList = project.
+        ProjectBase<PeakList> project = ProjectBase.getActive();
+        PeakList peakList = project.
                 getPeakList(peakSpecifier.substring(0, dot));
 
         if (peakList == null) {
@@ -1273,8 +1273,8 @@ public class PeakListBase {
      * @param listName the name of the peak list
      * @return the PeaKlist or null if no PeakList of that name exists
      */
-    public static PeakListBase get(String listName) {
-        ProjectBase<PeakListBase> project = ProjectBase.getActive();
+    public static PeakList get(String listName) {
+        ProjectBase<PeakList> project = ProjectBase.getActive();
         return project.getPeakList(listName);
     }
 
@@ -1550,8 +1550,8 @@ public class PeakListBase {
      */
     public static boolean isAnyChanged() {
         boolean anyChanged = false;
-        ProjectBase<PeakListBase> project = ProjectBase.getActive();
-        for (PeakListBase checkList : project.getPeakLists()) {
+        ProjectBase<PeakList> project = ProjectBase.getActive();
+        for (PeakList checkList : project.getPeakLists()) {
             if (checkList.isChanged()) {
                 anyChanged = true;
                 break;
@@ -1565,8 +1565,8 @@ public class PeakListBase {
      *
      */
     public static void clearAllChanged() {
-        ProjectBase<PeakListBase> project = ProjectBase.getActive();
-        for (PeakListBase checkList : project.getPeakLists()) {
+        ProjectBase<PeakList> project = ProjectBase.getActive();
+        for (PeakList checkList : project.getPeakLists()) {
             checkList.clearChanged();
         }
     }
@@ -1587,7 +1587,7 @@ public class PeakListBase {
      */
     public void sortPeaks(int dim, boolean ascending) throws IllegalArgumentException {
 //        checkDim(dim);
-        PeakListBase.sortPeaks(peaks, dim, ascending);
+        PeakList.sortPeaks(peaks, dim, ascending);
         reIndex();
     }
 
@@ -1610,8 +1610,8 @@ public class PeakListBase {
      * @param listName
      */
     public static void remove(String listName) {
-        ProjectBase<PeakListBase> project = ProjectBase.getActive();
-        PeakListBase peakList = project.getPeakList(listName);
+        ProjectBase<PeakList> project = ProjectBase.getActive();
+        PeakList peakList = project.getPeakList(listName);
         if (peakList != null) {
             peakList.remove();
         }
@@ -1834,7 +1834,7 @@ public class PeakListBase {
         int nRemoved = 0;
         for (int i = (peaks.size() - 1); i >= 0; i--) {
             if ((peaks.get(i)).getStatus() < 0) {
-                PeakListBase.unLinkPeak(peaks.get(i));
+                PeakList.unLinkPeak(peaks.get(i));
                 (peaks.get(i)).markDeleted();
                 peaks.remove(i);
                 nRemoved++;
@@ -1851,7 +1851,7 @@ public class PeakListBase {
         int nPeaks = peaks.size();
 
         for (int i = 0; i < nPeaks; i++) {
-            PeakListBase.unLinkPeak(peaks.get(i));
+            PeakList.unLinkPeak(peaks.get(i));
         }
     }
 
@@ -1913,9 +1913,9 @@ public class PeakListBase {
      * @return @throws IllegalArgumentException
      */
     public int clusterPeaks() throws IllegalArgumentException {
-        List<PeakListBase> peakLists = new ArrayList<>();
+        List<PeakList> peakLists = new ArrayList<>();
         peakLists.add(this);
-        return PeakListBase.clusterPeaks(peakLists);
+        return PeakList.clusterPeaks(peakLists);
 
     }
 
@@ -2007,7 +2007,7 @@ public class PeakListBase {
      * @param dims
      * @return
      */
-    public double[] centerAlign(PeakListBase otherList, int[] dims) {
+    public double[] centerAlign(PeakList otherList, int[] dims) {
         double[] deltas = new double[dims.length];
         for (int i = 0; i < dims.length; i++) {
             int k = dims[i];

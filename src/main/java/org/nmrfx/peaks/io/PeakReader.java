@@ -32,7 +32,7 @@ import java.util.regex.Pattern;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.Measures;
 import org.nmrfx.peaks.PeakDim;
-import org.nmrfx.peaks.PeakListBase;
+import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.SpectralDim;
 import org.python.util.PythonInterpreter;
 
@@ -73,7 +73,7 @@ public class PeakReader {
                 for (PeakDim peakDim : peakDims) {
                     if (peakDim != firstPeakDim) {
 //                        System.out.println(peakDim.getName());
-                        PeakListBase.linkPeakDims(firstPeakDim, peakDim);
+                        PeakList.linkPeakDims(firstPeakDim, peakDim);
                     }
 
                 }
@@ -81,11 +81,11 @@ public class PeakReader {
         }
     }
 
-    public PeakListBase readPeakList(String fileName) throws IOException {
+    public PeakList readPeakList(String fileName) throws IOException {
         return readPeakList(fileName, null);
     }
 
-    public PeakListBase readPeakList(String fileName, Map<String, Object> pMap) throws IOException {
+    public PeakList readPeakList(String fileName, Map<String, Object> pMap) throws IOException {
         Path path = Paths.get(fileName);
         PeakFileDetector detector = new PeakFileDetector();
         String type = detector.probeContentType(path);
@@ -103,14 +103,14 @@ public class PeakReader {
         }
     }
 
-    public PeakListBase readXPK2Peaks(String fileName) throws IOException {
+    public PeakList readXPK2Peaks(String fileName) throws IOException {
         Path path = Paths.get(fileName);
         String fileTail = path.getFileName().toString();
         fileTail = fileTail.substring(0, fileTail.lastIndexOf('.'));
         boolean gotHeader = false;
         String[] dataHeader = null;
         Map<String, Integer> dataMap = null;
-        PeakListBase peakList = null;
+        PeakList peakList = null;
         String units = "ppm";
         try (final BufferedReader fileReader = Files.newBufferedReader(path)) {
             while (true) {
@@ -136,7 +136,7 @@ public class PeakReader {
                         if (map.get("peaklist") != null) {
                             listName = data[map.get("peaklist")];
                         }
-                        peakList = new PeakListBase(listName, nDim);
+                        peakList = new PeakList(listName, nDim);
                         if (map.get("dataset") != null) {
                             peakList.setDatasetName(data[map.get("dataset")]);
                         }
@@ -226,7 +226,7 @@ public class PeakReader {
         return peakList;
     }
 
-    public void processLine(PeakListBase peakList, String[] dataHeader, Map<String, Integer> dataMap, String[] data) {
+    public void processLine(PeakList peakList, String[] dataHeader, Map<String, Integer> dataMap, String[] data) {
         Peak peak = peakList.getNewPeak();
         for (String field : dataHeader) {
             int dotIndex = field.indexOf('.');
@@ -351,7 +351,7 @@ public class PeakReader {
 
     }
 
-    public void readMPK2(PeakListBase peakList, String fileName) throws IOException {
+    public void readMPK2(PeakList peakList, String fileName) throws IOException {
         Path path = Paths.get(fileName);
         boolean gotHeader = false;
         boolean hasErrors = false;
@@ -491,7 +491,7 @@ public class PeakReader {
     }
 
      */
-    public PeakListBase readXPKPeaks(String fileName) throws IOException {
+    public PeakList readXPKPeaks(String fileName) throws IOException {
         Path path = Paths.get(fileName);
         String fileTail = path.getFileName().toString();
         fileTail = fileTail.substring(0, fileTail.lastIndexOf('.'));
@@ -510,7 +510,7 @@ public class PeakReader {
                 listMap.put(field, values);
             }
             int nDim = listMap.get("label").size();
-            PeakListBase peakList = new PeakListBase(listName, nDim);
+            PeakList peakList = new PeakList(listName, nDim);
             for (String field : listFields) {
                 if (!field.equals("dataset") && !field.equals("condition")) {
                     for (int iDim = 0; iDim < nDim; iDim++) {
@@ -617,7 +617,7 @@ public class PeakReader {
         return store;
     }
 
-    public static PeakListBase readSparkySaveFile(String fileName, Map<String, Object> pMap) {
+    public static PeakList readSparkySaveFile(String fileName, Map<String, Object> pMap) {
         Path path = Paths.get(fileName);
         String fileTail = path.getFileName().toString();
         fileTail = fileTail.substring(0, fileTail.lastIndexOf('.'));
@@ -629,23 +629,23 @@ public class PeakReader {
         interpreter.exec("sparky.pMap=pMap");
         rdString = String.format("sparky.loadSaveFile('%s','%s')", fileName, listName);
         interpreter.exec(rdString);
-        PeakListBase peakList = PeakListBase.get(listName);
+        PeakList peakList = PeakList.get(listName);
         return peakList;
     }
 
-    public static PeakListBase readSparkyAssignmentFile(String fileName) throws IOException {
+    public static PeakList readSparkyAssignmentFile(String fileName) throws IOException {
         Path path = Paths.get(fileName);
         String fileTail = path.getFileName().toString();
         fileTail = fileTail.substring(0, fileTail.indexOf('.'));
         String listName = fileTail;
-        PeakListBase peakList;
+        PeakList peakList;
         Pattern pattern = Pattern.compile("([A-Za-z]+)([0-9]+)(.*)");
         try (final BufferedReader fileReader = Files.newBufferedReader(path)) {
             String line = fileReader.readLine();
             line = line.trim();
             String[] fields = line.split("\\s+");
             int nDim = fields.length - 1;
-            peakList = new PeakListBase(listName, nDim);
+            peakList = new PeakList(listName, nDim);
             while (true) {
                 line = fileReader.readLine();
                 if (line == null) {

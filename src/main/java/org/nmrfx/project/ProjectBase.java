@@ -12,7 +12,7 @@ import org.nmrfx.peaks.io.PeakWriter;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.datasets.DatasetRegion;
 import org.nmrfx.datasets.DatasetParameterFile;
-import org.nmrfx.peaks.PeakListBase;
+import org.nmrfx.peaks.PeakList;
 
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeSupport;
@@ -32,7 +32,7 @@ import java.util.stream.Collectors;
  *
  * @author brucejohnson
  */
-public class ProjectBase<T extends PeakListBase> {
+public class ProjectBase<T extends PeakList> {
 
     static final public Pattern INDEX_PATTERN = Pattern.compile("^([0-9]+)_.*");
     static final public Predicate<String> INDEX_PREDICATE = INDEX_PATTERN.asPredicate();
@@ -293,7 +293,7 @@ public class ProjectBase<T extends PeakListBase> {
                 for (Path f : fileStream) {
                     String filePath = f.toString();
                     System.out.println("read peaks: " + f.toString());
-                    PeakListBase peakList = peakReader.readXPK2Peaks(f.toString());
+                    PeakList peakList = peakReader.readXPK2Peaks(f.toString());
                     String mpk2File = filePath.substring(0, filePath.length() - 4) + "mpk2";
                     Path mpk2Path = fileSystem.getPath(mpk2File);
                     if (Files.exists(mpk2Path)) {
@@ -320,7 +320,7 @@ public class ProjectBase<T extends PeakListBase> {
             String fileName = path.getFileName().toString();
             if (fileName.endsWith(".xpk2") || fileName.endsWith(".mpk2")) {
                 String listName = fileName.substring(0, fileName.length() - 5);
-                if (PeakListBase.get(listName) == null) {
+                if (PeakList.get(listName) == null) {
                     try {
                         Files.delete(path);
                     } catch (IOException ex) {
@@ -332,7 +332,7 @@ public class ProjectBase<T extends PeakListBase> {
         });
 
         peakLists.values().stream().forEach(peakListObj -> {
-            PeakListBase peakList = (PeakListBase) peakListObj;
+            PeakList peakList = (PeakList) peakListObj;
             Path peakFilePath = fileSystem.getPath(projectDir.toString(), "peaks", peakList.getName() + ".xpk2");
             Path measureFilePath = fileSystem.getPath(projectDir.toString(), "peaks", peakList.getName() + ".mpk2");
             // fixme should only write if file doesn't already exist or peaklist changed since read

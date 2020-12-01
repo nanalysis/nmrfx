@@ -84,8 +84,8 @@ public class Multiplet implements PeakOrMulti, Comparable {
     }
 
     @Override
-    public PeakListBase getPeakList() {
-        PeakListBase peakList = null;
+    public PeakList getPeakList() {
+        PeakList peakList = null;
         if (myPeakDim != null) {
             peakList = myPeakDim.getPeak().peakList;
         }
@@ -229,7 +229,7 @@ public class Multiplet implements PeakOrMulti, Comparable {
         Optional<Multiplet> result = Optional.empty();
         if (!removeComps.isEmpty()) {
             Peak peak = getOrigin();
-            PeakListBase peakList = peak.getPeakList();
+            PeakList peakList = peak.getPeakList();
             Peak newPeak = peakList.getNewPeak();
             PeakDim newPeakDim = newPeak.getPeakDim(0);
             Multiplet newMultiplet = newPeakDim.getMultiplet();
@@ -276,7 +276,7 @@ public class Multiplet implements PeakOrMulti, Comparable {
         double normVal = 0;
         String summary = "";
         // FIXME  make precision in ctr a function of dig resolution  sw/sfrq/size
-        PeakListBase peakList = myPeakDim.getPeak().getPeakList();
+        PeakList peakList = myPeakDim.getPeak().getPeakList();
         if (peakList.scale > 0.0) {
             normVal = getVolume() / peakList.scale;
         }

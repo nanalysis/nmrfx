@@ -144,9 +144,9 @@ public class Peak implements Comparable, PeakOrMulti {
     protected Corner corner = new Corner("ne");
     private int index = -1;
     private int[] colorArray = null;
-    public PeakListBase peakList;
+    public PeakList peakList;
 
-    public Peak(PeakListBase peakList, int nDim) {
+    public Peak(PeakList peakList, int nDim) {
         this(nDim);
         this.peakList = peakList;
         idNum = peakList.idLast + 1;
@@ -248,7 +248,7 @@ public class Peak implements Comparable, PeakOrMulti {
                 start = 0;
             }
 
-            peak = PeakListBase.getAPeak(string.substring(start));
+            peak = PeakList.getAPeak(string.substring(start));
         }
 
         return (peak);
@@ -267,7 +267,7 @@ public class Peak implements Comparable, PeakOrMulti {
             return (0);
         }
 
-        return (PeakListBase.getPeakDimNum(string.substring(start)));
+        return (PeakList.getPeakDimNum(string.substring(start)));
     }
 
     @Override
@@ -326,7 +326,7 @@ public class Peak implements Comparable, PeakOrMulti {
     }
 
     @Override
-    public PeakListBase getPeakList() {
+    public PeakList getPeakList() {
         return peakList;
     }
 
@@ -454,7 +454,7 @@ public class Peak implements Comparable, PeakOrMulti {
         return targetPeak;
     }
 
-    public Peak copy(PeakListBase peakList) {
+    public Peak copy(PeakList peakList) {
         Peak newPeak = new Peak(peakList, peakDims.length);
         newPeak.figureOfMerit = figureOfMerit;
         newPeak.valid = valid;
@@ -513,7 +513,7 @@ public class Peak implements Comparable, PeakOrMulti {
         this.setType(type);
 
         if ((flagLoc >= 0) && (flagLoc < NFLAGS)) {
-            List<Peak> lPeaks = PeakListBase.getLinks(this);
+            List<Peak> lPeaks = PeakList.getLinks(this);
 
             for (int i = 0, n = lPeaks.size(); i < n; i++) {
                 Peak lPeak = (Peak) lPeaks.get(i);
@@ -1328,12 +1328,12 @@ public class Peak implements Comparable, PeakOrMulti {
             startDim = 0;
             lastDim = nDim - 1;
         }
-        if (PeakListBase.clusterOrigin != null) {
+        if (PeakList.clusterOrigin != null) {
             for (int iDim = startDim; iDim <= lastDim; iDim++) {
-                List<PeakDim> linkedPeakDims = PeakListBase.getLinkedPeakDims(this, iDim);
+                List<PeakDim> linkedPeakDims = PeakList.getLinkedPeakDims(this, iDim);
                 for (int i = 0, n = linkedPeakDims.size(); i < n; i++) {
                     PeakDim linkedDim = (PeakDim) linkedPeakDims.get(i);
-                    if (linkedDim.getPeak().peakList == PeakListBase.clusterOrigin) {
+                    if (linkedDim.getPeak().peakList == PeakList.clusterOrigin) {
                         origin = linkedDim.getPeak().getIdNum();
                         break;
                     }

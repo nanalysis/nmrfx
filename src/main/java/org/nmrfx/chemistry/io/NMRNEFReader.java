@@ -30,7 +30,7 @@ import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.nmrfx.peaks.PeakDim;
-import org.nmrfx.peaks.PeakListBase;
+import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.ResonanceFactory;
 import org.nmrfx.star.Loop;
 import org.nmrfx.star.ParseException;
@@ -309,7 +309,7 @@ public class NMRNEFReader {
             List<String> atomColumn = loop.getColumnAsList("atom_name");
             List<String> valColumn = loop.getColumnAsList("value");
             List<String> valErrColumn = loop.getColumnAsList("value_uncertainty");
-            ResonanceFactory resFactory = PeakListBase.resFactory();
+            ResonanceFactory resFactory = PeakList.resFactory();
             for (int i = 0; i < chainCodeColumn.size(); i++) {
                 String sequenceCode = (String) sequenceCodeColumn.get(i);
                 String chainCode = (String) chainCodeColumn.get(i);

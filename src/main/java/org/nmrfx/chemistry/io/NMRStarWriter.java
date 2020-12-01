@@ -30,7 +30,7 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import org.nmrfx.chemistry.*;
-import org.nmrfx.peaks.PeakListBase;
+import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.InvalidPeakException;
 import org.nmrfx.peaks.io.PeakPathWriter;
 import org.nmrfx.peaks.io.PeakWriter;
@@ -1009,14 +1009,14 @@ public class NMRStarWriter {
             writeMoleculeSTAR3(chan, molecule, 1);
         }
         // fixme Dataset.writeDatasetsToSTAR3(channelName);
-        Iterator iter = PeakListBase.iterator();
+        Iterator iter = PeakList.iterator();
         PeakWriter peakWriter = new PeakWriter();
         while (iter.hasNext()) {
-            PeakListBase peakList = (PeakListBase) iter.next();
+            PeakList peakList = (PeakList) iter.next();
             peakWriter.writePeaksSTAR3(chan, peakList);
         }
 
-        AtomResonanceFactory resFactory = (AtomResonanceFactory) PeakListBase.resFactory();
+        AtomResonanceFactory resFactory = (AtomResonanceFactory) PeakList.resFactory();
 
         resFactory.writeResonancesSTAR3(chan);
         if (molecule != null) {

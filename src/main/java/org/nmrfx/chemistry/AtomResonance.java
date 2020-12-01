@@ -22,7 +22,7 @@ import org.nmrfx.chemistry.utilities.NvUtil;
 import java.util.List;
 import java.util.Map;
 
-import org.nmrfx.peaks.PeakListBase;
+import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.SimpleResonance;
 import org.nmrfx.star.Loop;
 import org.nmrfx.star.Saveframe;
@@ -82,7 +82,7 @@ public class AtomResonance extends SimpleResonance {
         List<String> nameColumn = loop.getColumnAsList("Name");
         List<String> resSetColumn = loop.getColumnAsList("Resonance_set_ID");
         // fixme unused ArrayList ssColumn = loop.getColumnAsList("Spin_system_ID");
-        AtomResonanceFactory resFactory = (AtomResonanceFactory) PeakListBase.resFactory();
+        AtomResonanceFactory resFactory = (AtomResonanceFactory) PeakList.resFactory();
         for (int i = 0, n = idColumn.size(); i < n; i++) {
             String value = null;
             long idNum = 0;

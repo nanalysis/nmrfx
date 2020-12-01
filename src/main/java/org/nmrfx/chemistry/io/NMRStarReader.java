@@ -41,7 +41,7 @@ import org.nmrfx.peaks.ComplexCoupling;
 import org.nmrfx.peaks.CouplingPattern;
 import org.nmrfx.peaks.Multiplet;
 import org.nmrfx.peaks.PeakDim;
-import org.nmrfx.peaks.PeakListBase;
+import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.Resonance;
 import org.nmrfx.peaks.ResonanceFactory;
 import org.nmrfx.peaks.SpectralDim;
@@ -540,7 +540,7 @@ public class NMRStarReader {
     }
 
     public void addMissingResonances() {
-        ResonanceFactory resFactory = PeakListBase.resFactory();
+        ResonanceFactory resFactory = PeakList.resFactory();
         for (PeakDim peakDim : peakDimsWithoutResonance) {
             Resonance resonance = resFactory.build();
             resonance.add(peakDim);
@@ -650,7 +650,7 @@ public class NMRStarReader {
 //        }
 //    }
     public void processSTAR3PeakList(Saveframe saveframe) throws ParseException {
-        ResonanceFactory resFactory = PeakListBase.resFactory();
+        ResonanceFactory resFactory = PeakList.resFactory();
         String listName = saveframe.getValue("_Spectral_peak_list", "Sf_framecode");
         String id = saveframe.getValue("_Spectral_peak_list", "ID");
         String sampleLabel = saveframe.getLabelValue("_Spectral_peak_list", "Sample_label");
@@ -675,7 +675,7 @@ public class NMRStarReader {
         }
         int nDim = NvUtil.toInt(nDimString);
 
-        PeakListBase peakList = new PeakListBase(listName, nDim, NvUtil.toInt(id));
+        PeakList peakList = new PeakList(listName, nDim, NvUtil.toInt(id));
 
         int nSpectralDim = saveframe.loopCount("_Spectral_dim");
         if (nSpectralDim > nDim) {
@@ -966,7 +966,7 @@ public class NMRStarReader {
         }
     }
 
-    void processTransitions(Saveframe saveframe, PeakListBase peakList) throws ParseException {
+    void processTransitions(Saveframe saveframe, PeakList peakList) throws ParseException {
         Loop loop = saveframe.getLoop("_Spectral_transition");
         if (loop != null) {
             List<Integer> idColumn = loop.getColumnAsIntegerList("ID", null);
@@ -1048,7 +1048,7 @@ public class NMRStarReader {
             List<String> valErrColumn = loop.getColumnAsList("Val_err");
             List<String> resColumn = loop.getColumnAsList("Resonance_ID");
             List<Integer> ambigColumn = loop.getColumnAsIntegerList("Ambiguity_code", -1);
-            ResonanceFactory resFactory = PeakListBase.resFactory();
+            ResonanceFactory resFactory = PeakList.resFactory();
             for (int i = 0; i < entityAssemblyIDColumn.size(); i++) {
                 String iEntity = (String) entityIDColumn.get(i);
                 String entityAssemblyID = (String) entityAssemblyIDColumn.get(i);
@@ -1314,7 +1314,7 @@ public class NMRStarReader {
         Atom[] atoms = new Atom[2];
         SpatialSetGroup[] spSets = new SpatialSetGroup[2];
         String[] resIDStr = new String[2];
-        PeakListBase peakList = null;
+        PeakList peakList = null;
         String lastPeakListIDStr = "";
         NoeSet noeSet = molecule.getMolecularConstraints().newNOESet(saveframe.getName().substring(5));
 
@@ -1370,12 +1370,12 @@ public class NMRStarReader {
             if (!peakListIDStr.equals(lastPeakListIDStr)) {
                 if (peakListIDStr.equals(".")) {
                     if (peakList == null) {
-                        peakList = new PeakListBase("gendist", 2);
+                        peakList = new PeakList("gendist", 2);
                     }
                 } else {
                     try {
                         int peakListID = Integer.parseInt(peakListIDStr);
-                        Optional<PeakListBase> peakListOpt = PeakListBase.get(peakListID);
+                        Optional<PeakList> peakListOpt = PeakList.get(peakListID);
                         if (peakListOpt.isPresent()) {
                             peakList = peakListOpt.get();
                         }
@@ -1432,7 +1432,7 @@ public class NMRStarReader {
         if (DEBUG) {
             System.out.println("nSave " + star3.getSaveFrameNames());
         }
-        AtomResonanceFactory resFactory = (AtomResonanceFactory) PeakListBase.resFactory();
+        AtomResonanceFactory resFactory = (AtomResonanceFactory) PeakList.resFactory();
         if (argv.length == 0) {
             hasResonances = false;
             compoundMap.clear();

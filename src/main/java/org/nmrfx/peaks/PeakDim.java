@@ -128,7 +128,7 @@ public class PeakDim {
     }
 
     public void initResonance() {
-        resonance = PeakListBase.resFactory().build();
+        resonance = PeakList.resFactory().build();
         resonance.add(this);
     }
 
@@ -186,7 +186,7 @@ public class PeakDim {
 
     public void setResonance(long resID) {
         remove();
-        resonance = PeakListBase.resFactory().get(resID);
+        resonance = PeakList.resFactory().get(resID);
     }
 
     public void setResonance(Resonance newResonance) {
@@ -770,7 +770,7 @@ public class PeakDim {
         return myPeak;
     }
 
-    public PeakListBase getPeakList() { return myPeak.peakList; }
+    public PeakList getPeakList() { return myPeak.peakList; }
 
     public String getSampleConditionLabel() { return myPeak.peakList.getSampleConditionLabel(); }
 
