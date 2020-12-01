@@ -3,7 +3,6 @@ package org.nmrfx.peaks;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.*;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -17,6 +16,7 @@ import org.nmrfx.utilities.Util;
 import static java.lang.Double.compare;
 import static java.util.Comparator.comparing;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
+import org.nmrfx.utilities.Updater;
 
 public class PeakListBase {
 
@@ -28,7 +28,6 @@ public class PeakListBase {
     /**
      *
      */
-    static List<PeakListener> globalListeners = new ArrayList<>();
     static List<FreezeListener> freezeListeners = new ArrayList<>();
     public int idLast;
     /**
@@ -50,7 +49,8 @@ public class PeakListBase {
     Map<String, String> properties = new HashMap<>();
     List<PeakListener> listeners = new ArrayList<>();
     protected boolean changed = false;
-    protected ScheduledThreadPoolExecutor schedExecutor = new ScheduledThreadPoolExecutor(2);
+    public boolean thisListUpdated = false;
+    Updater updater = null;
 
     /**
      *
@@ -471,21 +471,10 @@ public class PeakListBase {
         }
     }
 
-    static void registerGlobalListener(PeakListener newListener) {
-        if (!globalListeners.contains(newListener)) {
-            globalListeners.add(newListener);
-        }
-    }
 
     public void notifyListeners() {
         for (PeakListener listener : listeners) {
             listener.peakListChanged(new PeakEvent(this));
-        }
-    }
-
-    public static void notifyGlobalListeners() {
-        for (PeakListener listener : globalListeners) {
-            listener.peakListChanged(new PeakEvent("*"));
         }
     }
 
@@ -602,11 +591,14 @@ public class PeakListBase {
         return ProjectBase.getActive().getPeakLists().iterator();
     }
 
-    synchronized void setUpdatedFlag(boolean value) {
+    public synchronized void setUpdatedFlag(boolean value) {
     }
 
     public void peakListUpdated(Object object) {
         changed = true;
+        if (updater != null) {
+            updater.update();
+        }
     }
 
     /**
@@ -1637,8 +1629,10 @@ public class PeakListBase {
         }
         peaks.clear();
         peaks = null;
-        schedExecutor.shutdown();
-        schedExecutor = null;
+        if (updater != null) {
+            updater.shutdown();
+            updater = null;
+        }
         ProjectBase.getActive().removePeakList(listName);
     }
 
@@ -1995,6 +1989,48 @@ public class PeakListBase {
     public double getFoldAmount(int iDim) {
         double foldAmount = Math.abs(getSpectralDim(iDim).getSw() / getSpectralDim(iDim).getSf());
         return foldAmount;
+    }
+
+    /**
+     *
+     * @param iDim
+     * @return
+     */
+    public double center(int iDim) {
+        OptionalDouble avg = peaks.stream().filter((p) -> p.getStatus() >= 0).mapToDouble((p) -> p.peakDims[iDim].getChemShift()).average();
+        return avg.getAsDouble();
+    }
+
+    /**
+     *
+     * @param otherList
+     * @param dims
+     * @return
+     */
+    public double[] centerAlign(PeakListBase otherList, int[] dims) {
+        double[] deltas = new double[dims.length];
+        for (int i = 0; i < dims.length; i++) {
+            int k = dims[i];
+            if (k != -1) {
+                for (int j = 0; j < otherList.nDim; j++) {
+                    if (spectralDims[k].getDimName().equals(otherList.spectralDims[j].getDimName())) {
+                        double center1 = center(k);
+                        double center2 = otherList.center(j);
+                        System.out.println(i + " " + k + " " + j + " " + center1 + " " + center2);
+                        deltas[i] = center2 - center1;
+                    }
+                }
+            }
+        }
+        return deltas;
+    }
+
+    public void clearAtomLabels() {
+        for (Peak peak : peaks) {
+            for (PeakDim peakDim : peak.peakDims) {
+                peakDim.setLabel("");
+            }
+        }
     }
 
     public class SearchDim {
