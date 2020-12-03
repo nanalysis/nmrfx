@@ -140,6 +140,10 @@ public class MolecularConstraints {
         newRDCSet("default");
     }
 
+    public Collection<RDCConstraintSet> rdcSets() {
+        return rdcSets.values();
+    }
+
     public Optional<DistanceConstraintSet> activeDistanceSet() {
         return activeDistanceSet;
     }
