@@ -14,7 +14,6 @@ import org.nmrfx.peaks.PeakDim;
 import org.nmrfx.peaks.SpectralDim;
 import org.nmrfx.chemistry.AtomResonance;
 import org.nmrfx.peaks.Peak;
-import org.nmrfx.peaks.PeakListBase;
 import org.nmrfx.chemistry.Atom;
 import org.nmrfx.structure.chemistry.IdPeak;
 import org.nmrfx.structure.chemistry.IdResult;
@@ -24,6 +23,7 @@ import org.nmrfx.chemistry.PPMv;
 import org.nmrfx.structure.chemistry.MatchCriteria;
 import org.nmrfx.chemistry.SpatialSet;
 import org.nmrfx.chemistry.Util;
+import org.nmrfx.peaks.PeakList;
 
 /**
  *
@@ -31,7 +31,7 @@ import org.nmrfx.chemistry.Util;
  */
 public class NOEAssign {
 
-    public static MatchCriteria[] getMatchCriteria(PeakListBase peakList) throws NumberFormatException {
+    public static MatchCriteria[] getMatchCriteria(PeakList peakList) throws NumberFormatException {
         int nDim = peakList.nDim;
         MatchCriteria[] matchCriteria = new MatchCriteria[4];
         String[][] atomPats = new String[nDim][];
@@ -103,7 +103,7 @@ public class NOEAssign {
 
     // mode == 0  only extract contraints for peaks with one assignment
     // mode == 1  extract constraints for peaks with one or more (ambiguous) assignments
-    public static void extractNoePeaks(NoeSet noeSet, PeakListBase peakList, int mode, boolean onlyFrozen) {
+    public static void extractNoePeaks(NoeSet noeSet, PeakList peakList, int mode, boolean onlyFrozen) {
         double scale = 1.0;
         int[] atomIndex = new int[2];
         int nPeaks;
@@ -182,12 +182,12 @@ public class NOEAssign {
     // mode == 0  only extract contraints for peaks with one assignment
     // mode == 1  extract constraints for peaks with one or more (ambiguous) assignments
 
-    public static AssignResult extractNoePeaks2(NoeSet noeSet, final PeakListBase peakList, final int maxAmbig, final boolean strict, final int ppmSet) throws InvalidMoleculeException {
+    public static AssignResult extractNoePeaks2(NoeSet noeSet, final PeakList peakList, final int maxAmbig, final boolean strict, final int ppmSet) throws InvalidMoleculeException {
         Optional<NoeSet> noeSetOpt = Optional.of(noeSet);
         return extractNoePeaks2(noeSetOpt, peakList, maxAmbig, strict, ppmSet);
     }
 
-    public static AssignResult extractNoePeaks2(Optional<NoeSet> noeSetOpt, final PeakListBase peakList, final int maxAmbig, final boolean strict, final int ppmSet) throws InvalidMoleculeException {
+    public static AssignResult extractNoePeaks2(Optional<NoeSet> noeSetOpt, final PeakList peakList, final int maxAmbig, final boolean strict, final int ppmSet) throws InvalidMoleculeException {
         Peak peak;
         double scale = 1.0;
         int nPeaks;
@@ -356,10 +356,10 @@ public class NOEAssign {
     public static void updateGenTypes(NoeSet noeSet) {
         Map<String, Noe.NoeMatch> map = new HashMap<>();
         MatchCriteria[] matchCriteria = null;
-        PeakListBase lastList = null;
+        PeakList lastList = null;
         for (Map.Entry<Peak, List<Noe>> entry : noeSet.getPeakMapEntries()) {
             Peak peak = entry.getKey();
-            PeakListBase peakList = peak.getPeakList();
+            PeakList peakList = peak.getPeakList();
             if ((matchCriteria == null) || (lastList != peakList)) {
                 try {
                     matchCriteria = NOEAssign.getMatchCriteria(peakList);
@@ -379,10 +379,10 @@ public class NOEAssign {
 
     public static void updatePPMErrors(NoeSet noeSet) {
         MatchCriteria[] matchCriteria = null;
-        PeakListBase lastList = null;
+        PeakList lastList = null;
         for (Map.Entry<Peak, List<Noe>> entry : noeSet.getPeakMapEntries()) {
             Peak peak = entry.getKey();
-            PeakListBase peakList = peak.getPeakList();
+            PeakList peakList = peak.getPeakList();
             if ((matchCriteria == null) || (lastList != peakList)) {
                 try {
                     matchCriteria = NOEAssign.getMatchCriteria(peakList);
@@ -450,7 +450,7 @@ public class NOEAssign {
 
     }
 
-    public static void extractNoePeaksSlow(NoeSet noeSet, PeakListBase peakList, int mode) throws InvalidMoleculeException {
+    public static void extractNoePeaksSlow(NoeSet noeSet, PeakList peakList, int mode) throws InvalidMoleculeException {
         Peak peak;
         double scale = 1.0;
         int nPeaks;
@@ -534,7 +534,7 @@ public class NOEAssign {
     // mode == 0  only extract contraints for peaks with one assignment
     // mode == 1  extract constraints for peaks with one or more (ambiguous) assignments
 
-    public static double findMax(PeakListBase peakList, int dim, double mult) throws InvalidMoleculeException {
+    public static double findMax(PeakList peakList, int dim, double mult) throws InvalidMoleculeException {
         boolean strict = true;
         if (mult < 1.0e-6) {
             mult = peakList.getSpectralDim(dim).getIdTol() / 4.0;

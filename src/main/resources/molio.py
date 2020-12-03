@@ -3,7 +3,7 @@ from org.nmrfx.chemistry.io import SDFile
 from org.nmrfx.chemistry.io import Sequence
 from org.nmrfx.structure.chemistry import Molecule
 from org.nmrfx.chemistry import MoleculeFactory
-from org.nmrfx.structure.chemistry.io import MMcifReader
+from org.nmrfx.chemistry.io import MMcifReader
 
 from java.util import ArrayList
 from java.lang import ClassLoader

@@ -3,7 +3,7 @@ package org.nmrfx.structure.seqassign;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakDim;
-import org.nmrfx.peaks.PeakListBase;
+import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.SpectralDim;
 import org.yaml.snakeyaml.Yaml;
 
@@ -22,8 +22,8 @@ public class RunAbout {
 
     SpinSystems spinSystems = new SpinSystems(this);
     Map<String, Object> yamlData = null;
-    Map<String, PeakListBase> peakListMap = new LinkedHashMap<>();
-    List<PeakListBase> peakLists = new ArrayList<>();
+    Map<String, PeakList> peakListMap = new LinkedHashMap<>();
+    List<PeakList> peakLists = new ArrayList<>();
     Map<String, Map<String, List<String>>> arrange;
     Map<String, List<String>> dimLabels;
     Map<String, String> peakListTypes = new HashMap<>();
@@ -62,11 +62,11 @@ public class RunAbout {
         return result;
     }
 
-    public PeakListBase getPeakList(String key) {
+    public PeakList getPeakList(String key) {
         return peakListMap.get(key);
     }
 
-    public List<PeakListBase> getPeakLists() {
+    public List<PeakList> getPeakLists() {
         return peakLists;
     }
 
@@ -82,7 +82,7 @@ public class RunAbout {
         return typeInfoMap.get(typeName).nTotal;
     }
 
-    List<String> setPatterns(List<Map<String, Object>> typeList, String typeName, PeakListBase peakList) {
+    List<String> setPatterns(List<Map<String, Object>> typeList, String typeName, PeakList peakList) {
         double[] tols = {0.04, 0.5, 0.6}; // fixme
         List<String> patElems = new ArrayList<>();
         for (Map<String, Object> type : typeList) {
@@ -234,7 +234,7 @@ public class RunAbout {
         typeList = (List<Map<String, Object>>) yamlData.get("types");
         for (String typeName : peakListNames) {
             String datasetName = datasetNameMap.get(typeName);
-            PeakListBase peakList = PeakListBase.getPeakListForDataset(datasetName);
+            PeakList peakList = PeakList.getPeakListForDataset(datasetName);
             if (peakList != null) {
                 peakListTypes.put(peakList.getName(), typeName);
                 List<String> patElems = setPatterns(typeList, typeName, peakList);
@@ -306,7 +306,7 @@ public class RunAbout {
     }
 
     public void calcCombinations() {
-        for (PeakListBase peakList : peakLists) {
+        for (PeakList peakList : peakLists) {
             for (Peak peak : peakList.peaks()) {
                 for (PeakDim peakDim : peak.getPeakDims()) {
                     peakDim.setUser("");
@@ -322,7 +322,7 @@ public class RunAbout {
         getSpinSystems().dump();
     }
 
-    public static String getHDimName(PeakListBase peakList) {
+    public static String getHDimName(PeakList peakList) {
         String result = null;
         for (int i = 0; i < peakList.getNDim(); i++) {
             String dimName = peakList.getSpectralDim(i).getDimName();
@@ -334,7 +334,7 @@ public class RunAbout {
         return result;
     }
 
-    public static String getNDimName(PeakListBase peakList) {
+    public static String getNDimName(PeakList peakList) {
         String result = null;
         for (int i = 0; i < peakList.getNDim(); i++) {
             String dimName = peakList.getSpectralDim(i).getDimName();
@@ -348,7 +348,7 @@ public class RunAbout {
 
     public void filterPeaks() {
         double tolScale = 3.0;
-        PeakListBase refList = peakLists.get(0);
+        PeakList refList = peakLists.get(0);
         refList.clearSearchDims();
         List<String> commonDimNames = new ArrayList<>();
         commonDimNames.add(getHDimName(refList));
@@ -358,7 +358,7 @@ public class RunAbout {
             refList.addSearchDim(dimName, sDim.getIdTol() * tolScale);
         }
 
-        for (PeakListBase peakList : peakLists) {
+        for (PeakList peakList : peakLists) {
             AtomicInteger nFiltered = new AtomicInteger();
             if (refList != peakList) {
                 int[] dims = new int[commonDimNames.size()];

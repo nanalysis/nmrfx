@@ -192,8 +192,7 @@ public class Molecule extends MoleculeBase {
 
     // fixme    public EnergyLists energyList = null;
     public Molecule(String name) {
-        super();
-        this.name = name;
+        super(name);
         Atom.resetLastAtom();
         try {
             Class c = Class.forName("javafx.collections.FXCollections");
@@ -238,6 +237,10 @@ public class Molecule extends MoleculeBase {
 
     public void setActive() {
         MoleculeFactory.setActive(this);
+    }
+
+    public static Molecule getActive() {
+        return (Molecule) MoleculeFactory.getActive();
     }
 
     public void setTitle(final String value) {
@@ -332,10 +335,6 @@ public class Molecule extends MoleculeBase {
         String dotBracket = getProperty("vienna");
         dotBracket = dotBracket == null ? "" : dotBracket;
         return dotBracket;
-    }
-
-    public void setDotBracket(String value) {
-        setProperty("vienna", value);
     }
 
     public void setRDCResults(OrderSVD results) {
@@ -822,22 +821,6 @@ public class Molecule extends MoleculeBase {
             }
         }
         return hydrogens;
-    }
-
-    public int getRefPPMSetCount() {
-        Iterator e = getSpatialSetIterator();
-        int maxCount = 1;
-        while (e.hasNext()) {
-            SpatialSet spatialSet = (SpatialSet) e.next();
-            if (spatialSet == null) {
-                continue;
-            }
-            int nSets = spatialSet.getRefPPMSetCount();
-            if (nSets > maxCount) {
-                maxCount = nSets;
-            }
-        }
-        return maxCount;
     }
 
     public int selectResidues() {

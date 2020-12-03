@@ -8,7 +8,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.nmrfx.peaks.Peak;
-import org.nmrfx.peaks.PeakListBase;
+import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.SpectralDim;
 
 /**
@@ -63,7 +63,7 @@ public class SpinSystems {
 
     }
 
-    public static int[] matchDims(PeakListBase peakListA, PeakListBase peakListB) {
+    public static int[] matchDims(PeakList peakListA, PeakList peakListB) {
         int nDimA = peakListA.getNDim();
         int nDimB = peakListB.getNDim();
         int[] aMatch = new int[nDimA];
@@ -110,13 +110,13 @@ public class SpinSystems {
         return result;
     }
 
-    double[][] calcNormalization(List<PeakListBase> peakLists) {
-        PeakListBase refList = peakLists.get(0);
+    double[][] calcNormalization(List<PeakList> peakLists) {
+        PeakList refList = peakLists.get(0);
         double[][] sums = new double[refList.peaks().size()][peakLists.size() - 1];
         int i = 0;
         for (Peak pkA : refList.peaks()) {
             int j = 0;
-            for (PeakListBase peakListB : peakLists) {
+            for (PeakList peakListB : peakLists) {
                 int[] aMatch = matchDims(refList, peakListB);
                 if (peakListB != refList) {
                     double sumF = peakListB.peaks().stream().filter(pkB -> pkB.getStatus() >= 0).
@@ -130,16 +130,16 @@ public class SpinSystems {
         return sums;
     }
 
-    public void assembleWithClustering(List<PeakListBase> peakLists) {
+    public void assembleWithClustering(List<PeakList> peakLists) {
         double[][] sums = calcNormalization(peakLists);
-        PeakListBase refList = peakLists.get(0);
-        PeakListBase.clusterOrigin = refList;
+        PeakList refList = peakLists.get(0);
+        PeakList.clusterOrigin = refList;
         boolean[] useDim = new boolean[refList.getNDim()];
         for (int i = 0; i < useDim.length; i++) {
             useDim[i] = true;
         }
         int nPeakTypes = 0;
-        for (PeakListBase peakList : peakLists) {
+        for (PeakList peakList : peakLists) {
             peakList.unLinkPeaks();
             if (peakList != refList) {
                 int[] aMatch = matchDims(refList, peakList);
@@ -158,9 +158,9 @@ public class SpinSystems {
             nPeakTypes += totalCount;
         }
         final int nExpected = nPeakTypes;
-        Map<PeakListBase, Integer> peakMap = new HashMap<>();
+        Map<PeakList, Integer> peakMap = new HashMap<>();
         int j = 0;
-        for (PeakListBase peakList : peakLists) {
+        for (PeakList peakList : peakLists) {
             if (peakList != refList) {
                 peakMap.put(peakList, j);
                 j++;
@@ -175,14 +175,14 @@ public class SpinSystems {
             }
         }
 
-        PeakListBase.clusterPeaks(peakLists);
+        PeakList.clusterPeaks(peakLists);
         int i = 0;
         for (Peak pkA : refList.peaks()) {
             SpinSystem spinSys = new SpinSystem(pkA, this);
             systems.add(spinSys);
-            for (Peak pkB : PeakListBase.getLinks(pkA, 0)) {// fixme calculate correct dim
+            for (Peak pkB : PeakList.getLinks(pkA, 0)) {// fixme calculate correct dim
                 if (pkA != pkB) {
-                    PeakListBase peakListB = pkB.getPeakList();
+                    PeakList peakListB = pkB.getPeakList();
                     if (refList != peakListB) {
                         Integer jList = peakMap.get(peakListB);
                         if (jList == null) {
@@ -204,7 +204,7 @@ public class SpinSystems {
         }
     }
 
-    public void assemble(List<PeakListBase> peakLists) {
+    public void assemble(List<PeakList> peakLists) {
         systems.clear();
         peakLists.forEach(peakListA -> {
             peakListA.unLinkPeaks();
@@ -262,8 +262,8 @@ public class SpinSystems {
         }
     }
 
-    public void buildSpinSystems(List<PeakListBase> peakLists) {
-        PeakListBase refList = peakLists.get(0);
+    public void buildSpinSystems(List<PeakList> peakLists) {
+        PeakList refList = peakLists.get(0);
         for (Peak pkA : refList.peaks()) {
             SpinSystem spinSys = new SpinSystem(pkA, this);
             systems.add(spinSys);

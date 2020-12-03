@@ -26,7 +26,7 @@ import org.nmrfx.chemistry.constraints.NoeSet;
 import org.nmrfx.chemistry.constraints.Flags;
 import org.nmrfx.chemistry.constraints.Noe;
 import org.nmrfx.peaks.Peak;
-import org.nmrfx.peaks.PeakListBase;
+import org.nmrfx.peaks.PeakList;
 
 import java.util.*;
 
@@ -46,7 +46,7 @@ public class NOECalibrator {
     MoleculeBase molecule;
     private boolean useDistances = false;
     private char[] violCharArray = new char[0];
-    private final Map<PeakListBase, NoeCalibration> scaleMap = new HashMap<>();
+    private final Map<PeakList, NoeCalibration> scaleMap = new HashMap<>();
 
     public NOECalibrator(NoeSet noeSet) {
         this.noeSet = noeSet;
@@ -61,7 +61,7 @@ public class NOECalibrator {
         return sumAverage;
     }
 
-    public NoeCalibration getCalibration(PeakListBase peakList) {
+    public NoeCalibration getCalibration(PeakList peakList) {
         NoeCalibration noeCal = scaleMap.get(peakList);
         return noeCal;
     }
@@ -70,7 +70,7 @@ public class NOECalibrator {
         scaleMap.clear();
     }
 
-    public void setScale(PeakListBase peakList, NoeCalibration noeCal) {
+    public void setScale(PeakList peakList, NoeCalibration noeCal) {
         scaleMap.put(peakList, noeCal);
     }
 
@@ -406,7 +406,7 @@ public class NOECalibrator {
                     if (noe.peak == null) {
                         continue;
                     }
-                    PeakListBase peakList = noe.peak.getPeakList();
+                    PeakList peakList = noe.peak.getPeakList();
                     NoeCalibration noeCal = getCalibration(peakList);
                     if (noeCal == null) {
                         noeCal = defaultCal(peakList);
@@ -663,10 +663,10 @@ public class NOECalibrator {
         }
     }
 
-    public HashMap<PeakListBase, List<Double>> calcMedian(String mMode, PeakListBase whichList) {
-        Map<PeakListBase, List<Double>> valuesMap = new HashMap<>();
+    public HashMap<PeakList, List<Double>> calcMedian(String mMode, PeakList whichList) {
+        Map<PeakList, List<Double>> valuesMap = new HashMap<>();
         for (Map.Entry<Peak, List<Noe>> entry : noeSet.getPeakMapEntries()) {
-            PeakListBase peakList = entry.getKey().getPeakList();
+            PeakList peakList = entry.getKey().getPeakList();
             if ((whichList != null) && (whichList != peakList)) {
                 continue;
             }
@@ -718,9 +718,9 @@ public class NOECalibrator {
                 dList.add(scaledIntensity);
             }
         }
-        HashMap<PeakListBase, List<Double>> medianMap = new HashMap<>();
-        for (Map.Entry<PeakListBase, List<Double>> entry : valuesMap.entrySet()) {
-            PeakListBase peakList = entry.getKey();
+        HashMap<PeakList, List<Double>> medianMap = new HashMap<>();
+        for (Map.Entry<PeakList, List<Double>> entry : valuesMap.entrySet()) {
+            PeakList peakList = entry.getKey();
             List<Double> dList = entry.getValue();
             List<Double> valueList = new ArrayList<>();
             DescriptiveStatistics stat = new DescriptiveStatistics();
@@ -738,7 +738,7 @@ public class NOECalibrator {
         return medianMap;
     }
 
-    public void calibrateExp(PeakListBase whichList) {
+    public void calibrateExp(PeakList whichList) {
         if (noeSet.getSize() == 0) {
             return;
         }
@@ -751,7 +751,7 @@ public class NOECalibrator {
         double fError = 0.125;
         double lower = 1.8;
         for (Map.Entry<Peak, List<Noe>> entry : noeSet.getPeakMapEntries()) {
-            PeakListBase peakList = entry.getKey().getPeakList();
+            PeakList peakList = entry.getKey().getPeakList();
             if ((whichList != null) && (whichList != peakList)) {
                 continue;
             }
@@ -771,9 +771,9 @@ public class NOECalibrator {
         }
     }
 
-    public void updateNPossible(PeakListBase whichList) {
+    public void updateNPossible(PeakList whichList) {
         for (Map.Entry<Peak, List<Noe>> entry : noeSet.getPeakMapEntries()) {
-            PeakListBase peakList = entry.getKey().getPeakList();
+            PeakList peakList = entry.getKey().getPeakList();
             if ((whichList != null) && (whichList != peakList)) {
                 continue;
             }
@@ -852,9 +852,9 @@ public class NOECalibrator {
         }
     }
 
-    public NoeCalibration defaultCal(PeakListBase peakList) {
+    public NoeCalibration defaultCal(PeakList peakList) {
         String mMode = "intensity";
-        HashMap<PeakListBase, List<Double>> medianMap = calcMedian(mMode, peakList);
+        HashMap<PeakList, List<Double>> medianMap = calcMedian(mMode, peakList);
         List<Double> valueList = medianMap.get(peakList);
         double referenceValue = valueList.get(2);
         double referenceDist = 3.0;
