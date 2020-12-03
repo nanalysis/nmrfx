@@ -18,7 +18,6 @@
 package org.nmrfx.processor.gui;
 
 import org.nmrfx.processor.datasets.Dataset;
-import org.nmrfx.processor.datasets.peaks.PeakList;
 import org.nmrfx.processor.datasets.peaks.PeakNetworkMatch;
 import org.nmrfx.processor.datasets.vendor.NMRData;
 import org.nmrfx.processor.datasets.vendor.NMRDataUtil;
@@ -66,6 +65,7 @@ import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
+import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.control.Alert;
@@ -109,8 +109,8 @@ import javafx.util.Callback;
 import org.apache.commons.beanutils.PropertyUtils;
 import org.controlsfx.control.PopOver;
 import org.controlsfx.dialog.ExceptionDialog;
-import org.nmrfx.processor.datasets.peaks.Peak;
-import org.nmrfx.processor.datasets.peaks.PeakDim;
+import org.nmrfx.datasets.DatasetBase;
+import org.nmrfx.peaks.Peak;
 import org.nmrfx.processor.datasets.peaks.PeakLinker;
 import org.nmrfx.processor.datasets.peaks.PeakNeighbors;
 import org.nmrfx.processor.gui.controls.FractionCanvas;
@@ -118,6 +118,8 @@ import org.nmrfx.processor.gui.controls.LayoutControlCanvas;
 import org.nmrfx.graphicsio.GraphicsIOException;
 import org.nmrfx.graphicsio.PDFGraphicsContext;
 import org.nmrfx.graphicsio.SVGGraphicsContext;
+import org.nmrfx.peaks.PeakDim;
+import org.nmrfx.peaks.PeakList;
 import org.nmrfx.processor.datasets.peaks.PeakListAlign;
 import org.nmrfx.processor.gui.spectra.CanvasBindings;
 import org.nmrfx.processor.gui.spectra.ColorProperty;
@@ -362,9 +364,9 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         } else {
             datasetListView.setStyle("-fx-font-size:12pt;");
 
-            DictionarySort<Dataset> sorter = new DictionarySort<>();
+            DictionarySort<DatasetBase> sorter = new DictionarySort<>();
             datasetListView.getItems().clear();
-            Dataset.datasets().stream().sorted(sorter).forEach((Dataset d) -> {
+            Dataset.datasets().stream().sorted(sorter).forEach((DatasetBase d) -> {
                 datasetListView.getItems().add(d.getName());
             });
             datasetListView.setCellFactory(new Callback<ListView<String>, ListCell<String>>() {
@@ -617,7 +619,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
 
     }
 
-    public void addDataset(Dataset dataset, boolean appendFile, boolean reload) {
+    public void addDataset(DatasetBase dataset, boolean appendFile, boolean reload) {
         isFID = false;
         //dataset.setScale(1.0);
         int nDim = dataset.getNDim();
@@ -667,9 +669,10 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         getActiveChart().removeAllDatasets();
         // removeAllDatasets in chart only stops displaying them, so we need to actually close the dataset
         Path path1 = target.toPath();
-        List<Dataset> currentDatasets = new ArrayList<>();
+        List<DatasetBase> currentDatasets = new ArrayList<>();
         currentDatasets.addAll(Dataset.datasets());
-        for (Dataset dataset : currentDatasets) {
+        for (DatasetBase datasetBase : currentDatasets) {
+            Dataset dataset = (Dataset) datasetBase;
             File file = dataset.getFile();
             if (file != null) {
                 try {
@@ -1264,7 +1267,8 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         }
 
         try {
-            Scene scene = new Scene((Pane) loader.load());
+            Parent parent = loader.load();
+            Scene scene = new Scene((Pane) parent);
             stage.setScene(scene);
             scene.getStylesheets().add("/styles/Styles.css");
 
@@ -1278,7 +1282,6 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
             MainApp.registerStage(stage, controller);
             stage.show();
         } catch (IOException ioE) {
-
             ioE.printStackTrace();
             System.out.println(ioE.getMessage());
         }

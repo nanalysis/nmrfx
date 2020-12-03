@@ -20,8 +20,9 @@ package org.nmrfx.processor.gui.spectra;
 import javafx.event.ActionEvent;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.MenuItem;
+import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.processor.datasets.Dataset;
-import org.nmrfx.processor.datasets.DatasetRegion;
+import org.nmrfx.datasets.DatasetRegion;
 import org.nmrfx.processor.gui.PolyChart;
 
 /**
@@ -58,7 +59,7 @@ public class IntegralMenu extends ChartMenu {
     void setIntegralNorm(int iNorm) {
         DatasetRegion region = hit.getDatasetRegion();
         double integral = region.getIntegral();
-        Dataset dataset = hit.getDatasetAttr().getDataset();
+        DatasetBase dataset = hit.getDatasetAttr().getDataset();
         dataset.setNorm(integral * dataset.getScale() /  iNorm);
         chart.refresh();
 

@@ -35,6 +35,7 @@ import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import org.controlsfx.dialog.ExceptionDialog;
+import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.DatasetPhaser;
 import org.nmrfx.processor.operations.AutoPhase;
@@ -389,7 +390,7 @@ public class Phaser {
         if (!chart.hasData()) {
             return;
         }
-        Dataset dataset = chart.getDataset();
+        DatasetBase dataset = chart.getDataset();
         String phaseDim = "D" + String.valueOf(chart.datasetPhaseDim + 1);
         if (controller.chartProcessor != null) {
             List<String> listItems = controller.chartProcessor.getOperations(phaseDim);
@@ -454,7 +455,8 @@ public class Phaser {
 
     private void applyPhase() {
         PolyChart chart = controller.getActiveChart();
-        Dataset dataset = chart.getDataset();
+        DatasetBase datasetBase = chart.getDataset();
+        Dataset dataset = (Dataset) datasetBase;
         try {
             int iDim = chart.datasetPhaseDim;
             double ph0 = chart.getPh0();
@@ -479,7 +481,11 @@ public class Phaser {
 
     private void autoPhase(boolean firstOrder) {
         PolyChart chart = controller.getActiveChart();
-        Dataset dataset = chart.getDataset();
+        DatasetBase datasetBase = chart.getDataset();
+        if (!(datasetBase instanceof Dataset)) {
+
+        }
+        Dataset dataset = (Dataset) datasetBase;
         double ratio = 25.0;
         IDBaseline2.ThreshMode threshMode = IDBaseline2.ThreshMode.SDEV;
 //        if (dataset.getNDim() > 1) {
@@ -503,7 +509,7 @@ public class Phaser {
 
     private void resetPhases() {
         PolyChart chart = controller.getActiveChart();
-        Dataset dataset = chart.getDataset();
+        DatasetBase dataset = chart.getDataset();
         for (int i = 0; i < dataset.getNDim(); i++) {
             dataset.setPh0(i, 0.0);
             dataset.setPh0_r(i, 0.0);

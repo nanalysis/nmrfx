@@ -20,7 +20,7 @@ package org.nmrfx.processor.gui.spectra;
 import java.util.Optional;
 import javafx.event.Event;
 import javafx.scene.input.MouseEvent;
-import org.nmrfx.processor.datasets.peaks.Peak;
+import org.nmrfx.peaks.Peak;
 import org.nmrfx.processor.gui.CanvasAnnotation;
 import org.nmrfx.processor.gui.MainApp;
 import org.nmrfx.processor.gui.PolyChart;

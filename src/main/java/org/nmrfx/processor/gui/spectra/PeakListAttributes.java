@@ -18,9 +18,7 @@
 package org.nmrfx.processor.gui.spectra;
 
 import java.lang.reflect.InvocationTargetException;
-import org.nmrfx.processor.datasets.peaks.Multiplet;
-import org.nmrfx.processor.datasets.peaks.Peak;
-import org.nmrfx.processor.datasets.peaks.PeakList;
+import org.nmrfx.peaks.Peak;
 import org.nmrfx.processor.gui.PolyChart;
 import static org.nmrfx.processor.gui.spectra.DrawPeaks.minHitSize;
 import org.nmrfx.processor.gui.spectra.PeakDisplayParameters.DisplayTypes;
@@ -44,18 +42,20 @@ import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.collections.FXCollections;
-import javafx.collections.ObservableSet;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import org.apache.commons.beanutils.PropertyUtils;
+import org.nmrfx.datasets.DatasetBase;
+import org.nmrfx.peaks.AbsMultipletComponent;
+import org.nmrfx.peaks.ComplexCoupling;
+import org.nmrfx.peaks.Coupling;
+import org.nmrfx.peaks.CouplingPattern;
+import org.nmrfx.peaks.Multiplet;
+import org.nmrfx.peaks.PeakDim;
 import org.nmrfx.processor.datasets.Dataset;
-import org.nmrfx.processor.datasets.peaks.AbsMultipletComponent;
-import org.nmrfx.processor.datasets.peaks.ComplexCoupling;
-import org.nmrfx.processor.datasets.peaks.Coupling;
-import org.nmrfx.processor.datasets.peaks.CouplingPattern;
-import org.nmrfx.processor.datasets.peaks.PeakDim;
-import org.nmrfx.processor.datasets.peaks.PeakEvent;
-import org.nmrfx.processor.datasets.peaks.PeakListener;
+import org.nmrfx.peaks.PeakEvent;
+import org.nmrfx.peaks.PeakList;
+import org.nmrfx.peaks.PeakListener;
 import org.nmrfx.processor.gui.controls.ConsoleUtil;
 import org.nmrfx.processor.gui.spectra.PeakDisplayParameters.ColorTypes;
 
@@ -280,7 +280,7 @@ public class PeakListAttributes implements PeakListener {
         int nDataDim = dataAttr.nDim;
         foldLimits = new double[nDataDim][2];
         for (int i = 0; i < nDataDim; i++) {
-            Dataset dataset = dataAttr.getDataset();
+            DatasetBase dataset = dataAttr.getDataset();
             foldLimits[i] = dataset.getLimits(dataAttr.getDim(i));
         }
     }

@@ -23,14 +23,11 @@
  */
 package org.nmrfx.processor.gui.spectra;
 
-import org.nmrfx.processor.datasets.peaks.Multiplet;
-import org.nmrfx.processor.datasets.peaks.Peak;
-import org.nmrfx.processor.datasets.peaks.PeakList;
+import org.nmrfx.peaks.Peak;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.spectra.PeakDisplayParameters.DisplayTypes;
 import org.nmrfx.processor.gui.spectra.PeakDisplayParameters.LabelTypes;
 import static org.nmrfx.processor.gui.spectra.PeakDisplayParameters.LabelTypes.PPM;
-import org.nmrfx.processor.utilities.Format;
 import java.util.*;
 import javafx.geometry.BoundingBox;
 import javafx.geometry.Bounds;
@@ -49,11 +46,14 @@ import org.apache.commons.collections4.list.TreeList;
 import org.nmrfx.graphicsio.GraphicsContextInterface;
 import org.nmrfx.graphicsio.GraphicsContextProxy;
 import org.nmrfx.graphicsio.GraphicsIOException;
-import org.nmrfx.processor.datasets.peaks.AbsMultipletComponent;
-import org.nmrfx.processor.datasets.peaks.Peak.Corner;
-import org.nmrfx.processor.datasets.peaks.PeakDim;
-import org.nmrfx.processor.datasets.peaks.TreeLine;
+import org.nmrfx.peaks.AbsMultipletComponent;
+import org.nmrfx.peaks.Multiplet;
+import org.nmrfx.peaks.Peak.Corner;
+import org.nmrfx.peaks.PeakDim;
+import org.nmrfx.peaks.PeakList;
+import org.nmrfx.peaks.TreeLine;
 import org.nmrfx.processor.gui.utils.GUIColorUtils;
+import org.nmrfx.utilities.Format;
 
 /**
  *
@@ -899,7 +899,7 @@ public class DrawPeaks {
             System.out.println("invalid mult");
             return;
         }
-        Peak peak = multiplet.getOrigin();
+        Peak peak = (Peak) multiplet.getOrigin();
         if ((peak.getStatus() < 0) || !peak.isValid()) {
             return;
         }

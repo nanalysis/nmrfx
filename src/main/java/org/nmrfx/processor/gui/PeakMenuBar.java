@@ -19,11 +19,13 @@ import javafx.scene.control.TextInputDialog;
 import javafx.scene.control.ToolBar;
 import javafx.stage.FileChooser;
 import org.controlsfx.dialog.ExceptionDialog;
+import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.processor.datasets.Dataset;
-import org.nmrfx.processor.datasets.peaks.InvalidPeakException;
-import org.nmrfx.processor.datasets.peaks.PeakList;
-import org.nmrfx.processor.datasets.peaks.io.PeakReader;
-import org.nmrfx.processor.datasets.peaks.io.PeakWriter;
+import org.nmrfx.peaks.InvalidPeakException;
+import org.nmrfx.peaks.PeakList;
+import org.nmrfx.peaks.io.PeakReader;
+import org.nmrfx.peaks.io.PeakWriter;
+import org.nmrfx.processor.datasets.peaks.PeakListTools;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
 import org.nmrfx.utils.GUIUtils;
 
@@ -158,7 +160,7 @@ public class PeakMenuBar {
         String datasetName = getPeakList().getDatasetName();
         if ((datasetName == null) || datasetName.equals("")) {
             PolyChart chart = PolyChart.getActiveChart();
-            Dataset dataset = chart.getDataset();
+            DatasetBase dataset = chart.getDataset();
             if (dataset != null) {
                 for (PeakListAttributes peakAttr : chart.getPeakListAttributes()) {
                     if (peakAttr.getPeakList() == getPeakList()) {
@@ -186,28 +188,28 @@ public class PeakMenuBar {
     void mirror2DList() {
         PeakList peakList = getPeakList();
         if (peakList != null) {
-            peakList.addMirroredPeaks();
+            PeakListTools.addMirroredPeaks(peakList);
         }
     }
 
     void autoCouplePeakList() {
         PeakList peakList = getPeakList();
         if (peakList != null) {
-            peakList.autoCoupleHomoNuclear();
+            PeakListTools.autoCoupleHomoNuclear(peakList);
         }
     }
 
     void removeDiagonal() {
         PeakList peakList = getPeakList();
         if (peakList != null) {
-            peakList.removeDiagonalPeaks();
+            PeakListTools.removeDiagonalPeaks(peakList);
         }
     }
 
     void clusterPeakListDim(int dim) {
         PeakList peakList = getPeakList();
         if ((peakList != null) && (peakList.getNDim() > dim)) {
-            peakList.clusterPeakColumns(dim);
+            PeakListTools.clusterPeakColumns(peakList,dim);
         }
     }
 
@@ -249,7 +251,7 @@ public class PeakMenuBar {
         if (!checkDataset()) {
             return;
         }
-        getPeakList().quantifyPeaks("center");
+        PeakListTools.quantifyPeaks(getPeakList(), "center");
         refreshPeakView();
     }
 
@@ -257,7 +259,7 @@ public class PeakMenuBar {
         if (!checkDataset()) {
             return;
         }
-        getPeakList().quantifyPeaks("volume");
+        PeakListTools.quantifyPeaks(getPeakList(), "volume");
         refreshPeakView();
     }
 
@@ -265,7 +267,7 @@ public class PeakMenuBar {
         if (!checkDataset()) {
             return;
         }
-        getPeakList().quantifyPeaks("evolume");
+        PeakListTools.quantifyPeaks(getPeakList(), "evolume");
         refreshPeakView();
     }
 

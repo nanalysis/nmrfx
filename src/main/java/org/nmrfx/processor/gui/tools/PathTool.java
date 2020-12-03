@@ -37,14 +37,15 @@ import javafx.scene.paint.Color;
 import javafx.stage.FileChooser;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.chart.XYCanvasChart;
+import org.nmrfx.peaks.FreezeListener;
+import org.nmrfx.peaks.Peak;
+import org.nmrfx.peaks.PeakDistance;
+import org.nmrfx.peaks.PeakList;
+import org.nmrfx.peaks.PeakPath;
+import org.nmrfx.peaks.PeakPaths;
+import org.nmrfx.peaks.PeakPaths.PATHMODE;
 import org.nmrfx.processor.datasets.peaks.PathFitter;
-import org.nmrfx.processor.datasets.peaks.FreezeListener;
-import org.nmrfx.processor.datasets.peaks.Peak;
-import org.nmrfx.processor.datasets.peaks.PeakList;
-import org.nmrfx.processor.datasets.peaks.PeakPath;
-import org.nmrfx.processor.datasets.peaks.PeakPath.PATHMODE;
-import org.nmrfx.processor.datasets.peaks.PeakPath.Path;
-import org.nmrfx.processor.datasets.peaks.PeakPath.PeakDistance;
+import org.nmrfx.processor.datasets.peaks.PeakPathAnalyzer;
 import org.nmrfx.processor.gui.CanvasAnnotation;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.PeakNavigable;
@@ -85,8 +86,8 @@ public class PathTool implements PeakNavigable {
     Label nField;
     Button fitButton;
     Button addButton;
-    PeakPath peakPath;
-    ObservableList<PeakPath.Path> activePaths = FXCollections.observableArrayList();
+    PeakPaths peakPaths;
+    ObservableList<PeakPath> activePaths = FXCollections.observableArrayList();
 
     PathPlotTool plotTool;
 
@@ -262,7 +263,7 @@ public class PathTool implements PeakNavigable {
 
     void updatePathSelectMenu() {
         selectMenu.getItems().clear();
-        Collection<String> peakPathNames = PeakPath.getNames();
+        Collection<String> peakPathNames = PeakPaths.getNames();
         for (String name : peakPathNames) {
             MenuItem menuItem = new MenuItem(name);
             selectMenu.getItems().add(menuItem);
@@ -337,10 +338,10 @@ public class PathTool implements PeakNavigable {
 
     void selectPathData(String name) {
         activePaths.clear();
-        peakPath = PeakPath.get(name);
-        setupChart(peakPath.getDatasetNames());
+        peakPaths = PeakPaths.get(name);
+        setupChart(peakPaths.getDatasetNames());
         setupPlotTable();
-        if (peakPath.getPathMode() == PATHMODE.PRESSURE) {
+        if (peakPaths.getPathMode() == PATHMODE.PRESSURE) {
             plotTool.show("Pressure", "Shift Delta");
         } else {
             plotTool.show("Concentration", "Shift Delta");
@@ -356,8 +357,8 @@ public class PathTool implements PeakNavigable {
         if (file != null) {
             activePaths.clear();
             try {
-                peakPath = PeakPath.loadPathData(pathMode, file);
-                if (peakPath == null) {
+                peakPaths = PeakPaths.loadPathData(pathMode, file);
+                if (peakPaths == null) {
                     Alert alert = new Alert(Alert.AlertType.ERROR, "Error reading peak path file ");
                     alert.showAndWait();
                     return;
@@ -371,17 +372,17 @@ public class PathTool implements PeakNavigable {
                 alert.showAndWait();
                 return;
             }
-            setupChart(peakPath.getDatasetNames());
+            setupChart(peakPaths.getDatasetNames());
             setupPlotTable();
             setActionMenuDisabled(false);
         }
     }
 
     void setupPlotTable() {
-        if (peakPath != null) {
+        if (peakPaths != null) {
             List<String> colNames = new ArrayList<>();
             colNames.add("Peak");
-            String[] parNames = peakPath.getParNames();
+            String[] parNames = peakPaths.getParNames();
             for (String col : parNames) {
                 colNames.add(col);
                 colNames.add(col + "Dev");
@@ -391,17 +392,17 @@ public class PathTool implements PeakNavigable {
 
     }
 
-    boolean pathUsable(Path path) {
+    boolean pathUsable(PeakPath path) {
         return path.getNValid() > 3;
     }
 
     void fitAllPathes() {
-        if (peakPath != null) {
-            for (Path path : peakPath.getPaths()) {
+        if (peakPaths != null) {
+            for (PeakPath path : peakPaths.getPaths()) {
                 try {
                     if (pathUsable(path)) {
                         PathFitter fitPath = new PathFitter();
-                        fitPath.setup(peakPath, path);
+                        fitPath.setup(peakPaths, path);
                         fitPath.fit();
                     }
                 } catch (Exception ex) {
@@ -415,8 +416,8 @@ public class PathTool implements PeakNavigable {
     }
 
     void addAllPaths() {
-        if (peakPath != null) {
-            for (Path path : peakPath.getPaths()) {
+        if (peakPaths != null) {
+            for (PeakPath path : peakPaths.getPaths()) {
                 if (pathUsable(path)) {
                     if (path.hasPars()) {
                         if (activePaths.contains(path)) {
@@ -431,14 +432,14 @@ public class PathTool implements PeakNavigable {
     }
 
     void fitPath() {
-        if (peakPath != null) {
+        if (peakPaths != null) {
 
             Peak peak = peakNavigator.getPeak();
             PathFitter fitPath = new PathFitter();
             try {
-                Path path = peakPath.getPath(peak);
+                PeakPath path = peakPaths.getPath(peak);
                 if (pathUsable(path)) {
-                    fitPath.setup(peakPath, path);
+                    fitPath.setup(peakPaths, path);
                     fitPath.fit();
                     updatePathInfo(peak, fitPath);
                 }
@@ -450,16 +451,16 @@ public class PathTool implements PeakNavigable {
     }
 
     void fitPathsGrouped() {
-        if (peakPath != null) {
+        if (peakPaths != null) {
             PathFitter fitPath = new PathFitter();
-            List<PeakPath.Path> fitPaths = plotTool.getSelected();
+            List<PeakPath> fitPaths = plotTool.getSelected();
             if (fitPaths.isEmpty()) {
                 fitPaths.addAll(activePaths);
 
             }
             if (!fitPaths.isEmpty()) {
                 try {
-                    fitPath.setup(peakPath, fitPaths);
+                    fitPath.setup(peakPaths, fitPaths);
                     fitPath.fit();
                     plotTool.tableView.refresh();
                     showXYPaths(fitPaths);
@@ -473,14 +474,14 @@ public class PathTool implements PeakNavigable {
 
     void fitPathsIndividual() {
         PathFitter fitPath = new PathFitter();
-        List<PeakPath.Path> fitPaths = plotTool.getSelected();
+        List<PeakPath> fitPaths = plotTool.getSelected();
         if (fitPaths.isEmpty()) {
             fitPaths.addAll(activePaths);
         }
         if (!fitPaths.isEmpty()) {
             try {
-                for (Path path : fitPaths) {
-                    fitPath.setup(peakPath, path);
+                for (PeakPath path : fitPaths) {
+                    fitPath.setup(peakPaths, path);
                     fitPath.fit();
                 }
                 plotTool.tableView.refresh();
@@ -493,9 +494,9 @@ public class PathTool implements PeakNavigable {
     }
 
     void addPathToTable() {
-        if (peakPath != null) {
+        if (peakPaths != null) {
             Peak peak = peakNavigator.getPeak();
-            Path path = peakPath.getPath(peak);
+            PeakPath path = peakPaths.getPath(peak);
             if (path != null) {
                 if (activePaths.contains(path)) {
                     activePaths.remove(path);
@@ -512,7 +513,7 @@ public class PathTool implements PeakNavigable {
 
     void addActivePathsToTable() {
         activePaths.clear();
-        for (Path path : peakPath.getPaths()) {
+        for (PeakPath path : peakPaths.getPaths()) {
             if (path.isActive()) {
                 activePaths.add(path);
             }
@@ -521,26 +522,26 @@ public class PathTool implements PeakNavigable {
     }
 
     void clearPath() {
-        if (peakPath != null) {
+        if (peakPaths != null) {
             Peak startPeak = peakNavigator.getPeak();
             if (startPeak != null) {
-                peakPath.clearPath(startPeak);
-                peakPath.initPath(startPeak);
+                peakPaths.clearPath(startPeak);
+                peakPaths.initPath(startPeak);
             }
             drawPath();
         }
     }
 
     void addPeakToPath() {
-        if (peakPath != null) {
+        if (peakPaths != null) {
 
             Peak startPeak = peakNavigator.getPeak();
             List<Peak> selPeaks = chart.getSelectedPeaks();
             System.out.println("selp " + selPeaks.size() + " " + startPeak);
             if (selPeaks.size() == 1) {
                 if (startPeak != null) {
-                    peakPath.addPeak(startPeak, selPeaks.get(0));
-                    Path path = peakPath.getPath(startPeak);
+                    peakPaths.addPeak(startPeak, selPeaks.get(0));
+                    PeakPath path = peakPaths.getPath(startPeak);
                     if (path.getNValid() > 3) {
                         path.confirm();
                     }
@@ -552,13 +553,13 @@ public class PathTool implements PeakNavigable {
     }
 
     void removePeakFromPath() {
-        if (peakPath != null) {
+        if (peakPaths != null) {
 
             Peak startPeak = peakNavigator.getPeak();
             List<Peak> selPeaks = chart.getSelectedPeaks();
             if (selPeaks.size() == 1) {
                 if (startPeak != null) {
-                    peakPath.removePeak(startPeak, selPeaks.get(0));
+                    peakPaths.removePeak(startPeak, selPeaks.get(0));
                 }
             }
             drawPath();
@@ -660,29 +661,29 @@ checkLists(pp, 0.25, False)
      */
     void checkLists() {
         double radius = Double.parseDouble(radiusField.getText());
-        peakPath.checkListsForUnambigous(radius);
+        PeakPathAnalyzer.checkListsForUnambigous(peakPaths, radius);
     }
 
     void setStatus() {
         double radius = Double.parseDouble(radiusField.getText());
-        peakPath.setStatus(radius, 1.0);
+        PeakPathAnalyzer.setStatus(peakPaths.getPathMap(), radius, 1.0);
 
     }
 
     void clearPaths() {
-        if (peakPath != null) {
+        if (peakPaths != null) {
             Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "Clear all paths", ButtonType.CANCEL, ButtonType.YES);
             alert.showAndWait().ifPresent(response -> {
                 if (response == ButtonType.YES) {
-                    peakPath.clearPaths();
+                    peakPaths.clearPaths();
                 }
             });
         }
     }
 
     void findPaths() {
-        if (peakPath != null) {
-            peakPath.clearPaths();
+        if (peakPaths != null) {
+            peakPaths.clearPaths();
             int n = 10;
             double minRadius = 0.1;
             double maxRadius = Double.parseDouble(radiusField.getText());
@@ -693,8 +694,8 @@ checkLists(pp, 0.25, False)
             for (int i = 0; i < n; i++) {
                 radius = minRadius + i * (maxRadius - minRadius) / (n - 1);
                 lim = minLim + i * (maxLim - minLim) / (n - 1);
-                peakPath.checkListsForUnambigous(radius);
-                peakPath.setStatus(radius, lim);
+                PeakPathAnalyzer.checkListsForUnambigous(peakPaths, radius);
+                PeakPathAnalyzer.setStatus(peakPaths.getPathMap(), radius, lim);
 
             }
             chart.refresh();
@@ -703,30 +704,30 @@ checkLists(pp, 0.25, False)
     }
 
     void extendPath() {
-        if (peakPath != null) {
+        if (peakPaths != null) {
 
             double radius = Double.parseDouble(radiusField.getText());
             double lim = Double.parseDouble(tolField.getText());
             Peak startPeak = peakNavigator.getPeak();
-            peakPath.extendPath(startPeak, radius, lim);
-            peakPath.setStatus(radius, 1.0);
+            PeakPathAnalyzer.extendPath(peakPaths, startPeak, radius, lim);
+            PeakPathAnalyzer.setStatus(peakPaths.getPathMap(), radius, 1.0);
             drawPath();
         }
     }
 
     void extendPaths() {
-        if (peakPath != null) {
+        if (peakPaths != null) {
 
             double radius = Double.parseDouble(radiusField.getText());
             double lim = 1.0;
-            peakPath.extendPaths(radius, lim);
-            peakPath.setStatus(radius, 1.0);
+            PeakPathAnalyzer.extendPaths(peakPaths, radius, lim);
+            PeakPathAnalyzer.setStatus(peakPaths.getPathMap(), radius, 1.0);
             drawPath();
         }
     }
 
     void addPath() {
-        if (peakPath != null) {
+        if (peakPaths != null) {
 
             Peak lastPeak = null;
             List<Peak> selPeaks = chart.getSelectedPeaks();
@@ -737,7 +738,7 @@ checkLists(pp, 0.25, False)
             double radius = Double.parseDouble(radiusField.getText());
             Peak startPeak = peakNavigator.getPeak();
             if (startPeak != null) {
-                List<PeakDistance> peakDists = peakPath.scan(startPeak, radius, 2.0, 4, lastPeak, true);
+                List<PeakDistance> peakDists = PeakPathAnalyzer.scan(peakPaths, startPeak, radius, 2.0, 4, lastPeak, true);
                 for (PeakDistance peakDist : peakDists) {
                     if (peakDist != null) {
                         peakDist.getPeak().setStatus(1);
@@ -751,12 +752,12 @@ checkLists(pp, 0.25, False)
     }
 
     void drawPath() {
-        if (peakPath != null) {
+        if (peakPaths != null) {
 
             chart.clearAnnotations();
-            Collection<Path> paths = peakPath.getPaths();
+            Collection<PeakPath> paths = peakPaths.getPaths();
 
-            for (Path path : paths) {
+            for (PeakPath path : paths) {
                 int nValid = path.getNValid();
 
                 if (nValid > 2) {
@@ -786,10 +787,10 @@ checkLists(pp, 0.25, False)
     }
 
     void showPlotTool() {
-        if (peakPath == null) {
+        if (peakPaths == null) {
             return;
         }
-        if (peakPath.getPathMode() == PATHMODE.PRESSURE) {
+        if (peakPaths.getPathMode() == PATHMODE.PRESSURE) {
             plotTool.show("Pressure", "Shift Delta");
         } else {
             plotTool.show("Concentration", "Shift Delta");
@@ -801,11 +802,11 @@ checkLists(pp, 0.25, False)
     }
 
     void updatePathInfo(Peak peak, PathFitter fitPath) {
-        if (peakPath == null) {
+        if (peakPaths == null) {
             return;
         }
 
-        Path path = peakPath.getPath(peak);
+        PeakPath path = peakPaths.getPath(peak);
         nField.setText("");
         if (path != null) {
             //System.out.println(path.toString());
@@ -826,12 +827,12 @@ checkLists(pp, 0.25, False)
 
                 if (fitPath == null) {
                     fitPath = new PathFitter();
-                    fitPath.setup(peakPath, path);
+                    fitPath.setup(peakPaths, path);
                 }
 
                 double[][] xValues = fitPath.getX();
                 double[][] yValues = fitPath.getY();
-                if (peakPath.getPathMode() == PATHMODE.PRESSURE) {
+                if (peakPaths.getPathMode() == PATHMODE.PRESSURE) {
                     plotTool.show("Pressure", "Shift Delta");
                 } else {
                     plotTool.show("Concentration", "Shift Delta");
@@ -845,7 +846,7 @@ checkLists(pp, 0.25, False)
 
                 double[] fitPars = path.getFitPars();
                 double[] fitErrs = path.getFitErrs();
-                String[] parNames = peakPath.getParNames();
+                String[] parNames = peakPaths.getParNames();
                 if (fitPars != null) {
                     initFitFields(fitPars.length);
 //                    for (int i = 0; i < fitPars.length; i++) {
@@ -855,11 +856,11 @@ checkLists(pp, 0.25, False)
                         fitFields[i].setText(String.format("%s= %.3f +/- %.3f", parNames[i], fitPars[i], fitErrs[i]));
                     }
                     double first = 0.0;
-                    double last = Fitter.getMaxValue(peakPath.getXValues()[0]);
-                    if (peakPath.getPathMode() == PATHMODE.TITRATION) {
+                    double last = Fitter.getMaxValue(peakPaths.getXValues()[0]);
+                    if (peakPaths.getPathMode() == PATHMODE.TITRATION) {
                         double[][] xy = fitPath.getSimValues(fitPars, first, last, 100, xValues[1][0]);
                         plotTool.getChart().addLines(xy[0], xy[1], false, color);
-                    } else if (peakPath.getPathMode() == PATHMODE.PRESSURE) {
+                    } else if (peakPaths.getPathMode() == PATHMODE.PRESSURE) {
                         double[][] xy = fitPath.getPressureSimValues(fitPars, first, last, 100);
                         for (int i = 1; i < xy.length; i++) {
                             plotTool.getChart().addLines(xy[0], xy[i], false, color);
@@ -880,16 +881,16 @@ checkLists(pp, 0.25, False)
         plotTool.clear();
     }
 
-    public void showXYPaths(List<Path> paths) {
-        if (peakPath != null) {
-            if (peakPath.getPathMode() == PATHMODE.PRESSURE) {
+    public void showXYPaths(List<PeakPath> paths) {
+        if (peakPaths != null) {
+            if (peakPaths.getPathMode() == PATHMODE.PRESSURE) {
                 plotTool.show("Pressure", "Shift Delta");
             } else {
                 plotTool.show("Concentration", "Shift Delta");
             }
             plotTool.clear();
             int iSeries = 0;
-            for (Path path : paths) {
+            for (PeakPath path : paths) {
                 Color color = XYCanvasChart.colors[iSeries % XYCanvasChart.colors.length];
                 showXYPath(path, color);
                 iSeries++;
@@ -897,9 +898,9 @@ checkLists(pp, 0.25, False)
         }
     }
 
-    public void showXYPath(Path path, Color color) {
+    public void showXYPath(PeakPath path, Color color) {
         PathFitter fitPath = new PathFitter();
-        fitPath.setup(peakPath, path);
+        fitPath.setup(peakPaths, path);
 
         double[][] xValues = fitPath.getX();
         double[][] yValues = fitPath.getY();
@@ -916,11 +917,11 @@ checkLists(pp, 0.25, False)
 //                fitFields[i].setText(String.format("%.3f +/- %.3f", fitPars[i], fitErrs[i]));
 //            }
             double first = 0.0;
-            double last = Fitter.getMaxValue(peakPath.getXValues()[0]);
-            if (peakPath.getPathMode() == PATHMODE.TITRATION) {
+            double last = Fitter.getMaxValue(peakPaths.getXValues()[0]);
+            if (peakPaths.getPathMode() == PATHMODE.TITRATION) {
                 double[][] xy = fitPath.getSimValues(fitPars, first, last, 100, xValues[1][0]);
                 plotTool.getChart().addLines(xy[0], xy[1], false, color);
-            } else if (peakPath.getPathMode() == PATHMODE.PRESSURE) {
+            } else if (peakPaths.getPathMode() == PATHMODE.PRESSURE) {
                 double[][] xy = fitPath.getPressureSimValues(fitPars, first, last, 100);
                 for (int i = 1; i < xy.length; i++) {
                     plotTool.getChart().addLines(xy[0], xy[i], false, color);
@@ -931,7 +932,7 @@ checkLists(pp, 0.25, False)
     }
 
     void refreshPaths() {
-        peakPath.refreshPaths();
+        peakPaths.refreshPaths();
         chart.refresh();
     }
 
@@ -939,8 +940,8 @@ checkLists(pp, 0.25, False)
     public void refreshPeakView(Peak peak) {
 
         controller.refreshPeakView(peak);
-        if ((peak != null) && (peakPath != null)) {
-            Path path = peakPath.getPath(peak);
+        if ((peak != null) && (peakPaths != null)) {
+            PeakPath path = peakPaths.getPath(peak);
             updatePathInfo(peak);
         }
     }
@@ -955,8 +956,8 @@ checkLists(pp, 0.25, False)
         controller.refreshPeakListView(peakList);
     }
 
-    public void removeActivePaths(List<PeakPath.Path> selPaths) {
-        for (Path path : peakPath.getPaths()) {
+    public void removeActivePaths(List<PeakPath> selPaths) {
+        for (PeakPath path : peakPaths.getPaths()) {
             path.setActive(false);
 
         }

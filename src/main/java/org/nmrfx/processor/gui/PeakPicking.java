@@ -11,13 +11,14 @@ import java.util.List;
 import java.util.function.Consumer;
 import javafx.collections.ObservableList;
 import org.controlsfx.dialog.ExceptionDialog;
+import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.processor.datasets.Dataset;
-import org.nmrfx.processor.datasets.peaks.InvalidPeakException;
-import org.nmrfx.processor.datasets.peaks.Peak;
-import org.nmrfx.processor.datasets.peaks.PeakList;
+import org.nmrfx.peaks.InvalidPeakException;
+import org.nmrfx.peaks.Peak;
+import org.nmrfx.peaks.PeakList;
 import org.nmrfx.processor.datasets.peaks.PeakPickParameters;
 import org.nmrfx.processor.datasets.peaks.PeakPicker;
-import org.nmrfx.processor.datasets.peaks.io.PeakWriter;
+import org.nmrfx.peaks.io.PeakWriter;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
 
@@ -58,7 +59,8 @@ public class PeakPicking {
     }
 
     public static PeakList peakPickActive(PolyChart chart, DatasetAttributes dataAttr, boolean useCrossHairs, boolean refineLS, boolean saveFile, String listName) {
-        Dataset dataset = dataAttr.getDataset();
+        DatasetBase datasetBase = dataAttr.getDataset();
+        Dataset dataset = (Dataset) datasetBase;
         int nDim = dataset.getNDim();
 
         if (listName == null) {
@@ -116,7 +118,8 @@ public class PeakPicking {
     }
 
     public static PeakList pickAtPosition(PolyChart chart, DatasetAttributes dataAttr, double x, double y, boolean fixed, boolean saveFile) {
-        Dataset dataset = dataAttr.getDataset();
+        DatasetBase datasetBase = dataAttr.getDataset();
+        Dataset dataset = (Dataset) datasetBase;
         int nDim = dataset.getNDim();
         String listName = getListName(chart, dataAttr);
         double level = dataAttr.getLvl();

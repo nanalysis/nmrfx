@@ -30,11 +30,12 @@ import java.util.ArrayList;
 import java.util.List;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
-import org.apache.pdfbox.printing.PDFPageable;
+import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.graphicsio.GraphicsIO;
 import org.nmrfx.graphicsio.GraphicsIOException;
 import org.nmrfx.graphicsio.PDFWriter;
 import org.nmrfx.graphicsio.SVGWriter;
+import org.nmrfx.math.VecBase;
 import org.nmrfx.processor.datasets.Dataset;
 
 /**
@@ -68,14 +69,14 @@ public class SpectrumWriter {
         gIO.saveFile();
     }
 
-    public static void printVec(DatasetAttributes datasetAttributes, Vec[] vecs, NMRAxisLimits[] axes, AXMODE[] axModes) throws GraphicsIOException {
+    public static void printVec(DatasetAttributes datasetAttributes, VecBase[] vecs, NMRAxisLimits[] axes, AXMODE[] axModes) throws GraphicsIOException {
         GraphicsIO gIO = new PDFWriter();
         gIO.create(true, null);
         write(gIO, datasetAttributes, vecs, axes, axModes);
         printGraphics(gIO);
     }
 
-    public static void write(GraphicsIO writer, DatasetAttributes datasetAttributes, Vec[] vecs, NMRAxisLimits[] axes, AXMODE[] axModes) throws GraphicsIOException {
+    public static void write(GraphicsIO writer, DatasetAttributes datasetAttributes, VecBase[] vecs, NMRAxisLimits[] axes, AXMODE[] axModes) throws GraphicsIOException {
 
         double pageWidth = writer.getWidth();
         double pageHeight = writer.getHeight();
@@ -94,7 +95,7 @@ public class SpectrumWriter {
 
         writer.clipRect(xAxis.getStart(), yAxis.getStart(), width, height);
         double[][] xy = new double[2][];
-        for (Vec vec : vecs) {
+        for (VecBase vec : vecs) {
             int nPoints = DrawSpectrum.drawVector(vec, xAxis, yAxis, axModes[0], xy);
             writer.setLineWidth(datasetAttributes.getPosWidth());
             writer.drawPolyLine(xy[0], xy[1], nPoints);
@@ -193,7 +194,7 @@ public class SpectrumWriter {
         double cyOffset = contours.yOffset;
         // g2.beginPath();
         ArrayList<Double> polyLines = new ArrayList<>();
-        Dataset dataset = dataGenerator.getDataset();
+        DatasetBase dataset = dataGenerator.getDataset();
         for (int iLine = 0; iLine < lineCount; iLine += 4) {
             double xPoint1 = scale * contours.coords[coordIndex][iLine] + cxOffset;
             double xPoint2 = scale * contours.coords[coordIndex][iLine + 2] + cxOffset;

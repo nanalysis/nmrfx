@@ -78,14 +78,14 @@ import javafx.scene.layout.HBox;
 import javafx.util.StringConverter;
 import javafx.util.converter.FloatStringConverter;
 import javafx.util.converter.IntegerStringConverter;
+import org.nmrfx.datasets.DatasetBase;
+import org.nmrfx.datasets.Nuclei;
+import org.nmrfx.peaks.PeakDim;
+import org.nmrfx.peaks.SpectralDim;
 import org.nmrfx.processor.datasets.Dataset;
-import org.nmrfx.processor.datasets.Nuclei;
-import org.nmrfx.processor.datasets.peaks.Peak;
-import org.nmrfx.processor.datasets.peaks.PeakDim;
-import org.nmrfx.processor.datasets.peaks.PeakList;
-import org.nmrfx.processor.datasets.peaks.SpectralDim;
+import org.nmrfx.peaks.Peak;
+import org.nmrfx.peaks.PeakList;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
-import org.nmrfx.project.Project;
 import org.python.util.PythonInterpreter;
 
 /**
@@ -410,7 +410,7 @@ public class PeakAttrController implements Initializable, PeakNavigable, PeakMen
 
     public void updateConditionNames() {
         conditionField.getItems().clear();
-        Set<String> conditions = Project.getActive().getPeakLists().stream().
+        Set<String> conditions = PeakList.peakLists().stream().
                 map(peakList -> peakList.getSampleConditionLabel()).
                 filter(label -> label != null).collect(Collectors.toSet());
         conditions.stream().sorted().forEach(s -> {
@@ -767,7 +767,7 @@ public class PeakAttrController implements Initializable, PeakNavigable, PeakMen
         String datasetName = peakList.getDatasetName();
         if ((datasetName == null) || datasetName.equals("")) {
             PolyChart chart = PolyChart.getActiveChart();
-            Dataset dataset = chart.getDataset();
+            DatasetBase dataset = chart.getDataset();
             if (dataset != null) {
                 for (PeakListAttributes peakAttr : chart.getPeakListAttributes()) {
                     if (peakAttr.getPeakList() == peakList) {

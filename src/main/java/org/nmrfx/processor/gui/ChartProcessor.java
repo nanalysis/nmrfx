@@ -18,7 +18,7 @@
 package org.nmrfx.processor.gui;
 
 import org.nmrfx.processor.datasets.Dataset;
-import org.nmrfx.processor.datasets.DatasetParameterFile;
+import org.nmrfx.datasets.DatasetParameterFile;
 import org.nmrfx.processor.datasets.vendor.NMRData;
 import org.nmrfx.processor.datasets.vendor.NMRDataUtil;
 import org.nmrfx.processor.datasets.vendor.NMRViewData;

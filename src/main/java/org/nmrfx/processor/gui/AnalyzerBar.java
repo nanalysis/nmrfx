@@ -31,9 +31,8 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.GridPane;
 import javafx.scene.text.Font;
-import javafx.scene.text.TextAlignment;
-import org.nmrfx.processor.datasets.Dataset;
-import org.nmrfx.processor.datasets.RegionData;
+import org.nmrfx.datasets.DatasetBase;
+import org.nmrfx.datasets.RegionData;
 
 /**
  *
@@ -44,7 +43,7 @@ public class AnalyzerBar {
     FXMLController controller;
     Consumer closeAction = null;
     GridPane gridPane;
-    Dataset dataset;
+    DatasetBase dataset;
     private final Map<String, TextField> fieldMap = new HashMap<>();
     Optional<RegionData> result = Optional.empty();
     String[] fieldNames = {"Max", "Min", "RVolume", "N", "Mean", "RMS", "S/N", "DNoise"};

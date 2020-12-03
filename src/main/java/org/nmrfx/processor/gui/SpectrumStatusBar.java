@@ -68,6 +68,7 @@ import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Text;
 import javafx.util.Callback;
 import org.apache.commons.lang3.SystemUtils;
+import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.processor.gui.spectra.NMRAxis;
 import org.nmrfx.processor.gui.undo.ChartUndoLimits;
 
@@ -429,7 +430,7 @@ public class SpectrumStatusBar {
     }
 
     public void setChart(PolyChart chart) {
-        Dataset dataset = chart.getDataset();
+        DatasetBase dataset = chart.getDataset();
         if (!chart.getDatasetAttributes().isEmpty()) {
             DatasetAttributes dataAttr = chart.getDatasetAttributes().get(0);
             for (int axNum = 2; axNum < dataAttr.nDim; axNum++) {

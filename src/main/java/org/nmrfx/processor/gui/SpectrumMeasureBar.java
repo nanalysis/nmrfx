@@ -50,6 +50,8 @@ import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
 import javafx.scene.text.TextAlignment;
+import org.nmrfx.datasets.DatasetBase;
+import org.nmrfx.math.VecBase;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.processor.math.Vec;
 
@@ -80,7 +82,7 @@ public class SpectrumMeasureBar {
     ToggleButton absModeButton;
     ToggleButton gridModeButton;
     PolyChart chart = null;
-    Dataset dataset = null;
+    DatasetBase dataset = null;
     Double sDev = null;
 
     public SpectrumMeasureBar(FXMLController controller, Consumer closeAction) {
@@ -233,7 +235,7 @@ public class SpectrumMeasureBar {
         }
     }
 
-    public void getIntensity(PolyChart chart, Dataset dataset, int iCross) {
+    public void getIntensity(PolyChart chart, DatasetBase dataset, int iCross) {
         int nDim = dataset.getNDim();
         int[] pts = new int[nDim];
         boolean ok = true;
@@ -272,13 +274,13 @@ public class SpectrumMeasureBar {
         }
     }
 
-    public void setCrossText(PolyChart chart, Dataset dataset, int iOrient, Double... values) {
+    public void setCrossText(PolyChart chart, DatasetBase dataset, int iOrient, Double... values) {
         this.chart = chart;
         this.dataset = dataset;
         double[] pts = new double[2];
         double[] hzs = new double[2];
         double[] mHzs = new double[2];
-        Vec vec = dataset.getVec();
+        VecBase vec = dataset.getVec();
         boolean gridMode = gridModeButton.isSelected();
         boolean absMode = absModeButton.isSelected();
 
@@ -344,7 +346,8 @@ public class SpectrumMeasureBar {
         if (dataAttrOpt.isPresent()) {
             DatasetAttributes dataAttr = dataAttrOpt.get();
 
-            Dataset dataset = dataAttr.getDataset();
+            DatasetBase datasetBase = dataAttr.getDataset();
+            Dataset dataset = (Dataset) datasetBase;
 
             int nDim = dataset.getNDim();
             int[][] pt = new int[nDim][2];

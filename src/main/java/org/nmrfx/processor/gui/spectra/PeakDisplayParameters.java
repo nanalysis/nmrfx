@@ -22,11 +22,11 @@
  */
 package org.nmrfx.processor.gui.spectra;
 
-import org.nmrfx.processor.datasets.peaks.Peak;
-import org.nmrfx.processor.datasets.peaks.PeakList;
-import org.nmrfx.processor.utilities.NvUtil;
+import org.nmrfx.peaks.Peak;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
+import org.nmrfx.peaks.PeakList;
+import org.nmrfx.utilities.NvUtil;
 
 /**
  *
@@ -486,7 +486,7 @@ public class PeakDisplayParameters {
         if ((peakListName == null) || peakListName.equals("")) {
             return null;
         } else {
-            return PeakList.get(peakListName);
+            return (PeakList) PeakList.get(peakListName);
         }
     }
 

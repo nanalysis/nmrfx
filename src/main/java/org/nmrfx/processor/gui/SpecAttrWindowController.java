@@ -103,12 +103,12 @@ import org.controlsfx.control.ListSelectionView;
 import org.controlsfx.control.PopOver;
 import org.controlsfx.control.RangeSlider;
 import org.controlsfx.control.SegmentedButton;
-import org.nmrfx.processor.datasets.peaks.PeakList;
+import org.nmrfx.datasets.DatasetBase;
+import org.nmrfx.peaks.PeakList;
 import org.nmrfx.processor.gui.PolyChart.DISDIM;
 import static org.nmrfx.processor.gui.PolyChart.DISDIM.OneDX;
 import static org.nmrfx.processor.gui.PolyChart.DISDIM.TwoD;
 import org.nmrfx.processor.gui.utils.ColorSchemes;
-import org.nmrfx.project.Project;
 import org.nmrfx.utilities.DictionarySort;
 
 /**
@@ -784,7 +784,7 @@ public class SpecAttrWindowController implements Initializable {
         for (PeakListAttributes peakAttr : peakAttrs) {
             peaksTarget.add(peakAttr.getPeakListName());
         }
-        for (PeakList peakList : PeakList.getLists()) {
+        for (PeakList peakList : PeakList.peakLists()) {
             if (!peaksTarget.contains(peakList.getName())) {
                 boolean ok = false;
                 if (showOnlyMode.equals("All")) {
@@ -816,8 +816,8 @@ public class SpecAttrWindowController implements Initializable {
             DatasetAttributes dataAttr = (DatasetAttributes) obj;
             datasetsTarget.add(dataAttr.getDataset().getName());
         }
-        DictionarySort<Dataset> sorter = new DictionarySort<>();
-        Project.getActive().getDatasets().stream().sorted(sorter).forEach(d -> {
+        DictionarySort<DatasetBase> sorter = new DictionarySort<>();
+        Dataset.datasets().stream().sorted(sorter).forEach(d -> {
             if (!datasetsTarget.contains(d.getName())) {
                 datasetsSource.add(d.getName());
             }
@@ -1911,7 +1911,7 @@ public class SpecAttrWindowController implements Initializable {
     void saveParameters() {
         ObservableList<DatasetAttributes> items = datasetTableView.getItems();
         items.stream().forEach((dataAttr) -> {
-            Dataset dataset = dataAttr.getDataset();
+            DatasetBase dataset = dataAttr.getDataset();
             double lvl = dataAttr.getLvl();
             double scale = dataset.getScale();
             double tlvl = scale * lvl;

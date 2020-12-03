@@ -18,7 +18,6 @@
 package org.nmrfx.processor.gui;
 
 import org.nmrfx.processor.datasets.Dataset;
-import org.nmrfx.processor.datasets.peaks.PeakList;
 import de.codecentric.centerdevice.MenuToolkit;
 import de.codecentric.centerdevice.dialogs.about.AboutStageBuilder;
 import java.beans.PropertyChangeSupport;
@@ -31,6 +30,8 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javafx.application.Application;
@@ -51,16 +52,16 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
-import org.nmrfx.processor.datasets.DatasetListener;
-import org.nmrfx.processor.datasets.peaks.io.PeakReader;
+import org.nmrfx.peaks.io.PeakReader;
 import org.nmrfx.processor.gui.controls.FractionCanvas;
-import org.nmrfx.processor.utilities.WebConnect;
 import org.nmrfx.processor.gui.project.GUIProject;
-import org.nmrfx.project.Project;
 import org.nmrfx.server.Server;
 import static javafx.application.Application.launch;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableMap;
+import javafx.scene.text.Font;
+import org.nmrfx.chemistry.io.MoleculeIOException;
+import org.nmrfx.peaks.PeakList;
+import org.nmrfx.processor.utilities.WebConnect;
+import org.nmrfx.project.ProjectBase;
 
 public class MainApp extends Application {
 
@@ -80,8 +81,20 @@ public class MainApp extends Application {
     static boolean isAnalyst = false;
     Consumer<String> socketFunction = null;
     static NMRFxServer server = null;
-    public static ObservableMap<String, PeakList> peakListTable = FXCollections.observableMap(PeakList.peakListTable);
     static Font defaultFont;
+
+    public static void closeAll() {
+        for (PolyChart chart : PolyChart.CHARTS) {
+            chart.clearDataAndPeaks();
+            chart.clearAnnotations();
+        }
+        Stage mainStage = getMainStage();
+        for (Stage stage : stages) {
+            if (stage != mainStage) {
+                stage.close();
+            }
+        }
+    }
 
     public static void setAnalyst() {
         isAnalyst = true;
@@ -151,7 +164,7 @@ public class MainApp extends Application {
         interpreter.exec("from pyproc import *\ninitLocal()\nfrom gscript import *\nnw=NMRFxWindowScripting()\nfrom dscript import *\nfrom pscript import *\nimport os");
         interpreter.set("argv", parameters.getRaw());
         interpreter.exec("parseArgs(argv)");
-        Project.setPCS(new PropertyChangeSupport(this));
+        ProjectBase.setPCS(new PropertyChangeSupport(this));
         // Dataset.addObserver(this);
         if (defaultFont == null) {
             loadFont();
@@ -530,7 +543,7 @@ public class MainApp extends Application {
         }
     }
 
-    public static Project getActive() {
+    public static ProjectBase getActive() {
         return GUIProject.getActive();
     }
 
@@ -549,7 +562,7 @@ public class MainApp extends Application {
             GUIProject project = new GUIProject(projectName);
             try {
                 project.loadGUIProject(path);
-            } catch (IOException ex) {
+            } catch (IOException | MoleculeIOException | IllegalStateException ex) {
                 ExceptionDialog dialog = new ExceptionDialog(ex);
                 dialog.showAndWait();
             }

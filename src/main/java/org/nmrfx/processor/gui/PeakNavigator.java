@@ -26,15 +26,14 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
 import javafx.scene.paint.Color;
-import org.nmrfx.processor.datasets.peaks.Peak;
-import org.nmrfx.processor.datasets.peaks.PeakDim;
-import org.nmrfx.processor.datasets.peaks.PeakEvent;
-import org.nmrfx.processor.datasets.peaks.PeakList;
-import org.nmrfx.processor.datasets.peaks.PeakListener;
+import org.nmrfx.peaks.Peak;
+import org.nmrfx.peaks.PeakDim;
+import org.nmrfx.peaks.PeakEvent;
+import org.nmrfx.peaks.PeakList;
+import org.nmrfx.peaks.PeakListener;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
-import org.nmrfx.project.GUIProject;
-import org.nmrfx.project.Project;
+import org.nmrfx.project.ProjectBase;
 
 /*
  * To change this license header, choose License Headers in Project Properties.
@@ -198,14 +197,15 @@ public class PeakNavigator implements PeakListener {
             updatePeakListMenu();
         };
 
-        Project.getActive().addPeakListListener(mapChangeListener);
+        ProjectBase.getActive().addPeakListListener(mapChangeListener);
 
     }
 
     public void updatePeakListMenu() {
         peakListMenuButton.getItems().clear();
 
-        for (String peakListName : Project.getActive().getPeakListNames()) {
+        for (PeakList peakList : ProjectBase.getActive().getPeakLists()) {
+            String peakListName = peakList.getName();
             MenuItem menuItem = new MenuItem(peakListName);
             menuItem.setOnAction(e -> {
                 PeakNavigator.this.setPeakList(peakListName);

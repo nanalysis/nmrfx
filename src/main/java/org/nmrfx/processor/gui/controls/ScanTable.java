@@ -73,6 +73,7 @@ import org.controlsfx.control.PopOver;
 import org.controlsfx.control.table.ColumnFilter;
 import org.controlsfx.control.table.TableFilter;
 import org.controlsfx.dialog.ExceptionDialog;
+import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.DatasetException;
 import org.nmrfx.processor.datasets.DatasetMerger;
@@ -196,7 +197,7 @@ public class ScanTable {
 
     final protected String getActiveDatasetName() {
         PolyChart chart = scannerController.getChart();
-        Dataset dataset = chart.getDataset();
+        DatasetBase dataset = chart.getDataset();
         String name = "";
         if (dataset != null) {
             name = dataset.getName();
@@ -239,7 +240,7 @@ public class ScanTable {
                 groupSet.add(iGroup);
                 Color color = getGroupColor(iGroup);
                 double offset = iGroup * 1.0 / groupSize * 0.8;
-                Dataset dataset = chart.getDataset();
+                DatasetBase dataset = chart.getDataset();
                 if ((dataset == null) || (chart.getDatasetAttributes().size() != 1) || !dataset.getName().equals(datasetName)) {
                     dataset = Dataset.getDataset(datasetName);
                     if (dataset == null) {
@@ -561,7 +562,7 @@ public class ScanTable {
             loadScanTable(file);
         }
     }
-    
+
     public String getScanOutputDirectory() {
         return scanOutputDir;
     }
@@ -576,7 +577,7 @@ public class ScanTable {
 
     public void loadFromDataset() {
         PolyChart chart = scannerController.getChart();
-        Dataset dataset = chart.getDataset();
+        DatasetBase dataset = chart.getDataset();
         fileListItems.clear();
         int nRows = dataset.getSize(1);
         HashMap<String, String> fieldMap = new HashMap();

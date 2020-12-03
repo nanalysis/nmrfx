@@ -19,7 +19,6 @@ package org.nmrfx.processor.gui.spectra;
 
 import org.nmrfx.processor.datasets.DataCoordTransformer;
 import org.nmrfx.processor.datasets.DataGenerator;
-import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.math.Vec;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -37,7 +36,10 @@ import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.scene.paint.Color;
 import org.apache.commons.beanutils.PropertyUtils;
-import org.nmrfx.processor.datasets.DatasetRegion;
+import org.nmrfx.datasets.DatasetBase;
+import org.nmrfx.datasets.DatasetRegion;
+import org.nmrfx.math.VecBase;
+import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.GUIScripter;
 import org.nmrfx.processor.gui.PolyChart.DISDIM;
 
@@ -58,7 +60,7 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
     public static enum AXMODE {
 
         PTS() {
-            public int getIndex(Vec vec, double value) {
+            public int getIndex(VecBase vec, double value) {
                 int index = (int) Math.round(value);
                 if (index < 0) {
                     index = 0;
@@ -69,12 +71,12 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
                 return index;
             }
 
-            public double getIncrement(Vec vec, double start, double end) {
+            public double getIncrement(VecBase vec, double start, double end) {
                 return 1;
             }
 
             public int getIndex(DatasetAttributes dataAttr, int jDim, double value) {
-                Dataset dataset = dataAttr.getDataset();
+                DatasetBase dataset = dataAttr.getDataset();
                 int iDim = dataAttr.dim[jDim];
                 int index = (int) Math.round(value);
                 if (index < 0) {
@@ -87,7 +89,7 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
             }
 
             public double getIndexD(DatasetAttributes dataAttr, int jDim, double value) {
-                Dataset dataset = dataAttr.getDataset();
+                DatasetBase dataset = dataAttr.getDataset();
                 int iDim = dataAttr.dim[jDim];
                 double index = value;
                 if (index < 0.0) {
@@ -100,7 +102,7 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
             }
 
             public double indexToValue(DatasetAttributes dataAttr, int jDim, double value) {
-                Dataset dataset = dataAttr.getDataset();
+                DatasetBase dataset = dataAttr.getDataset();
                 int iDim = dataAttr.dim[jDim];
 
                 if (value < 0) {
@@ -117,7 +119,7 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
             }
 
             public String getLabel(DatasetAttributes dataAttr, int jDim) {
-                Dataset dataset = dataAttr.getDataset();
+                DatasetBase dataset = dataAttr.getDataset();
                 int iDim = dataAttr.dim[jDim];
 
                 return dataset.getLabel(iDim) + " (pt)";
@@ -129,7 +131,7 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
 
         },
         PPM() {
-            public int getIndex(Vec vec, double value) {
+            public int getIndex(VecBase vec, double value) {
                 int index = vec.refToPt(value);
                 if (index < 0) {
                     index = 0;
@@ -140,7 +142,7 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
                 return index;
             }
 
-            public double getIncrement(Vec vec, double start, double end) {
+            public double getIncrement(VecBase vec, double start, double end) {
                 int iStart = getIndex(vec, start);
                 int iEnd = getIndex(vec, end);
                 double delta = (end - start) / (iEnd - iStart);
@@ -148,7 +150,7 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
             }
 
             public int getIndex(DatasetAttributes dataAttr, int jDim, double value) {
-                Dataset dataset = dataAttr.getDataset();
+                DatasetBase dataset = dataAttr.getDataset();
                 int iDim = dataAttr.dim[jDim];
 
                 int index = dataset.ppmToPoint(iDim, value);
@@ -162,7 +164,7 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
             }
 
             public double getIndexD(DatasetAttributes dataAttr, int jDim, double value) {
-                Dataset dataset = dataAttr.getDataset();
+                DatasetBase dataset = dataAttr.getDataset();
                 int iDim = dataAttr.dim[jDim];
 
                 double index = dataset.ppmToDPoint(iDim, value);
@@ -176,7 +178,7 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
             }
 
             public double indexToValue(DatasetAttributes dataAttr, int jDim, double value) {
-                Dataset dataset = dataAttr.getDataset();
+                DatasetBase dataset = dataAttr.getDataset();
                 int iDim = dataAttr.dim[jDim];
 
                 double ppmValue = dataset.pointToPPM(iDim, value);
@@ -188,7 +190,7 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
             }
 
             public String getLabel(DatasetAttributes dataAttr, int jDim) {
-                Dataset dataset = dataAttr.getDataset();
+                DatasetBase dataset = dataAttr.getDataset();
                 int iDim = dataAttr.dim[jDim];
 
                 return dataset.getLabel(iDim) + " (ppm)";
@@ -199,7 +201,7 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
             }
         },
         HZ() {
-            public int getIndex(Vec vec, double value) {
+            public int getIndex(VecBase vec, double value) {
                 int index = (int) vec.lwToPtD(value);
                 if (index < 0) {
                     index = 0;
@@ -210,7 +212,7 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
                 return index;
             }
 
-            public double getIncrement(Vec vec, double start, double end) {
+            public double getIncrement(VecBase vec, double start, double end) {
                 int iStart = getIndex(vec, start);
                 int iEnd = getIndex(vec, end);
                 double delta = (end - start) / (iEnd - iStart);
@@ -218,7 +220,7 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
             }
 
             public int getIndex(DatasetAttributes dataAttr, int jDim, double value) {
-                Dataset dataset = dataAttr.getDataset();
+                DatasetBase dataset = dataAttr.getDataset();
                 int iDim = dataAttr.dim[jDim];
 
                 int index = (int) dataset.hzWidthToPoints(iDim, value);
@@ -232,7 +234,7 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
             }
 
             public double getIndexD(DatasetAttributes dataAttr, int jDim, double value) {
-                Dataset dataset = dataAttr.getDataset();
+                DatasetBase dataset = dataAttr.getDataset();
                 int iDim = dataAttr.dim[jDim];
 
                 double index = dataset.hzWidthToPoints(iDim, value);
@@ -246,7 +248,7 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
             }
 
             public double indexToValue(DatasetAttributes dataAttr, int jDim, double value) {
-                Dataset dataset = dataAttr.getDataset();
+                DatasetBase dataset = dataAttr.getDataset();
                 int iDim = dataAttr.dim[jDim];
 
                 double ppmValue = dataset.ptWidthToHz(iDim, value);
@@ -258,7 +260,7 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
             }
 
             public String getLabel(DatasetAttributes dataAttr, int jDim) {
-                Dataset dataset = dataAttr.getDataset();
+                DatasetBase dataset = dataAttr.getDataset();
                 int iDim = dataAttr.dim[jDim];
 
                 return dataset.getLabel(iDim) + " (Hz)";
@@ -269,7 +271,7 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
             }
         },
         TIME() {
-            public int getIndex(Vec vec, double value) {
+            public int getIndex(VecBase vec, double value) {
                 int index = vec.timeToPt(value);
                 if (index < 0) {
                     index = 0;
@@ -280,7 +282,7 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
                 return index;
             }
 
-            public double getIncrement(Vec vec, double start, double end) {
+            public double getIncrement(VecBase vec, double start, double end) {
                 int iStart = getIndex(vec, start);
                 int iEnd = getIndex(vec, end);
                 double delta = (end - start) / (iEnd - iStart);
@@ -288,10 +290,13 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
             }
 
             public int getIndex(DatasetAttributes dataAttr, int jDim, double value) {
-                Dataset dataset = dataAttr.getDataset();
+                DatasetBase dataset = dataAttr.getDataset();
                 int iDim = dataAttr.dim[jDim];
 
-                Vec vec = dataset.getVec();
+                Vec vec = null;
+                if (dataset instanceof Dataset) {
+                    vec = ((Dataset) dataset).getVec();
+                }
                 if (vec != null) {
                     return getIndex(vec, value);
                 } else {
@@ -308,10 +313,13 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
             }
 
             public double getIndexD(DatasetAttributes dataAttr, int jDim, double value) {
-                Dataset dataset = dataAttr.getDataset();
+                DatasetBase dataset = dataAttr.getDataset();
                 int iDim = dataAttr.dim[jDim];
 
-                Vec vec = dataset.getVec();
+                Vec vec = null;
+                if (dataset instanceof Dataset) {
+                    vec = ((Dataset) dataset).getVec();
+                }
                 if (vec != null) {
                     return getIndex(vec, value);
                 } else {
@@ -328,7 +336,7 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
             }
 
             public double indexToValue(DatasetAttributes dataAttr, int jDim, double value) {
-                Dataset dataset = dataAttr.getDataset();
+                DatasetBase dataset = dataAttr.getDataset();
                 int iDim = dataAttr.dim[jDim];
 
                 value = value / dataset.getSw(iDim);
@@ -350,11 +358,11 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
 
         ;
 
-        public abstract int getIndex(Vec vec, double value);
+        public abstract int getIndex(VecBase vec, double value);
 
         public abstract double indexToValue(DatasetAttributes dataAttr, int iDim, double value);
 
-        public abstract double getIncrement(Vec vec, double start, double end);
+        public abstract double getIncrement(VecBase vec, double start, double end);
 
         public abstract int getIndex(DatasetAttributes dataAttr, int iDim, double value);
 
@@ -365,7 +373,7 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
         public abstract String getLabel(DatasetAttributes dataAttr, int iDim);
 
         public String getDatasetLabel(DatasetAttributes dataAttr, int jDim) {
-            Dataset dataset = dataAttr.getDataset();
+            DatasetBase dataset = dataAttr.getDataset();
             int iDim = dataAttr.dim[jDim];
 
             return dataset.getLabel(iDim);
@@ -603,7 +611,7 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
         return drawRealProperty().get();
     }
 
-    public Dataset getDataset() {
+    public DatasetBase getDataset() {
         return theFile;
     }
 
@@ -687,11 +695,11 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
     public String title = "";
     private StringProperty firstName;
 
-    public DatasetAttributes(Dataset aFile, String fileName) {
+    public DatasetAttributes(DatasetBase aFile, String fileName) {
         initialize(aFile, fileName);
     }
 
-    public DatasetAttributes(Dataset aFile) {
+    public DatasetAttributes(DatasetBase aFile) {
         initialize(aFile, aFile.getFileName());
     }
 
@@ -744,9 +752,9 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
         return hasLevel;
     }
 
-    public void setDataset(Dataset aFile) {
+    public void setDataset(DatasetBase aFile) {
         hasLevel = false;
-        theFile = aFile;
+        theFile = (Dataset) aFile;
         nDim = aFile.getNDim();
         setFileName(aFile.getFileName());
         pt = new int[theFile.getNDim()][2];
@@ -791,8 +799,8 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
 
     }
 
-    private void initialize(Dataset aFile, String fileName) {
-        theFile = aFile;
+    private void initialize(DatasetBase aFile, String fileName) {
+        theFile = (Dataset) aFile;
         nDim = aFile.getNDim();
         setFileName(fileName);
         pt = new int[theFile.getNDim()][2];
@@ -1226,7 +1234,7 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
         return true;
     }
 
-    public boolean Vector(Vec specVec, int iChunk) throws IOException {
+    public boolean Vector(VecBase specVec, int iChunk) throws IOException {
         int[][] ptC = new int[pt.length][2];
         int[] dimC = new int[pt.length];
         int iDim = 1;

@@ -12,7 +12,7 @@ import javafx.scene.Cursor;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 import org.nmrfx.processor.datasets.Dataset;
-import org.nmrfx.processor.datasets.peaks.Peak;
+import org.nmrfx.peaks.Peak;
 import org.nmrfx.processor.gui.annotations.AnnoPolyLine;
 import org.nmrfx.processor.gui.annotations.AnnoShape;
 import org.nmrfx.processor.gui.controls.ConsoleUtil;

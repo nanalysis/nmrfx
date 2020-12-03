@@ -41,7 +41,7 @@ import javafx.stage.StageStyle;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.GUIScripter;
 import org.nmrfx.processor.gui.MainApp;
-import org.nmrfx.project.Project;
+import org.nmrfx.project.ProjectBase;
 import org.nmrfx.utilities.FileWatchListener;
 import org.nmrfx.utilities.NMRFxFileWatcher;
 import org.python.util.PythonInterpreter;
@@ -109,7 +109,7 @@ public class WindowIO implements FileWatchListener {
     }
 
     public void updateFavorites() {
-        Project project = Project.getActive();
+        ProjectBase project = ProjectBase.getActive();
         if ((project != null) && project.hasDirectory()) {
             Path projectDir = project.getDirectory();
             Path path = projectDir.getFileSystem().getPath(projectDir.toString(), "windows");
@@ -125,8 +125,8 @@ public class WindowIO implements FileWatchListener {
 
     public static void loadWindow() {
         FileChooser fileChooser = new FileChooser();
-        if (Project.getActive() != null) {
-            fileChooser.setInitialDirectory(Project.getActive().getDirectory().toFile());
+        if (ProjectBase.getActive() != null) {
+            fileChooser.setInitialDirectory(ProjectBase.getActive().getDirectory().toFile());
         }
         fileChooser.setTitle("Open NMRFx Window file");
         fileChooser.getExtensionFilters().addAll(
@@ -162,8 +162,8 @@ public class WindowIO implements FileWatchListener {
     }
 
     public static void loadFavorite(String favName) {
-        if (Project.getActive() != null) {
-            Path projectDir = Project.getActive().getDirectory();
+        if (ProjectBase.getActive() != null) {
+            Path projectDir = ProjectBase.getActive().getDirectory();
             Path path = projectDir.getFileSystem().getPath(projectDir.toString(), "windows", favName + "_fav.yaml");
             try {
                 loadWindow(path.toFile());
@@ -175,7 +175,7 @@ public class WindowIO implements FileWatchListener {
     }
 
     public static void saveFavorite() {
-        if (Project.getActive() == null) {
+        if (ProjectBase.getActive() == null) {
             GUIUtils.warn("Favorites", "No active project");
             return;
         }
@@ -186,8 +186,8 @@ public class WindowIO implements FileWatchListener {
     }
 
     public static void saveFavorite(String favName) {
-        if (Project.getActive() != null) {
-            Path projectDir = Project.getActive().getDirectory();
+        if (ProjectBase.getActive() != null) {
+            Path projectDir = ProjectBase.getActive().getDirectory();
             Path path = projectDir.getFileSystem().getPath(projectDir.toString(), "windows", favName + "_fav.yaml");
             try {
                 saveWindow(FXMLController.getActiveController(), path);
@@ -211,10 +211,10 @@ public class WindowIO implements FileWatchListener {
         interp.exec("import nwyaml\\n");
         if (Files.isDirectory(directory)) {
             Files.list(directory).sequential().filter(path -> predicate.test(path.getFileName().toString())).
-                    sorted(new Project.FileComparator()).
+                    sorted(new ProjectBase.FileComparator()).
                     forEach(path -> {
                         String fileName = path.getFileName().toString();
-                        Optional<Integer> fileNum = Project.getIndex(fileName);
+                        Optional<Integer> fileNum = ProjectBase.getIndex(fileName);
                         if (fileNum.isPresent()) {
                             interp.exec("nwyaml.loadYamlWin('" + path.toString() + "'" + "," + String.valueOf(fileNum.get()) + ")");
                         }

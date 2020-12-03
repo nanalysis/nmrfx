@@ -17,7 +17,8 @@
  */
 package org.nmrfx.processor.gui.spectra;
 
-import org.nmrfx.processor.datasets.peaks.Multiplet;
+import org.nmrfx.peaks.Multiplet;
+
 
 /**
  *

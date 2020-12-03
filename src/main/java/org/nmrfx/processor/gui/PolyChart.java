@@ -21,10 +21,6 @@ import org.nmrfx.processor.gui.spectra.SpectrumMenu;
 import org.nmrfx.processor.gui.spectra.NMRAxis;
 import org.nmrfx.processor.gui.spectra.DrawSpectrum;
 import org.nmrfx.processor.datasets.Dataset;
-import org.nmrfx.processor.datasets.RegionData;
-import org.nmrfx.processor.datasets.peaks.Multiplet;
-import org.nmrfx.processor.datasets.peaks.Peak;
-import org.nmrfx.processor.datasets.peaks.PeakList;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes.AXMODE;
@@ -39,7 +35,6 @@ import javafx.collections.ObservableList;
 import javafx.scene.shape.Path;
 import javafx.scene.shape.Line;
 import java.io.IOException;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -51,7 +46,6 @@ import java.util.function.DoubleFunction;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javafx.application.Platform;
-import javafx.beans.binding.Bindings;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleBooleanProperty;
@@ -82,18 +76,25 @@ import javafx.scene.shape.StrokeLineCap;
 import javafx.scene.text.Font;
 import javafx.scene.text.TextAlignment;
 import org.controlsfx.dialog.ExceptionDialog;
-import org.nmrfx.processor.datasets.DatasetRegion;
-import org.nmrfx.processor.datasets.peaks.PeakEvent;
+import org.nmrfx.datasets.DatasetBase;
+import org.nmrfx.datasets.Nuclei;
+import org.nmrfx.datasets.DatasetRegion;
+import org.nmrfx.datasets.RegionData;
 import org.nmrfx.processor.datasets.peaks.PeakFitException;
-import org.nmrfx.processor.datasets.peaks.PeakListener;
 import org.nmrfx.processor.datasets.peaks.PeakNeighbors;
 import static org.nmrfx.processor.gui.PolyChart.DISDIM.TwoD;
 import org.nmrfx.graphicsio.GraphicsContextInterface;
 import org.nmrfx.graphicsio.GraphicsContextProxy;
 import org.nmrfx.graphicsio.GraphicsIOException;
 import org.nmrfx.graphicsio.SVGGraphicsContext;
-import org.nmrfx.processor.datasets.Nuclei;
-import org.nmrfx.processor.datasets.peaks.PeakList.ARRAYED_FIT_MODE;
+import org.nmrfx.math.VecBase;
+import org.nmrfx.peaks.Multiplet;
+import org.nmrfx.peaks.Peak;
+import org.nmrfx.peaks.PeakEvent;
+import org.nmrfx.peaks.PeakList;
+import org.nmrfx.peaks.PeakListener;
+import org.nmrfx.processor.datasets.peaks.PeakListTools;
+import org.nmrfx.processor.datasets.peaks.PeakListTools.ARRAYED_FIT_MODE;
 import org.nmrfx.processor.gui.spectra.ChartMenu;
 import org.nmrfx.processor.gui.spectra.ConnectPeakAttributes;
 import org.nmrfx.processor.gui.undo.ChartUndoLimits;
@@ -109,8 +110,7 @@ import org.nmrfx.processor.gui.spectra.MultipletSelection;
 import org.nmrfx.processor.gui.spectra.PeakMenu;
 import org.nmrfx.processor.gui.spectra.RegionMenu;
 import org.nmrfx.processor.gui.undo.ChartUndoScale;
-import org.nmrfx.project.GUIProject;
-import org.nmrfx.project.Project;
+import org.nmrfx.project.ProjectBase;
 import org.nmrfx.utils.GUIUtils;
 
 public class PolyChart implements PeakListener {
@@ -385,7 +385,7 @@ public class PolyChart implements PeakListener {
         MapChangeListener<String, PeakList> mapChangeListener = (MapChangeListener.Change<? extends String, ? extends PeakList> change) -> {
             purgeInvalidPeakListAttributes();
         };
-        Project.getActive().addPeakListListener(mapChangeListener);
+        ProjectBase.getActive().addPeakListListener(mapChangeListener);
         keyBindings = new KeyBindings(this);
         mouseBindings = new MouseBindings(this);
         gestureBindings = new GestureBindings(this);
@@ -603,7 +603,7 @@ public class PolyChart implements PeakListener {
     }
 
     public void addRegion(double min, double max) {
-        Dataset dataset = getDataset();
+        DatasetBase dataset = getDataset();
         if (dataset != null) {
             DatasetRegion newRegion = dataset.addRegion(min, max);
             try {
@@ -711,8 +711,8 @@ public class PolyChart implements PeakListener {
         return firstDatasetAttr;
     }
 
-    public Dataset getDataset() {
-        Dataset dataset = null;
+    public DatasetBase getDataset() {
+        DatasetBase dataset = null;
         if (!datasetAttributesList.isEmpty()) {
             dataset = datasetAttributesList.get(0).getDataset();
         }
@@ -726,7 +726,7 @@ public class PolyChart implements PeakListener {
         datasetAttributesList.clear();
     }
 
-    void remove(Dataset dataset) {
+    void remove(DatasetBase dataset) {
         for (Iterator<DatasetAttributes> iterator = datasetAttributesList.iterator(); iterator.hasNext();) {
             DatasetAttributes dataAttr = iterator.next();
             if (dataset == dataAttr.getDataset()) {
@@ -738,7 +738,7 @@ public class PolyChart implements PeakListener {
 
     File getDatasetFile() {
         File file = null;
-        Dataset dataset = getDataset();
+        DatasetBase dataset = getDataset();
         if (dataset != null) {
             file = dataset.getFile();
         }
@@ -747,7 +747,7 @@ public class PolyChart implements PeakListener {
 
     protected int getDataSize(int dimNum) {
         int dataSize = 0;
-        Dataset dataset = getDataset();
+        DatasetBase dataset = getDataset();
         if (dataset != null) {
             dataSize = dataset.getSize(dimNum);
         }
@@ -756,7 +756,7 @@ public class PolyChart implements PeakListener {
 
     public void zoom(double factor) {
         ConsoleUtil.runOnFxThread(() -> {
-            Dataset dataset = getDataset();
+            DatasetBase dataset = getDataset();
             if (dataset != null) {
                 ChartUndoLimits undo = new ChartUndoLimits(this);
                 xZoom(factor);
@@ -912,7 +912,7 @@ public class PolyChart implements PeakListener {
     }
 
     protected void adjustScale(DatasetAttributes dataAttr, double factor) {
-        Dataset dataset = dataAttr.getDataset();
+        DatasetBase dataset = dataAttr.getDataset();
         if (is1D()) {
             double oldLevel = dataAttr.getLvl();
             double newLevel = oldLevel * factor;
@@ -939,7 +939,7 @@ public class PolyChart implements PeakListener {
         }
         final double scale = factor;
         datasetAttributesList.stream().forEach(dataAttr -> {
-            Dataset dataset = dataAttr.getDataset();
+            DatasetBase dataset = dataAttr.getDataset();
             if (is1D()) {
                 double oldLevel = dataAttr.getLvl();
                 dataAttr.setLvl(oldLevel * scale);
@@ -1015,7 +1015,7 @@ public class PolyChart implements PeakListener {
 
     public void incrementRow(int amount) {
         DatasetAttributes datasetAttributes = datasetAttributesList.get(0);
-        Dataset dataset = getDataset();
+        DatasetBase dataset = getDataset();
         if (dataset.getNDim() < 2) {
             return;
         }
@@ -1028,7 +1028,7 @@ public class PolyChart implements PeakListener {
         if (axes.length > axis) {
             ChartUndoLimits undo = new ChartUndoLimits(controller.getActiveChart());
             DatasetAttributes datasetAttributes = datasetAttributesList.get(0);
-            Dataset dataset = getDataset();
+            DatasetBase dataset = getDataset();
             int indexL = axModes[axis].getIndex(datasetAttributes, axis, axes[axis].getLowerBound());
             int indexU = axModes[axis].getIndex(datasetAttributes, axis, axes[axis].getUpperBound());
             int[] maxLimits = datasetAttributes.getMaxLimitsPt(axis);
@@ -1201,7 +1201,7 @@ public class PolyChart implements PeakListener {
     }
 
     protected int[] getPlotLimits(DatasetAttributes datasetAttributes, int iDim) {
-        Dataset dataset = datasetAttributes.getDataset();
+        DatasetBase dataset = datasetAttributes.getDataset();
 
         int min = axModes[iDim].getIndex(datasetAttributes, iDim, axes[iDim].getLowerBound());
         int max = axModes[iDim].getIndex(datasetAttributes, iDim, axes[iDim].getUpperBound());
@@ -1215,18 +1215,18 @@ public class PolyChart implements PeakListener {
     }
 
     public boolean hasData() {
-        Dataset dataset = getDataset();
+        DatasetBase dataset = getDataset();
         return dataset != null;
     }
 
     public boolean is1D() {
-        Dataset dataset = getDataset();
+        DatasetBase dataset = getDataset();
         return ((dataset != null) && (dataset.getNDim() == 1) || (disDimProp.get() != DISDIM.TwoD));
     }
 
     public int getNDim() {
         int nDim = 0;
-        Dataset dataset = getDataset();
+        DatasetBase dataset = getDataset();
         if (dataset != null) {
             nDim = dataset.getNDim();
         }
@@ -1249,7 +1249,7 @@ public class PolyChart implements PeakListener {
 
     protected void autoScale(DatasetAttributes dataAttr) {
         if (is1D()) {
-            Dataset dataset = dataAttr.getDataset();
+            DatasetBase dataset = dataAttr.getDataset();
 
             int[] limits = getPlotLimits(dataAttr, 0);
             int nDim = dataset.getNDim();
@@ -1290,24 +1290,27 @@ public class PolyChart implements PeakListener {
             dataAttr.setLvl(delta);
             setYAxisByLevel();
         } else {
-            Dataset dataset = dataAttr.getDataset();
-            Double sdev = dataset.guessNoiseLevel();
-            double[] percentile = null;
-            try {
-                percentile = getPercentile(dataAttr, 90.0);
-            } catch (IOException ex) {
-                percentile = null;
-            }
-
-            if (sdev != null) {
-                double value = sdev * 5.0;
-                if (percentile != null) {
-                    if (value < percentile[0]) {
-                        value = percentile[0];
-                    }
+            DatasetBase datasetBase = dataAttr.getDataset();
+            if (datasetBase instanceof Dataset) {
+                Dataset dataset = (Dataset) datasetBase;
+                Double sdev = dataset.guessNoiseLevel();
+                double[] percentile = null;
+                try {
+                    percentile = getPercentile(dataAttr, 90.0);
+                } catch (IOException ex) {
+                    percentile = null;
                 }
-                dataAttr.setLvl(value);
-                level = value;
+
+                if (sdev != null) {
+                    double value = sdev * 5.0;
+                    if (percentile != null) {
+                        if (value < percentile[0]) {
+                            value = percentile[0];
+                        }
+                    }
+                    dataAttr.setLvl(value);
+                    level = value;
+                }
             }
         }
     }
@@ -1342,7 +1345,7 @@ public class PolyChart implements PeakListener {
     }
 
     protected void setPhasePivot() {
-        Dataset dataset = getDataset();
+        DatasetBase dataset = getDataset();
         if (dataset == null) {
             return;
         }
@@ -1350,12 +1353,18 @@ public class PolyChart implements PeakListener {
     }
 
     protected void autoPhaseFlat(boolean doFirst) {
-        Dataset dataset = getDataset();
+        DatasetBase dataset = getDataset();
 
         if ((dataset == null) || (dataset.getVec() == null)) {
             return;
         }
-        Vec vec = dataset.getVec();
+        VecBase vecBase = dataset.getVec();
+        Vec vec;
+        if (vecBase instanceof Vec) {
+            vec = (Vec) vecBase;
+        } else {
+            return;
+        }
         double[] phases = vec.autoPhase(doFirst, 0, 0, 0, 45.0, 1.0);
         setPh0(phases[0]);
         setPh1(0.0);
@@ -1374,12 +1383,19 @@ public class PolyChart implements PeakListener {
     }
 
     protected void autoPhaseMax() {
-        Dataset dataset = getDataset();
+        DatasetBase dataset = getDataset();
 
         if ((dataset == null) || (dataset.getVec() == null)) {
             return;
         }
-        Vec vec = dataset.getVec();
+
+        VecBase vecBase = dataset.getVec();
+        Vec vec;
+        if (vecBase instanceof Vec) {
+            vec = (Vec) vecBase;
+        } else {
+            return;
+        }
         setPh0(vec.autoPhaseByMax());
         double sliderPH0 = getPh0();
         sliderPH0 = getPh0() + vec.getPH0();
@@ -1408,7 +1424,7 @@ public class PolyChart implements PeakListener {
     public void expand() {
         ChartUndoLimits undo = new ChartUndoLimits(this);
         expand(VERTICAL);
-        Dataset dataset = getDataset();
+        DatasetBase dataset = getDataset();
         if (dataset != null) {
             if (disDimProp.get() == DISDIM.TwoD) {
                 expand(HORIZONTAL);
@@ -1429,7 +1445,7 @@ public class PolyChart implements PeakListener {
     }
 
     protected double getRefPositionFromCrossHair(double newPPM) {
-        Dataset dataset = getDataset();
+        DatasetBase dataset = getDataset();
         if (dataset == null) {
             return 0.0;
         }
@@ -1468,7 +1484,7 @@ public class PolyChart implements PeakListener {
     }
 
     public void addRegionRange() {
-        Dataset dataset = getDataset();
+        DatasetBase dataset = getDataset();
         if (dataset == null) {
             return;
         }
@@ -1518,7 +1534,7 @@ public class PolyChart implements PeakListener {
     }
 
     public void addBaselineRange(boolean clearMode) {
-        Dataset dataset = getDataset();
+        DatasetBase dataset = getDataset();
         if (dataset == null) {
             return;
         }
@@ -1624,11 +1640,11 @@ public class PolyChart implements PeakListener {
 
     }
 
-    void setDataset(Dataset dataset) {
+    void setDataset(DatasetBase dataset) {
         setDataset(dataset, false);
     }
 
-    public boolean containsDataset(Dataset dataset) {
+    public boolean containsDataset(DatasetBase dataset) {
         boolean result = false;
         for (DatasetAttributes dataAttr : datasetAttributesList) {
             if (dataAttr.getDataset() == dataset) {
@@ -1639,7 +1655,7 @@ public class PolyChart implements PeakListener {
         return result;
     }
 
-    DatasetAttributes setDataset(Dataset dataset, boolean append) {
+    DatasetAttributes setDataset(DatasetBase dataset, boolean append) {
         SpectrumStatusBar statusBar = controller.getStatusBar();
         DatasetAttributes datasetAttributes = null;
         if (dataset != null) {
@@ -1675,7 +1691,7 @@ public class PolyChart implements PeakListener {
                     }
                 } else {
                     datasetAttributes = datasetAttributesList.get(0);
-                    Dataset existingDataset = datasetAttributes.getDataset();
+                    DatasetBase existingDataset = datasetAttributes.getDataset();
                     double oldLevel = datasetAttributes.getLvl();
                     datasetAttributes.setDataset(dataset);
                     if ((existingDataset == null) || !existingDataset.getName().equals(dataset.getName())) {
@@ -1713,7 +1729,7 @@ public class PolyChart implements PeakListener {
         if (!datasetAttributesList.isEmpty()) {
             for (DatasetAttributes datasetAttributes : datasetAttributesList) {
                 datasetAttributes.setDrawListSize(1);
-                Dataset dataset = datasetAttributes.getDataset();
+                DatasetBase dataset = datasetAttributes.getDataset();
                 if (value < 0) {
                     value = 0;
                 }
@@ -1792,7 +1808,7 @@ public class PolyChart implements PeakListener {
     }
 
     void setDatasetAttr(DatasetAttributes datasetAttrs) {
-        Dataset dataset = datasetAttrs.getDataset();
+        DatasetBase dataset = datasetAttrs.getDataset();
         int nDim = dataset.getNDim();
         int nAxes = nDim;
         if (is1D()) {
@@ -1823,7 +1839,7 @@ public class PolyChart implements PeakListener {
     }
 
     void updateAxisType() {
-        Dataset dataset = getDataset();
+        DatasetBase dataset = getDataset();
         DatasetAttributes datasetAttributes = datasetAttributesList.get(0);
         int nDim = dataset.getNDim();
         int nAxes = nDim;
@@ -1947,7 +1963,7 @@ public class PolyChart implements PeakListener {
         if ((axModes[0] == AXMODE.PPM) && (axModes[1] == AXMODE.PPM)) {
             if (!datasetAttributesList.isEmpty()) {
                 DatasetAttributes dAttr = datasetAttributesList.get(0);
-                Dataset dataset = dAttr.getDataset();
+                DatasetBase dataset = dAttr.getDataset();
                 if (dataset.getNDim() > 1) {
                     Nuclei nuc0 = dataset.getNucleus(dAttr.getDim(0));
                     Nuclei nuc1 = dataset.getNucleus(dAttr.getDim(1));
@@ -2213,7 +2229,7 @@ public class PolyChart implements PeakListener {
         for (DatasetAttributes datasetAttributes : datasetAttributesList) {
             try {
                 DatasetAttributes firstAttr = datasetAttributesList.get(0);
-                Dataset dataset = datasetAttributes.getDataset();
+                DatasetBase dataset = datasetAttributes.getDataset();
                 if (dataset != null) {
 //                datasetAttributes.setLvl(level);
                     datasetAttributes.setDrawReal(true);
@@ -2631,7 +2647,7 @@ public class PolyChart implements PeakListener {
             if (isPeakListCompatible(peakList, true)) {
                 DatasetAttributes matchData = null;
                 for (DatasetAttributes dataAttr : datasetAttributesList) {
-                    Dataset dataset = dataAttr.getDataset();
+                    DatasetBase dataset = dataAttr.getDataset();
                     String datasetName = dataset.getName();
                     if (datasetName.length() != 0) {
                         if (peakList.getDatasetName().equals(datasetName)) {
@@ -2807,7 +2823,11 @@ public class PolyChart implements PeakListener {
 
     public void fitPeakLists(int syncDim, boolean fitAll, boolean lsFit, ARRAYED_FIT_MODE arrayedFitMode) {
         peakListAttributesList.forEach((peakListAttr) -> {
-            Dataset dataset = peakListAttr.getDatasetAttributes().getDataset();
+            DatasetBase datasetBase = peakListAttr.getDatasetAttributes().getDataset();
+            Dataset dataset = null;
+            if (datasetBase instanceof Dataset) {
+                dataset = (Dataset) datasetBase;
+            }
             if (dataset == null) {
                 Alert alert = new Alert(Alert.AlertType.ERROR);
                 alert.setTitle("Peak  fit");
@@ -2838,11 +2858,12 @@ public class PolyChart implements PeakListener {
                 System.out.println("ndel " + delays.length);
             }
             try {
+
                 Set<Peak> peaks = peakListAttr.getSelectedPeaks();
                 if (fitAll && peaks.isEmpty()) {
-                    peakListAttr.getPeakList().peakFit(dataset, fitRows, delays, lsFit, syncDim, arrayedFitMode);
+                    PeakListTools.peakFit(peakListAttr.getPeakList(), dataset, fitRows, delays, lsFit, syncDim, arrayedFitMode);
                 } else if (!peaks.isEmpty()) {
-                    peakListAttr.getPeakList().peakFit(dataset, fitRows, delays, peaks, lsFit, syncDim, arrayedFitMode);
+                    PeakListTools.peakFit(peakListAttr.getPeakList(), dataset, fitRows, delays, peaks, lsFit, syncDim, arrayedFitMode);
                 }
             } catch (IllegalArgumentException | IOException | PeakFitException ex) {
                 Logger.getLogger(PolyChart.class
@@ -2853,10 +2874,10 @@ public class PolyChart implements PeakListener {
 
     public void clusterPeakLists(int syncDim) {
         peakListAttributesList.forEach((peakListAttr) -> {
-            Dataset dataset = peakListAttr.getDatasetAttributes().getDataset();
+            DatasetBase dataset = peakListAttr.getDatasetAttributes().getDataset();
             if (dataset != null) {
                 try {
-                    peakListAttr.getPeakList().clusterPeakColumns(syncDim);
+                    PeakListTools.clusterPeakColumns(peakListAttr.getPeakList(), syncDim);
                 } catch (IllegalArgumentException ex) {
                     Logger.getLogger(PolyChart.class
                             .getName()).log(Level.SEVERE, null, ex);
@@ -2869,7 +2890,8 @@ public class PolyChart implements PeakListener {
         peakListAttributesList.forEach((peakListAttr) -> {
             Set<Peak> peaks = peakListAttr.getSelectedPeaks();
             if (!peaks.isEmpty()) {
-                Dataset dataset = peakListAttr.getDatasetAttributes().getDataset();
+                DatasetBase datasetBase = peakListAttr.getDatasetAttributes().getDataset();
+                Dataset dataset = datasetBase instanceof Dataset ? (Dataset) datasetBase : null;
                 if (dataset != null) {
                     try {
                         int[] dim = getPeakDim(peakListAttr.getDatasetAttributes(), peakListAttr.getPeakList(), true);
@@ -2878,7 +2900,7 @@ public class PolyChart implements PeakListener {
                         }
                         int nExtra = dim.length - peakListAttr.getPeakList().nDim;
                         int[] planes = new int[nExtra];
-                        peakListAttr.getPeakList().tweakPeaks(dataset, peaks, planes);
+                        PeakListTools.tweakPeaks(peakListAttr.getPeakList(), dataset, peaks, planes);
 
                     } catch (IllegalArgumentException ex) {
                         Logger.getLogger(PolyChart.class
@@ -2898,12 +2920,13 @@ public class PolyChart implements PeakListener {
 
     public void tweakPeakLists() {
         peakListAttributesList.forEach((peakListAttr) -> {
-            Dataset dataset = peakListAttr.getDatasetAttributes().getDataset();
+            DatasetBase datasetBase = peakListAttr.getDatasetAttributes().getDataset();
+            Dataset dataset = datasetBase instanceof Dataset ? (Dataset) datasetBase : null;
             if (dataset != null) {
                 try {
                     int nExtra = dataset.getNDim() - peakListAttr.getPeakList().nDim;
                     int[] planes = new int[nExtra];
-                    peakListAttr.getPeakList().tweakPeaks(dataset, planes);
+                    PeakListTools.tweakPeaks(peakListAttr.getPeakList(), dataset, planes);
 
                 } catch (IllegalArgumentException ex) {
                     Logger.getLogger(PolyChart.class
@@ -3393,7 +3416,7 @@ public class PolyChart implements PeakListener {
     }
 
     public double getDataPH0() {
-        Dataset dataset = getDataset();
+        DatasetBase dataset = getDataset();
         double value = 0.0;
         if (dataset != null) {
             if (datasetPhaseDim != -1) {
@@ -3404,7 +3427,7 @@ public class PolyChart implements PeakListener {
     }
 
     public double getDataPH1() {
-        Dataset dataset = getDataset();
+        DatasetBase dataset = getDataset();
         double value = 0.0;
         if (dataset != null) {
             if (datasetPhaseDim != -1) {
@@ -3483,7 +3506,7 @@ public class PolyChart implements PeakListener {
         if (controller.chartProcessor == null) {
             return;
         }
-        Dataset dataset = getDataset();
+        DatasetBase dataset = getDataset();
         String vecDimName = controller.chartProcessor.getVecDimName();
         DatasetAttributes datasetAttributes = datasetAttributesList.get(0);
 
@@ -3555,7 +3578,7 @@ public class PolyChart implements PeakListener {
         if (annoCanvas == null) {
             return;
         }
-        Dataset dataset = getDataset();
+        DatasetBase dataset = getDataset();
         if (dataset == null) {
             return;
         }
@@ -3612,7 +3635,7 @@ public class PolyChart implements PeakListener {
         if (gC == null) {
             return;
         }
-        Dataset dataset = getDataset();
+        DatasetBase dataset = getDataset();
         if (dataset == null) {
             return;
         }
@@ -3657,7 +3680,7 @@ public class PolyChart implements PeakListener {
     }
 
     public void gotoMaxPlane() {
-        Dataset dataset = getDataset();
+        DatasetBase dataset = getDataset();
         if (dataset != null) {
             DatasetAttributes datasetAttributes = datasetAttributesList.get(0);
 
@@ -3740,7 +3763,7 @@ public class PolyChart implements PeakListener {
     }
 
     public void printSpectrum() throws IOException {
-        Dataset dataset = getDataset();
+        DatasetBase dataset = getDataset();
         if (dataset == null) {
             return;
         }
@@ -3748,8 +3771,8 @@ public class PolyChart implements PeakListener {
             if (dataset.getVec() == null) {
                 return;
             }
-            Vec vec = dataset.getVec();
-            Vec[] vecs = {vec};
+            VecBase vec = dataset.getVec();
+            VecBase[] vecs = {vec};
             DatasetAttributes datasetAttributes = datasetAttributesList.get(0);
             try {
                 SpectrumWriter.printVec(datasetAttributes, vecs, axes, axModes);
@@ -3767,8 +3790,8 @@ public class PolyChart implements PeakListener {
         }
     }
 
-    public Vec getVec() {
-        Dataset dataset = getDataset();
+    public VecBase getVec() {
+        DatasetBase dataset = getDataset();
         if (dataset == null) {
             return null;
         } else {
@@ -3897,7 +3920,7 @@ public class PolyChart implements PeakListener {
     }
 
     protected RegionData analyze(DatasetAttributes dataAttr) {
-        Dataset dataset = dataAttr.getDataset();
+        DatasetBase dataset = dataAttr.getDataset();
         double max = Double.NEGATIVE_INFINITY;
         double min = Double.MAX_VALUE;
 
@@ -3938,7 +3961,7 @@ public class PolyChart implements PeakListener {
     }
 
     protected double[] getPercentile(DatasetAttributes dataAttr, double p) throws IOException {
-        Dataset dataset = dataAttr.getDataset();
+        DatasetBase dataset = dataAttr.getDataset();
 
         int nDim = dataset.getNDim();
         int[][] pt = new int[nDim][2];
@@ -3955,7 +3978,7 @@ public class PolyChart implements PeakListener {
             }
             dim[iDim] = dataAttr.dim[iDim];
         }
-        double[] value = dataset.getPercentile(p, pt, dim);
+        double[] value = dataset instanceof Dataset ? ((Dataset) dataset).getPercentile(p, pt, dim) : null;
         return value;
     }
 

@@ -57,10 +57,12 @@ import org.apache.commons.math3.complex.Complex;
 import javafx.geometry.Bounds;
 import javafx.scene.control.Button;
 import javafx.scene.shape.Rectangle;
+import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.graphicsio.GraphicsContextInterface;
 import org.nmrfx.graphicsio.GraphicsContextProxy;
 import org.nmrfx.graphicsio.GraphicsIOException;
-import org.nmrfx.processor.datasets.DatasetRegion;
+import org.nmrfx.datasets.DatasetRegion;
+import org.nmrfx.math.VecBase;
 import org.nmrfx.processor.gui.PolyChart.DISDIM;
 
 /**
@@ -541,7 +543,7 @@ public class DrawSpectrum {
         int y1 = dataAttr.pt[1][1];
         g2.setLineWidth(1);
         g2.setStroke(Color.BLACK);
-        Dataset dataset = dataAttr.getDataset();
+        DatasetBase dataset = dataAttr.getDataset();
         for (int i = x0; i <= x1; i++) {
             for (int j = y0; j <= y1; j++) {
                 double xP = dataset.pointToPPM(dataAttr.dim[0], i);
@@ -591,7 +593,7 @@ public class DrawSpectrum {
     }
 
     static double[][] getPix(NMRAxis[] axes, DatasetAttributes dataAttr) {
-        Dataset dataset = dataAttr.getDataset();
+        DatasetBase dataset = dataAttr.getDataset();
         double xPoint1 = dataset.pointToPPM(dataAttr.dim[0], dataAttr.ptd[0][0]);
         double xPoint2 = dataset.pointToPPM(dataAttr.dim[0], dataAttr.ptd[0][1]);
         double yPoint1 = dataset.pointToPPM(dataAttr.dim[1], dataAttr.ptd[1][0]);
@@ -700,7 +702,7 @@ public class DrawSpectrum {
         double cyOffset = contours.yOffset;
         if (lineCount != 0) {
             g2.beginPath();
-            Dataset dataset = dataGenerator.getDataset();
+            DatasetBase dataset = dataGenerator.getDataset();
             for (int iLine = 0; iLine < lineCount; iLine += 4) {
                 if (cancelled) {
                     System.out.println("can response1");
@@ -859,10 +861,10 @@ public class DrawSpectrum {
     }
 
     public boolean draw1DSpectrum(DatasetAttributes dataAttributes, double firstLvl, double firstOffset, int orientation, AXMODE axMode, double ph0, double ph1, Path bcPath) {
-        Vec specVec = new Vec(32);
+        VecBase specVec = new Vec(32);
         boolean drawReal = dataAttributes.getDrawReal();
         boolean offsetMode = true;
-        Dataset dataset = dataAttributes.getDataset();
+        DatasetBase dataset = dataAttributes.getDataset();
         if (dataset.getVec() != null) {
             specVec = dataset.getVec();
             iChunk = -1;
@@ -899,7 +901,7 @@ public class DrawSpectrum {
         return offset;
     }
 
-    public double[] getRegionAsArray(Dataset dataset) {
+    public double[] getRegionAsArray(DatasetBase dataset) {
         Set<DatasetRegion> regions = dataset.getRegions();
         double[] ppms = null;
         if (regions != null) {
@@ -914,7 +916,7 @@ public class DrawSpectrum {
         return ppms;
     }
 
-    public double[] getOffsetsAsArray(Dataset dataset) {
+    public double[] getOffsetsAsArray(DatasetBase dataset) {
         Set<DatasetRegion> regions = dataset.getRegions();
         double[] offsets = null;
         if (regions != null) {
@@ -973,7 +975,7 @@ public class DrawSpectrum {
                 yFunction, true, 0, vec.getSize() - 1, size, dValue, 0.0, indexAxisDelta, true);
     }
 
-    public void drawVector(Vec vec, int orientation, int dataOffset, AXMODE axMode, boolean drawReal, double ph0, double ph1, Path bcPath, DoubleBinaryOperator xFunction, DoubleBinaryOperator yFunction, boolean offsetVec, boolean integralMode) {
+    public void drawVector(VecBase vec, int orientation, int dataOffset, AXMODE axMode, boolean drawReal, double ph0, double ph1, Path bcPath, DoubleBinaryOperator xFunction, DoubleBinaryOperator yFunction, boolean offsetVec, boolean integralMode) {
         int size = vec.getSize();
         double phase1Delta = ph1 / (size - 1);
         NMRAxis indexAxis = orientation == PolyChart.HORIZONTAL ? axes[0] : axes[1];
@@ -1003,7 +1005,7 @@ public class DrawSpectrum {
         nPoints = drawVectoreCore(vec, dataOffset, drawReal, ph0, ph1, xy, bcPath, xFunction, yFunction, offsetVec, vecStartPoint, vecEndPoint, size, dValue, phase1Delta, indexAxisDelta, integralMode);
     }
 
-    public static int drawVector(Vec vec, NMRAxisIO xAxis, NMRAxisIO yAxis, AXMODE axMode, double[][] xy) {
+    public static int drawVector(VecBase vec, NMRAxisIO xAxis, NMRAxisIO yAxis, AXMODE axMode, double[][] xy) {
         int dataOffset = 0;
         NMRAxisIO indexAxis = xAxis;
 
@@ -1043,7 +1045,7 @@ public class DrawSpectrum {
         return nPoints;
     }
 
-    private static int drawVectoreCore(Vec vec, int dataOffset, boolean drawReal,
+    private static int drawVectoreCore(VecBase vec, int dataOffset, boolean drawReal,
             double ph0, double ph1, double[][] xyValues, Path bcPath, DoubleBinaryOperator xFunction,
             DoubleBinaryOperator yFunction, boolean offsetVec, int start, int end, int size,
             double dValue, double dDelta, double delta, boolean integralMode) {
@@ -1066,7 +1068,9 @@ public class DrawSpectrum {
         }
         //System.out.println((start - dataOffset) + " " + (end - dataOffset) + " " + dValue + " " + (dValue + delta * (end - start)));
         if (((Math.abs(ph0) > 1.0e-6) || (Math.abs(ph1) > 1.0e-6)) && !vec.isComplex()) {
-            vec.hft();
+            if (vec instanceof Vec) {
+                ((Vec) vec).hft();
+            }
         }
         double dValueHold = dValue;
         int nPoints = 0;
@@ -1118,7 +1122,10 @@ public class DrawSpectrum {
             nPoints = iLine;
         }
         if (bcPath != null) {
-            boolean[] signalPoints = vec.getSignalRegion();
+            boolean[] signalPoints = null;
+            if (vec instanceof Vec) {
+                signalPoints = ((Vec) vec).getSignalRegion();
+            }
             dValue = dValueHold;
             if (signalPoints != null) {
                 boolean inBase = !signalPoints[start];
@@ -1174,16 +1181,19 @@ public class DrawSpectrum {
     }
 
     public void drawVecAnno(DatasetAttributes dataAttributes, int orientation, AXMODE axMode) {
-        Dataset dataset = dataAttributes.getDataset();
+        DatasetBase dataset = dataAttributes.getDataset();
         nPoints = 0;
         if (dataset.getVec() != null) {
-            Vec vec = dataset.getVec();
+            VecBase vec = dataset.getVec();
             NMRAxis indexAxis = orientation == PolyChart.HORIZONTAL ? axes[0] : axes[1];
             int vecStartPoint = axMode.getIndex(vec, indexAxis.getLowerBound());
             int vecEndPoint = axMode.getIndex(vec, indexAxis.getUpperBound());
 
             if (!vec.freqDomain()) {
-                double[] ve = vec.getAnnotation();
+                double[] ve = null;
+                if (vec instanceof Vec) {
+                    ve = ((Vec) vec).getAnnotation();
+                }
                 if ((ve != null) && (ve.length <= vec.getSize())) {
                     int annoEnd = vecEndPoint;
                     if (annoEnd >= ve.length) {
@@ -1196,19 +1206,22 @@ public class DrawSpectrum {
     }
 
     public void drawRegion(DatasetAttributes dataAttributes, int orientation, AXMODE axMode) {
-        Dataset dataset = dataAttributes.getDataset();
+        DatasetBase dataset = dataAttributes.getDataset();
         Set<DatasetRegion> regions = dataset.getRegions();
         for (DatasetRegion region : regions) {
 
         }
         if (dataset.getVec() != null) {
-            Vec vec = dataset.getVec();
+            VecBase vec = dataset.getVec();
             NMRAxis indexAxis = orientation == PolyChart.HORIZONTAL ? axes[0] : axes[1];
             int vecStartPoint = axMode.getIndex(vec, indexAxis.getLowerBound());
             int vecEndPoint = axMode.getIndex(vec, indexAxis.getUpperBound());
 
             if (!vec.freqDomain()) {
-                double[] ve = vec.getAnnotation();
+                double[] ve = null;
+                if (vec instanceof Vec) {
+                    ve = ((Vec) vec).getAnnotation();
+                }
                 if ((ve != null) && (ve.length <= vec.getSize())) {
                     int annoEnd = vecEndPoint;
                     if (annoEnd >= ve.length) {

@@ -38,6 +38,8 @@ import javafx.scene.layout.Pane;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
+import javafx.stage.WindowEvent;
+import static org.nmrfx.utils.GUIUtils.affirm;
 import org.python.util.InteractiveInterpreter;
 
 /**
@@ -55,6 +57,14 @@ public class ConsoleController extends OutputStream implements Initializable {
     InteractiveInterpreter interpreter = MainApp.getInterpreter();
     int historyInd = 0;
     KeyCode prevKey = null;
+    EventHandler<WindowEvent> close = event -> {
+        if (affirm("Are you sure you want to exit?")) {
+            Platform.exit();
+            System.exit(0);
+        } else {
+            event.consume();
+        }
+    };
 
 //    public ConsoleRedirect(TextArea textArea) {
 //        this.textArea = textArea;
@@ -94,7 +104,6 @@ public class ConsoleController extends OutputStream implements Initializable {
     }
 
     public void initializeConsole() {
-
         textArea.setEditable(true);
         textArea.setOnKeyPressed(new EventHandler<KeyEvent>() {
             @Override
@@ -114,8 +123,8 @@ public class ConsoleController extends OutputStream implements Initializable {
 
         PrintStream printStream = new PrintStream(this);
         // re-assigns standard output stream and error output stream
-        System.setOut(printStream);
-        System.setErr(printStream);
+        //System.setOut(printStream);
+        //System.setErr(printStream);
 
         interpreter.setOut(printStream);
         interpreter.setErr(printStream);

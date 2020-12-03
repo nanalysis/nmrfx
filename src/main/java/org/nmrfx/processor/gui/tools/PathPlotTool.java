@@ -51,8 +51,7 @@ import org.nmrfx.chart.Axis;
 import org.nmrfx.chart.DataSeries;
 import org.nmrfx.chart.XYCanvasChart;
 import org.nmrfx.chart.XYChartPane;
-import org.nmrfx.processor.datasets.peaks.PeakPath;
-import org.nmrfx.processor.datasets.peaks.PeakPath.Path;
+import org.nmrfx.peaks.PeakPath;
 
 /**
  *
@@ -64,7 +63,7 @@ public class PathPlotTool {
     Stage stage = null;
     XYCanvasChart activeChart = null;
     BorderPane borderPane = new BorderPane();
-    TableView<PeakPath.Path> tableView;
+    TableView<PeakPath> tableView;
     Scene stageScene = new Scene(borderPane, 500, 500);
     List<String> colNames;
 
@@ -98,7 +97,7 @@ public class PathPlotTool {
             fitGroupButton.setOnAction(e -> pathTool.fitPathsGrouped());
 
             borderPane.setTop(toolBar);
-            tableView = new TableView<PeakPath.Path>();
+            tableView = new TableView<PeakPath>();
             SplitPane sPane = new SplitPane(chartPane, tableView);
             sPane.setOrientation(Orientation.VERTICAL);
             borderPane.setCenter(sPane);
@@ -138,7 +137,7 @@ public class PathPlotTool {
         activeChart.autoScale(true);
     }
 
-    public void updateTable(ObservableList<PeakPath.Path> paths) {
+    public void updateTable(ObservableList<PeakPath> paths) {
         tableView.getItems().setAll(paths);
         System.out.println("items " + tableView.getItems().size());
     }
@@ -150,12 +149,12 @@ public class PathPlotTool {
         };
         tableView.getSelectionModel().getSelectedIndices().addListener(selectionListener);
         for (String colName : colNames) {
-            TableColumn<PeakPath.Path, Number> col = new TableColumn<>(colName);
+            TableColumn<PeakPath, Number> col = new TableColumn<>(colName);
             if (colName.equals("Peak")) {
                 col.setCellValueFactory(new PropertyValueFactory<>(colName));
             } else {
-                col.setCellValueFactory(new Callback<CellDataFeatures<PeakPath.Path, Number>, ObservableValue<Number>>() {
-                    public ObservableValue<Number> call(CellDataFeatures<PeakPath.Path, Number> p) {
+                col.setCellValueFactory(new Callback<CellDataFeatures<PeakPath, Number>, ObservableValue<Number>>() {
+                    public ObservableValue<Number> call(CellDataFeatures<PeakPath, Number> p) {
                         // p.getValue() returns the Path instance for a particular TableView row
                         int iProp = colNames.indexOf(colName);
                         iProp--;  // account for Peak column
@@ -167,7 +166,7 @@ public class PathPlotTool {
                     }
                 });
                 col.setCellFactory(c
-                        -> new TableCell<PeakPath.Path, Number>() {
+                        -> new TableCell<PeakPath, Number>() {
                     @Override
                     public void updateItem(Number value, boolean empty) {
                         super.updateItem(value, empty);
@@ -187,7 +186,7 @@ public class PathPlotTool {
         tableView.setOnKeyPressed(e
                 -> {
             if ((e.getCode() == KeyCode.BACK_SPACE) || (e.getCode() == KeyCode.DELETE)) {
-                List<PeakPath.Path> selPaths = getSelected();
+                List<PeakPath> selPaths = getSelected();
                 pathTool.removeActivePaths(selPaths);
 
             }
@@ -195,16 +194,16 @@ public class PathPlotTool {
         );
     }
 
-    public void selectRow(Path path) {
+    public void selectRow(PeakPath path) {
         tableView.getSelectionModel().clearSelection();
         tableView.getSelectionModel().select(path);
     }
 
-    List<PeakPath.Path> getSelected() {
-        List<PeakPath.Path> paths = new ArrayList<>();
+    List<PeakPath> getSelected() {
+        List<PeakPath> paths = new ArrayList<>();
         List<Integer> selected = tableView.getSelectionModel().getSelectedIndices();
         for (Integer index : selected) {
-            PeakPath.Path path = (PeakPath.Path) tableView.getItems().get(index);
+            PeakPath path = (PeakPath) tableView.getItems().get(index);
             paths.add(path);
         }
         return paths;
@@ -215,7 +214,7 @@ public class PathPlotTool {
         List<Integer> selected = tableView.getSelectionModel().getSelectedIndices();
         int iSeries = 0;
         for (Integer index : selected) {
-            PeakPath.Path path = (PeakPath.Path) tableView.getItems().get(index);
+            PeakPath path = (PeakPath) tableView.getItems().get(index);
             Color color = XYCanvasChart.colors[iSeries % XYCanvasChart.colors.length];
             pathTool.showXYPath(path, color);
             iSeries++;
@@ -244,7 +243,7 @@ public class PathPlotTool {
                 }
                 writer.write(header, 0, header.length());
             }
-            for (PeakPath.Path item : tableView.getItems()) {
+            for (PeakPath item : tableView.getItems()) {
                 StringBuilder sBuilder = new StringBuilder();
                 sBuilder.append('\n');
                 for (String colName : colNames) {

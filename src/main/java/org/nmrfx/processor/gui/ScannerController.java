@@ -49,8 +49,9 @@ import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import org.controlsfx.control.PropertySheet;
 import org.controlsfx.control.PropertySheet.Item;
+import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.processor.datasets.Dataset;
-import org.nmrfx.processor.datasets.DatasetRegion;
+import org.nmrfx.datasets.DatasetRegion;
 import org.nmrfx.processor.datasets.Measure;
 import org.nmrfx.processor.datasets.Measure.MeasureTypes;
 import org.nmrfx.processor.datasets.Measure.OffsetTypes;
@@ -464,7 +465,7 @@ public class ScannerController implements Initializable {
                     return;
                 }
             }
-            Dataset dataset = chart.getDataset();
+            DatasetBase dataset = chart.getDataset();
             double[] ppms = chart.getVerticalCrosshairPositions();
             double[] wppms = new double[2];
             wppms[0] = chart.getAxis(0).getLowerBound();
@@ -565,7 +566,7 @@ public class ScannerController implements Initializable {
 
     @FXML
     void measureRegions() {
-        Dataset dataset = chart.getDataset();
+        DatasetBase dataset = chart.getDataset();
         List<String> headers = scanTable.getHeaders();
         for (String header : headers) {
             Optional<Measure> measureOpt = matchHeader(header);
@@ -584,7 +585,7 @@ public class ScannerController implements Initializable {
 
     @FXML
     void showRegions() {
-        Dataset dataset = chart.getDataset();
+        DatasetBase dataset = chart.getDataset();
         List<String> headers = scanTable.getHeaders();
         TreeSet<DatasetRegion> regions = new TreeSet<>();
 
@@ -604,7 +605,7 @@ public class ScannerController implements Initializable {
 
     @FXML
     void clearRegions() {
-        Dataset dataset = chart.getDataset();
+        DatasetBase dataset = chart.getDataset();
         TreeSet<DatasetRegion> regions = new TreeSet<>();
 
         dataset.setRegions(regions);

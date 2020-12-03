@@ -20,7 +20,6 @@ package org.nmrfx.processor.gui;
 import org.nmrfx.processor.gui.controls.ConsoleUtil;
 import org.nmrfx.processor.gui.controls.ProcessingCodeAreaUtil;
 import org.nmrfx.processor.processing.Processor;
-import org.nmrfx.processor.processing.ProgressUpdater;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
@@ -91,6 +90,7 @@ import org.fxmisc.richtext.CodeArea;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.vendor.NMRData;
 import org.nmrfx.processor.datasets.vendor.VendorPar;
+import org.nmrfx.utilities.ProgressUpdater;
 
 public class ProcessorController implements Initializable, ProgressUpdater {
 

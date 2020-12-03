@@ -32,8 +32,9 @@ import javafx.scene.control.TextField;
 import javafx.scene.layout.GridPane;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
+import org.nmrfx.datasets.DatasetBase;
+import org.nmrfx.peaks.PeakList;
 import org.nmrfx.processor.datasets.Dataset;
-import org.nmrfx.processor.datasets.peaks.PeakList;
 import org.nmrfx.processor.gui.PolyChart;
 
 /**
@@ -137,7 +138,7 @@ public class SpectrumAdjuster {
 
     private static void writePars(PolyChart chart) {
         for (DatasetAttributes dataAttr : chart.getDatasetAttributes()) {
-            Dataset dataset = dataAttr.getDataset();
+            DatasetBase dataset = dataAttr.getDataset();
             dataset.writeParFile();
         }
 
@@ -149,7 +150,7 @@ public class SpectrumAdjuster {
         double delta = newPos - oldPos;
         undoChartName = chart.getName();
         for (DatasetAttributes dataAttr : chart.getDatasetAttributes()) {
-            Dataset dataset = dataAttr.getDataset();
+            DatasetBase dataset = dataAttr.getDataset();
             if (iDim < dataset.getNDim()) {
                 int dataDim = dataAttr.getDim(iDim);
                 double oldRef = dataset.getRefValue(dataDim);
@@ -204,7 +205,7 @@ public class SpectrumAdjuster {
             undoChartName = chart.getName();
             if (shiftDataset) {
                 for (DatasetAttributes dataAttr : chart.getDatasetAttributes()) {
-                    Dataset dataset = dataAttr.getDataset();
+                    DatasetBase dataset = dataAttr.getDataset();
                     for (int i = 0; i < nDim; i++) {
                         int dataDim = dataAttr.getDim(i);
                         double ref = dataset.getRefValue(dataDim);
@@ -260,7 +261,7 @@ public class SpectrumAdjuster {
             undoChartName = chart.getName();
             chart.getDatasetAttributes().forEach((dataAttr) -> {
                 int dataDim = dataAttr.dim[1];
-                Dataset dataset = dataAttr.getDataset();
+                DatasetBase dataset = dataAttr.getDataset();
                 double oldRef = dataset.getRefValue(dataDim);
                 datasetUndo.put(dataset.getName() + ":" + dataDim, oldRef);
                 dataAttr.getDataset().setRefValue(dataDim, oldRef + delta);
@@ -292,7 +293,7 @@ public class SpectrumAdjuster {
             }
             for (Map.Entry<String, Double> entry : peakUndo.entrySet()) {
                 String[] fields = entry.getKey().split(":");
-                PeakList peakList = PeakList.get(fields[0]);
+                PeakList peakList = (PeakList) PeakList.get(fields[0]);
                 int iDim = Integer.valueOf(fields[1]);
                 peakList.shiftPeak(iDim, -entry.getValue());
             }

@@ -19,6 +19,7 @@ package org.nmrfx.processor.gui.spectra;
 
 import java.util.List;
 import javafx.scene.shape.Line;
+import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.PolyChart;
@@ -357,7 +358,7 @@ public class CrossHairs {
     }
 
     public void drawCrossHair(int iCross, int iOrient) {
-        Dataset dataset = chart.getDataset();
+        DatasetBase dataset = chart.getDataset();
         if (dataset == null) {
             return;
         }
@@ -387,7 +388,7 @@ public class CrossHairs {
         }
     }
 
-    public void updateMeasureBar(Dataset dataset, int iOrient) {
+    public void updateMeasureBar(DatasetBase dataset, int iOrient) {
         SpectrumMeasureBar measureBar = getController().getSpectrumMeasureBar();
         if (measureBar != null) {
             Double value0 = crossHairStates[0][iOrient] ? crossHairPositions[0][iOrient] : null;

@@ -17,7 +17,7 @@
  */
 package org.nmrfx.processor.gui.spectra;
 
-import org.nmrfx.processor.datasets.DatasetRegion;
+import org.nmrfx.datasets.DatasetRegion;
 
 /**
  *

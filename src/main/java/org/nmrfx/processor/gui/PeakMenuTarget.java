@@ -1,7 +1,8 @@
 
 package org.nmrfx.processor.gui;
 
-import org.nmrfx.processor.datasets.peaks.PeakList;
+import org.nmrfx.peaks.PeakList;
+
 
 /**
  *

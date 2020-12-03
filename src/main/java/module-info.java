@@ -18,25 +18,27 @@
 
 open module org.nmrfx.processor.gui {
     exports org.nmrfx.processor.gui;
+    requires org.nmrfx.core;
     requires org.nmrfx.processor;
-    requires org.nmrfx;
+    requires org.nmrfx.utils;
+//    requires org.nmrfx.utils.properties;
+//    requires org.nmrfx.chart;
+ //  requires org.nmrfx.graphicsio;
+
     requires jnr.posix;
     requires jnr.ffi;
     requires java.logging;
     requires java.prefs;
+    requires java.desktop;
 
     requires org.objectweb.asm.tree.analysis;
     requires org.objectweb.asm.tree;
     requires jnr.a64asm;
     requires jnr.x86asm;
     requires jnr.constants;
-    requires org.apache.commons.collections4;
-    requires org.apache.commons.lang3;
     requires jdistlib;
     requires JTransforms;
     requires JLargeArrays;
-    requires org.apache.logging.log4j;
-    requires org.apache.logging.log4j.core;
     requires commons.math3;
     requires com.google.common;
     requires failureaccess;
@@ -48,11 +50,6 @@ open module org.nmrfx.processor.gui {
     requires org.yaml.snakeyaml;
     requires janino;
     requires commons.compiler;
-    requires smile.core;
-    requires smile.data;
-    requires smile.math;
-    requires smile.graph;
-    requires smile.interpolation;
     requires io.netty.all;
     requires jython.slim;
     requires antlr;
@@ -62,10 +59,10 @@ open module org.nmrfx.processor.gui {
     requires org.objectweb.asm.commons;
     requires org.objectweb.asm.util;
     requires jffi;
-    requires org.controlsfx.controls;
     requires fontawesomefx;
     requires pdfbox;
     requires fontbox;
+    requires org.controlsfx.controls;
     requires javafx.controlsEmpty;
     requires javafx.controls;
     requires javafx.baseEmpty;
