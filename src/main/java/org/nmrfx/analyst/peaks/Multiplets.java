@@ -1,9 +1,5 @@
-package org.nmrfx.processor.datasets.peaks;
+package org.nmrfx.analyst.peaks;
 
-import org.nmrfx.processor.datasets.Dataset;
-import org.nmrfx.processor.datasets.DatasetRegion;
-import org.nmrfx.processor.math.Vec;
-import org.nmrfx.processor.math.Vec.IndexValue;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -18,6 +14,22 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
+import org.nmrfx.datasets.DatasetRegion;
+import org.nmrfx.math.VecBase.IndexValue;
+import org.nmrfx.peaks.AbsMultipletComponent;
+import org.nmrfx.peaks.ComplexCoupling;
+import org.nmrfx.peaks.Coupling;
+import org.nmrfx.peaks.CouplingItem;
+import org.nmrfx.peaks.CouplingPattern;
+import org.nmrfx.peaks.Multiplet;
+import org.nmrfx.peaks.Peak;
+import org.nmrfx.peaks.PeakDim;
+import org.nmrfx.peaks.PeakList;
+import org.nmrfx.peaks.RelMultipletComponent;
+import org.nmrfx.peaks.Singlet;
+import org.nmrfx.processor.datasets.Dataset;
+import org.nmrfx.processor.datasets.peaks.PeakFitException;
+import org.nmrfx.processor.math.Vec;
 
 /**
  *
@@ -109,7 +121,7 @@ public class Multiplets {
     }
 
     public static List<Peak> getPeaks(List<PeakDim> peakDims) {
-        return peakDims.stream().map(p -> p.myPeak).collect(Collectors.toList());
+        return peakDims.stream().map(p -> p.getPeak()).collect(Collectors.toList());
     }
 
     public static void removePeakDims(List<PeakDim> peakDims) {
@@ -231,9 +243,9 @@ public class Multiplets {
     public static void addPeaksToMultiplet(Multiplet multiplet, double... ppms) {
         int iDim = 0;
         PeakDim peakDim = getMultipletRoot(multiplet);
-        PeakList refList = peakDim.myPeak.peakList;
-        double intensity = peakDim.myPeak.getIntensity();
-        double volume = peakDim.myPeak.getVolume1();
+        PeakList refList = peakDim.getPeak().peakList;
+        double intensity = peakDim.getPeak().getIntensity();
+        double volume = peakDim.getPeak().getVolume1();
         float width = peakDim.getLineWidth();
         float bounds = width * 3.0f;
 
@@ -257,9 +269,9 @@ public class Multiplets {
 //    }
     public static void addOuterCoupling(int addNumber, Multiplet multiplet) {
         PeakDim peakDim = getMultipletRoot(multiplet);
-        int type = peakDim.myPeak.getType();
+        int type = peakDim.getPeak().getType();
         List<AbsMultipletComponent> comps = getSortedMultipletPeaks(peakDim, "1.P");
-        PeakList refList = peakDim.myPeak.peakList;
+        PeakList refList = peakDim.getPeak().peakList;
         AbsMultipletComponent firstComp = comps.get(0);
         double firstPPM = firstComp.getOffset();
         AbsMultipletComponent lastComp = comps.get(comps.size() - 1);
@@ -272,8 +284,8 @@ public class Multiplets {
         double dppm;
 
         if (comps.size() == 1) {
-            peakDim.myPeak.setIntensity((float) intensity);
-            peakDim.myPeak.setVolume1((float) volume / 2.0f);
+            peakDim.getPeak().setIntensity((float) intensity);
+            peakDim.getPeak().setVolume1((float) volume / 2.0f);
             width /= 3.0;
             peakDim.setLineWidthValue((float) width);
             peakDim.setBoundsValue((float) width * 3.0f);
@@ -360,7 +372,7 @@ public class Multiplets {
             double firstPPM = comps.get(0).getOffset();
             double lastPPM = comps.get(nPeaks - 1).getOffset();
             double deltaPPM = Math.abs(lastPPM - firstPPM) / (nPeaks - 1);
-            double sf = multiplet.myPeakDim.myPeak.peakList.getSpectralDim(0).getSf();
+            double sf = multiplet.getPeakDim().getPeak().peakList.getSpectralDim(0).getSf();
             double couplingValue = deltaPPM * sf;
             double centerPPM = (firstPPM + lastPPM) / 2.0;
             multiplet.setCenter(centerPPM);
@@ -495,7 +507,7 @@ public class Multiplets {
     public static Optional<Double> measure(Multiplet multiplet, String mode) {
         List<AbsMultipletComponent> comps = getSortedMultipletPeaks(multiplet, "1.P");
         PeakDim peakDim = getMultipletRoot(multiplet);
-        Peak refPeak = peakDim.myPeak;
+        Peak refPeak = peakDim.getPeak();
         List<PeakDim> peakDims = new ArrayList<>();
         peakDims.add(peakDim);
         PeakList peakList = refPeak.peakList;
@@ -528,7 +540,7 @@ public class Multiplets {
         PeakDim peakDim = getMultipletRoot(multiplet);
         List<PeakDim> peakDims = new ArrayList<>();
         peakDims.add(peakDim);
-        Peak refPeak = peakDim.myPeak;
+        Peak refPeak = peakDim.getPeak();
         PeakList peakList = refPeak.peakList;
         Dataset dataset = Dataset.getDataset(peakList.getDatasetName());
         Optional<Double> result = Optional.empty();
@@ -591,7 +603,7 @@ public class Multiplets {
     public static void dumpPeakDims(Collection<PeakDim> peakDims) {
         System.out.println("dump peak dims");
         for (PeakDim peakDim : peakDims) {
-            System.out.println(peakDim.myPeak.getName() + " " + peakDim.myPeak.getIntensity() + " " + peakDim.getChemShift());
+            System.out.println(peakDim.getPeak().getName() + " " + peakDim.getPeak().getIntensity() + " " + peakDim.getChemShift());
         }
     }
 

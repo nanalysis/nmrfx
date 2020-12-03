@@ -1,4 +1,4 @@
-package org.nmrfx.processor.datasets.peaks;
+package org.nmrfx.analyst.peaks;
 
 import java.io.InputStream;
 import java.util.HashMap;

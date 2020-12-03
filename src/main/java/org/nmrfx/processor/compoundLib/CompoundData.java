@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.apache.commons.math3.stat.StatUtils;
+import org.nmrfx.math.VecBase;
 
 /**
  *
@@ -73,7 +74,7 @@ public class CompoundData {
     }
 
     public double search(String vecName, double[] vData, double[] ppms, double[] tols) {
-        Vec vec = Vec.get(vecName);
+        Vec vec = (Vec) Vec.get(vecName);
         return search(vec, vData, ppms, tols);
     }
 
@@ -237,7 +238,7 @@ public class CompoundData {
     }
 
     Vec getVec(String name) {
-        Vec vec = Vec.get(name);
+        Vec vec = (Vec) Vec.get(name);
         if (vec == null) {
             vec = Vec.createNamedVector(n, name, false);
         } else {

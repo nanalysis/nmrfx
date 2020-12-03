@@ -1,4 +1,4 @@
-package org.nmrfx.processor.datasets.peaks;
+package org.nmrfx.analyst.peaks;
 
 import org.junit.Test;
 

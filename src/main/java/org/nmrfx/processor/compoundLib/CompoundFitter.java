@@ -39,8 +39,9 @@ import org.apache.commons.math3.random.RandomGenerator;
 import org.apache.commons.math3.stat.StatUtils;
 import org.apache.commons.math3.stat.correlation.SpearmansCorrelation;
 import org.apache.commons.math3.util.FastMath;
+import org.nmrfx.math.Interpolator;
 import org.nmrfx.processor.math.AmplitudeFitResult;
-import org.nmrfx.processor.math.Interpolator;
+import org.nmrfx.math.Interpolator;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.math.VecUtil;
 
@@ -110,8 +111,8 @@ public class CompoundFitter implements MultivariateFunction {
      * @param maskName
      */
     public void setVecWithMask(String vecName, String maskName) {
-        Vec vec = Vec.get(vecName);
-        Vec maskVec = Vec.get(maskName);
+        Vec vec = (Vec) Vec.get(vecName);
+        Vec maskVec =(Vec)  Vec.get(maskName);
         if (vec == null) {
             throw new IllegalArgumentException("Vector \"" + vecName + "\" does not exist");
         }

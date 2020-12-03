@@ -1,12 +1,12 @@
-package org.nmrfx.processor.datasets.peaks;
+package org.nmrfx.analyst.peaks;
 
 import org.nmrfx.processor.datasets.Dataset;
-import org.nmrfx.processor.datasets.Nuclei;
-import org.nmrfx.processor.datasets.DatasetRegion;
-import org.nmrfx.processor.datasets.peaks.io.PeakWriter;
-import static org.nmrfx.processor.datasets.peaks.Multiplets.locatePeaks;
+import org.nmrfx.datasets.Nuclei;
+import org.nmrfx.datasets.DatasetRegion;
+import org.nmrfx.peaks.io.PeakWriter;
+import static org.nmrfx.analyst.peaks.Multiplets.locatePeaks;
 import org.nmrfx.processor.math.Vec;
-import org.nmrfx.processor.math.Vec.IndexValue;
+import org.nmrfx.math.VecBase.IndexValue;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -22,6 +22,15 @@ import java.util.TreeSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.apache.commons.math3.linear.RealMatrix;
+import org.nmrfx.peaks.AbsMultipletComponent;
+import org.nmrfx.peaks.InvalidPeakException;
+import org.nmrfx.peaks.Multiplet;
+import org.nmrfx.peaks.Peak;
+import org.nmrfx.peaks.PeakDim;
+import org.nmrfx.peaks.PeakList;
+import org.nmrfx.processor.datasets.peaks.PeakFitException;
+import org.nmrfx.processor.datasets.peaks.PeakPickParameters;
+import org.nmrfx.processor.datasets.peaks.PeakPicker;
 import org.nmrfx.processor.operations.IDBaseline2;
 import org.nmrfx.processor.operations.Util;
 
@@ -970,8 +979,8 @@ public class Analyzer {
                 continue;
             }
             Multiplet multiplet = peak.getPeakDim(0).getMultiplet();
-            System.out.println(multiplet.myPeakDim.myPeak.getName() + " "
-                    + multiplet.myPeakDim.getChemShift() + " " + multiplet.getCouplingsAsString() + " " + Multiplets.getCouplingPattern(multiplet) + " " + multiplet.getVolume() / peakList.scale);
+            System.out.println(multiplet.getPeakDim().getPeak().getName() + " "
+                    + multiplet.getPeakDim().getChemShift() + " " + multiplet.getCouplingsAsString() + " " + Multiplets.getCouplingPattern(multiplet) + " " + multiplet.getVolume() / peakList.scale);
 
         }
     }

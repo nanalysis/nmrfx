@@ -1,7 +1,8 @@
-package org.nmrfx.processor.datasets.peaks;
+package org.nmrfx.analyst.peaks;
 
 import java.util.ArrayList;
 import java.util.List;
+import org.nmrfx.peaks.CouplingItem;
 
 /**
  *

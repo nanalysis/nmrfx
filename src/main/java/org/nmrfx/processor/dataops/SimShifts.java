@@ -8,10 +8,9 @@ import org.ejml.data.Complex_F64;
 import org.ejml.data.DMatrixRMaj;
 import org.ejml.data.ZMatrixRMaj;
 import org.ejml.dense.row.CommonOps_DDRM;
-import static org.ejml.dense.row.CommonOps_DDRM.identity;
 import org.ejml.dense.row.CommonOps_ZDRM;
-import org.ejml.dense.row.factory.DecompositionFactory_DDRM;
 import org.ejml.interfaces.decomposition.EigenDecomposition_F64;
+import org.ejml.dense.row.factory.DecompositionFactory_DDRM;
 import org.ejml.simple.SimpleMatrix;
 import static org.nmrfx.processor.dataops.KronProduct.kronProd;
 import org.nmrfx.processor.math.Vec;
@@ -200,8 +199,8 @@ public class SimShifts {
         for (int i = 0; i < n; i++) {
             int m = (int) Math.pow(2, i);
             int m2 = (int) Math.pow(2, n - i - 1);
-            DMatrixRMaj e1Mat = identity(m, m);
-            DMatrixRMaj e2Mat = identity(m2, m2);
+            DMatrixRMaj e1Mat = CommonOps_DDRM.identity(m, m);
+            DMatrixRMaj e2Mat = CommonOps_DDRM.identity(m2, m2);
             ZMatrixRMaj cMatz = kronProd(kronProd(e1Mat, y), e2Mat);
             CommonOps_ZDRM.scale(0, 1.0, cMatz);
             DMatrixRMaj cMat = new DMatrixRMaj(N, N);
@@ -218,8 +217,8 @@ public class SimShifts {
         for (int i = 0; i < n; i++) {
             int m = (int) Math.pow(2, i);
             int m2 = (int) Math.pow(2, n - i - 1);
-            DMatrixRMaj e1Mat = identity(m, m);
-            DMatrixRMaj e2Mat = identity(m2, m2);
+            DMatrixRMaj e1Mat = CommonOps_DDRM.identity(m, m);
+            DMatrixRMaj e2Mat = CommonOps_DDRM.identity(m2, m2);
             DMatrixRMaj cMat = kronProd(kronProd(e1Mat, x), e2Mat);
             CommonOps_DDRM.add(cMat, state, state);
         }
@@ -234,8 +233,8 @@ public class SimShifts {
         for (int i = 0; i < n - 1; i++) {
             int m = (int) Math.pow(2, i);
             int m2 = (int) Math.pow(2, n - i - 1);
-            DMatrixRMaj e1Mat = identity(m, m);
-            DMatrixRMaj e2Mat = identity(m2, m2);
+            DMatrixRMaj e1Mat = CommonOps_DDRM.identity(m, m);
+            DMatrixRMaj e2Mat = CommonOps_DDRM.identity(m2, m2);
             DMatrixRMaj cMat = kronProd(kronProd(e1Mat, c1Mat), e2Mat);
 
             CommonOps_DDRM.add(ham, shifts.get(i, i), cMat, ham);

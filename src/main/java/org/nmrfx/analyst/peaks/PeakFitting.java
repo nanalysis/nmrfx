@@ -1,19 +1,24 @@
-package org.nmrfx.processor.datasets.peaks;
+package org.nmrfx.analyst.peaks;
 
 import org.nmrfx.processor.datasets.Dataset;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import org.nmrfx.processor.datasets.DatasetRegion;
-import static org.nmrfx.processor.datasets.peaks.PeakList.FIT_ALL;
-import static org.nmrfx.processor.datasets.peaks.PeakList.FIT_AMPLITUDES;
-import static org.nmrfx.processor.datasets.peaks.PeakList.FIT_LW_AMPLITUDES;
-import static org.nmrfx.processor.datasets.peaks.PeakList.FIT_MAX_DEV;
-import static org.nmrfx.processor.datasets.peaks.PeakList.FIT_RMS;
+import org.nmrfx.datasets.DatasetRegion;
+import org.nmrfx.peaks.Multiplet;
+import org.nmrfx.peaks.Peak;
+import org.nmrfx.peaks.PeakDim;
+import org.nmrfx.peaks.PeakList;
+import org.nmrfx.processor.datasets.peaks.PeakFitException;
+import org.nmrfx.processor.datasets.peaks.PeakFitter;
+import static org.nmrfx.processor.datasets.peaks.PeakListTools.FIT_ALL;
+import static org.nmrfx.processor.datasets.peaks.PeakListTools.FIT_AMPLITUDES;
+import static org.nmrfx.processor.datasets.peaks.PeakListTools.FIT_LW_AMPLITUDES;
+import static org.nmrfx.processor.datasets.peaks.PeakListTools.FIT_MAX_DEV;
+import static org.nmrfx.processor.datasets.peaks.PeakListTools.FIT_RMS;
 
 /**
  *
@@ -212,10 +217,10 @@ public class PeakFitting {
             if (peakDim.getPeak().isDeleted()) {
                 continue;
             }
-            if (!peakDim.myPeak.getFlag(4)) {
+            if (!peakDim.getPeak().getFlag(4)) {
                 allFit = false;
             }
-            allPeaks.add(peakDim.myPeak);
+            allPeaks.add(peakDim.getPeak());
             double[] bound;
             if (winRegions != null) {
                 bound = getBounds(winRegions, peakDim.getChemShift());

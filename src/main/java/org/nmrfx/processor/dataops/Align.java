@@ -12,9 +12,9 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+import org.nmrfx.math.VecBase.IndexValue;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.math.Vec;
-import org.nmrfx.processor.math.Vec.IndexValue;
 import org.nmrfx.processor.operations.CShift;
 
 /**

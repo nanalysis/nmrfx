@@ -18,14 +18,14 @@ set nvjpmain=org.python.util.jython
 set dir=%~dp0
 
 set javaexe=java
-set cp="%dir%analyst-%nvjver%.jar;%dir%lib/Manifest.jar"
+set cp="%dir%nmrfx-analyst-%nvjver%.jar;%dir%lib/Manifest.jar"
 
 
 set testjava=%dir%jre\bin\java.exe
 
 if exist %testjava% (
     set javaexe="%testjava%"
-    set cp="%dir%lib/analyst-%nvjver%.jar;%dir%lib/%Manifest.jar"
+    set cp="%dir%lib/nmrfx-analyst-%nvjver%.jar;%dir%lib/%Manifest.jar"
 )
 
 

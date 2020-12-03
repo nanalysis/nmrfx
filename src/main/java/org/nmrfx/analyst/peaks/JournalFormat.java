@@ -3,15 +3,21 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package org.nmrfx.processor.datasets.peaks;
+package org.nmrfx.analyst.peaks;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.apache.commons.lang3.text.StrSubstitutor;
+import org.nmrfx.datasets.Nuclei;
+import org.nmrfx.peaks.Coupling;
+import org.nmrfx.peaks.CouplingPattern;
+import org.nmrfx.peaks.Multiplet;
+import org.nmrfx.peaks.Peak;
+import org.nmrfx.peaks.PeakList;
+import org.nmrfx.peaks.Singlet;
 import org.nmrfx.processor.datasets.Dataset;
-import org.nmrfx.processor.datasets.Nuclei;
 
 /**
  *
@@ -76,10 +82,10 @@ public class JournalFormat {
 
 //            System.out.println(multiplet.myPeakDim.myPeak.getName() + " "
 //                    + multiplet.myPeakDim.getChemShift() + " " + multiplet.getCouplingsAsString() + " " + Multiplets.getCouplingPattern(multiplet) + " " + multiplet.getVolume() / peakList.scale);
-            double ppm = multiplet.myPeakDim.getChemShiftValue();
+            double ppm = multiplet.getPeakDim().getChemShiftValue();
             int nH = (int) Math.round(multiplet.getVolume() / peakList.getScale());
-            double bounds = multiplet.myPeakDim.getBounds().doubleValue();
-            double lw = multiplet.myPeakDim.getLineWidthHz();
+            double bounds = multiplet.getPeakDim().getBounds().doubleValue();
+            double lw = multiplet.getPeakDim().getLineWidthHz();
             double ppm1;
             double ppm2;
             if (ascending) {
