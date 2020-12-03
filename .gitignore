@@ -1,0 +1,10 @@
+/target/
+/sandbox/
+/tmp/
+/installers/
+/.idea/
+structure.iml
+*.xml
+*.class
+.DS_Store
+nmrfx-core.iml
