@@ -20,7 +20,7 @@ public class DatasetBase {
     //        } catch (IOException ioE) {
     //        }
     //    }
-        public final static int NV_HEADER_SIZE = 2048;
+    public final static int NV_HEADER_SIZE = 2048;
     public final static int UCSF_HEADER_SIZE = 180;
     public final static int LABEL_MAX_BYTES = 16;
     public final static int SOLVENT_MAX_BYTES = 24;
@@ -91,6 +91,7 @@ public class DatasetBase {
     public DatasetBase() {
 
     }
+
     public DatasetBase(String fullName, String name, boolean writable, boolean useCacheFile) throws IOException {
         file = new File(fullName);
 
@@ -304,6 +305,16 @@ public class DatasetBase {
 
     public DatasetStorageInterface getDataFile() {
         return dataFile;
+    }
+
+    /**
+     * Get the Vec object. Null if the dataset stores data in a data file,
+     * rather than Vec object.
+     *
+     * @return Vec storing data or null if data file mode.
+     */
+    public VecBase getVec() {
+        return null;
     }
 
     /**
@@ -2073,7 +2084,7 @@ public class DatasetBase {
     }
 
     synchronized public RegionData analyzeRegion(int[][] pt, int[] cpt, double[] width, int[] dim)
-            throws IOException{
+            throws IOException {
         return null;
     }
 

@@ -1432,7 +1432,7 @@ public class NMRStarReader {
         if (DEBUG) {
             System.out.println("nSave " + star3.getSaveFrameNames());
         }
-        AtomResonanceFactory resFactory = (AtomResonanceFactory) PeakList.resFactory();
+        ResonanceFactory resFactory =  PeakList.resFactory();
         if (argv.length == 0) {
             hasResonances = false;
             compoundMap.clear();

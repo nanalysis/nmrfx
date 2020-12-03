@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.nmrfx.peaks.PeakList;
+import org.nmrfx.peaks.ResonanceFactory;
 import org.nmrfx.peaks.SimpleResonance;
 import org.nmrfx.star.Loop;
 import org.nmrfx.star.Saveframe;
@@ -35,13 +36,13 @@ import org.nmrfx.star.ParseException;
 public class AtomResonance extends SimpleResonance {
 
     Atom atom = null;
-    static String[] resonanceLoopStrings = {
+    public final static String[] resonanceLoopStrings = {
         "_Resonance.ID",
         "_Resonance.Name",
         "_Resonance.Resonance_set_ID",
         "_Resonance.Spin_system_ID ",
         "_Resonance.Resonance_linker_list_ID ",};
-    static String[] resonanceCovalentLinkStrings = {
+    public final static String[] resonanceCovalentLinkStrings = {
         "_Resonance_covalent_link.Resonance_ID_1",
         "_Resonance_covalent_link.Resonance_ID_2",};
 
@@ -82,7 +83,7 @@ public class AtomResonance extends SimpleResonance {
         List<String> nameColumn = loop.getColumnAsList("Name");
         List<String> resSetColumn = loop.getColumnAsList("Resonance_set_ID");
         // fixme unused ArrayList ssColumn = loop.getColumnAsList("Spin_system_ID");
-        AtomResonanceFactory resFactory = (AtomResonanceFactory) PeakList.resFactory();
+        ResonanceFactory resFactory = PeakList.resFactory();
         for (int i = 0, n = idColumn.size(); i < n; i++) {
             String value = null;
             long idNum = 0;
@@ -191,7 +192,7 @@ public class AtomResonance extends SimpleResonance {
         }
     }
 
-    String toSTARResonanceString() {
+    public String toSTARResonanceString() {
         StringBuffer result = new StringBuffer();
         String sep = " ";
         char stringQuote = '"';

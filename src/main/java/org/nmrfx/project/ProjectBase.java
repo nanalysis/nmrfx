@@ -15,10 +15,13 @@ import org.nmrfx.datasets.DatasetParameterFile;
 import org.nmrfx.peaks.PeakList;
 
 import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.nio.file.*;
 import java.util.*;
 import java.util.function.Predicate;
@@ -27,12 +30,13 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import org.nmrfx.datasets.DatasetFactory;
 
 /**
  *
  * @author brucejohnson
  */
-public class ProjectBase<T extends PeakList> {
+public class ProjectBase {
 
     static final public Pattern INDEX_PATTERN = Pattern.compile("^([0-9]+)_.*");
     static final public Predicate<String> INDEX_PREDICATE = INDEX_PATTERN.asPredicate();
@@ -40,17 +44,27 @@ public class ProjectBase<T extends PeakList> {
     public Path projectDir = null;
     public Map<String, PeakPaths> peakPaths;
 
-    protected static ProjectBase getNewProject(String name) {
-        return new ProjectBase(name);
+    public static ProjectBase getNewProject(String name) {
+        ProjectBase projectBase;
+        try {
+            Class c = Class.forName("org.nmrfx.processor.gui.project.GUIProject");
+            Class[] parameterTypes = {String.class};
+            Constructor constructor = c.getDeclaredConstructor(parameterTypes);
+            projectBase = (ProjectBase) constructor.newInstance(name);
+        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException | SecurityException ex) {
+            System.out.println(" new project fail " + ex.getLocalizedMessage());
+            projectBase = new ProjectBase(name);
+        }
+        return projectBase;
     }
 
     protected Map<String, DatasetBase> datasetMap = new HashMap<>();
     protected List<DatasetBase> datasets = new ArrayList<>();
-    protected Map<String, T> peakLists = new HashMap<>();
+    protected Map<String, PeakList> peakLists = new HashMap<>();
     static ProjectBase activeProject = null;
     public static PropertyChangeSupport pcs = null;
 
-    public ProjectBase(String name) {
+    protected ProjectBase(String name) {
         this.name = name;
         peakPaths = new HashMap<>();
     }
@@ -62,6 +76,10 @@ public class ProjectBase<T extends PeakList> {
         }
         activeProject = project;
         return project;
+    }
+
+    public static void setPCS(PropertyChangeSupport newPCS) {
+        pcs = newPCS;
     }
 
     static String getName(String s) {
@@ -91,6 +109,7 @@ public class ProjectBase<T extends PeakList> {
             pcs.firePropertyChange(event);
         }
     }
+
     public String getName() {
         return name;
     }
@@ -129,10 +148,12 @@ public class ProjectBase<T extends PeakList> {
     }
 
     public List<DatasetBase> getDatasets() {
+        System.out.println("get datasets " + datasets.toString());
         return datasets;
     }
 
     public void addDataset(DatasetBase dataset, String datasetName) {
+        System.out.println("add dataset");
         datasetMap.put(datasetName, dataset);
         refreshDatasetList();
     }
@@ -148,17 +169,18 @@ public class ProjectBase<T extends PeakList> {
     public void refreshDatasetList() {
         datasets.clear();
         datasets.addAll(datasetMap.values());
+        System.out.println("refresh datasets " + datasets.toString());
     }
 
-    public void addPeakList(T peakList, String name) {
+    public void addPeakList(PeakList peakList, String name) {
         peakLists.put(name, peakList);
     }
 
-    public Collection<T> getPeakLists() {
+    public Collection<PeakList> getPeakLists() {
         return peakLists.values();
     }
 
-    public Map<String, T> getPeakListMap() {
+    public Map<String, PeakList> getPeakListMap() {
         return peakLists;
     }
 
@@ -166,7 +188,7 @@ public class ProjectBase<T extends PeakList> {
         return peakLists.keySet().stream().sorted().collect(Collectors.toList());
     }
 
-    public T getPeakList(String name) {
+    public PeakList getPeakList(String name) {
         return peakLists.get(name);
     }
 
@@ -178,8 +200,8 @@ public class ProjectBase<T extends PeakList> {
      * @return the Optional containing the PeaKlist or an empty value if no
      * PeakList with that id exists
      */
-    public Optional<T> getPeakList(int listID) {
-        Optional<T> peakListOpt = peakLists.values().stream().
+    public Optional<PeakList> getPeakList(int listID) {
+        Optional<PeakList> peakListOpt = peakLists.values().stream().
                 filter(p -> (p.getId() == listID)).findFirst();
         return peakListOpt;
     }
@@ -191,13 +213,13 @@ public class ProjectBase<T extends PeakList> {
      * @return Optional containing first peakList if any peak lists present or
      * empty if no peak lists.
      */
-    public Optional<T> getFirstPeakList() {
-        Optional<T> peakListOpt = peakLists.values().stream().
+    public Optional<PeakList> getFirstPeakList() {
+        Optional<PeakList> peakListOpt = peakLists.values().stream().
                 sorted((o1, o2) -> Integer.compare(o1.getId(), o2.getId())).findFirst();
         return peakListOpt;
     }
 
-    public void putPeakList(T peakList) {
+    public void putPeakList(PeakList peakList) {
         peakLists.put(peakList.getName(), peakList);
     }
 
@@ -222,6 +244,7 @@ public class ProjectBase<T extends PeakList> {
     }
 
     public void clearAllDatasets() {
+        System.out.println("clear all dataet");
         List<DatasetBase> removeDatasets = new ArrayList<>();
         removeDatasets.addAll(datasets);
         for (DatasetBase datasetBase : removeDatasets) {
@@ -365,7 +388,7 @@ public class ProjectBase<T extends PeakList> {
                         String fileName = path.getFileName().toString();
 
                         try {
-                            DatasetBase dataset = new DatasetBase(pathName, fileName, false, false);
+                            DatasetBase dataset = DatasetFactory.newDataset(pathName, fileName, false, false);
                             File regionFile = DatasetRegion.getRegionFile(path.toString());
                             System.out.println("region " + regionFile.toString());
                             if (regionFile.canRead()) {
@@ -447,5 +470,42 @@ public class ProjectBase<T extends PeakList> {
             return result;
         }
 
+    }
+
+    /**
+     * Add a PropertyChangeListener to the listener list. The listener is
+     * registered for all properties. The same listener object may be added more
+     * than once, and will be called as many times as it is added. If listener
+     * is null, no exception is thrown and no action is taken.
+     */
+    public static void addPropertyChangeListener(PropertyChangeListener listener) {
+        if (pcs != null) {
+            pcs.addPropertyChangeListener(listener);
+        }
+    }
+
+    /**
+     * Remove a PropertyChangeListener from the listener list. This removes a
+     * PropertyChangeListener that was registered for all properties. If
+     * listener was added more than once to the same event source, it will be
+     * notified one less time after being removed. If listener is null, or was
+     * never added, no exception is thrown and no action is taken.
+     */
+    public static void removePropertyChangeListener(PropertyChangeListener listener) {
+        if (pcs != null) {
+            pcs.removePropertyChangeListener(listener);
+        }
+    }
+
+    /**
+     * Returns an array of all the listeners that were added to the
+     * PropertyChangeSupport object with addPropertyChangeListener().
+     */
+    public static PropertyChangeListener[] getPropertyChangeListeners() {
+        if (pcs == null) {
+            return null;
+        } else {
+            return pcs.getPropertyChangeListeners();
+        }
     }
 }

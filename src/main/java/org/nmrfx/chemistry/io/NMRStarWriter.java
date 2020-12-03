@@ -38,6 +38,7 @@ import org.nmrfx.star.ParseException;
 import org.nmrfx.star.STAR3;
 import org.nmrfx.peaks.PeakPaths;
 import org.nmrfx.chemistry.constraints.ConstraintSet;
+import org.nmrfx.peaks.ResonanceFactory;
 
 /**
  *
@@ -1016,7 +1017,7 @@ public class NMRStarWriter {
             peakWriter.writePeaksSTAR3(chan, peakList);
         }
 
-        AtomResonanceFactory resFactory = (AtomResonanceFactory) PeakList.resFactory();
+        ResonanceFactory resFactory = PeakList.resFactory();
 
         resFactory.writeResonancesSTAR3(chan);
         if (molecule != null) {

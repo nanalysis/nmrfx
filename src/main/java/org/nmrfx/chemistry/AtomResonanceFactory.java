@@ -28,12 +28,11 @@ import java.util.TreeMap;
 
 import static org.nmrfx.chemistry.AtomResonance.resonanceLoopStrings;
 
-
 /**
  *
  * @author Bruce Johnson
  */
-public class AtomResonanceFactory extends ResonanceFactory implements FreezeListener {
+public class AtomResonanceFactory implements FreezeListener {
 
     Map<Long, AtomResonance> map = new HashMap<>();
     private long lastID = -1;
@@ -42,13 +41,12 @@ public class AtomResonanceFactory extends ResonanceFactory implements FreezeList
     public AtomResonanceFactory() {
     }
 
-    @Override
     public void init() {
         PeakList.registerFreezeListener(this);
     }
 
     public Resonance build() {
-        while (map.get(lastID++)!=null);
+        while (map.get(lastID++) != null);
         AtomResonance resonance = new AtomResonance(lastID);
         map.put(lastID, resonance);
         return resonance;
@@ -216,8 +214,8 @@ public class AtomResonanceFactory extends ResonanceFactory implements FreezeList
             String condition = peak.getPeakList().getSampleConditionLabel();
             AtomResonance res = (AtomResonance) peakDim.getResonance();
             Double ppmAvg = res.getPPMAvg(condition);
-            Atom atom=null;
-            if (MoleculeFactory.getActive()!=null) {
+            Atom atom = null;
+            if (MoleculeFactory.getActive() != null) {
                 atom = MoleculeBase.getAtomByName(peakDim.getLabel());
             }
             if (peakDim.isFrozen()) {

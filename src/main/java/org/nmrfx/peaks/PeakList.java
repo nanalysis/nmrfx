@@ -16,6 +16,7 @@ import org.nmrfx.utilities.Util;
 import static java.lang.Double.compare;
 import static java.util.Comparator.comparing;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
+import org.nmrfx.chemistry.AtomResonanceFactory;
 import org.nmrfx.utilities.Updater;
 
 public class PeakList {
@@ -108,6 +109,26 @@ public class PeakList {
     public static Optional<PeakList> get(int listID) {
         return ProjectBase.getActive().getPeakList(listID);
     }
+
+    /**
+     *
+     * @return
+     */
+    public static Collection<PeakList> peakLists() {
+        return ProjectBase.getActive().getPeakLists();
+    }
+
+    /**
+     * Return an Optional containing the PeakList with lowest id number or an
+     * empty value if no PeakLists are present.
+     *
+     * @return Optional containing first peakList if any peak lists present or
+     * empty if no peak lists.
+     */
+    public static Optional<PeakList> getFirst() {
+        return ProjectBase.getActive().getFirstPeakList();
+    }
+
     /**
      *
      */
@@ -284,7 +305,7 @@ public class PeakList {
      * @return
      */
     public static PeakList getPeakListForDataset(String datasetName) {
-        ProjectBase<PeakList> project = ProjectBase.getActive();
+        ProjectBase project = ProjectBase.getActive();
         for (PeakList peakList : project.getPeakLists()) {
             if (peakList.fileName.equals(datasetName)) {
                 return peakList;
@@ -427,7 +448,7 @@ public class PeakList {
      * @param newName
      */
     public void setName(String newName) {
-        ProjectBase<PeakList> project = ProjectBase.getActive();
+        ProjectBase project = ProjectBase.getActive();
         project.removePeakList(listName);
         listName = newName;
         project.addPeakList(this, newName);
@@ -470,7 +491,6 @@ public class PeakList {
             listeners.add(newListener);
         }
     }
-
 
     public void notifyListeners() {
         for (PeakListener listener : listeners) {
@@ -892,7 +912,7 @@ public class PeakList {
 
         int lastDot = peakSpecifier.lastIndexOf('.');
 
-        ProjectBase<PeakList> project = ProjectBase.getActive();
+        ProjectBase project = ProjectBase.getActive();
         PeakList peakList = project.
                 getPeakList(peakSpecifier.substring(0, dot));
 
@@ -933,7 +953,7 @@ public class PeakList {
 
         int lastDot = peakSpecifier.lastIndexOf('.');
 
-        ProjectBase<PeakList> project = ProjectBase.getActive();
+        ProjectBase project = ProjectBase.getActive();
         PeakList peakList = project.
                 getPeakList(peakSpecifier.substring(0, dot));
 
@@ -974,7 +994,7 @@ public class PeakList {
 
         int lastDot = peakSpecifier.lastIndexOf('.');
 
-        ProjectBase<PeakList> project = ProjectBase.getActive();
+        ProjectBase project = ProjectBase.getActive();
         PeakList peakList = project.
                 getPeakList(peakSpecifier.substring(0, dot));
 
@@ -1085,7 +1105,7 @@ public class PeakList {
 
         int lastDot = peakSpecifier.lastIndexOf('.');
 
-        ProjectBase<PeakList> project = ProjectBase.getActive();
+        ProjectBase project = ProjectBase.getActive();
         PeakList peakList = project.
                 getPeakList(peakSpecifier.substring(0, dot));
 
@@ -1274,7 +1294,7 @@ public class PeakList {
      * @return the PeaKlist or null if no PeakList of that name exists
      */
     public static PeakList get(String listName) {
-        ProjectBase<PeakList> project = ProjectBase.getActive();
+        ProjectBase project = ProjectBase.getActive();
         return project.getPeakList(listName);
     }
 
@@ -1550,7 +1570,7 @@ public class PeakList {
      */
     public static boolean isAnyChanged() {
         boolean anyChanged = false;
-        ProjectBase<PeakList> project = ProjectBase.getActive();
+        ProjectBase project = ProjectBase.getActive();
         for (PeakList checkList : project.getPeakLists()) {
             if (checkList.isChanged()) {
                 anyChanged = true;
@@ -1565,7 +1585,7 @@ public class PeakList {
      *
      */
     public static void clearAllChanged() {
-        ProjectBase<PeakList> project = ProjectBase.getActive();
+        ProjectBase project = ProjectBase.getActive();
         for (PeakList checkList : project.getPeakLists()) {
             checkList.clearChanged();
         }
@@ -1610,7 +1630,7 @@ public class PeakList {
      * @param listName
      */
     public static void remove(String listName) {
-        ProjectBase<PeakList> project = ProjectBase.getActive();
+        ProjectBase project = ProjectBase.getActive();
         PeakList peakList = project.getPeakList(listName);
         if (peakList != null) {
             peakList.remove();
