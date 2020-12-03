@@ -1457,6 +1457,22 @@ public class MoleculeBase implements Serializable, ITree {
         return maxCount;
     }
 
+    public int getRefPPMSetCount() {
+        Iterator e = getSpatialSetIterator();
+        int maxCount = 1;
+        while (e.hasNext()) {
+            SpatialSet spatialSet = (SpatialSet) e.next();
+            if (spatialSet == null) {
+                continue;
+            }
+            int nSets = spatialSet.getRefPPMSetCount();
+            if (nSets > maxCount) {
+                maxCount = nSets;
+            }
+        }
+        return maxCount;
+    }
+
     public void reName(Compound compound, String name1, String name2) {
         name = name2;
         MoleculeFactory.removeMolecule(name1);
@@ -1509,6 +1525,10 @@ public class MoleculeBase implements Serializable, ITree {
         for (int istruct : structures) {
             activeStructures.add(istruct);
         }
+    }
+
+    public void setDotBracket(String value) {
+        setProperty("vienna", value);
     }
 
     public static class SpatialSetIterator implements Iterator {
