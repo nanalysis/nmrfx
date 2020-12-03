@@ -33,13 +33,13 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
 import javafx.scene.paint.Color;
+import org.nmrfx.chemistry.Atom;
+import org.nmrfx.peaks.FreezeListener;
+import org.nmrfx.peaks.Peak;
+import org.nmrfx.peaks.PeakDim;
+import org.nmrfx.peaks.PeakList;
 import org.nmrfx.processor.datasets.Dataset;
-import org.nmrfx.processor.datasets.peaks.FreezeListener;
-import org.nmrfx.processor.datasets.peaks.Peak;
-import org.nmrfx.processor.datasets.peaks.PeakDim;
-import org.nmrfx.processor.datasets.peaks.PeakList;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
-import org.nmrfx.structure.chemistry.Atom;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.processor.optimization.PeakClusterMatcher;
 import org.nmrfx.processor.optimization.PeakCluster;
@@ -47,7 +47,7 @@ import org.nmrfx.processor.gui.spectra.ConnectPeakAttributes;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.processor.gui.spectra.KeyBindings;
 import org.nmrfx.processor.optimization.BipartiteMatcher;
-import org.nmrfx.project.Project;
+import org.nmrfx.processor.project.Project;
 
 /**
  *
@@ -284,7 +284,7 @@ public class PeakSlider implements ControllerTool {
     public void thawAllPeaks() {
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "Thaw all peaks?");
         alert.showAndWait().ifPresent(response -> {
-            for (PeakList peakList : PeakList.getLists()) {
+            for (PeakList peakList : PeakList.peakLists()) {
                 if (peakList.isSimulated()) {
                     peakList.peaks().stream().forEach(peak -> {
                         peak.setFrozen(false, true);
@@ -407,7 +407,7 @@ public class PeakSlider implements ControllerTool {
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "Move all peaks back to predicted positions?");
         alert.showAndWait().ifPresent(response -> {
             Map<Atom, Double> shiftMap = getShiftMap(randomize);
-            for (PeakList peakList : PeakList.getLists()) {
+            for (PeakList peakList : PeakList.peakLists()) {
                 if (peakList.isSimulated()) {
                     peakList.peaks().stream().forEach(peak -> {
                         for (PeakDim peakDim : peak.getPeakDims()) {

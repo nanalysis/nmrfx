@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.Optional;
 import java.util.ResourceBundle;
-import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
@@ -12,21 +11,16 @@ import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.ChoiceBox;
-import javafx.scene.control.TextField;
 import javafx.scene.control.TextInputDialog;
 import javafx.scene.layout.BorderPane;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import org.controlsfx.dialog.ExceptionDialog;
-import org.nmrfx.processor.gui.FXMLController;
-import org.nmrfx.processor.gui.MinerController;
-import org.nmrfx.processor.gui.RegionController;
-import org.nmrfx.structure.chemistry.Entity;
-import org.nmrfx.structure.chemistry.InvalidMoleculeException;
+import org.nmrfx.chemistry.Entity;
+import org.nmrfx.chemistry.InvalidMoleculeException;
+import org.nmrfx.chemistry.Polymer;
 import org.nmrfx.structure.chemistry.Molecule;
-import org.nmrfx.structure.chemistry.Polymer;
 import org.nmrfx.structure.chemistry.predict.Predictor;
-import org.nmrfx.structure.chemistry.predict.ProteinPredictor;
 
 /**
  * FXML Controller class

@@ -58,14 +58,18 @@ import javafx.util.Callback;
 import javafx.util.StringConverter;
 import javafx.util.converter.DefaultStringConverter;
 import org.controlsfx.dialog.ExceptionDialog;
-import org.nmrfx.processor.datasets.peaks.Peak;
-import org.nmrfx.processor.datasets.peaks.PeakList;
-import org.nmrfx.project.Project;
-import org.nmrfx.structure.chemistry.InvalidMoleculeException;
-import org.nmrfx.structure.chemistry.SpatialSetGroup;
-import org.nmrfx.structure.chemistry.constraints.NOEAssign;
-import org.nmrfx.structure.chemistry.constraints.Noe;
-import org.nmrfx.structure.chemistry.constraints.NoeSet;
+import org.nmrfx.chemistry.InvalidMoleculeException;
+import org.nmrfx.chemistry.MoleculeBase;
+import org.nmrfx.chemistry.MoleculeFactory;
+import org.nmrfx.chemistry.SpatialSetGroup;
+import org.nmrfx.chemistry.constraints.MolecularConstraints;
+import org.nmrfx.chemistry.constraints.Noe;
+import org.nmrfx.chemistry.constraints.NoeSet;
+import org.nmrfx.peaks.Peak;
+import org.nmrfx.peaks.PeakList;
+import org.nmrfx.processor.project.Project;
+import org.nmrfx.structure.noe.NOEAssign;
+import org.nmrfx.structure.noe.NOECalibrator;
 
 /**
  *
@@ -86,12 +90,19 @@ public class NOETableController implements Initializable {
     MenuButton noeSetMenuItem;
     MenuButton peakListMenuButton;
     ObservableMap<String, NoeSet> noeSetMap;
+    MoleculeBase molecule = null;
+    MolecularConstraints molConstr = null;
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
         initToolBar();
         initTable();
-        noeSetMap = FXCollections.observableMap(NoeSet.NOE_SETS());
+        molecule = MoleculeFactory.getActive();
+        if (molecule != null) {
+            molConstr = molecule.getMolecularConstraints();
+        }
+
+        noeSetMap = FXCollections.observableMap(molConstr.noeSets);
         MapChangeListener<String, NoeSet> mapChangeListener = (MapChangeListener.Change<? extends String, ? extends NoeSet> change) -> {
             updateNoeSetMenu();
         };
@@ -143,13 +154,17 @@ public class NOETableController implements Initializable {
 
     public void updateNoeSetMenu() {
         noeSetMenuItem.getItems().clear();
+        MoleculeBase mol = MoleculeFactory.getActive();
 
-        for (String noeSetName : NoeSet.getNames()) {
-            MenuItem menuItem = new MenuItem(noeSetName);
-            menuItem.setOnAction(e -> {
-                setNoeSet(NoeSet.getSet(noeSetName));
-            });
-            noeSetMenuItem.getItems().add(menuItem);
+        if (mol != null) {
+            MolecularConstraints molConstr = mol.getMolecularConstraints();
+            for (String noeSetName : molConstr.getNOESetNames()) {
+                MenuItem menuItem = new MenuItem(noeSetName);
+                menuItem.setOnAction(e -> {
+                    setNoeSet(molConstr.noeSets.get(noeSetName));
+                });
+                noeSetMenuItem.getItems().add(menuItem);
+            }
         }
     }
 
@@ -305,7 +320,7 @@ public class NOETableController implements Initializable {
                 stage.setTitle("Noes: ");
             } else {
 
-                ObservableList<Noe> noes = FXCollections.observableList(noeSet.get());
+                ObservableList<Noe> noes = FXCollections.observableList(noeSet.getConstraints());
                 System.out.println("noes " + noes.size());
                 updateColumns();
                 tableView.setItems(noes);
@@ -322,18 +337,21 @@ public class NOETableController implements Initializable {
             for (int i = 0; i < nDim; i++) {
                 NOEAssign.findMax(peakList, i, 0);
             }
-            NoeSet noeSet = NoeSet.getActiveSet();
-            if (noeSet == null) {
-                noeSet = NoeSet.addSet("default");
+            Optional<NoeSet> noeSetOpt = molConstr.activeNOESet();
+            if (noeSetOpt.isEmpty()) {
+                noeSet = molConstr.newNOESet("default");
+                noeSetOpt = Optional.of(noeSet);
+            } else {
+                noeSet = noeSetOpt.get();
             }
-            Optional<NoeSet> noeSetOpt = Optional.of(noeSet);
             NOEAssign.extractNoePeaks2(noeSetOpt, peakList, 2, false, 0);
-            noeSet.updateContributions(false, false);
-            setNoeSet(noeSet);
-            for (String name : NoeSet.getNames()) {
-                System.out.println("set name " + name);
+            if (noeSetOpt.isPresent()) {
+                NOECalibrator noeCalibrator = new NOECalibrator(noeSetOpt.get());
+                noeCalibrator.updateContributions(false, false);
+                noeSet = noeSetOpt.get();
+                System.out.println("active " + noeSet.getName());
             }
-            System.out.println("active " + noeSet.getName());
+            setNoeSet(noeSet);
             updateNoeSetMenu();
         } catch (InvalidMoleculeException ex) {
             ExceptionDialog exD = new ExceptionDialog(ex);

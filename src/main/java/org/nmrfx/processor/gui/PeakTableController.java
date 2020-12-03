@@ -57,12 +57,12 @@ import javafx.scene.paint.Color;
 import javafx.util.Callback;
 import javafx.util.StringConverter;
 import javafx.util.converter.DefaultStringConverter;
-import org.nmrfx.processor.datasets.peaks.Multiplet;
-import org.nmrfx.processor.datasets.peaks.Peak;
-import org.nmrfx.processor.datasets.peaks.PeakEvent;
-import org.nmrfx.processor.datasets.peaks.PeakList;
-import org.nmrfx.processor.datasets.peaks.PeakListener;
-import org.nmrfx.project.Project;
+import org.nmrfx.peaks.Multiplet;
+import org.nmrfx.peaks.Peak;
+import org.nmrfx.peaks.PeakEvent;
+import org.nmrfx.peaks.PeakList;
+import org.nmrfx.peaks.PeakListener;
+import org.nmrfx.processor.project.Project;
 
 /**
  *

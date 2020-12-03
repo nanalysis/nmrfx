@@ -168,7 +168,7 @@ public class SimFitMolController extends SimMolController {
 
         Dataset currData = null;
         for (PolyChart pChart : controller.getCharts()) {
-            currData = pChart.getDataset();
+            currData = (Dataset) pChart.getDataset();
             if (currData != null) {
                 break;
             }

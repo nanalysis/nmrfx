@@ -14,10 +14,10 @@ import javafx.scene.layout.HBox;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
-import org.nmrfx.processor.datasets.Dataset;
-import org.nmrfx.processor.datasets.peaks.Peak;
-import org.nmrfx.processor.datasets.peaks.PeakDim;
-import org.nmrfx.processor.datasets.peaks.PeakList;
+import org.nmrfx.datasets.DatasetBase;
+import org.nmrfx.peaks.Peak;
+import org.nmrfx.peaks.PeakDim;
+import org.nmrfx.peaks.PeakList;
 import org.nmrfx.processor.gui.AtomBrowser.AtomDelta;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
 import org.nmrfx.structure.chemistry.Molecule;
@@ -135,7 +135,7 @@ public class PeakAtomPicker {
             }
             if (usePeakAttr != null) {
                 peakDims = usePeakAttr.getPeakDim();
-                Dataset dataset = chart.getDataset();
+                DatasetBase dataset = chart.getDataset();
                 int i = 0;
                 for (int peakDim : peakDims) {
                     double shift = selPeak.getPeakDim(peakDim).getChemShiftValue();

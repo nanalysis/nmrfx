@@ -29,7 +29,6 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
-import javafx.collections.ListChangeListener;
 import javafx.collections.MapChangeListener;
 import javafx.scene.control.Button;
 import javafx.scene.control.ChoiceBox;
@@ -45,16 +44,17 @@ import javafx.scene.control.TextField;
 import javafx.scene.control.ToolBar;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.VBox;
+import org.nmrfx.datasets.DatasetBase;
+import org.nmrfx.peaks.Peak;
+import org.nmrfx.peaks.PeakDim;
+import org.nmrfx.peaks.PeakList;
 import org.nmrfx.processor.datasets.Dataset;
-import org.nmrfx.processor.datasets.peaks.Peak;
-import org.nmrfx.processor.datasets.peaks.PeakDim;
-import org.nmrfx.processor.datasets.peaks.PeakList;
 import org.nmrfx.processor.gui.controls.FractionPane;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.processor.gui.spectra.PeakDisplayParameters;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
 import org.nmrfx.processor.gui.utils.ToolBarUtils;
-import org.nmrfx.project.Project;
+import org.nmrfx.processor.project.Project;
 
 /**
  *
@@ -396,7 +396,7 @@ public class StripController implements ControllerTool {
         return maxRow;
     }
 
-    int getDim(Dataset dataset, String dimName) {
+    int getDim(DatasetBase dataset, String dimName) {
         int datasetDim = -1;
         for (int i = 0; i < dataset.getNDim(); i++) {
             if (dimName.equals(dataset.getLabel(i))) {
@@ -406,7 +406,7 @@ public class StripController implements ControllerTool {
         return datasetDim;
     }
 
-    int[] getDims(Dataset dataset) {
+    int[] getDims(DatasetBase dataset) {
         int[] dims = new int[dataset.getNDim()];
         if ((dimNames[X] == null) || (dimNames[Z] == null)) {
             for (int i = 0; i < dims.length; i++) {

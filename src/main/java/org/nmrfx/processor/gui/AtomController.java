@@ -66,19 +66,19 @@ import javafx.stage.FileChooser;
 import javafx.util.StringConverter;
 import javafx.util.converter.FloatStringConverter;
 import org.controlsfx.dialog.ExceptionDialog;
-import org.nmrfx.processor.datasets.peaks.AtomResonanceFactory;
-import org.nmrfx.processor.datasets.peaks.FreezeListener;
-import org.nmrfx.processor.datasets.peaks.Peak;
-import org.nmrfx.processor.datasets.peaks.PeakDim;
-import org.nmrfx.processor.datasets.peaks.PeakList;
-import org.nmrfx.structure.chemistry.Atom;
-import org.nmrfx.structure.chemistry.InvalidMoleculeException;
-import org.nmrfx.structure.chemistry.MolFilter;
+import org.nmrfx.chemistry.Atom;
+import org.nmrfx.chemistry.AtomResonanceFactory;
+import org.nmrfx.chemistry.InvalidMoleculeException;
+import org.nmrfx.chemistry.MolFilter;
+import org.nmrfx.chemistry.PPMv;
+import org.nmrfx.chemistry.io.MoleculeIOException;
+import org.nmrfx.chemistry.io.PDBFile;
+import org.nmrfx.chemistry.io.PPMFiles;
+import org.nmrfx.peaks.FreezeListener;
+import org.nmrfx.peaks.Peak;
+import org.nmrfx.peaks.PeakDim;
+import org.nmrfx.peaks.PeakList;
 import org.nmrfx.structure.chemistry.Molecule;
-import org.nmrfx.structure.chemistry.PPMv;
-import org.nmrfx.structure.chemistry.io.MoleculeIOException;
-import org.nmrfx.structure.chemistry.io.PDBFile;
-import org.nmrfx.structure.chemistry.io.PPMFiles;
 import org.nmrfx.structure.chemistry.predict.BMRBStats;
 
 /**
@@ -220,7 +220,7 @@ public class AtomController implements Initializable, FreezeListener {
         );
         MenuItem getPPMItem = new MenuItem("Get Frozen PPM");
         getPPMItem.setOnAction(e -> {
-            ((AtomResonanceFactory) PeakDim.resFactory()).assignFrozenAtoms("sim");
+            PeakList.resFactory().assignFrozenAtoms("sim");
             atomTableView.refresh();
         }
         );

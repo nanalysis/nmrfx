@@ -37,17 +37,18 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
 import javafx.scene.paint.Color;
+import org.nmrfx.chemistry.Atom;
+import org.nmrfx.chemistry.Compound;
+import org.nmrfx.chemistry.Util;
+import org.nmrfx.datasets.DatasetBase;
+import org.nmrfx.datasets.Nuclei;
+import org.nmrfx.peaks.Peak;
+import org.nmrfx.peaks.PeakDim;
+import org.nmrfx.peaks.PeakList;
+import org.nmrfx.peaks.SpectralDim;
 import org.nmrfx.processor.datasets.Dataset;
-import org.nmrfx.processor.datasets.Nuclei;
-import org.nmrfx.processor.datasets.peaks.Peak;
-import org.nmrfx.processor.datasets.peaks.PeakDim;
-import org.nmrfx.processor.datasets.peaks.PeakList;
-import org.nmrfx.processor.datasets.peaks.SpectralDim;
 import org.nmrfx.processor.gui.controls.FractionCanvas;
-import org.nmrfx.processor.utilities.Util;
-import org.nmrfx.project.Project;
-import org.nmrfx.structure.chemistry.Atom;
-import org.nmrfx.structure.chemistry.Compound;
+import org.nmrfx.processor.project.Project;
 import org.nmrfx.structure.chemistry.Molecule;
 
 /**
@@ -473,10 +474,10 @@ public class AtomBrowser {
         }
     }
 
-    public static List<AtomDelta> getMatchingAtomNames(Dataset dataset, double ppm, double tol) {
+    public static List<AtomDelta> getMatchingAtomNames(DatasetBase dataset, double ppm, double tol) {
         double[] ppms = {ppm};
         Map<String, AtomDelta> atomDeltaMap = new HashMap<>();
-        for (PeakList peakList : PeakList.getLists()) {
+        for (PeakList peakList : PeakList.peakLists()) {
             // maybe check if dataset active too
             int listType;
             if ((peakList.getDatasetName() != null) && !peakList.getDatasetName().equals("")) {

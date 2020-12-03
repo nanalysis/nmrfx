@@ -23,8 +23,10 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.shape.QuadCurve;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
+import org.nmrfx.chemistry.Atom;
 import org.nmrfx.structure.chemistry.predict.RNAAttributes;
 import org.nmrfx.structure.chemistry.predict.RNAStats;
+import org.nmrfx.structure.rna.SSLayout;
 
 public class SSViewer extends Pane {
 

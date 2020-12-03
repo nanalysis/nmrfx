@@ -46,22 +46,22 @@ import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
 import org.controlsfx.dialog.ExceptionDialog;
+import org.nmrfx.analyst.peaks.Analyzer;
+import org.nmrfx.analyst.peaks.JournalFormat;
+import org.nmrfx.analyst.peaks.JournalFormatPeaks;
+import org.nmrfx.analyst.peaks.Multiplets;
+import org.nmrfx.datasets.DatasetRegion;
+import org.nmrfx.peaks.AbsMultipletComponent;
+import org.nmrfx.peaks.ComplexCoupling;
+import org.nmrfx.peaks.Coupling;
+import org.nmrfx.peaks.CouplingPattern;
+import org.nmrfx.peaks.Multiplet;
+import org.nmrfx.peaks.Peak;
+import org.nmrfx.peaks.PeakEvent;
+import org.nmrfx.peaks.PeakList;
+import org.nmrfx.peaks.PeakListener;
+import org.nmrfx.peaks.Singlet;
 import org.nmrfx.processor.datasets.Dataset;
-import org.nmrfx.processor.datasets.DatasetRegion;
-import org.nmrfx.processor.datasets.peaks.AbsMultipletComponent;
-import org.nmrfx.processor.datasets.peaks.Analyzer;
-import org.nmrfx.processor.datasets.peaks.ComplexCoupling;
-import org.nmrfx.processor.datasets.peaks.Coupling;
-import org.nmrfx.processor.datasets.peaks.CouplingPattern;
-import org.nmrfx.processor.datasets.peaks.JournalFormat;
-import org.nmrfx.processor.datasets.peaks.JournalFormatPeaks;
-import org.nmrfx.processor.datasets.peaks.Multiplet;
-import org.nmrfx.processor.datasets.peaks.Multiplets;
-import org.nmrfx.processor.datasets.peaks.Peak;
-import org.nmrfx.processor.datasets.peaks.PeakEvent;
-import org.nmrfx.processor.datasets.peaks.PeakList;
-import org.nmrfx.processor.datasets.peaks.PeakListener;
-import org.nmrfx.processor.datasets.peaks.Singlet;
 import org.nmrfx.processor.gui.annotations.AnnoJournalFormat;
 import org.nmrfx.processor.gui.controls.ConsoleUtil;
 import org.nmrfx.processor.gui.molecule.CanvasMolecule;
@@ -446,7 +446,7 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
     }
 
     public void getAnalyzer() {
-        Dataset dataset = chart.getDataset();
+        Dataset dataset = (Dataset) chart.getDataset();
         PeakList activePeaklist = null;
         if (!chart.getPeakListAttributes().isEmpty()) {
             activePeaklist = chart.getPeakListAttributes().get(0).getPeakList();

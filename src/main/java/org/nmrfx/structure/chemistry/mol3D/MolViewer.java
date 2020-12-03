@@ -33,12 +33,12 @@ import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.apache.commons.math3.linear.ArrayRealVector;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
-import org.nmrfx.structure.chemistry.Atom;
-import org.nmrfx.structure.chemistry.Bond;
-import org.nmrfx.structure.chemistry.InvalidMoleculeException;
+import org.nmrfx.chemistry.Atom;
+import org.nmrfx.chemistry.Bond;
+import org.nmrfx.chemistry.InvalidMoleculeException;
+import org.nmrfx.chemistry.Polymer;
 import org.nmrfx.structure.chemistry.MissingCoordinatesException;
 import org.nmrfx.structure.chemistry.Molecule;
-import org.nmrfx.structure.chemistry.Polymer;
 
 /**
  *

@@ -18,14 +18,10 @@
 package org.nmrfx.processor.gui;
 
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
-import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.Map;
 import javafx.beans.Observable;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -49,10 +45,13 @@ import org.nmrfx.chart.DataSeries;
 import org.nmrfx.chart.XYCanvasChart;
 import org.nmrfx.chart.XYChartPane;
 import org.nmrfx.chart.XYValue;
+import org.nmrfx.chemistry.MoleculeBase;
+import org.nmrfx.chemistry.MoleculeFactory;
+import org.nmrfx.chemistry.constraints.MolecularConstraints;
+import org.nmrfx.chemistry.constraints.RDCConstraintSet;
 import org.nmrfx.graphicsio.GraphicsIOException;
 import org.nmrfx.graphicsio.SVGGraphicsContext;
 import org.nmrfx.structure.chemistry.OrderSVD;
-import org.nmrfx.structure.chemistry.constraints.RDCConstraintSet;
 
 /**
  *
@@ -73,7 +72,7 @@ public class RDCGUI {
     TextField qRhombField = new TextField("");
     TextField rhombField = new TextField("");
     TextField magField = new TextField("");
-    RDCConstraintSet rdcSet;
+    RDCConstraintSet localRDCSet;
     OrderSVD svdResults = null;
     Label pdbFile = new Label("");
     Label bmrbFile = new Label("");
@@ -193,35 +192,54 @@ public class RDCGUI {
     void updateRDCPlotChoices() {
         System.out.println("up");
         setChoice.getItems().clear();
-        if (analystApp != null) {
-            if (!RDCConstraintSet.getNames().isEmpty()) {
-                setChoice.getItems().addAll(RDCConstraintSet.getNames());
-                setChoice.setValue(setChoice.getItems().get(0));
+        MoleculeBase molecule = MoleculeFactory.getActive();
+        if (molecule != null) {
+            MolecularConstraints molConstr = molecule.getMolecularConstraints();
+            if (molConstr != null) {
+                if (!molConstr.getRDCSetNames().isEmpty()) {
+                    setChoice.getItems().addAll(molConstr.getRDCSetNames());
+                    setChoice.setValue(setChoice.getItems().get(0));
+                }
             }
         }
+    }
+
+    RDCConstraintSet rdcSet(String name) {
+        RDCConstraintSet rdcSet = null;
+        MoleculeBase molecule = MoleculeFactory.getActive();
+        if (molecule != null) {
+            MolecularConstraints molConstr = molecule.getMolecularConstraints();
+            if (molConstr != null) {
+                rdcSet = molConstr.getRDCSet(name);
+            }
+        }
+        if (rdcSet == null) {
+            rdcSet = this.localRDCSet;
+        }
+        return rdcSet;
     }
 
     @FXML
     void analyze() {
         String name = setChoice.getValue();
-        rdcSet = RDCConstraintSet.getSet(name);
-        if (rdcSet != null) {
+        localRDCSet = rdcSet(name);
+        if (localRDCSet != null) {
 //            if (pdbFile.getText().equals("")) {
 //                Alert alert = new Alert(Alert.AlertType.ERROR);
 //                alert.setContentText("Error: No PDB file loaded (Load PDB XYZ...).");
 //                alert.showAndWait();
 //                return;
 //            }
-            System.out.println("nrdcs " + rdcSet.getSize());
+            System.out.println("nrdcs " + localRDCSet.getSize());
 
-            svdResults = OrderSVD.calcRDCs(rdcSet, true, false, null);
+            svdResults = OrderSVD.calcRDCs(localRDCSet, true, false, null);
             if (svdResults == null) {
                 Alert alert = new Alert(Alert.AlertType.ERROR);
                 alert.setContentText("SVD Analysis failed");
                 alert.showAndWait();
                 return;
             }
-            svdResults.setRDCset(rdcSet);
+            svdResults.setRDCset(localRDCSet);
 
             double qRMS = svdResults.getQ();
             double qRhomb = svdResults.getQrhomb();
@@ -289,9 +307,9 @@ public class RDCGUI {
         if (file != null) {
             String setName = file.getName();
             setName = setName.substring(0, setName.indexOf("."));
-            rdcSet = RDCConstraintSet.addSet(setName);
+            localRDCSet = RDCConstraintSet.newSet(null, setName);
             try {
-                rdcSet.readInputFile(file);
+                localRDCSet.readInputFile(file);
             } catch (IOException ex) {
                 Alert alert = new Alert(Alert.AlertType.ERROR);
                 alert.setContentText("Error: file read error: " + ex.getMessage());

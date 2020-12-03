@@ -2,11 +2,11 @@ package org.nmrfx.structure.chemistry.mol3D;
 
 import java.util.ArrayList;
 import javafx.scene.paint.Color;
-import org.nmrfx.structure.chemistry.Atom;
-import org.nmrfx.structure.chemistry.Bond;
+import org.nmrfx.chemistry.Atom;
+import org.nmrfx.chemistry.Bond;
+import org.nmrfx.chemistry.Point3;
+import org.nmrfx.chemistry.SpatialSet;
 import org.nmrfx.structure.chemistry.Molecule;
-import org.nmrfx.structure.chemistry.Point3;
-import org.nmrfx.structure.chemistry.SpatialSet;
 
 /**
  *

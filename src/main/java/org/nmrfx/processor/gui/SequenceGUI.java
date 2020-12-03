@@ -28,10 +28,10 @@ import javafx.scene.control.TextField;
 import javafx.scene.control.ToolBar;
 import javafx.scene.layout.BorderPane;
 import javafx.stage.Stage;
+import org.nmrfx.chemistry.io.AtomParser;
+import org.nmrfx.chemistry.io.MoleculeIOException;
+import org.nmrfx.chemistry.io.Sequence;
 import org.nmrfx.structure.chemistry.Molecule;
-import org.nmrfx.structure.chemistry.io.AtomParser;
-import org.nmrfx.structure.chemistry.io.MoleculeIOException;
-import org.nmrfx.structure.chemistry.io.Sequence;
 import org.nmrfx.utils.GUIUtils;
 
 /**
@@ -117,7 +117,7 @@ public class SequenceGUI {
         }
         if (!seqList.isEmpty()) {
             try {
-                Molecule mol = sequence.read(polymerName, seqList, "", molName);
+                Molecule mol = (Molecule) sequence.read(polymerName, seqList, "", molName);
 
             } catch (MoleculeIOException ex) {
                 GUIUtils.warn("Sequence Error", ex.getMessage());

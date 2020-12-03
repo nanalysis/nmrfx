@@ -29,7 +29,6 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.List;
 import java.util.ResourceBundle;
-import java.util.function.Function;
 import javafx.beans.Observable;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleStringProperty;
@@ -60,22 +59,12 @@ import org.nmrfx.chart.DataSeries;
 import org.nmrfx.chart.XYCanvasChart;
 import org.nmrfx.chart.XYChartPane;
 import org.nmrfx.chart.XYValue;
-import org.nmrfx.processor.datasets.peaks.PeakList;
+import org.nmrfx.peaks.PeakList;
 import org.nmrfx.processor.gui.controls.FileTableItem;
 import org.nmrfx.processor.tools.LigandScannerInfo;
 import org.nmrfx.processor.tools.MatrixAnalyzer;
 import org.nmrfx.structure.tools.MCSAnalysis;
 import org.nmrfx.structure.tools.MCSAnalysis.Hit;
-import org.renjin.primitives.vector.RowNamesVector;
-import org.renjin.sexp.AttributeMap;
-import org.renjin.sexp.DoubleVector;
-import org.renjin.sexp.Environment;
-import org.renjin.sexp.IntVector;
-import org.renjin.sexp.ListVector;
-import org.renjin.sexp.SEXP;
-import org.renjin.sexp.StringArrayVector;
-import org.renjin.sexp.StringVector;
-import org.renjin.sexp.Symbols;
 
 /**
  *
@@ -332,209 +321,9 @@ public class LigandScannerController implements Initializable {
         return fileListItems;
     }
 
-    class DoubleColumnVector extends DoubleVector {
-
-        String name;
-        Function<FileTableItem, Double> getter;
-
-        public DoubleColumnVector(AttributeMap attributes) {
-            super(attributes);
-        }
-
-        DoubleColumnVector(String name, Function<FileTableItem, Double> getter) {
-            this.name = name;
-            this.getter = getter;
-        }
-
-        @Override
-        protected SEXP cloneWithNewAttributes(AttributeMap am) {
-            DoubleColumnVector clone = new DoubleColumnVector(am);
-            clone.name = name;
-            clone.getter = getter;
-            return clone;
-        }
-
-        @Override
-        public double getElementAsDouble(int i) {
-            FileTableItem item = fileListItems.get(i);
-            return getter.apply(item);
-        }
-
-        @Override
-        public int length() {
-            return fileListItems.size();
-        }
-
-        @Override
-        public boolean isConstantAccessTime() {
-            return true;
-        }
-
-    }
-
-    class IntColumnVector extends IntVector {
-
-        String name;
-        Function<FileTableItem, Integer> getter;
-
-        public IntColumnVector(AttributeMap attributes) {
-            super(attributes);
-        }
-
-        IntColumnVector(String name, Function<FileTableItem, Integer> getter) {
-            this.name = name;
-            this.getter = getter;
-        }
-
-        @Override
-        protected SEXP cloneWithNewAttributes(AttributeMap am) {
-            IntColumnVector clone = new IntColumnVector(am);
-            clone.name = name;
-            clone.getter = getter;
-            return clone;
-        }
-
-        @Override
-        public int getElementAsInt(int i) {
-            FileTableItem item = fileListItems.get(i);
-            return getter.apply(item);
-        }
-
-        @Override
-        public int length() {
-            return fileListItems.size();
-        }
-
-        @Override
-        public boolean isConstantAccessTime() {
-            return true;
-        }
-
-    }
-
-    class StringColumnVector extends StringVector {
-
-        String name;
-        Function<FileTableItem, String> getter;
-
-        public StringColumnVector(AttributeMap attributes) {
-            super(attributes);
-        }
-
-        public StringColumnVector(String name, Function<FileTableItem, String> getter) {
-            super(AttributeMap.EMPTY);
-            this.name = name;
-            this.getter = getter;
-        }
-
-        @Override
-        public int length() {
-            return fileListItems.size();
-        }
-
-        @Override
-        public boolean isConstantAccessTime() {
-            return true;
-        }
-
-        @Override
-        public String getElementAsString(int i) {
-            FileTableItem item = fileListItems.get(i);
-            if (item == null) {
-                System.out.println("null item " + i + " column " + name);
-                return NA;
-            }
-            return getter.apply(item);
-        }
-
-        @Override
-        protected StringColumnVector cloneWithNewAttributes(AttributeMap am) {
-            StringColumnVector clone = new StringColumnVector(am);
-            clone.name = name;
-            clone.getter = getter;
-            return clone;
-        }
-
-    }
-
+  
     public void updateDataFrame() {
-        ObservableList<TableColumn<LigandScannerInfo, ?>> columns = ligandTableView.getColumns();
-
-        ListVector.NamedBuilder builder = new ListVector.NamedBuilder();
-
-        int iCol = 0;
-        for (TableColumn column : columns) {
-            String fullName = column.getText();
-            int colonPos = fullName.indexOf(":");
-            final String name;
-            if (colonPos != -1) {
-                name = fullName.substring(0, colonPos);
-            } else {
-                name = fullName;
-            }
-            String type = columnTypes.get(fullName);
-            if (type == null) {
-                System.out.println("null type " + name);
-                type = "S";
-            }
-            switch (type) {
-                case "D": {
-                    DoubleColumnVector dVec = new DoubleColumnVector(name, item -> item.getDoubleExtra(fullName));
-                    builder.add(name, dVec);
-                    break;
-                }
-                case "I": {
-                    IntColumnVector iVec;
-                    if (name.equalsIgnoreCase("row")) {
-                        iVec = new IntColumnVector(name, item -> item.getRow());
-                    } else if (name.equalsIgnoreCase("ndim")) {
-                        iVec = new IntColumnVector(name, item -> item.getNDim());
-                    } else if (name.equalsIgnoreCase("etime")) {
-                        iVec = new IntColumnVector(name, item -> item.getDate().intValue());
-                    } else if (name.equalsIgnoreCase("group")) {
-                        iVec = new IntColumnVector(name, item -> item.getGroup());
-                    } else {
-                        iVec = new IntColumnVector(name, item -> item.getIntegerExtra(fullName));
-                    }
-                    builder.add(name, iVec);
-                    break;
-                }
-
-                case "S": {
-                    StringColumnVector sVec;
-                    if (name.equalsIgnoreCase("path")) {
-                        sVec = new StringColumnVector(name, item -> item.getFileName());
-                    } else if (name.equalsIgnoreCase("sequence")) {
-                        sVec = new StringColumnVector(name, item -> item.getSeqName());
-                    } else {
-                        sVec = new StringColumnVector(name, item -> item.getExtra(fullName));
-                    }
-                    builder.add(name, sVec);
-                    break;
-                }
-                default: {
-                    throw new IllegalArgumentException("Invalid column type");
-                }
-
-            }
-            iCol++;
-        }
-        builder.setAttribute(Symbols.ROW_NAMES, new RowNamesVector(fileListItems.size()));
-        builder.setAttribute(Symbols.CLASS, StringArrayVector.valueOf("data.frame"));
-
-        ListVector dFrame = builder.build();
-
-        ConsoleController consoleController = MainApp.getConsoleController();
-        if (consoleController == null) {
-            System.out.println("null proccon");
-        } else {
-            Environment env = consoleController.getREnvironment();
-            if (env == null) {
-                System.out.println("null env");
-            } else {
-                env.setVariableUnsafe("scntbl", dFrame);
-            }
-        }
+      
     }
 
     double[] getTableValues(String columnName) {

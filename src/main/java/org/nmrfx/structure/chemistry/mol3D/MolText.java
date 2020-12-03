@@ -8,7 +8,7 @@ import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
 import javafx.scene.text.Font;
 import javax.vecmath.*;
-import org.nmrfx.structure.chemistry.Point3;
+import org.nmrfx.chemistry.Point3;
 
 public class MolText extends Group implements MolItem {
 

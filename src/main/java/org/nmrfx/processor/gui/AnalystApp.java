@@ -18,16 +18,17 @@
 package org.nmrfx.processor.gui;
 
 import org.nmrfx.processor.datasets.Dataset;
-import org.nmrfx.processor.datasets.peaks.PeakList;
 import de.codecentric.centerdevice.MenuToolkit;
 import de.codecentric.centerdevice.dialogs.about.AboutStageBuilder;
-import java.beans.PropertyChangeSupport;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Calendar;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javafx.application.Platform;
@@ -50,37 +51,40 @@ import javafx.scene.control.CheckMenuItem;
 import javafx.scene.control.ToolBar;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
-import org.nmrfx.processor.datasets.peaks.InvalidPeakException;
-import org.nmrfx.processor.datasets.peaks.Peak;
-import org.nmrfx.processor.datasets.peaks.io.PeakReader;
 import org.nmrfx.processor.gui.controls.FractionCanvas;
-import org.nmrfx.processor.star.ParseException;
-import org.nmrfx.project.GUIStructureProject;
 import org.nmrfx.processor.utilities.WebConnect;
-import org.nmrfx.project.Project;
-import org.nmrfx.structure.chemistry.InvalidMoleculeException;
 import org.nmrfx.structure.chemistry.Molecule;
-import org.nmrfx.structure.chemistry.constraints.RDCConstraintSet;
-import org.nmrfx.structure.chemistry.io.MoleculeIOException;
-import org.nmrfx.structure.chemistry.io.NMRStarReader;
-import org.nmrfx.structure.chemistry.io.NMRStarWriter;
-import org.nmrfx.structure.chemistry.io.PDBFile;
-import org.nmrfx.structure.chemistry.io.SDFile;
-import org.nmrfx.structure.chemistry.io.Sequence;
 import org.nmrfx.structure.chemistry.mol3D.MolSceneController;
 import static javafx.application.Application.launch;
 import javafx.collections.ObservableList;
 import javafx.scene.layout.VBox;
-import org.nmrfx.processor.datasets.peaks.PeakLabeller;
+import org.nmrfx.chemistry.InvalidMoleculeException;
+import org.nmrfx.chemistry.MoleculeFactory;
+import org.nmrfx.chemistry.constraints.MolecularConstraints;
+import org.nmrfx.chemistry.constraints.NoeSet;
+import org.nmrfx.chemistry.io.MMcifReader;
+import org.nmrfx.chemistry.io.MoleculeIOException;
+import org.nmrfx.chemistry.io.NMRStarReader;
+import org.nmrfx.chemistry.io.NMRStarWriter;
+import org.nmrfx.chemistry.io.PDBFile;
+import org.nmrfx.chemistry.io.SDFile;
+import org.nmrfx.chemistry.io.Sequence;
+import org.nmrfx.peaks.InvalidPeakException;
+import org.nmrfx.peaks.Peak;
+import org.nmrfx.peaks.PeakLabeller;
+import org.nmrfx.peaks.PeakList;
+import org.nmrfx.peaks.io.PeakReader;
 import org.nmrfx.processor.gui.spectra.KeyBindings;
 import org.nmrfx.processor.gui.spectra.WindowIO;
-import org.nmrfx.structure.chemistry.constraints.NoeSet;
 import org.nmrfx.utils.GUIUtils;
 import org.python.util.PythonInterpreter;
 import org.nmrfx.processor.gui.molecule.CanvasMolecule;
+import org.nmrfx.processor.gui.project.GUIProject;
 import org.nmrfx.processor.gui.tools.RunAboutGUI;
 import org.nmrfx.processor.gui.utils.FxPropertyChangeSupport;
-import org.nmrfx.structure.chemistry.io.MMcifReader;
+import org.nmrfx.processor.project.Project;
+import org.nmrfx.project.ProjectBase;
+import org.nmrfx.star.ParseException;
 
 public class AnalystApp extends MainApp {
 
@@ -106,23 +110,10 @@ public class AnalystApp extends MainApp {
     CheckMenuItem assignOnPick;
     RDCGUI rdcGUI = null;
 
-    public static void closeAll() {
-        for (PolyChart chart : PolyChart.CHARTS) {
-            chart.clearDataAndPeaks();
-            chart.clearAnnotations();
-        }
-        Stage mainStage = getMainStage();
-        for (Stage stage : stages) {
-            if (stage != mainStage) {
-                stage.close();
-            }
-        }
-    }
-
     public void waitForCommit() {
         int nTries = 30;
         int iTry = 0;
-        while (GUIStructureProject.isCommitting() && (iTry < nTries)) {
+        while (GUIProject.isCommitting() && (iTry < nTries)) {
             System.out.println("committing");
             try {
                 Thread.sleep(500);
@@ -622,7 +613,7 @@ public class AnalystApp extends MainApp {
         if (datasetController == null) {
             datasetController = DatasetsController.create();
         }
-        GUIStructureProject project = (GUIStructureProject) Project.getActive();
+        GUIProject project = (GUIProject) Project.getActive();
         ObservableList datasetObs = (ObservableList) project.getDatasets();
         datasetController.setDatasetList(datasetObs);
         datasetController.getStage().show();
@@ -671,7 +662,7 @@ public class AnalystApp extends MainApp {
         if (consoleController == null) {
             System.out.println(string);
         } else {
-            consoleController.writeOutput(string);
+            consoleController.write(string);
         }
     }
 
@@ -746,9 +737,10 @@ public class AnalystApp extends MainApp {
     private void showNOETable() {
         if (noeTableController == null) {
             noeTableController = NOETableController.create();
-            List<NoeSet> noeSets = NoeSet.getSets();
+            Collection<NoeSet> noeSets = MoleculeFactory.getActive().getMolecularConstraints().noeSets();
+
             if (!noeSets.isEmpty()) {
-                noeTableController.setNoeSet(noeSets.get(0));
+                noeTableController.setNoeSet(noeSets.stream().findFirst().get());
             }
         }
         if (noeTableController != null) {
@@ -760,8 +752,8 @@ public class AnalystApp extends MainApp {
         }
     }
 
-    public static Project getActive() {
-        return GUIStructureProject.getActive();
+    public static ProjectBase getActive() {
+        return GUIProject.getActive();
     }
 
     private void loadProject() {
@@ -776,10 +768,10 @@ public class AnalystApp extends MainApp {
     private void loadProject(Path path) {
         if (path != null) {
             String projectName = path.getFileName().toString();
-            GUIStructureProject project = new GUIStructureProject(projectName);
+            GUIProject project = new GUIProject(projectName);
             try {
                 project.loadGUIProject(path);
-            } catch (IOException | MoleculeIOException ex) {
+            } catch (IOException | MoleculeIOException | IllegalStateException ex) {
                 ExceptionDialog dialog = new ExceptionDialog(ex);
                 dialog.showAndWait();
             }
@@ -792,9 +784,9 @@ public class AnalystApp extends MainApp {
         chooser.setTitle("Project Creator");
         File directoryFile = chooser.showSaveDialog(null);
         if (directoryFile != null) {
-            GUIStructureProject activeProject = (GUIStructureProject) getActive();
+            GUIProject activeProject = (GUIProject) getActive();
             if (activeProject != null) {
-                GUIStructureProject newProject = GUIStructureProject.replace(appName, activeProject);
+                GUIProject newProject = GUIProject.replace(appName, activeProject);
 
                 try {
                     newProject.createProject(directoryFile.toPath());
@@ -809,7 +801,7 @@ public class AnalystApp extends MainApp {
     }
 
     private void saveProject() {
-        GUIStructureProject project = (GUIStructureProject) getActive();
+        GUIProject project = (GUIProject) getActive();
         if (project.hasDirectory()) {
             try {
                 project.saveProject();
@@ -875,7 +867,7 @@ public class AnalystApp extends MainApp {
 
     void closeProject() {
         if (GUIUtils.affirm("Close all project information")) {
-            ((GUIStructureProject) getActive()).close();
+            ((GUIProject) getActive()).close();
         }
     }
 
@@ -890,8 +882,9 @@ public class AnalystApp extends MainApp {
                 if (rdcGUI != null) {
                     rdcGUI.bmrbFile.setText(starFile.getName());
                     rdcGUI.setChoice.getItems().clear();
-                    if (!RDCConstraintSet.getNames().isEmpty()) {
-                        rdcGUI.setChoice.getItems().addAll(RDCConstraintSet.getNames());
+                    MolecularConstraints molConstr = MoleculeFactory.getActive().getMolecularConstraints();
+                    if (!molConstr.getRDCSetNames().isEmpty()) {
+                        rdcGUI.setChoice.getItems().addAll(molConstr.getRDCSetNames());
                         rdcGUI.setChoice.setValue(rdcGUI.setChoice.getItems().get(0));
                     }
 
@@ -911,10 +904,12 @@ public class AnalystApp extends MainApp {
         if (starFile != null) {
             try {
                 NMRStarWriter.writeAll(starFile);
-            } catch (IOException | ParseException | InvalidPeakException | InvalidMoleculeException ex) {
+            } catch (IOException | InvalidPeakException | InvalidMoleculeException ex) {
                 ExceptionDialog dialog = new ExceptionDialog(ex);
                 dialog.showAndWait();
                 return;
+            } catch (org.nmrfx.star.ParseException ex) {
+                Logger.getLogger(AnalystApp.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
     }
@@ -967,9 +962,8 @@ public class AnalystApp extends MainApp {
             } catch (MoleculeIOException ioE) {
                 ExceptionDialog dialog = new ExceptionDialog(ioE);
                 dialog.showAndWait();
-            } catch (ParseException ex) {
-                ExceptionDialog dialog = new ExceptionDialog(ex);
-                dialog.showAndWait();
+            } catch (org.nmrfx.star.ParseException ex) {
+                Logger.getLogger(AnalystApp.class.getName()).log(Level.SEVERE, null, ex);
             }
 
             if (atomController != null) {
@@ -1139,7 +1133,7 @@ public class AnalystApp extends MainApp {
         stage.toFront();
         windowIO.updateFavorites();
         try {
-            Project project = Project.getActive();
+            ProjectBase project = ProjectBase.getActive();
             if (project != null) {
                 Path projectDir = project.getDirectory();
                 if (projectDir != null) {

@@ -1,9 +1,9 @@
 package org.nmrfx.processor.gui.annotations;
 
+import org.nmrfx.analyst.peaks.JournalFormat;
+import org.nmrfx.analyst.peaks.JournalFormatPeaks;
 import org.nmrfx.graphicsio.GraphicsContextInterface;
-import org.nmrfx.processor.datasets.peaks.JournalFormat;
-import org.nmrfx.processor.datasets.peaks.JournalFormatPeaks;
-import org.nmrfx.processor.datasets.peaks.PeakList;
+import org.nmrfx.peaks.PeakList;
 
 /**
  *

@@ -37,7 +37,7 @@ import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.structure.chemistry.Molecule;
-import org.nmrfx.structure.chemistry.RNALabels;
+import org.nmrfx.structure.rna.RNALabels;
 
 /**
  * FXML Controller class

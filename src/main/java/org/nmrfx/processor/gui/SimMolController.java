@@ -123,7 +123,7 @@ public class SimMolController implements ControllerTool {
             if (newDataset == null) {
                 Dataset currData = null;
                 for (PolyChart pChart : controller.getCharts()) {
-                    currData = pChart.getDataset();
+                    currData = (Dataset) pChart.getDataset();
                     if (currData != null) {
                         break;
                     }

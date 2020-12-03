@@ -8,7 +8,7 @@ import javafx.scene.paint.Color;
 import javafx.scene.paint.PhongMaterial;
 import javafx.scene.shape.Sphere;
 import javax.vecmath.*;
-import org.nmrfx.structure.chemistry.Point3;
+import org.nmrfx.chemistry.Point3;
 
 public class MolSphere extends Group implements MolItem {
 

@@ -86,7 +86,7 @@ public class MinerController {
     @FXML
     public void undoAlign(ActionEvent event) {
         PolyChart polyChart = scannerController.getChart();
-        Dataset dataset = polyChart.getDataset();
+        Dataset dataset = (Dataset) polyChart.getDataset();
         if (dataset != null) {
             double[] ppms = polyChart.getVerticalCrosshairPositions();
             DatasetAttributes dataAttr = (DatasetAttributes) polyChart.getDatasetAttributes().get(0);
@@ -124,7 +124,7 @@ public class MinerController {
     @FXML
     public void alignToMax(ActionEvent event) {
         PolyChart polyChart = scannerController.getChart();
-        Dataset dataset = polyChart.getDataset();
+        Dataset dataset = (Dataset) polyChart.getDataset();
         if (dataset != null) {
             double[] ppms = polyChart.getVerticalCrosshairPositions();
             DatasetAttributes dataAttr = (DatasetAttributes) polyChart.getDatasetAttributes().get(0);
@@ -161,7 +161,7 @@ public class MinerController {
     @FXML
     public void reorderByCorr(ActionEvent event) {
         PolyChart polyChart = scannerController.getChart();
-        Dataset dataset = polyChart.getDataset();
+        Dataset dataset = (Dataset) polyChart.getDataset();
         if (dataset != null) {
             double[] ppms = polyChart.getVerticalCrosshairPositions();
             DatasetAttributes dataAttr = (DatasetAttributes) polyChart.getDatasetAttributes().get(0);
@@ -184,7 +184,7 @@ public class MinerController {
     @FXML
     public void alignByCov(ActionEvent event) {
         PolyChart polyChart = scannerController.getChart();
-        Dataset dataset = polyChart.getDataset();
+        Dataset dataset = (Dataset) polyChart.getDataset();
         if (dataset != null) {
             double[] ppms = polyChart.getVerticalCrosshairPositions();
             DatasetAttributes dataAttr = (DatasetAttributes) polyChart.getDatasetAttributes().get(0);
@@ -247,7 +247,7 @@ public class MinerController {
 
     public void normalize(String mode) {
         PolyChart polyChart = scannerController.getChart();
-        Dataset dataset = polyChart.getDataset();
+        Dataset dataset = (Dataset) polyChart.getDataset();
         if (dataset != null) {
             double[] ppms = polyChart.getVerticalCrosshairPositions();
             DatasetAttributes dataAttr = (DatasetAttributes) polyChart.getDatasetAttributes().get(0);

@@ -39,11 +39,11 @@ import javafx.scene.text.Font;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import org.controlsfx.dialog.ExceptionDialog;
+import org.nmrfx.analyst.peaks.Analyzer;
+import org.nmrfx.datasets.DatasetRegion;
+import org.nmrfx.peaks.Peak;
+import org.nmrfx.peaks.PeakList;
 import org.nmrfx.processor.datasets.Dataset;
-import org.nmrfx.processor.datasets.DatasetRegion;
-import org.nmrfx.processor.datasets.peaks.Analyzer;
-import org.nmrfx.processor.datasets.peaks.Peak;
-import org.nmrfx.processor.datasets.peaks.PeakList;
 import org.nmrfx.processor.gui.spectra.CrossHairs;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.processor.gui.spectra.MultipletSelection;
@@ -283,7 +283,7 @@ public class RegionController implements Initializable {
     void adjustPeakIntegrals() {
         activeRegion.ifPresent(region -> {
             chart = PolyChart.getActiveChart();
-            Dataset dataset = chart.getDataset();
+            Dataset dataset = (Dataset) chart.getDataset();
             double norm = dataset.getNorm() / dataset.getScale();
             double integral = region.getIntegral();
             double value = integral / norm;
@@ -295,7 +295,7 @@ public class RegionController implements Initializable {
     public Analyzer getAnalyzer() {
         if (analyzer == null) {
             chart = PolyChart.getActiveChart();
-            Dataset dataset = chart.getDataset();
+            Dataset dataset = (Dataset) chart.getDataset();
             if ((dataset == null) || (dataset.getNDim() > 1)) {
                 Alert alert = new Alert(Alert.AlertType.ERROR);
                 alert.setContentText("Chart must have a 1D dataset");
