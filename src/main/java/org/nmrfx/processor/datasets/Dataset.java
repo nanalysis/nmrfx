@@ -34,8 +34,9 @@ import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.util.MultidimensionalCounter;
 import org.apache.commons.math3.stat.descriptive.rank.PSquarePercentile;
+import org.nmrfx.math.VecBase;
 import org.nmrfx.peaks.Peak;
-import org.nmrfx.processor.datasets.peaks.PeakList;
+import org.nmrfx.peaks.PeakList;
 import org.nmrfx.processor.operations.IDBaseline2;
 import org.nmrfx.processor.processing.LineShapeCatalog;
 import org.nmrfx.project.ProjectBase;
@@ -132,7 +133,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
                 }
             }
         }
-
+System.out.println("new dataset " + fileName);
         setStrides();
         addFile(fileName);
         loadLSCatalog();
@@ -143,10 +144,10 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
      *
      * @param vector the vector containing data
      */
-    public Dataset(Vec vector) {
+    public Dataset(VecBase vector) {
 
         FloatBuffer floatBuffer = FloatBuffer.allocate(vector.getSize());
-        this.vecMat = vector;
+        this.vecMat = (Vec) vector;
         fileName = vector.getName();
         canonicalName = vector.getName();
         dataFile = vector;
@@ -433,6 +434,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
      *
      * @return Vec storing data or null if data file mode.
      */
+    @Override
     public Vec getVec() {
         return (Vec) vecMat;
     }
@@ -458,6 +460,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
     }
 
     private void addFile(String datasetName) {
+        System.out.println("add dataset " + datasetName);
         ProjectBase.getActive().addDataset(this, datasetName);
         for (DatasetListener observer : observers) {
             try {
@@ -1879,7 +1882,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
      * @param rwVector the vector to put values in
      * @throws IOException if an I/O error occurs
      */
-    public void readVectorFromDatasetFile(int[][] pt, int[] dim, Vec rwVector) throws IOException {
+    public void readVectorFromDatasetFile(int[][] pt, int[] dim, VecBase rwVector) throws IOException {
         //System.out.println("reading vector from dataset file");
         int n = 0;
 

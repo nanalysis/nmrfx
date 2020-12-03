@@ -3,7 +3,7 @@ import array
 from shutil import copyfile
 from org.nmrfx.processor.datasets import Dataset
 from org.nmrfx.processor.datasets.peaks import PeakPickParameters
-from org.nmrfx.processor.datasets.peaks import PeakList
+from org.nmrfx.peaks import PeakList
 from org.nmrfx.processor.datasets.peaks import PeakPicker
 from org.nmrfx.processor.datasets.vendor import NMRPipeData
 from org.nmrfx.processor.math import Vec

@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.ArrayList;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.nmrfx.peaks.Peak;
-import org.nmrfx.processor.datasets.peaks.PeakList;
+import org.nmrfx.peaks.PeakList;
 
 /**
  * Performs Bipartite Match on two peak lists, an experimental and predicted

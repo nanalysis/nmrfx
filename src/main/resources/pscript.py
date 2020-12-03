@@ -1,8 +1,8 @@
 import array
-from org.nmrfx.processor.datasets.peaks import PeakList
-from org.nmrfx.processor.datasets.peaks import Peak
-from org.nmrfx.processor.datasets.peaks.io import PeakReader
-from org.nmrfx.processor.datasets.peaks.io import PeakWriter
+from org.nmrfx.peaks import PeakList
+from org.nmrfx.peaks import Peak
+from org.nmrfx.peaks.io import PeakReader
+from org.nmrfx.peaks.io import PeakWriter
 from org.nmrfx.processor.datasets.peaks import NUSConScore
 
 class NMRFxPeakScripting:

@@ -6,14 +6,14 @@ import java.util.logging.Logger;
 import org.junit.Assert;
 import org.junit.Test;
 import org.nmrfx.peaks.io.PeakReader;
-import org.nmrfx.peaks.PeakListBase;
+import org.nmrfx.peaks.PeakList;
 
 public class PeakReaderTest {
 
     String peakListName = "src/test/resources/test.xpk";
-    PeakListBase peakList1 = null;
+    PeakList peakList1 = null;
 
-    PeakListBase getPeakList() {
+    PeakList getPeakList() {
         if (peakList1 == null) {
             PeakReader peakReader = new PeakReader();
             try {
@@ -27,21 +27,21 @@ public class PeakReaderTest {
 
     @Test
     public void testXPKReader() {
-        PeakListBase peakList = getPeakList();
+        PeakList peakList = getPeakList();
         Assert.assertNotNull(peakList);
         Assert.assertEquals(4, peakList.size());
     }
 
     @Test
     public void testXPKReaderDims() {
-        PeakListBase peakList = getPeakList();
+        PeakList peakList = getPeakList();
         Assert.assertNotNull(peakList);
         Assert.assertEquals(2, peakList.getNDim());
     }
 
     @Test
     public void testXPKReaderSF() {
-        PeakListBase peakList = getPeakList();
+        PeakList peakList = getPeakList();
         double[] sf = {499.71899414, 50.64199829};
         Assert.assertNotNull(peakList);
         for (int i = 0; i < sf.length; i++) {
@@ -51,7 +51,7 @@ public class PeakReaderTest {
 
     @Test
     public void testXPKReaderSW() {
-        PeakListBase peakList = getPeakList();
+        PeakList peakList = getPeakList();
         double[] sw = {3940.89, 1320.0};
         Assert.assertNotNull(peakList);
         for (int i = 0; i < sw.length; i++) {
@@ -61,7 +61,7 @@ public class PeakReaderTest {
 
     @Test
     public void testXPKReaderLabel() {
-        PeakListBase peakList = getPeakList();
+        PeakList peakList = getPeakList();
         String[] labels = {"H1", "N15"};
         Assert.assertNotNull(peakList);
         for (int i = 0; i < labels.length; i++) {
@@ -71,7 +71,7 @@ public class PeakReaderTest {
 
     @Test
     public void testXPKReaderPPM() {
-        PeakListBase peakList = getPeakList();
+        PeakList peakList = getPeakList();
         //0 {} 8.784855 0.030457228 0.028026449 {} 129.01712 0.3105101 0.28385773 0.0 0.6005752
 
         double[] ppms = {8.784855, 129.01712};
@@ -83,7 +83,7 @@ public class PeakReaderTest {
 
     @Test
     public void testXPKReaderDimLabel() {
-        PeakListBase peakList = getPeakList();
+        PeakList peakList = getPeakList();
         //0 {} 8.784855 0.030457228 0.028026449 {} 129.01712 0.3105101 0.28385773 0.0 0.6005752
 
         String[] dimlabels = {"31.H", "31.N"};
@@ -95,7 +95,7 @@ public class PeakReaderTest {
 
     @Test
     public void testXPKReaderWidth() {
-        PeakListBase peakList = getPeakList();
+        PeakList peakList = getPeakList();
         //0 {} 8.784855 0.030457228 0.028026449 {} 129.01712 0.3105101 0.28385773 0.0 0.6005752
 
         double[] widths = {0.030457228, 0.3105101};
@@ -107,7 +107,7 @@ public class PeakReaderTest {
     
     @Test
     public void testXPKReaderBoxWidth() {
-        PeakListBase peakList = getPeakList();
+        PeakList peakList = getPeakList();
         //0 {} 8.784855 0.030457228 0.028026449 {} 129.01712 0.3105101 0.28385773 0.0 0.6005752
 
         double[] bwidths = {0.028026449, 0.28385773};
@@ -119,7 +119,7 @@ public class PeakReaderTest {
     
     @Test
     public void testXPKReaderVolume() {
-        PeakListBase peakList = getPeakList();
+        PeakList peakList = getPeakList();
         //0 {} 8.784855 0.030457228 0.028026449 {} 129.01712 0.3105101 0.28385773 0.0 0.6005752
 
         double vol = 0.0;
@@ -129,7 +129,7 @@ public class PeakReaderTest {
     
     @Test
     public void testXPKReaderIntensity() {
-        PeakListBase peakList = getPeakList();
+        PeakList peakList = getPeakList();
         //0 {} 8.784855 0.030457228 0.028026449 {} 129.01712 0.3105101 0.28385773 0.0 0.6005752
 
         double inten = 0.6005752;

@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import org.apache.commons.math3.special.Erf;
 import org.nmrfx.peaks.Peak;
-import org.nmrfx.processor.datasets.peaks.PeakList;
+import org.nmrfx.peaks.PeakList;
 
 /**
  * Coupling information about a given cluster to facilitate Bipartite Match.

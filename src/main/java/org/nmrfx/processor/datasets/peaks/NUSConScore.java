@@ -5,7 +5,7 @@ import java.util.DoubleSummaryStatistics;
 import java.util.List;
 import org.apache.commons.math3.stat.correlation.PearsonsCorrelation;
 import org.nmrfx.peaks.Peak;
-import org.nmrfx.peaks.PeakListBase;
+import org.nmrfx.peaks.PeakList;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.optimization.BipartiteMatcher;
 
@@ -17,8 +17,8 @@ public class NUSConScore {
 
     List<Peak> peaksM;
     List<Peak> peaksR;
-    PeakListBase peakListM;
-    PeakListBase peakListR;
+    PeakList peakListM;
+    PeakList peakListR;
     double[] peakWidths;
     private double accuracy;
     private double linearity;

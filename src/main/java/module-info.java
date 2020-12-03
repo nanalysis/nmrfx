@@ -5,6 +5,10 @@ module org.nmrfx.processor {
     exports org.nmrfx.processor.datasets.peaks;
     exports org.nmrfx.processor.datasets.vendor;
     exports org.nmrfx.processor.operations;
+    exports org.nmrfx.processor.processing;
+    exports org.nmrfx.processor.processing.processes;
+    exports org.nmrfx.processor.optimization;
+    exports org.nmrfx.processor.utilities;
     requires commons.math3;
     requires org.apache.commons.lang3;
     requires org.apache.commons.collections4;

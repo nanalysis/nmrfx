@@ -22,6 +22,7 @@ import org.nmrfx.datasets.RegionData;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import org.nmrfx.datasets.DatasetBase;
 
 /**
  *
@@ -131,7 +132,7 @@ public class Measure {
         this.name = name;
     }
 
-    public List<Double> measure(Dataset dataset) throws IOException {
+    public List<Double> measure(DatasetBase dataset) throws IOException {
         int alongDim = iDim == 0 ? 1 : 0;
         int nDim = dataset.getNDim();
         int size = nDim == 1 ? 1 : dataset.getSize(alongDim);

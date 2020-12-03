@@ -93,41 +93,5 @@ public class Project extends ProjectBase {
         this.projectDir = projectDir;
     }
 
-    /**
-     * Add a PropertyChangeListener to the listener list. The listener is
-     * registered for all properties. The same listener object may be added more
-     * than once, and will be called as many times as it is added. If listener
-     * is null, no exception is thrown and no action is taken.
-     */
-    public static void addPropertyChangeListener(PropertyChangeListener listener) {
-        if (pcs != null) {
-            pcs.addPropertyChangeListener(listener);
-        }
-    }
-
-    /**
-     * Remove a PropertyChangeListener from the listener list. This removes a
-     * PropertyChangeListener that was registered for all properties. If
-     * listener was added more than once to the same event source, it will be
-     * notified one less time after being removed. If listener is null, or was
-     * never added, no exception is thrown and no action is taken.
-     */
-    public static void removePropertyChangeListener(PropertyChangeListener listener) {
-        if (pcs != null) {
-            pcs.removePropertyChangeListener(listener);
-        }
-    }
-
-    /**
-     * Returns an array of all the listeners that were added to the
-     * PropertyChangeSupport object with addPropertyChangeListener().
-     */
-    public static PropertyChangeListener[] getPropertyChangeListeners() {
-        if (pcs == null) {
-            return null;
-        } else {
-            return pcs.getPropertyChangeListeners();
-        }
-    }
 
 }

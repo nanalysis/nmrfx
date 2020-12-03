@@ -73,7 +73,7 @@ public class PeakFitter {
         peaks = new Peak[nPeaks];
         for (int iArg = 0, iPeak = 0; iArg < argv.length;
                 iArg++, iPeak++) {
-            peaks[iPeak] = PeakListBase.getAPeak(argv[iArg]);
+            peaks[iPeak] = PeakList.getAPeak(argv[iArg]);
 
             if (peaks[iPeak] == null) {
                 throw new IllegalArgumentException("Couln't find peak \"" + argv[iArg] + "\"");
@@ -410,7 +410,7 @@ public class PeakFitter {
                     }
                 }
             }
-            List<Peak> linkedPeaks = PeakListBase.getLinks(peaks[iPeak], true);
+            List<Peak> linkedPeaks = PeakList.getLinks(peaks[iPeak], true);
             for (Peak lPeak : linkedPeaks) {
                 if (lPeak.getFlag(5)) {
                     fixWeakDoublet = false;
@@ -480,15 +480,15 @@ public class PeakFitter {
         int nDim = guesses.length;
         BIC = 0.0;
         switch (fitMode) {
-            case PeakList.FIT_RMS:
+            case PeakListTools.FIT_RMS:
                 rms = peakFit.rms(guesses);
                 updateBIC(rms, size, nDim);
                 result = rms;
                 return result;
-            case PeakList.FIT_AMPLITUDES:
+            case PeakListTools.FIT_AMPLITUDES:
                 rms = peakFit.rms(guesses);
                 break;
-            case PeakList.FIT_MAX_DEV:
+            case PeakListTools.FIT_MAX_DEV:
                 int maxDev = peakFit.maxPosDev(guesses, 3);
                 double maxDevFreq = theFile.pointToPPM(0, maxDev + p2[0][0]);
                 result = maxDevFreq;
@@ -703,11 +703,11 @@ public class PeakFitter {
         int nPars = guesses.length;
         double[] bestPars;
         double rms;
-        if (fitMode == PeakList.FIT_RMS) {
+        if (fitMode == PeakListTools.FIT_RMS) {
             rms = fitter.rms(guesses);
             updateBIC(rms, size, nPars);
             return rms;
-        } else if (fitMode == PeakList.FIT_MAX_DEV) {
+        } else if (fitMode == PeakListTools.FIT_MAX_DEV) {
             double[] yCalc = peakFit.sim(guesses, xv);
             int maxPos = fitter.maxDevLoc(yCalc, 3);
             double centerPt = maxPos + p2[0][0];

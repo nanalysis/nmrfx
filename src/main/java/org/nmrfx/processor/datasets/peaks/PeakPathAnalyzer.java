@@ -18,6 +18,7 @@ import smile.regression.KernelMachine;
 import java.util.*;
 
 public class PeakPathAnalyzer {
+
     OptFunction optFunction = new Quadratic10();
 
     public static double[] quadFitter(OptFunction optFunction, double[] xValues, double[] pValues, double[] yValues) {
@@ -57,7 +58,7 @@ public class PeakPathAnalyzer {
     }
 
     public static PeakPath checkForUnambigous(PeakPaths peakPath, ArrayList<ArrayList<PeakDistance>> filteredLists,
-                                              boolean useLast) {
+            boolean useLast) {
         // find largest first distance
         double maxDis = Double.NEGATIVE_INFINITY;
         double lastDis = 0.0;
@@ -104,7 +105,7 @@ public class PeakPathAnalyzer {
         //     public static double checkPath(PeakPaths peakPaths, List<PeakDistance> path) {
         paths.values().stream().sorted().forEach(path -> {
             if (path.isComplete() && path.isFree()) {
-                double check = checkPath(path.getPeakPaths(),path.getPeakDistances());
+                double check = checkPath(path.getPeakPaths(), path.getPeakDistances());
                 if ((path.getRadius() < radiusLimit) && (check < checkLimit)) {
                     path.confirm();
                     for (PeakDistance peakDist : path.getPeakDistances()) {
@@ -117,7 +118,7 @@ public class PeakPathAnalyzer {
     }
 
     public static void checkListsForUnambigous(PeakPaths peakPaths, double radius) {
-        PeakListBase firstList = peakPaths.getPeakLists().get(0);
+        PeakList firstList = peakPaths.getPeakLists().get(0);
         boolean useLast = true;
         for (PeakPath path : peakPaths.getPathMap().values()) {
             if (path.getPeakDistances().size() > 1) {
@@ -169,7 +170,7 @@ public class PeakPathAnalyzer {
     }
 
     public static void extendPaths(PeakPaths peakPath, double radius, double tol) {
-        PeakListBase firstList = peakPath.getPeakLists().get(0);
+        PeakList firstList = peakPath.getPeakLists().get(0);
         for (Peak peak : firstList.peaks()) {
             extendPath(peakPath, peak, radius, tol);
         }
@@ -202,17 +203,23 @@ public class PeakPathAnalyzer {
                             yValues[j] = peakDist.getDelta(iDim);
                             xValues[j][0] = indVars[0][i];
                             weightValues[j] = tols[iDim];
+                            System.out.println(j + " " + xValues[j][0] + " " + yValues[j] + " " + weightValues[j]);
                             j++;
                         }
                         i++;
                     }
-                    Variogram vGram = new PowerVariogram(xValues, yValues);
-                    KrigingInterpolation krig = new KrigingInterpolation(xValues,
-                            yValues, vGram, weightValues);
-                    double iValue = krig.interpolate(indVars[0][iSkip]);
-                    double mValue = path.get(iSkip).getDelta(iDim);
-                    double delta = (iValue - mValue) / tols[iDim];
-                    deltaSum += delta * delta;
+                    System.out.print("do krig " + j + " " + i);
+                    if (j > 2) {
+                        Variogram vGram = new PowerVariogram(xValues, yValues);
+                        KrigingInterpolation krig = new KrigingInterpolation(xValues,
+                                yValues, vGram, weightValues);
+                        double iValue = krig.interpolate(indVars[0][iSkip]);
+                        double mValue = path.get(iSkip).getDelta(iDim);
+                        double delta = (iValue - mValue) / tols[iDim];
+                        deltaSum += delta * delta;
+                    } else {
+                        deltaSum = 1000.0;
+                    }
                 }
 
                 double delta = Math.sqrt(deltaSum);
@@ -596,11 +603,11 @@ public class PeakPathAnalyzer {
         double[] weights = peakPaths.getWeights();
         int[] peakDims = peakPaths.getPeakDims();
 
-        Peak startPeak = PeakListBase.getAPeak(startPeakName);
+        Peak startPeak = PeakList.getAPeak(startPeakName);
         ArrayList<PeakDistance> peakDistances = new ArrayList<>();
         ArrayList<ArrayList<PeakDistance>> filteredLists;
         if (lastPeakName.length() != 0) {
-            Peak lastPeak = PeakListBase.getAPeak(lastPeakName);
+            Peak lastPeak = PeakList.getAPeak(lastPeakName);
             double distance = peakPaths.calcDistance(startPeak, lastPeak);
             double[] cDeltas = peakPaths.calcDeltas(startPeak, lastPeak);
             PeakDistance peakDis = new PeakDistance(lastPeak, distance, cDeltas);

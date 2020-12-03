@@ -8,7 +8,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.junit.Assert;
 import org.junit.Test;
-import org.nmrfx.peaks.PeakListBase;
+import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.InvalidPeakException;
 import org.nmrfx.peaks.io.PeakReader;
 import org.nmrfx.peaks.io.PeakWriter;
@@ -19,9 +19,9 @@ public class PeakWriterTest {
     String peakListName2 = "src/test/resources/test.xpk2";
     File writeFile = new File("src/test/resources/testw.xpk");
     File writeFile2 = new File("src/test/resources/testw.xpk2");
-    PeakListBase peakList1 = null;
+    PeakList peakList1 = null;
 
-    PeakListBase getPeakList(String peakListName) {
+    PeakList getPeakList(String peakListName) {
         if (peakList1 == null) {
             PeakReader peakReader = new PeakReader();
             try {
@@ -35,7 +35,7 @@ public class PeakWriterTest {
 
     @Test
     public void testXPKWriter() throws IOException, InvalidPeakException {
-        PeakListBase peakList = getPeakList(peakListName1);
+        PeakList peakList = getPeakList(peakListName1);
         Assert.assertNotNull(peakList);
 
         PeakWriter peakWriter = new PeakWriter();
@@ -44,7 +44,7 @@ public class PeakWriterTest {
             writer.close();
         }
 
-        PeakListBase peakListw = getPeakList(writeFile.toString());
+        PeakList peakListw = getPeakList(writeFile.toString());
         Files.deleteIfExists(writeFile.toPath());
         Assert.assertNotNull(peakListw);
         Assert.assertEquals(peakList, peakListw);
@@ -52,13 +52,13 @@ public class PeakWriterTest {
 
     @Test
     public void testXPK2Writer() throws IOException, InvalidPeakException {
-        PeakListBase peakList = getPeakList(peakListName2);
+        PeakList peakList = getPeakList(peakListName2);
         Assert.assertNotNull(peakList);
 
         PeakWriter peakWriter = new PeakWriter();
         peakWriter.writePeaksXPK2(writeFile2.getPath(), peakList);
 
-        PeakListBase peakListw = getPeakList(writeFile2.getPath());
+        PeakList peakListw = getPeakList(writeFile2.getPath());
         Files.deleteIfExists(writeFile2.toPath());
         Assert.assertNotNull(peakListw);
         Assert.assertEquals(peakList, peakListw);
@@ -66,7 +66,7 @@ public class PeakWriterTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void testXPKWriterNullChannel() throws IOException, InvalidPeakException {
-        PeakListBase peakList = getPeakList(peakListName1);
+        PeakList peakList = getPeakList(peakListName1);
         Assert.assertNotNull(peakList);
 
         PeakWriter peakWriter = new PeakWriter();

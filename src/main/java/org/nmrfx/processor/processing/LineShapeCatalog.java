@@ -16,7 +16,7 @@ import java.util.List;
 import org.apache.commons.math3.util.MultidimensionalCounter;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.peaks.Peak;
-import org.nmrfx.processor.datasets.peaks.PeakList;
+import org.nmrfx.peaks.PeakList;
 import org.nmrfx.processor.datasets.vendor.NMRData;
 import org.nmrfx.processor.math.Vec;
 
