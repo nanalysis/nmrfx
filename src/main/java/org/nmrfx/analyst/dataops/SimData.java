@@ -1,4 +1,4 @@
-package org.nmrfx.processor.dataops;
+package org.nmrfx.analyst.dataops;
 
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import org.nmrfx.math.VecBase.IndexValue;
-import org.nmrfx.processor.compoundLib.CompoundData;
+import org.nmrfx.analyst.compounds.CompoundData;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.math.Vec;
 import org.yaml.snakeyaml.Yaml;

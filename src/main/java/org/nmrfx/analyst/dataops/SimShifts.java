@@ -1,4 +1,4 @@
-package org.nmrfx.processor.dataops;
+package org.nmrfx.analyst.dataops;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -12,7 +12,7 @@ import org.ejml.dense.row.CommonOps_ZDRM;
 import org.ejml.interfaces.decomposition.EigenDecomposition_F64;
 import org.ejml.dense.row.factory.DecompositionFactory_DDRM;
 import org.ejml.simple.SimpleMatrix;
-import static org.nmrfx.processor.dataops.KronProduct.kronProd;
+import static org.nmrfx.analyst.dataops.KronProduct.kronProd;
 import org.nmrfx.processor.math.Vec;
 
 /**

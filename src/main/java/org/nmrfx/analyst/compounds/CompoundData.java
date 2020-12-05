@@ -2,7 +2,7 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-package org.nmrfx.processor.compoundLib;
+package org.nmrfx.analyst.compounds;
 
 import org.nmrfx.processor.math.Vec;
 import java.util.ArrayList;

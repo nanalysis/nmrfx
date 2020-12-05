@@ -1,4 +1,4 @@
-package org.nmrfx.processor.compoundLib;
+package org.nmrfx.analyst.compounds;
 
 public class FitResult {
 

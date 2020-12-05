@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package org.nmrfx.processor.dataops;
+package org.nmrfx.analyst.dataops;
 
 import org.ejml.data.DMatrixRMaj;
 import org.ejml.data.ZMatrixRMaj;

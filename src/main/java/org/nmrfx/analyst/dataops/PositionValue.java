@@ -1,4 +1,4 @@
-package org.nmrfx.processor.dataops;
+package org.nmrfx.analyst.dataops;
 
 public class PositionValue {
 

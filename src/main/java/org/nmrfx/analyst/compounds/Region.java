@@ -2,7 +2,7 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-package org.nmrfx.processor.compoundLib;
+package org.nmrfx.analyst.compounds;
 
 import org.apache.commons.math3.analysis.interpolation.SplineInterpolator;
 import org.apache.commons.math3.analysis.polynomials.PolynomialSplineFunction;

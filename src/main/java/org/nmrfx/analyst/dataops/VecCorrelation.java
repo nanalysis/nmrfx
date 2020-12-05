@@ -1,4 +1,4 @@
-package org.nmrfx.processor.dataops;
+package org.nmrfx.analyst.dataops;
 
 import org.apache.commons.math3.complex.Complex;
 import org.apache.commons.math3.transform.DftNormalization;

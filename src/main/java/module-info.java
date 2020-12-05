@@ -1,4 +1,7 @@
 module org.nmrfx.analyst {
+    exports org.nmrfx.analyst.peaks;
+    exports org.nmrfx.analyst.compounds;
+    exports org.nmrfx.analyst.dataops;
     requires org.nmrfx.core;
     requires org.nmrfx.processor;
     requires ejml.fat;
