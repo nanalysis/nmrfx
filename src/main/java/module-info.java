@@ -2,9 +2,11 @@ module org.nmrfx.processor {
     requires org.nmrfx.core;
     exports org.nmrfx.processor.math;
     exports org.nmrfx.processor.datasets;
+    exports org.nmrfx.processor.tools;
     exports org.nmrfx.processor.datasets.peaks;
     exports org.nmrfx.processor.datasets.vendor;
     exports org.nmrfx.processor.operations;
+    exports org.nmrfx.processor.project;
     exports org.nmrfx.processor.processing;
     exports org.nmrfx.processor.processing.processes;
     exports org.nmrfx.processor.optimization;
