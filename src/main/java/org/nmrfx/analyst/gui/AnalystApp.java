@@ -58,6 +58,8 @@ import org.nmrfx.analyst.gui.molecule3D.MolSceneController;
 import static javafx.application.Application.launch;
 import javafx.collections.ObservableList;
 import javafx.scene.layout.VBox;
+import javafx.stage.StageStyle;
+import org.comdnmr.gui.PyController;
 import org.nmrfx.chemistry.InvalidMoleculeException;
 import org.nmrfx.chemistry.MoleculeFactory;
 import org.nmrfx.chemistry.constraints.MolecularConstraints;
@@ -115,6 +117,7 @@ public class AnalystApp extends MainApp {
     public static RNAPeakGeneratorSceneController rnaPeakGenController;
     public static PeakTableController peakTableController;
     public static NOETableController noeTableController;
+    public static PyController ringNMRController;
     public static WindowIO windowIO = null;
     PeakAtomPicker peakAtomPicker = null;
     CheckMenuItem assignOnPick;
@@ -460,6 +463,11 @@ public class AnalystApp extends MainApp {
                 noeTableMenuItem,
                 assignCascade);
 
+        Menu dynamicsMenu = new Menu("Dynamics");
+        MenuItem ringNMRMenuItem = new MenuItem("Show RINGNMRGui");
+        ringNMRMenuItem.setOnAction(e -> showRING());
+        dynamicsMenu.getItems().addAll(ringNMRMenuItem);
+
         // Window Menu
         // TBD standard window menu items
         // Help Menu (items TBD)
@@ -491,13 +499,13 @@ public class AnalystApp extends MainApp {
             Menu windowMenu = new Menu("Window");
             windowMenu.getItems().addAll(tk.createMinimizeMenuItem(), tk.createZoomMenuItem(), tk.createCycleWindowsItem(),
                     new SeparatorMenuItem(), tk.createBringAllToFrontItem());
-            menuBar.getMenus().addAll(appMenu, fileMenu, projectMenu, spectraMenu, molMenu, viewMenu, peakMenu, windowMenu, helpMenu);
+            menuBar.getMenus().addAll(appMenu, fileMenu, projectMenu, spectraMenu, molMenu, viewMenu, peakMenu, dynamicsMenu, windowMenu, helpMenu);
             tk.autoAddWindowMenuItems(windowMenu);
             tk.setGlobalMenuBar(menuBar);
         } else {
             fileMenu.getItems().add(prefsItem);
             fileMenu.getItems().add(quitItem);
-            menuBar.getMenus().addAll(fileMenu, projectMenu, spectraMenu, molMenu, viewMenu, peakMenu, helpMenu);
+            menuBar.getMenus().addAll(fileMenu, projectMenu, spectraMenu, molMenu, viewMenu, peakMenu, dynamicsMenu, helpMenu);
             helpMenu.getItems().add(0, aboutItem);
         }
         return menuBar;
@@ -1178,6 +1186,16 @@ public class AnalystApp extends MainApp {
 
     void showRunAbout() {
         RunAboutGUI.create();
+    }
+
+    void showRING() {
+        if (ringNMRController == null) {
+            Stage stage = new Stage(StageStyle.DECORATED);
+            ringNMRController = PyController.create(stage);
+        }
+        Stage stage = ringNMRController.getStage();
+        stage.toFront();
+        stage.show();
     }
 
 }

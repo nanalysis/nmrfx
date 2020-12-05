@@ -38,6 +38,12 @@
             <scope>compile</scope>
         </dependency>
         <dependency>
+            <groupId>org.comdnmr</groupId>
+            <artifactId>ringnmrgui</artifactId>
+            <version>1.01</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-graphics</artifactId>
             <version>15</version>
