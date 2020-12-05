@@ -409,6 +409,10 @@ public class PolyChart implements PeakListener {
         return String.valueOf(id);
     }
 
+    public Canvas getCanvas() {
+        return canvas;
+    }
+    
     public static Optional<PolyChart> getChart(String name) {
         Optional<PolyChart> result = Optional.empty();
         for (PolyChart chart : CHARTS) {
@@ -1122,7 +1126,7 @@ public class PolyChart implements PeakListener {
         return position > lower && position < upper;
     }
 
-    protected void moveTo(Double[] positions) {
+    public void moveTo(Double[] positions) {
         for (int axis = 0; axis < positions.length; axis++) {
             if (positions[axis] != null) {
                 if (axis > 1) {
@@ -1146,7 +1150,7 @@ public class PolyChart implements PeakListener {
         refresh();
     }
 
-    protected void moveTo(Double[] positions, Double[] widths) {
+    public void moveTo(Double[] positions, Double[] widths) {
         for (int axis = 0; axis < positions.length; axis++) {
             if (positions[axis] != null) {
                 if (axis > 1) {
@@ -1640,7 +1644,7 @@ public class PolyChart implements PeakListener {
 
     }
 
-    void setDataset(DatasetBase dataset) {
+    public void setDataset(DatasetBase dataset) {
         setDataset(dataset, false);
     }
 
@@ -1655,7 +1659,7 @@ public class PolyChart implements PeakListener {
         return result;
     }
 
-    DatasetAttributes setDataset(DatasetBase dataset, boolean append) {
+    public DatasetAttributes setDataset(DatasetBase dataset, boolean append) {
         SpectrumStatusBar statusBar = controller.getStatusBar();
         DatasetAttributes datasetAttributes = null;
         if (dataset != null) {
@@ -1838,7 +1842,7 @@ public class PolyChart implements PeakListener {
         }
     }
 
-    void updateAxisType() {
+    public void updateAxisType() {
         DatasetBase dataset = getDataset();
         DatasetAttributes datasetAttributes = datasetAttributesList.get(0);
         int nDim = dataset.getNDim();
@@ -2045,6 +2049,10 @@ public class PolyChart implements PeakListener {
 //        }
     }
 
+    public void useImmediateMode(boolean state) {
+        useImmediateMode = state;
+    }
+    
     protected void layoutPlotChildren() {
         if (disabled) {
             return;
@@ -2628,7 +2636,7 @@ public class PolyChart implements PeakListener {
 
     }
 
-    PeakListAttributes setupPeakListAttributes(PeakList peakList) {
+    public PeakListAttributes setupPeakListAttributes(PeakList peakList) {
         purgeInvalidPeakListAttributes();
         boolean present = false;
         String listName = peakList.getName();
@@ -3074,7 +3082,7 @@ public class PolyChart implements PeakListener {
         return hitPeak;
     }
 
-    double[][] getRegionLimits(DatasetAttributes dataAttr) {
+    public double[][] getRegionLimits(DatasetAttributes dataAttr) {
         int nDataDim = dataAttr.nDim;
         double[][] limits = new double[nDataDim][2];
         for (int i = 0; ((i < axes.length) && (i < nDataDim)); i++) {
@@ -3252,15 +3260,15 @@ public class PolyChart implements PeakListener {
 
     }
 
-    void clearPeakPaths() {
+    public void clearPeakPaths() {
         peakPaths.clear();
     }
 
-    void addPeakPaths(List<ConnectPeakAttributes> peaks) {
+    public void addPeakPaths(List<ConnectPeakAttributes> peaks) {
         peakPaths.addAll(peaks);
     }
 
-    void addPeakPath(ConnectPeakAttributes peaks) {
+    public void addPeakPath(ConnectPeakAttributes peaks) {
         peakPaths.add(peaks);
     }
 

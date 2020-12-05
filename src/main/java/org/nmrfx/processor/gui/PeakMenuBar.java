@@ -42,7 +42,7 @@ public class PeakMenuBar {
         this.menuTarget = menuTarget;
     }
 
-    void initMenuBar(ToolBar menuBar) {
+    public void initMenuBar(ToolBar menuBar) {
         MenuButton fileMenu = new MenuButton("File");
 
         MenuItem saveXPK2 = new MenuItem("Save XPK2...");

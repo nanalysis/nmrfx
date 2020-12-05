@@ -76,8 +76,8 @@ public class MainApp extends Application {
     MenuToolkit menuTk;
     private static MenuBar mainMenuBar = null;
     Boolean isMac = null;
-    static MainApp mainApp = null;
-    static ConsoleController consoleController = null;
+    protected static MainApp mainApp = null;
+    static protected ConsoleController consoleController = null;
     static boolean isAnalyst = false;
     Consumer<String> socketFunction = null;
     static NMRFxServer server = null;
@@ -218,7 +218,7 @@ public class MainApp extends Application {
         return aboutStageBuilder.build();
     }
 
-    MenuBar makeMenuBar(String appName) {
+    public MenuBar makeMenuBar(String appName) {
         MenuToolkit tk = null;
         if (isMac()) {
             tk = MenuToolkit.toolkit();

@@ -37,7 +37,7 @@ public class AnnoText implements CanvasAnnotation {
     final double y2;
     POSTYPE xPosType;
     POSTYPE yPosType;
-    String text;
+    protected String text;
     Font font = Font.font("Liberation Sans", 12);
 
     Color fill = Color.BLACK;

@@ -175,7 +175,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
     SimpleObjectProperty<ScannerController> scannerController = new SimpleObjectProperty(null);
     Stage stage = null;
     boolean isFID = true;
-    static SimpleObjectProperty<FXMLController> activeController = new SimpleObjectProperty<>(null);
+    static public final SimpleObjectProperty<FXMLController> activeController = new SimpleObjectProperty<>(null);
     static String docString = null;
     static List<FXMLController> controllers = new ArrayList<>();
     static ConsoleController consoleController = null;
@@ -196,7 +196,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
     PathTool pathTool;
     ListView datasetListView = new ListView();
 
-    SimpleObjectProperty<List<Peak>> selPeaks = new SimpleObjectProperty<>();
+    public final SimpleObjectProperty<List<Peak>> selPeaks = new SimpleObjectProperty<>();
     UndoManager undoManager = new UndoManager();
     double widthScale = 10.0;
     Canvas canvas = new Canvas();
@@ -356,7 +356,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
     }
 
     @FXML
-    void showDatasetsAction(ActionEvent event) {
+   public  void showDatasetsAction(ActionEvent event) {
         if (Dataset.datasets().isEmpty()) {
             Label label = new Label("No open datasets\nUse File Menu Open item\nto open datasets");
             label.setStyle("-fx-font-size:12pt;-fx-text-alignment: center; -fx-padding:10px;");
@@ -414,7 +414,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
     }
 
     @FXML
-    void openFIDAction(ActionEvent event) {
+    public void openFIDAction(ActionEvent event) {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setInitialDirectory(getInitialDirectory());
         fileChooser.setTitle("Open NMR FID");
@@ -431,7 +431,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
     }
 
     @FXML
-    void openDatasetAction(ActionEvent event) {
+   public  void openDatasetAction(ActionEvent event) {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setInitialDirectory(getInitialDirectory());
         fileChooser.setTitle("Open NMR Dataset");
@@ -479,7 +479,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
     }
 
     @FXML
-    void addNoDrawAction(ActionEvent event) {
+    public void addNoDrawAction(ActionEvent event) {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setInitialDirectory(getInitialDirectory());
         fileChooser.setTitle("Add NMR Dataset");
@@ -751,7 +751,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
     }
 
     @FXML
-    void showPeakAttrAction(ActionEvent event) {
+    public void showPeakAttrAction(ActionEvent event) {
         showPeakAttr();
         peakAttrController.initIfEmpty();
     }
@@ -770,7 +770,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
     }
 
     @FXML
-    void showProcessorAction(ActionEvent event) {
+    public void showProcessorAction(ActionEvent event) {
         if (processorController == null) {
             processorController = ProcessorController.create(this, stage, getActiveChart());
         }
@@ -782,7 +782,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
     }
 
     @FXML
-    void showScannerAction(ActionEvent event) {
+    public void showScannerAction(ActionEvent event) {
         if (scannerController.get() == null) {
             ScannerController sControl = ScannerController.create(this, stage, getActiveChart());
             scannerController.set(sControl);
@@ -795,7 +795,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
     }
 
     @FXML
-    void viewDatasetInNvJAction(ActionEvent event) {
+    public void viewDatasetInNvJAction(ActionEvent event) {
         if ((chartProcessor != null) && (chartProcessor.datasetFile != null)) {
             String datasetPath = chartProcessor.datasetFile.getPath();
             if (datasetPath.equals("")) {
@@ -851,7 +851,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
     }
 
     @FXML
-    void exportPDFAction(ActionEvent event) {
+    public void exportPDFAction(ActionEvent event) {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Export to PDF");
         fileChooser.setInitialDirectory(getInitialDirectory());
@@ -872,7 +872,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
     }
 
     @FXML
-    void exportSVGAction(ActionEvent event) {
+    public void exportSVGAction(ActionEvent event) {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Export to SVG");
         fileChooser.setInitialDirectory(getInitialDirectory());
@@ -894,7 +894,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
     }
 
     @FXML
-    void copySVGAction(ActionEvent event) {
+   public void copySVGAction(ActionEvent event) {
         SVGGraphicsContext svgGC = new SVGGraphicsContext();
         try {
             ByteArrayOutputStream stream = new ByteArrayOutputStream();
