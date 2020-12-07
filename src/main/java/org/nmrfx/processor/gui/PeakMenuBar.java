@@ -237,6 +237,7 @@ public class PeakMenuBar {
     void duplicatePeakList() {
         if (getPeakList() != null) {
             TextInputDialog dialog = new TextInputDialog();
+            dialog.setContentText("New Peak List Name");
             Optional<String> result = dialog.showAndWait();
             if (result.isPresent()) {
                 PeakList newPeakList = getPeakList().copy(result.get(), false, false, true);
