@@ -35,6 +35,7 @@ import javafx.collections.ObservableList;
 import javafx.scene.shape.Path;
 import javafx.scene.shape.Line;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -66,6 +67,8 @@ import javafx.scene.Node;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Alert;
+import javafx.scene.control.ChoiceDialog;
+import javafx.scene.control.TextInputDialog;
 import javafx.scene.input.DragEvent;
 import javafx.scene.layout.Pane;
 import javafx.scene.shape.LineTo;
@@ -412,7 +415,7 @@ public class PolyChart implements PeakListener {
     public Canvas getCanvas() {
         return canvas;
     }
-    
+
     public static Optional<PolyChart> getChart(String name) {
         Optional<PolyChart> result = Optional.empty();
         for (PolyChart chart : CHARTS) {
@@ -2052,7 +2055,7 @@ public class PolyChart implements PeakListener {
     public void useImmediateMode(boolean state) {
         useImmediateMode = state;
     }
-    
+
     protected void layoutPlotChildren() {
         if (disabled) {
             return;
@@ -2949,6 +2952,37 @@ public class PolyChart implements PeakListener {
 //                drawSelectedPeaks(peakListAttr);
 //            }
 //        });
+    }
+
+    public void duplicatePeakList() {
+        ChoiceDialog<PeakList> dialog = new ChoiceDialog<>();
+        dialog.setTitle("Duplicate Peak List");
+        dialog.setContentText("Origin List:");
+        PeakList.peakLists().stream().forEach(p -> dialog.getItems().add(p));
+
+        Optional<PeakList> result = dialog.showAndWait();
+        if (result.isPresent()) {
+            PeakList peakList = result.get();
+            if (peakList != null) {
+                String newListName = PeakList.getNameForDataset(getDataset().getName());
+                if (PeakList.exists(newListName)) {
+                    newListName = GUIUtils.input("New list name");
+                    if ((newListName == null) || newListName.trim().equals("")) {
+                        return;
+                    }
+                    newListName = newListName.trim();
+                    if (PeakList.exists(newListName)) {
+                        GUIUtils.warn("Target List Already Exists", "Target List:" + newListName);
+                        return;
+                    }
+                }
+                PeakList newPeakList = peakList.copy(newListName, false, false, true);
+                if (newPeakList != null) {
+                    newPeakList.setDatasetName(getDataset().getName());
+                    updatePeakLists(Collections.singletonList(newPeakList.getName()));
+                }
+            }
+        }
     }
 
     public void drawPeakLists(boolean clear) {

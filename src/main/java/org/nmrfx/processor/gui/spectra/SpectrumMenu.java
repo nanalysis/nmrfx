@@ -119,6 +119,12 @@ public class SpectrumMenu extends ChartMenu {
         });
         peakMenu.getItems().add(tweakListItem);
 
+        MenuItem duplicatePeakMenuItem = new MenuItem("Add Duplicate Peak List");
+        duplicatePeakMenuItem.setOnAction((ActionEvent e) -> {
+            chart.duplicatePeakList();
+        });
+        peakMenu.getItems().add(duplicatePeakMenuItem);
+
         peakMenu.getItems().add(peakFitMenu);
 
 //     fitPeakLists(int syncDim, boolean fitAll, boolean lsFit, boolean fitPlanes) {
