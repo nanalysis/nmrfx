@@ -31,7 +31,6 @@ public class Atom implements IAtom {
     public AtomEnergyProp atomEnergyProp = null;
     AtomProperty atomProperty = null;
 
-
     public enum ATOMFLAGS {
         VISITED(0),
         AROMATIC(1),
@@ -110,6 +109,7 @@ public class Atom implements IAtom {
     public Atom(String name) {
         this.name = name;
     }
+
     public Atom(AtomParser atomParse) {
         this(atomParse.atomName);
         spatialSet = new SpatialSet(this);
@@ -136,6 +136,7 @@ public class Atom implements IAtom {
         setColorByType();
 
     }
+
     public static Atom genAtomWithType(String name, String aType) {
         AtomEnergyProp atomEnergyProp = AtomEnergyProp.get(aType);
         return new Atom(name, atomEnergyProp);
@@ -1288,7 +1289,7 @@ public class Atom implements IAtom {
         if (resName.length() > 3) {
             resName = resName.substring(0, 3);
         }
-        
+
         if (entity instanceof Residue) {
             String polymerName = ((Residue) entity).polymer.getName();
             //  chain code
