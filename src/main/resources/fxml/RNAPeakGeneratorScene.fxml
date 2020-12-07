@@ -8,7 +8,7 @@
 <?import javafx.scene.layout.*?>
 <?import org.controlsfx.control.*?>
 
-<BorderPane id="AnchorPane" prefHeight="400.0" prefWidth="600.0" styleClass="mainFxmlClass" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.nmrfx.processor.gui.RNAPeakGeneratorSceneController">
+<BorderPane id="AnchorPane" prefHeight="400.0" prefWidth="600.0" styleClass="mainFxmlClass" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.nmrfx.analyst.gui.RNAPeakGeneratorSceneController">
     <stylesheets>
         <URL value="@/styles/rnapeakgeneratorscene.css"/>
     </stylesheets>

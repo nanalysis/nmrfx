@@ -6,7 +6,7 @@
 <?import javafx.scene.layout.*?>
 <?import org.controlsfx.control.*?>
 
-<BorderPane xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" prefHeight="350.0" prefWidth="550.0" styleClass="mainFxmlClass" fx:id="attrBorderPane" fx:controller="org.nmrfx.processor.gui.MinerController">
+<BorderPane xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" prefHeight="350.0" prefWidth="550.0" styleClass="mainFxmlClass" fx:id="attrBorderPane" fx:controller="org.nmrfx.analyst.gui.MinerController">
     <top>
         <ToolBar fx:id="toolBar" prefHeight="40.0" prefWidth="200.0" BorderPane.alignment="CENTER">
             <items>
