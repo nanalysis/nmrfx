@@ -36,7 +36,13 @@ public class GUIUtils {
     }
 
     public static String input(String message) {
-        TextInputDialog textDialog = new TextInputDialog(message);
+        return input(message, "");
+    }
+
+    public static String input(String message, String defaultValue) {
+        TextInputDialog textDialog = new TextInputDialog(defaultValue);
+        textDialog.setHeaderText(message);
+        textDialog.setContentText("Value:");
         Optional<String> result = textDialog.showAndWait();
         if (result.isPresent()) {
             return result.get();
