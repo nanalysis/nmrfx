@@ -94,6 +94,11 @@ public class PeakList {
         this(name, n, null);
     }
 
+    @Override
+    public String toString() {
+        return listName;
+    }
+
     public static ResonanceFactory resFactory() {
         return resFactory;
     }
@@ -520,6 +525,7 @@ public class PeakList {
         } else {
             newPeakList = new PeakList(name, nDim);
         }
+        copy(newPeakList, allLinks, merge, copyLabels);
         return newPeakList;
     }
 
@@ -1296,6 +1302,17 @@ public class PeakList {
     public static PeakList get(String listName) {
         ProjectBase project = ProjectBase.getActive();
         return project.getPeakList(listName);
+    }
+
+    /**
+     * Check if peak lists exists.
+     *
+     * @param listName the name of the peak list
+     * @return true if a peak list exists that has the specified name
+     */
+    public static boolean exists(String listName) {
+        ProjectBase project = ProjectBase.getActive();
+        return project.getPeakList(listName) != null;
     }
 
     /**
