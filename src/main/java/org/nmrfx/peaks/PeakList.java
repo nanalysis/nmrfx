@@ -904,12 +904,29 @@ public class PeakList {
         return getDimsForDataset(dataset, false);
     }
 
+    public static PeakList getPeakListWithSpecifier(String peakSpecifier) {
+        int dot = peakSpecifier.indexOf('.');
+
+        if (dot == -1) {
+            return null;
+        }
+
+        ProjectBase project = ProjectBase.getActive();
+        PeakList peakList = project.
+                getPeakList(peakSpecifier.substring(0, dot));
+        return peakList;
+    }
+
     /**
      *
      * @param peakSpecifier
      * @return
      */
     public static Peak getAPeak(String peakSpecifier) {
+        PeakList peakList = getPeakListWithSpecifier(peakSpecifier);
+        if (peakList == null) {
+            return null;
+        }
         int dot = peakSpecifier.indexOf('.');
 
         if (dot == -1) {
@@ -917,14 +934,6 @@ public class PeakList {
         }
 
         int lastDot = peakSpecifier.lastIndexOf('.');
-
-        ProjectBase project = ProjectBase.getActive();
-        PeakList peakList = project.
-                getPeakList(peakSpecifier.substring(0, dot));
-
-        if (peakList == null) {
-            return null;
-        }
 
         if (peakList.indexMap.isEmpty()) {
             peakList.reIndex();
