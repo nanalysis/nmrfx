@@ -100,6 +100,29 @@ public class SpectralDim {
         }
     }
 
+    public static String[] parsePattern(String pattern) {
+        int dot = pattern.indexOf('.');
+        String[] resPats;
+        String[] atomPats;
+        if (dot < 0) {
+            resPats = new String[1];
+            atomPats = new String[1];
+            resPats[0] = "";
+            atomPats[0] = "*";
+        } else {
+            resPats = pattern.substring(0, dot).split(",");
+            atomPats = pattern.substring(dot + 1).toLowerCase().split(",");
+        }
+        String[] result = new String[resPats.length * atomPats.length];
+        int i = 0;
+        for (String resPat : resPats) {
+            for (String atomPat : atomPats) {
+                result[i++] = resPat + "." + atomPat;
+            }
+        }
+        return result;
+    }
+
     public SpectralDim copy(PeakList peakList) {
         SpectralDim newSpectralDim = new SpectralDim(peakList, dataDim);
         newSpectralDim.sf = sf;
