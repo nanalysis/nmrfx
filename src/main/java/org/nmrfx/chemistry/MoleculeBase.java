@@ -1321,6 +1321,16 @@ public class MoleculeBase implements Serializable, ITree {
         return polymers;
     }
 
+    public Polymer getPolymer(String polymerName) {
+        List<Polymer> polymers = new ArrayList<>();
+        Entity entity = getEntity(polymerName);
+        Polymer polymer = null;
+        if (entity instanceof Polymer) {
+            polymer = (Polymer) entity;
+        }
+        return polymer;
+    }
+
     public String getName() {
         return name;
     }
