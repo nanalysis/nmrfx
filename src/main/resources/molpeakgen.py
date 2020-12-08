@@ -7,17 +7,17 @@ import itertools as itools
 
 from refine import *
 
-from org.nmrfx.processor.datasets import Dataset
-from org.nmrfx.processor.datasets.peaks import Peak
-from org.nmrfx.processor.datasets.peaks import PeakList
-from org.nmrfx.processor.datasets.peaks.io import PeakWriter
-from org.nmrfx.processor.datasets.peaks import AtomResonanceFactory
+from org.nmrfx.datasets import DatasetBase
+from org.nmrfx.peaks import Peak
+from org.nmrfx.peaks import PeakList
+from org.nmrfx.peaks.io import PeakWriter
+from org.nmrfx.chemistry import AtomResonanceFactory
 from org.nmrfx.structure.chemistry import Molecule
-from org.nmrfx.structure.chemistry import RNALabels
+from org.nmrfx.structure.rna import RNALabels
 from org.nmrfx.structure.chemistry import CouplingList
-from org.nmrfx.structure.chemistry import InteractionType
-from org.nmrfx.structure.chemistry import SecondaryStructure
-from org.nmrfx.structure.chemistry import SSGen
+from org.nmrfx.structure.rna import InteractionType
+from org.nmrfx.chemistry import SecondaryStructure
+from org.nmrfx.structure.rna import SSGen
 
 from java.io import FileWriter
 import pdb as debugger
@@ -163,8 +163,8 @@ class MolPeakGen:
             self.mol.activateAtoms()
 
     def getListName(self, dataset, tail="_gen"):
-        if not isinstance(dataset,Dataset):
-            dataset = Dataset.getDataset(dataset)
+        if not isinstance(dataset,DatasetBase):
+            dataset = DatasetBase.getDataset(dataset)
         dataName = dataset.getName()
         index = dataName.find(".")
         if index != -1:
@@ -280,8 +280,8 @@ class MolPeakGen:
     def genDistancePeaks(self, dataset, listName="", condition="sim", scheme="", tol=5.0):
         self.setWidths([self.widthH, self.widthH])
         if dataset != None and dataset != "":
-            if not isinstance(dataset,Dataset):
-                dataset = Dataset.getDataset(dataset)
+            if not isinstance(dataset,DatasetBase):
+                dataset = DatasetBase.getDataset(dataset)
             labelScheme = dataset.getProperty("labelScheme")
             self.setLabelScheme(labelScheme)
             if scheme == "":
@@ -323,8 +323,8 @@ class MolPeakGen:
     def genTOCSYPeaks(self, dataset, listName="", condition="sim", transfers=2):
         self.setWidths([self.widthH, self.widthH])
         if dataset != None and dataset != "":
-            if not isinstance(dataset,Dataset):
-                dataset = Dataset.getDataset(dataset)
+            if not isinstance(dataset,DatasetBase):
+                dataset = DatasetBase.getDataset(dataset)
             labelScheme = dataset.getProperty("labelScheme")
             self.setLabelScheme(labelScheme)
         peakList = self.getPeakList(dataset, listName)
@@ -345,8 +345,8 @@ class MolPeakGen:
     def genHMBCPeaks(self, dataset, listName="", condition="sim", transfers=2):
         self.setWidths([self.widthH, self.widthH])
         if dataset != None and dataset != "":
-            if not isinstance(dataset,Dataset):
-                dataset = Dataset.getDataset(dataset)
+            if not isinstance(dataset,DatasetBase):
+                dataset = DatasetBase.getDataset(dataset)
             labelScheme = dataset.getProperty("labelScheme")
             self.setLabelScheme(labelScheme)
         peakList = self.getPeakList(dataset, listName)
@@ -369,8 +369,8 @@ class MolPeakGen:
     def genHSQCPeaks(self, pType, dataset, listName="", condition="sim"):
         self.setWidths([self.widthH*2, self.widthC])
         if dataset != None and dataset != "":
-            if not isinstance(dataset,Dataset):
-                dataset = Dataset.getDataset(dataset)
+            if not isinstance(dataset,DatasetBase):
+                dataset = DatasetBase.getDataset(dataset)
             labelScheme = dataset.getProperty("labelScheme")
             self.setLabelScheme(labelScheme)
         peakList = self.getPeakList(dataset, listName)
@@ -402,10 +402,11 @@ class MolPeakGen:
 
         self.refMode = False
         expValues = anames[expType] 
-        if not isinstance(dataset,Dataset):
-            dataset = Dataset.getDataset(dataset)
+        nPeakDim = len(expValues[0]) / 2
+        if not isinstance(dataset,DatasetBase):
+            dataset = DatasetBase.getDataset(dataset)
 
-        peakList = self.getPeakList(dataset, listName)
+        peakList = self.getPeakList(dataset, listName, nPeakDim)
         peakList.setSampleConditionLabel(condition)
         nDim = peakList.getNDim()
         nucNames = []
@@ -570,15 +571,15 @@ class MolPeakGen:
             stringified = self.stringifyAtomPairs(aPolyName,aResNum,bPolyName,bResNum,atomDistList)
             self.addPeaks(peakList, d1Edited, d2Edited, stringified)
 
-    def getPeakList(self, dataset, listName):
+    def getPeakList(self, dataset, listName, nPeakDim=0):
         if (dataset == None or dataset == "")  and listName != "":
             peakList = PeakList.get(listName)
         else:
             if listName == "":
                 listName = self.getListName(dataset)
-            if not isinstance(dataset,Dataset):
-                dataset = Dataset.getDataset(dataset)
-            peakList = peakgen.makePeakListFromDataset(listName, dataset)
+            if not isinstance(dataset,DatasetBase):
+                dataset = DatasetBase.getDataset(dataset)
+            peakList = peakgen.makePeakListFromDataset(listName, dataset, nPeakDim)
         return peakList
 
     def genRNASecStrPeaks(self, dataset, listName="", condition="sim", scheme=""):
@@ -586,8 +587,8 @@ class MolPeakGen:
         peakList = self.getPeakList(dataset, listName)
         
         if scheme == "" and dataset != None:
-            if not isinstance(dataset,Dataset):
-                dataset = Dataset.getDataset(dataset)
+            if not isinstance(dataset,DatasetBase):
+                dataset = DatasetBase.getDataset(dataset)
             self.setLabelScheme(dataset.getProperty("labelScheme"))
             scheme = dataset.getProperty("editScheme")
         if scheme == "":

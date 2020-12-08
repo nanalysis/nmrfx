@@ -10,19 +10,18 @@ import molio
 from refine import *
 from difflib import SequenceMatcher
 from java.util import ArrayList
-from org.nmrfx.structure.chemistry import SVMPredict
-from org.nmrfx.structure.chemistry import SSLayout
+from org.nmrfx.peaks import Peak
+from org.nmrfx.peaks import PeakList
+from org.nmrfx.chemistry import MolFilter
 from org.nmrfx.chemistry.io import Sequence
+from org.nmrfx.structure.rna import RNALabels
+from org.nmrfx.structure.rna import SSLayout
+from org.nmrfx.structure.chemistry import SVMPredict
 from org.nmrfx.structure.chemistry import Molecule
-from org.nmrfx.structure.chemistry import RNALabels
-from org.nmrfx.processor.datasets.peaks import Peak
-from org.nmrfx.processor.datasets.peaks import PeakList
 from org.nmrfx.structure.chemistry.predict import RNAStats
 from org.nmrfx.structure.chemistry.predict import RNAAttributes
-from org.nmrfx.structure.chemistry.energy import RingCurrentShift
 from org.nmrfx.structure.chemistry.predict import Predictor
-
-from org.nmrfx.structure.chemistry import MolFilter
+from org.nmrfx.structure.chemistry.energy import RingCurrentShift
 from java.io import FileWriter
 from subprocess import check_output
 
