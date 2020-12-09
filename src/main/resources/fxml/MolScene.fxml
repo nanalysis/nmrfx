@@ -21,7 +21,10 @@
 <?import javafx.scene.layout.VBox?>
 <?import org.controlsfx.control.*?>
 
-<BorderPane fx:id="attrBorderPane" prefHeight="350.0" prefWidth="550.0" styleClass="mainFxmlClass" xmlns="http://javafx.com/javafx/8.0.111" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.nmrfx.analyst.gui.molecule3D.MolSceneController">
+<BorderPane fx:id="attrBorderPane" prefHeight="350.0" prefWidth="550.0"
+            styleClass="mainFxmlClass" xmlns="http://javafx.com/javafx/8.0.111"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="org.nmrfx.analyst.gui.molecule3D.MolSceneController">
     <top>
         <ToolBar fx:id="menuBar" BorderPane.alignment="CENTER">
         </ToolBar>

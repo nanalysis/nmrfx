@@ -5,13 +5,14 @@
 <?import java.lang.*?>
 <?import javafx.scene.layout.*?>
 <?import org.controlsfx.control.*?>
-<?import org.controlsfx.control.spreadsheet.*?>
 
 <BorderPane xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1"
             prefHeight="350.0" prefWidth="600" styleClass="mainFxmlClass"
-            fx:id="attrBorderPane" fx:controller="org.nmrfx.analyst.gui.NOETableController">
+            fx:id="attrBorderPane"
+            fx:controller="org.nmrfx.analyst.gui.NOETableController">
     <top>
-        <ToolBar fx:id="toolBar" prefHeight="40.0" prefWidth="600" BorderPane.alignment="CENTER">
+        <ToolBar fx:id="toolBar" prefHeight="40.0" prefWidth="600"
+                 BorderPane.alignment="CENTER">
             <items>
             </items>
         </ToolBar>

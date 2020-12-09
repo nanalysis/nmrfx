@@ -8,12 +8,15 @@
 <?import javafx.scene.layout.*?>
 <?import org.controlsfx.control.*?>
 
-<BorderPane id="AnchorPane" prefHeight="400.0" prefWidth="600.0" styleClass="mainFxmlClass" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.nmrfx.analyst.gui.RNAPeakGeneratorSceneController">
+<BorderPane id="AnchorPane" prefHeight="400.0" prefWidth="600.0"
+            styleClass="mainFxmlClass" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="org.nmrfx.analyst.gui.RNAPeakGeneratorSceneController">
     <stylesheets>
         <URL value="@/styles/rnapeakgeneratorscene.css"/>
     </stylesheets>
     <top>
-        <ToolBar fx:id="toolBar" prefHeight="40.0" prefWidth="200.0" BorderPane.alignment="CENTER">
+        <ToolBar fx:id="toolBar" prefHeight="40.0" prefWidth="200.0"
+                 BorderPane.alignment="CENTER">
             <items>
                 <CheckBox text="D2O" fx:id="d2oCheckBox"/>
                 <CheckBox text="C" fx:id="carbonCheckBox"/>
@@ -33,14 +36,16 @@
     </top>
     <center>
         <GridPane>
-            <TitledPane  text="Adenosine" collapsible="false" GridPane.columnIndex="0" GridPane.rowIndex="0">
+            <TitledPane  text="Adenosine" collapsible="false"
+                         GridPane.columnIndex="0" GridPane.rowIndex="0">
                 <content>
                     <GridPane fx:id="adenosinePane">
                     
                     </GridPane>
                 </content>
             </TitledPane>
-            <TitledPane  text="Guanosine" collapsible="false" GridPane.columnIndex="1" GridPane.rowIndex="0">
+            <TitledPane  text="Guanosine" collapsible="false"
+                         GridPane.columnIndex="1" GridPane.rowIndex="0">
                 <content>
                     <GridPane fx:id="guanosinePane">
                     
@@ -48,7 +53,8 @@
                 </content>
 
             </TitledPane>
-            <TitledPane  text="Uridine" collapsible="false" GridPane.columnIndex="0" GridPane.rowIndex="1">
+            <TitledPane  text="Uridine" collapsible="false"
+                         GridPane.columnIndex="0" GridPane.rowIndex="1">
                 <content>
                     <GridPane fx:id="uridinePane">
                     
@@ -56,7 +62,8 @@
                 </content>
 
             </TitledPane>
-            <TitledPane text="Cytidine" collapsible="false" GridPane.columnIndex="1" GridPane.rowIndex="1">
+            <TitledPane text="Cytidine" collapsible="false" 
+                        GridPane.columnIndex="1" GridPane.rowIndex="1">
                 <content>
                     <GridPane fx:id="cytidinePane">
                     

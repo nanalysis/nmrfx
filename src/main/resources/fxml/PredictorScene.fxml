@@ -19,7 +19,8 @@
             </columnConstraints>
 
             <children>
-                <ChoiceBox fx:id="targetType" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+                <ChoiceBox fx:id="targetType" GridPane.columnIndex="0"
+                           GridPane.rowIndex="0"/>
                 <ChoiceBox fx:id="targetChoice" minWidth="125" 
                            GridPane.columnIndex="1" GridPane.rowIndex="0"/>
                 <Label text="Protein" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
@@ -28,7 +29,8 @@
                 <Label text="RNA" GridPane.columnIndex="0" GridPane.rowIndex="2"/>
                 <ChoiceBox fx:id="rnaChoice" minWidth="125" 
                            GridPane.columnIndex="1" GridPane.rowIndex="2"/>
-                <Label text="Small Molecule" GridPane.columnIndex="0" GridPane.rowIndex="3"/>            
+                <Label text="Small Molecule" GridPane.columnIndex="0"
+                       GridPane.rowIndex="3"/>            
                 <ChoiceBox fx:id="molChoice" minWidth="125" 
                            GridPane.columnIndex="1" GridPane.rowIndex="3"/>
             </children>
