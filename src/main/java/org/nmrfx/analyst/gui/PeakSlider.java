@@ -343,9 +343,10 @@ public class PeakSlider implements ControllerTool {
 
         PeakList peakList = peak.getPeakList();
         Dataset dataset = Dataset.getDataset(peakList.fileName);
-        int[] planes = new int[0];
         if (dataset != null) {
             int[] pdim = peakList.getDimsForDataset(dataset, true);
+            int nExtraDim = dataset.getNDim() - peakList.getNDim();
+            int[] planes = new int[nExtraDim];
 
             try {
                 peak.tweak(dataset, pdim, planes);
