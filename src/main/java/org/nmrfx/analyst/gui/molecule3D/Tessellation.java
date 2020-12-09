@@ -1,6 +1,13 @@
 package org.nmrfx.analyst.gui.molecule3D;
 
-// inspired (and some translation from python) by http://prideout.net/blog/?p=44
+// inspired (and some translation from python) from 
+// https://github.com/prideout/blog-source/tree/master/p44
+// see comment:
+//     f you want, you can download all the python scripts necessary for generating these meshes as a zip file.
+//     I consider this code to be on the public domain, so don't worry about licensing.
+// at:
+// https://github.com/prideout/blog-source/blob/master/p44/deploy/Article.txt
+
 
 import java.util.ArrayList;
 import java.util.function.BiFunction;
