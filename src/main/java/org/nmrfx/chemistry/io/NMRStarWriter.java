@@ -780,7 +780,8 @@ public class NMRStarWriter {
      * @throws IOException
      * @throws InvalidMoleculeException
      */
-    public static void writeT1T2(FileWriter chan, MoleculeBase molecule, String nucName, int field, String expType, String frameName, int listID, Map<Integer, Map<Integer, Map<String, Double>>> allFitResults) throws IOException, InvalidMoleculeException {
+    public static void writeT1T2(FileWriter chan, MoleculeBase molecule, String nucName, 
+            int field, String expType, String frameName, int listID, Map<Integer, Map<Integer, Map<String, Double>>> allFitResults) throws IOException, InvalidMoleculeException {
         chan.write("    ########################################\n");
         chan.write("    #  Heteronuclear " + expType + " relaxation values  #\n");
         chan.write("    ########################################\n");
@@ -879,12 +880,9 @@ public class NMRStarWriter {
                     //                Collections.sort(resList, (a, b) -> Integer.compare(a.getResNum(), b.getResNum()));
                     for (Residue res : resList) {
                         if (res.getPropertyObject(propKey) != null) {
-                            String resNum = res.getNumber();
-                            String resName = res.getName();
-                            String oneLetter = String.valueOf(res.getOneLetter());
                             Map<Integer, Map<String, Double>> fitResFieldMap = (Map<Integer, Map<String, Double>>) res.getPropertyObject(propKey);
                             Map<String, Double> parValues = fitResFieldMap.get(field);
-                            String outputLine = toStarT1T2String(idx, expType, listID, entityID, nucName, resNum, resName, oneLetter, isotope, parValues);
+                            String outputLine = toStarT1T2String(idx, expType, listID, entityID, res, nucName, isotope, parValues);
                             if (outputLine != null) {
                                 chan.write("      " + outputLine + "\n");
                                 idx++;
@@ -893,33 +891,26 @@ public class NMRStarWriter {
                     }
                 } else if (entity instanceof Compound) {
                     Compound compound = (Compound) entity;
-                    String resName = compound.getName();
-                    String oneLetter = compound.getName();
-                    List<Integer> compoundRes = (List<Integer>) compound.getPropertyObject("compRes");
-                    for (int resNum : compoundRes) {
-                        String propKey = expType + String.valueOf(resNum) + "fitResults";
-                        if (compound.getPropertyObject(propKey) != null) {
-                            Map<Integer, Map<String, Double>> fitResFieldMap = (Map<Integer, Map<String, Double>>) compound.getPropertyObject(propKey);
-                            Map<String, Double> parValues = fitResFieldMap.get(field);
-                            String outputLine = toStarT1T2String(idx, expType, listID, entityID, nucName, String.valueOf(resNum), resName, oneLetter, isotope, parValues);
-                            if (outputLine != null) {
-                                chan.write("      " + outputLine + "\n");
-                                idx++;
-                            }
+                    String propKey = expType + String.valueOf(compound.getNumber()) + "fitResults";
+                    if (compound.getPropertyObject(propKey) != null) {
+                        Map<Integer, Map<String, Double>> fitResFieldMap = (Map<Integer, Map<String, Double>>) compound.getPropertyObject(propKey);
+                        Map<String, Double> parValues = fitResFieldMap.get(field);
+                        String outputLine = toStarT1T2String(idx, expType, listID, entityID, compound, nucName, isotope, parValues);
+                        if (outputLine != null) {
+                            chan.write("      " + outputLine + "\n");
+                            idx++;
                         }
                     }
                 }
             }
         } else {
             int entityID = 1;
-            String resName = ".";
-            String oneLetter = ".";
             if (!allFitResults.isEmpty()) {
                 Set<Integer> resNums = allFitResults.keySet();
                 for (int resNum : resNums) {
                     Map<Integer, Map<String, Double>> fitResFieldMap = allFitResults.get(resNum);
                     Map<String, Double> parValues = fitResFieldMap.get(field);
-                    String outputLine = toStarT1T2String(idx, expType, listID, entityID, nucName, String.valueOf(resNum), resName, oneLetter, isotope, parValues);
+                    String outputLine = toStarT1T2String(idx, expType, listID, entityID, null, nucName, isotope, parValues);
                     if (outputLine != null) {
                         chan.write("      " + outputLine + "\n");
                         idx++;
@@ -939,17 +930,29 @@ public class NMRStarWriter {
      * @param idx int. The line index
      * @param expType String. The experiment type, T1 or T2.
      * @param listID int. The number of the T1/T2 block in the file.
-     * @param entityID int. The entity number in the molecule.
+     * @param entityID int. The number of the molecular entity.
+     * @param compound Compound. The molecular compound.
      * @param nucName String. The nucleus, e.g. N.
-     * @param resNum String. The residue number.
-     * @param resName String. The residue name.
-     * @param oneLetter String. The residue one-letter code.
      * @param isotope int. The isotope of the nucleus.
      * @param parValues Map<String, Double>. Map of the fit parameter values.
      * @return
      */
-    public static String toStarT1T2String(int idx, String expType, int listID, int entityID, String nucName, String resNum, String resName, String oneLetter, int isotope, Map<String, Double> parValues) {
+    public static String toStarT1T2String(int idx, String expType, int listID, int entityID, 
+            Compound compound, String nucName, int isotope, Map<String, Double> parValues) {
 
+        String resNum = String.valueOf(idx);
+        String resName = ".";
+        String oneLetter = ".";
+        if (compound != null) {
+            resNum = compound.getNumber();
+            resName = compound.getName();
+            if (compound instanceof Residue) {
+                oneLetter = String.valueOf(((Residue) compound).getOneLetter());
+            } else if (compound instanceof Compound) {
+                oneLetter = resName;
+            }
+        } 
+        
         if (parValues.get("R") == null) {
             return null;
         }
