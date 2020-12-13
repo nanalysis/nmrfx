@@ -21,10 +21,10 @@ set javaexe=java
 set cp="%dir%nmrfx-processor-%nvjver%.jar;%dir%lib/Manifest.jar"
 
 
-set testjava=%dir%jre\bin\java.exe
+set testjava="%dir%jre\bin\java.exe"
 
 if exist %testjava% (
-    set javaexe="%testjava%"
+    set javaexe=%testjava%
     set cp="%dir%lib/nmrfx-processor-%nvjver%.jar;%dir%lib/%Manifest.jar"
 )
 
