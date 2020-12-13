@@ -21,10 +21,10 @@ set javaexe=java
 set cp="%dir%nmrfx-structure-%nvjver%.jar;%dir%lib/Manifest.jar"
 set pgm=%~f0
 
-set testjava=%dir%jre\bin\java.exe
+set testjava="%dir%jre\bin\java.exe"
 
 if exist %testjava% (
-    set javaexe="%testjava%"
+    set javaexe=%testjava%
     set cp="%dir%lib/nmrfx-structure-%nvjver%.jar;%dir%lib/%Manifest.jar"
 )
 
