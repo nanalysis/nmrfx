@@ -160,7 +160,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
 
     private Button cancelButton;
     EventHandler<ActionEvent> menuHandler;
-    PopOver popOver = new PopOver();
+    PopOver popOver = null;
     PopOver attributesPopOver = null;
 
     ChangeListener<String> dimListener;
@@ -356,7 +356,10 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
     }
 
     @FXML
-   public  void showDatasetsAction(ActionEvent event) {
+    public void showDatasetsAction(ActionEvent event) {
+        if (popOver == null) {
+            popOver = new PopOver();
+        }
         if (Dataset.datasets().isEmpty()) {
             Label label = new Label("No open datasets\nUse File Menu Open item\nto open datasets");
             label.setStyle("-fx-font-size:12pt;-fx-text-alignment: center; -fx-padding:10px;");
@@ -431,7 +434,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
     }
 
     @FXML
-   public  void openDatasetAction(ActionEvent event) {
+    public void openDatasetAction(ActionEvent event) {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setInitialDirectory(getInitialDirectory());
         fileChooser.setTitle("Open NMR Dataset");
@@ -894,7 +897,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
     }
 
     @FXML
-   public void copySVGAction(ActionEvent event) {
+    public void copySVGAction(ActionEvent event) {
         SVGGraphicsContext svgGC = new SVGGraphicsContext();
         try {
             ByteArrayOutputStream stream = new ByteArrayOutputStream();
@@ -1229,7 +1232,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
             }
         }
         phaser = new Phaser(this, phaserBox);
-    }
+        }
 
     public Phaser getPhaser() {
         return phaser;

@@ -18,8 +18,8 @@
 package org.nmrfx.processor.gui;
 
 import org.nmrfx.processor.datasets.Dataset;
-import de.codecentric.centerdevice.MenuToolkit;
-import de.codecentric.centerdevice.dialogs.about.AboutStageBuilder;
+import de.jangassen.MenuToolkit;
+import de.jangassen.dialogs.about.AboutStageBuilder;
 import java.beans.PropertyChangeSupport;
 import java.io.File;
 import java.io.IOException;
@@ -210,7 +210,7 @@ public class MainApp extends Application {
 
     Stage makeAbout(String appName) {
         AboutStageBuilder aboutStageBuilder = AboutStageBuilder.start("About " + appName)
-                .withAppName(appName).withCloseOnFocusLoss().withHtml("<i>Processing for NMR Data</i>")
+                .withAppName(appName).withCloseOnFocusLoss()
                 .withVersionString("Version " + getVersion()).withCopyright("Copyright \u00A9 " + Calendar
                 .getInstance().get(Calendar.YEAR));
         Image image = new Image(MainApp.class.getResourceAsStream("/images/Icon_NVFX_256.png"));

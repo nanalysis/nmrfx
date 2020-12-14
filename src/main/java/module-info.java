@@ -36,6 +36,7 @@ open module org.nmrfx.processor.gui {
     requires java.logging;
     requires java.prefs;
     requires java.desktop;
+    requires nsmenufx;
 
     requires org.objectweb.asm.tree.analysis;
     requires org.objectweb.asm.tree;
@@ -89,7 +90,6 @@ open module org.nmrfx.processor.gui {
     requires org.bouncycastle.pg;
     requires org.bouncycastle.provider;
     requires org.bouncycastle.pkix;
-    requires centerdevice.nsmenufx;
     requires javafx.graphicsEmpty;
     requires javafx.graphics;
     requires javafx.fxmlEmpty;
