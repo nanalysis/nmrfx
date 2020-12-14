@@ -25,7 +25,7 @@ import java.net.URL;
 
 public class WebConnect {
 
-    static String webAddress = "https://nmrfx.org/downloads/processor/version.txt";
+    static String webAddress = "https://nmrfx.org/downloads/version/version.txt";
 
     public static String getVersion() {
         WebConnect webConn = new WebConnect();
