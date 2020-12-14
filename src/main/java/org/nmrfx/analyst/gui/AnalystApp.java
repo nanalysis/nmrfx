@@ -18,8 +18,8 @@
 package org.nmrfx.analyst.gui;
 
 import org.nmrfx.processor.datasets.Dataset;
-import de.codecentric.centerdevice.MenuToolkit;
-import de.codecentric.centerdevice.dialogs.about.AboutStageBuilder;
+import de.jangassen.MenuToolkit;
+import de.jangassen.dialogs.about.AboutStageBuilder;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
@@ -83,6 +83,7 @@ import org.python.util.PythonInterpreter;
 import org.nmrfx.analyst.gui.molecule.CanvasMolecule;
 import org.nmrfx.processor.gui.project.GUIProject;
 import org.nmrfx.analyst.gui.tools.RunAboutGUI;
+import org.nmrfx.chemistry.utilities.NvUtil;
 import org.nmrfx.processor.gui.ConsoleController;
 import org.nmrfx.processor.gui.DatasetsController;
 import org.nmrfx.processor.gui.FXMLController;
@@ -219,7 +220,7 @@ public class AnalystApp extends MainApp {
 
     Stage makeAbout(String appName) {
         AboutStageBuilder aboutStageBuilder = AboutStageBuilder.start("About " + appName)
-                .withAppName(appName).withCloseOnFocusLoss().withHtml("<i>Processing for NMR Data</i>")
+                .withAppName(appName).withCloseOnFocusLoss().withText("Processing for NMR Data")
                 .withVersionString("Version " + getVersion()).withCopyright("Copyright \u00A9 " + Calendar
                 .getInstance().get(Calendar.YEAR));
         Image image = new Image(AnalystApp.class.getResourceAsStream("/images/Icon_NVFX_256.png"));
@@ -524,18 +525,7 @@ public class AnalystApp extends MainApp {
     }
 
     public static String getVersion() {
-        if (version == null) {
-            String cp = System.getProperty("java.class.path");
-            // processorgui-10.1.2.jar
-            String jarPattern = ".*processorgui-([0-9\\.\\-abcr]+)\\.jar.*";
-            Pattern pat = Pattern.compile(jarPattern);
-            Matcher match = pat.matcher(cp);
-            version = "0.0.0";
-            if (match.matches()) {
-                version = match.group(1);
-            }
-        }
-        return version;
+        return NvUtil.getVersion();
     }
 
     @Override

@@ -33,5 +33,6 @@ module org.nmrfx.analyst.gui {
     requires org.controlsfx.controls;
     requires org.apache.commons.lang3;
     requires jython.slim;
+    requires nsmenufx;
 
 }

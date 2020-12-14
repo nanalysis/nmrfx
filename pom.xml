@@ -39,7 +39,7 @@
         </dependency>
         <dependency>
             <groupId>org.comdnmr</groupId>
-            <artifactId>ringnmrgui</artifactId>
+            <artifactId>ringnmr-gui</artifactId>
             <version>1.01</version>
             <scope>compile</scope>
         </dependency>
@@ -86,20 +86,6 @@
                 <configuration>
                     <mainClass>org.nmrfx.processor.gui.MainApp</mainClass>
                     <options>
-                        <option>--add-opens</option>
-                        <option>javafx.graphics/com.sun.javafx.tk=centerdevice.nsmenufx</option>
-                        <option>--add-opens</option>
-                        <option>javafx.graphics/com.sun.javafx.tk.quantum=centerdevice.nsmenufx</option>
-                        <option>--add-opens</option>
-                        <option>javafx.graphics/com.sun.javafx.tk=centerdevice.nsmenufx</option>
-                        <option>--add-opens</option>
-                        <option>javafx.graphics/com.sun.glass.ui=centerdevice.nsmenufx</option>
-                        <option>--add-opens</option>
-                        <option>javafx.graphics/com.sun.glass.ui.mac=centerdevice.nsmenufx</option>
-                        <option>--add-opens</option>
-                        <option>javafx.graphics/com.sun.javafx.menu=centerdevice.nsmenufx</option>
-                        <option>--add-opens</option>
-                        <option>javafx.controls/com.sun.javafx.scene.control=centerdevice.nsmenufx</option>
                         <option>--add-opens</option>
                         <option>javafx.graphics/com.sun.javafx.scene.traversal=org.controlsfx.controls</option>
                         <option>--add-opens</option>
