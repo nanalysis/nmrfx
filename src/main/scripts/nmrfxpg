@@ -16,7 +16,7 @@ else
 fi
 
 nvjver=${project.version}
-nvjmain=org.nmrfx.processor.gui.MainApp
+nvjmain=org.nmrfx.processor.gui.NMRApp
 iscygwin=false
 ismsys=false
 case "`uname`" in
@@ -45,10 +45,10 @@ CLASSPATH=${dir}"/lib/Manifest.jar"
 
 if [ -d "${dir}/../jre.bundle/Contents/Home/jre/bin" ] ; then
     JAVA="${dir}/../jre.bundle/Contents/Home/jre/bin/java"
-    CLASSPATH="$dir/lib/processorgui-$nvjver.jar:$CLASSPATH"
+    CLASSPATH="$dir/lib/nmrfx-processor-gui-$nvjver.jar:$CLASSPATH"
 elif [ -d "${dir}/jre/bin" ] ; then
     JAVA="${dir}/jre/bin/java"
-    CLASSPATH="$dir/lib/processorgui-$nvjver.jar:$CLASSPATH"
+    CLASSPATH="$dir/lib/nmrfx-processor-gui-$nvjver.jar:$CLASSPATH"
 else
     if [ -n "$JAVA_HOME" ] ; then
         if [ -x "$JAVA_HOME/jre/sh/java"  ] ; then
@@ -61,13 +61,13 @@ else
 
     if $ismsys ; then
         nvjdir=`$dir/echopath "$dir"`
-        CLASSPATH="$nvjdir/processorgui-$nvjver.jar;$CLASSPATH"
+        CLASSPATH="$nvjdir/nmrfx-processor-gui-$nvjver.jar;$CLASSPATH"
     elif $iscygwin ; then
         CLASSPATH=`cygpath -pu "$CLASSPATH"`
-        CLASSPATH="$dir/processorgui-$nvjver.jar;$CLASSPATH"
+        CLASSPATH="$dir/nmrfx-processor-gui-$nvjver.jar;$CLASSPATH"
         CLASSPATH=`cygpath -pw "$CLASSPATH"`
     else
-        CLASSPATH="$dir/processorgui-$nvjver.jar:$CLASSPATH"
+        CLASSPATH="$dir/nmrfx-processor-gui-$nvjver.jar:$CLASSPATH"
     fi
 fi
 

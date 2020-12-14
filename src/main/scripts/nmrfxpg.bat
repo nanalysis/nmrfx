@@ -13,19 +13,19 @@ rem
 if "%OS%" == "Windows_NT" setlocal
 
 set nvjver=${project.version}
-set nvjpmain=org.nmrfx.processor.gui.MainApp
+set nvjpmain=org.nmrfx.processor.gui.NMRApp
 
 set dir=%~dp0
 
 set javaexe=java
-set cp="%dir%processorgui-%nvjver%.jar;%dir%lib/Manifest.jar"
+set cp="%dir%nmrfx-processor-gui-%nvjver%.jar;%dir%lib/Manifest.jar"
 
 
 set testjava="%dir%jre\bin\java.exe"
 
 if exist %testjava% (
     set javaexe=%testjava%
-    set cp="%dir%lib/processorgui-%nvjver%.jar;%dir%lib/%Manifest.jar"
+    set cp="%dir%lib/nmrfx-processor-gui-%nvjver%.jar;%dir%lib/%Manifest.jar"
 )
 
 
