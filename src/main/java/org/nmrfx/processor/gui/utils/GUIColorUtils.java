@@ -27,7 +27,7 @@ public class GUIColorUtils {
 
     public static Color toColor(int[] rgb) {
         Color color = rgb.length == 3 ? Color.rgb(rgb[0], rgb[1], rgb[2])
-                : Color.rgb(rgb[0], rgb[1], rgb[2], rgb[3]);
+                : Color.rgb(rgb[0], rgb[1], rgb[2], rgb[3] / 255.0);
         return color;
     }
 
