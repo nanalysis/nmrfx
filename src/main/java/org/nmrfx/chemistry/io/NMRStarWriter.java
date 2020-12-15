@@ -508,7 +508,11 @@ public class NMRStarWriter {
         chan.write("_Assembly.ID                          ");
         chan.write(assemblyID + "\n");
         chan.write("_Assembly.Name               ");
-        chan.write(STAR3.quote(name) + "\n");
+        if (name == null) {
+            chan.write("null\n");
+        } else {
+            chan.write(STAR3.quote(name) + "\n");
+        }
         chan.write("_Assembly.Number_of_components                   ");
         int nEntities = molecule.entities.size();
         chan.write(nEntities + "\n");
@@ -870,34 +874,21 @@ public class NMRStarWriter {
 
         int idx = 1;
         if (molecule != null) {
+            List<String> prevRes = new ArrayList<>();
+            List<Atom> atoms = molecule.getAtomArray();
             Iterator entityIterator = molecule.entityLabels.values().iterator();
             while (entityIterator.hasNext()) {
                 Entity entity = (Entity) entityIterator.next();
                 int entityID = entity.getIDNum();
-                if (entity instanceof Polymer) {
+                for (Atom atom : atoms) {
                     String propKey = expType + "fitResults";
-                    List<Residue> resList = ((Polymer) entity).getResidues();
-                    //                Collections.sort(resList, (a, b) -> Integer.compare(a.getResNum(), b.getResNum()));
-                    for (Residue res : resList) {
-                        if (res.getPropertyObject(propKey) != null) {
-                            Map<Integer, Map<String, Double>> fitResFieldMap = (Map<Integer, Map<String, Double>>) res.getPropertyObject(propKey);
-                            Map<String, Double> parValues = fitResFieldMap.get(field);
-                            String outputLine = toStarT1T2String(idx, expType, listID, entityID, res, nucName, isotope, parValues);
-                            if (outputLine != null) {
-                                chan.write("      " + outputLine + "\n");
-                                idx++;
-                            }
-                        }
-                    }
-                } else if (entity instanceof Compound) {
-                    Compound compound = (Compound) entity;
-                    String propKey = expType + String.valueOf(compound.getNumber()) + "fitResults";
-                    if (compound.getPropertyObject(propKey) != null) {
-                        Map<Integer, Map<String, Double>> fitResFieldMap = (Map<Integer, Map<String, Double>>) compound.getPropertyObject(propKey);
+                    if (atom.getProperty(expType + "fitResults") != null) {
+                        Map<Integer, Map<String, Double>> fitResFieldMap = (Map<Integer, Map<String, Double>>) atom.getProperty(propKey);
                         Map<String, Double> parValues = fitResFieldMap.get(field);
-                        String outputLine = toStarT1T2String(idx, expType, listID, entityID, compound, nucName, isotope, parValues);
-                        if (outputLine != null) {
+                        String outputLine = toStarT1T2String(idx, expType, listID, entityID, atom, nucName, isotope, parValues);
+                        if (outputLine != null && !prevRes.contains(entityID + "." + atom.getResidueNumber())) {
                             chan.write("      " + outputLine + "\n");
+                            prevRes.add(entityID + "." + atom.getResidueNumber());
                             idx++;
                         }
                     }
@@ -931,26 +922,22 @@ public class NMRStarWriter {
      * @param expType String. The experiment type, T1 or T2.
      * @param listID int. The number of the T1/T2 block in the file.
      * @param entityID int. The number of the molecular entity.
-     * @param compound Compound. The molecular compound.
+     * @param atom Atom. The atom in the molecule.
      * @param nucName String. The nucleus, e.g. N.
      * @param isotope int. The isotope of the nucleus.
      * @param parValues Map<String, Double>. Map of the fit parameter values.
      * @return
      */
     public static String toStarT1T2String(int idx, String expType, int listID, int entityID, 
-            Compound compound, String nucName, int isotope, Map<String, Double> parValues) {
+            Atom atom, String nucName, int isotope, Map<String, Double> parValues) {
 
-        String resNum = String.valueOf(idx);
+        int resNum = idx;
         String resName = ".";
         String oneLetter = ".";
-        if (compound != null) {
-            resNum = compound.getNumber();
-            resName = compound.getName();
-            if (compound instanceof Residue) {
-                oneLetter = String.valueOf(((Residue) compound).getOneLetter());
-            } else if (compound instanceof Compound) {
-                oneLetter = resName;
-            }
+        if (atom != null) {
+            resNum = atom.getResidueNumber();
+            resName = atom.getResidueName();
+            oneLetter = String.valueOf(((Residue) atom.entity).getOneLetter());
         } 
         
         if (parValues.get("R") == null) {
@@ -962,8 +949,8 @@ public class NMRStarWriter {
         sBuilder.append(String.format("%-3s", "."));
         sBuilder.append(String.format("%-3d", entityID));
         sBuilder.append(String.format("%-3d", entityID));
-        sBuilder.append(String.format("%-6s", resNum));
-        sBuilder.append(String.format("%-6s", resNum));
+        sBuilder.append(String.format("%-6d", resNum));
+        sBuilder.append(String.format("%-6d", resNum));
         sBuilder.append(String.format("%-6s", resName)); //fixme writing out chainID, not compound name (e.g. B instead of SO4) when molecule loaded from CIF
         sBuilder.append(String.format("%-4s", nucName));
         sBuilder.append(String.format("%-4s", nucName));
@@ -976,7 +963,7 @@ public class NMRStarWriter {
         }
         sBuilder.append(String.format("%-3s", "."));
         sBuilder.append(String.format("%-3s", "."));
-        sBuilder.append(String.format("%-6s", resNum));
+        sBuilder.append(String.format("%-6d", resNum));
         sBuilder.append(String.format("%-4s", oneLetter));
         sBuilder.append(String.format("%-4s", nucName));
         sBuilder.append(String.format("%-10s", "."));
