@@ -742,7 +742,7 @@ public class MMcifReader {
                 Compound compound = compoundMap.get(mapID);
                 if (compound == null) {
                     //throw new ParseException("invalid compound in assignments saveframe \""+mapID+"\"");
-                    System.err.println("invalid compound in chem comp atom saveframe \"" + mapID + "\"");
+                    System.err.println("invalid compound in chem comp bond saveframe \"" + mapID + "\"");
                     continue;
                 }
                 String fullAtom1 = chainCode + ":" + sequenceCode + "." + atom1Name;
