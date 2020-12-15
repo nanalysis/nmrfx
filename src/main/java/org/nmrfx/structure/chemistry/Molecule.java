@@ -69,9 +69,6 @@ public class Molecule extends MoleculeBase {
     public static final LinkedHashSet shapeTypes = new LinkedHashSet();
 
     //public static MoleculeTableModel molTableModel = null;
-    public static final Map compoundMap() {
-        return StructureProject.getActive().compoundMap;
-    }
     public Map<Atom, Map<Atom, Double>> ringClosures;
     List<List<Atom>> atomTree = null;
     HashMap<String, List> allowedSourcesMap = new HashMap<>();

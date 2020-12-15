@@ -47,12 +47,10 @@ public class StructureProject extends ProjectBase {
     public Molecule activeMol;
     static StructureProject activeProject = null;
 
-    public final Map compoundMap;
 
     public StructureProject(String name) {
         super(name);
         activeProject = this;
-        compoundMap = new HashMap();
         activeMol = null;
     }
 
