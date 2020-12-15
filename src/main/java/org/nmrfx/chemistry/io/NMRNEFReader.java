@@ -51,7 +51,6 @@ public class NMRNEFReader {
     final File nefDir;
 
     Map entities = new HashMap();
-    Map<String, Compound> compoundMap = new HashMap<>();
     boolean hasResonances = false;
     Map<Long, List<PeakDim>> resMap = new HashMap<>();
     public static boolean DEBUG = false;
@@ -234,6 +233,7 @@ public class NMRNEFReader {
     }
 
     void addCompound(String id, Compound compound) {
+        var compoundMap = MoleculeBase.compoundMap();
         compoundMap.put(id, compound);
     }
 
@@ -303,6 +303,7 @@ public class NMRNEFReader {
     void processNEFChemicalShifts(Saveframe saveframe, int ppmSet) throws ParseException {
         Loop loop = saveframe.getLoop("_nef_chemical_shift");
         if (loop != null) {
+            var compoundMap = MoleculeBase.compoundMap();
             List<String> chainCodeColumn = loop.getColumnAsList("chain_code");
             List<String> sequenceCodeColumn = loop.getColumnAsList("sequence_code");
             List<String> resColumn = loop.getColumnAsList("residue_name");
@@ -406,6 +407,7 @@ public class NMRNEFReader {
         if (loop == null) {
             throw new ParseException("No \"_nef_dihedral_restraint\" loop");
         }
+        var compoundMap = MoleculeBase.compoundMap();
         List<String>[] chainCodeColumns = new ArrayList[4];
         List<String>[] sequenceCodeColumns = new ArrayList[4];
 //        List<String>[] residueNameColumns = new ArrayList[4];
@@ -487,6 +489,7 @@ public class NMRNEFReader {
         if (loop == null) {
             throw new ParseException("No \"_nef_distance_restraint\" loop");
         }
+        var compoundMap = MoleculeBase.compoundMap();
         List<String>[] chainCodeColumns = new ArrayList[2];
         List<String>[] sequenceColumns = new ArrayList[2];
         List<String>[] residueNameColumns = new ArrayList[2];
@@ -629,6 +632,7 @@ public class NMRNEFReader {
         MoleculeBase molecule = null;
         if (argv.length == 0) {
             hasResonances = false;
+            var compoundMap = MoleculeBase.compoundMap();
             compoundMap.clear();
             if (DEBUG) {
                 System.err.println("process molecule");

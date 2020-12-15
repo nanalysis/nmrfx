@@ -30,6 +30,7 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import org.nmrfx.chemistry.Compound;
 import org.nmrfx.datasets.DatasetFactory;
 
 /**
@@ -43,6 +44,7 @@ public class ProjectBase {
     final String name;
     public Path projectDir = null;
     public Map<String, PeakPaths> peakPaths;
+    public Map<String, Compound> compoundMap = new HashMap<>();
 
     public static ProjectBase getNewProject(String name) {
         ProjectBase projectBase;
@@ -113,6 +115,10 @@ public class ProjectBase {
     public String getName() {
         return name;
     }
+    
+    public Map<String, Compound> getCompoundMap() {
+        return compoundMap;
+    }    
 
     public boolean removeDataset(String datasetName) {
         DatasetBase toRemove = datasetMap.get(datasetName);

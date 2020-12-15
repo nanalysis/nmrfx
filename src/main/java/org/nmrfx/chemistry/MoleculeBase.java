@@ -7,6 +7,7 @@ import java.io.*;
 import java.util.*;
 import org.nmrfx.chemistry.constraints.MolecularConstraints;
 import org.nmrfx.chemistry.io.Sequence;
+import org.nmrfx.project.ProjectBase;
 
 public class MoleculeBase implements Serializable, ITree {
 
@@ -337,6 +338,10 @@ public class MoleculeBase implements Serializable, ITree {
 
         conditions.clear();
         MoleculeFactory.setActive(null);
+    }
+
+    public static final Map<String, Compound> compoundMap() {
+        return ProjectBase.getActive().getCompoundMap();
     }
 
     public MolecularConstraints getMolecularConstraints() {
@@ -1025,7 +1030,7 @@ public class MoleculeBase implements Serializable, ITree {
 
     public void writeXYZToPDB(String fileName, int whichStruct) throws IOException {
         int i;
-        try (PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter(fileName)))) {
+        try ( PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter(fileName)))) {
 
             updateAtomArray();
 

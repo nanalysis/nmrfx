@@ -41,7 +41,6 @@ public class MMcifReader {
     Map<Long, List<PeakDim>> resMap = new HashMap<>();
     Map<String, Character> chainCodeMap = new HashMap<>();
     Map<Integer, MMCIFEntity> entityMap = new HashMap<>();
-    Map<String, Compound> compoundMap = new HashMap<>();
 
     public MMcifReader(final File cifFile, final MMCIF star3) {
         this.mmcif = star3;
@@ -358,7 +357,7 @@ public class MMcifReader {
     }
 
     void addCompound(String id, Compound compound) {
-        compoundMap.put(id, compound);
+        MoleculeBase.compoundMap().put(id, compound);
     }
 
 //    void buildChemComp(final Saveframe saveframe, Molecule molecule) throws ParseException {
@@ -524,6 +523,7 @@ public class MMcifReader {
 
     void processAtomSites(MoleculeBase molecule, Saveframe saveframe, int ppmSet) throws ParseException {
         Loop loop = saveframe.getLoop("_atom_site");
+        var compoundMap = MoleculeBase.compoundMap();
         if (loop != null) {
 //            List<String> groupPDBColumn = loop.getColumnAsList("group_PDB");
 //            List<String> idColumn = loop.getColumnAsList("id");
@@ -641,6 +641,8 @@ public class MMcifReader {
     void processChemCompAtom(Saveframe saveframe, int ppmSet, MoleculeBase molecule, String chainCode, String sequenceCode) throws ParseException {
         Loop loop = saveframe.getLoop("_chem_comp_atom");
         if (loop != null) {
+            var compoundMap = MoleculeBase.compoundMap();
+
 //            List<String> groupPDBColumn = loop.getColumnAsList("group_PDB");
 //            List<String> idColumn = loop.getColumnAsList("id");
             List<String> typeSymbolColumn = loop.getColumnAsList("type_symbol");
@@ -721,7 +723,8 @@ public class MMcifReader {
         Loop loop = saveframe.getLoop("_chem_comp_bond");
         if (loop != null) {
 //            List<String> groupPDBColumn = loop.getColumnAsList("group_PDB");
-            List<String> idColumn = loop.getColumnAsList("comp_id");
+                  var compoundMap = MoleculeBase.compoundMap();
+  List<String> idColumn = loop.getColumnAsList("comp_id");
             List<String> atom1IDColumn = loop.getColumnAsList("atom_id_1");
             List<String> atom2IDColumn = loop.getColumnAsList("atom_id_2");
             List<String> bondOrderColumn = loop.getColumnAsList("value_order");
@@ -834,6 +837,7 @@ public class MMcifReader {
         if ((argv.length != 0) && (argv.length != 3)) {
             throw new IllegalArgumentException("?shifts fromSet toSet?");
         }
+        var compoundMap = MoleculeBase.compoundMap();
 
         if (argv.length == 0) {
             hasResonances = false;
