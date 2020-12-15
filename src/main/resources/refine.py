@@ -545,8 +545,11 @@ class refine:
             angleCon = molConstraints.newAngleSet("default")
         return angleCon
 
-    def addAngleConstraint(self, atoms, lower, upper, scale):
+    def addAngleConstraintAtoms(self, atoms, lower, upper, scale):
         self.getAngleConstraintSet().addAngleConstraint(atoms, lower, upper, scale)
+
+    def addAngleConstraint(self, angleConstraint):
+        self.getAngleConstraintSet().add(angleConstraint)
 
     def readLinkerDict(self, linkerDict):
         entityNames = [entity.getName() for entity in self.molecule.getEntities()]
@@ -756,7 +759,7 @@ class refine:
                 atom1 = atom2.getParent()
                 atom0 = atom1.getParent()
                 atoms = [atom0, atom1, atom2, atom3]
-                self.dihedral.addBoundary(atoms, lower,upper,scale)
+                self.addAngleConstraintAtoms(atoms, lower, upper, scale)
             elif (len(values)==2):
                 (atomName,s1) = values
                 lower = float(s1)-angleDelta
@@ -770,7 +773,7 @@ class refine:
                 atom1 = atom2.getParent()
                 atom0 = atom1.getParent()
                 atoms = [atom0, atom1, atom2, atom3]
-                self.dihedral.addBoundary(atoms, lower,upper,scale)
+                self.addAngleConstraintAtoms(atoms, lower, upper, scale)
             else:
                 atomName = values[0]
                 lower = float(values[1])
@@ -787,6 +790,7 @@ class refine:
                     i+=3
                 #bound = AngleBoundary(atomName,lower,upper,scale,center,sigma,height)
                 #self.dihedral.addBoundary(atomName,bound)
+                #self.addAngleConstraintAtoms(atoms, lower, upper, scale)
 
     def loadDistancesFromFile(self,fileName, keepSetting=None):
        file = open(fileName,"r")
@@ -1314,20 +1318,21 @@ class refine:
                 fullAtoms = []
                 for aName in a1:
                     atomName = self.getAtomName(residue, aName)
-                    fullAtoms.append(atomName)
+                    atom = self.molecule.getAtomByName(atomName)
+                    fullAtoms.append(atom)
 
                 scale = 1.0
                 try:
-                    self.dihedral.addBoundary(fullAtoms,lower,upper,scale)
+                    self.addAngleConstraintAtoms(fullAtoms, lower, upper, scale)
                 except:
-                    print "err",fullAtoms
+                    print "Error adding angle constraint",fullAtoms
                     pass
 
     def NEFReader(self, fileName):
         from java.io import FileReader
         from java.io import BufferedReader
         from java.io import File
-        from org.nmrfx.processor.star import STAR3
+        from org.nmrfx.star import STAR3
         from org.nmrfx.chemistry.io import NMRStarReader
         from org.nmrfx.chemistry.io import NMRStarWriter
         from org.nmrfx.chemistry.io import NMRNEFReader
@@ -1625,7 +1630,7 @@ class refine:
                 lower += 360.0
                 upper += 360.0
 	   try:
-               self.dihedral.addBoundary(fullAtoms,lower,upper,scale)
+               self.addAngleConstraintAtoms(fullAtoms, lower, upper, scale)
 	   except IllegalArgumentException as IAE:
                atoms = ' -> '.join(map(lambda x: x.split(':')[-1], fullAtoms))
 	       err = IAE.getMessage()
@@ -1661,13 +1666,13 @@ class refine:
                 (residueNum, rotamerName) = line.split()
                 angleBoundaries = RNARotamer.getAngleBoundaries(polymer, residueNum, rotamerName, mul)
                 for angleBoundary in angleBoundaries:
-                    self.dihedral.addBoundary(angleBoundary)
+                    self.addAngleConstraint(angleBoundary)
             fIn.close()
 
     def addSuiteBoundary(self,polymer, residueNum,rotamerName, mul=0.5):
         angleBoundaries = RNARotamer.getAngleBoundaries(polymer, str(residueNum), rotamerName, mul)
         for angleBoundary in angleBoundaries:
-            self.dihedral.addBoundary(angleBoundary)
+            self.addAngleConstraint(angleBoundary)
 
     def getSuiteAngles(self, molecule):
         angles  = [
