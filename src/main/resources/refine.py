@@ -336,7 +336,7 @@ class refine:
     def __init__(self):
 	self.NEFfile = ''
         self.energyLists = None
-        self.dihedrals = None
+        self.dihedral = None
         self.cyanaAngleFiles = []
         self.xplorAngleFiles = []
         self.nvAngleFiles = []
@@ -1351,7 +1351,7 @@ class refine:
         molecule.setDihedrals(dihedral)
         self.dihedral = molecule.getDihedrals();
         self.dihedral.clearBoundaries();
-        self.energyLists = self.dihedrals.energyList
+        self.energyLists = self.dihedral.energyList
         self.energyLists.makeCompoundList(molecule)
 
     def readNMRFxDistanceConstraints(self, fileName, keepSetting=None):
@@ -2023,7 +2023,7 @@ class refine:
             self.setupAtomProperties(entity)
             if entity in self.entityEntryDict:
                 atom = self.entityEntryDict[entity]
-                entity.genMeasuredTree(atom)
+                AngleTreeGenerator.genMeasuredTree(entity, atom)
 
     def setupAtomProperties(self, compound):
         pI = PathIterator(compound)
@@ -2059,7 +2059,7 @@ class refine:
             endAtom = end
         else:
             endAtom = None
-        Molecule.makeAtomList()
+        #MoleculeBase.makeAtomList()
         mol = self.molecule
         mol.resetGenCoords()
         mol.invalidateAtomArray()
