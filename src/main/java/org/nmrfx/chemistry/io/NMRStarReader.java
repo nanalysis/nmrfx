@@ -322,6 +322,19 @@ public class NMRStarReader {
             }
         }
     }
+    
+    public void buildT1T2(String expType) throws ParseException {
+        Iterator iter = star3.getSaveFrames().values().iterator();
+        while (iter.hasNext()) {
+            Saveframe saveframe = (Saveframe) iter.next();
+            if (saveframe.getCategoryName().equals("heteronucl_" + expType + "_relaxation")) {
+                if (DEBUG) {
+                    System.err.println("process " + expType + " relaxation " + saveframe.getName());
+                }
+                processT1T2(saveframe, expType);
+            }
+        }
+    }
 
     public void buildDataset(Map tagMap, String datasetName) throws ParseException, IOException {
         String name = STAR3.getTokenFromMap(tagMap, "Name");
@@ -1201,6 +1214,82 @@ public class NMRStarReader {
             }
         }
     }
+    
+    public void processT1T2(Saveframe saveframe, String expType) throws ParseException {
+        String frameName = saveframe.getCategory("_Heteronucl_" + expType + "_list").get("Sf_framecode");
+        String listID = saveframe.getCategory("_Heteronucl_" + expType + "_list").get("ID");
+        String field = saveframe.getCategory("_Heteronucl_" + expType + "_list").get("Spectrometer_frequency_1H");
+        String coherenceType = saveframe.getCategory("_Heteronucl_" + expType + "_list").get(expType + "_coherence_type");
+        String units = saveframe.getCategory("_Heteronucl_" + expType + "_list").get(expType + "_val_units");
+        MoleculeBase mol = MoleculeFactory.getActive();
+        if (mol != null) {
+            mol.setProperty(expType + field + "_" + listID + "frameName", frameName);
+            mol.setProperty(expType + "coherenceType", coherenceType);
+            mol.setProperty(expType + "units", units);
+        }
+        Loop loop = saveframe.getLoop("_" + expType);
+        if (loop == null) {
+            System.err.println("No \"" + expType + "\" loop");
+            return;
+        }
+        List<String> entityAssemblyIDColumn = loop.getColumnAsList("Entity_assembly_ID");
+        List<String> entityIDColumn = loop.getColumnAsList("Entity_ID");
+        List<String> compIdxIDColumn = loop.getColumnAsList("Comp_index_ID");
+        List<String> atomColumn = loop.getColumnAsList("Atom_ID");
+        List<String> valColumn = loop.getColumnAsListIfExists("Val");
+        List<String> errColumn = loop.getColumnAsListIfExists("Val_err");
+        List<String> RexValColumn = loop.getColumnAsListIfExists("Rex_val");
+        List<String> RexErrColumn = loop.getColumnAsListIfExists("Rex_err");
+        if (expType.equals("T2")) {
+            valColumn = loop.getColumnAsList(expType + "_val");
+            errColumn = loop.getColumnAsList(expType + "_val_err");
+        }
+        
+        for (int i = 0; i < entityAssemblyIDColumn.size(); i++) {
+            String iEntity = (String) entityIDColumn.get(i);
+            String entityAssemblyID = (String) entityAssemblyIDColumn.get(i);
+            if (iEntity.equals("?")) {
+                continue;
+            }
+            String iRes = (String) compIdxIDColumn.get(i);
+            String atomName = (String) atomColumn.get(i);
+            String valStr = (String) valColumn.get(i);
+            String errStr = (String) errColumn.get(i);
+            
+            if (mol != null && i == 0) {
+                mol.setProperty(expType + "nucName", atomName);
+            }
+            if (entityAssemblyID.equals(".")) {
+                entityAssemblyID = "1";
+            }
+            String mapID = entityAssemblyID + "." + iEntity + "." + iRes;
+            Compound compound = compoundMap.get(mapID);
+            if (compound == null) {
+                //throw new ParseException("invalid compound in conformer saveframe \""+mapID+"\"");
+                System.err.println("invalid compound in " + expType + " saveframe \"" + mapID + "\"");
+                continue;
+            }
+            if (mol == null) {
+                mol = compound.molecule;
+            }
+            Atom atom = compound.getAtomLoose(atomName);
+            if (atom == null) {
+                System.err.println("No atom \"" + mapID + "." + atomName + "\"");
+                continue;
+                //throw new ParseException("invalid atom in conformer saveframe \""+mapID+"."+atomName+"\"");
+            }
+            Map<String, String> expVals = new HashMap<>();
+            expVals.put(expType + "Val", valStr);
+            expVals.put(expType + "Err", errStr);
+            if (expType.equals("T2")) {
+                String RexValStr = (String) RexValColumn.get(i);
+                String RexErrStr = (String) RexErrColumn.get(i);
+                expVals.put("RexVal", RexValStr);
+                expVals.put("RexErr", RexErrStr);
+            }
+            atom.setProperty(expType + field + "_" + listID + "results", expVals);
+        }
+    }
 
     public void processDihedralConstraints(Saveframe saveframe) throws ParseException {
         Loop loop = saveframe.getLoop("_Torsion_angle_constraint");
@@ -1469,6 +1558,11 @@ public class NMRStarReader {
                 System.err.println("process rdc constraints");
             }
             buildRDCConstraints();
+            if (DEBUG) {
+                System.err.println("process T1/T2");
+            }
+            buildT1T2("T1");
+            buildT1T2("T2");
             if (DEBUG) {
                 System.err.println("process runabout");
             }

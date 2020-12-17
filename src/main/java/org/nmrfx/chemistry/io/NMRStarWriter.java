@@ -779,13 +779,11 @@ public class NMRStarWriter {
      * @param expType String. The experiment type, T1 or T2.
      * @param frameName String. The name of the experiment.
      * @param listID int. The number of the T1/T2 block in the file.
-     * @param allFitResults Map of the fit results. Only used if no molecule is
-     * present.
      * @throws IOException
      * @throws InvalidMoleculeException
      */
     public static void writeT1T2(FileWriter chan, MoleculeBase molecule, String nucName, 
-            int field, String expType, String frameName, int listID, Map<Integer, Map<Integer, Map<String, Double>>> allFitResults) throws IOException, InvalidMoleculeException {
+            int field, String expType, String frameName, int listID) throws IOException, InvalidMoleculeException {
         chan.write("    ########################################\n");
         chan.write("    #  Heteronuclear " + expType + " relaxation values  #\n");
         chan.write("    ########################################\n");
@@ -891,20 +889,6 @@ public class NMRStarWriter {
                             prevRes.add(entityID + "." + atom.getResidueNumber());
                             idx++;
                         }
-                    }
-                }
-            }
-        } else {
-            int entityID = 1;
-            if (!allFitResults.isEmpty()) {
-                Set<Integer> resNums = allFitResults.keySet();
-                for (int resNum : resNums) {
-                    Map<Integer, Map<String, Double>> fitResFieldMap = allFitResults.get(resNum);
-                    Map<String, Double> parValues = fitResFieldMap.get(field);
-                    String outputLine = toStarT1T2String(idx, expType, listID, entityID, null, nucName, isotope, parValues);
-                    if (outputLine != null) {
-                        chan.write("      " + outputLine + "\n");
-                        idx++;
                     }
                 }
             }
@@ -1043,7 +1027,6 @@ public class NMRStarWriter {
 //                Collections.sort(expTypes, (a, b) -> a.compareTo(b));
                 for (String expType : expTypes) {
                     int listID = 1;
-                    String frameName = (String) molecule.getProperty(expType + "frameName");
                     double[] fields = (double[]) entity.getPropertyObject(expType + "fields");
                     String nucName = (String) molecule.getProperty(expType + "nucName");
                     //        List<Double> fieldList = Arrays.asList(fields);
@@ -1051,32 +1034,13 @@ public class NMRStarWriter {
                     //        System.out.println(expType + " " + frameName);
                     for (double dField : fields) {
                         int field = (int) dField;
-                        writeT1T2(chan, molecule, nucName, field, expType, frameName, listID, null);
+                        String frameName = (String) molecule.getProperty(expType + String.valueOf(field) + "_" + String.valueOf(listID) + "frameName");
+                        writeT1T2(chan, molecule, nucName, field, expType, frameName, listID);
                         listID++;
                     }
                 }
             }
-        } else {
-            Set<String> expTypes = expFitResults.keySet();
-            if (expTypes != null) {
-//                Collections.sort(expTypes, (a, b) -> a.compareTo(b));
-                for (String expType : expTypes) {
-                    int listID = 1;
-                    String frameName = (String) expFitResults.get(expType).get(0);
-                    String nucName = (String) expFitResults.get(expType).get(1);
-                    double[] fields = (double[]) expFitResults.get(expType).get(2);
-                    Map<Integer, Map<Integer, Map<String, Double>>> allFitResults = (Map<Integer, Map<Integer, Map<String, Double>>>) expFitResults.get(expType).get(3);
-                    //        List<Double> fieldList = Arrays.asList(fields);
-                    //        Collections.sort(fields, (a, b) -> Double.compare(a, b));
-                    //        System.out.println(expType + " " + frameName);
-                    for (double dField : fields) {
-                        int field = (int) dField;
-                        writeT1T2(chan, molecule, nucName, field, expType, frameName, listID, allFitResults);
-                        listID++;
-                    }
-                }
-            }
-        }
+        } 
     }
 
 }
