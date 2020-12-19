@@ -279,7 +279,7 @@ public class Dihedral {
      * @param fileName
      */
     public void readDihedrals(String fileName) {
-        try (LineNumberReader lineReader = new LineNumberReader(new BufferedReader(new FileReader(fileName)))) {
+        try ( LineNumberReader lineReader = new LineNumberReader(new BufferedReader(new FileReader(fileName)))) {
             while (true) {
                 String string = lineReader.readLine();
                 if (string == null) {
@@ -484,7 +484,7 @@ public class Dihedral {
         //}
     }
 
-    public void setupAngleRestraints()  {
+    public void setupAngleRestraints() {
         angleBoundaries.clear();
         List<Atom> angleAtoms = molecule.getAngleAtoms();
         Collection<AngleConstraintSet> angleSets = molecule.getMolecularConstraints().angleSets();
