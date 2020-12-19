@@ -10,7 +10,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.apache.commons.math3.stat.StatUtils;
-import org.nmrfx.math.VecBase;
 
 /**
  *
