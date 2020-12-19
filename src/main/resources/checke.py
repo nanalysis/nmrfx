@@ -5,7 +5,7 @@ import os.path
 from org.nmrfx.structure.chemistry import Molecule
 from org.nmrfx.structure.chemistry.energy import EnergyLists
 from org.nmrfx.structure.chemistry import SuperMol
-from org.nmrfx.structure.chemistry.energy import AtomEnergyProp
+from org.nmrfx.chemistry import AtomEnergyProp
 from org.nmrfx.chemistry.io import PDBFile
 import molio
 from refine import *
