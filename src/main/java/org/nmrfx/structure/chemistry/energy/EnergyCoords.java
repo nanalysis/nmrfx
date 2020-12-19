@@ -482,6 +482,7 @@ public class EnergyCoords {
                                                     double b = Math.sqrt(bValues[iAtom] * bValues[jAtom]);
                                                     double c = cValues[iAtom] * cValues[jAtom];
                                                     c *= 322.0 / 6.0;
+                                                    c = 0.0;  // turn off charge temporarily
                                                     if (adjustClose > 0.01) {
                                                         a *= 0.5;
                                                         b *= 0.5;
