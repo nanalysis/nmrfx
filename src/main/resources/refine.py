@@ -548,6 +548,10 @@ class refine:
     def addAngleConstraintAtoms(self, atoms, lower, upper, scale):
         self.getAngleConstraintSet().addAngleConstraint(atoms, lower, upper, scale)
 
+    def addAngleConstraintAtomNames(self, atomNames, lower, upper, scale):
+        atoms = [self.molecule.getAtomByName(atomName) for atomName in atomNames]
+        self.getAngleConstraintSet().addAngleConstraint(atoms, lower, upper, scale)
+
     def addAngleConstraint(self, angleConstraint):
         self.getAngleConstraintSet().add(angleConstraint)
 
@@ -1630,7 +1634,7 @@ class refine:
                 lower += 360.0
                 upper += 360.0
 	   try:
-               self.addAngleConstraintAtoms(fullAtoms, lower, upper, scale)
+               self.addAngleConstraintAtomNames(fullAtoms, lower, upper, scale)
 	   except IllegalArgumentException as IAE:
                atoms = ' -> '.join(map(lambda x: x.split(':')[-1], fullAtoms))
 	       err = IAE.getMessage()
