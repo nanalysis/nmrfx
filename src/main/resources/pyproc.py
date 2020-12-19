@@ -1685,8 +1685,6 @@ def EXTRACT(start=0, end=0, mode='left', disabled=False, vector=None, process=No
         return None
     process = process or getCurrentProcess()
     fmode = False
-    if end != 0:
-        mode = 'region'
     if (mode == 'left'):
         fstart = 0.0
         fend = 0.5
