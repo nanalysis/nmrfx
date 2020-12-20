@@ -248,8 +248,8 @@ public class EnergyConstraintPairs extends EnergyDistancePairs {
                 FastVector3D iV = vecCoords[iAtom];
                 FastVector3D jV = vecCoords[jAtom];
                 double r2Temp = iV.disSq(jV);
-                double r = FastMath.sqrt(r2Temp);
-                sum2 += FastMath.pow(r, -6);
+                double r = Math.sqrt(r2Temp);
+                sum2 += Math.pow(r, -6);
                 derivs[i + j] = 0.0;
                 viol[i + j] = 0.0;
                 if (r2Temp < r2Min) {
@@ -257,7 +257,7 @@ public class EnergyConstraintPairs extends EnergyDistancePairs {
                 }
             }
             sum2 /= nMono;
-            double r = FastMath.pow(sum2, -1.0 / 6);
+            double r = Math.pow(sum2, -1.0 / 6);
             r2 = r * r;
             for (int j = 0; j < groupSize; j++) {
                 disSq[i + j] = r2;
@@ -276,10 +276,10 @@ public class EnergyConstraintPairs extends EnergyDistancePairs {
         final double dif;
         final double r;
         if (r2Min <= rDis2[i]) {
-            r = FastMath.sqrt(r2Min);
+            r = Math.sqrt(r2Min);
             dif = rDis[i] - r;
         } else if (r2 >= rUp2[i]) {
-            r = FastMath.sqrt(r2);
+            r = Math.sqrt(r2);
             dif = rUp[i] - r;
         } else {
             return 0.0;

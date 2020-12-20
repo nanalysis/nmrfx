@@ -19,7 +19,6 @@
 package org.nmrfx.structure.chemistry;
 
 import org.nmrfx.structure.fastlinear.FastVector3D;
-import org.apache.commons.math3.util.FastMath;
 
 class Coordinates3DF {
 
@@ -54,7 +53,7 @@ class Coordinates3DF {
             System.out.println("d1 is zero");
             return false;
         }
-        d1 = FastMath.sqrt(a * a + b * b + c * c);
+        d1 = Math.sqrt(a * a + b * b + c * c);
         ux1 = a / d1;
         uy1 = b / d1;
         uz1 = c / d1;
@@ -71,7 +70,7 @@ class Coordinates3DF {
         y2 = c * d - a * f;
         z2 = a * e - b * d;
 
-        d2 = FastMath.sqrt(x2 * x2 + y2 * y2 + z2 * z2);
+        d2 = Math.sqrt(x2 * x2 + y2 * y2 + z2 * z2);
 
         while (d2 < small) {
             /* colinear points */
@@ -82,9 +81,9 @@ class Coordinates3DF {
              *
              * y = Mx + c1         M = b/a = e/d z = Nx + c2 N = c/a = f/d 
              */
-            if (FastMath.abs(a) <= small) {
+            if (Math.abs(a) <= small) {
                 x2 = 0.0;
-                if (FastMath.abs(b) <= small || FastMath.abs(c) <= small) {
+                if (Math.abs(b) <= small || Math.abs(c) <= small) {
                     y2 = c;
                     z2 = b;
                 } else {
@@ -101,7 +100,7 @@ class Coordinates3DF {
              * be endless, but I am not sure if this is what the author
              * intended. 
              */
-            d2 = FastMath.sqrt(x2 * x2 + y2 * y2 + z2 * z2);
+            d2 = Math.sqrt(x2 * x2 + y2 * y2 + z2 * z2);
         }
         ux2 = x2 / d2;
         uy2 = y2 / d2;
@@ -127,8 +126,8 @@ class Coordinates3DF {
     }
 
     void calculate(final double dihedral, final double bndcos, final double bndsin, FastVector3D p4) {
-        final double sinphi = FastMath.sin(dihedral);
-        final double cosphi = FastMath.cos(dihedral);
+        final double sinphi = Math.sin(dihedral);
+        final double cosphi = Math.cos(dihedral);
 
         final double cdx = bndcos * ux1 + bndsin * (ux2 * sinphi + ux3 * cosphi);
         final double cdy = bndcos * uy1 + bndsin * (uy2 * sinphi + uy3 * cosphi);

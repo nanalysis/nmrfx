@@ -1,7 +1,6 @@
 package org.nmrfx.structure.chemistry;
 
 import java.util.List;
-import org.apache.commons.math3.util.FastMath;
 import org.nmrfx.chemistry.Atom;
 import org.nmrfx.chemistry.Coordinates;
 import org.nmrfx.chemistry.Point3;
@@ -15,8 +14,8 @@ public class CoordinateGenerator {
             }
             double bondLength = atom.bondLength;
             double valanceAngle = atom.valanceAngle;
-            atom.bndSin = (float) (bondLength * FastMath.sin(Math.PI - valanceAngle));
-            atom.bndCos = (float) (bondLength * FastMath.cos(Math.PI - valanceAngle));
+            atom.bndSin = (float) (bondLength * Math.sin(Math.PI - valanceAngle));
+            atom.bndCos = (float) (bondLength * Math.cos(Math.PI - valanceAngle));
         }
     }
 
