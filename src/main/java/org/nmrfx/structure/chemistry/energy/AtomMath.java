@@ -19,7 +19,6 @@ package org.nmrfx.structure.chemistry.energy;
 
 import org.nmrfx.chemistry.*;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
-import org.apache.commons.math3.util.FastMath;
 import org.nmrfx.chemistry.constraints.AtomDistancePair;
 import org.nmrfx.chemistry.constraints.DistanceConstraint;
 
@@ -67,12 +66,12 @@ public class AtomMath {
      *
      */
     public static boolean atomLimit(final Point3 a, final Point3 b, final double cutOff, final double cutOffSq) {
-        double delX = FastMath.abs(a.getX() - b.getX());
+        double delX = Math.abs(a.getX() - b.getX());
         boolean result = false;
         if (delX < cutOff) {
-            double delY = FastMath.abs(a.getY() - b.getY());
+            double delY = Math.abs(a.getY() - b.getY());
             if (delY < cutOff) {
-                double delZ = FastMath.abs(a.getZ() - b.getZ());
+                double delZ = Math.abs(a.getZ() - b.getZ());
                 if (delZ < cutOff) {
                     double sqDis = delX * delX + delY * delY + delZ * delZ;
                     if (sqDis < cutOffSq) {
@@ -141,8 +140,8 @@ public class AtomMath {
         final double d34 = Vector3D.distance(c, d);
         final double ang123 = Vector3D.angle(a.subtract(b), c.subtract(b));
         final double ang234 = Vector3D.angle(b.subtract(c), d.subtract(c));
-        final double cosine = (sd13 - sd14 + sd24 - sd23 + 2.0 * d12 * d34 * FastMath.cos(ang123) * FastMath.cos(ang234))
-                / (2.0 * d12 * d34 * FastMath.sin(ang123) * FastMath.sin(ang234));
+        final double cosine = (sd13 - sd14 + sd24 - sd23 + 2.0 * d12 * d34 * Math.cos(ang123) * Math.cos(ang234))
+                / (2.0 * d12 * d34 * Math.sin(ang123) * Math.sin(ang234));
 
         final double volume = calcVolume(a, b, c, d);
 
@@ -151,9 +150,9 @@ public class AtomMath {
         if (cosine > 1.0) {
             angle = 0.0;
         } else if (cosine < -1.0) {
-            angle = FastMath.PI;
+            angle = Math.PI;
         } else {
-            angle = sgn * FastMath.acos(cosine);
+            angle = sgn * Math.acos(cosine);
         }
         return (angle);
 
@@ -180,10 +179,10 @@ public class AtomMath {
             double sum = 0.0;
             for (AtomDistancePair atomDistancePair : distancePair.getAtomPairs()) {
                 double distance1 = atomDistancePair.getDistance();
-                sum += FastMath.pow(distance1, -avgN);
+                sum += Math.pow(distance1, -avgN);
             }
             sum /= nMono;
-            distance = FastMath.pow(sum, -1.0 / avgN);
+            distance = Math.pow(sum, -1.0 / avgN);
         }
         return distance;
     }

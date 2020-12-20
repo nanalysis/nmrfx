@@ -18,7 +18,6 @@
 
 package org.nmrfx.structure.chemistry.energy;
 
-import org.apache.commons.math3.util.FastMath;
 
 import org.apache.commons.math3.analysis.MultivariateVectorFunction;
 import org.nmrfx.chemistry.Util;
@@ -39,8 +38,8 @@ public class DihedralGradient implements MultivariateVectorFunction {
         double[] derivatives = gradRefine.nonNormDeriv(point);
         double max = 0.0;
         for (double value : derivatives) {
-            if (FastMath.abs(value) > max) {
-                max = FastMath.abs(value);
+            if (Math.abs(value) > max) {
+                max = Math.abs(value);
             }
         }
         return derivatives;

@@ -23,7 +23,6 @@ import org.apache.commons.math3.analysis.MultivariateFunction;
 import org.apache.commons.math3.optimization.GoalType;
 import org.apache.commons.math3.optimization.PointValuePair;
 import org.apache.commons.math3.optimization.direct.CMAESOptimizer;
-import org.apache.commons.math3.util.FastMath;
 
 public class LayoutMolecule implements MultivariateFunction {
 
@@ -118,14 +117,14 @@ public class LayoutMolecule implements MultivariateFunction {
             double y1 = xy[connector.start * 2 + 1];
             double x2 = xy[connector.end * 2];
             double y2 = xy[connector.end * 2 + 1];
-            double distance = FastMath.sqrt((x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2));
+            double distance = Math.sqrt((x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2));
             double delta = (connector.distance - distance);
             energy += delta * delta * connector.weight;
         }
         for (int i = 0; i < xy.length; i += 2) {
             double x1 = xy[i];
             double y1 = xy[i + 1];
-            double eContrib = FastMath.sqrt(x1 * x1 + y1 * y1) * 0.001;
+            double eContrib = Math.sqrt(x1 * x1 + y1 * y1) * 0.001;
             energy += eContrib;
             for (int j = (i + 2); j < xy.length; j += 2) {
                 if (bondMap[i / 2][j / 2]) {
@@ -133,7 +132,7 @@ public class LayoutMolecule implements MultivariateFunction {
                 }
                 double x2 = xy[j];
                 double y2 = xy[j + 1];
-                double distance = FastMath.sqrt((x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2));
+                double distance = Math.sqrt((x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2));
                 if (distance < minDis) {
                     double delta = (distance - minDis);
                     energy += delta * delta * delta * delta * repelWeight;
@@ -159,7 +158,7 @@ public class LayoutMolecule implements MultivariateFunction {
             double y1 = atomXY[connector.start * 2 + 1];
             double x2 = atomXY[connector.end * 2];
             double y2 = atomXY[connector.end * 2 + 1];
-            double distance = FastMath.sqrt((x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2));
+            double distance = Math.sqrt((x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2));
             double delta = (connector.distance - distance);
             double eContrib = delta * delta * connector.weight;
             System.out.println(connector.start + " " + connector.end + " " + distance + " " + delta + " " + eContrib);
@@ -168,7 +167,7 @@ public class LayoutMolecule implements MultivariateFunction {
         for (int i = 0; i < atomXY.length; i += 2) {
             double x1 = atomXY[i];
             double y1 = atomXY[i + 1];
-            double eContrib = FastMath.sqrt(x1 * x1 + y1 * y1) * 0.001;
+            double eContrib = Math.sqrt(x1 * x1 + y1 * y1) * 0.001;
             energy += eContrib;
             System.out.println(i + " " + x1 + " " + y1 + " " + eContrib);
             for (int j = (i + 2); j < atomXY.length; j += 2) {
@@ -177,7 +176,7 @@ public class LayoutMolecule implements MultivariateFunction {
                 }
                 double x2 = atomXY[j];
                 double y2 = atomXY[j + 1];
-                double distance = FastMath.sqrt((x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2));
+                double distance = Math.sqrt((x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2));
                 if (distance < minDis) {
                     double delta = (distance - minDis);
                     energy += delta * delta * delta * delta * repelWeight;

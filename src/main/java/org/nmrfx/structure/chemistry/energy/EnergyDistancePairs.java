@@ -5,7 +5,6 @@
  */
 package org.nmrfx.structure.chemistry.energy;
 
-import org.apache.commons.math3.util.FastMath;
 import org.nmrfx.chemistry.Atom;
 import static org.nmrfx.structure.chemistry.energy.AtomMath.RADJ;
 import org.nmrfx.structure.fastlinear.FastVector3D;
@@ -58,7 +57,7 @@ public class EnergyDistancePairs extends EnergyPairs {
             derivs[i] = 0.0;
             viol[i] = 0.0;
             if (r2 <= rDis2[i]) {
-                double r = FastMath.sqrt(r2);
+                double r = Math.sqrt(r2);
                 double dif = rDis[i] - r;
                 viol[i] = weights[i] * weight * dif * dif;
                 sum += viol[i];
@@ -81,10 +80,10 @@ public class EnergyDistancePairs extends EnergyPairs {
         int iAtom = iAtoms[i];
         int jAtom = jAtoms[i];
         double r2 = disSq[i];
-        double r = FastMath.sqrt(r2);
+        double r = Math.sqrt(r2);
         double dif = 0.0;
         if (r2 <= rDis2[i]) {
-            r = FastMath.sqrt(r2);
+            r = Math.sqrt(r2);
             dif = rDis[i] - r;
         }
         String result = "";

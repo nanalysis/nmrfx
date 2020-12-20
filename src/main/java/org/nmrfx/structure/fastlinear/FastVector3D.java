@@ -17,7 +17,6 @@
  */
 package org.nmrfx.structure.fastlinear;
 
-import org.apache.commons.math3.util.FastMath;
 import org.apache.commons.math3.util.MathArrays;
 
 /**
@@ -69,7 +68,7 @@ public class FastVector3D extends FastVector {
     }
 
     public double length() {
-        return FastMath.sqrt(data[0] * data[0] + data[1] * data[1] + data[2] * data[2]);
+        return Math.sqrt(data[0] * data[0] + data[1] * data[1] + data[2] * data[2]);
     }
 
     public double sumSq() {
@@ -85,7 +84,7 @@ public class FastVector3D extends FastVector {
     }
 
     public double dis(FastVector3D v2) {
-        return FastMath.sqrt(disSq(v2));
+        return Math.sqrt(disSq(v2));
     }
 
     public double disSq(FastVector3D v2) {
@@ -96,12 +95,12 @@ public class FastVector3D extends FastVector {
     }
 
     public static boolean atomLimit(final FastVector3D a, final FastVector3D b, final double cutOff, final double cutOffSq) {
-        double delX = FastMath.abs(a.data[0] - b.data[0]);
+        double delX = Math.abs(a.data[0] - b.data[0]);
         boolean result = false;
         if (delX < cutOff) {
-            double delY = FastMath.abs(a.data[1] - b.data[1]);
+            double delY = Math.abs(a.data[1] - b.data[1]);
             if (delY < cutOff) {
-                double delZ = FastMath.abs(a.data[2] - b.data[2]);
+                double delZ = Math.abs(a.data[2] - b.data[2]);
                 if (delZ < cutOff) {
                     double sqDis = delX * delX + delY * delY + delZ * delZ;
                     if (sqDis < cutOffSq) {

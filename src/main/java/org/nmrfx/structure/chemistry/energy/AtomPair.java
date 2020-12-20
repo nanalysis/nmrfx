@@ -22,7 +22,6 @@ import org.nmrfx.chemistry.Atom;
 import org.nmrfx.chemistry.AtomEnergyProp;
 import org.nmrfx.chemistry.EnergyPair;
 import org.nmrfx.chemistry.SpatialSet;
-import org.apache.commons.math3.util.FastMath;
 
 /**
  * This class represents an atom pair between two atoms. The energy of the atom pair is determined using AtomEnergyProp
@@ -117,7 +116,7 @@ public class AtomPair {
             eDeriv[0] = 0.0;
             eDeriv[1] = 0.0;
         } else {
-            double r = FastMath.sqrt(r2);
+            double r = Math.sqrt(r2);
             double dif = r0 - r;
             eDeriv[0] = weight * dif * dif;
             if (calcDeriv) {

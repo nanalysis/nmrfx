@@ -17,7 +17,6 @@ import org.apache.commons.math3.optim.SimpleBounds;
 import org.apache.commons.math3.optim.InitialGuess;
 import org.apache.commons.math3.optim.nonlinear.scalar.ObjectiveFunction;
 import org.apache.commons.math3.optim.MaxEval;
-import org.apache.commons.math3.util.FastMath;
 import org.apache.commons.math3.optim.PointValuePair;
 import org.apache.commons.math3.analysis.MultivariateFunction;
 import org.apache.commons.math3.geometry.euclidean.twod.Vector2D;
@@ -813,7 +812,7 @@ public class SSLayout implements MultivariateFunction {
 
                 //suggested default value for population size represented by variable 'lambda'
                 //anglesValue.length represents the number of parameters
-                int lambda = (int) (lambdaMul * FastMath.round(4 + 3 * FastMath.log(lguess.length)));
+                int lambda = (int) (lambdaMul * Math.round(4 + 3 * Math.log(lguess.length)));
 
                 CMAESOptimizer optimizer = new CMAESOptimizer(nSteps, stopFitness, true, diagOnly, 0,
                         DEFAULT_RANDOMGENERATOR, true,

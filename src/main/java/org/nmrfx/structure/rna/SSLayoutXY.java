@@ -28,7 +28,6 @@ import org.apache.commons.math3.optim.SimpleBounds;
 import org.apache.commons.math3.optim.InitialGuess;
 import org.apache.commons.math3.optim.nonlinear.scalar.ObjectiveFunction;
 import org.apache.commons.math3.optim.MaxEval;
-import org.apache.commons.math3.util.FastMath;
 import org.apache.commons.math3.optim.PointValuePair;
 import org.apache.commons.math3.analysis.MultivariateFunction;
 import org.apache.commons.math3.geometry.euclidean.twod.Vector2D;
@@ -480,7 +479,7 @@ public class SSLayoutXY implements MultivariateFunction {
             if (report) {
                 System.out.println("ang " + angle * 180.0 / Math.PI);
             }
-            double cosAngle = FastMath.cos(angle);
+            double cosAngle = Math.cos(angle);
             double minCos = 0.1;
             if (cosAngle > minCos) {
                 sumAngle += (cosAngle - minCos);
@@ -514,7 +513,7 @@ public class SSLayoutXY implements MultivariateFunction {
         limit = nNuc;
         PointValuePair result = null;
         DEFAULT_RANDOMGENERATOR.setSeed(1);
-        int lambda = (int) (lambdaMul * FastMath.round(4 + 3 * FastMath.log(guess.length)));
+        int lambda = (int) (lambdaMul * Math.round(4 + 3 * Math.log(guess.length)));
 
         CMAESOptimizer optimizer = new CMAESOptimizer(nSteps, stopFitness, true, diagOnly, 0,
                 DEFAULT_RANDOMGENERATOR, true,

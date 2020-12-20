@@ -32,7 +32,6 @@ import java.util.List;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math3.geometry.euclidean.threed.Plane;
 import org.apache.commons.math3.geometry.euclidean.threed.Line;
-import org.apache.commons.math3.util.FastMath;
 import org.nmrfx.chemistry.MoleculeBase;
 
 public class RingCurrentShift {
@@ -350,7 +349,7 @@ public class RingCurrentShift {
             Vector3D crossProd = Vector3D.crossProduct(ptStart.subtract(pointOnPlane), ptEnd.subtract(pointOnPlane));
             double mag = crossProd.getNorm();
             double dotProd = ring.normal.dotProduct(crossProd);
-            double area = -0.5 * FastMath.copySign(mag, dotProd);
+            double area = -0.5 * Math.copySign(mag, dotProd);
             double rStart = Vector3D.distance(targetPoint, ptStart);
             double rEnd = Vector3D.distance(targetPoint, ptEnd);
             double distance = 1.0 / (rStart * rStart * rStart) + 1.0 / (rEnd * rEnd * rEnd);
@@ -394,7 +393,7 @@ public class RingCurrentShift {
             Vector3D crossProd = Vector3D.crossProduct(ptStart.subtract(pointOnPlane), ptEnd.subtract(pointOnPlane));
             double mag = crossProd.getNorm();
             double dotProd = ring.normal.dotProduct(crossProd);
-            double area = -0.5 * FastMath.copySign(mag, dotProd);
+            double area = -0.5 * Math.copySign(mag, dotProd);
             double rStart = Vector3D.distance(targetPoint, ptStart);
             double rEnd = Vector3D.distance(targetPoint, ptEnd);
             double distance = 1.0 / (rStart * rStart * rStart) + 1.0 / (rEnd * rEnd * rEnd);

@@ -32,7 +32,6 @@ import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Iterator;
@@ -40,8 +39,6 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
-import org.apache.commons.math3.util.FastMath;
-import org.nmrfx.chemistry.constraints.AngleConstraintSet;
 import org.nmrfx.chemistry.constraints.DistanceConstraintSet;
 import org.nmrfx.structure.chemistry.energy.RNARotamer.RotamerScore;
 import org.nmrfx.structure.chemistry.predict.Predictor;
@@ -72,8 +69,8 @@ public class EnergyLists {
     private RingCurrentShift ringShifts = new RingCurrentShift();
     private Predictor predictor = null;
     AtomBranch[] branches = null;
-    static final double toDeg = 180.0 / FastMath.PI;
-    static final double toRad = FastMath.PI / 180;
+    static final double toDeg = 180.0 / Math.PI;
+    static final double toRad = Math.PI / 180;
     static boolean REPORTBAD = false;
     boolean stochasticMode = false;
     boolean[] stochasticResidues = null;
@@ -999,7 +996,7 @@ public class EnergyLists {
                         Compound compound2 = (Compound) atom2.entity;
                         int iRes = Integer.parseInt(compound1.number);
                         int jRes = Integer.parseInt(compound2.number);
-                        if (FastMath.abs(iRes - jRes) < deltaEnd) {
+                        if (Math.abs(iRes - jRes) < deltaEnd) {
                             ok = true;
                         }
                     }
@@ -1014,7 +1011,7 @@ public class EnergyLists {
                         Compound compound2 = (Compound) atom2.entity;
                         int iRes = Integer.parseInt(compound1.number);
                         int jRes = Integer.parseInt(compound2.number);
-                        if (FastMath.abs(iRes - jRes) < deltaEnd) {
+                        if (Math.abs(iRes - jRes) < deltaEnd) {
                             ok = true;
                         }
                     }
@@ -1070,7 +1067,7 @@ public class EnergyLists {
                         Compound compound2 = (Compound) atom2.entity;
                         int iRes = Integer.parseInt(compound1.number);
                         int jRes = Integer.parseInt(compound2.number);
-                        if (FastMath.abs(iRes - jRes) < deltaEnd) {
+                        if (Math.abs(iRes - jRes) < deltaEnd) {
                             ok = true;
                         }
                     }
@@ -1102,7 +1099,7 @@ public class EnergyLists {
                             Compound compound2 = (Compound) atom2.entity;
                             int iRes = Integer.parseInt(compound1.number);
                             int jRes = Integer.parseInt(compound2.number);
-                            if (FastMath.abs(iRes - jRes) >= deltaEnd) {
+                            if (Math.abs(iRes - jRes) >= deltaEnd) {
                                 allInRange = false;
                                 break;
                             }

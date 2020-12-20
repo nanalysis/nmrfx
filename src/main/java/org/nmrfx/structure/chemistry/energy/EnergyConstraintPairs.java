@@ -14,9 +14,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import org.apache.commons.math3.util.FastMath;
 import org.nmrfx.chemistry.Atom;
-import org.nmrfx.structure.chemistry.Molecule;
 import static org.nmrfx.structure.chemistry.energy.AtomMath.RADJ;
 import org.nmrfx.structure.fastlinear.FastVector3D;
 
@@ -315,13 +313,13 @@ public class EnergyConstraintPairs extends EnergyDistancePairs {
         int iAtom = iAtoms[i];
         int jAtom = jAtoms[i];
         double r2 = disSq[i];
-        double r = FastMath.sqrt(r2);
+        double r = Math.sqrt(r2);
         double dif = 0.0;
         if (r2 <= rDis2[i]) {
-            r = FastMath.sqrt(r2);
+            r = Math.sqrt(r2);
             dif = rDis[i] - r;
         } else if (r2 >= rUp2[i]) {
-            r = FastMath.sqrt(r2);
+            r = Math.sqrt(r2);
             dif = rUp[i] - r;
         }
         String result = "";

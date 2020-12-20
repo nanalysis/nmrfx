@@ -7,7 +7,6 @@ package org.nmrfx.structure.chemistry.energy;
 
 import java.util.HashMap;
 import java.util.List;
-import org.apache.commons.math3.util.FastMath;
 import org.nmrfx.chemistry.Atom;
 import org.nmrfx.chemistry.PPMv;
 import org.nmrfx.chemistry.Residue;
@@ -86,7 +85,7 @@ public class EnergyShiftPairs extends EnergyPairs {
                     FastVector3D jV = vecCoords[jAtom];
                     double r2 = iV.disSq(jV);
                     if (r2 <= r2Lim) {
-                        double r = FastMath.sqrt(r2);
+                        double r = Math.sqrt(r2);
                         int alphaIndex = shiftClass[jAtom];
                         double alpha = Predictor.getAlpha(alphaClass, alphaIndex);
                         double shiftContrib = alpha / (r * r2);

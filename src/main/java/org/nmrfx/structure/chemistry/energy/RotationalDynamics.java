@@ -29,7 +29,6 @@ import org.nmrfx.structure.fastlinear.FastVector;
 import org.nmrfx.structure.fastlinear.FastVector3D;
 import java.util.ArrayList;
 import java.util.List;
-import org.apache.commons.math3.util.FastMath;
 import java.util.Random;
 import org.nmrfx.utilities.ProgressUpdater;
 import org.python.core.PyFloat;
@@ -188,7 +187,7 @@ public class RotationalDynamics {
             delAngle = v * timestep + (4.0 * a1 - a0) * timestep * timestep / 6.0;
             Atom diAtom = branch.atom;
             Atom daughter = diAtom.daughterAtom;
-            double absDelta = FastMath.abs(delAngle);
+            double absDelta = Math.abs(delAngle);
             if (absDelta > max) {
                 max = absDelta;
             }
@@ -200,7 +199,7 @@ public class RotationalDynamics {
             daughter.dihedralAngle += delAngle;
             daughter.dihedralAngle = (float) Util.reduceAngle(daughter.dihedralAngle);
         }
-        sumDeltaSq += FastMath.sqrt(sumSq / branches.size());
+        sumDeltaSq += Math.sqrt(sumSq / branches.size());
         sumMaxDelta += max;
     }
 

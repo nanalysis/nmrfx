@@ -27,7 +27,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import org.apache.commons.math3.util.FastMath;
 
 public class RNARotamer {
 
@@ -466,7 +465,7 @@ public class RNARotamer {
             totalProb += score.prob;
 
         }
-        return -FastMath.log(totalProb);
+        return -Math.log(totalProb);
     }
 
     public static Map<Integer, Double> calcDerivs(RotamerScore[] scores, double rotEnergy) {
@@ -497,9 +496,9 @@ public class RNARotamer {
                 delta = 2.0 * Math.PI - delta;
             }
             delta /= halfWidths[index];
-            sum += FastMath.pow(delta, HPOWER);
+            sum += Math.pow(delta, HPOWER);
         }
-        double result = FastMath.pow(sum, 1.0 / HPOWER);
+        double result = Math.pow(sum, 1.0 / HPOWER);
         return result;
     }
 

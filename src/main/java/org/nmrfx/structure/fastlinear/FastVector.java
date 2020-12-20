@@ -19,7 +19,6 @@
 package org.nmrfx.structure.fastlinear;
 
 import org.apache.commons.math3.linear.RealVector;
-import org.apache.commons.math3.util.FastMath;
 
 /**
  *
@@ -118,7 +117,7 @@ public class FastVector {
         for (int i = 0, len = data.length; i < len; i++) {
             sumSq += data[i] * data[i];
         }
-        return FastMath.sqrt(sumSq);
+        return Math.sqrt(sumSq);
 
     }
 

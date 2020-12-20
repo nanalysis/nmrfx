@@ -18,7 +18,6 @@
 package org.nmrfx.structure.chemistry.energy;
 
 import org.nmrfx.chemistry.Atom;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import org.apache.commons.math3.analysis.MultivariateFunction;
@@ -32,7 +31,6 @@ import org.apache.commons.math3.optim.nonlinear.scalar.ObjectiveFunction;
 import org.apache.commons.math3.optim.nonlinear.scalar.noderiv.CMAESOptimizer;
 import org.apache.commons.math3.random.MersenneTwister;
 import org.apache.commons.math3.random.RandomGenerator;
-import org.apache.commons.math3.util.FastMath;
 import org.apache.commons.math3.util.Precision;
 
 /**
@@ -92,7 +90,7 @@ public class CmaesRefinement extends Refinement implements MultivariateFunction 
         DEFAULT_RANDOMGENERATOR.setSeed(1);
         //suggested default value for population size represented by variable 'labda'
         //anglesValue.length represents the number of parameters
-        int lambda = (int) (lambdaMul * FastMath.round(4 + 3 * FastMath.log(dihedrals.angleValues.length)));
+        int lambda = (int) (lambdaMul * Math.round(4 + 3 * Math.log(dihedrals.angleValues.length)));
         CMAESOptimizer optimizer = new CMAESOptimizer(nSteps, stopFitness, true, diagOnly, 0,
                 DEFAULT_RANDOMGENERATOR, true,
                 new Checker(100 * Precision.EPSILON, 100 * Precision.SAFE_MIN, nSteps));

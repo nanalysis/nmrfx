@@ -36,7 +36,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.apache.commons.math3.optim.PointValuePair;
 import org.apache.commons.math3.optim.SimpleValueChecker;
-import org.apache.commons.math3.util.FastMath;
 import org.nmrfx.chemistry.constraints.AngleConstraintSet;
 
 public class Dihedral {
@@ -52,10 +51,10 @@ public class Dihedral {
     double[] sincosValues;
     boolean sinCosMode = true;
     boolean centerBoundaries = false;
-    static final double toDeg = 180.0 / FastMath.PI;
-    static final double toRad = FastMath.PI / 180;
-    static final double deltaV1 = 121.8084 * FastMath.PI / 180.0;
-    static final double deltaV3 = 121.8084 * FastMath.PI / 180.0;
+    static final double toDeg = 180.0 / Math.PI;
+    static final double toRad = Math.PI / 180;
+    static final double deltaV1 = 121.8084 * Math.PI / 180.0;
+    static final double deltaV3 = 121.8084 * Math.PI / 180.0;
     int nBackbone = 0;
     int nSidechain = 0;
     double[][] boundaries = null;
@@ -469,14 +468,14 @@ public class Dihedral {
         for (int i = 0; i < boundaries[0].length; i++) {
             if (centerBoundaries) {
                 double angle = Util.reduceAngle(angleValues[i]);
-                boundaries[0][i] = Util.reduceAngle(angle - FastMath.PI / 2);
-                boundaries[1][i] = boundaries[0][i] + FastMath.PI;
+                boundaries[0][i] = Util.reduceAngle(angle - Math.PI / 2);
+                boundaries[1][i] = boundaries[0][i] + Math.PI;
             } else {
-                boundaries[0][i] = -1.0 * FastMath.PI;
-                boundaries[1][i] = 1.0 * FastMath.PI;
+                boundaries[0][i] = -1.0 * Math.PI;
+                boundaries[1][i] = 1.0 * Math.PI;
             }
-            ranBoundaries[0][i] = -FastMath.PI;
-            ranBoundaries[1][i] = FastMath.PI;
+            ranBoundaries[0][i] = -Math.PI;
+            ranBoundaries[1][i] = Math.PI;
         }
         setupAngleRestraints();
         //for (int j=0;j<angleValues.length;j++) {
@@ -594,16 +593,16 @@ public class Dihedral {
 //            System.out.println("############################ " +f + " " + i);
         }
         double normValue = f * (boundaries[1][i] - boundaries[0][i]) + boundaries[0][i];
-        if (boundaries[1][i] > FastMath.PI) {
+        if (boundaries[1][i] > Math.PI) {
             normValue = Util.reduceAngle(normValue);
         }
         return normValue;
     }
 
     public double toNormalized(double value, int i) {
-        if (boundaries[1][i] > FastMath.PI) {
+        if (boundaries[1][i] > Math.PI) {
             if (value < 0.0) {
-                value += 2.0 * FastMath.PI;
+                value += 2.0 * Math.PI;
             }
         }
         double f = (value - boundaries[0][i]) / (boundaries[1][i] - boundaries[0][i]);
@@ -637,7 +636,7 @@ public class Dihedral {
 
         for (int i = 0; i < sugarAngles.length; i++) {
             sugarAngles[i] = maxTorsionAngle
-                    * FastMath.cos(pseudoRotationAngle + (i - 2) * 4.0 * FastMath.PI
+                    * Math.cos(pseudoRotationAngle + (i - 2) * 4.0 * Math.PI
                             / 5.0);
         }
         return sugarAngles;
@@ -652,21 +651,21 @@ public class Dihedral {
         if (cosValue > 1.0) {
             pseudoAngle = 0.0;
         } else if (cosValue < -1.0) {
-            pseudoAngle = FastMath.PI;
+            pseudoAngle = Math.PI;
         } else {
-            pseudoAngle = FastMath.acos(cosValue);
+            pseudoAngle = Math.acos(cosValue);
         }
         //System.out.println("PSEUDO ANGLE: " + pseudoAngle);
         double v3T1 = puckerAmplitude
-                * FastMath.cos(pseudoAngle + 4.0 * FastMath.PI / 5.0);
+                * Math.cos(pseudoAngle + 4.0 * Math.PI / 5.0);
         double v3T2 = puckerAmplitude
-                * FastMath.cos(2.0 * FastMath.PI - pseudoAngle + 4.0 * FastMath.PI / 5.0);
+                * Math.cos(2.0 * Math.PI - pseudoAngle + 4.0 * Math.PI / 5.0);
 
-        double delta1 = FastMath.abs(v3T1 - v3);
-        double delta2 = FastMath.abs(v3T2 - v3);
+        double delta1 = Math.abs(v3T1 - v3);
+        double delta2 = Math.abs(v3T2 - v3);
 
         if (delta2 < delta1) {
-            pseudoAngle = 2.0 * FastMath.PI - pseudoAngle;
+            pseudoAngle = 2.0 * Math.PI - pseudoAngle;
         }
         values[0] = pseudoAngle;
         values[1] = puckerAmplitude;

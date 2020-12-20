@@ -18,7 +18,6 @@
 
 package org.nmrfx.structure.chemistry.energy;
 
-import org.apache.commons.math3.util.FastMath;
 
 public class EnergyDeriv {
 
@@ -41,7 +40,7 @@ public class EnergyDeriv {
     public double getMeanDeriv() {
         double sum = 0.0;
         for (double value : deriv) {
-            sum += FastMath.abs(value);
+            sum += Math.abs(value);
         }
         return sum / deriv.length;
     }

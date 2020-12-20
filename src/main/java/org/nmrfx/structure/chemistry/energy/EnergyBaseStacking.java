@@ -5,7 +5,6 @@
  */
 package org.nmrfx.structure.chemistry.energy;
 
-import org.apache.commons.math3.util.FastMath;
 import org.nmrfx.chemistry.Atom;
 import static org.nmrfx.structure.chemistry.energy.AtomMath.RADJ;
 import org.nmrfx.structure.fastlinear.FastVector3D;
@@ -96,7 +95,7 @@ public class EnergyBaseStacking extends EnergyDistancePairs {
             derivs[i] = 0.0;
             viol[i] = 0.0;
             if ((r2 > 16.0) && (r2 < 36.0)) {
-                double r = FastMath.sqrt(r2);
+                double r = Math.sqrt(r2);
                 double du = (r - 4.0) / 2.0;
                 double g = -0.2 * (2.0 * Math.pow(du, 3.0) - 3.0 * Math.pow(du, 2.0) + 1.0);
 
@@ -126,7 +125,7 @@ public class EnergyBaseStacking extends EnergyDistancePairs {
     public static double getEnergy(int i, double r2, double weight) {
         double energy = 0.0;
         if ((r2 > 16.0) && (r2 < 36.0)) {
-            double r = FastMath.sqrt(r2);
+            double r = Math.sqrt(r2);
             double du = (r - 4.0) / 2.0;
             double g = -0.2 * (2.0 * Math.pow(du, 3.0) - 3.0 * Math.pow(du, 2.0) + 1.0);
             energy = weight * g;
@@ -142,10 +141,10 @@ public class EnergyBaseStacking extends EnergyDistancePairs {
         int iAtom = iAtoms[i];
         int jAtom = jAtoms[i];
         double r2 = disSq[i];
-        double r = FastMath.sqrt(r2);
+        double r = Math.sqrt(r2);
         double dif = 0.0;
         if (r2 <= 36.0) {
-            r = FastMath.sqrt(r2);
+            r = Math.sqrt(r2);
             dif = 6.0 - r;
         }
         String result = "";
