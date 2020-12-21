@@ -249,6 +249,10 @@ public class Dihedral {
      * @param fileName
      */
     public void writeDihedrals(String fileName) {
+        writeDihedrals(fileName, true);
+    }
+
+    public void writeDihedrals(String fileName, boolean includePseudo) {
         PrintStream fileOut;
         try {
             fileOut = new PrintStream(fileName);
@@ -256,7 +260,6 @@ public class Dihedral {
             return;
         }
         int i = 0;
-        boolean includePseudo = true;
         if (includePseudo) {
             ArrayList<Atom> pseudoAngleAtoms = molecule.setupPseudoAngles();
             for (Atom atom : pseudoAngleAtoms) {
