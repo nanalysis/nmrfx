@@ -125,7 +125,7 @@ public class NMRNEFReader {
         int entityID = 1;
         String lastChain = "";
         double linkLen = 5.0;
-        double valAngle = 90.0;
+        double valAngle = 120.0;
         double dihAngle = 135.0;
         Polymer lastPolymer = null;
         for (int i = 0; i < chainCodeColumn.size(); i++) {
