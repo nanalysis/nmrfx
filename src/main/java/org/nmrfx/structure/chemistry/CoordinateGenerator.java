@@ -16,6 +16,8 @@ public class CoordinateGenerator {
             double valanceAngle = atom.valanceAngle;
             atom.bndSin = (float) (bondLength * Math.sin(Math.PI - valanceAngle));
             atom.bndCos = (float) (bondLength * Math.cos(Math.PI - valanceAngle));
+            atom.bndSinNR = (float) (bondLength * Math.sin(valanceAngle));
+            atom.bndCosNR = (float) (bondLength * Math.cos(valanceAngle));
         }
     }
 

@@ -15,9 +15,9 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package org.nmrfx.structure.chemistry;
 
+import org.nmrfx.structure.fastlinear.FastMatrix;
 import org.nmrfx.structure.fastlinear.FastVector3D;
 
 class Coordinates3DF {
@@ -26,6 +26,9 @@ class Coordinates3DF {
     FastVector3D p1 = null;
     FastVector3D p2 = null;
     FastVector3D p3 = null;
+    FastVector3D bc = null;
+    FastVector3D nXbc = null;
+    FastVector3D n = null;
 
     Coordinates3DF(FastVector3D p1, FastVector3D p2, FastVector3D p3) {
         this.p1 = p1;
@@ -125,7 +128,23 @@ class Coordinates3DF {
 
     }
 
-    void calculate(final double dihedral, final double bndcos, final double bndsin, FastVector3D p4) {
+    boolean setupNeRF() {
+        bc = p3.subtract(p2);
+        bc.normalize();
+        // fixme  check for length 0.0 and return false
+
+        FastVector3D AB = p2.subtract(p1);
+        n = new FastVector3D();
+        FastVector3D.crossProduct(AB, bc, n);
+        n.normalize();
+        nXbc = new FastVector3D();
+        FastVector3D.crossProduct(n, bc, nXbc);
+        nXbc.normalize();
+        return true;
+
+    }
+
+    boolean calculate(final double dihedral, final double bndcos, final double bndsin, FastVector3D p4) {
         final double sinphi = Math.sin(dihedral);
         final double cosphi = Math.cos(dihedral);
 
@@ -136,6 +155,39 @@ class Coordinates3DF {
         /*
          * Set the coordinates of p4. 
          */
-        p3.add(cdx,cdy,cdz,p4);
+        p3.add(cdx, cdy, cdz, p4);
+        return checkDihedral(dihedral, p4);
+    }
+
+    boolean checkDihedral(double dihedral, FastVector3D p4) {
+        double calDihedral = FastVector3D.calcDihedral(p1, p2, p3, p4);
+        double delta = Math.abs(dihedral - calDihedral);
+        boolean ok = true;
+        if (delta > Math.PI) {
+            delta = 2.0 * Math.PI - delta;
+        }
+        if (delta > 1.0e-6) {
+            ok = false;
+//            System.out.println("dihedral " + dihedral + " " + calDihedral + " " + delta);
+//            System.out.println(p1.toString());
+//            System.out.println(p2.toString());
+//            System.out.println(p3.toString());
+//            System.out.println(p4.toString());
+        }
+        return ok;
+
+    }
+
+    boolean calculateNeRF(final double dihedral, final double bndcos, final double bndsin, FastVector3D p4) {
+        FastVector3D D2 = new FastVector3D(
+                bndcos,
+                Math.cos(dihedral) * bndsin,
+                Math.sin(dihedral) * bndsin);
+        FastMatrix m = new FastMatrix(bc, nXbc, n);
+        FastVector3D dMbc = new FastVector3D();
+        m.operate(D2, dMbc);
+        p3.add(dMbc, p4);
+        return checkDihedral(dihedral, p4);
+
     }
 }

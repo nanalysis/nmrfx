@@ -682,6 +682,7 @@ public class Molecule extends MoleculeBase {
                 v3 = vecCoords[genVecs[i][2]];
 
                 Coordinates3DF coords = new Coordinates3DF(v1, v2, v3);
+//              coords.setupNeRF();
                 if (!coords.setup()) {
                     throw new RuntimeException("genCoords: coordinates the same for " + i + " " + genVecs[i][2]);
                 }
@@ -695,7 +696,8 @@ public class Molecule extends MoleculeBase {
                         dihedralAngle += dihedralAngles[nAngles];
                     }
                     nAngles++;
-                    coords.calculate(dihedralAngle, a4.bndCos, a4.bndSin, v4);
+\                  // coords.calculateNeRF(dihedralAngle, a4.bndCosNR, a4.bndSinNR, v4test);
+                   boolean ok = coords.calculate(dihedralAngle, a4.bndCos, a4.bndSin, v4);
                 }
             }
 
