@@ -17,6 +17,7 @@
  */
 package org.nmrfx.structure.chemistry.energy;
 
+import java.io.IOException;
 import org.nmrfx.chemistry.Atom;
 import org.nmrfx.chemistry.AtomEnergyProp;
 import org.nmrfx.chemistry.Util;
@@ -30,6 +31,8 @@ import org.nmrfx.structure.fastlinear.FastVector3D;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.nmrfx.utilities.ProgressUpdater;
 import org.python.core.PyFloat;
 import org.python.core.PyFunction;
@@ -504,9 +507,28 @@ public class RotationalDynamics {
         } else {
             calcAcceleration2(0);
         }
+//        String nameRoot = String.format("_%d_%.0f_.",iStep,timeStep);
+//        if ((iStep > 5022) && (iStep < 5027)) {
+//            dihedrals.writeDihedrals("dihedralsPre" + nameRoot + "txt", false);
+//            try {
+//                molecule.updateFromVecCoords();
+//                molecule.writeXYZToPDB("pre" + nameRoot + "pdb", 0);
+//            } catch (IOException ex) {
+//                Logger.getLogger(RotationalDynamics.class.getName()).log(Level.SEVERE, null, ex);
+//            }
+//        }
         advanceVelocities2(timeStep);
         advanceDihedrals2(timeStep);
         molecule.genCoordsFastVec3D(null);
+//        if ((iStep > 5022) && (iStep < 5027)) {
+//            dihedrals.writeDihedrals("dihedralsPost" + nameRoot + "txt", false);
+//            try {
+//                molecule.updateFromVecCoords();
+//                molecule.writeXYZToPDB("post" + nameRoot + "pdb", 0);
+//            } catch (IOException ex) {
+//                Logger.getLogger(RotationalDynamics.class.getName()).log(Level.SEVERE, null, ex);
+//            }
+//        }
         updateVelocitiesRecursive();
 
         double newKineticEnergy = calcKineticEnergy();
@@ -514,6 +536,17 @@ public class RotationalDynamics {
         EnergyDeriv eDeriv = dihedrals.eDeriv();
         double potentialEnergy = eDeriv.getEnergy();
         double total = potentialEnergy + kineticEnergy;
+//        Atom a1 = molecule.getAtom("1:88.HB3");
+//        Atom a2 = molecule.getAtom("2:1.H191");
+//        FastVector3D[] vecCoords = molecule.getEnergyCoords().vecCoords;
+//        FastVector3D v1 = vecCoords[a1.eAtom];
+//        FastVector3D v2 = vecCoords[a2.eAtom];
+//        double dis = v1.dis(v2);
+//
+//        System.out.println(iStep + " " + total + " " + dis + " " + timeStep);
+//        if ((total / lastTotalEnergy) > 10.0) {
+//            dihedrals.energyList.dump(0.2, 0.2, "energy"+iStep+".txt");
+//        }
 
         deltaEnergy = Math.abs((total - lastTotalEnergy) / total);
         lastKineticEnergy = newKineticEnergy;
