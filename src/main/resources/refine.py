@@ -576,7 +576,7 @@ class refine:
             # default is 6.
             n = linkerDict['n'] if 'n' in linkerDict else 6
             linkLen = linkerDict['length'] if 'length' in linkerDict else 5.0
-            valAngle = linkerDict['valAngle'] if 'valAngle' in linkerDict else 90.0
+            valAngle = linkerDict['valAngle'] if 'valAngle' in linkerDict else 110.0
             dihAngle = linkerDict['dihAngle'] if 'dihAngle' in linkerDict else 135.0
 
         else:
@@ -1132,7 +1132,7 @@ class refine:
 
     def readMoleculeDict(self,seqReader, molDict):
         linkLen = 5.0;
-        valAngle = 90.0;
+        valAngle = 110.0;
         dihAngle = 135.0;
         if seqReader != None and seqReader.getMolecule() != None:
             mol = seqReader.getMolecule()
