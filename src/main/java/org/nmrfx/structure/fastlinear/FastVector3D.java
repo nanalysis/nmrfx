@@ -124,13 +124,21 @@ public class FastVector3D extends FastVector {
         target.data[2] = data[2] - dz;
     }
 
+    public FastVector3D subtract(FastVector3D v2) {
+        FastVector3D target = new FastVector3D();
+        target.data[0] = data[0] - v2.getX();
+        target.data[1] = data[1] - v2.getY();
+        target.data[2] = data[2] - v2.getZ();
+        return target;
+    }
+
     public void subtract(FastVector3D v2, FastVector3D target) {
         target.data[0] = data[0] - v2.getX();
         target.data[1] = data[1] - v2.getY();
         target.data[2] = data[2] - v2.getZ();
     }
 
-    public void crossProduct(FastVector3D v1, FastVector3D v2, FastVector3D target) {
+    public static void crossProduct(FastVector3D v1, FastVector3D v2, FastVector3D target) {
         target.data[0] = MathArrays.linearCombination(v1.data[1], v2.data[2], -v1.data[2], v2.data[1]);
         target.data[1] = MathArrays.linearCombination(v1.data[2], v2.data[0], -v1.data[0], v2.data[2]);
         target.data[2] = MathArrays.linearCombination(v1.data[0], v2.data[1], -v1.data[1], v2.data[0]);
@@ -156,4 +164,43 @@ public class FastVector3D extends FastVector {
         double dot = v1.dotProduct(v2);
         return Math.acos(dot / normProduct);
     }
+
+    public static double volume(FastVector3D a, FastVector3D b, FastVector3D c, FastVector3D d) {
+        FastVector3D i = a.subtract(d);
+        FastVector3D j = b.subtract(d);
+        FastVector3D k = c.subtract(d);
+        // triple product
+        FastVector3D jXk = new FastVector3D();
+        FastVector3D.crossProduct(j, k, jXk);
+        return i.dotProduct(jXk);
+    }
+
+    public static double calcDihedral(FastVector3D a, FastVector3D b, FastVector3D c, FastVector3D d) {
+
+        double d12 = FastVector3D.distance(a, b);
+        double sd13 = FastVector3D.distanceSq(a, c);
+        double sd14 = FastVector3D.distanceSq(a, d);
+        double sd23 = FastVector3D.distanceSq(b, c);
+        double sd24 = FastVector3D.distanceSq(b, d);
+        double d34 = FastVector3D.distance(c, d);
+        double ang123 = FastVector3D.angle(a.subtract(b), c.subtract(b));
+        double ang234 = FastVector3D.angle(b.subtract(c), d.subtract(c));
+        double cosine = (sd13 - sd14 + sd24 - sd23 + 2.0 * d12 * d34 * Math.cos(ang123) * Math.cos(ang234))
+                / (2.0 * d12 * d34 * Math.sin(ang123) * Math.sin(ang234));
+
+        double volume = volume(a, b, c, d);
+
+        double sgn = (volume < 0.0) ? 1.0 : -1.0;
+        final double angle;
+        if (cosine > 1.0) {
+            angle = 0.0;
+        } else if (cosine < -1.0) {
+            angle = Math.PI;
+        } else {
+            angle = sgn * Math.acos(cosine);
+        }
+        return (angle);
+
+    }
+
 }

@@ -15,7 +15,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package org.nmrfx.structure.fastlinear;
 
 import java.util.Arrays;
@@ -37,6 +36,22 @@ public class FastMatrix {
         this.nCols = nCols;
         this.size = nRows * nCols;
         data = new double[size];
+    }
+
+    public FastMatrix(FastVector3D col0, FastVector3D col1, FastVector3D col2) {
+        this.nRows = 3;
+        this.nCols = 3;
+        this.size = nRows * nCols;
+        data = new double[size];
+        setEntry(0, 0, col0.getX());
+        setEntry(1, 0, col0.getY());
+        setEntry(2, 0, col0.getZ());
+        setEntry(0, 1, col1.getX());
+        setEntry(1, 1, col1.getY());
+        setEntry(2, 1, col1.getZ());
+        setEntry(0, 2, col2.getX());
+        setEntry(1, 2, col2.getY());
+        setEntry(2, 2, col2.getZ());
     }
 
     public void zero() {
