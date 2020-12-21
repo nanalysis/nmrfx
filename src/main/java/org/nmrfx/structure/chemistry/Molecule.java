@@ -696,7 +696,7 @@ public class Molecule extends MoleculeBase {
                         dihedralAngle += dihedralAngles[nAngles];
                     }
                     nAngles++;
-\                  // coords.calculateNeRF(dihedralAngle, a4.bndCosNR, a4.bndSinNR, v4test);
+                  // coords.calculateNeRF(dihedralAngle, a4.bndCosNR, a4.bndSinNR, v4test);
                    boolean ok = coords.calculate(dihedralAngle, a4.bndCos, a4.bndSin, v4);
                 }
             }
