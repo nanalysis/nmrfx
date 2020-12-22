@@ -89,14 +89,14 @@ class Viol:
 
 def analyzeViols(nStruct,viols,limit):
     sum = 0.0
-    structIndicators = [' ']*nStruct
+    structIndicators = ['.']*nStruct
     max = 0.0
     bound = viols[0].bound
     nViol = 0
     for viol in viols:
         aViol = abs(viol.viol)
         sum += aViol
-        if aViol > max:
+        if aViol > abs(max):
             max = viol.viol
         if aViol > limit:
             structIndicators[viol.struct]='+'
@@ -127,7 +127,6 @@ def summary(outFiles,limit=0.2):
                     viols[type][atoms] = []
                 viol = Viol(iFile,float(fields[3]),float(fields[-2]))
                 viols[type][atoms].append(viol)
-                #print fields
             elif fields[0] == 'Shi:':
                 type = fields[0]
                 atoms = fields[1]
@@ -137,6 +136,8 @@ def summary(outFiles,limit=0.2):
                 viols[type][atoms].append(viol)
         iFile += 1
     nStruct = len(outFiles)
+    outLine =  "  %4s %16s   %16s %4s %10s %10s %10s Structures\n" % ("Type","Atom1","Atom2","nViol","Bound","Mean","Max")
+    fOut.write(outLine)
     for type in ['Dis:','Rep:','Shi:']:
         for atoms in viols[type]:
             #sum
@@ -145,12 +146,12 @@ def summary(outFiles,limit=0.2):
             if (nViol > 2):
                 if type=="Shi:":
                     atom1 = atoms
-                    outLine =  "   %3s %16s - %16s %4d %10.2f %10.2f %10.2f" % (type,atom1,"",nViol,bound,mean,max)
+                    outLine =  "   %3s %16s - %16s %4d %10.2f %10.2f %10.2f " % (type,atom1,"",nViol,bound,mean,max)
                 else:
                     atom1,atom2 = atoms.split("_")
-                    outLine =  "   %3s %16s - %16s %4d %10.2f %10.2f %10.2f" % (type,atom1,atom2,nViol,bound,mean,max)
+                    outLine =  "   %3s %16s - %16s %4d %10.2f %10.2f %10.2f " % (type,atom1,atom2,nViol,bound,mean,max)
                 fOut.write(outLine)
                 if nStruct <= 100:
-                    fOut.write(structIndicators)
+                    fOut.write('|'+structIndicators+'|')
                 fOut.write('\n')
     fOut.close()
