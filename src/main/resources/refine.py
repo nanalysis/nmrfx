@@ -2023,7 +2023,7 @@ class refine:
                         continue
                 else:
                     ### To remeasure, coordinates should be generated for the entity ###
-                    entity.genCoordinates(None)
+                    AngleTreeGenerator.genCoordinates(entity, prfStartAtom)
             self.setupAtomProperties(entity)
             if entity in self.entityEntryDict:
                 atom = self.entityEntryDict[entity]
