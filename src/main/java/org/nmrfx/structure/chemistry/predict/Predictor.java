@@ -377,10 +377,10 @@ public class Predictor {
                     if (alphaType >= 0) {
                         double[] distances = molecule.calcDistanceInputMatrixRow(iStruct, getRMax(), atom, getIntraScale());
                         double distPPM = 0.0;
-                        double chi = ((Residue) atom.getEntity()).calcChi();
+                        double chi = ((Residue) atom.getEntity()).calcChi(iStruct);
                         angleValues[0] = Math.cos(chi);
                         angleValues[1] = Math.sin(chi);
-                        double nu2 = ((Residue) atom.getEntity()).calcNu2();
+                        double nu2 = ((Residue) atom.getEntity()).calcNu2(iStruct);
                         angleValues[2] = Math.cos(nu2);
                         angleValues[3] = Math.sin(nu2);
                         int angStart = alphas[alphaType].length - 4;

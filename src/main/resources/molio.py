@@ -74,7 +74,7 @@ def readPDBXCoords(fileName, structNum, noComplain, genCoords):
     '''
 
     pdb = PDBFile()
-    pdb.readCoordinates(fileName, structNum, False, True)
+    pdb.readCoordinates(fileName, structNum, noComplain, genCoords)
     updateAtomArray()
     mol = MoleculeFactory.getActive()
     return mol
