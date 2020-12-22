@@ -178,7 +178,6 @@ public class Polymer extends Entity {
         for (Residue residue : tempResidues) {
             addResidue(residue);
         }
-
     }
 
     public int renumberResidue(String oldNumber, String newNumber) {
