@@ -42,7 +42,7 @@ done
 dir=`dirname "$pgm"`
 CLASSPATH=${dir}"/lib/Manifest.jar"
 
-jreDir=`ls -d ${dir}/*jre*`
+jreDir=`ls -d ${dir}/*jre* 2>/dev/null`
 
 if [ -d "${dir}/../jre.bundle/Contents/Home/jre/bin" ] ; then
     JAVA="${dir}/../jre.bundle/Contents/Home/jre/bin/java"
