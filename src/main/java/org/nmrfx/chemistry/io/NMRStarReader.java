@@ -1226,6 +1226,7 @@ public class NMRStarReader {
         String coherenceType = saveframe.getCategory("_Heteronucl_" + expType + "_list").get(expType + "_coherence_type");
         String units = saveframe.getCategory("_Heteronucl_" + expType + "_list").get(expType + "_val_units");
         MoleculeBase mol = MoleculeFactory.getActive();
+        var compoundMap = MoleculeBase.compoundMap();
         if (mol != null) {
             mol.setProperty(expType + field + "_" + listID + "frameName", frameName);
             mol.setProperty(expType + "coherenceType", coherenceType);
@@ -1292,6 +1293,21 @@ public class NMRStarReader {
                 expVals.put("RexErr", RexErrStr);
             }
             atom.setProperty(expType + field + "_" + listID + "results", expVals);
+            if (expType.equals("T1")) {
+                Set<String> t1Fields = (Set<String>) atom.getProperty(expType + "fields");
+                if (t1Fields == null) {
+                    t1Fields = new TreeSet<>();
+                }
+                t1Fields.add(field);
+                atom.setProperty(expType + "fields", t1Fields);
+            } else if (expType.equals("T2")) {
+                Set<String> t2Fields = (Set<String>) atom.getProperty(expType + "fields");
+                if (t2Fields == null) {
+                    t2Fields = new TreeSet<>();
+                }
+                t2Fields.add(field);
+                atom.setProperty(expType + "fields", t2Fields);
+            }
         }
     }
 
@@ -1565,9 +1581,12 @@ public class NMRStarReader {
             }
             buildRDCConstraints();
             if (DEBUG) {
-                System.err.println("process T1/T2");
+                System.err.println("process T1");
             }
             buildT1T2("T1");
+            if (DEBUG) {
+                System.err.println("process T2");
+            }
             buildT1T2("T2");
             if (DEBUG) {
                 System.err.println("process runabout");
