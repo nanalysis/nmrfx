@@ -1,5 +1,4 @@
 @echo off
-
 rem nvjp [ script  [ arg ... ] ]
 rem 
 rem optional environment variables:
@@ -21,16 +20,12 @@ set javaexe=java
 set cp="%dir%nmrfx-core-%nvjver%.jar;%dir%lib/Manifest.jar"
 
 
-set testjava=%dir%jre\bin\java.exe
+set testjava="%dir%jre/bin/java.exe"
 
 if exist %testjava% (
-    set javaexe="%testjava%"
+    set javaexe=%testjava%
     set cp="%dir%lib/nmrfx-core-%nvjver%.jar;%dir%lib/%Manifest.jar"
 )
 
 
-if "%1"=="" (
-    %javaexe% -Djava.awt.headless=true -mx2048m -cp %cp% %JAVA_OPTS% %nvjpmain%
-) else (
-    %javaexe% -Djava.awt.headless=true -mx2048m -cp %cp% %JAVA_OPTS% %nvjpmain% -c "import dispatchnvfx" %*
-)
+%javaexe% -Djava.awt.headless=true -mx2048m -cp %cp% %JAVA_OPTS% %nvjpmain% %*

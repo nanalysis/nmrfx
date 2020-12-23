@@ -72,9 +72,5 @@ else
 fi
 
 export CLASSPATH
-if [ "$#" -eq 0 ]; then
-    exec "$JAVA" -Djava.awt.headless=true -mx${HEAP_MEM}m -cp "$CLASSPATH" $JAVA_OPTS $nvjmain ${1+"$@"}
-else
-    exec "$JAVA" -Djava.awt.headless=true -mx${HEAP_MEM}m -cp "$CLASSPATH" $JAVA_OPTS $nvjmain -c "import dispatchnvfx" ${1+"$@"}
-fi
+exec "$JAVA" -Djava.awt.headless=true -mx${HEAP_MEM}m -cp "$CLASSPATH" $JAVA_OPTS $nvjmain ${1+"$@"}
 

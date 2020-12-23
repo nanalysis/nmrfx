@@ -59,7 +59,6 @@ public class NMRStarReader {
 
     final STAR3 star3;
     final File starFile;
-    Map<String, Compound> compoundMap = new HashMap<>();
 
     Map entities = new HashMap();
     boolean hasResonances = false;
@@ -287,6 +286,7 @@ public class NMRStarReader {
     }
 
     public void addCompound(String id, Compound compound) {
+        var compoundMap = MoleculeBase.compoundMap();
         compoundMap.put(id, compound);
     }
 
@@ -573,6 +573,7 @@ public class NMRStarReader {
     }
 
     public void buildResonanceLists() throws ParseException {
+        var compoundMap = MoleculeBase.compoundMap();
         for (Saveframe saveframe : star3.getSaveFrames().values()) {
             if (saveframe.getCategoryName().equals("resonance_linker")) {
                 hasResonances = true;
@@ -606,6 +607,7 @@ public class NMRStarReader {
         SpatialSetGroup spg = null;
         String iEntity = (String) entityIDColumn.get(i);
         String entityAssemblyID = (String) entityAssemblyIDColumn.get(i);
+        var compoundMap = MoleculeBase.compoundMap();
         if (!iEntity.equals("?")) {
             String iRes = (String) compIdxIDColumn.get(i);
             String atomName = (String) atomColumn.get(i);
@@ -1052,6 +1054,7 @@ public class NMRStarReader {
     public void processChemicalShifts(Saveframe saveframe, int ppmSet) throws ParseException {
         Loop loop = saveframe.getLoop("_Atom_chem_shift");
         if (loop != null) {
+            var compoundMap = MoleculeBase.compoundMap();
             List<String> entityAssemblyIDColumn = loop.getColumnAsList("Entity_assembly_ID");
             List<String> entityIDColumn = loop.getColumnAsList("Entity_ID");
             List<String> compIdxIDColumn = loop.getColumnAsList("Comp_index_ID");
@@ -1142,6 +1145,7 @@ public class NMRStarReader {
             System.err.println("No \"_Atom_site\" loop");
             return;
         }
+        var compoundMap = MoleculeBase.compoundMap();
         List<String> entityAssemblyIDColumn = loop.getColumnAsList("Label_entity_assembly_ID");
         List<String> entityIDColumn = loop.getColumnAsList("Label_entity_ID");
         List<String> compIdxIDColumn = loop.getColumnAsList("Label_comp_index_ID");
@@ -1380,6 +1384,7 @@ public class NMRStarReader {
         if (loop == null) {
             throw new ParseException("No \"_Gen_dist_constraint\" loop");
         }
+        var compoundMap = MoleculeBase.compoundMap();
         List<String>[] entityAssemblyIDColumns = new ArrayList[2];
         List<String>[] entityIDColumns = new ArrayList[2];
         List<String>[] compIdxIDColumns = new ArrayList[2];
@@ -1521,9 +1526,10 @@ public class NMRStarReader {
         if (DEBUG) {
             System.out.println("nSave " + star3.getSaveFrameNames());
         }
-        ResonanceFactory resFactory =  PeakList.resFactory();
+        ResonanceFactory resFactory = PeakList.resFactory();
         if (argv.length == 0) {
             hasResonances = false;
+            var compoundMap = MoleculeBase.compoundMap();
             compoundMap.clear();
             buildExperiments();
             if (DEBUG) {

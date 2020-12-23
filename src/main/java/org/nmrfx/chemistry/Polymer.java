@@ -17,7 +17,6 @@
  */
 package org.nmrfx.chemistry;
 
-
 import java.util.*;
 
 public class Polymer extends Entity {
@@ -161,6 +160,24 @@ public class Polymer extends Entity {
 
     public List<Residue> getResidues() {
         return Collections.unmodifiableList(residueList);
+    }
+
+    public void addResidueOffset(int offset) {
+        List<Residue> tempResidues = new ArrayList<>(residueList);
+        for (Residue residue : tempResidues) {
+            Integer resNum = residue.getResNum();
+            if (resNum == null) {
+                resNum = Integer.parseInt(residue.getNumber());
+            }
+            resNum += offset;
+            residue.setNumber(String.valueOf(resNum));
+            residue.resNum = resNum;
+        }
+        residues.clear();
+        residueList.clear();
+        for (Residue residue : tempResidues) {
+            addResidue(residue);
+        }
     }
 
     public int renumberResidue(String oldNumber, String newNumber) {
