@@ -778,12 +778,14 @@ public class NMRStarWriter {
      * @param field int. The B0 field
      * @param expType String. The experiment type, T1 or T2.
      * @param frameName String. The name of the experiment.
+     * @param coherenceType String. The coherence type.
+     * @param units String. The units of the T1/T2 data.
      * @param listID int. The number of the T1/T2 block in the file.
      * @throws IOException
      * @throws InvalidMoleculeException
      */
     public static void writeT1T2(FileWriter chan, MoleculeBase molecule, String nucName, 
-            int field, String expType, String frameName, int listID) throws IOException, InvalidMoleculeException {
+            int field, String expType, String frameName, String coherenceType, String units, int listID) throws IOException, InvalidMoleculeException {
         chan.write("    ########################################\n");
         chan.write("    #  Heteronuclear " + expType + " relaxation values  #\n");
         chan.write("    ########################################\n");
@@ -808,9 +810,9 @@ public class NMRStarWriter {
         chan.write("   _Heteronucl_" + expType + "_list.Spectrometer_frequency_1H      ");
         chan.write(String.valueOf(field) + "\n");
         chan.write("   _Heteronucl_" + expType + "_list." + expType + "_coherence_type              ");
-        chan.write("Sz" + "\n"); //fixme get dynamically
+        chan.write(coherenceType + "\n");
         chan.write("   _Heteronucl_" + expType + "_list." + expType + "_val_units                   ");
-        chan.write("s-1" + "\n");
+        chan.write(units + "\n");
         chan.write("   _Heteronucl_" + expType + "_list.Rex_units                      ");
         chan.write(".\n");
         chan.write("   _Heteronucl_" + expType + "_list.Details                        ");
@@ -879,9 +881,9 @@ public class NMRStarWriter {
                 Entity entity = (Entity) entityIterator.next();
                 int entityID = entity.getIDNum();
                 for (Atom atom : atoms) {
-                    String propKey = expType + "fitResults";
-                    if (atom.getProperty(expType + "fitResults") != null) {
-                        Map<Integer, Map<String, Double>> fitResFieldMap = (Map<Integer, Map<String, Double>>) atom.getProperty(propKey);
+                    List<List<Object>> t1t2DataList = (List<List<Object>>) atom.getT1T2DataList(expType);
+                    if (t1t2DataList != null) {
+                        Map<Integer, Map<String, Double>> fitResFieldMap = (Map<Integer, Map<String, Double>>) t1t2DataList.get(listID - 1).get(5);
                         Map<String, Double> parValues = fitResFieldMap.get(field);
                         String outputLine = toStarT1T2String(idx, expType, listID, entityID, atom, nucName, isotope, parValues);
                         if (outputLine != null && !prevRes.contains(entityID + "." + atom.getResidueNumber())) {
@@ -924,7 +926,7 @@ public class NMRStarWriter {
             oneLetter = String.valueOf(((Residue) atom.entity).getOneLetter());
         } 
         
-        if (parValues.get("R") == null) {
+        if (parValues == null || parValues.get("R") == null) {
             return null;
         }
 
@@ -1024,18 +1026,16 @@ public class NMRStarWriter {
             Entity entity = molecule.getEntities().get(0);
             TreeSet<String> expTypes = (TreeSet<String>) entity.getPropertyObject("expTypes");
             if (expTypes != null) {
-//                Collections.sort(expTypes, (a, b) -> a.compareTo(b));
                 for (String expType : expTypes) {
                     int listID = 1;
-                    double[] fields = (double[]) entity.getPropertyObject(expType + "fields");
-                    String nucName = (String) molecule.getProperty(expType + "nucName");
-                    //        List<Double> fieldList = Arrays.asList(fields);
-                    //        Collections.sort(fields, (a, b) -> Double.compare(a, b));
-                    //        System.out.println(expType + " " + frameName);
-                    for (double dField : fields) {
-                        int field = (int) dField;
-                        String frameName = (String) molecule.getProperty(expType + String.valueOf(field) + "_" + String.valueOf(listID) + "frameName");
-                        writeT1T2(chan, molecule, nucName, field, expType, frameName, listID);
+                    List<List<Object>> t1t2DataList = (List<List<Object>>) molecule.getAtomArray().get(0).getT1T2DataList(expType);
+                    for (List<Object> t1t2Data : t1t2DataList) {
+                        String frameName = (String) t1t2Data.get(0);
+                        int field = (int) t1t2Data.get(1);
+                        String coherenceType = (String) t1t2Data.get(2);
+                        String units = (String) t1t2Data.get(3);
+                        String nucName = (String) t1t2Data.get(4);
+                        writeT1T2(chan, molecule, nucName, field, expType, frameName, coherenceType, units, listID);
                         listID++;
                     }
                 }

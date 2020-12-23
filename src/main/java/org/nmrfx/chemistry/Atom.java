@@ -107,6 +107,7 @@ public class Atom implements IAtom {
     final boolean[] flags = new boolean[ATOMFLAGS.values().length];
     Optional<Map<String, Object>> properties = Optional.empty();
     public Atom daughterAtom = null;
+    public List<List<Object>>[] t1t2Data = new List[2];
 
     public Atom(String name) {
         this.name = name;
@@ -2259,6 +2260,44 @@ public class Atom implements IAtom {
             propValue = properties.get().get(name);
         }
         return propValue;
+    }
+    
+    public void addT1T2Data(String expType, int iList, int iVal, Object value) {
+        if (expType.equals("T1")) {
+            List<List<Object>> dataList = t1t2Data[0];
+            if (dataList == null) {
+                dataList = new ArrayList<>();
+            }
+            if (dataList.size() < iList + 1) {
+                dataList.add(new ArrayList<>());
+            }
+            List<Object> data = dataList.get(iList);
+            data.add(iVal, value);
+            dataList.set(iList, data);
+            t1t2Data[0] = dataList;
+        } else if (expType.equals("T2")) {
+            List<List<Object>> dataList = t1t2Data[1];
+            if (dataList == null) {
+                dataList = new ArrayList<>();
+            }
+            if (dataList.size() < iList + 1) {
+                dataList.add(new ArrayList<>());
+            }
+            List<Object> data = dataList.get(iList);
+            data.add(iVal, value);
+            dataList.set(iList, data);
+            t1t2Data[1] = dataList;
+        }
+    }
+
+    public Object getT1T2DataList(String expType) {
+        List<List<Object>> dataList = null;
+        if (expType.equals("T1")) {
+            dataList = t1t2Data[0];
+        } else if (expType.equals("T2")) {
+            dataList = t1t2Data[1];
+        }
+        return dataList;
     }
 
     @Override

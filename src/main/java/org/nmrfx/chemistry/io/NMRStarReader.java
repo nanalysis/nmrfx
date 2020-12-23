@@ -1227,11 +1227,6 @@ public class NMRStarReader {
         String units = saveframe.getCategory("_Heteronucl_" + expType + "_list").get(expType + "_val_units");
         MoleculeBase mol = MoleculeFactory.getActive();
         var compoundMap = MoleculeBase.compoundMap();
-        if (mol != null) {
-            mol.setProperty(expType + field + "_" + listID + "frameName", frameName);
-            mol.setProperty(expType + "coherenceType", coherenceType);
-            mol.setProperty(expType + "units", units);
-        }
         Loop loop = saveframe.getLoop("_" + expType);
         if (loop == null) {
             System.err.println("No \"" + expType + "\" loop");
@@ -1261,9 +1256,6 @@ public class NMRStarReader {
             String valStr = (String) valColumn.get(i);
             String errStr = (String) errColumn.get(i);
             
-            if (mol != null && i == 0) {
-                mol.setProperty(expType + "nucName", atomName);
-            }
             if (entityAssemblyID.equals(".")) {
                 entityAssemblyID = "1";
             }
@@ -1292,22 +1284,12 @@ public class NMRStarReader {
                 expVals.put("RexVal", RexValStr);
                 expVals.put("RexErr", RexErrStr);
             }
-            atom.setProperty(expType + field + "_" + listID + "results", expVals);
-            if (expType.equals("T1")) {
-                Set<String> t1Fields = (Set<String>) atom.getProperty(expType + "fields");
-                if (t1Fields == null) {
-                    t1Fields = new TreeSet<>();
-                }
-                t1Fields.add(field);
-                atom.setProperty(expType + "fields", t1Fields);
-            } else if (expType.equals("T2")) {
-                Set<String> t2Fields = (Set<String>) atom.getProperty(expType + "fields");
-                if (t2Fields == null) {
-                    t2Fields = new TreeSet<>();
-                }
-                t2Fields.add(field);
-                atom.setProperty(expType + "fields", t2Fields);
-            }
+            atom.addT1T2Data(expType, Integer.parseInt(listID) - 1, 0, frameName);
+            atom.addT1T2Data(expType, Integer.parseInt(listID) - 1, 1, field);
+            atom.addT1T2Data(expType, Integer.parseInt(listID) - 1, 2, coherenceType);
+            atom.addT1T2Data(expType, Integer.parseInt(listID) - 1, 3, units);
+            atom.addT1T2Data(expType, Integer.parseInt(listID) - 1, 4, atomName);
+            atom.addT1T2Data(expType, Integer.parseInt(listID) - 1, 5, expVals);
         }
     }
 
