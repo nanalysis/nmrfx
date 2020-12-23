@@ -203,7 +203,7 @@ public class NMRNEFReader {
                         System.out.println("Can't find residue \"" + resName + extension + "\" in residue libraries or STAR file");
                         try {
                             String cifFile = FileSystems.getDefault().getPath(nefDir.toString(), resName + ".cif").toString();
-                            System.out.println("read residue from " + cifFile);
+                            System.out.println("read residue " + chainCode + " " + seqCode + " from " + cifFile);
                             MMcifReader.readChemComp(cifFile, molecule, chainCode, seqCode);
                         } catch (Exception ex) {
                             ex.printStackTrace();
@@ -218,6 +218,8 @@ public class NMRNEFReader {
                 if (!cifFile.exists()) {
                     throw new ParseException("File " + cifFileName + " doesn't exist");
                 }
+                System.out.println("read residue " + chainCode + " " + seqCode + " from " + cifFile);
+
                 MMcifReader.readChemComp(cifFileName, molecule, chainCode, seqCode);
             }
         }
