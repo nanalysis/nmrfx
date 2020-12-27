@@ -171,8 +171,12 @@ public class MolecularConstraints {
         return distanceSets.keySet();
     }
 
-    public DistanceConstraintSet getDistanceSet(String name) {
-        return distanceSets.get(name);
+    public DistanceConstraintSet getDistanceSet(String name, boolean create) {
+        DistanceConstraintSet set = distanceSets.get(name);
+        if ((set == null) && create) {
+            set = newDistanceSet(name);
+        }
+        return set;
     }
 
     public void resetDistanceSets() {

@@ -36,6 +36,7 @@ public class DistanceConstraintSet implements ConstraintSet, Iterable {
     boolean dirty = true;
     public static char[] violCharArray = new char[0];
     public static int ID = 1;
+    boolean containsBonds = false;
 
     private DistanceConstraintSet(MolecularConstraints molecularConstraints,
             String name) {
@@ -104,6 +105,14 @@ public class DistanceConstraintSet implements ConstraintSet, Iterable {
 
     public void setDirty() {
         dirty = true;
+    }
+
+    public boolean containsBonds() {
+        return containsBonds;
+    }
+
+    public void containsBonds(boolean state) {
+        containsBonds = state;
     }
 
     public void updateData() {
@@ -233,12 +242,12 @@ public class DistanceConstraintSet implements ConstraintSet, Iterable {
     }
 
     public void addDistanceConstraint(final List<String> filterStrings1, final List<String> filterStrings2,
-            final double rLow, final double rUp) throws IllegalArgumentException {
-        addDistanceConstraint(filterStrings1, filterStrings2, rLow, rUp, 1.0, null, null);
+            final double rLow, final double rUp, boolean isBond) throws IllegalArgumentException {
+        addDistanceConstraint(filterStrings1, filterStrings2, rLow, rUp, isBond, 1.0, null, null);
     }
 
     public void addDistanceConstraint(final List<String> filterStrings1, final List<String> filterStrings2,
-            final double rLow, final double rUp, Double weight, Double targetValue, Double targetErr) throws IllegalArgumentException {
+            final double rLow, final double rUp, boolean isBond, Double weight, Double targetValue, Double targetErr) throws IllegalArgumentException {
         if (filterStrings1.size() != filterStrings2.size()) {
             throw new IllegalArgumentException("atoms group 1 and atoms group 2 should be same size");
         }
@@ -276,9 +285,9 @@ public class DistanceConstraintSet implements ConstraintSet, Iterable {
         atoms1m.toArray(atomsA1);
         atoms2m.toArray(atomsA2);
         if (weight != null && targetValue != null && targetErr != null) {
-            add(new DistanceConstraint(atomsA1, atomsA2, rLow, rUp, false, weight, targetValue, targetErr));
+            add(new DistanceConstraint(atomsA1, atomsA2, rLow, rUp, isBond, weight, targetValue, targetErr));
         } else {
-            add(new DistanceConstraint(atomsA1, atomsA2, rLow, rUp, false));
+            add(new DistanceConstraint(atomsA1, atomsA2, rLow, rUp, isBond));
         }
 
     }
@@ -326,7 +335,7 @@ public class DistanceConstraintSet implements ConstraintSet, Iterable {
             Atom[] atomsA1a = {atomsA1[i]};
             Atom[] atomsA2a = {atomsA2[i]};
             add(new DistanceConstraint(atomsA1a, atomsA2a, rLow, rUp, false, weight, targetValues.get(i), targetErr));
-           // fixme  distancePairMap.put(modelNum, distList);
+            // fixme  distancePairMap.put(modelNum, distList);
         }
 
     }

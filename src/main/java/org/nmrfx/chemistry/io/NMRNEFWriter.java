@@ -285,17 +285,20 @@ public class NMRNEFWriter {
         chan.write("save_\n");
     }
 
-    static void writeDistances(MoleculeBase molecule, List<DistanceConstraint> distList, FileWriter chan) throws IOException, InvalidMoleculeException {
+    static void writeDistances(MoleculeBase molecule, DistanceConstraintSet distSet, FileWriter chan) throws IOException, InvalidMoleculeException {
+        List<DistanceConstraint> distList = distSet.get();
+        String saveFrameName = distSet.getName();
         chan.write("\n");
-        chan.write("save_nef_distance_restraint_list\n"); //fixme dynamically get framecode
+        chan.write("save_" + saveFrameName + "\n"); //fixme dynamically get framecode
         chan.write("    _nef_distance_restraint_list.sf_category       ");
         chan.write("nef_distance_restraint_list\n");
         chan.write("    _nef_distance_restraint_list.sf_framecode      ");
-        chan.write("nef_distance_restraint_list\n"); //fixme dynamically get framecode
+        chan.write(saveFrameName + "\n"); //fixme dynamically get framecode
         chan.write("    _nef_distance_restraint_list.potential_type    ");
         chan.write(".\n");
         chan.write("    _nef_distance_restraint_list.restraint_origin  ");
-        chan.write("noe\n");
+        String restraintOrigin = distSet.containsBonds() ? "bond" : "noe";
+        chan.write(restraintOrigin + "\n");
         chan.write("\n");
 
         chan.write("     loop_\n");
@@ -518,7 +521,7 @@ public class NMRNEFWriter {
      * @throws InvalidMoleculeException
      */
     public static void writeAll(File file) throws IOException, ParseException, InvalidPeakException, InvalidMoleculeException {
-        try (FileWriter writer = new FileWriter(file)) {
+        try ( FileWriter writer = new FileWriter(file)) {
             String name = file.getName();
             if (name.endsWith(".nef")) {
                 name = name.substring(0, name.length() - 4);
@@ -568,7 +571,7 @@ public class NMRNEFWriter {
             writeMolSys(molecule, chan);
             writePPM(molecule, chan);
             for (DistanceConstraintSet distanceSet : molecule.getMolecularConstraints().distanceSets()) {
-                writeDistances(molecule, distanceSet.get(), chan);
+                writeDistances(molecule, distanceSet, chan);
             }
             for (AngleConstraintSet angleSet : molecule.getMolecularConstraints().angleSets()) {
                 writeDihedrals(molecule, angleSet.get(), chan);
