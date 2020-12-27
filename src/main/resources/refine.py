@@ -519,21 +519,20 @@ class refine:
             except TypeError:
                 self.readLinkerDict(linkerList)
 
-    def getDistanceConstraintSet(self):
+    def getDistanceConstraintSet(self, name):
         molConstraints = self.molecule.getMolecularConstraints()
-        optSet = molConstraints.activeDistanceSet()
-        disCon = None
-        if optSet.isPresent():
-            disCon = optSet.get()
-        else:
-            disCon = molConstraints.newDistanceSet("default")
+        disCon = molConstraints.getDistanceSet(name, True)
         return disCon
 
     def addDistanceConstraint(self, atomName1,atomName2,lower,upper,bond=False):
         if bond == False:
-            self.getDistanceConstraintSet().addDistanceConstraint(atomName1,atomName2,lower,upper)
+            disCon = self.getDistanceConstraintSet("distances")
+            disCon.addDistanceConstraint(atomName1,atomName2,lower,upper)
+            disCon.containsBonds(False)
         else:
-            self.getDistanceConstraintSet().addDistanceConstraint(atomName1,atomName2,lower,upper,bond)
+            disCon = self.getDistanceConstraintSet("bonds")
+            disCon.addDistanceConstraint(atomName1,atomName2,lower,upper,bond)
+            disCon.containsBonds(True)
 
     def getAngleConstraintSet(self):
         molConstraints = self.molecule.getMolecularConstraints()
@@ -1077,6 +1076,9 @@ class refine:
             angleWt = self.readAngleDict(data['angles'])
         if 'tree' in data:
             self.setupTree(treeDict)
+
+        for entity in self.molecule.getEntities():
+            self.setupAtomProperties(entity)
 
         self.setup('./',seed,writeTrajectory=False, usePseudo=False)
         self.energy()
