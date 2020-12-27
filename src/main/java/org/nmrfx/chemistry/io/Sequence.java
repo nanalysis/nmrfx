@@ -151,11 +151,7 @@ public class Sequence {
                     return;
                 }
                 if (fields.length > 7) {
-                    if (fields[7].equals("middle") && (resPos != RES_POSITION.MIDDLE)) {
-                        return;
-                    } else if (fields[7].equals("start") && (resPos != RES_POSITION.START)) {
-                        return;
-                    } else if (fields[7].equals("end") && (resPos != RES_POSITION.END)) {
+                    if (!checkQualifier(fields[7], resPos)) {
                         return;
                     }
                 }
@@ -179,20 +175,12 @@ public class Sequence {
 
                 checkFieldCount(fields);
                 int nFields = fields.length;
-                if (fields[nFields - 1].equals("middle")) {
-                    if (resPos != RES_POSITION.MIDDLE) {
-                        return;
-                    } else {
-                        nFields--;
-                    }
-                } else if (fields[nFields - 1].equals("start")) {
-                    if (resPos != RES_POSITION.START) {
-                        return;
-                    } else {
-                        nFields--;
-                    }
-                } else if (fields[nFields - 1].equals("end")) {
-                    if (resPos != RES_POSITION.END) {
+                String lastField = fields[nFields - 1];
+
+                boolean hasQualifier = lastField.contains("middle")
+                        || lastField.contains("start") || lastField.contains("end");
+                if (hasQualifier) {
+                    if (!checkQualifier(lastField, resPos)) {
                         return;
                     } else {
                         nFields--;
@@ -284,13 +272,11 @@ public class Sequence {
             public void processLine(Sequence sequence, String[] fields, Residue residue, RES_POSITION resPos, String coordSetName)
                     throws MoleculeIOException {
                 checkFieldCount(fields);
+
                 if (fields.length > 4) {
-                    if (fields[4].equals("middle") && (resPos != RES_POSITION.MIDDLE)) {
+                    if (!checkQualifier(fields[4], resPos)) {
                         return;
-                    } else if (fields[4].equals("start") && (resPos != RES_POSITION.START)) {
-                        return;
-                    } else if (fields[4].equals("end") && (resPos != RES_POSITION.END)) {
-                        return;
+
                     }
                 }
                 Atom angleAtom = residue.getAtom(fields[1]);
@@ -377,7 +363,18 @@ public class Sequence {
                 throw new IllegalArgumentException(
                         "Must have less than \"" + maxFields + "\" fields for \"" + description + "\"");
             }
+        }
 
+        boolean checkQualifier(String field, RES_POSITION resPos) {
+            boolean result = false;
+            String[] qualifiers = field.split("\\|");
+            for (String qualifier : qualifiers) {
+                if (resPos.name().equalsIgnoreCase(qualifier)) {
+                    result = true;
+                    break;
+                }
+            }
+            return result;
         }
     }
 
