@@ -623,16 +623,16 @@ public class EnergyLists {
                 }
             }
             if (forceWeight.getStacking() > 0.0) {
-                EnergyCoords eCoords = molecule.getEnergyCoords();
-                stackingEnergy = eCoords.calcStacking(false, forceWeight.getStacking());
-                nStack = eCoords.getNStacking();
-                for (int i = 0; i < nStack; i++) {
-                    ViolationStats stat = eCoords.getStackError(i, limitVal, forceWeight.getStacking());
-                    if (stat != null) {
-                        String errMsg = stat.toString();
-                        writer.print(errMsg);
-                    }
-                }
+//                EnergyCoords eCoords = molecule.getEnergyCoords();
+//                stackingEnergy = eCoords.calcStacking(false, forceWeight.getStacking());
+//                nStack = eCoords.getNStacking();
+//                for (int i = 0; i < nStack; i++) {
+//                    ViolationStats stat = eCoords.getStackError(i, limitVal, forceWeight.getStacking());
+//                    if (stat != null) {
+//                        String errMsg = stat.toString();
+//                        writer.print(errMsg);
+//                    }
+//                }
             }
             if (forceWeight.getDihedralProb() > 0.0) {
                 EnergyCoords eCoords = molecule.getEnergyCoords();
