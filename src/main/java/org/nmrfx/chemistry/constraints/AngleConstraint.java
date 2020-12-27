@@ -77,6 +77,13 @@ public class AngleConstraint implements Constraint {
         if (atoms.length != 4) {
             throw new IllegalArgumentException("Must specify 4 atoms in AngleBoundary constructor");
         }
+        int i = 0;
+        for (Atom atom : atoms) {
+            if (atom == null) {
+                throw new IllegalArgumentException("null atom " + i + " in Angle constraint");
+            }
+            i++;
+        }
         if ((atoms[2].parent != atoms[1]) && (atoms[1].parent != atoms[2])) {
             throw new IllegalArgumentException("Second atom must be parent of first atom, or vice versa");
         }
