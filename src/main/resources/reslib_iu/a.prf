@@ -1,10 +1,10 @@
 LNAME Adenine
 SNAME rade
 RCHAR a
-ATOM   P      P     1.60  120.58  -151.1  1.1662 middle
-ATOM   Pc     Pcg  0.00 120.00 -157.9      0.000 middle
-ATOM   OP1    O2    1.48  109.68  -114.8  -0.7760 middle
-ATOM   OP2    O2    1.48  109.68  -130.4  -0.7760 middle
+ATOM   P      P     1.60  120.58  -151.1  1.1662 middle|end
+ATOM   Pc     Pcg  0.00 120.00 -157.9      0.000 middle|end
+ATOM   OP1    O2    1.48  109.68  -114.8  -0.7760 middle|end
+ATOM   OP2    O2    1.48  109.68  -130.4  -0.7760 middle|end
 ATOM   O5'    OS    1.59  104.38  -71.6   -0.4989
 ATOM   HO5'   HO   1.59 104.38  -71.6      0.4295 start
 ATOM   C5'    CI    1.41  120.54  -67.9   0.0558
@@ -39,8 +39,8 @@ ATOM   N6     N2    1.36  118.10  -180.0  -0.9019
 ATOM   H61    H     1.01  120.00  0.0     0.4115
 ATOM   H62    H     1.01  120.00  -180.0  0.4115
 ATOM   O3'    OS    1.41  112.21  78.2    -0.5246
-FAMILY  -    P    O5'  OP1  OP2 Pc middle
-FAMILY  P    O5'  C5' middle
+FAMILY  -    P    O5'  OP1  OP2 Pc middle|end
+FAMILY  P    O5'  C5' middle|end
 FAMILY  -    O5'  C5' HO5' start
 FAMILY  O5'  C5'  C4' H5' H5''
 FAMILY  C5'  C4'  C3' H4' C4c
@@ -60,7 +60,7 @@ FAMILY  N1   C6   N6 C6p -C5
 FAMILY  C6   N6   H61 H62
 FAMILY  C1'  O4'  -C4'
 FAMILY  C3'  O3'   +
-ANGLE     P      ZETA 2 middle
+ANGLE     P      ZETA 2 middle|end
 ANGLE     O5'      ALPHA 2
 ANGLE     C5'     BETA 2
 ANGLE     C4'     GAMMA 2
