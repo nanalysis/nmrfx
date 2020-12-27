@@ -24,7 +24,6 @@ public class DatasetFactory {
             Constructor constructor = c.getDeclaredConstructor(parameterTypes);
             dataset = (DatasetBase) constructor.newInstance(fullName, name, writable, useCacheFile);
         } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException | SecurityException ex) {
-            System.out.println(" new project fail " + ex.getLocalizedMessage());
             dataset = new DatasetBase(fullName, name, writable, useCacheFile);
         }
         return dataset;
@@ -39,7 +38,6 @@ public class DatasetFactory {
             Constructor constructor = c.getDeclaredConstructor(parameterTypes);
             dataset = (DatasetBase) constructor.newInstance(fullName, title, dimSizes, closeDataset);
         } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException | SecurityException ex) {
-            System.out.println(" new project fail " + ex.getLocalizedMessage());
         }
         return dataset;
     }
@@ -52,7 +50,6 @@ public class DatasetFactory {
             Constructor constructor = c.getDeclaredConstructor(parameterTypes);
             dataset = (DatasetBase) constructor.newInstance(vec);
         } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException | SecurityException ex) {
-            System.out.println(" new project fail " + ex.getLocalizedMessage());
         }
         return dataset;
     }

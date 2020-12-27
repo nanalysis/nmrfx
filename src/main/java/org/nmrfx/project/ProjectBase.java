@@ -54,7 +54,6 @@ public class ProjectBase {
             Constructor constructor = c.getDeclaredConstructor(parameterTypes);
             projectBase = (ProjectBase) constructor.newInstance(name);
         } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException | SecurityException ex) {
-            System.out.println(" new project fail " + ex.getLocalizedMessage());
             projectBase = new ProjectBase(name);
         }
         return projectBase;
