@@ -606,7 +606,7 @@ public class Molecule extends MoleculeBase {
     }
 
     public int genCoordsFast(final double[] dihedralAngles, boolean fillCoords, int iStructure) throws RuntimeException {
-        if (!atoms.isEmpty()) {
+   if (!atoms.isEmpty()) {
             if (fillCoords) {
                 boolean anyInvalid = false;
                 for (Atom atom : atoms) {
@@ -626,7 +626,7 @@ public class Molecule extends MoleculeBase {
             if (genVecs == null) {
                 setupGenCoords();
             }
-            List<Atom> atomList;
+     List<Atom> atomList;
             if (treeAtoms == null) {
                 atomList = atoms;
             } else {
@@ -641,7 +641,7 @@ public class Molecule extends MoleculeBase {
             structures.add(iStructure);
             resetActiveStructures();
             updateVecCoords();
-            return nAngles;
+       return nAngles;
         } else {
             return 0;
         }
