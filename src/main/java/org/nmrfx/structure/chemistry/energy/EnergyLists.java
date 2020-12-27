@@ -1039,7 +1039,7 @@ public class EnergyLists {
             List<DistanceConstraint> distanceList = distanceSet.get();
             for (DistanceConstraint distancePair : distanceList) {
                 double weight;
-                if (distancePair.isBond()) {
+                if (distancePair.isBond() || distanceSet.containsBonds()) {
                     weight = forceWeight.getBondWt();
                 } else {
                     weight = 1.0;
