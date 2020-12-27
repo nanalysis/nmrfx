@@ -1411,11 +1411,12 @@ public class Atom implements IAtom {
         sBuilder.append(String.format("%-8.3f", target));
 
         // target value uncertainty
-        String targetErr = String.valueOf(distPair.getTargetError());
-        if (Double.parseDouble(targetErr) == 0) {
-            targetErr = ".";
+        double targetErr = distPair.getTargetError();
+        if (targetErr  < 1.0e-6) {
+            sBuilder.append(String.format("%-8s", "."));
+        } else {
+            sBuilder.append(String.format("%-8.3f", targetErr));
         }
-        sBuilder.append(String.format("%-8s", targetErr));
 
         // lower limit
         double lower = distPair.getLower();
@@ -1467,7 +1468,7 @@ public class Atom implements IAtom {
 
             // sequence code 
             if (atom.entity instanceof Residue) {
-                seqCode = atom.entity.getIDNum();
+                seqCode = ((Residue) atom.entity).getResNum();
             } else if (atom.entity instanceof Compound) {
                 seqCode = Integer.parseInt(((Compound) atom.entity).getNumber());
             }
@@ -1511,6 +1512,9 @@ public class Atom implements IAtom {
 
         // name
         String name = bound.getName();
+        if (name.equals("")) {
+            name = ".";
+        }
         sBuilder.append(String.format("%6s", name));
 
         return sBuilder.toString();
