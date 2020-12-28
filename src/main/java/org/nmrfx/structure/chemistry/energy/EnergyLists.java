@@ -1038,11 +1038,9 @@ public class EnergyLists {
         for (DistanceConstraintSet distanceSet : molecule.getMolecularConstraints().distanceSets.values()) {
             List<DistanceConstraint> distanceList = distanceSet.get();
             for (DistanceConstraint distancePair : distanceList) {
-                double weight;
+                double weight = distancePair.getWeight();
                 if (distancePair.isBond() || distanceSet.containsBonds()) {
-                    weight = forceWeight.getBondWt();
-                } else {
-                    weight = 1.0;
+                    weight *= forceWeight.getBondWt();
                 }
                 if (stochasticMode) {
                     Atom atom1 = distancePair.getAtomPairs()[0].getAtoms1()[0];
