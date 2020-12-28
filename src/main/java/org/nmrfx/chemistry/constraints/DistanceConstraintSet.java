@@ -242,6 +242,11 @@ public class DistanceConstraintSet implements ConstraintSet, Iterable {
     }
 
     public void addDistanceConstraint(final List<String> filterStrings1, final List<String> filterStrings2,
+            final double rLow, final double rUp) throws IllegalArgumentException {
+        addDistanceConstraint(filterStrings1, filterStrings2, rLow, rUp, false, 1.0, null, null);
+    }
+
+    public void addDistanceConstraint(final List<String> filterStrings1, final List<String> filterStrings2,
             final double rLow, final double rUp, boolean isBond) throws IllegalArgumentException {
         addDistanceConstraint(filterStrings1, filterStrings2, rLow, rUp, isBond, 1.0, null, null);
     }
