@@ -22,7 +22,7 @@ public class PathIterator implements Iterator {
     int lastAtom = 0;
     int min = 3;
     int currentAtom = -1;
-    Map atomMap = new HashMap();
+    Map<IAtom, Integer> atomMap = new HashMap<>();
     PathVars pVars = null;
     NodeValidatorInterface nodeValidator;
     IAtom[] atoms;
@@ -50,10 +50,18 @@ public class PathIterator implements Iterator {
             IAtom atom0 = bonds[i].getAtom(0);
             IAtom atom1 = bonds[i].getAtom(1);
             if ((atom0.getAtomicNumber() >= 1) && (atom1.getAtomicNumber() >= 1)) {
-                int iAtom0 = (Integer) atomMap.get(atom0);
-                int iAtom1 = (Integer) atomMap.get(atom1);
-                String key01 = iAtom0 + " " + iAtom1;
-                String key10 = iAtom1 + " " + iAtom0;
+                Integer iAtom0 = atomMap.get(atom0);
+                Integer iAtom1 = atomMap.get(atom1);
+                if (iAtom0 == null) {
+                    System.out.println("no atom0 " + atom0 + " " + atom1);
+                    continue;
+                }
+                if (iAtom1 == null) {
+                    System.out.println("no atom1 " + atom0 + " " + atom1);
+                    continue;
+                }
+                String key01 = iAtom0 + " " + iAtom1.intValue();
+                String key10 = iAtom1 + " " + iAtom0.intValue();
                 Integer order = getBondOrder(bonds[i]);
                 bondMap.put(key01, order);
                 bondMap.put(key10, order);
