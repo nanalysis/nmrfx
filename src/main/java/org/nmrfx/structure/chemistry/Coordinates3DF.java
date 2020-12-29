@@ -156,23 +156,24 @@ class Coordinates3DF {
          * Set the coordinates of p4. 
          */
         p3.add(cdx, cdy, cdz, p4);
-        return checkDihedral(dihedral, p4);
+        return checkDihedral(dihedral, p4, bndcos, bndsin);
     }
 
-    boolean checkDihedral(double dihedral, FastVector3D p4) {
+    boolean checkDihedral(double dihedral, FastVector3D p4, double bndcos, double bndsin) {
         double calDihedral = FastVector3D.calcDihedral(p1, p2, p3, p4);
         double delta = Math.abs(dihedral - calDihedral);
         boolean ok = true;
         if (delta > Math.PI) {
             delta = 2.0 * Math.PI - delta;
         }
-        if (delta > 1.0e-6) {
+        if (delta > 5.0e-2) {
             ok = false;
-//            System.out.println("dihedral " + dihedral + " " + calDihedral + " " + delta);
-//            System.out.println(p1.toString());
-//            System.out.println(p2.toString());
-//            System.out.println(p3.toString());
-//            System.out.println(p4.toString());
+            System.out.println("dihedral " + dihedral + " " + calDihedral + " " + delta);
+            System.out.println(p1.toString());
+            System.out.println(p2.toString());
+            System.out.println(p3.toString());
+            System.out.println(p4.toString());
+            System.out.println("bnd " + bndcos + " " + bndsin);
         }
         return ok;
 
@@ -187,7 +188,16 @@ class Coordinates3DF {
         FastVector3D dMbc = new FastVector3D();
         m.operate(D2, dMbc);
         p3.add(dMbc, p4);
-        return checkDihedral(dihedral, p4);
+        boolean ok =  checkDihedral(dihedral, p4, bndcos, bndsin);
+        if (!ok || !Double.isFinite(dMbc.getX()) || !Double.isFinite(dMbc.getY()) || !Double.isFinite(dMbc.getZ())) {
+            System.out.println("non finite coords fast");
+            System.out.println(Math.toDegrees(dihedral) + " " + bndcos + " " + bndsin);
+            System.out.println(D2.toString());
+            System.out.println(dMbc.toString());
+            System.out.println(p1.toString() + "\n" + p2.toString() + "\n" + p3.toString());
+            return false;
+        }
+        return ok;
 
     }
 }

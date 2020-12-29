@@ -606,7 +606,7 @@ public class Molecule extends MoleculeBase {
     }
 
     public int genCoordsFast(final double[] dihedralAngles, boolean fillCoords, int iStructure) throws RuntimeException {
-   if (!atoms.isEmpty()) {
+        if (!atoms.isEmpty()) {
             if (fillCoords) {
                 boolean anyInvalid = false;
                 for (Atom atom : atoms) {
@@ -626,7 +626,7 @@ public class Molecule extends MoleculeBase {
             if (genVecs == null) {
                 setupGenCoords();
             }
-     List<Atom> atomList;
+            List<Atom> atomList;
             if (treeAtoms == null) {
                 atomList = atoms;
             } else {
@@ -641,7 +641,7 @@ public class Molecule extends MoleculeBase {
             structures.add(iStructure);
             resetActiveStructures();
             updateVecCoords();
-       return nAngles;
+            return nAngles;
         } else {
             return 0;
         }
@@ -696,8 +696,11 @@ public class Molecule extends MoleculeBase {
                         dihedralAngle += dihedralAngles[nAngles];
                     }
                     nAngles++;
-                    coords.calculateNeRF(dihedralAngle, a4.bndCos, a4.bndSin, v4);
-                  // boolean ok = coords.calculate(dihedralAngle, a4.bndCos, a4.bndSin, v4);
+                    boolean ok = coords.calculateNeRF(dihedralAngle, a4.bndCos, a4.bndSin, v4);
+                    if (!ok) {
+                        System.out.println(a4.getParent() + " " + a4.getFullName() + " " + a4.valanceAngle);
+                    }
+                    // boolean ok = coords.calculate(dihedralAngle, a4.bndCos, a4.bndSin, v4);
                 }
             }
 
