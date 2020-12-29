@@ -924,12 +924,18 @@ public class EnergyLists {
                     }
                     RotamerScore[] rotamerScores = RNARotamer.getNBest(polymer, i, 3, eCoords);
                     double rotamerEnergy = RNARotamer.calcEnergy(rotamerScores);
+                    if (Double.isNaN(rotamerEnergy) || !Double.isFinite(rotamerEnergy)) {
+                        System.out.println("rotamer nan " + rotamerScores.length);
+                    }
                     //System.out.printf("%5.3g  ", rotamerEnergy);
                     if (calcDeriv) {
                         Map<Integer, Double> rotDerivs = RNARotamer.calcDerivs(rotamerScores, rotamerEnergy);
                         for (int atomIndex : rotDerivs.keySet()) {
                             double deriv = forceWeight.getDihedralProb() * rotDerivs.get(atomIndex);
                             derivs[atomIndex] += (deriv);
+                            if (Double.isNaN(derivs[atomIndex]) || !Double.isFinite(derivs[atomIndex])) {
+                                System.out.println("deriv nan");
+                            }
                         }
                     }
                     totalEnergy += (forceWeight.getDihedralProb() * rotamerEnergy);
