@@ -1067,6 +1067,9 @@ class refine:
                     self.molecule.setupRotGroups()
                     #raise TypeError("Tree mode must be run on molecules with more than one entity")
 
+        for entity in self.molecule.getEntities():
+            self.setupAtomProperties(entity)
+
         if linkerList:
             self.addLinkers(linkerList)
 
@@ -1077,8 +1080,6 @@ class refine:
         if 'tree' in data:
             self.setupTree(treeDict)
 
-        for entity in self.molecule.getEntities():
-            self.setupAtomProperties(entity)
 
         self.setup('./',seed,writeTrajectory=False, usePseudo=False)
         self.energy()
