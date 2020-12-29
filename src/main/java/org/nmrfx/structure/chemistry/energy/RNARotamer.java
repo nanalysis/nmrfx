@@ -398,7 +398,6 @@ public class RNARotamer {
            probability. The function takes the polymer and a residue number.
          */
 
-        RotamerScore[] bestScores = new RotamerScore[n];
         double[] testAngles = RNARotamer.getDihedrals(polymer, residueNum, ec);
         List<RotamerScore> rotamerScores = new ArrayList<>();
         for (RNARotamer rotamer : ROTAMERS.values()) {
@@ -406,7 +405,7 @@ public class RNARotamer {
             RotamerScore rotScore = new RotamerScore(rotamer, 0.0, probability, testAngles, null);
             rotamerScores.add(rotScore);
         }
-        rotamerScores = rotamerScores.stream().sorted(Comparator.comparingDouble(RotamerScore::getProb).reversed()).limit(n).collect(Collectors.toList());
+        rotamerScores = rotamerScores.stream().filter(rScore -> (rScore.getProb() > 1.0e-16)).sorted(Comparator.comparingDouble(RotamerScore::getProb).reversed()).limit(n).collect(Collectors.toList());
 
         // The commented out code may be a bit faster but less legible. 
 //        for (RNARotamer rotamer : ROTAMERS.values()) {
@@ -431,6 +430,7 @@ public class RNARotamer {
 //                }
 //            }
 //        }
+        RotamerScore[] bestScores = new RotamerScore[rotamerScores.size()];
         bestScores = rotamerScores.toArray(bestScores);
         return bestScores;
     }
@@ -455,6 +455,9 @@ public class RNARotamer {
          */
         double totalProb = 0;
         for (RotamerScore score : scores) {
+            if (score == null) {
+                continue;
+            }
             score.calcNormDeltas();
             double prob = score.prob;
             if (prob < 10e-200) {
@@ -513,8 +516,11 @@ public class RNARotamer {
                 delta = 2.0 * Math.PI - delta;
             }
             double sdevValue = sdevs[index];
-            double p = (1.0 / (sdevValue * Math.sqrt(2.0 * Math.PI))) * Math.exp(-(delta * delta) / (2.0 * sdevValue * sdevValue));
+            double p = (1.0 / (sdevValue * Math.sqrt(2.0 * Math.PI))) * Math.exp(-(delta * delta) / (2.0 * sdevValue * sdevValue)) + 1.0e-3;
             totalProb *= p;
+        }
+        if (totalProb < 1.0e-15) {
+            totalProb = 1.0e-15;
         }
         if (totalProb > 1) {
             totalProb = 1;
