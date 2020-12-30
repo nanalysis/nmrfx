@@ -576,10 +576,10 @@ public class EnergyLists {
 
             if (forceWeight.getRobson() > 0.0) {
                 EnergyCoords eCoords = molecule.getEnergyCoords();
-                robsonEnergy = eCoords.calcRepel(false, forceWeight.getRobson());
+                robsonEnergy = eCoords.calcRepel(false, forceWeight.getRobson(), forceWeight.getElectrostatic());
                 nRobson = eCoords.getNContacts();
                 for (int i = 0; i < nRobson; i++) {
-                    ViolationStats stat = eCoords.getRepelError(i, limitVal, forceWeight.getRobson());
+                    ViolationStats stat = eCoords.getRepelError(i, limitVal, forceWeight.getRobson(), forceWeight.getElectrostatic());
                     if (stat != null) {
                         String errMsg = stat.toString();
                         writer.print(errMsg);
@@ -587,10 +587,10 @@ public class EnergyLists {
                 }
             } else {
                 EnergyCoords eCoords = molecule.getEnergyCoords();
-                repelEnergy = eCoords.calcRepel(false, forceWeight.getRepel());
+                repelEnergy = eCoords.calcRepel(false, forceWeight.getRepel(), -1.0);
                 nRepel = eCoords.getNContacts();
                 for (int i = 0; i < nRepel; i++) {
-                    ViolationStats stat = eCoords.getRepelError(i, limitVal, forceWeight.getRepel());
+                    ViolationStats stat = eCoords.getRepelError(i, limitVal, forceWeight.getRepel(), -1.0);
                     if (stat != null) {
                         String errMsg = stat.toString();
                         writer.print(errMsg);
@@ -837,7 +837,8 @@ public class EnergyLists {
     public double calcRepelFast(boolean calcDeriv) {
         EnergyCoords eCoords = molecule.getEnergyCoords();
         double weight = forceWeight.getRobson() > 0.0 ? forceWeight.getRobson() : forceWeight.getRepel();
-        double energy = eCoords.calcRepel(calcDeriv, weight);
+        double eWeight = forceWeight.getRobson() > 0.0 ? forceWeight.getElectrostatic() : -1.0;
+        double energy = eCoords.calcRepel(calcDeriv, weight, eWeight);
         if (calcDeriv) {
             eCoords.addRepelDerivs(branches);
         }

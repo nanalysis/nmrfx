@@ -131,22 +131,20 @@ public class EnergyPairs {
             }
         }
         if (dMax > 100000.0) {
-            System.out.print(eCoords.atoms[iAtoms[iMax]].getFullName() + " " + eCoords.atoms[jAtoms[iMax]].getFullName() + " " + dMax + " ");
-            int iAtom = iAtoms[iMax];
-            int jAtom = jAtoms[iMax];
-
-            FastVector3D pv1 = vecCoords[iAtom];
-            FastVector3D pv2 = vecCoords[jAtom];
-            System.out.println(FastVector3D.distance(pv1, pv2));
+            System.out.printf("WARNING: Gradient %8.2g ", dMax);
             ViolationStats stats = getError(iMax, 0.1, 1.0);
             if (stats != null) {
-                System.out.println(stats.toString());
+                System.out.print(stats.toString());
             }
 
         }
     }
 
     public ViolationStats getError(int i, double limitVal, double weight) {
+        return null;
+    }
+
+    public ViolationStats getError(int i, double limitVal, double weight, double eWeight) {
         return null;
     }
 

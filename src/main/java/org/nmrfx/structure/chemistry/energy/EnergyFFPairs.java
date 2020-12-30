@@ -46,7 +46,7 @@ public class EnergyFFPairs extends EnergyDistancePairs {
     }
 
     @Override
-    public double calcEnergy(boolean calcDeriv, double weight) {
+    public double calcEnergy(boolean calcDeriv, double weight, double eWeight) {
         FastVector3D[] vecCoords = eCoords.getVecCoords();
         double sum = 0.0;
         double cutoffScale = -1.0;
@@ -56,6 +56,9 @@ public class EnergyFFPairs extends EnergyDistancePairs {
             double a = aValues[i];
             double b = bValues[i];
             double c = charge[i]; // fixme
+            if (eWeight < 0.0) {
+                c = 0.0;
+            }
 
             FastVector3D iV = vecCoords[iAtom];
             FastVector3D jV = vecCoords[jAtom];
@@ -179,7 +182,7 @@ public class EnergyFFPairs extends EnergyDistancePairs {
         return sum;
     }
 
-    double getEnergy(int i, double r2, double weight) {
+    double getEnergy(int i, double r2, double weight, double eWeight) {
         int iAtom = iAtoms[i];
         int jAtom = jAtoms[i];
         double a = aValues[i];
@@ -190,7 +193,7 @@ public class EnergyFFPairs extends EnergyDistancePairs {
         final double s3 = s * s * s;
         final double s6 = s3 * s3;
         double eV = weight * ((a * s3 - b) * s6);
-        double eE = weight * (c * s);
+        double eE = eWeight < 0.0 ? 0.0 : weight * (c * s);
 //        Atom[] atoms = eCoords.atoms;
 //        System.out.println(atoms[iAtom].getFullName() + " " + atoms[jAtom].getFullName() + " " + eV + " " + eE + " " + (1.0/s));
         return eV + eE;
@@ -198,7 +201,7 @@ public class EnergyFFPairs extends EnergyDistancePairs {
     }
 
     @Override
-    public ViolationStats getError(int i, double limitVal, double weight) {
+    public ViolationStats getError(int i, double limitVal, double weight, double eWeight) {
         String modeType = "FF";
         Atom[] atoms = eCoords.atoms;
         int iAtom = iAtoms[i];
@@ -212,7 +215,7 @@ public class EnergyFFPairs extends EnergyDistancePairs {
         }
         String result = "";
         ViolationStats stat = null;
-        double energy = getEnergy(i, r2, weights[i] * weight);
+        double energy = getEnergy(i, r2, weights[i] * weight, weights[i] * eWeight);
         if (Math.abs(dif) > limitVal) {
             stat = new ViolationStats(2, atoms[iAtom].getFullName(), atoms[jAtom].getFullName(), r, rDis[i], 0.0, energy, eCoords);
         }

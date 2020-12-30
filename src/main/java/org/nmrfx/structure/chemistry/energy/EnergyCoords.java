@@ -168,20 +168,20 @@ public class EnergyCoords {
         return eConstraintPairs.calcEnergy(calcDeriv, weight);
     }
 
-    public double calcRepel(boolean calcDeriv, double weight) {
-        return eDistancePairs.calcEnergy(calcDeriv, weight);
+    public double calcRepel(boolean calcDeriv, double weight, double eWeight) {
+        return eDistancePairs.calcEnergy(calcDeriv, weight, eWeight);
     }
 
     public double calcStacking(boolean calcDeriv, double weight) {
-        return eBaseStackingPairs.calcEnergy(calcDeriv, weight);
+        return eBaseStackingPairs.calcEnergy(calcDeriv, weight, -1.0);
     }
 
     public double calcDistShifts(boolean calcDeriv, double rMax, double intraScale, double weight) {
         return eShiftPairs.calcDistShifts(calcDeriv, rMax, intraScale, weight);
     }
 
-    public ViolationStats getRepelError(int i, double limitVal, double weight) {
-        return eDistancePairs.getError(i, limitVal, weight);
+    public ViolationStats getRepelError(int i, double limitVal, double weight, double eWeight) {
+        return eDistancePairs.getError(i, limitVal, weight, eWeight);
     }
 
     public ViolationStats getNOEError(int i, double limitVal, double weight) {
@@ -482,7 +482,6 @@ public class EnergyCoords {
                                                     double b = Math.sqrt(bValues[iAtom] * bValues[jAtom]);
                                                     double c = cValues[iAtom] * cValues[jAtom];
                                                     c *= 322.0 / 6.0;
-                                                    c = 0.0;  // turn off charge temporarily
                                                     if (adjustClose > 0.01) {
                                                         a *= 0.5;
                                                         b *= 0.5;
