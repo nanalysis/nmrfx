@@ -281,7 +281,7 @@ public class Dihedral {
      * @param fileName
      */
     public void readDihedrals(String fileName) {
-        try ( LineNumberReader lineReader = new LineNumberReader(new BufferedReader(new FileReader(fileName)))) {
+        try (LineNumberReader lineReader = new LineNumberReader(new BufferedReader(new FileReader(fileName)))) {
             while (true) {
                 String string = lineReader.readLine();
                 if (string == null) {
