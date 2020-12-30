@@ -160,6 +160,10 @@ def runStage(stage, refiner, rDyn):
     """
     refiner.setPars(stage['param'])
     refiner.setForces(stage['force'])
+    forceString = refiner.getForces()
+    print forceString
+    parString = refiner.getPars()
+    print parString
     timeStep = rDyn.getTimeStep()/2.0
     gminSteps = stage['gMinSteps']
     if gminSteps:

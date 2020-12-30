@@ -479,6 +479,12 @@ class refine:
         }
         forces = ('elec','robson','repel','dis','tors','dih','irp','shift','bondWt','stack')
         forceWeights = []
+        if 'robson' in forceDict:
+            if forceDict['robson'] > 0.0:
+                forceDict['repel'] = -1.0
+        elif getOrigWeight['robson'] > 0.0:
+                forceDict['repel'] = -1.0
+
         for force in forces:
             forceWeight = forceDict[force] if force in forceDict else getOrigWeight[force]
             if force == 'bondWt' and forceWeight < 1:
@@ -647,17 +653,19 @@ class refine:
             self.bondConstraints.append(distanceConstraint)
 
 
-    def printPars(self):
-         el = self.energyLists
-         coarseGrain = el.getCourseGrain()
-         includeH = el.getIncludeH()
-         hardSphere = el.getHardSphere()
-         deltaStart = el.getDeltaStart()
-         deltaEnd = el.getDeltaEnd()
-         shrinkValue = el.getShrinkValue()
-         shrinkHValue = el.getShrinkHValue()
-         disLim = el.getDistanceLimit()
-         print coarseGrain,includeH,hardSphere,shrinkValue,shrinkHValue,deltaStart,deltaEnd,disLim
+    def getPars(self):
+        el = self.energyLists
+        coarseGrain = el.getCourseGrain()
+        includeH = el.getIncludeH()
+        hardSphere = el.getHardSphere()
+        deltaStart = el.getDeltaStart()
+        deltaEnd = el.getDeltaEnd()
+        shrinkValue = el.getShrinkValue()
+        shrinkHValue = el.getShrinkHValue()
+        disLim = el.getDistanceLimit()
+        fW = self.energyLists.getForceWeight()
+        output = "coarse %5s includeH %5s hard %5.2f shrinkValue %5.2f shrinkHValue %5.2f deltaStart %4d deltaEnd %4d disLim %5.2f" % (coarseGrain,includeH,hardSphere,shrinkValue,shrinkHValue,deltaStart,deltaEnd,disLim)
+        return output
 
     def setPars(self,parsDict):
         if not parsDict:
