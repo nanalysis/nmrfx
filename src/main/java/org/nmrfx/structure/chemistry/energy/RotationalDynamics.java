@@ -638,8 +638,10 @@ public class RotationalDynamics {
         firstRun = false;
         SuperMol superMol = new SuperMol(molecule);
 
-        System.out.printf("%6s %10s %8s %8s %8s %8s %10s %10s %8s %8s\n", "step", "time", "temp", "kinE", "potE", "totE", "deltaE", "timeStep", "rmsAngle", "maxAngle");
-        System.out.printf("%6d %10.3f %8.1f %8.1f %8.1f %8.1f %10.6f %10.6f %8.3f %8.3f %6d\n", currentStep, totalTime, currentTemp, lastKineticEnergy * eScale, lastPotentialEnergy * eScale, lastTotalEnergy * eScale, deltaEnergy, 0.0, 0.0, 0.0, molecule.getEnergyCoords().getNContacts());
+        System.out.printf("RDYN %6s %10s %8s %8s %8s %8s %10s %10s %8s %8s %8s\n",
+                "step", "time", "temp", "kinE", "potE", "totE", "deltaE",
+                "timeStep", "rmsAngle", "maxAngle", "contacts");
+        System.out.printf("RDYN %6d %10.3f %8.1f %8.1f %8.1f %8.1f %10.6f %10.6f %8.3f %8.3f %8d\n", currentStep, totalTime, currentTemp, lastKineticEnergy * eScale, lastPotentialEnergy * eScale, lastTotalEnergy * eScale, deltaEnergy, 0.0, 0.0, 0.0, molecule.getEnergyCoords().getNContacts());
         for (int iStep = 0; iStep < stepsToRun; iStep++) {
             if (((iStep + 1) % dihedrals.updateAt) == 0) {
                 dihedrals.energyList.makeAtomListFast();
@@ -678,7 +680,11 @@ public class RotationalDynamics {
                 double rms = 180.0 * (sumDeltaSq / lastSteps) / Math.PI;
                 double maxDelta = 180.0 * (sumMaxDelta / lastSteps) / Math.PI;
                 double avgStep = (totalTime - lastTime) / lastSteps;
-                System.out.printf("%6d %10.3f %8.1f %8.1f %8.1f %8.1f %10.6f %10.6f %8.3f %8.3f %6d\n", currentStep, totalTime, currentTemp, lastKineticEnergy * eScale, lastPotentialEnergy * eScale, lastTotalEnergy * eScale, sumERef / lastSteps, avgStep, rms, maxDelta, molecule.getEnergyCoords().getNContacts());
+                System.out.printf("RDYN %6d %10.3f %8.1f %8.1f %8.1f %8.1f %10.6f %10.6f %8.3f %8.3f %8d\n",
+                        currentStep, totalTime, currentTemp,
+                        lastKineticEnergy * eScale, lastPotentialEnergy * eScale,
+                        lastTotalEnergy * eScale, sumERef / lastSteps, avgStep,
+                        rms, maxDelta, molecule.getEnergyCoords().getNContacts());
                 sumDeltaSq = 0.0;
                 sumMaxDelta = 0.0;
                 sumERef = 0.0;

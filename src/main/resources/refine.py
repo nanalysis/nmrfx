@@ -2363,9 +2363,13 @@ class refine:
 
         self.updateAt(5)
         self.setForces({'repel':0.5,'dis':1,'dih':5,'irp':irp})
+        forceString = self.getForces()
+        print "FORCES " + forceString
 
         for end in [3,10,20,1000]:
             self.setPars({'useh':False,'dislim':self.disLim,'end':end,'hardSphere':0.15,'shrinkValue':0.20})
+            parString = self.getPars()
+            print "PARS   " + parString
             self.gmin(nsteps=steps,tolerance=1.0e-6)
         if self.eFileRoot != None and self.reportDump:
             self.dump(-1.0,-1.0,self.eFileRoot+'_prep.txt')

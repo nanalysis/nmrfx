@@ -55,7 +55,8 @@ public class GradientRefinement extends Refinement {
             if (converged || (iteration == 1) || ((iteration % reportAt) == 0)) {
                 long time = System.currentTimeMillis();
                 long deltaTime = time - startTime;
-                report(iteration, nEvaluations, deltaTime, dihedrals.energyList.atomList.size(), current.getValue());
+                int nContacts = molecule.getEnergyCoords().getNContacts();
+                report("GMIN", iteration, nContacts, current.getValue());
                 if (trajectoryWriter != null) {
                     if ((progressUpdater != null) || (trajectoryWriter != null)) {
                         molecule.updateFromVecCoords();
@@ -103,6 +104,7 @@ public class GradientRefinement extends Refinement {
                 NonLinearConjugateGradientOptimizer.Formula.POLAK_RIBIERE,
                 new Checker(tolerance, tolerance, nSteps), tolerance, tolerance, 1.0e-5);
         //new SimpleValueChecker(100 * Precision.EPSILON, 100 * Precision.SAFE_MIN));
+        System.out.printf("%-6s %6s %8s %9s\n", "GMIN", "iter", "contacts", "energy");
 
         prepareAngles(false);
         dihedrals.setBoundaries(0.1, false);
@@ -112,7 +114,8 @@ public class GradientRefinement extends Refinement {
         dihedrals.energyList.makeAtomListFast();
         DihedralEnergy dihEnergy = new DihedralEnergy(dihedrals);
         DihedralGradient dihGradient = new DihedralGradient(this);
-        report(0, 0, 0, dihedrals.energyList.atomList.size(), dihEnergy.value(dihedrals.angleValues));
+        int nContacts = molecule.getEnergyCoords().getNContacts();
+        report("GMIN", 0, nContacts, dihEnergy.value(dihedrals.angleValues));
         reportAt = 20;
         if (trajectoryWriter != null) {
             try {

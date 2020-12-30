@@ -15,7 +15,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package org.nmrfx.structure.chemistry.energy;
 
 import org.nmrfx.structure.chemistry.Molecule;
@@ -39,7 +38,11 @@ public abstract class Refinement {
     }
 
     public void report(int iteration, int nEvaluations, long time, int nContacts, double energy) {
-        System.out.printf("%6d %6d %8d %5d %9.2f\n", iteration, nEvaluations, time, nContacts, energy);
+        System.out.printf("MIN %6d %6d %8d %5d %9.2f\n", iteration, nEvaluations, time, nContacts, energy);
+    }
+
+    public void report(String type, int iteration, int nContacts, double energy) {
+        System.out.printf("%-6s %6d %8d %9.2f\n", type, iteration, nContacts, energy);
     }
 
     double energy() {
