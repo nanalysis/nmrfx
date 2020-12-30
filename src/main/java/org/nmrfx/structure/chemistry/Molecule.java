@@ -695,6 +695,9 @@ public class Molecule extends MoleculeBase {
                     } else {
                         dihedralAngle += dihedralAngles[nAngles];
                     }
+                    if (!Double.isFinite(dihedralAngle)) {
+                        System.out.println(nAngles + " " + a4.getFullName());
+                    }
                     nAngles++;
                     boolean ok = coords.calculateNeRF(dihedralAngle, a4.bndCos, a4.bndSin, v4);
                     if (!ok) {
