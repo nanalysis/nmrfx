@@ -4,7 +4,7 @@
 
     <groupId>org.nmrfx</groupId>
     <artifactId>nmrfx-analyst-gui</artifactId>
-    <version>11.1.5</version>
+    <version>11.1.6</version>
     <name>nmrfx-analyst-gui</name>
     <packaging>jar</packaging>
 
@@ -16,25 +16,25 @@
         <dependency>
             <groupId>org.nmrfx</groupId>
             <artifactId>nmrfx-processor</artifactId>
-            <version>11.1.5</version>
+            <version>11.1.6</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.nmrfx</groupId>
             <artifactId>nmrfx-processor-gui</artifactId>
-            <version>11.1.5</version>
+            <version>11.1.6</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.nmrfx</groupId>
             <artifactId>nmrfx-analyst</artifactId>
-            <version>11.1.5</version>
+            <version>11.1.6</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.nmrfx</groupId>
             <artifactId>nmrfx-structure</artifactId>
-            <version>11.1.5</version>
+            <version>11.1.6</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
