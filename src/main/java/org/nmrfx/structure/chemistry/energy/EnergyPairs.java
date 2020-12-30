@@ -44,7 +44,7 @@ public class EnergyPairs {
     public void clear() {
         nPairs = 0;
     }
-    
+
     public void addPair(int i, int j, int iUnit, int jUnit, double r0) {
         addPair(i, j, iUnit, jUnit);
     }
@@ -95,8 +95,14 @@ public class EnergyPairs {
 
         FastVector3D v1 = new FastVector3D();
         FastVector3D v2 = new FastVector3D();
+        int iMax = 0;
+        double dMax = 0.0;
         for (int i = 0; i < nPairs; i++) {
             double deriv = derivs[i];
+            if (Math.abs(deriv) > dMax) {
+                dMax = Math.abs(deriv);
+                iMax = i;
+            }
             if (deriv == 0.0) {
                 continue;
             }
@@ -124,5 +130,24 @@ public class EnergyPairs {
                 branches[jUnit].subtractToG(v2.getValues());
             }
         }
+        if (dMax > 100000.0) {
+            System.out.print(eCoords.atoms[iAtoms[iMax]].getFullName() + " " + eCoords.atoms[jAtoms[iMax]].getFullName() + " " + dMax + " ");
+            int iAtom = iAtoms[iMax];
+            int jAtom = jAtoms[iMax];
+
+            FastVector3D pv1 = vecCoords[iAtom];
+            FastVector3D pv2 = vecCoords[jAtom];
+            System.out.println(FastVector3D.distance(pv1, pv2));
+            ViolationStats stats = getError(iMax, 0.1, 1.0);
+            if (stats != null) {
+                System.out.println(stats.toString());
+            }
+
+        }
     }
+
+    public ViolationStats getError(int i, double limitVal, double weight) {
+        return null;
+    }
+
 }
