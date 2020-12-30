@@ -623,9 +623,9 @@ public class EnergyLists {
                 }
             }
             if (forceWeight.getStacking() > 0.0) {
-//                EnergyCoords eCoords = molecule.getEnergyCoords();
-//                stackingEnergy = eCoords.calcStacking(false, forceWeight.getStacking());
-//                nStack = eCoords.getNStacking();
+                EnergyCoords eCoords = molecule.getEnergyCoords();
+                stackingEnergy = eCoords.calcStacking(false, forceWeight.getStacking());
+                nStack = eCoords.getNStacking();
 //                for (int i = 0; i < nStack; i++) {
 //                    ViolationStats stat = eCoords.getStackError(i, limitVal, forceWeight.getStacking());
 //                    if (stat != null) {
@@ -1294,6 +1294,7 @@ public class EnergyLists {
     }
 
     public void addDeriv(SpatialSet spSet1, SpatialSet spSet2, double deriv, final Point3 pt1, final Point3 pt2) {
+        System.out.println("a " + deriv);
         FastVector pv1 = new FastVector(pt1.toArray());
         FastVector pv2 = new FastVector(pt2.toArray());
 
@@ -1331,6 +1332,7 @@ public class EnergyLists {
     }
 
     public void addDeriv(AtomPair atomPair, double deriv) {
+        System.out.println("b " + deriv);
         Point3 pt1 = atomPair.spSet1.getPoint();
         Point3 pt2 = atomPair.spSet2.getPoint();
         FastVector pv1 = new FastVector(pt1.toArray());
@@ -1400,6 +1402,7 @@ public class EnergyLists {
                 if (REPORTBAD && (Math.abs(dot1 + dot2) > 100000.0)) {
                     System.out.printf("%5d dot1 %9.5g dot2 %9.5g df %9.5g %s\n", i, dot1, dot2, (dot1 + dot2),
                             branches[i].atom.getFullName());
+                    //System.exit(1);
                 }
                 df[k++] = -1.0 * (dot1 + dot2);
             }
