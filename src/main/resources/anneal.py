@@ -24,6 +24,7 @@ def getAnnealStages(dOpt, settings):
         'econVal'        : dOpt['econHigh'],
         'nStepVal'       : stepsHigh,
         'gMinSteps'      : None,
+        'dfreeSteps'      : None,
         'switchFracVal'  : None,
         'param'   : {
                                 'end':1000,
@@ -161,10 +162,14 @@ def runStage(stage, refiner, rDyn):
     refiner.setPars(stage['param'])
     refiner.setForces(stage['force'])
     forceString = refiner.getForces()
-    print forceString
+    print "FORCES " + forceString
     parString = refiner.getPars()
-    print parString
+    print "PARS   " + parString
     timeStep = rDyn.getTimeStep()/2.0
+    if 'dfreeSteps' in stage:
+        dfreeSteps = stage['dfreeSteps']
+        if dfreeSteps:
+            refiner.refine(nsteps=dfreeSteps,radius=20, alg='cmaes');
     gminSteps = stage['gMinSteps']
     if gminSteps:
         refiner.gmin(nsteps=gminSteps, tolerance=1.0e-6)
