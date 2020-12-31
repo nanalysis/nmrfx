@@ -22,6 +22,7 @@ import org.nmrfx.structure.fastlinear.FastVector3D;
 
 class Coordinates3DF {
 
+    public static boolean CHECK_DIHEDRALS = false;
     double ux1, uy1, uz1, ux2, uy2, uz2, ux3, uy3, uz3;
     FastVector3D p1 = null;
     FastVector3D p2 = null;
@@ -188,14 +189,17 @@ class Coordinates3DF {
         FastVector3D dMbc = new FastVector3D();
         m.operate(D2, dMbc);
         p3.add(dMbc, p4);
-        boolean ok =  checkDihedral(dihedral, p4, bndcos, bndsin);
-        if (!ok || !Double.isFinite(dMbc.getX()) || !Double.isFinite(dMbc.getY()) || !Double.isFinite(dMbc.getZ())) {
-            System.out.println("non finite coords fast");
-            System.out.println(Math.toDegrees(dihedral) + " " + bndcos + " " + bndsin);
-            System.out.println(D2.toString());
-            System.out.println(dMbc.toString());
-            System.out.println(p1.toString() + "\n" + p2.toString() + "\n" + p3.toString());
-            return false;
+        boolean ok = true;
+        if (CHECK_DIHEDRALS) {
+            ok = checkDihedral(dihedral, p4, bndcos, bndsin);
+            if (!ok || !Double.isFinite(dMbc.getX()) || !Double.isFinite(dMbc.getY()) || !Double.isFinite(dMbc.getZ())) {
+                System.out.println("non finite coords fast");
+                System.out.println(Math.toDegrees(dihedral) + " " + bndcos + " " + bndsin);
+                System.out.println(D2.toString());
+                System.out.println(dMbc.toString());
+                System.out.println(p1.toString() + "\n" + p2.toString() + "\n" + p3.toString());
+                return false;
+            }
         }
         return ok;
 
