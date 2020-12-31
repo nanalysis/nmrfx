@@ -7,6 +7,7 @@ import os.path
 import glob
 import shutil
 import imp
+import checke
 from super import *
 from java.lang import System
 from java.lang import Runtime
@@ -51,11 +52,15 @@ def calcStructures(calcScript,startStructure,nStructures,dir,nProcesses=4, heapM
     print cmd
     nSubmitted = 0
     processes = [None]*nProcesses
+    startTimes = [None]*nProcesses
+    seedNums = [None]*nProcesses
     fOut = [None]*nProcesses
     myEnv = os.environ.copy()
     myEnv["NMRFXSTR_MEMORY"] = str(heapMemory)
     errStatus = 0
     errExit = False
+    eTimes = []
+    nSeed = 0
 
     while (True):
 
@@ -66,14 +71,17 @@ def calcStructures(calcScript,startStructure,nStructures,dir,nProcesses=4, heapM
             # [DONT submit process] otherwise
             if (processes[i]==None and (not errStatus)):
                 if nSubmitted < nStructures:
-                    strNum = nSubmitted+startStructure
+                    strNum = nSeed+startStructure
                     fOutName = os.path.join(outDir,'cmdout_'+str(strNum)+'.txt')
                     fOut[i] = open(fOutName,'w')
                     processes[i] = subprocess.Popen([cmd,"gen","-d",dir,"-s",str(strNum),calcScript,],stdout=fOut[i],stderr=subprocess.STDOUT,env=myEnv)
+                    startTimes[i] = time.time()
+                    seedNums[i] = strNum
                     pid = processes[i].pid
                     outStr =  "submit %d seed: %3d Structure # %3d of %3d pid %7d" % (i,strNum,(nSubmitted+1),nStructures,pid)
                     print outStr
                     nSubmitted += 1
+                    nSeed += 1
                 else:
                     #print "Submitted all",nStructures
                     break
@@ -83,9 +91,18 @@ def calcStructures(calcScript,startStructure,nStructures,dir,nProcesses=4, heapM
         for i in range(nProcesses):
             if (processes[i] != None):
                 retCode = processes[i].poll()
+                eTime = time.time() - startTimes[i]
                 if (retCode == None):
                     # still running, process hasn't terminated
-                    gotProcess = True
+                    if len(eTimes) > 1 and eTime > (3.0 * sum(eTimes)/len(eTimes)):
+                        nSubmitted -= 1
+                        strNum = seedNums[i]
+                        print "Kill",i,"seed",strNum, "PID",processes[i].pid,"eTime",eTime
+                        processes[i].kill()
+                        fOut[i].close()
+                        processes[i] = None
+                    else:
+                        gotProcess = True
                 else:
                     # if return code is nonzero, then an error occurred
 		    if retCode != 0:
@@ -95,7 +112,11 @@ def calcStructures(calcScript,startStructure,nStructures,dir,nProcesses=4, heapM
                         print "Error captured", i, processes[i].pid
                         print "Please see '{}'".format(fOut[i].name)
                     else:
-                        print "Finished",i,processes[i].pid
+                        eTimes.append(eTime)
+                        nFinished = len(eTimes)
+                        strNum = seedNums[i]
+                        outStr =  "Finish %d seed: %3d Finished    %3d of %3d pid %7d eTime %6.1f" % (i,strNum,nFinished,nStructures,processes[i].pid,eTime)
+                        print outStr
                     processes[i] = None
                     fOut[i].close()
             elif (processes[i] == None and errStatus):
@@ -218,6 +239,8 @@ def parseArgs():
         retCode = calcStructures(calcScript,start,nStructures,homeDir,nProcesses,heapMemory)
     if nKeep > 0 and (not retCode):
         keepStructures(nKeep)
+        checke.outDir = homeDir
+        checke.summary()
     if align and (not retCode):
         if nStructures == 0 and len(args) > 0:
             files = args
