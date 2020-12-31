@@ -201,6 +201,11 @@ public class EnergyFFPairs extends EnergyDistancePairs {
     }
 
     @Override
+    public ViolationStats getError(int i, double limitVal, double weight) {
+        return getError(i, limitVal, weight, -1.0);
+    }
+
+    @Override
     public ViolationStats getError(int i, double limitVal, double weight, double eWeight) {
         String modeType = "FF";
         Atom[] atoms = eCoords.atoms;

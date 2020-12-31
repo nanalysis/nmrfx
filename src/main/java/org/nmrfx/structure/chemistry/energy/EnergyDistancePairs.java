@@ -74,6 +74,11 @@ public class EnergyDistancePairs extends EnergyPairs {
         return sum;
     }
 
+    @Override
+    public ViolationStats getError(int i, double limitVal, double weight, double eWeight) {
+        return getError(i, limitVal, weight);
+    }
+
     public ViolationStats getError(int i, double limitVal, double weight) {
         String modeType = "Rep";
         Atom[] atoms = eCoords.atoms;

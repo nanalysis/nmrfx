@@ -132,7 +132,7 @@ public class EnergyPairs {
         }
         if (dMax > 100000.0) {
             System.out.printf("WARNING: Gradient %8.2g ", dMax);
-            ViolationStats stats = getError(iMax, 0.1, 1.0);
+            ViolationStats stats = getError(iMax, 0.1, 1.0, -1.0);
             if (stats != null) {
                 System.out.print(stats.toString());
             }
