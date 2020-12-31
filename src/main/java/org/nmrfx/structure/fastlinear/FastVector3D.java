@@ -17,6 +17,7 @@
  */
 package org.nmrfx.structure.fastlinear;
 
+import org.apache.commons.math3.util.FastMath;
 import org.apache.commons.math3.util.MathArrays;
 
 /**
@@ -162,7 +163,7 @@ public class FastVector3D extends FastVector {
 
         double normProduct = v1.norm() * v2.norm();
         double dot = v1.dotProduct(v2);
-        return Math.acos(dot / normProduct);
+        return FastMath.acos(dot / normProduct);
     }
 
     public static double volume(FastVector3D a, FastVector3D b, FastVector3D c, FastVector3D d) {
@@ -197,7 +198,7 @@ public class FastVector3D extends FastVector {
         } else if (cosine < -1.0) {
             angle = Math.PI;
         } else {
-            angle = sgn * Math.acos(cosine);
+            angle = sgn * FastMath.acos(cosine);
         }
         return (angle);
 
