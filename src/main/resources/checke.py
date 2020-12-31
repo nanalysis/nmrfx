@@ -104,16 +104,18 @@ def analyzeViols(nStruct,viols,limit):
     mean = sum / nStruct
     return nViol,bound,mean,max,''.join(structIndicators)
 
-def summary(outFiles,limit=0.2):
+def summary(outFiles=[],limit=0.2, minN=2):
     global outDir
     if len(outFiles) == 0:
         outFiles = glob.glob(os.path.join(outDir,'final','final*.txt'))
+        summaryFile = os.path.join(outDir,'final','analysis.txt')
+    else:
+        summaryFile = os.path.join(outDir,'analysis.txt')
     iFile = 0
     viols = {}
     viols['Rep:'] = {}
     viols['Dis:'] = {}
     viols['Shi:'] = {}
-    summaryFile = os.path.join(outDir,'analysis.txt')
     fOut = open(summaryFile,'w')
     for outFile in outFiles:
         f1 = open(outFile,'r')
@@ -143,7 +145,7 @@ def summary(outFiles,limit=0.2):
             #sum
             structIndicators = [' ']*nStruct
             (nViol,bound,mean,max,structIndicators) = analyzeViols(nStruct,viols[type][atoms],limit)
-            if (nViol > 2):
+            if (nViol > minN):
                 if type=="Shi:":
                     atom1 = atoms
                     outLine =  "   %3s %16s - %16s %4d %10.2f %10.2f %10.2f " % (type,atom1,"",nViol,bound,mean,max)
