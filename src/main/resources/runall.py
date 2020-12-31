@@ -98,9 +98,11 @@ def calcStructures(calcScript,startStructure,nStructures,dir,nProcesses=4, heapM
                         nSubmitted -= 1
                         strNum = seedNums[i]
                         print "Kill",i,"seed",strNum, "PID",processes[i].pid,"eTime",eTime
-                        processes[i].kill()
-                        fOut[i].close()
-                        processes[i] = None
+                        try:
+                            processes[i].kill()
+                        finally:
+                            fOut[i].close()
+                            processes[i] = None
                     else:
                         gotProcess = True
                 else:
