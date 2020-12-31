@@ -19,6 +19,7 @@ package org.nmrfx.structure.chemistry.energy;
 
 import org.nmrfx.chemistry.*;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
+import org.apache.commons.math3.util.FastMath;
 import org.nmrfx.chemistry.constraints.AtomDistancePair;
 import org.nmrfx.chemistry.constraints.DistanceConstraint;
 
@@ -152,7 +153,7 @@ public class AtomMath {
         } else if (cosine < -1.0) {
             angle = Math.PI;
         } else {
-            angle = sgn * Math.acos(cosine);
+            angle = sgn * FastMath.acos(cosine);
         }
         return (angle);
 
