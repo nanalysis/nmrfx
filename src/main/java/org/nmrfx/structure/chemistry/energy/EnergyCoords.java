@@ -47,6 +47,7 @@ public class EnergyCoords {
     EnergyConstraintPairs eConstraintPairs;
     EnergyShiftPairs eShiftPairs;
     EnergyBaseStacking eBaseStackingPairs;
+    ForceWeight forceWeight;
     int[] resNums = null;
     Atom[] atoms = null;
     int[] mAtoms = null;
@@ -69,11 +70,21 @@ public class EnergyCoords {
     private static double hbondDelta = 0.60;
 
     public EnergyCoords() {
+        this.forceWeight = new ForceWeight();
         eDistancePairs = new EnergyDistancePairs(this);
         eConstraintPairs = new EnergyConstraintPairs(this);
         eShiftPairs = new EnergyShiftPairs(this);
         eBaseStackingPairs = new EnergyBaseStacking(this);
+    }
 
+    public void setForceWeight(ForceWeight forceWeight) {
+        this.forceWeight = forceWeight;
+        boolean complexFFMode = forceWeight.getRobson() > 0.0;
+        if (complexFFMode && !(eDistancePairs instanceof EnergyFFPairs)) {
+            eDistancePairs = new EnergyFFPairs(this);
+        } else if (!complexFFMode && (eDistancePairs instanceof EnergyFFPairs)) {
+            eDistancePairs = new EnergyDistancePairs(this);
+        }
     }
 
     public FastVector3D[] getVecCoords(int size) {
@@ -101,14 +112,6 @@ public class EnergyCoords {
         nAtoms = size;
 
         return vecCoords;
-    }
-
-    public void setComplexFFMode(boolean complexFFMode) {
-        if (complexFFMode && !(eDistancePairs instanceof EnergyFFPairs)) {
-            eDistancePairs = new EnergyFFPairs(this);
-        } else if (!complexFFMode && (eDistancePairs instanceof EnergyFFPairs)) {
-            eDistancePairs = new EnergyDistancePairs(this);
-        }
     }
 
     public FastVector3D[] getVecCoords() {
@@ -429,7 +432,7 @@ public class EnergyCoords {
 //                                    System.out.println("i " + i + " j " + j + " iCell " + iCell + " " + jCell + " " + iOff + " atom " + iAtom + " " + (jAtom - iAtom - 1) + " " + atom1.getShortName() + " " + atom2.getShortName() + " " + disSq);
 
                                     double limit2R = limit2;
-                                    boolean stackCheck = (atom1.getEntity() != atom2.getEntity()) && atom1.getFlag(Atom.RING) && !atom1.getName().contains("'")
+                                    boolean stackCheck = (forceWeight.getStacking() > 0.0) && (atom1.getEntity() != atom2.getEntity()) && atom1.getFlag(Atom.RING) && !atom1.getName().contains("'")
                                             && atom2.getFlag(Atom.RING) && !atom2.getName().contains("'");
                                     Atom[] planeAtoms1 = null;
                                     Atom[] planeAtoms2 = null;
