@@ -548,7 +548,7 @@ public class Molecule extends MoleculeBase {
         updateAtomArray();
         setupGenCoords();
         energyLists.makeAtomListFast();
-        eCoords.setComplexFFMode(energyLists.getForceWeight().getRobson() > 0.0);
+        eCoords.setForceWeight(energyLists.getForceWeight());
         updateVecCoords();
     }
 

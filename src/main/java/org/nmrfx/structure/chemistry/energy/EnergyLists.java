@@ -220,7 +220,7 @@ public class EnergyLists {
 
     public void setForceWeight(final ForceWeight forceWeight) {
         this.forceWeight = forceWeight;
-        molecule.getEnergyCoords().setComplexFFMode(forceWeight.getRobson() > 0.0);
+        molecule.getEnergyCoords().setForceWeight(forceWeight);
     }
 
     public ForceWeight getForceWeight() {
