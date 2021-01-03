@@ -50,6 +50,30 @@ public class EnergyFFPairs extends EnergyDistancePairs {
         FastVector3D[] vecCoords = eCoords.getVecCoords();
         double sum = 0.0;
         double cutoffScale = -1.0;
+        double rMin = eCoords.forceWeight.getNBMin();
+        double a1 = rMin * 2.0;
+        double b1 = 1.0 / a1 * 0.25;
+        // 0.25  0.83 0.18
+        // 0.5   1.057 0.1661
+        // 0.75  1.4923 0.1513
+        // 1.00  1.880  0.1413
+        if (rMin < 0.35) {
+            a1 = 0.83;
+            b1 = 0.18;
+        } else if (rMin < 0.65) {
+            a1 = 1.057;
+            b1 = 0.1661;
+        } else if (rMin < 0.85) {
+            a1 = 1.4923;
+            b1 = 0.1513;
+        } else {
+            a1 = 1.880;
+            b1 = 0.1413;
+        }
+        double a12 = a1 * a1;
+        double b12 = b1 * b1;
+
+        double c1 = 2.01;
         for (int i = 0; i < nPairs; i++) {
             int iAtom = iAtoms[i];
             int jAtom = jAtoms[i];
@@ -59,47 +83,42 @@ public class EnergyFFPairs extends EnergyDistancePairs {
             if (eWeight < 0.0) {
                 c = 0.0;
             }
-
+//derivative of ( (2.0 + 0.5 *  x^2)/(1.0 + (0.0625 *  x^2 + 1.5) * x^2))
+// derivative of ( 2.0*(a + b *  x^2)/((a+b*x^2)^2 + x^2))
+// derivative of ( 2.0*(1.0 + 0.25 *  x^2)/((1.0+0.25*x^2)^2 + x^2)) 
+//derivative of ( 2.0*(2.0 + 0.15 *  x^2)/((2.0+0.15*x^2)^2 + x^2)) 
+// derivative of ( 2.0*q/(q^2+x^2))
+// derivative of (a*s3-b)*(s6)
             FastVector3D iV = vecCoords[iAtom];
             FastVector3D jV = vecCoords[jAtom];
             double r2 = iV.disSq(jV);
             disSq[i] = r2;
             derivs[i] = 0.0;
             viol[i] = 0.0;
-            if (!calcDeriv) {
-                final double q = 1.0 + 0.25 * r2;
-                final double s = 2.0 * q / (q * q + r2);
-                final double s3 = s * s * s;
-                final double s6 = s3 * s3;
-                double e = weight * ((a * s3 - b) * s6 + c * s);
-                if (cutoffScale >= 0.0) {
-                    e *= cutoffScale;
-                }
-                viol[i] = e;
-                sum += e;
-            } else {
-                final double u = 2.0 + 0.5 * r2;
-                final double v = 1.0 + (0.0625 * r2 + 1.5) * r2;
-                final double s = u / v;
-                final double s2 = s * s;
-                final double s3 = s2 * s;
-                final double s5 = s2 * s3;
-                final double s6 = s3 * s3;
-                final double deds = (9.0 * a * s3 - 6.0 * b) * s5 + c;
-                final double dsdp = (0.5 - (u / v) * (1.5 + 0.125 * r2)) / v;
-                double e = weight * ((a * s3 - b) * s6 + c * s);
+            final double q = a1 + b1 * r2;
+            final double u = c1 * q;
+            final double v = q * q + r2;
+            final double s = u / v;
+            final double s3 = s * s * s;
+            final double s6 = s3 * s3;
+            double e = weight * ((a * s3 - b) * s6 + c * s);
+            viol[i] = e;
+            sum += e;
+            if (calcDeriv) {
+                double s2 = s * s;
+                double s5 = s2 * s3;
+                double deds = (9.0 * a * s3 - 6.0 * b) * s5 + c;
+                double r4 = r2 * r2;
+                double dem2 = (a12 + 2 * a1 * b1 * r2 + b12 * r4 + r2);
+                double dsdp = -(c1 * (a12 * b1 + 2 * a1 * b12 * r2 + a1 + b12 * b1 * r4)) / (dem2 * dem2);
+
                 /*
                  * what is needed is actually the derivitive/r, therefore the r that
                  * would be in following drops out
+                 * double dqdx = 0.5 * r;  
                  */
                 double deriv = deds * dsdp * 2.0 * weight;
-                if (cutoffScale >= 0.0) {
-                    e *= cutoffScale;
-                    deriv *= cutoffScale;
-                }
-                viol[i] = e;
                 derivs[i] = deriv;
-                sum += e;
             }
 
         }
@@ -188,7 +207,12 @@ public class EnergyFFPairs extends EnergyDistancePairs {
         double a = aValues[i];
         double b = bValues[i];
         double c = charge[i]; // fixme
-        final double q = 1.0 + 0.25 * r2;
+        double rMin = eCoords.forceWeight.getNBMin();
+        double a1 = rMin * 2.0;
+        double b1 = 1.0 / a1 * 0.25;
+        final double q = a1 + b1 * r2;
+        final double u = 2.0 * q;
+        final double v = q * q + r2;
         final double s = 2.0 * q / (q * q + r2);
         final double s3 = s * s * s;
         final double s6 = s3 * s3;
