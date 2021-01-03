@@ -40,7 +40,7 @@ H4	1	1.0	1.409000	0.015000	1.0080	0	#H arom. bond. to C with 1 electrwd. group
 H5	1	1.0	1.359000	0.015000	1.0080	0	#H arom.at C with 2 elctrwd. gr,+HCOO group
 HA	1	1.0	1.459000	0.015000	1.0080	0	#H arom. bond. to C without elctrwd. groups
 HC	1	1.0	1.487000	0.015700	1.0080	0	#H aliph. bond. to C without electrwd.group
-HO	1	1.0	0.000000	0.000000	1.0080	1	#hydroxyl group
+HO	1	1.0	1.008000	0.135000	1.0000	1	#hydroxyl group
 HP	1	1.0	1.100000	0.015700	1.0080	0	#H bonded to C next to positively charged gr
 HS	1	1.0	0.600000	0.015700	1.0080	0	#hydrogen bonded to sulphur (pol?)
 HW	1	1.0	0.000000	0.000000	1.0080	0	#H in TIP3P water
