@@ -30,18 +30,19 @@ public class ForceWeight {
     private final double bondWt;
     private final double irp;
     private final double stacking;
+    private final double nbMin;
     final double cutoffSq = 64.0;
     final double cutoffSwitchSq = 36.0;
     final double cutoffDem = 28.0;
 
     public ForceWeight() {
-        this(-1.0, -1.0, 1.0, 1.0, -1.0, -1.0, -1.0, -1.0, 1.0, -1.0);
+        this(-1.0, -1.0, 1.0, 1.0, -1.0, -1.0, -1.0, -1.0, 1.0, -1.0, 0.5);
     }
 
     public ForceWeight(final double electrostatic, final double robson,
             final double repel, final double noe, double tortionAngle,
             double dihedral, double irp, double shift, double bond,
-            double stacking) {
+            double stacking, double nbMin) {
         this.electrostatic = electrostatic;
         this.robson = robson;
         this.repel = repel;
@@ -52,6 +53,7 @@ public class ForceWeight {
         this.shift = shift;
         this.bondWt = bond;
         this.stacking = stacking;
+        this.nbMin = Math.min(1.0, Math.max(0.25, nbMin));
     }
 
     /**
@@ -99,5 +101,9 @@ public class ForceWeight {
 
     public double getStacking() {
         return stacking;
+    }
+
+    public double getNBMin() {
+        return nbMin;
     }
 }
