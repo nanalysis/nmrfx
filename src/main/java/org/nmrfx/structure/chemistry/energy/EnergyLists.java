@@ -651,7 +651,7 @@ public class EnergyLists {
                             double rotamerEnergy = RNARotamer.calcEnergy(rotamerScores);
                             rotamerEnergy *= forceWeight.getDihedralProb();
                             probDih += rotamerEnergy;
-                            writer.format("Tor: %2d %4s %4s %4.3f\n", i, polymer.getResidue(i).getName(), rotamerScores[0].rotamer.name, rotamerEnergy);
+                            writer.format("Tor: %3d %3s %4s %4s %4.3f\n", i, polymer.getResidue(i).getNumber(), polymer.getResidue(i).getName(), rotamerScores[0].rotamer.name, rotamerEnergy);
                         }
                     }
                 }
