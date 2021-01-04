@@ -37,6 +37,7 @@ import org.nmrfx.structure.chemistry.Molecule;
 public class EnergyCoords {
 
     static final double PI32 = Math.PI * Math.sqrt(Math.PI);
+    public static final double RSCALE = Math.pow(2.0, -1.0 / 6.0);
 
     private static final int[][] offsets = {{0, 0, 0}, {1, 0, 0}, {1, 1, 0}, {0, 1, 0}, {-1, 1, 0}, {0, 0, 1},
     {1, 0, 1}, {1, 1, 1}, {0, 1, 1}, {-1, 1, 1}, {-1, 0, 1},
@@ -312,7 +313,7 @@ public class EnergyCoords {
                 }
                 double rMin = iProp.getR();
                 double eMin = Math.abs(iProp.getE());
-                contactRadii[i] = useFF ? Math.pow(2.0, -1.0 / 6) * rMin / 2.0 : rh1;
+                contactRadii[i] = useFF ? RSCALE * rMin / 2.0 : rh1;
                 aValues[i] = 2.0 * eMin * Math.pow(rMin, 9);
                 bValues[i] = 3.0 * eMin * Math.pow(rMin, 6);
                 cValues[i] = atom1.getCharge();
