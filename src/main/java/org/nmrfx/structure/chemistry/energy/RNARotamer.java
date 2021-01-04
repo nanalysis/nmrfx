@@ -621,19 +621,54 @@ public class RNARotamer {
                     }
                     Residue residue = polymer.getResidue(residueNum + delta);
                     Atom atom = residue.getAtom(aName);
-                    angleAtoms[j++] = atom;
-                    if (j == 3) {
+                    angleAtoms[j] = atom;
+                    if (j == 2) {
                         atoms[i] = atom;
                     }
+                    j++;
                 }
                 if (ec == null) {
-                    angles[i++] = AtomMath.calcDihedral(angleAtoms[0].getPoint(), angleAtoms[1].getPoint(), angleAtoms[2].getPoint(), angleAtoms[3].getPoint());
+                    angles[i] = AtomMath.calcDihedral(angleAtoms[0].getPoint(), angleAtoms[1].getPoint(), angleAtoms[2].getPoint(), angleAtoms[3].getPoint());
                 } else {
-                    angles[i++] = ec.calcDihedral(angleAtoms[0].eAtom, angleAtoms[1].eAtom, angleAtoms[2].eAtom, angleAtoms[3].eAtom);
+                    angles[i] = ec.calcDihedral(angleAtoms[0].eAtom, angleAtoms[1].eAtom, angleAtoms[2].eAtom, angleAtoms[3].eAtom);
                 }
+                if (angles[i] < -Math.PI) {
+                    angles[i] = 2.0 * Math.PI + angles[i];
+                } else if (angles[i] > Math.PI) {
+                    angles[i] = angles[i] - 2.0 * Math.PI;
+                }
+                i++;
             }
         }
         return angles;
+    }
+
+    public static void setDihedrals(Residue residue, String suiteName) {
+        RNARotamer rotamer = ROTAMERS.get(suiteName);
+        int j = 0;
+        for (String[] atomNames : suiteAtoms) {
+            String aName = atomNames[3];
+            int colonPos = aName.indexOf(':');
+            int delta = 0;
+            if (colonPos != -1) {
+                String deltaRes = aName.substring(0, colonPos);
+                delta = Integer.valueOf(deltaRes);
+                aName = aName.substring(colonPos + 1);
+            }
+            Residue applyResidue = delta < 0 ? residue.previous : residue;
+            if (applyResidue != null) {
+                Atom atom = applyResidue.getAtom(aName);
+                if (atom == null) {
+                    System.out.println("null " + aName);
+                } else {
+                    double angle = rotamer.angles[j];
+                    System.out.println(atom.getFullName() + " " + Math.toDegrees(angle));
+                    atom.setDihedral(Math.toDegrees(angle));
+                }
+            }
+            j++;
+        }
+        residue.molecule.genCoords(false);
     }
 
 //O3'     P       O5'     C5'     C4'     C3'     O3'
