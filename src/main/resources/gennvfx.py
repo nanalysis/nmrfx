@@ -2,6 +2,7 @@ import sys
 from refine import *
 from molio import readYaml
 import os
+import re
 import osfiles
 import runpy
 from optparse import OptionParser
@@ -36,17 +37,23 @@ def parseArgs():
     parser = OptionParser()
     parser.add_option("-s", "--seed", dest="seed",default='0', help="Random number generator seed")
     parser.add_option("-d", "--directory", dest="directory",default=homeDir, help="Base directory for output files ")
-    parser.add_option("-r", "--report", action="store_true",dest="report",default=False, help="Report violations in energy dump file ")
+    parser.add_option("-v", "--report", action="store_true",dest="report",default=False, help="Report violations in energy dump file ")
+    parser.add_option("-r", "--refine", dest="refineFile",default="", help="Name of file to refine ")
 
     (options, args) = parser.parse_args()
     homeDir = options.directory
     outDir = os.path.join(homeDir,'output')
     finDir = os.path.join(homeDir,'final')
+    refineDir = os.path.join(homeDir,'refine')
     seed = long(options.seed)
     report = options.report
-
-
-
+    refineFile = options.refineFile
+    if refineFile != '':
+        (refineDir,refineFileName) = os.path.split(refineFile)
+        pat = re.compile(r'(.*)\.(pdb|ang)')
+        seedMatch = pat.match(refineFileName)
+        if seedMatch:
+            refineRoot = seedMatch.group(1)
     argFile = args[0]
 
     dataDir = homeDir + '/'
@@ -68,7 +75,18 @@ def parseArgs():
         refiner.rootName = "temp"
         refiner.loadFromYaml(data,seed)
         if 'anneal' in data:
-            refiner.anneal(refiner.dOpt)
+            if refineFile != '':
+                if refineDir == '':
+                    refineDir = '.'
+                refiner.outDir = refineDir
+                if not os.path.exists(refiner.outDir):
+                    os.mkdir(refiner.outDir)
+                refiner.rootName = 'ref_'+refineRoot
+                print 'rootname',refiner.rootName
+                refiner.readAngles(refineFile)
+                refiner.refine(refiner.dOpt)
+            else:
+                refiner.anneal(refiner.dOpt)
         if 'script' in data:
             runpy.run_path(data['script'], init_globals=globals())
         if len(args) > 1:
@@ -76,7 +94,11 @@ def parseArgs():
             runpy.run_path(scriptFile, init_globals=globals())
         refiner.output()
     else:
-        runpy.run_path(argFile)
+        if argFile.endswith(".py"):
+            runpy.run_path(argFile)
+        else:
+            print "script files (" + argFile + ")must end in .py"
+            exit(1)
 
 parseArgs()
 sys.exit()

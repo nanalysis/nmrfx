@@ -1,4 +1,4 @@
-def getAnnealStages(dOpt, settings):
+def getAnnealStages(dOpt, settings, mode='gen'):
     """
     # Parameters:
 
@@ -142,10 +142,35 @@ def getAnnealStages(dOpt, settings):
                             'repel'  : 2.0,
                             }
     }
-    if cffSteps == 0:
-        stages = [stage_prep, stage_hi, stage_anneal_hi,stage_anneal_med,stage_anneal_low, stage_low]
+    stage_refine = {
+        'tempVal'        : [100, 1.0, dOpt['timePowerMed']],
+        'econVal'        : None,
+        'econVal'        : dOpt['econHigh'],
+        'nStepVal'       : 5000,
+        'gMinSteps'      : dOpt['minSteps'],
+        'switchFracVal'  : None,
+        'timestep'       : dOpt['timeStep'],
+        'param'          : {
+                            'end':1000,
+                            'useh' : True,
+                            'hardSphere' : 0.0,
+                            'shrinkValue' : 0.0,
+                            'shrinkHValue' : 0.0,
+                            },
+        'force'          : {
+                            'repel'  : 1.0,
+                             'dih':1.0,
+                            'bondWt' : 25.0,
+                            }
+    }
+
+    if mode == 'refine':
+        stages = [stage_refine, stage_low]
     else:
-        stages = [stage_prep, stage_hi, stage_anneal_hi,stage_anneal_med,stage_anneal_low, stage_cff_reduced, stage_cff_full, stage_low]
+        if cffSteps == 0:
+            stages = [stage_prep, stage_hi, stage_anneal_hi,stage_anneal_med,stage_anneal_low, stage_low]
+        else:
+            stages = [stage_prep, stage_hi, stage_anneal_hi,stage_anneal_med,stage_anneal_low, stage_cff_reduced, stage_cff_full, stage_low]
     stageDict = {}
 
     stageOrder = []
@@ -273,8 +298,8 @@ def runStage(stage, refiner, rDyn):
     if 'dfreeSteps' in stage:
         dfreeSteps = stage['dfreeSteps']
         if dfreeSteps:
-            refiner.refine(nsteps=dfreeSteps,radius=20, alg='cmaes');
-    if 'gminSteps' in stage:
+            refiner.refineNonDeriv(nsteps=dfreeSteps,radius=20, alg='cmaes');
+    if 'gMinSteps' in stage:
         gminSteps = stage['gMinSteps']
         if gminSteps:
             refiner.gmin(nsteps=gminSteps, tolerance=1.0e-6)

@@ -42,12 +42,21 @@ def setOutFiles(refiner,homeDir, seed):
     refiner.outDir = os.path.join(homeDir,'output')
     refiner.eFileRoot = os.path.join(refiner.outDir,'energyDump'+str(seed))
 
+def getSeedStr(refiner):
+   if refiner.mode == 'refine':
+       seedStr = ''
+   else:
+       seedStr = str(refiner.seed)
+   return seedStr
+
 def getAngleFile(refiner):
-   angleFile = os.path.join(refiner.outDir,refiner.rootName+str(refiner.seed)+'.ang')
+   seedStr = getSeedStr(refiner)
+   angleFile = os.path.join(refiner.outDir,refiner.rootName+seedStr+'.ang')
    return angleFile
 
 def getPDBFile(refiner):
-   pdbFile = os.path.join(refiner.outDir,refiner.rootName+str(refiner.seed)+'.pdb')
+   seedStr = getSeedStr(refiner)
+   pdbFile = os.path.join(refiner.outDir,refiner.rootName+seedStr+'.pdb')
    return pdbFile
 
 def logEnergy(refiner, energyStr):
@@ -56,8 +65,9 @@ def logEnergy(refiner, energyStr):
     energyFile.close()
 
 def getEnergyFile(refiner,mode=None):
+   seedStr = getSeedStr(refiner)
    if mode == None:
-       energyFile = os.path.join(refiner.outDir,refiner.rootName+str(refiner.seed)+'.txt')
+       energyFile = os.path.join(refiner.outDir,refiner.rootName+seedStr+'.txt')
    else:
        energyFile = os.path.join(refiner.outDir,refiner.eFileRoot+'_'+mode+'.txt')
    return energyFile

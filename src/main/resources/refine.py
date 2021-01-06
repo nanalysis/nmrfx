@@ -358,13 +358,14 @@ class refine:
         self.molecule = MoleculeFactory.getActive()
         self.entityEntryDict = {} # map of entity to linker atom
         self.reportDump = False
+        self.mode = 'gen'
         if self.molecule != None:
             self.molName = self.molecule.getName()
 
     def setAngleDelta(self,value):
         self.angleDelta = value
 
-    def writeAngles(self,fileName):
+    def writeAngles(self,fileName, includePseudo=False):
         """
         # Parameters:
 
@@ -376,7 +377,7 @@ class refine:
 
         See also: `writeDihedrals(fileName)`
         """
-        self.dihedral.writeDihedrals(fileName)
+        self.dihedral.writeDihedrals(fileName, includePseudo)
 
     def readAngles(self,fileName):
         """
@@ -724,7 +725,7 @@ class refine:
         self.refiner.setTrajectoryWriter(self.trajectoryWriter)
         self.refiner.gradMinimize(nsteps, tolerance)
 
-    def refine(self,nsteps=10000,stopFitness=0.0,radius=0.01,alg="cmaes",ninterp=1.2,lambdaMul=1, nFireflies=18, diagOnly=1.0,useDegrees=False):
+    def refineNonDeriv(self,nsteps=10000,stopFitness=0.0,radius=0.01,alg="cmaes",ninterp=1.2,lambdaMul=1, nFireflies=18, diagOnly=1.0,useDegrees=False):
         print self.energyLists.energy()
         self.energyLists.makeAtomListFast()
         print self.energyLists.energy()
@@ -2366,6 +2367,27 @@ class refine:
         if self.eFileRoot != None and self.reportDump:
             self.dump(-1.0,-1.0,self.eFileRoot+'_prep.txt')
 	#exit()
+
+    def refine(self,dOpt=None):
+        from anneal import runStage
+        from anneal import getAnnealStages
+        dOpt = dOpt if dOpt else dynOptions()
+        self.mode = 'refine'
+
+        rDyn = self.rinertia()
+        rDyn.setKinEScale(dOpt['kinEScale'])
+        energy = self.energy()
+        print 'start energy is', energy
+
+        stages = getAnnealStages(dOpt, self.settings,'refine')
+        for stage in stages:
+            runStage(stage, self, rDyn)
+
+        self.gmin(nsteps=dOpt['polishSteps'],tolerance=1.0e-6)
+        if dOpt['dfreeSteps']> 0:
+            self.refine(nsteps=dOpt['dfreeSteps'],radius=20, alg=dOpt['dfreeAlg']);
+        ec = self.molecule.getEnergyCoords()
+        #ec.exportConstraintPairs('constraints.txt')
 
     def anneal(self,dOpt=None,stage1={},stage2={}):
         from anneal import runStage
