@@ -30,6 +30,7 @@ import org.apache.commons.math3.optim.InitialGuess;
 import org.apache.commons.math3.optim.nonlinear.scalar.ObjectiveFunction;
 import org.apache.commons.math3.optim.MaxEval;
 import org.apache.commons.math3.optim.nonlinear.scalar.ObjectiveFunctionGradient;
+import org.nmrfx.chemistry.Atom;
 import org.nmrfx.utilities.ProgressUpdater;
 import smile.math.BFGS;
 
@@ -228,24 +229,31 @@ public class GradientRefinement extends Refinement {
         dihedrals.angleValues[i] = origValue - 2.0 * delta;
         putDihedrals();
         molecule.genCoords(false, null);
+        molecule.updateVecCoords();
         double energy1 = energy();
 
         dihedrals.angleValues[i] = origValue - delta;
         putDihedrals();
         molecule.genCoords(false, null);
+        molecule.updateVecCoords();
         double energy2 = energy();
 
         dihedrals.angleValues[i] = origValue + delta;
         putDihedrals();
         molecule.genCoords(false, null);
+        molecule.updateVecCoords();
         double energy3 = energy();
 
         dihedrals.angleValues[i] = origValue + 2.0 * delta;
         putDihedrals();
         molecule.genCoords(false, null);
+        molecule.updateVecCoords();
         double energy4 = energy();
 
         dihedrals.angleValues[i] = origValue;
+        putDihedrals();
+        molecule.genCoords(false, null);
+        molecule.updateVecCoords();
         double deriv = (energy1 / 12.0 - 2.0 * energy2 / 3.0 + 2.0 * energy3 / 3.0 - energy4 / 12.0) / delta;
         return deriv;
 
@@ -262,7 +270,7 @@ public class GradientRefinement extends Refinement {
             System.out.println("nAnalytical " + derivatives.length + " nNumeric " + nDerivatives.length);
             System.out.printf("%4s %10s %9s %9s %9s %9s\n", "i", "name", "e1", "e2", "nDer", "aDer");
         }
-        molecule.resetGenCoords();
+        // molecule.resetGenCoords();
         for (int i = 0; i < nAngles; i++) {
             double deriv = calcDeriv(delta, i);
             nDerivatives[i] = deriv;
@@ -273,22 +281,44 @@ public class GradientRefinement extends Refinement {
         return nDerivatives;
     }
 
-    public double calcDerivError(final double delta) {
+    public void dumpAngles() {
+        int nAngles = dihedrals.angleValues.length;
+        for (int i = 0; i < nAngles; i++) {
+            Atom atom = dihedrals.energyList.branches[i].atom;
+            System.out.println("Angles " + atom.getFullName() + " " + atom.daughterAtom.getFullName() + " " + Math.toDegrees(atom.daughterAtom.dihedralAngle));
+        }
+    }
+
+    public double[] calcDerivError(final double delta) {
+        dumpAngles();
         prepareAngles(false);
         getDihedrals();
         int nAngles = dihedrals.angleValues.length;
         EnergyDeriv eDeriv = eDeriv();
         double[] derivatives = eDeriv.getDerivatives();
         double maxError = Double.NEGATIVE_INFINITY;
-        molecule.resetGenCoords();
+        double maxDeriv = Double.NEGATIVE_INFINITY;
+        molecule.updateVecCoords();
+        //molecule.resetGenCoords();
+        molecule.genCoords(false);
+//        dumpAngles();
+        molecule.dumpCoordsGen();
         for (int i = 0; i < nAngles; i++) {
+            Atom atom = dihedrals.energyList.branches[i].atom;
+//            System.out.println("Calc Deriv " + dihedrals.energyList.branches[i].atom.getFullName() + " " + Math.toDegrees(atom.daughterAtom.dihedralAngle));
             double deriv = calcDeriv(delta, i);
+//            System.out.println("Calc Deriv " + dihedrals.energyList.branches[i].atom.getFullName() + " " + Math.toDegrees(atom.daughterAtom.dihedralAngle));
+            if (Math.abs(deriv) > maxDeriv) {
+                maxDeriv = Math.abs(deriv);
+            }
             double deltaDeriv = Math.abs(derivatives[i] - deriv);
             if (deltaDeriv > maxError) {
                 maxError = deltaDeriv;
             }
+//            System.out.println("calc deriv ####### " + i + " " + atom.getFullName() + " " + derivatives[i] + " " + deriv);
         }
-        return maxError;
+        double[] result = {maxDeriv, maxError};
+        return result;
     }
 
 }
