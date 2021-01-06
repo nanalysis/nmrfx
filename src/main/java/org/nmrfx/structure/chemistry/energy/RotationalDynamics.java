@@ -643,7 +643,7 @@ public class RotationalDynamics {
                 "timeStep", "rmsAngle", "maxAngle", "contacts");
         System.out.printf("RDYN %6d %10.3f %8.1f %8.1f %8.1f %8.1f %10.6f %10.6f %8.3f %8.3f %8d\n", currentStep, totalTime, currentTemp, lastKineticEnergy * eScale, lastPotentialEnergy * eScale, lastTotalEnergy * eScale, deltaEnergy, 0.0, 0.0, 0.0, molecule.getEnergyCoords().getNContacts());
         for (int iStep = 0; iStep < stepsToRun; iStep++) {
-            if (((iStep + 1) % dihedrals.updateAt) == 0) {
+            if (((iStep + 1) % dihedrals.energyList.getUpdateAt()) == 0) {
                 dihedrals.energyList.makeAtomListFast();
             }
             if ((dihedrals.energyList.getSwap() != 0) && (((iStep + 1) % dihedrals.energyList.getSwap()) == 0)) {

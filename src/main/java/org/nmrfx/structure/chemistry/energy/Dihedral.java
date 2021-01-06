@@ -66,7 +66,6 @@ public class Dihedral {
     static long startTime = 0;
     double bestEnergy = Double.MAX_VALUE;
     int nEvaluations = 0;
-    int updateAt = 10;
     int reportAt = 100;
     boolean usePseudo = false;
     private boolean usePseudoAsDefault = false;
@@ -151,10 +150,6 @@ public class Dihedral {
         normValues = new double[nNorm];
         inputSigma = new double[nNorm];
         normBoundaries = new double[2][nNorm];
-    }
-
-    public void updateAt(int updateAt) {
-        this.updateAt = updateAt;
     }
 
     public static void seed(long seed) {
@@ -615,7 +610,7 @@ public class Dihedral {
     }
 
     public double nonNormValue(final double[] dihValues) {
-        if ((nEvaluations % updateAt) == 0) {
+        if ((nEvaluations % energyList.getUpdateAt()) == 0) {
             energyList.makeAtomListFast();
         }
         System.arraycopy(dihValues, 0, angleValues, 0, angleValues.length);

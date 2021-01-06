@@ -61,6 +61,7 @@ public class EnergyLists {
     private boolean useCourseGrain = false;
     private int deltaEnd = 0;
     private int deltaStart = 0;
+    private int updateAt = 20;
     private int swapInterval = 0;
     private double hardSphere = 0;
     private double shrinkValue = 0.0;
@@ -140,6 +141,14 @@ public class EnergyLists {
 
     public int getDeltaEnd() {
         return deltaEnd;
+    }
+
+    public void setUpdateAt(final int value) {
+        updateAt = value;
+    }
+
+    public int getUpdateAt() {
+        return updateAt;
     }
 
     public void setShrinkValue(final double value) {
@@ -923,12 +932,14 @@ public class EnergyLists {
                         i++;
                         continue;
                     }
-                    RotamerScore[] rotamerScores = RNARotamer.getNBest(polymer, i, 3, eCoords);
+                    RotamerScore rotamerScore = RNARotamer.getBest(polymer, i, eCoords);
+                    RotamerScore[] rotamerScores = {rotamerScore};
+//                    RotamerScore[] rotamerScores = RNARotamer.getNBest(polymer, i, 1, eCoords);
                     double rotamerEnergy = RNARotamer.calcEnergy(rotamerScores);
                     if (Double.isNaN(rotamerEnergy) || !Double.isFinite(rotamerEnergy)) {
                         System.out.println("rotamer nan " + rotamerScores.length);
                     }
-                    //System.out.printf("%5.3g  ", rotamerEnergy);
+//                    //System.out.printf("%5.3g  ", rotamerEnergy);
                     if (calcDeriv) {
                         Map<Integer, Double> rotDerivs = RNARotamer.calcDerivs(rotamerScores, rotamerEnergy);
                         for (int atomIndex : rotDerivs.keySet()) {
