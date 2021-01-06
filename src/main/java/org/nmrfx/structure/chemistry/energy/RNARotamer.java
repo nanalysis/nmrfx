@@ -435,6 +435,26 @@ public class RNARotamer {
         return bestScores;
     }
 
+    public static RotamerScore getBest(Polymer polymer, int residueNum, EnergyCoords ec) {
+        /* getNBest finds n of the best rotamer confirmations and returns a 
+           list of rotamer scores containing the type of rotamer and the 
+           probability. The function takes the polymer and a residue number.
+         */
+
+        double[] testAngles = RNARotamer.getDihedrals(polymer, residueNum, ec);
+        RotamerScore bestRotamer = null;
+        double best = 0.0;
+        for (RNARotamer rotamer : ROTAMERS.values()) {
+            double probability = rotamer.probability(testAngles, new int[]{0, 1, 2, 3, 4, 5, 6}, rotamer.fraction);
+            if (probability > best) {
+                bestRotamer = new RotamerScore(rotamer, 0.0, probability, testAngles, null);
+                best = probability;
+            }
+
+        }
+        return bestRotamer;
+    }
+
     public static double calcEnergy(Polymer polymer, int residueNum) {
         /* calcRotamerEnergy calculates the rotamer energy of index residueNum.
            This defaults to using  three possible rotamer configureations.
