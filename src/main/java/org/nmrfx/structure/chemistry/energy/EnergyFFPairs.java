@@ -55,6 +55,7 @@ public class EnergyFFPairs extends EnergyDistancePairs {
         double rMin = eCoords.forceWeight.getNBMin();
         double a1 = rMin * 2.0;
         double b1 = 1.0 / a1 * 0.25;
+        double c1 = 2.01;
         // 0.25  0.83 0.18
         // 0.5   1.057 0.1661
         // 0.75  1.4923 0.1513
@@ -68,14 +69,17 @@ public class EnergyFFPairs extends EnergyDistancePairs {
         } else if (rMin < 0.85) {
             a1 = 1.4923;
             b1 = 0.1513;
-        } else {
+        } else if (rMin < 1.1) {
             a1 = 1.880;
             b1 = 0.1413;
+        } else {
+            a1 = 2.5;
+            b1 = 0.068;
+            c1 = 2.03;
         }
         double a12 = a1 * a1;
         double b12 = b1 * b1;
 
-        double c1 = 2.01;
         for (int i = 0; i < nPairs; i++) {
             int iAtom = iAtoms[i];
             int jAtom = jAtoms[i];
