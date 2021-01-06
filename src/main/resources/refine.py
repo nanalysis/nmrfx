@@ -283,6 +283,7 @@ class dynOptions(StrictDict):
 
     defaults = {
         'steps'         : 15000,
+        'cffSteps'         : 0,
         'highTemp'      : 5000.0,
         'medFrac'       : 0.05,
         'update'        : 20,
@@ -323,7 +324,7 @@ def createStrictDict(initDict, type):
     if initDict is None:
         initDict = {}
     allowedKeys = {}
-    allowedKeys['param'] = ['coarse', 'useh', 'hardSphere', 'start', 'end', 'shrinkValue', 'shrinkHValue', 'dislim', 'swap']
+    allowedKeys['param'] = ['coarse', 'useh', 'hardSphere', 'start', 'end', 'shrinkValue', 'shrinkHValue', 'dislim', 'swap','updateAt']
     allowedKeys['force'] = ['elec', 'robson', 'nbmin', 'repel', 'dis', 'tors', 'dih', 'irp', 'shift', 'bondWt','stack']
     allowedKeys = allowedKeys[type]
 
@@ -434,17 +435,6 @@ class refine:
         """
 
         self.dihedral.randomizeAngles()
-
-    def updateAt(self,n):
-        #XXX: Need to complete docstring
-        """
-        # Parameters:
-
-        n (int);
-
-        See also: `updateAt(...)` in Dihedrals.java
-        """
-        self.dihedral.updateAt(n)
 
     def setForces(self,forceDict):
         #XXX: Need to complete docstring
@@ -659,6 +649,7 @@ class refine:
         el = self.energyLists
         coarseGrain = el.getCourseGrain()
         includeH = el.getIncludeH()
+        updateAt = el.getUpdateAt()
         hardSphere = el.getHardSphere()
         deltaStart = el.getDeltaStart()
         deltaEnd = el.getDeltaEnd()
@@ -666,7 +657,7 @@ class refine:
         shrinkHValue = el.getShrinkHValue()
         disLim = el.getDistanceLimit()
         fW = self.energyLists.getForceWeight()
-        output = "coarse %5s includeH %5s hard %5.2f shrinkValue %5.2f shrinkHValue %5.2f deltaStart %4d deltaEnd %4d disLim %5.2f" % (coarseGrain,includeH,hardSphere,shrinkValue,shrinkHValue,deltaStart,deltaEnd,disLim)
+        output = "coarse %5s includeH %5s hard %5.2f shrinkValue %5.2f shrinkHValue %5.2f updateAt %3d deltaStart %4d deltaEnd %4d disLim %5.2f" % (coarseGrain,includeH,hardSphere,shrinkValue,shrinkHValue,updateAt, deltaStart,deltaEnd,disLim)
         return output
 
     def setPars(self,parsDict):
@@ -681,6 +672,7 @@ class refine:
             'shrinkValue' : self.energyLists.setShrinkValue,
             'shrinkHValue': self.energyLists.setShrinkHValue,
             'dislim'      : self.energyLists.setDistanceLimit,
+            'updateAt'      : self.energyLists.setUpdateAt,
             'swap'        : self.energyLists.setSwap
         }
         for par,parValue in parsDict.iteritems():
@@ -2341,9 +2333,8 @@ class refine:
         self.putPseudo(18.0,45.0)
         self.randomizeAngles()
         energy = self.energy()
-        self.updateAt(5)
         self.setForces({'repel':0.5,'dis':1,'dih':5})
-        self.setPars({'useh':False,'dislim':self.disLim,'end':2,'hardSphere':0.0,'shrinkValue':0.20})
+        self.setPars({'useh':False,'dislim':self.disLim,'end':2,'hardSphere':0.0,'shrinkValue':0.20,'updateAt':5})
         if steps > 0:
             self.refine(nsteps=steps,radius=20, alg=alg);
         if gsteps > 0:
@@ -2363,13 +2354,12 @@ class refine:
         forceDict = self.settings.get('force')
         irp = forceDict.get('irp', 0.015) if forceDict else 0.015
 
-        self.updateAt(5)
         self.setForces({'repel':0.5,'dis':1,'dih':5,'irp':irp})
         forceString = self.getForces()
         print "FORCES " + forceString
 
         for end in [3,10,20,1000]:
-            self.setPars({'useh':False,'dislim':self.disLim,'end':end,'hardSphere':0.15,'shrinkValue':0.20})
+            self.setPars({'useh':False,'dislim':self.disLim,'end':end,'hardSphere':0.15,'shrinkValue':0.20,'updateAt':5})
             parString = self.getPars()
             print "PARS   " + parString
             self.gmin(nsteps=steps,tolerance=1.0e-6)
@@ -2381,11 +2371,10 @@ class refine:
         from anneal import runStage
         from anneal import getAnnealStages
         dOpt = dOpt if dOpt else dynOptions()
-        self.annealPrep(dOpt, 100)
-        self.updateAt(dOpt['update'])
-        energy = self.energy()
+
         rDyn = self.rinertia()
         rDyn.setKinEScale(dOpt['kinEScale'])
+
         stages = getAnnealStages(dOpt, self.settings)
         for stage in stages:
             runStage(stage, self, rDyn)

@@ -13,13 +13,32 @@ def getAnnealStages(dOpt, settings):
     """
     from refine import createStrictDict
     steps = dOpt['steps']
+    cffSteps = 0
+    if 'cffSteps' in dOpt:
+         cffSteps = dOpt['cffSteps']
+    
     stepsEnd = dOpt['stepsEnd']
     stepsHigh = int(round(steps*dOpt['highFrac']))
     stepsAnneal1 = int(round((steps-stepsEnd-stepsHigh)*dOpt['toMedFrac']))
     stepsAnneal2 = steps-stepsHigh-stepsEnd-stepsAnneal1
     medTemp = round(dOpt['highTemp'] * dOpt['medFrac'])
 
-    stage1 = {
+    stage_prep = {
+        'ends' : [3,10,20,1000],
+        'param'   : {
+                                'dislim':4.6,
+                                'updateAt': 5,
+                                'useh':False,
+                                'hardSphere':0.15,
+                                'shrinkValue':0.20,
+         },
+        'force'   : {
+                        'repel':0.5,
+                        'dis':1.0,
+                        'dih':5
+                     }
+    }
+    stage_hi = {
         'tempVal'        : dOpt['highTemp'],
         'econVal'        : dOpt['econHigh'],
         'nStepVal'       : stepsHigh,
@@ -28,6 +47,7 @@ def getAnnealStages(dOpt, settings):
         'switchFracVal'  : None,
         'param'   : {
                                 'end':1000,
+                                'updateAt': dOpt['update'],
                                 'useh':False,
                                 'hardSphere':0.15,
                                 'shrinkValue':0.20,
@@ -40,7 +60,7 @@ def getAnnealStages(dOpt, settings):
         'timestep'       : dOpt['timeStep']
     }
 
-    stage2 = {
+    stage_anneal_hi = {
         'tempVal'        : [dOpt['highTemp'], medTemp, dOpt['timePowerHigh']],
         'econVal'        : dOpt['econHigh'],
         'nStepVal'       : int(round((steps-stepsEnd-stepsHigh)*dOpt['toMedFrac'])),
@@ -50,7 +70,7 @@ def getAnnealStages(dOpt, settings):
         'force'          : None
     }
 
-    stage3 = {
+    stage_anneal_med = {
         'tempVal'        : [medTemp, 1.0, dOpt['timePowerMed']],
         'econVal'        : lambda f: dOpt['econHigh']*(pow(0.5,f)),
         'nStepVal'       : steps-stepsHigh-stepsEnd-stepsAnneal1,
@@ -64,7 +84,7 @@ def getAnnealStages(dOpt, settings):
         'force'          : None
     }
 
-    stage4 = {
+    stage_anneal_low = {
         'tempVal'        : None,
         'econVal'        : None,
         'nStepVal'       : None,
@@ -82,7 +102,36 @@ def getAnnealStages(dOpt, settings):
                             }
     }
 
-    stage5 = {
+    stage_cff_reduced = { 
+        'nStepVal' : cffSteps,
+        'switchFracVal': 0.2,
+        'tempVal' : [100.0],
+        'param' : {
+            'dislim' : 6.0
+        },
+        'force' : {
+            'robson' : 1.0,
+            'nbmin' : 1.0,
+            'repel' : -1.0,
+            'tors' : -0.1,
+            'dis' : 40.0,
+            'dih' : 5.0,
+            'irp' : 0.5,
+            'stack' : 0.1
+        }
+    }
+    stage_cff_full = {
+        'nStepVal' : None,
+        'switchFracVal'  : None,
+        'force' : {
+            'robson' : 1.0,
+            'nbmin' : 0.50,
+            'repel' : -1.0,
+        },
+        'param'          : None
+    }
+
+    stage_low = {
         'tempVal'        : 0.0,
         'econVal'        : dOpt['econLow'],
         'nStepVal'       : stepsEnd,
@@ -93,9 +142,18 @@ def getAnnealStages(dOpt, settings):
                             'repel'  : 2.0,
                             }
     }
-    stages = [stage1, stage2, stage3, stage4, stage5]
+    if cffSteps == 0:
+        stages = [stage_prep, stage_hi, stage_anneal_hi,stage_anneal_med,stage_anneal_low, stage_low]
+    else:
+        stages = [stage_prep, stage_hi, stage_anneal_hi,stage_anneal_med,stage_anneal_low, stage_cff_reduced, stage_cff_full, stage_low]
     stageDict = {}
+
+    stageOrder = []
     for i,stage in enumerate(stages):
+        for (k,v) in locals().items():
+            if v is stage:
+                if k != 'stage':
+                    stageName = k
 
         ''' The default settings have the lowest priority '''
         stage['param'] = createStrictDict(stage['param'],'param')
@@ -106,39 +164,75 @@ def getAnnealStages(dOpt, settings):
         stage['force'].strictUpdate(settings.get('force'))
 
         ''' Specific stage settings have the highest priority '''
-        userStageKey = "stage"+str(i+1)
+        userStageKey = stageName
         userStage = settings.get(userStageKey, {})
         if userStage:
             stage['param'].strictUpdate(userStage.get('param'))
             stage['force'].strictUpdate(userStage.get('force'))
-        stageDict[i+1] = stage
-    for key in settings:
-        if len(key) > 7 and key[0:5] == "stage" and key[6] == ".":
-            index = float(key[5:])
-            index1 = int(round(index))
-            baseStage = stages[index1-1]
+        stageDict[stageName] = stage
+        stageOrder.append(stageName)
+    newStageNames={}
+    while (True):
+        newOrder = []
+        foundNew = False
+        for stageName in stageOrder:
+            newOrder.append(stageName)
+            for key in settings:
+                if key.startswith('stage_'):
+                    if key in stageDict:
+                        continue
+                    userStage = settings.get(key, {})
+                    if not 'after' in userStage:
+                        print 'no after key in stage ' + key
+                        exit(1)
+                    prevStageName = userStage['after']
+                    newStageNames[key]=prevStageName
+                    prevStageName = 'stage_' + prevStageName
+                    if prevStageName == stageName:
+                        baseStage = stageDict[prevStageName]
+                        newStage = dict(baseStage)
+                        newStage['param'] = createStrictDict(baseStage['param'],'param')
+                        newStage['force'] = createStrictDict(baseStage['force'],'force')
+                        newOrder.append(key)
+                        stageDict[key] = newStage
+                        for kk in userStage:
+                            if not kk == 'after':
+                                if kk != 'param' and kk != 'force':
+                                    newStage[kk] = userStage.get(kk)
+                                else:
+                                    newStage[kk].strictUpdate(userStage.get(kk))
+                        foundNew = True
+                        break
+        stageOrder = list(newOrder)
+        if not foundNew:
+            break
+    for newStageName in newStageNames:
+        if not newStageName in stageDict:        
+            print 'no location for ' + newStageName
+            exit(1)
 
-            newStage = dict(baseStage)
-            newStage['param'] = createStrictDict(baseStage['param'],'param')
-            newStage['force'] = createStrictDict(baseStage['force'],'force')
-
-            userStage = settings.get(key, {})
-            if userStage:
-                for kk in userStage:
-                    if kk != 'param' and kk != 'force':
-                        newStage[kk] = userStage.get(kk)
-                    else:
-                        newStage[kk].strictUpdate(userStage.get(kk))
-                stageDict[index] = newStage
-    keys = stageDict.keys()
-    keys.sort()
     stages=[]
-    for key in keys:
-        stages.append(stageDict[key])
+    for stageName in stageOrder:
+        stages.append(stageDict[stageName])
     return stages
 
-
 initialize = True
+
+def annealPrep(refiner,  ends,  steps=100):
+    ranfact=20.0
+    refiner.setSeed(refiner.seed)
+    refiner.randomizeAngles()
+    energy = refiner.energy()
+
+    for end in ends:
+        refiner.setPars({'end':end})
+        parString = refiner.getPars()
+        print "PARS   " + parString
+        refiner.gmin(nsteps=steps,tolerance=1.0e-6)
+    if refiner.eFileRoot != None and refiner.reportDump:
+        refiner.dump(-1.0,-1.0,refiner.eFileRoot+'_prep.txt')
+    energy = refiner.energy()
+
 def runStage(stage, refiner, rDyn):
     """
     Runs a stage of the dynamics using a stage dictionary that has
@@ -165,14 +259,28 @@ def runStage(stage, refiner, rDyn):
     print "FORCES " + forceString
     parString = refiner.getPars()
     print "PARS   " + parString
-    timeStep = rDyn.getTimeStep()/2.0
+
+    prep = True
+    if 'ends' in stage:
+        ends = stage['ends']
+        if 'gminSteps' in stage:
+            gminSteps = stage['gMinSteps']
+        else:
+            gminSteps = 100
+        annealPrep(refiner,  ends, gminSteps)
+        return
+
     if 'dfreeSteps' in stage:
         dfreeSteps = stage['dfreeSteps']
         if dfreeSteps:
             refiner.refine(nsteps=dfreeSteps,radius=20, alg='cmaes');
-    gminSteps = stage['gMinSteps']
-    if gminSteps:
-        refiner.gmin(nsteps=gminSteps, tolerance=1.0e-6)
+    if 'gminSteps' in stage:
+        gminSteps = stage['gMinSteps']
+        if gminSteps:
+            refiner.gmin(nsteps=gminSteps, tolerance=1.0e-6)
+
+
+    timeStep = rDyn.getTimeStep()/2.0
     tempFunc = stage.get('tempVal')
     if tempFunc is not None:
         if callable(tempFunc):
@@ -191,7 +299,10 @@ def runStage(stage, refiner, rDyn):
                 else:
                     upTemp, downTemp, powVal = tempFunc
                 tempLambda = lambda f: (upTemp - downTemp) * pow((1.0 - f), powVal) + downTemp
-        econLambda = stage['econVal']
+        if 'econVal' in stage:
+            econLambda = stage['econVal']
+        else:
+            econLambda = None
         if econLambda == None:
             econLambda = 0.001
         nSteps = stage['nStepVal']
