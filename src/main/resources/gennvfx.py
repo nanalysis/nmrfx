@@ -41,6 +41,7 @@ def dumpStages():
     for stage in stages:
         yaml = Yaml()
         data = yaml.load(str(stage))
+        print 'stage:'
         for k in data:
             v = data[k]
             if isinstance(v,LinkedHashMap):
@@ -57,12 +58,16 @@ def parseArgs():
     parser.add_option("-s", "--seed", dest="seed",default='0', help="Random number generator seed")
     parser.add_option("-d", "--directory", dest="directory",default=homeDir, help="Base directory for output files ")
     parser.add_option("-v", "--report", action="store_true",dest="report",default=False, help="Report violations in energy dump file ")
+    parser.add_option("-g", "--stages", action="store_true",dest="dumpStages",default=False, help="Dump stages")
     parser.add_option("-r", "--refine", dest="refineFile",default="", help="Name of file to refine ")
 
-    #dumpStages()
-    exit(0)
 
     (options, args) = parser.parse_args()
+
+    if options.dumpStages:
+        dumpStages()
+        exit(0)
+
     homeDir = options.directory
     outDir = os.path.join(homeDir,'output')
     finDir = os.path.join(homeDir,'final')
