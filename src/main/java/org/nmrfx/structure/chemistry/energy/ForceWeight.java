@@ -53,7 +53,7 @@ public class ForceWeight {
         this.shift = shift;
         this.bondWt = bond;
         this.stacking = stacking;
-        this.nbMin = Math.min(1.0, Math.max(0.25, nbMin));
+        this.nbMin = Math.min(1.25, Math.max(0.25, nbMin));
     }
 
     /**
