@@ -5,8 +5,10 @@ import os
 import re
 import osfiles
 import runpy
+import anneal
 from optparse import OptionParser
 from org.yaml.snakeyaml import Yaml
+from java.util import LinkedHashMap
 
 yamlStr = '''  
 anneal :
@@ -31,6 +33,23 @@ def genNEFYaml(fileName):
     data = yaml.load(input)
     return data
 
+def dumpStages():
+    global refiner
+    refiner=refine()
+    dOpt = dynOptions()
+    stages = anneal.getAnnealStages(dOpt,{})
+    for stage in stages:
+        yaml = Yaml()
+        data = yaml.load(str(stage))
+        for k in data:
+            v = data[k]
+            if isinstance(v,LinkedHashMap):
+                print "    " + k + " : "
+                for k2 in v:
+                    v2 = v[k2]
+                    print "        " + k2 + " : " + str(v2)
+            else:
+                print "    " + k + " : " + str(v)
 
 def parseArgs():
     homeDir = os.getcwd()
@@ -39,6 +58,9 @@ def parseArgs():
     parser.add_option("-d", "--directory", dest="directory",default=homeDir, help="Base directory for output files ")
     parser.add_option("-v", "--report", action="store_true",dest="report",default=False, help="Report violations in energy dump file ")
     parser.add_option("-r", "--refine", dest="refineFile",default="", help="Name of file to refine ")
+
+    #dumpStages()
+    exit(0)
 
     (options, args) = parser.parse_args()
     homeDir = options.directory
