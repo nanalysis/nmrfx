@@ -285,11 +285,13 @@ public class Dihedral {
                 String[] fields = string.split(" ");
                 Atom atom = MoleculeBase.getAtomByName(fields[0]);
                 double dihedral = Double.parseDouble(fields[1]);
-                atom.dihedralAngle = (float) (dihedral / toDeg);
+                atom.daughterAtom.dihedralAngle = (float) (dihedral / toDeg);
             }
             molecule.genCoords();
         } catch (FileNotFoundException fnE) {
+            System.out.println(fnE.getMessage());
         } catch (IOException ioE) {
+            System.out.println(ioE.getMessage());
         }
     }
 
