@@ -33,24 +33,30 @@ def genNEFYaml(fileName):
     data = yaml.load(input)
     return data
 
-def dumpStages():
+def dumpStages(mode):
     global refiner
     refiner=refine()
     dOpt = dynOptions()
-    stages = anneal.getAnnealStages(dOpt,{})
-    for stage in stages:
+    print "anneal:"
+    print "    dynOptions: "
+    print "        steps : " + str(dOpt['steps'])
+    print "        highTemp : " + str(dOpt['highTemp'])
+    
+    stages = anneal.getAnnealStages(dOpt,{},mode)
+    for stageName in stages:
+        stage = stages[stageName]
         yaml = Yaml()
         data = yaml.load(str(stage))
-        print 'stage:'
+        print "    " + stageName+':'
         for k in data:
             v = data[k]
             if isinstance(v,LinkedHashMap):
-                print "    " + k + " : "
+                print "        " + k + " : "
                 for k2 in v:
                     v2 = v[k2]
-                    print "        " + k2 + " : " + str(v2)
+                    print "            " + k2 + " : " + str(v2)
             else:
-                print "    " + k + " : " + str(v)
+                print "        " + k + " : " + str(v)
 
 def parseArgs():
     homeDir = os.getcwd()
@@ -58,14 +64,14 @@ def parseArgs():
     parser.add_option("-s", "--seed", dest="seed",default='0', help="Random number generator seed")
     parser.add_option("-d", "--directory", dest="directory",default=homeDir, help="Base directory for output files ")
     parser.add_option("-v", "--report", action="store_true",dest="report",default=False, help="Report violations in energy dump file ")
-    parser.add_option("-g", "--stages", action="store_true",dest="dumpStages",default=False, help="Dump stages")
+    parser.add_option("-g", "--stages", dest="dumpMode",default="", help="Dump Stages")
     parser.add_option("-r", "--refine", dest="refineFile",default="", help="Name of file to refine ")
 
 
     (options, args) = parser.parse_args()
 
-    if options.dumpStages:
-        dumpStages()
+    if options.dumpMode != "":
+        dumpStages(options.dumpMode)
         exit(0)
 
     homeDir = options.directory

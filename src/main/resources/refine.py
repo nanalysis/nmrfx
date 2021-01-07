@@ -2380,7 +2380,8 @@ class refine:
         print 'start energy is', energy
 
         stages = getAnnealStages(dOpt, self.settings,'refine')
-        for stage in stages:
+        for stageName in stages:
+            stage = stages[stageName]
             runStage(stage, self, rDyn)
 
         self.gmin(nsteps=dOpt['polishSteps'],tolerance=1.0e-6)
@@ -2398,7 +2399,8 @@ class refine:
         rDyn.setKinEScale(dOpt['kinEScale'])
 
         stages = getAnnealStages(dOpt, self.settings)
-        for stage in stages:
+        for stageName in stages:
+            stage = stages[stageName]
             runStage(stage, self, rDyn)
 
         self.gmin(nsteps=dOpt['polishSteps'],tolerance=1.0e-6)
