@@ -29,6 +29,7 @@ def getAnnealStages(dOpt, settings, mode='gen'):
         'param'   : {
                                 'dislim':4.6,
                                 'updateAt': 5,
+                                'swap': 20,
                                 'useh':False,
                                 'hardSphere':0.15,
                                 'shrinkValue':0.20,
@@ -36,6 +37,7 @@ def getAnnealStages(dOpt, settings, mode='gen'):
         'force'   : {
                         'repel':0.5,
                         'dis':1.0,
+                        'irp' : 0.05,
                         'dih':5
                      }
     }

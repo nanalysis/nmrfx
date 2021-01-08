@@ -992,7 +992,7 @@ class refine:
             #print "linker added between " + startAtom + " and " + endAtom
         return linkerList
 
-    def loadFromYaml(self,data, seed, pdbFile=""):
+    def loadFromYaml(self,data, seed, fileName=""):
         #XXX: Need to complete docstring
         """
         This procedure grabs the data presented in the YAML file and executes a series
@@ -1002,8 +1002,13 @@ class refine:
         molData = {}
 	residues = None
 
-        if pdbFile != '':
-            molio.readPDB(pdbFile)
+        if fileName != '':
+            if fileName.endswith('.pdb'):
+                molio.readPDB(fileName)
+            elif fileName.endswith('.nef'):
+		self.NEFReader(fileName)
+            else:
+                raise ValueError("Filename must end in .pdb or .nef")
         else:
 	    # Checks if NEF file is specified to process it.
 	    # Even if NEF file is specified, this control flow

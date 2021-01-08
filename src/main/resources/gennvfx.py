@@ -33,10 +33,12 @@ def genNEFYaml(fileName):
     data = yaml.load(input)
     return data
 
-def dumpStages(mode):
+def dumpStages(mode, nefFile):
     global refiner
     refiner=refine()
     dOpt = dynOptions()
+    if (nefFile != ""):
+        print "nef : " + nefFile
     print "anneal:"
     print "    dynOptions: "
     print "        steps : " + str(dOpt['steps'])
@@ -64,14 +66,16 @@ def parseArgs():
     parser.add_option("-s", "--seed", dest="seed",default='0', help="Random number generator seed")
     parser.add_option("-d", "--directory", dest="directory",default=homeDir, help="Base directory for output files ")
     parser.add_option("-v", "--report", action="store_true",dest="report",default=False, help="Report violations in energy dump file ")
-    parser.add_option("-g", "--stages", dest="dumpMode",default="", help="Dump Stages")
+    parser.add_option("-y", "--stages", dest="dumpYamlMode",default="", help="Dump stages to .yaml file")
     parser.add_option("-r", "--refine", dest="refineFile",default="", help="Name of file to refine ")
+    parser.add_option("-f", "--file", dest="sourceFile",default="", help="Name of file to load ")
 
 
     (options, args) = parser.parse_args()
+    sourceFile = options.sourceFile
 
-    if options.dumpMode != "":
-        dumpStages(options.dumpMode)
+    if options.dumpYamlMode != "":
+        dumpStages(options.dumpYamlMode, sourceFile)
         exit(0)
 
     homeDir = options.directory
@@ -87,7 +91,10 @@ def parseArgs():
         seedMatch = pat.match(refineFileName)
         if seedMatch:
             refineRoot = seedMatch.group(1)
-    argFile = args[0]
+
+    argFile = ""
+    if len(args) > 0:
+        argFile = args[0]
 
     dataDir = homeDir + '/'
     outDir = os.path.join(homeDir,'output')
@@ -99,6 +106,8 @@ def parseArgs():
         data = readYaml(argFile)
     elif argFile.endswith('.nef'):
         data = genNEFYaml(argFile)
+    elif sourceFile.endswith('.nef'):
+        data = genNEFYaml(sourceFile)
 
     if data != None:
         global refiner
@@ -106,7 +115,7 @@ def parseArgs():
         osfiles.setOutFiles(refiner,dataDir, seed)
         refiner.setReportDump(report) # if -r seen == True; else False
         refiner.rootName = "temp"
-        refiner.loadFromYaml(data,seed)
+        refiner.loadFromYaml(data,seed,sourceFile)
         if 'anneal' in data:
             if refineFile != '':
                 if refineDir == '':
