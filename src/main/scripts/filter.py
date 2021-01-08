@@ -16,8 +16,14 @@ if 'windows' in get_os_version():
 else:
     props = props.replace('./','')
     elems = props.split(':')
+    for elem in elems[1:]:
+         if elem.startswith("nmrfx-analyst"):
+             print elem
+             version = elem[14:-4]
+             print version
 firstElem = elems[0].replace('classpath=','')
 with open('target/Manifest.txt','w') as f1:
+    f1.write("Implementation-Version: " +  version + "\n")
     f1.write('Class-Path:')
     f1.write(" "+firstElem+"\n")
     for elem in elems[1:]:
