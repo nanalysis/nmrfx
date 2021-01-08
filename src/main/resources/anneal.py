@@ -73,7 +73,7 @@ def getAnnealStages(dOpt, settings, mode='gen'):
 
     stage_anneal_med = {
         'tempVal'        : [medTemp, 1.0, dOpt['timePowerMed']],
-        'econVal'        : lambda f: dOpt['econHigh']*(pow(0.5,f)),
+        'econVal'        : [dOpt['econHigh'],0.5],
         'nStepVal'       : steps-stepsHigh-stepsEnd-stepsAnneal1,
         'gMinSteps'      : dOpt['minSteps'],
         'switchFracVal'  : dOpt['switchFrac'],
@@ -313,6 +313,26 @@ def runStage(stage, refiner, rDyn):
 
     timeStep = rDyn.getTimeStep()/2.0
     tempFunc = stage.get('tempVal')
+    econLambda = None
+    if 'econVal' in stage:
+        econFunc = stage['econVal']
+        if callable(econFunc):
+            econLambda = econFunc
+        else:
+            if econFunc == None:
+                econLambda = 0.001
+            elif isinstance(econFunc,float):
+                econLambda = econFunc
+            else:
+                if len(econFunc) == 1:
+                    upLambda = econFunc[0]
+                    powBase = 0.5
+                else:
+                    upLambda, powBase = econFunc
+                econLambda =  lambda f: upLambda*(pow(powBase,f))
+    if econLambda == None:
+        econLambda = 0.001
+
     if tempFunc is not None:
         if callable(tempFunc):
             tempLambda = tempFunc
@@ -330,12 +350,7 @@ def runStage(stage, refiner, rDyn):
                 else:
                     upTemp, downTemp, powVal = tempFunc
                 tempLambda = lambda f: (upTemp - downTemp) * pow((1.0 - f), powVal) + downTemp
-        if 'econVal' in stage:
-            econLambda = stage['econVal']
-        else:
-            econLambda = None
-        if econLambda == None:
-            econLambda = 0.001
+
         nSteps = stage['nStepVal']
         global initialize
         if initialize:
