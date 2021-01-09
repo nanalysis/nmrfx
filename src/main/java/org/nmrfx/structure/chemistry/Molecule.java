@@ -562,7 +562,7 @@ public class Molecule extends MoleculeBase {
             AngleTreeGenerator aTreeGen = new AngleTreeGenerator();
             atomTree = aTreeGen.genTree(this, null, null);
         }
-        nullCoords();
+        //nullCoords();
         //dumpCoordsGen();
         genVecs = CoordinateGenerator.setupCoords(atomTree);
         CoordinateGenerator.prepareAtoms(atoms);
