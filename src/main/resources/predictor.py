@@ -8,7 +8,7 @@ import molio
 from org.yaml.snakeyaml import Yaml
 from java.io import FileInputStream
 from org.nmrfx.structure.chemistry.predict import ProteinPredictor
-from org.nmrfx.processor.datasets import Nuclei
+from org.nmrfx.datasets import Nuclei
 
 homeDir =  os.getcwd( )
 dataDir = homeDir + '/'
