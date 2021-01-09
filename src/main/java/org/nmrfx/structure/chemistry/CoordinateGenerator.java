@@ -89,7 +89,11 @@ public class CoordinateGenerator {
                     //                    if (fillCoords) {
                     //                       continue;
                     //                    }
-                    throw new RuntimeException("genCoords: coordinates the same for " + i + " " + pts[2].toString());
+                    throw new RuntimeException("genCoords: coordinates the same for "
+                            + i + " " + pts[0].toString() + " "
+                            + " " + pts[1].toString()
+                            + " " + pts[2].toString()
+                            + atoms.get(genVecs[i][2]).getFullName());
                 }
                 double dihedralAngle = 0;
                 for (int j = 3; j < genVecs[i].length; j++) {
