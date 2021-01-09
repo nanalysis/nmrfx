@@ -9,6 +9,7 @@ import anneal
 from optparse import OptionParser
 from org.yaml.snakeyaml import Yaml
 from java.util import LinkedHashMap
+from org.nmrfx.chemistry.io import NMRNEFWriter
 
 yamlStr = '''  
 anneal :
@@ -69,6 +70,7 @@ def parseArgs():
     parser.add_option("-y", "--yaml", dest="dumpYamlMode",default="", help="Dump stages to .yaml file")
     parser.add_option("-r", "--refine", dest="refineFile",default="", help="Name of file to refine ")
     parser.add_option("-f", "--file", dest="sourceFile",default="", help="Name of file to load ")
+    parser.add_option("-n", "--nef", dest="nefOutFile",default="", help="Name of nef file to write ")
 
 
     (options, args) = parser.parse_args()
@@ -116,6 +118,9 @@ def parseArgs():
         refiner.setReportDump(report) # if -r seen == True; else False
         refiner.rootName = "temp"
         refiner.loadFromYaml(data,seed,sourceFile)
+        if options.nefOutFile != '':
+            NMRNEFWriter.writeAll(options.nefOutFile)
+            exit(0)
         if 'anneal' in data:
             if refineFile != '':
                 if refineDir == '':
@@ -135,6 +140,7 @@ def parseArgs():
             scriptFile = args[1]
             runpy.run_path(scriptFile, init_globals=globals())
         refiner.output()
+
     else:
         if argFile.endswith(".py"):
             runpy.run_path(argFile)
