@@ -195,7 +195,8 @@ def parseArgs():
     parser.add_option("-s", "--start", dest="start",default='0', help="Starting number for structures (0)")
     parser.add_option("-p", "--nprocesses", dest="nProcesses",default=nProcesses, help="Number of simultaneous processes (nCpu)")
     parser.add_option("-a", "--align", action="store_true", dest="align", default=False, help="Align structures (False)")
-    parser.add_option("-b", "--base", dest="base",default='super', help="Base name for superimposed files (super)")
+    parser.add_option("-b", "--base", dest="baseName",default='sup_', help="Base name (prefix) for superimposed files (sup_)")
+    parser.add_option("-t", "--type", dest="type",default='cif', help="File type for superimposed files (cif)")
     parser.add_option("-d", "--directory", dest="directory",default=homeDir, help="Base directory for output files ")
     parser.add_option("-c", "--clean", action="store_true", dest="clean", default=False, help="Clean Directories (False)")
     parser.add_option("-m", "--memory", dest="heapMemory",default='512', help="Amount of heap memory to use in MBytes")
@@ -218,7 +219,6 @@ def parseArgs():
     start = int(options.start)
     nProcesses = int(options.nProcesses)
     align = options.align
-    base = options.base
     if nKeep == 0:
         if nStructures <= 10:
             nKeep = nStructures
@@ -249,7 +249,7 @@ def parseArgs():
         else:
             files = glob.glob(os.path.join(finDir,'final*.pdb'))
         if len(files) > 1:
-            runAllSuper(files)
+            runAllSuper(files, options.type, options.baseName)
 
 parseArgs()
 
