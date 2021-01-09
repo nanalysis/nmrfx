@@ -4,6 +4,9 @@ import runpy
 
 sys.argv.pop(0)
 if len(sys.argv) > 0:
+    if sys.argv[0] == "-h":
+        print "usage: nmrfxs batch|gen|predict|score|summary|super|train|script.py"
+        exit(0)
     if sys.argv[0] == "batch":
         import runall
     elif sys.argv[0] == "score":
