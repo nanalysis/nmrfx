@@ -65,8 +65,8 @@ def parseArgs():
     parser = OptionParser()
     parser.add_option("-s", "--seed", dest="seed",default='0', help="Random number generator seed")
     parser.add_option("-d", "--directory", dest="directory",default=homeDir, help="Base directory for output files ")
-    parser.add_option("-v", "--report", action="store_true",dest="report",default=False, help="Report violations in energy dump file ")
-    parser.add_option("-y", "--stages", dest="dumpYamlMode",default="", help="Dump stages to .yaml file")
+    parser.add_option("-v", "--viol", action="store_true",dest="report",default=False, help="Report violations during calculations in energy dump file ")
+    parser.add_option("-y", "--yaml", dest="dumpYamlMode",default="", help="Dump stages to .yaml file")
     parser.add_option("-r", "--refine", dest="refineFile",default="", help="Name of file to refine ")
     parser.add_option("-f", "--file", dest="sourceFile",default="", help="Name of file to load ")
 
