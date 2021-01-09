@@ -29,9 +29,25 @@ do
     cp -r -p ../../target/${PRG}-*-bin/${PRG}* .
     sdir=`ls -d ${PRG}-*`
     cd $sdir
+    echo $sdir
+
+    if [[ $os == "linux-amd64" ]]
+    then
+        rm lib/*-mac*
+        rm lib/*-win*
+    fi
+
+    if [[ $os == "windows-amd64" ]]
+    then
+        rm lib/*-linux*
+        rm lib/*-win*
+    fi
+
     if [[ $os == "macosx-amd64" ]]
     then
         cp -R -p ${JREHOME}/$jreFileName .
+        rm lib/*-linux*
+        rm lib/*-win*
     else
         mkdir jre
         cd jre
