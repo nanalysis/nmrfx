@@ -46,14 +46,15 @@ def parseArgs():
     parser.add_argument("-R", dest="resListI", default="*", help="Residues to include in comparison")
     parser.add_argument("-A", dest="atomListI", default="*", help="Atoms to include in comparison")
     parser.add_argument("-c", dest="refCompare", action='store_true', help="Whether to compare calculated structures to reference structure, and save output to a file.")
-    parser.add_argument("-s", dest="saveModels", default=None, help="Whether to save aligned models.")
+    parser.add_argument("-t", dest="type", default=None, help="Type (cif|pdb) for saved aligned models. No files saved if None (None)")
+    parser.add_argument("-b", dest="baseName", default="sup_", help="Base name (prefix) for superimposed file names.")
     parser.add_argument("-n", dest="nCore", default=5, type=int, help="Number of core residue cycles. Default is 5.")
     parser.add_argument("fileNames",nargs="*")
     args = parser.parse_args()
     if (args.nCore < 0):
         print "Error: n must be >= 0."
         sys.exit()
-    if args.saveModels is not None and args.saveModels != 'cif' and args.saveModels != 'pdb':
+    if args.type is not None and args.type != 'cif' and args.type != 'pdb':
         print "Error: save models file type must be cif or pdb."
         sys.exit()
     if len(args.fileNames) > 1:
@@ -178,7 +179,7 @@ def sortByStructNum(val):
         sNum = sys.maxint
     return sNum
 
-def saveModels(mol, files, type):
+def saveModels(mol, files, type, prefix):
     active = mol.getActiveStructures()
     if type == 'cif':
         mol.resetActiveStructures()
@@ -187,13 +188,13 @@ def saveModels(mol, files, type):
             treeSet = TreeSet(sNums)
             mol.setActiveStructures(treeSet)
         molName = mol.getName()
-        cifFile = os.path.join(os.getcwd(), molName + "_all.cif")
+        cifFile = os.path.join(os.getcwd(), prefix + molName + "_all.cif")
         out = FileWriter(cifFile)
         MMcifWriter.writeAll(out, molName)
     elif type == 'pdb':
         for (i,file) in zip(active,files):
             (dir,fileName) = os.path.split(file)
-            newFileName = 'sup_' + fileName
+            newFileName = prefix  + fileName
             newFile = os.path.join(dir,newFileName)
             molio.savePDB(mol, newFile, i)
 
@@ -283,12 +284,13 @@ def runSuper(args):
         superImpose(mol, minI, coreRes,'c*,n*,o*,p*')
     (dir,fileName) = os.path.split(files[0])
     (base,ext) = os.path.splitext(fileName)
-    if args.saveModels is not None:
-        type = args.saveModels
-        saveModels(mol, files, type)
+    if args.type is not None:
+        type = args.type
+        prefix = args.baseName
+        saveModels(mol, files, type, prefix)
 
-def runAllSuper(files):
+def runAllSuper(files, type, prefix):
     batchArgs = argparse.Namespace(atomListE='', atomListI="ca,c,n,o,p,o5',c5',c4',c3',o3'",
                                 fileNames=files, nCore=5, refCompare=False, resListE='',
-                                resListI='*', saveModels='cif')
+                                resListI='*', type=type, baseName=prefix)
     runSuper(batchArgs)
