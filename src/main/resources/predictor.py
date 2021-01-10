@@ -31,11 +31,30 @@ def predictProtein(mol, outputMode="star"):
     pred.predict(-1)
     dumpPredictions(mol, outputMode)
 
+def dumpLigandPredictions(mol, location=-1):
+    ligands = mol.getLigands()
+    for ligand in ligands:
+        for atom in ligand.getAtoms():
+            atomName = atom.getName()
+            if (location < 0):
+                value = ligand.getAtom(atomName).getRefPPM(-location-1)
+            else:
+                value = ligand.getAtom(atomName).getPPM(location)
+            if value != None and value.isValid():
+                value = value.getValue()
+                valueErr = atom.getSDevRefPPM()
+                valueStr = "%5s %.2f" % (atomName,value)
+                print valueStr
+
+
 def dumpPredictions(mol, location=-1, outputMode="star"):
     polymers = mol.getPolymers()
     if outputMode == "protein":
+        resStr = "%4s %7s" % ("Num","Name")
+        print resStr,
         for atomName in ('N','CA','CB','C','H','HA(2)','HA3'):
-            print atomName,
+            valueStr = "%6s" % atomName
+            print valueStr,
         print ""
     iAtom = 1
     iAtom = 1
@@ -44,7 +63,8 @@ def dumpPredictions(mol, location=-1, outputMode="star"):
     for polymer in polymers:
         for residue in polymer.iterator():
             if outputMode == "protein":
-                print residue.getNumber(), residue.getName(),
+                resStr = "%4s %7s" % (residue.getNumber(), residue.getName())
+                print resStr,
                 for atomName in ('N','CA','CB','C','H','HA','HA3'):
                     if residue.getName() == "GLY" and atomName == 'HA':
                         atomName = 'HA2'
@@ -56,8 +76,8 @@ def dumpPredictions(mol, location=-1, outputMode="star"):
                             value = residue.getAtom(atomName).getRefPPM(-location-1)
                         else:
                             value = residue.getAtom(atomName).getPPM(location)
-                        if value != None:
-                            valueStr = "%6.2f" % (value)
+                        if value != None and value.isValid():
+                            valueStr = "%6.2f" % (value.getValue())
                             print valueStr,
                         else:
                             print "  _   ",
@@ -66,9 +86,13 @@ def dumpPredictions(mol, location=-1, outputMode="star"):
                 atoms = residue.getAtoms()
                 for atom in atoms:
                     atomName = atom.getName()
-                    value = atom.getRefPPM()
-                    valueErr = atom.getSDevRefPPM()
-                    if value != None:
+                    if (location < 0):
+                        value = residue.getAtom(atomName).getRefPPM(-location-1)
+                    else:
+                        value = residue.getAtom(atomName).getPPM(location)
+                    if value != None and value.isValid():
+                        value = value.getValue()
+                        valueErr = atom.getSDevRefPPM()
                         #valueStr = "%s.%s %.2f %.2f" % (residue.getNumber(),atomName,value,valueErr)
                         elemName = atom.getElementName()
                         nuclei = Nuclei.findNuclei(elemName)
@@ -135,6 +159,12 @@ def predictWithStructure(fileName, location = -1, outputMode="star", predMode="d
         mol = molio.readPDB(fileName)
     elif fileName.endswith('.cif'):
         mol = molio.readMMCIF(fileName)
+    elif fileName.endswith('.sdf'):
+        cmpd = molio.readSDF(fileName)
+        mol = cmpd.molecule
+    elif fileName.endswith('.mol'):
+        cmpd = molio.readSDF(fileName)
+        mol = cmpd.molecule
     else:
         print 'Invalid file type'
         exit(1)
@@ -142,6 +172,7 @@ def predictWithStructure(fileName, location = -1, outputMode="star", predMode="d
     pred=Predictor()
     pred.predictMolecule(mol, location, predMode == 'rc')
     dumpPredictions(mol, location, outputMode)
+    dumpLigandPredictions(mol, location)
 
 def parseArgs():
     parser = argparse.ArgumentParser(description="predictor options")
