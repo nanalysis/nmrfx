@@ -90,7 +90,6 @@ def isRNA(mol):
                 break
     return rna
                 
-
 def predictRNAWithYaml(fileName, iRef, outputMode, predMode):
     input = FileInputStream(fileName)
     yaml = Yaml()
