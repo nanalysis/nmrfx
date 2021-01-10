@@ -366,10 +366,8 @@ public class Predictor {
             molecule.updateVecCoords();
             EnergyCoords eCoords = molecule.getEnergyCoords();
             // eCoords.setCells(eCoords.getShiftPairs(), 10000, rMax, 0.0, true, 0.0, 0.0);
-            System.out.println("pred");
             eCoords.calcDistShifts(false, getRMax(), intraScale, 1.0);
         } else {
-            System.out.println("rmax " + getRMax());
             List<Atom> atoms = polymer.getAtoms();
             for (Atom atom : atoms) {
                 String aName = atom.getName();
