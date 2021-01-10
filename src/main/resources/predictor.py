@@ -31,7 +31,7 @@ def predictProtein(mol, outputMode="star"):
     pred.predict(-1)
     dumpPredictions(mol, outputMode)
 
-def dumpPredictions(mol, iRef=-1, outputMode="star"):
+def dumpPredictions(mol, location=-1, outputMode="star"):
     polymers = mol.getPolymers()
     if outputMode == "protein":
         for atomName in ('N','CA','CB','C','H','HA(2)','HA3'):
@@ -52,10 +52,10 @@ def dumpPredictions(mol, iRef=-1, outputMode="star"):
                     if atom == None:
                         print "  _   ",
                     else:
-                        if (iRef < 0):
-                            value = residue.getAtom(atomName).getRefPPM()
+                        if (location < 0):
+                            value = residue.getAtom(atomName).getRefPPM(-location-1)
                         else:
-                            value = residue.getAtom(atomName).getPPM()
+                            value = residue.getAtom(atomName).getPPM(location)
                         if value != None:
                             valueStr = "%6.2f" % (value)
                             print valueStr,
@@ -90,7 +90,7 @@ def isRNA(mol):
                 break
     return rna
                 
-def predictRNAWithYaml(fileName, iRef, outputMode, predMode):
+def predictRNAWithYaml(fileName, location, outputMode, predMode):
     input = FileInputStream(fileName)
     yaml = Yaml()
     data = yaml.load(input)
@@ -102,10 +102,10 @@ def predictRNAWithYaml(fileName, iRef, outputMode, predMode):
     mol = refiner.molecule
     vienna = data['rna']['vienna']
 
-    predictRNAWithAttributes(mol, vienna, iRef, outputMode, predMode)
+    predictRNAWithAttributes(mol, vienna, location, outputMode, predMode)
 
 
-def predictRNAWithStructureAttributes(fileName, vienna, iRef = -1, outputMode="star", predMode="dist"):
+def predictRNAWithStructureAttributes(fileName, vienna, location = -1, outputMode="star", predMode="dist"):
     if fileName.endswith('.pdb'):
         mol = molio.readPDB(fileName)
     elif fileName.endswith('.cif'):
@@ -117,14 +117,13 @@ def predictRNAWithStructureAttributes(fileName, vienna, iRef = -1, outputMode="s
     viennaStr = ""
     for char in vienna:
         viennaStr += char
-    predictRNAWithAttributes(mol, viennaStr, iRef, outputMode, predMode)
+    predictRNAWithAttributes(mol, viennaStr, location, outputMode, predMode)
 
-def predictRNAWithAttributes(mol, vienna, iRef = -1, outputMode="star", predMode="dist"):
-    mol.setDotBracket(vienna)
-    rnapred.predictFromSequence()
-    dumpPredictions(mol, iRef, outputMode)
+def predictRNAWithAttributes(mol, vienna, location = -1, outputMode="star", predMode="dist"):
+    rnapred.predictFromSequence(mol, vienna, location)
+    dumpPredictions(mol, location, outputMode)
 
-def predictWithStructure(fileName, iRef = -1, outputMode="star", predMode="dist"):
+def predictWithStructure(fileName, location = -1, outputMode="star", predMode="dist"):
     if fileName.endswith('.pdb'):
         mol = molio.readPDB(fileName)
     elif fileName.endswith('.cif'):
@@ -134,12 +133,12 @@ def predictWithStructure(fileName, iRef = -1, outputMode="star", predMode="dist"
         exit(1)
 
     pred=Predictor()
-    pred.predictMolecule(mol, iRef, predMode == 'rc')
-    dumpPredictions(mol, iRef, outputMode)
+    pred.predictMolecule(mol, location, predMode == 'rc')
+    dumpPredictions(mol, location, outputMode)
 
 def parseArgs():
     parser = argparse.ArgumentParser(description="predictor options")
-    parser.add_argument("-l", dest="iRef", default=-1, type=int,  help="Only violations with an error of at least this amount will be reported (0.2)")
+    parser.add_argument("-l", dest="location", default=-1, type=int,  help="Location to store prediction in.  Values less than one go into "reference" locations. (-1)")
     parser.add_argument("-m", dest="predMode", default="dist", help="Only violations that occur in at least this number of structures will be reported (2).")
     parser.add_argument("-o", dest="outputMode", default="star", help="Only violations that occur in at least this number of structures will be reported (2).")
     parser.add_argument("fileNames",nargs="*")
@@ -148,9 +147,9 @@ def parseArgs():
 
     for fileName in args.fileNames:
         if fileName.endswith('.yaml'):
-             predictRNAWithYaml(fileName, args.iRef, args.outputMode, args.predMode)
+             predictRNAWithYaml(fileName, args.location, args.outputMode, args.predMode)
         else:
              if args.predMode == "attr":
-                 predictRNAWithStructureAttributes(fileName, args.iRef, args.outputMode, args.predMode)
+                 predictRNAWithStructureAttributes(fileName, args.location, args.outputMode, args.predMode)
              else:
-                 predictWithStructure(fileName, args.iRef, args.outputMode, args.predMode)
+                 predictWithStructure(fileName, args.location, args.outputMode, args.predMode)
