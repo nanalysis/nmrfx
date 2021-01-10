@@ -18,10 +18,13 @@ def parseArgs():
     parser.add_option("-y", "--yaml", dest="yamlFile", default=None)
 
     #Will now be used to add addition files to parse that are not included in the yaml file
-    parser.add_option("-c", "--convert", action='store_true', dest="modifyFileType", default=False) # not used!
+#    parser.add_option("-c", "--convert", action='store_true', dest="modifyFileType", default=False) # not used!
     parser.add_option("-s", "--shifts", dest="shiftFile", default=None)
     parser.add_option("-d", "--distances", dest="disFile", default=None)
     parser.add_option("-r", "--range", dest="resRange", default="")
+    parser.add_option("-l", dest="limDis", default=0.2, help="Only violations with an error of at least this amount will be reported (0.2)")
+    parser.add_option("-n", dest="nViols", default=2, help="Only violations that occur in at least this number of structures will be reported (2).")
+
 
     (options, args) = parser.parse_args()
     outDir = os.path.join(homeDir,options.outDir)
@@ -37,6 +40,8 @@ def parseArgs():
 
     changeRange = (options.resRange != '')
     range = options.resRange
+    limDis = float(options.limDis)
+    nViols = int(options.nViols)
 
     if (options.yamlFile != None):
         input = FileInputStream(options.yamlFile)
@@ -94,7 +99,7 @@ def parseArgs():
                 dict['range'] = range
  
     outFiles = loadPDBModels(pdbFiles,data,outDir)
-    summary(outFiles)
+    summary(outFiles, limDis, nViols)
 
 
 def checkIncluded(constraintArray,newDict):

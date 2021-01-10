@@ -2,6 +2,7 @@ import sys
 import os
 import glob
 import os.path
+import argparse
 from org.nmrfx.structure.chemistry import Molecule
 from org.nmrfx.structure.chemistry.energy import EnergyLists
 from org.nmrfx.structure.chemistry import SuperMol
@@ -39,7 +40,7 @@ def loadPDBModels(files, yaml, out):
 
     iFile = 1
     refiner = refine()
-    refiner.loadFromYaml(yaml,0,pdbFile=files[0])
+    refiner.loadFromYaml(yaml,0,fileName=files[0])
 
     if not os.path.exists(outDir):
         os.mkdir(outDir)
@@ -50,7 +51,7 @@ def loadPDBModels(files, yaml, out):
     data = []
     for file in files:
         outFile = os.path.join(outDir,'output'+str(iFile)+'.txt')
-        pdb.readCoordinates(file,0,False, False)
+        pdb.readCoordinates(file,0,False, True)
         mol = Molecule.getActive()
         refiner.setPars({'coarse':False,'useh':True,'dislim':4.6,'end':10000,'hardSphere':0.0,'shrinkValue':0.0, 'shrinkHValue':0.0})
 
@@ -157,3 +158,14 @@ def summary(outFiles=[],limit=0.2, minN=2):
                     fOut.write('|'+structIndicators+'|')
                 fOut.write('\n')
     fOut.close()
+
+
+def parseArgs():
+    parser = argparse.ArgumentParser(description="summary options")
+    parser.add_argument("-l", dest="limDis", default=0.2, help="Only violations with an error of at least this amount will be reported (0.2)")
+    parser.add_argument("-n", dest="nViols", default=2, help="Only violations that occur in at least this number of structures will be reported (2).")
+    parser.add_argument("fileNames",nargs="*")
+
+    args = parser.parse_args()
+
+    summary(args.fileNames, float(args.limDis), int(args.nViols))

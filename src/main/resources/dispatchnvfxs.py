@@ -14,11 +14,12 @@ if len(sys.argv) > 0:
     elif sys.argv[0] == "summary":
         import checke
         checke.outDir = os.getcwd()
-        checke.summary(sys.argv[1:])
+        checke.parseArgs()
     elif sys.argv[0] == "gen":
         import gennvfx
     elif sys.argv[0] == "predict":
         import predictor
+        predictor.parseArgs()
     elif sys.argv[0] == "super":
         import super
         super.parseArgs()
