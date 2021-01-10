@@ -233,12 +233,16 @@ public class Predictor {
         proteinPredictor.predict(iRef);
     }
 
-    public void predictMolecule(Molecule mol, int iRef) throws InvalidMoleculeException, IOException {
+    public void predictMolecule(Molecule mol, int iRef, boolean rcMode) throws InvalidMoleculeException, IOException {
 
         boolean hasPeptide = false;
         for (Polymer polymer : mol.getPolymers()) {
             if (isRNA(polymer)) {
-                predictRNAWithDistances(polymer, 0, iRef, false);
+                if (rcMode) {
+                    predictRNAWithRingCurrent(polymer, 0, iRef);
+                } else {
+                    predictRNAWithDistances(polymer, 0, iRef, false);
+                }
             } else if (polymer.isPeptide()) {
                 hasPeptide = true;
             }

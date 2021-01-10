@@ -2,12 +2,15 @@ import sys
 from refine import *
 import os
 import osfiles
+import argparse
 import runpy
 import rnapred
 import molio
 from org.yaml.snakeyaml import Yaml
 from java.io import FileInputStream
 from org.nmrfx.structure.chemistry.predict import ProteinPredictor
+from org.nmrfx.structure.rna import RNAAnalysis
+from org.nmrfx.structure.chemistry.predict import Predictor
 from org.nmrfx.datasets import Nuclei
 
 homeDir =  os.getcwd( )
@@ -16,15 +19,21 @@ outDir = os.path.join(homeDir,'output')
 
 argFile = sys.argv[-1]
 
-def predictProtein(mol, tableMode=False):
+def predictRNA(mol, outputMode="star"):
+    refiner=refine()
+    shifts = refiner.predictRNAShifts()
+    dumpPredictions(mol)
+
+
+def predictProtein(mol, outputMode="star"):
     pred=ProteinPredictor()
     pred.init(mol)
     pred.predict(-1)
-    dumpPredictions(mol, tableMode)
+    dumpPredictions(mol, outputMode)
 
-def dumpPredictions(mol, tableMode=False):
+def dumpPredictions(mol, iRef=-1, outputMode="star"):
     polymers = mol.getPolymers()
-    if tableMode:
+    if outputMode == "protein":
         for atomName in ('N','CA','CB','C','H','HA(2)','HA3'):
             print atomName,
         print ""
@@ -34,7 +43,7 @@ def dumpPredictions(mol, tableMode=False):
     iRes = 1
     for polymer in polymers:
         for residue in polymer.iterator():
-            if tableMode:
+            if outputMode == "protein":
                 print residue.getNumber(), residue.getName(),
                 for atomName in ('N','CA','CB','C','H','HA','HA3'):
                     if residue.getName() == "GLY" and atomName == 'HA':
@@ -43,7 +52,10 @@ def dumpPredictions(mol, tableMode=False):
                     if atom == None:
                         print "  _   ",
                     else:
-                        value = residue.getAtom(atomName).getRefPPM()
+                        if (iRef < 0):
+                            value = residue.getAtom(atomName).getRefPPM()
+                        else:
+                            value = residue.getAtom(atomName).getPPM()
                         if value != None:
                             valueStr = "%6.2f" % (value)
                             print valueStr,
@@ -78,8 +90,9 @@ def isRNA(mol):
                 break
     return rna
                 
-if argFile.endswith('.yaml'):
-    input = FileInputStream(argFile)
+
+def predictRNAWithYaml(fileName, iRef, outputMode, predMode):
+    input = FileInputStream(fileName)
     yaml = Yaml()
     data = yaml.load(input)
 
@@ -89,23 +102,56 @@ if argFile.endswith('.yaml'):
     refiner.loadFromYaml(data,0)
     mol = refiner.molecule
     vienna = data['rna']['vienna']
+
+    predictRNAWithAttributes(mol, vienna, iRef, outputMode, predMode)
+
+
+def predictRNAWithStructureAttributes(fileName, vienna, iRef = -1, outputMode="star", predMode="dist"):
+    if fileName.endswith('.pdb'):
+        mol = molio.readPDB(fileName)
+    elif fileName.endswith('.cif'):
+        mol = molio.readMMCIF(fileName)
+    else:
+        print 'Invalid file type'
+        exit(1)
+    vienna = RNAAnalysis.getViennaSequence(mol)
+    viennaStr = ""
+    for char in vienna:
+        viennaStr += char
+    predictRNAWithAttributes(mol, viennaStr, iRef, outputMode, predMode)
+
+def predictRNAWithAttributes(mol, vienna, iRef = -1, outputMode="star", predMode="dist"):
     mol.setDotBracket(vienna)
-    #rnapred.predictFromSequence(mol,vienna)
     rnapred.predictFromSequence()
-    rnapred.dumpPredictions(mol)
-elif argFile.endswith('.pdb') or argFile.endswith('.cif'):
-    if argFile.endswith('.pdb'):
-        mol = molio.readPDB(argFile)
-    elif argFile.endswith('.cif'):
-        mol = molio.readMMCIF(argFile)
+    dumpPredictions(mol, iRef, outputMode)
+
+def predictWithStructure(fileName, iRef = -1, outputMode="star", predMode="dist"):
+    if fileName.endswith('.pdb'):
+        mol = molio.readPDB(fileName)
+    elif fileName.endswith('.cif'):
+        mol = molio.readMMCIF(fileName)
     else:
         print 'Invalid file type'
         exit(1)
 
-    # fixme, need to do this by polymer so you can have protein-rna complex
-    if isRNA(mol):
-        refiner=refine()
-        shifts = refiner.predictRNAShifts()
-        dumpPredictions(mol)
-    else:
-        predictProtein(mol)
+    pred=Predictor()
+    pred.predictMolecule(mol, iRef, predMode == 'rc')
+    dumpPredictions(mol, iRef, outputMode)
+
+def parseArgs():
+    parser = argparse.ArgumentParser(description="predictor options")
+    parser.add_argument("-l", dest="iRef", default=-1, type=int,  help="Only violations with an error of at least this amount will be reported (0.2)")
+    parser.add_argument("-m", dest="predMode", default="dist", help="Only violations that occur in at least this number of structures will be reported (2).")
+    parser.add_argument("-o", dest="outputMode", default="star", help="Only violations that occur in at least this number of structures will be reported (2).")
+    parser.add_argument("fileNames",nargs="*")
+
+    args = parser.parse_args()
+
+    for fileName in args.fileNames:
+        if fileName.endswith('.yaml'):
+             predictRNAWithYaml(fileName, args.iRef, args.outputMode, args.predMode)
+        else:
+             if args.predMode == "attr":
+                 predictRNAWithStructureAttributes(fileName, args.iRef, args.outputMode, args.predMode)
+             else:
+                 predictWithStructure(fileName, args.iRef, args.outputMode, args.predMode)
