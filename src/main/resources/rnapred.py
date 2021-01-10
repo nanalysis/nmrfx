@@ -368,7 +368,7 @@ def setPredictions(molecule, predPPMs, ppmSet=-1):
             atom.setPPM(ppmSet, ppm)
             atom.setPPMError(ppmSet, ppm)
 
-def dumpPredictions(molecule, refMode=True):
+def dumpPredictions(molecule, iRef):
     polymers = molecule.getPolymers()
     if len(polymers) > 1:
         useFull = True
@@ -377,10 +377,10 @@ def dumpPredictions(molecule, refMode=True):
     for polymer in polymers:
         for residue in polymer.getResidues():
             for atom in residue.getAtoms():
-                if refMode:
-                    ppmV = atom.getRefPPM(0)
+                if iRef < 0:
+                    ppmV = atom.getRefPPM(-iRef-1)
                 else:
-                    ppmV = atom.getPPM(0)
+                    ppmV = atom.getPPM(iRef)
                 if (ppmV != None):
                     if atom.parent.active and atom.active:
                          if useFull:

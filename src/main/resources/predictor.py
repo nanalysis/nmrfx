@@ -105,7 +105,7 @@ def predictRNAWithYaml(fileName, location, outputMode, predMode):
     predictRNAWithAttributes(mol, vienna, location, outputMode, predMode)
 
 
-def predictRNAWithStructureAttributes(fileName, vienna, location = -1, outputMode="star", predMode="dist"):
+def predictRNAWithStructureAttributes(fileName, location = -1, outputMode="star", predMode="dist"):
     if fileName.endswith('.pdb'):
         mol = molio.readPDB(fileName)
     elif fileName.endswith('.cif'):
@@ -121,7 +121,10 @@ def predictRNAWithStructureAttributes(fileName, vienna, location = -1, outputMod
 
 def predictRNAWithAttributes(mol, vienna, location = -1, outputMode="star", predMode="dist"):
     rnapred.predictFromSequence(mol, vienna, location)
-    dumpPredictions(mol, location, outputMode)
+    if outputMode == 'attr':
+        rnapred.dumpPredictions(mol, location)
+    else:
+        dumpPredictions(mol, location, outputMode)
 
 def predictWithStructure(fileName, location = -1, outputMode="star", predMode="dist"):
     if fileName.endswith('.pdb'):
@@ -138,18 +141,17 @@ def predictWithStructure(fileName, location = -1, outputMode="star", predMode="d
 
 def parseArgs():
     parser = argparse.ArgumentParser(description="predictor options")
-    parser.add_argument("-l", dest="location", default=-1, type=int,  help="Location to store prediction in.  Values less than one go into "reference" locations. (-1)")
-    parser.add_argument("-m", dest="predMode", default="dist", help="Only violations that occur in at least this number of structures will be reported (2).")
-    parser.add_argument("-o", dest="outputMode", default="star", help="Only violations that occur in at least this number of structures will be reported (2).")
+    parser.add_argument("-l", dest="location", default=-1, type=int,  help="Location to store prediction in.  Values less than one go into 'reference' locations. (-1)")
+    parser.add_argument("-r", dest="rnaPredMode", default="dist", help="Prediction mode used for rna prediction.  Can be dist, rc or attr.")
+    parser.add_argument("-o", dest="outputMode", default="star", help="Output mode.  Can be star, protein or attr.  If set to star the output will be a portion of a BMRB chemical shift save frame.  If protein it will be a table of backbone protein shifts.  Mode attr is only appropriate to RNA predictions done with attributes.")
     parser.add_argument("fileNames",nargs="*")
 
     args = parser.parse_args()
-
     for fileName in args.fileNames:
         if fileName.endswith('.yaml'):
-             predictRNAWithYaml(fileName, args.location, args.outputMode, args.predMode)
+             predictRNAWithYaml(fileName, args.location, args.outputMode, args.rnaPredMode)
         else:
-             if args.predMode == "attr":
-                 predictRNAWithStructureAttributes(fileName, args.location, args.outputMode, args.predMode)
+             if args.rnaPredMode == "attr":
+                 predictRNAWithStructureAttributes(fileName, args.location, args.outputMode, args.rnaPredMode)
              else:
-                 predictWithStructure(fileName, args.location, args.outputMode, args.predMode)
+                 predictWithStructure(fileName, args.location, args.outputMode, args.rnaPredMode)
