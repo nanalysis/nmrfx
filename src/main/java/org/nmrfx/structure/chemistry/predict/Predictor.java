@@ -452,7 +452,7 @@ public class Predictor {
                     HOSEStat hoseStat = predResult.getStat(predAtomType);
                     double shift = hoseStat.dStat.getPercentile(50);
                     shift = Math.round(shift * roundScale) / roundScale;
-                    System.out.println(atom.getShortName() + " " + predResult.getShell() + " " + shift);
+                   // System.out.println(atom.getShortName() + " " + predResult.getShell() + " " + shift);
                     if (iRef < 0) {
                         atom.setRefPPM(-iRef - 1, shift);
                     } else {

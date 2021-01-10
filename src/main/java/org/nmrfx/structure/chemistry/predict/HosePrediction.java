@@ -286,7 +286,6 @@ public class HosePrediction {
                 start = i + 1;
             }
         }
-        System.out.println("hosesize " + hoseList.size());
 //        Collections.sort(hoseList, (Comparator) new HOSEComparator());
     }
 
@@ -705,9 +704,9 @@ public class HosePrediction {
         try {
             InputStream iStream;
             if (resourceMode) {
-                System.out.println("open " + fileName);
+//                System.out.println("open " + fileName);
                 iStream = ClassLoader.getSystemResourceAsStream(fileName);
-                System.out.println("got " + iStream);
+//                System.out.println("got " + iStream);
                 ByteArrayOutputStream byteBuffer = new ByteArrayOutputStream();
                 int nRead;
                 byte[] data = new byte[16384];
@@ -729,26 +728,26 @@ public class HosePrediction {
     }
 
     public static HosePrediction getPredictor() {
-        System.out.println("getP");
+//        System.out.println("getP");
         HosePrediction hosePredictor = new HosePrediction();
-        System.out.println("gotP");
+//        System.out.println("gotP");
         hosePredictor.openData("data/hosecodes.txt", true);
-        System.out.println("gotD");
-        System.out.println("gotI");
+//        System.out.println("gotD");
+//        System.out.println("gotI");
         hosePredictor.genIndex();
-        System.out.println("gend");
+//        System.out.println("gend");
         return hosePredictor;
     }
 
     public static HosePrediction getPredictorN() {
-        System.out.println("getPN");
+//        System.out.println("getPN");
         HosePrediction hosePredictor = new HosePrediction();
-        System.out.println("gotPN");
+//        System.out.println("gotPN");
         hosePredictor.openData("data/hosecodesN.txt", true);
-        System.out.println("gotDN");
-        System.out.println("gotIN");
+//        System.out.println("gotDN");
+//        System.out.println("gotIN");
         hosePredictor.genIndex();
-        System.out.println("gendN");
+//        System.out.println("gendN");
         return hosePredictor;
     }
 
