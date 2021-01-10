@@ -557,6 +557,10 @@ public class Molecule extends MoleculeBase {
     }
 
     public void setupGenCoords() throws RuntimeException {
+        setupGenCoords(false);
+    }
+
+    public void setupGenCoords(boolean fillCoords) throws RuntimeException {
         updateAtomArray();
         if (atomTree == null) {
             AngleTreeGenerator aTreeGen = new AngleTreeGenerator();
@@ -565,7 +569,7 @@ public class Molecule extends MoleculeBase {
         //nullCoords();
         //dumpCoordsGen();
         genVecs = CoordinateGenerator.setupCoords(atomTree);
-        CoordinateGenerator.prepareAtoms(atoms);
+        CoordinateGenerator.prepareAtoms(atoms, fillCoords);
     }
 
     public void dumpCoordsGen() {
@@ -624,7 +628,7 @@ public class Molecule extends MoleculeBase {
             }
 
             if (genVecs == null) {
-                setupGenCoords();
+                setupGenCoords(fillCoords);
             }
             List<Atom> atomList;
             if (treeAtoms == null) {

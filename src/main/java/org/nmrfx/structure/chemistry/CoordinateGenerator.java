@@ -7,10 +7,12 @@ import org.nmrfx.chemistry.Point3;
 
 public class CoordinateGenerator {
 
-    public static void prepareAtoms(List<Atom> atoms) {
+    public static void prepareAtoms(List<Atom> atoms, boolean fillCoords) {
         for (Atom atom : atoms) {
-            if (!atom.getPointValidity()) {
-                atom.setPointValidity(true);
+            if (!fillCoords) {
+                if (!atom.getPointValidity()) {
+                    atom.setPointValidity(true);
+                }
             }
             double bondLength = atom.bondLength;
             double valanceAngle = atom.valanceAngle;
@@ -67,18 +69,23 @@ public class CoordinateGenerator {
 //                        //continue;
 //                    }
                     pts[0] = origins[genVecs[i][0] + 2];
+//                    System.out.println("origin0 " + 0 + " " + pts[0].toString());
                 } else {
                     pts[0] = atoms.get(genVecs[i][0]).spatialSet.getPoint(iStruct);
+//                    System.out.println("origin0 " + atoms.get(genVecs[i][0]).getFullName() + " " + pts[0].toString());
                 }
                 if (genVecs[i][1] < 0) {
 //                    if (fillCoords) {
 //                        //continue;
 //                    }
                     pts[1] = origins[genVecs[i][1] + 2];
+//                    System.out.println("origin1 " + 1 + " " + pts[0].toString());
                 } else {
                     pts[1] = atoms.get(genVecs[i][1]).spatialSet.getPoint(iStruct);
+//                    System.out.println("origin1 " + atoms.get(genVecs[i][1]).getFullName() + " " + pts[1].toString());
                 }
                 pts[2] = atoms.get(genVecs[i][2]).spatialSet.getPoint(iStruct);
+//                System.out.println("origin2 " + atoms.get(genVecs[i][2]).getFullName() + " " + pts[2].toString());
                 for (int j = 0; j < 3; j++) {
                     if (pts[j] == null) {
                         System.out.println(i + " " + j + " " + atoms.get(genVecs[i][j]).getShortName());
@@ -104,9 +111,11 @@ public class CoordinateGenerator {
                         dihedralAngle += dihedrals[nAngles];
                     }
                     nAngles++;
+//                    System.out.println("validid " + a4.getFullName() + " " + a4.getPointValidity());
                     if (!a4.getPointValidity()) {
                         a4.setPointValidity(true);
                         Point3 p4 = coords.calculate(dihedralAngle, a4.bndCos, a4.bndSin);
+//                        System.out.println("gen " + a4.getFullName() + " " + p4.toString());
                         a4.setPoint(iStruct, p4);
                     }
                 }

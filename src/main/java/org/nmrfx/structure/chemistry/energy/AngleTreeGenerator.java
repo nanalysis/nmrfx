@@ -30,7 +30,7 @@ public class AngleTreeGenerator {
         List<List<Atom>> atomTree = aTreeGen.genTree(entity, startAtom, null);
         List<Atom> atomList = aTreeGen.getPathList();
         int[][] genVecs = CoordinateGenerator.setupCoords(atomTree);
-        CoordinateGenerator.prepareAtoms(atomList);
+        CoordinateGenerator.prepareAtoms(atomList, false);
         for (Atom atom : atomList) {
             atom.setPointValidity(false);
         }
