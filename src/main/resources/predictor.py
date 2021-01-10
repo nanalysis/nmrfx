@@ -113,6 +113,10 @@ def predictRNAWithStructureAttributes(fileName, location = -1, outputMode="star"
     else:
         print 'Invalid file type'
         exit(1)
+    if not isRNA(mol):
+        print 'Molecule not RNA'
+        exit(1)
+
     vienna = RNAAnalysis.getViennaSequence(mol)
     viennaStr = ""
     for char in vienna:
