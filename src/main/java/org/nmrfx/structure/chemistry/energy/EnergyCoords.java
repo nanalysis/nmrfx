@@ -80,7 +80,7 @@ public class EnergyCoords {
 
     public void setForceWeight(ForceWeight forceWeight) {
         this.forceWeight = forceWeight;
-        boolean complexFFMode = forceWeight.getRobson() > 0.0;
+        boolean complexFFMode = forceWeight.getCFFNB() > 0.0;
         if (complexFFMode && !(eDistancePairs instanceof EnergyFFPairs)) {
             eDistancePairs = new EnergyFFPairs(this);
         } else if (!complexFFMode && (eDistancePairs instanceof EnergyFFPairs)) {

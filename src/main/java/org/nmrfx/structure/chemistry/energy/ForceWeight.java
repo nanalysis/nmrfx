@@ -22,7 +22,7 @@ public class ForceWeight {
     private final double electrostatic;
     private final double dihedralProb;
     private final double dihedral;
-    private final double robson;
+    private final double cffnb;
     private final double repel;
     private final double noe;
     private final double shift;
@@ -39,12 +39,12 @@ public class ForceWeight {
         this(-1.0, -1.0, 1.0, 1.0, -1.0, -1.0, -1.0, -1.0, 1.0, -1.0, 0.5);
     }
 
-    public ForceWeight(final double electrostatic, final double robson,
+    public ForceWeight(final double electrostatic, final double cffnb,
             final double repel, final double noe, double tortionAngle,
             double dihedral, double irp, double shift, double bond,
             double stacking, double nbMin) {
         this.electrostatic = electrostatic;
-        this.robson = robson;
+        this.cffnb = cffnb;
         this.repel = repel;
         this.noe = noe;
         this.dihedralProb = tortionAngle;
@@ -63,8 +63,8 @@ public class ForceWeight {
         return electrostatic;
     }
 
-    public double getRobson() {
-        return robson;
+    public double getCFFNB() {
+        return cffnb;
     }
 
     public double getRepel() {

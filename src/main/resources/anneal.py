@@ -113,7 +113,7 @@ def getAnnealStages(dOpt, settings, mode='gen'):
             'dislim' : 6.0
         },
         'force' : {
-            'robson' : 1.0,
+            'cffnb' : 1.0,
             'nbmin' : 1.0,
             'repel' : -1.0,
             'tors' : -0.1,
@@ -127,7 +127,7 @@ def getAnnealStages(dOpt, settings, mode='gen'):
         'nStepVal' : None,
         'switchFracVal'  : None,
         'force' : {
-            'robson' : 1.0,
+            'cffnb' : 1.0,
             'nbmin' : 0.50,
             'repel' : -1.0,
         },

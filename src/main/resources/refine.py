@@ -325,7 +325,7 @@ def createStrictDict(initDict, type):
         initDict = {}
     allowedKeys = {}
     allowedKeys['param'] = ['coarse', 'useh', 'hardSphere', 'start', 'end', 'shrinkValue', 'shrinkHValue', 'dislim', 'swap','updateAt']
-    allowedKeys['force'] = ['elec', 'robson', 'nbmin', 'repel', 'dis', 'tors', 'dih', 'irp', 'shift', 'bondWt','stack']
+    allowedKeys['force'] = ['elec', 'cffnb', 'nbmin', 'repel', 'dis', 'tors', 'dih', 'irp', 'shift', 'bondWt','stack']
     allowedKeys = allowedKeys[type]
 
     strictDict = StrictDict(defaultErr=type+'s')
@@ -442,7 +442,7 @@ class refine:
         """
         # Parameters:
 
-        * robson (_);
+        * cffnb (_);
         * nbmin (_);
         * repel (_);
         * elec (_);
@@ -459,7 +459,7 @@ class refine:
         forceWeightOrig = self.energyLists.getForceWeight()
         getOrigWeight = {
             'elec'   : forceWeightOrig.getElectrostatic(),
-            'robson' : forceWeightOrig.getRobson(),
+            'cffnb' : forceWeightOrig.getCFFNB(),
             'nbmin' : forceWeightOrig.getNBMin(),
             'repel'  : forceWeightOrig.getRepel(),
             'dis'    : forceWeightOrig.getNOE(),
@@ -470,12 +470,12 @@ class refine:
             'stack'  : forceWeightOrig.getStacking(),
             'bondWt' : forceWeightOrig.getBondWt()
         }
-        forces = ('elec','robson','repel','dis','tors','dih','irp','shift','bondWt','stack','nbmin')
+        forces = ('elec','cffnb','repel','dis','tors','dih','irp','shift','bondWt','stack','nbmin')
         forceWeights = []
-        if 'robson' in forceDict:
-            if forceDict['robson'] > 0.0:
+        if 'cffnb' in forceDict:
+            if forceDict['cffnb'] > 0.0:
                 forceDict['repel'] = -1.0
-        elif getOrigWeight['robson'] > 0.0:
+        elif getOrigWeight['cffnb'] > 0.0:
                 forceDict['repel'] = -1.0
 
         for force in forces:
@@ -495,7 +495,7 @@ class refine:
         """
 
         fW = self.energyLists.getForceWeight()
-        output = "robson %5.2f nbmin %5.2f repel %5.2f elec %5.2f dis %5.2f dprob %5.2f dih %5.2f irp %5.2f shift %5.2f bondWt %5.2f stack %5.2f" % (fW.getRobson(),fW.getNBMin(), fW.getRepel(),fW.getElectrostatic(),fW.getNOE(),fW.getDihedralProb(),fW.getDihedral(),fW.getIrp(), fW.getShift(), fW.getBondWt(), fW.getStacking())
+        output = "cffnb %5.2f nbmin %5.2f repel %5.2f elec %5.2f dis %5.2f dprob %5.2f dih %5.2f irp %5.2f shift %5.2f bondWt %5.2f stack %5.2f" % (fW.getCFFNB(),fW.getNBMin(), fW.getRepel(),fW.getElectrostatic(),fW.getNOE(),fW.getDihedralProb(),fW.getDihedral(),fW.getIrp(), fW.getShift(), fW.getBondWt(), fW.getStacking())
         return output
 
     def dump(self,limit,shiftLim, fileName):

@@ -188,7 +188,7 @@ public class AtomMath {
         return distance;
     }
 
-    public static AtomEnergy calcRobson(final Point3 pt1, final Point3 pt2, final AtomPair atmPair, final ForceWeight forceWeight, final boolean calcDeriv) {
+    public static AtomEnergy calcCFF(final Point3 pt1, final Point3 pt2, final AtomPair atmPair, final ForceWeight forceWeight, final boolean calcDeriv) {
         final double a = atmPair.ePair.a1;
         final double b = atmPair.ePair.b1;
         final double c;
@@ -213,7 +213,7 @@ public class AtomMath {
                 final double s = 2.0 * q / (q * q + p);
                 final double s3 = s * s * s;
                 final double s6 = s3 * s3;
-                double e = forceWeight.getRobson() * ((a * s3 - b) * s6 + c * s);
+                double e = forceWeight.getCFFNB() * ((a * s3 - b) * s6 + c * s);
                 if (cutoffScale >= 0.0) {
                     e *= cutoffScale;
                 }
@@ -228,12 +228,12 @@ public class AtomMath {
                 final double s6 = s3 * s3;
                 final double deds = (9.0 * a * s3 - 6.0 * b) * s5 + c;
                 final double dsdp = (0.5 - (u / v) * (1.5 + 0.125 * p)) / v;
-                double e = forceWeight.getRobson() * ((a * s3 - b) * s6 + c * s);
+                double e = forceWeight.getCFFNB() * ((a * s3 - b) * s6 + c * s);
                 /*
                  * what is needed is actually the derivitive/r, therefore the r that
                  * would be in following drops out
                  */
-                double deriv = deds * dsdp * 2.0 * forceWeight.getRobson();
+                double deriv = deds * dsdp * 2.0 * forceWeight.getCFFNB();
                 if (cutoffScale >= 0.0) {
                     e *= cutoffScale;
                     deriv *= cutoffScale;

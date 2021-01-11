@@ -526,8 +526,8 @@ public class EnergyLists {
         //        PrintStream out = System.out;
         double dihEnergy = 0.0;
         int nDih = 0;
-        double robsonEnergy = 0.0;
-        int nRobson = 0;
+        double cffnbEnergy = 0.0;
+        int nCFF = 0;
         double repelEnergy = 0.0;
         int nRepel = 0;
         double distanceEnergy = 0.0;
@@ -583,12 +583,12 @@ public class EnergyLists {
                 }
             }
 
-            if (forceWeight.getRobson() > 0.0) {
+            if (forceWeight.getCFFNB() > 0.0) {
                 EnergyCoords eCoords = molecule.getEnergyCoords();
-                robsonEnergy = eCoords.calcRepel(false, forceWeight.getRobson(), forceWeight.getElectrostatic());
-                nRobson = eCoords.getNContacts();
-                for (int i = 0; i < nRobson; i++) {
-                    ViolationStats stat = eCoords.getRepelError(i, limitVal, forceWeight.getRobson(), forceWeight.getElectrostatic());
+                cffnbEnergy = eCoords.calcRepel(false, forceWeight.getCFFNB(), forceWeight.getElectrostatic());
+                nCFF = eCoords.getNContacts();
+                for (int i = 0; i < nCFF; i++) {
+                    ViolationStats stat = eCoords.getRepelError(i, limitVal, forceWeight.getCFFNB(), forceWeight.getElectrostatic());
                     if (stat != null) {
                         String errMsg = stat.toString();
                         writer.print(errMsg);
@@ -680,10 +680,10 @@ public class EnergyLists {
 
             }
 
-            double energySum = dihEnergy + robsonEnergy + repelEnergy + distanceEnergy + irpEnergy + shiftTotEnergy + probDih;
+            double energySum = dihEnergy + cffnbEnergy + repelEnergy + distanceEnergy + irpEnergy + shiftTotEnergy + probDih;
             writer.format(
-                    "Irp %5d %8.3f Dih %5d %8.3f Robson %5d %8.3f Repel %5d %8.3f Distance %5d %8.3f %8.3f Shift %5d %8.3f ProbT %5d %8.3f Stack %5d %8.3f Total %8.3f\n",
-                    nIrp, irpEnergy, nDih, dihEnergy, nRobson, robsonEnergy, nRepel, repelEnergy, nDistance, distanceEnergy,
+                    "Irp %5d %8.3f Dih %5d %8.3f CFF %5d %8.3f Repel %5d %8.3f Distance %5d %8.3f %8.3f Shift %5d %8.3f ProbT %5d %8.3f Stack %5d %8.3f Total %8.3f\n",
+                    nIrp, irpEnergy, nDih, dihEnergy, nCFF, cffnbEnergy, nRepel, repelEnergy, nDistance, distanceEnergy,
                     maxDis, nShift, shiftTotEnergy, nRotamers, probDih, nStack, stackingEnergy, energySum);
         } catch (Exception e) {
             e.printStackTrace();
@@ -834,7 +834,7 @@ public class EnergyLists {
         for (AtomPair atomPair : atomList) {
             Point3 pt1 = atomPair.spSet1.getPoint();
             Point3 pt2 = atomPair.spSet2.getPoint();
-            AtomEnergy energy = AtomMath.calcRobson(pt1, pt2, atomPair, forceWeight, calcDeriv);
+            AtomEnergy energy = AtomMath.calcCFF(pt1, pt2, atomPair, forceWeight, calcDeriv);
             if (calcDeriv) {
                 addDeriv(atomPair, energy.getDeriv(), pt1, pt2);
             }
@@ -845,8 +845,8 @@ public class EnergyLists {
 
     public double calcRepelFast(boolean calcDeriv) {
         EnergyCoords eCoords = molecule.getEnergyCoords();
-        double weight = forceWeight.getRobson() > 0.0 ? forceWeight.getRobson() : forceWeight.getRepel();
-        double eWeight = forceWeight.getRobson() > 0.0 ? forceWeight.getElectrostatic() : -1.0;
+        double weight = forceWeight.getCFFNB() > 0.0 ? forceWeight.getCFFNB() : forceWeight.getRepel();
+        double eWeight = forceWeight.getCFFNB() > 0.0 ? forceWeight.getElectrostatic() : -1.0;
         double energy = eCoords.calcRepel(calcDeriv, weight, eWeight);
         if (calcDeriv) {
             eCoords.addRepelDerivs(branches);
@@ -1177,7 +1177,7 @@ public class EnergyLists {
         }
         try {
             //two ways to calculate whether atoms are bumping into one another - 1) calc repel, 2)calc robsen
-            if (forceWeight.getRobson() > 0.0) {
+            if (forceWeight.getCFFNB() > 0.0) {
                 energyTotal += calcRepelFast(calcDeriv);
             } else if (forceWeight.getRepel() > 0.0) {
                 energyTotal += calcRepelFast(calcDeriv);
@@ -1476,7 +1476,7 @@ public class EnergyLists {
             updateNOEPairs();
         }
         eCoords.setCells(eCoords.eDistancePairs, deltaEnd, distanceLimit, hardSphere,
-                includeH, shrinkValue, shrinkHValue, forceWeight.getRobson() > 0.0);
+                includeH, shrinkValue, shrinkHValue, forceWeight.getCFFNB() > 0.0);
         if (forceWeight.getShift() > 0.0) {
             // eCoords.setCells(eCoords.eShiftPairs, deltaEnd, distanceLimit, 0, true, 0, 0);
         }
