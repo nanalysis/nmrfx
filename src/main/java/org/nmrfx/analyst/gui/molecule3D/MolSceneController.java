@@ -820,7 +820,7 @@ public class MolSceneController implements Initializable, MolSelectionListener, 
                 + "        param:\n"
                 + "            dislim : 6.0\n"
                 + "        force :\n"
-                + "            robson : 1\n"
+                + "            cffnb : 1\n"
                 + "            repel : -1\n"
         );
 
