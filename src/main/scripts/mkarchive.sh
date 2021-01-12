@@ -33,10 +33,7 @@ do
     then
         cp -R -p ${JREHOME}/$jreFileName .
     else
-        mkdir jre
-        cd jre
-        cp -r -p ${JREHOME}/$jreFileName .
-        cd ..
+        cp -r -p ${JREHOME}/$jreFileName jre
     fi
     cd ..
 
