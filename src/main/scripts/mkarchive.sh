@@ -40,7 +40,7 @@ do
     if [[ $os == "windows-amd64" ]]
     then
         rm lib/*-linux*
-        rm lib/*-win*
+        rm lib/*-mac*
     fi
 
     if [[ $os == "macosx-amd64" ]]
@@ -49,10 +49,7 @@ do
         rm lib/*-linux*
         rm lib/*-win*
     else
-        mkdir jre
-        cd jre
-        cp -r -p ${JREHOME}/$jreFileName .
-        cd ..
+        cp -r -p ${JREHOME}/$jreFileName jre
     fi
     cd ..
 
