@@ -930,7 +930,7 @@ public class AnalystApp extends MainApp {
                 switch (type) {
                     case "pdb": {
                         PDBFile pdbReader = new PDBFile();
-                        pdbReader.readSequence(file.toString(), false);
+                        pdbReader.readSequence(file.toString(), false, 0);
                         System.out.println("read mol: " + file.toString());
                         break;
                     }
