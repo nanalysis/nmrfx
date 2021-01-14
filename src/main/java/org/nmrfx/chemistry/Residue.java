@@ -167,6 +167,8 @@ public class Residue extends Compound {
                         atom = (Atom) atomMap.get("o'");
                     } else if (lName.equals("ot2")) {
                         atom = (Atom) atomMap.get("o''");
+                    } else if (lName.equals("oxt")) {
+                        atom = (Atom) atomMap.get("o''");
                     } else if (lName.equals("o2")) {
                         atom = (Atom) atomMap.get("o''");
                     }
