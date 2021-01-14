@@ -186,7 +186,8 @@ public class PredictorSceneController implements Initializable {
         if (hasPeptide) {
             if (proteinChoice.getValue().equals("3D")) {
                 if (checkCoordinates(mol)) {
-                    predictor.predictProtein(mol, ppmSet);
+                    int iStructure = 0;
+                    predictor.predictProtein(mol, iStructure, ppmSet);
                 }
             }
         }
