@@ -372,10 +372,16 @@ public class Molecule extends MoleculeBase {
 
     public static double calcDistance(MolFilter molFilter1, MolFilter molFilter2)
             throws MissingCoordinatesException, InvalidMoleculeException {
+        return calcDistance(molFilter1, molFilter2, molFilter1.getStructureNum());
+    }
+
+    public static double calcDistance(MolFilter molFilter1, MolFilter molFilter2,
+            int structureNum)
+            throws MissingCoordinatesException, InvalidMoleculeException {
         List<SpatialSet> selected1 = matchAtoms(molFilter1);
         List<SpatialSet> selected2 = matchAtoms(molFilter2);
-        Point3 pt1 = Atom.avgAtom(selected1, molFilter1.getStructureNum());
-        Point3 pt2 = Atom.avgAtom(selected2, molFilter2.getStructureNum());
+        Point3 pt1 = Atom.avgAtom(selected1, structureNum);
+        Point3 pt2 = Atom.avgAtom(selected2, structureNum);
         if (pt1 == null) {
             throw new MissingCoordinatesException("No coordinates for atom " + molFilter1.getString());
         }
@@ -442,6 +448,12 @@ public class Molecule extends MoleculeBase {
 
     public double calcDihedral(MolFilter molFilter1, MolFilter molFilter2, MolFilter molFilter3,
             MolFilter molFilter4) throws IllegalArgumentException {
+        return calcDihedral(molFilter1, molFilter2, molFilter3, molFilter4, 0);
+
+    }
+
+    public double calcDihedral(MolFilter molFilter1, MolFilter molFilter2, MolFilter molFilter3,
+            MolFilter molFilter4, int structureNum) throws IllegalArgumentException {
         MolFilter[] molFilters = new MolFilter[4];
         molFilters[0] = molFilter1;
         molFilters[1] = molFilter2;
@@ -455,7 +467,7 @@ public class Molecule extends MoleculeBase {
             if (spSets[i] == null) {
                 throw new IllegalArgumentException("No atom for " + molFilter.getString());
             }
-            pts[i] = spSets[i].getPoint(molFilter.getStructureNum());
+            pts[i] = spSets[i].getPoint(structureNum);
             if (pts[i] == null) {
                 throw new IllegalArgumentException("No coordinates for atom " + molFilter.getString());
             }
@@ -466,6 +478,10 @@ public class Molecule extends MoleculeBase {
 
     public static double calcDihedral(final Atom[] atoms) throws MissingCoordinatesException {
         int structureNum = 0;
+        return calcDihedral(atoms, structureNum);
+    }
+
+    public static double calcDihedral(final Atom[] atoms, int structureNum) throws MissingCoordinatesException {
         SpatialSet[] spSets = new SpatialSet[4];
         Point3[] pts = new Point3[4];
         int i = 0;
@@ -473,7 +489,8 @@ public class Molecule extends MoleculeBase {
             spSets[i] = atom.spatialSet;
             pts[i] = spSets[i].getPoint(structureNum);
             if (pts[i] == null) {
-                throw new MissingCoordinatesException("No coordinates for atom " + atom.getFullName());
+                throw new MissingCoordinatesException("No coordinates for atom "
+                        + atom.getFullName() + " in structure " + structureNum);
             }
             i++;
         }
@@ -622,7 +639,7 @@ public class Molecule extends MoleculeBase {
                 if (!anyInvalid) {
                     structures.add(iStructure);
                     resetActiveStructures();
-                    updateVecCoords();
+                    updateVecCoords(iStructure);
                     return 0;
                 }
             }
@@ -644,7 +661,7 @@ public class Molecule extends MoleculeBase {
             int nAngles = CoordinateGenerator.genCoords(genVecs, atomList, iStructure, dihedralAngles);
             structures.add(iStructure);
             resetActiveStructures();
-            updateVecCoords();
+            updateVecCoords(iStructure);
             return nAngles;
         } else {
             return 0;
@@ -724,6 +741,10 @@ public class Molecule extends MoleculeBase {
     }
 
     public void updateVecCoords() {
+        updateVecCoords(0);
+    }
+    
+    public void updateVecCoords(int iStruct) {
         int i = 0;
         Entity lastEntity = null;
         int resNum = -1;
@@ -746,9 +767,9 @@ public class Molecule extends MoleculeBase {
                 resNum = resMap.size();
                 resMap.put(atom.entity, resNum);
             }
-            Point3 pt = atom.getPoint();
+            Point3 pt = atom.getPoint(iStruct);
             if (pt == null) {
-                System.out.println("updateVecCoords null pt " + atom.getFullName() + " " + (i - 1));
+                System.err.println("updateVecCoords null pt " + atom.getFullName() + " " + (i - 1));
             } else {
                 eCoords.setCoords(i, pt.getX(), pt.getY(), pt.getZ(), resNum, atom);
             }

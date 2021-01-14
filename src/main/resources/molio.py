@@ -26,7 +26,7 @@ def readMMCIF(fileName):
     updateAtomArray()
     return mol
 
-def readPDB(fileName, isCompound = False):
+def readPDB(fileName, isCompound = False, iStruct=0):
     ''' Reads a pdb file and modifies the static Molecule object.
         isCompound is used to specify if the file should be read in
         as a ligand or small molecule.
@@ -41,7 +41,7 @@ def readPDB(fileName, isCompound = False):
     compound = None
     pdb = PDBFile()
     if not isCompound:
-        pdb.readSequence(fileName,0)
+        pdb.readSequence(fileName,False, iStruct)
         mol = MoleculeFactory.getActive()
     else:
         mol = pdb.readResidue(fileName, None, MoleculeFactory.getActive(), None)

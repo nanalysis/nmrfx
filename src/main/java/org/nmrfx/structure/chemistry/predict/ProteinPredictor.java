@@ -34,9 +34,9 @@ public class ProteinPredictor {
 
     String reportAtom = null;
 
-    public void init(Molecule mol) throws InvalidMoleculeException, IOException {
+    public void init(Molecule mol, int iStructure) throws InvalidMoleculeException, IOException {
         propertyGenerator = new PropertyGenerator();
-        propertyGenerator.init(mol);
+        propertyGenerator.init(mol, iStructure);
         this.molecule = mol;
     }
 
@@ -97,17 +97,17 @@ public class ProteinPredictor {
         return true;
     }
 
-    public void predict(int iRef) throws InvalidMoleculeException, IOException {
+    public void predict(int iRef, int structureNum) throws InvalidMoleculeException, IOException {
         for (Polymer polymer : molecule.getPolymers()) {
             if (polymer.isPeptide()) {
-                predict(polymer, iRef);
+                predict(polymer, iRef, structureNum);
             }
         }
     }
 
-    public void predict(Polymer polymer, int iRef) throws IOException {
+    public void predict(Polymer polymer, int iRef, int structureNum) throws IOException {
         for (Residue residue : polymer.getResidues()) {
-            predict(residue, iRef);
+            predict(residue, iRef, structureNum);
         }
 
     }
@@ -151,17 +151,17 @@ public class ProteinPredictor {
         return atomType;
     }
 
-    public void predict(Residue residue, int iRef) throws IOException {
+    public void predict(Residue residue, int iRef, int structureNum) throws IOException {
         if (values == null) {
             loadCoefficients();
         }
         Map<String, Double> valueMap = propertyGenerator.getValues();
         Polymer polymer = residue.getPolymer();
-        if (propertyGenerator.getResidueProperties(polymer, residue)) {
+        if (propertyGenerator.getResidueProperties(polymer, residue, structureNum)) {
             for (Atom atom : residue.getAtoms()) {
                 Optional<String> atomTypeOpt = getAtomNameType(atom);
                 atomTypeOpt.ifPresent(atomType -> {
-                    propertyGenerator.getAtomProperties(atom);
+                    propertyGenerator.getAtomProperties(atom, structureNum);
                     String type = atomType;
                     Integer jType = aaMap.get(type);
                     if (jType != null) {

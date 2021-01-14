@@ -53,14 +53,15 @@ public class PropertyGenerator {
         formatter.setGroupingUsed(false);
     }
 
-    public double calcDistance(String aname1, String aname2) throws MissingCoordinatesException, InvalidMoleculeException {
+    public double calcDistance(String aname1, String aname2, int structureNum)
+            throws MissingCoordinatesException, InvalidMoleculeException {
         MolFilter mf1 = new MolFilter(aname1);
         MolFilter mf2 = new MolFilter(aname2);
-        double distance = molecule.calcDistance(mf1, mf2);
+        double distance = molecule.calcDistance(mf1, mf2, structureNum);
         return distance;
     }
 
-    public double calcRingShift(String aname1) {
+    public double calcRingShift(String aname1, int structureNum) {
         MolFilter mf1 = new MolFilter(aname1);
         SpatialSet spSet = molecule.findSpatialSet(mf1);
         if (spSet == null) {
@@ -69,13 +70,12 @@ public class PropertyGenerator {
         }
         RingCurrentShift ringShifts = new RingCurrentShift();
         ringShifts.makeRingList(molecule);
-        int iStruct = 0;
-        double shift = ringShifts.calcRingContributions(spSet, iStruct, 1.0);
+        double shift = ringShifts.calcRingContributions(spSet, structureNum, 1.0);
         return shift;
     }
 
-    public HydrogenBond calcHBond(String hydrogenAtom) throws InvalidMoleculeException {
-        int[] structures = {0};
+    public HydrogenBond calcHBond(String hydrogenAtom, int structureNum) throws InvalidMoleculeException {
+        int[] structures = {structureNum};
         MolFilter hydrogenFilter = new MolFilter(hydrogenAtom);
         MolFilter acceptorFilter = new MolFilter("*.O,O*");
         ArrayList<HydrogenBond> hBonds = molecule.hydrogenBonds(structures, hydrogenFilter, acceptorFilter);
@@ -83,7 +83,7 @@ public class PropertyGenerator {
         //System.out.println(hydrogenAtom + " " + hBonds.size());
         HydrogenBond hBest = null;
         for (HydrogenBond hBond : hBonds) {
-            double testShift = hBond.getShift(0);
+            double testShift = hBond.getShift(structureNum);
             if (testShift > shift) {
                 hBest = hBond;
                 shift = testShift;
@@ -92,22 +92,22 @@ public class PropertyGenerator {
         return hBest;
     }
 
-    public double calcHBondAngle(String hydrogenAtom) throws InvalidMoleculeException {
-        HydrogenBond hBond = calcHBond(hydrogenAtom);
+    public double calcHBondAngle(String hydrogenAtom, int structureNum) throws InvalidMoleculeException {
+        HydrogenBond hBond = calcHBond(hydrogenAtom, structureNum);
         double angle = Math.PI / 2.0;
         if (hBond != null) {
-            angle = hBond.getAngle(0);
+            angle = hBond.getAngle(structureNum);
         }
         return angle;
     }
 
-    public double calcHBondAngle(Map<String, HydrogenBond> hBondMap, String hydrogenAtom) {
+    public double calcHBondAngle(Map<String, HydrogenBond> hBondMap, String hydrogenAtom, int structureNum) {
         Atom atom = molecule.findAtom(hydrogenAtom);
         double value = 0.0;
         if ((hBondMap != null) && (atom != null)) {
             HydrogenBond hBond = hBondMap.get(atom.getFullName());
             if (hBond != null) {
-                double angle = hBond.getAngle(0);
+                double angle = hBond.getAngle(structureNum);
                 if (angle > Math.PI / 2.0) {
                     value = -Math.cos(angle);
                 }
@@ -116,25 +116,25 @@ public class PropertyGenerator {
         return value;
     }
 
-    public double calcHBondShift(Map<String, HydrogenBond> hBondMap, String hydrogenAtom, double power) {
+    public double calcHBondShift(Map<String, HydrogenBond> hBondMap, String hydrogenAtom, double power, int structureNum) {
         Atom atom = molecule.findAtom(hydrogenAtom);
         double shift = 0.0;
         if ((hBondMap != null) && (atom != null)) {
             HydrogenBond hBond = hBondMap.get(atom.getFullName());
             if (hBond != null) {
-                shift = hBond.getShift(0, power);
+                shift = hBond.getShift(structureNum, power);
             }
         }
         return 100.0 * shift;
     }
 
-    public double calcHBondDistance(Map<String, HydrogenBond> hBondMap, String hydrogenAtom) {
+    public double calcHBondDistance(Map<String, HydrogenBond> hBondMap, String hydrogenAtom, int structureNum) {
         Atom atom = molecule.findAtom(hydrogenAtom);
         double dis = 0.0;
         if ((hBondMap != null) && (atom != null)) {
             HydrogenBond hBond = hBondMap.get(atom.getFullName());
             if (hBond != null) {
-                dis = hBond.getHADistance(0);
+                dis = hBond.getHADistance(structureNum);
                 dis = 3.5 - dis;
             }
         }
@@ -144,7 +144,7 @@ public class PropertyGenerator {
         return dis;
     }
 
-    public double calcEInteractionShift(Map<String, Double> eShiftMap, String hydrogenAtom) {
+    public double calcEInteractionShift(Map<String, Double> eShiftMap, String hydrogenAtom, int structureNum) {
         Atom atom = molecule.findAtom(hydrogenAtom);
         //System.out.println(hydrogenAtom + " " + atom + " " + eShiftMap);
         double shift = 0.0;
@@ -157,7 +157,7 @@ public class PropertyGenerator {
         return shift;
     }
 
-    public double calcEInteractionShift(Map<String, Double> eShiftMap, Atom atom) {
+    public double calcEInteractionShift(Map<String, Double> eShiftMap, Atom atom, int structureNum) {
         double shift = 0.0;
         Double shiftDouble = eShiftMap.get(atom.getFullName());
         if (shiftDouble != null) {
@@ -182,61 +182,61 @@ public class PropertyGenerator {
         return contactSum;
     }
 
-    public double calculatePhi(String polyName, int res) {
+    public double calculatePhi(String polyName, int res, int structureNum) {
         MolFilter mf1 = new MolFilter(polyName + ":" + Integer.toString(res - 1) + ".C");
         MolFilter mf2 = new MolFilter(polyName + ":" + Integer.toString(res) + ".N");
         MolFilter mf3 = new MolFilter(polyName + ":" + Integer.toString(res) + ".CA");
         MolFilter mf4 = new MolFilter(polyName + ":" + Integer.toString(res) + ".C");
-        return molecule.calcDihedral(mf1, mf2, mf3, mf4);
+        return molecule.calcDihedral(mf1, mf2, mf3, mf4, structureNum);
     }
 
-    public double calculatePhi(String polyName, Residue residue) throws MissingCoordinatesException {
+    public double calculatePhi(String polyName, Residue residue, int structureNum) throws MissingCoordinatesException {
         Atom[] atoms = new Atom[4];
         atoms[0] = residue.previous.getAtom("C");
         atoms[1] = residue.getAtom("N");
         atoms[2] = residue.getAtom("CA");
         atoms[3] = residue.next.getAtom("C");
-        return molecule.calcDihedral(atoms);
+        return molecule.calcDihedral(atoms, structureNum);
     }
 
-    public double calculateOmega(String polyName, Residue residue) throws MissingCoordinatesException {
+    public double calculateOmega(String polyName, Residue residue, int structureNum) throws MissingCoordinatesException {
         Atom[] atoms = new Atom[4];
         atoms[0] = residue.previous.getAtom("O");
         atoms[1] = residue.previous.getAtom("C");
         atoms[2] = residue.getAtom("N");
         atoms[3] = residue.getAtom("CA");
-        return molecule.calcDihedral(atoms);
+        return molecule.calcDihedral(atoms, structureNum);
     }
 
-    public double calculateOmega(String polyName, int res) {
+    public double calculateOmega(String polyName, int res, int structureNum) {
         MolFilter mf1 = new MolFilter(polyName + ":" + Integer.toString(res - 1) + ".O");
         MolFilter mf2 = new MolFilter(polyName + ":" + Integer.toString(res - 1) + ".C");
         MolFilter mf3 = new MolFilter(polyName + ":" + Integer.toString(res) + ".N");
         MolFilter mf4 = new MolFilter(polyName + ":" + Integer.toString(res) + ".CA");
-        return molecule.calcDihedral(mf1, mf2, mf3, mf4) + Math.PI;
+        return molecule.calcDihedral(mf1, mf2, mf3, mf4, structureNum) + Math.PI;
     }
 
-    public double calculatePsi(String polyName, Residue residue) throws MissingCoordinatesException {
+    public double calculatePsi(String polyName, Residue residue, int structureNum) throws MissingCoordinatesException {
         Atom[] atoms = new Atom[4];
         atoms[0] = residue.getAtom("N");
         atoms[1] = residue.getAtom("CA");
         atoms[2] = residue.getAtom("C");
         atoms[3] = residue.next.getAtom("N");
-        return molecule.calcDihedral(atoms);
+        return molecule.calcDihedral(atoms, structureNum);
     }
 
-    public double calculatePsi(String polyName, int res) {
+    public double calculatePsi(String polyName, int res, int structureNum) {
         MolFilter mf1 = new MolFilter(polyName + ":" + Integer.toString(res) + ".N");
         MolFilter mf2 = new MolFilter(polyName + ":" + Integer.toString(res) + ".CA");
         MolFilter mf3 = new MolFilter(polyName + ":" + Integer.toString(res) + ".C");
         MolFilter mf4 = new MolFilter(polyName + ":" + Integer.toString(res + 1) + ".n");
-        return molecule.calcDihedral(mf1, mf2, mf3, mf4);
+        return molecule.calcDihedral(mf1, mf2, mf3, mf4, structureNum);
     }
 
-    public double[] calculatePsi(String polyName, int first, int last) {
+    public double[] calculatePsi(String polyName, int first, int last, int structureNum) {
         double[] ret = new double[last - first + 1];
         for (int i = 0; i < ret.length; ++i) {
-            ret[i] = calculatePsi(polyName, first + i);
+            ret[i] = calculatePsi(polyName, first + i, structureNum);
         }
         return ret;
     }
@@ -358,7 +358,7 @@ public class PropertyGenerator {
         }
     }
 
-    public double calculateChi(String polyName, Residue residue) throws MissingCoordinatesException {
+    public double calculateChi(String polyName, Residue residue, int structureNum) throws MissingCoordinatesException {
         String resName = residue.getName();
         if (resName.equals("ALA") || resName.equals("GLY")) {
             return Double.NaN;
@@ -399,11 +399,11 @@ public class PropertyGenerator {
             }
             if (atoms[3] == null) {
             }
-            return Molecule.calcDihedral(atoms);
+            return Molecule.calcDihedral(atoms, structureNum);
         }
     }
 
-    public double calculateChi2(Residue residue) throws MissingCoordinatesException {
+    public double calculateChi2(Residue residue, int structureNum) throws MissingCoordinatesException {
         String resName = residue.getName();
         Atom[] atoms = new Atom[4];
         if (resName.equals("PHE")
@@ -451,10 +451,10 @@ public class PropertyGenerator {
         } else {
             return Double.NaN;
         }
-        return Molecule.calcDihedral(atoms);
+        return Molecule.calcDihedral(atoms, structureNum);
     }
 
-    public void init(Molecule molecule) throws InvalidMoleculeException, IOException {
+    public void init(Molecule molecule, int iStructure) throws InvalidMoleculeException, IOException {
         //NvShell nvShell = new NvShell(interp);
         if (properties == null) {
             properties = loadPropertyFile();
@@ -462,7 +462,7 @@ public class PropertyGenerator {
         HashMap<String, TreeMap<Integer, LinkedHashMap<String, String>>> data = new HashMap<String, TreeMap<Integer, LinkedHashMap<String, String>>>();
         // offsetTable = loadCorrTable("corrtable.txt");
         this.molecule = molecule;
-        contactMap = molecule.calcContactSum(0, true);
+        contactMap = molecule.calcContactSum(iStructure, true);
         hBondMap = new HashMap<>();
         eShiftMap = new HashMap<>();
         String[] hbondAtomNames = {"H", "HA"};
@@ -472,10 +472,10 @@ public class PropertyGenerator {
             if (atomName.startsWith("HA")) {
                 hydrogenFilter = new MolFilter("*." + atomName + "*");
             }
-            Map<String, HydrogenBond> hBondMapForAtom = molecule.hydrogenBondMap(hydrogenFilter, acceptorFilter, 0);
+            Map<String, HydrogenBond> hBondMapForAtom = molecule.hydrogenBondMap(hydrogenFilter, acceptorFilter, iStructure);
             hBondMap.putAll(hBondMapForAtom);
             MolFilter sourceFilter = new MolFilter("*.O*,N,H");  // fixme ?  why is H here (for NH?)
-            Map<String, Double> eShiftMapForAtom = molecule.electroStaticShiftMap(hydrogenFilter, sourceFilter, 0);
+            Map<String, Double> eShiftMapForAtom = molecule.electroStaticShiftMap(hydrogenFilter, sourceFilter, iStructure);
             eShiftMap.putAll(eShiftMapForAtom);
         }
     }
@@ -489,7 +489,8 @@ public class PropertyGenerator {
         return valueMap;
     }
 
-    public boolean getResidueProperties(Polymer polymer, Residue residue) {
+    public boolean getResidueProperties(Polymer polymer, Residue residue,
+            int structureNum) {
         valueMap.clear();
         Residue prevResidue = residue.previous;
         Residue nextResidue = residue.next;
@@ -526,15 +527,15 @@ public class PropertyGenerator {
 
             if (prevResidue != null) {
                 if (prevResidue.previous != null) {
-                    valueMap.put("phiP", calculatePhi(polyName, prevResidue));
+                    valueMap.put("phiP", calculatePhi(polyName, prevResidue, structureNum));
                 } else {
                     valueMap.put("N2", 1.0);
                 }
-                valueMap.put("chiP", calculateChi(polyName, prevResidue));
-                valueMap.put("psiP", calculatePsi(polyName, prevResidue));
-                valueMap.put("omega", calculateOmega(polyName, residue));
+                valueMap.put("chiP", calculateChi(polyName, prevResidue, structureNum));
+                valueMap.put("psiP", calculatePsi(polyName, prevResidue, structureNum));
+                valueMap.put("omega", calculateOmega(polyName, residue, structureNum));
                 if (nextResidue != null) {
-                    valueMap.put("phiC", calculatePhi(polyName, residue));
+                    valueMap.put("phiC", calculatePhi(polyName, residue, structureNum));
                 }
                 if (!getResProps(prevResidue, "_P")) {
                     return false;
@@ -542,17 +543,17 @@ public class PropertyGenerator {
             } else {
                 valueMap.put("N1", 1.0);
             }
-            valueMap.put("chiC", calculateChi(polyName, residue));
-            valueMap.put("chi2C", calculateChi2(residue));
+            valueMap.put("chiC", calculateChi(polyName, residue, structureNum));
+            valueMap.put("chi2C", calculateChi2(residue, structureNum));
             if (!getResProps(residue, "")) {
                 return false;
             }
             if (nextResidue != null) {
-                valueMap.put("psiC", calculatePsi(polyName, residue));
-                valueMap.put("chiS", calculateChi(polyName, nextResidue));
+                valueMap.put("psiC", calculatePsi(polyName, residue, structureNum));
+                valueMap.put("chiS", calculateChi(polyName, nextResidue, structureNum));
                 if (nextResidue.next != null) {
-                    valueMap.put("phiS", calculatePhi(polyName, nextResidue));
-                    valueMap.put("psiS", calculatePsi(polyName, nextResidue));
+                    valueMap.put("phiS", calculatePhi(polyName, nextResidue, structureNum));
+                    valueMap.put("psiS", calculatePsi(polyName, nextResidue, structureNum));
 
                     if (!getResProps(nextResidue, "_S")) {
                         return false;
@@ -586,15 +587,16 @@ public class PropertyGenerator {
 
     }
 
-    public boolean getAtomProperties(Polymer polymer, int res, String resName, String atomName) {
+    public boolean getAtomProperties(Polymer polymer, int res, String resName,
+            String atomName, int structureNum) {
         atomName = atomName.toUpperCase();
         String atomSpec = polymer.getName() + ":" + Integer.toString(res) + "." + atomName;
         Atom atom = molecule.findAtom(atomSpec);
-        return getAtomProperties(atom);
+        return getAtomProperties(atom, structureNum);
 
     }
 
-    public boolean getAtomProperties(Atom atom) {
+    public boolean getAtomProperties(Atom atom, int structureNum) {
         String atomName = atom.getName();
         String atomSpec = atom.getFullName();
         String hAtomSpec = "";
@@ -605,55 +607,55 @@ public class PropertyGenerator {
             double contactSum = getContactSum(atomSpec);
             valueMap.put("contacts", contactSum);
             valueMap.put("fRandom", getFRandom(atomName, contactSum));
-            valueMap.put("ring", calcRingShift(atomSpec));
+            valueMap.put("ring", calcRingShift(atomSpec, structureNum));
             double eInteractionShift = 0.0;
             if (atomName.charAt(0) == 'H') {
-                eInteractionShift = calcEInteractionShift(eShiftMap, atomSpec);
+                eInteractionShift = calcEInteractionShift(eShiftMap, atomSpec, structureNum);
             } else if (atomName.charAt(0) == 'N') {
-                eInteractionShift = calcEInteractionShift(eShiftMap, hAtomSpec);
+                eInteractionShift = calcEInteractionShift(eShiftMap, hAtomSpec, structureNum);
             }
             valueMap.put("eshift", eInteractionShift);
             double hbondShift = 0.0;
             if (atomName.charAt(0) == 'H') {
-                hbondShift = calcHBondShift(hBondMap, atomSpec, 3.0);
+                hbondShift = calcHBondShift(hBondMap, atomSpec, 3.0, structureNum);
             } else if (atomName.charAt(0) == 'N') {
-                hbondShift = calcHBondShift(hBondMap, hAtomSpec, 3.0);
+                hbondShift = calcHBondShift(hBondMap, hAtomSpec, 3.0, structureNum);
             }
             valueMap.put("hshift", hbondShift);
             hbondShift = 0.0;
             if (atomName.charAt(0) == 'H') {
-                hbondShift = calcHBondShift(hBondMap, atomSpec, 1.0);
+                hbondShift = calcHBondShift(hBondMap, atomSpec, 1.0, structureNum);
             } else if (atomName.charAt(0) == 'N') {
-                hbondShift = calcHBondShift(hBondMap, hAtomSpec, 1.0);
+                hbondShift = calcHBondShift(hBondMap, hAtomSpec, 1.0, structureNum);
             }
             valueMap.put("hshift1", hbondShift);
             hbondShift = 0.0;
             if (atomName.charAt(0) == 'H') {
-                hbondShift = calcHBondShift(hBondMap, atomSpec, 2.0);
+                hbondShift = calcHBondShift(hBondMap, atomSpec, 2.0, structureNum);
             } else if (atomName.charAt(0) == 'N') {
-                hbondShift = calcHBondShift(hBondMap, hAtomSpec, 2.0);
+                hbondShift = calcHBondShift(hBondMap, hAtomSpec, 2.0, structureNum);
             }
             valueMap.put("hshift2", hbondShift);
             hbondShift = 0.0;
             if (atomName.charAt(0) == 'H') {
-                hbondShift = calcHBondShift(hBondMap, atomSpec, 3.0);
+                hbondShift = calcHBondShift(hBondMap, atomSpec, 3.0, structureNum);
             } else if (atomName.charAt(0) == 'N') {
-                hbondShift = calcHBondShift(hBondMap, hAtomSpec, 3.0);
+                hbondShift = calcHBondShift(hBondMap, hAtomSpec, 3.0, structureNum);
             }
             valueMap.put("hshift3", hbondShift);
 
             double hbondAngle = 0.0;
             if (atomName.charAt(0) == 'H') {
-                hbondAngle = calcHBondAngle(hBondMap, atomSpec);
+                hbondAngle = calcHBondAngle(hBondMap, atomSpec, structureNum);
             } else if (atomName.charAt(0) == 'N') {
-                hbondAngle = calcHBondAngle(hBondMap, hAtomSpec);
+                hbondAngle = calcHBondAngle(hBondMap, hAtomSpec, structureNum);
             }
             valueMap.put("hbondang", hbondAngle);
             double hbondDistance = 0.0;
             if (atomName.charAt(0) == 'H') {
-                hbondDistance = calcHBondDistance(hBondMap, atomSpec);
+                hbondDistance = calcHBondDistance(hBondMap, atomSpec, structureNum);
             } else if (atomName.charAt(0) == 'N') {
-                hbondDistance = calcHBondDistance(hBondMap, hAtomSpec);
+                hbondDistance = calcHBondDistance(hBondMap, hAtomSpec, structureNum);
             }
             valueMap.put("hbonddis", hbondDistance);
             valueMap.put("randoff", 1.0);
@@ -688,7 +690,7 @@ public class PropertyGenerator {
         return true;
     }
 
-    public void analyzeResidue(Polymer polymer, String polyName, int res, String csString) {
+    public void analyzeResidue(Polymer polymer, String polyName, int res, String csString, int structureNum) {
 
         Atom atom = molecule.findAtom(polyName + ":" + Integer.toString(res) + ".N");
         if (atom == null) {
@@ -724,7 +726,7 @@ public class PropertyGenerator {
                 System.out.printf("%d:%s\n", res, resName);
             }
             LinkedHashMap<String, String> map = new LinkedHashMap<String, String>();
-            double omega = calculateOmega(polyName, res);
+            double omega = calculateOmega(polyName, res, structureNum);
             Double contactSum = null;
             Double fRandom = null;
         }
@@ -828,10 +830,10 @@ public class PropertyGenerator {
         return corr;
     }
 
-    public double[] calculatePhi(String polyName, int first, int last) {
+    public double[] calculatePhi(String polyName, int first, int last, int structureNum) {
         double[] ret = new double[last - first + 1];
         for (int i = 0; i < ret.length; ++i) {
-            ret[i] = calculatePhi(polyName, first + i);
+            ret[i] = calculatePhi(polyName, first + i, structureNum);
         }
         return ret;
     }

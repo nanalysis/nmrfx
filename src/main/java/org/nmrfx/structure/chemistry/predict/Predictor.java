@@ -225,23 +225,23 @@ public class Predictor {
         return alphas[alphaClass][nAlpha - 4 + index];
     }
 
-    public void predictProtein(Molecule mol, int iRef) throws InvalidMoleculeException, IOException {
+    public void predictProtein(Molecule mol, int iStructure, int iRef) throws InvalidMoleculeException, IOException {
         if (proteinPredictor == null) {
             proteinPredictor = new ProteinPredictor();
         }
-        proteinPredictor.init(mol);
-        proteinPredictor.predict(iRef);
+        proteinPredictor.init(mol, iStructure);
+        proteinPredictor.predict(iRef, iStructure);
     }
 
-    public void predictMolecule(Molecule mol, int iRef, boolean rcMode) throws InvalidMoleculeException, IOException {
+    public void predictMolecule(Molecule mol, int iStructure, int iRef, boolean rcMode) throws InvalidMoleculeException, IOException {
 
         boolean hasPeptide = false;
         for (Polymer polymer : mol.getPolymers()) {
             if (isRNA(polymer)) {
                 if (rcMode) {
-                    predictRNAWithRingCurrent(polymer, 0, iRef);
+                    predictRNAWithRingCurrent(polymer, iStructure, iRef);
                 } else {
-                    predictRNAWithDistances(polymer, 0, iRef, false);
+                    predictRNAWithDistances(polymer, iStructure, iRef, false);
                 }
             } else if (polymer.isPeptide()) {
                 hasPeptide = true;
@@ -252,8 +252,8 @@ public class Predictor {
             if (proteinPredictor == null) {
                 proteinPredictor = new ProteinPredictor();
             }
-            proteinPredictor.init(mol);
-            proteinPredictor.predict(iRef);
+            proteinPredictor.init(mol, iStructure);
+            proteinPredictor.predict(iRef, iStructure);
 
         }
         boolean hasPolymer = !mol.getPolymers().isEmpty();
@@ -338,7 +338,6 @@ public class Predictor {
         if (rnaFixedMap.isEmpty()) {
             try {
                 readRNAFixed("data/rnafix.txt");
-                System.out.println("loaded fixed");
             } catch (IOException ex) {
                 System.out.println("failed load " + ex.getMessage());
                 return false;
@@ -452,7 +451,7 @@ public class Predictor {
                     HOSEStat hoseStat = predResult.getStat(predAtomType);
                     double shift = hoseStat.dStat.getPercentile(50);
                     shift = Math.round(shift * roundScale) / roundScale;
-                   // System.out.println(atom.getShortName() + " " + predResult.getShell() + " " + shift);
+                    // System.out.println(atom.getShortName() + " " + predResult.getShell() + " " + shift);
                     if (iRef < 0) {
                         atom.setRefPPM(-iRef - 1, shift);
                     } else {

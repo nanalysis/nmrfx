@@ -227,7 +227,7 @@ public class StructureProject extends ProjectBase {
     public static void loadMolecule(Path file) throws MoleculeIOException {
         if (file.toString().endsWith(".pdb")) {
             PDBFile pdbReader = new PDBFile();
-            pdbReader.readSequence(file.toString(), false);
+            pdbReader.readSequence(file.toString(), false, 0);
             System.out.println("read mol: " + file.toString());
         } else if (file.toString().endsWith(".sdf")) {
             SDFile.read(file.toString(), null);
@@ -265,7 +265,7 @@ public class StructureProject extends ProjectBase {
                                 sequence.read(pathName);
                             } else if (fileName.endsWith(".pdb")) {
                                 if (mol.entities.isEmpty()) {
-                                    pdbReader.readSequence(pathName, false);
+                                    pdbReader.readSequence(pathName, false, 0);
                                 } else {
                                     PDBFile.readResidue(pathName, null, mol, baseName);
                                 }

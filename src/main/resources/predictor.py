@@ -25,10 +25,10 @@ def predictRNA(mol, outputMode="star"):
     dumpPredictions(mol)
 
 
-def predictProtein(mol, outputMode="star"):
+def predictProtein(mol, iStruct, outputMode="star"):
     pred=ProteinPredictor()
-    pred.init(mol)
-    pred.predict(-1)
+    pred.init(mol, iStruct)
+    pred.predict(-1, iStruct)
     dumpPredictions(mol, outputMode)
 
 def dumpLigandPredictions(mol, location=-1):
@@ -154,9 +154,14 @@ def predictRNAWithAttributes(mol, vienna, location = -1, outputMode="star", pred
     else:
         dumpPredictions(mol, location, outputMode)
 
-def predictWithStructure(fileName, location = -1, outputMode="star", predMode="dist"):
+def predictWithStructure(fileName, xMode=False, iStruct=0, model=0, location = -1, outputMode="star", predMode="dist"):
     if fileName.endswith('.pdb'):
-        mol = molio.readPDB(fileName)
+        if (xMode):
+            mol = molio.readPDBX(fileName)
+            print 'read all coords'
+            molio.readPDBXCoords(fileName, -1, True, False)
+        else:
+            mol = molio.readPDB(fileName, iStruct=iStruct)
     elif fileName.endswith('.cif'):
         mol = molio.readMMCIF(fileName)
     elif fileName.endswith('.sdf'):
@@ -170,23 +175,27 @@ def predictWithStructure(fileName, location = -1, outputMode="star", predMode="d
         exit(1)
 
     pred=Predictor()
-    pred.predictMolecule(mol, location, predMode == 'rc')
+    pred.predictMolecule(mol, model, location, predMode == 'rc')
     dumpPredictions(mol, location, outputMode)
     dumpLigandPredictions(mol, location)
 
 def parseArgs():
     parser = argparse.ArgumentParser(description="predictor options")
+    parser.add_argument("-x", dest="xMode", default=False, action="store_true", help="Whether to read coordinates without library (False")
     parser.add_argument("-l", dest="location", default=-1, type=int,  help="Location to store prediction in.  Values less than one go into 'reference' locations. (-1)")
+    parser.add_argument("-s", dest="iStruct", default=0, type=int,  help="Model to read.  0 reads first, -1 reads all, other values read specified model (0)")
+    parser.add_argument("-m", dest="model", default=0, type=int,  help="Model to use for coordinates (0)")
     parser.add_argument("-r", dest="rnaPredMode", default="dist", help="Prediction mode used for rna prediction.  Can be dist, rc or attr.")
     parser.add_argument("-o", dest="outputMode", default="star", help="Output mode.  Can be star, protein or attr.  If set to star the output will be a portion of a BMRB chemical shift save frame.  If protein it will be a table of backbone protein shifts.  Mode attr is only appropriate to RNA predictions done with attributes.")
     parser.add_argument("fileNames",nargs="*")
-
     args = parser.parse_args()
     for fileName in args.fileNames:
         if fileName.endswith('.yaml'):
              predictRNAWithYaml(fileName, args.location, args.outputMode, args.rnaPredMode)
         else:
              if args.rnaPredMode == "attr":
-                 predictRNAWithStructureAttributes(fileName, args.location, args.outputMode, args.rnaPredMode)
+                 predictRNAWithStructureAttributes(fileName, args.model, args.location, args.outputMode, args.rnaPredMode)
              else:
-                 predictWithStructure(fileName, args.location, args.outputMode, args.rnaPredMode)
+                 if args.model != args.iStruct:
+                     args.iStruct = -1
+                 predictWithStructure(fileName, args.xMode, args.iStruct, args.model, args.location, args.outputMode, args.rnaPredMode)
