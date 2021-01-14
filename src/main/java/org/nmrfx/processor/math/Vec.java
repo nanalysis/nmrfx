@@ -161,7 +161,6 @@ public class Vec extends VecBase {
     }
 
     // fixme what the he?? does this do
-
     /**
      * Get start of "valid" data in vectors that have DSP "charge-up" at
      * beginning. This value is calculated based on the vectors stored
@@ -3038,4 +3037,9 @@ public class Vec extends VecBase {
         return result;
     }
 
+    public void max(Vec vec) {
+        for (int i = 0; i < size; i++) {
+            setReal(i, Math.max(getReal(i), vec.getReal(i)));
+        }
+    }
 }

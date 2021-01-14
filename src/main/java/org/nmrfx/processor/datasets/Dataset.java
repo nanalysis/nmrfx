@@ -60,6 +60,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
     private boolean dirty = false;  // flag set if a vector has been written to dataset, should purge bufferVectors
     LineShapeCatalog simVecs = null;
     Map<String, double[]> buffers = new HashMap<>();
+    Dataset[] projections = null;
 
     public int length() {
         int length = 1;
@@ -133,7 +134,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
                 }
             }
         }
-System.out.println("new dataset " + fileName);
+        System.out.println("new dataset " + fileName);
         setStrides();
         addFile(fileName);
         loadLSCatalog();
@@ -565,7 +566,6 @@ System.out.println("new dataset " + fileName);
 //        }
 //    }
 //    close $f1
-
     /**
      * Return whether dataset has a data file.
      *
@@ -746,7 +746,7 @@ System.out.println("new dataset " + fileName);
                     }
                     iPointAbs[i] = points[i];
                 }
-                rData.setValue( readPoint(points, dim));
+                rData.setValue(readPoint(points, dim));
 
                 if (rData.getValue() == Double.MAX_VALUE) {
                     continue;
@@ -2241,8 +2241,12 @@ System.out.println("new dataset " + fileName);
     public void readVector(Vec vector, int index, int iDim) throws IOException {
         int[] dim = new int[nDim];
         int[][] pt = new int[nDim][2];
+        dim[0] = iDim;
+        int jDim = 0;
+        for (int i = 1; i < nDim; i++) {
+            dim[i] = jDim++; 
+        }
         for (int i = 0; i < nDim; i++) {
-            dim[i] = i;
             if (iDim == i) {
                 pt[i][0] = 0;
                 if (vector.isComplex()) {
@@ -2910,4 +2914,29 @@ System.out.println("new dataset " + fileName);
         return result;
     }
 
+    public Dataset getProjection(int iDim) {
+        if (projections == null) {
+            return null;
+        } else {
+            return projections[iDim];
+        }
+    }
+
+    public void project(int iDim) throws IOException {
+        if (projections == null) {
+            projections = new Dataset[getNDim()];
+        }
+        Vec projVec = new Vec(getSize(iDim));
+        projVec.setName(getName() + "_proj_" + (iDim + 1));
+        readVector(projVec, 0, iDim);
+        projVec.zeros();
+        Iterator<Vec> iter = vectors(iDim);
+        while (iter.hasNext()) {
+            Vec vec = iter.next();
+            projVec.max(vec);
+        }
+        Dataset projDataset = new Dataset(projVec);
+        projDataset.setLabel(0, getLabel(iDim));
+        projections[iDim] = projDataset;
+    }
 }
