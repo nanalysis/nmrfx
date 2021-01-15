@@ -196,6 +196,12 @@ public class PropertyGenerator {
         atoms[1] = residue.getAtom("N");
         atoms[2] = residue.getAtom("CA");
         atoms[3] = residue.next.getAtom("C");
+        for (int i = 0; i < atoms.length; i++) {
+            if (atoms[i] == null) {
+                throw new IllegalArgumentException("Calc phi for residue: " + residue.getNumber() + " atom not found " + i);
+            }
+        }
+
         return molecule.calcDihedral(atoms, structureNum);
     }
 
