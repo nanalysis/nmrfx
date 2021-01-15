@@ -808,6 +808,32 @@ public class DrawSpectrum {
         }
     }
 
+    public void drawProjection(Dataset dataset, DatasetAttributes datasetAttr, SliceAttributes sliceAttr, int orientation, Bounds bounds) {
+        int sliceDim = orientation;
+        Vec sliceVec = new Vec(32, false);
+        boolean drawReal = datasetAttr.getDrawReal();
+        try {
+            datasetAttr.getProjection(dataset, sliceVec, sliceDim);
+            double level = datasetAttr.lvlProperty().get();
+            double scale = -sliceAttr.getScaleValue() / level;
+            //System.out.println(orientation + " " + slicePosX + " " + slicePosY);
+            if (sliceDim == 0) {
+                double offset = axes[0].getYOrigin() - axes[1].getHeight() * 1.005;
+                drawVector(sliceVec, orientation, 0, AXMODE.PPM, drawReal, 0.0, 0.0, null,
+                        (index, intensity) -> axes[0].getDisplayPosition(index),
+                        (index, intensity) -> intensity * scale + offset, false, false);
+            } else {
+                double offset = axes[0].getXOrigin() + axes[0].getWidth() * 1.005;
+
+                drawVector(sliceVec, orientation, 0, AXMODE.PPM, drawReal, 0.0, 0.0, null,
+                        (index, intensity) -> -intensity * scale + offset,
+                        (index, intensity) -> axes[1].getDisplayPosition(index), false, false);
+            }
+        } catch (IOException ioE) {
+            System.out.println(ioE.getMessage());
+        }
+    }
+
     public void drawSlice(DatasetAttributes datasetAttr, SliceAttributes sliceAttr, int orientation, double slicePosX, double slicePosY, Bounds bounds, double ph0, double ph1) {
         int sliceDim = orientation;
         Vec sliceVec = new Vec(32, false);

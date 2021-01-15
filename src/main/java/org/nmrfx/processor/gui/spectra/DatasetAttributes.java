@@ -578,6 +578,14 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
         return clmProperty().get();
     }
 
+    public void projection(int value) {
+        projectionAxis = value;
+    }
+
+    public int projection() {
+        return projectionAxis;
+    }
+
     private StringProperty fileName;
 
     public StringProperty fileNameProperty() {
@@ -692,6 +700,7 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
     public boolean[] selectionList = null;
     public boolean selected;
     public boolean intSelected;
+    private int projectionAxis = -1;
     public String title = "";
     private StringProperty firstName;
 
@@ -928,6 +937,19 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
         } else {
             return drawList.size() - 1;
         }
+    }
+
+    public boolean getProjection(Dataset dataset, Vec specVec, int iDim) throws IOException {
+        int[][] ptC = new int[1][2];
+        int[] dimC = new int[pt.length];
+        double ppm0 = theFile.pointToPPM(dim[iDim], pt[iDim][0]);
+        double ppm1 = theFile.pointToPPM(dim[iDim], pt[iDim][1]);
+        dimC[0] = 0;
+        ptC[0][0] = dataset.ppmToPoint(0, ppm0);
+        ptC[0][1] = dataset.ppmToPoint(0, ppm1);
+        specVec.resize(ptC[0][1] - ptC[0][0] + 1, dataset.getComplex_r(0));
+        dataset.readVectorFromDatasetFile(ptC, dimC, specVec);
+        return true;
     }
 
     public boolean getSlice(Vec specVec, int iDim, double ppmx, double ppmy) throws IOException {
@@ -2068,6 +2090,48 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
             }
 
         });
+    }
+
+    public int[] getMatchDim(DatasetAttributes dataAttr2, boolean looseMode) {
+        int nMatchDim = dataAttr2.nDim;
+        int[] dim = new int[nDim];
+        int nMatch = 0;
+        int nShouldMatch = 0;
+        boolean[] used = new boolean[nMatchDim];
+        int nAxes = 2;
+
+        for (int i = 0; (i < nAxes) && (i < dim.length); i++) {
+            dim[i] = -1;
+            nShouldMatch++;
+            for (int j = 0; j < nMatchDim; j++) {
+                if (getLabel(i).equals(dataAttr2.getLabel(j))) {
+                    dim[i] = j;
+                    nMatch++;
+                    used[j] = true;
+                    break;
+                }
+            }
+        }
+
+        if ((nMatch != nShouldMatch) && looseMode) {
+            for (int i = 0; (i < nAxes) && (i < dim.length); i++) {
+                if (dim[i] == -1) {
+                    for (int j = 0; j < nMatchDim; j++) {
+                        if (!used[j]) {
+                            String dNuc = getDataset().getNucleus(i).getNumberName();
+                            String pNuc = dataAttr2.getDataset().getNucleus(j).getNumberName();
+                            if (dNuc.equals(pNuc)) {
+                                dim[i] = j;
+                                used[j] = true;
+                                nMatch++;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return dim;
     }
 
 }

@@ -852,7 +852,15 @@ public class PolyChart implements PeakListener {
 
     protected double[] getRange(int axis) {
         double[] limits = {Double.MAX_VALUE, Double.NEGATIVE_INFINITY};
-        datasetAttributesList.stream().forEach(d -> d.checkRange(axModes[axis], axis, limits));
+        for (DatasetAttributes dataAttr : datasetAttributesList) {
+            if (dataAttr.projection() == -1) {
+                dataAttr.checkRange(axModes[axis], axis, limits);
+            } else {
+                if (dataAttr.projection() == axis) {
+                    dataAttr.checkRange(axModes[axis], 0, limits);
+                }
+            }
+        }
         return limits;
     }
 
@@ -1644,7 +1652,37 @@ public class PolyChart implements PeakListener {
                 datasetAttrs.addAll(newList);
             }
         }
+    }
 
+    void updateProjections() {
+        boolean has1D = false;
+        boolean hasND = false;
+        Optional<DatasetAttributes> firstNDAttr = Optional.empty();
+        for (DatasetAttributes datasetAttributes : datasetAttributesList) {
+            Dataset dataset = (Dataset) datasetAttributes.getDataset();
+            if (dataset != null) {
+                if (dataset.getNDim() == 1) {
+                    has1D = true;
+                } else if (disDimProp.get() == DISDIM.TwoD) {
+                    hasND = true;
+                    if (firstNDAttr.isEmpty()) {
+                        firstNDAttr = Optional.of(datasetAttributes);
+                    }
+                }
+            }
+        }
+        boolean mixedDim = has1D && hasND;
+        for (DatasetAttributes datasetAttributes : datasetAttributesList) {
+            Dataset dataset = (Dataset) datasetAttributes.getDataset();
+            if (!mixedDim || (dataset == null) || dataset.getNDim() > 1) {
+                datasetAttributes.projection(-1);
+            } else {
+                int[] matchDim = datasetAttributes.getMatchDim(firstNDAttr.get(), true);
+                if (matchDim[0] != -1) {
+                    datasetAttributes.projection(matchDim[0]);
+                }
+            }
+        }
     }
 
     public void setDataset(DatasetBase dataset) {
@@ -2237,10 +2275,14 @@ public class PolyChart implements PeakListener {
         int iTitle = 0;
         double firstOffset = 0.0;
         double firstLvl = 1.0;
+        updateProjections();
         for (DatasetAttributes datasetAttributes : datasetAttributesList) {
             try {
                 DatasetAttributes firstAttr = datasetAttributesList.get(0);
                 DatasetBase dataset = datasetAttributes.getDataset();
+                if (datasetAttributes.projection() != -1) {
+                    continue;
+                }
                 if (dataset != null) {
 //                datasetAttributes.setLvl(level);
                     datasetAttributes.setDrawReal(true);
@@ -2308,6 +2350,11 @@ public class PolyChart implements PeakListener {
 
             } catch (GraphicsIOException gIO) {
 
+            }
+        }
+        for (DatasetAttributes datasetAttributes : datasetAttributesList) {
+            if (datasetAttributes.projection() != -1) {
+                drawProjection(gC, datasetAttributes.projection(), (Dataset) datasetAttributes.getDataset());
             }
         }
         boolean finished = true;
@@ -3614,6 +3661,58 @@ public class PolyChart implements PeakListener {
                 drawSlice(gC, 1, HORIZONTAL);
             }
         }
+    }
+
+    public void projectDataset() {
+        Dataset dataset = (Dataset) getDataset();
+        if (dataset == null) {
+            return;
+        }
+        if (dataset.getNDim() == 2) {
+            try {
+                dataset.project(0);
+                dataset.project(1);
+            } catch (IOException ex) {
+            }
+        }
+
+    }
+
+    public void drawProjection(GraphicsContextInterface gC, int iProj) {
+        if (gC == null) {
+            return;
+        }
+        Dataset dataset = (Dataset) getDataset();
+        if (dataset == null) {
+            return;
+        }
+        int nDim = dataset.getNDim();
+        if (nDim != 2) {
+            return;
+        }
+        DatasetAttributes dataAttr = datasetAttributesList.get(0);
+
+        for (int i = 0; i < 2; i++) {
+            if ((iProj == -1) || (i == iProj)) {
+                int dDim = dataAttr.getDim(i);
+                Dataset datasetProj = dataset.getProjection(dDim);
+                if (datasetProj == null) {
+                    return;
+                }
+                //drawProjection(gC, i, datasetProj);
+            }
+        }
+    }
+
+    public void drawProjection(GraphicsContextInterface gC, int iAxis, Dataset dataset) {
+        DatasetAttributes dataAttr = datasetAttributesList.get(0);
+        Bounds bounds = plotBackground.getBoundsInParent();
+        drawSpectrum.drawProjection(dataset, dataAttr, sliceAttributes, iAxis, bounds);
+        double[][] xy = drawSpectrum.getXY();
+        int nPoints = drawSpectrum.getNPoints();
+        gC.setStroke(dataAttr.getPosColor());
+        gC.strokePolyline(xy[0], xy[1], nPoints);
+
     }
 
     public void extractSlice(int iOrient) {
