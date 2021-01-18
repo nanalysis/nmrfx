@@ -778,6 +778,7 @@ public class Sequence {
             }
         }
         if (molecule != null) {
+            molecule.updateAtomArray();
             molecule.genCoords(false);
             molecule.setupRotGroups();
         }
