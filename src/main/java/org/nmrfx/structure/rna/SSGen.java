@@ -71,7 +71,7 @@ public class SSGen {
     public final void pairTo() {
         SSLayout ssLay = new SSLayout(viennaSeq.length());
         ssLay.interpVienna(viennaSeq, residues);
-    }
+        }
 
     public static SecondaryStructure classifyRes(List<Residue> residues) {
         if (residues != null && !(residues.isEmpty())) {
@@ -123,7 +123,7 @@ public class SSGen {
             Residue resAfter = ssLastRes.getNext();
             boolean samePoly = ssFirstRes.getPolymer() == ssLastRes.getPolymer();
 
-            if (ssLastRes == lastRes || ssFirstRes == firstRes) { //last residue or first residue (string of non pairing all the way to end)
+            if (ssLastRes == lastRes || ssFirstRes == firstRes || (resAfter == null)) { //last residue or first residue (string of non pairing all the way to end)
                 add = true;
                 type = "nonloop"; //instead of calling first residue, call last residue
             } else if (samePoly && (resBefore.pairedTo == resAfter)) { //loop
