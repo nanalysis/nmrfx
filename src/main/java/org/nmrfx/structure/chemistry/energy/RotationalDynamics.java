@@ -120,6 +120,9 @@ public class RotationalDynamics {
                     branch.atoms.add(atom);
                 }
             }
+            if (branch.atoms.isEmpty()) {
+                System.out.println("empty " + branch.atom.getFullName());
+            }
             branch.index = i;
             i++;
         }
