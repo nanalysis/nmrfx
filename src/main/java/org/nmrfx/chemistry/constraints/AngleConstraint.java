@@ -117,7 +117,7 @@ public class AngleConstraint implements Constraint {
             throw new IllegalArgumentException("Must specify 4 atoms in AngleBoundary constructor");
         }
         if ((atoms.get(2).parent != atoms.get(1)) && (atoms.get(1).parent != atoms.get(2))) {
-            throw new IllegalArgumentException("Second atom must be parent of first atom, or vice versa");
+            throw new IllegalArgumentException("Second atom must be parent of first atom, or vice versa " + atoms.get(1).getFullName() + " " + atoms.get(2).getFullName());
         }
         /*Changed from Original*/
         if (((lower < -180.0) && (upper < 0.0)) || (upper > 360.0) || (upper < lower)) {
