@@ -7,6 +7,7 @@ package org.nmrfx.structure.chemistry.miner;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 /**
  *
@@ -32,9 +33,34 @@ public interface NodeValidatorInterface {
 
     public int pathSize(int patternIndex);
 
-    public void dumpProps();
+    public default List<List<String>> dumpProps() {
+        String[] propertyNames = getPropertyNames();
+        boolean[][] p = getProperties();
+        List<List<String>> result = new ArrayList<>();
+        List<String> header = new ArrayList<>();
+        for (int i = 0; i < propertyNames.length; i++) {
+            if (!propertyNames[i].contains("temp")) {
+                header.add(propertyNames[i]);
+            }
+        }
+        result.add(header);
+        for (int i = 0; i < p.length; i++) {
+            List<String> line = new ArrayList<>();
+            for (int j = 0; j < p[i].length; j++) {
+                if (p[i][j]) {
+                    if (!propertyNames[j].contains("temp")) {
+                        line.add(propertyNames[j]);
+                    }
+                }
+            }
+            result.add(line);
+        }
+        return result;
+
+    }
 
     public int getJump(int patternIndex, final int pathIndex);
+
     void assignProps(ArrayList path, final int patternIndex);
 
 }
