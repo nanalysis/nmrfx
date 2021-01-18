@@ -743,7 +743,7 @@ public class Molecule extends MoleculeBase {
     public void updateVecCoords() {
         updateVecCoords(0);
     }
-    
+
     public void updateVecCoords(int iStruct) {
         int i = 0;
         Entity lastEntity = null;
@@ -2419,6 +2419,9 @@ public class Molecule extends MoleculeBase {
     }
 
     public Map<Atom, Map<Atom, Double>> getRingClosures() {
+        if (ringClosures == null) {
+            ringClosures = new HashMap<>();
+        }
         return ringClosures;
     }
 
