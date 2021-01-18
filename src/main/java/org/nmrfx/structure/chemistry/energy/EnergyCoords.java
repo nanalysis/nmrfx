@@ -548,9 +548,6 @@ public class EnergyCoords {
             for (int j = 0; j < nAtoms; j++) {
                 FastVector3D v2 = vecCoords[j];
                 double dis = v1.dis(v2);
-//                if ((i==296) && (j == 239)) {
-//                    System.out.println("updatedis " + dis + " " + atoms[i].getShortName() + " " + atoms[j].getShortName());
-//                }
                 disRanges[0][i][j] = Math.min(dis, disRanges[0][i][j]);
                 disRanges[1][i][j] = Math.max(dis, disRanges[1][i][j]);
             }
