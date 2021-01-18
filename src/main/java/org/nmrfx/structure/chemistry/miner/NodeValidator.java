@@ -32,6 +32,8 @@ public class NodeValidator implements NodeValidatorInterface {
 0,
 0,
 0,
+0,
+0,
 1,
 1,
 1,
@@ -116,14 +118,16 @@ public class NodeValidator implements NodeValidatorInterface {
 {0,0,0,0,0,9},
 {10},
 {11,11,11,11,11,12},
+{13,11,11,11,11,12},
 {11,11,11,11,12},
-{13},
-{14,15},
-{14,16},
-{14,17},
-{0},
-{18},
+{13,11,11,11,12},
 {14},
+{13,15,16},
+{13,17,16},
+{13,18,16},
+{0},
+{16},
+{13},
 {19},
 {20},
 {21},
@@ -133,7 +137,7 @@ public class NodeValidator implements NodeValidatorInterface {
 {15,0},
 {25},
 {26},
-{18,0},
+{16,0},
 {27},
 {28},
 {29},
@@ -142,8 +146,8 @@ public class NodeValidator implements NodeValidatorInterface {
 {33,0},
 {34},
 {35},
-{0,14,0},
-{0,14,0},
+{0,13,0},
+{0,13,0},
 {36},
 {37,0},
 {38,0},
@@ -156,11 +160,11 @@ public class NodeValidator implements NodeValidatorInterface {
 {44},
 {45},
 {46,0},
-{0,17,0},
+{0,18,0},
 {47},
 {48,0},
 {48,0},
-{16},
+{17},
 {49},
 {49,0},
 {50},
@@ -205,11 +209,13 @@ public class NodeValidator implements NodeValidatorInterface {
 {-1,3,3,3,3,3},
 {-1},
 {-1,3,3,3,3,3},
+{-1,3,3,3,3,3},
+{-1,3,3,3,3},
 {-1,3,3,3,3},
 {-1},
-{-1,2},
-{-1,2},
-{-1,2},
+{-1,2,0},
+{-1,2,0},
+{-1,2,0},
 {-1},
 {-1},
 {-1},
@@ -294,11 +300,13 @@ public class NodeValidator implements NodeValidatorInterface {
 {-1,-1,-1,-1,-1,-1},
 {-1},
 {-1,-1,-1,-1,-1,-1},
+{-1,-1,-1,-1,-1,-1},
+{-1,-1,-1,-1,-1},
 {-1,-1,-1,-1,-1},
 {-1},
-{-1,-1},
-{-1,-1},
-{-1,-1},
+{-1,-1,-1},
+{-1,-1,-1},
+{-1,-1,-1},
 {-1},
 {-1},
 {-1},
@@ -383,6 +391,8 @@ public class NodeValidator implements NodeValidatorInterface {
 {14,14,14,14,14,14},
 {15},
 {16,16,16,16,16,16},
+{16,16,16,16,16,16},
+{17,17,17,17,17},
 {17,17,17,17,17},
 {18},
 {19},
@@ -791,11 +801,11 @@ break;
 break;
 
      case 13:
- atomValid =p[atomIndex][17] || p[atomIndex][16]; // ar5 || ar6
+ atomValid =(aNum == 7); // N
 break;
 
      case 14:
- atomValid =(aNum == 7); // N
+ atomValid =p[atomIndex][17] || p[atomIndex][16]; // ar5 || ar6
 break;
 
      case 15:
@@ -803,15 +813,15 @@ break;
 break;
 
      case 16:
- atomValid =(aNum == 15); // P
+ atomValid =(aNum == 8); // O
 break;
 
      case 17:
- atomValid =(aNum == 16); // S
+ atomValid =(aNum == 15); // P
 break;
 
      case 18:
- atomValid =(aNum == 8); // O
+ atomValid =(aNum == 16); // S
 break;
 
      case 19:
@@ -1090,7 +1100,7 @@ break;
     public boolean[][] getProperties() {
         return p;
     }
-
+/*
     public void dumpProps() {
         for (int i = 0; i < propertyNames.length; i++) {
             System.out.print(propertyNames[i] + " ");
@@ -1106,6 +1116,7 @@ break;
          
         }
     }
+*/
     
     public boolean ringClosed(final int[] currentPath,final int bondOrder, final int atomIndex, final int ringIndex, HashMap bondMap) {
         String key = currentPath[ringIndex] + " " + atomIndex;
