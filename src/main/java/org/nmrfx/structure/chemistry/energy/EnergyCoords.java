@@ -532,39 +532,9 @@ public class EnergyCoords {
     }
 
     public double[][][] getFixedRange() {
-        int lastRes = Integer.MIN_VALUE;
-        int nResidues = 0;
-        for (int i = 0; i < nAtoms; i++) {
-            if (resNums[i] != lastRes) {
-                lastRes = resNums[i];
-                nResidues++;
-            }
-        }
-        int[] resCounts = new int[nResidues];
-        int[] resStarts = new int[nResidues];
-        lastRes = Integer.MIN_VALUE;
-        int j = 0;
-        for (int i = 0; i < nAtoms; i++) {
-            resCounts[resNums[i]]++;
-            if (resNums[i] != lastRes) {
-                lastRes = resNums[i];
-                resStarts[j++] = i;
-            }
-        }
         double[][][] disRange = new double[2][nAtoms][nAtoms];
         fixed = new boolean[nAtoms][nAtoms];
         for (int i = 0; i < nAtoms; i++) {
-            int resNum = resNums[i];
-            int lastAtom = i + 500;
-            if (lastAtom >= nAtoms) {
-                lastAtom = nAtoms - 1;
-            }
-            int nResAtoms = lastAtom - i;
-//            int nResAtoms = resCounts[resNum];
-//            nResAtoms -= (i - resStarts[resNum]) + 1;
-//            if (resNum < (nResidues - 1)) {
-//                nResAtoms += resCounts[resNum + 1];
-//            }
             Arrays.fill(disRange[0][i], Double.MAX_VALUE);
             Arrays.fill(disRange[1][i], Double.NEGATIVE_INFINITY);
 
@@ -578,6 +548,9 @@ public class EnergyCoords {
             for (int j = 0; j < nAtoms; j++) {
                 FastVector3D v2 = vecCoords[j];
                 double dis = v1.dis(v2);
+//                if ((i==296) && (j == 239)) {
+//                    System.out.println("updatedis " + dis + " " + atoms[i].getShortName() + " " + atoms[j].getShortName());
+//                }
                 disRanges[0][i][j] = Math.min(dis, disRanges[0][i][j]);
                 disRanges[1][i][j] = Math.max(dis, disRanges[1][i][j]);
             }
@@ -590,7 +563,7 @@ public class EnergyCoords {
         for (int i = 0; i < nAtoms; i++) {
             for (int j = 0; j < nAtoms; j++) {
                 double delta = Math.abs(disRanges[1][i][j] - disRanges[0][i][j]);
-                //System.out.println(i + " " + j + " " + atoms[i].getShortName() + " " + atoms[i + j + 1].getShortName() + " " + delta);
+//                System.out.println(i + " " + j + " " + atoms[i].getShortName() + " " + atoms[j].getShortName() + " " + delta);
                 if (delta < tol) {
                     setFixed(i, j, true);
                 }
@@ -608,25 +581,11 @@ public class EnergyCoords {
 
     public void dumpFixed() {
         for (int i = 0; i < fixed.length; i++) {
-            String rName1 = ((Residue) atoms[i].getEntity()).getName();
-            String aName1 = atoms[i].getName();
-            String name1;
-            if (aName1.contains("'")) {
-                name1 = aName1;
-            } else {
-                name1 = rName1 + "." + aName1;
-            }
+            String name1 = atoms[i].getFullName();
             for (int j = 0; j < fixed[i].length; j++) {
 
                 if ((i != j) && fixed[i][j]) {
-                    String rName2 = ((Residue) atoms[j].getEntity()).getName();
-                    String aName2 = atoms[j].getName();
-                    String name2;
-                    if (aName2.contains("'")) {
-                        name2 = aName2;
-                    } else {
-                        name2 = rName2 + "." + aName2;
-                    }
+                    String name2 = atoms[j].getFullName();
                     if (name1.compareTo(name2) <= 0) {
                         System.out.println("fix " + name1 + " " + name2);
                     } else {
