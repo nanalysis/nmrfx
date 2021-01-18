@@ -21,8 +21,7 @@ public class NodeEvaluatorFactory {
         IClassBodyEvaluator cbe = CompilerFactoryFactory.getDefaultCompilerFactory().newClassBodyEvaluator();
         Class[] iIface = {NodeValidatorInterface.class};
         cbe.setImplementedInterfaces(iIface);
-        cbe.setParentClassLoader(this.getClass().getClassLoader());
-        cbe.setClassName("org.nmrfx.structure.chemistry.miner.NodeValidatorX");
+        cbe.setParentClassLoader(NodeEvaluatorFactory.class.getClassLoader());
         NodeValidatorInterface nodeValidator = (NodeValidatorInterface) cbe.createInstance(new StringReader(classBody));
         return nodeValidator;
     }
