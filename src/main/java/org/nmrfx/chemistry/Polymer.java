@@ -97,6 +97,11 @@ public class Polymer extends Entity {
         return new PolymerIterator();
     }
 
+    @Override
+    public String toString() {
+        return name;
+    }
+
     public Residue getResidue(String name) {
         return residues.get(name.toLowerCase());
     }
