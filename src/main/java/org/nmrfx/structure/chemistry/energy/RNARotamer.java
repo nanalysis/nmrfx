@@ -761,8 +761,13 @@ public class RNARotamer {
                 }
             }
             if (ok) {
-                AngleConstraint angleBoundary = new AngleConstraint(angleAtomNames, lower, upper, 1.0);
-                boundaries.add(angleBoundary);
+                try {
+                    AngleConstraint angleBoundary = new AngleConstraint(angleAtomNames, lower, upper, 1.0);
+                    boundaries.add(angleBoundary);
+                } catch (IllegalArgumentException iaE) {
+                    System.out.println(iaE.getMessage());
+
+                }
             }
             i++;
 
