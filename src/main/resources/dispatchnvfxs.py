@@ -11,6 +11,9 @@ if len(sys.argv) > 0:
         import runall
     elif sys.argv[0] == "score":
         import runTests
+    elif sys.argv[0] == "measure":
+        import measure
+        measure.parseArgs()
     elif sys.argv[0] == "summary":
         import checke
         checke.outDir = os.getcwd()
