@@ -630,15 +630,13 @@ class refine:
     def breakBonds(self,bondDict):
         for bondInfo in bondDict:
             atomName1, atomName2 = bondInfo['atoms']
-            breakBond = bondInfo['break'] if 'break' in bondInfo else False
-            if breakBond:
-                atom1 = self.molecule.getAtomByName(atomName1)
-                atom2 = self.molecule.getAtomByName(atomName2)
-                atom1.removeBondTo(atom2)
-                atom2.removeBondTo(atom1)
-                atom1.rotActive = False
-                atom1.rotUnit = -1
-                atom1.rotGroup = None
+            atom1 = self.molecule.getAtomByName(atomName1)
+            atom2 = self.molecule.getAtomByName(atomName2)
+            atom1.removeBondTo(atom2)
+            atom2.removeBondTo(atom1)
+            atom1.rotActive = False
+            atom1.rotUnit = -1
+            atom1.rotGroup = None
 
     def readBondDict(self,bondDict):
         for bondInfo in bondDict:
@@ -652,10 +650,15 @@ class refine:
                     upper = distances + 0.001
     
                 atomName1, atomName2 = bondInfo['atoms']
-                atom1 = self.molecule.getAtomByName(atomName1)
-                atom2 = self.molecule.getAtomByName(atomName2)
-                ringClosures = self.molecule.getRingClosures()
-                AngleTreeGenerator.addRingClosureSet(ringClosures, atom1, atom2)
+                self.addDistanceConstraint(atomName1,atomName2,lower,upper,True)
+                
+    def floatBonds(self, floatDict):
+        for bondInfo in floatDict:
+            atomName1, atomName2 = bondInfo['atoms']
+            atom1 = self.molecule.getAtomByName(atomName1)
+            atom2 = self.molecule.getAtomByName(atomName2)
+            ringClosures = self.molecule.getRingClosures()
+            AngleTreeGenerator.addRingClosureSet(ringClosures, atom1, atom2)
 
     def addCyclicBond(self, polymer):
         # to return a list atomName1, atomName2, distance
@@ -1074,8 +1077,8 @@ class refine:
         nEntities = len(self.molecule.getEntities())
         nPolymers = len(self.molecule.getPolymers())
 
-        if 'bonds' in data:
-            self.readBondDict(data['bonds'])
+        if 'float' in data:
+            self.floatBonds(data['float'])
 
         # Check to auto add tree in case where there are ligands
         if nEntities > nPolymers:
@@ -1105,16 +1108,17 @@ class refine:
         if linkerList:
             self.addLinkers(linkerList)
 
-        if 'bonds' in data:
-            self.breakBonds(data['bonds'])
+        if 'float' in data:
+            self.breakBonds(data['float'])
 
+        if 'bonds' in data:
+            self.readBondDict(data['bonds'])
         if 'distances' in data:
             disWt = self.readDistanceDict(data['distances'],residues)
         if 'angles' in data:
             angleWt = self.readAngleDict(data['angles'])
         if 'tree' in data:
             self.setupTree(treeDict)
-
 
         self.setup('./',seed,writeTrajectory=False, usePseudo=False)
         self.energy()
