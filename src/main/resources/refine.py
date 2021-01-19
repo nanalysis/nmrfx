@@ -627,17 +627,35 @@ class refine:
         else:
             self.molecule.createLinker(startAtom, endAtom, n, linkLen, valAngle, dihAngle)
 
+    def breakBonds(self,bondDict):
+        for bondInfo in bondDict:
+            atomName1, atomName2 = bondInfo['atoms']
+            breakBond = bondInfo['break'] if 'break' in bondInfo else False
+            if breakBond:
+                atom1 = self.molecule.getAtomByName(atomName1)
+                atom2 = self.molecule.getAtomByName(atomName2)
+                atom1.removeBondTo(atom2)
+                atom2.removeBondTo(atom1)
+                atom1.rotActive = False
+                atom1.rotUnit = -1
+                atom1.rotGroup = None
+
     def readBondDict(self,bondDict):
         for bondInfo in bondDict:
-            distances = bondInfo['length'] if 'length' in bondInfo else 1.08
-            if not isinstance(distances,float):
-                lower,upper = distances
-            else:
-                lower = distances - 0.001
-                upper = distances + 0.001
-
-            atomName1, atomName2 = bondInfo['atoms']
-            self.addDistanceConstraint(atomName1, atomName2, lower, upper, True)
+            breakBond = bondInfo['break'] if 'break' in bondInfo else False
+            if not breakBond:
+                distances = bondInfo['length'] if 'length' in bondInfo else 1.08
+                if not isinstance(distances,float):
+                    lower,upper = distances
+                else:
+                    lower = distances - 0.001
+                    upper = distances + 0.001
+    
+                atomName1, atomName2 = bondInfo['atoms']
+                atom1 = self.molecule.getAtomByName(atomName1)
+                atom2 = self.molecule.getAtomByName(atomName2)
+                ringClosures = self.molecule.getRingClosures()
+                AngleTreeGenerator.addRingClosureSet(ringClosures, atom1, atom2)
 
     def addCyclicBond(self, polymer):
         # to return a list atomName1, atomName2, distance
@@ -1056,6 +1074,9 @@ class refine:
         nEntities = len(self.molecule.getEntities())
         nPolymers = len(self.molecule.getPolymers())
 
+        if 'bonds' in data:
+            self.readBondDict(data['bonds'])
+
         # Check to auto add tree in case where there are ligands
         if nEntities > nPolymers:
             if not 'tree' in data:
@@ -1064,6 +1085,9 @@ class refine:
         if 'tree' in data:
             if len(self.molecule.getEntities()) > 1:
                 linkerList = self.validateLinkerList(linkerList, treeDict)
+            else:
+                if linkerList:
+                    linkerList = [linkerList]
             treeDict = self.setEntityEntryDict(linkerList, treeDict)
             self.measureTree()
         else:
@@ -1080,6 +1104,9 @@ class refine:
 
         if linkerList:
             self.addLinkers(linkerList)
+
+        if 'bonds' in data:
+            self.breakBonds(data['bonds'])
 
         if 'distances' in data:
             disWt = self.readDistanceDict(data['distances'],residues)
@@ -1108,8 +1135,6 @@ class refine:
                 distance = float(distance)
                 self.addDistanceConstraint(atomName1, atomName2, distance - .0001, distance + .0001, True)
 
-        if 'bonds' in data:
-            self.readBondDict(data['bonds'])
 
         if 'shifts' in data:
             self.readShiftDict(data['shifts'],residues)
@@ -1237,6 +1262,8 @@ class refine:
             self.addSuiteAngles(rnaDict['suite'])
         if 'vienna' in rnaDict:
             self.findHelices(rnaDict['vienna'])
+        if 'planarity' in rnaDict:
+            self.addPlanarity = rnaDict['planarity']
         if 'bp' in rnaDict:
 	    polymers = self.molecule.getPolymers()
             bps = rnaDict['bp']
@@ -1815,14 +1842,19 @@ class refine:
                 tetraLoopSeq += residue.getName()
                 tetraLoopRes.append(residue.getNumber())
             if gnraPat.match(tetraLoopSeq):
-                res2 = allResidues[m.start()+3].getNumber()
-                res3 = allResidues[m.start()+4].getNumber()
-                res4 = allResidues[m.start()+5].getNumber()
-                res5 = allResidues[m.start()+6].getNumber()
-                self.addSuiteBoundary(polymer, res2,"1g")
-                self.addSuiteBoundary(polymer, res3,"1a")
-                self.addSuiteBoundary(polymer, res4,"1a")
-                self.addSuiteBoundary(polymer, res5,"1c")
+                res2 = allResidues[m.start()+3]
+                res2Num = res2.getNumber()
+                res3 = allResidues[m.start()+4]
+                res3Num = res3.getNumber()
+                res4 = allResidues[m.start()+5]
+                res4Num = res4.getNumber()
+                res5 = allResidues[m.start()+6]
+                res5Num = res5.getNumber()
+                if res2.getPolymer() == res5.getPolymer():
+                    self.addSuiteBoundary(polymer, res2Num,"1g")
+                    self.addSuiteBoundary(polymer, res3Num,"1a")
+                    self.addSuiteBoundary(polymer, res4Num,"1a")
+                    self.addSuiteBoundary(polymer, res5Num,"1c")
 
     def addBasePair(self, residueI, residueJ, type=1):
         resNameI = residueI.getName()
@@ -2040,6 +2072,14 @@ class refine:
                 atom = self.entityEntryDict[entity]
                 AngleTreeGenerator.genMeasuredTree(entity, atom)
 
+    def dumpProperties(self, nodeValidator):
+        atoms = self.molecule.getAtoms()
+        props = nodeValidator.dumpProps()
+        print props[0]
+        for atom,line in zip(atoms,props[1:]):
+            print atom,line
+
+
     def setupAtomProperties(self, compound):
         pI = PathIterator(compound)
         nodeValidator = NodeValidator()
@@ -2050,7 +2090,6 @@ class refine:
         pI.setProperties("namide", "AMIDE");
         pI.setProperties("r", "RING");
         pI.setHybridization();
-
 
     def setupTree(self, treeDict):
         """Creates the tree path and setups the coordinates of the molecule from all the entities
@@ -2310,7 +2349,7 @@ class refine:
         self.useDegrees = False
         self.setupEnergy(self.molName,self.energyLists, usePseudo=usePseudo,useShifts=useShifts)
         self.loadDihedrals(self.angleStrings)
-        self.addRingClosures() # Broken bonds are stored in molecule after tree generation. This is to fix broken bonds
+        self.addRingClosures() # Broken bonds are stored in molecule after tree generation. This is to fix broken bonds  # fixme should not happen with rna riboses as they are added
         self.setForces({'repel':0.5,'dis':1,'dih':5})
         self.setPars({'coarse':False,'useh':False,'dislim':self.disLim,'end':2,'hardSphere':0.15,'shrinkValue':0.20})
         if writeTrajectory:
