@@ -719,9 +719,10 @@ public class RNARotamer {
                 upper += 360.0;
             }
             //System.out.printf("%3s %5s %8.3f %8.3f %8.3f %8.3f\n", residueNum, name, mean * toDEG, sdev * toDEG * mul, lower, upper);
-            List<Atom> angleAtomNames = new ArrayList<>();
+            List<Atom> angleAtoms = new ArrayList<>();
             int j = 0;
             boolean ok = true;
+            int iAtom = 0;
             for (String aName : atomNames) {
                 int colonPos = aName.indexOf(':');
                 int delta = 0;
@@ -754,15 +755,22 @@ public class RNARotamer {
                 if (atom == null) {
                     ok = false;
                 }
+                if (iAtom > 0) {
+                    if (atom.parent != angleAtoms.get(iAtom - 1)) {
+                        System.out.println("skip " + atom.getFullName());
+                        ok = false;
+                    }
+                }
                 if (ok) {
-                    angleAtomNames.add(atom);
+                    angleAtoms.add(atom);
                 } else {
                     break;
                 }
+                iAtom++;
             }
             if (ok) {
                 try {
-                    AngleConstraint angleBoundary = new AngleConstraint(angleAtomNames, lower, upper, 1.0);
+                    AngleConstraint angleBoundary = new AngleConstraint(angleAtoms, lower, upper, 1.0);
                     boundaries.add(angleBoundary);
                 } catch (IllegalArgumentException iaE) {
                     System.out.println(iaE.getMessage());
