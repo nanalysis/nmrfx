@@ -2283,4 +2283,26 @@ public class Atom implements IAtom {
     public static int compareByIndex(Atom a1, Atom a2) {
         return Integer.compare(a1.iAtom, a2.iAtom);
     }
+    
+     public boolean isBackbone() {
+        Polymer polymer = (Polymer) getTopEntity();
+        String Name = this.getName();
+        boolean isProtein = polymer.isPeptide();
+        boolean isRNA = polymer.isRNA();
+		if (isRNA){
+            if (Name.equals("O3'") || Name.equals("P") || Name.equals("O5'") || Name.equals("C5'") || Name.equals("C3'")){
+                return true;
+            } else {
+                return false;
+            }
+		} else if (isProtein) {
+            if (Name.equals("N") || Name.equals("CA") || Name.equals("C")) {
+                return true;
+            } else {
+                return false;
+            }
+		}  else {
+            return false;
+		}
+    }   
 }
