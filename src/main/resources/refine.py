@@ -629,14 +629,17 @@ class refine:
 
     def breakBonds(self,bondDict):
         for bondInfo in bondDict:
-            atomName1, atomName2 = bondInfo['atoms']
-            atom1 = self.molecule.getAtomByName(atomName1)
-            atom2 = self.molecule.getAtomByName(atomName2)
-            atom1.removeBondTo(atom2)
-            atom2.removeBondTo(atom1)
-            atom1.rotActive = False
-            atom1.rotUnit = -1
-            atom1.rotGroup = None
+            breakBond = bondInfo['break'] if 'break' in bondInfo else False
+            if breakBond:
+                atomName1, atomName2 = bondInfo['atoms']
+                atom1 = self.molecule.getAtomByName(atomName1)
+                atom2 = self.molecule.getAtomByName(atomName2)
+                print 'break', atomName1, atomName2
+                atom1.removeBondTo(atom2)
+                atom2.removeBondTo(atom1)
+                atom1.rotActive = False
+                atom1.rotUnit = -1
+                atom1.rotGroup = None
 
     def readBondDict(self,bondDict):
         for bondInfo in bondDict:
@@ -1080,6 +1083,7 @@ class refine:
         if 'float' in data:
             self.floatBonds(data['float'])
 
+
         # Check to auto add tree in case where there are ligands
         if nEntities > nPolymers:
             if not 'tree' in data:
@@ -1110,6 +1114,8 @@ class refine:
 
         if 'float' in data:
             self.breakBonds(data['float'])
+        if 'bonds' in data:
+            self.breakBonds(data['bonds'])
 
         if 'bonds' in data:
             self.readBondDict(data['bonds'])
