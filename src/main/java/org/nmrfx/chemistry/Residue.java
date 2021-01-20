@@ -940,4 +940,12 @@ public class Residue extends Compound {
         return sBuilder.toString();
     }
 
+    public void setBackboneRotationActive(boolean state) {
+        List<Atom> atoms = this.getAtoms();
+        for (Atom iAtom : atoms) {
+            if (iAtom.isBackbone()) {
+                iAtom.rotActive = state;
+            }
+            }
+    } 
 }
