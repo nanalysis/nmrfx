@@ -2295,18 +2295,14 @@ public class Atom implements IAtom {
             } else {
                 return false;
             }
-		}
-		else if (isProtein) {
+		} else if (isProtein) {
             if (Name.equals("N") || Name.equals("CA") || Name.equals("C")) {
                 return true;
             } else {
                 return false;
             }
-		}
-	        else {
-		    System.out.println("Molecule is DNA or other type");
-		    System.exit(0);
-                    return false;
+		}  else {
+            return false;
 		}
     }   
 }
