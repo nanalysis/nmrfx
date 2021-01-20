@@ -1412,7 +1412,7 @@ public class Atom implements IAtom {
 
         // target value uncertainty
         double targetErr = distPair.getTargetError();
-        if (targetErr  < 1.0e-6) {
+        if (targetErr < 1.0e-6) {
             sBuilder.append(String.format("%-8s", "."));
         } else {
             sBuilder.append(String.format("%-8.3f", targetErr));
@@ -2283,26 +2283,21 @@ public class Atom implements IAtom {
     public static int compareByIndex(Atom a1, Atom a2) {
         return Integer.compare(a1.iAtom, a2.iAtom);
     }
-    
-     public boolean isBackbone() {
-        Polymer polymer = (Polymer) getTopEntity();
-        String Name = this.getName();
-        boolean isProtein = polymer.isPeptide();
-        boolean isRNA = polymer.isRNA();
-		if (isRNA){
-            if (Name.equals("O3'") || Name.equals("P") || Name.equals("O5'") || Name.equals("C5'") || Name.equals("C3'")){
-                return true;
+
+    public boolean isBackbone() {
+        if (getTopEntity() instanceof Polymer) {
+            Polymer polymer = (Polymer) getTopEntity();
+            boolean isProtein = polymer.isPeptide();
+            boolean isRNA = polymer.isRNA();
+            if (isRNA) {
+                return name.equals("O3'") || name.equals("P") || name.equals("O5'") || name.equals("C5'") || name.equals("C3'");
+            } else if (isProtein) {
+                return name.equals("N") || name.equals("CA") || name.equals("C");
             } else {
                 return false;
             }
-		} else if (isProtein) {
-            if (Name.equals("N") || Name.equals("CA") || Name.equals("C")) {
-                return true;
-            } else {
-                return false;
-            }
-		}  else {
+        } else {
             return false;
-		}
-    }   
+        }
+    }
 }
