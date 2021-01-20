@@ -634,7 +634,6 @@ class refine:
                 atomName1, atomName2 = bondInfo['atoms']
                 atom1 = self.molecule.getAtomByName(atomName1)
                 atom2 = self.molecule.getAtomByName(atomName2)
-                print 'break', atomName1, atomName2
                 atom1.removeBondTo(atom2)
                 atom2.removeBondTo(atom1)
                 atom1.rotActive = False
@@ -1082,7 +1081,6 @@ class refine:
 
         if 'float' in data:
             self.floatBonds(data['float'])
-
 
         # Check to auto add tree in case where there are ligands
         if nEntities > nPolymers:
