@@ -1890,6 +1890,25 @@ public class Atom implements IAtom {
         return list;
     }
 
+    public boolean isBackbone() {
+        if (getTopEntity() instanceof Polymer) {
+            Polymer polymer = (Polymer) getTopEntity();
+            boolean isProtein = polymer.isPeptide();
+            boolean isRNA = polymer.isRNA();
+            if (isRNA) {
+                return name.equals("O3'") || name.equals("P") ||
+                        name.equals("O5'") || name.equals("C5'") ||
+                        name.equals("C4'") || name.equals("C3'");
+            } else if (isProtein) {
+                return name.equals("N") || name.equals("CA") || name.equals("C");
+            } else {
+                return false;
+            }
+        } else {
+            return false;
+        }
+    }
+
     public boolean isFirstInMethyl() {
         boolean result = false;
         if (isMethyl()) {
@@ -2282,22 +2301,5 @@ public class Atom implements IAtom {
 
     public static int compareByIndex(Atom a1, Atom a2) {
         return Integer.compare(a1.iAtom, a2.iAtom);
-    }
-
-    public boolean isBackbone() {
-        if (getTopEntity() instanceof Polymer) {
-            Polymer polymer = (Polymer) getTopEntity();
-            boolean isProtein = polymer.isPeptide();
-            boolean isRNA = polymer.isRNA();
-            if (isRNA) {
-                return name.equals("O3'") || name.equals("P") || name.equals("O5'") || name.equals("C5'") || name.equals("C3'");
-            } else if (isProtein) {
-                return name.equals("N") || name.equals("CA") || name.equals("C");
-            } else {
-                return false;
-            }
-        } else {
-            return false;
-        }
     }
 }
