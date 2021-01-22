@@ -1908,6 +1908,31 @@ public class Atom implements IAtom {
             return false;
         }
     }
+    
+    public boolean isLinker() {
+        if (getTopEntity() instanceof Polymer) {
+            Polymer polymer = (Polymer) getTopEntity();
+            boolean isProtein = polymer.isPeptide();
+            boolean isRNA = polymer.isRNA();
+            String fullName = (String) name;
+            Character nameBase = fullName.charAt(0);
+            if (isRNA) {
+                return nameBase.equals('X');
+            } else if (isProtein) {
+                return nameBase.equals('X');
+            } else {
+                return false;
+            }
+        } else {
+            return false;
+        }
+    }
+    
+    public void setLinkerRotationActive(boolean state) {
+        if (this.isLinker()) {
+                this.rotActive = state;
+            }
+            } 
 
     public boolean isFirstInMethyl() {
         boolean result = false;
