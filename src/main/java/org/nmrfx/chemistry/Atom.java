@@ -1896,9 +1896,9 @@ public class Atom implements IAtom {
             boolean isProtein = polymer.isPeptide();
             boolean isRNA = polymer.isRNA();
             if (isRNA) {
-                return name.equals("O3'") || name.equals("P") ||
-                        name.equals("O5'") || name.equals("C5'") ||
-                        name.equals("C4'") || name.equals("C3'");
+                return name.equals("O3'") || name.equals("P")
+                        || name.equals("O5'") || name.equals("C5'")
+                        || name.equals("C4'") || name.equals("C3'");
             } else if (isProtein) {
                 return name.equals("N") || name.equals("CA") || name.equals("C");
             } else {
@@ -2244,6 +2244,17 @@ public class Atom implements IAtom {
     public boolean isCoarse() {
         int nameLen = name.length();
         return name.charAt(nameLen - 1) == 'c';
+    }
+
+    public boolean isLinker() {
+        return type.equals("XX");
+    }
+
+    public void setLinkerRotationActive(boolean state) {
+        if (this.isLinker()) {
+            System.out.println("is linker " + getFullName());
+            this.rotActive = state;
+        }
     }
 
     @Override
