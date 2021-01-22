@@ -32,19 +32,27 @@ do
 
     if [[ $os == "linux-amd64" ]]
     then
+        rm lib/*-android*
+        rm lib/*-ios*
+        rm lib/*-linux-arm*
+        rm lib/*-linux-ppc*
+        rm lib/*-linux-x86.*
         rm lib/*-mac*
         rm lib/*-win*
     fi
-
     if [[ $os == "windows-amd64" ]]
     then
+        rm lib/*-android*
+        rm lib/*-ios*
         rm lib/*-linux*
         rm lib/*-mac*
+        rm lib/*-windows-x86.*
     fi
-
     if [[ $os == "macosx-amd64" ]]
     then
         cp -R -p ${JREHOME}/$jreFileName .
+        rm lib/*-android*
+        rm lib/*-ios*
         rm lib/*-linux*
         rm lib/*-win*
     else
