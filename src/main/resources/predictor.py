@@ -19,6 +19,34 @@ outDir = os.path.join(homeDir,'output')
 
 argFile = sys.argv[-1]
 
+tags = '''    _Atom_chem_shift.ID
+    _Atom_chem_shift.Assembly_atom_ID
+    _Atom_chem_shift.Entity_assembly_ID
+    _Atom_chem_shift.Entity_ID
+    _Atom_chem_shift.Comp_index_ID
+    _Atom_chem_shift.Seq_ID
+    _Atom_chem_shift.Comp_ID
+    _Atom_chem_shift.Atom_ID
+    _Atom_chem_shift.Atom_type
+    _Atom_chem_shift.Atom_isotope_number
+    _Atom_chem_shift.Val
+    _Atom_chem_shift.Val_err
+    _Atom_chem_shift.Assign_fig_of_merit
+    _Atom_chem_shift.Ambiguity_code
+    _Atom_chem_shift.Occupancy
+    _Atom_chem_shift.Resonance_ID
+    _Atom_chem_shift.Auth_entity_assembly_ID
+    _Atom_chem_shift.Auth_asym_ID
+    _Atom_chem_shift.Auth_seq_ID
+    _Atom_chem_shift.Auth_comp_ID
+    _Atom_chem_shift.Auth_atom_ID'''
+
+
+tags2 = '''    _Atom_chem_shift.Details
+    _Atom_chem_shift.Entry_ID
+    _Atom_chem_shift.Assigned_chem_shift_list_ID
+'''
+
 def predictRNA(mol, outputMode="star"):
     refiner=refine()
     shifts = refiner.predictRNAShifts()
@@ -47,7 +75,14 @@ def dumpLigandPredictions(mol, location=-1):
                 print valueStr
 
 
-def dumpPredictions(mol, location=-1, outputMode="star"):
+def dumpPredictions(mol, location=-1, outputMode="star", selected=False, header=False, model=-1):
+    if outputMode == 'star' and header: 
+        #tags = tags.split()
+        print tags
+        if model != -1:
+            print "    _Atom_chem_shift.PDB_model_num"
+        print tags2
+
     polymers = mol.getPolymers()
     if outputMode == "protein":
         resStr = "%4s %7s" % ("Num","Name")
@@ -85,6 +120,8 @@ def dumpPredictions(mol, location=-1, outputMode="star"):
             else:
                 atoms = residue.getAtoms()
                 for atom in atoms:
+                    if selected and not atom.getSelected():
+                        continue
                     atomName = atom.getName()
                     if (location < 0):
                         value = residue.getAtom(atomName).getRefPPM(-location-1)
@@ -97,7 +134,10 @@ def dumpPredictions(mol, location=-1, outputMode="star"):
                         elemName = atom.getElementName()
                         nuclei = Nuclei.findNuclei(elemName)
                         isotope = nuclei.getNumber()
-                        valueStr = "     %5d . %1d %1d %3d %3s %3s %-4s %1s %2s %7.3f %5.3f . 1 . . . . %3s %3s %-4s .    . 1" % (iAtom,iEntity,iEntity,iRes, residue.getNumber(),residue.getName(),atomName,elemName,isotope,value,valueErr,residue.getNumber(), residue.getName(),atomName)
+                        if model != -1:
+                            valueStr = "     %5d . %1d %1d %3d %3s %3s %-4s %1s %2s %7.3f %5.3f . 1 . . . . %3s %3s %-4s %5d .    . 1" % (iAtom,iEntity,iEntity,iRes, residue.getNumber(),residue.getName(),atomName,elemName,isotope,value,valueErr,residue.getNumber(), residue.getName(),atomName, model)
+                        else:
+                            valueStr = "     %5d . %1d %1d %3d %3s %3s %-4s %1s %2s %7.3f %5.3f . 1 . . . . %3s %3s %-4s .    . 1" % (iAtom,iEntity,iEntity,iRes, residue.getNumber(),residue.getName(),atomName,elemName,isotope,value,valueErr,residue.getNumber(), residue.getName(),atomName )
                         print valueStr
                         iAtom += 1
             iRes += 1
