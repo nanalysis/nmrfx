@@ -657,6 +657,9 @@ public class EnergyLists {
 
                             nRotamers++;
                             RotamerScore[] rotamerScores = RNARotamer.getNBest(polymer, i, 3, eCoords);
+                            if ((rotamerScores == null) || (rotamerScores.length == 0)) {
+                                continue;
+                            }
                             double rotamerEnergy = RNARotamer.calcEnergy(rotamerScores);
                             rotamerEnergy *= forceWeight.getDihedralProb();
                             probDih += rotamerEnergy;
@@ -933,6 +936,9 @@ public class EnergyLists {
                         continue;
                     }
                     RotamerScore rotamerScore = RNARotamer.getBest(polymer, i, eCoords);
+                    if (rotamerScore == null) {
+                        continue;
+                    }
                     RotamerScore[] rotamerScores = {rotamerScore};
 //                    RotamerScore[] rotamerScores = RNARotamer.getNBest(polymer, i, 1, eCoords);
                     double rotamerEnergy = RNARotamer.calcEnergy(rotamerScores);
@@ -943,6 +949,11 @@ public class EnergyLists {
                     if (calcDeriv) {
                         Map<Integer, Double> rotDerivs = RNARotamer.calcDerivs(rotamerScores, rotamerEnergy);
                         for (int atomIndex : rotDerivs.keySet()) {
+                            if (atomIndex >= derivs.length) {
+                                throw new RuntimeException("Atom Index " + atomIndex +
+                                        " too large " + derivs.length + " for residue " + residue.toString()
+                                + " angle atoms size " + angleAtoms.size());
+                            }
                             double deriv = forceWeight.getDihedralProb() * rotDerivs.get(atomIndex);
                             derivs[atomIndex] += (deriv);
                             if (Double.isNaN(derivs[atomIndex]) || !Double.isFinite(derivs[atomIndex])) {
@@ -1231,6 +1242,7 @@ public class EnergyLists {
             }
         } catch (Exception ex) {
             ex.printStackTrace();
+            System.exit(1);
         }
 
         return new EnergyDeriv(energyTotal, gradient);

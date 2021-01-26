@@ -399,6 +399,9 @@ public class RNARotamer {
          */
 
         double[] testAngles = RNARotamer.getDihedrals(polymer, residueNum, ec);
+        if (testAngles == null) {
+            return new RotamerScore[0];
+        }
         List<RotamerScore> rotamerScores = new ArrayList<>();
         for (RNARotamer rotamer : ROTAMERS.values()) {
             double probability = rotamer.probability(testAngles, new int[]{0, 1, 2, 3, 4, 5, 6}, rotamer.fraction);
@@ -442,6 +445,9 @@ public class RNARotamer {
          */
 
         double[] testAngles = RNARotamer.getDihedrals(polymer, residueNum, ec);
+        if (testAngles == null) {
+            return null;
+        }
         RotamerScore bestRotamer = null;
         double best = 0.0;
         for (RNARotamer rotamer : ROTAMERS.values()) {
@@ -643,6 +649,9 @@ public class RNARotamer {
                     Atom atom = residue.getAtom(aName);
                     angleAtoms[j] = atom;
                     if (j == 2) {
+                        if (!atom.rotActive) {
+                            return null;
+                        }
                         atoms[i] = atom;
                     }
                     j++;

@@ -498,7 +498,6 @@ public class Dihedral {
         }
 
         energyList.clearAngleBoundaries();
-        System.out.println("setup angle restraints " + angleAtoms.size());
         for (int i = 0; i < angleAtoms.size(); i++) {
             Atom atom = angleAtoms.get(i);
             atom.aAtom = i;
