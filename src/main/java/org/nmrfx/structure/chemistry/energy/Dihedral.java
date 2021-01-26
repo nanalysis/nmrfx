@@ -498,17 +498,24 @@ public class Dihedral {
         }
 
         energyList.clearAngleBoundaries();
+        System.out.println("setup angle restraints " + angleAtoms.size());
         for (int i = 0; i < angleAtoms.size(); i++) {
             Atom atom = angleAtoms.get(i);
             atom.aAtom = i;
             String atomName = atom.getFullName();
             List<AngleConstraint> angleBoundaryList = angleBoundaries.get(atomName);
             //if angleBoundary is present for that atom, replace value at there respected indices
-
-            if (angleBoundaryList != null) {
-                for (AngleConstraint angleBoundary : angleBoundaryList) {
-                    angleBoundary.setIndex(i);
-                    energyList.addAngleBoundary(angleBoundary);
+            boolean useLast = true;
+            if ((angleBoundaryList != null) && !angleBoundaryList.isEmpty()) {
+                if (useLast) {
+                    AngleConstraint angleConstraint = angleBoundaryList.get(angleBoundaryList.size() - 1);
+                    angleConstraint.setIndex(i);
+                    energyList.addAngleBoundary(angleConstraint);
+                } else {
+                    for (AngleConstraint angleConstraint : angleBoundaryList) {
+                        angleConstraint.setIndex(i);
+                        energyList.addAngleBoundary(angleConstraint);
+                    }
                 }
             }
         }
