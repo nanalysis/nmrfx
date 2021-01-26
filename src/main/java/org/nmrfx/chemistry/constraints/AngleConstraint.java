@@ -321,10 +321,10 @@ public class AngleConstraint implements Constraint {
         result.append(sep);
 
 //      _Torsion_angle_constraint.Angle_lower_bound_val
-        result.append(getLower());
+        result.append(String.format("%.0f", Math.toDegrees(getLower())));
         result.append(sep);
 //      _Torsion_angle_constraint.Angle_upper_bound_val
-        result.append(getUpper());
+        result.append(String.format("%.0f", Math.toDegrees(getUpper())));
         result.append(sep);
 
         String ssID = null;
