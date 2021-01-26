@@ -129,7 +129,7 @@ public class Util {
         int wildIndex = pat.indexOf('*');
         String rePat = null;
         if (percentIndex != -1) {
-            rePat = pat.substring(0, percentIndex) + "[0-9]*";
+            rePat = pat.substring(0, percentIndex) + "[0-9']*";
         } else if (wildIndex != -1) {
             String substr = pat.substring(0, wildIndex);
             rePat = strictlyNEF ? substr + "\\S+" : substr + "\\S*";

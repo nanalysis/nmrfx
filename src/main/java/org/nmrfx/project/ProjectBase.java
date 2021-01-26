@@ -54,7 +54,6 @@ public class ProjectBase {
             Constructor constructor = c.getDeclaredConstructor(parameterTypes);
             projectBase = (ProjectBase) constructor.newInstance(name);
         } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException | SecurityException ex) {
-            System.out.println(" new project fail " + ex.getLocalizedMessage());
             projectBase = new ProjectBase(name);
         }
         return projectBase;
@@ -154,7 +153,7 @@ public class ProjectBase {
     }
 
     public List<DatasetBase> getDatasets() {
-        System.out.println("get datasets " + datasets.toString());
+//        System.out.println("get datasets " + datasets.toString());
         return datasets;
     }
 

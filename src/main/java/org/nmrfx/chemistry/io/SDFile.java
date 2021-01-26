@@ -82,7 +82,6 @@ public class SDFile {
         try {
             for (int i = 0; i < header.length; i++) {
                 header[i] = lineReader.readLine();
-                System.out.println(header[i]);
             }
         } catch (IOException ioe) {
             throw new MoleculeIOException("Couldn't read first four lines");
@@ -400,7 +399,6 @@ public class SDFile {
             int iLine = lineReader == null ? -1 : lineReader.getLineNumber();
             throw new MoleculeIOException("error reading at line " + iLine);
         }
-        System.out.println("read mol " + nAtoms);
         molecule.getAtomTypes();
         return molecule;
     }
@@ -430,7 +428,6 @@ public class SDFile {
             }
             sdFile.readMol(fileName, fileContent, compound);
         } else {
-            System.out.println("Creating molecule");
             molecule = sdFile.readMol(fileName, fileContent);
             compound = molecule.getLigands().get(0);
         }

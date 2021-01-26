@@ -1412,11 +1412,12 @@ public class Atom implements IAtom {
         sBuilder.append(String.format("%-8.3f", target));
 
         // target value uncertainty
-        String targetErr = String.valueOf(distPair.getTargetError());
-        if (Double.parseDouble(targetErr) == 0) {
-            targetErr = ".";
+        double targetErr = distPair.getTargetError();
+        if (targetErr < 1.0e-6) {
+            sBuilder.append(String.format("%-8s", "."));
+        } else {
+            sBuilder.append(String.format("%-8.3f", targetErr));
         }
-        sBuilder.append(String.format("%-8s", targetErr));
 
         // lower limit
         double lower = distPair.getLower();
@@ -1468,7 +1469,7 @@ public class Atom implements IAtom {
 
             // sequence code 
             if (atom.entity instanceof Residue) {
-                seqCode = atom.entity.getIDNum();
+                seqCode = ((Residue) atom.entity).getResNum();
             } else if (atom.entity instanceof Compound) {
                 seqCode = Integer.parseInt(((Compound) atom.entity).getNumber());
             }
@@ -1512,6 +1513,9 @@ public class Atom implements IAtom {
 
         // name
         String name = bound.getName();
+        if (name.equals("")) {
+            name = ".";
+        }
         sBuilder.append(String.format("%6s", name));
 
         return sBuilder.toString();
@@ -1887,6 +1891,25 @@ public class Atom implements IAtom {
         return list;
     }
 
+    public boolean isBackbone() {
+        if (getTopEntity() instanceof Polymer) {
+            Polymer polymer = (Polymer) getTopEntity();
+            boolean isProtein = polymer.isPeptide();
+            boolean isRNA = polymer.isRNA();
+            if (isRNA) {
+                return name.equals("O3'") || name.equals("P")
+                        || name.equals("O5'") || name.equals("C5'")
+                        || name.equals("C4'") || name.equals("C3'");
+            } else if (isProtein) {
+                return name.equals("N") || name.equals("CA") || name.equals("C");
+            } else {
+                return false;
+            }
+        } else {
+            return false;
+        }
+    }
+
     public boolean isFirstInMethyl() {
         boolean result = false;
         if (isMethyl()) {
@@ -2222,6 +2245,17 @@ public class Atom implements IAtom {
     public boolean isCoarse() {
         int nameLen = name.length();
         return name.charAt(nameLen - 1) == 'c';
+    }
+
+    public boolean isLinker() {
+        return type.equals("XX");
+    }
+
+    public void setLinkerRotationActive(boolean state) {
+        if (this.isLinker()) {
+            System.out.println("is linker " + getFullName());
+            this.rotActive = state;
+        }
     }
 
     @Override

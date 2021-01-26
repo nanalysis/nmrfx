@@ -77,6 +77,13 @@ public class AngleConstraint implements Constraint {
         if (atoms.length != 4) {
             throw new IllegalArgumentException("Must specify 4 atoms in AngleBoundary constructor");
         }
+        int i = 0;
+        for (Atom atom : atoms) {
+            if (atom == null) {
+                throw new IllegalArgumentException("null atom " + i + " in Angle constraint");
+            }
+            i++;
+        }
         if ((atoms[2].parent != atoms[1]) && (atoms[1].parent != atoms[2])) {
             throw new IllegalArgumentException("Second atom must be parent of first atom, or vice versa");
         }
@@ -110,7 +117,7 @@ public class AngleConstraint implements Constraint {
             throw new IllegalArgumentException("Must specify 4 atoms in AngleBoundary constructor");
         }
         if ((atoms.get(2).parent != atoms.get(1)) && (atoms.get(1).parent != atoms.get(2))) {
-            throw new IllegalArgumentException("Second atom must be parent of first atom, or vice versa");
+            throw new IllegalArgumentException("Second atom must be parent of first atom, or vice versa " + atoms.get(1).getFullName() + " " + atoms.get(2).getFullName());
         }
         /*Changed from Original*/
         if (((lower < -180.0) && (upper < 0.0)) || (upper > 360.0) || (upper < lower)) {
@@ -314,10 +321,10 @@ public class AngleConstraint implements Constraint {
         result.append(sep);
 
 //      _Torsion_angle_constraint.Angle_lower_bound_val
-        result.append(getLower());
+        result.append(String.format("%.0f", Math.toDegrees(getLower())));
         result.append(sep);
 //      _Torsion_angle_constraint.Angle_upper_bound_val
-        result.append(getUpper());
+        result.append(String.format("%.0f", Math.toDegrees(getUpper())));
         result.append(sep);
 
         String ssID = null;

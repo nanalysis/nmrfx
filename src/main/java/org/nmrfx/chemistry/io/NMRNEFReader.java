@@ -203,7 +203,7 @@ public class NMRNEFReader {
                         System.out.println("Can't find residue \"" + resName + extension + "\" in residue libraries or STAR file");
                         try {
                             String cifFile = FileSystems.getDefault().getPath(nefDir.toString(), resName + ".cif").toString();
-                            System.out.println("read residue from " + cifFile);
+                            System.out.println("read residue " + chainCode + " " + seqCode + " from " + cifFile);
                             MMcifReader.readChemComp(cifFile, molecule, chainCode, seqCode);
                         } catch (Exception ex) {
                             ex.printStackTrace();
@@ -218,6 +218,8 @@ public class NMRNEFReader {
                 if (!cifFile.exists()) {
                     throw new ParseException("File " + cifFileName + " doesn't exist");
                 }
+                System.out.println("read residue " + chainCode + " " + seqCode + " from " + cifFile);
+
                 MMcifReader.readChemComp(cifFileName, molecule, chainCode, seqCode);
             }
         }
@@ -473,6 +475,9 @@ public class NMRNEFReader {
                     }
                 }
                 atoms[atomIndex] = MoleculeBase.getAtomByName(fullAtom);
+                if (atoms[atomIndex] == null) {
+                    throw new ParseException("Atom not found " + fullAtom);
+                }
             }
             double scale = 1.0;
             try {
@@ -489,6 +494,7 @@ public class NMRNEFReader {
         if (loop == null) {
             throw new ParseException("No \"_nef_distance_restraint\" loop");
         }
+        String origin = saveframe.getValue("_nef_distance_restraint_list", "restraint_origin", "noe");
         var compoundMap = MoleculeBase.compoundMap();
         List<String>[] chainCodeColumns = new ArrayList[2];
         List<String>[] sequenceColumns = new ArrayList[2];
@@ -518,6 +524,9 @@ public class NMRNEFReader {
         atomNames[0] = new ArrayList<>();
         atomNames[1] = new ArrayList<>();
         DistanceConstraintSet distanceSet = molecule.getMolecularConstraints().newDistanceSet(saveframe.getName());
+        if (origin.contains("bond")) {
+            distanceSet.containsBonds(true);
+        }
 
         for (int i = 0; i < chainCodeColumns[0].size(); i++) {
             int restraintIDValue = restraintIDColumn.get(i);
@@ -594,7 +603,7 @@ public class NMRNEFReader {
             Util.setStrictlyNEF(true);
             try {
                 if (addConstraint) {
-                    distanceSet.addDistanceConstraint(atomNames[0], atomNames[1], lower, upper, weight, target, targetErr);
+                    distanceSet.addDistanceConstraint(atomNames[0], atomNames[1], lower, upper, distanceSet.containsBonds(),  weight, target, targetErr);
                 }
             } catch (IllegalArgumentException iaE) {
                 int index = indexColumn.get(i);

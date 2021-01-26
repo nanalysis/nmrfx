@@ -126,6 +126,9 @@ public class Coordinates {
         final double cdx = bndcos * ux1 + bndsin * (ux2 * sinphi + ux3 * cosphi);
         final double cdy = bndcos * uy1 + bndsin * (uy2 * sinphi + uy3 * cosphi);
         final double cdz = bndcos * uz1 + bndsin * (uz2 * sinphi + uz3 * cosphi);
+        if (!Double.isFinite(cdx) ||!Double.isFinite(cdx) || !Double.isFinite(cdz)) {
+            System.out.println("non finite coords");
+        }
 
         /*
          * Set the coordinates of p4. 

@@ -247,7 +247,7 @@ public class PDBFile {
 
     }
 
-    public ArrayList<String> readSequence(String fileName, boolean listMode)
+    public ArrayList<String> readSequence(String fileName, boolean listMode, int structureNum)
             throws MoleculeIOException {
         LineNumberReader lineReader;
         String lastRes = "";
@@ -321,7 +321,7 @@ public class PDBFile {
             if (!listMode) {
                 Sequence sequence = new Sequence();
                 sequence.read(molName, residueList, null);
-                readCoordinates(fileName, 0, true, true);
+                readCoordinates(fileName, structureNum, true, true);
             }
         } catch (IOException e) {
             System.err.println(e.getMessage());
@@ -429,7 +429,7 @@ public class PDBFile {
                 Matcher matcher = pdbPattern.matcher(entry.toString());
                 if (matcher.matches()) {
                     if (readMolSeq) {
-                        readSequence(entry.toString(), false);
+                        readSequence(entry.toString(), false, 0);
                         molecule = MoleculeFactory.getActive();
                         molecule.structures.clear();
                         readMolSeq = false;
@@ -451,7 +451,7 @@ public class PDBFile {
         int iStruct = 0;
         for (File entry : files) {
             if (readMolSeq) {
-                readSequence(entry.toString(), false);
+                readSequence(entry.toString(), false, 0);
                 molecule = MoleculeFactory.getActive();
                 molecule.structures.clear();
                 readMolSeq = false;
@@ -597,8 +597,8 @@ public class PDBFile {
                             //System.out.println(resi.getName() + " " + resi.getNumber());
                             //}
                             if (!atomParse.resName.equals("HOH")) {
-                               // System.err.println("null residue " + atomParse.resNum + " for polymer " + polymerName);
-                               // System.err.println(string);
+                                // System.err.println("null residue " + atomParse.resNum + " for polymer " + polymerName);
+                                // System.err.println(string);
                             }
                             continue;
                         }
@@ -615,8 +615,8 @@ public class PDBFile {
                         atom = residue.getAtomLoose(atomParse.atomName);
 
                         if (atom == null) {
-                            //System.err.println("null atom " + atomParse.atomName);
-                            //System.err.println("null atom " + string);
+                            System.err.println("null atom " + atomParse.atomName);
+                            System.err.println("null atom " + string);
                             continue;
                         }
 

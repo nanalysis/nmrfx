@@ -167,6 +167,8 @@ public class Residue extends Compound {
                         atom = (Atom) atomMap.get("o'");
                     } else if (lName.equals("ot2")) {
                         atom = (Atom) atomMap.get("o''");
+                    } else if (lName.equals("oxt")) {
+                        atom = (Atom) atomMap.get("o''");
                     } else if (lName.equals("o2")) {
                         atom = (Atom) atomMap.get("o''");
                     }
@@ -421,7 +423,7 @@ public class Residue extends Compound {
         if (pType.contains("polypeptide")) {
             atom = this.getAtom("N");
         } else {
-            atom = this.getAtom("P");
+            atom = this.getAtom("OP1");
             if (atom == null) {
                 atom = this.getAtom("HO5'");
             }
@@ -938,4 +940,12 @@ public class Residue extends Compound {
         return sBuilder.toString();
     }
 
+    public void setBackboneRotationActive(boolean state) {
+        List<Atom> atoms = this.getAtoms();
+        for (Atom iAtom : atoms) {
+            if (iAtom.isBackbone()) {
+                iAtom.rotActive = state;
+            }
+            }
+    } 
 }
