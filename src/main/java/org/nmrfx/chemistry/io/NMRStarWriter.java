@@ -21,6 +21,8 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -28,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 import org.nmrfx.chemistry.*;
 import org.nmrfx.peaks.PeakList;
@@ -39,6 +42,7 @@ import org.nmrfx.star.STAR3;
 import org.nmrfx.peaks.PeakPaths;
 import org.nmrfx.chemistry.constraints.ConstraintSet;
 import org.nmrfx.peaks.ResonanceFactory;
+import org.nmrfx.chemistry.RelaxationData.relaxTypes;
 
 /**
  *
@@ -768,24 +772,206 @@ public class NMRStarWriter {
         result.append(entityID);
         return result.toString();
     }
-
+    
     /**
-     * Write out the T1/T2 sections of the STAR file.
+     * Write out the NOE sections of the STAR file.
      *
      * @param chan FileWriter. The FileWriter to use
      * @param molecule Molecule. The molecule to use
-     * @param nucName String. The nucleus, e.g. N.
-     * @param field int. The B0 field
-     * @param expType String. The experiment type, T1 or T2.
-     * @param frameName String. The name of the experiment.
-     * @param coherenceType String. The coherence type.
-     * @param units String. The units of the T1/T2 data.
-     * @param listID int. The number of the T1/T2 block in the file.
+     * @param noeData0 NOEData0. The NOE dataset.
+     * @param listID int. The number of the NOE block in the file.
      * @throws IOException
      * @throws InvalidMoleculeException
      */
-    public static void writeT1T2(FileWriter chan, MoleculeBase molecule, String nucName, 
-            int field, String expType, String frameName, String coherenceType, String units, int listID) throws IOException, InvalidMoleculeException {
+    public static void writeNOE(FileWriter chan, MoleculeBase molecule, NOEData noeData0, int listID) throws IOException, InvalidMoleculeException {
+        List<Atom> atoms = molecule.getAtomArray();
+        String frameName = noeData0.getID();
+        double field = noeData0.getField();
+        chan.write("    ########################################\n");
+        chan.write("    #  Heteronuclear NOE relaxation values  #\n");
+        chan.write("    ########################################\n");
+        chan.write("\n\n");
+        chan.write("save_" + frameName + "\n");
+        chan.write("   _Heteronucl_NOE_list.Sf_category                    ");
+        chan.write("heteronucl_NOE_relaxation\n");
+        chan.write("   _Heteronucl_NOE_list.Sf_framecode                   ");
+        chan.write(frameName + "\n");
+        chan.write("   _Heteronucl_NOE_list.Entry_ID                       ");
+        chan.write(".\n"); //fixme get dynamically
+        chan.write("   _Heteronucl_NOE_list.ID                             ");
+        chan.write(listID + "\n");
+        chan.write("   _Heteronucl_NOE_list.Sample_condition_list_ID       ");
+        chan.write(listID + "\n");
+        chan.write("   _Heteronucl_NOE_list.Sample_condition_list_label    ");
+        chan.write("$sample_conditions_" + listID + "\n");
+        chan.write("   _Heteronucl_NOE_list.Spectrometer_frequency_1H      ");
+        chan.write(String.valueOf(field) + "\n");
+        chan.write("   _Heteronucl_NOE_list.Heteronuclear_NOE_val_type      ");
+        chan.write(STAR3.quote("peak height") + "\n");
+        chan.write("   _Heteronucl_NOE_list.ref_val      ");
+        chan.write("0\n"); //fixme get dynamically
+        chan.write("   _Heteronucl_NOE_list.ref_description      ");
+        chan.write(".\n");
+        chan.write("   _Heteronucl_NOE_list.Details                        ");
+        chan.write(".\n");
+
+        chan.write("\n");
+        chan.write("   loop_\n");
+        chan.write("      _Heteronucl_NOE_experiment.Experiment_ID\n");
+        chan.write("      _Heteronucl_NOE_experiment.Experiment_name\n");
+        chan.write("      _Heteronucl_NOE_experiment.Sample_ID\n");
+        chan.write("      _Heteronucl_NOE_experiment.Sample_label\n");
+        chan.write("      _Heteronucl_NOE_experiment.Sample_state\n");
+        chan.write("      _Heteronucl_NOE_experiment.Entry_ID\n");
+        chan.write("      _Heteronucl_NOE_experiment.Heteronucl_NOE_list_ID\n");
+        chan.write("\n");
+
+        String nmrExpType = "2D 1H-15N HSQC"; //fixme get dynamically
+        String sampleLabel = "$sample_" + listID; //fixme get dynamically
+        String result1 = String.format("%-2d %-7s %-7s %-9s %-2s %-2s %-2d", listID, STAR3.quote(nmrExpType), listID, sampleLabel, ".", ".", listID);
+        chan.write("      " + result1 + "\n");
+        chan.write("   stop_\n\n");
+
+        String[] loopStrings = {"ID", "Assembly_atom_ID_1", "Entity_assembly_ID_1", "Entity_ID_1", "Comp_index_ID_1", "Seq_ID_1",
+                "Comp_ID_1", "Atom_ID_1", "Atom_type_1", "Atom_isotope_number_1", "Assembly_atom_ID_2", "Entity_assembly_ID_2", "Entity_ID_2", 
+                "Comp_index_ID_2", "Seq_ID_2", "Comp_ID_2", "Atom_ID_2", "Atom_type_2", "Atom_isotope_number_2", "Val", "Val_err", 
+                "Resonance_ID_1", "Resonance_ID_2", "Auth_entity_assembly_ID_1", "Auth_seq_ID_1", "Auth_comp_ID_1", "Auth_atom_ID_1", 
+                "Auth_entity_assembly_ID_2", "Auth_seq_ID_2", "Auth_comp_ID_2", "Auth_atom_ID_2", "Entry_ID", "Heteronucl_NOE_list_ID"};
+
+        chan.write("   loop_\n");
+        for (String loopString : loopStrings) {
+            chan.write("      _Heteronucl_NOE." + loopString + "\n");
+        }
+        chan.write("\n");
+
+        int idx = 1;
+        
+        List<String> prevRes = new ArrayList<>();
+        Iterator entityIterator = molecule.entityLabels.values().iterator();
+        while (entityIterator.hasNext()) {
+            Entity entity = (Entity) entityIterator.next();
+            int entityID = entity.getIDNum();
+            for (Atom atom : atoms) {
+                List<NOEData> noeDataList = atom.getNOEData(field, null).stream()
+                        .filter(r -> r.getID().contains("RING_fit")).collect(Collectors.toList());
+                if (noeDataList != null) {
+                    for (NOEData noeData : noeDataList) {
+                            Double value = noeData.getValue();
+                            Double error = noeData.getError();
+                            Atom atom2 = noeData.getPairAtom();
+                            String outputLine = toStarNOEString(idx, listID, entityID, atom, atom2, value, error);
+                            if (outputLine != null && !prevRes.contains(entityID + "." + atom.getResidueNumber())) {
+                                chan.write("      " + outputLine + "\n");
+                                prevRes.add(entityID + "." + atom.getResidueNumber());
+                                idx++;
+                            }
+                    }
+                }
+            }
+        }
+
+        chan.write("   stop_\n");
+        chan.write("save_\n\n");
+
+    }
+
+    /**
+     * Write the data lines in the NOE Data block of the STAR file.
+     *
+     * @param idx int. The line index
+     * @param listID int. The number of the T1/T2/T1rho/NOE block in the file.
+     * @param entityID int. The number of the molecular entity.
+     * @param atom1 Atom. The first atom in the NOE atom pair.
+     * @param atom2 Atom. The second atom in the NOE atom pair.
+     * @param value Double. parameter value.
+     * @param error Double. error value.
+     * @return
+     */
+    public static String toStarNOEString(int idx, int listID, int entityID, Atom atom1, Atom atom2, Double value, Double error) {
+
+        Atom[] atoms = {atom1, atom2};
+
+        StringBuilder sBuilder = new StringBuilder();
+        sBuilder.append(String.format("%-3d", idx));
+        for (Atom atom : atoms) {
+            int resNum = 1;
+            String resName = ".";
+            String nucName = ".";
+            int isotope = 1;
+            if (atom != null) {
+                resNum = atom.getResidueNumber();
+                resName = atom.getResidueName();
+                nucName = atom.getName();
+                switch (nucName) {
+                    case "C":
+                        isotope = 13;
+                        break;
+                    case "N":
+                        isotope = 15;
+                        break;
+                    case "F":
+                        isotope = 19;
+                        break;
+                    case "P":
+                        isotope = 31;
+                        break;
+                    default:
+                        break;
+                }
+            } 
+            sBuilder.append(String.format("%-3s", "."));
+            sBuilder.append(String.format("%-3d", entityID));
+            sBuilder.append(String.format("%-3d", entityID));
+            sBuilder.append(String.format("%-6d", resNum));
+            sBuilder.append(String.format("%-6d", resNum));
+            sBuilder.append(String.format("%-6s", resName)); //fixme writing out chainID, not compound name (e.g. B instead of SO4) when molecule loaded from CIF
+            sBuilder.append(String.format("%-4s", nucName));
+            sBuilder.append(String.format("%-4s", nucName));
+            sBuilder.append(String.format("%-4s", isotope));
+        }
+        sBuilder.append(String.format("%-8.3f", value));
+        sBuilder.append(String.format("%-8.3f", error));
+        sBuilder.append(String.format("%-3s", "."));
+        sBuilder.append(String.format("%-3s", "."));
+        for (Atom atom : atoms) {
+            int resNum = 1;
+            String resName = ".";
+            String nucName = ".";
+            if (atom != null) {
+                resNum = atom.getResidueNumber();
+                resName = atom.getResidueName();
+                nucName = atom.getName();
+            } 
+            sBuilder.append(String.format("%-3s", "."));
+            sBuilder.append(String.format("%-6d", resNum));
+            sBuilder.append(String.format("%-4s", resName));
+            sBuilder.append(String.format("%-4s", nucName));
+        }
+        sBuilder.append(String.format("%-4s", "."));
+        sBuilder.append(String.format("%-4d", listID));
+
+        return sBuilder.toString();
+
+    }
+
+
+    /**
+     * Write out the Relaxation Data (T1, T2, T1rho) sections of the STAR file.
+     *
+     * @param chan FileWriter. The FileWriter to use
+     * @param molecule Molecule. The molecule to use
+     * @param relaxDataA0 RelaxationData. The relaxation dataset.
+     * @param listID int. The number of the T1/T2/T1rho/NOE block in the file.
+     * @throws IOException
+     * @throws InvalidMoleculeException
+     */
+    public static void writeRelaxation(FileWriter chan, MoleculeBase molecule, RelaxationData relaxDataA0, int listID) throws IOException, InvalidMoleculeException {
+        List<Atom> atoms = molecule.getAtomArray();
+        relaxTypes expType = relaxDataA0.getExpType();
+        String frameName = relaxDataA0.getID();
+        double field = relaxDataA0.getField();
+        String coherenceType = relaxDataA0.getExtras().get("coherenceType");
+        String units = relaxDataA0.getExtras().get("units");
         chan.write("    ########################################\n");
         chan.write("    #  Heteronuclear " + expType + " relaxation values  #\n");
         chan.write("    ########################################\n");
@@ -842,55 +1028,41 @@ public class NMRStarWriter {
         String[] loopStrings = {"ID", "Assembly_atom_ID", "Entity_assembly_ID", "Entity_ID", "Comp_index_ID", "Seq_ID",
             "Comp_ID", "Atom_ID", "Atom_type", "Atom_isotope_number", "Val", "Val_err", "Resonance_ID", "Auth_entity_assembly_ID",
             "Auth_seq_ID", "Auth_comp_ID", "Auth_atom_ID", "Entry_ID", "Heteronucl_" + expType + "_list_ID"};
-        if (expType.equals("T2")) {
+        if (expType.equals(relaxTypes.T2) || expType.equals(relaxTypes.T1RHO)) {
             String[] loopStrings2 = {"ID", "Assembly_atom_ID", "Entity_assembly_ID", "Entity_ID", "Comp_index_ID", "Seq_ID",
                 "Comp_ID", "Atom_ID", "Atom_type", "Atom_isotope_number", expType + "_val", expType + "_val_err", "Rex_val", "Rex_err",
                 "Resonance_ID", "Auth_entity_assembly_ID", "Auth_seq_ID", "Auth_comp_ID", "Auth_atom_ID", "Entry_ID", "Heteronucl_" + expType + "_list_ID"};
             loopStrings = loopStrings2;
-        }
+        } 
         chan.write("   loop_\n");
         for (String loopString : loopStrings) {
             chan.write("      _" + expType + "." + loopString + "\n");
         }
         chan.write("\n");
 
-        int isotope = 1;
-        switch (nucName) {
-            case "C":
-                isotope = 13;
-                break;
-            case "N":
-                isotope = 15;
-                break;
-            case "F":
-                isotope = 19;
-                break;
-            case "P":
-                isotope = 31;
-                break;
-            default:
-                break;
-        }
-
         int idx = 1;
-        if (molecule != null) {
-            List<String> prevRes = new ArrayList<>();
-            List<Atom> atoms = molecule.getAtomArray();
-            Iterator entityIterator = molecule.entityLabels.values().iterator();
-            while (entityIterator.hasNext()) {
-                Entity entity = (Entity) entityIterator.next();
-                int entityID = entity.getIDNum();
-                for (Atom atom : atoms) {
-                    List<List<Object>> t1t2DataList = (List<List<Object>>) atom.getT1T2DataList(expType);
-                    if (t1t2DataList != null) {
-                        Map<Integer, Map<String, Double>> fitResFieldMap = (Map<Integer, Map<String, Double>>) t1t2DataList.get(listID - 1).get(5);
-                        Map<String, Double> parValues = fitResFieldMap.get(field);
-                        String outputLine = toStarT1T2String(idx, expType, listID, entityID, atom, nucName, isotope, parValues);
-                        if (outputLine != null && !prevRes.contains(entityID + "." + atom.getResidueNumber())) {
-                            chan.write("      " + outputLine + "\n");
-                            prevRes.add(entityID + "." + atom.getResidueNumber());
-                            idx++;
-                        }
+        
+        List<String> prevRes = new ArrayList<>();
+        Iterator entityIterator = molecule.entityLabels.values().iterator();
+        while (entityIterator.hasNext()) {
+            Entity entity = (Entity) entityIterator.next();
+            int entityID = entity.getIDNum();
+            for (Atom atom : atoms) {
+                List<RelaxationData> relaxDataList = atom.getRelaxationData(expType, field, null).stream()
+                        .filter(r -> r.getID().contains("RING_fit")).collect(Collectors.toList());
+                if (relaxDataList != null) {
+                    for (RelaxationData relaxData : relaxDataList) {
+                            Map<String, Double> values = relaxData.getValues();
+                            Map<String, Double> errors = relaxData.getErrors();
+                            List<Map<String, Double>> valErrList = new ArrayList<>();
+                            valErrList.add(values);
+                            valErrList.add(errors);
+                            String outputLine = toStarRelaxationString(idx, expType, listID, entityID, atom, valErrList);
+                            if (outputLine != null && !prevRes.contains(entityID + "." + atom.getResidueNumber())) {
+                                chan.write("      " + outputLine + "\n");
+                                prevRes.add(entityID + "." + atom.getResidueNumber());
+                                idx++;
+                            }
                     }
                 }
             }
@@ -902,33 +1074,46 @@ public class NMRStarWriter {
     }
 
     /**
-     * Write the data lines in the T1/T2 blocks of the STAR file.
+     * Write the data lines in the Relaxation Data (T1, T2, T1rho) blocks of the STAR file.
      *
      * @param idx int. The line index
-     * @param expType String. The experiment type, T1 or T2.
-     * @param listID int. The number of the T1/T2 block in the file.
+     * @param expType relaxTypes. The experiment type: T1, T2, T1rho.
+     * @param listID int. The number of the T1/T2/T1rho block in the file.
      * @param entityID int. The number of the molecular entity.
      * @param atom Atom. The atom in the molecule.
-     * @param nucName String. The nucleus, e.g. N.
-     * @param isotope int. The isotope of the nucleus.
-     * @param parValues Map<String, Double>. Map of the fit parameter values.
+     * @param valErrList List<Map<String, Double>>. List of the parameter value and error maps: [values map, errors map].
      * @return
      */
-    public static String toStarT1T2String(int idx, String expType, int listID, int entityID, 
-            Atom atom, String nucName, int isotope, Map<String, Double> parValues) {
+    public static String toStarRelaxationString(int idx, relaxTypes expType, int listID, int entityID, 
+            Atom atom, List<Map<String, Double>> valErrList) {
 
         int resNum = idx;
         String resName = ".";
         String oneLetter = ".";
+        String nucName = ".";
+        int isotope = 1;
         if (atom != null) {
             resNum = atom.getResidueNumber();
             resName = atom.getResidueName();
             oneLetter = String.valueOf(((Residue) atom.entity).getOneLetter());
+            nucName = atom.getName();
+            switch (nucName) {
+                case "C":
+                    isotope = 13;
+                    break;
+                case "N":
+                    isotope = 15;
+                    break;
+                case "F":
+                    isotope = 19;
+                    break;
+                case "P":
+                    isotope = 31;
+                    break;
+                default:
+                    break;
+            }
         } 
-        
-        if (parValues == null || parValues.get("R") == null) {
-            return null;
-        }
 
         StringBuilder sBuilder = new StringBuilder();
         sBuilder.append(String.format("%-3d", idx));
@@ -941,18 +1126,22 @@ public class NMRStarWriter {
         sBuilder.append(String.format("%-4s", nucName));
         sBuilder.append(String.format("%-4s", nucName));
         sBuilder.append(String.format("%-4s", isotope));
-        sBuilder.append(String.format("%-8.3f", parValues.get("R")));
-        sBuilder.append(String.format("%-8.3f", parValues.get("R.sd")));
-        if (expType.equals("T2")) {
-            sBuilder.append(String.format("%-3s", ".")); //"%-10.3f", parValues.get("A")
-            sBuilder.append(String.format("%-3s", ".")); //"%-10.3f", parValues.get("A.sd")
-        }
+        valErrList.get(0).keySet().forEach((key) -> {
+            valErrList.forEach((valMap) -> {
+                Double value = valMap.get(key);
+                if (value != null) {
+                    sBuilder.append(String.format("%-8.3f", value));
+                } else {
+                    sBuilder.append(String.format("%-3s", "."));
+                }
+            });
+        });
         sBuilder.append(String.format("%-3s", "."));
         sBuilder.append(String.format("%-3s", "."));
         sBuilder.append(String.format("%-6d", resNum));
-        sBuilder.append(String.format("%-4s", oneLetter));
+        sBuilder.append(String.format("%-4s", oneLetter)); 
         sBuilder.append(String.format("%-4s", nucName));
-        sBuilder.append(String.format("%-10s", "."));
+        sBuilder.append(String.format("%-4s", "."));
         sBuilder.append(String.format("%-4d", listID));
 
         return sBuilder.toString();
@@ -961,21 +1150,17 @@ public class NMRStarWriter {
 
     public static void writeAll(String fileName) throws IOException, ParseException, InvalidPeakException, InvalidMoleculeException {
         try (FileWriter writer = new FileWriter(fileName)) {
-            writeAll(writer, null);
+            writeAll(writer);
         }
     }
 
     public static void writeAll(File file) throws IOException, ParseException, InvalidPeakException, InvalidMoleculeException {
         try (FileWriter writer = new FileWriter(file)) {
-            writeAll(writer, null);
+            writeAll(writer);
         }
     }
 
     public static void writeAll(FileWriter chan) throws IOException, ParseException, InvalidPeakException, InvalidMoleculeException {
-        writeAll(chan, null);
-    }
-
-    public static void writeAll(FileWriter chan, Map<String, List<Object>> expFitResults) throws IOException, ParseException, InvalidPeakException, InvalidMoleculeException {
 
         Date date = new Date(System.currentTimeMillis());
         chan.write("    ######################################\n");
@@ -1023,19 +1208,24 @@ public class NMRStarWriter {
             iPath++;
         }
         if (molecule != null) {
-            Entity entity = molecule.getEntities().get(0);
-            TreeSet<String> expTypes = (TreeSet<String>) entity.getPropertyObject("expTypes");
+            Collection<NOEData> molNOEData = NOEData.getNOEData(molecule.getAtomArray());
+            int noelistID = 1;
+            List<NOEData> noeDataList = molNOEData.stream().filter(d -> d.getID().contains("RING_fit")).collect(Collectors.toList());
+            if (!noeDataList.isEmpty()) {
+                writeNOE(chan, molecule, noeDataList.get(0), noelistID);
+                noelistID++;
+            }
+   
+            Collection<RelaxationData> molRelaxData = RelaxationData.getRelaxationData(molecule.getAtomArray());
+            Set<relaxTypes> expTypes = RelaxationData.getExpTypes(molecule);
             if (expTypes != null) {
-                for (String expType : expTypes) {
+                for (relaxTypes expType : expTypes) {
                     int listID = 1;
-                    List<List<Object>> t1t2DataList = (List<List<Object>>) molecule.getAtomArray().get(0).getT1T2DataList(expType);
-                    for (List<Object> t1t2Data : t1t2DataList) {
-                        String frameName = (String) t1t2Data.get(0);
-                        int field = (int) t1t2Data.get(1);
-                        String coherenceType = (String) t1t2Data.get(2);
-                        String units = (String) t1t2Data.get(3);
-                        String nucName = (String) t1t2Data.get(4);
-                        writeT1T2(chan, molecule, nucName, field, expType, frameName, coherenceType, units, listID);
+                    List<RelaxationData> relaxDataList = molRelaxData.stream()
+                            .filter(d -> d.getID().contains("RING_fit") && d.getExpType().equals(expType))
+                            .collect(Collectors.toList());
+                    if (!relaxDataList.isEmpty()) {
+                        writeRelaxation(chan, molecule, relaxDataList.get(0), listID);
                         listID++;
                     }
                 }

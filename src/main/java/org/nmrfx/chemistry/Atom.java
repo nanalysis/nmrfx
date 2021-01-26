@@ -24,6 +24,8 @@ import org.nmrfx.chemistry.io.AtomParser;
 
 import javax.vecmath.Point2d;
 import java.util.*;
+import java.util.stream.Collectors;
+import org.nmrfx.chemistry.RelaxationData.relaxTypes;
 
 public class Atom implements IAtom {
 
@@ -107,8 +109,9 @@ public class Atom implements IAtom {
     final boolean[] flags = new boolean[ATOMFLAGS.values().length];
     Optional<Map<String, Object>> properties = Optional.empty();
     public Atom daughterAtom = null;
-    public List<List<Object>>[] t1t2Data = new List[2];
-
+    public Map<String, RelaxationData> relaxData = new HashMap<>(); 
+    public Map<String, NOEData> noeData = new HashMap<>();
+       
     public Atom(String name) {
         this.name = name;
     }
@@ -139,7 +142,7 @@ public class Atom implements IAtom {
         setColorByType();
 
     }
-
+    
     public static Atom genAtomWithType(String name, String aType) {
         AtomEnergyProp atomEnergyProp = AtomEnergyProp.get(aType);
         return new Atom(name, atomEnergyProp);
@@ -339,6 +342,48 @@ public class Atom implements IAtom {
             }
         }
         bonds = newBonds;
+    }
+       
+    public RelaxationData getRelaxationData(String ID) {
+        return relaxData.get(ID);
+    }
+    
+    public Collection<RelaxationData> getRelaxationData(relaxTypes expType, Double field, Double temperature) {
+        List<RelaxationData> filtered = relaxData.values().stream()
+                .filter(r -> expType == null || r.getExpType() == null || expType.equals(r.getExpType()))
+                .filter(r -> field == null || field.equals(r.getField()))
+                .filter(r -> temperature == null || temperature.equals(r.getTemperature())).collect(Collectors.toList());
+        
+        return filtered;
+    }
+    
+    public Collection<RelaxationData> getRelaxationData(List<relaxTypes> expTypes, List<Double> fields, List<Double> temperatures) {
+        List<RelaxationData> filtered = relaxData.values().stream()
+                .filter(r -> expTypes == null || r.getExpType() == null || expTypes.contains(r.getExpType()))
+                .filter(r -> fields == null || fields.contains(r.getField()))
+                .filter(r -> temperatures == null || temperatures.contains(r.getTemperature())).collect(Collectors.toList());
+        
+        return filtered;
+    }
+    
+    public NOEData getNOEData(String ID) {
+        return noeData.get(ID);
+    }
+    
+    public Collection<NOEData> getNOEData(Double field, Double temperature) {
+        List<NOEData> filtered = noeData.values().stream()
+                .filter(r -> field == null || field.equals(r.getField()))
+                .filter(r -> temperature == null || temperature.equals(r.getTemperature())).collect(Collectors.toList());
+        
+        return filtered;
+    }
+    
+    public Collection<NOEData> getNOEData(List<Double> fields, List<Double> temperatures) {
+        List<NOEData> filtered = noeData.values().stream()
+                .filter(r -> fields == null || fields.contains(r.getField()))
+                .filter(r -> temperatures == null || temperatures.contains(r.getTemperature())).collect(Collectors.toList());
+        
+        return filtered;
     }
 
     public List<Atom> getConnected() {
@@ -2294,44 +2339,6 @@ public class Atom implements IAtom {
             propValue = properties.get().get(name);
         }
         return propValue;
-    }
-    
-    public void addT1T2Data(String expType, int iList, int iVal, Object value) {
-        if (expType.equals("T1")) {
-            List<List<Object>> dataList = t1t2Data[0];
-            if (dataList == null) {
-                dataList = new ArrayList<>();
-            }
-            if (dataList.size() < iList + 1) {
-                dataList.add(new ArrayList<>());
-            }
-            List<Object> data = dataList.get(iList);
-            data.add(iVal, value);
-            dataList.set(iList, data);
-            t1t2Data[0] = dataList;
-        } else if (expType.equals("T2")) {
-            List<List<Object>> dataList = t1t2Data[1];
-            if (dataList == null) {
-                dataList = new ArrayList<>();
-            }
-            if (dataList.size() < iList + 1) {
-                dataList.add(new ArrayList<>());
-            }
-            List<Object> data = dataList.get(iList);
-            data.add(iVal, value);
-            dataList.set(iList, data);
-            t1t2Data[1] = dataList;
-        }
-    }
-
-    public Object getT1T2DataList(String expType) {
-        List<List<Object>> dataList = null;
-        if (expType.equals("T1")) {
-            dataList = t1t2Data[0];
-        } else if (expType.equals("T2")) {
-            dataList = t1t2Data[1];
-        }
-        return dataList;
     }
 
     @Override
