@@ -19,7 +19,7 @@ import java.util.TreeSet;
 public class RelaxationData {
     
         public enum relaxTypes {
-            T1("T1"), T2("T2"), T1RHO("T1rho");
+            T1("T1"), T2("T2"), T1RHO("T1rho"), NOE("NOE");
             
             private final String name;
             
@@ -32,23 +32,25 @@ public class RelaxationData {
             }
         }
         
-        String ID;
-        relaxTypes expType;
-        double field;
-        double temperature;
-        Map<String, Double> values; 
-        Map<String, Double> errors;
-        Map<String, String> extras;
+        public String ID;
+        public relaxTypes expType;
+        public List<Atom> extraAtoms;
+        public double field;
+        public double temperature;
+        public Double value; 
+        public Double error;
+        public Map<String, String> extras;
 
-        public RelaxationData(String ID, relaxTypes expType, double field, double temperature,
-                Map<String, Double> values, Map<String, Double> errors, Map<String, String> extras) {
+        public RelaxationData(String ID, relaxTypes expType, List<Atom> extraAtoms, double field, double temperature,
+                Double value, Double error, Map<String, String> extras) {
             
             this.ID = ID;
             this.expType = expType;
+            this.extraAtoms = extraAtoms;
             this.field = field;
             this.temperature = temperature;
-            this.values = values; 
-            this.errors = errors;
+            this.value = value; 
+            this.error = error;
             this.extras = extras;
         }
         
@@ -59,6 +61,10 @@ public class RelaxationData {
         public relaxTypes getExpType() {
             return expType;
         }
+        
+        public List<Atom> getExtraAtoms() {
+            return extraAtoms;
+        }
 
         public double getField() {
             return field;
@@ -68,12 +74,12 @@ public class RelaxationData {
             return temperature;
         }
 
-        public Map<String, Double> getValues() {
-            return values;
+        public Double getValue() {
+            return value;
         }
 
-        public Map<String, Double> getErrors() {
-            return errors;
+        public Double getError() {
+            return error;
         }
 
         public Map<String, String> getExtras() {

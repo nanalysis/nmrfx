@@ -110,7 +110,6 @@ public class Atom implements IAtom {
     Optional<Map<String, Object>> properties = Optional.empty();
     public Atom daughterAtom = null;
     public Map<String, RelaxationData> relaxData = new HashMap<>(); 
-    public Map<String, NOEData> noeData = new HashMap<>();
        
     public Atom(String name) {
         this.name = name;
@@ -360,26 +359,6 @@ public class Atom implements IAtom {
     public Collection<RelaxationData> getRelaxationData(List<relaxTypes> expTypes, List<Double> fields, List<Double> temperatures) {
         List<RelaxationData> filtered = relaxData.values().stream()
                 .filter(r -> expTypes == null || r.getExpType() == null || expTypes.contains(r.getExpType()))
-                .filter(r -> fields == null || fields.contains(r.getField()))
-                .filter(r -> temperatures == null || temperatures.contains(r.getTemperature())).collect(Collectors.toList());
-        
-        return filtered;
-    }
-    
-    public NOEData getNOEData(String ID) {
-        return noeData.get(ID);
-    }
-    
-    public Collection<NOEData> getNOEData(Double field, Double temperature) {
-        List<NOEData> filtered = noeData.values().stream()
-                .filter(r -> field == null || field.equals(r.getField()))
-                .filter(r -> temperature == null || temperature.equals(r.getTemperature())).collect(Collectors.toList());
-        
-        return filtered;
-    }
-    
-    public Collection<NOEData> getNOEData(List<Double> fields, List<Double> temperatures) {
-        List<NOEData> filtered = noeData.values().stream()
                 .filter(r -> fields == null || fields.contains(r.getField()))
                 .filter(r -> temperatures == null || temperatures.contains(r.getTemperature())).collect(Collectors.toList());
         

@@ -778,12 +778,12 @@ public class NMRStarWriter {
      *
      * @param chan FileWriter. The FileWriter to use
      * @param molecule Molecule. The molecule to use
-     * @param noeData0 NOEData0. The NOE dataset.
+     * @param noeData0 RelaxationData. The NOE dataset.
      * @param listID int. The number of the NOE block in the file.
      * @throws IOException
      * @throws InvalidMoleculeException
      */
-    public static void writeNOE(FileWriter chan, MoleculeBase molecule, NOEData noeData0, int listID) throws IOException, InvalidMoleculeException {
+    public static void writeNOE(FileWriter chan, MoleculeBase molecule, RelaxationData noeData0, int listID) throws IOException, InvalidMoleculeException {
         List<Atom> atoms = molecule.getAtomArray();
         String frameName = noeData0.getID();
         double field = noeData0.getField();
@@ -852,13 +852,13 @@ public class NMRStarWriter {
             Entity entity = (Entity) entityIterator.next();
             int entityID = entity.getIDNum();
             for (Atom atom : atoms) {
-                List<NOEData> noeDataList = atom.getNOEData(field, null).stream()
+                List<RelaxationData> noeDataList = atom.getRelaxationData(relaxTypes.NOE, field, null).stream()
                         .filter(r -> r.getID().contains("RING_fit")).collect(Collectors.toList());
                 if (noeDataList != null) {
-                    for (NOEData noeData : noeDataList) {
+                    for (RelaxationData noeData : noeDataList) {
                             Double value = noeData.getValue();
                             Double error = noeData.getError();
-                            Atom atom2 = noeData.getPairAtom();
+                            Atom atom2 = noeData.getExtraAtoms().get(0);
                             String outputLine = toStarNOEString(idx, listID, entityID, atom, atom2, value, error);
                             if (outputLine != null && !prevRes.contains(entityID + "." + atom.getResidueNumber())) {
                                 chan.write("      " + outputLine + "\n");
@@ -1052,12 +1052,18 @@ public class NMRStarWriter {
                         .filter(r -> r.getID().contains("RING_fit")).collect(Collectors.toList());
                 if (relaxDataList != null) {
                     for (RelaxationData relaxData : relaxDataList) {
-                            Map<String, Double> values = relaxData.getValues();
-                            Map<String, Double> errors = relaxData.getErrors();
-                            List<Map<String, Double>> valErrList = new ArrayList<>();
-                            valErrList.add(values);
-                            valErrList.add(errors);
-                            String outputLine = toStarRelaxationString(idx, expType, listID, entityID, atom, valErrList);
+                            Double value = relaxData.getValue();
+                            Double error = relaxData.getError();
+                            List<Double> results = new ArrayList<>(); 
+                            results.add(value);
+                            results.add(error);
+                            if (expType.equals(relaxTypes.T2) || expType.equals(relaxTypes.T1RHO)) {
+                                Double RexValue = ((T2T1RhoData) relaxData).getRexValue();
+                                Double RexError = ((T2T1RhoData) relaxData).getRexError();
+                                results.add(RexValue);
+                                results.add(RexError);
+                            }
+                            String outputLine = toStarRelaxationString(idx, expType, listID, entityID, atom, results);
                             if (outputLine != null && !prevRes.contains(entityID + "." + atom.getResidueNumber())) {
                                 chan.write("      " + outputLine + "\n");
                                 prevRes.add(entityID + "." + atom.getResidueNumber());
@@ -1081,11 +1087,10 @@ public class NMRStarWriter {
      * @param listID int. The number of the T1/T2/T1rho block in the file.
      * @param entityID int. The number of the molecular entity.
      * @param atom Atom. The atom in the molecule.
-     * @param valErrList List<Map<String, Double>>. List of the parameter value and error maps: [values map, errors map].
+     * @param results List<Double>. The relaxation and error values: {value, error, RexValue, RexError}.
      * @return
      */
-    public static String toStarRelaxationString(int idx, relaxTypes expType, int listID, int entityID, 
-            Atom atom, List<Map<String, Double>> valErrList) {
+    public static String toStarRelaxationString(int idx, relaxTypes expType, int listID, int entityID, Atom atom, List<Double> results) {
 
         int resNum = idx;
         String resName = ".";
@@ -1126,15 +1131,12 @@ public class NMRStarWriter {
         sBuilder.append(String.format("%-4s", nucName));
         sBuilder.append(String.format("%-4s", nucName));
         sBuilder.append(String.format("%-4s", isotope));
-        valErrList.get(0).keySet().forEach((key) -> {
-            valErrList.forEach((valMap) -> {
-                Double value = valMap.get(key);
-                if (value != null) {
-                    sBuilder.append(String.format("%-8.3f", value));
-                } else {
-                    sBuilder.append(String.format("%-3s", "."));
-                }
-            });
+        results.forEach((value) -> {
+            if (value != null) {
+                sBuilder.append(String.format("%-8.3f", value));
+            } else {
+                sBuilder.append(String.format("%-3s", "."));
+            }
         });
         sBuilder.append(String.format("%-3s", "."));
         sBuilder.append(String.format("%-3s", "."));
@@ -1208,14 +1210,6 @@ public class NMRStarWriter {
             iPath++;
         }
         if (molecule != null) {
-            Collection<NOEData> molNOEData = NOEData.getNOEData(molecule.getAtomArray());
-            int noelistID = 1;
-            List<NOEData> noeDataList = molNOEData.stream().filter(d -> d.getID().contains("RING_fit")).collect(Collectors.toList());
-            if (!noeDataList.isEmpty()) {
-                writeNOE(chan, molecule, noeDataList.get(0), noelistID);
-                noelistID++;
-            }
-   
             Collection<RelaxationData> molRelaxData = RelaxationData.getRelaxationData(molecule.getAtomArray());
             Set<relaxTypes> expTypes = RelaxationData.getExpTypes(molecule);
             if (expTypes != null) {
@@ -1225,7 +1219,11 @@ public class NMRStarWriter {
                             .filter(d -> d.getID().contains("RING_fit") && d.getExpType().equals(expType))
                             .collect(Collectors.toList());
                     if (!relaxDataList.isEmpty()) {
-                        writeRelaxation(chan, molecule, relaxDataList.get(0), listID);
+                        if (relaxDataList.get(0).getExpType().equals(relaxTypes.NOE)) {
+                            writeNOE(chan, molecule, relaxDataList.get(0), listID);
+                        } else {
+                            writeRelaxation(chan, molecule, relaxDataList.get(0), listID);
+                        }
                         listID++;
                     }
                 }

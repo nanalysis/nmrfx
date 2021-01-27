@@ -1317,11 +1317,13 @@ public class NMRStarReader {
                 //throw new ParseException("invalid atom in conformer saveframe \""+mapID+"."+atomName+"\"");
             }
             
-            NOEData noeData = new NOEData(frameName, atom2, Double.parseDouble(field), temperature, value, error, extras);
-//            System.out.println("reader " + noeData);
-            atom.noeData.put(frameName, noeData);
-            NOEData noeData2 = new NOEData(frameName, atom, Double.parseDouble(field), temperature, value, error, extras);
-            atom2.noeData.put(frameName, noeData2);
+            List<Atom> atoms = new ArrayList<>();
+            atoms.add(atom2);
+            
+            RelaxationData relaxData = new RelaxationData(frameName, relaxTypes.NOE, atoms, Double.parseDouble(field), temperature, value, error, extras);
+//            System.out.println("reader NOE" + relaxData);
+            atom.relaxData.put(frameName, relaxData);
+//            System.out.println(atom.relaxData);
         }
     }
     
@@ -1362,24 +1364,22 @@ public class NMRStarReader {
             }
             String iRes = (String) compIdxIDColumn.get(i);
             String atomName = (String) atomColumn.get(i);
-            Map<String, Double> values = new LinkedHashMap<>();
-            Map<String, Double> errors = new LinkedHashMap<>();
-            values.put(expType.getName(), null);
-            errors.put(expType.getName(), null);
+            Double value = null;
+            Double error = null;
+            Double RexValue = null;
+            Double RexError = null;
             if (!valColumn.get(i).equals(".")) {
-                values.replace(expType.getName(), Double.parseDouble(valColumn.get(i)));
+                value = Double.parseDouble(valColumn.get(i));
             }
             if (!errColumn.get(i).equals(".")) {
-                errors.replace(expType.getName(), Double.parseDouble(errColumn.get(i)));
+                error = Double.parseDouble(errColumn.get(i));
             }
-            if (expType.equals(relaxTypes.T2)) {
-                values.put("Rex", null);
-                errors.put("Rex", null);
+            if (expType.equals(relaxTypes.T2) || expType.equals(relaxTypes.T1RHO)) {
                 if (!RexValColumn.get(i).equals(".")) {
-                    values.replace("Rex", Double.parseDouble(RexValColumn.get(i)));
+                    RexValue = Double.parseDouble(RexValColumn.get(i));
                 }
                 if (!RexErrColumn.get(i).equals(".")) {
-                    errors.replace("Rex", Double.parseDouble(RexErrColumn.get(i)));
+                    RexError = Double.parseDouble(RexErrColumn.get(i));
                 }
             }
             double temperature = 25.0;
@@ -1404,10 +1404,15 @@ public class NMRStarReader {
                 //throw new ParseException("invalid atom in conformer saveframe \""+mapID+"."+atomName+"\"");
             }
             
-            RelaxationData relaxData = new RelaxationData(frameName, expType, Double.parseDouble(field), temperature, values, errors, extras);
-//            System.out.println("reader " + relaxData);
-            atom.relaxData.put(frameName, relaxData);
-//            System.out.println("reader atom.relaxData = " + atom + " " + atom.relaxData);
+            if (expType.equals(relaxTypes.T1)) {
+                RelaxationData relaxData = new RelaxationData(frameName, expType, new ArrayList<>(), Double.parseDouble(field), temperature, value, error, extras);
+//                System.out.println("reader " + relaxData);
+                atom.relaxData.put(frameName, relaxData);
+//                System.out.println("reader atom.relaxData = " + atom + " " + atom.relaxData);
+            } else {
+                T2T1RhoData relaxData = new T2T1RhoData(frameName, expType, new ArrayList<>(), Double.parseDouble(field), temperature, value, error, RexValue, RexError, extras);
+                atom.relaxData.put(frameName, relaxData);
+            }
         }
     }
 
