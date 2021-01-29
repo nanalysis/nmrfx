@@ -2346,6 +2346,7 @@ public class Molecule extends MoleculeBase {
         }
         for (Atom iAtom : atomList) {
             iAtom.rotUnit = -1;
+            iAtom.rotGroup = null;
             if ((iAtom.getParent() != null) && (iAtom.irpIndex > 0) && iAtom.rotActive) {
                 //if (iAtom.irpIndex > 0) {
                 iAtom.rotUnit = rotUnit++;
@@ -2382,7 +2383,7 @@ public class Molecule extends MoleculeBase {
             Atom parent = iAtom.getParent();
             Atom grandparent = parent != null ? parent.getParent() : null;
             Atom daughter = iAtom.daughterAtom;
-            if ((parent != null) && (grandparent != null) && (daughter != null) && (iAtom.irpIndex > 0)) {
+            if ((parent != null) && (grandparent != null) && (daughter != null) && (iAtom.irpIndex > 0) && (iAtom.rotActive)) {
                 String aType = iAtom.getType();
                 String pType = parent.getType();
                 String gType = grandparent.getType();
@@ -3269,6 +3270,7 @@ public class Molecule extends MoleculeBase {
             newAtom.dihedralAngle = (float) (dihAngle * Math.PI / 180.0);
             newAtom.valanceAngle = (float) (valAngle * Math.PI / 180.0);
             newAtom.irpIndex = 1;
+            newAtom.rotActive = true;
             newAtom.setType("XX");
 
             curAtom = newAtom;
