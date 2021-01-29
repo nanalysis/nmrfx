@@ -3,8 +3,9 @@ import os
 import osfiles
 import argparse
 import molio
+from org.nmrfx.structure.chemistry.energy import RNARotamer
 
-def dumpDis(mol, fileName='distanes.txt', delta=0.5, atomPat='*.H*',maxDis=4.5,prob=1.1,fixLower=0.0):
+def dumpDis(mol, fileName='distances.txt', delta=0.5, atomPat='*.H*',maxDis=4.5,prob=1.1,fixLower=0.0):
     """ Writes a dump file containing distance violations based on input distance
         constraints and actual distance between atoms.
 
@@ -41,11 +42,60 @@ def dumpDis(mol, fileName='distanes.txt', delta=0.5, atomPat='*.H*',maxDis=4.5,p
                 outStr = "%s %s %.1f %.1f\n" % (atom1,atom2,lower,upper)
                 fOut.write(outStr)
 
-def loadStructure(fileName, xMode=False):
+
+def genResidueList(resString):
+    if resString == '':
+        return None
+    residues = None
+    if resString != '':
+        residues = []
+        elems = resString.split(',')
+        for elem in elems:
+            elem = elem.strip()
+            if elem[0] == '-':
+                sign = '-'
+                elem = elem[1:]
+            else:
+                sign = ''
+
+            if '-' in elem:
+                if '--' in elem:
+                    r1,r2 = elem.split('--')
+                    r1 = sign+r1 
+                    r2 = '-'+r2 
+                else:
+                    r1,r2 = elem.split('-')
+                    r1 = sign+r1 
+                r1 = int(r1)
+                r2 = int(r2)
+                for r in range(r1,r2+1):
+                    residues.append(str(r))
+            else:
+                residues.append(sign+elem)
+    return set(residues)
+            
+def rnaSuite(mol, includeResidues, fileName='stdout'):
+    if fileName == 'stdout':
+        fOut = sys.stdout
+    else:
+        fOut = open(fileName,'w')
+    for polymer in mol.getPolymers():
+        if polymer.isRNA():
+            for residue in polymer.getResidues():
+                if includeResidues != None:
+                    if residue.getNumber() not in includeResidues:
+                        continue
+                rotamerScore = RNARotamer.scoreResidue(residue)
+                if rotamerScore != None:
+                    outStr = "%4s %2s %s\n" %(residue.getNumber(),residue.getName(),rotamerScore.toString())
+                    fOut.write(outStr)
+    if fileName != 'stdout':
+        fOut.close()
+  
+def loadStructure(fileName, xMode=True, iStruct=0):
     if fileName.endswith('.pdb'):
         if (xMode):
             mol = molio.readPDBX(fileName)
-            print 'read all coords'
             molio.readPDBXCoords(fileName, -1, True, False)
         else:
             mol = molio.readPDB(fileName, iStruct=iStruct)
@@ -64,10 +114,16 @@ def loadStructure(fileName, xMode=False):
 
 def parseArgs():
     parser = argparse.ArgumentParser(description="predictor options")
-    #parser.add_argument("-d", dest="xMode", default=False, action="store_true", help="Whether to read coordinates without library (False")
+    parser.add_argument("-dis", dest="disMode", default=False, action="store_true", help="Whether to output  distances(False")
+    parser.add_argument("-suite", dest="suiteMode", default=False, action="store_true", help="Whether to output  RNA suites(False")
+    parser.add_argument("-residues", dest="includeResidues", default='',  help="Limit residues to these (use all)")
     parser.add_argument("fileNames",nargs="*")
     args = parser.parse_args()
+    includeResidues = genResidueList(args.includeResidues)
     for fileName in args.fileNames:
         mol = loadStructure(fileName)
-        dumpDis(mol) 
+        if args.disMode:
+            dumpDis(mol) 
+        if args.suiteMode:
+            rnaSuite(mol, includeResidues)
         
