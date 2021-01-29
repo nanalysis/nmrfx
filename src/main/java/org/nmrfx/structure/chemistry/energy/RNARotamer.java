@@ -393,12 +393,17 @@ public class RNARotamer {
     }
 
     public static RotamerScore[] getNBest(Polymer polymer, int residueNum, int n, EnergyCoords ec) {
+        Residue residue = polymer.getResidue(residueNum);
+        return getNBest(residue, n, ec);
+    }
+
+    public static RotamerScore[] getNBest(Residue residue, int n, EnergyCoords ec) {
         /* getNBest finds n of the best rotamer confirmations and returns a 
            list of rotamer scores containing the type of rotamer and the 
            probability. The function takes the polymer and a residue number.
          */
 
-        double[] testAngles = RNARotamer.getDihedrals(polymer, residueNum, ec);
+        double[] testAngles = RNARotamer.getDihedrals(residue, ec);
         if (testAngles == null) {
             return new RotamerScore[0];
         }
@@ -439,12 +444,18 @@ public class RNARotamer {
     }
 
     public static RotamerScore getBest(Polymer polymer, int residueNum, EnergyCoords ec) {
+        Residue residue = polymer.getResidue(residueNum);
+        return getBest(residue, ec);
+
+    }
+
+    public static RotamerScore getBest(Residue residue, EnergyCoords ec) {
         /* getNBest finds n of the best rotamer confirmations and returns a 
            list of rotamer scores containing the type of rotamer and the 
            probability. The function takes the polymer and a residue number.
          */
 
-        double[] testAngles = RNARotamer.getDihedrals(polymer, residueNum, ec);
+        double[] testAngles = RNARotamer.getDihedrals(residue, ec);
         if (testAngles == null) {
             return null;
         }
@@ -507,6 +518,9 @@ public class RNARotamer {
                 sum += (scores[j].prob * scores[j].normDeltas[i] * (1.0 / scores[j].rotamer.sdev[i]));
             }
             double deriv = eRotEnergy * sum;
+            if ((i == 0) || (i == 6)) {
+                deriv /= 2;  // avoid double counting delta
+            }
             int angleIndex = atoms[i].aAtom;
             derivMap.put(angleIndex, deriv);
         }
@@ -548,8 +562,8 @@ public class RNARotamer {
         if (totalProb < 1.0e-15) {
             totalProb = 1.0e-15;
         }
-        if (totalProb > 1) {
-            totalProb = 1;
+        if (totalProb > 1000.0) {
+            totalProb = 1000.0;
         }
         return totalProb;
     }
@@ -631,8 +645,13 @@ public class RNARotamer {
     }
 
     public static double[] getDihedrals(Polymer polymer, int residueNum, EnergyCoords ec) {
+        Residue residue = polymer.getResidue(residueNum);
+        return getDihedrals(residue, ec);
+    }
+
+    public static double[] getDihedrals(Residue residue, EnergyCoords ec) {
         double[] angles = new double[suiteAtoms.length];
-        if (residueNum > 0) {
+        if (residue.previous != null) {
             int i = 0;
             for (String[] atomNames : suiteAtoms) {
                 Atom[] angleAtoms = new Atom[4];
@@ -645,8 +664,8 @@ public class RNARotamer {
                         delta = Integer.valueOf(deltaRes);
                         aName = aName.substring(colonPos + 1);
                     }
-                    Residue residue = polymer.getResidue(residueNum + delta);
-                    Atom atom = residue.getAtom(aName);
+                    Atom atom = delta == -1 ? residue.previous.getAtom(aName)
+                            : residue.getAtom(aName);
                     angleAtoms[j] = atom;
                     if (j == 2) {
                         if (!atom.rotActive) {
@@ -673,8 +692,13 @@ public class RNARotamer {
     }
 
     public static void setDihedrals(Residue residue, String suiteName) {
+        setDihedrals(residue, suiteName, 0.0);
+    }
+
+    public static void setDihedrals(Residue residue, String suiteName, double sdev) {
         RNARotamer rotamer = ROTAMERS.get(suiteName);
         int j = 0;
+        sdev = Math.toRadians(sdev);
         for (String[] atomNames : suiteAtoms) {
             String aName = atomNames[3];
             int colonPos = aName.indexOf(':');
@@ -687,10 +711,11 @@ public class RNARotamer {
             Residue applyResidue = delta < 0 ? residue.previous : residue;
             if (applyResidue != null) {
                 Atom atom = applyResidue.getAtom(aName);
-                if (atom == null) {
-                    System.out.println("null " + aName);
-                } else {
+                if (atom != null) {
                     double angle = rotamer.angles[j];
+                    if (sdev != 0.0) {
+                        angle += CmaesRefinement.DEFAULT_RANDOMGENERATOR.nextGaussian() * sdev;
+                    }
                     System.out.println(atom.getFullName() + " " + Math.toDegrees(angle));
                     atom.setDihedral(Math.toDegrees(angle));
                 }
@@ -703,9 +728,14 @@ public class RNARotamer {
 //O3'     P       O5'     C5'     C4'     C3'     O3'
 // d-1     e-1     z-1     a       b       g       d
     public static RotamerScore scoreResidue(Polymer polymer, int residueNum) {
+        Residue residue = polymer.getResidue(residueNum);
+        return scoreResidue(residue);
+    }
+    
+    public static RotamerScore scoreResidue(Residue residue) {
         RotamerScore rotamerScore = null;
-        if (residueNum > 0) {
-            double[] angles = getDihedrals(polymer, residueNum);
+        if (residue.previous != null) {
+            double[] angles = getDihedrals(residue, null);
             rotamerScore = bestProb(angles);
         }
         return rotamerScore;
