@@ -643,31 +643,39 @@ public class EnergyLists {
 //                    }
 //                }
             }
-            if (forceWeight.getDihedralProb() > 0.0) {
-                EnergyCoords eCoords = molecule.getEnergyCoords();
-                List<Polymer> polymers = molecule.getPolymers();
-                for (Polymer polymer : polymers) {
-                    if (polymer.isRNA()) {
-                        for (int i = 1; i < polymer.size(); i++) {
-                            Residue residue = polymer.getResidue(i);
-                            if (!residue.isStandard()) {
-                                i++;
-                                continue;
-                            }
+            EnergyCoords eCoords = molecule.getEnergyCoords();
+            List<Polymer> polymers = molecule.getPolymers();
+            for (Polymer polymer : polymers) {
+                if (polymer.isRNA()) {
+                    for (int i = 1; i < polymer.size(); i++) {
+                        Residue residue = polymer.getResidue(i);
+                        if (!residue.isStandard()) {
+                            i++;
+                            continue;
+                        }
 
-                            nRotamers++;
-                            RotamerScore[] rotamerScores = RNARotamer.getNBest(polymer, i, 3, eCoords);
-                            if ((rotamerScores == null) || (rotamerScores.length == 0)) {
-                                continue;
-                            }
-                            double rotamerEnergy = RNARotamer.calcEnergy(rotamerScores);
+                        nRotamers++;
+                        RotamerScore[] rotamerScores = RNARotamer.getNBest(residue, 1, eCoords);
+                        if ((rotamerScores == null) || (rotamerScores.length == 0)) {
+                            continue;
+                        }
+
+                        double rotamerEnergy = RNARotamer.calcEnergy(rotamerScores);
+                        if (forceWeight.getDihedralProb() > 0.0) {
                             rotamerEnergy *= forceWeight.getDihedralProb();
                             probDih += rotamerEnergy;
-                            writer.format("Tor: %3d %3s %4s %4s %4.3f\n", i, polymer.getResidue(i).getNumber(), polymer.getResidue(i).getName(), rotamerScores[0].rotamer.name, rotamerEnergy);
+                        }
+                        for (RotamerScore rotamerScore : rotamerScores) {
+                            writer.format("Tor: %3d %3s %3s %6.2f %s\n", i,
+                                    residue.getNumber(),
+                                    residue.getName(),
+                                    rotamerEnergy,
+                                    rotamerScore.toString());
                         }
                     }
                 }
             }
+
             if (forceWeight.getIrp() > 0.0) {
                 for (Atom atom : angleAtoms) {
                     if ((atom.irpIndex > 1) && (atom.irpIndex < 9999) && atom.rotActive) {
@@ -945,14 +953,14 @@ public class EnergyLists {
                     if (Double.isNaN(rotamerEnergy) || !Double.isFinite(rotamerEnergy)) {
                         System.out.println("rotamer nan " + rotamerScores.length);
                     }
-//                    //System.out.printf("%5.3g  ", rotamerEnergy);
+//                    System.out.printf("%10s %5.3g  ", residue.toString(), rotamerEnergy);
                     if (calcDeriv) {
                         Map<Integer, Double> rotDerivs = RNARotamer.calcDerivs(rotamerScores, rotamerEnergy);
                         for (int atomIndex : rotDerivs.keySet()) {
                             if (atomIndex >= derivs.length) {
-                                throw new RuntimeException("Atom Index " + atomIndex +
-                                        " too large " + derivs.length + " for residue " + residue.toString()
-                                + " angle atoms size " + angleAtoms.size());
+                                throw new RuntimeException("Atom Index " + atomIndex
+                                        + " too large " + derivs.length + " for residue " + residue.toString()
+                                        + " angle atoms size " + angleAtoms.size());
                             }
                             double deriv = forceWeight.getDihedralProb() * rotDerivs.get(atomIndex);
                             derivs[atomIndex] += (deriv);
@@ -962,8 +970,8 @@ public class EnergyLists {
                         }
                     }
                     totalEnergy += (forceWeight.getDihedralProb() * rotamerEnergy);
+//                    System.out.println();
                 }
-                // System.out.println();
 
             }
         }
