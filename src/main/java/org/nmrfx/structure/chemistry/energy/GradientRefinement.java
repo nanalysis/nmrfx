@@ -290,7 +290,7 @@ public class GradientRefinement extends Refinement {
     }
 
     public double[] calcDerivError(final double delta) {
-        dumpAngles();
+        //dumpAngles();
         prepareAngles(false);
         getDihedrals();
         int nAngles = dihedrals.angleValues.length;
@@ -302,7 +302,7 @@ public class GradientRefinement extends Refinement {
         //molecule.resetGenCoords();
         molecule.genCoords(false);
 //        dumpAngles();
-        molecule.dumpCoordsGen();
+        //molecule.dumpCoordsGen();
         for (int i = 0; i < nAngles; i++) {
             Atom atom = dihedrals.energyList.branches[i].atom;
 //            System.out.println("Calc Deriv " + dihedrals.energyList.branches[i].atom.getFullName() + " " + Math.toDegrees(atom.daughterAtom.dihedralAngle));
