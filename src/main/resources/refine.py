@@ -58,11 +58,13 @@ protein1To3 = {protein3To1[key]: key for key in protein3To1}
 
 
 rnaBPPlanarity = {
-    'GC':[['C6p','C4',0.5],['C2','C2p',0.5]],
-    'CG':[['C4','C6p',0.5],['C2p','C2',0.5]],
-    'AU':[['C6p','C4',0.5],['C2','C2p',0.5]],
-    'UA':[['C4','C6p',0.5],['C2p','C2',0.5]]
+    'GC':[['C6p','C4',0.5],['C2','C2p',0.2]],
+    'CG':[['C4','C6p',0.5],['C2p','C2',0.2]],
+    'AU':[['C6p','C4',0.5],['C2','C2p',0.2]],
+    'UA':[['C4','C6p',0.5],['C2p','C2',0.2]]
 }
+
+gnraHBonds = [["N2","N7",2.4,2.8],["N3","N6",2.7,5.0],["N2","OP1",2.4,2.9]]
 
 addPlanarity = False
 
@@ -1840,6 +1842,8 @@ class refine:
                 tetraLoopSeq += residue.getName()
                 tetraLoopRes.append(residue.getNumber())
             if gnraPat.match(tetraLoopSeq):
+                res1 = allResidues[m.start()+2]
+                res1Num = res1.getNumber()
                 res2 = allResidues[m.start()+3]
                 res2Num = res2.getNumber()
                 res3 = allResidues[m.start()+4]
@@ -1853,6 +1857,11 @@ class refine:
                     self.addSuiteBoundary(polymer, res3Num,"1a")
                     self.addSuiteBoundary(polymer, res4Num,"1a")
                     self.addSuiteBoundary(polymer, res5Num,"1c")
+                addGNRAHBonds = False
+                if addGNRAHBonds: 
+                    atomNameI = self.getAtomName(res1,"P")
+                    atomNameJ5 = self.getAtomName(res4,"P")
+                    self.addDistanceConstraint(atomNameI, atomNameJ5, 10, 12.0)
 
     def addBasePair(self, residueI, residueJ, type=1):
         resNameI = residueI.getName()
@@ -1864,14 +1873,22 @@ class refine:
 	for i in range(0, numBp):
 	    restraints = bp.distances[i].split(":")
 	    atoms = bp.atomPairs[i].split(":")
-	    atomI = atoms[0].split("/")[0]
-            atom1Name = self.getAtomName(residueI, atomI)
-	    atomJ = atoms[1].split("/")[0]
-            atom2Name = self.getAtomName(residueJ, atomJ)
+	    atomsI = atoms[0].split('/')
+	    atomsJ = atoms[1].split('/')
+            atom1Names = []
+            atom2Names = []
+            for atomI in atomsI:
+                atom1Name = self.getAtomName(residueI, atomI)
+                for atomJ in atomsJ:
+                    atom2Name = self.getAtomName(residueJ, atomJ)
+                    atom1Names.append(atom1Name)
+                    atom2Names.append(atom2Name)
 	    atomAtomDis= float(restraints[1])
 	    lowAtomAtomDis= float(restraints[0])
             atomParentDis= float(restraints[3])
             lowAtomParentDis= float(restraints[2])
+            atomI = atomsI[0]
+            atomJ = atomsJ[0]
 	    if atomI.startswith("H"):
 	        parentAtom = residueI.getAtom(atomI).parent.getName()
                 parentAtomName = self.getAtomName(residueI,parentAtom)
@@ -1880,7 +1897,7 @@ class refine:
 	        parentAtom = residueJ.getAtom(atomJ).parent.getName()
                 parentAtomName = self.getAtomName(residueJ,parentAtom)
 		self.addDistanceConstraint(parentAtomName, atom1Name ,lowAtomParentDis,atomParentDis)
-	    self.addDistanceConstraint(atom1Name, atom2Name ,lowAtomAtomDis,atomAtomDis)
+	    self.addDistanceConstraint(atom1Names, atom2Names ,lowAtomAtomDis,atomAtomDis)
         if type == 1:
             atomPI = residueI.getAtom("P")
             atomPJ = residueJ.getAtom("P")
@@ -2442,6 +2459,7 @@ class refine:
 
         stages = getAnnealStages(dOpt, self.settings)
         for stageName in stages:
+            print stageName
             stage = stages[stageName]
             runStage(stage, self, rDyn)
 
