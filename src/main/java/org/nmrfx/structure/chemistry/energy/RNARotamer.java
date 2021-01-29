@@ -165,7 +165,11 @@ public class RNARotamer {
         public double getSuiteness() {
             double suiteness = (Math.cos(Math.PI * Math.min(score, 1.0)) + 1.0) / 2.0;
             if (suiteness < 0.01) {
-                suiteness = 0.01;
+                if (rotamer == OUTLIER) {
+                    suiteness = 0.0;
+                } else {
+                    suiteness = 0.01;
+                }
             }
             return suiteness;
         }
@@ -731,7 +735,7 @@ public class RNARotamer {
         Residue residue = polymer.getResidue(residueNum);
         return scoreResidue(residue);
     }
-    
+
     public static RotamerScore scoreResidue(Residue residue) {
         RotamerScore rotamerScore = null;
         if (residue.previous != null) {
