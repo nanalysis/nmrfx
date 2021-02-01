@@ -608,6 +608,12 @@ public class Molecule extends MoleculeBase {
         genVecs = null;
     }
 
+    public void fillEntityCoords() {
+        for (Entity entity : getEntities()) {
+            AngleTreeGenerator.fillCoordinates(entity, null);
+        }
+    }
+
     public int genCoords() throws RuntimeException {
         return genCoordsFast(null, false, 0);
     }
@@ -2439,8 +2445,6 @@ public class Molecule extends MoleculeBase {
 
     @Override
     public void setMethylRotationActive(boolean state) {
-        updateAtomArray();
-        findEquivalentAtoms();
         for (Atom iAtom : atoms) {
             if (iAtom.isMethyl()) {
                 Atom parent = iAtom.getParent();

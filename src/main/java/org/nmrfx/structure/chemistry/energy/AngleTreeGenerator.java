@@ -37,6 +37,23 @@ public class AngleTreeGenerator {
         CoordinateGenerator.genCoords(genVecs, atomList);
     }
 
+    public static void fillCoordinates(Entity entity, Atom startAtom) {
+        if (startAtom == null) {
+            for (Atom atom : entity.atoms) {
+                if (atom.getPointValidity()) {
+                    startAtom = atom;
+                    break;
+                }
+            }
+        }
+        AngleTreeGenerator aTreeGen = new AngleTreeGenerator();
+        List<List<Atom>> atomTree = aTreeGen.genTree(entity, startAtom, null);
+        List<Atom> atomList = aTreeGen.getPathList();
+        int[][] genVecs = CoordinateGenerator.setupCoords(atomTree);
+        CoordinateGenerator.prepareAtoms(atomList, true);
+        CoordinateGenerator.genCoords(genVecs, atomList);
+    }
+
     public static void genMeasuredTree(Entity entity, Atom startAtom) {
         if (startAtom == null) {
             startAtom = entity.atoms.get(0);
