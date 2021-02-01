@@ -104,7 +104,7 @@ public class AllBasePairs {
         bpMap.clear();
         basePairs.clear();
         ClassLoader cl = ClassLoader.getSystemClassLoader();
-        InputStream istream = cl.getResourceAsStream("data/basepair.csv");
+        InputStream istream = cl.getResourceAsStream("data/basepair.txt");
         Scanner inputStream = new Scanner(istream);
         while (inputStream.hasNextLine()) {
             String data = inputStream.nextLine();
