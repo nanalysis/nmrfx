@@ -58,7 +58,7 @@ public class RNAHelix extends SecondaryStructure {
         while (i < secResidues.size()) {
             Residue res1 = secResidues.get(i);
             Residue res2 = secResidues.get(i + 1);
-            BasePair bp = new BasePair(res1, res2);
+            BasePair bp = new BasePair(res1, i, res2, i+1, 1);
             basePairs.add(bp);
             i += 2;
         }

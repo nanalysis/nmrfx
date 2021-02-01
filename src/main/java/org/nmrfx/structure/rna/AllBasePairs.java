@@ -33,23 +33,56 @@ public class AllBasePairs {
     public int type;
     public String res1;
     public String res2;
-    public String[] atomPairs;
-    public String[] distances;
+    BPConstraint[] bpConstraints;
+
     private final static Map<String, AllBasePairs> bpMap = new HashMap<>();
     private final static List<AllBasePairs> basePairs = new ArrayList<>();
 
-    public AllBasePairs(int type, String res1, String res2, String[] atomPairs, String[] distances) {
+    public AllBasePairs(int type, String res1, String res2, BPConstraint[] bpConstraints) {
         this.res1 = res1;
         this.res2 = res2;
         this.type = type;
-        this.atomPairs = atomPairs;
-        this.distances = distances;
+        this.bpConstraints = bpConstraints;
+    }
 
+    static class BPConstraint {
+
+        final String[][] atomNames;
+        final double lower;
+        final double upper;
+        final double lowerHeavy;
+        final double upperHeavy;
+
+        public BPConstraint(String[][] atomNames, double lower, double upper, double lowerHeavy, double upperHeavy) {
+            this.atomNames = atomNames;
+            this.lower = lower;
+            this.upper = upper;
+            this.lowerHeavy = lowerHeavy;
+            this.upperHeavy = upperHeavy;
+        }
+
+        public String toString() {
+            StringBuilder sBuilder = new StringBuilder();
+            sBuilder.append(String.format("%4.1f ", lower));
+            sBuilder.append(String.format("%4.1f ", upper));
+            for (int i = 0; i < atomNames.length; i++) {
+                sBuilder.append(atomNames[i][0]).append(" ");
+                sBuilder.append(atomNames[i][1]);
+                if (i < atomNames.length - 1) {
+                    sBuilder.append(" ");
+                }
+            }
+            return sBuilder.toString();
+        }
+    }
+
+    public BPConstraint[] getBPConstraints() {
+        return bpConstraints;
     }
 
     @Override
     public String toString() {
-        return type + ", " + res1 + ", " + res2 + ", " + Arrays.toString(atomPairs);
+        return type + ", " + res1 + ", " + res2;
     }
 
     public static AllBasePairs getBasePair(int type, String res1, String res2) {
@@ -76,33 +109,44 @@ public class AllBasePairs {
         while (inputStream.hasNextLine()) {
             String data = inputStream.nextLine();
             if (!data.isEmpty()) {
-                String[] arrOfStr = data.split(",");
+                String[] arrOfStr = data.split("\t");
                 if (arrOfStr.length >= 1) {
                     int type = Integer.parseInt(arrOfStr[0]);
                     String res1 = arrOfStr[1];
                     String res2 = arrOfStr[2];
                     int nPairs = (arrOfStr.length - 3) / 3;
-                    String[] atomPairs = new String[nPairs]; ///populate list with basepairs
-                    String[] distances = new String[nPairs];
+                    BPConstraint[] bpConstraints = new BPConstraint[nPairs];
                     int firstindex = 3;
                     int secondindex = 4;
-                    String upperALim;
-                    String lowerALim;
-                    String upperPLim;
-                    String lowerPLim;
                     for (int i = 0; i < nPairs; i++) {
-                        atomPairs[i] = arrOfStr[firstindex] + ":" + arrOfStr[secondindex];
+                        String[] atomNames1 = arrOfStr[firstindex].split("/");
+                        String[] atomNames2 = arrOfStr[secondindex].split("/");
+                        int nCombo = atomNames1.length * atomNames2.length;
+                        String[][] atomNames = new String[nCombo][2];
+                        int iCombo = 0;
+                        for (String atomName1 : atomNames1) {
+                            for (String atomName2 : atomNames2) {
+                                atomNames[iCombo][0] = atomName1;
+                                atomNames[iCombo][1] = atomName2;
+                                iCombo++;
+                            }
+                        }
+
                         String[] restraints = arrOfStr[secondindex + 1].split("/");
-                        lowerALim = restraints[0];
-                        upperALim = restraints[1];
-                        lowerPLim = restraints[2];
-                        upperPLim = restraints[3];
-                        distances[i] = lowerALim + ":" + upperALim + ":" + lowerPLim + ":" + upperPLim;
+                        String lowerALim = restraints[0];
+                        String upperALim = restraints[1];
+                        String lowerPLim = restraints[2];
+                        String upperPLim = restraints[3];
+                        double lower = Double.parseDouble(lowerALim);
+                        double upper = Double.parseDouble(upperALim);
+                        double heavyLower = Double.parseDouble(lowerPLim);
+                        double heavyUpper = Double.parseDouble(upperPLim);
+                        bpConstraints[i] = new BPConstraint(atomNames, lower, upper, heavyLower, heavyUpper);
                         firstindex += 3;
                         secondindex += 3;
                     }
                     String pair = type + res1 + res2;
-                    AllBasePairs bp = new AllBasePairs(type, res1, res2, atomPairs, distances);
+                    AllBasePairs bp = new AllBasePairs(type, res1, res2, bpConstraints);
                     bpMap.put(pair, bp);
                     basePairs.add(bp);
                 }

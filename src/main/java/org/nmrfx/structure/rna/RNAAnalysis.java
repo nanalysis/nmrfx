@@ -71,17 +71,20 @@ public class RNAAnalysis {
     public static List<BasePair> getPairList(Molecule molecule, int typeTarget) { //for RNA only
         List<BasePair> bpList = new ArrayList();
         List<Residue> rnaResidues = genRnaResidues(molecule);
+        int iResA = 0;
         for (Residue residueA : rnaResidues) {
+            int iResB = 0;
             for (Residue residueB : rnaResidues) {
                 if (residueA.getResNum() < residueB.getResNum()) {
                     int type = BasePair.getBasePairType(residueA, residueB);
-                    if (type == typeTarget) {
-                        BasePair bp = new BasePair(residueA, residueB);
+                    if ((type == typeTarget) || ((typeTarget == -1) && (type > 0))) {
+                        BasePair bp = new BasePair(residueA, iResA, residueB, iResB, type);
                         bpList.add(bp);
-
                     }
                 }
+                iResB++;
             }
+            iResA++;
         }
         return bpList;
     }
@@ -101,7 +104,7 @@ public class RNAAnalysis {
         List<BasePair> bpList = getPairList(molecule);
         for (BasePair bp1 : bpList) {
             for (BasePair bp2 : bpList) {
-                if (bp1.res1.iRes < bp2.res1.iRes && bp1.res2.iRes < bp2.res2.iRes && bp1.res2.iRes > bp2.res1.iRes) {
+                if (bp1.getIResA() < bp2.getIResA() && bp1.getIResB() < bp2.getIResB() && bp1.getIResB() > bp2.getIResA()) {
                     if (currentBp != bp2) {
                         bpMap.put(i, crossedPairs);
                         i++;
@@ -132,20 +135,24 @@ public class RNAAnalysis {
         List<BasePair> bps = getPairList(molecule);
         List<Residue> rnaResidues = genRnaResidues(molecule);
         char[] vienna = new char[rnaResidues.size()];
-        String leftBrackets = "[{";
-        String rightBrackets = "]}";
+        String leftBrackets = "[{ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        String rightBrackets = "]}abcdefghijklmnopqrstuvwxyz";
         for (int i = 0; i < vienna.length; i++) {
             vienna[i] = '.';
         }
         for (BasePair bp : bps) {
-            vienna[bp.res1.iRes] = '(';
-            vienna[bp.res2.iRes] = ')';
+            vienna[bp.getIResA()] = '(';
+            vienna[bp.getIResB()] = ')';
         }
         if (!bpMap.isEmpty()) {
             for (Map.Entry<Integer, List<BasePair>> crossMap : bpMap.entrySet()) {
                 for (BasePair bp : crossMap.getValue()) {
-                    vienna[bp.res1.iRes] = leftBrackets.charAt(crossMap.getKey());
-                    vienna[bp.res2.iRes] = rightBrackets.charAt(crossMap.getKey());
+                    int key = crossMap.getKey();
+                    if (key >= leftBrackets.length()) {
+                        key = leftBrackets.length() - 1;
+                    }
+                    vienna[bp.getIResA()] = leftBrackets.charAt(key);
+                    vienna[bp.getIResB()] = rightBrackets.charAt(key);
                 }
 
             }
@@ -177,8 +184,12 @@ public class RNAAnalysis {
         }
         for (Map.Entry<Integer, List<BasePair>> crossMap : bpMap.entrySet()) {
             for (BasePair bp : crossMap.getValue()) {
-                vienna[bp.res1.iRes] = leftBrackets.charAt(crossMap.getKey());
-                vienna[bp.res2.iRes] = rightBrackets.charAt(crossMap.getKey());
+                int key = crossMap.getKey();
+                if (key >= leftBrackets.length()) {
+                    key = leftBrackets.length() - 1;
+                }
+                vienna[bp.res1.iRes] = leftBrackets.charAt(key);
+                vienna[bp.res2.iRes] = rightBrackets.charAt(key);
             }
         }
         return vienna;
