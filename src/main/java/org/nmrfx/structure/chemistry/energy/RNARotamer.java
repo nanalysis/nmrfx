@@ -121,7 +121,8 @@ public class RNARotamer {
         double prob;
         double[] angles;
         String message;
-        double[] normDeltas = new double[7];
+        double[] normDeltas;
+        double[] deltas;
 
         public RotamerScore(RNARotamer rotamer, double score, double prob, double[] angles) {
             this(rotamer, score, prob, angles, "");
@@ -133,20 +134,28 @@ public class RNARotamer {
             this.angles = angles;
             this.message = message;
             this.prob = prob;
+            if (rotamer.angles != null) {
+                normDeltas = new double[7];
+                deltas = new double[7];
+                calcNormDeltas();
+            }
         }
 
         private void calcNormDeltas() {
-            for (int i = 0; i < 7; i++) {
-                double delta = angles[i] - rotamer.angles[i];
+            if (angles != null) {
+                for (int i = 0; i < 7; i++) {
+                    double delta = angles[i] - rotamer.angles[i];
 //                double delta = Math.abs(angles[i] - rotamer.angles[i]);
 
-                if (delta > Math.PI) {
-                    delta = -(2.0 * Math.PI - delta);
+                    if (delta > Math.PI) {
+                        delta = -(2.0 * Math.PI - delta);
+                    }
+                    if (delta < -Math.PI) {
+                        delta = 2.0 * Math.PI + delta;
+                    }
+                    normDeltas[i] = delta / rotamer.sdev[i];
+                    deltas[i] = delta;
                 }
-                if (delta < -Math.PI) {
-                    delta = 2.0 * Math.PI + delta;
-                }
-                normDeltas[i] = delta / rotamer.sdev[i];
             }
         }
 
@@ -176,7 +185,14 @@ public class RNARotamer {
 
         @Override
         public String toString() {
-            String result = String.format("%2s S%20s %8.6f %.3f %.2f %50s %6s", rotamer.name, rotamer.suiteName, prob, score, getSuiteness(), formatAngles(angles), message);
+            String result = String.format("%2s %20s %8.6f %.3f %.2f %50s %6s", rotamer.name, rotamer.suiteName, prob, score, getSuiteness(), RNARotamer.formatAngles(angles), message);
+            return result;
+        }
+
+        public String report() {
+            String pucker2 = getPucker(Math.toDegrees(angles[6]));
+            
+            String result = String.format("%2s %4.2f %2s %92s", rotamer.name, getSuiteness(), pucker2, formatAngles(angles, deltas));
             return result;
         }
 
@@ -247,19 +263,26 @@ public class RNARotamer {
 
     }
 
+    public static String getPucker(double angleDegrees) {
+        final String pucker;
+        if (Math.abs(angleDegrees - 84.0) < 10.0) {
+            pucker = "3'";
+        } else if (Math.abs(angleDegrees - 147.0) < 10.0) {
+            pucker = "2'";
+        } else {
+            pucker = "?";
+
+        }
+        return pucker;
+    }
+
     public final String makeSuiteName(double[] angles) {
         StringBuilder builder = new StringBuilder();
         // m, p, t convention of Lovell et al. (20) for values near 􏰋60°, 􏰏60°, or 180°;
         for (int i = 0; i < 7; i++) {
             double testAngle = angles[i] * toDEG;
             if ((i == 0) || (i == 6)) {
-                if (Math.abs(testAngle - 84.0) < 10.0) {
-                    builder.append("3'");
-                } else if (Math.abs(testAngle - 147.0) < 10.0) {
-                    builder.append("2'");
-                } else {
-                    builder.append('?');
-                }
+                builder.append(getPucker(testAngle));
             } else if (i == 1) {
                 if (Math.abs(testAngle + 130.0) < 41.0) {
                     builder.append("e");
@@ -351,7 +374,7 @@ public class RNARotamer {
         for (int i = 1; i < 5; i++) {
             double testAngle = angles[i] * toDEG;
             if ((testAngle >= ranges[i - 1][0]) && (testAngle <= ranges[i - 1][1])) {
-                System.out.println("fail " + i + " " + testAngle + " " + ranges[i - 1][0] + " " + ranges[i - 1][1]);
+                // System.out.println("fail " + i + " " + testAngle + " " + ranges[i - 1][0] + " " + ranges[i - 1][1]);
                 result = i;
                 break;
             }
@@ -363,7 +386,20 @@ public class RNARotamer {
     public static String formatAngles(double[] angles) {
         StringBuilder builder = new StringBuilder();
         for (double angle : angles) {
-            builder.append(String.format(" %6.1f", angle * toDEG));
+            builder.append(String.format(" %6.1f", Math.toDegrees(angle)));
+        }
+        return builder.toString();
+    }
+
+    public static String formatAngles(double[] angles, double[] deltas) {
+        StringBuilder builder = new StringBuilder();
+        for (int i = 0; i < angles.length; i++) {
+            var angle = angles[i];
+            double delta = 0.0;
+            if (deltas != null) {
+                delta = deltas[i];
+            }
+            builder.append(String.format(" %6.1f %5.1f", Math.toDegrees(angle), Math.toDegrees(delta)));
         }
         return builder.toString();
     }
@@ -680,6 +716,11 @@ public class RNARotamer {
                     j++;
                 }
                 if (ec == null) {
+                    for (Atom atom : angleAtoms) {
+                        if (atom.getPoint() == null) {
+                            return null;
+                        }
+                    }
                     angles[i] = AtomMath.calcDihedral(angleAtoms[0].getPoint(), angleAtoms[1].getPoint(), angleAtoms[2].getPoint(), angleAtoms[3].getPoint());
                 } else {
                     angles[i] = ec.calcDihedral(angleAtoms[0].eAtom, angleAtoms[1].eAtom, angleAtoms[2].eAtom, angleAtoms[3].eAtom);
@@ -740,7 +781,9 @@ public class RNARotamer {
         RotamerScore rotamerScore = null;
         if (residue.previous != null) {
             double[] angles = getDihedrals(residue, null);
-            rotamerScore = bestProb(angles);
+            if (angles != null) {
+                rotamerScore = bestProb(angles);
+            }
         }
         return rotamerScore;
     }
