@@ -52,6 +52,9 @@ public class CoordinateGenerator {
 
     public static int genCoords(int[][] genVecs, List<Atom> atoms, int iStruct, final double[] dihedrals) {
         int nAngles = 0;
+        if (genVecs.length == 0) {
+            return 0;
+        }
         Atom a3 = atoms.get(genVecs[0][2]);
         if (!a3.getPointValidity(iStruct)) {
             a3.setPointValidity(iStruct, true);
