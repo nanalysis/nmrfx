@@ -304,9 +304,9 @@ public class PDBFile {
                         lastRes = atomParse.resNum;
                         lastLoc = atomParse.loc;
                         atomParse.resName = atomParse.resName.toLowerCase();
-                        if (atomParse.resName.equals("mse")) {
-                            atomParse.resName = "met";
-                        }
+//                        if (atomParse.resName.equals("mse")) {
+//                            atomParse.resName = "met";
+//                        }
                         residueList.add(atomParse.resName + " " + atomParse.resNum);
                     }
                     // fixme should we do anything here with MODEL
