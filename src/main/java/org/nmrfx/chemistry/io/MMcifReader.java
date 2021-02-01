@@ -31,7 +31,7 @@ import org.nmrfx.chemistry.protein.Sheet;
 
 public class MMcifReader {
 
-    static boolean DEBUG = true;
+    static boolean DEBUG = false;
 
     final MMCIF mmcif;
     final File cifFile;
