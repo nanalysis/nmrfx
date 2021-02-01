@@ -60,7 +60,7 @@ public class HydrogenBond {
             if (acceptorParent.entity != donor.entity) {
                 Point3 donorPt = donor.getPoint(structureNum);
                 Point3 hydrogenPt = hydrogen.atom.getPoint(structureNum);
-                if (donorPt != null) {
+                if ((hydrogenPt != null) && (donorPt != null)) {
                     Point3 acceptorPt = acceptor.getPoint(structureNum);
                     if (acceptorPt != null) {
                         double distance = Atom.calcDistance(hydrogenPt, acceptorPt);
