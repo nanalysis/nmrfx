@@ -51,7 +51,7 @@ N	7	1.45	1.824000	0.170000	14.0100	-1	#sp2 nitrogen in amide groups
 N*	7	1.5	1.824000	0.170000	14.0100	0	#sp2 N
 N2	7	1.5	1.824000	0.170000	14.0100	-1	#sp2 N in amino groupsARG/HIP/LYS>!PRO
 N3	7	1.5	1.824000	0.170000	14.0100	0	#sp3 N for charged amino groups (Lys, etc)
-NA	7	1.5	1.824000	0.170000	14.0100	0	#sp2 N in 5 memb.ring w/H atom (HIS)
+NA	7	1.45	1.824000	0.170000	14.0100	0	#sp2 N in 5 memb.ring w/H atom (HIS)
 NB	7	1.5	1.824000	0.170000	14.0100	-1	#sp2 N in 5 memb.ring w/LP (HIS,ADE,GUA)
 NC	7	1.5	1.824000	0.170000	14.0100	-1	#sp2 N in 6 memb.ring w/LP (ADE,GUA)
 ND	7	1.5	1.824000	0.170000	14.0100	0	#ASN/GLN amide O; NHE
