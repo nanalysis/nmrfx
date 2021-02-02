@@ -45,7 +45,7 @@ public class AllBasePairs {
         this.bpConstraints = bpConstraints;
     }
 
-    static class BPConstraint {
+    public static class BPConstraint {
 
         final String[][] atomNames;
         final double lower;
@@ -60,11 +60,33 @@ public class AllBasePairs {
             this.lowerHeavy = lowerHeavy;
             this.upperHeavy = upperHeavy;
         }
+        
+        public String[][] getAtomNames() {
+            return atomNames;
+        }
+        
+        public double getLower() {
+            return lower;
+        }
+        
+        public double getUpper() {
+            return upper;
+        }
+        
+        public double getLowerHeavy() {
+            return lowerHeavy;
+        }
+        
+        public double getUpperHeavy() {
+            return upperHeavy;
+        }
 
         public String toString() {
             StringBuilder sBuilder = new StringBuilder();
             sBuilder.append(String.format("%4.1f ", lower));
             sBuilder.append(String.format("%4.1f ", upper));
+            sBuilder.append(String.format("%4.1f ", lowerHeavy));
+            sBuilder.append(String.format("%4.1f ", upperHeavy));
             for (int i = 0; i < atomNames.length; i++) {
                 sBuilder.append(atomNames[i][0]).append(" ");
                 sBuilder.append(atomNames[i][1]);

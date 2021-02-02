@@ -1868,35 +1868,33 @@ class refine:
         resNameJ = residueJ.getName()
         resNumI = residueI.getNumber()
         resNumJ = residueJ.getNumber()
-	bp = AllBasePairs.getBasePair(type, resNameI, resNameJ)
-   	numBp = len(bp.atomPairs)
-	for i in range(0, numBp):
-	    restraints = bp.distances[i].split(":")
-	    atoms = bp.atomPairs[i].split(":")
-	    atomsI = atoms[0].split('/')
-	    atomsJ = atoms[1].split('/')
+	basePairs = AllBasePairs.getBasePair(type, resNameI, resNameJ)
+	for bp in basePairs.getBPConstraints():
+            print bp.toString()
+            lowAtomAtomDis = bp.getLower()
+            atomAtomDis = bp.getUpper()
+            lowAtomParentDis = bp.getLowerHeavy()
+            atomParentDis = bp.getUpperHeavy()
             atom1Names = []
             atom2Names = []
-            for atomI in atomsI:
-                atom1Name = self.getAtomName(residueI, atomI)
-                for atomJ in atomsJ:
-                    atom2Name = self.getAtomName(residueJ, atomJ)
-                    atom1Names.append(atom1Name)
-                    atom2Names.append(atom2Name)
-	    atomAtomDis= float(restraints[1])
-	    lowAtomAtomDis= float(restraints[0])
-            atomParentDis= float(restraints[3])
-            lowAtomParentDis= float(restraints[2])
-            atomI = atomsI[0]
-            atomJ = atomsJ[0]
+            allAtomNames =  bp.getAtomNames()
+            for atomNames in allAtomNames:
+                atom1Name = self.getAtomName(residueI, atomNames[0])
+                atom2Name = self.getAtomName(residueJ, atomNames[1])
+                atom1Names.append(atom1Name)
+                atom2Names.append(atom2Name)
+            atomI = allAtomNames[0][0]
+            atomJ = allAtomNames[0][1]
 	    if atomI.startswith("H"):
+                print residueI.toString(),atomI
 	        parentAtom = residueI.getAtom(atomI).parent.getName()
                 parentAtomName = self.getAtomName(residueI,parentAtom)
-		self.addDistanceConstraint(parentAtomName, atom2Name ,lowAtomParentDis,atomParentDis)
+		self.addDistanceConstraint(parentAtomName, atom2Names[0] ,lowAtomParentDis,atomParentDis)
 	    elif atomJ.startswith("H"):
+                print residueJ.toString(),atomJ
 	        parentAtom = residueJ.getAtom(atomJ).parent.getName()
                 parentAtomName = self.getAtomName(residueJ,parentAtom)
-		self.addDistanceConstraint(parentAtomName, atom1Name ,lowAtomParentDis,atomParentDis)
+		self.addDistanceConstraint(parentAtomName, atom1Names[0] ,lowAtomParentDis,atomParentDis)
 	    self.addDistanceConstraint(atom1Names, atom2Names ,lowAtomAtomDis,atomAtomDis)
         if type == 1:
             atomPI = residueI.getAtom("P")
