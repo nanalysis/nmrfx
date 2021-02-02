@@ -1,9 +1,11 @@
 import sys
+import math
 import os
 import osfiles
 import argparse
 import molio
 from org.nmrfx.structure.chemistry.energy import RNARotamer
+from org.nmrfx.structure.chemistry.energy import Dihedral
 from org.nmrfx.structure.rna import RNAAnalysis
 
 def dumpDis(mol, fileName='distances.txt', delta=0.5, atomPat='*.H*',maxDis=4.5,prob=1.1,fixLower=0.0):
@@ -80,17 +82,33 @@ def rnaDotBracket(mol, fileName='stdout'):
    vienna = RNAAnalysis.getViennaSequence(mol)
    dotBracketDict = {}
    for rnaResidue,dotBracket in zip(rnaResidues, vienna):
-       polyName = rnaResidue.getPolymer().getName()
-       resNum = rnaResidue.getNumber()
-       dotBracketDict[polyName+resNum]=str(dotBracket)
+       dotBracketDict[rnaResidue.toString()]=str(dotBracket)
    vienna = ''.join(vienna) 
    return vienna,dotBracketDict
 
 def sequence(mol, fileName='stdout'):
     for polymer in mol.getPolymers():
         type = polymer.getPolymerType()
+        print polymer.getName(), type
         for residue in polymer.getResidues():
-            print polymer.getName(),residue.getName()
+            print residue
+            #print residue.toString()()
+
+def getRNAPairs(mol):
+    pairs = RNAAnalysis.getPairList(mol, -1)
+    rnaPairDict = {}
+    for pair in pairs:
+        resA = pair.getResA()
+        resB = pair.getResB()
+        type = pair.getType()
+        resAStr = resA.toString()
+        resBStr = resB.toString()
+        resAName = resA.getName()
+        resBName = resB.getName()
+        rnaPairDict[resAStr] = (resBStr,type,resAName+resBName)
+        rnaPairDict[resBStr] = (resAStr,type,resBName+resAName)
+    return rnaPairDict
+        
 
 def rnaSuite(mol, includeResidues, fileName='stdout'):
     if fileName == 'stdout':
@@ -102,21 +120,47 @@ def rnaSuite(mol, includeResidues, fileName='stdout'):
         if polymer.isRNA():
             if rnaDotBracketDict == None:
                 vienna, rnaDotBracketDict = rnaDotBracket(mol)
+                rnaPairDict = getRNAPairs(mol)
             polyName = polymer.getName()
             for residue in polymer.getResidues():
                 if includeResidues != None:
                     if residue.getNumber() not in includeResidues:
                         continue
-                resNum = residue.getNumber()
-                dotBracket = rnaDotBracketDict[polyName+resNum]
+                chi = residue.calcChi()
+                if chi != None:
+                    chi = chi * 180.0 / math.pi
+                    chi = "%6.1f" % (chi)
+                else:
+                    chi = "na"
+                nu2 = residue.calcNu2()
+                nu3 = residue.calcNu3()
+                if nu2 != None and nu3 != None:
+                    pseudo = Dihedral.calcPseudoAngle(nu2, nu3)
+                    pseudoAngle = pseudo[0]*180.0/math.pi
+                    if pseudoAngle > 180.0:
+                        pseudoAngle = pseudoAngle - 360.0
+                    pucker = pseudo[1]*180.0/math.pi
+                    pseudoAngle = "%6.1f" % (pseudoAngle)
+                else:
+                    pseudoAngle = "na"
+                resID = residue.toString()
+                dotBracket = rnaDotBracketDict[resID]
+                resPair = '_'
+                type = 0
+                pair = '_' 
+                if resID in rnaPairDict:
+                    resPair,type,pair = rnaPairDict[resID]
                 rotamerScore = RNARotamer.scoreResidue(residue)
                 if rotamerScore != None:
-                    outStr = "%4s %4s %2s %2s %s\n" %(polyName, residue.getNumber(),residue.getName(),dotBracket,rotamerScore.toString())
+                    outStr = "%8s %2s %2s %2d %8s %102s %6s %6s\n" %(resID,dotBracket,pair,type,resPair, rotamerScore.report(), pseudoAngle, chi)
+                    fOut.write(outStr)
+                else:
+                    outStr = "%8s %2s %2s %2d %8s\n" %(resID,dotBracket,pair, type, resPair)
                     fOut.write(outStr)
     if fileName != 'stdout':
         fOut.close()
   
-def loadStructure(fileName, xMode=True, iStruct=0):
+def loadStructure(fileName, xMode=False, iStruct=0):
     if fileName.endswith('.pdb'):
         if (xMode):
             mol = molio.readPDBX(fileName)
@@ -153,6 +197,7 @@ def parseArgs():
             dumpDis(mol) 
         if args.suiteMode:
             rnaSuite(mol, includeResidues)
+            getRNAPairs(mol)
         if args.dotMode:
             vienna, rnaDotBracketDict = rnaDotBracket(mol)
             print vienna
