@@ -1870,7 +1870,6 @@ class refine:
         resNumJ = residueJ.getNumber()
 	basePairs = AllBasePairs.getBasePair(type, resNameI, resNameJ)
 	for bp in basePairs.getBPConstraints():
-            print bp.toString()
             lowAtomAtomDis = bp.getLower()
             atomAtomDis = bp.getUpper()
             lowAtomParentDis = bp.getLowerHeavy()
@@ -1886,12 +1885,10 @@ class refine:
             atomI = allAtomNames[0][0]
             atomJ = allAtomNames[0][1]
 	    if atomI.startswith("H"):
-                print residueI.toString(),atomI
 	        parentAtom = residueI.getAtom(atomI).parent.getName()
                 parentAtomName = self.getAtomName(residueI,parentAtom)
 		self.addDistanceConstraint(parentAtomName, atom2Names[0] ,lowAtomParentDis,atomParentDis)
 	    elif atomJ.startswith("H"):
-                print residueJ.toString(),atomJ
 	        parentAtom = residueJ.getAtom(atomJ).parent.getName()
                 parentAtomName = self.getAtomName(residueJ,parentAtom)
 		self.addDistanceConstraint(parentAtomName, atom1Names[0] ,lowAtomParentDis,atomParentDis)
