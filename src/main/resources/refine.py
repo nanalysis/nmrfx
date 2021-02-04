@@ -1705,6 +1705,8 @@ class refine:
             fIn = open(fileName,'r')
             for line in fIn:
                 line = line.strip()
+                if line.startswith("#"):
+                    continue
                 (residueNum, rotamerName) = line.split()
                 angleBoundaries = RNARotamer.getAngleBoundaries(polymer, residueNum, rotamerName, mul)
                 for angleBoundary in angleBoundaries:
@@ -1853,6 +1855,7 @@ class refine:
                 res5 = allResidues[m.start()+6]
                 res5Num = res5.getNumber()
                 if res2.getPolymer() == res5.getPolymer():
+                    self.addSuiteBoundary(polymer, res1Num,"1a")
                     self.addSuiteBoundary(polymer, res2Num,"1g")
                     self.addSuiteBoundary(polymer, res3Num,"1a")
                     self.addSuiteBoundary(polymer, res4Num,"1a")
