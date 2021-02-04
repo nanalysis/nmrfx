@@ -796,6 +796,10 @@ public class RNARotamer {
         ArrayList<AngleConstraint> boundaries = new ArrayList<>();
         int i = 0;
         for (String[] atomNames : suiteAtoms) {
+            if (i == 0) {
+                i++;
+                continue;
+            }
             double mean = rotamer.angles[i];
             double sdev = sdevs[i];
             double lower = (mean - sdev * mul) * toDEG;
