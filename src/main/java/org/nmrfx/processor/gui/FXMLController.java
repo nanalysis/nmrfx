@@ -859,10 +859,18 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         fileChooser.setTitle("Export to PDF");
         fileChooser.setInitialDirectory(getInitialDirectory());
         File selectedFile = fileChooser.showSaveDialog(null);
-        if (selectedFile != null) {
+        exportPDF(selectedFile);
+    }
+
+    public void exportPDF(File file) {
+        exportSVG(file.toString());
+    }
+
+    public void exportPDF(String fileName) {
+        if (fileName != null) {
             try {
                 PDFGraphicsContext pdfGC = new PDFGraphicsContext();
-                pdfGC.create(true, canvas.getWidth(), canvas.getHeight(), selectedFile.toString());
+                pdfGC.create(true, canvas.getWidth(), canvas.getHeight(), fileName);
                 for (PolyChart chart : charts) {
                     chart.exportVectorGraphics(pdfGC);
                 }
@@ -880,10 +888,18 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         fileChooser.setTitle("Export to SVG");
         fileChooser.setInitialDirectory(getInitialDirectory());
         File selectedFile = fileChooser.showSaveDialog(null);
-        if (selectedFile != null) {
+        exportSVG(selectedFile);
+    }
+
+    public void exportSVG(File file) {
+        exportSVG(file.toString());
+    }
+
+    public void exportSVG(String fileName) {
+        if (fileName != null) {
             SVGGraphicsContext svgGC = new SVGGraphicsContext();
             try {
-                svgGC.create(true, canvas.getWidth(), canvas.getHeight(), selectedFile.toString());
+                svgGC.create(true, canvas.getWidth(), canvas.getHeight(), fileName);
                 for (PolyChart chart : charts) {
                     chart.exportVectorGraphics(svgGC);
                 }
@@ -1232,7 +1248,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
             }
         }
         phaser = new Phaser(this, phaserBox);
-        }
+    }
 
     public Phaser getPhaser() {
         return phaser;

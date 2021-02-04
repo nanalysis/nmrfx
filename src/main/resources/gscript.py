@@ -352,7 +352,9 @@ class NMRFxWindowScripting:
 
     def addPolyLine(self, x, y, color="black", width=1.0):
         self.cmd.addPolyLine(x , y, color, width)
-            
+
+    def export(self, fileName):
+        self.cmd.export(fileName)
 
 def parseArgs(argv):
     nw = NMRFxWindowScripting()

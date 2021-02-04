@@ -693,6 +693,17 @@ public class GUIScripter {
         });
     }
 
+    public void export(String fileName) {
+        ConsoleUtil.runOnFxThread(() -> {
+            FXMLController activeController = getActiveController();
+            if (fileName.endsWith(".svg")) {
+                activeController.exportSVG(fileName);
+            } else if (fileName.endsWith(".pdf")) {
+                activeController.exportPDF(fileName);
+            }
+        });
+    }
+
     public static String toRGBCode(Color color) {
         return String.format("#%02X%02X%02X%02X",
                 (int) (color.getRed() * 255),
@@ -775,4 +786,5 @@ public class GUIScripter {
         interp.exec(keyActions.get(keyStr));
         currentActive.setActiveChart();
     }
+
 }
