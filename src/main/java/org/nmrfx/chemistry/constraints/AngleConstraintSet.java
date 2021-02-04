@@ -33,6 +33,7 @@ public class AngleConstraintSet implements ConstraintSet, Iterable {
 
     private final MolecularConstraints molecularConstraints;
     private ArrayList<AngleConstraint> constraints = new ArrayList<>();
+    private Map<String, Integer> map = new HashMap<>();
     int nStructures = 0;
     private final String name;
     boolean dirty = true;
@@ -65,7 +66,15 @@ public class AngleConstraintSet implements ConstraintSet, Iterable {
 
     public void add(AngleConstraint constraint) {
         constraint.idNum = getSize();
-        constraints.add(constraint);
+        String key = constraint.getRefAtom().getFullName();
+        if (map.containsKey(key)) {
+            int index = map.get(key);
+            constraints.set(index, constraint);
+        } else {
+            constraints.add(constraint);
+            map.put(key, constraints.size() - 1);
+        }
+        dirty = true;
     }
 
     public String getName() {
@@ -90,11 +99,11 @@ public class AngleConstraintSet implements ConstraintSet, Iterable {
 
     public void clear() {
         constraints.clear();
+        map.clear();
     }
 
     public void add(Constraint constraint) {
-        constraints.add((AngleConstraint) constraint);
-        dirty = true;
+        add((AngleConstraint) constraint);
     }
 
     public ArrayList<AngleConstraint> get() {
