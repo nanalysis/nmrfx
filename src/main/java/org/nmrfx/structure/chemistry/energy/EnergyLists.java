@@ -1408,6 +1408,36 @@ public class EnergyLists {
         }
     }
 
+    public void dumpBranches() {
+        int n = branches.length;
+        for (int i = 0; i < n; i++) {
+            System.out.printf("branch %3d %10s ", i, branches[i].atom.getFullName());
+            for (int k = 0; k < 3; k++) {
+                System.out.printf(" f %7.1f g %7.1f", branches[i].farr[k], branches[i].garr[k]);
+            }
+            System.out.println("");
+        }
+        try {
+            for (int i = n - 1; i >= 0; i--) {
+                System.out.print("recur " + i + " " + branches[i].branches.length);
+                for (int j = 0; j < branches[i].branches.length; j++) {
+                    if (branches[i].branches[j] != null) {
+                        System.out.printf(" recur %3d %10s %10s ", i, branches[i].atom.getFullName(), branches[i].branches[j].atom.getFullName());
+                        for (int k = 0; k < 3; k++) {
+                            System.out.printf(" %7.1f %7.1f ", branches[i].branches[j].farr[k], branches[i].branches[j].garr[k]);
+                        }
+                    } else {
+                        //System.out.println("null branch");
+                    }
+                }
+                System.out.println("");
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            System.exit(1);
+        }
+    }
+
     public double[] recurrentDerivative() {
         int n = branches.length;
         double[] df = new double[n];
