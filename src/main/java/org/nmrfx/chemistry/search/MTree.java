@@ -342,7 +342,7 @@ public class MTree {
 
     public int[] depthFirstPath(int start) {
         int nNodes = nodes.size();
-        int [] iPath;
+        int[] iPath;
         if (nNodes != 0) {
             for (int j = 0; j < nNodes; j++) {
                 MNode cNode = (MNode) nodes.elementAt(j);
@@ -360,9 +360,8 @@ public class MTree {
                 MNode cNode = pathNodes.get(i);
                 iPath[i] = cNode.getID() + ((cNode.shell) << 8);
             }
-        }
-        else {
-            iPath = new int[0]; 
+        } else {
+            iPath = new int[0];
         }
 
         return iPath;
@@ -370,14 +369,14 @@ public class MTree {
 
     public int depthFirstPath(MNode cNode, ArrayList<MNode> path) {
         int maxShell = 0;
-        cNode.lastRotatable = lastRotatable;
-        if ((cNode.atom.irpIndex > 0) && (cNode.atom.rotActive)) {
-            lastRotatable = cNode;
+        if (cNode.parent != null) {
+            if ((cNode.parent.atom.irpIndex > 0) && (cNode.parent.atom.rotActive)) {
+                cNode.lastRotatable = cNode.parent;
+            } else {
+                cNode.lastRotatable = cNode.parent.lastRotatable;
+            }
         }
         for (int i = 0; i < cNode.nodes.size(); i++) {
-            if ((cNode.atom.irpIndex > 0) && (cNode.atom.rotActive)) {
-                lastRotatable = cNode;
-            }
             MNode nNode = ((MNode) cNode.nodes.get(i));
 
             if (nNode.shell == -1) {
