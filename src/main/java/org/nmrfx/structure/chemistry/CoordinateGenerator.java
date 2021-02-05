@@ -139,7 +139,7 @@ public class CoordinateGenerator {
                 Atom atom = atomList.get(genVecs[i][2]);
                 String angleDaughterName = atom.daughterAtom != null ? atom.daughterAtom.getShortName() : "____";
                 String atomParentName = atom.parent != null ? atom.parent.getShortName() : "___";
-                System.out.printf("%8s %8s %8s %3d %3d %3d\n", atomParentName, atom.getShortName(), angleDaughterName,
+                System.out.printf("%8s %8s %8s %4d %3d %3d\n", atomParentName, atom.getShortName(), angleDaughterName,
                         atom.irpIndex, atom.rotUnit, atom.iAtom);
                 double dihedralAngle = 0;
                 int a3Index = genVecs[i][2];
