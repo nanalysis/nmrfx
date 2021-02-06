@@ -242,18 +242,20 @@ public class AtomEnergyProp {
         StringBuilder sBuilder = new StringBuilder();
         int firstDash = torsionType.indexOf('-');
         int lastDash = torsionType.lastIndexOf('-');
+        String[] torsionFields = torsionType.split("-");
         for (boolean[] generic : generics) {
             sBuilder.setLength(0);
             if (generic[0]) {
                 sBuilder.append(("X"));
             } else {
-                sBuilder.append(torsionType.substring(0, firstDash));
+                sBuilder.append(torsionFields[0]);
             }
-            sBuilder.append(torsionType.substring(firstDash, lastDash + 1));
+            sBuilder.append("-").append(torsionFields[1]).append("-").
+                    append(torsionFields[2]).append("-");
             if (generic[1]) {
                 sBuilder.append(("X"));
             } else {
-                sBuilder.append(torsionType.substring(7));
+                sBuilder.append(torsionFields[3]);
             }
             Integer index = torsionMap.get(sBuilder.toString());
             if (index != null) {
@@ -349,7 +351,7 @@ public class AtomEnergyProp {
      * substitution for hydrogen
      */
     public static EnergyPair getInteraction(final Atom atom1, final Atom atom2, double hardSphere,
-                                            boolean usehardSphere, double shrinkValue, double shrinkHValue) {
+            boolean usehardSphere, double shrinkValue, double shrinkHValue) {
 
         AtomEnergyProp iProp = (AtomEnergyProp) atom1.atomEnergyProp;
         AtomEnergyProp jProp = (AtomEnergyProp) atom2.atomEnergyProp;
