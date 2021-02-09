@@ -191,7 +191,7 @@ public class RNARotamer {
 
         public String report() {
             String pucker2 = getPucker(Math.toDegrees(angles[6]));
-            
+
             String result = String.format("%2s %4.2f %2s %92s", rotamer.name, getSuiteness(), pucker2, formatAngles(angles, deltas));
             return result;
         }
@@ -736,11 +736,15 @@ public class RNARotamer {
         return angles;
     }
 
-    public static void setDihedrals(Residue residue, String suiteName) {
-        setDihedrals(residue, suiteName, 0.0);
+    public static void setDihedrals(Residue residue, String suiteName, boolean doFreeze) {
+        setDihedrals(residue, suiteName, 0.0, doFreeze);
     }
 
-    public static void setDihedrals(Residue residue, String suiteName, double sdev) {
+    public static void setDihedrals(Residue residue, String suiteName) {
+        setDihedrals(residue, suiteName, 0.0, false);
+    }
+
+    public static void setDihedrals(Residue residue, String suiteName, double sdev, boolean doFreeze) {
         RNARotamer rotamer = ROTAMERS.get(suiteName);
         int j = 0;
         sdev = Math.toRadians(sdev);
@@ -763,6 +767,9 @@ public class RNARotamer {
                     }
                     System.out.println(atom.getFullName() + " " + Math.toDegrees(angle));
                     atom.setDihedral(Math.toDegrees(angle));
+                    if (doFreeze) {
+                        atom.parent.setRotActive(false);
+                    }
                 }
             }
             j++;
