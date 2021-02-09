@@ -390,6 +390,9 @@ public class AngleTreeGenerator {
                         rotatable = true;
                         mode = 10;
                     }
+                } else if (a2.getFlag(Atom.AROMATIC) && (a3.getAtomicNumber() == 7)) { // flatten nh2 on bases
+                    rotatable = false;
+                    mode = 11;
                 }
                 boolean twoRing = false;
                 if (a3.getProperty("rings") != null && a2.getProperty("rings") != null) {
