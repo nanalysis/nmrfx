@@ -2364,7 +2364,7 @@ class refine:
         self.loadDihedrals(self.angleStrings)
         self.addRingClosures() # Broken bonds are stored in molecule after tree generation. This is to fix broken bonds  # fixme should not happen with rna riboses as they are added
         self.setForces({'repel':0.5,'dis':1,'dih':5})
-        self.setPars({'coarse':False,'useh':False,'dislim':self.disLim,'end':2,'hardSphere':0.15,'shrinkValue':0.20})
+        self.setPars({'coarse':False,'useh':False,'dislim':self.disLim,'end':1000,'hardSphere':0.15,'shrinkValue':0.20})
         if writeTrajectory:
             self.trajectoryWriter = TrajectoryWriter(self.molecule,"output.traj","traj")
             selection = "*.ca,c,n,o,p,o5',c5',c4',c3',o3'"
