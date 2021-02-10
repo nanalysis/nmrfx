@@ -1,6 +1,7 @@
 import sys
 import time
 import os
+import re
 import runpy
 import os.path
 import argparse
@@ -8,10 +9,79 @@ import psspecial
 from pyproc import *
 from string import Template
 
-from org.nmrfx.processor.datasets.vendor import RefInfo
-from org.nmrfx.processor.math import Vec
 from java.lang import Runtime
 from org.python.util import PythonInterpreter;
+from org.nmrfx.processor.datasets.vendor import RefInfo
+from org.nmrfx.processor.math import Vec
+from org.nmrfx.processor.processing import ProcessingLib
+from org.nmrfx.processor.datasets.vendor import NMRDataUtil
+
+def getLibraryScript(fidFileName, nvFileName, args):
+    nmrData = NMRDataUtil.getFID(fidFileName)
+    sequence = nmrData.getSequence()
+    nDim = nmrData.getNDim()
+    vendor = nmrData.getVendor()
+
+    autoPhaseVars = []
+    if args.autoPhase:
+        np = nmrData.getNPoints()
+        vec = Vec.createNamedVector(np,'autophase', True)
+        nmrData.readVector(0,vec)
+        autoPhaseVars = autoPhaseFirstRow(vec)
+    nmrData.close()
+
+    seqScript = ProcessingLib.findSequence(sequence, vendor, nDim)
+
+    script = ''
+    if seqScript != None:
+        header = 'from pyproc import *\n'
+        script = header
+
+        script += 'FID("' + fidFileName + '")\n'
+        script += 'CREATE("' + nvFileName + '")\n'
+        script +=  seqScript.getScript()
+       
+        vars = seqScript.getVars()
+        vars = updateVars(vars, autoPhaseVars, nDim)
+        vars = updateVars(vars, args.vars, nDim)
+        script = replaceVars(script, vars)
+    return script
+
+def getDefaultVars(nDim):
+    vars = {}
+    for iDim in range(1, nDim+1):
+        var = 'ph0.'+str(iDim)
+        vars[var] = 0.0
+        var = 'ph1.'+str(iDim)
+        vars[var] = 0.0
+    vars['ref.1'] = "'H2O'"
+    vars['fstart.1'] = 10000.0
+    vars['fend.1'] = -10000.0
+    return vars
+
+def updateVars(vars, varArgs, nDim):
+    varPat = re.compile("(.+)=(.+)")
+    for arg in varArgs:
+        m = varPat.match(arg)
+        if m:
+           var,value = (m.group(1),m.group(2))
+           if not var in vars:
+               sys.exit('Error: unknown var specified on command line:' + var)
+ 
+           for iDim in range(1,nDim+1):
+               if var.startswith('ph0.'+str(iDim)):
+                   vars['autoPh.'+str(iDim)] = 0
+               if var.startswith('ph1.'+str(iDim)):
+                   vars['autoPh.'+str(iDim)] = 0
+           vars[var] = value
+    return vars
+
+def replaceVars(script, vars):
+    for var in vars:
+       value = str(vars[var])
+       var = '$'+var
+       script = script.replace(var,value)
+    return script
 
 def autoPhaseFirstRow(vec, doFirst = False):
     regions = [0.025,0.45]
@@ -20,18 +90,14 @@ def autoPhaseFirstRow(vec, doFirst = False):
     FT(vector=vec)
     REGIONS(regions,vector=vec)
     phases = vec.autoPhase(doFirst, 0, 0, 0, 45.0, 1.0)
-    return phases
+    autoPhaseVars = []
+    autoPhaseVars.append('ph0.1='+str(phases[0]))
+    if doFirst:
+       autoPhaseVars.append('ph1.1='+str(phases[1]))
+    return autoPhaseVars
 
-def makeScript(args):
-    nProc = Runtime.getRuntime().availableProcessors()
-    if nProc > 4:
-        nProc -= 2
-    fileName = args.fidfile
-    if not os.path.exists(fileName):
-         raise Exception('FID file "' + fileName + '" doesn\'t exist')
 
-    datasetName = args.dataset
-
+def getAutoScript(fileName, datasetName, args):
     refInfo = RefInfo()
 
     if os.path.isabs(fileName):
@@ -41,32 +107,17 @@ def makeScript(args):
 
     fidInfo = FID(filePath)
     nmrData = fidInfo.fidObj
+    nDim = nmrData.getNDim()
     np = nmrData.getNPoints()
-    vec = Vec(np,True)
+    vec = Vec.createNamedVector(np,'autophase', True)
     nmrData.readVector(0,vec)
-    phases = []
+    autoPhaseVars = []
     if args.autoPhase:
-        phases.append(autoPhaseFirstRow(vec))
-    elif args.phaseArgs1 != "":
-        ph = args.phaseArgs1
-        phases.append([float(ph[0]), float(ph[1])])
-    else:
-        phases.append([0.0, 0.0])
-    if args.phaseArgs2 != "":
-        ph = args.phaseArgs2
-        phases.append([float(ph[0]), float(ph[1])])
-    else:
-        phases.append([0.0, 0.0])
-    if args.phaseArgs3 != "":
-        ph = args.phaseArgs3
-        phases.append([float(ph[0]), float(ph[1])])
-    else:
-        phases.append([0.0, 0.0])
-    if args:
-        refInfo.setDirectRef(args.refArg)
+        autoPhaseVars = autoPhaseFirstRow(vec)
+
+    refInfo.setDirectRef("$ref.1")
     parString = refInfo.getParString(nmrData, nmrData.getNDim(), "")
-    scriptOps = autoGenScript(fidInfo, args, phases)
-    #scriptOps = Template(scriptOps).substitute()
+    scriptOps = autoGenScript(fidInfo, args)
     script = '''
 import os
 from pyproc import *
@@ -77,15 +128,19 @@ $parString
 $scriptOps
 '''
 
-    if args.autoPhase:
-        script +='DIM()\nDPHASE(dim=0)\n'
-
-    script = Template(script).substitute(nProc=nProc, filePath=filePath, dataset=datasetName,parString=parString,scriptOps=scriptOps)
+    nProc = Runtime.getRuntime().availableProcessors()
+    if nProc > 4:
+        nProc -= 2
+    script = Template(script).substitute(filePath=filePath, dataset=datasetName,nProc=nProc, parString=parString,scriptOps=scriptOps)
     script += '\nrun()\n'
 
     nmrData.close()
     # removes nmrData object from processor so we don't have two when processing is done
     useProcessor()
+    vars = getDefaultVars(nDim)
+    vars = updateVars(vars, autoPhaseVars, nDim)
+    vars = updateVars(vars, args.vars, nDim)
+    script = replaceVars(script, vars)
     return script
 
 def saveScript(script):
@@ -101,7 +156,7 @@ def execScript(script):
     interpreter.exec(script)
 
 
-def autoGenScript(fidInfo, args=None, phases=None):
+def autoGenScript(fidInfo, args=None):
     coefDicts = {'hy':'hyper','hy-r':'hyper-r','ea':'echo-antiecho','ea-r':'echo-antiecho-r','ge':'ge','sep':'sep','re':'real'}
     script = ''
     if fidInfo.nd < 2:
@@ -143,16 +198,8 @@ def autoGenScript(fidInfo, args=None, phases=None):
         script += 'SB()\n'
         script += 'ZF()\n'
         script += 'FT()\n'
-        if phases and len(phases[0]) == 2:
-            ph10 = phases[0][0]
-            ph11 = phases[0][1]
-            script += 'PHASE(ph0='+str(ph10)+',ph1='+str(ph11)+')\n'
-        else:
-            script += 'PHASE(ph0=0.0,ph1=0.0)\n'
-
-        if args and args.extractArgs != "":
-            extract = args.extractArgs
-            script += "EXTRACT(" + extract[0] + "," + extract[1] + ",mode='region')\n"
+        script += 'PHASE(ph0=$ph0.1,ph1=$ph1.1)\n'
+        script += 'EXTRACTP(fstart=$fstart.1,fend=$fend.1)\n'
 
         fCoef = fidInfo.getSymbolicCoefs(1)
 
@@ -191,11 +238,18 @@ def autoGenScript(fidInfo, args=None, phases=None):
         if fCoef != None and fCoef == 'sep':
             script += "MAG()\n"
         else:
-            if phases and len(phases[iDim-1]) == 2:
-                ph10 = phases[iDim-1][0]
-                ph11 = phases[iDim-1][1]
-                script += 'PHASE(ph0='+str(ph10)+',ph1='+str(ph11)+')\n'
+            script += 'PHASE(ph0=$ph0.'+str(iDim)+', ph1=$ph1.'+str(iDim)+')\n'
     if  not args:
         script += 'run()'
     return script
 
+def makeScript(args):
+    fileName = args.fidfile
+    if not os.path.exists(fileName):
+         raise Exception('FID file "' + fileName + '" doesn\'t exist')
+
+    datasetName = args.dataset
+    script = getLibraryScript(fileName, datasetName, args)
+    if script == '':
+        script = getAutoScript(fileName, datasetName, args)
+    return script

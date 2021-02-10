@@ -42,12 +42,10 @@ else:
     parser_auto.add_argument("--extract",dest='extractArgs',default='',nargs=2,help="Extract this region in the first dimension")
     parser_auto.add_argument("--tdcomb2",dest='tdcombArgs2',choices=coefs,default='',help="Mode for combining phase data in dimension 2")
     parser_auto.add_argument("--tdcomb3",dest='tdcombArgs3',choices=coefs,default='',help="Mode for combining phase data in dimension 3")
-    parser_auto.add_argument("--ph1",dest='phaseArgs1',default='',nargs=2,help="Phase dimension 1")
-    parser_auto.add_argument("--ph2",dest='phaseArgs2',default='',nargs=2,help="Phase dimension 2")
-    parser_auto.add_argument("--ph3",dest='phaseArgs3',default='',nargs=2,help="Phase dimension 3")
     parser_auto.add_argument("--ref",dest='refArg',default='',help="Reference for dimension 1")
     parser_auto.add_argument('fidfile', nargs='?', default="ser")
     parser_auto.add_argument('dataset', nargs='?', default="dataset.nv")
+    parser_auto.add_argument('vars', nargs='*', default="")
 
     parser_auto.set_defaults(func=autoProcess)
 

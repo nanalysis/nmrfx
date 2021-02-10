@@ -732,7 +732,6 @@ public class Processor {
 
         //nmrDataSets.clear();
         nmrDataSets.add(nmrData);
-        System.err.println("nmr data sets " + nmrDataSets.size());
         resetVecReadCount();
         setFidDimensions(nmrData, tdSizes);
         return nmrData;
@@ -764,7 +763,6 @@ public class Processor {
 
         //nmrDataSets.clear();
         nmrDataSets.add(nmrData);
-        System.err.println("nmr data sets " + nmrDataSets.size());
         resetVecReadCount();
         setFidDimensions(nmrData, tdSizes);
         adjustSizes();

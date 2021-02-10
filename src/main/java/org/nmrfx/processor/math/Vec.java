@@ -107,7 +107,7 @@ public class Vec extends VecBase {
      * @return new Vec object
      */
     public static final Vec createNamedVector(int size, String name, boolean complex) {
-        Vec vec = new Vec(size, name, complex);
+        var vec = new Vec(size, name, complex);
         put(name, vec);
         return vec;
     }

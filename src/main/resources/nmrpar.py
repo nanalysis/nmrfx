@@ -3,6 +3,23 @@ from org.nmrfx.processor.processing import Processor
 
 processor = Processor.getProcessor()
 
+def ppmToFrac(fidInfo, ppm,size,  dim):
+    sw = fidInfo.sw[dim]
+    sf = fidInfo.sf[dim]
+    ref = fidInfo.ref[dim]
+    refpt = size / 2
+    fsize = fidInfo.size[dim]
+    delRef = ref - ppm
+    swPPM = sw / sf
+    ppmFrac = delRef / swPPM
+    refFrac = float(refpt) / size
+    f =  ppmFrac + refFrac
+    if f < 0.0:
+        f = 0.0
+    if f > 1.0:
+        f = 1.0
+    return f
+
 def getTdSizes(nmrData=None):
     '''return time domain sizes'''
     if not nmrData:

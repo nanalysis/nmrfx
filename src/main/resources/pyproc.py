@@ -104,6 +104,7 @@ import java.lang.Double as Double
 import java.lang.Integer as Integer
 
 import psspecial
+from nmrpar import ppmToFrac
 from nmrpar import getFdSizes
 from nmrpar import getTdSizes
 from nmrpar import getBzSize
@@ -905,6 +906,7 @@ def getAcqOrder():
 def setDataInfoSize(curDim, size):
     global dataInfo
     global fidInfo
+    print 'setsize',curDim,size
     if fidInfo.mapToDatasetList[curDim] != -1:
         dataInfo.size[curDim] = size
         if size > dataInfo.msize[curDim]:
@@ -1643,26 +1645,31 @@ def EXTRACTP(fstart=0.0, fend=0.0,  disabled=False, vector=None, process=None):
     Parameters
     ---------
     fstart : real
-        min : 0
-        max : size-1
+        min : -1.0
+        max : 15.0
         Start point of region to extract
     fend : real
-        min : 0
-        max : size-1
+        min : -1.0
+        max : 15.0
         End point of region to extract
 '''
     global fidInfo
+    global dataInfo
     if disabled:
         return None
+    curDim = dataInfo.curDim
+    curSize = dataInfo.size[curDim]
+    f1 = ppmToFrac(fidInfo, fstart,curSize,  curDim)
+    f2 = ppmToFrac(fidInfo, fend, curSize, curDim)
     process = process or getCurrentProcess()
-    op = Extract(fstart,fend,True)
+    op = Extract(f1,f2)
     if (vector != None):
         op.eval(vector)
     else:
         process.addOperation(op)
         if (dataInfo.resizeable):
             curDim = dataInfo.curDim
-            setDataInfoSize(curDim, getExtractSizeP(dataInfo.size[curDim],fidInfo,curDim,fstart,fend))
+            setDataInfoSize(curDim, getExtractSize(dataInfo.size[curDim],f1,f2))
 
 
 
