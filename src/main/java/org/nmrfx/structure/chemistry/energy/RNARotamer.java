@@ -23,10 +23,13 @@ import org.nmrfx.chemistry.*;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
+import org.nmrfx.structure.chemistry.Molecule;
 
 public class RNARotamer {
 
@@ -749,6 +752,10 @@ public class RNARotamer {
         int j = 0;
         sdev = Math.toRadians(sdev);
         for (String[] atomNames : suiteAtoms) {
+            if (j == 0) {
+                j++;
+                continue;
+            }
             String aName = atomNames[3];
             int colonPos = aName.indexOf(':');
             int delta = 0;
@@ -880,4 +887,96 @@ public class RNARotamer {
         return boundaries;
     }
 
+    public static List<Atom>[] getLinkAtoms(Molecule molecule) {
+        List<Atom> angleAtoms = molecule.getAngleAtoms();
+
+        List<Residue> rnaResidues = new ArrayList<>();
+        int nSuite = 10;
+        String[] linkAtoms = new String[nSuite];
+        for (int j = 1; j < suiteAtoms.length; j++) {
+            linkAtoms[j - 1] = suiteAtoms[j][3];
+        }
+        linkAtoms[6] = "C1'";
+        linkAtoms[7] = "ring1";
+        linkAtoms[8] = "ring2GA";
+        linkAtoms[9] = "ring2CU";
+        int nVars = angleAtoms.size() + suiteAtoms.length - 1;
+        List<Atom>[] updateAtoms = new ArrayList[nSuite + 1];
+        Set<Atom> fixAtoms = new HashSet<>();
+        for (Polymer polymer : molecule.getPolymers()) {
+            if (polymer.isRNA()) {
+                for (Residue residue : polymer.getResidues()) {
+                    rnaResidues.add(residue);
+                    boolean loopEdge = false;
+                    if ((residue.next != null) && (residue.next.pairedTo == null)) {
+                        loopEdge = true;
+                    }
+                    if ((residue.previous != null) && (residue.previous.pairedTo == null)) {
+                        loopEdge = true;
+                    }
+                    if ((residue.pairedTo != null) && (!loopEdge)) {
+                        int j = 0;
+                        for (String aName : linkAtoms) {
+                            boolean ok = true;
+                            if (aName.equals("ring1")) {
+                                if (residue.getName().equals("G") || residue.getName().equals("A")) {
+                                    aName = "N9";
+                                } else {
+                                    aName = "N1";
+                                }
+                            }
+                            if (aName.equals("ring2GA")) {
+                                if (residue.getName().equals("G") || residue.getName().equals("A")) {
+                                    aName = "C8";
+                                } else {
+                                    ok = false;
+                                }
+                            }
+                            if (aName.equals("ring2CU")) {
+                                if (residue.getName().equals("C") || residue.getName().equals("U")) {
+                                    aName = "C2";
+                                } else {
+                                    ok = false;
+                                }
+                            }
+                            if (ok) {
+                                int colonPos = aName.indexOf(':');
+                                int delta = 0;
+                                if (colonPos != -1) {
+                                    String deltaRes = aName.substring(0, colonPos);
+                                    delta = Integer.valueOf(deltaRes);
+                                    aName = aName.substring(colonPos + 1);
+                                }
+                                Residue applyResidue = delta < 0 ? residue.previous : residue;
+                                if (updateAtoms[j] == null) {
+                                    updateAtoms[j] = new ArrayList<>();
+                                }
+                                Atom atom = applyResidue.getAtom(aName);
+                                if (atom != null) {
+                                    updateAtoms[j].add(atom);
+                                    fixAtoms.add(atom);
+                                }
+                            }
+                            j++;
+                        }
+                    }
+                }
+            }
+        }
+        updateAtoms[nSuite] = new ArrayList<>();
+        for (Atom atom : angleAtoms) {
+            if (!fixAtoms.contains(atom.daughterAtom)) {
+                updateAtoms[nSuite].add(atom.daughterAtom);
+            }
+        }
+        for (List<Atom> updateSet : updateAtoms) {
+            for (Atom atom : updateSet) {
+                if (atom != null) {
+                    System.out.print(atom.getShortName() + "  ");
+                }
+            }
+            System.out.println("");
+        }
+        return updateAtoms;
+    }
 }

@@ -17,6 +17,7 @@
  */
 package org.nmrfx.structure.chemistry.energy;
 
+import java.util.Arrays;
 import org.nmrfx.chemistry.Atom;
 import java.util.List;
 import java.util.Random;
@@ -41,6 +42,8 @@ public class CmaesRefinement extends Refinement implements MultivariateFunction 
 
     public static final RandomGenerator DEFAULT_RANDOMGENERATOR = new MersenneTwister(1);
     Random rand = new Random(1);
+    List<Atom>[] linkedAtoms = null;
+    double[][] linkedValues;
 
     public class Checker extends SimpleValueChecker {
 
@@ -63,6 +66,12 @@ public class CmaesRefinement extends Refinement implements MultivariateFunction 
         super(dihedrals);
         this.molecule = dihedrals.molecule;
         startTime = System.currentTimeMillis();
+    }
+
+    public CmaesRefinement(final Dihedral dihedrals, List<Atom>[] linkedAtoms) {
+        super(dihedrals);
+        this.molecule = dihedrals.molecule;
+        this.linkedAtoms = linkedAtoms;
     }
 
     public double refineCMAES(final int nSteps, final double stopFitness, final double sigma, final double lambdaMul, final int diagOnly, final boolean useDegrees) {
@@ -129,7 +138,141 @@ public class CmaesRefinement extends Refinement implements MultivariateFunction 
         return result.getValue();
     }
 
+    public double refineCMAESWithLinkedAtoms(final int nSteps, final double stopFitness,
+            final double sigma, final double lambdaMul, final int diagOnly,
+            final boolean useDegrees) {
+        reportAt = 10;
+        bestEnergy = Double.MAX_VALUE;
+        double energy = energy();
+        molecule.genCoords(false, null);
+        dihedrals.energyList.makeAtomListFast();
+        energy = energy();
+        molecule.genCoords(false, null);
+        dihedrals.energyList.makeAtomListFast();
+        energy = energy();
+        double[][] values = getLinkedValues();
+        double[][] normBoundaries = new double[3][values[0].length];
+        double[] sigmaValues = new double[values[0].length];
+        Arrays.fill(normBoundaries[0], 0.0);
+        Arrays.fill(normBoundaries[1], 100.0);
+        Arrays.fill(normBoundaries[2], 50.0);
+        Arrays.fill(sigmaValues, 10.0);
+
+        long time = System.currentTimeMillis();
+        long deltaTime = time - startTime;
+        report(0, nEvaluations, deltaTime, dihedrals.energyList.atomList.size(), energy);
+
+        DEFAULT_RANDOMGENERATOR.setSeed(1);
+        //suggested default value for population size represented by variable 'labda'
+        //anglesValue.length represents the number of parameters
+        int lambda = (int) (lambdaMul * Math.round(4 + 3 * Math.log(values[0].length)));
+        CMAESOptimizer optimizer = new CMAESOptimizer(nSteps, stopFitness, true, diagOnly, 0,
+                DEFAULT_RANDOMGENERATOR, true,
+                new Checker(100 * Precision.EPSILON, 100 * Precision.SAFE_MIN, nSteps));
+
+        PointValuePair result = null;
+
+        try {
+            result = optimizer.optimize(
+                    new CMAESOptimizer.PopulationSize(lambda),
+                    new CMAESOptimizer.Sigma(sigmaValues),
+                    new MaxEval(2000000),
+                    new ObjectiveFunction(this), GoalType.MINIMIZE,
+                    new SimpleBounds(normBoundaries[0], normBoundaries[1]),
+                    new InitialGuess(normBoundaries[2]));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        updateWithLinkedValues(linkedValues[3]);
+
+        molecule.genCoords(false, null);
+        List<Double> fitnessHistory = optimizer.getStatisticsFitnessHistory();
+        List<Double> sigmaHistory = optimizer.getStatisticsSigmaHistory();
+        int nStat = sigmaHistory.size();
+        if (nStat > 0) {
+            System.out.println("finished " + optimizer.getIterations() + " " + sigmaHistory.get(nStat - 1));
+        }
+        //printAngleTest();
+        return result.getValue();
+    }
+
+    public double[][] getLinkedValues() {
+        int nVars = linkedAtoms.length - 1 + linkedAtoms[linkedAtoms.length - 1].size();
+        linkedValues = new double[4][nVars];
+        int i = 0;
+        for (List<Atom> atomArray : linkedAtoms) {
+            if (i < linkedAtoms.length - 1) {
+                //System.out.println("do links");
+                double sum = 0.0;
+                for (Atom atom : atomArray) {
+                    //System.out.printf("%6.1f ", Math.toDegrees(atom.dihedralAngle));
+                    sum += atom.dihedralAngle;
+                    //linkedValues[2][i] = atom.dihedralAngle;
+                }
+                double avg = sum / atomArray.size();
+
+                linkedValues[2][i] = avg;
+            } else {
+                for (Atom atom : atomArray) {
+                    linkedValues[2][i] = atom.dihedralAngle;
+                    i++;
+                }
+            }
+            i++;
+        }
+        for (int j = 0; j < nVars; j++) {
+            linkedValues[0][j] = linkedValues[2][j] - Math.toRadians(3.0);
+            linkedValues[1][j] = linkedValues[2][j] + Math.toRadians(3.0);
+        }
+        return linkedValues;
+    }
+
+    double[] denormLinkedValues(final double[] values) {
+
+        for (int i = 0; i < values.length; i++) {
+            double f = values[i] / 100.0;
+            linkedValues[2][i] = f * (linkedValues[1][i] - linkedValues[0][i]) + linkedValues[0][i];
+        }
+        return linkedValues[2];
+    }
+
+    void updateWithLinkedValues(final double[] denormValues) {
+        int i = 0;
+        for (List<Atom> atomArray : linkedAtoms) {
+            if (i < linkedAtoms.length - 1) {
+                for (Atom atom : atomArray) {
+                    atom.dihedralAngle = (float) denormValues[i];
+                }
+            } else {
+                for (Atom atom : atomArray) {
+                    atom.dihedralAngle = (float) denormValues[i];
+                    i++;
+                }
+            }
+            i++;
+        }
+        molecule.genCoords(false, null);
+    }
+
+    public double linkedValue(final double[] values) {
+        double[] denormValues = denormLinkedValues(values);
+        updateWithLinkedValues(denormValues);
+        if ((nEvaluations % updateAt) == 0) {
+            dihedrals.energyList.makeAtomListFast();
+        }
+        double energy = energy();
+        if (energy < bestEnergy) {
+            bestEnergy = energy;
+            System.arraycopy(denormValues, 0, linkedValues[3], 0, denormValues.length);
+            nEvaluations++;
+        }
+        return energy;
+    }
+
     public double value(final double[] dihValues) {
+        if (linkedValues != null) {
+            return linkedValue(dihValues);
+        }
         dihedrals.denormalize(dihValues, dihedrals.angleValues);
         putDihedrals();
         molecule.genCoords(false, null);
