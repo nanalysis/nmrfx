@@ -280,7 +280,7 @@ public class Residue extends Compound {
     public Double calcNu3(int structureNum) {
         Atom[] atoms = getNu3Atoms();
         try {
-            return atoms != null ? Atom.calcDihedral(atoms, structureNum) - DELTA_V3: null;
+            return atoms != null ? Atom.calcDihedral(atoms, structureNum) - DELTA_V3 : null;
         } catch (IllegalArgumentException iAE) {
             return null;
         }
