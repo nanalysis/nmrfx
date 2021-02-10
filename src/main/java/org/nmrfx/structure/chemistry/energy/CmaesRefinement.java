@@ -140,7 +140,7 @@ public class CmaesRefinement extends Refinement implements MultivariateFunction 
 
     public double refineCMAESWithLinkedAtoms(final int nSteps, final double stopFitness,
             final double sigma, final double lambdaMul, final int diagOnly,
-            final boolean useDegrees) {
+            final boolean useDegrees, final double dev1, final double dev2) {
         reportAt = 10;
         bestEnergy = Double.MAX_VALUE;
         double energy = energy();
@@ -150,7 +150,7 @@ public class CmaesRefinement extends Refinement implements MultivariateFunction 
         molecule.genCoords(false, null);
         dihedrals.energyList.makeAtomListFast();
         energy = energy();
-        double[][] values = getLinkedValues();
+        double[][] values = getLinkedValues(dev1, dev2);
         double[][] normBoundaries = new double[3][values[0].length];
         double[] sigmaValues = new double[values[0].length];
         Arrays.fill(normBoundaries[0], 0.0);
@@ -196,7 +196,7 @@ public class CmaesRefinement extends Refinement implements MultivariateFunction 
         return result.getValue();
     }
 
-    public double[][] getLinkedValues() {
+    public double[][] getLinkedValues(double dev1, double dev2) {
         int nVars = linkedAtoms.length - 1 + linkedAtoms[linkedAtoms.length - 1].size();
         linkedValues = new double[4][nVars];
         int i = 0;
@@ -212,17 +212,17 @@ public class CmaesRefinement extends Refinement implements MultivariateFunction 
                 double avg = sum / atomArray.size();
 
                 linkedValues[2][i] = avg;
+                linkedValues[0][i] = linkedValues[2][i] - Math.toRadians(dev1);
+                linkedValues[1][i] = linkedValues[2][i] + Math.toRadians(dev1);
             } else {
                 for (Atom atom : atomArray) {
                     linkedValues[2][i] = atom.dihedralAngle;
+                    linkedValues[0][i] = linkedValues[2][i] - Math.toRadians(dev2);
+                    linkedValues[1][i] = linkedValues[2][i] + Math.toRadians(dev2);
                     i++;
                 }
             }
             i++;
-        }
-        for (int j = 0; j < nVars; j++) {
-            linkedValues[0][j] = linkedValues[2][j] - Math.toRadians(3.0);
-            linkedValues[1][j] = linkedValues[2][j] + Math.toRadians(3.0);
         }
         return linkedValues;
     }
