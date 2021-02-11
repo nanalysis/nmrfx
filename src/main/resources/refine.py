@@ -1262,6 +1262,7 @@ class refine:
             self.addSuiteAngles(rnaDict['suite'])
         if 'vienna' in rnaDict:
             self.findHelices(rnaDict['vienna'])
+            self.vienna = rnaDict['vienna']
         if 'planarity' in rnaDict:
             self.addPlanarity = rnaDict['planarity']
         if 'bp' in rnaDict:
