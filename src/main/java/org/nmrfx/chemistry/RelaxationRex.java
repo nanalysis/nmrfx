@@ -12,12 +12,12 @@ import java.util.Map;
  *
  * @author mbeckwith
  */
-public class T2T1RhoData extends RelaxationData {
+public class RelaxationRex extends RelaxationData {
 
         Double RexValue; 
         Double RexError;
 
-        public T2T1RhoData(String ID, relaxTypes expType, List<Atom> extraAtoms, double field, double temperature,
+        public RelaxationRex(String ID, relaxTypes expType, List<Atom> extraAtoms, double field, double temperature,
                 Double value, Double error, Double RexValue, Double RexError, Map<String, String> extras) {
             
             super(ID, expType, extraAtoms, field, temperature, value, error, extras);

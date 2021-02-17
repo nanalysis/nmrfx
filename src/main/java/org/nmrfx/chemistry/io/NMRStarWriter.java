@@ -21,15 +21,12 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
-import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 import org.nmrfx.chemistry.*;
@@ -63,7 +60,7 @@ public class NMRStarWriter {
     private static String[] atomCoordinateLoopStrings = {"_Atom_site.Assembly_ID", "_Atom_site.Model_ID", "_Atom_site.Model_site_ID", "_Atom_site.ID", "_Atom_site.Assembly_atom_ID", "_Atom_site.Label_entity_assembly_ID", "_Atom_site.Label_entity_ID", "_Atom_site.Label_comp_index_ID", "_Atom_site.Label_comp_ID", "_Atom_site.Label_atom_ID", "_Atom_site.Type_symbol", "_Atom_site.Cartn_x", "_Atom_site.Cartn_y", "_Atom_site.Cartn_z", "_Atom_site.Cartn_x_esd", "_Atom_site.Cartn_y_esd", "_Atom_site.Cartn_z_esd", "_Atom_site.Occupancy", "_Atom_site.Occupancy_esd", "_Atom_site.Uncertainty", "_Atom_site.Ordered_flag", "_Atom_site.Footnote_ID", "_Atom_site.Details", "_Atom_site.Entry_ID", "_Atom_site.Conformer_family_coord_set_ID"};
 
     static String toSTAR3CompoundString(int ID, Atom atom, int entityID) {
-        StringBuffer result = new StringBuffer();
+        StringBuilder result = new StringBuilder();
         String sep = " ";
         result.append(atom.getName());
         result.append(sep);
@@ -721,7 +718,7 @@ public class NMRStarWriter {
 
     public static void writeXYZ(MoleculeBase molecule, FileWriter chan, int whichStruct) throws IOException, InvalidMoleculeException {
         int i = 0;
-        int iStruct = 0;
+        int iStruct;
         chan.write("loop_\n");
         chan.write("  _Atom_ID\n");
         if (whichStruct < 0) {
@@ -1058,8 +1055,8 @@ public class NMRStarWriter {
                             results.add(value);
                             results.add(error);
                             if (expType.equals(relaxTypes.T2) || expType.equals(relaxTypes.T1RHO)) {
-                                Double RexValue = ((T2T1RhoData) relaxData).getRexValue();
-                                Double RexError = ((T2T1RhoData) relaxData).getRexError();
+                                Double RexValue = ((RelaxationRex) relaxData).getRexValue();
+                                Double RexError = ((RelaxationRex) relaxData).getRexError();
                                 results.add(RexValue);
                                 results.add(RexError);
                             }
