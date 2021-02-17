@@ -143,6 +143,13 @@ public class AngleConstraint implements Constraint {
         this(atoms, lower, upper, scale, 1.0, (lower + upper) / 2.0, upper - lower, "");
     }
 
+    public String toString() {
+        return String.format("%s %s %s %s %6.1f %6.1f", atoms[0].getFullName(),
+                atoms[1].getFullName(), atoms[2].getFullName(),
+                atoms[3].getFullName(), Math.toDegrees(lower), Math.toDegrees(upper));
+
+    }
+
     public static boolean allowRotation(List<String> atomNames) {
 
         int arrayLength = atomNames.size();

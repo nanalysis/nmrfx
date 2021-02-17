@@ -1937,12 +1937,17 @@ public class Atom implements IAtom {
     public boolean isFirstInMethyl() {
         boolean result = false;
         if (isMethyl()) {
-            AtomEquivalency aEquiv = equivAtoms.get(0);
-            ArrayList<Atom> atoms = aEquiv.getAtoms();
-            Atom firstAtom = atoms.get(0);
+            List<Atom> atoms = parent.getConnected();
+            Atom firstAtom = null;
             for (Atom atom : atoms) {
-                if (atom.name.compareToIgnoreCase(firstAtom.name) < 0) {
-                    firstAtom = atom;
+                if (atom.getAtomicNumber() == 1) {
+                    if (firstAtom == null) {
+                        firstAtom = atom;
+                    } else {
+                        if (atom.name.compareToIgnoreCase(firstAtom.name) < 0) {
+                            firstAtom = atom;
+                        }
+                    }
                 }
             }
             result = this == firstAtom;
@@ -1951,19 +1956,17 @@ public class Atom implements IAtom {
     }
 
     public boolean isMethyl() {
-        if (!entity.hasEquivalentAtoms()) {
-            MoleculeBase.findEquivalentAtoms(entity);
-        }
-
-        if ((aNum != 1) || (equivAtoms == null) || equivAtoms.isEmpty()) {
+        if ((aNum != 1) || (parent == null)) {
             return false;
         } else {
-            AtomEquivalency aEquiv = equivAtoms.get(0);
-            if (aEquiv.getAtoms().size() == 3) {
-                return aEquiv.shareParent();
-            } else {
-                return false;
+            List<Atom> atoms = parent.getConnected();
+            int nH = 0;
+            for (Atom atom : atoms) {
+                if (atom.getAtomicNumber() == 1) {
+                    nH++;
+                }
             }
+            return nH == 3;
         }
     }
 

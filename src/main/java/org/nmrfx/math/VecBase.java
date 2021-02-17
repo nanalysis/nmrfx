@@ -322,7 +322,7 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
      * @param cvec store result
      */
     public static void addMulVector(VecBase avec, int size, VecBase bvec, double scale,
-                                    VecBase cvec) {
+            VecBase cvec) {
         int i;
 
         for (i = 0; i < size; i++) {
@@ -2374,7 +2374,6 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
      * Check if the size is a power of 2, if not resize the Vector so it is a
      * power of 2 in length
      */
-
     public void checkPowerOf2() {
         if (!ArithmeticUtils.isPowerOfTwo(size)) {
             int n = 1;
@@ -2384,6 +2383,7 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
             resize(n);
         }
     }
+
     public static double phaseMin(double ph) {
         while (ph > 180) {
             ph -= 360.0;
@@ -3258,5 +3258,9 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
         public int getIndex() {
             return index;
         }
+    }
+
+    public double[] autoPhase(boolean doFirst, int winSize, double ratio, int mode, double ph1Limit, double negativePenalty) {
+        return null;
     }
 }

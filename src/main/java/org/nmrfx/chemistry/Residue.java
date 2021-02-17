@@ -26,6 +26,8 @@ import static org.nmrfx.chemistry.io.PDBFile.isIUPACMode;
 
 public class Residue extends Compound {
 
+    static final double DELTA_V3 = 121.8084 * Math.PI / 180.0;
+
     public Residue previous = null;
     public Residue next = null;
     public Polymer polymer;
@@ -250,7 +252,11 @@ public class Residue extends Compound {
 
     public Double calcNu2(int structureNum) {
         Atom[] atoms = getNu2Atoms();
-        return atoms != null ? Atom.calcDihedral(atoms, structureNum) : null;
+        try {
+            return atoms != null ? Atom.calcDihedral(atoms, structureNum) : null;
+        } catch (IllegalArgumentException iAE) {
+            return null;
+        }
     }
 
     public Atom[] getNu2Atoms() {
@@ -260,6 +266,33 @@ public class Residue extends Compound {
             atoms[1] = getAtom("C2'");
             atoms[2] = getAtom("C3'");
             atoms[3] = getAtom("C4'");
+            return atoms;
+        } else {
+            return null;
+        }
+
+    }
+
+    public Double calcNu3() {
+        return calcNu3(0);
+    }
+
+    public Double calcNu3(int structureNum) {
+        Atom[] atoms = getNu3Atoms();
+        try {
+            return atoms != null ? Atom.calcDihedral(atoms, structureNum) - DELTA_V3 : null;
+        } catch (IllegalArgumentException iAE) {
+            return null;
+        }
+    }
+
+    public Atom[] getNu3Atoms() {
+        if (name.equals("U") || name.equals("C") || name.equals("G") || name.equals("A")) {
+            Atom[] atoms = new Atom[4];
+            atoms[0] = getAtom("C5'");
+            atoms[1] = getAtom("C4'");
+            atoms[2] = getAtom("C3'");
+            atoms[3] = getAtom("O3'");
             return atoms;
         } else {
             return null;
@@ -312,9 +345,11 @@ public class Residue extends Compound {
 
     public Double calcChi(int structureNum) {
         Atom[] atoms = getChiAtoms();
-
-        return atoms != null ? Atom.calcDihedral(atoms, structureNum) : null;
-
+        try {
+            return atoms != null ? Atom.calcDihedral(atoms, structureNum) : null;
+        } catch (IllegalArgumentException iAE) {
+            return null;
+        }
     }
 
     public Double calcChi2() {
@@ -946,6 +981,6 @@ public class Residue extends Compound {
             if (iAtom.isBackbone()) {
                 iAtom.rotActive = state;
             }
-            }
-    } 
+        }
+    }
 }

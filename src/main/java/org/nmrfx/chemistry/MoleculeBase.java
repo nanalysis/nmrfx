@@ -1029,7 +1029,7 @@ public class MoleculeBase implements Serializable, ITree {
 
     public void writeXYZToPDB(String fileName, int whichStruct) throws IOException {
         int i;
-        try ( PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter(fileName)))) {
+        try (PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter(fileName)))) {
 
             updateAtomArray();
 
@@ -1373,6 +1373,9 @@ public class MoleculeBase implements Serializable, ITree {
 
     public void setMethylRotationActive(boolean state) {
 
+    }
+
+    public void fillEntityCoords() {
     }
 
     public int genCoords(boolean fillCoords) throws RuntimeException {
