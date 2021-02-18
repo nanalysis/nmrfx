@@ -45,6 +45,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.value.ObservableValue;
@@ -72,14 +74,17 @@ import org.nmrfx.chemistry.InvalidMoleculeException;
 import org.nmrfx.chemistry.MolFilter;
 import org.nmrfx.chemistry.PPMv;
 import org.nmrfx.chemistry.io.MoleculeIOException;
+import org.nmrfx.chemistry.io.NMRStarReader;
 import org.nmrfx.chemistry.io.PDBFile;
 import org.nmrfx.chemistry.io.PPMFiles;
 import org.nmrfx.peaks.FreezeListener;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakDim;
 import org.nmrfx.peaks.PeakList;
+import org.nmrfx.star.ParseException;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.structure.chemistry.predict.BMRBStats;
+import org.nmrfx.utils.GUIUtils;
 
 /**
  *
@@ -515,7 +520,21 @@ public class AtomController implements Initializable, FreezeListener {
             Path path = file.toPath();
             Molecule molecule = Molecule.getActive();
             if (molecule != null) {
-                PPMFiles.readPPM(molecule, path, 0, refMode);
+                int iSet = refMode
+                        ? refSetChoice.getValue() : ppmSetChoice.getValue();
+                if (file.getName().endsWith(".str")) {
+                    if (refMode) {
+                        iSet = -1 - iSet;
+                    }
+                    try {
+                        NMRStarReader.readChemicalShifts(file, iSet);
+                    } catch (ParseException ex) {
+                        GUIUtils.warn("Error reading .str file", ex.getMessage());
+                        return;
+                    }
+                } else {
+                    PPMFiles.readPPM(molecule, path, iSet, refMode);
+                }
             }
             atomTableView.refresh();
         }
