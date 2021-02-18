@@ -24,6 +24,8 @@ import org.nmrfx.chemistry.io.AtomParser;
 
 import javax.vecmath.Point2d;
 import java.util.*;
+import java.util.stream.Collectors;
+import org.nmrfx.chemistry.RelaxationData.relaxTypes;
 
 public class Atom implements IAtom {
 
@@ -107,7 +109,8 @@ public class Atom implements IAtom {
     final boolean[] flags = new boolean[ATOMFLAGS.values().length];
     Optional<Map<String, Object>> properties = Optional.empty();
     public Atom daughterAtom = null;
-
+    public Map<String, RelaxationData> relaxData = new HashMap<>(); 
+       
     public Atom(String name) {
         this.name = name;
     }
@@ -138,7 +141,7 @@ public class Atom implements IAtom {
         setColorByType();
 
     }
-
+    
     public static Atom genAtomWithType(String name, String aType) {
         AtomEnergyProp atomEnergyProp = AtomEnergyProp.get(aType);
         return new Atom(name, atomEnergyProp);
@@ -338,6 +341,28 @@ public class Atom implements IAtom {
             }
         }
         bonds = newBonds;
+    }
+       
+    public RelaxationData getRelaxationData(String ID) {
+        return relaxData.get(ID);
+    }
+    
+    public Collection<RelaxationData> getRelaxationData(relaxTypes expType, Double field, Double temperature) {
+        List<RelaxationData> filtered = relaxData.values().stream()
+                .filter(r -> expType == null || r.getExpType() == null || expType.equals(r.getExpType()))
+                .filter(r -> field == null || field.equals(r.getField()))
+                .filter(r -> temperature == null || temperature.equals(r.getTemperature())).collect(Collectors.toList());
+        
+        return filtered;
+    }
+    
+    public Collection<RelaxationData> getRelaxationData(List<relaxTypes> expTypes, List<Double> fields, List<Double> temperatures) {
+        List<RelaxationData> filtered = relaxData.values().stream()
+                .filter(r -> expTypes == null || r.getExpType() == null || expTypes.contains(r.getExpType()))
+                .filter(r -> fields == null || fields.contains(r.getField()))
+                .filter(r -> temperatures == null || temperatures.contains(r.getTemperature())).collect(Collectors.toList());
+        
+        return filtered;
     }
 
     public List<Atom> getConnected() {
