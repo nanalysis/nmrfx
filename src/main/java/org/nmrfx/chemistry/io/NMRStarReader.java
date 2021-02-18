@@ -25,7 +25,6 @@ import org.nmrfx.chemistry.*;
 import org.nmrfx.chemistry.constraints.*;
 import org.nmrfx.chemistry.Residue.RES_POSITION;
 import org.nmrfx.chemistry.AtomResonance;
-import org.nmrfx.chemistry.AtomResonanceFactory;
 import org.nmrfx.star.Loop;
 import org.nmrfx.star.ParseException;
 import org.nmrfx.star.STAR3;
@@ -96,6 +95,26 @@ public class NMRStarReader {
         NMRStarReader reader = new NMRStarReader(starFile, star);
         reader.process();
         return star;
+    }
+
+    public static void readChemicalShifts(File starFile, int ppmSet) throws ParseException {
+        FileReader fileReader;
+        try {
+            fileReader = new FileReader(starFile);
+        } catch (FileNotFoundException ex) {
+            return;
+        }
+        BufferedReader bfR = new BufferedReader(fileReader);
+
+        STAR3 star = new STAR3(bfR, "star3");
+
+        try {
+            star.scanFile();
+        } catch (ParseException parseEx) {
+            throw new ParseException(parseEx.getMessage() + " " + star.getLastLine());
+        }
+        NMRStarReader reader = new NMRStarReader(starFile, star);
+        reader.buildChemShifts(0, ppmSet);
     }
 
     static void updateFromSTAR3ChemComp(Saveframe saveframe, Compound compound) throws ParseException {
@@ -1041,6 +1060,11 @@ public class NMRStarReader {
     public void processChemicalShifts(Saveframe saveframe, int ppmSet) throws ParseException {
         Loop loop = saveframe.getLoop("_Atom_chem_shift");
         if (loop != null) {
+            boolean refMode = false;
+            if (ppmSet < 0) {
+                refMode = true;
+                ppmSet = -1 - ppmSet;
+            }
             var compoundMap = MoleculeBase.compoundMap();
             List<String> entityAssemblyIDColumn = loop.getColumnAsList("Entity_assembly_ID");
             List<String> entityIDColumn = loop.getColumnAsList("Entity_ID");
@@ -1091,23 +1115,26 @@ public class NMRStarReader {
                     throw new ParseException("invalid atom in assignments saveframe \"" + mapID + "." + atomName + "\"");
                 }
                 SpatialSet spSet = atom.spatialSet;
-                if (ppmSet < 0) {
-                    ppmSet = 0;
-                }
-                int structureNum = ppmSet;
                 if (spSet == null) {
                     throw new ParseException("invalid spatial set in assignments saveframe \"" + mapID + "." + atomName + "\"");
                 }
                 try {
-                    spSet.setPPM(structureNum, Double.parseDouble(value), false);
-                    spSet.getPPM(structureNum).setAmbigCode(ambigColumn.get(i));
-                    if (!valueErr.equals(".")) {
-                        spSet.setPPM(structureNum, Double.parseDouble(valueErr), true);
+                    if (refMode) {
+                        spSet.setRefPPM(ppmSet, Double.parseDouble(value));
+                        if (!valueErr.equals(".")) {
+                            spSet.setRefError(ppmSet, Double.parseDouble(valueErr));
+                        }
+                    } else {
+                        spSet.setPPM(ppmSet, Double.parseDouble(value), false);
+                        spSet.getPPM(ppmSet).setAmbigCode(ambigColumn.get(i));
+                        if (!valueErr.equals(".")) {
+                            spSet.setPPM(ppmSet, Double.parseDouble(valueErr), true);
+                        }
                     }
                 } catch (NumberFormatException nFE) {
                     throw new ParseException("Invalid chemical shift value (not double) \"" + value + "\" error \"" + valueErr + "\"");
                 }
-                if (hasResonances && !resIDStr.equals(".")) {
+                if (!refMode && hasResonances && !resIDStr.equals(".")) {
                     long resID = Long.parseLong(resIDStr);
                     if (resID >= 0) {
                         AtomResonance resonance = (AtomResonance) resFactory.get(resID);
