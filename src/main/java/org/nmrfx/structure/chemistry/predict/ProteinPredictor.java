@@ -1,5 +1,6 @@
 package org.nmrfx.structure.chemistry.predict;
 
+import com.google.common.collect.HashBiMap;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -17,6 +18,7 @@ import org.nmrfx.chemistry.InvalidMoleculeException;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.chemistry.Polymer;
 import org.nmrfx.chemistry.Residue;
+import org.nmrfx.chemistry.io.PDBAtomParser;
 import org.nmrfx.structure.chemistry.energy.PropertyGenerator;
 
 public class ProteinPredictor {
@@ -28,6 +30,10 @@ public class ProteinPredictor {
     Map<String, Double> rmsMap = new HashMap<>();
     Map<String, double[]> minMaxMap = new HashMap<>();
     ArrayList<String> attrNames = new ArrayList<>();
+    Map<String, Double> shiftMap = new HashMap<>();
+    Map<String, Double> tempMap = new HashMap<>();
+    Map<String, double[]> neighborMap = new HashMap<>();
+    Map<String, Map<String, CorrComb>> corrCombMap = new HashMap<>();
     Molecule molecule = null;
 
     double[][] values = null;
@@ -80,6 +86,128 @@ public class ProteinPredictor {
             }
         }
         initMinMax();
+    }
+
+    class CorrComb {
+
+        int relPos;
+        String centerAA;
+        String neighborType;
+        double value1;
+        double value2;
+
+        public CorrComb(int relPos, String centerAA, String neighborType, double value1, double value2) {
+            this.relPos = relPos;
+            this.centerAA = centerAA;
+            this.neighborType = neighborType;
+            this.value1 = value1;
+            this.value2 = value2;
+        }
+
+    }
+
+    void loadPotenci() throws IOException {
+        InputStream iStream = this.getClass().getResourceAsStream("/data/predict/protein/potenci.txt");
+        List<String[]> lines = new ArrayList<>();
+        boolean firstLine = true;
+        String mode = "";
+        List<String> atomNames = new ArrayList<>();
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(iStream))) {
+            while (true) {
+                String line = reader.readLine();
+                if (line == null) {
+                    break;
+                }
+                line = line.strip();
+                if (line.isBlank()) {
+                    continue;
+                }
+                if (line.startsWith("#")) {
+                    mode = line.substring(1);
+                    continue;
+                }
+                String[] fields = line.split("\t");
+                switch (mode) {
+                    case "SHIFT": {
+                        if (fields[0].equals("aa")) {
+                            atomNames.clear();
+                            for (int i = 1; i < fields.length; i++) {
+                                atomNames.add(fields[i]);
+                            }
+                        } else {
+                            String aaName = fields[0];
+                            for (int i = 1; i < fields.length; i++) {
+                                if (!fields[i].equals("None")) {
+                                    Double value = Double.parseDouble(fields[i]);
+                                    shiftMap.put(aaName + "." + atomNames.get(i - 1), value);
+                                }
+                            }
+                        }
+                        break;
+                    }
+                    case "NEIGHBOR": {
+                        String aName = fields[0];
+                        String aaName = fields[1];
+                        double[] values = new double[4];
+                        for (int i = 0; i < values.length; i++) {
+                            values[i] = Double.parseDouble(fields[2 + i]);
+                        }
+                        neighborMap.put(aaName + "." + aName, values);
+                        break;
+                    }
+                    //C       -1      G       r       xrGxx   0.2742  1.4856
+
+                    case "TERMCORRS": {
+                        String aName = fields[0];
+                        String termName = fields[1];
+                        double[] values = new double[4];
+                        if (termName.equals("n")) {
+                            values[3] = Double.parseDouble(fields[2]);
+                        } else {
+                            values[0] = Double.parseDouble(fields[2]);
+                        }
+                        neighborMap.put(termName + "." + aName, values);
+                        break;
+                    }
+                    case "GROUPCORR": {
+                        String aName = fields[0];
+                        String segment = fields[4];
+                        int relPos = Integer.parseInt(fields[1]);
+                        String centerAA = fields[2];
+                        String neighborType = fields[3];
+                        Double value1 = Double.parseDouble(fields[5]);
+                        Double value2 = Double.parseDouble(fields[6]);
+
+                        CorrComb corrComb = new CorrComb(relPos, centerAA, neighborType, value1, value2);
+                        if (!corrCombMap.containsKey(aName)) {
+                            corrCombMap.put(aName, new HashMap<String, CorrComb>());
+                        }
+                        Map<String, CorrComb> segMap = corrCombMap.get(aName);
+                        segMap.put(segment, corrComb);
+                        break;
+                    }
+                    case "TEMPCORRS": {
+                        if (fields[0].equals("aa")) {
+                            atomNames.clear();
+                            for (int i = 1; i < fields.length; i++) {
+                                atomNames.add(fields[i]);
+                            }
+                        } else {
+                            String aaName = fields[0];
+                            double[] values = new double[atomNames.size()];
+                            for (int i = 1; i < fields.length; i++) {
+                                double value = Double.parseDouble(fields[i]);
+                                tempMap.put(aaName + "." + atomNames.get(i - 1), value);
+                            }
+                            break;
+                        }
+                    }
+
+                    default: {
+                    }
+                }
+            }
+        }
     }
 
     public static double calcDisorderScale(double contactSum, double[] minMax) {
@@ -240,6 +368,121 @@ public class ProteinPredictor {
             }
         }
         return rms;
+    }
+
+    public Double predictRandom(Residue residue, String aName, double tempK) throws IOException {
+        Double result = null;
+        Residue prevRes = residue.getPrevious();
+        Residue nextRes = residue.getNext();
+        if ((prevRes != null) && (nextRes != null)) {
+            String[] aaChars = new String[5];
+            aaChars[1] = PDBAtomParser.convert3To1(prevRes.getName());
+            aaChars[2] = PDBAtomParser.convert3To1(residue.getName());
+            aaChars[3] = PDBAtomParser.convert3To1(nextRes.getName());
+            Residue prev2Res = prevRes.getPrevious();
+            Residue next2Res = nextRes.getNext();
+            if (prev2Res == null) {
+                aaChars[0] = "n";
+            } else {
+                aaChars[0] = PDBAtomParser.convert3To1(prev2Res.getName());
+            }
+            if (next2Res == null) {
+                aaChars[4] = "c";
+            } else {
+                aaChars[4] = PDBAtomParser.convert3To1(next2Res.getName());
+            }
+            result = predictRandom(aaChars, aName, tempK);
+        }
+        return result;
+    }
+
+    public List<Map<String, Double>> predictRandomSequence(String sequence, double tempK) throws IOException {
+        String[] aNames = {"C", "CA", "CB", "HA", "H", "N", "HB"};
+        int nResidues = sequence.length();
+        String[] seq = sequence.split("");
+        List<Map<String, Double>> result = new ArrayList<>();
+        for (int i = 0; i < nResidues - 2; i++) {
+            String[] seqChars = new String[5];
+            seqChars[1] = seq[i];
+            seqChars[2] = seq[i + 1];
+            seqChars[3] = seq[i + 2];
+            if (i == 0) {
+                seqChars[0] = "n";
+            } else {
+                seqChars[0] = seq[i];
+            }
+            if (i == nResidues - 3) {
+                seqChars[4] = "c";
+            } else {
+                seqChars[4] = seq[i + 3];
+            }
+            Map<String, Double> aaMap = new HashMap<>();
+            for (String aName : aNames) {
+                Double value = predictRandom(seqChars, aName, tempK);
+                aaMap.put(aName, value);
+            }
+            result.add(aaMap);
+        }
+        return result;
+    }
+
+    public Double predictRandom(String[] aaChars, String aName, double tempK) throws IOException {
+        String[] groups = {"G", "P", "FYW", "LIVMCA", "KR", "DE"};
+        String[] labels = {"G", "P", "r", "a", "+", "-", "p"};
+        Double result = null;
+        if (shiftMap.isEmpty()) {
+            loadPotenci();
+        }
+        int[] neighorPositions = {2, 1, -1, -2};
+        String aaKey = aaChars[2] + "." + aName;
+        if (shiftMap.containsKey(aaKey)) {
+            result = shiftMap.get(aaKey);
+//            System.out.println(aaKey + " " + result);
+            for (int i = 0; i < neighorPositions.length; i++) {
+                String neighborName = aaChars[2 + neighorPositions[i]];
+                String key = neighborName + "." + aName;
+                double[] neighborCorrs = neighborMap.get(key);
+                result += neighborCorrs[i];
+//                System.out.println(i + " " + neighborCorrs[i] + " " + result);
+            }
+            List<String> groupStr = new ArrayList<>();
+            for (int i = 0; i < 5; i++) {
+                String aaName = aaChars[i];
+                boolean found = false;
+                int j = 0;
+                for (String group : groups) {
+                    if (group.contains(aaName)) {
+                        groupStr.add(labels[j]);
+                        found = true;
+                        break;
+                    }
+                    j++;
+                }
+                if (!found) {
+                    groupStr.add("p");
+                }
+            }
+            Map<String, CorrComb> segMap = corrCombMap.get(aName);
+            String centerType = groupStr.get(2);
+            for (String segment : segMap.keySet()) {
+                CorrComb corrComb = segMap.get(segment);
+//                System.out.println(segment + " " + centerType + " " + corrComb.centerAA + " " + corrComb.neighborType + " " + corrComb.relPos);
+                if (corrComb.centerAA.equals(centerType) && groupStr.get(2 + corrComb.relPos).equals(corrComb.neighborType)) {
+//                    System.out.println("gotgrp");
+                    if ((!groupStr.get(2).equals("p") || !corrComb.neighborType.equals("p")) || "ST".contains(aaChars[2])) {
+
+                        result += corrComb.value1;
+//                        System.out.println(segment + "  " + corrComb.value1 + " " + result);
+                    }
+                }
+            }
+            if (tempMap.containsKey(aaKey)) {
+                double tempFactor = tempMap.get(aaKey);
+                result += (tempFactor / 1000.0) * (tempK - 298.0);
+            }
+        }
+
+        return result;
     }
 
 }
