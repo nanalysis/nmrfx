@@ -115,7 +115,7 @@ public class CoordinateGenerator {
                     }
                     nAngles++;
 //                    System.out.println("validid " + a4.getFullName() + " " + a4.getPointValidity());
-                    if (!a4.getPointValidity()) {
+                    if (!a4.getPointValidity(iStruct)) {
                         a4.setPointValidity(true);
                         Point3 p4 = coords.calculate(dihedralAngle, a4.bndCos, a4.bndSin);
 //                        System.out.println("gen " + a4.getFullName() + " " + p4.toString());
