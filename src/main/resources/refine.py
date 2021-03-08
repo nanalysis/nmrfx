@@ -42,6 +42,9 @@ from org.nmrfx.chemistry.constraints import RDC
 from org.nmrfx.chemistry.constraints import RDCConstraintSet
 from org.nmrfx.chemistry import SpatialSet
 
+from anneal import getAnnealStages
+from anneal import runStage
+
 #tclInterp = Interp()
 #tclInterp.eval("puts hello")
 #tclInterp.eval('package require java')
@@ -1866,7 +1869,64 @@ class refine:
                     atomNameI = self.getAtomName(res1,"P")
                     atomNameJ5 = self.getAtomName(res4,"P")
                     self.addDistanceConstraint(atomNameI, atomNameJ5, 10, 12.0)
+					
+    def restart(self):
+        print 'restart'
+        self.energyLists = None
+        self.molecule.invalidateAtomTree()
+        self.molecule.setupRotGroups()
+        self.molecule.setupAngles()
+        self.setup('./',self.seed)
+        self.energyLists.setupConstraints()
+        rDyn = self.rinertia()
+        rDyn.setKinEScale(self.dOpt['kinEScale'])
+        return rDyn
 
+    def lockRNALinkers(self, state):
+        mol = self.molecule
+        atomList = mol.atoms
+        for atom in atomList:
+            atom.setLinkerRotationActive(state)
+        self.molecule.setupRotGroups()
+        self.molecule.setupAngles()
+
+    def lockRNAHelices(self, lockLast=False):
+        ssGen = SSGen(self.molecule, self.vienna)
+        ssGen.secondaryStructGen()
+        for ss in ssGen.structures:
+            if ss.getName() == "Helix":
+                helixResidues = ss.getResidues()
+                strandI = helixResidues[0::2]
+                strandJ = helixResidues[1::2]
+                nRes = len(strandI)
+                for i in range(nRes):
+                    resI = strandI[i]
+                    resJ = strandJ[i]
+                    if i == nRes-1:
+                        if lockLast:
+                            RNARotamer.setDihedrals(resI,'1a', 0.0, True)
+                            RNARotamer.setDihedrals(resJ,'1c', 0.0, True)
+                    else:
+                        RNARotamer.setDihedrals(resI,'1a', 0.0, True)
+                        RNARotamer.setDihedrals(resJ,'1a', 0.0, True)
+              
+                    rDyn = self.restart()
+                    stages = getAnnealStages(self.dOpt, self.settings,'refine')
+                    runStage(stages['stage_refine'], self, rDyn)
+
+    def refineLockedRNA(self, nsteps=4000, dev1=3.0, dev2=4.0, skipEnd=True):
+        linkAtoms = RNARotamer.getLinkAtoms(self.molecule, skipEnd)
+        cmaes = CmaesRefinement(self.dihedral, linkAtoms)
+        stopFitness=0.0
+        radius=0.01
+        alg="cmaes"
+        ninterp=1.2
+        lambdaMul=1
+        diagOnly=0.2
+        useDegrees=False
+        diagOnly = int(round(nsteps*diagOnly))
+        cmaes.refineCMAESWithLinkedAtoms(nsteps,stopFitness,radius,lambdaMul,diagOnly,useDegrees,dev1,dev2)
+	
     def addBasePair(self, residueI, residueJ, type=1):
         resNameI = residueI.getName()
         resNameJ = residueJ.getName()
