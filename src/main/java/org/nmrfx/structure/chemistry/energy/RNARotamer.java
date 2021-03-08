@@ -887,10 +887,9 @@ public class RNARotamer {
         return boundaries;
     }
 
-    public static List<Atom>[] getLinkAtoms(Molecule molecule) {
+    public static List<Atom>[] getLinkAtoms(Molecule molecule, boolean skipEnd) {
         List<Atom> angleAtoms = molecule.getAngleAtoms();
 
-        List<Residue> rnaResidues = new ArrayList<>();
         int nSuite = 10;
         String[] linkAtoms = new String[nSuite];
         for (int j = 1; j < suiteAtoms.length; j++) {
@@ -906,15 +905,14 @@ public class RNARotamer {
         for (Polymer polymer : molecule.getPolymers()) {
             if (polymer.isRNA()) {
                 for (Residue residue : polymer.getResidues()) {
-                    rnaResidues.add(residue);
-                    boolean loopEdge = false;
+                    boolean helixEnd = false;
                     if ((residue.next != null) && (residue.next.pairedTo == null)) {
-                        loopEdge = true;
+                        helixEnd = true;
                     }
                     if ((residue.previous != null) && (residue.previous.pairedTo == null)) {
-                        loopEdge = true;
+                        helixEnd = true;
                     }
-                    if ((residue.pairedTo != null) && (!loopEdge)) {
+                    if ((residue.pairedTo != null) && (!helixEnd || (!skipEnd && residue.iRes < residue.pairedTo.iRes))) {
                         int j = 0;
                         for (String aName : linkAtoms) {
                             boolean ok = true;
