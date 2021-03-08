@@ -52,26 +52,32 @@ public class NoeSet implements ConstraintSet, Iterable {
         return noeSet;
     }
 
+    @Override
     public String getName() {
         return name;
     }
 
+    @Override
     public String getCategory() {
         return "general_distance_constraints";
     }
 
+    @Override
     public String getListType() {
         return "_Gen_dist_constraint_list";
     }
 
+    @Override
     public String getType() {
         return "NOE";
     }
 
+    @Override
     public int getSize() {
         return constraints.size();
     }
 
+    @Override
     public void clear() {
         constraints.clear();
         peakMap.clear();
@@ -91,14 +97,17 @@ public class NoeSet implements ConstraintSet, Iterable {
         return constraints;
     }
 
+    @Override
     public Noe get(int i) {
         return constraints.get(i);
     }
 
+    @Override
     public MolecularConstraints getMolecularConstraints() {
         return molecularConstraints;
     }
 
+    @Override
     public Iterator iterator() {
         return constraints.iterator();
     }
@@ -106,7 +115,7 @@ public class NoeSet implements ConstraintSet, Iterable {
     public List<Noe> getConstraintsForPeak(Peak peak) {
         List<Noe> noeList = peakMap.get(peak);
         if (noeList == null) {
-            noeList = new ArrayList<Noe>();
+            noeList = new ArrayList<>();
             peakMap.put(peak, noeList);
         }
         return noeList;
@@ -116,10 +125,12 @@ public class NoeSet implements ConstraintSet, Iterable {
         return peakMap.entrySet();
     }
 
+    @Override
     public boolean isDirty() {
         return dirty;
     }
 
+    @Override
     public void setDirty() {
         dirty = true;
     }
@@ -171,10 +182,12 @@ public class NoeSet implements ConstraintSet, Iterable {
         "_Gen_dist_constraint.Entry_ID",
         "_Gen_dist_constraint.Gen_dist_constraint_list_ID",};
 
+    @Override
     public String[] getLoopStrings() {
         return noeLoopStrings;
     }
 
+    @Override
     public void resetWriting() {
         memberID = -1;
         lastPeakWritten = null;

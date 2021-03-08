@@ -395,7 +395,7 @@ public class SpatialSet {
     }
 
     public void setPPM(int ppmSet, double value, boolean setError) {
-        List<SpatialSet> spSets = new ArrayList<SpatialSet>();
+        List<SpatialSet> spSets = new ArrayList<>();
         spSets.add(this);
         if (atom.isMethyl()) {
             Atom[] partners = atom.getPartners(1, 1);
@@ -408,7 +408,7 @@ public class SpatialSet {
                 }
             }
         }
-        for (SpatialSet spSet : spSets) {
+        spSets.forEach((spSet) -> {
             PPMv ppmv;
             if (ppmSet < 0) {
                 spSet.setRefPPMValidity(true);
@@ -435,11 +435,11 @@ public class SpatialSet {
                 }
                 spSet.atom.changed();
             }
-        }
+        });
     }
 
     public void setPPMValidity(int ppmSet, boolean validity) {
-        List<SpatialSet> spSets = new ArrayList<SpatialSet>();
+        List<SpatialSet> spSets = new ArrayList<>();
         spSets.add(this);
         if (atom.isMethyl()) {
             Atom[] partners = atom.getPartners(1, 1);

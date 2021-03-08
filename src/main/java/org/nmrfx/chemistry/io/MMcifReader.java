@@ -132,6 +132,7 @@ public class MMcifReader {
             this.type = type;
         }
 
+        @Override
         public String toString() {
             return id + " " + type;
         }
@@ -171,6 +172,7 @@ public class MMcifReader {
             hetero.add(isHetero);
         }
 
+        @Override
         public void build(MoleculeBase molecule, String asymName) throws ParseException {
             String reslibDir = PDBFile.getReslibDir("IUPAC");
             Sequence sequence = new Sequence(molecule);

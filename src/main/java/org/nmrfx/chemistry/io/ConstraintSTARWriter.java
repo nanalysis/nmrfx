@@ -54,8 +54,8 @@ public class ConstraintSTARWriter {
 
         String[] loopStrings = cSet.getLoopStrings();
         chan.write("loop_\n");
-        for (int j = 0; j < loopStrings.length; j++) {
-            chan.write(loopStrings[j] + "\n");
+        for (String loopString : loopStrings) {
+            chan.write(loopString + "\n");
         }
         chan.write("\n");
         Iterator iter = cSet.iterator();

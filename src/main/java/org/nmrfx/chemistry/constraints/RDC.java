@@ -25,7 +25,7 @@ import org.nmrfx.chemistry.SpatialSet;
  */
 public class RDC implements Constraint {
 
-    private static DistanceStat defaultStat = new DistanceStat();
+    private final static DistanceStat defaultStat = new DistanceStat();
 
     /**
      * @return the defaultStat
@@ -33,7 +33,7 @@ public class RDC implements Constraint {
     public static DistanceStat getDefaultStat() {
         return defaultStat;
     }
-    private static double tolerance = 5.0;
+    private final static double tolerance = 5.0;
     private int idNum = 0;
     private final SpatialSet sp1;
     private final SpatialSet sp2;
@@ -52,14 +52,17 @@ public class RDC implements Constraint {
         set.setDirty();
     }
 
+    @Override
     public int getID() {
         return getIdNum();
     }
 
+    @Override
     public DistanceStat getStat() {
         return getDisStat();
     }
 
+    @Override
     public boolean isUserActive() {
         return getActive() > 0;
     }
@@ -96,6 +99,7 @@ public class RDC implements Constraint {
         return viol;
     }
 
+    @Override
     public String toSTARString() {
         StringBuilder result = new StringBuilder();
         char sep = ' ';
@@ -137,6 +141,7 @@ public class RDC implements Constraint {
     /**
      * @return the lower
      */
+    @Override
     public double getValue() {
         return value;
     }

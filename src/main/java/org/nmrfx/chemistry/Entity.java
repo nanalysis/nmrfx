@@ -63,8 +63,8 @@ public class Entity implements AtomContainer, Serializable, ITree {
     public String magneticEquivalenceGroupCode = "?";
     public String role = "?";
     public String details = "?";
-    HashMap<String, String> propertyMap = new HashMap<String, String>();
-    Map<String, Object> propertyObjectMap= new HashMap<String, Object>();
+    HashMap<String, String> propertyMap = new HashMap<>();
+    Map<String, Object> propertyObjectMap= new HashMap<>();
     ArrayList<EntityCommonName> commonNames = new ArrayList<>();
 
     @Override
@@ -119,13 +119,13 @@ public class Entity implements AtomContainer, Serializable, ITree {
         List<IBond> ibonds = atom.getBonds();
         List<IAtom> result = new ArrayList<>();
 
-        for (IBond ibond : ibonds) {
+        ibonds.forEach((ibond) -> {
             if (ibond.getAtom(0) == atom) {
                 result.add(ibond.getAtom(1));
             } else if (ibond.getAtom(1) == atom) {
                 result.add(ibond.getAtom(0));
             }
-        }
+        });
         return result;
     }
 
@@ -236,10 +236,12 @@ public class Entity implements AtomContainer, Serializable, ITree {
         return atoms;
     }
 
+    @Override
     public List<Atom> getAtomArray() {
         return getAtoms();
     }
 
+    @Override
     public Atom getAtom(int index) {
         return atoms.get(index);
     }
@@ -279,6 +281,7 @@ public class Entity implements AtomContainer, Serializable, ITree {
         bonds.remove(bond);
     }
 
+    @Override
     public List<Bond> getBondList() {
         return bonds;
     }

@@ -27,7 +27,6 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import org.nmrfx.peaks.InvalidPeakException;
@@ -198,7 +197,7 @@ public class NMRNEFWriter {
             boolean writeLine = true;
             int collapse = atom.getStereo() <= 0 ? 1 : 0;
             int sameShift = 0;
-            Optional<Atom> methylPartnerOpt = Optional.empty();
+            Optional<Atom> methylPartnerOpt;
             Optional<Atom> partnerOpt = Optional.empty();
             if (atom.isMethyl()) {
                 if (!atom.isFirstInMethyl()) {
@@ -449,14 +448,13 @@ public class NMRNEFWriter {
         molecule.updateAtomArray();
         List<AngleConstraint> angleBlock1 = new ArrayList<>();
         List<AngleConstraint> angleBlock2 = new ArrayList<>();
-        for (AngleConstraint bound : angleConstraints) {
+        angleConstraints.forEach((bound) -> {
             if (bound.getTargetValue() % 1 == 0 || bound.getTargetValue() % 0.5 == 0) {
                 angleBlock1.add(bound);
             } else {
                 angleBlock2.add(bound);
             }
-
-        }
+        });
 
         Comparator<AngleConstraint> aCmp = (AngleConstraint bound1, AngleConstraint bound2) -> { //sort atom1 sequence code
             int i = 0;
@@ -535,6 +533,7 @@ public class NMRNEFWriter {
      * information to a NEF formatted file.
      *
      * @param chan FileWriter. Writer used for writing the file.
+     * @param name String. The dataset name.
      * @throws IOException
      * @throws ParseException
      * @throws InvalidPeakException

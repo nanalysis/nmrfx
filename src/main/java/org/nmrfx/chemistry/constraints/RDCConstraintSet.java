@@ -37,7 +37,7 @@ import org.nmrfx.chemistry.Atom;
 public class RDCConstraintSet implements ConstraintSet, Iterable {
 
     private final MolecularConstraints molecularConstraints;
-    private ArrayList<RDC> constraints = new ArrayList<>(64);
+    private final ArrayList<RDC> constraints = new ArrayList<>(64);
     int nStructures = 0;
     private final String name;
     boolean dirty = true;
@@ -57,30 +57,37 @@ public class RDCConstraintSet implements ConstraintSet, Iterable {
         return rdcSet;
     }
 
+    @Override
     public String getName() {
         return name;
     }
 
+    @Override
     public String getCategory() {
         return "torsion_angle_constraints";
     }
 
+    @Override
     public String getListType() {
         return "_RDC_list";
     }
 
+    @Override
     public String getType() {
         return "RDC";
     }
 
+    @Override
     public int getSize() {
         return constraints.size();
     }
 
+    @Override
     public void clear() {
         constraints.clear();
     }
 
+    @Override
     public void add(Constraint constraint) {
         constraints.add((RDC) constraint);
         dirty = true;
@@ -93,10 +100,12 @@ public class RDCConstraintSet implements ConstraintSet, Iterable {
         return constraints;
     }
 
+    @Override
     public RDC get(int i) {
         return constraints.get(i);
     }
 
+    @Override
     public MolecularConstraints getMolecularConstraints() {
         return molecularConstraints;
     }
@@ -110,14 +119,17 @@ public class RDCConstraintSet implements ConstraintSet, Iterable {
         dirty = true;
     }
 
+    @Override
     public Iterator iterator() {
         return constraints.iterator();
     }
 
+    @Override
     public boolean isDirty() {
         return dirty;
     }
 
+    @Override
     public void setDirty() {
         dirty = true;
     }
@@ -205,10 +217,12 @@ public class RDCConstraintSet implements ConstraintSet, Iterable {
         "_RDC.Val_err",
         "_RDC.RDC_list_ID",};
 
+    @Override
     public String[] getLoopStrings() {
         return rdcConstraintLoopStrings;
     }
 
+    @Override
     public void resetWriting() {
         ID = 1;
     }

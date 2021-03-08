@@ -30,7 +30,7 @@ import org.nmrfx.chemistry.MoleculeBase;
 public class DistanceConstraintSet implements ConstraintSet, Iterable {
 
     private final MolecularConstraints molecularConstraints;
-    private ArrayList<DistanceConstraint> constraints = new ArrayList<>();
+    private final ArrayList<DistanceConstraint> constraints = new ArrayList<>();
     int nStructures = 0;
     private final String name;
     boolean dirty = true;
@@ -51,30 +51,37 @@ public class DistanceConstraintSet implements ConstraintSet, Iterable {
         return distanceSet;
     }
 
+    @Override
     public String getName() {
         return name;
     }
 
+    @Override
     public String getCategory() {
         return "distance_constraints";
     }
 
+    @Override
     public String getListType() {
         return "_Distance_constraint_list";
     }
 
+    @Override
     public String getType() {
         return "distance constraint";
     }
 
+    @Override
     public int getSize() {
         return constraints.size();
     }
 
+    @Override
     public void clear() {
         constraints.clear();
     }
 
+    @Override
     public void add(Constraint constraint) {
         constraints.add((DistanceConstraint) constraint);
         dirty = true;
@@ -87,22 +94,27 @@ public class DistanceConstraintSet implements ConstraintSet, Iterable {
         return constraints;
     }
 
+    @Override
     public DistanceConstraint get(int i) {
         return constraints.get(i);
     }
 
+    @Override
     public MolecularConstraints getMolecularConstraints() {
         return molecularConstraints;
     }
 
+    @Override
     public Iterator iterator() {
         return constraints.iterator();
     }
 
+    @Override
     public boolean isDirty() {
         return dirty;
     }
 
+    @Override
     public void setDirty() {
         dirty = true;
     }
@@ -131,10 +143,9 @@ public class DistanceConstraintSet implements ConstraintSet, Iterable {
         nStructures = structures.length;
         violCharArray = new char[lastStruct + 1];
         SummaryStatistics sumStat = new SummaryStatistics();
-        for (DistanceConstraint aConstraint : constraints) {
+        constraints.forEach((_item) -> {
             sumStat.clear();
-
-        }
+        });
         dirty = false;
     }
 
@@ -181,10 +192,12 @@ public class DistanceConstraintSet implements ConstraintSet, Iterable {
         "_Torsion_angle_constraint.Entry_ID",
         "_Torsion_angle_constraint.Gen_dist_constraint_list_ID",};
 
+    @Override
     public String[] getLoopStrings() {
         return angleConstraintLoopStrings;
     }
 
+    @Override
     public void resetWriting() {
         ID = 1;
     }
@@ -213,22 +226,22 @@ public class DistanceConstraintSet implements ConstraintSet, Iterable {
         ArrayList<Atom> atoms1 = MoleculeBase.getMatchedAtoms(molFilter1, molecule);
         ArrayList<Atom> atoms2 = MoleculeBase.getMatchedAtoms(molFilter2, molecule);
 
-        if (atoms1.size() == 0) {
+        if (atoms1.isEmpty()) {
             throw new IllegalArgumentException("atom null " + filterString1);
         }
-        if (atoms2.size() == 0) {
+        if (atoms2.isEmpty()) {
             throw new IllegalArgumentException("atom null " + filterString2);
         }
 
         ArrayList<Atom> atoms1m = new ArrayList<>();
         ArrayList<Atom> atoms2m = new ArrayList<>();
 
-        for (Atom atom1 : atoms1) {
-            for (Atom atom2 : atoms2) {
+        atoms1.forEach((atom1) -> {
+            atoms2.forEach((atom2) -> {
                 atoms1m.add(atom1);
                 atoms2m.add(atom2);
-            }
-        }
+            });
+        });
 
         Atom[] atomsA1 = new Atom[atoms1m.size()];
         Atom[] atomsA2 = new Atom[atoms2m.size()];
@@ -268,19 +281,19 @@ public class DistanceConstraintSet implements ConstraintSet, Iterable {
             List<Atom> group1 = MoleculeBase.getNEFMatchedAtoms(molFilter1, molecule);
             List<Atom> group2 = MoleculeBase.getNEFMatchedAtoms(molFilter2, molecule);
 
-            if (group1.size() == 0) {
+            if (group1.isEmpty()) {
                 throw new IllegalArgumentException("atoms1 null " + filterString1);
             }
-            if (group2.size() == 0) {
+            if (group2.isEmpty()) {
                 throw new IllegalArgumentException("atoms2 null " + filterString2);
             }
 
-            for (Atom atom1 : group1) {
-                for (Atom atom2 : group2) {
+            group1.forEach((atom1) -> {
+                group2.forEach((atom2) -> {
                     atoms1m.add(atom1);
                     atoms2m.add(atom2);
-                }
-            }
+                });
+            });
         }
         Atom[] atomsA1 = new Atom[atoms1m.size()];
         Atom[] atomsA2 = new Atom[atoms2m.size()];
@@ -314,19 +327,19 @@ public class DistanceConstraintSet implements ConstraintSet, Iterable {
             List<Atom> group1 = MoleculeBase.getNEFMatchedAtoms(molFilter1, molecule);
             List<Atom> group2 = MoleculeBase.getNEFMatchedAtoms(molFilter2, molecule);
 
-            if (group1.size() == 0) {
+            if (group1.isEmpty()) {
                 throw new IllegalArgumentException("atoms1 null " + filterString1);
             }
-            if (group2.size() == 0) {
+            if (group2.isEmpty()) {
                 throw new IllegalArgumentException("atoms2 null " + filterString2);
             }
 
-            for (Atom atom1 : group1) {
-                for (Atom atom2 : group2) {
+            group1.forEach((atom1) -> {
+                group2.forEach((atom2) -> {
                     atoms1m.add(atom1);
                     atoms2m.add(atom2);
-                }
-            }
+                });
+            });
         }
         Atom[] atomsA1 = new Atom[atoms1m.size()];
         Atom[] atomsA2 = new Atom[atoms2m.size()];

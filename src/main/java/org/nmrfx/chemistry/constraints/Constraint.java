@@ -34,8 +34,8 @@ public interface Constraint {
         },
         SEMIAUTOMATIC("semiautomatic", "Semi") {
         };
-        private String description;
-        private String shortDesc;
+        private final String description;
+        private final String shortDesc;
 
         public String getDescription() {
             return description;

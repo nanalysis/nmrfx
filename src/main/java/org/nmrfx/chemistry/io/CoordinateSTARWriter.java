@@ -55,8 +55,8 @@ public class CoordinateSTARWriter {
         char sep = ' ';
         int whichStruct = -1;
         chan.write("loop_\n");
-        for (int j = 0; j < loopStrings.length; j++) {
-            chan.write(loopStrings[j] + "\n");
+        for (String loopString : loopStrings) {
+            chan.write(loopString + "\n");
         }
         chan.write("\n");
 
