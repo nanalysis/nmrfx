@@ -254,6 +254,24 @@ public class CmaesRefinement extends Refinement implements MultivariateFunction 
         molecule.genCoords(false, null);
     }
 
+    void dumpLinkedValues() {
+        int i = 0;
+        for (List<Atom> atomArray : linkedAtoms) {
+            if (i < linkedAtoms.length - 1) {
+                for (Atom atom : atomArray) {
+                    System.out.printf("%10s %12.6s\n", atom.getShortName(), Math.toDegrees(atom.dihedralAngle));
+                }
+            } else {
+                for (Atom atom : atomArray) {
+                    System.out.printf("%10s %12.6s\n", atom.getShortName(), Math.toDegrees(atom.dihedralAngle));
+                    i++;
+                }
+            }
+            i++;
+        }
+        molecule.genCoords(false, null);
+    }
+
     public double linkedValue(final double[] values) {
         double[] denormValues = denormLinkedValues(values);
         updateWithLinkedValues(denormValues);
