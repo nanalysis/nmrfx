@@ -2480,6 +2480,21 @@ public class Molecule extends MoleculeBase {
         return angleAtoms;
     }
 
+    public List<Atom> getAllAngleAtoms() {
+        List<Atom> allAngleAtoms = new ArrayList<Atom>();
+
+        for (int i = 0; i < genVecs.length; i++) {
+            if (genVecs[i].length > 3) {
+                Atom angleAtom = treeAtoms.get(genVecs[i][2]);
+                if ((angleAtom.getParent() != null) && (angleAtom.irpIndex > 0)) {
+                    allAngleAtoms.add(angleAtom);
+                }
+            }
+
+        }
+        return allAngleAtoms;
+    }
+
     public ArrayList<Atom> getPseudoAngleAtoms() {
         return pseudoAngleAtoms;
     }

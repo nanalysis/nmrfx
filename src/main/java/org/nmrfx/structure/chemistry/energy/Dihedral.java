@@ -261,9 +261,9 @@ public class Dihedral {
                 fileOut.format("%s %.6f\n", atom.getFullName(), atom.dihedralAngle * toDeg);
             }
         }
-        List<Atom> angleAtoms = molecule.getAngleAtoms();
+        List<Atom> angleAtoms = molecule.getAllAngleAtoms();
         for (Atom atom : angleAtoms) {
-            fileOut.format("%s %.6f\n", atom.getFullName(), atom.daughterAtom.dihedralAngle * toDeg);
+            fileOut.format("%s %.6f\n", atom.getFullName(), Math.toDegrees(atom.daughterAtom.dihedralAngle));
         }
         fileOut.close();
     }
