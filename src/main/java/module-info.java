@@ -23,4 +23,6 @@ module org.nmrfx.core {
     requires vecmath;
     requires com.google.common;
     requires jython.slim;
+    requires jsch;
+    requires com.google.gson;
 }
