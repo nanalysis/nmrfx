@@ -284,6 +284,8 @@ public class AnalystApp extends MainApp {
         loadPeakListMenuItem.setOnAction(e -> loadPeakLists());
         MenuItem portMenuItem = new MenuItem("New NMRFx Server...");
         portMenuItem.setOnAction(e -> startServer(e));
+        MenuItem fetchMenuItem = new MenuItem("Remote Datasets...");
+        fetchMenuItem.setOnAction(e -> createRemoteDatasets());
 
         Menu projectMenu = new Menu("Projects");
 
@@ -326,7 +328,9 @@ public class AnalystApp extends MainApp {
                 openSTARMenuItem, saveSTARMenuItem, openSparkyMenuItem);
 
         fileMenu.getItems().addAll(openMenuItem, openDatasetMenuItem, addMenuItem,
-                recentFIDMenuItem, recentDatasetMenuItem, newMenuItem, portMenuItem, new SeparatorMenuItem(), svgMenuItem, pdfMenuItem, loadPeakListMenuItem);
+                recentFIDMenuItem, recentDatasetMenuItem, newMenuItem,
+                portMenuItem, new SeparatorMenuItem(), svgMenuItem, pdfMenuItem,
+                loadPeakListMenuItem, fetchMenuItem);
 
         Menu spectraMenu = new Menu("Spectra");
         spectraMenu.disableProperty().bind(FXMLController.activeController.isNull());
@@ -1186,6 +1190,10 @@ public class AnalystApp extends MainApp {
         Stage stage = ringNMRController.getStage();
         stage.toFront();
         stage.show();
+    }
+
+    void createRemoteDatasets() {
+        DatasetBrowserController browserController = DatasetBrowserController.create();
     }
 
 }
