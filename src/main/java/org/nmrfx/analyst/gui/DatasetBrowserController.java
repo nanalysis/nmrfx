@@ -63,6 +63,7 @@ import org.nmrfx.utilities.RemoteDataset;
 import org.controlsfx.control.tableview2.TableView2;
 import org.nmrfx.processor.datasets.vendor.NMRDataUtil;
 import org.nmrfx.processor.gui.FXMLController;
+import org.nmrfx.processor.gui.controls.ConsoleUtil;
 import org.nmrfx.utilities.RemoteDatasetAccess;
 import org.nmrfx.utilities.UnZipper;
 import org.nmrfx.utils.GUIUtils;
@@ -149,7 +150,7 @@ public class DatasetBrowserController implements Initializable {
 
             controller = loader.<DatasetBrowserController>getController();
             controller.stage = stage;
-            stage.setTitle("Remote Datasets");
+            stage.setTitle("Dataset Browser");
             stage.show();
         } catch (IOException ioE) {
             ioE.printStackTrace();
@@ -321,6 +322,8 @@ public class DatasetBrowserController implements Initializable {
         Task<List<RemoteDataset>> task = new Task<List<RemoteDataset>>() {
             @Override
             protected List<RemoteDataset> call() throws Exception {
+                ConsoleUtil.runOnFxThread(() -> stage.setTitle("Dataset Browser: Scanning"));
+
                 List<RemoteDataset> results = NMRDataUtil.scanDirectory(scanDir, outPath);
                 Platform.runLater(new Runnable() {
                     @Override
@@ -330,6 +333,8 @@ public class DatasetBrowserController implements Initializable {
                         tableView.setItems(items);
                     }
                 });
+                ConsoleUtil.runOnFxThread(() -> stage.setTitle("Dataset Browser"));
+
                 return results;
             }
         };

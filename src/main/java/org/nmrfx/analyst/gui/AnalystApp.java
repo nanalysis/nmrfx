@@ -29,8 +29,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import javafx.application.Platform;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
@@ -287,8 +285,8 @@ public class AnalystApp extends MainApp {
         loadPeakListMenuItem.setOnAction(e -> loadPeakLists());
         MenuItem portMenuItem = new MenuItem("New NMRFx Server...");
         portMenuItem.setOnAction(e -> startServer(e));
-        MenuItem fetchMenuItem = new MenuItem("Remote Datasets...");
-        fetchMenuItem.setOnAction(e -> createRemoteDatasets());
+        MenuItem datasetBrowserMenuItem = new MenuItem("Dataset Browser...");
+        datasetBrowserMenuItem.setOnAction(e -> createRemoteDatasets());
 
         Menu projectMenu = new Menu("Projects");
 
@@ -331,9 +329,9 @@ public class AnalystApp extends MainApp {
                 openSTARMenuItem, saveSTARMenuItem, openSparkyMenuItem);
 
         fileMenu.getItems().addAll(openMenuItem, openDatasetMenuItem, addMenuItem,
-                recentFIDMenuItem, recentDatasetMenuItem, newMenuItem,
+                recentFIDMenuItem, recentDatasetMenuItem, datasetBrowserMenuItem, newMenuItem,
                 portMenuItem, new SeparatorMenuItem(), svgMenuItem, pdfMenuItem,
-                loadPeakListMenuItem, fetchMenuItem);
+                loadPeakListMenuItem);
 
         Menu spectraMenu = new Menu("Spectra");
         spectraMenu.disableProperty().bind(FXMLController.activeController.isNull());
