@@ -296,7 +296,7 @@ public class DatasetBrowserController implements Initializable {
 
     File getLocalIndexFile() {
         Path path = getLocalDir();
-        File localFile = fileSystem.getPath(path.getParent().toString(), "index.json").toFile();
+        File localFile = fileSystem.getPath(path.getParent().toString(), "nmrfx_index.json").toFile();
         return localFile;
     }
 
@@ -355,7 +355,7 @@ public class DatasetBrowserController implements Initializable {
                 return;
             }
         }
-        File localFile = fileSystem.getPath(path.getParent().toString(), "index.json").toFile();
+        File localFile = fileSystem.getPath(path.getParent().toString(), "nmrfx_index.json").toFile();
         System.out.println("local " + localFile);
         String remoteFile = remoteDir + "/scripts/test.json";
         if (initRemoteDatasetAccess()) {
