@@ -32,8 +32,8 @@ import org.nmrfx.chemistry.MoleculeBase;
 public class AngleConstraintSet implements ConstraintSet, Iterable {
 
     private final MolecularConstraints molecularConstraints;
-    private ArrayList<AngleConstraint> constraints = new ArrayList<>();
-    private Map<String, Integer> map = new HashMap<>();
+    private final ArrayList<AngleConstraint> constraints = new ArrayList<>();
+    private final Map<String, Integer> map = new HashMap<>();
     int nStructures = 0;
     private final String name;
     boolean dirty = true;
@@ -77,31 +77,38 @@ public class AngleConstraintSet implements ConstraintSet, Iterable {
         dirty = true;
     }
 
+    @Override
     public String getName() {
         return name;
     }
 
+    @Override
     public String getCategory() {
         return "torsion_angle_constraints";
     }
 
+    @Override
     public String getListType() {
         return "_Torsion_angle_constraint_list";
     }
 
+    @Override
     public String getType() {
         return "dihedral angle";
     }
 
+    @Override
     public int getSize() {
         return constraints.size();
     }
 
+    @Override
     public void clear() {
         constraints.clear();
         map.clear();
     }
 
+    @Override
     public void add(Constraint constraint) {
         add((AngleConstraint) constraint);
     }
@@ -113,22 +120,27 @@ public class AngleConstraintSet implements ConstraintSet, Iterable {
         return constraints;
     }
 
+    @Override
     public AngleConstraint get(int i) {
         return constraints.get(i);
     }
 
+    @Override
     public MolecularConstraints getMolecularConstraints() {
         return molecularConstraints;
     }
 
+    @Override
     public Iterator iterator() {
         return constraints.iterator();
     }
 
+    @Override
     public boolean isDirty() {
         return dirty;
     }
 
+    @Override
     public void setDirty() {
         dirty = true;
     }
@@ -194,7 +206,7 @@ public class AngleConstraintSet implements ConstraintSet, Iterable {
         dirty = false;
     }
 
-    private static String[] angleConstraintLoopStrings = {
+    private final static String[] angleConstraintLoopStrings = {
         "_Torsion_angle_constraint.ID",
         "_Torsion_angle_constraint.Torsion_angle_name",
         "_Torsion_angle_constraint.Assembly_atom_ID_1",
@@ -237,10 +249,12 @@ public class AngleConstraintSet implements ConstraintSet, Iterable {
         "_Torsion_angle_constraint.Entry_ID",
         "_Torsion_angle_constraint.Gen_dist_constraint_list_ID",};
 
+    @Override
     public String[] getLoopStrings() {
         return angleConstraintLoopStrings;
     }
 
+    @Override
     public void resetWriting() {
         ID = 1;
     }

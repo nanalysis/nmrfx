@@ -67,9 +67,9 @@ public class AtomEnergyProp {
     // hbond donor (1), acceptor (-1)
     private final int hbondMode;
     //scaling factor
-    private static double rscale = 0.68;
+    private final static double rscale = 0.68;
     private static final HashMap<String, AtomEnergyProp> propMap = new HashMap<String, AtomEnergyProp>();
-    private static double hbondDelta = 0.30;
+    private final static double hbondDelta = 0.30;
     private static final Map<Integer, AtomEnergyProp> DEFAULT_MAP = new HashMap<>();
     public static Map<String, Integer> torsionMap = new HashMap<>();
 
@@ -186,7 +186,7 @@ public class AtomEnergyProp {
         lineReader = new LineNumberReader(bf);
         torsionMap.clear();
         List<List<double[]>> torsionMasterList = new ArrayList<>();
-        List<double[]> torsionList = new ArrayList<>();
+        List<double[]> torsionList;
         int nVals = 1;
         String lastKey = "";
         while (true) {
@@ -228,9 +228,7 @@ public class AtomEnergyProp {
         for (int i = 0; i < irpTable.length; i++) {
             irpTable[i] = new double[torsionMasterList.get(i).size()][nVals];
             for (int j = 0; j < irpTable[i].length; j++) {
-                for (int k = 0; k < nVals; k++) {
-                    irpTable[i][j][k] = torsionMasterList.get(i).get(j)[k];
-                }
+                System.arraycopy(torsionMasterList.get(i).get(j), 0, irpTable[i][j], 0, nVals);
             }
         }
     }

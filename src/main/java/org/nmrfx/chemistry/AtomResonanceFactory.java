@@ -66,11 +66,11 @@ public class AtomResonanceFactory implements FreezeListener {
     }
 
     public void clean() {
-        Map<Long, AtomResonance> resonancesNew = new TreeMap<Long, AtomResonance>();
+        Map<Long, AtomResonance> resonancesNew = new TreeMap<>();
         long resID = 0;
         for (Map.Entry<Long, AtomResonance> entry : map.entrySet()) {
             AtomResonance resonance = entry.getValue();
-            if (((resonance.getPeakDims() != null) && (resonance.getPeakDims().size() != 0))) {
+            if (((resonance.getPeakDims() != null) && (!resonance.getPeakDims().isEmpty()))) {
                 resonance.setID(resID);
                 resonancesNew.put(resID, resonance);
                 resID++;
@@ -251,8 +251,8 @@ public class AtomResonanceFactory implements FreezeListener {
         chan.write("\n");
         String[] loopStrings = resonanceLoopStrings;
         chan.write("loop_\n");
-        for (int j = 0; j < loopStrings.length; j++) {
-            chan.write(loopStrings[j] + "\n");
+        for (String loopString : loopStrings) {
+            chan.write(loopString + "\n");
         }
         chan.write("\n");
         for (Map.Entry<Long, AtomResonance> entry : map.entrySet()) {

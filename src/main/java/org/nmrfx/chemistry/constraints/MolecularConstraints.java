@@ -59,9 +59,9 @@ public class MolecularConstraints {
     }
 
     public void resetNOESets() {
-        for (Map.Entry<String, NoeSet> noeSet : noeSets.entrySet()) {
+        noeSets.entrySet().forEach((noeSet) -> {
             noeSet.getValue().clear();
-        }
+        });
         noeSets.clear();
         newNOESet("default");
     }
@@ -98,9 +98,9 @@ public class MolecularConstraints {
     }
 
     public void resetAngleSets() {
-        for (Map.Entry<String, AngleConstraintSet> cSet : angleSets.entrySet()) {
+        angleSets.entrySet().forEach((cSet) -> {
             cSet.getValue().clear();
-        }
+        });
         angleSets.clear();
         newAngleSet("default");
     }
@@ -133,9 +133,9 @@ public class MolecularConstraints {
     }
 
     public void resetRDCSets() {
-        for (Map.Entry<String, RDCConstraintSet> cSet : rdcSets.entrySet()) {
+        rdcSets.entrySet().forEach((cSet) -> {
             cSet.getValue().clear();
-        }
+        });
         rdcSets.clear();
         newRDCSet("default");
     }
@@ -180,9 +180,9 @@ public class MolecularConstraints {
     }
 
     public void resetDistanceSets() {
-        for (Map.Entry<String, DistanceConstraintSet> cSet : distanceSets.entrySet()) {
+        distanceSets.entrySet().forEach((cSet) -> {
             cSet.getValue().clear();
-        }
+        });
         distanceSets.clear();
         newDistanceSet("default");
     }

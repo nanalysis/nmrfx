@@ -25,8 +25,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.math3.util.FastMath;
-import org.nmrfx.chemistry.Atom;
-import org.nmrfx.chemistry.PPMv;
 
 /**
  *

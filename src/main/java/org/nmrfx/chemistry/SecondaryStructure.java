@@ -17,7 +17,6 @@
  */
 package org.nmrfx.chemistry;
 
-import org.nmrfx.chemistry.Residue;
 
 import java.util.*;
 
@@ -62,8 +61,8 @@ public abstract class SecondaryStructure {
     }
 
     public void getInvolvedRes() {
-        for (Residue residue : secResidues) {
+        secResidues.forEach((residue) -> {
             System.out.print(residue.getPolymer().getName() + ":" + residue.getName() + residue.getNumber());
-        }
+        });
     }
 }

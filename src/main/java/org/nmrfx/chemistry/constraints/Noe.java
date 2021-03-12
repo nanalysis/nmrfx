@@ -395,9 +395,9 @@ public class Noe extends DistanceConstraint implements Serializable {
 
     public String getActivityFlags() {
         StringBuilder result = new StringBuilder();
-        for (Flags f : activeFlags) {
+        activeFlags.forEach((f) -> {
             result.append(f.getCharDesc());
-        }
+        });
         return result.toString();
     }
 
@@ -621,6 +621,7 @@ public class Noe extends DistanceConstraint implements Serializable {
     /**
      * @return the lower
      */
+    @Override
     public double getLower() {
         return lower;
     }
@@ -635,6 +636,7 @@ public class Noe extends DistanceConstraint implements Serializable {
     /**
      * @return the upper
      */
+    @Override
     public double getUpper() {
         return upper;
     }

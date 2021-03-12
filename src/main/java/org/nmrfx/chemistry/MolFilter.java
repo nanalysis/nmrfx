@@ -17,9 +17,6 @@
  */
 package org.nmrfx.chemistry;
 
-import org.nmrfx.chemistry.CoordSet;
-import org.nmrfx.chemistry.Entity;
-import org.nmrfx.chemistry.Util;
 import java.util.Vector;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -83,8 +80,8 @@ public class MolFilter {
     public MolFilter(String string) {
         this.string = string;
         String resAtom;
-        String firstResTmp = "*";
-        String lastResTmp = "*";
+        String firstResTmp;
+        String lastResTmp;
         atomNames.setSize(0);
 
         String anames;
@@ -110,7 +107,7 @@ public class MolFilter {
             csAndE = new CoordsetAndEntity(coordSetName, entityName);
         } else {
             csAndE = new CoordsetAndEntity(molName);
-            if (molName != "*") {
+            if (!"*".equals(molName)) {
                 entityName = molName;
             }
         }
@@ -195,7 +192,6 @@ public class MolFilter {
             structureNum = 0;
         }
 
-        return;
     }
 
     public int getStructureNum() {

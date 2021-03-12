@@ -19,7 +19,6 @@ package org.nmrfx.chemistry.protein;
 
 import org.nmrfx.chemistry.Residue;
 
-import java.util.*;
 import org.nmrfx.chemistry.SecondaryStructure;
 
 /**

@@ -18,8 +18,6 @@
 
 package org.nmrfx.chemistry;
 
-import org.nmrfx.chemistry.AtomSpecifier;
-
 public class BondSpecifier {
 
     private final AtomSpecifier atom1;

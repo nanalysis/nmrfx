@@ -53,6 +53,7 @@ public class AtomResonance extends SimpleResonance {
         super(id);
     }
 
+    @Override
     public String getAtomName() {
         if (atom != null) {
             return atom.getFullName();
@@ -85,8 +86,8 @@ public class AtomResonance extends SimpleResonance {
         // fixme unused ArrayList ssColumn = loop.getColumnAsList("Spin_system_ID");
         ResonanceFactory resFactory = PeakList.resFactory();
         for (int i = 0, n = idColumn.size(); i < n; i++) {
-            String value = null;
-            long idNum = 0;
+            String value;
+            long idNum;
             if ((value = NvUtil.getColumnValue(idColumn, i)) != null) {
                 idNum = NvUtil.toLong(value);
             } else {
@@ -127,7 +128,7 @@ public class AtomResonance extends SimpleResonance {
             List<String> atomIDColumn = loop.getColumnAsList("Atom_ID");
             // fixme unused ArrayList atomSetIDColumn = loop.getColumnAsList("Atom_set_ID");
             for (int i = 0, n = resSetIDColumn.size(); i < n; i++) {
-                String value = null;
+                String value;
                 long idNum = 0;
                 if ((value = NvUtil.getColumnValue(resSetIDColumn, i)) != null) {
                     idNum = NvUtil.toLong(value);
@@ -193,10 +194,10 @@ public class AtomResonance extends SimpleResonance {
     }
 
     public String toSTARResonanceString() {
-        StringBuffer result = new StringBuffer();
+        StringBuilder result = new StringBuilder();
         String sep = " ";
         char stringQuote = '"';
-        result.append(String.valueOf(getID()) + sep);
+        result.append(String.valueOf(getID())).append(sep);
         result.append(stringQuote);
         result.append(getName());
         result.append(stringQuote);

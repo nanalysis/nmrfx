@@ -34,7 +34,7 @@ public class Residue extends Compound {
     private char oneLetter = 0;
     private boolean standard = false;
     static Map standardResSet = new TreeMap();
-    Map<String, Atom[]> pseudoMap = new HashMap<String, Atom[]>();
+    Map<String, Atom[]> pseudoMap = new HashMap<>();
     private final static String[] compliantAminoAcid = {"C", "CA", "N"};
     private final static String[] compliantNucleicAcid = {"C5'", "O5'", "P"};
     private String lastBackBoneAtomName = null;
@@ -126,6 +126,7 @@ public class Residue extends Compound {
         setHasEquivalentAtoms(false);
     }
 
+    @Override
     public void removeAtom(final Atom atom) {
         super.removeAtom(atom);
         polymer.removeAtom(atom);
@@ -143,16 +144,24 @@ public class Residue extends Compound {
         if (atom == null) {
             if (lName.charAt(0) == 'h') {
                 if (polymer.isCapped() && (polymer.getFirstResidue() == this)) {
-                    if (lName.equals("hn")) {
-                        atom = (Atom) atomMap.get("h1");
-                    } else if (lName.equals("h")) {
-                        atom = (Atom) atomMap.get("h1");
-                    } else if (lName.equals("ht1")) {
-                        atom = (Atom) atomMap.get("h1");
-                    } else if (lName.equals("ht2")) {
-                        atom = (Atom) atomMap.get("h2");
-                    } else if (lName.equals("ht3")) {
-                        atom = (Atom) atomMap.get("h3");
+                    switch (lName) {
+                        case "hn":
+                            atom = (Atom) atomMap.get("h1");
+                            break;
+                        case "h":
+                            atom = (Atom) atomMap.get("h1");
+                            break;
+                        case "ht1":
+                            atom = (Atom) atomMap.get("h1");
+                            break;
+                        case "ht2":
+                            atom = (Atom) atomMap.get("h2");
+                            break;
+                        case "ht3":
+                            atom = (Atom) atomMap.get("h3");
+                            break;
+                        default:
+                            break;
                     }
                 } else if (lName.equals("hn")) {
                     atom = (Atom) atomMap.get("h");
@@ -161,18 +170,27 @@ public class Residue extends Compound {
                 }
             } else if (lName.charAt(0) == 'o') {
                 if (polymer.isCapped() && (polymer.getLastResidue() == this)) {
-                    if (lName.equals("o")) {
-                        atom = (Atom) atomMap.get("o'");
-                    } else if (lName.equals("ot1")) {
-                        atom = (Atom) atomMap.get("o'");
-                    } else if (lName.equals("o1")) {
-                        atom = (Atom) atomMap.get("o'");
-                    } else if (lName.equals("ot2")) {
-                        atom = (Atom) atomMap.get("o''");
-                    } else if (lName.equals("oxt")) {
-                        atom = (Atom) atomMap.get("o''");
-                    } else if (lName.equals("o2")) {
-                        atom = (Atom) atomMap.get("o''");
+                    switch (lName) {
+                        case "o":
+                            atom = (Atom) atomMap.get("o'");
+                            break;
+                        case "ot1":
+                            atom = (Atom) atomMap.get("o'");
+                            break;
+                        case "o1":
+                            atom = (Atom) atomMap.get("o'");
+                            break;
+                        case "ot2":
+                            atom = (Atom) atomMap.get("o''");
+                            break;
+                        case "oxt":
+                            atom = (Atom) atomMap.get("o''");
+                            break;
+                        case "o2":
+                            atom = (Atom) atomMap.get("o''");
+                            break;
+                        default:
+                            break;
                     }
                 }
             }
@@ -236,11 +254,13 @@ public class Residue extends Compound {
         return pseudoName != null ? pseudoMap.get(pseudoName) : null;
     }
 
+    @Override
     public void addBond(final Bond bond) {
         super.addBond(bond);
         polymer.addBond(bond);
     }
 
+    @Override
     public void removeBond(final Bond bond) {
         super.removeBond(bond);
         polymer.removeBond(bond);
@@ -305,41 +325,51 @@ public class Residue extends Compound {
     }
 
     public Atom[] getChiAtoms() {
-        if (name.equals("ALA") || name.equals("GLY")) {
-            return null;
-        } else if (name.equals("U") || name.equals("C")) {
-            Atom[] atoms = new Atom[4];
-            atoms[0] = getAtom("O4'");
-            atoms[1] = getAtom("C1'");
-            atoms[2] = getAtom("N1");
-            atoms[3] = getAtom("C2");
-            return atoms;
-        } else if (name.equals("G") || name.equals("A")) {
-            Atom[] atoms = new Atom[4];
-            atoms[0] = getAtom("O4'");
-            atoms[1] = getAtom("C1'");
-            atoms[2] = getAtom("N9");
-            atoms[3] = getAtom("C4");
-            return atoms;
-        } else {
-            Atom[] atoms = new Atom[4];
-            atoms[0] = getAtom("N");
-            atoms[1] = getAtom("CA");
-            atoms[2] = getAtom("CB");
-            String atom3Name;
-            if (name.equals("THR")) {
-                atom3Name = "OG1";
-            } else if (name.equals("SER")) {
-                atom3Name = "OG";
-            } else if (name.equals("CYS")) {
-                atom3Name = "SG";
-            } else if (name.equals("ILE") || name.equals("VAL")) {
-                atom3Name = "CG1";
-            } else {
-                atom3Name = "CG";
+        switch (name) {
+            case "ALA":
+            case "GLY":
+                return null;
+            case "U":
+            case "C":
+            {
+                Atom[] atoms = new Atom[4];
+                atoms[0] = getAtom("O4'");
+                atoms[1] = getAtom("C1'");
+                atoms[2] = getAtom("N1");
+                atoms[3] = getAtom("C2");
+                return atoms;
             }
-            atoms[3] = getAtom(atom3Name);
-            return atoms;
+            case "G":
+            case "A":
+            {
+                Atom[] atoms = new Atom[4];
+                atoms[0] = getAtom("O4'");
+                atoms[1] = getAtom("C1'");
+                atoms[2] = getAtom("N9");
+                atoms[3] = getAtom("C4");
+                return atoms;
+            }
+            default:
+            {
+                Atom[] atoms = new Atom[4];
+                atoms[0] = getAtom("N");
+                atoms[1] = getAtom("CA");
+                atoms[2] = getAtom("CB");
+                String atom3Name;
+                if (name.equals("THR")) {
+                    atom3Name = "OG1";
+                } else if (name.equals("SER")) {
+                    atom3Name = "OG";
+                } else if (name.equals("CYS")) {
+                    atom3Name = "SG";
+                } else if (name.equals("ILE") || name.equals("VAL")) {
+                    atom3Name = "CG1";
+                } else {
+                    atom3Name = "CG";
+                }
+                atoms[3] = getAtom(atom3Name);
+                return atoms;
+            }
         }
     }
 
@@ -361,43 +391,57 @@ public class Residue extends Compound {
             return null;
         } else {
             Atom[] atoms = new Atom[4];
-            if (name.equals("PHE") || name.equals("TRP") || name.equals("TYR")) {
-                atoms[0] = getAtom("CA");
-                atoms[1] = getAtom("CB");
-                atoms[2] = getAtom("CG");
-                atoms[3] = getAtom("CD1");
-            } else if (name.equals("HIS")) {
-                atoms[0] = getAtom("CA");
-                atoms[1] = getAtom("CB");
-                atoms[2] = getAtom("CG");
-                atoms[3] = getAtom("CD2");
-            } else if (name.equals("MET")) {
-                atoms[0] = getAtom("CA");
-                atoms[1] = getAtom("CB");
-                atoms[2] = getAtom("CG");
-                atoms[3] = getAtom("SD");
-            } else if (name.equals("ILE")) {
-                atoms[0] = getAtom("CA");
-                atoms[1] = getAtom("CB");
-                atoms[2] = getAtom("CG1");
-                atoms[3] = getAtom("CD1");
-            } else if (name.equals("LEU")) {
-                atoms[0] = getAtom("CA");
-                atoms[1] = getAtom("CB");
-                atoms[2] = getAtom("CG");
-                atoms[3] = getAtom("CD1");
-            } else if (name.equals("ASN") || name.equals("ASP")) {
-                atoms[0] = getAtom("CA");
-                atoms[1] = getAtom("CB");
-                atoms[2] = getAtom("CG");
-                atoms[3] = getAtom("OD1");
-            } else if (name.equals("GLN") || name.equals("GLU") || name.equals("LYS") || name.equals("ARG")) {
-                atoms[0] = getAtom("CA");
-                atoms[1] = getAtom("CB");
-                atoms[2] = getAtom("CG");
-                atoms[3] = getAtom("CD");
-            } else {
-                return null;
+            switch (name) {
+                case "PHE":
+                case "TRP":
+                case "TYR":
+                    atoms[0] = getAtom("CA");
+                    atoms[1] = getAtom("CB");
+                    atoms[2] = getAtom("CG");
+                    atoms[3] = getAtom("CD1");
+                    break;
+                case "HIS":
+                    atoms[0] = getAtom("CA");
+                    atoms[1] = getAtom("CB");
+                    atoms[2] = getAtom("CG");
+                    atoms[3] = getAtom("CD2");
+                    break;
+                case "MET":
+                    atoms[0] = getAtom("CA");
+                    atoms[1] = getAtom("CB");
+                    atoms[2] = getAtom("CG");
+                    atoms[3] = getAtom("SD");
+                    break;
+                case "ILE":
+                    atoms[0] = getAtom("CA");
+                    atoms[1] = getAtom("CB");
+                    atoms[2] = getAtom("CG1");
+                    atoms[3] = getAtom("CD1");
+                    break;
+                case "LEU":
+                    atoms[0] = getAtom("CA");
+                    atoms[1] = getAtom("CB");
+                    atoms[2] = getAtom("CG");
+                    atoms[3] = getAtom("CD1");
+                    break;
+                case "ASN":
+                case "ASP":
+                    atoms[0] = getAtom("CA");
+                    atoms[1] = getAtom("CB");
+                    atoms[2] = getAtom("CG");
+                    atoms[3] = getAtom("OD1");
+                    break;
+                case "GLN":
+                case "GLU":
+                case "LYS":
+                case "ARG":
+                    atoms[0] = getAtom("CA");
+                    atoms[1] = getAtom("CB");
+                    atoms[2] = getAtom("CG");
+                    atoms[3] = getAtom("CD");
+                    break;
+                default:
+                    return null;
             }
             return Atom.calcDihedral(atoms, structureNum);
         }
@@ -483,17 +527,17 @@ public class Residue extends Compound {
                 removeAtoms.add(atom);
             }
         }
-        for (Atom atom : removeAtoms) {
+        removeAtoms.forEach((atom) -> {
             List<IBond> rBonds = atom.getBonds();
             atom.removeBonds();
-            for (IBond rBond : rBonds) {
+            rBonds.forEach((rBond) -> {
                 removeBond((Bond) rBond);
-            }
-        }
+            });
+        });
 
-        for (Atom atom : removeAtoms) {
+        removeAtoms.forEach((atom) -> {
             removeAtom(atom);
-        }
+        });
         molecule.updateBondArray();
     }
 
@@ -705,10 +749,19 @@ public class Residue extends Compound {
         }
     }
 
+    @Override
     public String toString() {
         return polymer.getName() + ":" + getName() + getNumber();
     }
 
+    /**
+     * Converts sequence information to a String in NEF format.
+     * 
+     * @param idx int. The line index.
+     * @param link String. Linkage (e.g. start, end, single).
+     * @return String in NEF format.
+     */
+    @Override
     public String toNEFSequenceString(int idx, String link) {
         //chain ID
         char chainID = ' ';
@@ -729,6 +782,12 @@ public class Residue extends Compound {
         return String.format("%8d %7s %7d %9s %-14s %-7s", idx, chainID, num, resName, link, resVar);
     }
 
+    /**
+     * Converts sequence information to a String in mmCIF format.
+     * 
+     * @param pdb boolean. Whether to write lines in PDBX format.
+     * @return String in mmCIF format.
+     */
     public String toMMCifSequenceString(boolean pdb) {
         //chain ID
         String polymerName = this.polymer.getName();
@@ -763,6 +822,13 @@ public class Residue extends Compound {
         }
     }
 
+    /**
+     * Convert chemical composition information to String in mmCIF format.
+     * 
+     * @param weightMap Map<String, Double>. Map of atom molecular weights.
+     * @param fullResName String. The full residue name.
+     * @return String in mmCIF format.
+     */
     public String toMMCifChemCompString(Map<String, Double> weightMap, String fullResName) {
         //residue name
         String resName = this.name;
@@ -840,6 +906,13 @@ public class Residue extends Compound {
 
     }
 
+    /**
+     * Convert structure configuration information to a String in mmCIF format.
+     * 
+     * @param idx int. The line index.
+     * @param lastRes Residue. The last residue in the sequence.
+     * @return String in mmCIF format.
+     */
     public String toMMCifStructConfString(int idx, Residue lastRes) {
         //type id
         String typeID = "HELX_P";
@@ -891,6 +964,13 @@ public class Residue extends Compound {
         return String.format("%-6s %-6s %-1d %-3s %-1s %-2d %-1s %-3s %-1s %-2d %-1s %-3s %-1s %-2d %-3s %-1s %-2d %-1d %-1s %-2s", typeID, id, idx, resName, chainID, seqID, insCode, resName1, chainID1, seqID1, insCode1, resName, chainID, seqID, resName1, chainID1, seqID1, entityIDNum, details, length);
     }
 
+    /**
+     * Convert sheet information to a String in mmCIF format.
+     * 
+     * @param idx int. The line index.
+     * @param lastRes Residue. The last residue in the sequence.
+     * @return
+     */
     public String toMMCifSheetRangeString(int idx, Residue lastRes) {
         //first chain ID
         String polymerName = this.polymer.getName();
@@ -930,6 +1010,14 @@ public class Residue extends Compound {
         return String.format("%-2s %-1d %-3s %-1s %-2d %-1s %-3s %-1s %-2d %-1s %-3s %-1s %-2d %-3s %-1s %-2d", chainID, idx, resName, chainID, seqID, insCode, resName1, chainID1, seqID1, insCode1, resName, chainID, seqID, resName1, chainID1, seqID1);
     }
 
+    /**
+     * Convert torsion angle information to a String in mmCIF format.
+     * 
+     * @param angles double[]. List of the torsion angles: [phi, psi].
+     * @param idx int. The line index.
+     * @param pdbModelNum int. The PDB model number.
+     * @return String in mmCIF format.
+     */
     public String toMMCifTorsionString(double[] angles, int idx, int pdbModelNum) {
 
         StringBuilder sBuilder = new StringBuilder();

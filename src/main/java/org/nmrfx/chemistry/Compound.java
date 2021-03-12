@@ -47,6 +47,7 @@ public class Compound extends Entity implements AtomIterable {
         atomMap = new HashMap();
     }
 
+    @Override
     public Iterator iterator() {
         return atoms.iterator();
     }
@@ -73,6 +74,7 @@ public class Compound extends Entity implements AtomIterable {
         return entityID;
     }
 
+    @Override
     public void removeAtom(Atom atom) {
         super.removeAtom(atom);
         atomMap.remove(atom.getName().toLowerCase());
@@ -80,6 +82,7 @@ public class Compound extends Entity implements AtomIterable {
         setHasEquivalentAtoms(false);
     }
 
+    @Override
     public void addAtom(Atom afterAtom, Atom atom) {
         super.addAtom(afterAtom, atom);
         atom.entity = this;
@@ -101,7 +104,7 @@ public class Compound extends Entity implements AtomIterable {
     }
 
     public ArrayList<Atom> getAtoms(String match) {
-        ArrayList<Atom> atomList = new ArrayList<Atom>();
+        ArrayList<Atom> atomList = new ArrayList<>();
         match = match.toLowerCase();
         for (Atom atom : atoms) {
             String aName = atom.getName().toLowerCase();
@@ -157,9 +160,9 @@ public class Compound extends Entity implements AtomIterable {
 
     public void updateNames() {
         HashMap newMap = new HashMap();
-        for (Atom atom : atoms) {
+        atoms.forEach((atom) -> {
             newMap.put(atom.name.toLowerCase(), atom);
-        }
+        });
         atomMap = newMap;
     }
     

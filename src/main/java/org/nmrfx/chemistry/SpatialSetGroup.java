@@ -101,9 +101,9 @@ public class SpatialSetGroup {
                 AtomEquivalency aEquiv = atom.equivAtoms.get(0);
                 ArrayList<Atom> atoms = aEquiv.getAtoms();
                 spSets.clear();
-                for (Atom atom2 : atoms) {
+                atoms.forEach((atom2) -> {
                     spSets.add(atom2.spatialSet);
-                }
+                });
             }
         }
     }

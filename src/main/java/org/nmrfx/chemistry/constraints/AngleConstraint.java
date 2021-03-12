@@ -143,6 +143,7 @@ public class AngleConstraint implements Constraint {
         this(atoms, lower, upper, scale, 1.0, (lower + upper) / 2.0, upper - lower, "");
     }
 
+    @Override
     public String toString() {
         return String.format("%s %s %s %s %6.1f %6.1f", atoms[0].getFullName(),
                 atoms[1].getFullName(), atoms[2].getFullName(),
@@ -194,6 +195,7 @@ public class AngleConstraint implements Constraint {
     }
 
     /**
+     * @param i int. The index of the spatial set in the list of atoms.
      * @return the spSet
      */
     public SpatialSet getSpSet(int i) {
@@ -237,7 +239,7 @@ public class AngleConstraint implements Constraint {
     }
 
     public double getViol(double angle) {
-        double viol = 0.0;
+        double viol;
         if (getUpper() > getLower()) {
             if ((angle >= getLower()) && (angle <= getUpper())) {
                 viol = 0.0;

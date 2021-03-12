@@ -32,10 +32,10 @@ public class AtomGeometry {
     /**
      * Calculates the volume or space occupied between 4 points
      *
-     * @param pt1 first point
-     * @param pt2 second point
-     * @param pt3 third point
-     * @param pt4 fourth point
+     * @param a first point
+     * @param b second point
+     * @param c third point
+     * @param d fourth point
      * @return volume double
      */
     public static double calcVolume(final Point3 a, final Point3 b, final Point3 c, final Point3 d) {
@@ -45,10 +45,10 @@ public class AtomGeometry {
     /**
      * Calculates the dihedral angle
      *
-     * @param pt1 first point
-     * @param pt2 second point
-     * @param pt3 third point
-     * @param pt4 fourth point
+     * @param a first point
+     * @param b second point
+     * @param c third point
+     * @param d fourth point
      * @return angle
      */
     public static double calcDihedral(final Point3 a, final Point3 b, final Point3 c, final Point3 d) {
@@ -67,7 +67,7 @@ public class AtomGeometry {
         final double volume = calcVolume(a, b, c, d);
 
         final double sgn = (volume < 0.0) ? 1.0 : -1.0;
-        double angle = 0.0;
+        double angle;
         if (cosine > 1.0) {
             angle = 0.0;
         } else if (cosine < -1.0) {
