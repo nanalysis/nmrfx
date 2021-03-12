@@ -254,7 +254,7 @@ initialize = True
 def annealPrep(refiner,  ends,  steps=100):
     ranfact=20.0
     refiner.setSeed(refiner.seed)
-    refiner.randomizeAngles()
+    refiner.prepAngles()
     energy = refiner.energy()
 
     for end in ends:

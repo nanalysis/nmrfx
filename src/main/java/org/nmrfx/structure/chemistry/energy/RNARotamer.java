@@ -33,6 +33,7 @@ import org.nmrfx.structure.chemistry.Molecule;
 
 public class RNARotamer {
 
+    public static String SUITE_FORMAT = " %6.1f %5.1f";
     private static Atom[][] Atom;
 
     final double[] angles;
@@ -64,6 +65,8 @@ public class RNARotamer {
     static final double[] halfWidths = new double[suiteAtoms.length];
 
     static final LinkedHashMap<String, RNARotamer> ROTAMERS = new LinkedHashMap<>();
+
+    static final String[] PRESET_ATOMS = {"P", "O5'", "C5'", "C4'", "C3'", "O3'"};
 
     // d-1, e-1,z-1,a,b,g,d
     static {
@@ -402,7 +405,7 @@ public class RNARotamer {
             if (deltas != null) {
                 delta = deltas[i];
             }
-            builder.append(String.format(" %6.1f %5.1f", Math.toDegrees(angle), Math.toDegrees(delta)));
+            builder.append(String.format(SUITE_FORMAT, Math.toDegrees(angle), Math.toDegrees(delta)));
         }
         return builder.toString();
     }
@@ -773,6 +776,41 @@ public class RNARotamer {
                         angle += CmaesRefinement.DEFAULT_RANDOMGENERATOR.nextGaussian() * sdev;
                     }
                     System.out.println(atom.getFullName() + " " + Math.toDegrees(angle));
+                    atom.setDihedral(Math.toDegrees(angle));
+                    if (doFreeze) {
+                        atom.parent.setRotActive(false);
+                    }
+                }
+            }
+            j++;
+        }
+        residue.molecule.genCoords(false);
+    }
+
+    public static void setDihedrals(Residue residue, double[] angles, double sdev, boolean doFreeze) {
+        setDihedrals(residue, PRESET_ATOMS, angles, sdev, doFreeze);
+    }
+
+    public static void setDihedrals(Residue residue, String[] atomNames, double[] angles, double sdev, boolean doFreeze) {
+        int j = 0;
+        sdev = Math.toRadians(sdev);
+        for (String atomName : atomNames) {
+            int colonPos = atomName.indexOf(':');
+            int delta = 0;
+            if (colonPos != -1) {
+                String deltaRes = atomName.substring(0, colonPos);
+                delta = Integer.valueOf(deltaRes);
+                atomName = atomName.substring(colonPos + 1);
+            }
+            Residue applyResidue = delta < 0 ? residue.previous : residue;
+            if (applyResidue != null) {
+                Atom atom = applyResidue.getAtom(atomName);
+                if (atom != null) {
+                    double angle = Math.toRadians(angles[j]); // Converted to radians
+                    if (sdev != 0.0) {
+                        angle += CmaesRefinement.DEFAULT_RANDOMGENERATOR.nextGaussian() * sdev;
+                    }
+                    //   System.out.println(atom.getFullName() + " " + Math.toDegrees(angle));
                     atom.setDihedral(Math.toDegrees(angle));
                     if (doFreeze) {
                         atom.parent.setRotActive(false);

@@ -1153,6 +1153,90 @@ class refine:
             self.dOpt = self.readAnnealDict(data['anneal'])
         self.energy()
 
+        if 'initialize' in data:
+            self.initializeData = (data['initialize'])
+        else:
+            self.initializeData = None
+
+    def prepAngles(self):
+        print 'Initializing angles'
+        ranfact=20.0
+        self.setSeed(self.seed)
+        self.randomizeAngles()
+        data = self.initializeData
+        if data != None:
+            if 'vienna' in data:
+                print 'Setting angles based on Vienna sequence'
+                self.setAnglesVienna(data['vienna']['restrain'])
+            elif 'doublehelix' in data:
+                print 'Setting angles based on double helix information'
+                self.setAnglesDoubleHelix(data)
+            else:
+                print 'Neither auto locking to Vienna sequence nor double helix specified'
+            self.restart()
+        #self.output()
+        #exit(0)
+
+    def setAnglesDoubleHelix(self,data):
+        if data['doublehelix'][0]['restrain']:
+            print 'Locking angles based on double helix information after setting'
+        # Set angles based on double helix information
+        # print data['doublehelix']
+        # print data['doublehelix'][0]['start']
+        # print data['doublehelix'][0]['end']
+        # print data['doublehelix'][0]['restrain']
+			
+    def setAnglesVienna(self, doLock, lockLast=True):
+        if doLock:
+            print 'Locking Vienna angles after setting'
+        ssGen = SSGen(self.molecule, self.vienna)
+        ssGen.secondaryStructGen()
+        for ss in ssGen.structures:
+            if ss.getName() == "Helix":
+                helixResidues = ss.getResidues()
+                strandI = helixResidues[0::2]
+                strandJ = helixResidues[1::2]
+                nRes = len(strandI)
+                for i in range(nRes):
+                    resI = strandI[i]
+                    resJ = strandJ[i]
+                    if i == nRes-1:
+                        lockThis = doLock and lockLast
+                        RNARotamer.setDihedrals(resI,self.getAngles('beforetetraloop1'), 0.0, lockThis)
+                        RNARotamer.setDihedrals(resJ,self.getAngles('aftertetraloop1'), 0.0, lockThis)
+                    else:
+                        RNARotamer.setDihedrals(resI,self.getAngles('helix'), 0.0, doLock)
+                        RNARotamer.setDihedrals(resJ,self.getAngles('helix'), 0.0, doLock)
+            elif ss.getName() == "Loop":
+                loopResidues = ss.getResidues()
+                if len(loopResidues) == 4:
+                    print 'Tetraloop detected'
+                    nRes = len(loopResidues)
+                else:
+                    sys.exit('Loop length is not equal to 4.') # For now, exit if loop length is not 4
+                for i in range(nRes):
+                    if(i == 0):
+                        print 'Tetraloop position 1 being set for residue: '
+                        print loopResidues[i]
+                        RNARotamer.setDihedrals(loopResidues[i],self.getAngles('tetraloop1'), 0.0, doLock)
+                    elif (i == 1):
+                        print 'Tetraloop position 2 being set for residue: '
+                        print loopResidues[i]
+                        RNARotamer.setDihedrals(loopResidues[i],self.getAngles('tetraloop2'), 0.0, doLock)
+                    elif (i == 2):
+                        print 'Tetraloop position 3 being set for residue: '
+                        print loopResidues[i]
+                        RNARotamer.setDihedrals(loopResidues[i],self.getAngles('tetraloop3'), 0.0, doLock)
+                    else:
+                        print 'Tetraloop position 4 being set for residue: '
+                        print loopResidues[i]
+                        RNARotamer.setDihedrals(loopResidues[i],self.getAngles('tetraloop4'), 0.0, doLock)
+					
+    def getAngles(self,resPosition):
+        filetext = open('angles.dict', 'r').read()
+        anglesDict = eval(filetext)
+        return anglesDict[resPosition]
+
     def readMolEditDict(self,seqReader, editDict):
         for entry in editDict:
             if 'remove' in entry:
@@ -1878,9 +1962,8 @@ class refine:
         self.molecule.setupAngles()
         self.setup('./',self.seed)
         self.energyLists.setupConstraints()
-        rDyn = self.rinertia()
-        rDyn.setKinEScale(self.dOpt['kinEScale'])
-        return rDyn
+        self.rDyn = self.rinertia()
+        self.rDyn.setKinEScale(self.dOpt['kinEScale'])
 
     def lockRNALinkers(self, state):
         mol = self.molecule
@@ -1910,9 +1993,9 @@ class refine:
                         RNARotamer.setDihedrals(resI,'1a', 0.0, True)
                         RNARotamer.setDihedrals(resJ,'1a', 0.0, True)
               
-                    rDyn = self.restart()
+                    self.restart()
                     stages = getAnnealStages(self.dOpt, self.settings,'refine')
-                    runStage(stages['stage_refine'], self, rDyn)
+                    runStage(stages['stage_refine'], self, self.rDyn)
 
     def refineLockedRNA(self, nsteps=4000, dev1=3.0, dev2=4.0, skipEnd=True):
         linkAtoms = RNARotamer.getLinkAtoms(self.molecule, skipEnd)
@@ -2468,7 +2551,7 @@ class refine:
         self.setSeed(self.seed)
         #self.putPseudo(18.0,45.0)
         #raise ValueError()
-        self.randomizeAngles()
+        self.randomizeAngles() # Angles randomized here
         energy = self.energy()
         forceDict = self.settings.get('force')
         irp = forceDict.get('irp', 0.015) if forceDict else 0.015
@@ -2492,15 +2575,15 @@ class refine:
         dOpt = dOpt if dOpt else dynOptions()
         self.mode = 'refine'
 
-        rDyn = self.rinertia()
-        rDyn.setKinEScale(dOpt['kinEScale'])
+        self.rDyn = self.rinertia()
+        self.rDyn.setKinEScale(dOpt['kinEScale'])
         energy = self.energy()
         print 'start energy is', energy
 
         stages = getAnnealStages(dOpt, self.settings,'refine')
         for stageName in stages:
             stage = stages[stageName]
-            runStage(stage, self, rDyn)
+            runStage(stage, self, self.rDyn)
 
         self.gmin(nsteps=dOpt['polishSteps'],tolerance=1.0e-6)
         if dOpt['dfreeSteps']> 0:
@@ -2513,14 +2596,14 @@ class refine:
         from anneal import getAnnealStages
         dOpt = dOpt if dOpt else dynOptions()
 
-        rDyn = self.rinertia()
-        rDyn.setKinEScale(dOpt['kinEScale'])
+        self.rDyn = self.rinertia()
+        self.rDyn.setKinEScale(dOpt['kinEScale'])
 
         stages = getAnnealStages(dOpt, self.settings)
         for stageName in stages:
             print stageName
             stage = stages[stageName]
-            runStage(stage, self, rDyn)
+            runStage(stage, self, self.rDyn)
 
         self.gmin(nsteps=dOpt['polishSteps'],tolerance=1.0e-6)
         if dOpt['dfreeSteps']> 0:
@@ -2532,27 +2615,27 @@ class refine:
         self.updateAt(20)
         self.setForces({'repel':5.0,'dis':1.0,'dih':5})
         self.setPars({'coarse':True, 'end':1000,'useh':False,'hardSphere':0.15,'shrinkValue':0.20})
-        rDyn = self.rinertia()
+        self.rDyn = self.rinertia()
         steps0 =  5000
         steps1 = (steps-steps0)/3
         steps2 = steps-steps0-steps1
 
-        rDyn.initDynamics(hiTemp,hiTemp,steps0,timeStep)
-        rDyn.run(1.0)
+        self.rDyn.initDynamics(hiTemp,hiTemp,steps0,timeStep)
+        self.rDyn.run(1.0)
 
-        timeStep = rDyn.getTimeStep()/2.0
-        rDyn.continueDynamics(hiTemp,medTemp,steps1,timeStep)
-        rDyn.run(1.0)
+        timeStep = self.rDyn.getTimeStep()/2.0
+        self.rDyn.continueDynamics(hiTemp,medTemp,steps1,timeStep)
+        self.rDyn.run(1.0)
 
-        timeStep = rDyn.getTimeStep()/2.0
-        rDyn.continueDynamics(medTemp,2.0,steps2,timeStep)
-        rDyn.run(0.65)
+        timeStep = self.rDyn.getTimeStep()/2.0
+        self.rDyn.continueDynamics(medTemp,2.0,steps2,timeStep)
+        self.rDyn.run(0.65)
 
         self.setPars({'useh':True,'shrinkValue':0.05,'shrinkHValue':0.05})
 
-        timeStep = rDyn.getTimeStep()/2.0
-        rDyn.continueDynamics(timeStep)
-        rDyn.run(0.35)
+        timeStep = self.rDyn.getTimeStep()/2.0
+        self.rDyn.continueDynamics(timeStep)
+        self.rDyn.run(0.35)
 
 
         if self.eFileRoot != None:
@@ -2564,9 +2647,9 @@ class refine:
         self.setForces({'repel':0.5,'dis':1.0,'dih':5})
         self.setPars({'end':1000,'useh':False,'hardSphere':0.15,'shrinkValue':0.20})
         self.setPars(stage1)
-        rDyn = self.rinertia()
-        rDyn.initDynamics(temp,temp,steps,timeStep, timePower)
-        rDyn.run(1.0)
+        self.rDyn = self.rinertia()
+        self.rDyn.initDynamics(temp,temp,steps,timeStep, timePower)
+        self.rDyn.run(1.0)
 
     def sgd(self,dOpt=None,stage1={},stage2={}):
         if (dOpt==None):
