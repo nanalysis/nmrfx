@@ -5,13 +5,19 @@
  */
 package org.nmrfx.analyst.gui;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.StringProperty;
 import org.controlsfx.control.PropertySheet;
 import static org.nmrfx.processor.gui.MainApp.preferencesController;
 import org.nmrfx.processor.gui.PreferencesController;
+import org.nmrfx.utils.properties.BooleanOperationItem;
 import org.nmrfx.utils.properties.DoubleRangeOperationItem;
 import org.nmrfx.utils.properties.IntRangeOperationItem;
+import org.nmrfx.utils.properties.TextOperationItem;
 
 /**
  *
@@ -54,6 +60,67 @@ public class AnalystPrefs {
         return libraryVectorREF.getValue();
     }
 
+    static BooleanProperty useRemotePassword = null;
+
+    public static Boolean getUseRemotePassword() {
+        useRemotePassword = PreferencesController.getBoolean(useRemotePassword, "REMOTE_USE_PASSWORD", false);
+        return useRemotePassword.getValue();
+    }
+
+    public static void setUseRemotePassword(boolean value) {
+        useRemotePassword.setValue(value);
+        PreferencesController.setBoolean("REMOTE_USE_PASSWORD", value);
+    }
+
+    static StringProperty remoteUserName = null;
+
+    public static String getRemoteUserName() {
+        remoteUserName = PreferencesController.getString(remoteUserName, "REMOTE_USER_NAME", "");
+        return remoteUserName.getValue();
+    }
+
+    public static void setRemoteUserName(String name) {
+        remoteUserName.setValue(name);
+        PreferencesController.setString("REMOTE_USER_NAME", name);
+    }
+
+    static StringProperty remoteHostName = null;
+
+    public static String getRemoteHostName() {
+        remoteHostName = PreferencesController.getString(remoteHostName, "REMOTE_HOST", "");
+        return remoteHostName.getValue();
+    }
+
+    public static void setRemoteHostName(String name) {
+        remoteHostName.setValue(name);
+        PreferencesController.setString("REMOTE_HOST", name);
+    }
+
+    static StringProperty remoteDirectory = null;
+
+    public static String getRemoteDirectory() {
+        remoteDirectory = PreferencesController.getString(remoteDirectory, "REMOTE_DIRECTORY", "");
+        return remoteDirectory.getValue();
+    }
+
+    public static void setRemoteDirectory(String name) {
+        remoteDirectory.setValue(name);
+        PreferencesController.setString("REMOTE_DIRECTORY", name);
+    }
+
+    static StringProperty localDirectory = null;
+
+    public static String getLocalDirectory() {
+        Path defaultDir = Paths.get(System.getProperty("user.home"), "nmrdata");
+        localDirectory = PreferencesController.getString(localDirectory, "LOCAL_DIRECTORY", defaultDir.toString());
+        return localDirectory.getValue();
+    }
+
+    public static void setLocalDirectory(String name) {
+        localDirectory.setValue(name);
+        PreferencesController.setString("LOCAL_DIRECTORY", name);
+    }
+
     public static void addPrefs() {
         PropertySheet prefSheet = preferencesController.getPrefSheet();
         IntRangeOperationItem libraryVectorSizeItem = new IntRangeOperationItem(
@@ -66,7 +133,7 @@ public class AnalystPrefs {
                 (a, b, c) -> {
                     libraryVectorLB.setValue((Double) c);
                 },
-                getLibraryVectorLB(), 0, 10.0, "Spectrum Library", "VectorSW",
+                getLibraryVectorLB(), 0, 10.0, "Spectrum Library", "VectorLW",
                 "Line broadening (Hz) for simulated spectra");
         DoubleRangeOperationItem libraryVectorSFItem = new DoubleRangeOperationItem(
                 (a, b, c) -> {
@@ -87,8 +154,38 @@ public class AnalystPrefs {
                 getLibraryVectorREF(), 0, 10.0, "Spectrum Library", "VectorREF",
                 "Center reference (PPM) for simulated spectra");
 
+        TextOperationItem remoteUserItem = new TextOperationItem((a, b, c) -> {
+            setRemoteUserName((String) c);
+        }, getRemoteUserName(), "Remote Data",
+                "UserName",
+                "User name on remote host");
+
+        TextOperationItem remoteHostItem = new TextOperationItem((a, b, c) -> {
+            setRemoteHostName((String) c);
+        }, getRemoteHostName(), "Remote Data",
+                "HostName",
+                "Name of remote host (server)");
+
+        TextOperationItem remoteDirectoryItem = new TextOperationItem((a, b, c) -> {
+            setRemoteDirectory((String) c);
+        }, getRemoteDirectory(), "Remote Data",
+                "Directory",
+                "Directory on remote host that stores data");
+
+        BooleanOperationItem remoteUsePasswordItem = new BooleanOperationItem((a, b, c) -> {
+            setUseRemotePassword((Boolean) c);
+        }, getUseRemotePassword(), "Remote Data", "UsePassword", "Prompt for password when connecting");
+
+        TextOperationItem localDirectoryItem = new TextOperationItem((a, b, c) -> {
+            setLocalDirectory((String) c);
+        }, getLocalDirectory(), "Local Data",
+                "Directory",
+                "Directory on local host that stores data");
+
         prefSheet.getItems().addAll(libraryVectorSizeItem, libraryVectorLBItem,
-                libraryVectorSFItem, libraryVectorSWItem, libraryVectorREFItem);
+                libraryVectorSFItem, libraryVectorSWItem, libraryVectorREFItem,
+                localDirectoryItem,
+                remoteHostItem, remoteDirectoryItem, remoteUserItem, remoteUsePasswordItem);
 
     }
 
