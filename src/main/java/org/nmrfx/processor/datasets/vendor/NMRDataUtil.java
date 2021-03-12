@@ -25,6 +25,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.FileTime;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -32,6 +33,10 @@ import java.util.Base64;
 import java.util.Base64.Encoder;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import org.nmrfx.utilities.RemoteDataset;
 
 /**
  * Utility helper class for NMRData interface.
@@ -46,7 +51,8 @@ public final class NMRDataUtil {
     }
 
     /**
-     * Get the currently active NMRData object. Used by nvfx to make object available to python
+     * Get the currently active NMRData object. Used by nvfx to make object
+     * available to python
      *
      * @return the NMRData object that was set with setCurrentData
      */
@@ -55,7 +61,8 @@ public final class NMRDataUtil {
     }
 
     /**
-     * Set the currently active NMRData object. Used by nvfx to make object available to python
+     * Set the currently active NMRData object. Used by nvfx to make object
+     * available to python
      *
      * @param nmrData an NMRData object to set as the active one
      */
@@ -64,11 +71,13 @@ public final class NMRDataUtil {
     }
 
     /**
-     * Get the FID parameters and data from an absolute file path <b>fpath</b>. Data may be in any vendor format, e.g.
-     * Bruker or Varian, and in any directory or subdirectory allowable by a vendor.
+     * Get the FID parameters and data from an absolute file path <b>fpath</b>.
+     * Data may be in any vendor format, e.g. Bruker or Varian, and in any
+     * directory or subdirectory allowable by a vendor.
      * <p>
-     * For example, if $dir is a full path directory, <b>fpath</b> may be $dir/HMQC, $dir/HMQC/, $dir/HMQC/4,
-     * $dir/HMQC/4/ser, $dir/cosy.fid or $dir/cosy.fid/fid.
+     * For example, if $dir is a full path directory, <b>fpath</b> may be
+     * $dir/HMQC, $dir/HMQC/, $dir/HMQC/4, $dir/HMQC/4/ser, $dir/cosy.fid or
+     * $dir/cosy.fid/fid.
      * </p>
      *
      * @param fpath absolute file path
@@ -104,11 +113,13 @@ public final class NMRDataUtil {
     } // end getFID
 
     /**
-     * Get the parameters and data from an absolute file path <b>fpath</b>. Data may be in any vendor format, e.g.
-     * Bruker or Varian, and in any directory or subdirectory allowable by a vendor. Maybe spectrum or FID
+     * Get the parameters and data from an absolute file path <b>fpath</b>. Data
+     * may be in any vendor format, e.g. Bruker or Varian, and in any directory
+     * or subdirectory allowable by a vendor. Maybe spectrum or FID
      * <p>
-     * For example, if $dir is a full path directory, <b>fpath</b> may be $dir/HMQC, $dir/HMQC/, $dir/HMQC/4,
-     * $dir/HMQC/4/ser, $dir/cosy.fid or $dir/cosy.fid/fid.
+     * For example, if $dir is a full path directory, <b>fpath</b> may be
+     * $dir/HMQC, $dir/HMQC/, $dir/HMQC/4, $dir/HMQC/4/ser, $dir/cosy.fid or
+     * $dir/cosy.fid/fid.
      * </p>
      *
      * @param fpath absolute file path
@@ -176,12 +187,13 @@ public final class NMRDataUtil {
 //    public static NMRData getSpectrum(String fpath) throws IOException {
 //    }
     /**
-     * Guess nucleus from frequency <b>freq</b>. Nuclei searched are 1H, 13C, 15N, 31P. 1H frequencies searched span 300
-     * to 1000 MHz.
+     * Guess nucleus from frequency <b>freq</b>. Nuclei searched are 1H, 13C,
+     * 15N, 31P. 1H frequencies searched span 300 to 1000 MHz.
      *
      * @param freq frequency
-     * @return Arraylist of four elements: first is a nucleus String, second is a minimum frequency difference, third is
-     * a 1H frequency, fourth is a bracketing minimum frequency difference.
+     * @return Arraylist of four elements: first is a nucleus String, second is
+     * a minimum frequency difference, third is a 1H frequency, fourth is a
+     * bracketing minimum frequency difference.
      */
     public static ArrayList guessNucleusFromFreq(final double freq) {
         final double[] Hfreqs = {1000.0, 950.0, 900.0, 800.0, 750.0,
@@ -258,7 +270,8 @@ public final class NMRDataUtil {
     } // end class PeekFiles
 
     /**
-     * Scan the specified directory to find sub-directories that are NMR data sets.
+     * Scan the specified directory to find sub-directories that are NMR data
+     * sets.
      *
      * @param path the path of the directory to scan
      * @return An ArrayList containing a list of NMR dataset paths.
@@ -276,6 +289,71 @@ public final class NMRDataUtil {
         }
         return fileList;
 
+    }
+
+    public static List<Path> findProcessedFiles(Path path) throws IOException {
+        List<Path> result;
+        try (Stream<Path> pathStream = Files.find(path,
+                1,
+                (p, basicFileAttributes)
+                -> {
+            String name = p.getFileName().toString();
+            return name.endsWith(".nv") || name.endsWith(".ucsf");
+        }
+        )) {
+            result = pathStream.collect(Collectors.toList());
+        }
+        return result;
+    }
+
+    public static String getProcessedDataset(File localFile) {
+        String datasetName = "";
+        try {
+            List<Path> processed = findProcessedFiles(localFile.toPath());
+            if (!processed.isEmpty()) {
+                processed.sort((o1, o2) -> {
+                    try {
+                        FileTime time1 = Files.getLastModifiedTime(o1);
+                        FileTime time2 = Files.getLastModifiedTime(o2);
+                        return time1.compareTo(time2);
+                    } catch (IOException ex) {
+                        return 0;
+                    }
+                }
+                );
+                datasetName = processed.get(0).getFileName().toString();
+            }
+        } catch (IOException ex) {
+        }
+        return datasetName;
+
+    }
+
+    public static List<RemoteDataset> scanDirectory(String scanDir, Path savePath) {
+        List<RemoteDataset> items = new ArrayList<>();
+        Path path1 = Paths.get(scanDir);
+        if (path1.toFile().exists()) {
+            var files = NMRDataUtil.findNMRDirectories(scanDir);
+            for (String fileName : files) {
+                try {
+                    NMRData data = NMRDataUtil.getNMRData(fileName);
+                    if (data != null) {
+                        Path path2 = Paths.get(fileName);
+                        Path path3 = path1.relativize(path2);
+                        RemoteDataset rData = data.getRemoteData();
+                        rData.setPath(path3.toString());
+                        rData.setPresent(true);
+                        rData.setProcessed(getProcessedDataset(path2.toFile()));
+                        items.add(rData);
+                    }
+                } catch (IOException ex) {
+                }
+            }
+            if (savePath != null) {
+                RemoteDataset.saveItems(savePath, items);
+            }
+        }
+        return items;
     }
 
     public static String calculateHash(String input) throws NoSuchAlgorithmException {

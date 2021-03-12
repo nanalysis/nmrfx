@@ -751,6 +751,17 @@ class VarianData implements NMRData {
     }
 
     @Override
+    public String getUser() {
+        String s;
+        if ((s = getPar("acquser")) == null) {
+            if ((s = getPar("operator")) == null) {
+                s = "";
+            }
+        }
+        return s;
+    }
+
+    @Override
     public double getPH0(int iDim) {
         double ph0 = 0.0;
         Double dpar;

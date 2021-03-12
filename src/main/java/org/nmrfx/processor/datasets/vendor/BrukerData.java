@@ -281,6 +281,17 @@ public class BrukerData implements NMRData {
     }
 
     @Override
+    public String getUser() {
+        String s = "";
+        if ((s = getPar("OWNER,1")) == null) {
+            s = "";
+        } else {
+            s = s.trim();
+        }
+        return s;
+    }
+
+    @Override
     public Map getFidFlags() {
         Map<String, Boolean> flags = new HashMap(5);
         flags.put("fixdsp", fixDSP);

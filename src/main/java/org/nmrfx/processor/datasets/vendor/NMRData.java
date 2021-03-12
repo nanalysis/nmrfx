@@ -34,6 +34,7 @@ import java.util.LinkedHashMap;
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.commons.math3.complex.Complex;
+import org.nmrfx.utilities.RemoteDataset;
 
 /**
  * The <i>NMRData</i> interface contains methods for retrieving data and
@@ -98,7 +99,7 @@ public interface NMRData {
      * @return the parameter value
      */
     public Integer getParInt(String parname);
-    
+
     public List<VendorPar> getPars();
 
     /**
@@ -307,7 +308,7 @@ public interface NMRData {
      * @param value new value for sweep width
      */
     default public void setFixDSP(boolean value) {
-        
+
     }
 
     public boolean isComplex(int dim);
@@ -358,6 +359,15 @@ public interface NMRData {
      * @return vendor name
      */
     public String getVendor();
+
+    /**
+     * Return the name of the user (operator).
+     *
+     * @return user name
+     */
+    public default String getUser() {
+        return "";
+    }
 
     /**
      * Return the zeroth order phase value from parameter file.
@@ -629,7 +639,7 @@ public interface NMRData {
     public default boolean isFrequencyDim(int iDim) {
         return true;
     }
-    
+
     public default double getTrim() {
         return 0.0;
     }
@@ -761,5 +771,25 @@ public interface NMRData {
                     values.put(parName, value);
             }
         }
+    }
+
+    public default RemoteDataset getRemoteData() {
+        RemoteDataset rData = new RemoteDataset();
+        rData.setUser(getUser());
+        rData.setText(getText());
+        rData.setSol(getSolvent());
+        rData.setPos(getSamplePosition());
+        rData.setSeq(getSequence());
+        rData.setSf(getSF(0));
+        rData.setTe(getTempK());
+        rData.setNd(getNDim());
+        rData.setTn(getTN(0));
+        rData.setVnd(getVendor());
+        rData.setNv(getNVectors());
+//        rData.setSample(getSample());
+//        rData.setIso(getIsotope());
+//        rData.setNb(getNotebook());
+        rData.setTime(getZonedDate().format(DateTimeFormatter.ISO_DATE_TIME));
+        return rData;
     }
 }
