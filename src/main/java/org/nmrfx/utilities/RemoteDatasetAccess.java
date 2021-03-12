@@ -1,14 +1,16 @@
 package org.nmrfx.utilities;
 
-import com.jcraft.jsch.Channel;
 import com.jcraft.jsch.ChannelSftp;
 import com.jcraft.jsch.JSch;
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
 import com.jcraft.jsch.SftpException;
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.util.Optional;
 
 /**
  *
@@ -16,32 +18,103 @@ import java.nio.file.FileSystems;
  */
 public class RemoteDatasetAccess {
 
-    public static String USERNAME = "bjohnson";
-    public static String REMOTE_HOST = "cobalt.nmrbox.org";
+    public String userName = "";
+    public String remoteHost = "";
     public static int REMOTE_PORT = 22;
     public static int SESSION_TIMEOUT = 10000;
     public static int CHANNEL_TIMEOUT = 5000;
-    String remoteFile = "/public/groups/comd-nmr/share/scripts/test.json";
+    JSch jsch = new JSch();
+    String userdir = System.getProperty("user.home");
+    FileSystem fileSystem = FileSystems.getDefault();
+    Session jschSession = null;
+    ChannelSftp sftp = null;
+    String password = null;
+    boolean passwordValid = false;
+    Optional<Boolean> useIdentity = Optional.empty();
 
-    public boolean fetchIndex(File localFile) {
-        String userdir = System.getProperty("user.home");
-        FileSystem fileSystem = FileSystems.getDefault();
-        String knownHostsFile = fileSystem.getPath(userdir, ".ssh", "known_hosts").toString();
-        String identityFile = fileSystem.getPath(userdir, ".ssh", "id_rsa").toString();
+    public RemoteDatasetAccess(String userName, String remoteHost) {
+        this.userName = userName;
+        this.remoteHost = remoteHost;
+    }
 
-        Session jschSession = null;
-        try {
+    public void connect() throws JSchException {
+        getSession();
+    }
 
-            JSch jsch = new JSch();
-            jsch.setKnownHosts(knownHostsFile);
-            jsch.addIdentity(identityFile);
-            jschSession = jsch.getSession(USERNAME, REMOTE_HOST, REMOTE_PORT);
+    public void setPassword(String value) {
+        this.password = value;
+    }
+
+    public boolean passwordValid() {
+        return passwordValid;
+    }
+
+    public boolean useIdentity() {
+        if (useIdentity.isPresent()) {
+            return useIdentity.get();
+        }
+        File knownHostsFile = fileSystem.getPath(userdir, ".ssh", "known_hosts").toFile();
+        File identityFile = fileSystem.getPath(userdir, ".ssh", "id_rsa").toFile();
+        boolean ok = false;
+
+        if (knownHostsFile.exists() && identityFile.exists()) {
+            try {
+                ok = Files.lines(identityFile.toPath()).anyMatch(line -> line.startsWith(remoteHost));
+            } catch (IOException ex) {
+                ok = false;
+            }
+        }
+        useIdentity = Optional.of(ok);
+        return useIdentity.get();
+    }
+
+    Session getSession() throws JSchException {
+        if ((jschSession == null) || !jschSession.isConnected()) {
+            System.out.println("create session");
+            File knownHostsFile = fileSystem.getPath(userdir, ".ssh", "known_hosts").toFile();
+            File identityFile = fileSystem.getPath(userdir, ".ssh", "id_rsa").toFile();
+            System.out.println("set known hosts");
+            jsch.setKnownHosts(knownHostsFile.toString());
+
+            if ((password == null) || password.isEmpty()) {
+                System.out.println("set identity");
+                jsch.addIdentity(identityFile.toString());
+
+            }
+
+            System.out.println("get session now");
+            jschSession = jsch.getSession(userName, remoteHost, REMOTE_PORT);
+            System.out.println("got session");
+
+            if ((password != null) && !password.isEmpty()) {
+                System.out.println("set password");
+                jschSession.setPassword(password);
+                passwordValid = false;
+            }
+
             jschSession.connect(SESSION_TIMEOUT);
-            Channel sftp = jschSession.openChannel("sftp");
+            if ((password != null) && !password.isEmpty()) {
+                passwordValid = jschSession.isConnected();
+            }
+        }
+        return jschSession;
+    }
+
+    ChannelSftp getSftp() throws JSchException {
+        Session session = getSession();
+        if ((sftp == null) || sftp.isClosed() || !sftp.isConnected()) {
+            System.out.println("create channel");
+            sftp = (ChannelSftp) session.openChannel("sftp");
             sftp.connect(CHANNEL_TIMEOUT);
-            ChannelSftp channelSftp = (ChannelSftp) sftp;
-            channelSftp.get(remoteFile, localFile.getAbsolutePath().toString());
-            channelSftp.exit();
+        }
+        return sftp;
+    }
+
+    public boolean fetchFile(String remoteFile, File localFile) {
+        try {
+            ChannelSftp sftpChannel = getSftp();
+            sftpChannel.get(remoteFile, localFile.getAbsolutePath().toString());
+            sftpChannel.exit();
         } catch (JSchException | SftpException e) {
             return false;
         } finally {
@@ -50,7 +123,6 @@ public class RemoteDatasetAccess {
             }
         }
         return true;
-
     }
 
     public void parseIndex() {
