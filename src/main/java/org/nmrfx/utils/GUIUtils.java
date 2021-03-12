@@ -6,9 +6,16 @@
 package org.nmrfx.utils;
 
 import java.util.Optional;
+import javafx.geometry.Pos;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
+import javafx.scene.control.Dialog;
+import javafx.scene.control.Label;
+import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextInputDialog;
+import javafx.scene.layout.HBox;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.Circle;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 
@@ -57,5 +64,31 @@ public class GUIUtils {
         text.setFont(font);
         final double width = text.getLayoutBounds().getWidth();
         return width;
+    }
+
+    public static String getPassword() {
+        Dialog<String> dialog = new Dialog<>();
+        dialog.setTitle("Password");
+        dialog.setHeaderText("");
+        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+
+        PasswordField pwd = new PasswordField();
+        HBox content = new HBox();
+        content.setAlignment(Pos.CENTER_LEFT);
+        content.setSpacing(10);
+        content.getChildren().addAll(new Label("Password:"), pwd);
+        dialog.getDialogPane().setContent(content);
+        dialog.setResultConverter(dialogButton -> {
+            if (dialogButton == ButtonType.OK) {
+                return pwd.getText();
+            }
+            return null;
+        });
+        String pw = null;
+        Optional<String> result = dialog.showAndWait();
+        if (result.isPresent()) {
+            pw = result.get();
+        }
+        return pw;
     }
 }
