@@ -141,6 +141,9 @@ public class AnalystApp extends MainApp {
 
     @Override
     public void start(Stage stage) throws Exception {
+        if (isMac()) {
+            System.setProperty("prism.lcdtext", "false");
+        }
         MainApp.setAnalyst();
         mainApp = this;
         analystApp = this;
