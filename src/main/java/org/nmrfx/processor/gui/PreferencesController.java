@@ -34,10 +34,14 @@ import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.prefs.Preferences;
+import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.event.ActionEvent;
@@ -456,6 +460,30 @@ public class PreferencesController implements Initializable {
         return prop;
     }
 
+    public static BooleanProperty getBoolean(BooleanProperty prop, String name, boolean defValue) {
+        if (prop == null) {
+            Preferences prefs = Preferences.userNodeForPackage(MainApp.class);
+            String value = prefs.get(name, null);
+            if (value != null) {
+                prop = new SimpleBooleanProperty(Boolean.parseBoolean(value));
+            } else {
+                prop = new SimpleBooleanProperty(defValue);
+            }
+        }
+        return prop;
+    }
+
+    public static void setBoolean(String name, Boolean value) {
+        Preferences prefs = Preferences.userNodeForPackage(MainApp.class);
+        if (value != null) {
+            prefs.put(name, value.toString());
+        } else {
+            prefs.remove(name);
+        }
+    }
+
+    
+
     public static DoubleProperty getDouble(DoubleProperty prop, String name, double defValue) {
         if (prop == null) {
             Preferences prefs = Preferences.userNodeForPackage(MainApp.class);
@@ -467,6 +495,29 @@ public class PreferencesController implements Initializable {
             }
         }
         return prop;
+    }
+
+    public static StringProperty getString(StringProperty prop, String name, String defValue) {
+        if (prop == null) {
+            Preferences prefs = Preferences.userNodeForPackage(MainApp.class);
+            String value = prefs.get(name, null);
+            if (value != null) {
+                prop = new SimpleStringProperty(value);
+            } else {
+                prop = new SimpleStringProperty(defValue);
+            }
+        }
+        return prop;
+    }
+
+    public static void setString(String name, String value) {
+        Preferences prefs = Preferences.userNodeForPackage(MainApp.class);
+        if (value != null) {
+            prefs.put(name, value);
+        } else {
+            prefs.remove(name);
+        }
+
     }
 
 }
