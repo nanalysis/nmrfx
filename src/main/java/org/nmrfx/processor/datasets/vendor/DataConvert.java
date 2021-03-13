@@ -25,22 +25,56 @@ import java.nio.IntBuffer;
 import java.nio.ShortBuffer;
 import org.apache.commons.math3.complex.Complex;
 
+/**
+ *
+ * @author brucejohnson
+ */
 public class DataConvert {
-// copy read data into double array
 
+// copy read data into double array
+    /**
+     *
+     */
     public enum DataType {
+
+        /**
+         *
+         */
         FLOAT,
+        /**
+         *
+         */
         DOUBLE,
+        /**
+         *
+         */
         SHORT,
+        /**
+         *
+         */
         INT;
     }
 
+    private DataConvert() {
+    }
+
+    /**
+     * Scale values (divide) in array by specified parameter
+     *
+     * @param data array of data values
+     * @param scale divide values by this value
+     */
     public static void scale(double[] data, double scale) {
         for (int i = 0; i < data.length; i++) {
             data[i] /= scale;
         }
     }
 
+    /**
+     * Multiply alternate pairs of data by -1.0
+     *
+     * @param data array of data values
+     */
     public static void negatePairs(double[] data) {
         for (int i = 0; i < data.length; i += 4) {
             data[i + 2] *= -1.0;
@@ -48,6 +82,15 @@ public class DataConvert {
         }
     }
 
+    /**
+     * Copy data values from a complex (alternate values) array into two arrays
+     * of real and imaginary values
+     *
+     * @param data array of data values
+     * @param rdata the array to receive the real values
+     * @param idata the array to receive the imaginary values
+     * @param size the number of complex values to copy
+     */
     public static void toArrays(double[] data, double[] rdata, double[] idata, int size) {
         for (int i = 0; i < size; i += 2) {
             rdata[i / 2] = data[i];
@@ -55,12 +98,26 @@ public class DataConvert {
         }
     }
 
+    /**
+     * Copy values from a complex (alternate values) array into an array
+     * containing Complex objects
+     *
+     * @param data array of data values
+     * @param cData the array of complex objects
+     * @param size the number complex values to copy
+     */
     public static void toComplex(double[] data, Complex[] cData, int size) {
         for (int i = 0; i < size; i += 2) {
             cData[i / 2] = new Complex(data[i], data[i + 1]);
         }
     }
 
+    /**
+     * Swap the real and imaginary values of a complex (alternate values) array
+     *
+     * @param data array of data values
+     * @param size the number of complex values to swap
+     */
     public static void swapXY(double[] data, int size) {
         for (int i = 0; i < size; i += 2) {
             double hold = data[i];
@@ -69,6 +126,18 @@ public class DataConvert {
         }
     }
 
+    /**
+     * Copy an array of bytes into an array of double values, converting the
+     * correct number of bytes into each data value, based on the DataType. The
+     * DataType can be DOUBLE, FLOAT, INT, or SHORT
+     *
+     * @param dataBuf the array of bytes to convert
+     * @param data the array of double values to receive the converted values.
+     * If null a new array will be created
+     * @param size The number of data values to create
+     * @param type The type of the data in the data buffer.
+     * @return the new array of double values
+     */
     public static double[] copyVecData(byte[] dataBuf, double[] data, int size, DataType type) {
         ByteOrder byteOrder = ByteOrder.BIG_ENDIAN;
         if (data == null) {
@@ -106,4 +175,5 @@ public class DataConvert {
         }
         return data;
     }
+
 }
