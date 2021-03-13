@@ -25,9 +25,16 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ *
+ * @author brucejohnson
+ */
 public class BrukerPar {
 
     static final Logger LOGGER = Logger.getLogger("org.nmrfx.processor.datasets.Dataset");
+
+    private BrukerPar() {
+    }
 
     /**
      * parse a Bruker parameter file
