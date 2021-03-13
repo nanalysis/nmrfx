@@ -100,6 +100,11 @@ public interface NMRData {
      */
     public Integer getParInt(String parname);
 
+    /**
+     * REeturn a list of all the vendor specific pars for this dataset
+     *
+     * @return the List of VendorPar objects
+     */
     public List<VendorPar> getPars();
 
     /**
@@ -293,7 +298,6 @@ public interface NMRData {
     /**
      * Return the sweep width for the specified dimension
      *
-     * @param dim data dimension index
      * @return sweep width
      */
     default public boolean getFixDSP() {
@@ -301,16 +305,21 @@ public interface NMRData {
     }
 
     /**
-     * Set the sweep width for the specified dimension. Used to overwrite a
-     * value loaded by analysis of parameter files.
+     * Set the sweep width for the specified dimension.Used to overwrite a value
+     * loaded by analysis of parameter files.
      *
-     * @param dim data dimension index
      * @param value new value for sweep width
      */
     default public void setFixDSP(boolean value) {
 
     }
 
+    /**
+     * Return whether the specified dimension has complex data
+     *
+     * @param dim data dimension index
+     * @return true if data is complex
+     */
     public boolean isComplex(int dim);
 
     /**
@@ -632,14 +641,32 @@ public interface NMRData {
         return builder.toString();
     }
 
+    /**
+     * Return a boolean indicating if this dataset is a raw (FID) dataset.
+     *
+     * @return true if the dataset is an FID
+     */
     public default boolean isFID() {
         return true;
     }
 
+    /**
+     * Return a boolean indicating if this dimension is in the frequency domain
+     *
+     * @param iDim data dimension index
+     * @return true if the specified dimension is in the frequency domain
+     */
     public default boolean isFrequencyDim(int iDim) {
         return true;
     }
 
+    /**
+     * Return a double number indicating the fraction of spectrum that should be
+     * trimmed off. Typically used to remove edges that are distored because of
+     * artifacts from the digital filtering.
+     *
+     * @return the fraction to be trimmed
+     */
     public default double getTrim() {
         return 0.0;
     }
@@ -681,6 +708,12 @@ public interface NMRData {
         }
     }
 
+    /**
+     * Create a sample schedule corresponding to uniform sampling
+     *
+     * @param nSizes the sizes of each indirect dimension
+     * @return the SampleSchedule
+     */
     public default SampleSchedule createUniformSchedule(List<Integer> nSizes) {
         int[] nSArray = new int[nSizes.size()];
         for (int i = 0; i < nSArray.length; i++) {
@@ -773,6 +806,12 @@ public interface NMRData {
         }
     }
 
+    /**
+     * Get a RemoteDataset object with parameters from this dataset. Used when
+     * indexing remote or local data repositories.
+     *
+     * @return the RemoteData object constructed from this datasets parameters.
+     */
     public default RemoteDataset getRemoteData() {
         RemoteDataset rData = new RemoteDataset();
         rData.setUser(getUser());
