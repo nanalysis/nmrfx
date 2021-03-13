@@ -1205,8 +1205,14 @@ class refine:
                         RNARotamer.setDihedrals(resI,self.getAngles('beforetetraloop1'), 0.0, lockThis)
                         RNARotamer.setDihedrals(resJ,self.getAngles('aftertetraloop1'), 0.0, lockThis)
                     else:
-                        RNARotamer.setDihedrals(resI,self.getAngles('helix'), 0.0, doLock)
-                        RNARotamer.setDihedrals(resJ,self.getAngles('helix'), 0.0, doLock)
+                        if resI.getName() in 'GA':
+                            RNARotamer.setDihedrals(resI,self.getAngles('helix','GA'), 0.0, doLock)
+                        else:
+                            RNARotamer.setDihedrals(resI,self.getAngles('helix','CU'), 0.0, doLock)
+                        if resJ.getName() in 'GA':
+                            RNARotamer.setDihedrals(resJ,self.getAngles('helix','GA'), 0.0, doLock)
+                        else:
+                            RNARotamer.setDihedrals(resJ,self.getAngles('helix','CU'), 0.0, doLock)
             elif ss.getName() == "Loop":
                 loopResidues = ss.getResidues()
                 if len(loopResidues) == 4:
@@ -1232,10 +1238,14 @@ class refine:
                         print loopResidues[i]
                         RNARotamer.setDihedrals(loopResidues[i],self.getAngles('tetraloop4'), 0.0, doLock)
 					
-    def getAngles(self,resPosition):
+    def getAngles(self,resPosition, resType=None):
         filetext = open('angles.dict', 'r').read()
         anglesDict = eval(filetext)
-        return anglesDict[resPosition]
+        print anglesDict
+        if resType == None:
+            return anglesDict[resPosition]
+        else:
+            return anglesDict[resPosition,resType]
 
     def readMolEditDict(self,seqReader, editDict):
         for entry in editDict:

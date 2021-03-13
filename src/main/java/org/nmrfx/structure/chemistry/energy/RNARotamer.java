@@ -746,10 +746,28 @@ public class RNARotamer {
         setDihedrals(residue, suiteName, 0.0, doFreeze);
     }
 
+    /**
+     * Set the dihedral angles for the specified residue based on angles for the
+     * specified suite.
+     *
+     * @param residue Set angles in this residue
+     * @param suiteName Get the angles from the suite with this name
+     */
     public static void setDihedrals(Residue residue, String suiteName) {
         setDihedrals(residue, suiteName, 0.0, false);
     }
 
+    /**
+     * Set the dihedral angles for the specified residue based on angles for the
+     * specified suite.
+     *
+     * @param residue Set angles in this residue
+     * @param suiteName Get the angles from the suite with this name
+     * @param sdev Vary the angle from the suite value by a random number chosen
+     * from a Gaussian distribution with a standard deviation of sdev
+     * @param doFreeze If true, freeze the angle so it is not adjusted during
+     * refinement
+     */
     public static void setDihedrals(Residue residue, String suiteName, double sdev, boolean doFreeze) {
         RNARotamer rotamer = ROTAMERS.get(suiteName);
         int j = 0;
@@ -787,10 +805,39 @@ public class RNARotamer {
         residue.molecule.genCoords(false);
     }
 
+    /**
+     *
+     * Set the dihedral angles for the specified residue based on angles for the
+     * specified suite.
+     *
+     * @param residue Set angles in this residue
+     * @param angles Am array of angle values to set. The angles are set on the
+     * atoms named in the PRESET_ATOMS array.
+     * @param sdev Vary the angle from the suite value by a random number chosen
+     * from a Gaussian distribution with a standard deviation of sdev
+     * @param doFreeze If true, freeze the angle so it is not adjusted during
+     * refinement
+     */
     public static void setDihedrals(Residue residue, double[] angles, double sdev, boolean doFreeze) {
         setDihedrals(residue, PRESET_ATOMS, angles, sdev, doFreeze);
     }
 
+    /**
+     *
+     * Set the dihedral angles for the specified residue based on angles for the
+     * specified suite.
+     *
+     * @param residue Set angles in this residue
+     * @param atomNames The atoms whose angles are set. This specifies the name
+     * of the daughter atom of the rotatable bond. That is, the atom name here
+     * is atom D, for the torsion A-B-C-D (rotation around bond B-C)
+     * @param angles Am array of angle values to set. The angles are set on the
+     * atoms named in atomNames.
+     * @param sdev Vary the angle from the suite value by a random number chosen
+     * from a Gaussian distribution with a standard deviation of sdev
+     * @param doFreeze If true, freeze the angle so it is not adjusted during
+     * refinement
+     */
     public static void setDihedrals(Residue residue, String[] atomNames, double[] angles, double sdev, boolean doFreeze) {
         int j = 0;
         sdev = Math.toRadians(sdev);
@@ -814,6 +861,59 @@ public class RNARotamer {
                     atom.setDihedral(Math.toDegrees(angle));
                     if (doFreeze) {
                         atom.parent.setRotActive(false);
+                    }
+                }
+            }
+            j++;
+        }
+        residue.molecule.genCoords(false);
+    }
+
+    /**
+     *
+     * Set the dihedral angles for the specified residue based on angles for the
+     * specified suite.
+     *
+     * @param residue Set angles in this residue
+     * @param angleMap A map with atomNames as key and angles (in degrees) as
+     * values. The atomNames (unlike the other setDihedrals methods) specify
+     * atom C, for the torsion A-B-C-D (rotation around bond B-C).
+     * @param sdev Vary the angle from the suite value by a random number chosen
+     * from a Gaussian distribution with a standard deviation of sdev
+     * @param doFreeze If true, freeze the angle so it is not adjusted during
+     * refinement
+     */
+    public static void setDihedrals(Residue residue, Map<String, Double> angleMap, double sdev, boolean doFreeze) {
+        int j = 0;
+        sdev = Math.toRadians(sdev);
+        for (String atomKey : angleMap.keySet()) {
+            String atomName = atomKey;
+            int colonPos = atomName.indexOf(':');
+            int delta = 0;
+            if (colonPos != -1) {
+                String deltaRes = atomName.substring(0, colonPos);
+                delta = Integer.valueOf(deltaRes);
+                atomName = atomName.substring(colonPos + 1);
+            }
+            Residue applyResidue = delta < 0 ? residue.previous : residue;
+            if (applyResidue != null) {
+                Atom atom = applyResidue.getAtom(atomName);
+                if (atom != null) {
+                    Atom daughterAtom = atom.daughterAtom;
+                    if (daughterAtom != null) {
+                        if (angleMap.containsKey(atomKey)) {
+                            double angle = Math.toRadians(angleMap.get(atomKey)); // Converted to radians
+                            if (sdev != 0.0) {
+                                angle += CmaesRefinement.DEFAULT_RANDOMGENERATOR.nextGaussian() * sdev;
+                            }
+                            daughterAtom.setDihedral(Math.toDegrees(angle));
+                            if (doFreeze) {
+                                atom.setRotActive(false);
+                            }
+                        } else {
+                            System.out.println("No atom " + atomName + " " + applyResidue.getName() + " " + angleMap.toString());
+
+                        }
                     }
                 }
             }
