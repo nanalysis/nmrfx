@@ -48,7 +48,7 @@ public class NMRViewData implements NMRData {
     private boolean isSpectrum = true;
     private boolean isFloat = false, isShort = false, isComplex = true;
     private Dataset dataset;
-    private HashMap<String, String> parMap = null;
+    private final HashMap<String, String> parMap = null;
     private String[] acqOrder;
     private SampleSchedule sampleSchedule = null;
 
@@ -73,6 +73,7 @@ public class NMRViewData implements NMRData {
         this.fpath = dataset.getFileName();
     }
 
+    @Override
     public void close() {
         dataset.close();
     }
@@ -87,9 +88,9 @@ public class NMRViewData implements NMRData {
 
     private static boolean findFIDFiles(String dpath) {
         boolean found = false;
-        if (dpath.toString().endsWith(".nv")) {
+        if (dpath.endsWith(".nv")) {
             found = true;
-        } else if (dpath.toString().endsWith(".ucsf")) {
+        } else if (dpath.endsWith(".ucsf")) {
             found = true;
         }
         return found;
@@ -254,9 +255,7 @@ public class NMRViewData implements NMRData {
             }
         } else {
             this.acqOrder = new String[newOrder.length];
-            for (int i = 0; i < newOrder.length; i++) {
-                this.acqOrder[i] = newOrder[i];
-            }
+            System.arraycopy(newOrder, 0, this.acqOrder, 0, newOrder.length);
         }
     }
 
@@ -321,7 +320,7 @@ public class NMRViewData implements NMRData {
     }
 
     private String getAxisFreqName(int iDim) {
-        String freqName = "hz";
+        String freqName;
         char achar = getAxisChar(iDim);
         switch (achar) {
             case 'h':
@@ -539,6 +538,7 @@ public class NMRViewData implements NMRData {
         return null;
     }
 
+    @Override
     public List<Double> getValues(int dim) {
         double[] values = dataset.getValues(dim);
         if (values == null) {
@@ -583,6 +583,7 @@ public class NMRViewData implements NMRData {
         }
     }
 
+    @Override
     public void readVector(int iDim, int iVec, Vec dvec) {
     }
 

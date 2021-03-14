@@ -421,6 +421,7 @@ class JCAMPData implements NMRData {
     }
 
     // open and read Bruker text file
+    @Override
     public String getText() {
         if (text == null) {
             String textPath = "";

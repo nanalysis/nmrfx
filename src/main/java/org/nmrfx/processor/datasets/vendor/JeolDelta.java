@@ -198,7 +198,7 @@ public class JeolDelta implements NMRData {
 
     @Override
     public double getRef(int dim) {
-        double ref = 0.0;
+        double ref;
         if (refValue[dim] != null) {
             ref = refValue[dim];
         } else {
@@ -306,7 +306,6 @@ public class JeolDelta implements NMRData {
 
     @Override
     public String[] getLabelNames() {
-        int nDim = getNDim();
         ArrayList<String> names = new ArrayList<>();
         for (int i = 0; i < nDim; i++) {
             String name = getTN(i);
@@ -477,6 +476,7 @@ public class JeolDelta implements NMRData {
             return new JeolUnits(siPrefix, unitPower, b1);
         }
 
+        @Override
         public String toString() {
             return prefix + " " + power + " " + unit;
         }
