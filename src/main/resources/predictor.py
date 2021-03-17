@@ -76,6 +76,9 @@ def dumpLigandPredictions(mol, location=-1):
 
 
 def dumpPredictions(mol, location=-1, outputMode="star", selected=False, header=False, model=-1):
+    if outputMode.startswith('star') and outputMode.endswith('H'):
+        outputMode = outputMode[0:-1]
+        header = True
     if outputMode == 'star' and header: 
         #tags = tags.split()
         print tags
@@ -226,7 +229,7 @@ def parseArgs():
     parser.add_argument("-s", dest="iStruct", default=0, type=int,  help="Model to read.  0 reads first, -1 reads all, other values read specified model (0)")
     parser.add_argument("-m", dest="model", default=0, type=int,  help="Model to use for coordinates (0)")
     parser.add_argument("-r", dest="rnaPredMode", default="dist", help="Prediction mode used for rna prediction.  Can be dist, rc or attr.")
-    parser.add_argument("-o", dest="outputMode", default="star", help="Output mode.  Can be star, protein or attr.  If set to star the output will be a portion of a BMRB chemical shift save frame.  If protein it will be a table of backbone protein shifts.  Mode attr is only appropriate to RNA predictions done with attributes.")
+    parser.add_argument("-o", dest="outputMode", default="star", help="Output mode.  Can be star,starH, protein or attr.  If set to star or starH  the output will be a portion of a BMRB chemical shift save frame (if starH the STAR save frame header will be included).   If protein it will be a table of backbone protein shifts.  Mode attr is only appropriate to RNA predictions done with attributes.")
     parser.add_argument("fileNames",nargs="*")
     args = parser.parse_args()
     for fileName in args.fileNames:
@@ -234,7 +237,7 @@ def parseArgs():
              predictRNAWithYaml(fileName, args.location, args.outputMode, args.rnaPredMode)
         else:
              if args.rnaPredMode == "attr":
-                 predictRNAWithStructureAttributes(fileName, args.model, args.location, args.outputMode, args.rnaPredMode)
+                 predictRNAWithStructureAttributes(fileName, args.location, args.outputMode, args.rnaPredMode)
              else:
                  if args.model != args.iStruct:
                      args.iStruct = -1
