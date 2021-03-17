@@ -344,6 +344,20 @@ public class MoleculeBase implements Serializable, ITree {
         return ProjectBase.getActive().getCompoundMap();
     }
 
+    public void buildCompoundMap() {
+        Map<String, Compound> map = compoundMap();
+        for (Polymer polymer : getPolymers()) {
+            for (Residue residue : polymer.getResidues()) {
+                String mapID = polymer.getIDNum() + "." + polymer.getIDNum() + "." + residue.getIDNum();
+                map.put(mapID, residue);
+            }
+        }
+        for (Compound compound : getLigands()) {
+            String mapID = 1 + "." + compound.getIDNum() + "." + compound.getIDNum();
+            map.put(mapID, compound);
+        }
+    }
+
     public MolecularConstraints getMolecularConstraints() {
         return molecularConstraints;
     }
