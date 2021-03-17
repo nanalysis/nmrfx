@@ -28,7 +28,7 @@ public class SimData {
     final short[][] jValues;
     final short[][] jPairs;
 
-    SimData(String name, String id, int nBlocks) {
+    public SimData(String name, String id, int nBlocks) {
         this.name = name;
         this.id = id;
         ppms = new short[nBlocks][];
@@ -41,7 +41,7 @@ public class SimData {
         return !simDataMap.isEmpty();
     }
 
-    void setPPMs(int iBlock, List<Double> values) {
+    public void setPPMs(int iBlock, List<Double> values) {
         ppms[iBlock] = new short[values.size()];
         for (int i = 0; i < ppms[iBlock].length; i++) {
             double f = values.get(i) / ppmScale;
@@ -57,7 +57,7 @@ public class SimData {
         return values;
     }
 
-    void setJValues(int iBlock, List<Double> values) {
+    public void setJValues(int iBlock, List<Double> values) {
         jValues[iBlock] = new short[values.size()];
         for (int i = 0; i < jValues[iBlock].length; i++) {
             double f = values.get(i) / jScale;
@@ -73,7 +73,7 @@ public class SimData {
         return values;
     }
 
-    void setJPairs(int iBlock, List<Integer> values) {
+    public void setJPairs(int iBlock, List<Integer> values) {
         jPairs[iBlock] = new short[values.size()];
         for (int i = 0; i < jPairs[iBlock].length; i++) {
             jPairs[iBlock][i] = values.get(i).shortValue();
