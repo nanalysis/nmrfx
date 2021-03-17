@@ -569,4 +569,27 @@ public class Multiplet implements PeakOrMulti, Comparable {
         width[0] = Math.abs(p[0][0] - p[0][1]);
 
     }
+
+    public double[] simulate(int m, double min, double max) {
+        double widthLimit = 0.0001;
+        List<AbsMultipletComponent> comps = getAbsComponentList();
+        double delta = (max - min) / (m - 1);
+        double f = min;
+        double[] bpCoords = new double[m];
+        for (int i = 0; i < m; i++) {
+            for (AbsMultipletComponent comp : comps) {
+                double c = comp.getOffset();
+                double w = comp.getLineWidth();
+                if (w < widthLimit) {
+                    w = widthLimit;
+                }
+                double a = comp.getIntensity();
+                bpCoords[i] += ((a * ((w * w) / 4)) / (((w * w) / 4)
+                        + ((f - c) * (f - c))));
+            }
+
+            f += delta;
+        }
+        return bpCoords;
+    }
 }
