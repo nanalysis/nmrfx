@@ -808,9 +808,20 @@ public class BrukerData implements NMRData {
         }
         if ((ipar = getParInt("TD,1")) != null) {
             np = ipar;
-            int pad = np % 256;
-            if (dType != 2 && (pad > 0)) {
-                tbytes = (np + 256 - pad) * bytesPerWord;
+            if (dType == 0) {
+                int pad = np % 256;
+                if (pad > 0) {
+                    tbytes = (np + 256 - pad) * bytesPerWord;
+                } else {
+                    tbytes = np * bytesPerWord;
+                }
+            } else if (dType == 2) {
+                int pad = np % 128;
+                if (pad > 0) {
+                    tbytes = (np + 128 - pad) * bytesPerWord;
+                } else {
+                    tbytes = np * bytesPerWord;
+                }
             } else {
                 tbytes = np * bytesPerWord;
             }
