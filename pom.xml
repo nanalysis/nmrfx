@@ -5,7 +5,7 @@
     <groupId>org.nmrfx</groupId>
     <artifactId>nmrfx-processor</artifactId>
     <packaging>jar</packaging>
-    <version>11.1.13</version>
+    <version>11.1.14</version>
     <name>nmrfx-processor</name>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -15,7 +15,7 @@
         <dependency>
             <groupId>org.nmrfx</groupId>
             <artifactId>nmrfx-core</artifactId>
-            <version>11.1.13</version>
+            <version>11.1.14</version>
         </dependency>
         <dependency>
             <groupId>com.github.jnr</groupId>
