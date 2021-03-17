@@ -48,6 +48,7 @@ import org.nmrfx.peaks.Peak;
 import org.nmrfx.utilities.NvUtil;
 import org.nmrfx.peaks.io.PeakPathReader;
 import org.nmrfx.chemistry.RelaxationData.relaxTypes;
+import org.nmrfx.project.ProjectBase;
 
 /**
  *
@@ -338,7 +339,7 @@ public class NMRStarReader {
             }
         }
     }
-    
+
     public void buildNOE() throws ParseException {
         for (Saveframe saveframe : star3.getSaveFrames().values()) {
             if (saveframe.getCategoryName().equals("heteronucl_NOEs")) {
@@ -349,7 +350,7 @@ public class NMRStarReader {
             }
         }
     }
-    
+
     public void buildRelaxation(relaxTypes expType) throws ParseException {
         for (Saveframe saveframe : star3.getSaveFrames().values()) {
             if (saveframe.getCategoryName().equals("heteronucl_" + expType + "_relaxation")) {
@@ -1081,6 +1082,14 @@ public class NMRStarReader {
                 ppmSet = -1 - ppmSet;
             }
             var compoundMap = MoleculeBase.compoundMap();
+            // map may be empty if we're importing shifts into new project
+            // without reading star file with entity
+            if (compoundMap.isEmpty()) {
+                if (molecule == null) {
+                    molecule = MoleculeFactory.getActive();
+                }
+                molecule.buildCompoundMap();
+            }
             List<String> entityAssemblyIDColumn = loop.getColumnAsList("Entity_assembly_ID");
             List<String> entityIDColumn = loop.getColumnAsList("Entity_ID");
             List<String> compIdxIDColumn = loop.getColumnAsList("Comp_index_ID");
@@ -1247,7 +1256,7 @@ public class NMRStarReader {
             }
         }
     }
-    
+
     public void processNOE(Saveframe saveframe) throws ParseException {
         String frameName = saveframe.getCategory("_Heteronucl_NOE_list").get("Sf_framecode");
         String field = saveframe.getCategory("_Heteronucl_NOE_list").get("Spectrometer_frequency_1H");
@@ -1256,7 +1265,7 @@ public class NMRStarReader {
         String refDescription = saveframe.getCategory("_Heteronucl_NOE_list").get("ref_description");
         extras.put("refVal", refVal);
         extras.put("refDescription", refDescription);
-       
+
         MoleculeBase mol = MoleculeFactory.getActive();
         var compoundMap = MoleculeBase.compoundMap();
         Loop loop = saveframe.getLoop("_Heteronucl_NOE");
@@ -1274,7 +1283,7 @@ public class NMRStarReader {
         List<String> atom2Column = loop.getColumnAsList("Atom_ID_2");
         List<String> valColumn = loop.getColumnAsList("Val");
         List<String> errColumn = loop.getColumnAsList("Val_err");
-                
+
         for (int i = 0; i < entityAssemblyIDColumn.size(); i++) {
             String iEntity = (String) entityIDColumn.get(i);
             String entityAssemblyID = (String) entityAssemblyIDColumn.get(i);
@@ -1298,9 +1307,9 @@ public class NMRStarReader {
             if (!errColumn.get(i).equals(".")) {
                 error = Double.parseDouble(errColumn.get(i));
             }
-            
+
             double temperature = 25.0;
-            
+
             if (entityAssemblyID.equals(".")) {
                 entityAssemblyID = "1";
             }
@@ -1313,36 +1322,36 @@ public class NMRStarReader {
             }
             if (mol == null) {
                 mol = compound.molecule;
-            }            
+            }
             Atom atom = compound.getAtomLoose(atomName);
             if (atom == null) {
                 System.err.println("No atom \"" + mapID + "." + atomName + "\"");
                 continue;
                 //throw new ParseException("invalid atom in conformer saveframe \""+mapID+"."+atomName+"\"");
             }
-            
+
             if (entityAssemblyID2.equals(".")) {
                 entityAssemblyID2 = "1";
             }
             String mapID2 = entityAssemblyID2 + "." + iEntity2 + "." + iRes2;
-    
+
             Atom atom2 = compound.getAtomLoose(atomName2);
             if (atom2 == null) {
                 System.err.println("No atom \"" + mapID2 + "." + atomName2 + "\"");
                 continue;
                 //throw new ParseException("invalid atom in conformer saveframe \""+mapID+"."+atomName+"\"");
             }
-            
+
             List<Atom> atoms = new ArrayList<>();
             atoms.add(atom2);
-            
+
             RelaxationData relaxData = new RelaxationData(frameName, relaxTypes.NOE, atoms, Double.parseDouble(field), temperature, value, error, extras);
 //            System.out.println("reader NOE" + relaxData);
             atom.relaxData.put(frameName, relaxData);
 //            System.out.println(atom.relaxData);
         }
     }
-    
+
     public void processRelaxation(Saveframe saveframe, relaxTypes expType) throws ParseException {
         String frameName = saveframe.getCategory("_Heteronucl_" + expType + "_list").get("Sf_framecode");
         String field = saveframe.getCategory("_Heteronucl_" + expType + "_list").get("Spectrometer_frequency_1H");
@@ -1351,7 +1360,7 @@ public class NMRStarReader {
         Map<String, String> extras = new HashMap<>();
         extras.put("coherenceType", coherenceType);
         extras.put("units", units);
-       
+
         MoleculeBase mol = MoleculeFactory.getActive();
         var compoundMap = MoleculeBase.compoundMap();
         Loop loop = saveframe.getLoop("_" + expType);
@@ -1370,8 +1379,8 @@ public class NMRStarReader {
         if (expType.equals(relaxTypes.T2) || expType.equals(relaxTypes.T1RHO)) {
             valColumn = loop.getColumnAsList(expType + "_val");
             errColumn = loop.getColumnAsList(expType + "_val_err");
-        } 
-                
+        }
+
         for (int i = 0; i < entityAssemblyIDColumn.size(); i++) {
             String iEntity = (String) entityIDColumn.get(i);
             String entityAssemblyID = (String) entityAssemblyIDColumn.get(i);
@@ -1399,7 +1408,7 @@ public class NMRStarReader {
                 }
             }
             double temperature = 25.0;
-            
+
             if (entityAssemblyID.equals(".")) {
                 entityAssemblyID = "1";
             }
@@ -1419,7 +1428,7 @@ public class NMRStarReader {
                 continue;
                 //throw new ParseException("invalid atom in conformer saveframe \""+mapID+"."+atomName+"\"");
             }
-            
+
             if (expType.equals(relaxTypes.T1)) {
                 RelaxationData relaxData = new RelaxationData(frameName, expType, new ArrayList<>(), Double.parseDouble(field), temperature, value, error, extras);
 //                System.out.println("reader " + relaxData);
