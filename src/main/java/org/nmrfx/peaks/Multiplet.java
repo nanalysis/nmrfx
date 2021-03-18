@@ -584,9 +584,9 @@ public class Multiplet implements PeakOrMulti, Comparable {
                     w = widthLimit;
                 }
                 double a = comp.getIntensity();
-                bpCoords[i] += ((a * ((w * w) / 4)) / (((w * w) / 4)
+                double v = ((a * ((w * w) / 4)) / (((w * w) / 4)
                         + ((f - c) * (f - c))));
-            }
+                }
 
             f += delta;
         }

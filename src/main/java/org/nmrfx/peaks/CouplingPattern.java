@@ -289,22 +289,23 @@ public class CouplingPattern extends Coupling {
         for (int i = 0; i < nCouplings; i++) {
             double jCoup = cplItem[i].getCoupling();
             double sin2Theta = cplItem[i].getSin2Theta();
+//            System.out.println(i + " " + jCoup + " "  + sin2Theta);
             int nSplits = cplItem[i].getNSplits();
             int last = (cplItem[i].getNSplits() * current) - 1;
             for (int j = 0; j < current; j++) {
                 double offset = jCoup * ((nSplits / 2.0) - 0.5);
                 for (int k = 0; k < nSplits; k++) {
                     double pascalAmp = PASCALS_TRIANGLE[nSplits - 1][k];
-                    // System.out.println(j + " " + current + " " + jCoup + " " + offset + " " + (current - j - 1) + " " + last + " " + freqs[last] + " " + freqs[current - j - 1]);
+//                     System.out.println(j + " cur " + current + " j " + jCoup + " off " + offset + " " + (current - j - 1) + " " + last + " fL " + freqs[last] + " fC " + freqs[current - j - 1]);
                     freqs[last] = freqs[current - j - 1] + offset;
                     if (offset > smallCoup) {
-                        jAmps[last] = jAmps[current - j - 1] * pascalAmp + sin2Theta;
+                        jAmps[last] = jAmps[current - j - 1] * (pascalAmp + sin2Theta);
                     } else if (offset < -smallCoup) {
-                        jAmps[last] = jAmps[current - j - 1] * pascalAmp - sin2Theta;
+                        jAmps[last] = jAmps[current - j - 1] * (pascalAmp - sin2Theta);
                     } else {
                         jAmps[last] = jAmps[current - j - 1] * pascalAmp;
                     }
-                    //System.out.println(i + " " + nSplits + " " + k + " " + pascalAmp + " " + freqs[last] + " " + jAmps[last]);
+//                    System.out.println(i + " n " + nSplits + " k " + k + " pA " + pascalAmp + " f " + freqs[last] + " jA " + jAmps[last]);
                     last--;
                     offset -= jCoup;
                 }
