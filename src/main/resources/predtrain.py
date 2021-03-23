@@ -7,7 +7,7 @@ import super
 import rnapred
 import urllib2
 from org.nmrfx.structure.chemistry import Molecule
-from org.nmrfx.structure.chemistry import MolFilter
+from org.nmrfx.chemistry import MolFilter
 from org.nmrfx.structure.chemistry.energy import RingCurrentShift
 from org.nmrfx.chemistry.io import PDBFile
 from org.apache.commons.math3.stat.descriptive import DescriptiveStatistics
