@@ -201,6 +201,11 @@ public class Analyzer {
         setVolumesFromIntegrals();
     }
 
+    public void peakPickRegion(DatasetRegion region) {
+        updateThreshold();
+        peakPickRegion(region.getRegionStart(0), region.getRegionEnd(0), threshold);
+    }
+
     public void peakPickRegion(double ppm1, double ppm2) {
         updateThreshold();
         peakPickRegion(ppm1, ppm2, threshold);
@@ -228,13 +233,20 @@ public class Analyzer {
     public Optional<Double> measureRegion(DatasetRegion region, String mode) throws Exception {
         List<PeakDim> peakDims = Multiplets.findPeaksInRegion(peakList, region);
         double[] bounds = {region.getRegionStart(0), region.getRegionEnd(0)};
-        PeakFitting peakFitting = new PeakFitting(dataset);
         Optional<Double> result = Optional.empty();
-        try {
-            double value = peakFitting.jfitRegion(region, peakDims, mode);
-            result = Optional.of(value);
-        } catch (IllegalArgumentException | PeakFitException | IOException ex) {
-            System.out.println("error in fit " + ex.getMessage());
+        if (peakDims.isEmpty()) {
+            region.measure(dataset);
+            int maxLoc = region.getMaxLocation()[0];
+            double ppmLoc = dataset.pointToPPM(0, maxLoc);
+            result = Optional.of(ppmLoc);
+        } else {
+            PeakFitting peakFitting = new PeakFitting(dataset);
+            try {
+                double value = peakFitting.jfitRegion(region, peakDims, mode);
+                result = Optional.of(value);
+            } catch (IllegalArgumentException | PeakFitException | IOException ex) {
+                System.out.println("error in fit " + ex.getMessage());
+            }
         }
         return result;
     }
@@ -816,7 +828,14 @@ public class Analyzer {
     }
 
     public void objectiveDeconvolution(DatasetRegion region) throws Exception {
+        if (peakList == null) {
+            peakPickRegion(region);
+        }
         List<PeakDim> peakDims = Multiplets.findPeaksInRegion(peakList, region);
+        if (peakDims.isEmpty()) {
+            peakPickRegion(region);
+            peakDims = Multiplets.findPeaksInRegion(peakList, region);
+        }
         PeakFitting peakFitting = new PeakFitting(dataset);
         int nComps = peakDims.size();
         int nAdd = 0;
@@ -829,8 +848,12 @@ public class Analyzer {
         for (PeakDim peakDim : peakDims) {
             peakDim.getPeak().setFlag(4, false);
         }
-        double rms = peakFitting.jfitRegion(region, peakDims, "all");
-        double minBIC = peakFitting.getBIC();
+        double rms = Double.MAX_VALUE;
+        double minBIC = Double.MAX_VALUE;
+        if (!peakDims.isEmpty()) {
+            rms = peakFitting.jfitRegion(region, peakDims, "all");
+            minBIC = peakFitting.getBIC();
+        }
         System.out.println("start " + rms + " " + minBIC);
         for (int i = 0; i < nAdd; i++) {
             Optional<Double> result = measureRegion(region, "maxdev");

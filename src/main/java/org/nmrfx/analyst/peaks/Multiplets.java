@@ -1,6 +1,5 @@
 package org.nmrfx.analyst.peaks;
 
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -1170,19 +1169,20 @@ public class Multiplets {
     }
 
     public static List<PeakDim> findPeaksInRegion(PeakList peakList, DatasetRegion region) {
-        int[] dim = new int[peakList.nDim];
-        for (int i = 0; i < dim.length; i++) {
-            dim[i] = i;
-        }
-        double[][] limits = new double[1][2];
-        limits[0][0] = region.getRegionStart(0);
-        limits[0][1] = region.getRegionEnd(0);
-        PeakDim rootPeak = null;
-        List<Peak> peaks = locatePeaks(peakList, limits, dim);
         List<PeakDim> peakDims = new ArrayList<>();
-        for (Peak peak : peaks) {
-            peakDims.add(peak.getPeakDim(0));
+        if (peakList != null) {
+            int[] dim = new int[peakList.nDim];
+            for (int i = 0; i < dim.length; i++) {
+                dim[i] = i;
+            }
+            double[][] limits = new double[1][2];
+            limits[0][0] = region.getRegionStart(0);
+            limits[0][1] = region.getRegionEnd(0);
+            List<Peak> peaks = locatePeaks(peakList, limits, dim);
+            for (Peak peak : peaks) {
+                peakDims.add(peak.getPeakDim(0));
 
+            }
         }
         return peakDims;
     }
