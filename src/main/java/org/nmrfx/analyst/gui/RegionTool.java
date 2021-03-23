@@ -352,6 +352,15 @@ public class RegionTool implements ControllerTool {
         }
     }
 
+    private void showPeakList() {
+        List<String> peakListNames = new ArrayList<>();
+        PeakList peakList = analyzer.getPeakList();
+        if (peakList != null) {
+            peakListNames.add(peakList.getName());
+            chart.updatePeakLists(peakListNames);
+        }
+    }
+
     private void findRegions() {
         Analyzer analyzer = getAnalyzer();
         if (analyzer != null) {
@@ -712,6 +721,7 @@ public class RegionTool implements ControllerTool {
         activeRegion.ifPresent(region -> {
             try {
                 analyzer.objectiveDeconvolution(region);
+                showPeakList();
                 chart.refresh();
                 refresh();
             } catch (Exception ex) {
@@ -728,6 +738,7 @@ public class RegionTool implements ControllerTool {
                 if (result.isPresent()) {
                     System.out.println("dev pos " + result.get());
                     analyzer.addPeaksToRegion(region, result.get());
+                    showPeakList();
                     chart.refresh();
                     refresh();
                 }
