@@ -219,8 +219,7 @@ public class SimFitMolController extends SimMolController {
              */
             double refConc = 1.0;
             double cmpdConc = 1.0;
-            double frac = 1.0e-3;
-            CompoundData cData = SimData.genCompoundData(name, name, pars, lb, refConc, cmpdConc, frac);
+            CompoundData cData = SimData.genCompoundData(name, name, pars, lb, refConc, cmpdConc);
             CompoundData.put(cData, name);
             activeField.getItems().add(name);
             cmpdMatcher.addMatch(cData);
