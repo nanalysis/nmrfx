@@ -3670,8 +3670,22 @@ public class PolyChart implements PeakListener {
         }
         if (dataset.getNDim() == 2) {
             try {
+                List<String> datasetNames = new ArrayList<>();
+                datasetNames.add(dataset.getName());
                 dataset.project(0);
                 dataset.project(1);
+                Dataset proj0 = dataset.getProjection(0);
+                Dataset proj1 = dataset.getProjection(1);
+                if (proj0 != null) {
+                    datasetNames.add(proj0.getName());
+                    chartProps.setTopBorderSize(150);
+                }
+                if (proj1 != null) {
+                    datasetNames.add(proj1.getName());
+                    chartProps.setRightBorderSize(150);
+                }
+                updateDatasets(datasetNames);
+                refresh();
             } catch (IOException ex) {
             }
         }
@@ -3798,23 +3812,25 @@ public class PolyChart implements PeakListener {
         if ((nDim > 1) && controller.sliceStatus.get() && sliceStatus.get()) {
             if (((iOrient == HORIZONTAL) && xOn) || ((iOrient == VERTICAL) && yOn)) {
                 for (DatasetAttributes datasetAttributes : datasetAttributesList) {
-                    if (iOrient == HORIZONTAL) {
-                        drawSpectrum.drawSlice(datasetAttributes, sliceAttributes, HORIZONTAL, crossHairPositions[iCross][VERTICAL], crossHairPositions[iCross][HORIZONTAL], bounds, getPh0(0), getPh1(0));
-                    } else {
-                        drawSpectrum.drawSlice(datasetAttributes, sliceAttributes, VERTICAL, crossHairPositions[iCross][VERTICAL], crossHairPositions[iCross][HORIZONTAL], bounds, getPh0(1), getPh1(1));
-                    }
-                    double[][] xy = drawSpectrum.getXY();
-                    int nPoints = drawSpectrum.getNPoints();
-                    if (sliceAttributes.useDatasetColorProperty().get()) {
-                        gC.setStroke(datasetAttributes.getPosColor());
-                    } else {
-                        if (iCross == 0) {
-                            gC.setStroke(sliceAttributes.getSlice1Color());
+                    if (datasetAttributes.getDataset().getNDim() > 1) {
+                        if (iOrient == HORIZONTAL) {
+                            drawSpectrum.drawSlice(datasetAttributes, sliceAttributes, HORIZONTAL, crossHairPositions[iCross][VERTICAL], crossHairPositions[iCross][HORIZONTAL], bounds, getPh0(0), getPh1(0));
                         } else {
-                            gC.setStroke(sliceAttributes.getSlice2Color());
+                            drawSpectrum.drawSlice(datasetAttributes, sliceAttributes, VERTICAL, crossHairPositions[iCross][VERTICAL], crossHairPositions[iCross][HORIZONTAL], bounds, getPh0(1), getPh1(1));
                         }
+                        double[][] xy = drawSpectrum.getXY();
+                        int nPoints = drawSpectrum.getNPoints();
+                        if (sliceAttributes.useDatasetColorProperty().get()) {
+                            gC.setStroke(datasetAttributes.getPosColor());
+                        } else {
+                            if (iCross == 0) {
+                                gC.setStroke(sliceAttributes.getSlice1Color());
+                            } else {
+                                gC.setStroke(sliceAttributes.getSlice2Color());
+                            }
+                        }
+                        gC.strokePolyline(xy[0], xy[1], nPoints);
                     }
-                    gC.strokePolyline(xy[0], xy[1], nPoints);
                 }
             }
         }
