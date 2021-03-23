@@ -24,7 +24,6 @@ public class CompoundData {
     private final double sf;
     private final double sw;
     private final int n;
-    private final int nProtons;
     private final String name;
     private final double refConc;
     private final double cmpdConc;
@@ -32,7 +31,7 @@ public class CompoundData {
     private double regionNorm = 0.0;
     List<Region> regions = new ArrayList<>();
 
-    public CompoundData(String cmpdID, String name, double ref, double sf, double sw, int n, double refConc, double cmpdConc, int nProtons, double refNProtons) {
+    public CompoundData(String cmpdID, String name, double ref, double sf, double sw, int n, double refConc, double cmpdConc, double refNProtons) {
         this.id = cmpdID;
         this.name = name;
         this.ref = ref;
@@ -41,7 +40,6 @@ public class CompoundData {
         this.n = n;
         this.refConc = refConc;
         this.cmpdConc = cmpdConc;
-        this.nProtons = nProtons;
         this.refNProtons = refNProtons;
     }
 

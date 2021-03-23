@@ -6,7 +6,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-import org.nmrfx.math.VecBase.IndexValue;
 import org.nmrfx.analyst.compounds.CompoundData;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.math.Vec;
@@ -35,7 +34,6 @@ public class SimData {
         jValues = new short[nBlocks][];
         jPairs = new short[nBlocks][];
     }
-
 
     public static boolean loaded() {
         return !simDataMap.isEmpty();
@@ -141,69 +139,104 @@ public class SimData {
 //    public CompoundData(String cmpdID, String name, double ref, double sf, double sw, int n, double refConc, double cmpdConc, double refNProtons) {
 
     public static CompoundData genCompoundData(String cmpdID, String name, SimDataVecPars pars, double lb,
-            double refConc, double cmpdConc, double frac) {
+            double refConc, double cmpdConc) {
         Vec vec = prepareVec(name, pars);
-        int nProtons = genVec(name, vec, lb);
-        double refNProtons = 9.0;
-        CompoundData cData = new CompoundData(cmpdID, name, pars.getVref(), pars.getSf(), pars.getSw(), pars.getN(), refConc, cmpdConc, nProtons, refNProtons);
-        genRegions(cData, vec, frac);
+        List<Region> regions = genVec(name, vec, lb);
+        CompoundData cData = genRegions(cmpdID, name, pars, refConc, cmpdConc, vec, regions);
         return cData;
     }
 
-    public static int genVec(String name, Vec vec, double lb) throws IllegalArgumentException {
+    static class Region {
+
+        double min;
+        double max;
+        int nProtons;
+
+        public Region(double min, double max, int nProtons) {
+            this.min = min;
+            this.max = max;
+            this.nProtons = nProtons;
+        }
+
+    }
+
+    public static List<Region> genVec(String name, Vec vec, double lb) throws IllegalArgumentException {
         SimData data = simDataMap.get(name);
         if (data == null) {
             throw new IllegalArgumentException("Can't find data for \"" + name + "\"");
         }
         vec.zeros();
         int nBlocks = data.ppms.length;
-        int nProtons = 0;
+        List<double[]> regions = new ArrayList<>();
         for (int i = 0; i < nBlocks; i++) {
             double[] shifts = data.getPPMs(i);
-            nProtons += shifts.length;
             double[] couplings = data.getJValues(i);
             int[] pairs = data.getJPairs(i);
+            for (int j = 0; j < shifts.length; j++) {
+                double min = shifts[j];
+                double max = shifts[j];
+                for (int k = 0; k < couplings.length; k++) {
+                    if ((pairs[k * 2] - 1 == j) || (pairs[k * 2 + 1] - 1 == j)) {
+                        double delta = Math.abs(couplings[k]) / vec.getSF();
+                        min = min - delta / 2;
+                        max = max + delta / 2;
+                    }
+                }
+                double[] region = {min - 3 * lb / vec.getSF(), max + 3 * lb / vec.getSF()};
+                regions.add(region);
+            }
             SimShifts simShifts = new SimShifts(shifts, couplings, pairs, vec.getSF());
             simShifts.diag();
             simShifts.makeSpec(vec);
         }
+        regions.sort((a, b) -> Double.compare(a[0], b[0]));
+        double min = regions.get(0)[0];
+        double max = regions.get(0)[1];
+        List<Region> filteredRegions = new ArrayList<>();
+        int nProtons = 1;
+        for (int i = 1; i < regions.size(); i++) {
+            double[] region = regions.get(i);
+            if ((region[0] > max) || (i == regions.size() - 1)) {
+                if (i == regions.size() - 1) {
+                    max = region[1];
+                }
+                Region fRegion = new Region(min, max, nProtons);
+                filteredRegions.add(fRegion);
+                min = region[0];
+                max = region[1];
+                nProtons = 1;
+            } else {
+                nProtons++;
+                max = region[1];
+            }
+        }
+        filteredRegions.sort((a, b) -> Double.compare(b.min, a.min));
         vec.hft();
         vec.ift();
         vec.decay(lb, 0.0, 1.0);
         vec.fft();
         vec.phase(45.0, 0.0);
-        return nProtons;
+        vec.scale(250.0);
+        return filteredRegions;
     }
 
-    public static void genRegions(CompoundData cData, Vec vec, double frac) {
-        IndexValue indexValue = vec.maxIndex();
-        double maxIntensity = indexValue.getValue();
-        double threshold = maxIntensity * frac;
+    public static CompoundData genRegions(String cmpdID, String name, SimDataVecPars pars, double refConc, double cmpdConc, Vec vec, List<Region> regions) {
+        double refNProtons = 9.0;
+        CompoundData cData = new CompoundData(cmpdID, name, pars.getVref(), pars.getSf(), pars.getSw(), pars.getN(), refConc, cmpdConc, refNProtons);
         int n = vec.getSize();
-        boolean inSignal = false;
-        int start = 0;
-        int end = 0;
-        List<Double> values = new ArrayList<>();
-        for (int i = 0; i < n; i++) {
-            double value = vec.getReal(i);
-            if (value > threshold) {
-                if (!inSignal) {
-                    inSignal = true;
-                    start = i;
-                }
-                values.add(value);
-            } else {
-                if (inSignal) {
-                    inSignal = false;
-                    end = i - 1;
-                    double[] intensities = values.stream().mapToDouble(d -> d).toArray();
-                    values.clear();
-                    double startPPM = vec.pointToPPM(start);
-                    double endPPM = vec.pointToPPM(end);
-                    cData.addRegion(intensities, start, end, startPPM, endPPM);
-                }
+
+        for (Region region : regions) {
+            int pt1 = vec.refToPt(region.max);
+            int pt2 = vec.refToPt(region.min);
+            double[] intensities = new double[pt2 - pt1 + 1];
+            int j = 0;
+            for (int i = pt1; i <= pt2; i++) {
+                intensities[j++] = vec.getReal(i);
             }
+            cData.addRegion(intensities, pt1, pt2, region.max, region.min);
         }
+        return cData;
+
     }
 
     public static void load() {
