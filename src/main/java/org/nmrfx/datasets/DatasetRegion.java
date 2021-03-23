@@ -21,6 +21,7 @@ public class DatasetRegion implements Comparator, Comparable {
     double integral;
     double min;
     double max;
+    int[] maxLocation;
     boolean isAuto = true;
 
     public static TreeSet<DatasetRegion> loadRegions(File file) throws IOException {
@@ -405,6 +406,10 @@ public class DatasetRegion implements Comparator, Comparable {
     public double getMin() {
         return min;
     }
+    
+    public int[] getMaxLocation() {
+        return maxLocation;
+    }
 
     public boolean isAuto() {
         return isAuto;
@@ -433,12 +438,16 @@ public class DatasetRegion implements Comparator, Comparable {
 
         for (int i = istart; i <= iend; i++) {
             pt[0] = i;
+            
 
             double value = dataset.readPoint(pt);
             value -= offset;
             offset += delta;
             min = Math.min(min, value);
-            max = Math.max(max, value);
+            if (value > max) {
+                max = value;
+                maxLocation = pt.clone();
+            }
             sum += value;
         }
         setIntegral(sum);
