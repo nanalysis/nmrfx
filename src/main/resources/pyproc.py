@@ -2706,7 +2706,7 @@ def WRITE(index=-1, dimag=True, isabled=False, disabled=False, vector=None, proc
         process.addOperation(op)
     return op
 
-def AUTOPHASE(firstOrder=False, maxMode=False, winSize=2, ratio=25.0, mode='flat', ph1Limit=45.0, negativePenalty=1.0, disabled=False, vector=None, process=None):
+def AUTOPHASE(firstOrder=False, maxMode=False, winSize=2, ratio=25.0, mode='flat', ph1Limit=90.0, negativePenalty=1.0, disabled=False, vector=None, process=None):
     '''Auto Phase shift.
     Parameters
     ---------
@@ -2754,7 +2754,7 @@ def AUTOPHASE(firstOrder=False, maxMode=False, winSize=2, ratio=25.0, mode='flat
     else:
         process.addOperation(op)
     return op
-def DPHASE(dim=0,firstOrder=False, winSize=2, ratio=25.0, ph1Limit=45.0, disabled=False, dataset=None, process=None):
+def DPHASE(dim=0,firstOrder=False, winSize=2, ratio=25.0, ph1Limit=90.0, disabled=False, dataset=None, process=None):
     '''Auto Phase shift.
     Parameters
     ---------
