@@ -10,13 +10,36 @@ from org.nmrfx.structure.chemistry import Molecule
 from org.nmrfx.chemistry import MolFilter
 from org.nmrfx.structure.chemistry.energy import RingCurrentShift
 from org.nmrfx.chemistry.io import PDBFile
+from org.nmrfx.structure.chemistry.predict import RNAAttributes
+from org.nmrfx.structure.tools import SMILECrossValidator
+
+
+
 from org.apache.commons.math3.stat.descriptive import DescriptiveStatistics
 from org.apache.commons.math3.linear import Array2DRowRealMatrix
 from org.apache.commons.math3.linear import ArrayRealVector
 from org.apache.commons.math3.linear import SingularValueDecomposition
 
+from java.io import File
+from smile.io import Read
+from smile.io import Write
+from org.apache.commons.csv import CSVFormat
+from smile.regression import RidgeRegression
+from smile.regression import LASSO
+from smile.regression import OLS
+from smile.validation import CrossValidation
+from smile.validation.metric import RMSE
+from smile.data import DataFrame
+from smile.data.formula import Formula
+
+
+
+
+
 ringTypes = ["A0","A1","G0","G1","C0","U0"]
 #rmax = 4.6
+
+deltaB = None
 
 def getPDBFile(pdbID):
     pdbFile="pdbfiles/"+pdbID+".pdb"
@@ -47,27 +70,10 @@ def loadRCTrainingMatrix(fileName):
 
     A,b,atomCts,atomIDs (Matrix, Vector, Dictionary, Vector) the matrix and vector to be used in fitting, a dictionary of atom counts, and a vector of atom names
     """
-
-    A = []
-    b = []
-    atomCts = {}
-    atomIDs = []
-    with open(fileName,'r') as f1:
-        for line in f1:
-            line = line.strip()
-            fields = line.split('\t')
-            row = [float(v) for v in fields[1:-1]]
-            A.append(row)
-            b.append(float(fields[-1]))
-            key = fields[0][2:]
-            atomIDs.append(key)
-            if not key in atomCts.keys():
-                atomCts[key] = 1
-            elif key in atomCts.keys():
-                atomCts[key] += 1
-    AMat = Array2DRowRealMatrix(A)
-    bVec = ArrayRealVector(b)
-    return AMat, bVec, atomCts, atomIDs
+    format = CSVFormat.TDF.withFirstRecordAsHeader()
+    trainDf = Read.csv(fileName, format)
+    #data = dFrame.toArray()
+    return trainDf
 
 def genRCMat(mol, atomNames, f1, ringMode, typeRCDist):
     """
@@ -88,8 +94,11 @@ def genRCMat(mol, atomNames, f1, ringMode, typeRCDist):
 
     See also: `loadRCTrainingMatrix(...)`
     """
+    global writeHeader
     plusRingMode = False
     chiMode = True
+    refMode = True
+    atomSources = RNAAttributes.getAtomSources()
     if  (typeRCDist.lower()=='rc') or plusRingMode:
         ringShifts = RingCurrentShift()
         ringShifts.makeRingList(mol)
@@ -107,7 +116,7 @@ def genRCMat(mol, atomNames, f1, ringMode, typeRCDist):
         else:
             filterString += ","+atomId
     if  (typeRCDist.lower()=='rc'):
-        mol.calcLCMB(0, True)
+        mol.calcLCMB(0, True, True)
     molFilter = MolFilter(filterString)
     spatialSets = Molecule.matchAtoms(molFilter)
     ringRatio = 1.0
@@ -117,17 +126,31 @@ def genRCMat(mol, atomNames, f1, ringMode, typeRCDist):
         aName = atom.getName()
         nucName = atom.getEntity().getName()
         name = nucName+'.'+aName
-        row = [name]
+        header = ['AName']
+        fullName = mol.getName()+":"+atom.getFullName() 
+        row = [fullName]
         found = False
         for atomName in atomNames:
             if name == atomName or aName == atomName:
-                row.append('1')
+                row.append('1.0')
                 found = True
             else:
-                row.append('0')
+                row.append('0.0')
+            header.append('is'+atomName)
+
         if not found:
             continue
+        if refMode:
+            row = [name]
+            header = ['AName']
+        if  (typeRCDist.lower()=='rc'):
+            if not ringMode:
+                header.append('Ring')
+        else:
+            for aSrc in atomSources:
+                header.append(aSrc)
         ppm = atom.getRefPPM()
+        origPPM = ppm
         if ppm == None:
             continue
         if  (typeRCDist.lower()=='rc'):
@@ -139,13 +162,22 @@ def genRCMat(mol, atomNames, f1, ringMode, typeRCDist):
                         factor = ringFactors[ringType]
                     else:
                         factor = 0.0
+                    header.append(ringType)
                     s = "%.6f" % (factor * 5.45)
                     row.append(s)
             else:
                 s = "%.3f" % (ringPPM)
                 row.append(s)
+            if abs(ppm - refValues[name]) > 6.0:
+                print 'skip',atom.getFullName(),ppm
+                continue
+            ppm -= refValues[name]
         elif (typeRCDist.lower()=='dist'):
-            distances = mol.calcDistanceInputMatrixRow(0, rmax, atom)#/ 5.45
+            if abs(ppm - refValues[name]) > 6.0:
+                print 'skip',atom.getFullName(),ppm
+                continue
+            ppm -= refValues[name]
+            distances = mol.calcDistanceInputMatrixRow(0, rmax, atom, rnapred.intraScale)#/ 5.45
             s = [ '%.6f' % elem for elem in distances ] # "%.3f" % (distances)
             row += s
             if plusRingMode:
@@ -157,11 +189,27 @@ def genRCMat(mol, atomNames, f1, ringMode, typeRCDist):
                 sinchi = math.sin(chi)
                 coschi = math.cos(chi)
                 s = "%.3f" % (coschi)
+                header.append('coschi')
                 row.append(s)
                 s = "%.3f" % (sinchi)
+                header.append('sinchi')
                 row.append(s)
+                nu2 = atom.getEntity().calcNu2()
+                sinnu2 = math.sin(nu2)
+                cosnu2 = math.cos(nu2)
+                header.append('cosnu2')
+                s = "%.3f" % (cosnu2)
+                row.append(s)
+                header.append('sinnu2')
+                s = "%.3f" % (sinnu2)
+                row.append(s)
+
         s = "%.3f" % (ppm)
         row.append(s)
+        header.append('cs')
+        if writeHeader:
+            f1.write('\t'.join(header)+'\n')
+            writeHeader = False
         f1.write('\t'.join(row)+'\n')
 
 def predictWithRCFromPDB(pdbFile, refShifts, ringRatio, typeRCDist, atomNames, builtin):
@@ -206,7 +254,8 @@ def predictWithRCFromPDB(pdbFile, refShifts, ringRatio, typeRCDist, atomNames, b
             shifts = rnapred.predictRCShifts(mol, structList, refShifts, ringRatio, ringTypes)
         elif typeRCDist.lower() == 'dist':
             alphas = ringRatio
-            shifts = rnapred.predictDistShifts(mol, rmax, structList, refShifts, alphas)
+            #shifts = rnapred.predictDistShifts(mol, rmax, structList, refShifts, alphas)
+            shifts = rnapred.predictDistShifts(mol, rmax, atomNames, structList, refValues, alphas)
 
     return mol, shifts
 
@@ -259,7 +308,7 @@ def analyzeFiles(pdbs, bmrbs, typeRCDist, aType, offsets, refShifts=None, ringRa
     chains = ['','A','B','C','D']
 
     for pdbID,bmrbID in zip(pdbs,bmrbs):
-        print pdbID,bmrbID
+        #print pdbID,bmrbID
         bmrbFile = 'star/bmr'+bmrbID+'.str'
         if not os.path.exists(bmrbFile):
             bmrbFile = 'star2/bmr'+bmrbID+'.str'
@@ -296,12 +345,31 @@ def analyzeFiles(pdbs, bmrbs, typeRCDist, aType, offsets, refShifts=None, ringRa
                                 deltaAbs = abs(predPPM-expPPM)
                                 ppmDatas.append(PPMData(predPPM, expPPM,bID,pdbID,chain,res,aname))
                                 aNames[aname] = 1
-                                #print bID,chain,res,aname,expPPM,predPPM,delta
+                                #print 'XXXX',bID,chain,res,aname,expPPM,predPPM,delta
 
     return (ppmDatas,aNames.keys())
 
 
-def reref(ppmDatas, bmrbs):
+def getReref(aType):
+    global deltaB
+    if deltaB == None:
+        deltaB = {}
+        fileName = aType+'reref.txt'
+        if os.path.exists(fileName):
+            deltaB = loadReref(fileName)
+
+def loadReref(fileName):
+    deltaB = {}
+    with open(fileName,'r') as fIn:
+        for line in fIn:
+            line = line.strip()
+            fields = line.split()
+            if len(fields) > 2 and fields[2] != "nan":
+                deltaB[fields[0]] = float(fields[2])
+    return deltaB
+    
+
+def reref(ppmDatas, bmrbs, aType):
     """
     Adjust referencing of bmrb data.  Use the average deviation between predicted
     and experimental data to adjust experimental shifts.
@@ -316,13 +384,20 @@ def reref(ppmDatas, bmrbs):
     _ (None); Adjusts the exp field of each PPMData entry in provided list.
 
     """
-
-    deltaB = {}
-    for bID in bmrbs:
-        deltaValues = [ppmData.exp-ppmData.pred for ppmData in ppmDatas if ppmData.bID == bID]
-        dStat = getDStat(deltaValues)
-        deltaB[bID] = dStat.getMean()
-        print "%s %3d %.3f" % (bID,len(deltaValues),deltaB[bID])
+    fileName = aType+'reref.txt'
+    if os.path.exists(fileName):
+        deltaB = loadReref(fileName)
+    else:
+        fOut = open(fileName,'w')
+        deltaB = {}
+        for bID in bmrbs:
+            deltaValues = [ppmData.exp-ppmData.pred for ppmData in ppmDatas if ppmData.bID == bID]
+            dStat = getDStat(deltaValues)
+            deltaB[bID] = dStat.getMean()
+            outStr =  "%s %3d %.3f" % (bID,len(deltaValues),deltaB[bID])
+            print outStr
+            fOut.write(outStr+'\n')
+        fOut.close()
 
     sumAbs = 0.0
     for ppmData in ppmDatas:
@@ -435,7 +510,8 @@ def readTrainingFiles(fileName):
             dotBrackets.append(dotBracket)
     return pdbs,dotBrackets
 
-def setRefShiftsFromBMRB(bmrbID, offsets):
+def setRefShiftsFromBMRB(bmrbID, offsets, aType):
+    getReref(aType)
     bmrbFile = 'star/bmr'+bmrbID+'.str'
     shiftDict = seqalgs.readBMRBShifts(bmrbID, bmrbFile)
     chains = ['','A','B','C','D']
@@ -454,11 +530,13 @@ def setRefShiftsFromBMRB(bmrbID, offsets):
                     if atom == None:
                         print 'no atom',chain,atomSpec
                     else:
+                        if bmrbID in deltaB:
+                            ppm -= deltaB[bmrbID]
                         atom.setRefPPM(ppm)
                         #atom.setRefError(errorVal)
 
 
-def genRCTrainingMatrix(outFileName, pdbFiles, shiftSources, atomNames, ringMode, typeRCDist):
+def genRCTrainingMatrix(outFileName, pdbFiles, shiftSources, atomNames, ringMode, typeRCDist, aType):
     """
     Generate the training data from a list of pdbFiles and dotBracket values.
     Each file is predicted using the attribute method based on a specified
@@ -482,7 +560,8 @@ def genRCTrainingMatrix(outFileName, pdbFiles, shiftSources, atomNames, ringMode
         os.remove(outFileName)
     except:
         pass
-
+    global writeHeader
+    writeHeader = True
     with open(outFileName,'a') as f1:
         for pdbID,shiftSource in zip(pdbFiles,shiftSources):
             Molecule.removeAll()
@@ -490,16 +569,16 @@ def genRCTrainingMatrix(outFileName, pdbFiles, shiftSources, atomNames, ringMode
             if not getPDBFile(pdbID):
                 print 'skip',pdbFile
                 continue
-            print 'train',pdbFile
+            #print 'train',pdbFile
             pdb = PDBFile()
             mol = molio.readPDB(pdbFile)
             if shiftSource[0]=="." or shiftSource[0]=="(":
                 rnapred.predictFromSequence(mol,shiftSource)
             else:
-                setRefShiftsFromBMRB(shiftSource, {})
+                setRefShiftsFromBMRB(shiftSource, {}, aType)
             genRCMat(mol,atomNames,f1, ringMode, typeRCDist)
 
-def trainRC(atomNames, trainingFileName, matrixFileName, ringMode, typeRCDist):
+def trainRC(atomNames, trainingFileName, matrixFileName, ringMode, typeRCDist, aType):
     """
     Training the ring-current shift model using specified training data.
 
@@ -516,34 +595,49 @@ def trainRC(atomNames, trainingFileName, matrixFileName, ringMode, typeRCDist):
     """
 
     pdbFiles,dotBrackets = readTrainingFiles(trainingFileName)
-    genRCTrainingMatrix(matrixFileName, pdbFiles, dotBrackets, atomNames, ringMode, typeRCDist)
-    AMat, bVec, atomCtsDict, atomIDs = loadRCTrainingMatrix(matrixFileName)
-    atomTot = float(sum(atomCtsDict.values()))
-    atomFract = [float(atomCtsDict.values()[i])/atomTot for i in range(len(atomCtsDict))]
-    atomNormDict = {atomCtsDict.keys()[i]: (1.0/len(atomCtsDict))/(atomFract[i]) for i in range(len(atomCtsDict))}
-    atomNorm = [atomNormDict[atomID] for atomID in atomIDs]
-    AMatNRows = AMat.getRowDimension()
-    AMatNCols = AMat.getColumnDimension()
-    AMat = Array2DRowRealMatrix([[AMat.getEntry(i,j) * atomNorm[i] for j in range(AMatNCols)] for i in range(AMatNRows)])
-    bVec = bVec.ebeMultiply(ArrayRealVector(atomNorm))
-    svd = SingularValueDecomposition(AMat)
-    coefVec = svd.getSolver().solve(bVec)
-    bPred = AMat.operate(coefVec)
-    deltaB = bPred.subtract(bVec)
-    dotProd = deltaB.dotProduct(deltaB)
-    rms = math.sqrt(dotProd/bPred.getDimension())
-    print 'fitrms',rms,'rank',svd.getRank()
-    coefs = coefVec.getDataRef()
+    genRCTrainingMatrix(matrixFileName, pdbFiles, dotBrackets, atomNames, ringMode, typeRCDist, aType)
+    trainDf = loadRCTrainingMatrix(matrixFileName)
+    atomSpecifiers = trainDf.column(0)
+    trainDf = trainDf.drop(0)
+
+
+    formula = Formula.lhs("cs")
+#    lassoModel = RidgeRegression.fit(formula, trainDf, lambdaVal)
+    lassoModel = LASSO.fit(formula, trainDf, lambdaVal)
+    print lassoModel
+    rms = math.sqrt(lassoModel.RSS() / trainDf.nrows())
+    print lassoModel.RSS(),rms
+
+    smileCV = SMILECrossValidator(formula, trainDf, lambdaVal)
+    xValidPreds = smileCV.cv(10)
+    print xValidPreds
+
+    coefs = lassoModel.coefficients()
+    coefs = list(coefs)
+    intercept = lassoModel.intercept()
+    coefs.append(intercept)
+    deltaB = lassoModel.residuals()
+    nValues = trainDf.nrows()
+#    for i in range(nValues):
+#        print 'DDDD',atomSpecifiers.get(i),deltaB[i]
+    #print coefs
+    #print intercept
+
+
+
     if (typeRCDist.lower()=='rc'):
         if ringMode:
              nRings = len(ringTypes)
-             ringRatios = list(coefs[-nRings:])
+             ringRatios = list(coefs[-nRings-1:-1])
         else:
              nRings = 1;
              ringRatios = coefs[-1]
         coefs = coefs[0:-nRings]
+        #print 'rccoef', coefs
+        #print 'rcrings', ringRatios
     elif (typeRCDist.lower()=='dist'):
         alphas = coefs[len(atomNames):]
+        alphas = coefs
         coefs = coefs[0:len(atomNames)]
         ringRatios = alphas
     coefDict = {}

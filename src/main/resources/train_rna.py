@@ -1,4 +1,5 @@
 import predtrain
+import rnapred
 import sys, argparse, os
 import seqalgs
 from org.nmrfx.structure.chemistry.predict import RNAAttributes
@@ -14,9 +15,11 @@ allowedAtomsH += ["C2","C8","C5","C6","\"C1'\"","\"C2'\"","\"C3'\"","\"C4'\"","a
 
 gatomNames = {}
 gatomNames['H'] = ["A.H2","A.H8","G.H8","C.H5","U.H5","C.H6","U.H6","A.H1'","G.H1'","C.H1'","U.H1'","H2'","H3'","H4'","H5'","H5''"]
+gatomNames['H'] = ["A.H2","A.H8","G.H8","C.H5","U.H5","C.H6","U.H6","H1'","H2'","H3'","H4'","H5'","H5''"]
 #gatomNames['C'] = ["A.C2","A.C8","G.C8","C.C5","U.C5","C.C6","U.C6","A.C1'","G.C1'","C.C1'","U.C1'","C2'","C3'","C4'","C5'"]
 gatomNames['C'] = ["A.C2","A.C8","G.C8","C.C5","U.C5","C.C6","U.C6","C1'","C2'","C3'","C4'","C5'"]
 gatomNames['Hr'] = ["A.H1'","G.H1'","C.H1'","U.H1'","H2'","H3'","H4'","H5'","H5''"]
+gatomNames['Hr'] = ["H1'","H2'","H3'","H4'","H5'","H5''"]
 #gatomNames['Cr'] = ["A.C1'","G.C1'","C.C1'","U.C1'","C2'","C3'","C4'","C5'"]
 gatomNames['Cr'] = ["C1'","C2'","C3'","C4'","C5'"]
 gatomNames['Hn'] = ["A.H2","A.H8","G.H8","C.H5","U.H5","C.H6","U.H6"]
@@ -26,16 +29,21 @@ gatomNamesAll = ["A.H2","A.H8","G.H8","C.H5","U.H5","C.H6","U.H6","A.H1'","G.H1'
 #gatomNamesAll += ["A.C2","A.C8","G.C8","C.C5","U.C5","C.C6","U.C6","A.C1'","G.C1'","C.C1'","U.C1'","C2'","C3'","C4'","C5'"]
 gatomNamesAll += ["A.C2","A.C8","G.C8","C.C5","U.C5","C.C6","U.C6","C2'","C3'","C4'","C5'"]
 
-predtrain.rmax=4.6
+#predtrain.rmax= 8.0
+#predtrain.rmax=15.0
+#predtrain.rmax=4.6
+#rnapred.intraScale = 5.0
+
 
 def getAtomNames(atomNameList):
     atomNames = []
-    for atom in atomNameList:
-        if atom in gatomNames:
-            atomNames = gatomNames[atom]
-        else:
-            indices = [i for i, e in enumerate(gatomNamesAll) if (e[2:] == atom) or (e == atom)]
-            atomNames += [gatomNamesAll[index] for index in indices]
+    for atoms in atomNameList:
+        for atom in atoms.split(','):
+            if atom in gatomNames:
+                atomNames = gatomNames[atom]
+            else:
+                indices = [i for i, e in enumerate(gatomNamesAll) if (e[2:] == atom) or (e == atom)]
+                atomNames += [gatomNamesAll[index] for index in indices]
     return atomNames
 
 
@@ -54,6 +62,9 @@ def addParseArgs(parser):
     parser.add_argument('atomNameList', nargs='*', help="List of atom types. Allowed types are " + ", ".join(allowedAtomsH))
     parser.add_argument("-c", "--calcType", default="rc", help="Calculation type: distance (dist) or ring current shift (rc). Default is rc.")
     parser.add_argument("-r", "--ringMode", action="store_true", help="Whether to use ringMode=True")
+    parser.add_argument("-d", "--distRange", default=4.6, help="Distance range,4.6")
+    parser.add_argument("-i", "--intraScale", default=5.0, help="Scale intraresidue values,5.0")
+    parser.add_argument("-l", "--lambdaVal", default=0.001, help="Lambda for Ridge/LASSO,0.001")
     parser.add_argument("-b", "--builtin", action="store_true",default=False, help="Whether to skip training and use built-in values=False")
     parser.add_argument("-t", "--trainFile", default="trainfiles.txt",
                             help="Text file with training set file information. Default is trainfiles.txt")
@@ -91,9 +102,9 @@ def defineParseArgs(args):
     # if type != 'dist' and type != 'rc':
     #     parser.error("Invalid calculation type " + type + ". Allowed types are dist or rc.")
 
-    if not all(elem in allowedAtoms for elem in atomNameList):
-        notAllowed = list(set(atomNameList) - set(allowedAtoms))
-        parser.error("Invalid atom(s) " + " ,".join(notAllowed) + ". Allowed atoms are " + ", ".join(allowedAtomsH))
+#    if not all(elem in allowedAtoms for elem in atomNameList):
+#        notAllowed = list(set(atomNameList) - set(allowedAtoms))
+#        parser.error("Invalid atom(s) " + " ,".join(notAllowed) + ". Allowed atoms are " + ", ".join(allowedAtomsH))
 
     print 'type is', type
     print 'ringMode is', ringMode
@@ -188,63 +199,116 @@ def dumpRefShifts(varName, coefDict, fOut):
         fOut.write(outStr)
     
 
-def dumpAlphas(eName, alphaDict, aType, fOut):
+def dumpAlphas(eName, alphaDict, allAtomNames, aType, refValues, fOut):
     atomSources = RNAAttributes.getAtomSources()
     keys = alphaDict.keys()
     keys.sort()
     #for key in keys:
     #    print 'double[] '+key+eName+'Alphas = {'+str(alphaDict[key])[1:-2]+'};'
-    fOut.write('rmax\t'+str(predtrain.rmax)+'\t'+aType+'\n')
+    fOut.write('rmax\t'+str(predtrain.rmax)+'\t'+aType+'\t'+str(rnapred.intraScale)+'\n')
     for key in keys:
-        fOut.write('coef\t'+key+'\t'+str(len(alphaDict[key]))+'\n')
+        #print 'KKKK',key,allAtomNames[key]
+        #print atomSources
+        atomNames = allAtomNames[key]
+        nNames = len(atomNames)
+        nNames = 0
+        for i in range(nNames):
+            if atomNames[i] == key:
+                deltaRef = alphaDict[key][i]
+                intercept = alphaDict[key][-1]
+                refValue = deltaRef+intercept
+        intercept = alphaDict[key][-1]
+        refKey = key
+        if refKey.endswith("'"):
+            refKey = 'U.'+key
+        
+        refValue  = intercept + refValues[refKey]
+
+        fOut.write('coef\t'+key+'\t'+str(len(alphaDict[key])-1)+'\t'+str(round(refValue,3))+'\n')
         for i,v in enumerate(alphaDict[key]):
-            if i < len(atomSources):
-                atomSource = atomSources[i]
+            if i < nNames:
+                atomSource = atomNames[i]
+            elif (i - nNames)  < len(atomSources):
+                atomSource = atomSources[i-nNames]
+            elif i == (len(alphaDict[key]) - 1):
+                #atomSource = 'intercept'
+                continue
             else:
                 atomSource = "chi"
             outStr = "%d\t%s\t%.5f\n" %(i,atomSource,v)
             fOut.write(outStr)
 
+def readRefs():
+    refValues = {}
+    with open('refs.txt','r') as f1:
+        for line in f1:
+            line = line.strip();
+            if line[0] == '#':
+                continue
+            fields = line.split()
+            nucName = fields[0]
+            aName = fields[1]
+            if nucName == 'R': 
+                for nucName in ['A','G','C','U']:
+                    key = nucName + '.' + aName
+                    refValues[key] = float(fields[2])
+            else:
+                key = nucName + '.' + aName
+                refValues[key] = float(fields[2])
+    print refValues
+    return refValues
+
 def train(atomNameList, trainFile, testFile, matrixFile, ringMode, type):
     #print atomNames
     offsetDict = makeOffsetDict(trainFile, testFile) #{'15857': {'B': 58}, '15858': {'A': 12, 'B': 58}, '18893': {'B': 58}, '19662': {'B': 100}}
-    print "offsetDict = ", offsetDict
+    #print "offsetDict = ", offsetDict
     offsets = {}
+    allAtomNames={}
     aType = atomNameList[0][0]
+
+    refValues = readRefs()
+    predtrain.refValues = refValues
 
     fileName = 'rna_pred_dist_%s_%.1f.txt' % (aType, predtrain.rmax)
     fOut = open(fileName,'w')
     if type == "rc":
         atomNames = getAtomNames(atomNameList)
-        coefDict,ringRatio = predtrain.trainRC(atomNames, trainFile, matrixFile, ringMode, type)
+        coefDict,ringRatio = predtrain.trainRC(atomNames, trainFile, matrixFile, ringMode, type, aType)
+        print 'coef',coefDict
+        print 'rings',ringRatio
         for aName in coefDict:
             coefDict[aName] = round(coefDict[aName],3)
-        alphasDict = round(ringRatio,3)
+        alphasDict = [round(ringValue,3) for ringValue in ringRatio]
+        coefDict = refValues
     else:
         alphasDict={}
         coefDict={}
         thisDict={}
+        print 'list',atomNameList
         for atomName in atomNameList:
             dictName = 'base'
             if atomName[-1] == 'r':
                 dictName = 'ribose'
-            thisDict,alphasDict[dictName] = predtrain.trainRC(gatomNames[atomName], trainFile, matrixFile, ringMode, type)
+            atomNames = getAtomNames([atomName])
+            thisDict,alphas = predtrain.trainRC(atomNames, trainFile, matrixFile, ringMode, type, aType)
+            for atomName1 in atomNames:
+                alphasDict[atomName1] =  [round(v,3) for v in alphas]
+                allAtomNames[atomName1] = atomNames
             for aName in thisDict:
                 coefDict[aName] = round(thisDict[aName],3)
 
-        if not 'ribose' in alphasDict:
-            alphasDict['ribose'] = alphasDict['base']
-        alphasDict['ribose'] = [round(v,3) for v in alphasDict['ribose']]
-        alphasDict['base'] = [round(v,3) for v in alphasDict['base']]
-        dumpAlphas(atomNameList[0][0], alphasDict, aType, fOut)
-
-    print coefDict,alphasDict
+        dumpAlphas(atomNameList[0][0], alphasDict, allAtomNames, aType,refValues, fOut)
+    print 'dicts'
+    print alphasDict
+    print coefDict
     bmrbs,pdbs = predtrain.readTestFiles(testFile)
-    dumpRefShifts("RNA_REF_SHIFTS",coefDict, fOut)
+    #dumpRefShifts("RNA_REF_SHIFTS",coefDict, fOut)
+    dumpRefShifts("RNA_REF_SHIFTS",refValues, fOut)
+    #print alphasDict
 
-    ppmDatas,aNames = predtrain.analyzeFiles(pdbs, bmrbs, type, aType, offsets, coefDict, alphasDict)
+    ppmDatas,aNames = predtrain.analyzeFiles(pdbs, bmrbs, type, aType, offsets, coefDict, alphasDict, allAtomNames)
     #predtrain.dumpPPMData(ppmDatas)
-    predtrain.reref(ppmDatas, bmrbs)
+    predtrain.reref(ppmDatas, bmrbs, aType)
     nTotal,sumAbs = predtrain.getSumAbs(ppmDatas)
     print "nAtoms %4d MAE %4.2f" % (nTotal,sumAbs)
     predtrain.removeOutliers(aNames, ppmDatas)
@@ -266,7 +330,7 @@ def testBuiltin(atomNameList,  testFile,  type):
     bmrbs,pdbs = predtrain.readTestFiles(testFile)
     atomNames = getAtomNames(atomNameList)
     ppmDatas,aNames = predtrain.analyzeFiles(pdbs, bmrbs, type, aType, offsets, None, None,atomNames,  True)
-    predtrain.reref(ppmDatas, bmrbs)
+    predtrain.reref(ppmDatas, bmrbs, aType)
     nTotal,sumAbs = predtrain.getSumAbs(ppmDatas)
     print "nAtoms %4d MAE %4.2f" % (nTotal,sumAbs)
     predtrain.removeOutliers(aNames, ppmDatas)
@@ -278,6 +342,9 @@ parser = argparse.ArgumentParser()
 addParseArgs(parser)
 args = parser.parse_args()
 type, ringMode, atomNameList, trainFile, testFile, matrixFile, builtin = defineParseArgs(args)
+predtrain.rmax=float(args.distRange)
+rnapred.intraScale = float(args.intraScale)
+predtrain.lambdaVal = float(args.lambdaVal)
 
 if builtin:
     testBuiltin(atomNameList, testFile, type)
