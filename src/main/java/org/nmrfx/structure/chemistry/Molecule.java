@@ -3310,6 +3310,53 @@ public class Molecule extends MoleculeBase {
         // setupAngles();
     }
 
+    public List<Atom> createLinker(Atom atom1, Atom atom2,
+            double[] linkLen, double[] valAngle, String[] aNames, double dihAngle) {
+        /**
+         * createLinker is a method to create a link between atoms in two
+         * separate entities
+         *
+         * @param numLinks number of linker atoms to use
+         * @param atom1
+         * @param atom2
+         */
+        List<Atom> newAtoms = new ArrayList<>();
+
+        if (atom1 == null || atom2 == null) {
+            return newAtoms;
+        }
+        Atom curAtom = atom1;
+        Atom newAtom;
+        int numLinks = linkLen.length;
+        for (int i = 0; i < numLinks; i++) {
+            newAtom = curAtom.add(aNames[i], "X", Order.SINGLE);
+            newAtom.bondLength = (float) linkLen[i];
+            newAtom.dihedralAngle = (float) (dihAngle * Math.PI / 180.0);
+            newAtom.valanceAngle = (float) (valAngle[i] * Math.PI / 180.0);
+            newAtom.irpIndex = 1;
+            newAtom.rotActive = true;
+            newAtom.setType("XX");
+            newAtoms.add(newAtom);
+
+            curAtom = newAtom;
+            if ((i == (numLinks - 1)) && (atom2 != null)) {
+                Atom.addBond(curAtom, atom2, Order.SINGLE, 0, false);
+                atom2.parent = curAtom;
+                curAtom.daughterAtom = atom2;
+            }
+        }
+
+        if (atom2 != null) {
+            invalidateAtomTree();
+            invalidateAtomArray();
+            //List<Atom> ats = getAtomArray();
+            updateVecCoords();
+            resetGenCoords();
+        }
+        return newAtoms;
+        // setupAngles();
+    }
+
     @Override
     public void addNonStandardResidue(Sequence sequence, Residue residue) {
         boolean isProtein = residue.polymer.getPolymerType().equals("polypeptide");

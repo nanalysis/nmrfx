@@ -914,7 +914,11 @@ public class RNARotamer {
                             System.out.println("No atom " + atomName + " " + applyResidue.getName() + " " + angleMap.toString());
 
                         }
+                    } else {
+                        System.out.println(residue.toString() + " no daugh " + atomName);
                     }
+                } else {
+                    System.out.println(residue.toString() + " no " + atomName);
                 }
             }
             j++;
@@ -965,7 +969,9 @@ public class RNARotamer {
             int j = 0;
             boolean ok = true;
             int iAtom = 0;
-            for (String aName : atomNames) {
+            Atom[] angleAtomArray = new Atom[4];
+            for (iAtom = 3; iAtom >= 0; iAtom--) {
+                String aName = atomNames[iAtom];
                 int colonPos = aName.indexOf(':');
                 int delta = 0;
                 if (colonPos != -1) {
@@ -974,43 +980,35 @@ public class RNARotamer {
                     aName = aName.substring(colonPos + 1);
                 }
                 Residue residue = polymer.getResidue(residueNum);
-                Atom atom = null;
-                switch (delta) {
-                    case 1:
-                        if (residue.next == null) {
-                            ok = false;
-                        } else {
-                            atom = residue.next.getAtom(aName);
-                        }
-                        break;
-                    case -1:
-                        if (residue.previous == null) {
-                            ok = false;
-                        } else {
-                            atom = residue.previous.getAtom(aName);
-                        }
-                        break;
-                    default:
-                        atom = residue.getAtom(aName);
-                        break;
+                Atom atom;
+                if (iAtom == 3) {
+                    atom = residue.getAtom(aName);
+                } else {
+                    atom = angleAtomArray[iAtom + 1].parent;
                 }
                 if (atom == null) {
                     ok = false;
-                }
-                if (iAtom > 0) {
-                    if (atom.parent != angleAtoms.get(iAtom - 1)) {
-                        System.out.println("skip " + atom.getFullName());
-                        ok = false;
-                    }
-                }
-                if (ok) {
-                    angleAtoms.add(atom);
-                } else {
                     break;
+                } else {
+                    String thisName = atom.getName();
+                    if (!aName.equals(thisName)) {
+                        if (thisName.startsWith("X")) {
+                            thisName = thisName.substring(1);
+                            if (!aName.equals(thisName)) {
+                                System.out.println("skip " + iAtom + " " + atom.getFullName() + " " + atomNames[iAtom]);
+                                ok = false;
+                                break;
+                            }
+                        }
+                    }
+
+                    angleAtomArray[iAtom] = atom;
                 }
-                iAtom++;
             }
             if (ok) {
+                for (Atom atom : angleAtomArray) {
+                    angleAtoms.add(atom);
+                }
                 try {
                     AngleConstraint angleBoundary = new AngleConstraint(angleAtoms, lower, upper, 1.0);
                     boundaries.add(angleBoundary);

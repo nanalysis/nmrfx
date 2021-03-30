@@ -562,7 +562,9 @@ class refine:
         entityNames = [entity.getName() for entity in self.molecule.getEntities()]
         if not linkerDict:
             return
+        print linkerDict
         if 'atoms' in linkerDict:
+            print 'gotatoms'
             atomName1, atomName2 = linkerDict['atoms']
             atom1 = self.molecule.getAtomByName(atomName1)
             atom2 = self.molecule.getAtomByName(atomName2)
@@ -619,6 +621,7 @@ class refine:
                         order = bondOrders[order-1]
                     except:
                         order = order.upper()
+                    print 'createLinkA'
                     self.molecule.createLinker(startAtom, endAtom, order, length)
                 else:
                     atomName1, atomName2 = bondDict['atoms']
@@ -630,7 +633,36 @@ class refine:
                     upper = length + .0001
                     self.addDistanceConstraint(atomName1,atomName2,lower,upper,True)
         else:
-            self.molecule.createLinker(startAtom, endAtom, n, linkLen, valAngle, dihAngle)
+            if 'rna' in linkerDict:
+                self.addRNALinker(startAtom, endAtom, dihAngle)
+            else:
+                newAtoms = self.molecule.createLinker(startAtom, endAtom,  linkLen, valAngle, linkNames, dihAngle)
+
+    def addRNALinker(self, startAtom, endAtom, dihAngle):
+            print 'createLinkB'
+            linkLen = [5.0,5.0,5.0,5.0,5.0,5.0,1.52,1.41,1.6]
+            valAngle = [110.0,110.0,110.0,110.0,110.0,110.0,116.47,112.21,120.58]
+            linkNames = ["X1","X2","X3","X4","X5","X6","XC4'","XC3'","XO3'"]
+            oParent1 = endAtom.getParent()
+            oParent2 = oParent1.getParent()
+            oParent3 = oParent2.getParent()
+            newAtoms = self.molecule.createLinker(startAtom, endAtom,  linkLen, valAngle, linkNames, dihAngle)
+            for newAtom in newAtoms:
+                print newAtom.getFullName()
+
+            atomName1 = newAtoms[-1].getFullName() 
+            atomName2 = oParent1.getFullName()
+            print atomName1,atomName2
+            self.addDistanceConstraint(atomName1,atomName2,0.0,0.01,True)
+            atomName1 = newAtoms[-2].getFullName() 
+            atomName2 = oParent2.getFullName()
+            print atomName1,atomName2
+            self.addDistanceConstraint(atomName1,atomName2,0.0,0.01,True)
+            atomName1 = newAtoms[-3].getFullName() 
+            atomName2 = oParent3.getFullName()
+            print atomName1,atomName2
+            self.addDistanceConstraint(atomName1,atomName2,0.0,0.01,True)
+
 
     def processBonds(self,bondDict, phase):
         for bondInfo in bondDict:
