@@ -234,6 +234,8 @@ class FIDInfo:
                     self.fidObj.resetSF(i)
                     continue
                 value = self.fidObj.getParDouble(par)
+                if self.fidObj.getVendor() == "rs2d":
+                    value = value / 1.0e6
                 if isinstance(value,float):
                     self.sf[i] = value
             self.fidObj.setSF(i,self.sf[i])
@@ -278,7 +280,7 @@ class FIDInfo:
         global fidInfo
         fidObj = self.fidObj
         size = fidObj.getNPoints()
-        v1 = Vec(name, size, True)
+        v1 = Vec(size, name,  True)
         fidObj.readVector(index,v1)
         return v1
 

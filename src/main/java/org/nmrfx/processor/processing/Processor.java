@@ -727,7 +727,7 @@ public class Processor {
         try {
             nmrData = NMRDataUtil.getFID(filename, nusFile);
         } catch (IOException ex) {
-            throw new ProcessingException("Cannot open dataset " + filename);
+            throw new ProcessingException("Cannot open FID " + filename);
         }
 
         //nmrDataSets.clear();

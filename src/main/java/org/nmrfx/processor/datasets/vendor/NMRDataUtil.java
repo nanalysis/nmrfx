@@ -94,6 +94,8 @@ public final class NMRDataUtil {
         try {
             if (NMRViewData.findFID(bpath)) {
                 return new NMRViewData(bpath.toString());
+            } else if (RS2DData.findFID(bpath)) {
+                return new RS2DData(bpath.toString(), nusFile);
             } else if (BrukerData.findFID(bpath)) {
                 return new BrukerData(bpath.toString(), nusFile);
             } else if (VarianData.findFID(bpath)) {
@@ -132,6 +134,8 @@ public final class NMRDataUtil {
         try {
             if (NMRViewData.findFID(bpath)) {
                 return new NMRViewData(bpath.toString());
+            } else if (RS2DData.findFID(bpath)) {
+                return new RS2DData(bpath.toString(), null);
             } else if (BrukerData.findData(bpath)) {
                 return new BrukerData(bpath.toString(), null);
             } else if (VarianData.findFID(bpath)) {
