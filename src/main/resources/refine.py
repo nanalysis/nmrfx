@@ -636,7 +636,7 @@ class refine:
             if 'rna' in linkerDict:
                 self.addRNALinker(startAtom, endAtom, dihAngle)
             else:
-                newAtoms = self.molecule.createLinker(startAtom, endAtom,  linkLen, valAngle, linkNames, dihAngle)
+                newAtoms = self.molecule.createLinker(startAtom, endAtom,  linkLen, valAngle,  dihAngle)
 
     def addRNALinker(self, startAtom, endAtom, dihAngle):
             print 'createLinkB'
