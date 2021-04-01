@@ -520,7 +520,8 @@ class refine:
             try :
                 for linkerDict in linkerList:
                     self.readLinkerDict(linkerDict) # returns used Entities to mark them
-            except TypeError:
+            except TypeError as e:
+                print repr(e)
                 self.readLinkerDict(linkerList)
 
     def getDistanceConstraintSet(self, name):
@@ -579,7 +580,7 @@ class refine:
 
 	    # n is the number of rotational points within a link established between any 2 entities.
             # default is 6.
-            n = linkerDict['n'] if 'n' in linkerDict else 6
+            nLinks = linkerDict['n'] if 'n' in linkerDict else 6
             linkLen = linkerDict['length'] if 'length' in linkerDict else 5.0
             valAngle = linkerDict['valAngle'] if 'valAngle' in linkerDict else 110.0
             dihAngle = linkerDict['dihAngle'] if 'dihAngle' in linkerDict else 135.0
@@ -636,7 +637,7 @@ class refine:
             if 'rna' in linkerDict:
                 self.addRNALinker(startAtom, endAtom, dihAngle)
             else:
-                newAtoms = self.molecule.createLinker(startAtom, endAtom,  linkLen, valAngle,  dihAngle)
+                newAtoms = self.molecule.createLinker(startAtom, endAtom,  nLinks, linkLen, valAngle,  dihAngle)
 
     def addRNALinker(self, startAtom, endAtom, dihAngle):
             print 'createLinkB'
