@@ -563,9 +563,7 @@ class refine:
         entityNames = [entity.getName() for entity in self.molecule.getEntities()]
         if not linkerDict:
             return
-        print linkerDict
         if 'atoms' in linkerDict:
-            print 'gotatoms'
             atomName1, atomName2 = linkerDict['atoms']
             atom1 = self.molecule.getAtomByName(atomName1)
             atom2 = self.molecule.getAtomByName(atomName2)
@@ -640,7 +638,6 @@ class refine:
                 newAtoms = self.molecule.createLinker(startAtom, endAtom,  nLinks, linkLen, valAngle,  dihAngle)
 
     def addRNALinker(self, startAtom, endAtom, dihAngle):
-            print 'createLinkB'
             linkLen = [5.0,5.0,5.0,5.0,5.0,5.0,1.52,1.41,1.6]
             valAngle = [110.0,110.0,110.0,110.0,110.0,110.0,116.47,112.21,120.58]
             linkNames = ["X1","X2","X3","X4","X5","X6","XC4'","XC3'","XO3'"]
@@ -648,16 +645,12 @@ class refine:
             oParent2 = oParent1.getParent()
             oParent3 = oParent2.getParent()
             newAtoms = self.molecule.createLinker(startAtom, endAtom,  linkLen, valAngle, linkNames, dihAngle)
-            for newAtom in newAtoms:
-                print newAtom.getFullName()
 
             atomName1 = newAtoms[-1].getFullName() 
             atomName2 = oParent1.getFullName()
-            print atomName1,atomName2
             self.addDistanceConstraint(atomName1,atomName2,0.0,0.01,True)
             atomName1 = newAtoms[-2].getFullName() 
             atomName2 = oParent2.getFullName()
-            print atomName1,atomName2
             self.addDistanceConstraint(atomName1,atomName2,0.0,0.01,True)
             atomName1 = newAtoms[-3].getFullName() 
             atomName2 = oParent3.getFullName()
@@ -963,7 +956,13 @@ class refine:
             while len(linkerList) > 0:
                 linkerDict = linkerList[0]
                 atomSpecs = linkerDict['atoms']
-                atoms = [self.molecule.getAtomByName(atom) for atom in atomSpecs]
+                atoms = []
+                for atomName in atomSpecs:
+                    atom = self.molecule.getAtomByName(atomName)
+                    if atom == None:
+                        msg = 'Linker atom "' + atomName + '" doesn\'t exist'
+                        raise ValueError(msg)
+                    atoms.append(atom)
                 linkerEntities = [atom.getTopEntity() for atom in atoms]
 
                 if linkerEntities[0] in visitedEntities and linkerEntities[1] in visitedEntities:
