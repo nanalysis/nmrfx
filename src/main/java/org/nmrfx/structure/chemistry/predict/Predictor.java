@@ -179,8 +179,8 @@ public class Predictor {
 
     public static void loadRNADistData() {
         try {
-            readFile("data/rna_pred_dist_H_4.6.txt");
-            readFile("data/rna_pred_dist_C_4.6.txt");
+            readFile("data/rna_pred_dist_H_6.0.txt");
+            readFile("data/rna_pred_dist_C_6.0.txt");
         } catch (IOException ex) {
             Logger.getLogger(Predictor.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -376,6 +376,7 @@ public class Predictor {
                     String nucName = atom.getEntity().getName();
                     int alphaType = getAlphaIndex(nucName, aName);
                     if (alphaType >= 0) {
+                        int nAlpha = alphas[alphaType].length - 1;
                         double[] distances = molecule.calcDistanceInputMatrixRow(iStruct, getRMax(), atom, getIntraScale());
                         double distPPM = 0.0;
                         double chi = ((Residue) atom.getEntity()).calcChi(iStruct);
@@ -384,8 +385,8 @@ public class Predictor {
                         double nu2 = ((Residue) atom.getEntity()).calcNu2(iStruct);
                         angleValues[2] = Math.cos(nu2);
                         angleValues[3] = Math.sin(nu2);
-                        int angStart = alphas[alphaType].length - 4;
-                        for (int i = 0; i < alphas[alphaType].length; i++) {
+                        int angStart = nAlpha - 4;
+                        for (int i = 0; i < nAlpha; i++) {
                             double alpha = alphas[alphaType][i];
                             double shiftContrib;
                             double dis = 0.0;
@@ -396,7 +397,7 @@ public class Predictor {
                             }
                             distPPM += shiftContrib;
                         }
-                        double ppm = basePPM + distPPM;
+                        double ppm = alphas[alphaType][nAlpha] + distPPM;
                         Double mae = getMAE(atom);
                         if (iRef < 0) {
                             atom.setRefPPM(-iRef - 1, ppm);
@@ -489,13 +490,15 @@ public class Predictor {
                                 setIntraScale(Double.parseDouble(fields[3]));
                             } else if (fields[0].equals("coef")) {
                                 state = "coef";
-                                nCoef = Integer.parseInt(fields[2]);
+                                nCoef = Integer.parseInt(fields[2]) + 1;
                                 if (!coefMap.containsKey(fields[1])) {
                                     coefMap.put(fields[1], coefMap.size());
                                 }
                                 typeIndex = coefMap.get(fields[1]);
                                 alphas[typeIndex] = new double[nCoef];
                                 coefAtoms = new String[nCoef];
+                                alphas[typeIndex][nCoef - 1] = Double.parseDouble(fields[3]);
+                                coefAtoms[nCoef - 1] = "intercept";
                             } else if (fields[0].equals("baseshifts")) {
                                 state = "baseshifts";
                             } else if (fields[0].equals("mae")) {
