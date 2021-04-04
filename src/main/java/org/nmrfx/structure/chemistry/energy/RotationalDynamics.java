@@ -115,6 +115,10 @@ public class RotationalDynamics {
         List<Atom> atoms = molecule.getAtomArray();
         int i = 0;
         for (AtomBranch branch : branches) {
+            if (branch == null) {
+                System.out.println("Rotational Dynamcis has a null branch");
+                break;
+            }
             for (Atom atom : atoms) {
                 if (atom.rotGroup == branch.atom) {
                     branch.atoms.add(atom);
