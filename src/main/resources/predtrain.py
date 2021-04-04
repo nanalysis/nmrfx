@@ -336,6 +336,8 @@ def analyzeFiles(pdbs, bmrbs, typeRCDist, aType, offsets, refShifts=None, ringRa
                         atom = Molecule.getAtomByName(atomSpec)
                         if atom == None:
                             print 'no atom',chain,atomSpec
+                        elif atom.getName() in ['H61', 'H41', 'H62', 'H21', 'H42', 'H22', 'H3']:
+                            continue
                         else:
                             ppmV = atom.getRefPPM(0)
                             if (ppmV != None):
@@ -466,7 +468,7 @@ def getAtomStats(aNames, ppmDatas):
 
     rms = {}
     deltaMeanSum = 0.0
-    print "%4s %4s %4s %4s" % ("Atm","N","MAE","RMS")
+    print "%4s	%4s	%4s	%4s" % ("Atm","N","MAE","RMS")
     maeValues={}
     for aname in aNames:
         deltaValues = [ppmData.exp-ppmData.pred for ppmData in ppmDatas if ppmData.aName == aname and ppmData.valid]
@@ -475,7 +477,7 @@ def getAtomStats(aNames, ppmDatas):
         sumDV2 = dStat.getSumsq()
         rms[aname] = math.sqrt(sumDV2/len(deltaValues))
         deltaMeanSum += meanAbs(deltaValues)
-        print "%-4s %4d %4.2f %4.2f" % (aname,len(deltaValues),meanAbs(deltaValues),rms[aname])
+        print "%-4s	%4d	%4.2f	%4.2f" % (aname,len(deltaValues),meanAbs(deltaValues),rms[aname])
         maeValues[aname]=meanAbs(deltaValues)
     print "%s %.2f" % ("avg Delta Values =", deltaMeanSum/len(aNames))
     return maeValues

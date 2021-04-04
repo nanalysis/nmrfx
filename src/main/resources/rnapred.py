@@ -16,6 +16,7 @@ from org.nmrfx.chemistry import MolFilter
 from org.nmrfx.chemistry.io import Sequence
 from org.nmrfx.structure.rna import RNALabels
 from org.nmrfx.structure.rna import SSLayout
+from org.nmrfx.structure.rna import RNAAnalysis
 from org.nmrfx.structure.chemistry import SVMPredict
 from org.nmrfx.structure.chemistry import Molecule
 from org.nmrfx.structure.chemistry.predict import RNAStats
@@ -646,11 +647,20 @@ def predictDistShifts(mol, rmax, allAtomNames, structureNum=0, refShifts=None, a
 
 def predictBuiltIn(mol, atomNames, typeRCDist, structureNum=0):
     predictor = Predictor()
-    for polymer in mol.getPolymers():
-        if  (typeRCDist.lower()=='dist'):
-            predictor.predictRNAWithDistances(polymer, 0, 0, True)
-        else:
-            predictor.predictRNAWithRingCurrent(polymer, 0, 0)
+    if typeRCDist == "attr":
+        vienna = RNAAnalysis.getViennaSequence(mol)
+        viennaStr = ""
+        for char in vienna:
+            viennaStr += char
+
+        print viennaStr
+        predictFromSequence(mol, viennaStr, -1)
+    else:
+        for polymer in mol.getPolymers():
+            if  (typeRCDist.lower()=='dist'):
+                predictor.predictRNAWithDistances(polymer, 0, -1, False)
+            else:
+                predictor.predictRNAWithRingCurrent(polymer, 0, -1)
 
     filterString = ""
     inFilter = {}

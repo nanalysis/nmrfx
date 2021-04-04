@@ -27,7 +27,7 @@ gatomNames['Cn'] = ["A.C2","A.C8","G.C8","C.C5","U.C5","C.C6","U.C6"]
 gatomNamesAll = ["A.H2","A.H8","G.H8","C.H5","U.H5","C.H6","U.H6","A.H1'","G.H1'","C.H1'","U.H1'","H2'","H3'","H4'","H5'","H5''"]
 #gatomNamesAll += ["A.C2","A.C8","G.C8","C.C5","U.C5","C.C6","U.C6","A.C1'","G.C1'","C.C1'","U.C1'","C2'","C3'","C4'","C5'"]
 #gatomNamesAll += ["A.C2","A.C8","G.C8","C.C5","U.C5","C.C6","U.C6","A.C1'","G.C1'","C.C1'","U.C1'","C2'","C3'","C4'","C5'"]
-gatomNamesAll += ["A.C2","A.C8","G.C8","C.C5","U.C5","C.C6","U.C6","C2'","C3'","C4'","C5'"]
+gatomNamesAll += ["A.C2","A.C8","G.C8","C.C5","U.C5","C.C6","U.C6","C1'","C2'","C3'","C4'","C5'"]
 
 #predtrain.rmax= 8.0
 #predtrain.rmax=15.0
@@ -290,6 +290,7 @@ def train(atomNameList, trainFile, testFile, matrixFile, ringMode, type):
             if atomName[-1] == 'r':
                 dictName = 'ribose'
             atomNames = getAtomNames([atomName])
+            print 'BBBB',atomNames
             thisDict,alphas = predtrain.trainRC(atomNames, trainFile, matrixFile, ringMode, type, aType)
             for atomName1 in atomNames:
                 alphasDict[atomName1] =  [round(v,3) for v in alphas]
@@ -330,6 +331,7 @@ def testBuiltin(atomNameList,  testFile,  type):
     bmrbs,pdbs = predtrain.readTestFiles(testFile)
     atomNames = getAtomNames(atomNameList)
     ppmDatas,aNames = predtrain.analyzeFiles(pdbs, bmrbs, type, aType, offsets, None, None,atomNames,  True)
+
     predtrain.reref(ppmDatas, bmrbs, aType)
     nTotal,sumAbs = predtrain.getSumAbs(ppmDatas)
     print "nAtoms %4d MAE %4.2f" % (nTotal,sumAbs)
