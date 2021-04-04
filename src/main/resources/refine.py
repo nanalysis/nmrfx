@@ -633,18 +633,65 @@ class refine:
                     self.addDistanceConstraint(atomName1,atomName2,lower,upper,True)
         else:
             if 'rna' in linkerDict:
-                self.addRNALinker(startAtom, endAtom, dihAngle)
+                self.addRNALinker(startAtom, endAtom, nLinks, linkLen, valAngle,  dihAngle)
             else:
                 newAtoms = self.molecule.createLinker(startAtom, endAtom,  nLinks, linkLen, valAngle,  dihAngle)
 
-    def addRNALinker(self, startAtom, endAtom, dihAngle):
-            linkLen = [5.0,5.0,5.0,5.0,5.0,5.0,1.52,1.41,1.6]
-            valAngle = [110.0,110.0,110.0,110.0,110.0,110.0,116.47,112.21,120.58]
-            linkNames = ["X1","X2","X3","X4","X5","X6","XC4'","XC3'","XO3'"]
+    def addRNALinker(self, startAtom, endAtom,  nLinks, linkLen, valAngle, dihAngle):
+        if endAtom.getName() == "P":
+            self.addRNALinkerTurn(startAtom, endAtom, nLinks, linkLen, valAngle, dihAngle)
+        else:
+            self.addRNALinkerHelix(startAtom, endAtom, nLinks, linkLen, valAngle, dihAngle)
+
+
+    def addRNALinkerHelix(self, startAtom, endAtom, nLinks, linkLen, valAngle, dihAngle):
+#            linkLens = [5.0,5.0,5.0,5.0,5.0,5.0,1.41,1.6, 1.59]
+#            valAngles = [110.0,110.0,110.0,110.0,110.0,110.0,112.21,120.58, 104.38]
+#            linkNames = ["X1","X2","X3","X4","X5","X6","XC3'","XO3'","XP"]
+
+            linkNames = [""]*(nLinks+3)
+            linkLens = [linkLen]*(nLinks+3)
+            valAngles = [valAngle]*(nLinks+3)
+
+            linkLens[-3] = 1.41
+            linkLens[-2] = 1.60
+            linkLens[-1] = 1.59
+            valAngles[-3] = 112.21
+            valAngles[-2] = 120.58
+            valAngles[-1] = 104.38
+            for i in range(nLinks):
+                linkNames[i] = "X"+str(i+1)
+            linkNames[-3] = "XC3'"
+            linkNames[-2] = "XO3'"
+            linkNames[-1] = "XP"
+
+            newAtoms = self.molecule.createLinker(startAtom, endAtom,  linkLens, valAngles, linkNames, dihAngle)
+
+    def addRNALinkerTurn(self, startAtom, endAtom, nLinks, linkLen, valAngle, dihAngle):
+#            linkLens = [5.0,5.0,5.0,5.0,5.0,5.0,1.52,1.41,1.6]
+#            valAngles = [110.0,110.0,110.0,110.0,110.0,110.0,116.47,112.21,120.58]
+#            linkNames = ["X1","X2","X3","X4","X5","X6","XC4'","XC3'","XO3'"]
+
+            linkNames = [""]*(nLinks+3)
+            linkLens = [linkLen]*(nLinks+3)
+            valAngles = [valAngle]*(nLinks+3)
+
+            linkLens[-3] = 1.52
+            linkLens[-2] = 1.41
+            linkLens[-1] = 1.60
+            valAngles[-3] = 116.47
+            valAngles[-2] = 112.21
+            valAngles[-1] = 120.58
+            for i in range(nLinks):
+                linkNames[i] = "X"+str(i+1)
+            linkNames[-3] = "XC4'"
+            linkNames[-2] = "XC3'"
+            linkNames[-1] = "XO3'"
+
             oParent1 = endAtom.getParent()
             oParent2 = oParent1.getParent()
             oParent3 = oParent2.getParent()
-            newAtoms = self.molecule.createLinker(startAtom, endAtom,  linkLen, valAngle, linkNames, dihAngle)
+            newAtoms = self.molecule.createLinker(startAtom, endAtom,  linkLens, valAngles, linkNames, dihAngle)
 
             atomName1 = newAtoms[-1].getFullName() 
             atomName2 = oParent1.getFullName()
@@ -2030,7 +2077,7 @@ class refine:
                     if i == nRes-1:
                         if lockLast:
                             RNARotamer.setDihedrals(resI,'1a', 0.0, True)
-                            RNARotamer.setDihedrals(resJ,'1c', 0.0, True)
+                            RNARotamer.setDihedrals(resJ,'1a', 0.0, True)
                     else:
                         RNARotamer.setDihedrals(resI,'1a', 0.0, True)
                         RNARotamer.setDihedrals(resJ,'1a', 0.0, True)
