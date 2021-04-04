@@ -203,13 +203,20 @@ public class CmaesRefinement extends Refinement implements MultivariateFunction 
         for (List<Atom> atomArray : linkedAtoms) {
             if (i < linkedAtoms.length - 1) {
                 //System.out.println("do links");
-                double sum = 0.0;
+                double sumCos = 0.0;
+                double sumSin = 0.0;
                 for (Atom atom : atomArray) {
                     //System.out.printf("%6.1f ", Math.toDegrees(atom.dihedralAngle));
-                    sum += atom.dihedralAngle;
+                    sumCos += Math.cos(atom.dihedralAngle);
+                    sumSin += Math.sin(atom.dihedralAngle);
+
                     //linkedValues[2][i] = atom.dihedralAngle;
                 }
-                double avg = sum / atomArray.size();
+                int n = atomArray.size();
+                double avg = Math.atan2(sumSin / n, sumCos / n);
+                for (Atom atom : atomArray) {
+                    System.out.println(atom.getFullName() + " " + Math.toDegrees(atom.dihedralAngle) + " " + Math.toDegrees(avg));
+                }
 
                 linkedValues[2][i] = avg;
                 linkedValues[0][i] = linkedValues[2][i] - Math.toRadians(dev1);
