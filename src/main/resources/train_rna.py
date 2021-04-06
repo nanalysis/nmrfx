@@ -66,6 +66,7 @@ def addParseArgs(parser):
     parser.add_argument("-i", "--intraScale", default=5.0, help="Scale intraresidue values,5.0")
     parser.add_argument("-l", "--lambdaVal", default=0.001, help="Lambda for Ridge/LASSO,0.001")
     parser.add_argument("-b", "--builtin", action="store_true",default=False, help="Whether to skip training and use built-in values=False")
+    parser.add_argument("-o", "--output", action="store_true",default=False, help="Output atom specific predictions=False")
     parser.add_argument("-t", "--trainFile", default="trainfiles.txt",
                             help="Text file with training set file information. Default is trainfiles.txt")
     parser.add_argument("-T", "--testFile", default="testfiles.txt",
@@ -323,14 +324,14 @@ def train(atomNameList, trainFile, testFile, matrixFile, ringMode, type):
         fOut.write(outStr)
     fOut.close()
 
-def testBuiltin(atomNameList,  testFile,  type):
+def testBuiltin(atomNameList,  testFile,  type, report):
     aType = atomNameList[0][0]
     offsetDict = makeOffsetDict(None, testFile) #{'15857': {'B': 58}, '15858': {'A': 12, 'B': 58}, '18893': {'B': 58}, '19662': {'B': 100}}
     print "offsetDict = ", offsetDict
     offsets = {}
     bmrbs,pdbs = predtrain.readTestFiles(testFile)
     atomNames = getAtomNames(atomNameList)
-    ppmDatas,aNames = predtrain.analyzeFiles(pdbs, bmrbs, type, aType, offsets, None, None,atomNames,  True)
+    ppmDatas,aNames = predtrain.analyzeFiles(pdbs, bmrbs, type, aType, offsets, None, None,atomNames, True, report)
 
     predtrain.reref(ppmDatas, bmrbs, aType)
     nTotal,sumAbs = predtrain.getSumAbs(ppmDatas)
@@ -349,6 +350,6 @@ rnapred.intraScale = float(args.intraScale)
 predtrain.lambdaVal = float(args.lambdaVal)
 
 if builtin:
-    testBuiltin(atomNameList, testFile, type)
+    testBuiltin(atomNameList, testFile, type, args.output)
 else:
     train(atomNameList, trainFile, testFile, matrixFile, ringMode, type)

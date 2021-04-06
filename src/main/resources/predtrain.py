@@ -280,7 +280,7 @@ class PPMData:
         self.aName = a
         self.valid = True
 
-def analyzeFiles(pdbs, bmrbs, typeRCDist, aType, offsets, refShifts=None, ringRatio=None, atomNames=None, builtin=False):
+def analyzeFiles(pdbs, bmrbs, typeRCDist, aType, offsets, refShifts=None, ringRatio=None, atomNames=None, builtin=False, report=False):
     """
     Analyze a whole set of pdb files and associated chemical shifts in bmrb files
     Chemical shifts will be predicted with 3D Ring Current shift code
@@ -347,6 +347,9 @@ def analyzeFiles(pdbs, bmrbs, typeRCDist, aType, offsets, refShifts=None, ringRa
                                 deltaAbs = abs(predPPM-expPPM)
                                 ppmDatas.append(PPMData(predPPM, expPPM,bID,pdbID,chain,res,aname))
                                 aNames[aname] = 1
+                                if report:
+                                    outStr = "PREDICT %8s %4s %3s %4s %-4s %7.2f %7.2f %7.2f" % (bID,pdbID,chain,res,aname,expPPM,predPPM,delta)
+                                    print outStr
                                 #print 'XXXX',bID,chain,res,aname,expPPM,predPPM,delta
 
     return (ppmDatas,aNames.keys())
