@@ -2676,7 +2676,7 @@ class refine:
 
         self.gmin(nsteps=dOpt['polishSteps'],tolerance=1.0e-6)
         if dOpt['dfreeSteps']> 0:
-            self.refine(nsteps=dOpt['dfreeSteps'],radius=20, alg=dOpt['dfreeAlg']);
+            self.refineNonDeriv(nsteps=dOpt['dfreeSteps'],radius=20, alg=dOpt['dfreeAlg']);
         ec = self.molecule.getEnergyCoords()
         #ec.exportConstraintPairs('constraints.txt')
 
@@ -2696,7 +2696,7 @@ class refine:
 
         self.gmin(nsteps=dOpt['polishSteps'],tolerance=1.0e-6)
         if dOpt['dfreeSteps']> 0:
-            self.refine(nsteps=dOpt['dfreeSteps'],radius=20, alg=dOpt['dfreeAlg']);
+            self.refineNonDeriv(nsteps=dOpt['dfreeSteps'],radius=20, alg=dOpt['dfreeAlg']);
         ec = self.molecule.getEnergyCoords()
         #ec.exportConstraintPairs('constraints.txt')
 
