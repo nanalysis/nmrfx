@@ -45,12 +45,12 @@ public class EnergyShiftPairs extends EnergyPairs {
 
     final void setupShifts() {
         Atom[] atoms = eCoords.atoms;
+        Predictor.checkRNADistData();
         for (int i = 0; i < atoms.length; i++) {
             Atom atom = eCoords.atoms[i];
             int atomClass = RNAAttributes.getAtomSourceIndex(atom);
             eCoords.shiftClass[i] = atomClass;
-            Double baseValue = Predictor.getDistBaseShift(atom);
-            eCoords.baseShifts[i] = baseValue == null ? 0.0 : baseValue;
+            eCoords.baseShifts[i] = atomClass >= 0 ? Predictor.getAlphaIntercept(atomClass) : 0.0;
             eCoords.refShifts[i] = 0.0;
             PPMv ppmV = atom.getPPM(0);
             if ((ppmV != null) && ppmV.isValid()) {

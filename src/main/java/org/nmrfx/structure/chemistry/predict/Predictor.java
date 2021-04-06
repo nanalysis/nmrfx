@@ -193,9 +193,7 @@ public class Predictor {
     }
 
     public static Double getDistBaseShift(Atom atom) {
-        if (baseShiftMap.isEmpty()) {
-            loadRNADistData();
-        }
+        checkRNADistData();
         String nucName = atom.getEntity().getName();
         String nucAtom = nucName + "." + atom.getName();
         Double basePPM;
@@ -207,7 +205,15 @@ public class Predictor {
         return basePPM;
     }
 
+    public static void checkRNADistData() {
+        if (coefMap.isEmpty()) {
+            loadRNADistData();
+        }
+
+    }
+
     public static int getAlphaIndex(String nucName, String aName) {
+        checkRNADistData();
         Integer typeIndex = coefMap.get(aName);
         if (typeIndex == null) {
             typeIndex = coefMap.get(nucName + "." + aName);
@@ -217,11 +223,14 @@ public class Predictor {
 
     public static double getAlpha(int alphaClass, int index) {
         return alphas[alphaClass][index];
+    }
 
+    public static double getAlphaIntercept(int alphaClass) {
+        return alphas[alphaClass][alphas[alphaClass].length - 1];
     }
 
     public static double getAngleAlpha(int alphaClass, int index) {
-        int nAlpha = alphas[alphaClass].length;
+        int nAlpha = alphas[alphaClass].length - 1;
         return alphas[alphaClass][nAlpha - 4 + index];
     }
 
@@ -368,47 +377,44 @@ public class Predictor {
             eCoords.calcDistShifts(false, getRMax(), intraScale, 1.0);
         } else {
             List<Atom> atoms = polymer.getAtoms();
+            double[] angleValues = new double[4];
             for (Atom atom : atoms) {
                 String aName = atom.getName();
-                Double basePPM = getDistBaseShift(atom);
-                double[] angleValues = new double[4];
-                if (basePPM != null) {
-                    String nucName = atom.getEntity().getName();
-                    int alphaType = getAlphaIndex(nucName, aName);
-                    if (alphaType >= 0) {
-                        int nAlpha = alphas[alphaType].length - 1;
-                        double[] distances = molecule.calcDistanceInputMatrixRow(iStruct, getRMax(), atom, getIntraScale());
-                        double distPPM = 0.0;
-                        double chi = ((Residue) atom.getEntity()).calcChi(iStruct);
-                        angleValues[0] = Math.cos(chi);
-                        angleValues[1] = Math.sin(chi);
-                        double nu2 = ((Residue) atom.getEntity()).calcNu2(iStruct);
-                        angleValues[2] = Math.cos(nu2);
-                        angleValues[3] = Math.sin(nu2);
-                        int angStart = nAlpha - 4;
-                        for (int i = 0; i < nAlpha; i++) {
-                            double alpha = alphas[alphaType][i];
-                            double shiftContrib;
-                            double dis = 0.0;
-                            if (i < angStart) {
-                                shiftContrib = alpha * distances[i];
-                            } else {
-                                shiftContrib = alpha * angleValues[i - angStart];
-                            }
-                            distPPM += shiftContrib;
-                        }
-                        double ppm = alphas[alphaType][nAlpha] + distPPM;
-                        Double mae = getMAE(atom);
-                        if (iRef < 0) {
-                            atom.setRefPPM(-iRef - 1, ppm);
-                            if (mae != null) {
-                                atom.setRefError(-iRef - 1, mae);
-                            }
+                String nucName = atom.getEntity().getName();
+                int alphaType = getAlphaIndex(nucName, aName);
+                if (alphaType >= 0) {
+                    int nAlpha = alphas[alphaType].length - 1;
+                    double[] distances = molecule.calcDistanceInputMatrixRow(iStruct, getRMax(), atom, getIntraScale());
+                    double distPPM = 0.0;
+                    double chi = ((Residue) atom.getEntity()).calcChi(iStruct);
+                    angleValues[0] = Math.cos(chi);
+                    angleValues[1] = Math.sin(chi);
+                    double nu2 = ((Residue) atom.getEntity()).calcNu2(iStruct);
+                    angleValues[2] = Math.cos(nu2);
+                    angleValues[3] = Math.sin(nu2);
+                    int angStart = nAlpha - 4;
+                    for (int i = 0; i < nAlpha; i++) {
+                        double alpha = alphas[alphaType][i];
+                        double shiftContrib;
+                        double dis = 0.0;
+                        if (i < angStart) {
+                            shiftContrib = alpha * distances[i];
                         } else {
-                            atom.setPPM(iRef, ppm);
-                            if (mae != null) {
-                                atom.setPPMError(-iRef - 1, mae);
-                            }
+                            shiftContrib = alpha * angleValues[i - angStart];
+                        }
+                        distPPM += shiftContrib;
+                    }
+                    double ppm = alphas[alphaType][nAlpha] + distPPM;
+                    Double mae = getMAE(atom);
+                    if (iRef < 0) {
+                        atom.setRefPPM(-iRef - 1, ppm);
+                        if (mae != null) {
+                            atom.setRefError(-iRef - 1, mae);
+                        }
+                    } else {
+                        atom.setPPM(iRef, ppm);
+                        if (mae != null) {
+                            atom.setPPMError(-iRef - 1, mae);
                         }
                     }
                 }
