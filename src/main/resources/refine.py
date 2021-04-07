@@ -637,6 +637,51 @@ class refine:
             else:
                 newAtoms = self.molecule.createLinker(startAtom, endAtom,  nLinks, linkLen, valAngle,  dihAngle)
 
+    def readRNALinkerDict(self, rnaLinkerDict, formLinks=True):
+        linkAtoms = []
+        for connection in rnaLinkerDict:
+            connectors = connection['connect']
+            if len(connectors) != 2:
+                raise ValueError('Should be two elements in connection')
+            atoms = []
+            for i, connector in enumerate(connectors):
+                if connector.find(':') == -1:
+                    polymer = self.molecule.getEntity(connector)
+                    residues = polymer.getResidues()
+                    if i == 0:
+                        residue = residues[-1]
+                        atom = residue.getAtom("H3'")
+                    else:
+                        residue = residues[0]
+                        atom = residue.getAtom("O5'")
+                else:
+                    if i == 0:
+                        aName = connector+".H3'"
+                        atom = self.molecule.getAtomByName(aName)
+                    else:
+                        aName = connector+".P"
+                        atom = self.molecule.getAtomByName(aName)
+                        if atom == None:
+                            aName = connector+".O5'"
+                            atom = self.molecule.getAtomByName(aName)
+                atoms.append(atom)
+
+            res0 = atoms[0].getEntity()
+            res1 = atoms[1].getEntity()
+            poly0 = atoms[0].getTopEntity()
+            poly1 = atoms[1].getTopEntity()
+
+            linkAtoms.append(atoms)
+            if formLinks:
+                nLinks = connection['n'] if 'n' in connection else 6
+                linkLen = connection['length'] if 'length' in connection else 5.0
+                valAngle = connection['valAngle'] if 'valAngle' in connection else 110.0
+                dihAngle = connection['dihAngle'] if 'dihAngle' in connection else 135.0
+                if poly0 == poly1:
+                    self.breakBond(atoms[1].getParent(), atoms[1])
+                self.addRNALinker(atoms[0], atoms[1], nLinks, linkLen, valAngle,  dihAngle)
+        return linkAtoms
+            
     def addRNALinker(self, startAtom, endAtom,  nLinks, linkLen, valAngle, dihAngle):
         if endAtom.getName() == "P":
             self.addRNALinkerTurn(startAtom, endAtom, nLinks, linkLen, valAngle, dihAngle)
@@ -721,17 +766,23 @@ class refine:
                 atomName1, atomName2 = bondInfo['atoms']
                 atom1 = self.molecule.getAtomByName(atomName1)
                 atom2 = self.molecule.getAtomByName(atomName2)
-                ringClosures = self.molecule.getRingClosures()
-                AngleTreeGenerator.addRingClosureSet(ringClosures, atom1, atom2)
+                self.floatBond(atom1, atom2)
             elif phase == 'break' and (bondMode == 'break' or bondMode == 'float'):
                 atomName1, atomName2 = bondInfo['atoms']
                 atom1 = self.molecule.getAtomByName(atomName1)
                 atom2 = self.molecule.getAtomByName(atomName2)
-                atom1.removeBondTo(atom2)
-                atom2.removeBondTo(atom1)
-                atom1.rotActive = False
-                atom1.rotUnit = -1
-                atom1.rotGroup = None
+                self.breakBond(atom1, atom2)
+
+    def floatBond(self, atom1, atom2):
+        ringClosures = self.molecule.getRingClosures()
+        AngleTreeGenerator.addRingClosureSet(ringClosures, atom1, atom2)
+                
+    def breakBond(self, atom1, atom2):
+        atom1.removeBondTo(atom2)
+        atom2.removeBondTo(atom1)
+        atom1.rotActive = False
+        atom1.rotUnit = -1
+        atom1.rotGroup = None
                 
     def addCyclicBond(self, polymer):
         # to return a list atomName1, atomName2, distance
@@ -1057,7 +1108,7 @@ class refine:
             raise ValueError(atomName, "was not found in", entityName)
         return atom
 
-    def validateLinkerList(self,linkerList, treeDict):
+    def validateLinkerList(self,linkerList, treeDict, rnaLinkerDict):
         ''' validateLinkerList goes over all linkers and the treeDict to make
             sure all entities in the molecule are connected in some way.
             If no linker is provided for an entity, one will be created for
@@ -1070,7 +1121,20 @@ class refine:
         firstEntityName = entryAtomName.split(':')[0] if entryAtomName else unusedEntities[0]
         firstEntity = self.molecule.getEntity(firstEntityName)
         unusedEntities.remove(firstEntityName)
-        if linkerList:
+        if rnaLinkerDict:
+            linkerList = []
+            linkerAtoms = self.readRNALinkerDict(rnaLinkerDict, False)
+            for linkPair in linkerAtoms:
+                (startAtom, endAtom) = linkPair
+                newLinker = {'atoms': [startAtom.getFullName(), endAtom.getFullName()]}
+                linkerList.append(newLinker)
+                for i,atom in enumerate(linkPair):
+                    entName = atom.getTopEntity().getName()
+#                    if i == 1:
+#                        self.entityEntryDict[atom.getTopEntity()] = atom
+                    if entName in unusedEntities:
+                        unusedEntities.remove(entName)
+        elif linkerList:
             linkerList = linkerList if type(linkerList) is ArrayList else [linkerList]
             linkerAtoms = reduce(lambda total, linkerDict : total + list(linkerDict.get('atoms')), linkerList, [])
             for atomName in linkerAtoms:
@@ -1088,6 +1152,8 @@ class refine:
             startAtom = firstEntity.getLastAtom().getFullName()
             endAtom = self.getEntityTreeStartAtom(entity).getFullName()
             newLinker = {'atoms': [startAtom, endAtom]}
+#            newLinker = {'atoms': ["A:20.H3'", "B:1.O5'"]}
+#            print 'make new linker', newLinker
             linkerList.append(newLinker)
             #print "linker added between " + startAtom + " and " + endAtom
         return linkerList
@@ -1101,6 +1167,7 @@ class refine:
 
         molData = {}
 	residues = None
+        rnaLinkerDict = None
 
         if fileName != '':
             if fileName.endswith('.pdb'):
@@ -1126,10 +1193,13 @@ class refine:
                 self.reslib = molData['reslib'] if 'reslib' in molData else None
                 if self.reslib:
                     PDBFile.setLocalResLibDir(self.reslib)
+                if 'rna' in data:
+                    if 'links' in data['rna']:
+                        rnaLinkerDict = data['rna']['links']
 
 		# Different entities can be specified. Via sequence files
 		# or input residues.
-                if not 'link' in molData:
+                if not 'link' in molData and not rnaLinkerDict:
                     seqReader = Sequence()
                 else:
                     seqReader = None
@@ -1159,6 +1229,16 @@ class refine:
         if 'bonds' in data:
             self.processBonds(data['bonds'], 'float')
 
+        if rnaLinkerDict:
+            rnaLinkerAtoms = self.readRNALinkerDict(rnaLinkerDict, False)
+            for atoms in rnaLinkerAtoms:
+                atom = atoms[1]
+                if atom.getParent() == None:
+                    print 'null atom parent', atom
+                else:
+                    print 'float',atoms[1].getParent(),atoms[1]
+                    self.floatBond(atoms[1].getParent(), atoms[1])
+                
         # Check to auto add tree in case where there are ligands
         if nEntities > nPolymers:
             if not 'tree' in data:
@@ -1166,7 +1246,7 @@ class refine:
 
         if 'tree' in data:
             if len(self.molecule.getEntities()) > 1:
-                linkerList = self.validateLinkerList(linkerList, treeDict)
+                linkerList = self.validateLinkerList(linkerList, treeDict, rnaLinkerDict)
             else:
                 if linkerList:
                     linkerList = [linkerList]
@@ -1184,7 +1264,9 @@ class refine:
         for entity in self.molecule.getEntities():
             self.setupAtomProperties(entity)
 
-        if linkerList:
+        if rnaLinkerDict:
+            self.readRNALinkerDict(rnaLinkerDict)
+        elif linkerList:
             self.addLinkers(linkerList)
 
         if 'bonds' in data:
