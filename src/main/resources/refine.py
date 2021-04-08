@@ -1352,28 +1352,53 @@ class refine:
             print 'Locking Vienna angles after setting'
         ssGen = SSGen(self.molecule, self.vienna)
         ssGen.secondaryStructGen()
+        connectorResList = self.getConnectorResList()
         for ss in ssGen.structures:
             if ss.getName() == "Helix":
                 helixResidues = ss.getResidues()
                 strandI = helixResidues[0::2]
                 strandJ = helixResidues[1::2]
+                print strandI
+                print strandJ
                 nRes = len(strandI)
                 for i in range(nRes):
                     resI = strandI[i]
                     resJ = strandJ[i]
-                    if i == nRes-1:
+                    icsplit = str(resI).split(':')
+                    isplit = icsplit[1:]
+                    resNumI = int(str(isplit)[3:-2])
+                    jcsplit = str(resJ).split(':')
+                    jsplit = jcsplit[1:]
+                    resNumJ = int(str(jsplit)[3:-2])
+                    iIsConnector = resNumI in connectorResList
+                    jIsConnector = resNumJ in connectorResList
+                    iLockThis = doLock
+                    jLockThis = doLock
+                    linkerResList, noLinkerResList = self.getResLinkerLists()
+                    hasLinker = resI.getAtom("X1") != None
+                    print "hasLInker", hasLinker
+                    if hasLinker:
                         lockThis = doLock and lockLast
-                        RNARotamer.setDihedrals(resI,self.getAngles('beforetetraloop1'), 0.0, lockThis)
-                        RNARotamer.setDihedrals(resJ,self.getAngles('aftertetraloop1'), 0.0, lockThis)
+                        RNARotamer.setDihedrals(resI,self.getAngles(resNumI,'beforelinker1'), 0.0, lockThis)
+                        if resJ.getName() in 'GA':
+                            RNARotamer.setDihedrals(resJ,self.getAngles(resNumJ,'helix','GA'), 0.0, doLock)
+                        else:
+                            RNARotamer.setDihedrals(resJ,self.getAngles(resNumJ,'helix','CU'), 0.0, doLock)
+                    elif i == nRes-1:
+                        print 'lastRESSS'
+                        lockThis = doLock and lockLast
+                        RNARotamer.setDihedrals(resI,self.getAngles(resNumI,'beforetetraloop1'), 0.0, lockThis)
+                        RNARotamer.setDihedrals(resJ,self.getAngles(resNumJ,'aftertetraloop1'), 0.0, lockThis)
                     else:
                         if resI.getName() in 'GA':
-                            RNARotamer.setDihedrals(resI,self.getAngles('helix','GA'), 0.0, doLock)
+                            RNARotamer.setDihedrals(resI,self.getAngles(resNumI,'helix','GA'), 0.0, doLock)
                         else:
-                            RNARotamer.setDihedrals(resI,self.getAngles('helix','CU'), 0.0, doLock)
+                            RNARotamer.setDihedrals(resI,self.getAngles(resNumI,'helix','CU'), 0.0, doLock)
                         if resJ.getName() in 'GA':
-                            RNARotamer.setDihedrals(resJ,self.getAngles('helix','GA'), 0.0, doLock)
+                            RNARotamer.setDihedrals(resJ,self.getAngles(resNumJ,'helix','GA'), 0.0, doLock)
                         else:
-                            RNARotamer.setDihedrals(resJ,self.getAngles('helix','CU'), 0.0, doLock)
+                            RNARotamer.setDihedrals(resJ,self.getAngles(resNumJ,'helix','CU'), 0.0, doLock)
+                    
             elif ss.getName() == "Loop":
                 loopResidues = ss.getResidues()
                 if len(loopResidues) == 4:
@@ -1385,29 +1410,65 @@ class refine:
                     if(i == 0):
                         print 'Tetraloop position 1 being set for residue: '
                         print loopResidues[i]
-                        RNARotamer.setDihedrals(loopResidues[i],self.getAngles('tetraloop1'), 0.0, doLock)
+                        RNARotamer.setDihedrals(loopResidues[i],self.getAngles(resNumI,'tetraloop1'), 0.0, doLock)
                     elif (i == 1):
                         print 'Tetraloop position 2 being set for residue: '
                         print loopResidues[i]
-                        RNARotamer.setDihedrals(loopResidues[i],self.getAngles('tetraloop2'), 0.0, doLock)
+                        RNARotamer.setDihedrals(loopResidues[i],self.getAngles(resNumI,'tetraloop2'), 0.0, doLock)
                     elif (i == 2):
                         print 'Tetraloop position 3 being set for residue: '
                         print loopResidues[i]
-                        RNARotamer.setDihedrals(loopResidues[i],self.getAngles('tetraloop3'), 0.0, doLock)
+                        RNARotamer.setDihedrals(loopResidues[i],self.getAngles(resNumI,'tetraloop3'), 0.0, doLock)
                     else:
                         print 'Tetraloop position 4 being set for residue: '
                         print loopResidues[i]
-                        RNARotamer.setDihedrals(loopResidues[i],self.getAngles('tetraloop4'), 0.0, doLock)
+                        RNARotamer.setDihedrals(loopResidues[i],self.getAngles(resNumI,'tetraloop4'), 0.0, doLock)
+						
+            elif ss.getName() == "Bulge":
+                bulgeResidues = ss.getResidues()
+                print 'Bulge detected in residues: ' + str(bulgeResidues)
+                nRes = len(bulgeResidues)
+                for i in range(nRes):
+                    resI = bulgeResidues[i]
+                    icsplit = str(resI).split(':')
+                    isplit = icsplit[1:]
+                    resNumI = int(str(isplit)[3:-2])
+                    if resI.getName() in 'GA': # Set helical angles for now
+                        RNARotamer.setDihedrals(resI,self.getAngles(resNumI,'helix','GA'), 0.0, False)
+                    else:
+                        RNARotamer.setDihedrals(resI,self.getAngles(resNumI,'helix','CU'), 0.0, False)
 					
-    def getAngles(self,resPosition, resType=None):
-        filetext = open('angles.dict', 'r').read()
+    def getAngles(self, resNum, resPosition, resType=None):
+        noLinkerDictFileName = 'angles-nolinker.dict'
+        linkerDictFileName = 'angles-linker.dict'
+        linkerResList, noLinkerResList = self.getResLinkerLists()
+        if(resNum in linkerResList):
+            # print 'Using linker dict for residue ' + str(resNum)
+            dictFileName = linkerDictFileName
+        elif(resNum in noLinkerResList):
+            # print 'Using no-linker dict for residue ' + str(resNum)
+            dictFileName = noLinkerDictFileName
+        else:
+            print 'No linker list status detected for residue ' + str(resNum) + '. Using no-linker list.'
+            dictFileName = noLinkerDictFileName
+        filetext = open(dictFileName, 'r').read()
         anglesDict = eval(filetext)
-        print anglesDict
         if resType == None:
+            print resNum,resPosition,resType,dictFileName,anglesDict[resPosition]
             return anglesDict[resPosition]
         else:
+            print resNum,resPosition,resType,dictFileName,anglesDict[resPosition, resType]
             return anglesDict[resPosition,resType]
-
+			
+    def getResLinkerLists(self):
+        linkerResList = [1,2,3,4,5,6,7,8,9,10,11,28,29,30,31,32,33,34,35,36,37,38]
+        noLinkerResList = [12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27]
+        return linkerResList, noLinkerResList
+		
+    def getConnectorResList(self):
+        connectorResList = [11]
+        return connectorResList
+		
     def readMolEditDict(self,seqReader, editDict):
         for entry in editDict:
             if 'remove' in entry:
