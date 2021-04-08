@@ -1045,7 +1045,14 @@ public class RNARotamer {
                     if ((residue.next != null) && (residue.next.pairedTo == null)) {
                         helixEnd = true;
                     }
+
                     if ((residue.previous != null) && (residue.previous.pairedTo == null)) {
+                        helixEnd = true;
+                    }
+                    if ((residue.pairedTo != null) && (residue.pairedTo.previous != null) && (residue.pairedTo.previous.pairedTo == null)) {
+                        helixEnd = true;
+                    }
+                    if ((residue.pairedTo != null) && (residue.pairedTo.next != null) && (residue.pairedTo.next.pairedTo == null)) {
                         helixEnd = true;
                     }
                     if ((residue.pairedTo != null) && (!helixEnd || (!skipEnd && residue.iRes < residue.pairedTo.iRes))) {
