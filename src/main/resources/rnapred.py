@@ -1,6 +1,7 @@
 import sys
 import re
 import jarray
+import array
 import refine
 import subprocess
 import math

@@ -241,4 +241,6 @@ def parseArgs():
              else:
                  if args.model != args.iStruct:
                      args.iStruct = -1
+                 if not args.rnaPredMode in ["attr","rc","dist"]:
+                      raise ValueError("Invalid rna prediction mode " + args.rnaPredMode)
                  predictWithStructure(fileName, args.xMode, args.iStruct, args.model, args.location, args.outputMode, args.rnaPredMode)
