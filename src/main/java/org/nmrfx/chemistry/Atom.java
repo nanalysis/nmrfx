@@ -109,8 +109,8 @@ public class Atom implements IAtom {
     final boolean[] flags = new boolean[ATOMFLAGS.values().length];
     Optional<Map<String, Object>> properties = Optional.empty();
     public Atom daughterAtom = null;
-    public Map<String, RelaxationData> relaxData = new HashMap<>(); 
-       
+    public Map<String, RelaxationData> relaxData = new HashMap<>();
+
     public Atom(String name) {
         this.name = name;
     }
@@ -141,7 +141,7 @@ public class Atom implements IAtom {
         setColorByType();
 
     }
-    
+
     public static Atom genAtomWithType(String name, String aType) {
         AtomEnergyProp atomEnergyProp = AtomEnergyProp.get(aType);
         return new Atom(name, atomEnergyProp);
@@ -342,26 +342,30 @@ public class Atom implements IAtom {
         }
         bonds = newBonds;
     }
-       
+
+    public Map<String, RelaxationData> getRelaxationData() {
+        return relaxData;
+    }
+
     public RelaxationData getRelaxationData(String ID) {
         return relaxData.get(ID);
     }
-    
+
     public Collection<RelaxationData> getRelaxationData(relaxTypes expType, Double field, Double temperature) {
         List<RelaxationData> filtered = relaxData.values().stream()
                 .filter(r -> expType == null || r.getExpType() == null || expType.equals(r.getExpType()))
                 .filter(r -> field == null || field.equals(r.getField()))
                 .filter(r -> temperature == null || temperature.equals(r.getTemperature())).collect(Collectors.toList());
-        
+
         return filtered;
     }
-    
+
     public Collection<RelaxationData> getRelaxationData(List<relaxTypes> expTypes, List<Double> fields, List<Double> temperatures) {
         List<RelaxationData> filtered = relaxData.values().stream()
                 .filter(r -> expTypes == null || r.getExpType() == null || expTypes.contains(r.getExpType()))
                 .filter(r -> fields == null || fields.contains(r.getField()))
                 .filter(r -> temperatures == null || temperatures.contains(r.getTemperature())).collect(Collectors.toList());
-        
+
         return filtered;
     }
 
@@ -1933,7 +1937,7 @@ public class Atom implements IAtom {
             return false;
         }
     }
-    
+
     public boolean isLinker() {
         if (getTopEntity() instanceof Polymer) {
             Polymer polymer = (Polymer) getTopEntity();
@@ -1952,12 +1956,12 @@ public class Atom implements IAtom {
             return false;
         }
     }
-    
+
     public void setLinkerRotationActive(boolean state) {
         if (this.isLinker()) {
-                this.rotActive = state;
-            }
-            } 
+            this.rotActive = state;
+        }
+    }
 
     public boolean isFirstInMethyl() {
         boolean result = false;
