@@ -712,6 +712,9 @@ public class RNARotamer {
                     }
                     Atom atom = delta == -1 ? residue.previous.getAtom(aName)
                             : residue.getAtom(aName);
+                    if (atom == null) { 
+                        return null;
+                    }
                     angleAtoms[j] = atom;
                     if (j == 2) {
                         if (!atom.rotActive) {
