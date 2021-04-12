@@ -1353,10 +1353,17 @@ public class NMRStarReader {
     }
 
     public void processRelaxation(Saveframe saveframe, relaxTypes expType) throws ParseException {
-        String frameName = saveframe.getCategory("_Heteronucl_" + expType + "_list").get("Sf_framecode");
-        String field = saveframe.getCategory("_Heteronucl_" + expType + "_list").get("Spectrometer_frequency_1H");
-        String coherenceType = saveframe.getCategory("_Heteronucl_" + expType + "_list").get(expType + "_coherence_type");
-        String units = saveframe.getCategory("_Heteronucl_" + expType + "_list").get(expType + "_val_units");
+        String catName = saveframe.getCategoryName();
+        String frameName = saveframe.getName();
+        for (String cat : saveframe.getCategories()) {
+            System.out.println(cat);
+        }
+        String mainCat = "_Heteronucl_" + expType + "_list";
+        System.out.println(catName + " " + frameName);
+        Double field = saveframe.getDoubleValue(mainCat, "Spectrometer_frequency_1H");
+        System.out.println(field);
+        String coherenceType = saveframe.getValue(mainCat, expType + "_coherence_type");
+        String units = saveframe.getValue(mainCat, expType + "_val_units");
         Map<String, String> extras = new HashMap<>();
         extras.put("coherenceType", coherenceType);
         extras.put("units", units);
@@ -1380,6 +1387,8 @@ public class NMRStarReader {
             valColumn = loop.getColumnAsList(expType + "_val");
             errColumn = loop.getColumnAsList(expType + "_val_err");
         }
+
+        double temperature = 25.0;
 
         for (int i = 0; i < entityAssemblyIDColumn.size(); i++) {
             String iEntity = (String) entityIDColumn.get(i);
@@ -1407,7 +1416,6 @@ public class NMRStarReader {
                     RexError = Double.parseDouble(RexErrColumn.get(i));
                 }
             }
-            double temperature = 25.0;
 
             if (entityAssemblyID.equals(".")) {
                 entityAssemblyID = "1";
@@ -1430,12 +1438,12 @@ public class NMRStarReader {
             }
 
             if (expType.equals(relaxTypes.T1)) {
-                RelaxationData relaxData = new RelaxationData(frameName, expType, new ArrayList<>(), Double.parseDouble(field), temperature, value, error, extras);
+                RelaxationData relaxData = new RelaxationData(frameName, expType, new ArrayList<>(), field, temperature, value, error, extras);
 //                System.out.println("reader " + relaxData);
                 atom.relaxData.put(frameName, relaxData);
 //                System.out.println("reader atom.relaxData = " + atom + " " + atom.relaxData);
             } else {
-                RelaxationRex relaxData = new RelaxationRex(frameName, expType, new ArrayList<>(), Double.parseDouble(field), temperature, value, error, RexValue, RexError, extras);
+                RelaxationRex relaxData = new RelaxationRex(frameName, expType, new ArrayList<>(), field, temperature, value, error, RexValue, RexError, extras);
                 atom.relaxData.put(frameName, relaxData);
             }
         }
