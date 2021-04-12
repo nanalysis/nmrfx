@@ -121,8 +121,11 @@ def getSequenceArray(indexing,seqString,linkers,polyType):
     '''
     indexing = indexing if indexing else 1;
     resNames = [char.upper() if polyType == "RNA" else protein1To3[char.upper()] for char in seqString]
+    print linkers
     linkers = [linker.split(':') for linker in linkers.split()] if linkers else []
+    print linkers
     linkers = {int(i): int(n) for i,n in linkers} # resNum to number of linkers
+    print linkers
     try :
         resNums = range(int(indexing),int(indexing)+len(seqString))
     except ValueError:
@@ -136,6 +139,7 @@ def getSequenceArray(indexing,seqString,linkers,polyType):
                 startIndex, endIndex = [int(i) for i in indices]
             resNums += range(startIndex, endIndex+1)
 
+    print resNums
     if len(resNums) != len(resNames):
         raise IndexError('The indexing method cannot be applied to the given sequence string')
 
@@ -145,7 +149,9 @@ def getSequenceArray(indexing,seqString,linkers,polyType):
     for i, resNum in enumerate(resNums):
         resString = ' '.join([resNames[i], str(resNum)])
         seqArray.append(resString)
+        print seqArray
         nLinkers = linkers.get(resNum)
+        print 'nlinks',resNum, nLinkers
         if not nLinkers :
             continue
         for j in range(1, nLinkers + 1):
@@ -678,6 +684,7 @@ class refine:
                 valAngle = connection['valAngle'] if 'valAngle' in connection else 110.0
                 dihAngle = connection['dihAngle'] if 'dihAngle' in connection else 135.0
                 if poly0 == poly1:
+                    print 'break bond ', poly0, poly1
                     self.breakBond(atoms[1].getParent(), atoms[1])
                 self.addRNALinker(atoms[0], atoms[1], nLinks, linkLen, valAngle,  dihAngle)
         return linkAtoms
@@ -732,6 +739,8 @@ class refine:
             linkNames[-3] = "XC4'"
             linkNames[-2] = "XC3'"
             linkNames[-1] = "XO3'"
+
+            print endAtom,endAtom.getParent()
 
             oParent1 = endAtom.getParent()
             oParent2 = oParent1.getParent()
@@ -1228,6 +1237,7 @@ class refine:
 
         if 'bonds' in data:
             self.processBonds(data['bonds'], 'float')
+        self.molecule.fillEntityCoords()
 
         if rnaLinkerDict:
             rnaLinkerAtoms = self.readRNALinkerDict(rnaLinkerDict, False)
