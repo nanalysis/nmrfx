@@ -284,16 +284,20 @@ public enum Nuclei {
      */
     public static Nuclei findNuclei(final String test) {
         Nuclei result = H1;
-        for (Nuclei nucleus : values()) {
-            if (nucleus.getNameNumber().equals(test)) {
-                result = nucleus;
-                break;
-            } else if (nucleus.getNumberName().equals(test)) {
-                result = nucleus;
-                break;
-            } else if (nucleus.getName().equals(test)) {
-                result = nucleus;
-                break;
+        try {
+            result = valueOf(test);
+        } catch (IllegalArgumentException iaE) {
+            for (Nuclei nucleus : values()) {
+                if (nucleus.getNameNumber().equals(test)) {
+                    result = nucleus;
+                    break;
+                } else if (nucleus.getNumberName().equals(test)) {
+                    result = nucleus;
+                    break;
+                } else if (nucleus.getName().equals(test)) {
+                    result = nucleus;
+                    break;
+                }
             }
         }
 
