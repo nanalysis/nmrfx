@@ -178,7 +178,7 @@ public class Sequence {
                 String lastField = fields[nFields - 1];
 
                 boolean hasQualifier = lastField.contains("middle")
-                        || lastField.contains("start") || lastField.contains("end");
+                        || lastField.contains("start") || lastField.contains("end") || lastField.contains("nop");
                 if (hasQualifier) {
                     if (!checkQualifier(lastField, resPos)) {
                         return;
