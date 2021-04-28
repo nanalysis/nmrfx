@@ -1681,7 +1681,7 @@ public class Molecule extends MoleculeBase {
         RealMatrix rotMat = rdcEig.getVT().copy();
         if (scaleMat) {
             for (int i = 0; i < 3; i++) {
-                double scale = eigValues[i] / maxEig;
+                double scale = Math.abs(eigValues[i] / maxEig);
                 rotMat.setEntry(i, 0, rotMat.getEntry(i, 0) * scale);
                 rotMat.setEntry(i, 1, rotMat.getEntry(i, 1) * scale);
                 rotMat.setEntry(i, 2, rotMat.getEntry(i, 2) * scale);
