@@ -569,6 +569,23 @@ public class MolSceneController implements Initializable, MolSelectionListener, 
         molViewer.addTube(0, 0.7, "tubes " + getIndex());
     }
 
+    public void drawOrientationSpheresX() throws InvalidMoleculeException {
+        molViewer.addOrientationSphere(0, 122, 3.0, 0, "osphereX");
+    }
+
+    public void drawOrientationSpheresY() throws InvalidMoleculeException {
+        molViewer.addOrientationSphere(0, 122, 3.0, 1, "osphereY");
+    }
+
+    public void drawOrientationSpheresZ() throws InvalidMoleculeException {
+        molViewer.addOrientationSphere(0, 122, 3.0, 2, "osphereZ");
+    }
+    
+    public void drawOrientationCyl() throws InvalidMoleculeException {
+        molViewer.addOrientationCyls(0, 122, 3.0, 2, "ocyls");
+    }
+    
+
     public void drawBox() throws InvalidMoleculeException {
         System.out.println("add box");
         molViewer.deleteItems("delete", "box");

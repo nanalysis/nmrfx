@@ -38,6 +38,7 @@ import org.nmrfx.chemistry.InvalidMoleculeException;
 import org.nmrfx.chemistry.Polymer;
 import org.nmrfx.structure.chemistry.MissingCoordinatesException;
 import org.nmrfx.structure.chemistry.Molecule;
+import org.nmrfx.structure.rdc.AlignmentCalc;
 
 /**
  *
@@ -283,7 +284,7 @@ public class MolViewer extends Pane {
         twoDPane.getChildren().clear();
         for (LabelNode labelNode : labelNodes) {
             Point3D coordinates = labelNode.node.localToScene(javafx.geometry.Point3D.ZERO, true);
-           // coordinates = SceneUtils.subSceneToScene(subScene, coordinates);  got rid of this by using true above
+            // coordinates = SceneUtils.subSceneToScene(subScene, coordinates);  got rid of this by using true above
             double x = coordinates.getX();
             double y = coordinates.getY();
             Point2D pt2 = twoDPane.sceneToLocal(0, 0);
@@ -350,7 +351,15 @@ public class MolViewer extends Pane {
     }
 
     void drawMol() throws InvalidMoleculeException {
-        createItems("lines");
+        Molecule molecule = Molecule.getActive();
+        if (molecule == null) {
+            return;
+        }
+        if (!molecule.getPolymers().isEmpty()) {
+            createItems("tube");
+        } else {
+            createItems("lines");
+        }
     }
 
     class MolPrimitives {
@@ -491,26 +500,43 @@ public class MolViewer extends Pane {
             return;
         }
         try {
-            double[] corner = mol.getCorner(iStructure).toArray();
+            Vector3D[] cornerVecs = mol.getCorner(iStructure);
+            double[] minCorner = cornerVecs[0].toArray();
+            double[] maxCorner = cornerVecs[1].toArray();
             double[][] factors = {{1, 1, 1}, {-1, -1, -1}, {-1, 1, 1}, {1, -1, -1}, {1, -1, 1}, {-1, 1, -1}};
             double[][] begin = new double[factors.length][3];
             double[][] end = new double[factors.length][3];
             double[][] diffs = new double[factors.length][3];
-            for (int i = 0; i < begin.length; i++) {
-                for (int j = 0; j < 3; j++) {
-                    begin[i][j] = corner[j] * factors[i][j];
-                    end[i][j] = begin[i][j];
-                    diffs[i][j] = 2 * corner[j] * factors[i][j];
+            double[] v0 = new double[3];
+            double[] v1 = new double[3];
+            double[][] ends = new double[2][];
+            int[][] ds = {{1, 2}, {0, 2}, {0, 1}};
+            for (int i = 0; i < 3; i++) {
+                int d1 = ds[i][0];
+                int d2 = ds[i][1];
+                ends[0] = minCorner.clone();
+                ends[1] = maxCorner.clone();
+                for (int j = 0; j < 2; j++) {
+                    for (int k = 0; k < 2; k++) {
+                        v0[i] = ends[0][i];
+                        v1[i] = ends[1][i];
+                        v0[d1] = ends[j][d1];
+                        v1[d1] = ends[j][d1];
+                        v0[d2] = ends[k][d2];
+                        v1[d2] = ends[k][d2];
+                        Color color;
+                        if ((j == 0) && (k == 0)) {
+                            color = Color.GREEN;
+                        } else {
+                            color = Color.WHITE;
+                        }
+                        MolCylinder cyl0 = new MolCylinder(v0, v1, radius, color, tag);
+                        molGroup.getChildren().add(cyl0);
+
+                    }
                 }
             }
-            for (int i = 0; i < begin.length; i++) {
-                for (int j = 0; j < 3; j++) {
-                    end[i][j] -= diffs[i][j];
-                    MolCylinder cyl = new MolCylinder(begin[i], end[i], radius, Color.WHITE, tag);
-                    molGroup.getChildren().add(cyl);
-                    end[i][j] = begin[i][j];
-                }
-            }
+
         } catch (MissingCoordinatesException ex) {
         }
     }
@@ -548,7 +574,7 @@ public class MolViewer extends Pane {
                 colors[0] = Color.CORAL;
                 colors[1] = Color.LIGHTGREEN;
                 colors[2] = Color.LIGHTBLUE;
-                scale = 30.0;
+                scale = 15.0;
 
             } else if (type.equals("svd")) {
                 System.out.println("add SVD axes");
@@ -586,21 +612,26 @@ public class MolViewer extends Pane {
         if (mol == null) {
             return;
         }
-        double[][] rotMat = new double[3][3];
+        RealMatrix rotMat;
         if (type.equals("rdc")) {
-            rotMat = mol.getRDCRotationMatrix(false).getData();
+            rotMat = mol.getRDCRotationMatrix(false);
         } else if (type.equals("svd")) {
-            rotMat = mol.getSVDRotationMatrix(false).getData();
+            rotMat = mol.getSVDRotationMatrix(false);
+        } else {
+            return;
         }
-        double mxx = rotMat[0][0];
-        double mxy = rotMat[0][1];
-        double mxz = rotMat[0][2];
-        double myx = -rotMat[1][0];
-        double myy = -rotMat[1][1];
-        double myz = -rotMat[1][2];
-        double mzx = -rotMat[2][0];
-        double mzy = -rotMat[2][1];
-        double mzz = -rotMat[2][2];
+        System.out.println(rotMat.toString());
+        double[][] rotMatData = rotMat.getData();
+
+        double mxx = rotMatData[0][0];
+        double mxy = rotMatData[0][1];
+        double mxz = rotMatData[0][2];
+        double myx = -rotMatData[1][0];
+        double myy = -rotMatData[1][1];
+        double myz = -rotMatData[1][2];
+        double mzx = -rotMatData[2][0];
+        double mzy = -rotMatData[2][1];
+        double mzz = -rotMatData[2][2];
         rotTransform.setToTransform(mxx, mxy, mxz, 0.0, myx, myy, myz, 0.0, mzx, mzy, mzz, 0.0);
         updateView();
     }
@@ -626,6 +657,53 @@ public class MolViewer extends Pane {
             molGroup.getChildren().add(tube);
         }
 
+    }
+
+    public void addOrientationSphere(int iStructure, int n, double sphereRadius, int orient, String tag) throws InvalidMoleculeException {
+        Molecule mol = Molecule.getActive();
+        if (mol == null) {
+            return;
+        }
+        AlignmentCalc aCalc = new AlignmentCalc(mol);
+        aCalc.center();
+        Vector3D center = aCalc.getCenter();
+        double radius = aCalc.getRadius();
+        aCalc = new AlignmentCalc();
+        aCalc.genAngles(n, 18, 1.0);
+        Vector3D initialVec;
+        Color color;
+        if (orient == 0) {
+            initialVec = new Vector3D(1.0, 0.0, 0.0);
+            color = Color.RED;
+        } else if (orient == 1) {
+            initialVec = new Vector3D(0.0, 1.0, 0.0);
+            color = Color.GREEN;
+        } else {
+            initialVec = new Vector3D(0.0, 0.0, 1.0);
+            color = Color.BLUE;
+        }
+        aCalc.genVectors(initialVec);
+        //aCalc.makeSphere(n, 1.0, 1.0);
+        List<Vector3D> vecs = aCalc.getVectors();
+        Spheres spheres = new Spheres(tag, vecs, color, 0.3, center, radius + 3.0, tag);
+        molGroup.getChildren().add(spheres);
+    }
+
+    public void addOrientationCyls(int iStructure, int n, double sphereRadius, int orient, String tag) throws InvalidMoleculeException {
+        Molecule mol = Molecule.getActive();
+        if (mol == null) {
+            return;
+        }
+        AlignmentCalc aCalc = new AlignmentCalc();
+        aCalc.makeCylinder(100, 10.0, 15.0, 100.0);
+        aCalc.center();
+        Vector3D center = aCalc.getCenter();
+        double radius = aCalc.getRadius();
+        Vector3D initialVec;
+        Color color = Color.RED;
+        List<Vector3D> vecs = aCalc.getVectors();
+        Spheres spheres = new Spheres(tag, vecs, color, 0.3, center, 1.1, tag);
+        molGroup.getChildren().add(spheres);
     }
 
     public void createItems(String mode, String[] args, ArrayList<Bond> bonds,
