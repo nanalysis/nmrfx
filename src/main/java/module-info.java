@@ -3,6 +3,7 @@ module org.nmrfx.structure {
     exports org.nmrfx.structure.chemistry.energy;
     exports org.nmrfx.structure.noe;
     exports org.nmrfx.structure.rna;
+    exports org.nmrfx.structure.rdc;
     exports org.nmrfx.structure.tools;
     exports org.nmrfx.structure.seqassign;
     exports org.nmrfx.structure.chemistry.predict;
