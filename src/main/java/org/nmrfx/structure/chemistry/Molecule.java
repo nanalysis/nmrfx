@@ -57,6 +57,8 @@ import org.nmrfx.chemistry.search.MNode;
 import org.nmrfx.chemistry.search.MTree;
 import org.nmrfx.structure.chemistry.miner.NodeValidator;
 import org.nmrfx.structure.chemistry.miner.PathIterator;
+import org.nmrfx.structure.rdc.AlignmentCalc;
+import org.nmrfx.structure.rdc.AlignmentMatrix;
 import org.nmrfx.structure.rna.BasePair;
 
 public class Molecule extends MoleculeBase {
@@ -1575,13 +1577,16 @@ public class Molecule extends MoleculeBase {
         }
     }
 
-    public Vector3D getCorner(int iStructure) throws MissingCoordinatesException {
+    public Vector3D[] getCorner(int iStructure) throws MissingCoordinatesException {
         int n;
         Point3 pt;
         n = 0;
         double[] coords = new double[3];
-        double[] corner = new double[3];
-        double[] mCenter = getCenter(iStructure);
+        double[][] corner = new double[2][3];
+        for (int iC = 0; iC < 3; iC++) {
+            corner[0][iC] = Double.MAX_VALUE;
+            corner[1][iC] = Double.NEGATIVE_INFINITY;
+        }
         for (Atom atom : atoms) {
             pt = atom.getPoint(iStructure);
 
@@ -1590,9 +1595,11 @@ public class Molecule extends MoleculeBase {
                 coords[1] = pt.getY();
                 coords[2] = pt.getZ();
                 for (int iC = 0; iC < 3; iC++) {
-                    double delta = Math.abs(coords[iC] - mCenter[iC]);
-                    if (delta > corner[iC]) {
-                        corner[iC] = delta;
+                    if (coords[iC] < corner[0][iC]) {
+                        corner[0][iC] = coords[iC];
+                    }
+                    if (coords[iC] > corner[1][iC]) {
+                        corner[1][iC] = coords[iC];
                     }
                 }
                 n++;
@@ -1602,7 +1609,15 @@ public class Molecule extends MoleculeBase {
         if (n == 0) {
             throw new MissingCoordinatesException("couldn't calculate center: no coordinates");
         }
-        return new Vector3D(corner[0], corner[1], corner[2]);
+        double atomRadius = 2.5;
+        for (int i = 0; i < 3; i++) {
+            corner[0][i] -= atomRadius;
+            corner[1][i] += atomRadius;
+        }
+        Vector3D minCorner = new Vector3D(corner[0][0], corner[0][1], corner[0][2]);
+        Vector3D maxCorner = new Vector3D(corner[1][0], corner[1][1], corner[1][2]);
+        Vector3D[] result = {minCorner, maxCorner};
+        return result;
     }
 
     /**
@@ -1639,29 +1654,41 @@ public class Molecule extends MoleculeBase {
     }
 
     public RealMatrix getRDCRotationMatrix(boolean scaleMat) {
+        EigenDecomposition rdcEig;
         if (rdcResults == null) {
-            return null;
+            AlignmentCalc aCalc = new AlignmentCalc(this);
+            aCalc.center();
+            aCalc.genAngles(122, 18, 1.0);
+            aCalc.findMinimums();
+            double slabWidth = 0.2;
+            double f = 0.025;
+            double d = 40.0;
+            aCalc.calcExclusions(slabWidth, f, d);
+            aCalc.calcTensor(0.8);
+            AlignmentMatrix aMat = aCalc.getAlignment();
+            rdcEig = aMat.getEig();
         } else {
-            EigenDecomposition rdcEig = rdcResults.getEig();
-            double[] eigValues = rdcEig.getRealEigenvalues();
-            double maxEig = Double.NEGATIVE_INFINITY;
-            for (int i = 0; i < 3; i++) {
-                if (Math.abs(eigValues[i]) > maxEig) {
-                    maxEig = Math.abs(eigValues[i]);
-                }
-            }
-
-            RealMatrix rotMat = rdcEig.getVT().copy();
-            if (scaleMat) {
-                for (int i = 0; i < 3; i++) {
-                    double scale = eigValues[i] / maxEig;
-                    rotMat.setEntry(i, 0, rotMat.getEntry(i, 0) * scale);
-                    rotMat.setEntry(i, 1, rotMat.getEntry(i, 1) * scale);
-                    rotMat.setEntry(i, 2, rotMat.getEntry(i, 2) * scale);
-                }
-            }
-            return rotMat;
+            rdcEig = rdcResults.getEig();
         }
+        double[] eigValues = rdcEig.getRealEigenvalues();
+        double maxEig = Double.NEGATIVE_INFINITY;
+        for (int i = 0; i < 3; i++) {
+            if (Math.abs(eigValues[i]) > maxEig) {
+                maxEig = Math.abs(eigValues[i]);
+            }
+        }
+
+        RealMatrix rotMat = rdcEig.getVT().copy();
+        if (scaleMat) {
+            for (int i = 0; i < 3; i++) {
+                double scale = eigValues[i] / maxEig;
+                rotMat.setEntry(i, 0, rotMat.getEntry(i, 0) * scale);
+                rotMat.setEntry(i, 1, rotMat.getEntry(i, 1) * scale);
+                rotMat.setEntry(i, 2, rotMat.getEntry(i, 2) * scale);
+            }
+        }
+        return rotMat;
+
     }
 
     public RealMatrix getSVDRotationMatrix(boolean scaleMat) {
