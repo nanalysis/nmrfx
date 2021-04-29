@@ -481,6 +481,7 @@ public class EnergyLists {
         if (dihedrals == null) {
             return;
         }
+        System.out.println("update fixed");
         dihedrals.saveDihedrals();
         EnergyCoords eCoords = molecule.getEnergyCoords();
         double[][][] dRange = eCoords.getFixedRange();
@@ -1068,9 +1069,16 @@ public class EnergyLists {
     }
 
     public void updateNOEPairs() {
+        boolean dumped = false;
         EnergyCoords eCoords = molecule.getEnergyCoords();
         molecule.updateVecCoords();
         eCoords.eConstraintPairs.clear();
+        if (!eCoords.fixedCurrent()) {
+            if (molecule.getDihedrals() == null) {
+                return;
+            }
+            updateFixed(molecule.getDihedrals());
+        }
         int iGroup = 0;
         for (DistanceConstraintSet distanceSet : molecule.getMolecularConstraints().distanceSets.values()) {
             List<DistanceConstraint> distanceList = distanceSet.get();
@@ -1095,31 +1103,33 @@ public class EnergyLists {
                     boolean ok = false;
                     Atom atom1 = distancePair.getAtomPairs()[0].getAtoms1()[0];
                     Atom atom2 = distancePair.getAtomPairs()[0].getAtoms2()[0];
-                    if (deltaEnd == 0) {
-                        ok = true;
-                    } else {
-                        Compound compound1 = (Compound) atom1.entity;
-                        Compound compound2 = (Compound) atom2.entity;
-                        int iRes = Integer.parseInt(compound1.number);
-                        int jRes = Integer.parseInt(compound2.number);
-                        if (Math.abs(iRes - jRes) < deltaEnd) {
+                    if (true || !eCoords.fixedCurrent() || !eCoords.getFixed(atom1.eAtom, atom2.eAtom)) {
+                        if (deltaEnd == 0) {
                             ok = true;
+                        } else {
+                            Compound compound1 = (Compound) atom1.entity;
+                            Compound compound2 = (Compound) atom2.entity;
+                            int iRes = Integer.parseInt(compound1.number);
+                            int jRes = Integer.parseInt(compound2.number);
+                            if (Math.abs(iRes - jRes) < deltaEnd) {
+                                ok = true;
+                            }
                         }
-                    }
-                    if (ok) {
-                        int iAtom = atom1.eAtom;
-                        int jAtom = atom2.eAtom;
-                        // fixme is this right  probably should use -1 for group
-                        int iUnit = -1;
-                        if (atom1.rotGroup != null) {
-                            iUnit = atom1.rotGroup.rotUnit;
+                        if (ok) {
+                            int iAtom = atom1.eAtom;
+                            int jAtom = atom2.eAtom;
+                            // fixme is this right  probably should use -1 for group
+                            int iUnit = -1;
+                            if (atom1.rotGroup != null) {
+                                iUnit = atom1.rotGroup.rotUnit;
+                            }
+                            int jUnit = -1;
+                            if (atom2.rotGroup != null) {
+                                jUnit = atom2.rotGroup.rotUnit;
+                            }
+                            eCoords.addPair(iAtom, jAtom, iUnit, jUnit, distancePair.getLower(), distancePair.getUpper(), distancePair.isBond(),
+                                    iGroup, weight);
                         }
-                        int jUnit = -1;
-                        if (atom2.rotGroup != null) {
-                            jUnit = atom2.rotGroup.rotUnit;
-                        }
-                        eCoords.addPair(iAtom, jAtom, iUnit, jUnit, distancePair.getLower(), distancePair.getUpper(), distancePair.isBond(),
-                                iGroup, weight);
                     }
                 } else {
                     boolean ok = false;
@@ -1130,13 +1140,15 @@ public class EnergyLists {
                         for (AtomDistancePair atomDistancePair : distancePair.getAtomPairs()) {
                             Atom atom1 = atomDistancePair.getAtoms1()[0];
                             Atom atom2 = atomDistancePair.getAtoms2()[0];
-                            Compound compound1 = (Compound) atom1.entity;
-                            Compound compound2 = (Compound) atom2.entity;
-                            int iRes = Integer.parseInt(compound1.number);
-                            int jRes = Integer.parseInt(compound2.number);
-                            if (Math.abs(iRes - jRes) >= deltaEnd) {
-                                allInRange = false;
-                                break;
+                            if (true || !eCoords.fixedCurrent() || !eCoords.getFixed(atom1.eAtom, atom2.eAtom)) {
+                                Compound compound1 = (Compound) atom1.entity;
+                                Compound compound2 = (Compound) atom2.entity;
+                                int iRes = Integer.parseInt(compound1.number);
+                                int jRes = Integer.parseInt(compound2.number);
+                                if (Math.abs(iRes - jRes) >= deltaEnd) {
+                                    allInRange = false;
+                                    break;
+                                }
                             }
                         }
                         ok = allInRange;
@@ -1146,15 +1158,24 @@ public class EnergyLists {
                         for (AtomDistancePair atomDistancePair : distancePair.getAtomPairs()) {
                             Atom atom1 = atomDistancePair.getAtoms1()[0];
                             Atom atom2 = atomDistancePair.getAtoms2()[0];
-                            int iAtom = atom1.eAtom;
-                            int jAtom = atom2.eAtom;
-                            if ((atom1.rotGroup == null) || (atom2.rotGroup == null)) {
-                                System.out.println("null rot group " + atom1.getShortName() + " " + atom2.getShortName());
-                            } else {
-                                int iUnit = atom1.rotGroup.rotUnit;
-                                int jUnit = atom2.rotGroup.rotUnit;
-                                eCoords.addPair(iAtom, jAtom, iUnit, jUnit, distancePair.getLower(), distancePair.getUpper(), distancePair.isBond(),
-                                        iGroup, weight / nPairs);
+                            if (true || !eCoords.fixedCurrent() || !eCoords.getFixed(atom1.eAtom, atom2.eAtom)) {
+                                int iAtom = atom1.eAtom;
+                                int jAtom = atom2.eAtom;
+                                if ((atom1.rotGroup == null) || (atom2.rotGroup == null)) {
+                                    System.out.println("null rot group "
+                                            + atom1.getShortName() + " "
+                                            + atom2.getShortName() + " "
+                                            + eCoords.getFixed(atom1.eAtom, atom2.eAtom));
+//                                    if (!dumped) {
+//                                        eCoords.dumpFixed();
+//                                        dumped = true;
+//                                    }
+                                } else {
+                                    int iUnit = atom1.rotGroup.rotUnit;
+                                    int jUnit = atom2.rotGroup.rotUnit;
+                                    eCoords.addPair(iAtom, jAtom, iUnit, jUnit, distancePair.getLower(), distancePair.getUpper(), distancePair.isBond(),
+                                            iGroup, weight / nPairs);
+                                }
                             }
 
                         }
