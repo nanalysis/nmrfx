@@ -13,16 +13,21 @@ import org.nmrfx.chemistry.Atom;
  * @author brucejohnson
  */
 public class RDCVector {
+    public static boolean CALC_MAX_RDC = true;
 
     Atom atom1;
     Atom atom2;
     Vector3D vector;
     double rdc;
+    double maxRDC;
 
     public RDCVector(Atom atom1, Atom atom2, Vector3D vector) {
         this.atom1 = atom1;
         this.atom2 = atom2;
         this.vector = vector;
+        String elemName1 = atom1.getElementName();
+        String elemName2 = atom2.getElementName();
+        maxRDC = AlignmentMatrix.calcMaxRDC(vector, elemName1, elemName2, CALC_MAX_RDC, false);
     }
 
     public double getRDC() {
@@ -37,8 +42,12 @@ public class RDCVector {
         return atom1;
     }
 
-    public Atom getAtom12() {
+    public Atom getAtom2() {
         return atom2;
+    }
+
+    public double getMaxRDC() {
+        return maxRDC;
     }
 
     @Override
