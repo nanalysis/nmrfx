@@ -23,6 +23,9 @@ if len(sys.argv) > 0:
     elif sys.argv[0] == "predict":
         import predictor
         predictor.parseArgs()
+    elif sys.argv[0] == "rdc":
+        import rdc
+        rdc.parseArgs()
     elif sys.argv[0] == "super":
         import super
         super.parseArgs()
