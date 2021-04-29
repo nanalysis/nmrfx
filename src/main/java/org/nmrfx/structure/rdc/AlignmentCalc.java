@@ -261,7 +261,6 @@ public class AlignmentCalc {
             for (int j = i + 1; j < vectors.size(); j++) {
                 Vector3D vec2 = vectors.get(j);
                 double dis = vec1.distance(vec2);
-                double[] ab = angles.get(i);
                 // System.out.printf("%6.1f %6.1f %6.1f\n", Math.toDegrees(ab[0]), Math.toDegrees(ab[1]),  dis);
                 min = Math.min(min, dis);
 
