@@ -481,7 +481,6 @@ public class EnergyLists {
         if (dihedrals == null) {
             return;
         }
-        System.out.println("update fixed");
         dihedrals.saveDihedrals();
         EnergyCoords eCoords = molecule.getEnergyCoords();
         double[][][] dRange = eCoords.getFixedRange();
