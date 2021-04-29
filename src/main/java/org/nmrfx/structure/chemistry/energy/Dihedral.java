@@ -263,7 +263,8 @@ public class Dihedral {
         }
         List<Atom> angleAtoms = molecule.getAllAngleAtoms();
         for (Atom atom : angleAtoms) {
-            fileOut.format("%s %.6f\n", atom.getFullName(), Math.toDegrees(atom.daughterAtom.dihedralAngle));
+            int rotatable = atom.rotActive ? 1 : 0;
+            fileOut.format("%s %.6f %d\n", atom.getFullName(), Math.toDegrees(atom.daughterAtom.dihedralAngle), rotatable);
         }
         fileOut.close();
     }
