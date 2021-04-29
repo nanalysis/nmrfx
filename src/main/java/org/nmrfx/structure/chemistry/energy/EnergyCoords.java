@@ -593,6 +593,10 @@ public class EnergyCoords {
             }
         }
     }
+    
+    public void resetFixed() {
+        fixed = null;
+    }
 
     public boolean fixedCurrent() {
         boolean status = (fixed != null) && (fixed.length == nAtoms);
