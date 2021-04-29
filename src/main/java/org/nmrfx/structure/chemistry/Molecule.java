@@ -17,6 +17,7 @@
  */
 package org.nmrfx.structure.chemistry;
 
+import org.nmrfx.structure.rdc.OrderSVD;
 import org.nmrfx.chemistry.CoordSet;
 import org.nmrfx.chemistry.Order;
 import org.nmrfx.chemistry.protein.Sheet;
