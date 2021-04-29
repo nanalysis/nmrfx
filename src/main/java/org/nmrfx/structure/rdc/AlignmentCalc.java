@@ -382,7 +382,7 @@ public class AlignmentCalc {
             }
             totalScale += scale;
         }
-        double globalScale = (double) nConstrainedPositions / (nConstrainedPositions + nFreePositions);
+        double globalScale = 0.5 * (double) nConstrainedPositions / (nConstrainedPositions + nFreePositions);
 
         System.out.printf("avgDots %7.5f %7.5f %7.5f totalScale %7.5f\n", sumDots[0] / angleMinimums.size(), sumDots[1] / angleMinimums.size(), sumDots[2] / angleMinimums.size(), totalScale);
         RealMatrix saupeMat = new Array2DRowRealMatrix(sMat);
