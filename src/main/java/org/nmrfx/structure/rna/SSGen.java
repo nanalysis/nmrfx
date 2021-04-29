@@ -71,7 +71,7 @@ public class SSGen {
     public final void pairTo() {
         SSLayout ssLay = new SSLayout(viennaSeq.length());
         ssLay.interpVienna(viennaSeq, residues);
-        }
+    }
 
     public static SecondaryStructure classifyRes(List<Residue> residues) {
         if (residues != null && !(residues.isEmpty())) {
@@ -163,6 +163,11 @@ public class SSGen {
             while (tracker < residues.size() && residues.get(tracker).pairedTo != null) {
                 Residue res1 = residues.get(tracker);
                 Residue res2 = res1.pairedTo;
+                Residue res1Next = res1.getNext();
+                Residue res2Before = res2.getPrevious();
+//                if ((res1.getPrevious() != null) && (res2.getNext() != null) && (res2.getNext().pairedTo == null)) {
+//                    
+//                }
                 Polymer poly1 = res1.getPolymer();
                 Polymer poly2 = res2.getPolymer();
                 int polyID1 = poly1.getIDNum();
@@ -177,6 +182,10 @@ public class SSGen {
                     tracker++;
                 } else {
                     tracker++;
+                }
+                if ((res1Next != null) && (res1Next.pairedTo != null) && (res2Before != null) && res2Before.pairedTo == null) {
+                    // bulge on opposite strand so end helix
+                    break;
                 }
             }
             type = "helix";
