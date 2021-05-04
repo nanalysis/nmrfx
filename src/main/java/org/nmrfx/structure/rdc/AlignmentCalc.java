@@ -57,6 +57,7 @@ public class AlignmentCalc {
     RealMatrix directionMatrix;
     int nFreePositions;
     int nConstrainedPositions;
+    double globalScale;
 
     public class AngleMinimum {
 
@@ -169,17 +170,23 @@ public class AlignmentCalc {
         this.vectors = vectors;
     }
 
-    public AlignmentCalc(MoleculeBase molecule) {
+    public AlignmentCalc(MoleculeBase molecule, boolean useH, double atomRadius) {
+        this.atomRadius = atomRadius;
         for (Atom atom : molecule.getAtomArray()) {
+            if (atom.isCoarse() || atom.isPlanarity()) {
+                continue;
+            }
             Point3 point3d = atom.getPoint();
             if (point3d != null) {
-                vectors.add(point3d);
-                AtomEnergyProp prop = AtomEnergyProp.get(atom.getType());
-                if (prop != null) {
-                    atom.mass = prop.getMass();
-                    masses.add(atom.mass);
-                } else {
-                    masses.add(1.0);
+                if (useH || (atom.getAtomicNumber() != 1)) {
+                    vectors.add(point3d);
+                    AtomEnergyProp prop = AtomEnergyProp.get(atom.getType());
+                    if (prop != null) {
+                        atom.mass = prop.getMass();
+                        masses.add(atom.mass);
+                    } else {
+                        masses.add(1.0);
+                    }
                 }
             }
         }
@@ -321,8 +328,17 @@ public class AlignmentCalc {
         angleMinimums.sort((a, b) -> Double.compare(b.min, a.min));
     }
 
-    public void calcExclusions(double slabWidth, double f, double d) {
-        double rMid = d / (2.0 * f);
+    public void calcExclusions(double slabWidth, double f, double d, String mode) {
+        double rMid;
+        double delFree;
+        if (mode.equals("bicelle")) {
+            rMid = d / (2.0 * f);
+            delFree = d / 2.0;
+        } else {
+            rMid = d / Math.sqrt(4.0 * f);
+            delFree = d / 2.0;
+        }
+        System.out.println(f + " d " + d + " rmid " + rMid);
         AngleMinimum firstAMin = angleMinimums.get(0);
         AngleMinimum lastAMin = angleMinimums.get(angleMinimums.size() - 1);
         double firstMin = firstAMin.getMin();
@@ -344,8 +360,87 @@ public class AlignmentCalc {
         }
     }
 
+    public void calcCylExclusions(double slabWidth, double f, double d, String mode) {
+        double rMid;
+        if (mode.equals("bicelle")) {
+            rMid = d / (2.0 * f);
+        } else {
+            rMid = d / Math.sqrt(f * 2.0);
+        }
+        System.out.println(f + " d " + d + " rmid " + rMid);
+        int n = (int) ((rMid - d / 2.0) / slabWidth);
+        int nAllOverlap = 0;
+        for (int i = 0; i < n; i++) {
+            boolean anyOverlap = false;
+            boolean allOverlap = true;
+            for (AngleMinimum aMin : angleMinimums) {
+                double xOffset = d / 2.0 + i * slabWidth;
+                boolean overlaps;
+                if (mode.equals("bicelle")) {
+                    overlaps = calcOverlap(aMin.rot, xOffset, d / 2.0);
+                } else {
+                    overlaps = calcCylOverlap(aMin.rot, xOffset, d / 2.0);
+                }
+                if (overlaps) {
+                    anyOverlap = true;
+                    aMin.count++;
+                } else {
+                    allOverlap = false;
+                }
+            }
+            if (allOverlap) {
+                nAllOverlap++;
+            }
+            if (!anyOverlap) {
+                nConstrainedPositions = i;
+                break;
+            }
+        }
+        for (AngleMinimum aMin : angleMinimums) {
+            aMin.count -= nAllOverlap;
+        }
+        nConstrainedPositions -= nAllOverlap;
+        double constrainedSize;
+        double freeSize;
+        double fullSize;
+        double gScale;
+        double scale;
+        if (mode.equals("bicelle")) {
+            double halfWall = d / 2.0;
+            double overlapThickness = nAllOverlap * slabWidth;
+            double constrainedThickness = nConstrainedPositions * slabWidth;
+            double overlapSize = 2.0 * overlapThickness;
+            constrainedSize = 2.0 * constrainedThickness;
+            fullSize = d / f;
+            freeSize = fullSize - d - constrainedSize - overlapSize;
+            scale = 0.5;
+
+        } else {
+            double r = d / 2.0;
+            double areaPerCyl = Math.PI * r * r / f;
+            double overlapThickness = nAllOverlap * slabWidth;
+            double rR = r + overlapThickness;
+            double constrainedThickness = nConstrainedPositions * slabWidth;
+            double rC = r + overlapThickness + constrainedThickness;
+            double cylArea = Math.PI * r * r;
+            double cylRestrictedArea = Math.PI * rR * rR;
+            double cylConstrainedArea = Math.PI * rC * rC;
+            freeSize = areaPerCyl - cylConstrainedArea;
+            constrainedSize = cylConstrainedArea - cylRestrictedArea;
+            scale = 0.25;
+        }
+        globalScale = scale * constrainedSize / (constrainedSize + freeSize);
+
+        nFreePositions = n - nAllOverlap - nConstrainedPositions;
+        // double globalScale = 0.5 * (double) nConstrainedPositions / (nConstrainedPositions + nFreePositions);
+        System.out.println("n " + n + " nPos " + nAllOverlap + " nFree "
+                + nFreePositions + " nConstr " + nConstrainedPositions
+                + " ggs " + globalScale);
+    }
+
     public void calcTensor(double lcS) {
         double[][] sMat = new double[3][3];
+        double[][] sMat2 = new double[3][3];
         double total = 0;
         double[] sumDots = {0.0, 0.0, 0.0};
         for (AngleMinimum aMin : angleMinimums) {
@@ -354,7 +449,7 @@ public class AlignmentCalc {
         double totalScale = 0.0;
         for (AngleMinimum aMin : angleMinimums) {
             double scale = (nConstrainedPositions - aMin.getCount()) / total;
-            // scale = 1.0/angleMinimums.size();
+            double scaleUniform = 1.0 / angleMinimums.size();
             // scale = 1.0;
             double[] dots = new double[3];
             for (int i = 0; i < 3; i++) {
@@ -366,25 +461,27 @@ public class AlignmentCalc {
 //            System.out.printf("%5.2f %5.2f %5.2f\n", aMin.vecs[2].getX(), aMin.vecs[2].getY(), aMin.vecs[2].getZ());
 //            System.out.printf("%5.2f %5.2f %5.2f\n", dots[0], dots[1], dots[2]);
             for (int i = 0; i < 3; i++) {
-                for (int j = i; j < 3; j++) {
-                    int k = i == j ? 1 : 0;
-                    sMat[i][j] += ((3.0 * dots[i] * dots[j] - k) / 2.0) * scale * lcS;
+                for (int j = 0; j < 3; j++) {
+                    double k = i == j ? 1.0 : 0.0;
+                    sMat[i][j] += -1.0 * ((3.0 * dots[i] * dots[j] - k) / 2.0) * scale * lcS;
+                    sMat2[i][j] += -1.0 * ((3.0 * dots[i] * dots[j] - k) / 2.0) * scaleUniform * lcS;
                 }
             }
             sumDots[0] += dots[0] * dots[0];
             sumDots[1] += dots[1] * dots[1];
             sumDots[2] += dots[2] * dots[2];
-            for (int i = 0; i < 3; i++) {
-                for (int j = i + 1; j < 3; j++) {
-                    sMat[j][i] = sMat[i][j];
-                }
-            }
+//            for (int i = 0; i < 3; i++) {
+//                for (int j = i + 1; j < 3; j++) {
+//                    sMat[j][i] = sMat[i][j];
+//                }
+//            }
             totalScale += scale;
         }
-        double globalScale = 0.5 * (double) nConstrainedPositions / (nConstrainedPositions + nFreePositions);
-
-        System.out.printf("avgDots %7.5f %7.5f %7.5f totalScale %7.5f\n", sumDots[0] / angleMinimums.size(), sumDots[1] / angleMinimums.size(), sumDots[2] / angleMinimums.size(), totalScale);
+//        double globalScale = 0.5 * (double) nConstrainedPositions / (nConstrainedPositions + nFreePositions);
+        System.out.println("glboal " + globalScale);
+        RealMatrix saupeMat2 = new Array2DRowRealMatrix(sMat2);
         RealMatrix saupeMat = new Array2DRowRealMatrix(sMat);
+        saupeMat = saupeMat.subtract(saupeMat2);
         alignmentMatrix = new AlignmentMatrix(saupeMat, globalScale);
     }
 
@@ -405,6 +502,35 @@ public class AlignmentCalc {
             maxX = Math.max(maxX, rotVector.getX() + atomRadius);
         }
         double[] result = {minX, maxX};
+        return result;
+    }
+
+    public boolean calcCylOverlap(Rotation rot, double deltaX, double limit) {
+        double limitSq = limit * limit;
+        boolean result = false;
+        for (Vector3D vector : vectors) {
+            Vector3D rotVector = rot.applyTo(vector);
+            double x = rotVector.getX() + deltaX;
+            double y = rotVector.getY();
+            double deltaSq = x * x + y * y;
+            if (deltaSq < limitSq) {
+                result = true;
+                break;
+            }
+        }
+        return result;
+    }
+
+    public boolean calcOverlap(Rotation rot, double deltaX, double limit) {
+        boolean result = false;
+        for (Vector3D vector : vectors) {
+            Vector3D rotVector = rot.applyTo(vector);
+            double x = rotVector.getX() + deltaX;
+            if (x < limit) {
+                result = true;
+                break;
+            }
+        }
         return result;
     }
 

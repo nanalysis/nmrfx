@@ -47,6 +47,7 @@ import java.util.logging.Logger;
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.apache.commons.math3.linear.EigenDecomposition;
 import org.apache.commons.math3.linear.RealMatrix;
+import org.apache.commons.math3.linear.RealVector;
 import org.apache.commons.math3.linear.SingularValueDecomposition;
 import org.nmrfx.structure.project.StructureProject;
 import org.nmrfx.structure.chemistry.energy.AngleTreeGenerator;
@@ -1657,14 +1658,14 @@ public class Molecule extends MoleculeBase {
     public RealMatrix getRDCRotationMatrix(boolean scaleMat) {
         EigenDecomposition rdcEig;
         if (rdcResults == null) {
-            AlignmentCalc aCalc = new AlignmentCalc(this);
+            AlignmentCalc aCalc = new AlignmentCalc(this, true, 2.0);
             aCalc.center();
             aCalc.genAngles(122, 18, 1.0);
             aCalc.findMinimums();
             double slabWidth = 0.2;
             double f = 0.025;
             double d = 40.0;
-            aCalc.calcExclusions(slabWidth, f, d);
+            aCalc.calcExclusions(slabWidth, f, d, "cyl");
             aCalc.calcTensor(0.8);
             AlignmentMatrix aMat = aCalc.getAlignment();
             rdcEig = aMat.getEig();
