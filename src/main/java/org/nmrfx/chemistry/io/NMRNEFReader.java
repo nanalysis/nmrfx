@@ -603,7 +603,7 @@ public class NMRNEFReader {
             Util.setStrictlyNEF(true);
             try {
                 if (addConstraint) {
-                    distanceSet.addDistanceConstraint(atomNames[0], atomNames[1], lower, upper, distanceSet.containsBonds(),  weight, target, targetErr);
+                    distanceSet.addDistanceConstraint(atomNames[0], atomNames[1], lower, upper, distanceSet.containsBonds(), weight, target, targetErr);
                 }
             } catch (IllegalArgumentException iaE) {
                 int index = indexColumn.get(i);
