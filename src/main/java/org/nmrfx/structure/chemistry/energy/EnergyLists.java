@@ -1118,16 +1118,12 @@ public class EnergyLists {
                             int iAtom = atom1.eAtom;
                             int jAtom = atom2.eAtom;
                             // fixme is this right  probably should use -1 for group
-                            int iUnit = -1;
-                            if (atom1.rotGroup != null) {
-                                iUnit = atom1.rotGroup.rotUnit;
+                            int iUnit = atom1.rotGroup == null ? -1 : atom1.rotGroup.rotUnit;
+                            int jUnit = atom2.rotGroup == null ? -1 : atom2.rotGroup.rotUnit;
+                            if (((iUnit != -1) || (jUnit != -1)) && (iUnit != jUnit)) {
+                                eCoords.addPair(iAtom, jAtom, iUnit, jUnit, distancePair.getLower(), distancePair.getUpper(), distancePair.isBond(),
+                                        iGroup, weight);
                             }
-                            int jUnit = -1;
-                            if (atom2.rotGroup != null) {
-                                jUnit = atom2.rotGroup.rotUnit;
-                            }
-                            eCoords.addPair(iAtom, jAtom, iUnit, jUnit, distancePair.getLower(), distancePair.getUpper(), distancePair.isBond(),
-                                    iGroup, weight);
                         }
                     }
                 } else {
@@ -1160,23 +1156,13 @@ public class EnergyLists {
                             if (true || !eCoords.fixedCurrent() || !eCoords.getFixed(atom1.eAtom, atom2.eAtom)) {
                                 int iAtom = atom1.eAtom;
                                 int jAtom = atom2.eAtom;
-                                if ((atom1.rotGroup == null) || (atom2.rotGroup == null)) {
-                                    System.out.println("null rot group "
-                                            + atom1.getShortName() + " "
-                                            + atom2.getShortName() + " "
-                                            + eCoords.getFixed(atom1.eAtom, atom2.eAtom));
-//                                    if (!dumped) {
-//                                        eCoords.dumpFixed();
-//                                        dumped = true;
-//                                    }
-                                } else {
-                                    int iUnit = atom1.rotGroup.rotUnit;
-                                    int jUnit = atom2.rotGroup.rotUnit;
+                                int iUnit = atom1.rotGroup == null ? -1 : atom1.rotGroup.rotUnit;
+                                int jUnit = atom2.rotGroup == null ? -1 : atom2.rotGroup.rotUnit;
+                                if (((iUnit != -1) || (jUnit != -1)) && (iUnit != jUnit)) {
                                     eCoords.addPair(iAtom, jAtom, iUnit, jUnit, distancePair.getLower(), distancePair.getUpper(), distancePair.isBond(),
                                             iGroup, weight / nPairs);
                                 }
                             }
-
                         }
                     }
                 }

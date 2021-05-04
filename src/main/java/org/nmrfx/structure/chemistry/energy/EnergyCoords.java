@@ -429,86 +429,77 @@ public class EnergyCoords {
                                     }
                                     Atom atom1 = atoms[iAtom];
                                     Atom atom2 = atoms[jAtom];
-                                    double disSq = vecCoords[iAtom].disSq(vecCoords[jAtom]);
+                                    int iUnit = atom1.rotGroup == null ? -1 : atom1.rotGroup.rotUnit;
+                                    int jUnit = atom2.rotGroup == null ? -1 : atom2.rotGroup.rotUnit;
+                                    if (((iUnit != -1) || (jUnit != -1)) && (iUnit != jUnit)) {
+                                        double disSq = vecCoords[iAtom].disSq(vecCoords[jAtom]);
 //                                    System.out.println("i " + i + " j " + j + " iCell " + iCell + " " + jCell + " " + iOff + " atom " + iAtom + " " + (jAtom - iAtom - 1) + " " + atom1.getShortName() + " " + atom2.getShortName() + " " + disSq);
 
-                                    double limit2R = limit2;
-                                    boolean stackCheck = (forceWeight.getStacking() > 0.0) && (atom1.getEntity() != atom2.getEntity()) && atom1.getFlag(Atom.RING) && !atom1.getName().contains("'")
-                                            && atom2.getFlag(Atom.RING) && !atom2.getName().contains("'");
-                                    Atom[] planeAtoms1 = null;
-                                    Atom[] planeAtoms2 = null;
-                                    if (stackCheck) {
-                                        limit2R = 36.0;
-                                        planeAtoms1 = atom1.getPlaneAtoms();
-                                        planeAtoms2 = atom2.getPlaneAtoms();
-                                    }
-                                    if (disSq < limit2R) {
-                                        int iRes = resNums[iAtom];
-                                        int jRes = resNums[jAtom];
-                                        int deltaRes = Math.abs(jRes - iRes);
-                                        if (deltaRes >= deltaEnd) {
-                                            continue;
+                                        double limit2R = limit2;
+                                        boolean stackCheck = (forceWeight.getStacking() > 0.0) && (atom1.getEntity() != atom2.getEntity()) && atom1.getFlag(Atom.RING) && !atom1.getName().contains("'")
+                                                && atom2.getFlag(Atom.RING) && !atom2.getName().contains("'");
+                                        Atom[] planeAtoms1 = null;
+                                        Atom[] planeAtoms2 = null;
+                                        if (stackCheck) {
+                                            limit2R = 36.0;
+                                            planeAtoms1 = atom1.getPlaneAtoms();
+                                            planeAtoms2 = atom2.getPlaneAtoms();
                                         }
-                                        boolean notFixed = true;
-                                        double adjustClose = 0.0;
-                                        // fixme could we have invalid jAtom-iAtom-1, if res test inappropriate
-                                        if ((iRes == jRes) || (deltaRes == 1)) {
-                                            if (checkCloseAtoms(atom1, atom2)) {
-                                                adjustClose = 0.2;
+                                        if (disSq < limit2R) {
+                                            int iRes = resNums[iAtom];
+                                            int jRes = resNums[jAtom];
+                                            int deltaRes = Math.abs(jRes - iRes);
+                                            if (deltaRes >= deltaEnd) {
+                                                continue;
                                             }
-                                        }
-                                        notFixed = !getFixed(iAtom, jAtom);
-                                        boolean interactable1 = (contactRadii[iAtom] > 1.0e-6) && (contactRadii[jAtom] > 1.0e-6);
-                                        // fixme  this is fast, but could miss interactions for atoms that are not bonded
-                                        // as it doesn't test for an explicit bond between the pairs
-                                        // boolean notConstrained = !hasBondConstraint[iAtom] || !hasBondConstraint[jAtom];
-//                                        System.out.println("        " + notFixed + " " + (fixed[iAtom][jAtom - iAtom - 1]) + " " + deltaRes + " "
-//                                                + interactable1 + " " + notConstrained);
-                                        if (notFixed && interactable1) {
-                                            int iUnit;
-                                            int jUnit;
-                                            if (atom1.rotGroup != null) {
-                                                iUnit = atom1.rotGroup.rotUnit;
-                                            } else {
-                                                iUnit = -1;
-                                            }
-                                            if (atom2.rotGroup != null) {
-                                                jUnit = atom2.rotGroup.rotUnit;
-                                            } else {
-                                                jUnit = -1;
-                                            }
-
-                                            //double rH = ePair.getRh();
-                                            double rH = contactRadii[iAtom] + contactRadii[jAtom];
-                                            if (disSq < limit2) {
-                                                if (useFF) {
-                                                    double a = Math.sqrt(aValues[iAtom] * aValues[jAtom]);
-                                                    double b = Math.sqrt(bValues[iAtom] * bValues[jAtom]);
-                                                    double c = cValues[iAtom] * cValues[jAtom];
-                                                    c *= 322.0 / 6.0;
-                                                    if (adjustClose > 0.01) {
-                                                        a *= 0.5;
-                                                        b *= 0.5;
-                                                    }
-                                                    ePairs.addPair(iAtom, jAtom, iUnit, jUnit, rH,
-                                                            a, b, c);
-                                                } else {
-                                                    if (hBondable[iAtom] * hBondable[jAtom] < 0) {
-                                                        rH -= hbondDelta;
-                                                    }
-                                                    rH -= adjustClose;
-                                                    ePairs.addPair(iAtom, jAtom, iUnit, jUnit, rH);
+                                            boolean notFixed = true;
+                                            double adjustClose = 0.0;
+                                            // fixme could we have invalid jAtom-iAtom-1, if res test inappropriate
+                                            if ((iRes == jRes) || (deltaRes == 1)) {
+                                                if (checkCloseAtoms(atom1, atom2)) {
+                                                    adjustClose = 0.2;
                                                 }
                                             }
-                                            if (stackCheck && (planeAtoms1 != null) && (planeAtoms2 != null)) {
+                                            notFixed = !getFixed(iAtom, jAtom);
+                                            boolean interactable1 = (contactRadii[iAtom] > 1.0e-6) && (contactRadii[jAtom] > 1.0e-6);
+                                            // fixme  this is fast, but could miss interactions for atoms that are not bonded
+                                            // as it doesn't test for an explicit bond between the pairs
+                                            // boolean notConstrained = !hasBondConstraint[iAtom] || !hasBondConstraint[jAtom];
+//                                        System.out.println("        " + notFixed + " " + (fixed[iAtom][jAtom - iAtom - 1]) + " " + deltaRes + " "
+//                                                + interactable1 + " " + notConstrained);
+                                            if (notFixed && interactable1) {
+                                                //double rH = ePair.getRh();
+                                                double rH = contactRadii[iAtom] + contactRadii[jAtom];
+                                                if (disSq < limit2) {
+                                                    if (useFF) {
+                                                        double a = Math.sqrt(aValues[iAtom] * aValues[jAtom]);
+                                                        double b = Math.sqrt(bValues[iAtom] * bValues[jAtom]);
+                                                        double c = cValues[iAtom] * cValues[jAtom];
+                                                        c *= 322.0 / 6.0;
+                                                        if (adjustClose > 0.01) {
+                                                            a *= 0.5;
+                                                            b *= 0.5;
+                                                        }
+                                                        ePairs.addPair(iAtom, jAtom, iUnit, jUnit, rH,
+                                                                a, b, c);
+                                                    } else {
+                                                        if (hBondable[iAtom] * hBondable[jAtom] < 0) {
+                                                            rH -= hbondDelta;
+                                                        }
+                                                        rH -= adjustClose;
+                                                        ePairs.addPair(iAtom, jAtom, iUnit, jUnit, rH);
+                                                    }
+                                                }
+                                                if (stackCheck && (planeAtoms1 != null) && (planeAtoms2 != null)) {
 
-                                                eBaseStackingPairs.addPair(iAtom,
-                                                        jAtom, iUnit, jUnit, rH,
-                                                        planeAtoms1[0].eAtom,
-                                                        planeAtoms1[1].eAtom,
-                                                        planeAtoms2[0].eAtom,
-                                                        planeAtoms2[1].eAtom
-                                                );
+                                                    eBaseStackingPairs.addPair(iAtom,
+                                                            jAtom, iUnit, jUnit, rH,
+                                                            planeAtoms1[0].eAtom,
+                                                            planeAtoms1[1].eAtom,
+                                                            planeAtoms2[0].eAtom,
+                                                            planeAtoms2[1].eAtom
+                                                    );
+                                                }
                                             }
                                         }
                                     }
@@ -593,7 +584,7 @@ public class EnergyCoords {
             }
         }
     }
-    
+
     public void resetFixed() {
         fixed = null;
     }
