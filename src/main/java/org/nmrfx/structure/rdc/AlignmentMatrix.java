@@ -68,16 +68,19 @@ public class AlignmentMatrix {
     static double scaleHN = (gammaH * gammaN) / ((1.0e-10) * (1.0e-10) * (1.0e-10));
 
     final RealMatrix saupeMat;
+    RealVector eigenValues;
+    RealMatrix eigenVectors;
     final EigenDecomposition eig;
     final RealMatrix Sdiag;
     final double globalScale;
     double[][] euler;
 
-    public AlignmentMatrix(RealMatrix saupeMat, double globalScale) {
-        this.saupeMat = saupeMat;
+    public AlignmentMatrix(RealMatrix matrix, double globalScale) {
+        this.saupeMat = matrix.scalarMultiply(globalScale);
         this.globalScale = globalScale;
         eig = new EigenDecomposition(saupeMat);
         Sdiag = eig.getD();
+        sortEigen(eig);
     }
 
     public AlignmentMatrix(double sZZ, double sXXminusYY, double sXY, double sXZ, double sYZ) {
@@ -88,18 +91,59 @@ public class AlignmentMatrix {
         this.globalScale = 1.0;
         eig = new EigenDecomposition(saupeMat);
         Sdiag = eig.getD();
+        sortEigen(eig);
+    }
+
+    private void sortEigen(EigenDecomposition eig) {
+        double[] d = eig.getRealEigenvalues();
+        double max = Double.NEGATIVE_INFINITY;
+        double min = Double.MAX_VALUE;
+        int iMin = 0;
+        int iMax = 0;
+        int iMid = 0;
+        for (int i = 0; i < 3; i++) {
+            if (Math.abs(d[i]) < min) {
+                min = Math.abs(d[i]);
+                iMin = i;
+            }
+            if (Math.abs(d[i]) > max) {
+                max = Math.abs(d[i]);
+                iMax = i;
+            }
+        }
+        for (int i = 0; i < 3; i++) {
+            if ((i != iMin) && (i != iMax)) {
+                iMid = i;
+                break;
+            }
+        }
+        double[] values = {d[iMin], d[iMid], d[iMax]};
+        int[] indices = {iMin, iMid, iMax};
+        double[][] vectors = new double[3][3];
+        for (int i = 0; i < 3; i++) {
+            double signMul = i == 1 ? 1.0 : -1.0;
+            for (int j = 0; j < 3; j++) {
+                vectors[i][j] = signMul * eig.getVT().getEntry(indices[i], j);
+            }
+        }
+        eigenValues = new ArrayRealVector(values);
+        eigenVectors = new Array2DRowRealMatrix(vectors);
     }
 
     public EigenDecomposition getEig() {
         return eig;
     }
 
-    public double getScale() {
-        return globalScale;
+    public RealVector getEigenValues() {
+        return eigenValues.copy();
     }
 
-    public RealMatrix getScaledMatrix() {
-        return saupeMat.scalarMultiply(globalScale);
+    public RealMatrix getEigenVectors() {
+        return eigenVectors.copy();
+    }
+
+    public double getScale() {
+        return globalScale;
     }
 
     /**
@@ -126,7 +170,7 @@ public class AlignmentMatrix {
      * @return double Sz'z' element of the diagonalized order matrix S.
      */
     public double getSzz() {
-        return Sdiag.getEntry(2, 2);
+        return eigenValues.getEntry(2);
     }
 
     /**
@@ -135,7 +179,7 @@ public class AlignmentMatrix {
      * @return double Sy'y' element of the diagonalized order matrix S.
      */
     public double getSyy() {
-        return Sdiag.getEntry(1, 1);
+        return eigenValues.getEntry(1);
     }
 
     /**
@@ -144,7 +188,7 @@ public class AlignmentMatrix {
      * @return double Sx'x' element of the diagonalized order matrix S.
      */
     public double getSxx() {
-        return Sdiag.getEntry(0, 0);
+        return eigenValues.getEntry(0);
     }
 
     /**
@@ -302,7 +346,7 @@ public class AlignmentMatrix {
     }
 
     public void calcRDC(RealMatrix directionMatrix, List<RDCVector> vectors) {
-        RealMatrix scaledMat = getScaledMatrix();
+        RealMatrix scaledMat = saupeMat;
         double sYY = scaledMat.getEntry(1, 1);
         double sZZ = scaledMat.getEntry(2, 2);
         double sXY = scaledMat.getEntry(0, 1);
@@ -362,16 +406,51 @@ public class AlignmentMatrix {
                 }
             }
         }
+        maxRDC *= -1.0;
         return maxRDC;
     }
 
     public void dump() {
-        System.out.println("Euler Angles for clockwise rotation about z, y', z''\n");
-        System.out.println("Alpha\tBeta\tGamma\n");
-        System.out.println(String.format("%.3f\t%.3f\t%.3f\n", euler[0][0], euler[0][1], euler[0][2]));
-        System.out.println(String.format("%.3f\t%.3f\t%.3f\n", euler[0][0] + 180., euler[0][1], euler[0][2]));
-        System.out.println(String.format("%.3f\t%.3f\t%.3f\n", euler[1][0], euler[1][1], euler[1][2] + 180.));
-        System.out.println(String.format("%.3f\t%.3f\t%.3f\n\n", euler[1][0] + 180., euler[1][1], euler[1][2] + 180.));
+        double rhombicity = Math.abs(calcRhombicity());
+        //double mag = Math.abs(calcMagnitude());
+        double axial = calcSAxial();
+        double rhombic = calcSRhombic();
+        double Sxx = getSxx();
+        double Syy = getSyy();
+        double Szz = getSzz();
+        double eta = calcEta();
+        RealMatrix ssMat = saupeMat;
+        System.out.println("Saupe Matrix");
+        System.out.printf("Szz %10.4e Sxx-Syy %10.4e Sxy %10.4e Sxz %10.4e Syz %10.4e\n",
+                ssMat.getEntry(2, 2),
+                ssMat.getEntry(0, 0) - ssMat.getEntry(1, 1),
+                ssMat.getEntry(0, 1), ssMat.getEntry(0, 2), ssMat.getEntry(1, 2));
+
+        System.out.println("");
+        System.out.printf("Rhombicity %.6e\naxial %.6e\nrhombic %.6e\neta %.6e\n", rhombicity, axial, rhombic, eta);
+        System.out.println("");
+        System.out.println("Eigenvalues");
+        System.out.printf("Sxx %.6e Syy %.6e Szz %.6e\n", Sxx, Syy, Szz);
+        System.out.println("");
+        RealMatrix eigenVecs = eig.getVT();
+        System.out.println("Eigenvectors");
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 3; j++) {
+                if (j != 0) {
+                    System.out.print(" ");
+                }
+                System.out.printf("%12.4e", eigenVectors.getEntry(i, j));
+            }
+            System.out.println("");
+        }
+        System.out.println("");
+        System.out.println("Euler Angles for clockwise rotation about z, y', z''");
+        System.out.printf("%7s %7s %7s\n", "Alpha", "Beta", "Gamma");
+
+        System.out.println(String.format("%7.2f %7.2f %7.2f", euler[1][0] + 180., euler[1][1], euler[1][2]));
+        System.out.println(String.format("%7.2f %7.2f %7.2f", euler[1][0], euler[1][1], euler[1][2]));
+        System.out.println(String.format("%7.2f %7.2f %7.2f", euler[0][0] + 180., euler[0][1], euler[0][2] + 180.0));
+        System.out.println(String.format("%7.2f %7.2f %7.2f", euler[0][0], euler[0][1], euler[0][2] + 180.0));
 
     }
 }
