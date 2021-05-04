@@ -51,7 +51,7 @@ import org.nmrfx.chemistry.constraints.MolecularConstraints;
 import org.nmrfx.chemistry.constraints.RDCConstraintSet;
 import org.nmrfx.graphicsio.GraphicsIOException;
 import org.nmrfx.graphicsio.SVGGraphicsContext;
-import org.nmrfx.structure.chemistry.OrderSVD;
+import org.nmrfx.structure.rdc.OrderSVD;
 
 /**
  *
