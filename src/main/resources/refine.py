@@ -1231,9 +1231,9 @@ class refine:
 
         if 'bonds' in data:
             self.processBonds(data['bonds'], 'float')
-        self.molecule.fillEntityCoords()
 
         if rnaLinkerDict:
+            self.molecule.fillEntityCoords()
             rnaLinkerAtoms = self.readRNALinkerDict(rnaLinkerDict, False)
             for atoms in rnaLinkerAtoms:
                 atom = atoms[1]
