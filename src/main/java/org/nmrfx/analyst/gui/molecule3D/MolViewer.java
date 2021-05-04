@@ -664,7 +664,7 @@ public class MolViewer extends Pane {
         if (mol == null) {
             return;
         }
-        AlignmentCalc aCalc = new AlignmentCalc(mol);
+        AlignmentCalc aCalc = new AlignmentCalc(mol, true, 2.0);
         aCalc.center();
         Vector3D center = aCalc.getCenter();
         double radius = aCalc.getRadius();
