@@ -2303,6 +2303,12 @@ public class Atom implements IAtom {
         return name.charAt(nameLen - 1) == 'c';
     }
 
+    // fixme this could return other atoms that end in p
+    public boolean isPlanarity() {
+        int nameLen = name.length();
+        return name.charAt(nameLen - 1) == 'p';
+    }
+
     @Override
     public Point2d getPoint2d() {
         return new Point2d(getPoint().getX(), getPoint().getY());
