@@ -436,6 +436,12 @@ public class Dihedral {
         for (int iAtom = 0; iAtom < angleAtoms.size(); iAtom++) {
             Atom atom = angleAtoms.get(iAtom).daughterAtom;
             // temporarily set everything to use sigma, till we make sure counting is correct
+            if (atom == null) {
+                System.out.println("daughter null " + angleAtoms.get(iAtom).daughterAtom.getFullName());
+            }
+            if (atom.parent == null) {
+                System.out.println("parent null " + angleAtoms.get(iAtom).daughterAtom.getFullName());
+            }
             if (atom.parent.getName().equals("P") || atom.parent.getName().equals("O5'") || atom.parent.getName().equals("C5'") || atom.parent.getName().equals("C4'") || atom.parent.getName().equals("O3'")) {
                 inputSigma[aStart++] = sigma / backBoneScale;
                 if (sinCosMode) {
