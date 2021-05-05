@@ -70,8 +70,8 @@ public class AlignmentMatrix {
     final RealMatrix saupeMat;
     RealVector eigenValues;
     RealMatrix eigenVectors;
-    final EigenDecomposition eig;
-    final RealMatrix Sdiag;
+    EigenDecomposition eig;
+    RealMatrix Sdiag;
     final double globalScale;
     double[][] euler;
 
@@ -92,6 +92,55 @@ public class AlignmentMatrix {
         eig = new EigenDecomposition(saupeMat);
         Sdiag = eig.getD();
         sortEigen(eig);
+    }
+
+    private AlignmentMatrix(double sXX, double sYY, double sZZ, double sXY, double sXZ, double sYZ) {
+        double[][] s = {{sXX, sXY, sXZ}, {sXY, sYY, sYZ}, {sXZ, sYZ, sZZ}};
+        saupeMat = new Array2DRowRealMatrix(s);
+        this.globalScale = 1.0;
+    }
+
+    public static AlignmentMatrix getValidMatrix(double sXX, double sYY, double sZZ, double sXY, double sXZ, double sYZ) {
+        AlignmentMatrix aMat = new AlignmentMatrix(sXX, sYY, sZZ, sXY, sXZ, sYZ);
+        if (aMat.validate()) {
+            System.out.println("valid 1");
+            aMat.eig = new EigenDecomposition(aMat.saupeMat);
+            aMat.Sdiag = aMat.eig.getD();
+            double Sxx = aMat.Sdiag.getEntry(0, 0);
+            double Syy = aMat.Sdiag.getEntry(1, 1);
+            double Szz = aMat.Sdiag.getEntry(2, 2);
+            if ((Sxx >= -0.5 && Sxx <= 1.0) && (Syy >= -0.5 && Syy <= 1.0) && (Szz >= -0.5 && Szz <= 1.0)) {
+                System.out.println("valid 2");
+                aMat.sortEigen(aMat.eig);
+                return aMat;
+            }
+        }
+        return null;
+    }
+
+    public boolean validate() {
+        boolean ok = true;
+        for (int i = 0; i < 3; i++) {
+            for (int j = i; j < 3; j++) {
+                double v = saupeMat.getEntry(i, j);
+                if (i == j) {
+                    if ((v < -0.5) || (v > 1.0)) {
+                        ok = false;
+                        break;
+                    }
+                } else {
+                    if ((v < -0.75) || (v > 0.75)) {
+                        ok = false;
+                        break;
+
+                    }
+                }
+            }
+            if (!ok) {
+                break;
+            }
+        }
+        return ok;
     }
 
     private void sortEigen(EigenDecomposition eig) {
@@ -358,7 +407,7 @@ public class AlignmentMatrix {
 
         for (int i = 0; i < vectors.size(); i++) {
             RDCVector rdcVec = vectors.get(i);
-            double rdc = result.getEntry(i) * rdcVec.getMaxRDC();
+            double rdc = -1.0 * result.getEntry(i) * rdcVec.getMaxRDC();
             rdcVec.setRDC(rdc);
         }
     }

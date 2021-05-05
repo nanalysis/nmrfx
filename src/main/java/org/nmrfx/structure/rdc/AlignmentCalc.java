@@ -358,6 +358,7 @@ public class AlignmentCalc {
             nSkip = Math.max(0, nSkip);
             aMin.count = nSkip;
         }
+        globalScale = 0.5 * (double) nConstrainedPositions / (nConstrainedPositions + nFreePositions);
     }
 
     public void calcCylExclusions(double slabWidth, double f, double d, String mode) {

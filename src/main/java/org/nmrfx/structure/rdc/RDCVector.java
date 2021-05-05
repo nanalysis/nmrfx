@@ -13,12 +13,15 @@ import org.nmrfx.chemistry.Atom;
  * @author brucejohnson
  */
 public class RDCVector {
+
     public static boolean CALC_MAX_RDC = true;
 
     Atom atom1;
     Atom atom2;
     Vector3D vector;
-    double rdc;
+    Double rdcPred;
+    Double rdcExp;
+    Double error;
     double maxRDC;
 
     public RDCVector(Atom atom1, Atom atom2, Vector3D vector) {
@@ -30,12 +33,36 @@ public class RDCVector {
         maxRDC = AlignmentMatrix.calcMaxRDC(vector, elemName1, elemName2, CALC_MAX_RDC, false);
     }
 
-    public double getRDC() {
-        return rdc;
+    public Double getRDC() {
+        return rdcPred;
+    }
+
+    public Double getExpRDC() {
+        return rdcExp;
+    }
+
+    public Double getNormRDC() {
+        return rdcPred / maxRDC;
+    }
+
+    public Double getNormExpRDC() {
+        return rdcExp / maxRDC;
+    }
+
+    public Double getError() {
+        return error;
     }
 
     public void setRDC(double rdc) {
-        this.rdc = rdc;
+        this.rdcPred = rdc;
+    }
+
+    public void setExpRDC(double rdc) {
+        this.rdcExp = rdc;
+    }
+
+    public void setError(double err) {
+        this.error = err;
     }
 
     public Atom getAtom1() {
@@ -55,7 +82,9 @@ public class RDCVector {
         StringBuilder sBuilder = new StringBuilder();
         sBuilder.append(atom1.getFullName()).append(" ").append(atom1.getEntity().getName()).append(" ");
         sBuilder.append(atom2.getFullName()).append(" ").append(atom2.getEntity().getName()).append(" ");
-        sBuilder.append(String.format("%.2f", rdc));
+        sBuilder.append(String.format("%.2f", rdcPred)).append(" ");
+        sBuilder.append(String.format("%.2f", rdcExp)).append(" ");
+        sBuilder.append(String.format("%.2f", error));
         return sBuilder.toString();
     }
 

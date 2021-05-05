@@ -1665,7 +1665,7 @@ public class Molecule extends MoleculeBase {
             double slabWidth = 0.2;
             double f = 0.025;
             double d = 40.0;
-            aCalc.calcExclusions(slabWidth, f, d, "cyl");
+            aCalc.calcCylExclusions(slabWidth, f, d, "cyl");
             aCalc.calcTensor(0.8);
             AlignmentMatrix aMat = aCalc.getAlignment();
             rdcEig = aMat.getEig();
