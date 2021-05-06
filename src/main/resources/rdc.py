@@ -94,7 +94,6 @@ def svdFitRDC(rdcVec):
 
 def calcRDC(aMat,rdcVec):
     aMat.calcAlignment()
-    #aMat.dump()
 
     rMat = AlignmentMatrix.setupDirectionMatrix(rdcVec.getRDCVectors())
     aMat.calcRDC(rMat, rdcVec.getRDCVectors())
@@ -183,5 +182,5 @@ def parseArgs():
         rdcFit.evaluate(aMat, rdcVec.getExpRDCVectors());
     if args.outtable != "":
         dumpRDC(args.outtable, rdcVec, rdcDict)
-    aMat.dump()
+    print aMat.toString()
     print rdcFit.toString()
