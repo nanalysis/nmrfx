@@ -101,14 +101,14 @@ public class RDCFitQuality {
     @Override
     public String toString() {
         StringBuilder sBuilder = new StringBuilder();
-        sBuilder.append("n ").append(n).append(" ");
-        sBuilder.append(String.format("rms %.3f", rms)).append(" ");
-        sBuilder.append(String.format("chiSq %.3f", chiSq)).append(" ");
-        sBuilder.append(String.format("Q-rms %.3f", qRMS)).append(" ");
-        sBuilder.append(String.format("Q-AxRh %.3f", qRhomb)).append(" ");
-        sBuilder.append(String.format("slope %.3f +/- %.3f", slope, slopeErr)).append(" ");
-        sBuilder.append(String.format("intercept %.3f +/- %.3f", intercept, interceptErr)).append(" ");
-        sBuilder.append(String.format("r %.3f", r)).append(" ");
+        sBuilder.append("n ").append(n).append("\n");
+        sBuilder.append(String.format("rms %.3f", rms)).append("\n");
+        sBuilder.append(String.format("chiSq %.3f", chiSq)).append("\n");
+        sBuilder.append(String.format("Q-rms %.3f", qRMS)).append("\n");
+        sBuilder.append(String.format("Q-AxRh %.3f", qRhomb)).append("\n");
+        sBuilder.append(String.format("slope %.3f +/- %.3f", slope, slopeErr)).append("\n");
+        sBuilder.append(String.format("intercept %.3f +/- %.3f", intercept, interceptErr)).append("\n");
+        sBuilder.append(String.format("r %.3f", r)).append("\n");
         sBuilder.append(String.format("r2 %.3f", r2));
 
         return sBuilder.toString();

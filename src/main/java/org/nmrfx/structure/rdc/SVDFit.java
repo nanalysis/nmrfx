@@ -48,7 +48,6 @@ public class SVDFit {
         int cycle = 0;
         AlignmentMatrix aMat;
         while (true) {
-            System.out.println("cycle " + cycle);
             // calculate the x vector for which |Ax - b| is minimized
             orderMatrixElems = svd.getSolver().solve(expRDCNorm);
             double sYY = orderMatrixElems.getEntry(0);
@@ -59,7 +58,6 @@ public class SVDFit {
             double sXX = -sZZ - sYY;
             aMat = AlignmentMatrix.getValidMatrix(sXX, sYY, sZZ, sXY, sXZ, sYZ);
             if (aMat != null) {
-                System.out.println("complete svd");
                 break;
             } else {
                 cycle++;

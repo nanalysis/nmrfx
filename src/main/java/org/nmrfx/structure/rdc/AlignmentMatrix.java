@@ -458,7 +458,7 @@ public class AlignmentMatrix {
         return maxRDC;
     }
 
-    public void dump() {
+    public String toString() {
         double rhombicity = Math.abs(calcRhombicity());
         //double mag = Math.abs(calcMagnitude());
         double axial = calcSAxial();
@@ -468,37 +468,37 @@ public class AlignmentMatrix {
         double Szz = getSzz();
         double eta = calcEta();
         RealMatrix ssMat = saupeMat;
-        System.out.println("Saupe Matrix");
-        System.out.printf("Szz %10.4e Sxx-Syy %10.4e Sxy %10.4e Sxz %10.4e Syz %10.4e\n",
+        StringBuilder sBuilder = new StringBuilder();
+        sBuilder.append("Saupe Matrix\n");
+        sBuilder.append(String.format("Szz %10.4e Sxx-Syy %10.4e Sxy %10.4e Sxz %10.4e Syz %10.4e\n",
                 ssMat.getEntry(2, 2),
                 ssMat.getEntry(0, 0) - ssMat.getEntry(1, 1),
-                ssMat.getEntry(0, 1), ssMat.getEntry(0, 2), ssMat.getEntry(1, 2));
+                ssMat.getEntry(0, 1), ssMat.getEntry(0, 2), ssMat.getEntry(1, 2)));
 
-        System.out.println("");
-        System.out.printf("Rhombicity %.6e\naxial %.6e\nrhombic %.6e\neta %.6e\n", rhombicity, axial, rhombic, eta);
-        System.out.println("");
-        System.out.println("Eigenvalues");
-        System.out.printf("Sxx %.6e Syy %.6e Szz %.6e\n", Sxx, Syy, Szz);
-        System.out.println("");
+        sBuilder.append("\n");
+        sBuilder.append(String.format("Rhombicity %.6e\naxial %.6e\nrhombic %.6e\neta %.6e\n", rhombicity, axial, rhombic, eta));
+        sBuilder.append("\nEigenvalues\n");
+        sBuilder.append(String.format("Sxx %.6e Syy %.6e Szz %.6e\n", Sxx, Syy, Szz));
+        sBuilder.append("\n");
         RealMatrix eigenVecs = eig.getVT();
-        System.out.println("Eigenvectors");
+        sBuilder.append("Eigenvectors\n");
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 3; j++) {
                 if (j != 0) {
-                    System.out.print(" ");
+                    sBuilder.append(" ");
                 }
-                System.out.printf("%12.4e", eigenVectors.getEntry(i, j));
+                sBuilder.append(String.format("%12.4e", eigenVectors.getEntry(i, j)));
             }
-            System.out.println("");
+            sBuilder.append("\n");
         }
-        System.out.println("");
-        System.out.println("Euler Angles for clockwise rotation about z, y', z''");
-        System.out.printf("%7s %7s %7s\n", "Alpha", "Beta", "Gamma");
+        sBuilder.append("\nEuler Angles for clockwise rotation about z, y', z''\n");
+        sBuilder.append(String.format("%7s %7s %7s\n", "Alpha", "Beta", "Gamma"));
 
-        System.out.println(String.format("%7.2f %7.2f %7.2f", euler[1][0] + 180., euler[1][1], euler[1][2]));
-        System.out.println(String.format("%7.2f %7.2f %7.2f", euler[1][0], euler[1][1], euler[1][2]));
-        System.out.println(String.format("%7.2f %7.2f %7.2f", euler[0][0] + 180., euler[0][1], euler[0][2] + 180.0));
-        System.out.println(String.format("%7.2f %7.2f %7.2f", euler[0][0], euler[0][1], euler[0][2] + 180.0));
+        sBuilder.append(String.format("%7.2f %7.2f %7.2f\n", euler[1][0] + 180., euler[1][1], euler[1][2]));
+        sBuilder.append(String.format("%7.2f %7.2f %7.2f\n", euler[1][0], euler[1][1], euler[1][2]));
+        sBuilder.append(String.format("%7.2f %7.2f %7.2f\n", euler[0][0] + 180., euler[0][1], euler[0][2] + 180.0));
+        sBuilder.append(String.format("%7.2f %7.2f %7.2f\n", euler[0][0], euler[0][1], euler[0][2] + 180.0));
+        return sBuilder.toString();
 
     }
 }
