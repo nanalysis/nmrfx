@@ -479,7 +479,6 @@ public class AlignmentCalc {
             totalScale += scale;
         }
 //        double globalScale = 0.5 * (double) nConstrainedPositions / (nConstrainedPositions + nFreePositions);
-        System.out.println("glboal " + globalScale);
         RealMatrix saupeMat2 = new Array2DRowRealMatrix(sMat2);
         RealMatrix saupeMat = new Array2DRowRealMatrix(sMat);
         saupeMat = saupeMat.subtract(saupeMat2);

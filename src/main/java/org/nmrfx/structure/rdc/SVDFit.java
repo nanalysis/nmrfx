@@ -84,18 +84,4 @@ public class SVDFit {
         }
         return aMat;
     }
-
-    public void evaluate() {
-        RealVector dcDiff = calcRDC.subtract(expRDC);
-        double dcSqSum = 0;
-        for (int i = 0; i < dcDiff.getDimension(); i++) {
-            System.out.println(normVec.getEntry(i) + " " + calcRDC.getEntry(i) + " " + expRDC.getEntry(i));
-            double diff = dcDiff.getEntry(i);
-            dcSqSum += diff * diff;
-        }
-        System.out.println(dcSqSum);
-        double rms = Math.sqrt(dcSqSum / dcDiff.getDimension());
-        System.out.println(rms);
-
-    }
 }

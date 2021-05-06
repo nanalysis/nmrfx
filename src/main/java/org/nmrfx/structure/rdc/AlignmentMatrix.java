@@ -407,7 +407,7 @@ public class AlignmentMatrix {
 
         for (int i = 0; i < vectors.size(); i++) {
             RDCVector rdcVec = vectors.get(i);
-            double rdc = -1.0 * result.getEntry(i) * rdcVec.getMaxRDC();
+            double rdc = result.getEntry(i) * rdcVec.getMaxRDC();
             rdcVec.setRDC(rdc);
         }
     }
@@ -455,7 +455,6 @@ public class AlignmentMatrix {
                 }
             }
         }
-        maxRDC *= -1.0;
         return maxRDC;
     }
 
