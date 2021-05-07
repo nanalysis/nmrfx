@@ -18,10 +18,11 @@
 package org.nmrfx.analyst.gui;
 
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.Map;
+import java.util.List;
 import javafx.beans.Observable;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -31,6 +32,7 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.Label;
+import javafx.scene.control.Slider;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ToolBar;
 import javafx.scene.layout.BorderPane;
@@ -39,6 +41,7 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+import org.apache.commons.math3.linear.RealMatrix;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.chart.Axis;
 import org.nmrfx.chart.DataSeries;
@@ -47,11 +50,16 @@ import org.nmrfx.chart.XYChartPane;
 import org.nmrfx.chart.XYValue;
 import org.nmrfx.chemistry.MoleculeBase;
 import org.nmrfx.chemistry.MoleculeFactory;
+import org.nmrfx.chemistry.RDC;
 import org.nmrfx.chemistry.constraints.MolecularConstraints;
 import org.nmrfx.chemistry.constraints.RDCConstraintSet;
 import org.nmrfx.graphicsio.GraphicsIOException;
 import org.nmrfx.graphicsio.SVGGraphicsContext;
-import org.nmrfx.structure.rdc.OrderSVD;
+import org.nmrfx.structure.chemistry.Molecule;
+import org.nmrfx.structure.rdc.AlignmentCalc;
+import org.nmrfx.structure.rdc.AlignmentMatrix;
+import org.nmrfx.structure.rdc.RDCFitQuality;
+import org.nmrfx.structure.rdc.SVDFit;
 
 /**
  *
@@ -72,10 +80,15 @@ public class RDCGUI {
     TextField qRhombField = new TextField("");
     TextField rhombField = new TextField("");
     TextField magField = new TextField("");
+    Slider fracSlider = new Slider(0.1, 15, 5);
+    ChoiceBox<String> modeBox = new ChoiceBox();
+    ChoiceBox<String> stericBox = new ChoiceBox();
+
     RDCConstraintSet localRDCSet;
-    OrderSVD svdResults = null;
     Label pdbFile = new Label("");
     Label bmrbFile = new Label("");
+    SVDFit svdFit;
+    AlignmentMatrix aMat;
 
     public RDCGUI(AnalystApp analystApp) {
         this.analystApp = analystApp;
@@ -121,15 +134,34 @@ public class RDCGUI {
             HBox hBox = new HBox();
             HBox.setHgrow(hBox, Priority.ALWAYS);
             hBox.setMinWidth(600);
+            stericBox.getItems().addAll("Wall", "Cylinder");
+            stericBox.setValue("Wall");
+            modeBox.getItems().addAll("SVD", "Steric");
+            modeBox.setValue("SVD");
+            Label fracLabel = new Label("  W/V %: ");
+            Label modeLabel = new Label(" Calc Mode: ");
+            Label stericLabel = new Label(" Steric Mode: ");
+            Label fracValue = new Label("");
+            fracSlider.setPrefWidth(200.0);
+            hBox.getChildren().addAll(modeLabel, modeBox, stericLabel, stericBox, fracLabel, fracSlider, fracValue);
+            fracSlider.valueProperty().addListener(c -> {
+                double val = fracSlider.getValue();
+                fracValue.setText(String.format("%.3f", val / 100.0));
+            });
+            fracValue.setText(String.format("%.3f", fracSlider.getValue() / 100.0));
+
+            HBox hBox2 = new HBox();
+            HBox.setHgrow(hBox2, Priority.ALWAYS);
+            hBox2.setMinWidth(600);
             qRMSField.setPrefWidth(60);
             qRhombField.setPrefWidth(60);
             rhombField.setPrefWidth(60);
             magField.setPrefWidth(60);
-            hBox.getChildren().addAll(setLabel, setChoice, qRMSlabel, qRMSField, qRhomblabel, qRhombField, rhomblabel, rhombField, maglabel, magField);
+            hBox2.getChildren().addAll(setLabel, setChoice, qRMSlabel, qRMSField, qRhomblabel, qRhombField, rhomblabel, rhombField, maglabel, magField);
 
             VBox vBox = new VBox();
             vBox.setMinWidth(600);
-            vBox.getChildren().addAll(toolBar, hBox);
+            vBox.getChildren().addAll(toolBar, hBox, hBox2);
             //Create the Scatter chart
             XYChartPane chartPane = new XYChartPane();
             activeChart = chartPane.getChart();
@@ -169,21 +201,19 @@ public class RDCGUI {
                 activeChart.getData().clear();
                 //Prepare XYChart.Series objects by setting data
                 series0.getData().clear();
-                if (svdResults != null) {
-                    double[] xValues = svdResults.getBUnNormVector().toArray();
-                    double[] yValues = svdResults.getCalcBVector();
-                    if ((xValues != null) && (yValues != null)) {
-                        for (int j = 0; j < xValues.length; j++) {
-                            series0.getData().add(new XYValue(xValues[j], yValues[j]));
-                        }
-                        series0.getData().sort(Comparator.comparing(XYValue::getXValue));
-                        long lb = Math.round(series0.getData().get(0).getXValue());
-                        long ub = Math.round(series0.getData().get(series0.getData().size() - 1).getXValue());
-                        series1.getData().add(new XYValue(lb, lb));
-                        series1.getData().add(new XYValue(ub, ub));
+                if (aMat != null) {
+                    List<RDC> rdcValues = new ArrayList<>();
+                    rdcValues.addAll(localRDCSet.get());
+                    for (RDC rdcValue : rdcValues) {
+                        series0.getData().add(new XYValue(rdcValue.getExpRDC(), rdcValue.getRDC()));
                     }
+                    series0.getData().sort(Comparator.comparing(XYValue::getXValue));
+                    long lb = Math.round(series0.getData().get(0).getXValue());
+                    long ub = Math.round(series0.getData().get(series0.getData().size() - 1).getXValue());
+                    series1.getData().add(new XYValue(lb, lb));
+                    series1.getData().add(new XYValue(ub, ub));
+
                 }
-                System.out.println("plot");
                 activeChart.autoScale(true);
             }
         }
@@ -224,6 +254,8 @@ public class RDCGUI {
         String name = setChoice.getValue();
         localRDCSet = rdcSet(name);
         if (localRDCSet != null) {
+            List<RDC> rdcValues = new ArrayList<>(localRDCSet.get());
+
 //            if (pdbFile.getText().equals("")) {
 //                Alert alert = new Alert(Alert.AlertType.ERROR);
 //                alert.setContentText("Error: No PDB file loaded (Load PDB XYZ...).");
@@ -232,19 +264,32 @@ public class RDCGUI {
 //            }
             System.out.println("nrdcs " + localRDCSet.getSize());
 
-            svdResults = OrderSVD.calcRDCs(localRDCSet, true, false, null);
-            if (svdResults == null) {
-                Alert alert = new Alert(Alert.AlertType.ERROR);
-                alert.setContentText("SVD Analysis failed");
-                alert.showAndWait();
-                return;
-            }
-            svdResults.setRDCset(localRDCSet);
+            RealMatrix directionMatrix = AlignmentMatrix.setupDirectionMatrix(rdcValues);
+            if (modeBox.getValue().equals("SVD")) {
+                svdFit = new SVDFit(directionMatrix, rdcValues);
 
-            double qRMS = svdResults.getQ();
-            double qRhomb = svdResults.getQrhomb();
-            double rhombicity = Math.abs(svdResults.calcRhombicity());
-            double magnitude = Math.abs(svdResults.calcMagnitude());
+                if (svdFit == null) {
+                    Alert alert = new Alert(Alert.AlertType.ERROR);
+                    alert.setContentText("SVD Analysis failed");
+                    alert.showAndWait();
+                    return;
+                }
+                aMat = svdFit.fit();
+            } else {
+                aMat = calcStericAlignment(directionMatrix, rdcValues);
+            }
+            Molecule mol = (Molecule) MoleculeFactory.getActive();
+            mol.setRDCResults(aMat);
+
+            RDCFitQuality fitQuality = new RDCFitQuality();
+            fitQuality.evaluate(aMat, rdcValues);
+            System.out.println(aMat.toString());
+            System.out.append(fitQuality.toString());
+
+            double qRMS = fitQuality.getQRMS();
+            double qRhomb = fitQuality.getQRhomb();
+            double rhombicity = Math.abs(aMat.calcRhombicity());
+            double magnitude = Math.abs(aMat.calcMagnitude());
             qRMSField.setText(String.valueOf(Math.round(qRMS * 100.0) / 100.0));
             qRhombField.setText(String.valueOf(Math.round(qRhomb * 100.0) / 100.0));
             rhombField.setText(String.valueOf(Math.round(rhombicity * 100.0) / 100.0));
@@ -263,12 +308,34 @@ public class RDCGUI {
 
     }
 
+    AlignmentMatrix calcStericAlignment(RealMatrix rMat, List<RDC> rdcValues) {
+        MoleculeBase mol = MoleculeFactory.getActive();
+        AlignmentCalc aCalc = new AlignmentCalc(mol, true, 2.0);
+        aCalc.center();
+        aCalc.genAngles(122, 18, 1.0);
+        aCalc.findMinimums();
+        double slabWidth = 0.2;
+        double f = fracSlider.getValue() / 100.0;
+        double d = 40.0;
+        String mode = stericBox.getValue().equals("Wall") ? "bicelle" : "pf1";
+        if (mode.equals("pf1")) {
+            d = 67.0;
+        }
+        aCalc.calcCylExclusions(slabWidth, f, d, mode);
+        aCalc.calcTensor(0.8);
+        AlignmentMatrix aMatrix = aCalc.getAlignment();
+        aMatrix.calcAlignment();
+        aMatrix.calcRDC(rMat, rdcValues);
+        return aMatrix;
+    }
+
     void saveToFile() {
         try {
             FileChooser chooser = new FileChooser();
             chooser.setTitle("Save RDC Results");
             File directoryFile = chooser.showSaveDialog(null);
-            OrderSVD.writeToFile(svdResults, directoryFile);
+            FileWriter fileWriter = new FileWriter(directoryFile);
+            fileWriter.write(aMat.toString());
         } catch (IOException ex) {
             ExceptionDialog dialog = new ExceptionDialog(ex);
             dialog.showAndWait();
@@ -304,10 +371,15 @@ public class RDCGUI {
         FileChooser chooser = new FileChooser();
         chooser.setTitle("Load RDC Text File");
         File file = chooser.showOpenDialog(null);
+        Molecule molecule = (Molecule) MoleculeFactory.getActive();
+        MolecularConstraints molConstraints = null;
+        if (molecule != null) {
+            molConstraints = molecule.getMolecularConstraints();
+        }
         if (file != null) {
             String setName = file.getName();
             setName = setName.substring(0, setName.indexOf("."));
-            localRDCSet = RDCConstraintSet.newSet(null, setName);
+            localRDCSet = RDCConstraintSet.newSet(molConstraints, setName);
             try {
                 localRDCSet.readInputFile(file);
             } catch (IOException ex) {
