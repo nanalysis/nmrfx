@@ -17,13 +17,15 @@
  */
 package org.nmrfx.chemistry.constraints;
 
+import org.nmrfx.chemistry.Atom;
+import org.nmrfx.chemistry.RDC;
 import org.nmrfx.chemistry.SpatialSet;
 
 /**
  *
  * @author brucejohnson
  */
-public class RDC implements Constraint {
+public class RDCConstraint extends RDC implements Constraint {
 
     private final static DistanceStat defaultStat = new DistanceStat();
 
@@ -35,19 +37,13 @@ public class RDC implements Constraint {
     }
     private final static double tolerance = 5.0;
     private int idNum = 0;
-    private final SpatialSet sp1;
-    private final SpatialSet sp2;
-    private final double value;
-    private final double err;
-    Double length = null;
     private DistanceStat disStat = defaultStat;
     private int active = 1;
 
-    public RDC(RDCConstraintSet set, final SpatialSet sp1, final SpatialSet sp2, final double value, final double err) {
-        this.sp1 = sp1;
-        this.sp2 = sp2;
-        this.value = value;
-        this.err = err;
+    public RDCConstraint(RDCConstraintSet set, final Atom atom1, final Atom atom2, final double value, final double err) {
+        super(atom1, atom2);
+        setExpRDC(value);
+        setError(err);
         idNum = set.getSize();
         set.setDirty();
     }
@@ -79,7 +75,7 @@ public class RDC implements Constraint {
      * @return the spSets
      */
     public SpatialSet[] getSpSets() {
-        SpatialSet[] spSet = {sp1, sp2};
+        SpatialSet[] spSet = {getAtom1().spatialSet, getAtom2().spatialSet};
         return spSet;
     }
 
@@ -95,7 +91,7 @@ public class RDC implements Constraint {
     }
 
     public double getViol(double rdc) {
-        double viol = value - rdc;
+        double viol = getRDC() - rdc;
         return viol;
     }
 
@@ -105,11 +101,11 @@ public class RDC implements Constraint {
         char sep = ' ';
         result.append(RDCConstraintSet.ID++);
         result.append(sep);
-        sp1.addToSTARString(result);
+        getAtom1().getSpatialSet().addToSTARString(result);
         result.append(sep);
         result.append(".");
         result.append(sep);
-        sp2.addToSTARString(result);
+        getAtom2().getSpatialSet().addToSTARString(result);
         result.append(sep);
         result.append(".");
         result.append(sep);
@@ -143,14 +139,22 @@ public class RDC implements Constraint {
      */
     @Override
     public double getValue() {
-        return value;
+        return getExpRDC();
     }
 
     /**
      * @return the upper
      */
     public double getErr() {
-        return err;
+        return getErr();
+    }
+
+    public double getPredicted() {
+        return getRDC();
+    }
+
+    public void setPredicted(double value) {
+        setRDC(value);
     }
 
     /**
@@ -166,4 +170,5 @@ public class RDC implements Constraint {
     public void setDisStat(DistanceStat disStat) {
         this.disStat = disStat;
     }
+
 }

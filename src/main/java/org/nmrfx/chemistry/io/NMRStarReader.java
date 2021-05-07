@@ -1525,7 +1525,7 @@ public class NMRStarReader {
                 if (spG != null) {
                     spSets[iAtom] = spG.getFirstSet();
                     if (errColumn.get(i) != null) {
-                        RDC aCon = new RDC(rdcSet, spSets[0], spSets[1], valColumn.get(i), errColumn.get(i));
+                        RDCConstraint aCon = new RDCConstraint(rdcSet, spSets[0].getAtom(), spSets[1].getAtom(), valColumn.get(i), errColumn.get(i));
                         rdcSet.add(aCon);
                     }
                 }

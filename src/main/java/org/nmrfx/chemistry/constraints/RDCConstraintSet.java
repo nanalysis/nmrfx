@@ -37,7 +37,7 @@ import org.nmrfx.chemistry.Atom;
 public class RDCConstraintSet implements ConstraintSet, Iterable {
 
     private final MolecularConstraints molecularConstraints;
-    private final ArrayList<RDC> constraints = new ArrayList<>(64);
+    private final ArrayList<RDCConstraint> constraints = new ArrayList<>(64);
     int nStructures = 0;
     private final String name;
     boolean dirty = true;
@@ -89,11 +89,11 @@ public class RDCConstraintSet implements ConstraintSet, Iterable {
 
     @Override
     public void add(Constraint constraint) {
-        constraints.add((RDC) constraint);
+        constraints.add((RDCConstraint) constraint);
         dirty = true;
     }
 
-    public ArrayList<RDC> get() {
+    public List<RDCConstraint> get() {
         if (dirty) {
             updateAngleData();
         }
@@ -101,7 +101,7 @@ public class RDCConstraintSet implements ConstraintSet, Iterable {
     }
 
     @Override
-    public RDC get(int i) {
+    public RDCConstraint get(int i) {
         return constraints.get(i);
     }
 
@@ -115,7 +115,7 @@ public class RDCConstraintSet implements ConstraintSet, Iterable {
     }
 
     public void add(int i, Constraint constraint) {
-        constraints.add(i, (RDC) constraint);
+        constraints.add(i, (RDCConstraint) constraint);
         dirty = true;
     }
 
@@ -135,7 +135,11 @@ public class RDCConstraintSet implements ConstraintSet, Iterable {
     }
 
     public void updateAngleData() {
-        MoleculeBase mol = molecularConstraints.molecule;
+        
+        MoleculeBase mol = null;
+        if (molecularConstraints != null) {
+            mol = molecularConstraints.molecule;
+        }
         if (mol == null) {
             return;
         }
@@ -150,7 +154,7 @@ public class RDCConstraintSet implements ConstraintSet, Iterable {
         nStructures = structures.length;
         violCharArray = new char[lastStruct + 1];
         SummaryStatistics sumStat = new SummaryStatistics();
-        for (RDC aConstraint : constraints) {
+        for (RDCConstraint aConstraint : constraints) {
             sumStat.clear();
             int nInBounds = 0;
             BitSet violStructures = new BitSet(nStructures);
@@ -238,22 +242,27 @@ public class RDCConstraintSet implements ConstraintSet, Iterable {
             }
             String sline = line.trim();
             String[] sfields = sline.split("\t");
-            System.out.println("nfields " + sfields.length);
             if (sfields.length == 4) {
                 Atom atom1 = MoleculeBase.getAtomByName(sfields[0]);
                 Atom atom2 = MoleculeBase.getAtomByName(sfields[1]);
                 double value = Double.parseDouble(sfields[2]);
                 double err = Double.parseDouble(sfields[3]);
-                RDC rdc = new RDC(this, atom1.getSpatialSet(), atom2.getSpatialSet(), value, err);
+                RDCConstraint rdc = new RDCConstraint(this, atom1, atom2, value, err);
                 constraints.add(rdc);
             } else if (sfields.length == 6) {
                 Atom atom1 = MoleculeBase.getAtomByName(sfields[0] + "." + sfields[1]);
                 Atom atom2 = MoleculeBase.getAtomByName(sfields[2] + "." + sfields[3]);
                 double value = Double.parseDouble(sfields[4]);
                 double err = Double.parseDouble(sfields[5]);
-                RDC rdc = new RDC(this, atom1.getSpatialSet(), atom2.getSpatialSet(), value, err);
+                RDCConstraint rdc = new RDCConstraint(this, atom1, atom2, value, err);
                 constraints.add(rdc);
-                System.out.println("add con " + getSize() + " " + atom1.getShortName() + " " + atom2.getShortName() + " " + value);
+            } else if (sfields.length == 8) {
+                Atom atom1 = MoleculeBase.getAtomByName(sfields[0] + "." + sfields[2]);
+                Atom atom2 = MoleculeBase.getAtomByName(sfields[3] + "." + sfields[5]);
+                double value = Double.parseDouble(sfields[6]);
+                double err = Double.parseDouble(sfields[7]);
+                RDCConstraint rdc = new RDCConstraint(this, atom1, atom2, value, err);
+                constraints.add(rdc);
             }
         }
     }
