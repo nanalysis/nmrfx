@@ -23,6 +23,7 @@ import java.util.stream.Collectors;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import org.nmrfx.chemistry.Atom;
 import org.nmrfx.chemistry.Polymer;
+import org.nmrfx.chemistry.RDC;
 import org.nmrfx.chemistry.Residue;
 import org.nmrfx.structure.chemistry.Molecule;
 
@@ -35,7 +36,7 @@ public class RDCVectors {
     String aName1;
     String aName2;
 
-    List<RDCVector> rdcVectors = new ArrayList<>();
+    List<RDC> rdcVectors = new ArrayList<>();
 
     public RDCVectors(Molecule molecule, String aName1, String aName2) {
         this.aName1 = aName1;
@@ -52,7 +53,7 @@ public class RDCVectors {
                     if (r != 0.0) {
                         vector = v1.subtract(v2);
                         vector.scalarMultiply(1.0e-10);
-                        RDCVector rdcVector = new RDCVector(atom1, atom2, vector);
+                        RDC rdcVector = new RDC(atom1, atom2, vector);
                         rdcVectors.add(rdcVector);
                     }
                 }
@@ -60,11 +61,32 @@ public class RDCVectors {
         }
     }
 
-    public List<RDCVector> getRDCVectors() {
+    public RDCVectors(Molecule molecule, List<String> atomKeys) {
+        for (String atomKey : atomKeys) {
+            String[] keys = atomKey.split(":");
+            Atom atom1 = molecule.findAtom(keys[0]);
+            Atom atom2 = molecule.findAtom(keys[1]);
+            if ((atom1 != null) && (atom2 != null)) {
+                System.out.println(atom1.getFullName() + " " + atom2.getFullName());
+                Vector3D v1 = atom1.getPoint();
+                Vector3D v2 = atom2.getPoint();
+                double r = Vector3D.distance(v1, v2) * 1e-10;
+                Vector3D vector = null;
+                if (r != 0.0) {
+                    vector = v1.subtract(v2);
+                    vector.scalarMultiply(1.0e-10);
+                    RDC rdcVector = new RDC(atom1, atom2, vector);
+                    rdcVectors.add(rdcVector);
+                }
+            }
+        }
+    }
+
+    public List<RDC> getRDCVectors() {
         return rdcVectors;
     }
 
-    public List<RDCVector> getExpRDCVectors() {
-        return rdcVectors.stream().filter(r -> r.rdcExp != null).collect(Collectors.toList());
+    public List<RDC> getExpRDCVectors() {
+        return rdcVectors.stream().filter(r -> r.getExpRDC() != null).collect(Collectors.toList());
     }
 }

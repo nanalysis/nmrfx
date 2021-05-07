@@ -38,7 +38,7 @@ from org.nmrfx.structure.chemistry.energy import AngleTreeGenerator
 #from tcl.lang import Interp
 from java.lang import String, NullPointerException, IllegalArgumentException
 from java.util import ArrayList
-from org.nmrfx.chemistry.constraints import RDC
+from org.nmrfx.chemistry.constraints import RDCConstraint
 from org.nmrfx.chemistry.constraints import RDCConstraintSet
 from org.nmrfx.chemistry import SpatialSet
 
@@ -2635,7 +2635,7 @@ class refine:
                     newAtom1Ind = setAtoms[1].index(atomName1);
             if newAtom1Ind >= 0:
                 spSets1 = rdcSet.get(newAtom1Ind).getSpSets()
-                rdcObj = RDC(rdcSet, spSets1[0], spSets1[1], rdc, err)
+                rdcObj = RDCConstraint(rdcSet, spSets1[0], spSets1[1], rdc, err)
                 rdcSet.remove(newAtom1Ind);
                 rdcSet.add(newAtom1Ind, rdcObj);
             else:
@@ -2644,7 +2644,7 @@ class refine:
                 if atom1 != None and atom2 != None:
                     spSet1 = atom1.getSpatialSet()
                     spSet2 = atom2.getSpatialSet()
-                    rdcObj = RDC(rdcSet, spSet1, spSet2, rdc, err)
+                    rdcObj = RDCConstraint(rdcSet, spSet1, spSet2, rdc, err)
                     rdcSet.add(rdcObj)
         #for constraint in rdcSet.get():
         #    print constraint.getSpSets()[0].getFullName(), constraint.getSpSets()[1].getFullName(), constraint.getValue(), constraint.getErr()

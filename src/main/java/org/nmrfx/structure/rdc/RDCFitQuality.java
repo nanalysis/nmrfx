@@ -5,6 +5,7 @@
  */
 package org.nmrfx.structure.rdc;
 
+import org.nmrfx.chemistry.RDC;
 import java.util.List;
 import org.apache.commons.math3.stat.regression.SimpleRegression;
 
@@ -62,13 +63,13 @@ public class RDCFitQuality {
         return r2;
     }
 
-    public void evaluate(AlignmentMatrix aMat, List<RDCVector> rdcVecs) {
+    public void evaluate(AlignmentMatrix aMat, List<RDC> rdcVecs) {
         SimpleRegression sReg = new SimpleRegression();
         double dcDiffSqSum = 0;
         double dcSqSum = 0;
         n = rdcVecs.size();
         chiSq = 0.0;
-        for (RDCVector rdcVec : rdcVecs) {
+        for (RDC rdcVec : rdcVecs) {
             double rdc = rdcVec.getRDC();
             double rdcExp = rdcVec.getExpRDC();
             double delta = rdc - rdcExp;

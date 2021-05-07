@@ -48,7 +48,7 @@ import org.apache.commons.math3.geometry.euclidean.threed.RotationConvention;
 import org.apache.commons.math3.geometry.euclidean.threed.RotationOrder;
 import org.nmrfx.chemistry.MoleculeFactory;
 import org.nmrfx.star.ParseException;
-import org.nmrfx.chemistry.constraints.RDC;
+import org.nmrfx.chemistry.constraints.RDCConstraint;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.python.util.PythonInterpreter;
 
@@ -208,8 +208,8 @@ public class OrderSVD {
      * Example file located in orderten_svd_dipole.c
      *
      * @param file String of the name of the file.
-     * @return List of Lists of vectors, unnormalized RDC values, maxRDC values,
-     * error values, atom names, and XYZ coordinates for both atoms.
+     * @return List of Lists of vectors, unnormalized RDCConstraint values, maxRDC values,
+ error values, atom names, and XYZ coordinates for both atoms.
      */
     public static List readInputFile(String file) {
         ArrayList<Vector3D> vectors = new ArrayList<>();
@@ -282,17 +282,17 @@ public class OrderSVD {
      * Returns the b vector used in the SVD.
      *
      * @return ArrayRealVector b vector containing the normalized experimental
-     * RDC values used to solve for x in the SVD: Ax = b.
+ RDCConstraint values used to solve for x in the SVD: Ax = b.
      */
     public ArrayRealVector getBVector() {
         return bVec;
     }
 
     /**
-     * Returns the unnormalized experimental RDC value vector.
+     * Returns the unnormalized experimental RDCConstraint value vector.
      *
      * @return ArrayRealVector b vector containing the unnormalized experimental
-     * RDC values.
+ RDCConstraint values.
      */
     public ArrayRealVector getBUnNormVector() {
         return bVecUnNorm;
@@ -302,7 +302,7 @@ public class OrderSVD {
      * Returns the x vector solved for in the SVD.
      *
      * @return RealVector x solved for in the SVD using the direction cosine A
-     * matrix and the normalized experimental RDC b vector: Ax = b.
+ matrix and the normalized experimental RDCConstraint b vector: Ax = b.
      */
     public RealVector getXVector() {
         return xVec;
@@ -448,7 +448,7 @@ public class OrderSVD {
     }
 
     /**
-     * Returns the maximum RDC values associated with different atom types.
+     * Returns the maximum RDCConstraint values associated with different atom types.
      *
      * @return HashMap of the maxRDC values for different atom types.
      */
@@ -457,8 +457,8 @@ public class OrderSVD {
     }
 
     /**
-     * Returns the maximum RDC values used for different pairs of atoms in the
-     * molecule.
+     * Returns the maximum RDCConstraint values used for different pairs of atoms in the
+ molecule.
      *
      * @return double[] Array of the maxRDC values for the atom pairs in the
      * molecule.
@@ -468,8 +468,8 @@ public class OrderSVD {
     }
 
     /**
-     * Sets the maximum RDC values used for different pairs of atoms in the
-     * molecule.
+     * Sets the maximum RDCConstraint values used for different pairs of atoms in the
+ molecule.
      *
      * @param maxRDC double[] Array of the maxRDC values for the atom pairs in
      * the molecule.
@@ -479,33 +479,33 @@ public class OrderSVD {
     }
 
     /**
-     * Calculates the normalized RDC values using the A matrix and x vector from
-     * the SVD.
+     * Calculates the normalized RDCConstraint values using the A matrix and x vector from
+ the SVD.
      *
-     * @return RealVector Normalized calculated RDC values b vector calculated
-     * using the solved x vector from the SVD: Ax = b.
+     * @return RealVector Normalized calculated RDCConstraint values b vector calculated
+ using the solved x vector from the SVD: Ax = b.
      */
     public RealVector calcBVectorNorm() {
         return AR.operate(xVec);
     }
 
     /**
-     * Sets the normalized RDC values calculated using the A matrix and x vector
-     * from the SVD.
+     * Sets the normalized RDCConstraint values calculated using the A matrix and x vector
+ from the SVD.
      *
-     * @param calcBVecNorm RealVector Normalized calculated RDC values b vector
-     * calculated using the solved x vector from the SVD: Ax = b.
+     * @param calcBVecNorm RealVector Normalized calculated RDCConstraint values b vector
+ calculated using the solved x vector from the SVD: Ax = b.
      */
     public void setCalcBVectorNorm(RealVector calcBVecNorm) {
         bCalcNorm = calcBVecNorm.toArray();
     }
 
     /**
-     * Calculates the unnormalized RDC values using the A matrix and x vector
-     * from the SVD.
+     * Calculates the unnormalized RDCConstraint values using the A matrix and x vector
+ from the SVD.
      *
-     * @return RealVector Unnormalized calculated RDC values b vector calculated
-     * using the solved x vector from the SVD: Ax = b.
+     * @return RealVector Unnormalized calculated RDCConstraint values b vector calculated
+ using the solved x vector from the SVD: Ax = b.
      */
     public RealVector calcBVector() {
         RealVector calcBVecNorm = calcBVectorNorm();
@@ -515,55 +515,55 @@ public class OrderSVD {
     }
 
     /**
-     * Sets the unnormalized RDC values calculated using the A matrix and x
-     * vector from the SVD.
+     * Sets the unnormalized RDCConstraint values calculated using the A matrix and x
+ vector from the SVD.
      *
-     * @param calcBVec RealVector Unnormalized calculated RDC values b vector
-     * calculated using the solved x vector from the SVD: Ax = b.
+     * @param calcBVec RealVector Unnormalized calculated RDCConstraint values b vector
+ calculated using the solved x vector from the SVD: Ax = b.
      */
     public void setCalcBVector(RealVector calcBVec) {
         bCalc = calcBVec.toArray();
     }
 
     /**
-     * Returns the differences between the unnormalized RDC values (calculated -
-     * experimental).
+     * Returns the differences between the unnormalized RDCConstraint values (calculated -
+ experimental).
      *
-     * @return RealVector of the differences between the unnormalized RDC values
-     * (calculated b vector - experimental b vector).
+     * @return RealVector of the differences between the unnormalized RDCConstraint values
+ (calculated b vector - experimental b vector).
      */
     public RealVector getRDCDiffs() {
         return dcDiffs;
     }
 
     /**
-     * Sets the differences between the unnormalized RDC values (calculated -
-     * experimental).
+     * Sets the differences between the unnormalized RDCConstraint values (calculated -
+ experimental).
      *
      * @param rdcDiffs RealVector of the differences between the unnormalized
-     * RDC values (calculated b vector - experimental b vector).
+ RDCConstraint values (calculated b vector - experimental b vector).
      */
     public void setRDCDiffs(RealVector rdcDiffs) {
         dcDiffs = rdcDiffs;
     }
 
     /**
-     * Returns the normalized RDC values calculated using the A matrix and x
-     * vector from the SVD.
+     * Returns the normalized RDCConstraint values calculated using the A matrix and x
+ vector from the SVD.
      *
-     * @return double[] Normalized b (calculated RDC) values calculated using
-     * the solved x vector from the SVD: Ax = b.
+     * @return double[] Normalized b (calculated RDCConstraint) values calculated using
+ the solved x vector from the SVD: Ax = b.
      */
     public double[] getCalcBVectorNorm() {
         return bCalcNorm;
     }
 
     /**
-     * Returns the unnormalized RDC values calculated using the A matrix and x
-     * vector from the SVD.
+     * Returns the unnormalized RDCConstraint values calculated using the A matrix and x
+ vector from the SVD.
      *
-     * @return double[] Unnormalized b (calculated RDC) values calculated using
-     * the solved x vector from the SVD: Ax = b.
+     * @return double[] Unnormalized b (calculated RDCConstraint) values calculated using
+ the solved x vector from the SVD: Ax = b.
      */
     public double[] getCalcBVector() {
         return bCalc;
@@ -598,7 +598,7 @@ public class OrderSVD {
     }
 
     /**
-     * Sets the RDC constraint set.
+     * Sets the RDCConstraint constraint set.
      *
      * @param set
      */
@@ -607,7 +607,7 @@ public class OrderSVD {
     }
 
     /**
-     * Returns the RDC constraint set.
+     * Returns the RDCConstraint constraint set.
      *
      * @return
      */
@@ -616,13 +616,12 @@ public class OrderSVD {
     }
 
     /**
-     * Sets the RDC SVD results of the Molecule object.
+     * Sets the RDCConstraint SVD results of the Molecule object.
      *
      * @param results OrderSVD results object.
      */
     public void setSVDResults(OrderSVD results) {
         Molecule mol = (Molecule) MoleculeFactory.getActive();
-        mol.setRDCResults(results);
     }
 
     /**
@@ -685,17 +684,17 @@ public class OrderSVD {
     }
 
     /**
-     * Calculates the maximum RDC value associated with two atoms in a Molecule
-     * object.
+     * Calculates the maximum RDCConstraint value associated with two atoms in a Molecule
+ object.
      *
      * @param vector Vector3D object that represents the vector associated with
      * the two atoms.
      * @param atomName1 String of the name of the first atom of the vector.
      * @param atomName2 String of the name of the second atom of the vector.
-     * @param calcMaxRDC Boolean of whether to calculate the max RDC value based
-     * on the vector distance.
-     * @param scale Boolean of whether to calculate the max RDC value with the
-     * scaling method used in CYANA.
+     * @param calcMaxRDC Boolean of whether to calculate the max RDCConstraint value based
+ on the vector distance.
+     * @param scale Boolean of whether to calculate the max RDCConstraint value with the
+ scaling method used in CYANA.
      * @return double parameter that is the maxRDC value.
      */
     public static double calcMaxRDC(Vector3D vector, String atomName1, String atomName2, boolean calcMaxRDC, boolean scale) {
@@ -724,12 +723,12 @@ public class OrderSVD {
      *
      * @param atomPairs List of List of Strings of atom name pairs: [[atom 1
      * name, atom 2 name], [atom 1 name, atom 2 name]...]
-     * @param rdc List of the unnormalized experimental RDC values.
-     * @param errors List of the errors in the experimental RDC values.
-     * @param calcMaxRDC Boolean of whether to calculate the max RDC value based
-     * on the vector distance.
-     * @param scale Boolean of whether to calculate the max RDC value with the
-     * scaling method used in CYANA.
+     * @param rdc List of the unnormalized experimental RDCConstraint values.
+     * @param errors List of the errors in the experimental RDCConstraint values.
+     * @param calcMaxRDC Boolean of whether to calculate the max RDCConstraint value based
+ on the vector distance.
+     * @param scale Boolean of whether to calculate the max RDCConstraint value with the
+ scaling method used in CYANA.
      * @param xyzCoords Optional List of Lists containing the XYZ coordinates of
      * the two atoms: [[[atom1 X, atom1 Y, atom1 Z], [atom2 X, atom2 Y, atom2
      * Z]]...]
@@ -782,12 +781,12 @@ public class OrderSVD {
     /**
      * Performs an Order SVD calculation to calculate molecular RDCs.
      *
-     * @param rdcSet RDCConstraintSet containing RDC information from the STAR
-     * file (e.g. atoms, rdc values, rdc error values).
-     * @param calcMaxRDC Boolean of whether to calculate the max RDC value based
-     * on the vector distance.
-     * @param scale Boolean of whether to calculate the max RDC value with the
-     * scaling method used in CYANA.
+     * @param rdcSet RDCConstraintSet containing RDCConstraint information from the STAR
+ file (e.g. atoms, rdc values, rdc error values).
+     * @param calcMaxRDC Boolean of whether to calculate the max RDCConstraint value based
+ on the vector distance.
+     * @param scale Boolean of whether to calculate the max RDCConstraint value with the
+ scaling method used in CYANA.
      * @param xyzCoords Optional List of Lists containing the XYZ coordinates of
      * the two atoms: [[[atom1 X, atom1 Y, atom1 Z], [atom2 X, atom2 Y, atom2
      * Z]]...]
@@ -951,10 +950,10 @@ public class OrderSVD {
     }
 
     /**
-     * Saves SVD RDC results to a file.
+     * Saves SVD RDCConstraint results to a file.
      *
-     * @param svdResults OrderSVD object with the results of the SVD RDC
-     * calculation.
+     * @param svdResults OrderSVD object with the results of the SVD RDCConstraint
+ calculation.
      * @param resultsFile File to write.
      * @throws IOException
      */
@@ -1043,7 +1042,7 @@ public class OrderSVD {
      *
      * @param file File to read.
      * @param type String of the file format: "xplor" or "cyana".
-     * @param rdcSetName String of the name of the RDC set.
+     * @param rdcSetName String of the name of the RDCConstraint set.
      * @throws IOException
      * @throws ParseException
      */
@@ -1083,17 +1082,17 @@ public class OrderSVD {
     /**
      * Updates the RDCSet object with RDCs read from XPLOR or CYANA files.
      *
-     * @param atom1 List of atoms for the first atom in the RDC pair.
-     * @param atom2 List of atoms for the second atom in the RDC pair.
-     * @param rdc List of XPLOR or CYANA RDC values.
-     * @param err List of XPLOR or CYANA RDC error values.
-     * @param rdcSetName String of the name of the RDC set.
+     * @param atom1 List of atoms for the first atom in the RDCConstraint pair.
+     * @param atom2 List of atoms for the second atom in the RDCConstraint pair.
+     * @param rdc List of XPLOR or CYANA RDCConstraint values.
+     * @param err List of XPLOR or CYANA RDCConstraint error values.
+     * @param rdcSetName String of the name of the RDCConstraint set.
      */
     public static void updateRDCSet(MoleculeBase molecule, List<String> atom1, List<String> atom2, List<String> rdc, List<String> err, String rdcSetName) {
         RDCConstraintSet rdcSet = molecule.getMolecularConstraints().getRDCSet(rdcSetName);
         String[][] setAtoms = new String[2][rdcSet.getSize()];
         for (int i = 0; i < rdcSet.getSize(); i++) {
-            RDC setRDC = rdcSet.get(i);
+            RDCConstraint setRDC = rdcSet.get(i);
             SpatialSet[] spSets = setRDC.getSpSets();
             setAtoms[0][i] = spSets[0].getFullName().split(":")[1];
             setAtoms[1][i] = spSets[1].getFullName().split(":")[1];
@@ -1107,7 +1106,7 @@ public class OrderSVD {
             }
             if (newAtom1Ind >= 0) {
                 SpatialSet[] spSets1 = rdcSet.get(newAtom1Ind).getSpSets();
-                RDC aCon = new RDC(rdcSet, spSets1[0], spSets1[1], Double.parseDouble(rdc.get(i)), Double.parseDouble(err.get(i)));
+                RDCConstraint aCon = new RDCConstraint(rdcSet, spSets1[0].getAtom(), spSets1[1].getAtom(), Double.parseDouble(rdc.get(i)), Double.parseDouble(err.get(i)));
                 rdcSet.remove(newAtom1Ind);
                 rdcSet.add(newAtom1Ind, aCon);
             } else {
@@ -1116,7 +1115,7 @@ public class OrderSVD {
                 if (a1 != null & a2 != null) {
                     SpatialSet spSet1 = a1.getSpatialSet();
                     SpatialSet spSet2 = a2.getSpatialSet();
-                    RDC rdcObj = new RDC(rdcSet, spSet1, spSet2, Double.parseDouble(rdc.get(i)), Double.parseDouble(err.get(i)));
+                    RDCConstraint rdcObj = new RDCConstraint(rdcSet, spSet1.getAtom(), spSet2.getAtom(), Double.parseDouble(rdc.get(i)), Double.parseDouble(err.get(i)));
                     rdcSet.add(rdcObj);
                 }
             }
@@ -1124,7 +1123,7 @@ public class OrderSVD {
 //        for (int i=0; i<rdcSet.getSize(); i++) {
 //            String Atom1 = rdcSet.get(i).getSpSets()[0].getFullName().split(":")[1];
 //            String Atom2 = rdcSet.get(i).getSpSets()[1].getFullName().split(":")[1];
-//            System.out.println("RDC " + i + " = " + Atom1 + " " + Atom2 + " " + rdcSet.get(i).getValue());
+//            System.out.println("RDCConstraint " + i + " = " + Atom1 + " " + Atom2 + " " + rdcSet.get(i).getValue());
 //        }
     }
 }

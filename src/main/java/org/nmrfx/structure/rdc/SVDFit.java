@@ -11,6 +11,7 @@ import org.apache.commons.math3.linear.ArrayRealVector;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
 import org.apache.commons.math3.linear.SingularValueDecomposition;
+import org.nmrfx.chemistry.RDC;
 
 /**
  *
@@ -19,7 +20,7 @@ import org.apache.commons.math3.linear.SingularValueDecomposition;
 public class SVDFit {
 
     RealMatrix AR;
-    List<RDCVector> rdcVecs;
+    List<RDC> rdcVecs;
     RealVector expRDCNorm;
     RealVector expRDC;
     RealVector calcRDCNorm;
@@ -27,17 +28,19 @@ public class SVDFit {
     RealVector normVec;
     RealVector orderMatrixElems;
 
-    public SVDFit(RealMatrix AR, List<RDCVector> rdcVecs) {
+    public SVDFit(RealMatrix AR, List<RDC> rdcVecs) {
         this.AR = AR;
         this.rdcVecs = rdcVecs;
         expRDCNorm = new ArrayRealVector(rdcVecs.size());
         expRDC = new ArrayRealVector(rdcVecs.size());
         normVec = new ArrayRealVector(rdcVecs.size());
         for (int i = 0; i < rdcVecs.size(); i++) {
-            RDCVector rdcVec = rdcVecs.get(i);
-            expRDCNorm.setEntry(i, rdcVec.getNormExpRDC());
-            expRDC.setEntry(i, rdcVec.getExpRDC());
-            normVec.setEntry(i, rdcVec.getMaxRDC());
+            RDC rdcVec = rdcVecs.get(i);
+            double rdc = rdcVec.getExpRDC();
+            double maxRDC = rdcVec.getMaxRDC();
+            expRDCNorm.setEntry(i, rdc / maxRDC);
+            expRDC.setEntry(i, rdc);
+            normVec.setEntry(i, maxRDC);
         }
     }
 

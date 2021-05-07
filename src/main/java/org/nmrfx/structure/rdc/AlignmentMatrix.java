@@ -29,6 +29,7 @@ import org.apache.commons.math3.linear.ArrayRealVector;
 import org.apache.commons.math3.linear.EigenDecomposition;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
+import org.nmrfx.chemistry.RDC;
 
 /**
  *
@@ -287,16 +288,10 @@ public class AlignmentMatrix {
      * @return double magnitude = (1/2)*maxRDCs[index of
      * max(abs(maxRDCs))]*(axial component of S)
      */
-//    public double calcMagnitude() {
-//        double[] absMaxRDCs = new double[maxRDCs.length];
-//        for (int i = 0; i < absMaxRDCs.length; i++) {
-//            absMaxRDCs[i] = Math.abs(maxRDCs[i]);
-//        }
-//        double maxAbsRDC = Arrays.stream(absMaxRDCs).max().getAsDouble();
-//        int maxIndex = Arrays.stream(absMaxRDCs).boxed().collect(Collectors.toList()).indexOf(maxAbsRDC);
-//
-//        return 0.5 * maxRDCs[maxIndex] * calcSAxial();
-//    }
+    public double calcMagnitude() {
+        return 0.5 * maxRDCDict.get("HN") * calcSAxial();
+    }
+    
     public double[][] calcEulerAngles(double[][] R) {
         double Rxz = R[0][2];
         double Ryz = R[1][2];
@@ -370,13 +365,13 @@ public class AlignmentMatrix {
         }
     }
 
-    public static RealMatrix setupDirectionMatrix(List<RDCVector> vectors) {
-        int nVectors = vectors.size();
+    public static RealMatrix setupDirectionMatrix(List<RDC> rdcs) {
+        int nVectors = rdcs.size();
         double[][] A = new double[nVectors][5];
         int iRow = 0;
         // calculate the direction cosines and construct the matrix A. Based on orderten_svd_dipole.c
-        for (RDCVector rdcVec : vectors) {
-            Vector3D normVec = rdcVec.vector.normalize();
+        for (RDC rdcVec : rdcs) {
+            Vector3D normVec = rdcVec.getVector().normalize();
             double dcosX = normVec.getX();
             double dcosY = normVec.getY();
             double dcosZ = normVec.getZ();
@@ -394,7 +389,7 @@ public class AlignmentMatrix {
         return directionMatrix;
     }
 
-    public void calcRDC(RealMatrix directionMatrix, List<RDCVector> vectors) {
+    public void calcRDC(RealMatrix directionMatrix, List<RDC> vectors) {
         RealMatrix scaledMat = saupeMat;
         double sYY = scaledMat.getEntry(1, 1);
         double sZZ = scaledMat.getEntry(2, 2);
@@ -406,24 +401,24 @@ public class AlignmentMatrix {
         RealVector result = directionMatrix.operate(sVec);
 
         for (int i = 0; i < vectors.size(); i++) {
-            RDCVector rdcVec = vectors.get(i);
-            double rdc = result.getEntry(i) * rdcVec.getMaxRDC();
+            RDC rdcVec = vectors.get(i);
+            double rdc = result.getEntry(i) * Math.abs(rdcVec.getMaxRDC());
             rdcVec.setRDC(rdc);
         }
     }
 
     /**
-     * Calculates the maximum RDC value associated with two atoms in a Molecule
-     * object.
+     * Calculates the maximum RDCConstraint value associated with two atoms in a
+     * Molecule object.
      *
      * @param vector Vector3D object that represents the vector associated with
      * the two atoms.
      * @param aType1 String of the type of the first atom of the vector.
      * @param aType2 String of the type of the second atom of the vector.
-     * @param calcMaxRDC Boolean of whether to calculate the max RDC value based
-     * on the vector distance.
-     * @param scale Boolean of whether to calculate the max RDC value with the
-     * scaling method used in CYANA.
+     * @param calcMaxRDC Boolean of whether to calculate the max RDCConstraint
+     * value based on the vector distance.
+     * @param scale Boolean of whether to calculate the max RDCConstraint value
+     * with the scaling method used in CYANA.
      * @return double parameter that is the maxRDC value.
      */
     public static double calcMaxRDC(Vector3D vector, String aType1, String aType2, boolean calcMaxRDC, boolean scale) {

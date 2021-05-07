@@ -428,7 +428,7 @@ public class AlignmentCalc {
             double cylConstrainedArea = Math.PI * rC * rC;
             freeSize = areaPerCyl - cylConstrainedArea;
             constrainedSize = cylConstrainedArea - cylRestrictedArea;
-            scale = 0.25;
+            scale = 0.5;
         }
         globalScale = scale * constrainedSize / (constrainedSize + freeSize);
 

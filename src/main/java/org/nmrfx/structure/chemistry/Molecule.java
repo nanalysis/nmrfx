@@ -186,7 +186,7 @@ public class Molecule extends MoleculeBase {
     int genVecs[][] = null;
     EnergyCoords eCoords = new EnergyCoords();
     Dihedral dihedrals = null;
-    OrderSVD rdcResults = null;
+    AlignmentMatrix alignmentMat = null;
     EnergyLists energyList;
     ProteinHelix helix;
     Sheet sheets;
@@ -338,8 +338,8 @@ public class Molecule extends MoleculeBase {
         return dotBracket;
     }
 
-    public void setRDCResults(OrderSVD results) {
-        rdcResults = results;
+    public void setRDCResults(AlignmentMatrix results) {
+        alignmentMat = results;
     }
 
     public static Point3 avgCoords(MolFilter molFilter1) throws IllegalArgumentException, InvalidMoleculeException {
@@ -1657,20 +1657,20 @@ public class Molecule extends MoleculeBase {
 
     public RealMatrix getRDCRotationMatrix(boolean scaleMat) {
         EigenDecomposition rdcEig;
-        if (rdcResults == null) {
+        if (alignmentMat == null) {
             AlignmentCalc aCalc = new AlignmentCalc(this, true, 2.0);
             aCalc.center();
             aCalc.genAngles(122, 18, 1.0);
             aCalc.findMinimums();
             double slabWidth = 0.2;
-            double f = 0.025;
+            double f = 0.01;
             double d = 40.0;
-            aCalc.calcCylExclusions(slabWidth, f, d, "cyl");
+            aCalc.calcCylExclusions(slabWidth, f, d, "bicelle");
             aCalc.calcTensor(0.8);
-            AlignmentMatrix aMat = aCalc.getAlignment();
-            rdcEig = aMat.getEig();
+            alignmentMat = aCalc.getAlignment();
+            rdcEig = alignmentMat.getEig();
         } else {
-            rdcEig = rdcResults.getEig();
+            rdcEig = alignmentMat.getEig();
         }
         double[] eigValues = rdcEig.getRealEigenvalues();
         double maxEig = Double.NEGATIVE_INFINITY;
@@ -1679,8 +1679,8 @@ public class Molecule extends MoleculeBase {
                 maxEig = Math.abs(eigValues[i]);
             }
         }
-
-        RealMatrix rotMat = rdcEig.getVT().copy();
+        RealMatrix rotMat = alignmentMat.getEigenVectors();
+//        RealMatrix rotMat = rdcEig.getVT().copy();
         if (scaleMat) {
             for (int i = 0; i < 3; i++) {
                 double scale = Math.abs(eigValues[i] / maxEig);
