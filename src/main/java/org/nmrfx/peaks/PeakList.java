@@ -15,8 +15,8 @@ import org.nmrfx.utilities.Util;
 
 import static java.lang.Double.compare;
 import static java.util.Comparator.comparing;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
-import org.nmrfx.chemistry.AtomResonanceFactory;
 import org.nmrfx.utilities.Updater;
 
 public class PeakList {
@@ -50,7 +50,7 @@ public class PeakList {
     Map<String, String> properties = new HashMap<>();
     List<PeakListener> listeners = new ArrayList<>();
     protected boolean changed = false;
-    public boolean thisListUpdated = false;
+    public AtomicBoolean thisListUpdated = new AtomicBoolean(false);
     Updater updater = null;
 
     /**
@@ -501,6 +501,14 @@ public class PeakList {
         for (PeakListener listener : listeners) {
             listener.peakListChanged(new PeakEvent(this));
         }
+    }
+
+    public void registerUpdater(Updater updater) {
+        this.updater = updater;
+    }
+
+    public void removeUpdater() {
+        this.updater = null;
     }
 
     /**
