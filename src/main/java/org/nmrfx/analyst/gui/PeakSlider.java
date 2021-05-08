@@ -491,7 +491,6 @@ public class PeakSlider implements ControllerTool {
     }
 
     public void setActivePeaks(List<Peak> peaks) {
-        System.out.println("setActivePeaks(" + peaks + ")");
         selPeaks = peaks;
         controller.getCharts().stream()
                 .forEach(chart -> {
