@@ -1344,7 +1344,7 @@ public class PolyChart implements PeakListener {
 
     protected void setPhaseDim(int phaseDim) {
         String vecDimName = "";
-        if (controller.chartProcessor != null) {
+        if ((controller.chartProcessor != null) && controller.processControllerVisible.get()) {
             vecDimName = controller.chartProcessor.getVecDimName();
             datasetPhaseDim = controller.chartProcessor.mapToDataset(phaseDim);
         } else {
