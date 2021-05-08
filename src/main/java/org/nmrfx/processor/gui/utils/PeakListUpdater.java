@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.nmrfx.peaks.PeakEvent;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.PeakListener;
@@ -38,16 +39,22 @@ public class PeakListUpdater implements Updater {
 
     protected ScheduledThreadPoolExecutor schedExecutor = new ScheduledThreadPoolExecutor(2);
     PeakList peakList;
-    static boolean aListUpdated = false;
-    static boolean needToFireEvent = false;
+    static AtomicBoolean aListUpdated = new AtomicBoolean(false);
+    static AtomicBoolean needToFireEvent = new AtomicBoolean(false);
     ScheduledFuture futureUpdate = null;
 
+    public PeakListUpdater(PeakList peakList) {
+        this.peakList = peakList;
+    }
+
+    @Override
     public void shutdown() {
         schedExecutor.shutdown();
         schedExecutor = null;
         peakList = null;
     }
 
+    @Override
     public void update() {
         setUpdatedFlag(true);
         startTimer();
@@ -57,14 +64,14 @@ public class PeakListUpdater implements Updater {
 
         @Override
         public void run() {
-            if (aListUpdated) {
-                needToFireEvent = true;
-                setAUpdatedFlag(false);
+            if (aListUpdated.get()) {
+                needToFireEvent.set(true);
+                aListUpdated.set(false);
                 startTimer();
-            } else if (needToFireEvent) {
-                needToFireEvent = false;
+            } else if (needToFireEvent.get()) {
+                needToFireEvent.set(false);
                 scanListsForUpdates();
-                if (aListUpdated) {
+                if (aListUpdated.get()) {
                     startTimer();
                 }
             }
@@ -73,7 +80,7 @@ public class PeakListUpdater implements Updater {
 
     synchronized void startTimer() {
         if (peakList.valid() && (schedExecutor != null)) {
-            if (needToFireEvent || (futureUpdate == null) || futureUpdate.isDone()) {
+            if (needToFireEvent.get() || (futureUpdate == null) || futureUpdate.isDone()) {
                 UpdateTask updateTask = new UpdateTask();
                 futureUpdate = schedExecutor.schedule(updateTask, 50, TimeUnit.MILLISECONDS);
             }
@@ -86,7 +93,7 @@ public class PeakListUpdater implements Updater {
         Iterator iter = PeakList.iterator();
         while (iter.hasNext()) {
             PeakList peakList = (PeakList) iter.next();
-            if ((peakList != null) && (peakList.thisListUpdated)) {
+            if ((peakList != null) && (peakList.thisListUpdated.get())) {
                 peakList.setUpdatedFlag(false);
                 // fixme should only do if necessary
                 //peakList.sortMultiplets();
@@ -98,16 +105,11 @@ public class PeakListUpdater implements Updater {
             notifyGlobalListeners();
         }
     }
-    // FIXME need to make safe
 
-    synchronized static void setAUpdatedFlag(boolean value) {
-        aListUpdated = value;
-    }
-
-    synchronized void setUpdatedFlag(boolean value) {
-        peakList.thisListUpdated = value;
+    void setUpdatedFlag(boolean value) {
+        peakList.thisListUpdated.set(value);
         if (value) {
-            setAUpdatedFlag(value);
+            aListUpdated.set(value);
         }
     }
 

@@ -68,7 +68,6 @@ import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ChoiceDialog;
-import javafx.scene.control.TextInputDialog;
 import javafx.scene.input.DragEvent;
 import javafx.scene.layout.Pane;
 import javafx.scene.shape.LineTo;
@@ -113,6 +112,7 @@ import org.nmrfx.processor.gui.spectra.MultipletSelection;
 import org.nmrfx.processor.gui.spectra.PeakMenu;
 import org.nmrfx.processor.gui.spectra.RegionMenu;
 import org.nmrfx.processor.gui.undo.ChartUndoScale;
+import org.nmrfx.processor.gui.utils.PeakListUpdater;
 import org.nmrfx.project.ProjectBase;
 import org.nmrfx.utils.GUIUtils;
 

@@ -51,6 +51,7 @@ import org.nmrfx.processor.gui.MainApp;
 import org.nmrfx.processor.gui.PreferencesController;
 import org.nmrfx.processor.gui.spectra.WindowIO;
 import org.nmrfx.processor.gui.utils.FxPropertyChangeSupport;
+import org.nmrfx.processor.gui.utils.PeakListUpdater;
 import org.nmrfx.project.ProjectBase;
 import org.nmrfx.star.ParseException;
 
@@ -461,6 +462,23 @@ public class GUIProject extends ProjectBase {
             commitActive = false;
         }
         return didSomething;
+    }
+
+    @Override
+    public void addPeakList(PeakList peakList, String name) {
+        super.addPeakList(peakList, name);
+        PeakListUpdater updater = new PeakListUpdater(peakList);
+        System.out.println("update " + name);
+        peakList.registerUpdater(updater);
+    }
+
+    public void removePeakList(String name) {
+        PeakList peakList = peakLists.get(name);
+        if (peakList != null) {
+            peakList.removeUpdater();
+        }
+        super.removePeakList(name);
+
     }
 
     void loadWindows(Path dir) throws IOException {
