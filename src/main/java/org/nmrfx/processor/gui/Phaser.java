@@ -37,7 +37,6 @@ import javafx.scene.layout.VBox;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.processor.datasets.Dataset;
-import org.nmrfx.processor.datasets.DatasetPhaser;
 import org.nmrfx.processor.operations.AutoPhase;
 import org.nmrfx.processor.operations.IDBaseline2;
 
@@ -63,7 +62,7 @@ public class Phaser {
         initGUI(vbox);
     }
 
-    public void initGUI(VBox vbox) {
+    private void initGUI(VBox vbox) {
         for (int iPh = 0; iPh < 2; iPh++) {
             final int phMode = iPh;
             Label label = new Label("PH" + iPh);
@@ -152,15 +151,17 @@ public class Phaser {
     void resetMenus(SimpleBooleanProperty procVis) {
         if (procVis.get()) {
             phaseMenuButton.getItems().setAll(processorMenuItems);
+            xyPhaseChoice.setVisible(false);
         } else {
             phaseMenuButton.getItems().setAll(datasetMenuItems);
+            xyPhaseChoice.setVisible(true);
         }
     }
 
     void setChartPhaseDim() {
         PolyChart chart = controller.getActiveChart();
         chart.setPhaseDim(phaseChoice.get().equals("X") ? 0 : 1);
-        if (controller.chartProcessor == null) {
+        if ((controller.chartProcessor == null) || !controller.processControllerVisible.get()) {
             setPH1Slider(chart.getDataPH1());
             setPH0Slider(chart.getDataPH0());
         }
@@ -439,6 +440,7 @@ public class Phaser {
 
     private void setPhasePivot() {
         controller.getActiveChart().setPhasePivot();
+        controller.getActiveChart().drawSlices();
     }
 
     private void autoPhaseFlat0() {
@@ -495,7 +497,7 @@ public class Phaser {
 
         int iDim = chart.datasetPhaseDim;
         int winSize = 2;
-        double ph1Limit = 45.0;
+        double ph1Limit = 90.0;
         try {
             double[] phases = dataset.autoPhase(iDim, firstOrder, winSize, ratio, ph1Limit, threshMode);
             chart.setPh0(0.0);

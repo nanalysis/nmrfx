@@ -220,6 +220,7 @@ public class PolyChart implements PeakListener {
     int datasetPhaseDim = 0;
     int phaseAxis = 0;
     double phaseFraction = 0.0;
+    double pivotPosition = 0.0;
     boolean useImmediateMode = true;
     private final List<ConnectPeakAttributes> peakPaths = new ArrayList<>();
     Consumer<DatasetRegion> newRegionConsumer = null;
@@ -594,6 +595,7 @@ public class PolyChart implements PeakListener {
             } else {
                 annoGC.strokeRect(startX, startY, dX, dY);
             }
+            annoGC.setLineDashes(null);
         }
     }
 
@@ -3592,23 +3594,24 @@ public class PolyChart implements PeakListener {
      * @param pivot the pivot to set
      */
     public void setPivot(double pivot) {
-        if (controller.chartProcessor == null) {
-            return;
+        String vecDimName = "";
+        if (controller.chartProcessor != null) {
+            vecDimName = controller.chartProcessor.getVecDimName();
         }
         DatasetBase dataset = getDataset();
-        String vecDimName = controller.chartProcessor.getVecDimName();
         DatasetAttributes datasetAttributes = datasetAttributesList.get(0);
-
         if (is1D() || vecDimName.equals("D1")) {
             int datasetDim = datasetAttributes.dim[0];
             int position = axModes[0].getIndex(datasetAttributes, 0, pivot);
+            pivotPosition = pivot;
             int size = dataset.getSize(datasetDim);
             phaseFraction = position / (size - 1.0);
-        } else if (datasetPhaseDim > 0) {
+        } else if (datasetPhaseDim >= 0) {
             int datasetDim = datasetAttributes.dim[phaseAxis];
             int position = axModes[phaseAxis].getIndex(datasetAttributes, phaseAxis, pivot);
             int size = dataset.getSize(datasetDim);
             phaseFraction = position / (size - 1.0);
+            pivotPosition = pivot;
         }
         //System.out.printf("pivot %.3f map %d dDim %d size %d pos %.3f frac %.3f\n",pivot, mapDim,datasetDim,size,position,phaseFraction);
     }
@@ -3802,11 +3805,14 @@ public class PolyChart implements PeakListener {
             xOn = true;
             yOn = true;
         }
+        int drawPivotAxis = -1;
         if (controller.isPhaseSliderVisible()) {
             if (phaseAxis == 0) {
                 yOn = false;
+                drawPivotAxis = 0;
             } else {
                 xOn = false;
+                drawPivotAxis = 1;
             }
         }
         if ((nDim > 1) && controller.sliceStatus.get() && sliceStatus.get()) {
@@ -3833,6 +3839,26 @@ public class PolyChart implements PeakListener {
                     }
                 }
             }
+        }
+        if (drawPivotAxis == 0) {
+            if (phaseFraction > 1.0e-6) {
+                double dispPos = axes[0].getDisplayPosition(pivotPosition);
+                if ((dispPos > 1) && (dispPos < leftBorder + axes[0].getWidth())) {
+                    gC.setStroke(Color.GREEN);
+                    gC.strokeLine(dispPos, topBorder, dispPos, topBorder + axes[1].getHeight());
+                }
+            }
+
+        } else if (drawPivotAxis == 1) {
+            if (phaseFraction > 1.0e-6) {
+                double dispPos = axes[1].getDisplayPosition(pivotPosition);
+                if ((dispPos > 1) && (dispPos < topBorder + axes[1].getHeight())) {
+                    gC.setStroke(Color.GREEN);
+                    gC.strokeLine(leftBorder, dispPos, leftBorder + axes[0].getWidth(), dispPos);
+
+                }
+            }
+
         }
     }
 
