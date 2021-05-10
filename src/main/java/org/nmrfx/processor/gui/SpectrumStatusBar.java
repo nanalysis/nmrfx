@@ -733,6 +733,9 @@ public class SpectrumStatusBar {
                 MenuItem menuItem = new MenuItem(String.valueOf(iDim + 1) + ":" + dimName);
                 menuItem.addEventHandler(ActionEvent.ACTION, event -> dimAction(rowName, dimName));
                 dimMenu.getItems().add(menuItem);
+                if (controller.isPhaseSliderVisible()) {
+                    chart.updatePhaseDim();
+                }
             }
         }
     }

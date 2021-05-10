@@ -248,7 +248,7 @@ public class Phaser {
     }
 
     public void handlePh0Reset(double ph0) {
-        handlePh0Reset(ph0, true);
+        handlePh0Reset(ph0, controller.processControllerVisible.get());
     }
 
     public void handlePh0Reset(double ph0, boolean updateOp) {
@@ -279,7 +279,7 @@ public class Phaser {
     }
 
     void handlePh1Reset(double ph1) {
-        handlePh1Reset(ph1, true);
+        handlePh1Reset(ph1, controller.processControllerVisible.get());
     }
 
     void handlePh1Reset(double ph1, boolean updateOp) {

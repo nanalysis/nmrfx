@@ -1344,13 +1344,24 @@ public class PolyChart implements PeakListener {
 
     }
 
+    public void updatePhaseDim() {
+        if ((controller.chartProcessor == null) || !controller.processControllerVisible.get()) {
+            setPhaseDim(phaseAxis);
+        }
+    }
+
     protected void setPhaseDim(int phaseDim) {
         String vecDimName = "";
         if ((controller.chartProcessor != null) && controller.processControllerVisible.get()) {
             vecDimName = controller.chartProcessor.getVecDimName();
             datasetPhaseDim = controller.chartProcessor.mapToDataset(phaseDim);
         } else {
-            datasetPhaseDim = phaseDim;
+            if (datasetAttributesList.isEmpty()) {
+                datasetPhaseDim = phaseDim;
+            } else {
+                DatasetAttributes dataAttr = datasetAttributesList.get(0);
+                datasetPhaseDim = dataAttr.dim[phaseDim];
+            }
         }
 
         phaseAxis = 0;
@@ -3595,19 +3606,20 @@ public class PolyChart implements PeakListener {
      */
     public void setPivot(double pivot) {
         String vecDimName = "";
-        if (controller.chartProcessor != null) {
+        if ((controller.chartProcessor != null) && controller.processControllerVisible.get()) {
             vecDimName = controller.chartProcessor.getVecDimName();
         }
         DatasetBase dataset = getDataset();
         DatasetAttributes datasetAttributes = datasetAttributesList.get(0);
+        int datasetDim = -1;
         if (is1D() || vecDimName.equals("D1")) {
-            int datasetDim = datasetAttributes.dim[0];
+            datasetDim = datasetAttributes.dim[0];
             int position = axModes[0].getIndex(datasetAttributes, 0, pivot);
             pivotPosition = pivot;
             int size = dataset.getSize(datasetDim);
             phaseFraction = position / (size - 1.0);
         } else if (datasetPhaseDim >= 0) {
-            int datasetDim = datasetAttributes.dim[phaseAxis];
+            datasetDim = datasetAttributes.dim[phaseAxis];
             int position = axModes[phaseAxis].getIndex(datasetAttributes, phaseAxis, pivot);
             int size = dataset.getSize(datasetDim);
             phaseFraction = position / (size - 1.0);
