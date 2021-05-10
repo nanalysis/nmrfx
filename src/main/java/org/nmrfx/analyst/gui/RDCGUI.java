@@ -275,6 +275,7 @@ public class RDCGUI {
                     return;
                 }
                 aMat = svdFit.fit();
+                aMat.calcAlignment();
             } else {
                 aMat = calcStericAlignment(directionMatrix, rdcValues);
             }
