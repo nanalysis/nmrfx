@@ -157,7 +157,7 @@ public class RefManager {
         if (refresh) {
             ProcessorController pController = processorController;
             if (pController.isViewingDataset()) {
-                if  (pController.autoProcess.isSelected()) {
+                if (pController.autoProcess.isSelected()) {
                     processorController.processIfIdle();
                 }
             } else {
