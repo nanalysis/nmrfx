@@ -310,6 +310,24 @@ public final class NMRDataUtil {
         return result;
     }
 
+    public static File findNewestFile(Path dirPath) {
+        File lastFile = null;
+        try {
+            List<Path> paths = findProcessedFiles(dirPath);
+            long lastMod = 0;
+            for (Path path : paths) {
+                File file = path.toFile();
+                long modTime = file.lastModified();
+                if (modTime > lastMod) {
+                    lastMod = modTime;
+                    lastFile = file;
+                }
+            }
+        } catch (IOException ex) {
+        }
+        return lastFile;
+    }
+
     public static String getProcessedDataset(File localFile) {
         String datasetName = "";
         try {
