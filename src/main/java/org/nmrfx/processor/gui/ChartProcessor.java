@@ -44,6 +44,7 @@ import org.python.core.PyObject;
 import org.python.util.InteractiveInterpreter;
 import javafx.beans.property.SimpleObjectProperty;
 import org.nmrfx.processor.processing.processes.ProcessOps;
+import org.nmrfx.utils.GUIUtils;
 
 
 /*
@@ -688,6 +689,12 @@ public class ChartProcessor {
     }
 
     public String getDatasetName() {
+        if (datasetName.isEmpty()) {
+            datasetName = GUIUtils.input("Enter dataset name: ");
+            if (datasetName.isEmpty()) {
+                datasetName = "dataset";
+            }
+        }
         return datasetName;
     }
 
@@ -727,10 +734,9 @@ public class ChartProcessor {
         String scriptName = "process.py";
         String locMode = PreferencesController.getLocation();
         if (!locMode.startsWith("FID")) {
-            scriptName = datasetName + "_process.py";
+            scriptName = getDatasetName() + "_process.py";
         }
         return scriptName;
-
     }
 
     public void writeScript(String script) {
@@ -748,6 +754,42 @@ public class ChartProcessor {
         }
     }
 
+    public String getDatasetNameFromScript() {
+        String scriptDirName = getScriptDir();
+        File file = new File(scriptDirName, getDefaultScriptName());
+        StringBuilder resultBuilder = new StringBuilder();
+        if (file.exists()) {
+            try {
+                Files.lines(file.toPath()).forEach(line -> {
+                    if (line.trim().startsWith("CREATE")) {
+                        int firstParen = line.indexOf("(");
+                        int lastParen = line.lastIndexOf(")");
+                        String filePath = line.substring(firstParen + 2, lastParen - 1);
+                        File datasetFile = new File(filePath);
+                        String datasetName = datasetFile.getName();
+                        File newFile = Paths.get(scriptDirName, datasetName).toFile();
+                        if (newFile.exists()) {
+                            resultBuilder.append(datasetName);
+                            return;
+                        }
+                    }
+                });
+            } catch (IOException ex) {
+                return "";
+            }
+        }
+        return resultBuilder.toString();
+
+    }
+
+    public void loadDefaultScriptIfPresent() {
+        String parent = getScriptDir();
+        File scriptFile = new File(parent, getDefaultScriptName());
+        if (scriptFile.exists() && scriptFile.canRead()) {
+            processorController.openScript(scriptFile);
+        }
+    }
+
     String buildScript() {
         if (mapOpLists == null) {
             return "";
@@ -759,8 +801,8 @@ public class ChartProcessor {
         }
         String parent = getScriptDir();
         File file = new File(nmrData.getFilePath());
-        datasetFile = new File(parent, datasetName + extension);
-        datasetFileTemp = new File(parent, datasetName + extension + ".tmp");
+        datasetFile = new File(parent, getDatasetName() + extension);
+        datasetFileTemp = new File(parent, getDatasetName() + extension + ".tmp");
         int nDim = nmrData.getNDim();
         String lineSep = System.lineSeparator();
         StringBuilder scriptBuilder = new StringBuilder();
