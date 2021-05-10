@@ -162,6 +162,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
 
     final ReadOnlyObjectProperty<Worker.State> stateProperty = processDataset.worker.stateProperty();
     Throwable processingThrowable;
+    String currentText = "";
 
     public static ProcessorController create(FXMLController fxmlController, Stage parent, PolyChart chart) {
         FXMLLoader loader = new FXMLLoader(SpecAttrWindowController.class.getResource("/fxml/ProcessorScene.fxml"));
@@ -569,7 +570,11 @@ public class ProcessorController implements Initializable, ProgressUpdater {
 
     void updateScriptDisplay() {
         //textArea.setText(getFullScript());
-        textArea.replaceText(getFullScript());
+        String script = getFullScript();
+        if (!script.equals(currentText)) {
+            textArea.replaceText(script);
+            currentText = script;
+        }
 
         chartProcessor.setScriptValid(true);
     }
@@ -699,7 +704,10 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         refOps.add("tdsize");
         refOps.add("fixdsp");
         //textArea.setText(scriptString);
-        textArea.replaceText(scriptString);
+        if (!scriptString.equals(currentText)) {
+            textArea.replaceText(scriptString);
+            currentText = scriptString;
+        }
         String[] lines = scriptString.split("\n");
         List<String> headerList = new ArrayList<>();
         List<String> dimList = null;
@@ -748,7 +756,11 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         }
         chartProcessor.setScripts(headerList, mapOpLists);
         //textArea.setText(getFullScript());
-        textArea.replaceText(getFullScript());
+        String script = getFullScript();
+        if (!script.equals(currentText)) {
+            textArea.replaceText(script);
+            currentText = script;
+        }
         chartProcessor.setScriptValid(true);
     }
 
