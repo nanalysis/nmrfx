@@ -23,6 +23,9 @@ import java.io.PrintStream;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.ResourceBundle;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import javafx.application.Platform;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
@@ -50,6 +53,8 @@ import org.python.util.InteractiveInterpreter;
  */
 public class ConsoleController extends OutputStream implements Initializable {
 
+    protected ScheduledThreadPoolExecutor schedExecutor = new ScheduledThreadPoolExecutor(2);
+
     @FXML
     private TextArea textArea;
     Stage stage;
@@ -57,6 +62,7 @@ public class ConsoleController extends OutputStream implements Initializable {
     InteractiveInterpreter interpreter = MainApp.getInterpreter();
     int historyInd = 0;
     KeyCode prevKey = null;
+    ScheduledFuture futureUpdate = null;
     EventHandler<WindowEvent> close = event -> {
         if (affirm("Are you sure you want to exit?")) {
             Platform.exit();
@@ -69,6 +75,7 @@ public class ConsoleController extends OutputStream implements Initializable {
 //    public ConsoleRedirect(TextArea textArea) {
 //        this.textArea = textArea;
 //    }
+    @Override
     public void initialize(URL url, ResourceBundle rb) {
         initializeConsole();
         MainApp.setConsoleController(this);
@@ -105,20 +112,25 @@ public class ConsoleController extends OutputStream implements Initializable {
 
     public void initializeConsole() {
         textArea.setEditable(true);
-        textArea.setOnKeyPressed(new EventHandler<KeyEvent>() {
-            @Override
-            public void handle(KeyEvent keyEvent) {
-                consoleInteraction(keyEvent);
+        textArea.addEventFilter(KeyEvent.KEY_PRESSED, event -> {
+            KeyCode keyCode = event.getCode();
+            if (keyCode == KeyCode.BACK_SPACE) {
+                filterBackSpace(event);
+            } else if (keyCode == KeyCode.ENTER) {
+                filterEnter(event);
+            } else if (keyCode == KeyCode.DOWN) {
+                doHistory(event);
+            } else if (keyCode == KeyCode.UP) {
+                doHistory(event);
+            } else if (keyCode == KeyCode.ALPHANUMERIC || keyCode == KeyCode.DIGIT0) {
+                prevKey = keyCode;
+            } else if (event.isControlDown()) {
+                filterControl(event);
             }
         });
-        textArea.setOnKeyReleased(new EventHandler<KeyEvent>() {
-            @Override
-            public void handle(KeyEvent keyEvent) {
-                KeyCode code = keyEvent.getCode();
-                if (code == KeyCode.ENTER || code == KeyCode.UP || code == KeyCode.DOWN) {
-                    textArea.positionCaret(textArea.getText().lastIndexOf(">") + 2);
-                }
-            }
+        textArea.addEventFilter(KeyEvent.KEY_RELEASED, event -> {
+        });
+        textArea.addEventFilter(KeyEvent.KEY_TYPED, event -> {
         });
 
         PrintStream printStream = new PrintStream(this);
@@ -147,6 +159,7 @@ public class ConsoleController extends OutputStream implements Initializable {
                 textArea.appendText("");
             });
         }
+        startTimer();
     }
 
     @Override
@@ -165,10 +178,12 @@ public class ConsoleController extends OutputStream implements Initializable {
                 textArea.appendText("");
             });
         }
+        startTimer();
     }
 
     public void clearConsole() {
         textArea.setText("> ");
+        textArea.end();
     }
 
     public void close() {
@@ -180,45 +195,120 @@ public class ConsoleController extends OutputStream implements Initializable {
         stage.toFront();
     }
 
-    public void consoleInteraction(KeyEvent keyEvent) {
-        KeyCode key = keyEvent.getCode();
+    private void filterControl(KeyEvent keyEvent) {
+        keyEvent.consume();
+        KeyCode keyCode = keyEvent.getCode();
+        if (keyCode == KeyCode.A) {
+            String text = textArea.getText();
+            int lastLineStart = text.lastIndexOf(">") + 2;
+            textArea.positionCaret(lastLineStart);
+        } else if (keyCode == KeyCode.E) {
+            textArea.end();
+        }
+    }
+
+    private void filterBackSpace(KeyEvent keyEvent) {
         String text = textArea.getText();
         int lastLineStart = text.lastIndexOf(">") + 2;
-        int lastLineEnd = textArea.getLength();
-        String lastLine = text.substring(lastLineStart - 2, lastLineEnd).trim();
-        String typed = text.substring(lastLineStart).trim();
-        if (key == KeyCode.ENTER & lastLine.equals("> " + typed)) {
-            history.add(typed);
-            historyInd = history.size();
-            if (history.size() == 1 || prevKey == KeyCode.UP || prevKey == KeyCode.DOWN) {
-                textArea.appendText("\n");
+        int caretPosition = textArea.getCaretPosition();
+        if (caretPosition <= lastLineStart) {
+            keyEvent.consume();
+        }
+    }
+
+    private void filterEnter(KeyEvent keyEvent) {
+        keyEvent.consume();
+        String typed = getLastTyped();
+        textArea.appendText("\n");
+        if (!typed.isEmpty()) {
+            if (typed.equals("clear")) {
+                clearConsole();
+                return;
+            } else {
+                history.add(typed);
+                historyInd = history.size();
+                if (history.size() == 1 || prevKey == KeyCode.UP || prevKey == KeyCode.DOWN) {
+                    textArea.appendText("\n");
+                }
+                interpreter.runsource(typed);
             }
-            interpreter.runsource(typed);
-            textArea.appendText("> ");
-        } else if (key == KeyCode.ENTER & typed.equals("")) {
-            textArea.appendText("> ");
-        } else if (key == KeyCode.UP) {
-            if (history.size() > 0) {
-                prevKey = key;
+        }
+        textArea.appendText("> ");
+    }
+
+    void doHistory(KeyEvent keyEvent) {
+        KeyCode key = keyEvent.getCode();
+        keyEvent.consume();
+        if (history.size() > 0) {
+            prevKey = key;
+            String command = "";
+            if (key == KeyCode.UP) {
                 historyInd -= 1;
                 if (historyInd < 0) {
                     historyInd = 0;
                 }
-                String command = history.get(historyInd);
-                textArea.replaceText(lastLineStart, lastLineEnd, command);
-            }
-        } else if (key == KeyCode.DOWN) {
-            if (history.size() > 0) {
-                prevKey = key;
+                command = history.get(historyInd);
+            } else {
                 historyInd += 1;
-                if (historyInd > history.size() - 1) {
-                    historyInd = history.size() - 1;
+                if (historyInd <= history.size() - 1) {
+                    command = history.get(historyInd);
+                } else {
+                    historyInd = history.size();
                 }
-                String command = history.get(historyInd);
-                textArea.replaceText(lastLineStart, lastLineEnd, command);
             }
-        } else if (key == KeyCode.ALPHANUMERIC || key == KeyCode.DIGIT0) {
-            prevKey = key;
+            String text = textArea.getText();
+            int lastLineStart = text.lastIndexOf(">") + 2;
+            int lastLineEnd = textArea.getLength();
+            textArea.replaceText(lastLineStart, lastLineEnd, command);
+            textArea.end();
+        }
+
+    }
+
+    private String getLastTyped() {
+        String text = textArea.getText();
+        int lastLineStart = text.lastIndexOf(">") + 2;
+        int lastLineEnd = textArea.getLength();
+        String typed = text.substring(lastLineStart).trim();
+        return typed;
+    }
+
+    private boolean isPromptPresent() {
+        String text = textArea.getText();
+        int lastLineStart = text.lastIndexOf(">") + 2;
+        int lastLineEnd = textArea.getLength();
+        return lastLineStart == lastLineEnd;
+    }
+
+    class UpdateTask implements Runnable {
+
+        @Override
+        public void run() {
+            if (Platform.isFxApplicationThread()) {
+                if (!isPromptPresent()) {
+                    textArea.appendText("\n> ");
+                    textArea.end();
+                }
+            } else {
+                Platform.runLater(() -> {
+                    if (!isPromptPresent()) {
+                        textArea.appendText("\n> ");
+                        textArea.end();
+                    }
+                });
+            }
+
         }
     }
+
+    synchronized void startTimer() {
+        if (schedExecutor != null) {
+            if ((futureUpdate == null) || futureUpdate.isDone()) {
+                UpdateTask updateTask = new UpdateTask();
+                futureUpdate = schedExecutor.schedule(updateTask, 500, TimeUnit.MILLISECONDS);
+            }
+        }
+
+    }
+
 }

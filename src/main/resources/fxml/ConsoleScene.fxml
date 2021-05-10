@@ -18,10 +18,7 @@
     <top>
         <HBox>
             <children>
-                <SegmentedButton>
-                    <buttons>
-                    </buttons>
-                </SegmentedButton>
+                <Button fx:id="clearButton" text="Clear" onAction="#clearConsole"/>
             </children>
         </HBox>
     </top>
