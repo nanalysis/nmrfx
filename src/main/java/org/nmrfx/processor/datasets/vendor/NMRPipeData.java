@@ -1439,11 +1439,11 @@ public class NMRPipeData implements NMRData {
     public void saveFile(String template) throws IOException {
         this.template = template;
         ByteOrder byteOrder = ByteOrder.LITTLE_ENDIAN;
-        int[] indices = new int[3];
+        int[] indices = new int[2];
         int nBytes = dataSource.getSize(0) * Float.BYTES;
         int nPlanes = dataSource.getNDim() > 2 ? dataSource.getSize(2) : 1;
         for (int iPlane = 0; iPlane < nPlanes; iPlane++) {
-            indices[2] = iPlane;
+            indices[1] = iPlane;
             String fileName = getTemplateFile(iPlane);
             try (RandomAccessFile outFile = new RandomAccessFile(fileName, "rw")) {
                 outFile.write(fileHeader.bBuffer.array());
@@ -1451,7 +1451,7 @@ public class NMRPipeData implements NMRData {
                 FloatBuffer floatBuffer = byteBuffer.order(byteOrder).asFloatBuffer();
                 Vec vec = new Vec(dataSource.getSize(0));
                 for (int i = 0, nRows = dataSource.getSize(1); i < nRows; i++) {
-                    indices[1] = i;
+                    indices[0] = i;
                     dataSource.readVector(vec, indices, 0);
                     for (int j = 0, n = vec.getSize(); j < n; j++) {
                         floatBuffer.put(j, (float) vec.getReal(j));

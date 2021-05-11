@@ -2230,24 +2230,31 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         return bMat;
     }
 
-    /**
-     * Read vector from dataset
-     *
-     * @param vector Store dataset values in this vec
-     * @param index the index of vector to read
-     * @param iDim read values along this dimension index
-     * @throws IOException if an I/O error occurs
-     */
-    public void readVector(Vec vector, int index, int iDim) throws IOException {
+    class Location {
+
+        int[] dim;
+        int[][] pt;
+
+        public Location(int[] dim, int[][] pt) {
+            this.dim = dim;
+            this.pt = pt;
+        }
+    }
+
+    public Location getLocation(Vec vector, int[] indices, int iDim) {
         int[] dim = new int[nDim];
         int[][] pt = new int[nDim][2];
         dim[0] = iDim;
         int jDim = 0;
         for (int i = 1; i < nDim; i++) {
-            dim[i] = jDim++; 
+            if (jDim == iDim) {
+                jDim++;
+            }
+            dim[i] = jDim++;
         }
+
         for (int i = 0; i < nDim; i++) {
-            if (iDim == i) {
+            if (i == 0) {
                 pt[i][0] = 0;
                 if (vector.isComplex()) {
                     pt[i][1] = 2 * vector.getSize() - 1;
@@ -2255,11 +2262,38 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
                     pt[i][1] = vector.getSize() - 1;
                 }
             } else {
-                pt[i][0] = index;
-                pt[i][1] = index;
+                pt[i][0] = indices[i - 1];
+                pt[i][1] = indices[i - 1];
             }
         }
-        readVectorFromDatasetFile(pt, dim, vector);
+        return new Location(dim, pt);
+    }
+
+    /**
+     * Read vector from two dimensional dataset
+     *
+     * @param index the index of vector to read
+     * @param iDim read values along this dimension index
+     * @throws IOException if an I/O error occurs
+     */
+    public Vec readVector(int index, int iDim) throws IOException {
+        Vec vector = new Vec(getSize(iDim), getComplex(iDim));
+        readVector(vector, index, iDim);
+        return vector;
+
+    }
+
+    /**
+     * Read vector from a two dimensional dataset
+     *
+     * @param vector Store dataset values in this vec
+     * @param index the index of vector to read
+     * @param iDim read values along this dimension index
+     * @throws IOException if an I/O error occurs
+     */
+    public void readVector(Vec vector, int index, int iDim) throws IOException {
+        int[] indices = {index};
+        readVector(vector, indices, iDim);
     }
 
     /**
@@ -2271,23 +2305,8 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
      * @throws IOException if an I/O error occurs
      */
     public void readVector(Vec vector, int[] indices, int iDim) throws IOException {
-        int[] dim = new int[nDim];
-        int[][] pt = new int[nDim][2];
-        for (int i = 0; i < nDim; i++) {
-            dim[i] = i;
-            if (iDim == i) {
-                pt[i][0] = 0;
-                if (vector.isComplex()) {
-                    pt[i][1] = 2 * vector.getSize() - 1;
-                } else {
-                    pt[i][1] = vector.getSize() - 1;
-                }
-            } else {
-                pt[i][0] = indices[i];
-                pt[i][1] = indices[i];
-            }
-        }
-        readVectorFromDatasetFile(pt, dim, vector);
+        Location location = getLocation(vector, indices, iDim);
+        readVectorFromDatasetFile(location.pt, location.dim, vector);
     }
 
     /**
@@ -2307,7 +2326,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
     }
 
     /**
-     * Write vector to dataset
+     * Write vector to a two dimensional dataset
      *
      * @param vector Store dataset values in this vec
      * @param index the index of vector to write
@@ -2315,23 +2334,9 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
      * @throws IOException if an I/O error occurs
      */
     public void writeVector(Vec vector, int index, int iDim) throws IOException {
-        int[] dim = new int[nDim];
-        int[][] pt = new int[nDim][2];
-        for (int i = 0; i < nDim; i++) {
-            dim[i] = i;
-            if (iDim == i) {
-                pt[i][0] = 0;
-                if (vector.isComplex()) {
-                    pt[i][1] = 2 * vector.getSize() - 1;
-                } else {
-                    pt[i][1] = vector.getSize() - 1;
-                }
-            } else {
-                pt[i][0] = index;
-                pt[i][1] = index;
-            }
-        }
-        writeVecToDatasetFile(pt, dim, vector);
+        int[] indices = {index};
+        Location location = getLocation(vector, indices, iDim);
+        writeVecToDatasetFile(location.pt, location.dim, vector);
     }
 
     /**
@@ -2348,26 +2353,8 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
      * (not dataset file)
      */
     public void writeVector(Vec vector, int[] indices, int iDim) throws IOException, IllegalArgumentException {
-        int[] dim = new int[nDim];
-        int[][] pt = new int[nDim][2];
-        for (int i = 0, j = 0; i < nDim; i++) {
-            if (iDim == i) {
-                pt[i][0] = 0;
-                if (vector.isComplex()) {
-                    pt[i][1] = 2 * vector.getSize() - 1;
-                } else {
-                    pt[i][1] = vector.getSize() - 1;
-
-                }
-                dim[0] = iDim;
-            } else {
-                dim[j + 1] = i;
-                pt[i][0] = indices[j];
-                pt[i][1] = indices[j];
-                j++;
-            }
-        }
-        vector.setPt(pt, dim);
+        Location location = getLocation(vector, indices, iDim);
+        vector.setPt(location.pt, location.dim);
         writeVector(vector);
     }
 
