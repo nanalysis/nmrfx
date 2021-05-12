@@ -35,6 +35,17 @@ public class PeakMenu extends ChartMenu {
     @Override
     public void makeChartMenu() {
         chartMenu = new ContextMenu();
+        MenuItem inspectorItem = new MenuItem("Inspector");
+        inspectorItem.setOnAction((ActionEvent e) -> {
+            showPeakInspector();
+        });
+        chartMenu.getItems().add(inspectorItem);
+
     }
 
+    void showPeakInspector() {
+        chart.focus();
+        chart.showHitPeak(chart.getMouseX(), chart.getMouseY());
+
+    }
 }
