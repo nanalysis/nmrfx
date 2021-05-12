@@ -5,7 +5,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Vector;
 
 import org.nmrfx.chemistry.constraints.Constraint;
 import org.nmrfx.chemistry.constraints.Noe;
@@ -220,7 +219,7 @@ public class NOEAssign {
                 ArrayList res1s = new ArrayList();
                 peakDim = peak.getPeakDim(matchCriteria[1].getDim());
                 ppm = peakDim.getChemShift();
-                if (Math.abs(ppm-matchCriteria[0].getPpm()) < 0.01) {
+                if (Math.abs(ppm - matchCriteria[0].getPpm()) < 0.01) {
                     continue; // diagonal fixme
                 }
                 matchCriteria[1].setPPM(ppm);
@@ -308,7 +307,7 @@ public class NOEAssign {
                         }
                     }
                 }
-                Vector[] matchList = idPeak.scan3(matchCriteria, true);
+                List<SpatialSet>[] matchList = idPeak.scan3(matchCriteria, true);
                 ArrayList<IdResult> idResults = idPeak.getResults2(matchList, matchCriteria);
                 int nMan = map.size();
                 if ((nMan == 0) || !strict) {
@@ -321,11 +320,11 @@ public class NOEAssign {
                             if (nMan > 0) {
                                 type = Constraint.GenTypes.AUTOPLUS;
                             }
-                                Noe.NoeMatch match = new Noe.NoeMatch(sp1, sp2, type, idResult.getPPMError(1.0));
-                                map.put(name, match);
-                            }
+                            Noe.NoeMatch match = new Noe.NoeMatch(sp1, sp2, type, idResult.getPPMError(1.0));
+                            map.put(name, match);
                         }
                     }
+                }
                 int nPossible = map.size();
                 if (nPossible > maxAmbig) {
                     nMaxAmbig++;
@@ -516,7 +515,7 @@ public class NOEAssign {
                     double ppm = peakDim.getChemShift();
                     matchCriteria[iDim] = new MatchCriteria(iDim, ppm, tol[iDim], atomPats[iDim], resPats[iDim], relation[iDim], folding[iDim], 0);
                 }
-                Vector[] matchList = idPeak.scan(matchCriteria);
+                List<SpatialSet>[] matchList = idPeak.scan(matchCriteria);
                 ArrayList<IdResult> idResults = idPeak.getIdResults(matchList, matchCriteria);
                 // fixme filter duplicates ( stereo specific )
                 int nPossible = idResults.size();
