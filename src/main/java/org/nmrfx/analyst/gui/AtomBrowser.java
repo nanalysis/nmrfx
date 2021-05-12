@@ -251,7 +251,7 @@ public class AtomBrowser {
                 datasetList.add(item.dataset.getName());
                 List<String> peakListList = new ArrayList<>();
                 peakListList.add(item.peakList.getName());
-               // fixme chart.setTitle(item.dataset.getTitle());
+                // fixme chart.setTitle(item.dataset.getTitle());
                 chart.updateDatasets(datasetList);
                 chart.updatePeakLists(peakListList);
                 // fixme
@@ -472,11 +472,12 @@ public class AtomBrowser {
         }
 
         public String toString() {
-            return String.format("%s %2d%% %1d",name, Math.round(99.0 * fDelta), listType);
+            return String.format("%s %2d%% %1d", name, Math.round(99.0 * fDelta), listType);
         }
     }
 
-    public static List<AtomDelta> getMatchingAtomNames(DatasetBase dataset, double ppm, double tol) {
+    public static List<AtomDelta> getMatchingAtomNames(DatasetBase dataset,
+            SpectralDim sDim, double ppm, double tol) {
         double[] ppms = {ppm};
         Map<String, AtomDelta> atomDeltaMap = new HashMap<>();
         for (PeakList peakList : PeakList.peakLists()) {
@@ -510,14 +511,15 @@ public class AtomBrowser {
             }
         }
         Molecule molecule = Molecule.getActive();
+        String nucName = Nuclei.findNuclei(sDim.getNucleus()).getName();
         if (molecule != null) {
             List<Atom> atoms = molecule.getAtoms();
             for (Atom atom : atoms) {
-                if (atom.getElementNumber() == 1) { // fixme only working with H
+                if (atom.getElementName().equalsIgnoreCase(nucName)) {
                     Double shift = atom.getPPM();
                     if (shift != null) {
                         double delta = Math.abs(shift - ppm) / tol;
-                        String aName = atom.getName();
+                        String aName = atom.getShortName();
                         AtomDelta aDelta = new AtomDelta(aName, delta, 1, null);
                         AtomDelta current = atomDeltaMap.get(aName);
                         if ((current == null) || aDelta.getScore() < current.getScore()) {
