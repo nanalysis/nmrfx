@@ -19,6 +19,7 @@ import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakDim;
 import org.nmrfx.peaks.PeakList;
+import org.nmrfx.peaks.SpectralDim;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
@@ -140,8 +141,9 @@ public class PeakAtomPicker {
                 DatasetBase dataset = chart.getDataset();
                 int i = 0;
                 for (int peakDim : peakDims) {
+                    SpectralDim sDim = selPeak.getPeakList().getSpectralDim(peakDim);
                     double shift = selPeak.getPeakDim(peakDim).getChemShiftValue();
-                    List<AtomDelta> atoms1 = AtomBrowser.getMatchingAtomNames(dataset, shift, tol);
+                    List<AtomDelta> atoms1 = AtomBrowser.getMatchingAtomNames(dataset, sDim, shift, tol);
                     System.out.println(atoms1.toString());
                     atomChoices[i].getItems().clear();
                     atomChoices[i].getItems().add("Other");
