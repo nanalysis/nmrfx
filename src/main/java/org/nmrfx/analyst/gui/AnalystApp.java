@@ -449,10 +449,6 @@ public class AnalystApp extends MainApp {
 
         assignOnPick = new CheckMenuItem("Assign on Pick");
 
-        MenuItem peakAssignerItem = new MenuItem("Show Peak Assigner");
-        peakAssignerItem.disableProperty().bind(FXMLController.activeController.isNull());
-        peakAssignerItem.setOnAction(e -> assignPeak());
-
         MenuItem atomBrowserMenuItem = new MenuItem("Show Atom Browser");
         atomBrowserMenuItem.disableProperty().bind(FXMLController.activeController.isNull());
         atomBrowserMenuItem.setOnAction(e -> showAtomBrowser());
@@ -460,7 +456,7 @@ public class AnalystApp extends MainApp {
         MenuItem runAboutMenuItem = new MenuItem("Show RunAboutX");
         runAboutMenuItem.setOnAction(e -> showRunAbout());
 
-        assignCascade.getItems().addAll(peakAssignerItem, assignOnPick,
+        assignCascade.getItems().addAll(assignOnPick,
                 atomBrowserMenuItem, runAboutMenuItem);
 
         peakMenu.getItems().addAll(peakAttrMenuItem,
@@ -563,6 +559,11 @@ public class AnalystApp extends MainApp {
 
         statusBar.addToToolMenu(oneDMenu);
         statusBar.addToToolMenu(molMenu);
+
+
+        MenuItem peakAssignMenuItem = new MenuItem("Show Peak Assigner");
+        statusBar.addToToolMenu("Peak Tools", peakAssignMenuItem);
+        peakAssignMenuItem.setOnAction(e -> showPeakAssignTool());
 
         MenuItem peakSliderMenuItem = new MenuItem("Show Peak Slider");
         statusBar.addToToolMenu("Peak Tools", peakSliderMenuItem);
@@ -1078,6 +1079,23 @@ public class AnalystApp extends MainApp {
             multipletTool.initialize(vBox);
             controller.addTool(multipletTool);
         }
+    }
+
+    public void showPeakAssignTool() {
+        FXMLController controller = FXMLController.getActiveController();
+        if (!controller.containsTool(PeakAssignTool.class)) {
+            VBox vBox = new VBox();
+            controller.getBottomBox().getChildren().add(vBox);
+            PeakAssignTool peakAssignTool = new PeakAssignTool(controller, this::removePeakAssignTool);
+            peakAssignTool.initialize(vBox);
+            controller.addTool(peakAssignTool);
+        }
+    }
+
+    public void removePeakAssignTool(PeakAssignTool peakAssignTool) {
+        FXMLController controller = FXMLController.getActiveController();
+        controller.removeTool(PeakAssignTool.class);
+        controller.getBottomBox().getChildren().remove(peakAssignTool.getBox());
     }
 
     public void showPeakSlider() {
