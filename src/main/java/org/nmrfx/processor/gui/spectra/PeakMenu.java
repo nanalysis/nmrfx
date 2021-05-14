@@ -20,6 +20,9 @@ package org.nmrfx.processor.gui.spectra;
 import javafx.event.ActionEvent;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.MenuItem;
+import javafx.stage.Window;
+import org.nmrfx.peaks.Peak;
+import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.PolyChart;
 
 /**
@@ -27,6 +30,8 @@ import org.nmrfx.processor.gui.PolyChart;
  * @author brucejohnson
  */
 public class PeakMenu extends ChartMenu {
+
+    Peak peak;
 
     public PeakMenu(PolyChart chart) {
         super(chart);
@@ -45,7 +50,15 @@ public class PeakMenu extends ChartMenu {
 
     void showPeakInspector() {
         chart.focus();
-        chart.showHitPeak(chart.getMouseX(), chart.getMouseY());
+        FXMLController controller = chart.getController();
+        controller.showPeakAttr();
+        if (peak != null) {
+            controller.getPeakAttrController().gotoPeak(peak);
+        }
+        controller.getPeakAttrController().getStage().toFront();
+    }
 
+    public void setActivePeak(Peak peak) {
+        this.peak = peak;
     }
 }
