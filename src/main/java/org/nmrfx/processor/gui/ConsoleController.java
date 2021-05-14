@@ -188,12 +188,21 @@ public class ConsoleController extends OutputStream implements Initializable {
     }
 
     public void pwd() {
-        interpreter.exec("print(os.getcwd()),");
+        try {
+            interpreter.exec("print(os.getcwd()),");
+        } catch (Exception e) {
+            textArea.appendText("\n" + e.getMessage());
+        }
+
         textArea.appendText("\n> ");
     }
 
     public void cd(String path) {
-        interpreter.exec("os.chdir('" + path + "')");
+        try {
+            interpreter.exec("os.chdir('" + path + "')");
+        } catch (Exception e) {
+            textArea.appendText("\n" + e.getMessage());
+        }
         textArea.appendText("\n> ");
     }
 
@@ -202,8 +211,11 @@ public class ConsoleController extends OutputStream implements Initializable {
             filter = "*";
         }
         String script = "for f in glob.glob('" + filter + "'):\n  print f\n";
-        System.out.print(script);
-        interpreter.exec(script);
+        try {
+            interpreter.exec(script);
+        } catch (Exception e) {
+            textArea.appendText("\n" + e.getMessage());
+        }
         textArea.appendText("\n> ");
     }
 
