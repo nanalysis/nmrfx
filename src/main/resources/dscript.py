@@ -1,5 +1,6 @@
 from itertools import izip
 import array
+import os
 from shutil import copyfile
 from org.nmrfx.processor.datasets import Dataset
 from org.nmrfx.processor.datasets.peaks import PeakPickParameters
@@ -14,6 +15,7 @@ class NMRFxDatasetScripting:
         self.cmd = Dataset
 
     def open(self, fileName,writable=False):
+        fileName = os.path.join(os.getcwd(), fileName)
         dataset = Dataset(fileName,"",writable, False)
         return dataset
 
