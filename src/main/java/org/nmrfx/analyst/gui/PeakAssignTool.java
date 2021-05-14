@@ -20,6 +20,7 @@ import org.nmrfx.analyst.gui.AtomBrowser.AtomDelta;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakDim;
+import org.nmrfx.peaks.AtomResPattern;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.SpectralDim;
 import org.nmrfx.processor.datasets.Dataset;
@@ -38,11 +39,14 @@ public class PeakAssignTool implements ControllerTool {
     FXMLController controller;
     Consumer<PeakAssignTool> closeAction;
     VBox vBox;
+    GridPane gridPane;
     ComboBox<String>[] atomChoices;
+    TextField[] atomChoicesTF;
     Map<String, AtomDelta>[] atomDeltaMaps;
     Label[] ppmLabels;
     Peak selPeak = null;
     int[] peakDims;
+    int nFields;
     boolean removePeakOnClose = false;
     ASSIGN_MODE mode = ASSIGN_MODE.SIMPLE;
 
@@ -77,52 +81,102 @@ public class PeakAssignTool implements ControllerTool {
             }
         }
         HBox hBox = new HBox();
-        double width1 = 200;
-        double width2 = 125;
-        atomChoices = new ComboBox[nDim];
-        ppmLabels = new Label[nDim];
-        atomDeltaMaps = new HashMap[nDim];
         String iconSize = "12px";
         String fontSize = "7pt";
         Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "Close", iconSize, fontSize, ContentDisplay.TOP);
         closeButton.setOnAction(e -> close());
         hBox.getChildren().add(closeButton);
         hBox.getChildren().add(pickButton);
-        for (int iDim = 0; iDim < nDim; iDim++) {
-            final int jDim = iDim;
-            GridPane gridPane = new GridPane();
-            hBox.getChildren().add(gridPane);
-            Label ppmLabel = new Label(" ppm");
-            ppmLabel.setPrefWidth(width1);
-            ComboBox<String> atomChoice = new ComboBox<>();
-            atomChoice.setEditable(true);
-            atomChoice.setPrefWidth(width1);
-            ChoiceBox<String> entityChoice = new ChoiceBox<>();
-
-            entityChoice.setPrefWidth(width2);
-            TextField atomField = new TextField();
-            atomField.setPrefWidth(width1 - width2);
-            gridPane.add(ppmLabel, 0, 0, 2, 1);
-            gridPane.add(atomChoice, 0, 1, 2, 1);
-            atomChoices[iDim] = atomChoice;
-            atomChoices[iDim].setOnKeyReleased(e -> {
-                if (e.getCode() == KeyCode.ENTER) {
-                    handleEnter(jDim);
-                }
-            });
-            ppmLabels[iDim] = ppmLabel;
-            atomDeltaMaps[iDim] = new HashMap<>();
-        }
+        gridPane = new GridPane();
+        hBox.getChildren().add(gridPane);
+        updateGrid(nDim);
         vBox.getChildren().add(hBox);
         FXMLController controller = FXMLController.getActiveController();
         controller.selPeaks.addListener(e -> setActivePeaks(controller.selPeaks.get()));
 
     }
 
+    void updateGrid(int nDim) {
+        double width1 = 200;
+        double width2 = 125;
+        atomChoices = new ComboBox[nDim];
+        atomChoicesTF = new TextField[nDim];
+        ppmLabels = new Label[nDim];
+        atomDeltaMaps = new HashMap[nDim];
+        gridPane.getChildren().clear();
+        nFields = nDim;
+        for (int iDim = 0; iDim < nDim; iDim++) {
+            final int jDim = iDim;
+            Label ppmLabel = new Label(" ppm");
+            ppmLabel.setPrefWidth(width1);
+            ChoiceBox<String> entityChoice = new ChoiceBox<>();
+
+            entityChoice.setPrefWidth(width2);
+            TextField atomField = new TextField();
+            atomField.setPrefWidth(width1 - width2);
+            gridPane.add(ppmLabel, iDim, 0, 1, 1);
+            if (mode == ASSIGN_MODE.SIMPLE) {
+                TextField atomChoice = new TextField();
+                atomChoicesTF[iDim] = atomChoice;
+                gridPane.add(atomChoice, iDim, 1, 1, 1);
+                atomChoicesTF[iDim].setOnKeyReleased(e -> {
+                    if (e.getCode() == KeyCode.ENTER) {
+                        handleEnter(jDim);
+                    }
+                });
+            } else {
+                ComboBox<String> atomChoice = new ComboBox<>();
+                atomChoice.setEditable(true);
+                atomChoice.setPrefWidth(width1);
+                gridPane.add(atomChoice, iDim, 1, 1, 1);
+                atomChoices[iDim] = atomChoice;
+                atomChoices[iDim].setOnKeyReleased(e -> {
+                    if (e.getCode() == KeyCode.ENTER) {
+                        handleEnter(jDim);
+                    }
+                });
+            }
+            ppmLabels[iDim] = ppmLabel;
+            atomDeltaMaps[iDim] = new HashMap<>();
+        }
+
+    }
+
     void handleEnter(int iDim) {
         if ((selPeak != null) && (peakDims != null)) {
-            String label = atomChoices[iDim].getValue();
-            selPeak.getPeakDim(peakDims[iDim]).setLabel(label);
+            assignDim(iDim);
+        }
+    }
+
+    void assignDim(int iDim) {
+        String label = getValue(iDim);
+        selPeak.getPeakDim(peakDims[iDim]).setLabel(label);
+        PeakDim[] selPeakDims = selPeak.peakDims;
+        PeakDim selPeakDim = selPeakDims[peakDims[iDim]];
+        if (!label.isBlank()) {
+            AtomResPattern.assign(label, selPeakDim, selPeakDims);
+            show(selPeak);
+        }
+    }
+
+    String getValue(int iDim) {
+        String value;
+        if (mode == ASSIGN_MODE.SIMPLE) {
+            value = atomChoicesTF[iDim].getText();
+        } else {
+            value = atomChoices[iDim].getValue();
+        }
+        return value;
+    }
+
+    void clearValue(int iDim) {
+        String value;
+        if (mode == ASSIGN_MODE.SIMPLE) {
+            atomChoicesTF[iDim].setText("");
+        } else {
+            atomChoices[iDim].getItems().clear();
+            atomChoices[iDim].getItems().add("");
+            atomChoices[iDim].setValue("");
         }
     }
 
@@ -134,10 +188,8 @@ public class PeakAssignTool implements ControllerTool {
         PolyChart chart = fxmlController.getActiveChart();
         List<Peak> selected = chart.getSelectedPeaks();
         selPeak = null;
-        for (ComboBox<String> atomChoice : atomChoices) {
-            atomChoice.getItems().clear();
-            atomChoice.getItems().add("");
-            atomChoice.setValue("");
+        for (int i = 0; i < nFields; i++) {
+            clearValue(i);
         }
         if (peak != null) {
             selPeak = peak;
@@ -149,6 +201,11 @@ public class PeakAssignTool implements ControllerTool {
             // for a single (appropriate) dimension"
         }
         if (selPeak != null) {
+            PeakList selPeakList = selPeak.getPeakList();
+            int nDim = selPeakList.getNDim();
+            if (nFields != nDim) {
+                updateGrid(nDim);
+            }
             PeakListAttributes usePeakAttr = null;
             List<PeakListAttributes> peakAttrs = chart.getPeakListAttributes();
             for (PeakListAttributes peakAttr : peakAttrs) {
@@ -174,8 +231,11 @@ public class PeakAssignTool implements ControllerTool {
                     for (int peakDim : peakDims) {
                         String label = selPeak.getPeakDim(peakDim).getLabel();
                         if (!label.isBlank()) {
-                            atomChoices[i].getItems().add(label);
-                            atomChoices[i].setValue(label);
+                            atomChoicesTF[i].setText(label);
+                        } else {
+                            String prompt = selPeakList.getSpectralDim(peakDim).
+                                    getPattern();
+                            atomChoicesTF[i].setPromptText(prompt);
                         }
                         i++;
                     }
@@ -225,8 +285,13 @@ public class PeakAssignTool implements ControllerTool {
 
     void doAssign() {
         int i = 0;
-        for (ComboBox<String> cBox : atomChoices) {
-            String value = cBox.getValue();
+        for (int iField = 0; iField < nFields; iField++) {
+            String value;
+            if (mode == ASSIGN_MODE.SIMPLE) {
+                value = atomChoicesTF[iField].getText();
+            } else {
+                value = atomChoices[iField].getValue();
+            }
             if (value != null) {
                 System.out.println("val " + value + " " + i);
                 PeakDim peakDim0 = selPeak.getPeakDim(peakDims[i]);
@@ -236,7 +301,7 @@ public class PeakAssignTool implements ControllerTool {
                     if (fields.length > 0) {
                         String atomSpecifier = fields[0];
                         if (mode == ASSIGN_MODE.SIMPLE) {
-                            peakDim0.setLabel(atomSpecifier);
+                            assignDim(iField);
                         } else {
                             System.out.println(atomSpecifier);
                             AtomDelta atomDelta = atomDeltaMaps[i].get(atomSpecifier);
