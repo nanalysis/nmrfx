@@ -26,7 +26,9 @@
  */
 package org.nmrfx.peaks;
 
+import java.util.ArrayList;
 import java.util.DoubleSummaryStatistics;
+import java.util.List;
 import java.util.Optional;
 
 import org.nmrfx.datasets.Nuclei;
@@ -82,6 +84,7 @@ public class SpectralDim {
     private boolean acqDim = false;
     private boolean absPos = false;
     private Optional<Double> meanWidthPPM = Optional.empty();
+    private Optional<AtomResPatterns> atomResPatterns = Optional.empty();
 
     /**
      * Creates a new instance of SpectralDim
@@ -121,6 +124,13 @@ public class SpectralDim {
             }
         }
         return result;
+    }
+
+    public AtomResPatterns getAtomResPatterns() {
+        if (atomResPatterns.isEmpty()) {
+            atomResPatterns = Optional.of(AtomResPattern.parsePattern(pattern, getRelationDim()));
+        }
+        return atomResPatterns.get();
     }
 
     public SpectralDim copy(PeakList peakList) {
@@ -509,6 +519,7 @@ public class SpectralDim {
 
     public void setPattern(String pattern) {
         this.pattern = pattern;
+        atomResPatterns = Optional.empty();
     }
 
     public String getRelation() {
@@ -533,6 +544,7 @@ public class SpectralDim {
             relation = "D" + (iDim + 1);
         }
         this.relation = relation;
+        atomResPatterns = Optional.empty();
     }
 
     public String getSpatialRelation() {
