@@ -158,6 +158,7 @@ public class AnalystApp extends MainApp {
         System.out.println(parameters.getRaw());
 
         interpreter.exec("import os");
+        interpreter.exec("import glob");
         interpreter.exec("from pyproc import *\ninitLocal()");
         interpreter.exec("from gscript import *\nnw=NMRFxWindowScripting()");
         interpreter.exec("from dscript import *");
