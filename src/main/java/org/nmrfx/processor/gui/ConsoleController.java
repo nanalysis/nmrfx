@@ -43,6 +43,7 @@ import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.stage.WindowEvent;
 import static org.nmrfx.utils.GUIUtils.affirm;
+import org.python.core.PyObject;
 import org.python.util.InteractiveInterpreter;
 
 /**
@@ -186,6 +187,26 @@ public class ConsoleController extends OutputStream implements Initializable {
         textArea.end();
     }
 
+    public void pwd() {
+        interpreter.exec("print(os.getcwd()),");
+        textArea.appendText("\n> ");
+    }
+
+    public void cd(String path) {
+        interpreter.exec("os.chdir('" + path + "')");
+        textArea.appendText("\n> ");
+    }
+
+    public void ls(String filter) {
+        if (filter.isBlank()) {
+            filter = "*";
+        }
+        String script = "for f in glob.glob('" + filter + "'):\n  print f\n";
+        System.out.print(script);
+        interpreter.exec(script);
+        textArea.appendText("\n> ");
+    }
+
     public void close() {
         stage.hide();
     }
@@ -223,6 +244,22 @@ public class ConsoleController extends OutputStream implements Initializable {
         if (!typed.isEmpty()) {
             if (typed.equals("clear")) {
                 clearConsole();
+                return;
+            } else if (typed.equals("pwd")) {
+                pwd();
+                return;
+            } else if (typed.equals("cd")) {
+                String homeDir = System.getProperty("user.home");
+                cd(homeDir);
+                return;
+            } else if (typed.startsWith("cd ")) {
+                cd(typed.substring(3).trim());
+                return;
+            } else if (typed.equals("ls")) {
+                ls("");
+                return;
+            } else if (typed.startsWith("ls ")) {
+                ls(typed.substring(3).trim());
                 return;
             } else {
                 history.add(typed);
