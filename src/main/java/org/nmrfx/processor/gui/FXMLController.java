@@ -185,7 +185,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
     SpectrumStatusBar statusBar;
     SpectrumMeasureBar measureBar = null;
     BooleanProperty sliceStatus = new SimpleBooleanProperty(false);
-    File initialDir = null;
+    static File initialDir = null;
 
     CanvasBindings canvasBindings;
 
@@ -259,7 +259,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         return axesColorProperty().get();
     }
 
-    public File getInitialDirectory() {
+    public static File getInitialDirectory() {
         if (initialDir == null) {
             String homeDirName = System.getProperty("user.home");
             initialDir = new File(homeDirName);
