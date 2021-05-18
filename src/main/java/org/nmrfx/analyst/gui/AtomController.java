@@ -80,6 +80,7 @@ import org.nmrfx.peaks.PeakList;
 import org.nmrfx.star.ParseException;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.structure.chemistry.predict.BMRBStats;
+import org.nmrfx.structure.chemistry.predict.ProteinPredictor;
 import org.nmrfx.utils.GUIUtils;
 
 /**
@@ -235,6 +236,10 @@ public class AtomController implements Initializable, FreezeListener {
         MenuItem bmrbRefItem = new MenuItem("BMRB Mean");
         bmrbRefItem.setOnAction(e -> loadBMRBStats());
         refMenu.getItems().addAll(bmrbRefItem);
+
+        MenuItem peptideRandomItem = new MenuItem("Peptide Random");
+        peptideRandomItem.setOnAction(e -> getRandomPPM());
+        refMenu.getItems().addAll(peptideRandomItem);
 
         MenuItem readRefPPMItem = new MenuItem("Read PPM...");
         readRefPPMItem.setOnAction(e -> readPPM(true));
@@ -547,6 +552,19 @@ public class AtomController implements Initializable, FreezeListener {
         }
         atomTableView.refresh();
 
+    }
+
+    void getRandomPPM() {
+        Molecule mol = Molecule.getActive();
+        if (mol != null) {
+            ProteinPredictor predictor = new ProteinPredictor();
+            try {
+                predictor.predictRandom(mol, -1);
+            } catch (IOException ioE) {
+
+            }
+
+        }
     }
 
     void loadBMRBStats() {

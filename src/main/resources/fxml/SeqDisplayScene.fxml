@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.canvas.Canvas?>
+<?import javafx.scene.control.ButtonBar?>
+<?import javafx.scene.control.MenuButton?>
+<?import javafx.scene.control.MenuItem?>
+<?import javafx.scene.control.CheckBox?>
+<?import javafx.scene.control.ChoiceBox?>
+<?import javafx.scene.control.Tab?>
+<?import javafx.scene.control.TabPane?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.control.Slider?>
+
+<?import javafx.scene.control.TitledPane?>
+<?import javafx.scene.control.ToolBar?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.Pane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+<?import org.controlsfx.control.*?>
+
+<BorderPane fx:id="attrBorderPane" prefHeight="350.0" prefWidth="550.0"
+            styleClass="mainFxmlClass" xmlns="http://javafx.com/javafx/8.0.111"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="org.nmrfx.analyst.gui.SeqDisplayController">
+    <top>
+        <ToolBar fx:id="menuBar" BorderPane.alignment="CENTER">
+        </ToolBar>
+    </top>
+    <center>
+        <TabPane prefHeight="200.0" prefWidth="200.0" tabClosingPolicy="UNAVAILABLE" focusTraversable="false" BorderPane.alignment="CENTER">
+            <tabs>
+                <Tab text="Display">
+                    <content>
+                        <BorderPane fx:id="seqDisplayPane" layoutX="126.0" layoutY="70.0" prefHeight="200.0" prefWidth="400.0">
+                            <top>
+                                <HBox>
+                                    <children>
+                                        <MenuButton  mnemonicParsing="false" text="File">
+                                            <items>
+                                                <MenuItem mnemonicParsing="false" onAction="#exportPDFAction" text="Export PDF..." />
+                                                <MenuItem mnemonicParsing="false" onAction="#exportSVGAction" text="Export SVG..." />
+                                            </items>
+                                        </MenuButton>
+                                    </children>
+                                </HBox>
+                            </top>
+                            <center>
+                            </center>
+                            <bottom>
+                                <HBox   HBox.hgrow="ALWAYS" prefHeight="20">
+                                    <children>
+                                        <Label text="Residues/Row"/>
+                                        <Slider fx:id="nResiduesSlider" prefWidth="150"/>
+                                        <Label fx:id="nResiduesLabel"/>
+                                        <Pane minWidth="40"/>
+                                        <Label text="Font Size"/>
+                                        <Slider fx:id="fontSizeSlider" prefWidth="150"/>
+                                        <Label fx:id="fontSizeLabel"/>
+                                    </children>
+                                </HBox>
+
+                            </bottom>
+                        </BorderPane>
+                    </content>
+                </Tab>
+                <Tab text="Atoms">
+                    <content>
+                        <BorderPane fx:id="atomsPane" layoutX="126.0" layoutY="70.0" prefHeight="200.0" prefWidth="400.0">
+                            <top>
+                                <HBox   HBox.hgrow="ALWAYS">
+                                    <children>
+                                        <ButtonBar HBox.hgrow="ALWAYS">
+                                            <buttons>
+
+                                            </buttons>
+                                        </ButtonBar>
+                                    </children>
+                                </HBox>
+                            </top>
+                            <center>
+                            </center>
+                            <bottom>
+                            </bottom>
+                        </BorderPane>
+                    </content>
+                </Tab>
+            </tabs>
+        </TabPane>
+    </center>
+</BorderPane>

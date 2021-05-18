@@ -118,6 +118,7 @@ public class AnalystApp extends MainApp {
     public static NOETableController noeTableController;
     public static PyController ringNMRController;
     public static WindowIO windowIO = null;
+    public static SeqDisplayController seqDisplayController = null;
     PeakAtomPicker peakAtomPicker = null;
     CheckMenuItem assignOnPick;
     RDCGUI rdcGUI = null;
@@ -393,11 +394,13 @@ public class AnalystApp extends MainApp {
         MenuItem readMolItem = new MenuItem("Read Mol...");
         readMolItem.setOnAction(e -> readMolecule("mol"));
         molFileMenu.getItems().add(readMolItem);
-        MenuItem seqGUIMenuItem = new MenuItem("Sequence GUI");
+        MenuItem seqGUIMenuItem = new MenuItem("Sequence Editor...");
         seqGUIMenuItem.setOnAction(e -> SequenceGUI.showGUI(this));
 
-        MenuItem atomsMenuItem = new MenuItem("Atoms");
+        MenuItem atomsMenuItem = new MenuItem("Atoms...");
         atomsMenuItem.setOnAction(e -> showAtoms(e));
+        MenuItem sequenceMenuItem = new MenuItem("Sequence Viewer...");
+        sequenceMenuItem.setOnAction(e -> showSequence(e));
 
         MenuItem molMenuItem = new MenuItem("Viewer");
         molMenuItem.setOnAction(e -> showMols());
@@ -405,7 +408,8 @@ public class AnalystApp extends MainApp {
         MenuItem rdcMenuItem = new MenuItem("RDC Analysis...");
         rdcMenuItem.setOnAction(e -> showRDCGUI());
 
-        molMenu.getItems().addAll(molFileMenu, seqGUIMenuItem, atomsMenuItem, molMenuItem, rdcMenuItem);
+        molMenu.getItems().addAll(molFileMenu, seqGUIMenuItem, atomsMenuItem,
+                sequenceMenuItem, molMenuItem, rdcMenuItem);
 
         Menu viewMenu = new Menu("View");
         MenuItem dataMenuItem = new MenuItem("Show Datasets");
@@ -561,7 +565,6 @@ public class AnalystApp extends MainApp {
         statusBar.addToToolMenu(oneDMenu);
         statusBar.addToToolMenu(molMenu);
 
-
         MenuItem peakAssignMenuItem = new MenuItem("Show Peak Assigner");
         statusBar.addToToolMenu("Peak Tools", peakAssignMenuItem);
         peakAssignMenuItem.setOnAction(e -> showPeakAssignTool());
@@ -704,6 +707,17 @@ public class AnalystApp extends MainApp {
             atomController.getStage().toFront();
         } else {
             System.out.println("Couldn't make atom controller");
+        }
+    }
+    private void showSequence(ActionEvent event) {
+        if (seqDisplayController == null) {
+            seqDisplayController = SeqDisplayController.create();
+        }
+        if (seqDisplayController != null) {
+            seqDisplayController.getStage().show();
+            seqDisplayController.getStage().toFront();
+        } else {
+            System.out.println("Couldn't make seqDisplayController");
         }
     }
 
