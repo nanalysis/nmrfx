@@ -1,6 +1,5 @@
 package org.nmrfx.structure.chemistry.predict;
 
-import com.google.common.collect.HashBiMap;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -237,7 +236,6 @@ public class ProteinPredictor {
         for (Residue residue : polymer.getResidues()) {
             predict(residue, iRef, structureNum);
         }
-
     }
 
     Optional<String> getAtomNameType(Atom atom) {
@@ -368,6 +366,32 @@ public class ProteinPredictor {
             }
         }
         return rms;
+    }
+
+    public void predictRandom(Molecule molecule, int iRef) throws IOException {
+        String[] aNames = {"C", "CA", "CB", "HA", "H", "N", "HB"};
+        for (Polymer polymer : molecule.getPolymers()) {
+            if (polymer.isPeptide()) {
+                for (Residue residue : polymer.getResidues()) {
+                    for (String aName : aNames) {
+                        Atom atom = residue.getAtom(aName);
+                        if (atom != null) {
+                            Double ppm = predictRandom(residue, aName, 298.0);
+                            if (ppm != null) {
+                                if (iRef < 0) {
+                                    atom.setRefPPM(-iRef - 1, ppm);
+                                    atom.setRefError(-iRef - 1, 0.1);
+                                } else {
+                                    atom.setPPM(iRef, ppm);
+                                    atom.setPPMError(iRef, 0.1);
+                                }
+                            }
+                        }
+                    }
+                }
+
+            }
+        }
     }
 
     public Double predictRandom(Residue residue, String aName, double tempK) throws IOException {
