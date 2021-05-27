@@ -158,7 +158,7 @@ public class PathFitter {
         int nSim = 100;
         int nPar = nDims * 3;
         int n = xValues[0].length;
-        double[][] x = new double [n][3];
+        double[][] x = new double[n][3];
 //        double[][] x = new double[n][2];
 //        double[] y = new double[n];
         double[][] parValues = new double[nDims * 3][nSim];
@@ -172,9 +172,8 @@ public class PathFitter {
                 }
 //                y[i] = yValues[iDim][i];
                 x[i][2] = yValues[iDim][i];
-                  
+
             }
-            System.out.println("ols");
             String[] colNames = {"a", "b", "y"};
             DataFrame dataframe = DataFrame.of(x, colNames);
             Formula f = Formula.lhs("y");
@@ -182,14 +181,13 @@ public class PathFitter {
             LinearModel model = OLS.fit(f, dataframe);
 //            System.out.println("ols " + ols.RSS());
 //            double[][] ppars = ols.ttest();
-            double [][] ppars = model.ttest();
-            bestPars[iDim * 3 + 1] = ppars[0][0];
-            bestPars[iDim * 3 + 2] = ppars[1][0];
-            bestPars[iDim * 3] = ppars[2][0];
-            parErrs[iDim * 3 + 1] = ppars[0][1];
-            parErrs[iDim * 3 + 2] = ppars[1][1];
-            parErrs[iDim * 3] = ppars[2][1];
-            System.out.println("ols pars");
+            double[][] ppars = model.ttest();
+            bestPars[iDim * 3] = ppars[0][0];
+            bestPars[iDim * 3 + 1] = ppars[1][0];
+            bestPars[iDim * 3 + 2] = ppars[2][0];
+            parErrs[iDim * 3] = ppars[0][1];
+            parErrs[iDim * 3 + 1] = ppars[1][1];
+            parErrs[iDim * 3 + 2] = ppars[2][1];
 
 //            Bootstrap boot = new Bootstrap(y.length, nSim);
 //            double[][] xs = new double[n][2];
