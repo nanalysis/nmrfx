@@ -17,8 +17,6 @@
  */
 package org.nmrfx.structure.chemistry.predict;
 
-import java.util.HashMap;
-import java.util.Map;
 import org.nmrfx.chemistry.Residue;
 
 /**
@@ -27,18 +25,7 @@ import org.nmrfx.chemistry.Residue;
  */
 public class ResidueProperties {
 
-    private final static Map<String, Double> SCALES = new HashMap<>();
     private static final double LIMIT = 16.0;
-
-    static {
-        SCALES.put("N", 0.627);
-        SCALES.put("C", 0.310);
-        SCALES.put("CB", 0.219);
-        SCALES.put("CA", 0.281);
-        SCALES.put("H", 0.102);
-        SCALES.put("HA", 0.0566);
-        SCALES.put("HB", 0.0546);
-    }
 
     /**
      * Calculate CheZOD score as a measure of disorder based on chemical shifts
@@ -55,7 +42,6 @@ public class ResidueProperties {
             int ppmSet, int refSet) {
         Residue prevResidue = centerResidue.previous;
         Residue nextResidue = centerResidue.next;
-        int resNum = centerResidue.getResNum();
 
         Residue[] residues = {prevResidue, centerResidue, nextResidue};
 
@@ -65,8 +51,12 @@ public class ResidueProperties {
             if (residue == null) {
                 continue;
             }
-            for (var scaleEntry : SCALES.entrySet()) {
-                var atom = residue.getAtom(scaleEntry.getKey());
+            for (var scaleEntry : ProteinPredictor.RANDOM_SCALES.entrySet()) {
+                String aName = scaleEntry.getKey();
+                if (residue.getName().equals("GLY") && aName.equals("HA")) {
+                    aName = "HA2";
+                }
+                var atom = residue.getAtom(aName);
                 if (atom != null) {
                     var ppmV = atom.getPPM(ppmSet);
                     if ((ppmV != null) && ppmV.isValid()) {
