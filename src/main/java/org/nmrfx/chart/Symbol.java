@@ -19,7 +19,6 @@ package org.nmrfx.chart;
 
 import javafx.scene.paint.Color;
 import org.nmrfx.graphicsio.GraphicsContextInterface;
-import org.nmrfx.graphicsio.GraphicsIOException;
 
 /**
  *
@@ -27,7 +26,7 @@ import org.nmrfx.graphicsio.GraphicsIOException;
  */
 public enum Symbol {
     CIRCLE() {
-        void draw(GraphicsContextInterface gC, double x, double y, double radius, Color stroke, Color fill) throws GraphicsIOException {
+        public void draw(GraphicsContextInterface gC, double x, double y, double radius, Color stroke, Color fill) {
             double x1 = x - radius;
             double y1 = y - radius;
             double diameter = 2 * radius;
@@ -41,9 +40,41 @@ public enum Symbol {
             }
         }
 
+    },
+    TRIANGLE_UP() {
+        public void draw(GraphicsContextInterface gC, double x, double y, double radius, Color stroke, Color fill) {
+            double[] xValues = {x, x - radius * TRI_X, x + radius * TRI_X, x};
+            double[] yValues = {y - radius, y + radius * TRI_Y, y + radius * TRI_Y, y - radius};
+            if (stroke != null) {
+                gC.setStroke(stroke);
+                gC.strokePolygon(xValues, yValues, xValues.length);
+            }
+            if (fill != null) {
+                gC.setFill(fill);
+                gC.fillPolygon(xValues, xValues, xValues.length);
+            }
+        }
+    },
+    TRIANGLE_DOWN() {
+        public void draw(GraphicsContextInterface gC, double x, double y, double radius, Color stroke, Color fill) {
+            double[] xValues = {x, x - radius * TRI_X, x + radius * TRI_X, x};
+            double[] yValues = {y + radius, y - radius * TRI_Y, y - radius * TRI_Y, y + radius};
+            if (stroke != null) {
+                gC.setStroke(stroke);
+                gC.strokePolygon(xValues, yValues, xValues.length);
+            }
+            if (fill != null) {
+                gC.setFill(fill);
+                gC.fillPolygon(xValues, xValues, xValues.length);
+            }
+        }
+
     };
 
-    abstract void draw(GraphicsContextInterface gC, double x, double y, double radius, Color stroke, Color fill) throws GraphicsIOException;
+    static final double TRI_X = Math.cos(Math.toRadians(30.0));
+    static final double TRI_Y = Math.sin(Math.toRadians(30.0));
+
+    abstract public void draw(GraphicsContextInterface gC, double x, double y, double radius, Color stroke, Color fill);
 
     boolean hit(double x, double y, double radius, double pickX, double pickY) {
         double halo = 3;
