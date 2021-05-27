@@ -451,7 +451,20 @@ public class SVGGraphicsContext implements GraphicsContextInterface {
 
     @Override
     public void fillPolygon(double[] xPoints, double[] yPoints, int nPoints) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        StringBuilder pointBuilder = new StringBuilder();
+        for (int i = 0; i < nPoints; i++) {
+            pointBuilder.append(format(xPoints[i]));
+            pointBuilder.append(',');
+            pointBuilder.append(format(yPoints[i]));
+            pointBuilder.append(' ');
+        }
+        try {
+            writer.writeEmptyElement("polygon");
+            writer.writeAttribute("points", pointBuilder.toString());
+            writer.writeAttribute("style", getStyle(false, true));
+            writer.writeCharacters("\n");
+        } catch (XMLStreamException ex) {
+        }
     }
 
     @Override
@@ -783,7 +796,20 @@ public class SVGGraphicsContext implements GraphicsContextInterface {
 
     @Override
     public void strokePolygon(double[] xPoints, double[] yPoints, int nPoints) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        StringBuilder pointBuilder = new StringBuilder();
+        for (int i = 0; i < nPoints; i++) {
+            pointBuilder.append(format(xPoints[i]));
+            pointBuilder.append(',');
+            pointBuilder.append(format(yPoints[i]));
+            pointBuilder.append(' ');
+        }
+        try {
+            writer.writeEmptyElement("polygon");
+            writer.writeAttribute("points", pointBuilder.toString());
+            writer.writeAttribute("style", getStyle(true, false));
+            writer.writeCharacters("\n");
+        } catch (XMLStreamException ex) {
+        }
     }
 
     @Override

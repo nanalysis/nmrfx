@@ -329,7 +329,15 @@ public class PDFGraphicsContext implements GraphicsContextInterface {
 
     @Override
     public void fillPolygon(double[] xPoints, double[] yPoints, int nPoints) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        try {
+            contentStream.moveTo(tX(xPoints[0]), tY(yPoints[0]));
+            for (int i = 1; i < nPoints; i++) {
+                contentStream.lineTo(tX(xPoints[i]), tY(yPoints[i]));
+            }
+            contentStream.fill();
+        } catch (IOException ex) {
+            Logger.getLogger(PDFGraphicsContext.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
 
     @Override
@@ -731,7 +739,15 @@ public class PDFGraphicsContext implements GraphicsContextInterface {
 
     @Override
     public void strokePolygon(double[] xPoints, double[] yPoints, int nPoints) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        try {
+            contentStream.moveTo(tX(xPoints[0]), tY(yPoints[0]));
+            for (int i = 1; i < nPoints; i++) {
+                contentStream.lineTo(tX(xPoints[i]), tY(yPoints[i]));
+            }
+            contentStream.stroke();
+        } catch (IOException ex) {
+            Logger.getLogger(PDFGraphicsContext.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
 
     @Override
