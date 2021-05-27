@@ -31,22 +31,36 @@ import javafx.beans.value.ChangeListener;
  */
 public class DoubleRangeOperationItem extends DoubleOperationItem {
 
+    final boolean zoomable;
+
     public DoubleRangeOperationItem(ChangeListener listener, double defaultValue, String category, String name, String description) {
         super(listener, defaultValue, category, name, description);
+        zoomable = true;
 
+    }
+
+    public DoubleRangeOperationItem(ChangeListener listener, double defaultValue, double min, double max, boolean zoomable, String category, String name, String description) {
+        super(listener, defaultValue, min, max, category, name, description);
+        this.zoomable = zoomable;
     }
 
     public DoubleRangeOperationItem(ChangeListener listener, double defaultValue, double min, double max, String category, String name, String description) {
         super(listener, defaultValue, min, max, category, name, description);
+        zoomable = true;
     }
 
     public DoubleRangeOperationItem(ChangeListener listener, double defaultValue, double min, double max, double amin, double amax, String category, String name, String description) {
         super(listener, defaultValue, min, max, amin, amax, category, name, description);
+        zoomable = true;
     }
 
     @Override
     public Class<?> getType() {
         return DoubleRangeOperationItem.class;
+    }
+    
+    public boolean getZoomable() {
+        return zoomable;
     }
 
 }

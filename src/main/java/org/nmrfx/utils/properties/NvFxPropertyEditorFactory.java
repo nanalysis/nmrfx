@@ -29,6 +29,7 @@ import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.Collection;
 import javafx.beans.value.ObservableValue;
 import javafx.event.ActionEvent;
 import javafx.scene.control.Button;
@@ -37,6 +38,7 @@ import javafx.scene.control.ComboBox;
 import javafx.scene.control.TextField;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
+import org.controlsfx.control.CheckComboBox;
 import org.controlsfx.control.PropertySheet.Item;
 import org.controlsfx.control.textfield.CustomTextField;
 import org.controlsfx.property.editor.AbstractPropertyEditor;
@@ -59,7 +61,7 @@ public class NvFxPropertyEditorFactory extends DefaultPropertyEditorFactory {
         Class<?> type = item.getType();
 
         //TODO: add support for char and collection editors
-//        System.out.println("get editor " + item.getName() + " " + item.getType().toString());
+        System.out.println("get editor " + item.getName() + " " + item.getType().toString());
         if (type == DoubleRangeOperationItem.class) {
             //System.out.println("double item");
             Slider slider = new Slider();
@@ -70,7 +72,7 @@ public class NvFxPropertyEditorFactory extends DefaultPropertyEditorFactory {
             slider.setShowTickMarks(true);
             slider.setBlockIncrement((dItem.getMax() - dItem.getMin()) / 100.0);
             slider.setMajorTickUnit((dItem.getMax() - dItem.getMin()) / 4);
-            ZoomSlider zoomSlider = new ZoomSlider(slider, dItem.getAmin(), dItem.getAmax());
+            ZoomSlider zoomSlider = new ZoomSlider(slider, dItem.getAmin(), dItem.getAmax(), dItem.getZoomable());
             return new PropertySliderEditor(dItem, zoomSlider);
         } else if (type == IntOperationItem.class) {
             IntOperationItem iItem = (IntOperationItem) item;
@@ -119,6 +121,13 @@ public class NvFxPropertyEditorFactory extends DefaultPropertyEditorFactory {
             slider.setSnapToTicks(true);
             IntSlider zoomSlider = new IntSlider(slider, iItem.getMin(), iItem.getMax());
             return new IntPropertySliderEditor(iItem, zoomSlider);
+
+        } else if (type == CheckComboOperationItem.class) {
+            CheckComboBox comboBox = new CheckComboBox();
+            CheckComboOperationItem cItem = (CheckComboOperationItem) item;
+            Collection<String> values = (Collection<String>) cItem.getChoices();
+            comboBox.getItems().addAll(values);
+            return new CheckComboEditor(cItem, comboBox);
 
         } else if (type == BooleanOperationItem.class) {
             //System.out.println("bpp; range item");

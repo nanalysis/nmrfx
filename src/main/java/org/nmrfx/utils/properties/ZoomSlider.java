@@ -50,8 +50,8 @@ public class ZoomSlider extends GridPane {
 
     CustomTextField textField = new CustomTextField();
     Slider slider;
-    Button downButton = new Button("-");
-    Button upButton = new Button("+");
+    Button downButton = null;
+    Button upButton = null;
     double amin;
     double amax;
     List<String> choices = new ArrayList<>();
@@ -174,7 +174,6 @@ public class ZoomSlider extends GridPane {
     }
 
     private void downAction(ActionEvent event) {
-        Button button = (Button) event.getSource();
         double min = slider.getMin();
         double max = slider.getMax();
         double value = slider.getValue();
@@ -206,29 +205,42 @@ public class ZoomSlider extends GridPane {
     }
 
     public ZoomSlider(Slider slider, double amin, double amax) {
+        this(slider, amin, amax, true);
+
+    }
+
+    public ZoomSlider(Slider slider, double amin, double amax, boolean zoomable) {
         super();
         this.slider = slider;
         this.amin = amin;
         this.amax = amax;
-        upButton.getStyleClass().add("toolButton");
-        downButton.getStyleClass().add("toolButton");
+        if (zoomable) {
+            downButton = new Button("-");
+            upButton = new Button("+");
+            upButton.getStyleClass().add("toolButton");
+            downButton.getStyleClass().add("toolButton");
+        }
 
         //downButton.setBorder(Border.EMPTY);
         textField.setFont(new Font(11));
         textField.setPrefWidth(60);
-        addControls();
-        downButton.addEventHandler(ActionEvent.ACTION, event -> downAction(event));
-        upButton.addEventHandler(ActionEvent.ACTION, event -> upAction(event));
+        addControls(zoomable);
+        if (zoomable) {
+            downButton.addEventHandler(ActionEvent.ACTION, event -> downAction(event));
+            upButton.addEventHandler(ActionEvent.ACTION, event -> upAction(event));
+        }
         Bindings.bindBidirectional(textField.textProperty(), slider.valueProperty(), (StringConverter) new DConverter());
         updateFormat();
     }
 
-    private void addControls() {
+    private void addControls(boolean zoomable) {
         add(textField, 0, 0);
         add(slider, 1, 0);
         setHgrow(slider, Priority.ALWAYS);
-        add(downButton, 2, 0);
-        add(upButton, 3, 0);
+        if (zoomable) {
+            add(downButton, 2, 0);
+            add(upButton, 3, 0);
+        }
     }
 
     public Slider getSlider() {
