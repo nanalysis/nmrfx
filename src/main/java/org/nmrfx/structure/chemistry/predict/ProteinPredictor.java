@@ -22,6 +22,19 @@ import org.nmrfx.structure.chemistry.energy.PropertyGenerator;
 
 public class ProteinPredictor {
 
+    public final static Map<String, Double> RANDOM_SCALES = new HashMap<>();
+
+    static {
+        RANDOM_SCALES.put("N", -0.472);
+        RANDOM_SCALES.put("C", 0.185);
+        RANDOM_SCALES.put("CB", -0.154);
+        RANDOM_SCALES.put("CA", 0.198);
+        RANDOM_SCALES.put("H", -0.067);
+        RANDOM_SCALES.put("HA", -0.026);
+        RANDOM_SCALES.put("HB", 0.022);
+
+    }
+
     static final Set<String> atomTypes = new HashSet<>();
 
     PropertyGenerator propertyGenerator;
@@ -368,6 +381,24 @@ public class ProteinPredictor {
         return rms;
     }
 
+    public static double getRandomCoilError(Atom atom) {
+        String aName = atom.getName();
+        String scaleName = aName;
+        if (aName.length() > 2) {
+            scaleName = aName.substring(0, 2);
+        }
+        double scale;
+        if (RANDOM_SCALES.containsKey(scaleName)) {
+            scale = RANDOM_SCALES.get(scaleName);
+        } else if (RANDOM_SCALES.containsKey(scaleName.substring(0, 1))) {
+            scale = RANDOM_SCALES.get(scaleName.substring(0, 1));
+        } else {
+            scale = 1.0;
+        }
+        return scale;
+
+    }
+
     public void predictRandom(Molecule molecule, int iRef) throws IOException {
         String[] aNames = {"C", "CA", "CB", "HA", "H", "N", "HB"};
         for (Polymer polymer : molecule.getPolymers()) {
@@ -378,12 +409,13 @@ public class ProteinPredictor {
                         if (atom != null) {
                             Double ppm = predictRandom(residue, aName, 298.0);
                             if (ppm != null) {
+                                double errValue = getRandomCoilError(atom);
                                 if (iRef < 0) {
                                     atom.setRefPPM(-iRef - 1, ppm);
-                                    atom.setRefError(-iRef - 1, 0.1);
+                                    atom.setRefError(-iRef - 1, errValue);
                                 } else {
                                     atom.setPPM(iRef, ppm);
-                                    atom.setPPMError(iRef, 0.1);
+                                    atom.setPPMError(iRef, errValue);
                                 }
                             }
                         }
