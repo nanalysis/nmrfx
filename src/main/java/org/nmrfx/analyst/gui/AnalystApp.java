@@ -397,7 +397,7 @@ public class AnalystApp extends MainApp {
         MenuItem seqGUIMenuItem = new MenuItem("Sequence Editor...");
         seqGUIMenuItem.setOnAction(e -> SequenceGUI.showGUI(this));
 
-        MenuItem atomsMenuItem = new MenuItem("Atoms...");
+        MenuItem atomsMenuItem = new MenuItem("Atom Table...");
         atomsMenuItem.setOnAction(e -> showAtoms(e));
         MenuItem sequenceMenuItem = new MenuItem("Sequence Viewer...");
         sequenceMenuItem.setOnAction(e -> showSequence(e));

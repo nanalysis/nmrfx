@@ -7,27 +7,34 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
+import javafx.geometry.Side;
 import javafx.geometry.VPos;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.control.Slider;
 import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.TextAlignment;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
+import org.controlsfx.control.MasterDetailPane;
+import org.controlsfx.control.PropertySheet;
+import org.nmrfx.chart.Symbol;
 import org.nmrfx.chemistry.Atom;
 import org.nmrfx.chemistry.MoleculeFactory;
 import org.nmrfx.chemistry.Polymer;
@@ -39,7 +46,13 @@ import org.nmrfx.graphicsio.PDFGraphicsContext;
 import org.nmrfx.graphicsio.SVGGraphicsContext;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.structure.chemistry.Molecule;
+import org.nmrfx.structure.chemistry.predict.ResidueProperties;
 import org.nmrfx.utils.GUIUtils;
+import org.nmrfx.utils.properties.BooleanOperationItem;
+import org.nmrfx.utils.properties.CheckComboOperationItem;
+import org.nmrfx.utils.properties.ChoiceOperationItem;
+import org.nmrfx.utils.properties.DoubleRangeOperationItem;
+import org.nmrfx.utils.properties.NvFxPropertyEditorFactory;
 
 /**
  * FXML Controller class
@@ -52,13 +65,13 @@ public class SeqDisplayController implements Initializable {
     Color[] colors = {Color.BLUE, Color.RED, Color.BLACK, Color.GREEN, Color.CYAN, Color.MAGENTA, Color.YELLOW};
 
     static {
-        SCALES.put("N", 0.627);
-        SCALES.put("C", 0.310);
-        SCALES.put("CB", 0.219);
-        SCALES.put("CA", 0.281);
-        SCALES.put("H", 0.102);
-        SCALES.put("HA", 0.0566);
-        SCALES.put("HB", 0.0546);
+        SCALES.put("N", -0.472);
+        SCALES.put("C", 0.185);
+        SCALES.put("CB", -0.154);
+        SCALES.put("CA", 0.198);
+        SCALES.put("H", -0.067);
+        SCALES.put("HA", -0.026);
+        SCALES.put("HB", 0.022);
 
     }
 
@@ -69,7 +82,9 @@ public class SeqDisplayController implements Initializable {
     static final String[] PROTEIN_ATOMS = {"H", "N", "HA", "C", "CA", "CB"};
     Stage stage = null;
     @FXML
-    BorderPane seqDisplayPane;
+    MasterDetailPane masterDetailPane;
+    @FXML
+    BorderPane attrBorderPane;
     @FXML
     BorderPane atomsPane;
     @FXML
@@ -80,12 +95,29 @@ public class SeqDisplayController implements Initializable {
     Slider fontSizeSlider;
     @FXML
     Label fontSizeLabel;
+    @FXML
+    Label scaleLabel;
+    @FXML
+    CheckBox detailsCheckBox;
 
-    Pane canvasPane;
+    PropertySheet propertySheet;
+
+    ScrollPane canvasPane;
     Canvas seqCanvas;
-
     SimpleIntegerProperty nResProp = new SimpleIntegerProperty();
     SimpleIntegerProperty fontSizeProp = new SimpleIntegerProperty();
+
+    BooleanOperationItem showAtomShiftsItem;
+    BooleanOperationItem showZIRDItem;
+    ChoiceOperationItem modeZIRDItem;
+    BooleanOperationItem showAtomShiftsDotItem;
+    BooleanOperationItem showAtomShiftsCombineItem;
+    CheckComboOperationItem proteinShiftsAtomsItem;
+    CheckComboOperationItem rnaShiftsAtomsItem;
+    CheckComboOperationItem groupShiftsAtomsItem;
+    DoubleRangeOperationItem atomScaleItem;
+    DoubleRangeOperationItem zirdHeightItem;
+
     double smallGap = 5.0;
     boolean drawVienna = true;
     boolean verticalResNums = false;
@@ -95,12 +127,19 @@ public class SeqDisplayController implements Initializable {
      */
     @Override
     public void initialize(URL location, ResourceBundle resources) {
-        canvasPane = new Pane();
+        canvasPane = new ScrollPane();
         seqCanvas = new Canvas();
-        canvasPane.getChildren().add(seqCanvas);
-        seqDisplayPane.setCenter(canvasPane);
-        canvasPane.widthProperty().addListener(ss -> refresh());
-        canvasPane.heightProperty().addListener(ss -> refresh());
+        canvasPane.setContent(seqCanvas);
+        masterDetailPane.setMasterNode(canvasPane);
+        propertySheet = new PropertySheet();
+        masterDetailPane.setDetailSide(Side.RIGHT);
+
+        masterDetailPane.setDetailNode(propertySheet);
+        masterDetailPane.setShowDetailNode(true);
+        detailsCheckBox.setSelected(true);
+        attrBorderPane.setCenter(masterDetailPane);
+        seqCanvas.setWidth(1000.0);
+        seqCanvas.setHeight(1000.0);
         nResiduesSlider.setMin(20);
         nResiduesSlider.setMax(200);
         nResiduesSlider.valueProperty().bindBidirectional(nResProp);
@@ -117,6 +156,62 @@ public class SeqDisplayController implements Initializable {
             fontSizeLabel.setText(String.valueOf(fontSizeProp.get()));
             refresh();
         });
+        masterDetailPane.showDetailNodeProperty().bindBidirectional(detailsCheckBox.selectedProperty());
+
+        propertySheet.setPropertyEditorFactory(new NvFxPropertyEditorFactory());
+        propertySheet.setMode(PropertySheet.Mode.CATEGORY);
+        propertySheet.setModeSwitcherVisible(false);
+        propertySheet.setSearchBoxVisible(false);
+
+        showZIRDItem = new BooleanOperationItem((a, b, c) -> {
+            refresh();
+        }, Boolean.FALSE, "Residue Order Value", "Display", "Display IRD");
+
+        List<String> zirdModeChoices = List.of("Dot", "Bar");
+        modeZIRDItem = new ChoiceOperationItem((a, b, c) -> {
+            refresh();
+        }, "Dot", zirdModeChoices, "Residue Order Value", "Mode", "Display Mode for IRD");
+
+        showAtomShiftsItem = new BooleanOperationItem((a, b, c) -> {
+            refresh();
+        }, Boolean.FALSE, "Atom Shifts", "Display", "Display Atom Shift Deviation to Ref");
+
+        showAtomShiftsDotItem = new BooleanOperationItem((a, b, c) -> {
+            refresh();
+        }, Boolean.FALSE, "Atom Shifts", "Dot", "Show delta values as dot symbols");
+
+        showAtomShiftsCombineItem = new BooleanOperationItem((a, b, c) -> {
+            refresh();
+        }, Boolean.FALSE, "Atom Shifts", "Combine", "Combine multiple atoms per line");
+
+        List<String> proteinShiftsAtoms = List.of("H", "N", "C", "CA", "CB", "HA", "HB");
+        proteinShiftsAtomsItem = new CheckComboOperationItem((a) -> {
+            refresh();
+        }, "H", proteinShiftsAtoms, "Atom Shifts", "Protein Atoms", "Select atoms for display");
+
+        List<String> rnaShiftsAtoms = List.of("H5,H8", "H6,H2", "H1'", "H2'", "H3'", "H4'", "H5'",
+                "C5,C8", "C6,C2", "C1'", "C2'", "C3'", "C4'", "C5'");
+        rnaShiftsAtomsItem = new CheckComboOperationItem((a) -> {
+            refresh();
+        }, "H", rnaShiftsAtoms, "Atom Shifts", "RNA Atoms", "Select atoms for display");
+
+        List<String> groupShiftsAtoms = List.of("C", "ribose");
+        groupShiftsAtomsItem = new CheckComboOperationItem((a) -> {
+            refresh();
+        }, "", groupShiftsAtoms, "Atom Shifts", "Group By", "Select types to group atoms with");
+
+        atomScaleItem = new DoubleRangeOperationItem((a, b, c) -> refresh(),
+                5.0, 1.0, 20.0, false, "Atom Shifts", "Scale", "Scale delta values by by this amount");
+
+        zirdHeightItem = new DoubleRangeOperationItem((a, b, c) -> refresh(),
+                5.0, 1.0, 20.0, false, "Residue Order Value", "Height", "Scale region height by this amount");
+
+        propertySheet.getItems().addAll(showAtomShiftsItem,
+                proteinShiftsAtomsItem, rnaShiftsAtomsItem,
+                showAtomShiftsDotItem,
+                showAtomShiftsCombineItem, groupShiftsAtomsItem, atomScaleItem,
+                showZIRDItem, modeZIRDItem, zirdHeightItem);
+        masterDetailPane.setDividerPosition(smallGap);
 
     }
 
@@ -131,10 +226,8 @@ public class SeqDisplayController implements Initializable {
 
             controller = loader.<SeqDisplayController>getController();
             controller.stage = stage;
-            stage.setTitle("Seq Display");
+            stage.setTitle("Sequence Display");
             stage.setScene(scene);
-//            stage.setMinWidth(200);
-//            stage.setMinHeight(250);
             stage.show();
             stage.toFront();
 
@@ -149,16 +242,16 @@ public class SeqDisplayController implements Initializable {
         return stage;
     }
 
-    public List<String> getValidAtoms(Polymer polymer) {
-        String[] testNames;
+    public List<List<String>> getValidAtoms(Polymer polymer) {
+        List<String> testNames = new ArrayList<>();
         if (polymer.isPeptide()) {
-            testNames = PROTEIN_ATOMS;
+            testNames.addAll(proteinShiftsAtomsItem.getValues());
         } else if (polymer.isRNA()) {
-            testNames = RNA_ATOMS;
-        } else {
-            testNames = new String[0];
+            testNames.addAll(rnaShiftsAtomsItem.getValues());
         }
-        List<String> useNames = new ArrayList<>();
+        List<String> groupNames = groupShiftsAtomsItem.getValues();
+        List<List<String>> useNames = new ArrayList<>();
+
         for (String aName : testNames) {
             for (Residue residue : polymer.getResidues()) {
                 String[] splitAtoms = aName.split(",");
@@ -167,7 +260,24 @@ public class SeqDisplayController implements Initializable {
                     Atom atom = residue.getAtom(sName);
                     if (atom != null) {
                         if (atom.getPPM() != null) {
-                            useNames.add(aName);
+                            int groupNum = 0;
+                            int groupCount = 0;
+                            for (String groupAtom : groupNames) {
+                                int present = 0;
+                                if (groupAtom.equals("C")) {
+                                    present = aName.startsWith("C") ? 1 : 0;
+                                } else if (groupAtom.equals("ribose")) {
+                                    present = aName.endsWith("'") ? 1 : 0;
+                                }
+                                groupNum += (int) Math.pow(2, groupCount) * present;
+                                groupCount++;
+                            }
+                            if (useNames.size() <= groupNum) {
+                                for (int i = useNames.size(); i < (groupNum + 1); i++) {
+                                    useNames.add(new ArrayList<>());
+                                }
+                            }
+                            useNames.get(groupNum).add(aName);
                             gotAtom = true;
                             break;
                         }
@@ -181,12 +291,12 @@ public class SeqDisplayController implements Initializable {
         return useNames;
     }
 
-    void drawAtomLabels(GraphicsContextInterface gC, List<String> aNames, double x, double y, double height, boolean symbols) {
+    void drawAtomLabels(GraphicsContextInterface gC, List<String> aNames, double x, double y, double atomBarWidth, double height, boolean symbols) {
         gC.setTextAlign(TextAlignment.RIGHT);
         gC.setTextBaseline(VPos.CENTER);
         y = y + height / 2.0 + smallGap;
         int iAtom = 0;
-        double symSize = 6.0;
+        double symSize = 0.4 * atomBarWidth;
         for (String aName : aNames) {
             if (symbols) {
                 Color color = colors[iAtom % colors.length];
@@ -207,48 +317,50 @@ public class SeqDisplayController implements Initializable {
         }
     }
 
-    void drawAtomScores(GraphicsContextInterface gC, Residue residue, List<String> aNames, double x, double y, double height) {
+    double getScale(Atom atom) {
+        double scale = atom.getRefPPM(0).getError();
+        return scale;
+
+    }
+
+    Optional<Double> getDelta(Atom atom) {
+        Optional<Double> result = Optional.empty();
+        if (atom != null) {
+            Double ppm = atom.getPPM();
+            Double rppm = atom.getRefPPM();
+            if ((ppm != null) && (rppm != null)) {
+                double scale = getScale(atom);
+                scale *= atomScaleItem.getValue();
+                double delta = (ppm - rppm) / scale;
+                result = Optional.of(delta);
+            }
+        }
+        return result;
+    }
+
+    void drawAtomScores(GraphicsContextInterface gC, Residue residue,
+            List<String> aNames, double x, double y, double atomBarWidth, double height) {
         y = y + height / 2.0 + smallGap;
         for (String aName : aNames) {
-            Atom atom = residue.getAtom(aName);
-            if (atom != null) {
-                Double ppm = atom.getPPM();
-                Double rppm = atom.getRefPPM();
-                if ((ppm != null) && (rppm != null)) {
-                    String scaleName = aName;
-                    if (aName.length() > 2) {
-                        scaleName = aName.substring(0, 2);
-                    }
-                    double scale;
-                    if (SCALES.containsKey(scaleName)) {
-                        scale = SCALES.get(scaleName);
-                    } else {
-                        switch (atom.getElementNumber()) {
-                            case 1:
-                                scale = 0.05;
-                                break;
-                            case 6:
-                                scale = 0.3;
-                                break;
-                            default:
-                                scale = 0.6;
-                                break;
-                        }
-                    }
-                    scale *= 4.0;
-                    double delta = (ppm - rppm) / scale;
+            String[] splitAtoms = aName.split(",");
+            for (String sName : splitAtoms) {
+                Atom atom = residue.getAtom(sName);
+                Optional<Double> deltaOpt = getDelta(atom);
+                if (deltaOpt.isPresent()) {
+                    double delta = deltaOpt.get();
                     if (delta > 1.0) {
                         delta = 1.0;
                     } else if (delta < -1.0) {
                         delta = -1.0;
                     }
-                    double width = 6.0;
+                    double width = atomBarWidth - 2;
                     double halfWidth = width / 2.0;
                     double x1 = x - halfWidth;
                     double w = width;
 
                     double h = Math.abs(delta * height / 2.0);
                     double y1;
+
                     if (delta < 0.0) {
                         y1 = y;
                         gC.setFill(Color.RED);
@@ -264,10 +376,15 @@ public class SeqDisplayController implements Initializable {
         gC.setFill(Color.BLACK);
     }
 
-    void drawRNAAtomScores(GraphicsContextInterface gC, Residue residue, List<String> aNames, double x, double y, double height) {
-        height = (height + smallGap) * aNames.size();
+    void drawDotScores(GraphicsContextInterface gC, Residue residue,
+            List<String> aNames, double x, double y,
+            double atomBarWidth, double height, boolean combineMode) {
         y = y + height / 2.0 + smallGap;
         int iAtom = 0;
+        double deltaMax = 1.05;
+        int nUp = 0;
+        int nDown = 0;
+        int nGood = 0;
         for (String aName : aNames) {
             String[] splitAtoms = aName.split(",");
             for (String sName : splitAtoms) {
@@ -275,52 +392,117 @@ public class SeqDisplayController implements Initializable {
                 if (atom != null) {
                     Double ppm = atom.getPPM();
                     Double rppm = atom.getRefPPM();
-                    if ((ppm != null) && (rppm != null)) {
-                        double scale = atom.getElementNumber() == 1 ? 0.5 : 2.0;
-                        double delta = (ppm - rppm) / scale;
+                    gC.setStroke(Color.DARKGRAY);
+                    gC.strokeLine(x, y - height / 2.0, x, y + height / 2.0);
+                    Optional<Double> deltaOpt = getDelta(atom);
+                    if (deltaOpt.isPresent()) {
+                        double delta = deltaOpt.get();
                         Color color;
+                        Symbol symbol = Symbol.CIRCLE;
+                        int iOffset;
                         if (delta > 1.0) {
-                            delta = 1.0;
+                            iOffset = nUp;
+                            if (combineMode) {
+                                delta = 1.0 + (deltaMax - 1.0) * (nUp + 1) / 5;
+                            } else {
+                                delta = deltaMax;
+                            }
+                            nUp++;
+                            if (delta > deltaMax) {
+                                delta = deltaMax;
+                            }
                             color = Color.RED;
+                            symbol = Symbol.TRIANGLE_DOWN;
                         } else if (delta < -1.0) {
-                            delta = -1.0;
+                            iOffset = nDown;
+                            if (combineMode) {
+                                delta = -1.0 - (deltaMax - 1.0) * (nDown + 1) / 5;
+                            } else {
+                                delta = -deltaMax;
+                            }
+                            nDown++;
+                            if (delta < -deltaMax) {
+                                delta = -deltaMax;
+                            }
                             color = Color.RED;
+                            symbol = Symbol.TRIANGLE_UP;
                         } else {
+                            iOffset = nGood;
                             color = Color.BLUE;
+                            nGood++;
                         }
-                        color = colors[iAtom % colors.length];
+                        if (combineMode) {
+                            color = colors[iAtom % colors.length];
+                        }
 
-                        double width = 6.0;
+                        double width = 0.4 * atomBarWidth;
                         double halfSize = width / 2.0;
-                        double x1 = x - halfSize - halfSize / 2.0 + (iAtom % 2) * halfSize;
+                        double x1;
+                        if (combineMode) {
+                            x1 = x - halfSize / 2.0 + (iOffset % 2) * halfSize;
+                        } else {
+                            x1 = x;
+                        }
                         double w = width;
 
-                        double h = Math.abs(delta * height / 2.0);
+                        double h = Math.abs(delta * height / deltaMax * 0.5);
                         double y1;
                         if (delta < 0.0) {
-                            y1 = y - h - halfSize;
-                            gC.setFill(Color.RED);
+                            y1 = y - h;
                         } else {
-                            y1 = y + h - halfSize;
+                            y1 = y + h;
                         }
-                        gC.setStroke(Color.DARKGRAY);
-                        gC.strokeLine(x, y - height / 2.0, x, y + height / 2.0);
-                        gC.setFill(color);
-                        gC.setStroke(color);
-                        gC.strokeOval(x1, y1, w, w);
-                        gC.fillOval(x1, y1, w, w);
+                        symbol.draw(gC, x1, y1, halfSize, color, color);
                     }
                 }
             }
             iAtom++;
-            //y += height + smallGap;
+            if (!combineMode) {
+                y += height + smallGap;
+            }
         }
         gC.setFill(Color.BLACK);
         gC.setStroke(Color.BLACK);
     }
 
+    void drawSymbol(GraphicsContextInterface gC, Residue residue,
+            double x, double y,
+            double atomBarWidth, double height,
+            double value, double lower, double upper) {
+        y = y + height + smallGap;
+
+        double delta = (value - lower) / (upper - lower);
+        if (delta > 1.0) {
+            delta = 1.0;
+        } else if (delta < 0.0) {
+            delta = 0.0;
+        }
+        double y1 = y - delta * height;
+        double radius = atomBarWidth * 0.2;
+        Symbol.CIRCLE.draw(gC, x, y1, radius, Color.BLACK, Color.BLACK);
+
+    }
+
+    void drawBar(GraphicsContextInterface gC, Residue residue,
+            double x, double y,
+            double atomBarWidth, double height,
+            double value, double lower, double upper) {
+
+        y = y + height + smallGap;
+        double x1 = x - atomBarWidth / 2.0;
+        double delta = (value - lower) / (upper - lower);
+        if (delta > 1.0) {
+            delta = 1.0;
+        } else if (delta < 0.0) {
+            delta = 0.0;
+        }
+        double y1 = y - delta * height;
+        gC.fillRect(x1, y1, atomBarWidth, y - y1);
+    }
+
     void drawResNumLabel(GraphicsContextInterface gC, double x, double y, int resNum) {
         double fontHeight = gC.getFont().getSize();
+        gC.setFill(Color.BLACK);
         gC.setTextBaseline(VPos.BASELINE);
         gC.setTextAlign(TextAlignment.CENTER);
         String resNumStr = String.valueOf(resNum);
@@ -337,6 +519,7 @@ public class SeqDisplayController implements Initializable {
 
     void drawSeqCharLabel(GraphicsContextInterface gC, double x, double y, Residue residue) {
         String text = String.valueOf(residue.getOneLetter());
+        gC.setFill(Color.BLACK);
         gC.setTextBaseline(VPos.BASELINE);
         gC.setTextAlign(TextAlignment.CENTER);
         gC.fillText(text, x, y);
@@ -344,36 +527,55 @@ public class SeqDisplayController implements Initializable {
     }
 
     void drawLabel(GraphicsContextInterface gC, double x, double y, String text) {
+        gC.setFill(Color.BLACK);
         gC.setTextBaseline(VPos.BASELINE);
         gC.setTextAlign(TextAlignment.CENTER);
         gC.fillText(text, x, y);
 
     }
 
+    void drawBorder(GraphicsContextInterface gC, double x, double y, double w, double h) {
+        gC.setStroke(Color.BLACK);
+        gC.strokeRect(x, y, w, h);
+    }
+
+    void drawLine(GraphicsContextInterface gC, double x1, double y1, double x2, double y2) {
+        gC.setStroke(Color.BLACK);
+        gC.strokeLine(x1, y1, x2, y2);
+    }
+
     public void refresh() {
         var gC2D = seqCanvas.getGraphicsContext2D();
         GraphicsContextInterface gC = new GraphicsContextProxy(gC2D);
-        drawCanvas(gC);
+        double[] canvasSize = drawCanvas(gC, CANVAS_MODE.SIZE);
+        seqCanvas.setWidth(canvasSize[0]);
+        seqCanvas.setHeight(canvasSize[1]);
+        drawCanvas(gC, CANVAS_MODE.DRAW);
     }
 
-    public void drawCanvas(GraphicsContextInterface gC) {
+    enum CANVAS_MODE {
+        DRAW,
+        SIZE,
+        PICK;
+    };
 
-        double cWidth = canvasPane.getWidth();
-        double cHeight = canvasPane.getHeight();
-        seqCanvas.setWidth(cWidth);
-        seqCanvas.setHeight(cHeight);
+    double[] drawCanvas(GraphicsContextInterface gC, CANVAS_MODE cMode) {
+
+        double cWidth = seqCanvas.getWidth();
+        double cHeight = seqCanvas.getHeight();
         gC.setFill(Color.WHITE);
         gC.fillRect(0, 0, cWidth, cHeight);
         gC.setFill(Color.BLACK);
         Molecule mol = (Molecule) MoleculeFactory.getActive();
         if (mol == null) {
-            return;
+            double[] canvasSize = {100, 100};
+            return canvasSize;
         }
         gC.setFont(Font.font(fontSizeProp.get()));
         double fontHeight = gC.getFont().getSize();
         double fontWidth = GUIUtils.getTextWidth("M", gC.getFont());
         double heightMultiplier = 1.0;
-        double width = fontWidth + 2;
+        double atomBarWidth = fontWidth + 2;
         double atomBarHeight = fontHeight * heightMultiplier + 10;
         double xOrigin = 15 + 6 * fontWidth;
         double resNumHeight;
@@ -388,15 +590,29 @@ public class SeqDisplayController implements Initializable {
         double curY = y;
         String dotBracket = mol.getDotBracket();
         int resIndex = 0;
+        boolean dotMode = showAtomShiftsDotItem.getValue();
+        boolean combineMode = showAtomShiftsCombineItem.getValue();
+        double maxX = xOrigin;
+        double maxY = yOrigin;
         for (Polymer polymer : mol.getPolymers()) {
             Residue firstRes = polymer.getFirstResidue();
             int firstResNum = firstRes.getResNum();
-            int iRes = (firstResNum % 10) - 1;
-            boolean drawLabels = true;
+            int iRes = 0;
             var aNames = getValidAtoms(polymer);
+            int biggestGroup = 1;
+            for (var group : aNames) {
+                biggestGroup = Math.max(biggestGroup, group.size());
+            }
             curY = y;
+            int nResidues = polymer.getResidues().size();
+            int remaining = nResidues - resIndex;
+            int residuesInRow = remaining > nResProp.get() ? nResProp.get() : remaining;
+            double resWidth = residuesInRow * atomBarWidth;
+            maxX = Math.max(maxX, xOrigin + resWidth);
+            boolean lastResidueOnLine = false;
             for (Residue residue : polymer.getResidues()) {
-                double x = iRes * width + width / 2.0 + xOrigin;
+                lastResidueOnLine = ((iRes + 1) >= nResProp.get()) || (residue == polymer.getLastResidue());
+                double x = iRes * atomBarWidth + atomBarWidth / 2.0 + xOrigin;
 
                 int resNum = residue.getResNum();
 
@@ -407,26 +623,67 @@ public class SeqDisplayController implements Initializable {
                 drawSeqCharLabel(gC, x, y, residue);
                 if (polymer.isRNA() && drawVienna && (dotBracket != null)) {
                     y += fontHeight;
-                    drawLabel(gC, x, y, dotBracket.substring(resIndex, resIndex + 1));
+                    if (cMode == CANVAS_MODE.DRAW) {
+                        drawLabel(gC, x, y, dotBracket.substring(resIndex, resIndex + 1));
+                    }
                     y += smallGap;
                 }
+                if (showAtomShiftsItem.getValue()) {
+                    if (!dotMode) {
+                        for (var group : aNames) {
+                            if (!group.isEmpty()) {
+                                if (cMode == CANVAS_MODE.DRAW) {
+                                    if (lastResidueOnLine) {
+                                        drawAtomLabels(gC, group, xOrigin, y, atomBarWidth, atomBarHeight, false);
+                                    }
+                                    drawAtomScores(gC, residue, group, x, y, atomBarWidth, atomBarHeight);
+                                }
+                                y += (atomBarHeight + smallGap) * group.size();
+                            }
+                        }
+                    } else {
+                        for (var group : aNames) {
+                            double useHeight = combineMode ? (atomBarHeight + smallGap) * biggestGroup : atomBarHeight;
+                            if (cMode == CANVAS_MODE.DRAW) {
+                                if (lastResidueOnLine) {
+                                    drawAtomLabels(gC, group, xOrigin, y, atomBarWidth, atomBarHeight, combineMode);
+                                }
 
-                if (drawLabels) {
-                    drawAtomLabels(gC, aNames, xOrigin, y, atomBarHeight, true);
-                    drawLabels = false;
+                                drawDotScores(gC, residue, group, x, y, atomBarWidth, useHeight, combineMode);
+                            }
+                            if (combineMode) {
+                                y += useHeight + sectionGap;
+                            } else {
+                                y += (useHeight + smallGap) * group.size();
+                            }
+                        }
+                    }
                 }
+                if (showZIRDItem.getValue() && polymer.isPeptide()) {
+                    double zIDR = ResidueProperties.calcZIDR(residue, 0, 0);
+                    double zIDRHeight = atomBarHeight * zirdHeightItem.doubleValue();
+                    double maxZ = 15.0;
+                    double minZ = -3.0;
+                    if (cMode == CANVAS_MODE.DRAW) {
+                        if (modeZIRDItem.getValue().equals("Bar")) {
+                            gC.setFill(Color.GRAY);
+                            drawBar(gC, residue, x, y, atomBarWidth, zIDRHeight, zIDR, minZ, maxZ);
+                        } else {
+                            drawSymbol(gC, residue, x, y, atomBarWidth, zIDRHeight, zIDR, minZ, maxZ);
+                        }
+                        if (lastResidueOnLine) {
+                            drawBorder(gC, xOrigin, y + smallGap, resWidth, zIDRHeight);
+                            double y1 = y + smallGap + zIDRHeight * (1.0 - ((3.0 - minZ) / (maxZ - minZ)));
+                            gC.setStroke(Color.BLUE);
+                            drawLine(gC, xOrigin, y1, xOrigin + resWidth, y1);
 
-                if (polymer.isPeptide()) {
-                    drawAtomScores(gC, residue, aNames, x, y, atomBarHeight);
-                    y += (atomBarHeight + smallGap) * aNames.size();
-                } else {
-                    drawRNAAtomScores(gC, residue, aNames, x, y, atomBarHeight);
-                    y += (atomBarHeight + smallGap) * aNames.size();
+                        }
+                    }
+                    y += zIDRHeight;
                 }
-
+                maxY = Math.max(maxY, y);
                 iRes++;
                 if ((iRes >= nResProp.get()) || (residue == polymer.getLastResidue())) {
-                    drawLabels = true;
                     iRes = 0;
                     y = y + resNumHeight + fontHeight + sectionGap;
                     curY = y;
@@ -436,11 +693,14 @@ public class SeqDisplayController implements Initializable {
                 resIndex++;
             }
         }
+        double[] canvasSize = {maxX + 20, maxY + 20};
+        return canvasSize;
 
     }
 
     @FXML
-    public void exportPDFAction(ActionEvent event) {
+    public void exportPDFAction(ActionEvent event
+    ) {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Export to PDF");
         fileChooser.setInitialDirectory(FXMLController.getInitialDirectory());
@@ -459,7 +719,7 @@ public class SeqDisplayController implements Initializable {
             try {
                 PDFGraphicsContext pdfGC = new PDFGraphicsContext();
                 pdfGC.create(true, seqCanvas.getWidth(), seqCanvas.getHeight(), fileName);
-                drawCanvas(pdfGC);
+                drawCanvas(pdfGC, CANVAS_MODE.DRAW);
                 pdfGC.saveFile();
             } catch (GraphicsIOException ex) {
                 Logger.getLogger(FXMLController.class.getName()).log(Level.SEVERE, null, ex);
@@ -487,7 +747,7 @@ public class SeqDisplayController implements Initializable {
         if (fileName != null) {
             SVGGraphicsContext svgGC = new SVGGraphicsContext();
             svgGC.create(true, seqCanvas.getWidth(), seqCanvas.getHeight(), fileName);
-            drawCanvas(svgGC);
+            drawCanvas(svgGC, CANVAS_MODE.DRAW);
             svgGC.saveFile();
         }
         stage.setResizable(true);
