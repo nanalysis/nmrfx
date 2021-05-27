@@ -11,7 +11,6 @@ import java.util.Optional;
 import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -189,8 +188,8 @@ public class SeqDisplayController implements Initializable {
             refresh();
         }, "H", proteinShiftsAtoms, "Atom Shifts", "Protein Atoms", "Select atoms for display");
 
-        List<String> rnaShiftsAtoms = List.of("H5,H8", "H6,H2", "H1'", "H2'", "H3'", "H4'", "H5'",
-                "C5,C8", "C6,C2", "C1'", "C2'", "C3'", "C4'", "C5'");
+        List<String> rnaShiftsAtoms = List.of("H5,H8", "H5", "H8", "H6,H2", "H6", "H2", "H1'", "H2'", "H3'", "H4'", "H5'",
+                "C5,C8", "C5", "C8", "C6,C2", "C6", "C2", "C1'", "C2'", "C3'", "C4'", "C5'");
         rnaShiftsAtomsItem = new CheckComboOperationItem((a) -> {
             refresh();
         }, "H", rnaShiftsAtoms, "Atom Shifts", "RNA Atoms", "Select atoms for display");
@@ -211,7 +210,7 @@ public class SeqDisplayController implements Initializable {
                 showAtomShiftsDotItem,
                 showAtomShiftsCombineItem, groupShiftsAtomsItem, atomScaleItem,
                 showZIRDItem, modeZIRDItem, zirdHeightItem);
-        masterDetailPane.setDividerPosition(smallGap);
+        masterDetailPane.setDividerPosition(0.7);
 
     }
 
