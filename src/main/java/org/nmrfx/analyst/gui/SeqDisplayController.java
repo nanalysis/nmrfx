@@ -106,7 +106,10 @@ public class SeqDisplayController implements Initializable {
     SimpleIntegerProperty nResProp = new SimpleIntegerProperty();
     SimpleIntegerProperty fontSizeProp = new SimpleIntegerProperty();
 
+    ChoiceOperationItem showResNumberItem;
     BooleanOperationItem showAtomShiftsItem;
+    BooleanOperationItem showViennaItem;
+    BooleanOperationItem showSeqCharItem;
     BooleanOperationItem showZIRDItem;
     ChoiceOperationItem modeZIRDItem;
     BooleanOperationItem showAtomShiftsDotItem;
@@ -118,7 +121,6 @@ public class SeqDisplayController implements Initializable {
     DoubleRangeOperationItem zirdHeightItem;
 
     double smallGap = 5.0;
-    boolean drawVienna = true;
     boolean verticalResNums = false;
 
     /**
@@ -161,6 +163,17 @@ public class SeqDisplayController implements Initializable {
         propertySheet.setMode(PropertySheet.Mode.CATEGORY);
         propertySheet.setModeSwitcherVisible(false);
         propertySheet.setSearchBoxVisible(false);
+
+        showResNumberItem = new ChoiceOperationItem((a, b, c) -> {
+            refresh();
+        }, "Horizontal", List.of("Horizontal", "Vertical", "Off"), "Annotations", "Residue Orient", "Orientation for residue numbers");
+
+        showSeqCharItem = new BooleanOperationItem((a, b, c) -> {
+            refresh();
+        }, true, "Annotations", "Residue Char", "Show One-Letter Residue Character");
+        showViennaItem = new BooleanOperationItem((a, b, c) -> {
+            refresh();
+        }, Boolean.FALSE, "Annotations", "Dot-Bracket", "Show RNA Dot-Bracket (Vienna)");
 
         showZIRDItem = new BooleanOperationItem((a, b, c) -> {
             refresh();
@@ -205,12 +218,14 @@ public class SeqDisplayController implements Initializable {
         zirdHeightItem = new DoubleRangeOperationItem((a, b, c) -> refresh(),
                 5.0, 1.0, 20.0, false, "Residue Order Value", "Height", "Scale region height by this amount");
 
-        propertySheet.getItems().addAll(showAtomShiftsItem,
+        propertySheet.getItems().addAll(showResNumberItem, showSeqCharItem, showViennaItem,
+                showAtomShiftsItem,
                 proteinShiftsAtomsItem, rnaShiftsAtomsItem,
                 showAtomShiftsDotItem,
                 showAtomShiftsCombineItem, groupShiftsAtomsItem, atomScaleItem,
                 showZIRDItem, modeZIRDItem, zirdHeightItem);
         masterDetailPane.setDividerPosition(0.7);
+        refresh();
 
     }
 
@@ -508,10 +523,10 @@ public class SeqDisplayController implements Initializable {
         if (verticalResNums) {
             int len = resNumStr.length();
             for (int iNum = 0; iNum < len; iNum++) {
-                gC.fillText(resNumStr.substring(iNum, iNum + 1), x, y - fontHeight * (len - iNum) - 5);
+                gC.fillText(resNumStr.substring(iNum, iNum + 1), x, y - fontHeight * (len - iNum - 1) - 5);
             }
         } else {
-            gC.fillText(resNumStr, x, y - fontHeight - 5);
+            gC.fillText(resNumStr, x, y);
 
         }
     }
@@ -577,14 +592,8 @@ public class SeqDisplayController implements Initializable {
         double atomBarWidth = fontWidth + 2;
         double atomBarHeight = fontHeight * heightMultiplier + 10;
         double xOrigin = 15 + 6 * fontWidth;
-        double resNumHeight;
-        if (verticalResNums) {
-            resNumHeight = 4 * fontHeight + 5;
-        } else {
-            resNumHeight = fontHeight + 5;
-        }
         double sectionGap = fontHeight * 1.0;
-        double yOrigin = sectionGap + resNumHeight + fontHeight;
+        double yOrigin = sectionGap;
         double y = yOrigin;
         double curY = y;
         String dotBracket = mol.getDotBracket();
@@ -593,6 +602,7 @@ public class SeqDisplayController implements Initializable {
         boolean combineMode = showAtomShiftsCombineItem.getValue();
         double maxX = xOrigin;
         double maxY = yOrigin;
+        verticalResNums = showResNumberItem.get().equals("Vertical");
         for (Polymer polymer : mol.getPolymers()) {
             Residue firstRes = polymer.getFirstResidue();
             int firstResNum = firstRes.getResNum();
@@ -609,25 +619,47 @@ public class SeqDisplayController implements Initializable {
             double resWidth = residuesInRow * atomBarWidth;
             maxX = Math.max(maxX, xOrigin + resWidth);
             boolean lastResidueOnLine = false;
+            double resNumHeight;
+            if (verticalResNums) {
+                int nChars = String.valueOf(polymer.getResidues().get(nResidues - 1).getResNum()).length();
+                resNumHeight = nChars * fontHeight + 5;
+            } else {
+                resNumHeight = fontHeight + 5;
+            }
+
             for (Residue residue : polymer.getResidues()) {
                 lastResidueOnLine = ((iRes + 1) >= nResProp.get()) || (residue == polymer.getLastResidue());
                 double x = iRes * atomBarWidth + atomBarWidth / 2.0 + xOrigin;
 
                 int resNum = residue.getResNum();
+                if (!showResNumberItem.get().equals("Off")) {
+                    y += resNumHeight;
+                    boolean showExtra = false;
+                    if (verticalResNums) {
+                        if (residue.getPrevious() != null) {
+                            if (resNum != (residue.getPrevious().getResNum() + 1)) {
+                                showExtra = true;
 
-                if ((resNum % 10) == 0) {
-                    drawResNumLabel(gC, x, y, resNum);
+                            }
+                        }
+                    }
+                    if (showExtra || ((resNum % 10) == 0)) {
+                        drawResNumLabel(gC, x, y, resNum);
+                    }
                 }
 
-                drawSeqCharLabel(gC, x, y, residue);
-                if (polymer.isRNA() && drawVienna && (dotBracket != null)) {
-                    y += fontHeight;
+                if (showSeqCharItem.getValue()) {
+                    y += fontHeight + smallGap;
+                    drawSeqCharLabel(gC, x, y, residue);
+                }
+                if (polymer.isRNA() && showViennaItem.getValue() && (dotBracket != null)) {
+                    y += fontHeight + smallGap;
                     if (cMode == CANVAS_MODE.DRAW) {
                         drawLabel(gC, x, y, dotBracket.substring(resIndex, resIndex + 1));
                     }
-                    y += smallGap;
                 }
                 if (showAtomShiftsItem.getValue()) {
+                    y += smallGap;
                     if (!dotMode) {
                         for (var group : aNames) {
                             if (!group.isEmpty()) {
@@ -684,7 +716,7 @@ public class SeqDisplayController implements Initializable {
                 iRes++;
                 if ((iRes >= nResProp.get()) || (residue == polymer.getLastResidue())) {
                     iRes = 0;
-                    y = y + resNumHeight + fontHeight + sectionGap;
+                    y = y + sectionGap;
                     curY = y;
                 } else {
                     y = curY;
