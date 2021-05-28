@@ -43,7 +43,6 @@ public class CheckComboEditor extends AbstractPropertyEditor<Object, Node> {
         super(item, comboBox);
         comboBox.getCheckModel().getCheckedItems().addListener((ListChangeListener) a -> {
             item.listener.onChanged(a);
-            System.out.println("model changed");
         });
     }
 
@@ -53,14 +52,12 @@ public class CheckComboEditor extends AbstractPropertyEditor<Object, Node> {
         IndexedCheckModel checkModel = comboBox.getCheckModel();
         ObservableList<String> obsValue = checkModel.getCheckedItems();
         SimpleListProperty lP = new SimpleListProperty(obsValue);
-        System.out.println("get obs value " + obsValue);
         return lP;
     }
 
     @Override
     public void setValue(Object t) {
         CheckComboBox comboBox = (CheckComboBox) getEditor();
-        System.out.println("set value " + t);
 
 //        List<Integer> indices = (List<Integer>) t;
 //        for (var i : indices) {

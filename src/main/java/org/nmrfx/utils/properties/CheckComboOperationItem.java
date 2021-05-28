@@ -63,7 +63,6 @@ public class CheckComboOperationItem extends OperationItem implements Observable
 
     @Override
     public void setValue(Object o) {
-        System.out.println("setValue " + o);
         List<String> valueList = (List<String>) o;
         values.clear();
         values.addAll(valueList);
@@ -88,7 +87,6 @@ public class CheckComboOperationItem extends OperationItem implements Observable
 
     @Override
     public void setFromString(String sValue) {
-        System.out.println("setFromString " + sValue);
         // fixme  need general method to strip leading and trailing quotes
         if (sValue.charAt(0) == '\'') {
             sValue = sValue.substring(1, sValue.length() - 1);

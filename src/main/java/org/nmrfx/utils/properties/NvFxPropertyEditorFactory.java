@@ -61,7 +61,7 @@ public class NvFxPropertyEditorFactory extends DefaultPropertyEditorFactory {
         Class<?> type = item.getType();
 
         //TODO: add support for char and collection editors
-        System.out.println("get editor " + item.getName() + " " + item.getType().toString());
+        //System.out.println("get editor " + item.getName() + " " + item.getType().toString());
         if (type == DoubleRangeOperationItem.class) {
             //System.out.println("double item");
             Slider slider = new Slider();
@@ -127,6 +127,7 @@ public class NvFxPropertyEditorFactory extends DefaultPropertyEditorFactory {
             CheckComboOperationItem cItem = (CheckComboOperationItem) item;
             Collection<String> values = (Collection<String>) cItem.getChoices();
             comboBox.getItems().addAll(values);
+            comboBox.getCheckModel().check(cItem.defaultValue);
             return new CheckComboEditor(cItem, comboBox);
 
         } else if (type == BooleanOperationItem.class) {
