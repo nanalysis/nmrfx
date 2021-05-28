@@ -41,6 +41,7 @@ public class PeakPathReader {
         String units = saveframe.getLabelValue("_NMRFx_peak_path", "Units");
         String nDimString = saveframe.getValue("_NMRFx_peak_path", "Number_of_spectral_dimensions");
         String details = saveframe.getOptionalValue("_NMRFx_peak_path", "Details");
+        String type = saveframe.getOptionalValue("_NMRFx_peak_path", "Type");
         String sampleLabel = saveframe.getOptionalValue("_NMRFx_peak_path", "Sample_label");
         String sampleID = saveframe.getOptionalValue("_NMRFx_peak_path", "Sample_ID");
 
@@ -73,29 +74,53 @@ public class PeakPathReader {
         }
 
         Loop loop = saveframe.getLoop("_Peak_list");
+        PeakPaths.PATHMODE pathMode = type.equalsIgnoreCase("pressure")
+                ? PeakPaths.PATHMODE.PRESSURE : PeakPaths.PATHMODE.TITRATION;
         if (loop != null) {
             List<Integer> idColumn = loop.getColumnAsIntegerList("Spectral_peak_list_ID", 0);
             List<String> peakListLabels = loop.getColumnAsList("Spectral_peak_list_label");
-            List<Double> ligandConc = loop.getColumnAsDoubleList("Ligand_conc", 0.0);
-            List<Double> macroMoleculeConc = loop.getColumnAsDoubleList("Macromolecule_conc", 0.0);
-            int nConcs = idColumn.size();
-            double[] binderConcs = new double[nConcs];
-            double[] concentrations = new double[nConcs];
-            List<PeakList> peakLists = new ArrayList<>();
+            PeakPaths peakPath;
             Map<Integer, PeakList> idMap = new HashMap<>();
-            for (int iConc = 0; iConc < nConcs; iConc++) {
-                int id = idColumn.get(iConc);
-                binderConcs[iConc] = macroMoleculeConc.get(iConc);
-                concentrations[iConc] = ligandConc.get(iConc);
-                String peakListLabel = peakListLabels.get(iConc);
-                if (peakListLabel.startsWith("$")) {
-                    peakListLabel = peakListLabel.substring(1);
+            if (pathMode == PeakPaths.PATHMODE.TITRATION) {
+                List<Double> ligandConc = loop.getColumnAsDoubleList("Ligand_conc", 0.0);
+                List<Double> macroMoleculeConc = loop.getColumnAsDoubleList("Macromolecule_conc", 0.0);
+                int nConcs = idColumn.size();
+                double[] binderConcs = new double[nConcs];
+                double[] concentrations = new double[nConcs];
+                List<PeakList> peakLists = new ArrayList<>();
+                for (int iConc = 0; iConc < nConcs; iConc++) {
+                    int id = idColumn.get(iConc);
+                    binderConcs[iConc] = macroMoleculeConc.get(iConc);
+                    concentrations[iConc] = ligandConc.get(iConc);
+                    String peakListLabel = peakListLabels.get(iConc);
+                    if (peakListLabel.startsWith("$")) {
+                        peakListLabel = peakListLabel.substring(1);
+                    }
+                    PeakList peakList = PeakList.get(peakListLabel);
+                    peakLists.add(peakList);
+                    idMap.put(id, peakList);
                 }
-                PeakList peakList = PeakList.get(peakListLabel);
-                peakLists.add(peakList);
-                idMap.put(id, peakList);
+                peakPath = new PeakPaths(listName, peakLists, concentrations, binderConcs, weights, tols, PeakPaths.PATHMODE.TITRATION);
+            } else {
+                List<Double> pressureList = loop.getColumnAsDoubleList("Pressure", 0.0);
+                int nPressures = idColumn.size();
+                double[] pressures = new double[nPressures];
+                double[] emptyArray = new double[nPressures];
+                List<PeakList> peakLists = new ArrayList<>();
+                for (int iPressure = 0; iPressure < nPressures; iPressure++) {
+                    int id = idColumn.get(iPressure);
+                    pressures[iPressure] = pressureList.get(iPressure);
+                    String peakListLabel = peakListLabels.get(iPressure);
+                    if (peakListLabel.startsWith("$")) {
+                        peakListLabel = peakListLabel.substring(1);
+                    }
+                    PeakList peakList = PeakList.get(peakListLabel);
+                    peakLists.add(peakList);
+                    idMap.put(id, peakList);
+                }
+                peakPath = new PeakPaths(listName, peakLists, pressures, emptyArray, weights, tols, PeakPaths.PATHMODE.PRESSURE);
+
             }
-            PeakPaths peakPath = new PeakPaths(listName, peakLists, concentrations, binderConcs, weights, tols, PeakPaths.PATHMODE.TITRATION);
             peakPath.store();
 
             loop = saveframe.getLoop("_Path");
@@ -128,7 +153,6 @@ public class PeakPathReader {
                 throw new ParseException("No \"_Par\" loop");
             }
             if (loop != null) {
-                int nPars = 2;
                 List<Integer> parIDColumn = loop.getColumnAsIntegerList("ID", 0);
                 List<Integer> parPathIdColumn = loop.getColumnAsIntegerList("Path_ID", 0);
                 List<Integer> parDimColumn = loop.getColumnAsIntegerList("Dim", 0);
@@ -136,40 +160,56 @@ public class PeakPathReader {
                 List<String> parActiveColumn = loop.getColumnAsList("Active");
                 List<List<Double>> parColumns = new ArrayList<>();
                 List<List<Double>> errColumns = new ArrayList<>();
-                int jPar = 0;
-                for (String parName : peakPath.getBaseParNames()) {
+                List<String> parNames = peakPath.getBaseParNames();
+                for (String parName : parNames) {
                     parColumns.add(loop.getColumnAsDoubleList(parName + "_val", null));
                     errColumns.add(loop.getColumnAsDoubleList(parName + "_val_err", null));
-                    jPar++;
                 }
-                int nPaths = parIDColumn.size();
-                System.out.println("npaths " + nPaths);
-                for (int i = 0; i < nPaths; i++) {
+                int useDims = pathMode == PeakPaths.PATHMODE.PRESSURE ? nDim : 1;
+                int nParsPerDim = parNames.size();
+                int nPars = nParsPerDim * useDims;
+                int nPaths = parIDColumn.size() / useDims;
+                int i = 0;
+                for (int iPath = 0; iPath < nPaths; iPath++) {
                     double[] pars = new double[nPars];
                     double[] errors = new double[nPars];
                     boolean ok = true;
-                    for (int iPar = 0; iPar < nPars; iPar++) {
-                        Double val = parColumns.get(iPar).get(i);
-                        if (val == null) {
-                            ok = false;
-                            break;
-                        }
-                        pars[iPar] = parColumns.get(iPar).get(i);
-                        errors[iPar] = errColumns.get(iPar).get(i);
-                    }
+                    boolean confirmed = false;
+                    boolean active = false;
                     int id = parPathIdColumn.get(i);
+                    if (parConfirmedColumn.get(i).equals("yes")) {
+                        confirmed = true;
+                    }
+                    if (parActiveColumn.get(i).equals("yes")) {
+                        active = true;
+                    }
+                    for (int iDim = 0; iDim < useDims; iDim++) {
+
+                        if (ok) {
+                            for (int iPar = 0; iPar < nParsPerDim; iPar++) {
+                                Double val = parColumns.get(iPar).get(i);
+                                if (val == null) {
+                                    ok = false;
+                                    break;
+                                }
+                                pars[iDim * nParsPerDim + iPar] = parColumns.get(iPar).get(i);
+                                errors[iDim * nParsPerDim + iPar] = errColumns.get(iPar).get(i);
+                            }
+                        }
+                        i++;
+
+                    }
                     PeakPath path = pathMap.get(id);
                     if (ok) {
                         path.setFitPars(pars);
                         path.setFitErrs(errors);
                     }
-                    if (parConfirmedColumn.get(i).equals("yes")) {
+                    if (confirmed) {
                         path.confirm();
                     }
-                    if (parActiveColumn.get(i).equals("yes")) {
-                        path.setActive(true);
-                    }
+                    path.setActive(active);
                 }
+
             }
         }
     }

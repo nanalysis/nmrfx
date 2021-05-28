@@ -274,7 +274,7 @@ public class PeakPath implements Comparable<PeakPath> {
         StringBuilder sBuilder = new StringBuilder();
         sBuilder.append(String.format("%4d %4d %d %3s %3s", id, pathID, dim + 1,
                 (confirmed ? "yes" : "no"), (active ? "yes" : "no")));
-        int nPars = peakPaths.pathMode == PeakPaths.PATHMODE.PRESSURE ? 2 : 2;
+        int nPars = peakPaths.pathMode == PeakPaths.PATHMODE.PRESSURE ? 3 : 2;
 
         int start = dim * nPars;
         for (int i = 0; i < nPars; i++) {
@@ -317,7 +317,7 @@ public class PeakPath implements Comparable<PeakPath> {
             }
         }
         sBuilder.append(" ");
-        sBuilder.append(String.format("%.3f %b", radius, confirmed()));
+        sBuilder.append(String.format("%.3f %b %b %b", radius, confirmed(), isActive(), hasPars()));
         return sBuilder.toString();
     }
 }

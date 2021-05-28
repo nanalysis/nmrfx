@@ -81,12 +81,14 @@ public class PeakPaths implements PeakListener {
         TITRATION,
         PRESSURE;
     }
+    Comparator<Peak> peakComparator = (o1, o2) -> Integer.compare(o1.getIdNum(), o2.getIdNum());
+
     boolean fit0 = false;
     ArrayList<PeakList> peakLists = new ArrayList<>();
 //    ArrayList<ArrayList<PeakDistance>> filteredLists = new ArrayList<>();
     String name = "path1";
     String details = "";
-    Map<Peak, PeakPath> paths = new HashMap<>();
+    Map<Peak, PeakPath> paths = new TreeMap<>(peakComparator);
     final PeakList firstList;
     final double[][] indVars;
     int[] peakDims = {0, 1};
@@ -112,7 +114,7 @@ public class PeakPaths implements PeakListener {
     }
 
     public PeakPaths(String name, final List<PeakList> peakLists, double[] concentrations,
-                     final double[] binderConcs, final double[] weights, double[] tols, PATHMODE pathMode) {
+            final double[] binderConcs, final double[] weights, double[] tols, PATHMODE pathMode) {
         this.name = name;
         this.pathMode = pathMode;
         this.peakLists = new ArrayList<>();
@@ -290,6 +292,7 @@ public class PeakPaths implements PeakListener {
         if (pathMode == PATHMODE.PRESSURE) {
             parNames.add("A");
             parNames.add("B");
+            parNames.add("C");
         } else {
             if (fit0) {
                 parNames.add("A");
@@ -614,6 +617,7 @@ public class PeakPaths implements PeakListener {
     public double[][] getXValues() {
         return indVars;
     }
+
     public double getDTol() {
         return dTol;
     }
@@ -626,8 +630,8 @@ public class PeakPaths implements PeakListener {
         return weights;
     }
 
-     public int[] getPeakDims() {
+    public int[] getPeakDims() {
         return peakDims;
-     }
+    }
 
 }
