@@ -47,6 +47,7 @@ public class CheckComboOperationItem extends OperationItem implements Observable
         super(category, name, description);
         this.defaultValue = defaultValue;
         this.value = defaultValue;
+        values.add(defaultValue);
         this.listener = listener;
         this.choices = new ArrayList(choices);
     }
