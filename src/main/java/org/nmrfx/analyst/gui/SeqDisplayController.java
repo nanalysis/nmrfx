@@ -60,19 +60,7 @@ import org.nmrfx.utils.properties.NvFxPropertyEditorFactory;
  */
 public class SeqDisplayController implements Initializable {
 
-    private final static Map<String, Double> SCALES = new HashMap<>();
     Color[] colors = {Color.BLUE, Color.RED, Color.BLACK, Color.GREEN, Color.CYAN, Color.MAGENTA, Color.YELLOW};
-
-    static {
-        SCALES.put("N", -0.472);
-        SCALES.put("C", 0.185);
-        SCALES.put("CB", -0.154);
-        SCALES.put("CA", 0.198);
-        SCALES.put("H", -0.067);
-        SCALES.put("HA", -0.026);
-        SCALES.put("HB", 0.022);
-
-    }
 
     static final String[] RNA_ATOMS = {"H5,H8", "H6,H2", "H1'", "H2'", "H3'", "H4'", "H5'",
         "C5,C8", "C6,C2", "C1'", "C2'", "C3'", "C4'", "C5'"
@@ -108,6 +96,7 @@ public class SeqDisplayController implements Initializable {
 
     ChoiceOperationItem showResNumberItem;
     BooleanOperationItem showAtomShiftsItem;
+    DoubleRangeOperationItem fontScaleItem;
     BooleanOperationItem showViennaItem;
     BooleanOperationItem showSeqCharItem;
     BooleanOperationItem showZIRDItem;
@@ -119,6 +108,7 @@ public class SeqDisplayController implements Initializable {
     CheckComboOperationItem groupShiftsAtomsItem;
     DoubleRangeOperationItem atomScaleItem;
     DoubleRangeOperationItem zirdHeightItem;
+    DoubleRangeOperationItem atomBarHeightItem;
 
     double smallGap = 5.0;
     boolean verticalResNums = false;
@@ -163,6 +153,9 @@ public class SeqDisplayController implements Initializable {
         propertySheet.setMode(PropertySheet.Mode.CATEGORY);
         propertySheet.setModeSwitcherVisible(false);
         propertySheet.setSearchBoxVisible(false);
+
+        fontScaleItem = new DoubleRangeOperationItem((a, b, c) -> refresh(),
+                1.25, 1.0, 3.0, false, "Annotations", "Font Scale", "Scale for atom and residue number label font");
 
         showResNumberItem = new ChoiceOperationItem((a, b, c) -> {
             refresh();
@@ -213,16 +206,20 @@ public class SeqDisplayController implements Initializable {
         }, "", groupShiftsAtoms, "Atom Shifts", "Group By", "Select types to group atoms with");
 
         atomScaleItem = new DoubleRangeOperationItem((a, b, c) -> refresh(),
-                5.0, 1.0, 20.0, false, "Atom Shifts", "Scale", "Scale delta values by by this amount");
+                5.0, 1.0, 21.0, false, "Atom Shifts", "Scale", "Scale delta values by by this amount");
 
+        atomBarHeightItem = new DoubleRangeOperationItem((a, b, c) -> refresh(),
+                1.0, 1.0, 5.0, false, "Atom Shifts", "Height", "Scale atom bar height by this amount");
         zirdHeightItem = new DoubleRangeOperationItem((a, b, c) -> refresh(),
-                5.0, 1.0, 20.0, false, "Residue Order Value", "Height", "Scale region height by this amount");
+                5.0, 1.0, 21.0, false, "Residue Order Value", "Height", "Scale region height by this amount");
 
-        propertySheet.getItems().addAll(showResNumberItem, showSeqCharItem, showViennaItem,
+        propertySheet.getItems().addAll(showResNumberItem, fontScaleItem,
+                showSeqCharItem, showViennaItem,
                 showAtomShiftsItem,
                 proteinShiftsAtomsItem, rnaShiftsAtomsItem,
                 showAtomShiftsDotItem,
                 showAtomShiftsCombineItem, groupShiftsAtomsItem, atomScaleItem,
+                atomBarHeightItem,
                 showZIRDItem, modeZIRDItem, zirdHeightItem);
         masterDetailPane.setDividerPosition(0.7);
         refresh();
@@ -331,6 +328,14 @@ public class SeqDisplayController implements Initializable {
         }
     }
 
+    void drawYAxisLabel(GraphicsContextInterface gC, double x, double y, String text) {
+        gC.setTextAlign(TextAlignment.RIGHT);
+        gC.setTextBaseline(VPos.CENTER);
+        gC.setFill(Color.BLACK);
+        gC.fillText(text, x - 5, y);
+
+    }
+
     double getScale(Atom atom) {
         double scale = atom.getRefPPM(0).getError();
         return scale;
@@ -393,7 +398,7 @@ public class SeqDisplayController implements Initializable {
     void drawDotScores(GraphicsContextInterface gC, Residue residue,
             List<String> aNames, double x, double y,
             double atomBarWidth, double height, boolean combineMode) {
-        y = y + height / 2.0 + smallGap;
+        y = y + height / 2.0;
         int iAtom = 0;
         double deltaMax = 1.05;
         int nUp = 0;
@@ -426,7 +431,7 @@ public class SeqDisplayController implements Initializable {
                                 delta = deltaMax;
                             }
                             color = Color.RED;
-                            symbol = Symbol.TRIANGLE_DOWN;
+                            symbol = Symbol.TRIANGLE_UP;
                         } else if (delta < -1.0) {
                             iOffset = nDown;
                             if (combineMode) {
@@ -439,7 +444,7 @@ public class SeqDisplayController implements Initializable {
                                 delta = -deltaMax;
                             }
                             color = Color.RED;
-                            symbol = Symbol.TRIANGLE_UP;
+                            symbol = Symbol.TRIANGLE_DOWN;
                         } else {
                             iOffset = nGood;
                             color = Color.BLUE;
@@ -462,9 +467,9 @@ public class SeqDisplayController implements Initializable {
                         double h = Math.abs(delta * height / deltaMax * 0.5);
                         double y1;
                         if (delta < 0.0) {
-                            y1 = y - h;
-                        } else {
                             y1 = y + h;
+                        } else {
+                            y1 = y - h;
                         }
                         symbol.draw(gC, x1, y1, halfSize, color, color);
                     }
@@ -527,8 +532,9 @@ public class SeqDisplayController implements Initializable {
             }
         } else {
             gC.fillText(resNumStr, x, y);
-
         }
+        gC.setStroke(Color.BLACK);
+        gC.strokeLine(x, y + 3, x, y + 5);
     }
 
     void drawSeqCharLabel(GraphicsContextInterface gC, double x, double y, Residue residue) {
@@ -545,6 +551,18 @@ public class SeqDisplayController implements Initializable {
         gC.setTextBaseline(VPos.BASELINE);
         gC.setTextAlign(TextAlignment.CENTER);
         gC.fillText(text, x, y);
+    }
+
+    void drawRotatedLabel(GraphicsContextInterface gC, double x, double y, String text) {
+        gC.setTextBaseline(VPos.BASELINE);
+        gC.setTextAlign(TextAlignment.CENTER);
+        gC.save();
+        gC.translate(x, y);
+        gC.rotate(270);
+        gC.nativeCoords(true);
+        gC.fillText(text, 0, 0);
+        gC.nativeCoords(false);
+        gC.restore();
 
     }
 
@@ -585,13 +603,21 @@ public class SeqDisplayController implements Initializable {
             double[] canvasSize = {100, 100};
             return canvasSize;
         }
-        gC.setFont(Font.font(fontSizeProp.get()));
+        int fontSize = fontSizeProp.get();
+        int labelFontSize = (int) (fontSize * fontScaleItem.doubleValue());
+
+        Font labelFont = Font.font(labelFontSize);
+        Font font = Font.font(fontSize);
+        gC.setFont(font);
+
         double fontHeight = gC.getFont().getSize();
-        double fontWidth = GUIUtils.getTextWidth("M", gC.getFont());
-        double heightMultiplier = 1.0;
+        double fontWidth = GUIUtils.getTextWidth("M", font);
+        double labelFontWidth = GUIUtils.getTextWidth("M", labelFont);
+
         double atomBarWidth = fontWidth + 2;
-        double atomBarHeight = fontHeight * heightMultiplier + 10;
-        double xOrigin = 15 + 6 * fontWidth;
+        double atomBarHeight = fontHeight * atomBarHeightItem.doubleValue() + 10;
+        double zIDRHeight = fontHeight * zirdHeightItem.doubleValue() + 10;
+        double xOrigin = 15 + 6 * labelFontWidth;
         double sectionGap = fontHeight * 1.0;
         double yOrigin = sectionGap;
         double y = yOrigin;
@@ -622,9 +648,9 @@ public class SeqDisplayController implements Initializable {
             double resNumHeight;
             if (verticalResNums) {
                 int nChars = String.valueOf(polymer.getResidues().get(nResidues - 1).getResNum()).length();
-                resNumHeight = nChars * fontHeight + 5;
+                resNumHeight = nChars * labelFontSize + 5;
             } else {
-                resNumHeight = fontHeight + 5;
+                resNumHeight = labelFontSize + 5;
             }
 
             for (Residue residue : polymer.getResidues()) {
@@ -644,12 +670,14 @@ public class SeqDisplayController implements Initializable {
                         }
                     }
                     if (showExtra || ((resNum % 10) == 0)) {
+                        gC.setFont(labelFont);
                         drawResNumLabel(gC, x, y, resNum);
                     }
                 }
 
                 if (showSeqCharItem.getValue()) {
                     y += fontHeight + smallGap;
+                    gC.setFont(font);
                     drawSeqCharLabel(gC, x, y, residue);
                 }
                 if (polymer.isRNA() && showViennaItem.getValue() && (dotBracket != null)) {
@@ -660,11 +688,14 @@ public class SeqDisplayController implements Initializable {
                 }
                 if (showAtomShiftsItem.getValue()) {
                     y += smallGap;
+                    double startY = y;
+                    y += sectionGap;
                     if (!dotMode) {
                         for (var group : aNames) {
                             if (!group.isEmpty()) {
                                 if (cMode == CANVAS_MODE.DRAW) {
                                     if (lastResidueOnLine) {
+                                        gC.setFont(labelFont);
                                         drawAtomLabels(gC, group, xOrigin, y, atomBarWidth, atomBarHeight, false);
                                     }
                                     drawAtomScores(gC, residue, group, x, y, atomBarWidth, atomBarHeight);
@@ -677,24 +708,31 @@ public class SeqDisplayController implements Initializable {
                             double useHeight = combineMode ? (atomBarHeight + smallGap) * biggestGroup : atomBarHeight;
                             if (cMode == CANVAS_MODE.DRAW) {
                                 if (lastResidueOnLine) {
+                                    gC.setFont(labelFont);
                                     drawAtomLabels(gC, group, xOrigin, y, atomBarWidth, atomBarHeight, combineMode);
                                 }
-
                                 drawDotScores(gC, residue, group, x, y, atomBarWidth, useHeight, combineMode);
                             }
                             if (combineMode) {
+                                if (iRes == 0) {
+                                    gC.setStroke(Color.BLACK);
+                                    drawLine(gC, xOrigin, y + useHeight / 2.0, xOrigin + resWidth, y + useHeight / 2.0);
+                                }
                                 y += useHeight + sectionGap;
                             } else {
                                 y += (useHeight + smallGap) * group.size();
                             }
                         }
                     }
+                    if (lastResidueOnLine) {
+                        drawBorder(gC, xOrigin, startY, resWidth, y - startY);
+                    }
                 }
                 if (showZIRDItem.getValue() && polymer.isPeptide()) {
                     double zIDR = ResidueProperties.calcZIDR(residue, 0, 0);
-                    double zIDRHeight = atomBarHeight * zirdHeightItem.doubleValue();
                     double maxZ = 15.0;
                     double minZ = -3.0;
+                    y += smallGap;
                     if (cMode == CANVAS_MODE.DRAW) {
                         if (modeZIRDItem.getValue().equals("Bar")) {
                             gC.setFill(Color.GRAY);
@@ -707,6 +745,15 @@ public class SeqDisplayController implements Initializable {
                             double y1 = y + smallGap + zIDRHeight * (1.0 - ((3.0 - minZ) / (maxZ - minZ)));
                             gC.setStroke(Color.BLUE);
                             drawLine(gC, xOrigin, y1, xOrigin + resWidth, y1);
+                            y1 = y + smallGap + zIDRHeight * (1.0 - ((0.0 - minZ) / (maxZ - minZ)));
+                            drawLine(gC, xOrigin, y1, xOrigin + resWidth, y1);
+                            gC.setFont(font);
+                            drawYAxisLabel(gC, xOrigin, y1, "0.0");
+                            y1 = y + smallGap + zIDRHeight * (1.0 - ((maxZ - minZ) / (maxZ - minZ)));
+                            drawYAxisLabel(gC, xOrigin, y1, String.valueOf(maxZ));
+                            y1 = y + zIDRHeight / 2.0;
+                            gC.setFont(labelFont);
+                            drawRotatedLabel(gC, xOrigin - 3.5 * fontWidth, y1, "Z-Score");
 
                         }
                     }
