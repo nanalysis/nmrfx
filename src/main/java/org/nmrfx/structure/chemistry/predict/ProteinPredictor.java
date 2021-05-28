@@ -23,6 +23,7 @@ import org.nmrfx.structure.chemistry.energy.PropertyGenerator;
 public class ProteinPredictor {
 
     public final static Map<String, Double> RANDOM_SCALES = new HashMap<>();
+    // values from Journal of Biomolecular NMR (2018) 70:141–165 Potenci
 
     static {
         RANDOM_SCALES.put("N", -0.472);
