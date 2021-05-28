@@ -160,9 +160,13 @@ public class PathPlotTool {
                         iProp--;  // account for Peak column
                         boolean isErr = iProp % 2 == 1;
                         iProp /= 2;  // account for Dev columns
-                        double v = isErr ? p.getValue().getErr(iProp) : p.getValue().getPar(iProp);
-                        ObservableValue<Number> ov = new SimpleDoubleProperty(v);
-                        return ov;
+                        if (p.getValue().hasPars()) {
+                            double v = isErr ? p.getValue().getErr(iProp) : p.getValue().getPar(iProp);
+                            ObservableValue<Number> ov = new SimpleDoubleProperty(v);
+                            return ov;
+                        } else {
+                            return null;
+                        }
                     }
                 });
                 col.setCellFactory(c
