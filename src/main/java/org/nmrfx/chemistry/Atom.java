@@ -109,7 +109,8 @@ public class Atom implements IAtom {
     final boolean[] flags = new boolean[ATOMFLAGS.values().length];
     Optional<Map<String, Object>> properties = Optional.empty();
     public Atom daughterAtom = null;
-    public Map<String, RelaxationData> relaxData = new HashMap<>();
+    private Map<String, RelaxationData> relaxData = new HashMap<>();
+    private Map<String, OrderPar> orderPars = new HashMap<>();
 
     public Atom(String name) {
         this.name = name;
@@ -341,6 +342,14 @@ public class Atom implements IAtom {
             }
         }
         bonds = newBonds;
+    }
+
+    public void addOrderPar(String name, OrderPar data) {
+        orderPars.put(name, data);
+    }
+
+    public void addRelaxationData(String name, RelaxationData data) {
+        relaxData.put(name, data);
     }
 
     public Map<String, RelaxationData> getRelaxationData() {

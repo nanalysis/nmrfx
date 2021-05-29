@@ -362,6 +362,17 @@ public class NMRStarReader {
         }
     }
 
+    public void buildOrder() throws ParseException {
+        for (Saveframe saveframe : star3.getSaveFrames().values()) {
+            if (saveframe.getCategoryName().equals("order_parameters")) {
+                if (DEBUG) {
+                    System.err.println("process order pars " + saveframe.getName());
+                }
+                processOrder(saveframe);
+            }
+        }
+    }
+
     public void buildDataset(Map tagMap, String datasetName) throws ParseException, IOException {
         String name = STAR3.getTokenFromMap(tagMap, "Name");
         String path = STAR3.getTokenFromMap(tagMap, "Directory_path");
@@ -1347,7 +1358,7 @@ public class NMRStarReader {
 
             RelaxationData relaxData = new RelaxationData(frameName, relaxTypes.NOE, atoms, Double.parseDouble(field), temperature, value, error, extras);
 //            System.out.println("reader NOE" + relaxData);
-            atom.relaxData.put(frameName, relaxData);
+            atom.addRelaxationData(frameName, relaxData);
 //            System.out.println(atom.relaxData);
         }
     }
@@ -1440,11 +1451,109 @@ public class NMRStarReader {
             if (expType.equals(relaxTypes.T1)) {
                 RelaxationData relaxData = new RelaxationData(frameName, expType, new ArrayList<>(), field, temperature, value, error, extras);
 //                System.out.println("reader " + relaxData);
-                atom.relaxData.put(frameName, relaxData);
+                atom.addRelaxationData(frameName, relaxData);
 //                System.out.println("reader atom.relaxData = " + atom + " " + atom.relaxData);
             } else {
                 RelaxationRex relaxData = new RelaxationRex(frameName, expType, new ArrayList<>(), field, temperature, value, error, RexValue, RexError, extras);
-                atom.relaxData.put(frameName, relaxData);
+                atom.addRelaxationData(frameName, relaxData);
+            }
+        }
+    }
+
+    Optional<Atom> getAtom(MoleculeBase mol,
+            Saveframe saveframe,
+            List<String> entityAssemblyIDColumn,
+            List<String> entityIDColumn,
+            List<String> compIdxIDColumn,
+            List<String> atomColumn, int i
+    ) {
+        Optional<Atom> result = Optional.empty();
+        String iEntity = (String) entityIDColumn.get(i);
+        String entityAssemblyID = (String) entityAssemblyIDColumn.get(i);
+        if (entityAssemblyID.equals(".")) {
+            entityAssemblyID = "1";
+        }
+        if (iEntity.equals("?")) {
+            return result;
+        }
+        String iRes = (String) compIdxIDColumn.get(i);
+        String atomName = (String) atomColumn.get(i);
+
+        var compoundMap = MoleculeBase.compoundMap();
+        String mapID = entityAssemblyID + "." + iEntity + "." + iRes;
+        Compound compound = compoundMap.get(mapID);
+        if (compound == null) {
+            //throw new ParseException("invalid compound in conformer saveframe \""+mapID+"\"");
+            System.err.println("invalid compound in " + saveframe.getName() + " saveframe \"" + mapID + "\"");
+        } else {
+            if (mol == null) {
+                mol = compound.molecule;
+            }
+            Atom atom = compound.getAtomLoose(atomName);
+            if (atom == null) {
+                System.err.println("No atom \"" + mapID + "." + atomName + "\"");
+            } else {
+                result = Optional.of(atom);
+            }
+        }
+        return result;
+    }
+
+    public void processOrder(Saveframe saveframe) throws ParseException {
+        String catName = saveframe.getCategoryName();
+        String frameName = saveframe.getName();
+        for (String cat : saveframe.getCategories()) {
+            System.out.println(cat);
+        }
+        String mainCat = "_Order_parameter_list";
+        System.out.println(catName + " " + frameName);
+        Double field = saveframe.getDoubleValue(mainCat, "Rex_field_strength");
+        System.out.println(field);
+        String[] unitVars = {"Tau_e", "Tau_s", "Tau_f", "Rex"};
+        Map<String, String> extras = new HashMap<>();
+        for (var unitVar : unitVars) {
+            String units = saveframe.getValue(mainCat, unitVar + "_val_units");
+            extras.put(unitVar + "_units", units);
+        }
+
+        MoleculeBase mol = MoleculeFactory.getActive();
+        Loop loop = saveframe.getLoop("_Order_param");
+        if (loop == null) {
+            System.err.println("No _Order_param loop");
+            return;
+        }
+        List<String> entityAssemblyIDColumn = loop.getColumnAsList("Entity_assembly_ID");
+        List<String> entityIDColumn = loop.getColumnAsList("Entity_ID");
+        List<String> compIdxIDColumn = loop.getColumnAsList("Comp_index_ID");
+        List<String> atomColumn = loop.getColumnAsList("Atom_ID");
+
+        String[] parNames = OrderPar.getParNames();
+        List<Double>[] valColumns = new ArrayList[parNames.length];
+        List<Double>[] errColumns = new ArrayList[parNames.length];
+        int iCol = 0;
+        for (var parName : parNames) {
+            valColumns[iCol] = loop.getColumnAsDoubleList(parName + "_val", null);
+            errColumns[iCol] = loop.getColumnAsDoubleList(parName + "_val_fit_err", null);
+            iCol++;
+        }
+        var modelColumn = loop.getColumnAsDoubleList("Model_free_sum_squared_errs", null);
+        var modelNameColumn = loop.getColumnAsList("Model_fit");
+        Double[] values = new Double[parNames.length];
+        Double[] errs = new Double[parNames.length];
+
+        for (int i = 0; i < entityAssemblyIDColumn.size(); i++) {
+            Optional<Atom> atomOpt = getAtom(mol, saveframe,
+                    entityAssemblyIDColumn, entityIDColumn, compIdxIDColumn,
+                    atomColumn, i);
+            if (atomOpt.isPresent()) {
+                for (int iPar = 0; iPar < parNames.length; iPar++) {
+                    values[iPar] = valColumns[iPar].get(i);
+                    errs[iPar] = errColumns[iPar].get(i);
+                }
+                Double modelSSErr = modelColumn.get(i);
+                String modelName = modelNameColumn.get(i);
+                OrderPar orderPar = new OrderPar(values, errs, modelSSErr, modelName);
+                atomOpt.get().addOrderPar(frameName, orderPar);
             }
         }
     }
@@ -1734,6 +1843,10 @@ public class NMRStarReader {
                 System.err.println("process T2");
             }
             buildRelaxation(relaxTypes.T2);
+            if (DEBUG) {
+                System.err.println("process Order");
+            }
+            buildOrder();
             if (DEBUG) {
                 System.err.println("process runabout");
             }

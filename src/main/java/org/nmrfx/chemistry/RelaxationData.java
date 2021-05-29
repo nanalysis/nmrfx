@@ -89,11 +89,10 @@ public class RelaxationData {
     public static Collection<RelaxationData> getRelaxationData(List<Atom> atoms) {
         List<RelaxationData> relaxDataSet = new ArrayList<>();
         atoms.forEach((atom) -> {
-            atom.relaxData.keySet().forEach((key) -> {
+            atom.getRelaxationData().keySet().forEach((key) -> {
                 relaxDataSet.add(atom.getRelaxationData(key));
             });
         });
-
         return relaxDataSet;
     }
 
