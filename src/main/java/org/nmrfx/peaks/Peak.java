@@ -10,6 +10,7 @@ import java.util.*;
 import java.util.function.Function;
 
 import static java.util.Comparator.comparing;
+import org.nmrfx.utilities.NMRFxColor;
 
 public class Peak implements Comparable, PeakOrMulti {
 
@@ -994,7 +995,7 @@ public class Peak implements Comparable, PeakOrMulti {
 
     public void setColor(String colorName) {
         if (colorName != null) {
-            colorArray = ColorUtil.fromRGBCode(colorName);
+            colorArray = NMRFxColor.parseColor(colorName);
         }
         peakUpdated(this);
     }

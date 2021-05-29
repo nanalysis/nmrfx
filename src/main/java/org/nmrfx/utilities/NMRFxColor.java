@@ -57,12 +57,30 @@ public class NMRFxColor {
     }
 
     public static NMRFxColor fromRGBCode(String rgbCode) {
+        if (rgbCode.isBlank()) {
+            return NMRFxColor.BLACK;
+        }
         int[] rgb = ColorUtil.fromRGBCode(rgbCode);
         if (rgb.length == 4) {
             return new NMRFxColor(rgb[0], rgb[1], rgb[2], rgb[3]);
         } else {
             return new NMRFxColor(rgb[0], rgb[1], rgb[2]);
         }
+    }
+
+    public static int[] parseColor(String colorStr) {
+        int[] rgb;
+        if (colorStr.startsWith("0x")) {
+            rgb = ColorUtil.fromRGBCode(colorStr);
+        } else {
+            NMRFxColor fxColor = NvUtil.color(colorStr);
+            rgb = new int[4];
+            rgb[0] = fxColor.r;
+            rgb[1] = fxColor.g;
+            rgb[2] = fxColor.b;
+            rgb[3] = fxColor.alpha;
+        }
+        return rgb;
     }
 
 }
