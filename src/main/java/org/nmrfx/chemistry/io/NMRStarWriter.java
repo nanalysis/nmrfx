@@ -17,6 +17,8 @@
  */
 package org.nmrfx.chemistry.io;
 
+import org.nmrfx.chemistry.relax.RelaxationRex;
+import org.nmrfx.chemistry.relax.RelaxationData;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -39,7 +41,7 @@ import org.nmrfx.star.STAR3;
 import org.nmrfx.peaks.PeakPaths;
 import org.nmrfx.chemistry.constraints.ConstraintSet;
 import org.nmrfx.peaks.ResonanceFactory;
-import org.nmrfx.chemistry.RelaxationData.relaxTypes;
+import org.nmrfx.chemistry.relax.RelaxationData.relaxTypes;
 
 /**
  *
@@ -769,7 +771,7 @@ public class NMRStarWriter {
         result.append(entityID);
         return result.toString();
     }
-    
+
     /**
      * Write out the NOE sections of the STAR file.
      *
@@ -830,10 +832,10 @@ public class NMRStarWriter {
         chan.write("   stop_\n\n");
 
         String[] loopStrings = {"ID", "Assembly_atom_ID_1", "Entity_assembly_ID_1", "Entity_ID_1", "Comp_index_ID_1", "Seq_ID_1",
-                "Comp_ID_1", "Atom_ID_1", "Atom_type_1", "Atom_isotope_number_1", "Assembly_atom_ID_2", "Entity_assembly_ID_2", "Entity_ID_2", 
-                "Comp_index_ID_2", "Seq_ID_2", "Comp_ID_2", "Atom_ID_2", "Atom_type_2", "Atom_isotope_number_2", "Val", "Val_err", 
-                "Resonance_ID_1", "Resonance_ID_2", "Auth_entity_assembly_ID_1", "Auth_seq_ID_1", "Auth_comp_ID_1", "Auth_atom_ID_1", 
-                "Auth_entity_assembly_ID_2", "Auth_seq_ID_2", "Auth_comp_ID_2", "Auth_atom_ID_2", "Entry_ID", "Heteronucl_NOE_list_ID"};
+            "Comp_ID_1", "Atom_ID_1", "Atom_type_1", "Atom_isotope_number_1", "Assembly_atom_ID_2", "Entity_assembly_ID_2", "Entity_ID_2",
+            "Comp_index_ID_2", "Seq_ID_2", "Comp_ID_2", "Atom_ID_2", "Atom_type_2", "Atom_isotope_number_2", "Val", "Val_err",
+            "Resonance_ID_1", "Resonance_ID_2", "Auth_entity_assembly_ID_1", "Auth_seq_ID_1", "Auth_comp_ID_1", "Auth_atom_ID_1",
+            "Auth_entity_assembly_ID_2", "Auth_seq_ID_2", "Auth_comp_ID_2", "Auth_atom_ID_2", "Entry_ID", "Heteronucl_NOE_list_ID"};
 
         chan.write("   loop_\n");
         for (String loopString : loopStrings) {
@@ -842,7 +844,7 @@ public class NMRStarWriter {
         chan.write("\n");
 
         int idx = 1;
-        
+
         List<String> prevRes = new ArrayList<>();
         Iterator entityIterator = molecule.entityLabels.values().iterator();
         while (entityIterator.hasNext()) {
@@ -853,15 +855,15 @@ public class NMRStarWriter {
                         .filter(r -> r.getID().contains("RING_fit")).collect(Collectors.toList());
                 if (noeDataList != null) {
                     for (RelaxationData noeData : noeDataList) {
-                            Double value = noeData.getValue();
-                            Double error = noeData.getError();
-                            Atom atom2 = noeData.getExtraAtoms().get(0);
-                            String outputLine = toStarNOEString(idx, listID, entityID, atom, atom2, value, error);
-                            if (outputLine != null && !prevRes.contains(entityID + "." + atom.getResidueNumber())) {
-                                chan.write("      " + outputLine + "\n");
-                                prevRes.add(entityID + "." + atom.getResidueNumber());
-                                idx++;
-                            }
+                        Double value = noeData.getValue();
+                        Double error = noeData.getError();
+                        Atom atom2 = noeData.getExtraAtoms().get(0);
+                        String outputLine = toStarNOEString(idx, listID, entityID, atom, atom2, value, error);
+                        if (outputLine != null && !prevRes.contains(entityID + "." + atom.getResidueNumber())) {
+                            chan.write("      " + outputLine + "\n");
+                            prevRes.add(entityID + "." + atom.getResidueNumber());
+                            idx++;
+                        }
                     }
                 }
             }
@@ -915,7 +917,7 @@ public class NMRStarWriter {
                     default:
                         break;
                 }
-            } 
+            }
             sBuilder.append(String.format("%-3s", "."));
             sBuilder.append(String.format("%-3d", entityID));
             sBuilder.append(String.format("%-3d", entityID));
@@ -938,7 +940,7 @@ public class NMRStarWriter {
                 resNum = atom.getResidueNumber();
                 resName = atom.getResidueName();
                 nucName = atom.getName();
-            } 
+            }
             sBuilder.append(String.format("%-3s", "."));
             sBuilder.append(String.format("%-6d", resNum));
             sBuilder.append(String.format("%-4s", resName));
@@ -950,7 +952,6 @@ public class NMRStarWriter {
         return sBuilder.toString();
 
     }
-
 
     /**
      * Write out the Relaxation Data (T1, T2, T1rho) sections of the STAR file.
@@ -1030,7 +1031,7 @@ public class NMRStarWriter {
                 "Comp_ID", "Atom_ID", "Atom_type", "Atom_isotope_number", expType + "_val", expType + "_val_err", "Rex_val", "Rex_err",
                 "Resonance_ID", "Auth_entity_assembly_ID", "Auth_seq_ID", "Auth_comp_ID", "Auth_atom_ID", "Entry_ID", "Heteronucl_" + expType + "_list_ID"};
             loopStrings = loopStrings2;
-        } 
+        }
         chan.write("   loop_\n");
         for (String loopString : loopStrings) {
             chan.write("      _" + expType + "." + loopString + "\n");
@@ -1038,7 +1039,7 @@ public class NMRStarWriter {
         chan.write("\n");
 
         int idx = 1;
-        
+
         List<String> prevRes = new ArrayList<>();
         Iterator entityIterator = molecule.entityLabels.values().iterator();
         while (entityIterator.hasNext()) {
@@ -1049,23 +1050,23 @@ public class NMRStarWriter {
                         .filter(r -> r.getID().contains("RING_fit")).collect(Collectors.toList());
                 if (relaxDataList != null) {
                     for (RelaxationData relaxData : relaxDataList) {
-                            Double value = relaxData.getValue();
-                            Double error = relaxData.getError();
-                            List<Double> results = new ArrayList<>(); 
-                            results.add(value);
-                            results.add(error);
-                            if (expType.equals(relaxTypes.T2) || expType.equals(relaxTypes.T1RHO)) {
-                                Double RexValue = ((RelaxationRex) relaxData).getRexValue();
-                                Double RexError = ((RelaxationRex) relaxData).getRexError();
-                                results.add(RexValue);
-                                results.add(RexError);
-                            }
-                            String outputLine = toStarRelaxationString(idx, expType, listID, entityID, atom, results);
-                            if (outputLine != null && !prevRes.contains(entityID + "." + atom.getResidueNumber())) {
-                                chan.write("      " + outputLine + "\n");
-                                prevRes.add(entityID + "." + atom.getResidueNumber());
-                                idx++;
-                            }
+                        Double value = relaxData.getValue();
+                        Double error = relaxData.getError();
+                        List<Double> results = new ArrayList<>();
+                        results.add(value);
+                        results.add(error);
+                        if (expType.equals(relaxTypes.T2) || expType.equals(relaxTypes.T1RHO)) {
+                            Double RexValue = ((RelaxationRex) relaxData).getRexValue();
+                            Double RexError = ((RelaxationRex) relaxData).getRexError();
+                            results.add(RexValue);
+                            results.add(RexError);
+                        }
+                        String outputLine = toStarRelaxationString(idx, expType, listID, entityID, atom, results);
+                        if (outputLine != null && !prevRes.contains(entityID + "." + atom.getResidueNumber())) {
+                            chan.write("      " + outputLine + "\n");
+                            prevRes.add(entityID + "." + atom.getResidueNumber());
+                            idx++;
+                        }
                     }
                 }
             }
@@ -1077,14 +1078,16 @@ public class NMRStarWriter {
     }
 
     /**
-     * Write the data lines in the Relaxation Data (T1, T2, T1rho) blocks of the STAR file.
+     * Write the data lines in the Relaxation Data (T1, T2, T1rho) blocks of the
+     * STAR file.
      *
      * @param idx int. The line index
      * @param expType relaxTypes. The experiment type: T1, T2, T1rho.
      * @param listID int. The number of the T1/T2/T1rho block in the file.
      * @param entityID int. The number of the molecular entity.
      * @param atom Atom. The atom in the molecule.
-     * @param results List<Double>. The relaxation and error values: {value, error, RexValue, RexError}.
+     * @param results List<Double>. The relaxation and error values: {value,
+     * error, RexValue, RexError}.
      * @return
      */
     public static String toStarRelaxationString(int idx, relaxTypes expType, int listID, int entityID, Atom atom, List<Double> results) {
@@ -1115,7 +1118,7 @@ public class NMRStarWriter {
                 default:
                     break;
             }
-        } 
+        }
 
         StringBuilder sBuilder = new StringBuilder();
         sBuilder.append(String.format("%-3d", idx));
@@ -1138,7 +1141,7 @@ public class NMRStarWriter {
         sBuilder.append(String.format("%-3s", "."));
         sBuilder.append(String.format("%-3s", "."));
         sBuilder.append(String.format("%-6d", resNum));
-        sBuilder.append(String.format("%-4s", oneLetter)); 
+        sBuilder.append(String.format("%-4s", oneLetter));
         sBuilder.append(String.format("%-4s", nucName));
         sBuilder.append(String.format("%-4s", "."));
         sBuilder.append(String.format("%-4d", listID));
@@ -1225,7 +1228,7 @@ public class NMRStarWriter {
                     }
                 }
             }
-        } 
+        }
     }
 
 }

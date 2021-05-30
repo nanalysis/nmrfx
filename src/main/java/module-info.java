@@ -6,6 +6,7 @@ module org.nmrfx.core {
     exports org.nmrfx.chemistry.utilities;
     exports org.nmrfx.chemistry.constraints;
     exports org.nmrfx.chemistry.protein;
+    exports org.nmrfx.chemistry.relax;
     exports org.nmrfx.chemistry.search;
     exports org.nmrfx.math;
     exports org.nmrfx.math.units;

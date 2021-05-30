@@ -17,6 +17,8 @@
  */
 package org.nmrfx.chemistry;
 
+import org.nmrfx.chemistry.relax.OrderPar;
+import org.nmrfx.chemistry.relax.RelaxationData;
 import org.nmrfx.chemistry.constraints.AngleConstraint;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import org.nmrfx.chemistry.constraints.DistanceConstraint;
@@ -25,7 +27,7 @@ import org.nmrfx.chemistry.io.AtomParser;
 import javax.vecmath.Point2d;
 import java.util.*;
 import java.util.stream.Collectors;
-import org.nmrfx.chemistry.RelaxationData.relaxTypes;
+import org.nmrfx.chemistry.relax.RelaxationData.relaxTypes;
 
 public class Atom implements IAtom {
 
@@ -346,6 +348,10 @@ public class Atom implements IAtom {
 
     public void addOrderPar(String name, OrderPar data) {
         orderPars.put(name, data);
+    }
+
+    public Map<String, OrderPar> getOrderPars() {
+        return orderPars;
     }
 
     public void addRelaxationData(String name, RelaxationData data) {

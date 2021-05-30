@@ -17,6 +17,9 @@
  */
 package org.nmrfx.chemistry.io;
 
+import org.nmrfx.chemistry.relax.OrderPar;
+import org.nmrfx.chemistry.relax.RelaxationRex;
+import org.nmrfx.chemistry.relax.RelaxationData;
 import org.nmrfx.chemistry.Order;
 import java.io.BufferedReader;
 
@@ -47,8 +50,7 @@ import org.nmrfx.peaks.SpectralDim;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.utilities.NvUtil;
 import org.nmrfx.peaks.io.PeakPathReader;
-import org.nmrfx.chemistry.RelaxationData.relaxTypes;
-import org.nmrfx.project.ProjectBase;
+import org.nmrfx.chemistry.relax.RelaxationData.relaxTypes;
 
 /**
  *
@@ -1356,7 +1358,7 @@ public class NMRStarReader {
             List<Atom> atoms = new ArrayList<>();
             atoms.add(atom2);
 
-            RelaxationData relaxData = new RelaxationData(frameName, relaxTypes.NOE, atoms, Double.parseDouble(field), temperature, value, error, extras);
+            RelaxationData relaxData = new RelaxationData(frameName, relaxTypes.NOE, atom, atoms, Double.parseDouble(field), temperature, value, error, extras);
 //            System.out.println("reader NOE" + relaxData);
             atom.addRelaxationData(frameName, relaxData);
 //            System.out.println(atom.relaxData);
@@ -1449,12 +1451,12 @@ public class NMRStarReader {
             }
 
             if (expType.equals(relaxTypes.T1)) {
-                RelaxationData relaxData = new RelaxationData(frameName, expType, new ArrayList<>(), field, temperature, value, error, extras);
+                RelaxationData relaxData = new RelaxationData(frameName, expType, atom, new ArrayList<>(), field, temperature, value, error, extras);
 //                System.out.println("reader " + relaxData);
                 atom.addRelaxationData(frameName, relaxData);
 //                System.out.println("reader atom.relaxData = " + atom + " " + atom.relaxData);
             } else {
-                RelaxationRex relaxData = new RelaxationRex(frameName, expType, new ArrayList<>(), field, temperature, value, error, RexValue, RexError, extras);
+                RelaxationRex relaxData = new RelaxationRex(frameName, expType, atom, new ArrayList<>(), field, temperature, value, error, RexValue, RexError, extras);
                 atom.addRelaxationData(frameName, relaxData);
             }
         }
@@ -1527,7 +1529,7 @@ public class NMRStarReader {
         List<String> compIdxIDColumn = loop.getColumnAsList("Comp_index_ID");
         List<String> atomColumn = loop.getColumnAsList("Atom_ID");
 
-        String[] parNames = OrderPar.getParNames();
+        String[] parNames = OrderPar.getNames();
         List<Double>[] valColumns = new ArrayList[parNames.length];
         List<Double>[] errColumns = new ArrayList[parNames.length];
         int iCol = 0;
@@ -1552,7 +1554,7 @@ public class NMRStarReader {
                 }
                 Double modelSSErr = modelColumn.get(i);
                 String modelName = modelNameColumn.get(i);
-                OrderPar orderPar = new OrderPar(values, errs, modelSSErr, modelName);
+                OrderPar orderPar = new OrderPar(atomOpt.get(), values, errs, modelSSErr, modelName);
                 atomOpt.get().addOrderPar(frameName, orderPar);
             }
         }
@@ -1862,7 +1864,7 @@ public class NMRStarReader {
             if (DEBUG) {
                 System.err.println("process done");
             }
-        } else if ("shifts".startsWith(argv[2].toString())) {
+        } else if ("shifts".startsWith(argv[2])) {
             int fromSet = Integer.parseInt(argv[3]);
             int toSet = Integer.parseInt(argv[4]);
             buildChemShifts(fromSet, toSet);

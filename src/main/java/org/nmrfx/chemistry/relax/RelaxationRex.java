@@ -1,0 +1,78 @@
+/*
+ * NMRFx Analyst : 
+ * Copyright (C) 2004-2021 One Moon Scientific, Inc., Westfield, N.J., USA
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+package org.nmrfx.chemistry.relax;
+
+import java.util.List;
+import java.util.Map;
+import org.nmrfx.chemistry.Atom;
+
+/**
+ *
+ * @author mbeckwith
+ */
+public class RelaxationRex extends RelaxationData {
+
+    Double RexValue;
+    Double RexError;
+
+    public RelaxationRex(String ID, relaxTypes expType, Atom atom, List<Atom> extraAtoms, double field, double temperature,
+            Double value, Double error, Double RexValue, Double RexError, Map<String, String> extras) {
+
+        super(ID, expType, atom, extraAtoms, field, temperature, value, error, extras);
+
+        this.RexValue = RexValue;
+        this.RexError = RexError;
+    }
+
+    public Double getRexValue() {
+        return RexValue;
+    }
+
+    public Double getRexError() {
+        return RexError;
+    }
+
+    @Override
+    public String[] getParNames() {
+        String[] parNames = {expType.getName(), "Rex"};
+        return parNames;
+    }
+
+    @Override
+    public Double getValue(String name) {
+        if (name.equals(expType.getName())) {
+            return value;
+        } else if (name.equals("Rex")) {
+            return RexValue;
+        } else {
+            return null;
+        }
+    }
+
+    @Override
+    public Double getError(String name) {
+        if (name.equals(expType.getName())) {
+            return error;
+        } else if (name.equals("Rex")) {
+            return RexError;
+        } else {
+            return null;
+        }
+    }
+
+}
