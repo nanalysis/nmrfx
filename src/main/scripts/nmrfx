@@ -41,12 +41,15 @@ done
 
 dir=`dirname "$pgm"`
 CLASSPATH=${dir}"/lib/Manifest.jar"
-
+jreDir=`ls -d *jre* 2>/dev/null`
 if [ -d "${dir}/../jre.bundle/Contents/Home/jre/bin" ] ; then
     JAVA="${dir}/../jre.bundle/Contents/Home/jre/bin/java"
     CLASSPATH="$dir/lib/nmrfx-analyst-gui-$nvjver.jar:$CLASSPATH"
 elif [ -d "${dir}/jre/bin" ] ; then
     JAVA="${dir}/jre/bin/java"
+    CLASSPATH="$dir/lib/nmrfx-analyst-gui-$nvjver.jar:$CLASSPATH"
+elif [ -d "${jreDir}/Contents/Home/bin" ] ; then
+    JAVA="${jreDir}/Contents/Home/bin/java"
     CLASSPATH="$dir/lib/nmrfx-analyst-gui-$nvjver.jar:$CLASSPATH"
 else
     if [ -n "$JAVA_HOME" ] ; then
