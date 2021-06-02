@@ -19,6 +19,7 @@ package org.nmrfx.chemistry.relax;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -68,6 +69,19 @@ public class RelaxationData implements RelaxationValues {
         this.value = value;
         this.error = error;
         this.extras = extras;
+    }
+
+    public static void add(String id, String type, Atom atom, double field, double value, double error) {
+        if (type.equalsIgnoreCase("r1")) {
+            type = "T1";
+        } else if (type.equalsIgnoreCase("r2")) {
+            type = "T2";
+        }
+        relaxTypes relaxType = relaxTypes.valueOf(type.toUpperCase());
+        RelaxationData rData = new RelaxationData(id, relaxType, atom,
+                Collections.EMPTY_LIST, field,
+                25.0, value, error, Collections.EMPTY_MAP);
+        atom.addRelaxationData(id, rData);
     }
 
     public String getName() {
