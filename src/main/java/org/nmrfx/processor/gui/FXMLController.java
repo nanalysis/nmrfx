@@ -1129,6 +1129,10 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
     }
 
     public static FXMLController getActiveController() {
+        if (activeController.get() == null) {
+              FXMLController controller = FXMLController.create(); 
+              controller.setActiveController();
+        }
         return activeController.get();
     }
 
