@@ -8,6 +8,7 @@ module org.nmrfx.utils {
     exports org.nmrfx.utils;
     exports org.nmrfx.utils.properties;
     exports org.nmrfx.chart;
+    exports org.nmrfx.console;
     exports org.nmrfx.graphicsio;
 
     requires java.logging;
@@ -23,4 +24,6 @@ module org.nmrfx.utils {
     requires javafx.controls;
     requires javafx.baseEmpty;
     requires javafx.base;
+    requires javafx.fxml;
+    requires jython.slim;
 }
