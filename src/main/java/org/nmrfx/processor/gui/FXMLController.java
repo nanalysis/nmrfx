@@ -178,7 +178,6 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
     static public final SimpleObjectProperty<FXMLController> activeController = new SimpleObjectProperty<>(null);
     static String docString = null;
     static List<FXMLController> controllers = new ArrayList<>();
-    static ConsoleController consoleController = null;
 
     ObservableList<PolyChart> charts = FXCollections.observableArrayList();
     private PolyChart activeChart = null;
@@ -1267,9 +1266,6 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
 //        l.layoutBoundsProperty().addListener(e -> boundsUpdated(l));
 //        l2.layoutBoundsProperty().addListener(e -> boundsUpdated(l2));
         statusBar.setMode(0);
-        if (consoleController == null) {
-            consoleController = ConsoleController.create();
-        }
         activeController.set(this);
         for (int iCross = 0; iCross < 2; iCross++) {
             for (int jOrient = 0; jOrient < 2; jOrient++) {

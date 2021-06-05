@@ -30,8 +30,6 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.List;
 import java.util.function.Consumer;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javafx.application.Application;
@@ -62,6 +60,7 @@ import org.nmrfx.chemistry.io.MoleculeIOException;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.processor.utilities.WebConnect;
 import org.nmrfx.project.ProjectBase;
+import org.nmrfx.console.ConsoleController;
 
 public class MainApp extends Application {
 
@@ -77,7 +76,6 @@ public class MainApp extends Application {
     private static MenuBar mainMenuBar = null;
     Boolean isMac = null;
     protected static MainApp mainApp = null;
-    static protected ConsoleController consoleController = null;
     static boolean isAnalyst = false;
     Consumer<String> socketFunction = null;
     static NMRFxServer server = null;
@@ -164,6 +162,7 @@ public class MainApp extends Application {
         interpreter.exec("from pyproc import *\ninitLocal()\nfrom gscript import *\nnw=NMRFxWindowScripting()\nfrom dscript import *\nfrom pscript import *\nimport os");
         interpreter.set("argv", parameters.getRaw());
         interpreter.exec("parseArgs(argv)");
+        ConsoleController.create(interpreter, "NMRFx Console");
         ProjectBase.setPCS(new PropertyChangeSupport(this));
         // Dataset.addObserver(this);
         if (defaultFont == null) {
@@ -468,7 +467,7 @@ public class MainApp extends Application {
     }
 
     private void showConsole(ActionEvent event) {
-        MainApp.getConsoleController().show();
+        ConsoleController.getConsoleController().show();
     }
 
     @FXML
@@ -528,18 +527,14 @@ public class MainApp extends Application {
     }
 
     public static ConsoleController getConsoleController() {
-        return consoleController;
-    }
-
-    public static void setConsoleController(ConsoleController controller) {
-        consoleController = controller;
+        return ConsoleController.getConsoleController();
     }
 
     public static void writeOutput(String string) {
-        if (consoleController == null) {
+        if (getConsoleController() == null) {
             System.out.println(string);
         } else {
-            consoleController.write(string);
+            getConsoleController().write(string);
         }
     }
 
