@@ -56,7 +56,8 @@ import org.nmrfx.analyst.gui.molecule3D.MolSceneController;
 import static javafx.application.Application.launch;
 import javafx.collections.ObservableList;
 import javafx.scene.layout.VBox;
-//import org.comdnmr.gui.PyController;
+import javafx.stage.StageStyle;
+import org.comdnmr.gui.PyController;
 import org.nmrfx.chemistry.InvalidMoleculeException;
 import org.nmrfx.chemistry.MoleculeFactory;
 import org.nmrfx.chemistry.constraints.MolecularConstraints;
@@ -115,7 +116,7 @@ public class AnalystApp extends MainApp {
     public static RNAPeakGeneratorSceneController rnaPeakGenController;
     public static PeakTableController peakTableController;
     public static NOETableController noeTableController;
-//    public static PyController ringNMRController;
+    public static PyController ringNMRController;
     public static WindowIO windowIO = null;
     public static SeqDisplayController seqDisplayController = null;
     PeakAtomPicker peakAtomPicker = null;
@@ -1209,13 +1210,13 @@ public class AnalystApp extends MainApp {
     }
 
     void showRING() {
-//        if (ringNMRController == null) {
-//            Stage stage = new Stage(StageStyle.DECORATED);
-//            ringNMRController = PyController.create(stage);
-//        }
-//        Stage stage = ringNMRController.getStage();
-//        stage.toFront();
-//        stage.show();
+        if (ringNMRController == null) {
+            Stage stage = new Stage(StageStyle.DECORATED);
+            ringNMRController = PyController.create(stage);
+    }
+        Stage stage = ringNMRController.getStage();
+        stage.toFront();
+        stage.show();
     }
 
     void createRemoteDatasets() {

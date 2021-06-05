@@ -23,8 +23,8 @@ module org.nmrfx.analyst.gui {
     requires org.nmrfx.structure;
     requires org.nmrfx.analyst;
     requires org.nmrfx.utils;
-    //requires org.comdnmr;
-    //requires org.comdnmr.gui;
+    requires org.comdnmr;
+    requires org.comdnmr.gui;
     requires javafx.graphics;
     requires javafx.controls;
     requires javafx.base;
