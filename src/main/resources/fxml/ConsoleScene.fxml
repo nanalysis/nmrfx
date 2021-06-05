@@ -7,8 +7,6 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 <?import org.nmrfx.processor.gui.*?>
-<?import org.fxmisc.richtext.InlineCssTextArea?>
-<?import org.controlsfx.control.*?>
 
 
 <BorderPane id="AnchorPane" prefHeight="200.0" prefWidth="600.0" styleClass="mainFxmlClass" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.nmrfx.processor.gui.ConsoleController">
