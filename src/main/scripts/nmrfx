@@ -8,6 +8,15 @@
 # CLASSPATH  - colon separated list of additional jar files & class directories
 # JAVA_OPTS  - list of JVM options, e.g. "-Xmx256m -Dfoo=bar"
 #
+JAVA_OPTS="--add-opens=javafx.controls/com.sun.javafx.scene.control.inputmap=ALL-UNNAMED"
+
+#            <option>--add-opens</option>
+#            <option>javafx.controls/com.sun.javafx.scene.control.behavior=ALL-UNNAMED</option>
+#            <option>--add-opens</option>
+#            <option>javafx.controls/com.sun.javafx.scene.control.inputmap=ALL-UNNAMED</option>
+#            <option>--add-opens</option>
+#            <option>javafx.graphics/com.sun.javafx.scene.traversal=ALL-UNNAMED</option>
+
 
 if [ -n "$NMRFXP_MEMORY" ] ; then
     HEAP_MEM=$NMRFXP_MEMORY
