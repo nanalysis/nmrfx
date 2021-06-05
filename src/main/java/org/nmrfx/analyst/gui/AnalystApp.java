@@ -56,8 +56,7 @@ import org.nmrfx.analyst.gui.molecule3D.MolSceneController;
 import static javafx.application.Application.launch;
 import javafx.collections.ObservableList;
 import javafx.scene.layout.VBox;
-import javafx.stage.StageStyle;
-import org.comdnmr.gui.PyController;
+//import org.comdnmr.gui.PyController;
 import org.nmrfx.chemistry.InvalidMoleculeException;
 import org.nmrfx.chemistry.MoleculeFactory;
 import org.nmrfx.chemistry.constraints.MolecularConstraints;
@@ -82,7 +81,7 @@ import org.nmrfx.analyst.gui.molecule.CanvasMolecule;
 import org.nmrfx.processor.gui.project.GUIProject;
 import org.nmrfx.analyst.gui.tools.RunAboutGUI;
 import org.nmrfx.chemistry.utilities.NvUtil;
-import org.nmrfx.processor.gui.ConsoleController;
+import org.nmrfx.console.ConsoleController;
 import org.nmrfx.processor.gui.DatasetsController;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.MainApp;
@@ -116,7 +115,7 @@ public class AnalystApp extends MainApp {
     public static RNAPeakGeneratorSceneController rnaPeakGenController;
     public static PeakTableController peakTableController;
     public static NOETableController noeTableController;
-    public static PyController ringNMRController;
+//    public static PyController ringNMRController;
     public static WindowIO windowIO = null;
     public static SeqDisplayController seqDisplayController = null;
     PeakAtomPicker peakAtomPicker = null;
@@ -167,6 +166,7 @@ public class AnalystApp extends MainApp {
         interpreter.exec("from pscript import *");
         interpreter.set("argv", parameters.getRaw());
         interpreter.exec("parseArgs(argv)");
+        ConsoleController.create(interpreter, "NMRFx Console");
         PeakPicking.registerSinglePickAction((c) -> pickedPeakAction(c));
         PeakMenuBar.addExtra("Add Residue Prefix", PeakLabeller::labelWithSingleResidueChar);
         PeakMenuBar.addExtra("Remove Residue Prefix", PeakLabeller::removeSingleResidueChar);
@@ -666,14 +666,6 @@ public class AnalystApp extends MainApp {
 
     public static InteractiveInterpreter getInterpreter() {
         return interpreter;
-    }
-
-    public static ConsoleController getConsoleController() {
-        return getConsoleController();
-    }
-
-    public static void setConsoleController(ConsoleController controller) {
-        consoleController = controller;
     }
 
     public static void writeOutput(String string) {
@@ -1217,13 +1209,13 @@ public class AnalystApp extends MainApp {
     }
 
     void showRING() {
-        if (ringNMRController == null) {
-            Stage stage = new Stage(StageStyle.DECORATED);
-            ringNMRController = PyController.create(stage);
-        }
-        Stage stage = ringNMRController.getStage();
-        stage.toFront();
-        stage.show();
+//        if (ringNMRController == null) {
+//            Stage stage = new Stage(StageStyle.DECORATED);
+//            ringNMRController = PyController.create(stage);
+//        }
+//        Stage stage = ringNMRController.getStage();
+//        stage.toFront();
+//        stage.show();
     }
 
     void createRemoteDatasets() {

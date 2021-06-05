@@ -2,7 +2,8 @@
 
 JREHOME='/Users/brucejohnson/Development/mkjre'
 jversion='jdk-11.0.9.1+1-jre'
-PRGSCRIPT=nmrfx
+jversion='jdk-16.0.51-jre'
+jversion='zulu15.32.15-ca-fx-jre15.0.3'
 
 dir=`pwd`
 PRG="$(basename $dir)"
@@ -13,9 +14,11 @@ then
 fi
 
 #for os in "linux-amd64"
-for os in "macosx-amd64" "linux-amd64" "windows-amd64"
+for os in "macosx_x64" "linux_x64" "win_x64"
+#for os in "macosx_x64"
 do
-    jreFileName=${jversion}_${os}
+    #jreFileName=${jversion}_${os}
+    jreFileName=${jversion}-${os}
     echo $jreFileName
 
     dir=installers/$os
@@ -31,19 +34,21 @@ do
     cd $sdir
     echo $sdir
 
-    if [[ $os == "linux-amd64" ]]
+    rm lib/javafx*
+
+    if [[ $os == "linux_x64" ]]
     then
         rm lib/*-mac*
         rm lib/*-win*
     fi
 
-    if [[ $os == "windows-amd64" ]]
+    if [[ $os == "win_x64" ]]
     then
         rm lib/*-linux*
         rm lib/*-mac*
     fi
 
-    if [[ $os == "macosx-amd64" ]]
+    if [[ $os == "macosx_x64" ]]
     then
         cp -R -p ${JREHOME}/$jreFileName .
         rm lib/*-linux*
@@ -54,11 +59,12 @@ do
     cd ..
 
     fname=`echo $sdir | tr '.' '_'`
-    if [[ $os == "linux-amd64" ]]
+    if [[ $os == "linux_x64" ]]
     then
         tar czf ${fname}_${os}.tar.gz $sdir
-    elif [[ $os == "macosx-amd64" ]]
+    elif [[ $os == "macosx_x64" ]]
     then
+        #xattr -cr $sdir
         tar czf ${fname}_${os}.tar.gz $sdir
     else
         zip -r ${fname}_${os}.zip $sdir
