@@ -130,7 +130,11 @@ public class MainApp extends Application {
     }
 
     public static Stage getMainStage() {
-        return stages.get(0);
+        if (stages.isEmpty()) {
+            return null;
+        } else {
+            return stages.get(0);
+        }
     }
 
     public static List<Stage> getStages() {
