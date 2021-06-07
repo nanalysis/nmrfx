@@ -23,6 +23,7 @@ import javafx.event.Event;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ContentDisplay;
+import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Label;
 import javafx.scene.control.MenuButton;
 import javafx.scene.control.Menu;
@@ -193,6 +194,7 @@ public class PeakSlider implements ControllerTool {
             keyBindings.registerKeyAction("df", this::freezePeaks);
             keyBindings.registerKeyAction("dt", this::thawPeaks);
             keyBindings.registerKeyAction("ds", this::tweakPeaks);
+            addSliderToPeakMenu(chart);
         }
     }
 
@@ -1262,6 +1264,30 @@ public class PeakSlider implements ControllerTool {
                 controller.redrawChildren();
             }
         }
+    }
+
+    void addSliderToPeakMenu(PolyChart chart) {
+        boolean hasSliderMenu = false;
+        ContextMenu menu = chart.getPeakMenu().chartMenu;
+        for (var menuItem : menu.getItems()) {
+            if (menuItem.getText().equals("Slider")) {
+                hasSliderMenu = true;
+                break;
+            }
+        }
+        if (!hasSliderMenu) {
+            Menu cascade = new Menu("Slider");
+            menu.getItems().add(cascade);
+            MenuItem tweakFreezeItem = new MenuItem("Tweak & Freeze");
+            tweakFreezeItem.setOnAction(e -> tweakPeaks(e));
+            MenuItem thawItem = new MenuItem("Thaw");
+            thawItem.setOnAction(e -> thawPeaks(e));
+            MenuItem freezeItem = new MenuItem("Freeze");
+            freezeItem.setOnAction(e -> freezePeaks(e));
+
+            cascade.getItems().addAll(tweakFreezeItem, thawItem, freezeItem);
+        }
+
     }
 
 }
