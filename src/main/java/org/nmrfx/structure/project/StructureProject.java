@@ -309,7 +309,7 @@ public class StructureProject extends ProjectBase {
         }
         int nSets = refMode ? mol.getRefPPMSetCount() : mol.getPPMSetCount();
         for (int ppmSet = 0; ppmSet < nSets; ppmSet++) {
-            String fileName = String.valueOf(ppmSet) + "_" + "ppm.txt";
+            String fileName = "ppm_" + String.valueOf(ppmSet) + ".txt";
             String subDir = refMode ? "refshifts" : "shifts";
             Path peakFilePath = fileSystem.getPath(projectDir.toString(), subDir, fileName);
             // fixme should only write if file doesn't already exist or peaklist changed since read
