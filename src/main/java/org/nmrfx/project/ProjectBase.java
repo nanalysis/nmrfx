@@ -40,7 +40,9 @@ import org.nmrfx.datasets.DatasetFactory;
 public class ProjectBase {
 
     static final public Pattern INDEX_PATTERN = Pattern.compile("^([0-9]+)_.*");
+    static final public Pattern INDEX2_PATTERN = Pattern.compile("^.*_([0-9]+).*");
     static final public Predicate<String> INDEX_PREDICATE = INDEX_PATTERN.asPredicate();
+    static final public Predicate<String> INDEX2_PREDICATE = INDEX2_PATTERN.asPredicate();
     final String name;
     public Path projectDir = null;
     public Map<String, PeakPaths> peakPaths;
@@ -97,8 +99,11 @@ public class ProjectBase {
     public static Optional<Integer> getIndex(String s) {
         Optional<Integer> fileNum = Optional.empty();
         Matcher matcher = INDEX_PATTERN.matcher(s);
+        Matcher matcher2 = INDEX2_PATTERN.matcher(s);
         if (matcher.matches()) {
             fileNum = Optional.of(Integer.parseInt(matcher.group(1)));
+        } else if (matcher2.matches()) {
+            fileNum = Optional.of(Integer.parseInt(matcher2.group(1)));            
         }
         return fileNum;
     }
