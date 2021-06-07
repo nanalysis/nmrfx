@@ -51,6 +51,7 @@ import org.apache.commons.math3.transform.FastFourierTransformer;
 import org.apache.commons.math3.transform.TransformType;
 import org.apache.commons.math3.util.FastMath;
 import org.apache.commons.math3.util.ResizableDoubleArray;
+import org.python.core.PyType;
 
 /**
  * A class for representing vectors of data (typically for NMR). The data is
@@ -69,6 +70,8 @@ import org.apache.commons.math3.util.ResizableDoubleArray;
  */
 public class Vec extends VecBase {
 
+    public static final PyType VTYPE = PyType.fromClass(Vec.class);
+
     static GaussianRandomGenerator randGen = new GaussianRandomGenerator(new SynchronizedRandomGenerator(new Well19937c()));
 
     public static final String TYPE_NAME = "nmrfxvector";
@@ -82,15 +85,15 @@ public class Vec extends VecBase {
     public SampleSchedule schedule = null;
 
     public Vec(int size) {
-        super(size);
+        super(size, VTYPE);
     }
 
     public Vec(int size, boolean complex) {
-        super(size, complex);
+        super(size, complex, VTYPE);
     }
 
     public Vec(int size, String name, boolean complex) {
-        super(size, name, complex);
+        super(size, name, complex, VTYPE);
     }
 
     public Vec(int size, int[][] pt, int[] dim, boolean complex) {
@@ -1366,6 +1369,44 @@ public class Vec extends VecBase {
             }
         }
 
+        return (this);
+    }
+
+    /**
+     * Convert a Complex vector into real vector with the real and imaginary
+     * values in alternating positions of array.
+     *
+     * @return this vector
+     * @throws IllegalArgumentException if vector is already complex
+     */
+    public Vec alternate() throws IllegalArgumentException {
+        if (!isComplex()) {
+            throw new IllegalArgumentException("merge: vector is not complex");
+        } else {
+            int newSize = size * 2;
+            double[] newarr = new double[newSize];
+            if (rvec == null) {
+                rvec = newarr;
+            } else {
+                //copy rvec from 0 to size
+                //(because from size to rvec.length is junk data that we don't want)
+                System.arraycopy(rvec, 0, newarr, 0, Math.min(size, rvec.length));
+            }
+            rvec = newarr;
+            if (useApache) {
+                for (int i = 0; i < size; i++) {
+                    rvec[2 * i] = getReal(i);
+                    rvec[2 * i + 1] = getImag(i);
+                }
+            } else {
+                for (int i = size - 1; i >= 0; i--) {
+                    rvec[2 * i] = getReal(i);
+                    rvec[2 * i + 1] = getImag(i);
+                }
+            }
+            size = newSize;
+            isComplex = false;
+        }
         return (this);
     }
 
