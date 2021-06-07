@@ -20,7 +20,6 @@ package org.nmrfx.processor.gui.spectra;
 import javafx.event.ActionEvent;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.MenuItem;
-import javafx.stage.Window;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.PolyChart;
