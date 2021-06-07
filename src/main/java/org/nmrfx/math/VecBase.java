@@ -96,6 +96,18 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
     }
 
     /**
+     * Create a new named Vec object with the specified size and complex mode.
+     *
+     * @param name Name of the vector. Used for retrieving vectors by name.
+     * @param size Size of vector.
+     * @param complex true if the data stored in vector is Complex
+     */
+    public VecBase(int size, String name, boolean complex, PyType type) {
+        this(size, complex, type);
+        this.name = name;
+    }
+
+    /**
      * Create a new Vec object with the specified size and complex mode.
      *
      * @param size Size of vector.
@@ -113,12 +125,38 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
     }
 
     /**
+     * Create a new Vec object with the specified size and complex mode.
+     *
+     * @param size Size of vector.
+     * @param complex true if the data stored in vector is Complex
+     */
+    public VecBase(int size, boolean complex, PyType type) {
+        super(type);
+        this.isComplex = complex;
+        useApache = true;
+        rvec = new double[size];
+        freqDomain = false;
+
+        resize(size, complex);
+        tdSize = size;
+    }
+
+    /**
      * Create a new Vec object for real data and with the specified size.
      *
      * @param size Size of vector.
      */
     public VecBase(int size) {
         this(size, false);
+    }
+
+    /**
+     * Create a new Vec object for real data and with the specified size.
+     *
+     * @param size Size of vector.
+     */
+    public VecBase(int size, PyType type) {
+        this(size, false, type);
     }
 
     public VecBase(double[] values) {
@@ -512,7 +550,7 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
         cvec = newarr;
     }
 
-    private void expandRvec(int newsize) {
+    public void expandRvec(int newsize) {
         double[] newarr = new double[newsize];
         if (rvec == null) {
             rvec = newarr;
@@ -524,7 +562,7 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
         rvec = newarr;
     }
 
-    private void expandIvec(int newsize) {
+    public void expandIvec(int newsize) {
         double[] newarr = new double[newsize];
         if (ivec == null) {
             ivec = newarr;
@@ -3121,7 +3159,7 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
         }
         String outFileName = String.format("%s%04d.%s", rootName, index + 1, suffix);
 
-        try (FileOutputStream oStream = new FileOutputStream(outFileName)) {
+        try ( FileOutputStream oStream = new FileOutputStream(outFileName)) {
             int nElem = isComplex ? 2 : 1;
             ByteBuffer byteBuffer = ByteBuffer.allocate(size * Double.SIZE / 8 * nElem);
             if (littleEndian) {
@@ -3142,7 +3180,7 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
             throw ioE;
         }
         String parFileName = String.format("%s%04d.%s.par", rootName, index + 1, suffix);
-        try (FileOutputStream oStream = new FileOutputStream(parFileName)) {
+        try ( FileOutputStream oStream = new FileOutputStream(parFileName)) {
             ByteBuffer byteBuffer = ByteBuffer.allocate(2 * Integer.SIZE / 8);
             if (littleEndian) {
                 byteBuffer.order(ByteOrder.LITTLE_ENDIAN);
@@ -3202,7 +3240,7 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
         }
         String inFileName = String.format("%s%04d.%s", rootName, index + 1, suffix);
 
-        try (FileInputStream oStream = new FileInputStream(inFileName)) {
+        try ( FileInputStream oStream = new FileInputStream(inFileName)) {
             int nElem = isComplex ? 2 : 1;
             ByteBuffer byteBuffer = ByteBuffer.allocate(size * Double.SIZE / 8 * nElem);
             if (littleEndian) {
