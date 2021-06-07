@@ -53,6 +53,9 @@ import org.nmrfx.utils.GUIUtils;
  */
 public class WindowIO implements FileWatchListener {
 
+    final private static Pattern STAGE_PATTERN1 = Pattern.compile("([0-9]+_stage)\\.(yaml)");
+    final private static Pattern STAGE_PATTERN2 = Pattern.compile("(stage_[0-9]+)\\.(yaml)");
+
     Stage stage;
     BorderPane borderPane;
     ListView<String> listView;
@@ -201,14 +204,15 @@ public class WindowIO implements FileWatchListener {
     public static void loadWindow(File file) throws IOException {
         final PythonInterpreter interp = MainApp.getInterpreter();
         interp.exec("import nwyaml\\n");
-        interp.exec("nwyaml.loadYamlWin('" + file.toString() + "')");
+        interp.set("yamlFileName", file.toString());
+        interp.set("yamlFileNum", 1);
+        interp.exec("nwyaml.loadYamlWin(yamlFileName, yamlFileNum)");
+
     }
 
     public static void loadWindows(Path directory) throws IOException {
-        Pattern pattern = Pattern.compile("([0-9]+_stage)\\.(yaml)");
-        Pattern pattern2 = Pattern.compile("(stage_[0-9]+)\\.(yaml)");
-        Predicate<String> predicate = pattern.asPredicate();
-        Predicate<String> predicate2 = pattern2.asPredicate();
+        Predicate<String> predicate = STAGE_PATTERN1.asPredicate();
+        Predicate<String> predicate2 = STAGE_PATTERN2.asPredicate();
         final PythonInterpreter interp = MainApp.getInterpreter();
         interp.exec("import nwyaml\\n");
         if (Files.isDirectory(directory)) {
@@ -229,15 +233,19 @@ public class WindowIO implements FileWatchListener {
 
     public static void cleanWindows(Path projectDir) {
         Path directory = Paths.get(projectDir.toString(), "windows");
+        Predicate<String> predicate = STAGE_PATTERN1.asPredicate();
+        Predicate<String> predicate2 = STAGE_PATTERN2.asPredicate();
 
         if (Files.isDirectory(directory)) {
             try {
-                Files.list(directory).sequential().forEach(path -> {
-                    try {
-                        Files.deleteIfExists(path);
-                    } catch (IOException ex) {
-                    }
-                });
+                Files.list(directory).sequential().filter(path
+                        -> predicate.test(path.getFileName().toString()) || predicate2.test(path.getFileName().toString())).
+                        forEach(path -> {
+                            try {
+                                Files.deleteIfExists(path);
+                            } catch (IOException ex) {
+                            }
+                        });
             } catch (IOException ex) {
             }
         }

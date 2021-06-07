@@ -54,9 +54,9 @@ def genYamlData():
 def loadYamlWin(yamlFile, createNewStage=0):
     with open(yamlFile) as fIn:
         inputData = fIn.read()
-        processYamlData(inputData, createNewStage)
+        processYamlData(yamlFile, inputData, createNewStage)
 
-def processYamlData(inputData, createNewStage):
+def processYamlData(yamlFile, inputData, createNewStage):
     yaml = Yaml()
     if createNewStage > 0:
         nw.new()
