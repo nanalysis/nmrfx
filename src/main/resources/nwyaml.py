@@ -3,7 +3,16 @@ from org.yaml.snakeyaml import Yaml
 from java.io import FileInputStream
 import gscript
 
-def dumpYamlWin(yamlFile):
+def dumpYamlWin(fileName=None):
+    if fileName != None:
+        yamlFile = fileName
+    else:
+        yamlFile = yamlFileName
+    yamlDump = genYamlData()
+    with open(yamlFile,'w') as fOut:
+        fOut.write(yamlDump)
+    
+def genYamlData():
     yaml=Yaml()
     win={}
     win['geometry'] = nw.geometry()
@@ -39,14 +48,15 @@ def dumpYamlWin(yamlFile):
             pset['config']= nw.pconfig(peakList)
             sd['peaklists'].append(pset)
 
-    print win
     yamlDump = yaml.dump(win)
-    with open(yamlFile,'w') as fOut:
-        fOut.write(yamlDump)
+    return yamlDump
 
-def loadYamlWin(yamlFile, createNewStage=True):
+def loadYamlWin(yamlFile, createNewStage=0):
     with open(yamlFile) as fIn:
         inputData = fIn.read()
+        processYamlData(inputData, createNewStage)
+
+def processYamlData(inputData, createNewStage):
     yaml = Yaml()
     if createNewStage > 0:
         nw.new()

@@ -206,19 +206,40 @@ public class WindowIO implements FileWatchListener {
 
     public static void loadWindows(Path directory) throws IOException {
         Pattern pattern = Pattern.compile("([0-9]+_stage)\\.(yaml)");
+        Pattern pattern2 = Pattern.compile("(stage_[0-9]+)\\.(yaml)");
         Predicate<String> predicate = pattern.asPredicate();
+        Predicate<String> predicate2 = pattern2.asPredicate();
         final PythonInterpreter interp = MainApp.getInterpreter();
         interp.exec("import nwyaml\\n");
         if (Files.isDirectory(directory)) {
-            Files.list(directory).sequential().filter(path -> predicate.test(path.getFileName().toString())).
+            Files.list(directory).sequential().filter(path
+                    -> predicate.test(path.getFileName().toString()) || predicate2.test(path.getFileName().toString())).
                     sorted(new ProjectBase.FileComparator()).
                     forEach(path -> {
                         String fileName = path.getFileName().toString();
                         Optional<Integer> fileNum = ProjectBase.getIndex(fileName);
                         if (fileNum.isPresent()) {
-                            interp.exec("nwyaml.loadYamlWin('" + path.toString() + "'" + "," + String.valueOf(fileNum.get()) + ")");
+                            interp.set("yamlFileName", path.toString());
+                            interp.set("yamlFileNum", fileNum.get());
+                            interp.exec("nwyaml.loadYamlWin(yamlFileName, yamlFileNum)");
                         }
                     });
+        }
+    }
+
+    public static void cleanWindows(Path projectDir) {
+        Path directory = Paths.get(projectDir.toString(), "windows");
+
+        if (Files.isDirectory(directory)) {
+            try {
+                Files.list(directory).sequential().forEach(path -> {
+                    try {
+                        Files.deleteIfExists(path);
+                    } catch (IOException ex) {
+                    }
+                });
+            } catch (IOException ex) {
+            }
         }
     }
 
@@ -235,6 +256,7 @@ public class WindowIO implements FileWatchListener {
         if (projectDir == null) {
             throw new IllegalArgumentException("Project directory not set");
         }
+        cleanWindows(projectDir);
         PythonInterpreter interp = MainApp.getInterpreter();
         int i = 0;
         interp.exec("import nwyaml\\n");
@@ -242,9 +264,10 @@ public class WindowIO implements FileWatchListener {
         List<FXMLController> controllers = FXMLController.getControllers();
         for (FXMLController controller : controllers) {
             GUIScripter.setController(controller);
-            String fileName = i + "_stage.yaml";
+            String fileName = "stage_" + String.valueOf(i) + ".yaml";
             Path path = Paths.get(projectDir.toString(), "windows", fileName);
-            interp.exec("nwyaml.dumpYamlWin('" + path.toString() + "')");
+            interp.set("yamlFileName", path.toString());
+            interp.exec("nwyaml.dumpYamlWin(yamlFileName)");
             i++;
         }
         GUIScripter.setController(activeController);
