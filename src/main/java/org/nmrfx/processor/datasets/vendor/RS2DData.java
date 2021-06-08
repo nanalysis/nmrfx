@@ -170,7 +170,14 @@ public class RS2DData implements NMRData {
     }
 
     private static List<String> getParamValue(Document xml, String paramName) throws XPathExpressionException {
-        String expression = "/header/params/entry/key[text()='" + paramName + "']/../value/value";
+        if (!paramName.contains("'")) {
+            paramName =  "'" + paramName + "'";
+        } else if (!paramName.contains("\"")) {
+            paramName =  "\"" + paramName + "\"";
+        } else {
+            paramName =   "concat('" + paramName.replace("'", "',\"'\",'") + "')";
+        }
+        String expression = "/header/params/entry/key[text()=" + paramName + "]/../value/value";
         XPath path = XPathFactory.newInstance().newXPath();
         XPathEvaluationResult<?> result = path.evaluateExpression(expression, xml.getDocumentElement());
         var parList = new ArrayList<String>();
