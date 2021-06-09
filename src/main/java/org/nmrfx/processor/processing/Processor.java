@@ -1073,7 +1073,7 @@ public class Processor {
                         for (MatrixType mat : matrixTypes) {
                             vecs.add((Vec) mat);
                         }
-//                        System.out.println("load more vecs " + vecs.size() + " read " + nRead + " " + totalVecGroups + " " + vectorsToWrite);
+//                        System.out.println("load more vecs " + vecs.size() + " read " + nRead + " " + totalVecGroups + " " + vectorsPerProcess);
                         return vecs;
                     } else {
                     }
