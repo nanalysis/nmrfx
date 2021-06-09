@@ -417,6 +417,11 @@ public class NMRViewData implements NMRData {
     }
 
     @Override
+    public String getFTType(int iDim) {
+        return "ft";
+    }
+    
+    @Override
     public String getTN(int iDim) {
         return dataset.getNucleus(iDim).getName();
     }

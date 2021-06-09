@@ -231,7 +231,12 @@ class VarianData implements NMRData {
     public boolean isSpectrum() {
         return isSpectrum;
     }
-
+  @Override
+    public String getFTType(int iDim) {
+        // fixme
+        return  "ft";
+    } 
+    
     @Override
     public final int getNDim() {
         if (nDimVal == null) {

@@ -295,7 +295,12 @@ public class NMRPipeData implements NMRData {
     public int getNVectors() {
         return FIELDS.FDSPECNUM.getInt(fileHeader);
     }
-
+  
+    @Override
+    public String getFTType(int iDim) {
+        return "ft";
+    }
+    
     @Override
     public int getNPoints() {
         return FIELDS.FDSIZE.getInt(fileHeader);

@@ -234,6 +234,11 @@ class JCAMPData implements NMRData {
     public boolean getNegateImag(int iDim) {
         return iDim > 0;
     }
+    
+    @Override
+    public String getFTType(int iDim) {
+        return fttype[iDim];
+    }
 
     @Override
     public double[] getCoefs(int iDim) {

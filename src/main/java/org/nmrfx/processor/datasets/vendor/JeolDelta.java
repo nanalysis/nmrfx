@@ -118,7 +118,10 @@ public class JeolDelta implements NMRData {
             return null;
         }
     }
-
+  @Override
+    public String getFTType(int iDim) {
+        return "ft";
+    }
     @Override
     public int getNVectors() {
         return nVectors;

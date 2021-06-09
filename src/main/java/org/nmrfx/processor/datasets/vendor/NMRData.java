@@ -332,7 +332,14 @@ public interface NMRData {
     default boolean getNegatePairs(int dim) {
         return false;
     }
-
+    
+/**
+     * Return type of FT (FT or RFT) to perform in specified dimension
+     *
+     * @param dim data dimension index
+     * @return type of
+     */
+    public String getFTType(int dim);
     /**
      * Return whether imaginary values should be negated. Negating the imaginary
      * value reverses the spectrum.
