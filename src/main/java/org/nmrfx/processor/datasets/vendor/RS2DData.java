@@ -61,6 +61,7 @@ public class RS2DData implements NMRData {
     private final Double[] Ref = new Double[MAXDIM];
     private final Double[] Sw = new Double[MAXDIM];
     private final Double[] Sf = new Double[MAXDIM];
+    private final boolean[] negateImag = new boolean[MAXDIM];
     private final String[] obsNuc = new String[MAXDIM];
     private final boolean[] complexDim = new boolean[MAXDIM];
     private final double[] f1coef[] = new double[MAXDIM][];
@@ -139,7 +140,7 @@ public class RS2DData implements NMRData {
             nDim = 0;
 
             for (int i = 0; i < MAXDIM; i++) {
-                int dimSize = getParInt("MATRIX_DIMENSION_" + (i + 1) + "D");
+                int dimSize = getParInt("ACQUISITION_MATRIX_DIMENSION_" + (i + 1) + "D");
                 tdsize[i] = dimSize;
                 if (dimSize > 1) {
                     nDim++;
@@ -221,7 +222,7 @@ public class RS2DData implements NMRData {
     private void setFTPars() {
         // see bruker.tcl line 781-820
         complexDim[0] = true;  // same as exchange really
-        exchangeXY = false;
+        exchangeXY = true;
         negatePairs = false;
         fttype[0] = "ft";
         List<String> acqModes = parMap.get("ACQUISITION_MODE");
@@ -247,6 +248,7 @@ public class RS2DData implements NMRData {
                     complexDim[i] = false;
                     fttype[i] = "rft";
                     f1coefS[i] = "real";
+                    negateImag[i] = true;
                     break;
                 case "COMPLEX": // f1coef[i-1] = "1 0 0 0 0 0 1 0";
                     f1coef[i] = new double[]{1, 0, 0, 0, 0, 0, 1, 0};
@@ -360,7 +362,12 @@ public class RS2DData implements NMRData {
         }
         return vendorPars;
     }
-
+   
+    @Override
+    public String getFTType(int iDim) {
+        return fttype[iDim];
+    }
+    
     @Override
     public int getNVectors() {
         return nvectors;
@@ -507,6 +514,11 @@ public class RS2DData implements NMRData {
     @Override
     public boolean isComplex(int dim) {
         return complexDim[dim];
+    }
+    
+    @Override
+    public boolean getNegateImag(int iDim) {
+        return negateImag[iDim];
     }
 
     @Override
