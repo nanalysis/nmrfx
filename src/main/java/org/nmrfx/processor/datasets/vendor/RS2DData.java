@@ -243,6 +243,11 @@ public class RS2DData implements NMRData {
                     fttype[i] = "rft";
                     f1coefS[i] = "real";
                     break;
+                case "TPPI":
+                    complexDim[i] = false;
+                    fttype[i] = "rft";
+                    f1coefS[i] = "real";
+                    break;
                 case "COMPLEX": // f1coef[i-1] = "1 0 0 0 0 0 1 0";
                     f1coef[i] = new double[]{1, 0, 0, 0, 0, 0, 1, 0};
                     complexDim[i] = true;
