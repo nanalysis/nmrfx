@@ -34,15 +34,17 @@ public class Rft extends Operation {
 
     private final boolean inverse;
     private final boolean negatePairs;
+    private final boolean negateOdd;
 
-    public Rft(boolean inverse, boolean negatePairs) {
+    public Rft(boolean inverse, boolean negatePairs, boolean negateOdd) {
         this.inverse = inverse;
         this.negatePairs = negatePairs;
+        this.negateOdd = negateOdd;
     }
 
     @Override
     public Operation eval(Vec vector) throws ProcessingException {
-        vector.rft(inverse, negatePairs);
+        vector.rft(inverse, negatePairs, negateOdd);
         return this;
     }
 

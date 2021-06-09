@@ -224,15 +224,22 @@ def autoGenScript(fidInfo, args=None):
             script += 'NESTA()\n'
         script += 'SB(c=0.5)\n'
         script += 'ZF()\n'
-        script += 'FT('
-        negatePairs = fidInfo.negatePairsFT(iDim-1)
+        if fidInfo.fidObj.getFTType(iDim-1) == "rft":
+            script += 'RFT('
+        else:
+            script += 'FT('
+
         negateImag = fidInfo.negateImagFT(iDim-1)
+        negatePairs = fidInfo.negatePairsFT(iDim-1)
         if negatePairs:
             script += 'negatePairs=True'
         if negateImag:
             if negatePairs:
                 script += ','
-            script += 'negateImag=True'
+            if fidInfo.fidObj.getFTType(iDim-1) == "rft":
+                script += 'negateOdd=True'
+            else:
+                script += 'negateImag=True'
         script += ')\n'
         fCoef = fidInfo.getSymbolicCoefs(iDim-1)
         if fCoef != None and fCoef == 'sep':

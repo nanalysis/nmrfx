@@ -901,7 +901,7 @@ public class Vec extends VecBase {
      * Perform Real Fast Fourier Transform (FFT) of this vector.
      */
     public void rft(boolean inverse) {
-        rft(inverse, false);
+        rft(inverse, false, false);
     }
 
     /**
@@ -920,13 +920,17 @@ public class Vec extends VecBase {
      *
      * @param inverse If true do the inverse FFT.
      * @param negatePairs negate alternate real/imaginary pairs
+     * @param negateOdd negate alternate values
      */
-    public void rft(boolean inverse, boolean negatePairs) {
+    public void rft(boolean inverse, boolean negatePairs, boolean negateOdd) {
         if (!isComplex) {
             checkPowerOf2();
             double[] ftvec = new double[size];
             if (negatePairs) {
                 negatePairs();
+            }
+            if (negateOdd) {
+                negateImaginary();
             }
             System.arraycopy(rvec, 0, ftvec, 0, size);
 

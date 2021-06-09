@@ -3115,19 +3115,21 @@ def REVERSE(disabled=False, process=None, vector=None):
         process.addOperation(op)
     return op
 
-def RFT(inverse=False, negatePairs=False, disabled=False, process=None, vector=None):
+def RFT(inverse=False, negatePairs=False, negateOdd=False, disabled=False, process=None, vector=None):
     '''Real fourier transform
     Parameters
     ---------
     inverse : bool
         True if inverse RFT, False if forward RFT.
     negatePairs : bool
-        Negate alternate complex real/imaginary values before the FT
+        Negate alternate pairs of values before the FT
+    negateOdd : bool
+        Negate odd (alternate) values before the FT
 '''
     if disabled:
         return None
     process = process or getCurrentProcess()
-    op = Rft(inverse, negatePairs)
+    op = Rft(inverse, negatePairs, negateOdd)
     if (vector != None):
         op.eval(vector)
     else:
@@ -3725,15 +3727,23 @@ def genScript(arrayed=False):
             script += 'NESTA()\n'
         script += 'SB(c=0.5)\n'
         script += 'ZF()\n'
-        script += 'FT('
-        negatePairs = fidInfo.negatePairsFT(iDim-1)
+
+        if fidInfo.fidObj.getFTType(iDim-1) == "rft":
+            script += 'RFT('
+        else:
+            script += 'FT('
+
         negateImag = fidInfo.negateImagFT(iDim-1)
+        negatePairs = fidInfo.negatePairsFT(iDim-1)
         if negatePairs:
             script += 'negatePairs=True'
         if negateImag:
             if negatePairs:
                 script += ','
-            script += 'negateImag=True'
+            if fidInfo.fidObj.getFTType(iDim-1) == "rft":
+                script += 'negateOdd=True'
+            else:
+                script += 'negateImag=True'
         script += ')\n'
         fCoef = fidInfo.getSymbolicCoefs(iDim-1)
         if fCoef != None and fCoef == 'sep':
