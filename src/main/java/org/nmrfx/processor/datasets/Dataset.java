@@ -1907,7 +1907,6 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
             int dSize = getSize(dim[0]);
             if (rwVector.getSize() != dSize) {
                 if (rwVector.getFreqDomain()) {
-                    System.out.println("adjust size " + dSize + " " + rwVector.getSize());
                     rwVector.dwellTime *= (double) dSize / rwVector.getSize();
                 }
             }
