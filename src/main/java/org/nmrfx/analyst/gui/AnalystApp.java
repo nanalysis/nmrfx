@@ -498,10 +498,13 @@ public class AnalystApp extends MainApp {
             AnalystApp.hostServices.showDocument("http://link.springer.com/article/10.1007/s10858-016-0049-6");
         });
 
+        MenuItem openSourceItem = new MenuItem("Open Source Libraries");
+        openSourceItem.setOnAction(e -> showOpenSourceAction(e));
+
         // home
         // mailing list
         //
-        helpMenu.getItems().addAll(docsMenuItem, webSiteMenuItem, mailingListItem, versionMenuItem, refMenuItem);
+        helpMenu.getItems().addAll(docsMenuItem, webSiteMenuItem, mailingListItem, versionMenuItem, refMenuItem, openSourceItem);
 
         if (tk != null) {
             Menu windowMenu = new Menu("Window");
@@ -586,6 +589,10 @@ public class AnalystApp extends MainApp {
 
     static void showMailingListAction(ActionEvent event) {
         hostServices.showDocument("https://groups.google.com/forum/#!forum/nmrfx-processor");
+    }
+
+    static void showOpenSourceAction(ActionEvent event) {
+        hostServices.showDocument("https://nmrfx.org/downloads/oss/dependencies.html");
     }
 
     public void showVersionAction(ActionEvent event) {
