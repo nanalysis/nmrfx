@@ -1513,7 +1513,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
      */
     public void writeVecMat(String fullName) throws IOException {
         File newFile = new File(fullName);
-        try (RandomAccessFile outFile = new RandomAccessFile(newFile, "rw")) {
+        try ( RandomAccessFile outFile = new RandomAccessFile(newFile, "rw")) {
             byte[] buffer = vecMat.getBytes();
             DatasetHeaderIO headerIO = new DatasetHeaderIO(this);
             headerIO.writeHeader(layout, outFile);
@@ -1645,7 +1645,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
 
         String contourFileName = file.getPath() + ".ser";
 
-        try (FileOutputStream out = new FileOutputStream(contourFileName)) {
+        try ( FileOutputStream out = new FileOutputStream(contourFileName)) {
             ObjectOutputStream os = new ObjectOutputStream(out);
             os.writeObject(paths);
             os.flush();
@@ -1906,7 +1906,10 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         } else {
             int dSize = getSize(dim[0]);
             if (rwVector.getSize() != dSize) {
-                rwVector.dwellTime *= (double) dSize / rwVector.getSize();
+                if (rwVector.getFreqDomain()) {
+                    System.out.println("adjust size " + dSize + " " + rwVector.getSize());
+                    rwVector.dwellTime *= (double) dSize / rwVector.getSize();
+                }
             }
 
         }
