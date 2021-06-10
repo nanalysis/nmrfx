@@ -2557,7 +2557,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         newDataset.setSolvent(getSolvent());
         newDataset.setTitle(getTitle());
 
-        newDataset.writeHeader();
+        newDataset.writeHeader(false);
         newDataset.writeParFile();
         newDataset.close();
     }
