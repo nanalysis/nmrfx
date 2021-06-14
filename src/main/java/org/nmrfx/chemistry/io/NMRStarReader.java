@@ -1509,7 +1509,7 @@ public class NMRStarReader {
         }
         String mainCat = "_Order_parameter_list";
         System.out.println(catName + " " + frameName);
-        Double field = saveframe.getDoubleValue(mainCat, "Rex_field_strength");
+        Double field = saveframe.getDoubleValue(mainCat, "Rex_field_strength", null);
         System.out.println(field);
         String[] unitVars = {"Tau_e", "Tau_s", "Tau_f", "Rex"};
         Map<String, String> extras = new HashMap<>();
@@ -1635,9 +1635,13 @@ public class NMRStarReader {
                 SpatialSetGroup spG = getSpatialSet(entityAssemblyIDColumns[iAtom], entityIDColumns[iAtom], compIdxIDColumns[iAtom], atomColumns[iAtom], resonanceColumns[iAtom], i);
                 if (spG != null) {
                     spSets[iAtom] = spG.getFirstSet();
-                    if (errColumn.get(i) != null) {
-                        RDCConstraint aCon = new RDCConstraint(rdcSet, spSets[0].getAtom(), spSets[1].getAtom(), valColumn.get(i), errColumn.get(i));
-                        rdcSet.add(aCon);
+                    if ((spSets[0] == null) || (spSets[1] == null)) {
+                        System.out.println("null spset id  " + i + " iatom " + iAtom + " " + spG.getFullName());
+                    }  else {
+                        if (errColumn.get(i) != null) {
+                            RDCConstraint aCon = new RDCConstraint(rdcSet, spSets[0].getAtom(), spSets[1].getAtom(), valColumn.get(i), errColumn.get(i));
+                            rdcSet.add(aCon);
+                        }
                     }
                 }
             }
