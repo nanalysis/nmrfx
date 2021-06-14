@@ -8,29 +8,10 @@ import java.text.DecimalFormat;
 import org.nmrfx.chemistry.*;
 import org.nmrfx.structure.chemistry.*;
 
-/**
- * This program reads in a series of PDB files and spits out an arff training
- * file for weka. Attributes are by default read from the file attributes.txt
- * attributes are calculations that are believed to have some impact on chemical
- * shift e.g. sin($phi), cos($psi), etc the calcDistance and calcDihedral
- * functions are also exposed $r refers to the current residue number e.g.
- * calcDistance($r-2.CB, $r+2.CB) The following command line options are
- * supported: -c <atom>: the atom to calculate the chemical shift for e.g. -c CB
- * If none is specified it defaults to CB -o <outputfile> the name of the file
- * to write the data to. The default is output.arff. -a <acids> the list of
- * amino acid codes to process, separated by commas e.g. -a GLY,PRO -at <file>
- * the attribute file, attributes.txt by default -p <file> use extended
- * properties from a file Property files are comma-separated tables of arbitrary
- * properties for each amino acid This allows you to have expressions in your
- * attribute file like getProperty("CHARGE",$r) Where charge is defined for each
- * amino acid in the properties file. -v: verbose output.
- *
- * @author ameer
- *
- */
 public class PropertyGenerator {
 
     private static HashMap<String, HashMap<String, Double>> properties = null;
+    private static HashMap<String, double[]> residueFactors = null;
     private static HashMap<String, Double> offsetTable;
     private static boolean verbose;
     private static Locale stdLocale = new Locale("en", "US");
@@ -848,7 +829,7 @@ public class PropertyGenerator {
         InputStream iStream = PropertyGenerator.class.getResourceAsStream("/data/predict/protein/resprops.txt");
         HashMap<String, HashMap<String, Double>> properties = new HashMap<String, HashMap<String, Double>>();
 
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(iStream))) {
+        try ( BufferedReader reader = new BufferedReader(new InputStreamReader(iStream))) {
             String[] keys = null;
             while (true) {
                 String line = reader.readLine();
@@ -868,6 +849,30 @@ public class PropertyGenerator {
             }
         }
         return properties;
+    }
+
+    private static HashMap<String, double[]> loadResidueFactors() throws FileNotFoundException, IOException {
+        InputStream iStream = PropertyGenerator.class.getResourceAsStream("/data/predict/protein/resfactors.txt");
+        HashMap<String, double[]> map = new HashMap<>();
+
+        try ( var reader = new BufferedReader(new InputStreamReader(iStream))) {
+            while (true) {
+                var line = reader.readLine();
+                if (line == null) {
+                    break;
+                }
+                if (line.isBlank()) {
+                    continue;
+                }
+                String[] strValues = line.split("\t");
+                double[] values = new double[strValues.length - 1];
+                for (int i = 0; i < values.length; i++) {
+                    values[i] = Double.parseDouble(strValues[i + 1].trim());
+                }
+                map.put(strValues[0].trim(), values);
+            }
+        }
+        return map;
     }
 
     private static HashMap<String, Double> loadCorrTable(String fn) throws FileNotFoundException, IOException {
@@ -966,5 +971,92 @@ public class PropertyGenerator {
             e.printStackTrace();
         }
         return null;
+    }
+
+    public double[] getResidueFactors(String resName) throws IOException {
+        if (residueFactors == null) {
+            residueFactors = loadResidueFactors();
+        }
+        if (resName.equals("MSE")) {
+            resName = "MET";
+        }
+        if (!residueFactors.containsKey(resName)) {
+            return null;
+        }
+        return residueFactors.get(resName);
+    }
+
+    public double[] getResidueShiftProps(Residue residue, int nNeighbors, int nFactors,
+            int iPPM, int iRef) throws IOException {
+        String[] aNames = {"C", "CA", "CB", "N", "H", "HA"};
+
+        Residue[] residues = new Residue[2 * nNeighbors + 1];
+        residues[nNeighbors] = residue;
+        for (int i = 1; i <= nNeighbors; i++) {
+            int iP = nNeighbors - i;
+            int iN = nNeighbors + i;
+            residues[iP] = residues[iP + 1] == null ? null : residues[iP + 1].getPrevious();
+            residues[iN] = residues[iN - 1] == null ? null : residues[iN - 1].getNext();
+        }
+        int nAtoms = aNames.length;
+        int nRes = 2 * nNeighbors + 1;
+        int nPerRes = nFactors + nAtoms * 2; // 2 for missing
+        double[] result = new double[nPerRes * nRes];
+        for (int iRes = -nNeighbors; iRes <= nNeighbors; iRes++) {
+            Residue iResidue = residues[iRes + nNeighbors];
+            double[] resFactors;
+            if (iResidue == null) {
+                resFactors = new double[nFactors];
+            } else {
+                resFactors = getResidueFactors(iResidue.getName());
+            }
+            if (resFactors == null) {
+                throw new IllegalArgumentException("Unknown residue type " + iResidue.getName());
+            }
+            int  resPos = iRes + nNeighbors;
+            int iAtom = 0;
+            int resOffset = resPos * nPerRes;
+            int shiftOffset = resOffset + nFactors;
+            int missingOffset = shiftOffset + nAtoms;
+            int nMissing = 0;
+            for (var aName : aNames) {
+                boolean missing = true;
+                var delta = 0.0;
+                if (iResidue != null) {
+                    if (iResidue.getName().equals("GLY") && aName.equals("HA")) {
+                        aName = "HA2";
+                        if (iResidue.getAtom(aName) == null) {
+                            aName = "HA3";
+                        }
+                    }
+                    Atom atom = iResidue.getAtom(aName);
+                    if (atom != null) {
+                        var ppmV = atom.getPPM(iPPM);
+                        var refV = atom.getRefPPM(iRef);
+                        if ((ppmV != null) && ppmV.isValid() && (refV != null) && refV.isValid()) {
+                            double scale = atom.getName().charAt(0) == 'H' ? 1.0 : 10.0;
+                            delta = (ppmV.getValue() - refV.getValue()) / scale;
+                            if (delta > 1.0) {
+                                 delta = 1.0;
+                            } else if (delta < -1.0) {
+                                 delta = -1.0;
+                            }
+                            missing = false;
+                        }
+                    }
+                }
+                result[shiftOffset + iAtom] = delta;
+                result[missingOffset + iAtom] = missing ? 0 : 1;
+                iAtom++;
+                if (missing) {
+                    nMissing++;
+                }
+            }
+            if ((nAtoms-nMissing) < 2) {
+                return null;
+            }
+            System.arraycopy(resFactors, 0, result, resOffset, nFactors);
+        }
+        return result;
     }
 }
