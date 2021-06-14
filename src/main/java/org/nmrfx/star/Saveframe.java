@@ -238,6 +238,18 @@ public class Saveframe {
         }
     }
 
+    public Double getDoubleValue(String tagCategory, String tag, Double defaultValue) throws ParseException {
+        String value = getValue(tagCategory, tag);
+        if ((value == null) || value.equals(".") || value.equals("?")) {
+            return defaultValue;
+        }
+        try {
+            return Double.parseDouble(value);
+        } catch (NumberFormatException nfE) {
+            throw new ParseException(nfE.getMessage());
+        }
+    }
+
     public String getValue(String tagCategory, String tag) throws ParseException {
         Category category = getCategory(tagCategory);
         String result = (String) category.get(tag);
