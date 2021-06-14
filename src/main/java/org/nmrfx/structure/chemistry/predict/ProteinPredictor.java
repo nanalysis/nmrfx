@@ -399,6 +399,14 @@ public class ProteinPredictor {
         return scale;
 
     }
+    
+    String convert3To1(String name) {
+        if (name.equals("MSE")) {
+            return "M";
+        } else {
+            return PDBAtomParser.convert3To1(name);
+        }
+    }
 
     public void predictRandom(Molecule molecule, int iRef) throws IOException {
         String[] aNames = {"C", "CA", "CB", "HA", "H", "N", "HB"};
@@ -406,7 +414,19 @@ public class ProteinPredictor {
             if (polymer.isPeptide()) {
                 for (Residue residue : polymer.getResidues()) {
                     for (String aName : aNames) {
-                        Atom atom = residue.getAtom(aName);
+                        var aNames2 = new ArrayList<String>();
+                        if (residue.getName().equals("GLY") && aName.equals("HA")) {
+                            aNames2.add("HA2");
+                            aNames2.add("HA3");
+                        } else if (aName.equals("HB")) {
+                            aNames2.add("HB");
+                            aNames2.add("HB2");
+                            aNames2.add("HB3");
+                        } else {
+                            aNames2.add(aName);
+                        }
+                        for (var aName2:aNames2) {
+                        Atom atom = residue.getAtom(aName2);
                         if (atom != null) {
                             Double ppm = predictRandom(residue, aName, 298.0);
                             if (ppm != null) {
@@ -419,6 +439,7 @@ public class ProteinPredictor {
                                     atom.setPPMError(iRef, errValue);
                                 }
                             }
+                        }
                         }
                     }
                 }
@@ -433,22 +454,28 @@ public class ProteinPredictor {
         Residue nextRes = residue.getNext();
         if ((prevRes != null) && (nextRes != null)) {
             String[] aaChars = new String[5];
-            aaChars[1] = PDBAtomParser.convert3To1(prevRes.getName());
-            aaChars[2] = PDBAtomParser.convert3To1(residue.getName());
-            aaChars[3] = PDBAtomParser.convert3To1(nextRes.getName());
+            aaChars[1] = convert3To1(prevRes.getName());
+            aaChars[2] = convert3To1(residue.getName());
+            aaChars[3] = convert3To1(nextRes.getName());
             Residue prev2Res = prevRes.getPrevious();
             Residue next2Res = nextRes.getNext();
             if (prev2Res == null) {
                 aaChars[0] = "n";
             } else {
-                aaChars[0] = PDBAtomParser.convert3To1(prev2Res.getName());
+                aaChars[0] = convert3To1(prev2Res.getName());
             }
             if (next2Res == null) {
                 aaChars[4] = "c";
             } else {
-                aaChars[4] = PDBAtomParser.convert3To1(next2Res.getName());
+                aaChars[4] = convert3To1(next2Res.getName());
             }
-            result = predictRandom(aaChars, aName, tempK);
+            for (String aaChar: aaChars) {
+                 if (aaChar == null) {
+                      System.out.println("No sgnl res " + residue.getName() + " " + aName);
+                      return null;
+                 }
+            }
+          result = predictRandom(aaChars, aName, tempK);
         }
         return result;
     }
@@ -499,7 +526,11 @@ public class ProteinPredictor {
                 String neighborName = aaChars[2 + neighorPositions[i]];
                 String key = neighborName + "." + aName;
                 double[] neighborCorrs = neighborMap.get(key);
-                result += neighborCorrs[i];
+                if (neighborCorrs == null) {
+                    System.out.println("no neighbor " + key);
+                } else {
+                    result += neighborCorrs[i];
+                }
 //                System.out.println(i + " " + neighborCorrs[i] + " " + result);
             }
             List<String> groupStr = new ArrayList<>();
