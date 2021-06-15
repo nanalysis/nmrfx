@@ -35,6 +35,8 @@ do
     echo $sdir
 
     rm lib/javafx*
+    rm lib/*android*
+    rm lib/*-ios-*
 
     if [[ $os == "linux_x64" ]]
     then
