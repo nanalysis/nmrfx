@@ -321,6 +321,16 @@ public interface NMRData {
      * @return true if data is complex
      */
     public boolean isComplex(int dim);
+    
+    /**
+     * Set whether the specified dimension has complex data
+     *
+     * @param dim data dimension index
+     * @param value if data is complex
+     */
+    public default void setComplex(int dim, boolean value) {
+        
+    }
 
     /**
      * Return whether alternate real/imaginary pairs of data should be negated

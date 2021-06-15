@@ -67,6 +67,7 @@ public class RS2DData implements NMRData {
     private final double[] f1coef[] = new double[MAXDIM][];
     private final String[] f1coefS = new String[MAXDIM];
     private final String fttype[] = new String[MAXDIM];
+    private final String[] sfNames = new String[MAXDIM];
     private double groupDelay = 0.0;
     private SampleSchedule sampleSchedule = null;
 
@@ -77,6 +78,7 @@ public class RS2DData implements NMRData {
     int tbytes = 1;
     boolean exchangeXY = false;
     boolean negatePairs = false;
+    String obsNucleus = "";
     double scale = 1.0;
     double tempK = 298.15;
 
@@ -136,11 +138,36 @@ public class RS2DData implements NMRData {
                 List<String> parValues = getParamValue(xml, parName);
                 parMap.put(parName, parValues);
             }
-            tempK = getParDouble("SAMPLE_TEMPERATURE") + 273.15;
+            obsNucleus = getPar("OBSERVED_NUCLEUS");
+            Double obsFreq = null;
+            Double obsSW = getParDouble("SPECTRAL_WIDTH");
+            tempK = getParDouble("SAMPLE_TEMPERATURE");
+            String baseSFName = "";
             nDim = 0;
 
             for (int i = 0; i < MAXDIM; i++) {
+                String nucleus = getPar("NUCLEUS_" + (i + 1));
+                if (nucleus.equals(obsNucleus)) {
+                    obsFreq = getParDouble("BASE_FREQ_" + (i + 1));
+                    baseSFName = "BASE_FREQ_" + (i + 1);
+                    break;
+                }
+            }
+            System.out.println(" obs " + obsNucleus + " " + obsFreq + " " + baseSFName);
+            for (int i = 0; i < MAXDIM; i++) {
                 int dimSize = getParInt("ACQUISITION_MATRIX_DIMENSION_" + (i + 1) + "D");
+                String nucleus = getPar("NUCLEUS_" + (i + 1));
+                if (nucleus.equals(obsNucleus)) {
+                    System.out.println("nuclues is obs " + nucleus);
+                    Sf[i] = obsFreq;       
+                    Sw[i] = obsSW;  // fixme  this is kluge to fis some files that have wrong SPECTRAL_WIDTH_2D
+                    sfNames[i] = baseSFName;
+                } else {
+                    System.out.println("nuclues is not obs " + nucleus);
+                    Double baseFreq = getParDouble("BASE_FREQ_" + (i + 1));
+                    Sf[i] = baseFreq;
+                    sfNames[i] = "BASE_FREQ_" + (i + 1);
+                }
                 tdsize[i] = dimSize;
                 if (dimSize > 1) {
                     nDim++;
@@ -415,7 +442,7 @@ public class RS2DData implements NMRData {
             sf = Sf[iDim];
         } else {
             Double dpar;
-            if ((dpar = getParDouble("BASE_FREQ_," + (iDim + 1))) != null) {
+            if ((dpar = getParDouble("BASE_FREQ_" + (iDim + 1))) != null) {
                 sf = dpar;
             }
         }
@@ -517,6 +544,11 @@ public class RS2DData implements NMRData {
     }
     
     @Override
+    public void setComplex(int dim, boolean value) {
+         complexDim[dim] = value;
+    }
+    
+    @Override
     public boolean getNegateImag(int iDim) {
         return negateImag[iDim];
     }
@@ -580,7 +612,7 @@ public class RS2DData implements NMRData {
     public String[] getSFNames() {
         String[] names = new String[nDim];
         for (int i = 0; i < nDim; i++) {
-            names[i] = "BASE_FREQ_" + (i + 1);
+            names[i] = sfNames[i];
         }
         return names;
     }

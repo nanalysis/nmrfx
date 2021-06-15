@@ -289,6 +289,12 @@ class FIDInfo:
         fidObj = self.fidObj
         return fidObj.isComplex(dim)   # dim is 1-based
 
+    def setComplex(self, pars):
+        '''set whether or not current dimension is complex'''
+        self.checkParDim(pars)
+        for i,par in enumerate(pars):
+            self.fidObj.setComplex(i,par)
+
     def negatePairsFT(self,dim):
         '''return whether or not to negatePairs for FT for current dimension'''
         fidObj = self.fidObj
@@ -387,6 +393,16 @@ def sf(*pars):
        </ul>
     '''
     fidInfo.setSF(pars)
+
+def tdcomplex(*pars):
+    ''' Complex values to set for each dimension.<br>
+    Values can be True or False. 
+    <br>Examples:
+       <ul>
+       <li>tdcomplex(True,False) Boolean values</li>
+       </ul>
+    '''
+    fidInfo.setComplex(pars)
 
 def ref(*pars):
     ''' Reference position (in ppm) at center of spectrum to set for each dimension.<br>
