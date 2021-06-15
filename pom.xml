@@ -9,6 +9,9 @@
     <name>nmrfx-nmrfxstructure</name>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <nd4j.version>1.0.0-beta7</nd4j.version>
+        <dl4j.version>1.0.0-beta7</dl4j.version>
     </properties>
     <url>http://maven.apache.org</url>
     <dependencies>
@@ -97,7 +100,16 @@
             <artifactId>arpack-ng-platform</artifactId>
             <version>3.7.0-1.5.4</version>
         </dependency>
-
+        <dependency>
+            <groupId>org.deeplearning4j</groupId>
+            <artifactId>deeplearning4j-nn</artifactId>
+            <version>${dl4j.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.nd4j</groupId>
+            <artifactId>nd4j-api</artifactId>
+            <version>${nd4j.version}</version>
+        </dependency>
     </dependencies>
     <build>
         <plugins>
@@ -134,7 +146,7 @@
                     </execution>
                 </executions>
             </plugin>
-           <plugin>
+            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
                 <configuration>
