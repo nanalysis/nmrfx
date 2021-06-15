@@ -32,11 +32,13 @@ import org.nd4j.linalg.factory.Nd4j;
  */
 public class Protein2ndStructurePredictor {
 
-    ComputationGraph graphModel;
+    static ComputationGraph graphModel;
 
-    public void load() throws IOException {
-        InputStream iStream = Protein2ndStructurePredictor.class.getResourceAsStream("/data/predict/protein/model2ndstr.zip");
-        graphModel = ModelSerializer.restoreComputationGraph(iStream, true);
+    public static void load() throws IOException {
+        if (graphModel == null) {
+            InputStream iStream = Protein2ndStructurePredictor.class.getResourceAsStream("/data/predict/protein/model2ndstr.zip");
+            graphModel = ModelSerializer.restoreComputationGraph(iStream, true);
+        }
     }
 
     public void predict(Molecule mol) throws IOException {
@@ -48,6 +50,9 @@ public class Protein2ndStructurePredictor {
             for (var residue : polymer.getResidues()) {
                 double zIDR = ResidueProperties.calcZIDR(residue, 0, 0);
                 var props = pg.getResidueShiftProps(residue, 2, 5, 0, 0);
+                if (props == null) {
+                    continue;
+                }
                 double[][] props2D = {props};
                 var ndArray = Nd4j.create(props2D);
                 INDArray predicted = graphModel.output(ndArray)[0];
@@ -59,7 +64,6 @@ public class Protein2ndStructurePredictor {
                 }
                 ProteinResidueAnalysis protAnalysis = new ProteinResidueAnalysis(residue, zIDR, state8);
                 residue.setPropertyObject("Prot2ndStr", protAnalysis);
-                System.out.println(protAnalysis.toString());
             }
         }
     }
