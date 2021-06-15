@@ -988,7 +988,7 @@ public class PropertyGenerator {
 
     public double[] getResidueShiftProps(Residue residue, int nNeighbors, int nFactors,
             int iPPM, int iRef) throws IOException {
-        String[] aNames = {"C", "CA", "CB", "N", "H", "HA"};
+        String[] aNames = {"C", "CA", "CB", "N", "H", "HA", "HB"};
 
         Residue[] residues = new Residue[2 * nNeighbors + 1];
         residues[nNeighbors] = residue;
@@ -1013,7 +1013,7 @@ public class PropertyGenerator {
             if (resFactors == null) {
                 throw new IllegalArgumentException("Unknown residue type " + iResidue.getName());
             }
-            int  resPos = iRes + nNeighbors;
+            int resPos = iRes + nNeighbors;
             int iAtom = 0;
             int resOffset = resPos * nPerRes;
             int shiftOffset = resOffset + nFactors;
@@ -1028,6 +1028,13 @@ public class PropertyGenerator {
                         if (iResidue.getAtom(aName) == null) {
                             aName = "HA3";
                         }
+                    } else if (aName.equals("HB")) {
+                        if (iResidue.getAtom(aName) == null) {
+                            aName = "HB2";
+                            if (iResidue.getAtom(aName) == null) {
+                                aName = "HB3";
+                            }
+                        }
                     }
                     Atom atom = iResidue.getAtom(aName);
                     if (atom != null) {
@@ -1037,9 +1044,9 @@ public class PropertyGenerator {
                             double scale = atom.getName().charAt(0) == 'H' ? 1.0 : 10.0;
                             delta = (ppmV.getValue() - refV.getValue()) / scale;
                             if (delta > 1.0) {
-                                 delta = 1.0;
+                                delta = 1.0;
                             } else if (delta < -1.0) {
-                                 delta = -1.0;
+                                delta = -1.0;
                             }
                             missing = false;
                         }
@@ -1051,9 +1058,6 @@ public class PropertyGenerator {
                 if (missing) {
                     nMissing++;
                 }
-            }
-            if ((nAtoms-nMissing) < 2) {
-                return null;
             }
             System.arraycopy(resFactors, 0, result, resOffset, nFactors);
         }
