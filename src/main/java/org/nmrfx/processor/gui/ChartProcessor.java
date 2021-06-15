@@ -411,7 +411,10 @@ public class ChartProcessor {
         NMRData nmrData = getNMRData();
         int nPoints = nmrData.getNPoints();
         if (vecDim != 0) {
-            nPoints = 2 * nmrData.getSize(vecDim);
+            nPoints = nmrData.getSize(vecDim);
+            if (nmrData.isComplex(vecDim)) {
+                nPoints *= 2;
+            }
         }
         ProcessOps process = getProcess();
         process.clearVectors();
@@ -426,8 +429,8 @@ public class ChartProcessor {
             }
         }
         for (int j = 0; j < nVectors; j++) {
-            Vec newVec = new Vec(nPoints, true);
-            Vec saveVec = new Vec(nPoints, true);
+            Vec newVec = new Vec(nPoints, nmrData.isComplex(vecDim));
+            Vec saveVec = new Vec(nPoints, nmrData.isComplex(vecDim));
 
             if (vecDim == 0) {
                 if (vecIndex == null) {
