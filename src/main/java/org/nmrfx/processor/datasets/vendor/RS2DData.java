@@ -767,11 +767,12 @@ public class RS2DData implements NMRData {
                 readVector(iDim, iVec + shiftAmount, dvec.getCvec());
             } else {
 // fixme
-                readVector(iVec + shiftAmount, dvec.rvec, dvec.ivec);
+                dvec.makeApache();
+                readVector(iDim, iVec + shiftAmount, dvec.getCvec());
             }
         } else {
 // fixme
-            readVector(iVec, dvec.rvec);
+            readVector(iDim, iVec, dvec.rvec);
         }
         dvec.dwellTime = 1.0 / getSW(iDim);
         dvec.centerFreq = getSF(iDim);
@@ -822,16 +823,51 @@ public class RS2DData implements NMRData {
             cdata[j / 2] = new Complex(px / scale, py / scale);
         }
     }
+    public void readVector(int iDim, int iVec, double[] data) {
+        int size = getSize(iDim);
+        int nPer = 1;
+        if (isComplex(iDim)) {
+            nPer = 2;
+        }
+        int nPoints = size * nPer;
+        byte[] dataBuf = new byte[nPoints * Float.BYTES ];
+        FloatBuffer floatBuffer = ByteBuffer.wrap(dataBuf).asFloatBuffer();
+        for (int j = 0; j < nPoints; j++) {
+            floatBuffer.put(j, 0);
+        }
+        int stride = tbytes;
+        for (int i = 1; i < iDim; i++) {
+            stride *= getSize(i) * nPer;
+        }
+
+        for (int i = 0; i < nPoints; i++) {
+            if (sampleSchedule != null) {
+                int[] point = {i / 2};
+                int index = sampleSchedule.getIndex(point);
+                if (index != -1) {
+                    index = index * 2 + (i % 2);
+                    readValue(iDim, stride, index, i, iVec, dataBuf);
+                }
+            } else {
+                readValue(iDim, stride, i, i, iVec, dataBuf);
+            }
+        }
+        for (int j = 0; j < nPoints; j++) {
+            double px = floatBuffer.get(j);
+            data[j] = px / scale;
+        }
+    }
     // read value along dim
     // fixme only works for 2nd dim
 
     private void readValue(int iDim, int stride, int fileIndex, int vecIndex, int xCol, byte[] dataBuf) {
         try {
             int nread = 0;
+            int nPer = isComplex(iDim) ? 2 : 1;
             //int skips = fileIndex * tbytes + xCol * 4 * 2;
             int skips = fileIndex * stride + xCol * 4 * 2;
             //System.out.println(fileIndex + " " + xCol + " " + (skips/4));
-            ByteBuffer buf = ByteBuffer.wrap(dataBuf, vecIndex * 4 * 2, 4 * 2);
+            ByteBuffer buf = ByteBuffer.wrap(dataBuf, vecIndex * 4 * nPer, 4 * nPer);
             nread = fc.read(buf, skips);
         } catch (EOFException e) {
             LOGGER.log(Level.WARNING, e.getMessage());
