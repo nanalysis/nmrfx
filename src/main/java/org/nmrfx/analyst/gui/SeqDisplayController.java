@@ -114,6 +114,7 @@ public class SeqDisplayController implements Initializable {
     DoubleRangeOperationItem atomScaleItem;
     DoubleRangeOperationItem zirdHeightItem;
     DoubleRangeOperationItem ssStrHeightItem;
+    BooleanOperationItem fillWith2ndStrItem;
     DoubleRangeOperationItem atomBarHeightItem;
 
     double smallGap = 5.0;
@@ -179,6 +180,9 @@ public class SeqDisplayController implements Initializable {
         showZIRDItem = new BooleanOperationItem((a, b, c) -> {
             refresh();
         }, Boolean.FALSE, "Residue Order Value", "Display", "Display IRD");
+        fillWith2ndStrItem = new BooleanOperationItem((a, b, c) -> {
+            refresh();
+        }, Boolean.FALSE, "Residue Order Value", "Fill 2ndStr", "Fill bars with secondary structure prediction");
         show2ndStrDItem = new BooleanOperationItem((a, b, c) -> {
             refresh();
         }, Boolean.FALSE, "Secondary Structure Prediction", "Display", "Display 2nd Str");
@@ -233,7 +237,7 @@ public class SeqDisplayController implements Initializable {
                 showAtomShiftsDotItem,
                 showAtomShiftsCombineItem, groupShiftsAtomsItem, atomScaleItem,
                 atomBarHeightItem,
-                showZIRDItem, modeZIRDItem, zirdHeightItem,
+                showZIRDItem, modeZIRDItem, fillWith2ndStrItem, zirdHeightItem,
                 show2ndStrDItem, ssStrHeightItem);
         masterDetailPane.setDividerPosition(0.7);
         refresh();
@@ -671,11 +675,11 @@ public class SeqDisplayController implements Initializable {
         double labelFontWidth = GUIUtils.getTextWidth("M", labelFont);
 
         double atomBarWidth = barWidth + 2;
-        double atomBarHeight = fontHeight * atomBarHeightItem.doubleValue() + 10;
-        double zIDRHeight = fontHeight * zirdHeightItem.doubleValue() + 10;
-        double ssStrRHeight = fontHeight * ssStrHeightItem.doubleValue() + 10;
+        double atomBarHeight = barWidth * atomBarHeightItem.doubleValue() + 10;
+        double zIDRHeight = barWidth * zirdHeightItem.doubleValue() + 10;
+        double ssStrRHeight = barWidth * ssStrHeightItem.doubleValue() + 10;
         double xOrigin = 15 + 6 * labelFontWidth;
-        double sectionGap = fontHeight * 1.0;
+        double sectionGap = barWidth * 1.0;
         double yOrigin = sectionGap;
         double y = yOrigin;
         double curY = y;
@@ -792,7 +796,25 @@ public class SeqDisplayController implements Initializable {
                     y += smallGap;
                     if (cMode == CANVAS_MODE.DRAW) {
                         if (modeZIRDItem.getValue().equals("Bar")) {
-                            gC.setFill(Color.GRAY);
+                            Color color = Color.GRAY;
+                            if (fillWith2ndStrItem.get()) {
+                                ProteinResidueAnalysis resAnalysis = (ProteinResidueAnalysis) residue.getPropertyObject("Prot2ndStr");
+                                if (resAnalysis != null) {
+                                    List<Integer> sortedStates = resAnalysis.getSortedStates4();
+                                    double[] stateProbs = resAnalysis.getState4();
+                                    double f1 = stateProbs[sortedStates.get(0)];
+                                    double f2 = stateProbs[sortedStates.get(1)];
+                                    Color color1 = colors2ndStr[sortedStates.get(0)];
+                                    Color color2 = colors2ndStr[sortedStates.get(1)];
+                                    double f = f1 / (f1 + f2);
+//                                System.out.println(resAnalysis.toString());
+//                                System.out.println(sortedStates.toString());
+//                                System.out.printf("%.3f %.3f %.3f\n",f1,f2,f);
+//                                System.out.println(color1.toString() + " " + color2.toString());
+                                    color = color2.interpolate(color1, f);
+                                }
+                            }
+                            gC.setFill(color);
                             drawBar(gC, residue, x, y, atomBarWidth, zIDRHeight, zIDR, minZ, maxZ);
                         } else {
                             drawSymbol(gC, residue, x, y, atomBarWidth, zIDRHeight, zIDR, minZ, maxZ);
@@ -842,7 +864,19 @@ public class SeqDisplayController implements Initializable {
                                 drawBorder(gC, xOrigin, y + smallGap, resWidth, ssStrRHeight);
                                 gC.setFont(labelFont);
                                 double y1 = y + ssStrRHeight / 2.0;
-                                drawRotatedLabel(gC, xOrigin - 3.5 * fontWidth, y1, "2nd Str");
+                                drawRotatedLabel(gC, xOrigin - 4.0 * fontWidth, y1, "2nd Str");
+                                String[] classNames = ProteinResidueAnalysis.getClasses4();
+                                double labelDelta = ssStrRHeight / 4.0;
+                                y1 = y + ssStrRHeight - labelDelta / 2.0 + smallGap;
+                                int iClass = 0;
+                                for (var className : classNames) {
+                                    gC.setFill(colors2ndStr[iClass]);
+                                    drawRotatedLabel(gC, xOrigin - 1.0 * fontWidth, y1, className);
+                                    y1 -= ssStrRHeight / 4.0;
+                                    iClass++;
+
+                                }
+                                gC.setFill(Color.BLACK);
                             }
                         }
                     }
