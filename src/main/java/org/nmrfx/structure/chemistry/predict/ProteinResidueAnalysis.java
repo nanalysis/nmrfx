@@ -5,6 +5,8 @@
  */
 package org.nmrfx.structure.chemistry.predict;
 
+import java.util.ArrayList;
+import java.util.List;
 import org.nmrfx.chemistry.Residue;
 
 /**
@@ -21,6 +23,7 @@ public class ProteinResidueAnalysis {
     double[] state3;
     double[] state4;
     double zIRD;
+    List<Integer> sortedStates4;
 
     ProteinResidueAnalysis(Residue residue, double zIRD, double[] state8) {
         this.residue = residue;
@@ -49,7 +52,33 @@ public class ProteinResidueAnalysis {
             }
             iClass++;
         }
+        sortedStates4 = sortStates(state4);
         this.zIRD = zIRD;
+    }
+
+    public List<Integer> getSortedStates4() {
+        return sortedStates4;
+    }
+
+    private List<Integer> sortStates(double[] states) {
+        List<Integer> stateList = new ArrayList<>();
+        for (int i = 0; i < states.length; i++) {
+            stateList.add(i);
+        }
+        stateList.sort((a, b) -> Double.compare(states[b], states[a]));
+        return stateList;
+    }
+
+    public static String[] getClasses3() {
+        return CLASSES3;
+    }
+
+    public static String[] getClasses4() {
+        return CLASSES4;
+    }
+
+    public static String[] getClasses8() {
+        return CLASSES8;
     }
 
     public double[] getState8() {
