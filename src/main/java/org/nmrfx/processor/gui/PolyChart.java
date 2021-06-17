@@ -825,7 +825,7 @@ public class PolyChart implements PeakListener {
 
     public void copyTo(PolyChart newChart) {
         for (DatasetAttributes dataAttr : datasetAttributesList) {
-            DatasetAttributes newDataAttr = newChart.setDataset(dataAttr.getDataset(), true);
+            DatasetAttributes newDataAttr = newChart.setDataset(dataAttr.getDataset(), true, false);
             dataAttr.copyTo(newDataAttr);
         }
         for (PeakListAttributes peakAttr : peakListAttributesList) {
@@ -1699,7 +1699,7 @@ public class PolyChart implements PeakListener {
     }
 
     public void setDataset(DatasetBase dataset) {
-        setDataset(dataset, false);
+        setDataset(dataset, false, false);
     }
 
     public boolean containsDataset(DatasetBase dataset) {
@@ -1713,7 +1713,7 @@ public class PolyChart implements PeakListener {
         return result;
     }
 
-    public DatasetAttributes setDataset(DatasetBase dataset, boolean append) {
+    public DatasetAttributes setDataset(DatasetBase dataset, boolean append, boolean keepLevel) {
         SpectrumStatusBar statusBar = controller.getStatusBar();
         DatasetAttributes datasetAttributes = null;
         if (dataset != null) {
@@ -1752,7 +1752,7 @@ public class PolyChart implements PeakListener {
                     DatasetBase existingDataset = datasetAttributes.getDataset();
                     double oldLevel = datasetAttributes.getLvl();
                     datasetAttributes.setDataset(dataset);
-                    if ((existingDataset == null) || !existingDataset.getName().equals(dataset.getName())) {
+                    if ((existingDataset == null) || (!keepLevel && !existingDataset.getName().equals(dataset.getName()))) {
                         datasetAttributes.setLvl(dataset.getLvl());
                     } else if ((existingDataset != null) && existingDataset.getName().equals(dataset.getName())) {
                         datasetAttributes.setLvl(oldLevel);

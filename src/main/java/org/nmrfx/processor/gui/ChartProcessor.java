@@ -465,7 +465,7 @@ public class ChartProcessor {
         }
         Vec vec = vectors.get(iVec);
         vec.setName("vec" + iVec);
-        chart.setDataset(new Dataset(vec));
+        chart.setDataset(new Dataset(vec), false, true);
     }
 
     public void setVector(int value) {
@@ -475,7 +475,7 @@ public class ChartProcessor {
         }
         Vec vec = vectors.get(iVec);
         vec.setName("vec" + iVec);
-        chart.setDataset(new Dataset(vec));
+        chart.setDataset(new Dataset(vec), false, true);
         chart.layoutPlotChildren();
     }
 

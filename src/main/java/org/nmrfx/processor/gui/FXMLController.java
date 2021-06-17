@@ -654,7 +654,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         for (int i = 0; ((i < nDim) && (i < 2)); i++) {
             dataset.setFreqDomain(i, true);
         }
-        DatasetAttributes datasetAttributes = getActiveChart().setDataset(dataset, appendFile);
+        DatasetAttributes datasetAttributes = getActiveChart().setDataset(dataset, appendFile, false);
         datasetAttributes.dim[0] = 0;
         if (nDim > 1) {
             datasetAttributes.dim[1] = 1;
