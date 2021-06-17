@@ -246,7 +246,7 @@ public class SimFitMolController extends SimMolController {
             controller.getStatusBar().setMode(1);
             for (Dataset dataset : datasets) {
                 if (!chart.containsDataset(dataset)) {
-                    chart.setDataset(dataset, true);
+                    chart.setDataset(dataset, true, false);
                 }
             }
             updateColors(chart);

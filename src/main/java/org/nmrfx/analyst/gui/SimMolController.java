@@ -142,7 +142,7 @@ public class SimMolController implements ControllerTool {
                 newDataset.addProperty("SIM", name);
             }
             controller.getStatusBar().setMode(1);
-            chart.setDataset(newDataset, true);
+            chart.setDataset(newDataset, true, false);
 
             updateColors(chart);
             molNameField.setText("");
