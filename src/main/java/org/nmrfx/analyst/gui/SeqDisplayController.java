@@ -689,6 +689,25 @@ public class SeqDisplayController implements Initializable {
         boolean combineMode = showAtomShiftsCombineItem.getValue();
         double maxX = xOrigin;
         double maxY = yOrigin;
+
+        if (show2ndStrDItem.get() || fillWith2ndStrItem.get()) {
+            if (pred2ndStr == null) {
+                pred2ndStr = new Protein2ndStructurePredictor();
+                try {
+                    pred2ndStr.load();
+                } catch (IOException ex) {
+                }
+            }
+            if (currentMol != mol) {
+                try {
+                    pred2ndStr.load();
+                    pred2ndStr.predict(mol);
+                    currentMol = mol;
+                } catch (IOException ex) {
+                }
+            }
+        }
+
         verticalResNums = showResNumberItem.get().equals("Vertical");
         for (Polymer polymer : mol.getPolymers()) {
             Residue firstRes = polymer.getFirstResidue();
@@ -839,22 +858,6 @@ public class SeqDisplayController implements Initializable {
                     y += zIDRHeight;
                 }
                 if (show2ndStrDItem.getValue() && polymer.isPeptide()) {
-                    if (pred2ndStr == null) {
-                        pred2ndStr = new Protein2ndStructurePredictor();
-                        try {
-                            pred2ndStr.load();
-                        } catch (IOException ex) {
-                        }
-                    }
-                    if (currentMol != mol) {
-                        try {
-                            pred2ndStr.load();
-                            pred2ndStr.predict(mol);
-                            currentMol = mol;
-                        } catch (IOException ex) {
-                        }
-
-                    }
                     ProteinResidueAnalysis resAnalysis = (ProteinResidueAnalysis) residue.getPropertyObject("Prot2ndStr");
                     y += smallGap;
                     if (cMode == CANVAS_MODE.DRAW) {
