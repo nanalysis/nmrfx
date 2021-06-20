@@ -138,6 +138,7 @@ public class RS2DData implements NMRData {
                 List<String> parValues = getParamValue(xml, parName);
                 parMap.put(parName, parValues);
             }
+            groupDelay = 0.0;
             obsNucleus = getPar("OBSERVED_NUCLEUS");
             Double obsFreq = null;
             Double obsSW = getParDouble("SPECTRAL_WIDTH");
@@ -611,9 +612,7 @@ public class RS2DData implements NMRData {
     @Override
     public String[] getSFNames() {
         String[] names = new String[nDim];
-        for (int i = 0; i < nDim; i++) {
-            names[i] = sfNames[i];
-        }
+        System.arraycopy(sfNames, 0, names, 0, nDim);
         return names;
     }
 
@@ -862,13 +861,22 @@ public class RS2DData implements NMRData {
 
     private void readValue(int iDim, int stride, int fileIndex, int vecIndex, int xCol, byte[] dataBuf) {
         try {
-            int nread = 0;
             int nPer = isComplex(iDim) ? 2 : 1;
             //int skips = fileIndex * tbytes + xCol * 4 * 2;
             int skips = fileIndex * stride + xCol * 4 * 2;
             //System.out.println(fileIndex + " " + xCol + " " + (skips/4));
             ByteBuffer buf = ByteBuffer.wrap(dataBuf, vecIndex * 4 * nPer, 4 * nPer);
-            nread = fc.read(buf, skips);
+            int nread = fc.read(buf, skips);
+            if (nread != 4 * nPer) {
+                LOGGER.log(Level.WARNING, "Could not read requested bytes");
+                if (fc != null) {
+                    try {
+                        fc.close();
+                    } catch (IOException ex) {
+                        LOGGER.log(Level.WARNING, ex.getMessage());
+                    }
+                }
+            }
         } catch (EOFException e) {
             LOGGER.log(Level.WARNING, e.getMessage());
             if (fc != null) {
