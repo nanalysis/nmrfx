@@ -2082,6 +2082,10 @@ public class DatasetBase {
         }
         return value;
     }
+    
+    public boolean hasLayout() {
+        return layout != null;
+    }
 
     synchronized public RegionData analyzeRegion(int[][] pt, int[] cpt, double[] width, int[] dim)
             throws IOException {
