@@ -25,24 +25,25 @@ import org.nmrfx.chemistry.Atom;
  */
 public class OrderPar implements RelaxationValues {
 
-    static final String[] PAR_NAMES = {"Order_param", "Tau_e", "Tau_f", "Tau_s", "Rex", "Sf2", "Ss2"};
-    Atom atom;
-    Double value;
-    Double error;
-    Double TauE;
-    Double TauEerr;
-    Double TauF;
-    Double TauFerr;
-    Double TauS;
-    Double TauSerr;
-    Double Rex;
-    Double Rexerr;
-    Double Sf2;
-    Double Sf2err;
-    Double Ss2;
-    Double Ss2err;
-    Double sumSqErr;
-    String model;
+    static final String[] PAR_NAMES = {"S2", "Tau_e", "Tau_f", "Tau_s", "Rex", "Sf2", "Ss2", "model"};
+    private Atom atom;
+    private Double value;
+    private Double error;
+    private Double TauE;
+    private Double TauEerr;
+    private Double TauF;
+    private Double TauFerr;
+    private Double TauS;
+    private Double TauSerr;
+    private Double Rex;
+    private Double Rexerr;
+    private Double Sf2;
+    private Double Sf2err;
+    private Double Ss2;
+    private Double Ss2err;
+    private Double sumSqErr;
+    private String model;
+    private Double modelNum;
 
     public OrderPar(Atom atom, Double[] values, Double[] errs, Double sumSqErr, String model) {
         this(atom,
@@ -59,6 +60,12 @@ public class OrderPar implements RelaxationValues {
 
     public OrderPar(Atom atom, Double value, Double error, Double sumSqErr, String model) {
         this(atom, value, error, null, null, null, null, null, null, null,
+                null, null, null, null, null, sumSqErr, model);
+
+    }
+
+    public OrderPar(Atom atom, Double sumSqErr, String model) {
+        this(atom, null, null, null, null, null, null, null, null, null,
                 null, null, null, null, null, sumSqErr, model);
 
     }
@@ -98,9 +105,54 @@ public class OrderPar implements RelaxationValues {
                 sumSqErr, model);
     }
 
+    public OrderPar set(String name, Double val, Double err) {
+        OrderPar newPar = new OrderPar(atom, value, error,
+                TauE, TauEerr,
+                TauF, TauFerr,
+                TauS, TauSerr,
+                Rex, Rexerr,
+                Sf2, Sf2err,
+                Ss2, Ss2err,
+                sumSqErr, model);
+        switch (name) {
+            case "S2":
+                newPar.value = val;
+                newPar.error = err;
+                break;
+            case "Tau_e":
+                newPar.TauE = val;
+                newPar.TauEerr = err;
+                break;
+            case "Tau_f":
+                newPar.TauF = val;
+                newPar.TauFerr = err;
+                break;
+            case "Tau_s":
+                newPar.TauS = val;
+                newPar.TauSerr = err;
+                break;
+            case "Rex":
+                newPar.Rex = val;
+                newPar.Rexerr = err;
+                break;
+            case "Sf2":
+                newPar.Sf2 = val;
+                newPar.Sf2err = err;
+                break;
+            case "Ss2":
+                newPar.Ss2 = val;
+                newPar.Ss2err = err;
+                break;
+            case "model":
+                newPar.modelNum = val;
+                break;
+        }
+        return newPar;
+    }
+
     @Override
     public String getName() {
-        return "OrderPar";
+        return "S2";
     }
 
     public static String[] getNames() {
@@ -132,7 +184,7 @@ public class OrderPar implements RelaxationValues {
     @Override
     public Double getValue(String name) {
         switch (name) {
-            case "Order_param":
+            case "S2":
                 return value;
             case "Tau_e":
                 return TauE;
@@ -146,6 +198,8 @@ public class OrderPar implements RelaxationValues {
                 return Sf2;
             case "Ss2":
                 return Ss2;
+            case "model":
+                return modelNum;
             default:
                 return null;
         }
@@ -154,7 +208,7 @@ public class OrderPar implements RelaxationValues {
     @Override
     public Double getError(String name) {
         switch (name) {
-            case "Order_param":
+            case "S2":
                 return error;
             case "Tau_e":
                 return TauEerr;
@@ -171,5 +225,17 @@ public class OrderPar implements RelaxationValues {
             default:
                 return null;
         }
+    }
+
+    public String toString() {
+        StringBuilder sBuilder = new StringBuilder();
+        sBuilder.append(value).append(" ");
+        sBuilder.append(TauE).append(" ");
+        sBuilder.append(TauF).append(" ");
+        sBuilder.append(TauS).append(" ");
+        sBuilder.append(Rex).append(" ");
+        sBuilder.append(Sf2).append(" ");
+        sBuilder.append(Ss2);
+        return sBuilder.toString();
     }
 }
