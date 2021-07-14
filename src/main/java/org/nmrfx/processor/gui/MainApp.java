@@ -274,9 +274,16 @@ public class MainApp extends Application {
 
         MenuItem pdfMenuItem = new MenuItem("Export PDF...");
         pdfMenuItem.setOnAction(e -> FXMLController.getActiveController().exportPDFAction(e));
+        pdfMenuItem.disableProperty().bind(FXMLController.activeController.isNull());
+        
         MenuItem svgMenuItem = new MenuItem("Export SVG...");
         svgMenuItem.setOnAction(e -> FXMLController.getActiveController().exportSVGAction(e));
         svgMenuItem.disableProperty().bind(FXMLController.activeController.isNull());
+        
+        MenuItem pngMenuItem = new MenuItem("Export PNG...");
+        pngMenuItem.setOnAction(e -> FXMLController.getActiveController().exportPNG(e));
+        pngMenuItem.disableProperty().bind(FXMLController.activeController.isNull());
+        
         MenuItem loadPeakListMenuItem = new MenuItem("Load PeakLists");
         loadPeakListMenuItem.setOnAction(e -> loadPeakLists());
 
@@ -307,7 +314,7 @@ public class MainApp extends Application {
         projectMenu.getItems().addAll(projectOpenMenuItem, recentProjectMenuItem, projectSaveMenuItem, projectSaveAsMenuItem);
 
         fileMenu.getItems().addAll(openMenuItem, openDatasetMenuItem, addMenuItem,
-                recentFIDMenuItem, recentDatasetMenuItem, newMenuItem, portMenuItem, new SeparatorMenuItem(), pdfMenuItem, svgMenuItem, loadPeakListMenuItem);
+                recentFIDMenuItem, recentDatasetMenuItem, newMenuItem, portMenuItem, new SeparatorMenuItem(), pdfMenuItem, svgMenuItem, pngMenuItem, loadPeakListMenuItem);
 
         Menu spectraMenu = new Menu("Spectra");
         MenuItem copyItem = new MenuItem("Copy Spectrum as SVG Text");
