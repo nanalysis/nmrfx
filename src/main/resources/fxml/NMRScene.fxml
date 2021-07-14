@@ -51,9 +51,10 @@
                 </GridPane>
             </right>
             <bottom>
-                <HBox BorderPane.alignment="CENTER">
+                <HBox fx:id="dimHBox" alignment="CENTER_LEFT">
                     <children>
-                        <Label fx:id="rowLabel" />
+                        <Label text="Dim " alignment="CENTER_LEFT"/>
+                        <HBox fx:id="dimHBox2" alignment="CENTER_LEFT"/>
                     </children>
                 </HBox>
             </bottom>

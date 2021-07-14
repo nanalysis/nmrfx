@@ -407,6 +407,11 @@ public class ChartProcessor {
     }
 
     public void loadVectors(int i) {
+        int[] rows = {i};
+        loadVectors(1, rows);
+    }
+
+    public void loadVectors(int iDim, int[] rows) {
         //setFlags();
         NMRData nmrData = getNMRData();
         int nPoints = nmrData.getNPoints();
@@ -422,10 +427,23 @@ public class ChartProcessor {
         saveVectors.clear();
         int nVectors = 1;
         VecIndex vecIndex = null;
+        int i = 0;
+        if (rows.length > 0) {
+            i = rows[0];
+        }
         if (vecDim == 0) {
             nVectors = vectorsPerGroup;
             if (multiVecCounter != null) {
-                vecIndex = multiVecCounter.getNextGroup(i);
+                if (rows.length == 1) {
+                    vecIndex = multiVecCounter.getNextGroup(i);
+                } else {
+                    for (var iRow:rows) {
+                        System.out.print(iRow + " ");
+                    }
+                    System.out.println(i);
+                    i = multiVecCounter.findOutGroup(rows);
+                    vecIndex = multiVecCounter.getNextGroup(i);
+                }
             }
         }
         for (int j = 0; j < nVectors; j++) {
@@ -494,12 +512,12 @@ public class ChartProcessor {
         chart.setDataset(new Dataset(vec));
     }
 
-    public void vecRow(int i) {
+    public void vecRow(int iDim, int i) {
         if (getNMRData() != null) {
             int nDim = getNMRData().getNDim();
             int size = 1;
             if (nDim > 1) {
-                size = getNMRData().getSize(1);
+                size = getNMRData().getSize(iDim);
             }
 
             if (i >= size) {
@@ -508,14 +526,15 @@ public class ChartProcessor {
             if (i < 0) {
                 i = 0;
             }
-            loadVectors(i);
+            fxmlController.setRowLabel(i + 1, size);
+            int[] rows = fxmlController.getRows();
+            loadVectors(1, rows);
             try {
                 ProcessOps process = getProcess();
                 process.exec();
             } catch (IncompleteProcessException ipe) {
                 ipe.printStackTrace();
             }
-            fxmlController.setRowLabel(i + 1, size);
 
             chart.layoutPlotChildren();
         }
@@ -1119,6 +1138,7 @@ public class ChartProcessor {
         } else {
             vectorsPerGroup = 1;
         }
+        fxmlController.updateRowDimMenu(nDim);
     }
 
     public void setData(NMRData data, boolean clearOps) {

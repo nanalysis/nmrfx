@@ -77,9 +77,12 @@ import javafx.scene.control.ContentDisplay;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.MenuBar;
+import javafx.scene.control.RadioButton;
 import javafx.scene.control.SelectionMode;
 import javafx.scene.control.Separator;
 import javafx.scene.control.Slider;
+import javafx.scene.control.TextField;
+import javafx.scene.control.ToggleGroup;
 import javafx.scene.control.ToolBar;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -92,6 +95,7 @@ import javafx.scene.input.ScrollEvent;
 import javafx.scene.input.TransferMode;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
@@ -129,6 +133,7 @@ import org.nmrfx.processor.gui.tools.PathTool;
 import org.nmrfx.processor.gui.tools.SpectrumComparator;
 import org.nmrfx.processor.gui.undo.UndoManager;
 import org.nmrfx.utilities.DictionarySort;
+import org.nmrfx.utils.GUIUtils;
 import org.python.core.PyObject;
 import org.python.util.PythonInterpreter;
 
@@ -152,11 +157,15 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
     @FXML
     private BorderPane borderPane;
     @FXML
-    private Label rowLabel;
+    private HBox dimHBox;
+    @FXML
+    private HBox dimHBox2;
     @FXML
     private Slider vecNum1;
     @FXML
     private GridPane rightBox;
+    private TextField[] rowTextBoxes = new TextField[0];
+    ToggleGroup rowToggleGroup = new ToggleGroup();
 
     private Button cancelButton;
     EventHandler<ActionEvent> menuHandler;
@@ -421,7 +430,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         fileChooser.setInitialDirectory(getInitialDirectory());
         fileChooser.setTitle("Open NMR FID");
         fileChooser.getExtensionFilters().addAll(
-                new ExtensionFilter("NMR Fid", "fid", "ser", "*.nv", "*.dx", "*.jdx", "*.jdf","*.dat"),
+                new ExtensionFilter("NMR Fid", "fid", "ser", "*.nv", "*.dx", "*.jdx", "*.jdf", "*.dat"),
                 new ExtensionFilter("Any File", "*.*")
         );
         File selectedFile = fileChooser.showOpenDialog(null);
@@ -855,10 +864,30 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
     @FXML
     private void handleVecNum(Event event) {
         Slider slider = (Slider) event.getSource();
-        int iRow = (int) slider.getValue();
-        chartProcessor.vecRow(iRow - 1);
+        int iRow = (int) slider.getValue() - 1;
+        int iDim = getRowChoice() - 1;
+        chartProcessor.vecRow(iDim, iRow);
         getActiveChart().layoutPlotChildren();
         //label.setText("Hello World!");
+    }
+
+    public int[] getRows() {
+        int[] rows = new int[rowTextBoxes.length];
+        for (int i = 0; i < rows.length; i++) {
+            if (rowTextBoxes[i] == null) {
+                rows[i] = 0;
+            } else {
+                String text = rowTextBoxes[i].getText();
+                if (text.isBlank()) {
+                    rows[i] = 0;
+                } else {
+                    String[] fields = text.split("/");
+                    int row = Integer.parseInt(fields[0].trim()) - 1;
+                    rows[i] = row;
+                }
+            }
+        }
+        return rows;
     }
 
     @FXML
@@ -878,6 +907,21 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
     }
 
     @FXML
+    public void exportPNG(ActionEvent event) {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Export to PDF");
+        fileChooser.setInitialDirectory(getInitialDirectory());
+        File selectedFile = fileChooser.showSaveDialog(null);
+        if (selectedFile != null) {
+            try {
+                GUIUtils.snapNode(chartGroup, selectedFile);
+            } catch (IOException ex) {
+                GUIUtils.warn("Error saving png file", ex.getLocalizedMessage());
+            }
+        }
+    }
+
+    @FXML
     public void exportPDFAction(ActionEvent event) {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Export to PDF");
@@ -887,7 +931,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
     }
 
     public void exportPDF(File file) {
-        exportSVG(file.toString());
+        exportPDF(file.toString());
     }
 
     public void exportPDF(String fileName) {
@@ -980,8 +1024,23 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
 
         if (nDim > 1) {
             borderPane.setLeft(vectorBox);
-            borderPane.setBottom(rowLabel);
-
+            borderPane.setBottom(dimHBox);
+            if (rowTextBoxes.length != (nDim - 1)) {
+                rowTextBoxes = new TextField[nDim - 1];
+                dimHBox2.getChildren().clear();
+                for (int i = 0; i < nDim - 1; i++) {
+                    rowTextBoxes[i] = new TextField();
+                    rowTextBoxes[i].setPrefWidth(60);
+                    RadioButton radioButton = new RadioButton((i + 2) + ": ");
+                    Pane pane = new Pane();
+                    pane.setMinWidth(50.0);
+                    dimHBox2.getChildren().addAll(radioButton, rowTextBoxes[i], pane);
+                    radioButton.setToggleGroup(rowToggleGroup);
+                    if (i == 0) {
+                        rowToggleGroup.selectToggle(radioButton);
+                    }
+                }
+            }
             if (vecNum1 == null) {
                 System.out.println("null sl");
             } else {
@@ -1018,7 +1077,31 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
     }
 
     protected void setRowLabel(int row, int size) {
-        rowLabel.setText("Row: " + row + " / " + size);
+        int iDim = getRowChoice() - 2;
+        rowTextBoxes[iDim].setText(row + " / " + size);
+    }
+
+    Integer getRowChoice() {
+        RadioButton radioButton = (RadioButton) rowToggleGroup.getSelectedToggle();
+        String text = radioButton.getText();
+        Integer iDim = Integer.parseInt(text.substring(0, 1));
+        return iDim;
+    }
+
+    void handleRowDimChange() {
+        Integer iDim = getRowChoice();
+        if (iDim != null) {
+            int[] rows = getRows();
+            if (rows.length > 0) {
+                int row = rows[iDim - 2];
+                if ((vecNum1 != null) && vecNum1.isVisible()) {
+                    vecNum1.setValue(row + 1);
+                }
+            }
+        }
+    }
+
+    void updateRowDimMenu(int nDim) {
     }
 
     protected int[] getExtractRegion(String vecDimName, int size) {
@@ -1129,8 +1212,8 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
 
     public static FXMLController getActiveController() {
         if (activeController.get() == null) {
-              FXMLController controller = FXMLController.create(); 
-              controller.setActiveController();
+            FXMLController controller = FXMLController.create();
+            controller.setActiveController();
         }
         return activeController.get();
     }
@@ -1233,8 +1316,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
     }
 
     @Override
-    public void initialize(URL url, ResourceBundle rb
-    ) {
+    public void initialize(URL url, ResourceBundle rb) {
         rightBox.getChildren().remove(phaserBox);
         borderPane.setLeft(null);
         if (!MainApp.isMac()) {
@@ -1273,6 +1355,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
             }
         }
         phaser = new Phaser(this, phaserBox);
+        rowToggleGroup.selectedToggleProperty().addListener(e -> handleRowDimChange());
     }
 
     public Phaser getPhaser() {
