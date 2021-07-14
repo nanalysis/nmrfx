@@ -17,7 +17,10 @@
  */
 package org.nmrfx.processor.gui.tools;
 
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.List;
 import javafx.beans.Observable;
 import javafx.collections.ListChangeListener;
@@ -29,6 +32,8 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.Label;
+import javafx.scene.control.MenuButton;
+import javafx.scene.control.MenuItem;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ToolBar;
@@ -110,10 +115,18 @@ public class TRACTGUI {
                     }));
 
             ToolBar toolBar = new ToolBar();
-            Button exportButton = new Button("Export");
-            exportButton.setOnAction(e -> exportBarPlotSVGAction(e));
+            MenuButton fileMenu = new MenuButton("File");
+
+            MenuItem exportSVGMenuItem = new MenuItem("Export SVG...");
+            fileMenu.getItems().add(exportSVGMenuItem);
+            exportSVGMenuItem.setOnAction(e -> exportBarPlotSVGAction(e));
+
+            MenuItem exportDataMenuItem = new MenuItem("Export Data...");
+            fileMenu.getItems().add(exportDataMenuItem);
+            exportDataMenuItem.setOnAction(e -> exportData());
+
             Button fitButton = new Button("Fit");
-            toolBar.getItems().addAll(exportButton, fitButton);
+            toolBar.getItems().addAll(fileMenu, fitButton);
 
             fitButton.setOnAction(e -> analyze());
             scaleField = new TextField("2.0e-3");
@@ -317,6 +330,48 @@ public class TRACTGUI {
     protected void exportChart(SVGGraphicsContext svgGC) throws GraphicsIOException {
         svgGC.beginPath();
         activeChart.drawChart(svgGC);
+    }
+
+    void exportData() {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Export data values");
+        //fileChooser.setInitialDirectory(pyController.getInitialDirectory());
+        File selectedFile = fileChooser.showSaveDialog(null);
+        if (selectedFile != null) {
+            try (FileWriter writer = new FileWriter(selectedFile)) {
+                List<DataSeries> data = activeChart.getData();
+                if (!data.isEmpty()) {
+                    DataSeries series = data.get(0);
+                    List<XYValue> values = series.getValues();
+                    int n = values.size() / 2;
+                    writer.write("#Data " + n + " \n");
+
+                    for (int i = 0; i < n; i++) {
+                        XYValue v0 = values.get(i * 2);
+                        XYValue v1 = values.get(i * 2 + 1);
+                        String outStr = String.format("%.5f %.5f %.5f\n", v0.getXValue(), v0.getYValue(), v1.getYValue());
+                        writer.write(outStr);
+                    }
+                }
+                if (data.size() == 3) {
+                    DataSeries series0 = data.get(1);
+                    DataSeries series1 = data.get(2);
+                    List<XYValue> values0 = series0.getValues();
+                    List<XYValue> values1 = series1.getValues();
+                    int n = values0.size();
+                    writer.write("#Simulated " + n + " \n");
+                    for (int i = 0; i < n; i++) {
+                        XYValue v0 = values0.get(i);
+                        XYValue v1 = values1.get(i);
+                        String outStr = String.format("%.5f %.5f %.5f\n", v0.getXValue(), v0.getYValue(), v1.getYValue());
+                        writer.write(outStr);
+                    }
+                }
+            } catch (IOException ioE) {
+
+            }
+
+        }
     }
 
 }
