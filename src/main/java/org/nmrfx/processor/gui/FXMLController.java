@@ -169,8 +169,8 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
     private GridPane rightBox;
     private TextField[] rowTextBoxes = new TextField[0];
     ToggleGroup rowToggleGroup = new ToggleGroup();
-    private Spinner vecSpinner = new Spinner();
-    private SpinnerValueFactory.ListSpinnerValueFactory<String> spinFactory = null;
+    private ChoiceBox<String> realImagChoiceBox = new ChoiceBox();
+    private List<String> realImagChoices = new ArrayList<>();
     ChangeListener<String> vecNumListener;
 
     private Button cancelButton;
@@ -1046,7 +1046,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
                         rowToggleGroup.selectToggle(radioButton);
                     }
                 }
-                dimHBox2.getChildren().add(vecSpinner);
+                dimHBox2.getChildren().add(realImagChoiceBox);
             }
             if (vecNum1 == null) {
                 System.out.println("null sl");
@@ -1363,14 +1363,11 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         }
         phaser = new Phaser(this, phaserBox);
         rowToggleGroup.selectedToggleProperty().addListener(e -> handleRowDimChange());
-        spinFactory = new SpinnerValueFactory.ListSpinnerValueFactory(FXCollections.observableArrayList());
-        vecSpinner.setEditable(false);
-        vecSpinner.setValueFactory(spinFactory);
         vecNumListener = new ChangeListener<String>() {
             @Override
             public void changed(ObservableValue<? extends String> observableValue, String string, String string2) {
-                int vecNum = spinFactory.getItems().indexOf(string2);
-                System.out.println(string2 + "vecNum " + vecNum);
+                String text = realImagChoiceBox.getValue();
+                int vecNum = realImagChoices.indexOf(text);
                 chartProcessor.setVector(vecNum);
             }
         };
@@ -2219,10 +2216,10 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
 
     protected void updateVecNumChoice(int nDim) {
         char[] chars = {'R', 'I'};
+        realImagChoices.clear();
         if (nDim > 1) {
             int nVectors = (int) Math.pow(2, (nDim - 1));
-            vecSpinner.valueProperty().removeListener(vecNumListener);
-            spinFactory.getItems().clear();
+            realImagChoiceBox.valueProperty().removeListener(vecNumListener);
             StringBuilder sBuilder = new StringBuilder();
             for (int i = 0; i < nVectors; i++) {
                 sBuilder.setLength(0);
@@ -2232,9 +2229,10 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
                     sBuilder.append(chars[kk]);
                 }
                 System.out.println(i + " " + nVectors + " " + sBuilder.toString());
-                spinFactory.getItems().add(sBuilder.toString());
+                realImagChoiceBox.getItems().add(sBuilder.toString());
+                realImagChoices.add(sBuilder.toString());
             }
-            vecSpinner.valueProperty().addListener(vecNumListener);
+            realImagChoiceBox.valueProperty().addListener(vecNumListener);
         }
     }
 

@@ -53,7 +53,7 @@
             <bottom>
                 <HBox fx:id="dimHBox" alignment="CENTER_LEFT">
                     <children>
-                        <Label text="Dim " alignment="CENTER_LEFT"/>
+                        <Label text="Dimension: " alignment="CENTER_LEFT"/>
                         <HBox fx:id="dimHBox2" alignment="CENTER_LEFT"/>
                     </children>
                 </HBox>
