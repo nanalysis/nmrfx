@@ -91,7 +91,6 @@ public class SpectrumStatusBar {
     CheckBox complexStatus = new CheckBox("Complex");
     CheckBox phaserStatus = new CheckBox("Phasing");
     MenuButton toolButton = new MenuButton("Tools");
-    private Spinner vecSpinner = new Spinner();
     TextField[] planePPMField = new TextField[maxSpinners];
     Spinner[] planeSpinner = new Spinner[maxSpinners];
     MenuButton[] dimMenus = new MenuButton[maxSpinners + 2];
@@ -101,8 +100,6 @@ public class SpectrumStatusBar {
     StackPane[][] crossTextIcons = new StackPane[2][2];
     StackPane[][] limitTextIcons = new StackPane[2][2];
     boolean[][] iconStates = new boolean[2][2];
-    private SpinnerValueFactory.ListSpinnerValueFactory<String> spinFactory = null;
-    ChangeListener<String> vecNumListener;
     Pane filler1 = new Pane();
     Pane filler2 = new Pane();
     static String[] rowNames = {"X", "Y", "Z", "A", "B", "C", "D", "E"};
@@ -122,17 +119,6 @@ public class SpectrumStatusBar {
     public void buildBar(ToolBar btoolBar) {
         this.btoolBar = btoolBar;
         setupTools();
-        spinFactory = new SpinnerValueFactory.ListSpinnerValueFactory(FXCollections.observableArrayList());
-        vecSpinner.setEditable(false);
-        vecSpinner.setValueFactory(spinFactory);
-        vecNumListener = new ChangeListener<String>() {
-            @Override
-            public void changed(ObservableValue<? extends String> observableValue, String string, String string2) {
-                int vecNum = spinFactory.getItems().indexOf(string2);
-                System.out.println(string2 + "vecNum " + vecNum);
-                controller.chartProcessor.setVector(vecNum);
-            }
-        };
 
         for (int i = 0; i < 2; i++) {
             for (int j = 1; j >= 0; j--) {
@@ -533,28 +519,6 @@ public class SpectrumStatusBar {
         controller.getActiveChart().layoutPlotChildren();
     }
 
-    @FXML
-    protected void updateVecNumChoice(int nDim) {
-        char[] chars = {'R', 'I'};
-        if (nDim > 1) {
-            int nVectors = (int) Math.pow(2, (nDim - 1));
-            vecSpinner.valueProperty().removeListener(vecNumListener);
-            spinFactory.getItems().clear();
-            StringBuilder sBuilder = new StringBuilder();
-            for (int i = 0; i < nVectors; i++) {
-                sBuilder.setLength(0);
-                for (int j = nDim - 2; j >= 0; j--) {
-                    int k = (int) Math.pow(2, j);
-                    int kk = (i / k) % 2;
-                    sBuilder.append(chars[kk]);
-                }
-                System.out.println(i + " " + nVectors + " " + sBuilder.toString());
-                spinFactory.getItems().add(sBuilder.toString());
-            }
-            vecSpinner.valueProperty().addListener(vecNumListener);
-        }
-    }
-
     public void setCrossTextRange(int iCross, int jOrient, double min, double max) {
         crossText[iCross][jOrient].setMin(min);
         crossText[iCross][jOrient].setMax(max);
@@ -605,9 +569,7 @@ public class SpectrumStatusBar {
         currentMode = mode;
         arrayMode = false;
         List<Node> nodes = new ArrayList<>();
-        if (mode == 0) {
-            nodes.add(vecSpinner);
-        } else {
+        if (mode != 0) {
             nodes.add(cursorMenuButton);
             nodes.add(toolButton);
         }

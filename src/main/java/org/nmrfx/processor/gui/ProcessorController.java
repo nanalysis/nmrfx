@@ -299,7 +299,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
             dimChoice.getSelectionModel().select(0);
             dimChoice.getSelectionModel().selectedItemProperty().addListener(dimListener);
 
-            chart.controller.getStatusBar().updateVecNumChoice(nDim);
+            chart.controller.updateVecNumChoice(nDim);
         }
         updateLineshapeCatalog(nDim);
     }

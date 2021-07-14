@@ -53,6 +53,7 @@ import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ReadOnlyIntegerProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleObjectProperty;
+import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -81,6 +82,8 @@ import javafx.scene.control.RadioButton;
 import javafx.scene.control.SelectionMode;
 import javafx.scene.control.Separator;
 import javafx.scene.control.Slider;
+import javafx.scene.control.Spinner;
+import javafx.scene.control.SpinnerValueFactory;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleGroup;
 import javafx.scene.control.ToolBar;
@@ -166,6 +169,9 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
     private GridPane rightBox;
     private TextField[] rowTextBoxes = new TextField[0];
     ToggleGroup rowToggleGroup = new ToggleGroup();
+    private Spinner vecSpinner = new Spinner();
+    private SpinnerValueFactory.ListSpinnerValueFactory<String> spinFactory = null;
+    ChangeListener<String> vecNumListener;
 
     private Button cancelButton;
     EventHandler<ActionEvent> menuHandler;
@@ -1040,6 +1046,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
                         rowToggleGroup.selectToggle(radioButton);
                     }
                 }
+                dimHBox2.getChildren().add(vecSpinner);
             }
             if (vecNum1 == null) {
                 System.out.println("null sl");
@@ -1356,6 +1363,17 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         }
         phaser = new Phaser(this, phaserBox);
         rowToggleGroup.selectedToggleProperty().addListener(e -> handleRowDimChange());
+        spinFactory = new SpinnerValueFactory.ListSpinnerValueFactory(FXCollections.observableArrayList());
+        vecSpinner.setEditable(false);
+        vecSpinner.setValueFactory(spinFactory);
+        vecNumListener = new ChangeListener<String>() {
+            @Override
+            public void changed(ObservableValue<? extends String> observableValue, String string, String string2) {
+                int vecNum = spinFactory.getItems().indexOf(string2);
+                System.out.println(string2 + "vecNum " + vecNum);
+                chartProcessor.setVector(vecNum);
+            }
+        };
     }
 
     public Phaser getPhaser() {
@@ -2197,6 +2215,27 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
     public void addSelectedPeakListener(ChangeListener listener) {
         selPeaks.addListener(listener);
 
+    }
+
+    protected void updateVecNumChoice(int nDim) {
+        char[] chars = {'R', 'I'};
+        if (nDim > 1) {
+            int nVectors = (int) Math.pow(2, (nDim - 1));
+            vecSpinner.valueProperty().removeListener(vecNumListener);
+            spinFactory.getItems().clear();
+            StringBuilder sBuilder = new StringBuilder();
+            for (int i = 0; i < nVectors; i++) {
+                sBuilder.setLength(0);
+                for (int j = nDim - 2; j >= 0; j--) {
+                    int k = (int) Math.pow(2, j);
+                    int kk = (i / k) % 2;
+                    sBuilder.append(chars[kk]);
+                }
+                System.out.println(i + " " + nVectors + " " + sBuilder.toString());
+                spinFactory.getItems().add(sBuilder.toString());
+            }
+            vecSpinner.valueProperty().addListener(vecNumListener);
+        }
     }
 
 }
