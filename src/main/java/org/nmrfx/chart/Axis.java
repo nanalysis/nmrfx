@@ -30,6 +30,7 @@ import javafx.scene.text.Font;
 import javafx.scene.text.TextAlignment;
 import org.nmrfx.graphicsio.GraphicsContextInterface;
 import org.nmrfx.graphicsio.GraphicsIOException;
+import org.nmrfx.graphicsio.StyledCanvasText;
 
 /**
  *
@@ -470,6 +471,7 @@ public class Axis {
     }
 
     private void drawHorizontalAxis(GraphicsContextInterface gC) throws GraphicsIOException {
+        gC.setTextAlign(TextAlignment.CENTER);
         gC.strokeLine(xOrigin, yOrigin, xOrigin + width, yOrigin);
         double value = tInfo.minorStart;
         double gap1 = ticFontSize / 4;
@@ -514,7 +516,7 @@ public class Axis {
                     labelTop += ticFontSize + gap1;
                 }
             }
-            gC.fillText(label, xOrigin + width / 2, labelTop);
+            StyledCanvasText.drawStyledText(gC, label, xOrigin + width / 2, labelTop);
             //gC.drawText(label, leftBorder + width / 2, labelTop, "n", 0.0);
         }
 
@@ -571,7 +573,8 @@ public class Axis {
             gC.translate(xOrigin - width + gap2, yOrigin - height / 2);
             gC.rotate(270);
             gC.nativeCoords(true);
-            gC.fillText(label, 0, 0);
+            StyledCanvasText.drawStyledText(gC, label, 0, 0);
+            // gC.fillText(label, 0, 0);
             gC.nativeCoords(false);
             gC.restore();
 
