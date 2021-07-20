@@ -272,7 +272,8 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         }
     }
 
-    protected void updateDimChoice(int nDim) {
+    protected void updateDimChoice(boolean[] complex) {
+        int nDim = complex.length;
         if (nDim > 1) {
             dimChoice.getSelectionModel().selectedItemProperty().removeListener(dimListener);
             ObservableList<String> dimList = FXCollections.observableArrayList();
@@ -299,7 +300,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
             dimChoice.getSelectionModel().select(0);
             dimChoice.getSelectionModel().selectedItemProperty().addListener(dimListener);
 
-            chart.controller.updateVecNumChoice(nDim);
+            chart.controller.updateVecNumChoice(complex);
         }
         updateLineshapeCatalog(nDim);
     }

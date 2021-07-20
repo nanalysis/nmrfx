@@ -82,8 +82,6 @@ import javafx.scene.control.RadioButton;
 import javafx.scene.control.SelectionMode;
 import javafx.scene.control.Separator;
 import javafx.scene.control.Slider;
-import javafx.scene.control.Spinner;
-import javafx.scene.control.SpinnerValueFactory;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleGroup;
 import javafx.scene.control.ToolBar;
@@ -168,10 +166,13 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
     @FXML
     private GridPane rightBox;
     private TextField[] rowTextBoxes = new TextField[0];
+    private TextField fileIndexTextBox = new TextField();
     ToggleGroup rowToggleGroup = new ToggleGroup();
     private ChoiceBox<String> realImagChoiceBox = new ChoiceBox();
     private List<String> realImagChoices = new ArrayList<>();
     ChangeListener<String> vecNumListener;
+    int[] rowIndices;
+    int[] vecSizes;
 
     private Button cancelButton;
     EventHandler<ActionEvent> menuHandler;
@@ -915,7 +916,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
     @FXML
     public void exportPNG(ActionEvent event) {
         FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle("Export to PDF");
+        fileChooser.setTitle("Export to PNG");
         fileChooser.setInitialDirectory(getInitialDirectory());
         File selectedFile = fileChooser.showSaveDialog(null);
         if (selectedFile != null) {
@@ -1027,6 +1028,8 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
     protected void vectorStatus(int[] sizes, int vecDim) {
         int nDim = sizes.length;
         statusBar.setMode(0);
+        double sepWidth = 20.0;
+        vecSizes = sizes.clone();
 
         if (nDim > 1) {
             borderPane.setLeft(vectorBox);
@@ -1036,17 +1039,24 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
                 dimHBox2.getChildren().clear();
                 for (int i = 0; i < nDim - 1; i++) {
                     rowTextBoxes[i] = new TextField();
-                    rowTextBoxes[i].setPrefWidth(60);
+                    rowTextBoxes[i].setEditable(false);
+                    rowTextBoxes[i].setPrefWidth(100);
                     RadioButton radioButton = new RadioButton((i + 2) + ": ");
                     Pane pane = new Pane();
-                    pane.setMinWidth(50.0);
+                    pane.setMinWidth(sepWidth);
                     dimHBox2.getChildren().addAll(radioButton, rowTextBoxes[i], pane);
                     radioButton.setToggleGroup(rowToggleGroup);
                     if (i == 0) {
                         rowToggleGroup.selectToggle(radioButton);
                     }
                 }
-                dimHBox2.getChildren().add(realImagChoiceBox);
+                Pane pane = new Pane();
+                pane.setMinWidth(sepWidth);
+                fileIndexTextBox.setPrefWidth(60);
+                fileIndexTextBox.setEditable(false);
+                dimHBox2.getChildren().addAll(realImagChoiceBox, pane, new Label("File Index: "),
+                        fileIndexTextBox);
+
             }
             if (vecNum1 == null) {
                 System.out.println("null sl");
@@ -1056,15 +1066,18 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
                     sizeDim = 0;
                 }
                 System.out.println(sizeDim + " " + sizes[sizeDim]);
-                int maxSize = sizes[sizeDim] < 128 ? sizes[sizeDim] : 128;
+                int maxSize = sizes[sizeDim] < 256 ? sizes[sizeDim] : 256;
                 vecNum1.setMax(maxSize);
                 vecNum1.setValue(1);
+                for (int iDim = 1; iDim < sizes.length; iDim++) {
+                    rowTextBoxes[iDim - 1].setText(1 + " / " + sizes[iDim]);
+                }
+                fileIndexTextBox.setText("1");
             }
 
         } else {
             borderPane.setLeft(null);
             borderPane.setBottom(null);
-
         }
     }
 
@@ -1088,6 +1101,22 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         rowTextBoxes[iDim].setText(row + " / " + size);
     }
 
+    void setFileIndex(int[] indices) {
+        this.rowIndices = indices;
+        setFileIndex();
+    }
+
+    void setFileIndex() {
+        if (rowIndices != null) {
+            String text = realImagChoiceBox.getValue();
+            int riIndex = realImagChoices.indexOf(text);
+            if (riIndex != -1) {
+                int index = rowIndices[riIndex];
+                fileIndexTextBox.setText(String.valueOf(index + 1));
+            }
+        }
+    }
+
     Integer getRowChoice() {
         RadioButton radioButton = (RadioButton) rowToggleGroup.getSelectedToggle();
         String text = radioButton.getText();
@@ -1102,6 +1131,9 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
             if (rows.length > 0) {
                 int row = rows[iDim - 2];
                 if ((vecNum1 != null) && vecNum1.isVisible()) {
+                    int maxSize = vecSizes[iDim - 1] < 256 ? vecSizes[iDim - 1] : 256;
+                    System.out.println(iDim + " " + vecSizes[iDim - 1] + " " + maxSize);
+                    vecNum1.setMax(maxSize);
                     vecNum1.setValue(row + 1);
                 }
             }
@@ -1369,6 +1401,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
                 String text = realImagChoiceBox.getValue();
                 int vecNum = realImagChoices.indexOf(text);
                 chartProcessor.setVector(vecNum);
+                setFileIndex();
             }
         };
     }
@@ -2214,24 +2247,34 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
 
     }
 
-    protected void updateVecNumChoice(int nDim) {
+    protected void updateVecNumChoice(boolean[] complex) {
         char[] chars = {'R', 'I'};
         realImagChoices.clear();
+        realImagChoiceBox.getItems().clear();
+        int nDim = complex.length;
         if (nDim > 1) {
-            int nVectors = (int) Math.pow(2, (nDim - 1));
+            int nVectors = 1;
+            for (int iDim = 1; iDim < nDim; iDim++) {
+                nVectors *= complex[iDim] ? 2 : 1;
+            }
             realImagChoiceBox.valueProperty().removeListener(vecNumListener);
             StringBuilder sBuilder = new StringBuilder();
             for (int i = 0; i < nVectors; i++) {
                 sBuilder.setLength(0);
                 for (int j = nDim - 2; j >= 0; j--) {
-                    int k = (int) Math.pow(2, j);
-                    int kk = (i / k) % 2;
-                    sBuilder.append(chars[kk]);
+                    if (complex[j + 1]) {
+                        int k = (int) Math.pow(2, j);
+                        int kk = (i / k) % 2;
+                        sBuilder.append(chars[kk]);
+                    } else {
+                        sBuilder.append("R");
+                    }
                 }
                 System.out.println(i + " " + nVectors + " " + sBuilder.toString());
                 realImagChoiceBox.getItems().add(sBuilder.toString());
                 realImagChoices.add(sBuilder.toString());
             }
+            realImagChoiceBox.setValue(realImagChoices.get(0));
             realImagChoiceBox.valueProperty().addListener(vecNumListener);
         }
     }

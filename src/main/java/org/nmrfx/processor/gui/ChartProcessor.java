@@ -406,12 +406,12 @@ public class ChartProcessor {
         return fixDSP;
     }
 
-    public void loadVectors(int i) {
+    public int[] loadVectors(int i) {
         int[] rows = {i};
-        loadVectors(1, rows);
+        return loadVectors(1, rows);
     }
 
-    public void loadVectors(int iDim, int[] rows) {
+    public int[] loadVectors(int iDim, int[] rows) {
         //setFlags();
         NMRData nmrData = getNMRData();
         int nPoints = nmrData.getNPoints();
@@ -427,37 +427,50 @@ public class ChartProcessor {
         saveVectors.clear();
         int nVectors = 1;
         VecIndex vecIndex = null;
-        int i = 0;
+        int index = 0;
         if (rows.length > 0) {
-            i = rows[0];
+            index = rows[0];
         }
         if (vecDim == 0) {
             nVectors = vectorsPerGroup;
             if (multiVecCounter != null) {
                 if (rows.length == 1) {
-                    vecIndex = multiVecCounter.getNextGroup(i);
+
+                    vecIndex = multiVecCounter.getNextGroup(index);
                 } else {
-                    for (var iRow:rows) {
+                    for (var iRow : rows) {
                         System.out.print(iRow + " ");
                     }
-                    System.out.println(i);
-                    i = multiVecCounter.findOutGroup(rows);
-                    vecIndex = multiVecCounter.getNextGroup(i);
+                    System.out.println(index);
+                    index = multiVecCounter.findOutGroup(rows);
+                    vecIndex = multiVecCounter.getNextGroup(index);
+                    if (nmrData.getSampleSchedule() != null) {
+                        vecIndex = nmrData.getSampleSchedule().convertToNUSGroup(vecIndex, index);
+                        if (vecIndex != null) {
+                            vecIndex.printMe(index, 1);
+                        } else {
+                            System.out.println("No vec");
+                        }
+                    }
                 }
             }
         }
+        int[] fileIndices = new int[nVectors];
         for (int j = 0; j < nVectors; j++) {
             Vec newVec = new Vec(nPoints, nmrData.isComplex(vecDim));
             Vec saveVec = new Vec(nPoints, nmrData.isComplex(vecDim));
 
             if (vecDim == 0) {
                 if (vecIndex == null) {
-                    nmrData.readVector(i, newVec);
+                    fileIndices[j] = index;
+                    //nmrData.readVector(index, newVec);
                 } else {
+                    fileIndices[j] = vecIndex.getInVec(j);
                     nmrData.readVector(vecIndex.getInVec(j), newVec);
                 }
             } else {
-                nmrData.readVector(vecDim, i + j, newVec);
+                fileIndices[j] = index + j;
+                nmrData.readVector(vecDim, index + j, newVec);
                 if ((acqMode[vecDim] != null) && acqMode[vecDim].equals("echo-antiecho")) {
                     newVec.eaCombine(echoAntiEchoCoefs);
                 } else if ((acqMode[vecDim] != null) && acqMode[vecDim].equals("echo-antiecho-r")) {
@@ -484,6 +497,7 @@ public class ChartProcessor {
         Vec vec = vectors.get(iVec);
         vec.setName("vec" + iVec);
         chart.setDataset(new Dataset(vec), false, true);
+        return fileIndices;
     }
 
     public void setVector(int value) {
@@ -491,10 +505,12 @@ public class ChartProcessor {
         if (iVec > vectors.size() - 1) {
             iVec = vectors.size() - 1;
         }
-        Vec vec = vectors.get(iVec);
-        vec.setName("vec" + iVec);
-        chart.setDataset(new Dataset(vec), false, true);
-        chart.layoutPlotChildren();
+        if (iVec >= 0) {
+            Vec vec = vectors.get(iVec);
+            vec.setName("vec" + iVec);
+            chart.setDataset(new Dataset(vec), false, true);
+            chart.layoutPlotChildren();
+        }
     }
 
     public void initEmptyVecs() {
@@ -528,7 +544,8 @@ public class ChartProcessor {
             }
             fxmlController.setRowLabel(i + 1, size);
             int[] rows = fxmlController.getRows();
-            loadVectors(1, rows);
+            int[] fileIndices = loadVectors(1, rows);
+            fxmlController.setFileIndex(fileIndices);
             try {
                 ProcessOps process = getProcess();
                 process.exec();
@@ -1176,7 +1193,11 @@ public class ChartProcessor {
         // a value higher than the number of dimensions
         vecDim = 0;
         vecDimName = "D1";
-        processorController.updateDimChoice(nDim);
+        boolean[] complex = new boolean[nDim];
+        for (int iDim = 0; iDim < nDim; iDim++) {
+            complex[iDim] = data.isComplex(iDim);
+        }
+        processorController.updateDimChoice(complex);
         reloadData();
         processorController.refManager.resetData();
         processorController.refManager.setupItems(0);
@@ -1222,8 +1243,9 @@ public class ChartProcessor {
             //System.out.println("ndim " + nDim);
             if (nDim > 1) {
                 sizes = new int[nDim];
-                sizes[0] = nmrData.getSize(0);
-                sizes[1] = nmrData.getSize(1);
+                for (int i = 0; i < nDim; i++) {
+                    sizes[i] = nmrData.getSize(i);
+                }
             }
             fxmlController.vectorStatus(sizes, vecDim);
             fxmlController.setRowLabel(1, sizes[0]);
