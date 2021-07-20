@@ -1854,7 +1854,7 @@ public class DatasetBase {
      * @return The name of the nucleus
      */
     public String getStdLabel(final int iDim) {
-        return getNucleus(iDim).toString();
+        return "\u03B4 " + getNucleus(iDim).toLatexString();
     }
 
     public final void setStrides() {
@@ -2082,7 +2082,7 @@ public class DatasetBase {
         }
         return value;
     }
-    
+
     public boolean hasLayout() {
         return layout != null;
     }
