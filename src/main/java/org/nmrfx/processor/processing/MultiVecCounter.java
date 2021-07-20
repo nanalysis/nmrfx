@@ -316,6 +316,44 @@ public class MultiVecCounter {
         return new VecIndex(inVecs, outVecs);
     }
 
+    /**
+     * Returns a VecIndex object containing the output positions in new dataset
+     * and input positions in raw FID file that correspond to a particular
+     * group. A group represents all the vectors that have the same time value
+     * in the indirect dimensions.
+     *
+     * @param vecNum
+     * @return VecIndex with positions corresponding to specified group number.
+     */
+    public VecIndex getNextGroup(final int[] counts) {
+        int[] inVecs = new int[groupSize];
+        int[][][] outVecs = new int[groupSize][datasetNDim][2]; // output 4 vecs per group, 3 dimensions, pt
+
+        for (int i = 0; i < groupSize; i++) {
+            int[] iCounts = outToInCounter(counts);
+            inVecs[i] = inCounter.getCount(iCounts);
+            int[] offsets = getOffsets(counts);
+            //System.out.println(vecNum + " " + inVecs[i] + " " + offsets[0] + " " + offsets[1] + " " + iCounts[0] + " " + iCounts[1] + " " + iCounts[2] + " " + iCounts[3]);
+            //System.out.println(vecNum + " " + outCount + " " + offsets[0] + " " + offsets[1] + " " + counts[0] + " " + counts[1] + " " + counts[2] + " " + counts[3]);
+            int jDim = 1;
+            for (int iDim = 1; iDim < nDim; iDim++) {
+                //System.out.println(nDim + " " + datasetNDim + " " + i + " " + iDim + " " + offsets[iDim-1] + " " + osizes[nDim-iDim-1]);
+                if ((datasetNDim < nDim) && (osizes[nDim - iDim - 1] < 2)) {
+                    if (offsets[iDim - 1] > 0) {
+                        outVecs[i][datasetNDim - 1][0] = -1;
+                        outVecs[i][datasetNDim - 1][1] = -1;
+                        break;
+                    }
+                    continue;
+                }
+                outVecs[i][jDim][0] = offsets[iDim - 1];
+                outVecs[i][jDim][1] = offsets[iDim - 1];
+                jDim++;
+            }
+        }
+        return new VecIndex(inVecs, outVecs);
+    }
+
     public int findOutGroup(int... values) {
         int i = 0;
         try {
