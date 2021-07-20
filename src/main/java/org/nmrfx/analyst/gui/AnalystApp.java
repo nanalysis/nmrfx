@@ -281,9 +281,15 @@ public class AnalystApp extends MainApp {
         MenuItem pdfMenuItem = new MenuItem("Export PDF...");
         pdfMenuItem.disableProperty().bind(FXMLController.activeController.isNull());
         pdfMenuItem.setOnAction(e -> FXMLController.getActiveController().exportPDFAction(e));
+
         MenuItem svgMenuItem = new MenuItem("Export SVG...");
         svgMenuItem.setOnAction(e -> FXMLController.getActiveController().exportSVGAction(e));
         svgMenuItem.disableProperty().bind(FXMLController.activeController.isNull());
+
+        MenuItem pngMenuItem = new MenuItem("Export PNG...");
+        pngMenuItem.setOnAction(e -> FXMLController.getActiveController().exportPNG(e));
+        pngMenuItem.disableProperty().bind(FXMLController.activeController.isNull());
+
         MenuItem loadPeakListMenuItem = new MenuItem("Load PeakLists");
         loadPeakListMenuItem.setOnAction(e -> loadPeakLists());
         MenuItem portMenuItem = new MenuItem("New NMRFx Server...");
@@ -333,7 +339,7 @@ public class AnalystApp extends MainApp {
 
         fileMenu.getItems().addAll(openMenuItem, openDatasetMenuItem, addMenuItem,
                 recentFIDMenuItem, recentDatasetMenuItem, datasetBrowserMenuItem, newMenuItem,
-                portMenuItem, new SeparatorMenuItem(), svgMenuItem, pdfMenuItem,
+                portMenuItem, new SeparatorMenuItem(), svgMenuItem, pdfMenuItem, pngMenuItem,
                 loadPeakListMenuItem);
 
         Menu spectraMenu = new Menu("Spectra");
@@ -709,6 +715,7 @@ public class AnalystApp extends MainApp {
             System.out.println("Couldn't make atom controller");
         }
     }
+
     private void showSequence(ActionEvent event) {
         if (seqDisplayController == null) {
             seqDisplayController = SeqDisplayController.create();
@@ -1220,7 +1227,7 @@ public class AnalystApp extends MainApp {
         if (ringNMRController == null) {
             Stage stage = new Stage(StageStyle.DECORATED);
             ringNMRController = PyController.create(stage);
-    }
+        }
         Stage stage = ringNMRController.getStage();
         stage.toFront();
         stage.show();
