@@ -193,7 +193,7 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
                 DatasetBase dataset = dataAttr.getDataset();
                 int iDim = dataAttr.dim[jDim];
 
-                return dataset.getLabel(iDim) + " (ppm)";
+                return dataset.getDlabel(iDim) + " (ppm)";
             }
 
             public String getLabel(Vec vec) {
