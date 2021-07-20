@@ -12,6 +12,7 @@ module org.nmrfx.utils {
     exports org.nmrfx.graphicsio;
 
     requires java.logging;
+    requires java.desktop;
     requires java.xml;
     requires org.controlsfx.controls;
     requires javafx.graphicsEmpty;
@@ -25,5 +26,6 @@ module org.nmrfx.utils {
     requires javafx.baseEmpty;
     requires javafx.base;
     requires javafx.fxml;
+    requires javafx.swing;
     requires jython.slim;
 }
