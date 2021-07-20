@@ -275,6 +275,12 @@ public enum Nuclei {
         return getSuper() + getName();
     }
 
+    public String toLatexString() {
+        StringBuilder sBuilder = new StringBuilder();
+        sBuilder.append("^{").append(getNumber()).append("}").append(getName());
+        return sBuilder.toString();
+    }
+
     /**
      * Return nuclei object that matches the test string. Will find matches for
      * formats like 13C, C13 and C.
