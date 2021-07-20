@@ -36,9 +36,9 @@ import javafx.scene.transform.Affine;
  * @author brucejohnson
  */
 public interface GraphicsContextInterface {
-    
+
     default void nativeCoords(boolean state) {
-        
+
     }
 
     void appendSVGPath(String svgpath);
