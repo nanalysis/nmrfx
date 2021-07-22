@@ -361,7 +361,9 @@ public class MultiVecCounter {
                 VecIndex vecIndex = getNextGroup(i);
                 boolean ok = true;
                 for (int k = 0; k < values.length; k++) {
-                    if (2 * values[k] != vecIndex.outVecs[0][k + 1][0]) {
+                    int phsIndex = outPhases[k];
+                    int mul = osizes[phsIndex];
+                    if (mul * values[k] != vecIndex.outVecs[0][k + 1][0]) {
                         ok = false;
                         break;
                     }
