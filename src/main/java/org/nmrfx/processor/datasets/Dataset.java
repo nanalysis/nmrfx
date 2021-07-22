@@ -461,7 +461,6 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
     }
 
     private void addFile(String datasetName) {
-        System.out.println("add dataset " + datasetName);
         ProjectBase.getActive().addDataset(this, datasetName);
         for (DatasetListener observer : observers) {
             try {

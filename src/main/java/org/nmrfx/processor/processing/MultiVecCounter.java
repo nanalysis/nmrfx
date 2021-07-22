@@ -369,8 +369,8 @@ public class MultiVecCounter {
                     }
                 }
                 if (ok) {
-                    System.out.println("found " + i + " ");
-                    vecIndex.printMe(i, 1);
+//                    System.out.println("found " + i + " ");
+//                    vecIndex.printMe(i, 1);
                     return i;
                 }
                 i++;
