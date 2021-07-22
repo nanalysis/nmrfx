@@ -163,7 +163,6 @@ public class ProjectBase {
     }
 
     public void addDataset(DatasetBase dataset, String datasetName) {
-        System.out.println("add dataset");
         datasetMap.put(datasetName, dataset);
         refreshDatasetList();
     }
@@ -179,7 +178,6 @@ public class ProjectBase {
     public void refreshDatasetList() {
         datasets.clear();
         datasets.addAll(datasetMap.values());
-        System.out.println("refresh datasets " + datasets.toString());
     }
 
     public void addPeakList(PeakList peakList, String name) {
