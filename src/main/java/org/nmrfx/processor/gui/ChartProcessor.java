@@ -438,10 +438,10 @@ public class ChartProcessor {
 
                     vecIndex = multiVecCounter.getNextGroup(index);
                 } else {
-                    for (var iRow : rows) {
-                        System.out.print(iRow + " ");
-                    }
-                    System.out.println(index);
+//                    for (var iRow : rows) {
+//                        System.out.print(iRow + " ");
+//                    }
+//                    System.out.println(index);
                     index = multiVecCounter.findOutGroup(rows);
                     vecIndex = multiVecCounter.getNextGroup(index);
                     if (nmrData.getSampleSchedule() != null) {
