@@ -31,6 +31,8 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  *
@@ -40,6 +42,7 @@ public class DatasetParameterFile {
 
     final DatasetBase dataset;
     final DatasetLayout layout;
+    final static Pattern DLABEL_PAT = Pattern.compile("dlabel +[0-9]+ (.*)");
 
     public DatasetParameterFile(DatasetBase dataset, DatasetLayout layout) {
         this.dataset = dataset;
@@ -196,7 +199,11 @@ public class DatasetParameterFile {
             }
             case "dlabel": {
                 int iDim = Integer.parseInt(fields[1]) - 1;
-                dataset.setDlabel(iDim, fields[2]);
+                Matcher matcher = DLABEL_PAT.matcher(line);
+                if (matcher.matches()) {
+                    String dLabel = matcher.group(1).trim();
+                    dataset.setDlabel(iDim, dLabel);
+                }
                 break;
             }
             case "sw": {
