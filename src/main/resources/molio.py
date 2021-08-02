@@ -1,5 +1,6 @@
 from org.nmrfx.chemistry.io import PDBFile
 from org.nmrfx.chemistry.io import SDFile
+from org.nmrfx.chemistry.io import Mol2File
 from org.nmrfx.chemistry.io import Sequence
 from org.nmrfx.structure.chemistry import Molecule
 from org.nmrfx.chemistry import MoleculeFactory
@@ -83,6 +84,13 @@ def readSDF(fileName, newMolecule = False):
     sdf = SDFile()
     molecule = MoleculeFactory.getActive() if not newMolecule else None
     compound = sdf.read(fileName, None, molecule, None)
+    updateAtomArray()
+    return compound
+
+def readMol2(fileName, newMolecule = False):
+    mol2 = Mol2File()
+    molecule = MoleculeFactory.getActive() if not newMolecule else None
+    compound = mol2.read(fileName, None, molecule, None)
     updateAtomArray()
     return compound
 
