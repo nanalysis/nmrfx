@@ -17,7 +17,6 @@
  */
 package org.nmrfx.chemistry.io;
 
-import org.nmrfx.chemistry.io.MoleculeIOException;
 import org.nmrfx.chemistry.*;
 import java.io.*;
 import java.util.ArrayList;
