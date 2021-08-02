@@ -81,6 +81,7 @@ import org.python.util.PythonInterpreter;
 import org.nmrfx.analyst.gui.molecule.CanvasMolecule;
 import org.nmrfx.processor.gui.project.GUIProject;
 import org.nmrfx.analyst.gui.tools.RunAboutGUI;
+import org.nmrfx.chemistry.io.Mol2File;
 import org.nmrfx.chemistry.utilities.NvUtil;
 import org.nmrfx.console.ConsoleController;
 import org.nmrfx.processor.gui.DatasetsController;
@@ -401,6 +402,11 @@ public class AnalystApp extends MainApp {
         MenuItem readMolItem = new MenuItem("Read Mol...");
         readMolItem.setOnAction(e -> readMolecule("mol"));
         molFileMenu.getItems().add(readMolItem);
+        MenuItem readMol2Item = new MenuItem("Read Mol2...");
+        readMol2Item.setOnAction(e -> readMolecule("mol2"));
+        molFileMenu.getItems().add(readMol2Item);
+
+
         MenuItem seqGUIMenuItem = new MenuItem("Sequence Editor...");
         seqGUIMenuItem.setOnAction(e -> SequenceGUI.showGUI(this));
 
@@ -981,6 +987,9 @@ public class AnalystApp extends MainApp {
                     case "sdf":
                     case "mol":
                         SDFile.read(file.toString(), null);
+                        break;
+                    case "mol2":
+                        Mol2File.read(file.toString(), null);
                         break;
                     case "seq":
                         Sequence seq = new Sequence();
