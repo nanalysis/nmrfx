@@ -463,7 +463,7 @@ public class ChartProcessor {
             if (vecDim == 0) {
                 if (vecIndex == null) {
                     fileIndices[j] = index;
-                    //nmrData.readVector(index, newVec);
+                    nmrData.readVector(index, newVec);
                 } else {
                     fileIndices[j] = vecIndex.getInVec(j);
                     nmrData.readVector(vecIndex.getInVec(j), newVec);
