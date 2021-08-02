@@ -1098,7 +1098,9 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
 
     protected void setRowLabel(int row, int size) {
         int iDim = getRowChoice() - 2;
-        rowTextBoxes[iDim].setText(row + " / " + size);
+        if (iDim >= 0) {
+            rowTextBoxes[iDim].setText(row + " / " + size);
+        }
     }
 
     void setFileIndex(int[] indices) {
@@ -1119,8 +1121,13 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
 
     Integer getRowChoice() {
         RadioButton radioButton = (RadioButton) rowToggleGroup.getSelectedToggle();
-        String text = radioButton.getText();
-        Integer iDim = Integer.parseInt(text.substring(0, 1));
+        Integer iDim;
+        if (radioButton == null) {
+            iDim = 1;
+        } else {
+            String text = radioButton.getText();
+            iDim = Integer.parseInt(text.substring(0, 1));
+        }
         return iDim;
     }
 
