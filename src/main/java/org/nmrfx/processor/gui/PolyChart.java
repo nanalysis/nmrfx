@@ -3819,7 +3819,7 @@ public class PolyChart implements PeakListener {
         }
         int drawPivotAxis = -1;
         if (controller.isPhaseSliderVisible()) {
-            if (phaseAxis == 0) {
+            if ((phaseAxis == 0) || (nDim == 1)) {
                 yOn = false;
                 drawPivotAxis = 0;
             } else {
