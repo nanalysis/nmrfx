@@ -379,7 +379,7 @@ public class BrukerData implements NMRData {
     public boolean isComplex(int iDim) {
         return complexDim[iDim];
     }
-    
+
     @Override
     public String getFTType(int iDim) {
         return fttype[iDim];
