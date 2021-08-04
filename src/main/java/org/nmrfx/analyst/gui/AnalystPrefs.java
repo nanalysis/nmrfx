@@ -12,9 +12,11 @@ import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.StringProperty;
 import org.controlsfx.control.PropertySheet;
+import org.nmrfx.chemistry.io.PDBFile;
 import static org.nmrfx.processor.gui.MainApp.preferencesController;
 import org.nmrfx.processor.gui.PreferencesController;
 import org.nmrfx.utils.properties.BooleanOperationItem;
+import org.nmrfx.utils.properties.DirectoryOperationItem;
 import org.nmrfx.utils.properties.DoubleRangeOperationItem;
 import org.nmrfx.utils.properties.IntRangeOperationItem;
 import org.nmrfx.utils.properties.TextOperationItem;
@@ -121,6 +123,20 @@ public class AnalystPrefs {
         PreferencesController.setString("LOCAL_DIRECTORY", name);
     }
 
+    static StringProperty localResidueDirectory = null;
+
+    public static String getLocalResidueDirectory() {
+        Path defaultDir = Paths.get(System.getProperty("user.home"), "nmrfx_residues");
+        localResidueDirectory = PreferencesController.getString(localResidueDirectory, "LOCAL_RESIDUE_DIRECTORY", defaultDir.toString());
+        return localResidueDirectory.getValue();
+    }
+
+    public static void setLocaResiduelDirectory(String name) {
+        localResidueDirectory.setValue(name);
+        PDBFile.setLocalResLibDir(name);
+        PreferencesController.setString("LOCAL_RESIDUE_DIRECTORY", name);
+    }
+
     public static void addPrefs() {
         PropertySheet prefSheet = preferencesController.getPrefSheet();
         IntRangeOperationItem libraryVectorSizeItem = new IntRangeOperationItem(
@@ -182,10 +198,17 @@ public class AnalystPrefs {
                 "Directory",
                 "Directory on local host that stores data");
 
+        DirectoryOperationItem localResidueDirectoryItem = new DirectoryOperationItem((a, b, c) -> {
+            setLocaResiduelDirectory((String) c);
+        }, getLocalResidueDirectory(), "Structure",
+                "Local Residue Directory",
+                "Directory for custom residues");
+
         prefSheet.getItems().addAll(libraryVectorSizeItem, libraryVectorLBItem,
                 libraryVectorSFItem, libraryVectorSWItem, libraryVectorREFItem,
                 localDirectoryItem,
-                remoteHostItem, remoteDirectoryItem, remoteUserItem, remoteUsePasswordItem);
+                remoteHostItem, remoteDirectoryItem, remoteUserItem, remoteUsePasswordItem,
+                localResidueDirectoryItem);
 
     }
 

@@ -174,7 +174,7 @@ public class AnalystApp extends MainApp {
         PeakMenuBar.addExtra("Remove Residue Prefix", PeakLabeller::removeSingleResidueChar);
         KeyBindings.registerGlobalKeyAction("pa", this::assignPeak);
         Project.setPCS(new FxPropertyChangeSupport(this));
-
+        PDBFile.setLocalResLibDir(AnalystPrefs.getLocalResidueDirectory());
     }
 
     private void updateScannerGUI(ScannerController scannerController) {
