@@ -34,6 +34,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.nmrfx.chemistry.IBond;
+import org.nmrfx.chemistry.Polymer;
 
 /**
  *
@@ -129,10 +130,11 @@ public class HoseCodeGenerator {
 
         for (Atom atom : entity.atoms) {
             // entity check ensures that only atoms in same residue are used
+            // if entity is not polymer
             if (atom.getAtomicNumber() == 0) {
                 continue;
             }
-            if (atom.entity == entity) {
+            if ((entity instanceof Polymer) || (atom.entity == entity)) {
                 if (atom.isMethyl() && !atom.isFirstInMethyl()) {
                     continue;
                 }
