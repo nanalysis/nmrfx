@@ -51,7 +51,7 @@ public class PredictorSceneController implements Initializable {
         targetType.setValue("Ref Set");
         targetChoice.getItems().addAll(0, 1, 2, 3, 4);
         targetChoice.setValue(0);
-        proteinChoice.getItems().addAll("Off", "3D");
+        proteinChoice.getItems().addAll("Off", "3D", "Shells");
         proteinChoice.setValue("3D");
         rnaChoice.getItems().addAll("Off", "Attributes", "3D-Dist", "3D-RC");
         rnaChoice.setValue("Attributes");
@@ -188,6 +188,10 @@ public class PredictorSceneController implements Initializable {
                 if (checkCoordinates(mol)) {
                     int iStructure = 0;
                     predictor.predictProtein(mol, iStructure, ppmSet);
+                }
+            } else if (proteinChoice.getValue().equals("Shells")) {
+                for (Polymer polymer : mol.getPolymers()) {
+                    predictor.predictWithShells(polymer, ppmSet);
                 }
             }
         }
