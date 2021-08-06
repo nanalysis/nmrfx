@@ -54,7 +54,7 @@ public class PeakMenuBar {
         MenuItem saveSparky = new MenuItem("Save Sparky...");
         saveSparky.setOnAction(e -> savePeaks("sparky", "txt"));
 
-        fileMenu.getItems().addAll(saveXPK2, saveSparky);
+        fileMenu.getItems().addAll(saveXPK2, saveXPK, saveSparky);
 
         MenuItem readListItem = new MenuItem("Open...");
         readListItem.setOnAction(e -> readList());
