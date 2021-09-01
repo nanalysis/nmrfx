@@ -680,6 +680,7 @@ public class DrawPeaks {
             color = GUIColorUtils.toColor(peakColor);
         }
         g2.setStroke(color);
+        g2.setFill(color);
         return colorMode;
     }
 
@@ -1331,7 +1332,6 @@ public class DrawPeaks {
                     }
                     if (peakAttr.getLabelType() != LabelTypes.None) {
                         setLabelAlignment(g2, peak.getCorner());
-                        g2.setFill(peakAttr.getOnColor());
                         g2.fillText(label, position[0], position[1]);
                     }
                 }
