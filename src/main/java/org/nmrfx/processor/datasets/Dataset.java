@@ -26,6 +26,7 @@ import org.nmrfx.processor.operations.Util;
 import java.io.*;
 import java.nio.FloatBuffer;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.map.LRUMap;
 import org.apache.commons.math3.complex.Complex;
@@ -1512,7 +1513,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
      */
     public void writeVecMat(String fullName) throws IOException {
         File newFile = new File(fullName);
-        try ( RandomAccessFile outFile = new RandomAccessFile(newFile, "rw")) {
+        try (RandomAccessFile outFile = new RandomAccessFile(newFile, "rw")) {
             byte[] buffer = vecMat.getBytes();
             DatasetHeaderIO headerIO = new DatasetHeaderIO(this);
             headerIO.writeHeader(layout, outFile);
@@ -1644,7 +1645,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
 
         String contourFileName = file.getPath() + ".ser";
 
-        try ( FileOutputStream out = new FileOutputStream(contourFileName)) {
+        try (FileOutputStream out = new FileOutputStream(contourFileName)) {
             ObjectOutputStream os = new ObjectOutputStream(out);
             os.writeObject(paths);
             os.flush();
@@ -2138,6 +2139,27 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         dataset.close();
     }
 
+    public BucketedMatrix getBucketedSubMatrixFromRegions(int bucketSize) throws IOException {
+
+        int[] rowIndices = new int[getSize(1)];
+        for (int i = 0; i < rowIndices.length; i++) {
+            rowIndices[i] = i;
+        }
+        var columnSet = new TreeSet<Integer>();
+        for (var region : getRegions()) {
+            double ppm0 = region.getRegionStart(0);
+            int pt1 = ppmToPoint(0, ppm0);
+            double ppm1 = region.getRegionEnd(0);
+            int pt0 = ppmToPoint(0, ppm1);
+            for (int pt = pt0; pt <= pt1; pt++) {
+                columnSet.add(pt);
+            }
+        }
+        var columns = columnSet.stream().sorted().collect(Collectors.toList());
+
+        return getBucketedSubMatrix(rowIndices, columns, bucketSize, null);
+    }
+
     /**
      * Create a @see BucketMatrix from this dataset
      *
@@ -2150,16 +2172,16 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
      * @throws IllegalArgumentException if row or column indices is null or
      * empty
      */
-    public BucketedMatrix getBucketedSubMatrix(int[] rowIndices, int[] columnIndices, int bucketSize, String[][] dataTbl) throws IOException, IllegalArgumentException {
+    public BucketedMatrix getBucketedSubMatrix(int[] rowIndices, List<Integer> columnIndices, int bucketSize, String[][] dataTbl) throws IOException, IllegalArgumentException {
         if ((rowIndices == null) || (rowIndices.length == 0)) {
             throw new IllegalArgumentException("Empty or null indices");
         }
-        if ((columnIndices == null) || (columnIndices.length == 0)) {
+        if ((columnIndices == null) || (columnIndices.isEmpty())) {
             throw new IllegalArgumentException("Empty or null indices");
         }
 
         int nRows = rowIndices.length;
-        int nColumns = columnIndices.length;
+        int nColumns = columnIndices.size();
 
         ArrayList<ArrayList<Integer>> bucketList = new ArrayList<>();
         ArrayList<Integer> bucketIndices = new ArrayList<>();
@@ -2167,12 +2189,11 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
 
         int lastBucket = -1;
         int jBucket = -1;
-        int firstColumn = columnIndices[0];
+        int firstColumn = columnIndices.get(0);
 
         if (bucketSize == 0) {
             int lastIndex = -2;
-            for (int i = 0; i < columnIndices.length; i++) {
-                int j = columnIndices[i];
+            for (var j : columnIndices) {
                 if (j > (lastIndex + 1)) {
                     colList = new ArrayList<>();
                     bucketList.add(colList);
@@ -2184,8 +2205,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
                 colList.add(j);
             }
         } else {
-            for (int i = 0; i < columnIndices.length; i++) {
-                int j = columnIndices[i];
+            for (var j : columnIndices) {
                 int iBucket = (j - firstColumn) / bucketSize;
                 if (iBucket != lastBucket) {
                     lastBucket = iBucket;
@@ -2199,7 +2219,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
             }
         }
         int nBuckets = bucketList.size();
-        Array2DRowRealMatrix matrix = new Array2DRowRealMatrix(nRows, nBuckets);
+        double[][] matrix = new double[nRows][nBuckets];
         int[] pt = new int[nDim];
         double[] ppms = new double[nBuckets];
         // colCenters contains the centers of each buckets in units of original dataset
@@ -2222,7 +2242,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
                     sumCol += pt[0];
                     sum += readPoint(pt);
                 }
-                matrix.setEntry(i, k, sum);
+                matrix[i][k] = sum;
                 ppms[k] = sumPPM / colList.size();
                 colCenters[k] = (int) Math.round(sumCol / colList.size());
             }

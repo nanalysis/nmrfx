@@ -22,12 +22,10 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.*;
-import org.apache.commons.math3.linear.Array2DRowRealMatrix;
-import org.apache.commons.math3.linear.RealMatrix;
 
 public class BucketedMatrix {
 
-    final Array2DRowRealMatrix matrix;
+    final double[][] matrix;
     final int[] rowIndices;
     final int[] colCenters;
     final int[] colIndices;
@@ -36,7 +34,7 @@ public class BucketedMatrix {
     final int minCol;
     final int maxCol;
 
-    public BucketedMatrix(Array2DRowRealMatrix matrix, int[] rowIndices, int[] colIndices, int[] colCenters, double[] ppms, String[][] dataTbl) {
+    public BucketedMatrix(double[][] matrix, int[] rowIndices, int[] colIndices, int[] colCenters, double[] ppms, String[][] dataTbl) {
         this.matrix = matrix;
         this.rowIndices = rowIndices;
         this.colCenters = colCenters;
@@ -57,7 +55,7 @@ public class BucketedMatrix {
         maxCol = max;
     }
 
-    public Array2DRowRealMatrix getMatrix() {
+    public double[][] getMatrix() {
         return matrix;
     }
 
@@ -73,7 +71,7 @@ public class BucketedMatrix {
         return ppms;
     }
 
-    public void makeVectorFromColumn(RealMatrix realMatrix, double[] scales, int column, String vecName, double sf) {
+    public void makeVectorFromColumn(double[][] realMatrix, double[] scales, int column, String vecName, double sf) {
         int vecSize = maxCol - minCol + 1;
         // add some extra so peaks are not right at edge
         int extra = vecSize / 20;
@@ -93,7 +91,7 @@ public class BucketedMatrix {
         vecMat.setFreqDomain(true);
         int j = 0;
         for (int i : colCenters) {
-            double value = realMatrix.getEntry(j, column);
+            double value = realMatrix[j][column];
             vecMat.setReal(i - minCol + extra, value * scales[j]);
             j++;
         }
@@ -107,8 +105,8 @@ public class BucketedMatrix {
                 Charset.forName("US-ASCII"),
                 StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE);) {
 
-            int nRows = matrix.getRowDimension();
-            int nCols = matrix.getColumnDimension();
+            int nRows = matrix.length;
+            int nCols = matrix[0].length;
             sBuilder.setLength(0);
             for (int iCol = 0; iCol < nTableCols; iCol++) {
                 sBuilder.append(dataTbl[0][iCol]);
@@ -132,7 +130,7 @@ public class BucketedMatrix {
                 sBuilder.append(rowIndices[iRow] + 1);
                 for (int iCol = 0; iCol < nCols; iCol++) {
                     sBuilder.append('\t');
-                    sBuilder.append(matrix.getEntry(iRow, iCol));
+                    sBuilder.append(matrix[iRow][iCol]);
                 }
                 sBuilder.append(System.lineSeparator());
                 content = sBuilder.toString();
