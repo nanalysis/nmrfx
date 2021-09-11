@@ -233,13 +233,13 @@ class MolPeakGen:
         if ok:
             peak = peakgen.addPeak(peakList, ppms, eppms, widths, bounds, intensity, names)
 
-    def addPeaks(self, peakList, d1Edited, d2Edited, atomDistList=None):
+    def addPeaks(self, peakList, d1Edited, d2Edited, atomDistList=None, useN=True):
         if (atomDistList is None) or (not atomDistList): # none or empty
             return None
         scaleConst = 100.0/math.pow(2.0,-6)
         for aAtom, bAtom, distance in atomDistList:
             intensity = math.pow(distance, -6)*scaleConst
-            if aAtom.getParent().getAtomicNumber() != 7 and bAtom.getParent().getAtomicNumber() != 7:
+            if (useN or aAtom.getParent().getAtomicNumber() != 7) and (useN or bAtom.getParent().getAtomicNumber() != 7):
                 self.addProtonPairPeak(peakList, bAtom, aAtom, d1Edited=d1Edited, d2Edited=d2Edited, intensity=intensity)
                 self.addProtonPairPeak(peakList, aAtom, bAtom, d1Edited=d1Edited, d2Edited=d2Edited, intensity=intensity)
 
@@ -550,7 +550,7 @@ class MolPeakGen:
             retList.append((aSelected, bSelected, dist))
         return retList
 
-    def addRNASecStrPeaks(self, peakList, editScheme):
+    def addRNASecStrPeaks(self, peakList, editScheme, useN):
         (d1Edited, d2Edited) = editingModes[editScheme]
         residueInterTable = self.getResidueInterMap()
         rnaResidues = [residue for polymer in self.mol.getPolymers() if polymer.isRNA()
@@ -569,7 +569,7 @@ class MolPeakGen:
             if atomPairMap is None: continue
             atomDistList = atomPairMap.items() 
             stringified = self.stringifyAtomPairs(aPolyName,aResNum,bPolyName,bResNum,atomDistList)
-            self.addPeaks(peakList, d1Edited, d2Edited, stringified)
+            self.addPeaks(peakList, d1Edited, d2Edited, stringified, useN)
 
     def getPeakList(self, dataset, listName, nPeakDim=0):
         if (dataset == None or dataset == "")  and listName != "":
@@ -582,7 +582,7 @@ class MolPeakGen:
             peakList = peakgen.makePeakListFromDataset(listName, dataset, nPeakDim)
         return peakList
 
-    def genRNASecStrPeaks(self, dataset, listName="", condition="sim", scheme=""):
+    def genRNASecStrPeaks(self, dataset, listName="", condition="sim", scheme="", useN=False):
         self.setWidths([self.widthH, self.widthH])
         peakList = self.getPeakList(dataset, listName)
         
@@ -601,6 +601,6 @@ class MolPeakGen:
         ss.secondaryStructGen()
 
         peakList.setSampleConditionLabel(condition)
-        self.addRNASecStrPeaks(peakList, scheme)
+        self.addRNASecStrPeaks(peakList, scheme, useN)
         return peakList
 
