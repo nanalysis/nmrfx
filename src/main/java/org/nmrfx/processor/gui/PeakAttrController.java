@@ -55,6 +55,7 @@ import javafx.scene.chart.XYChart.Series;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
@@ -163,6 +164,7 @@ public class PeakAttrController implements Initializable, PeakNavigable, PeakMen
 
     private Slider distanceSlider = new Slider(2, 7.0, 5.0);
     private ChoiceBox transferLimitChoice = new ChoiceBox();
+    private CheckBox useNCheckBox = new CheckBox("UseN");
 
     private ScatterChart<Number, Number> scatterChart;
 
@@ -940,6 +942,7 @@ public class PeakAttrController implements Initializable, PeakNavigable, PeakMen
             } else if (subType.startsWith("RNA")) {
                 labels.add("H");
                 labels.add("H2");
+                optionBox.getChildren().add(useNCheckBox);
             } else if (subType.equals("HSQC")) {
                 labels.add("H");
                 labels.add("N");
@@ -1070,7 +1073,8 @@ public class PeakAttrController implements Initializable, PeakNavigable, PeakMen
                         script = String.format("molGen.genHSQCPeaks(\"%s\", \"%s\", listName=\"%s\")", "N", datasetName, listName);
                         break;
                     case "RNA-NOESY-2nd-str":
-                        script = String.format("molGen.genRNASecStrPeaks(\"%s\", listName=\"%s\")", datasetName, listName);
+                        int useN = useNCheckBox.isSelected() ? 1 : 0;
+                        script = String.format("molGen.genRNASecStrPeaks(\"%s\", listName=\"%s\", useN=%d)", datasetName, listName, useN);
                         break;
                     default:
                 }
