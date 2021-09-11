@@ -636,7 +636,6 @@ public class SSViewer extends Pane {
                     x = x1 + (aCoord.y / 5.0 * (j + 1.5)) + aCoord.x / 5 * (-1 - 0.5);
                     y = y1 + (aCoord.x / 5.0 * (j + 1.5)) - aCoord.y / 5 * (-1 - 0.5);
                 }
-                System.out.println(x1 + " " + y1 + " " + aCoord.x + " " + aCoord.y + " " + x + " " + y);
                 String text = "";
                 if (j > 1) {
                     text = (j - 1) + "'";
