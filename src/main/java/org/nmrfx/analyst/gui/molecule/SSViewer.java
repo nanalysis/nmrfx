@@ -623,10 +623,20 @@ public class SSViewer extends Pane {
 //            Line line = new Line(x1, y1, x1 + aCoord.x * scale, y1 + aCoord.y * scale);
 //            group.getChildren().add(line);
             int nAtoms = nAtomsProp.get();
-            for (int j = 0; j < nAtoms; j++) {
-                double x = x1 + aCoord.x / 5 * (j + 1.5);
-                double y = y1 - aCoord.y / 5 * (j + 1.5);
-//                System.out.println(x1 + " " + y1 + " " + aCoord.x + " " + aCoord.y + " " + x + " " + y);
+            for (int j = -2; j < nAtoms; j++) {
+                if ((j == -2) && (resChar != 'G')) {
+                    continue;
+                }
+                double x;
+                double y;
+                if (j >= 0) {
+                    x = x1 + aCoord.x / 5 * (j + 1.5);
+                    y = y1 - aCoord.y / 5 * (j + 1.5);
+                } else {
+                    x = x1 + (aCoord.y / 5.0 * (j + 1.5)) + aCoord.x / 5 * (-1 - 0.5);
+                    y = y1 + (aCoord.x / 5.0 * (j + 1.5)) - aCoord.y / 5 * (-1 - 0.5);
+                }
+                System.out.println(x1 + " " + y1 + " " + aCoord.x + " " + aCoord.y + " " + x + " " + y);
                 String text = "";
                 if (j > 1) {
                     text = (j - 1) + "'";
@@ -638,12 +648,28 @@ public class SSViewer extends Pane {
                     } else if (resChar == 'U') {
                         text = "5";
                     }
-                } else if (resChar == 'A') {
-                    text = "8";
-                } else if (resChar == 'G') {
-                    text = "8";
-                } else {
-                    text = "6";
+                } else if (j == 1) {
+                    if (resChar == 'A') {
+                        text = "8";
+                    } else if (resChar == 'G') {
+                        text = "8";
+                    } else {
+                        text = "6";
+                    }
+                } else if (j == -1) {
+                    if (resChar == 'U') {
+                        text = "3";
+                    } else if (resChar == 'C') {
+                        text = "41";
+                    } else if (resChar == 'A') {
+                        text = "62";
+                    } else if (resChar == 'G') {
+                        text = "21";
+                    }
+                } else if (j == -2) {
+                    if (resChar == 'G') {
+                        text = "1";
+                    }
                 }
                 if (!text.equals("")) {
                     boolean active = true;
@@ -767,10 +793,14 @@ public class SSViewer extends Pane {
 
     int getAtomIndex(String aName) {
         char c1 = aName.charAt(1);
-        if (aName.length() == 3) {
+        if ((aName.length() == 3) && (aName.charAt(2) == '\'')) {
             return c1 - '1' + 2;
+        } else if (aName.length() == 3) {
+            return -1;
         } else if ((c1 == '2') || (c1 == '5')) {
             return 0;
+        } else if ((c1 == '1') || (c1 == '3')) {
+            return -1;
         } else {
             return 1;
         }
