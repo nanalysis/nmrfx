@@ -27,6 +27,7 @@ import org.apache.commons.math3.optim.nonlinear.scalar.ObjectiveFunction;
 import org.apache.commons.math3.optim.MaxEval;
 import org.apache.commons.math3.optim.PointValuePair;
 import org.apache.commons.math3.analysis.MultivariateFunction;
+import org.apache.commons.math3.exception.MathIllegalStateException;
 import org.apache.commons.math3.exception.TooManyEvaluationsException;
 import org.apache.commons.math3.optim.nonlinear.scalar.noderiv.BOBYQAOptimizer;
 
@@ -276,6 +277,8 @@ public class FDSignalOpt implements MultivariateFunction {
                     new SimpleBounds(normBoundaries[0], normBoundaries[1]),
                     new InitialGuess(normValues));
         } catch (TooManyEvaluationsException e) {
+            result = new PointValuePair(bestPars, bestValue);
+        } catch (MathIllegalStateException e) {
             result = new PointValuePair(bestPars, bestValue);
         }
         nEvaluations = optimizer.getEvaluations();
