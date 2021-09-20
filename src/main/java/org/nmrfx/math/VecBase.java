@@ -1290,7 +1290,7 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
                 target.set(i, getReal(i));
             }
         }
-        VecBase.copyRef(this, target);
+      VecBase.copyRef(this, target);
     }
 
     /**
