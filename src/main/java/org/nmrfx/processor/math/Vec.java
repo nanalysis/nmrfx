@@ -34,6 +34,7 @@ import org.apache.commons.math3.complex.Complex;
 import org.nmrfx.processor.processing.SampleSchedule;
 
 import java.util.Arrays;
+import java.util.List;
 
 import org.apache.commons.math3.analysis.UnivariateFunction;
 import org.apache.commons.math3.complex.ComplexUtils;
@@ -2554,11 +2555,36 @@ public class Vec extends VecBase {
      * Fill a vector with Lorentzian lineshapes as specified in signals list
      *
      * @param signals the list of signal objects
+     * @param signalInPoints if true the frequency and decay in signals are in
+     * data points, otherwise they are in ppm and Hz.
      * @return this vector
      */
-    public Vec fillVec(ArrayList<Signal> signals) {
+    public Vec fillVec(List<Signal> signals, boolean signalInPoints) {
         makeReal();
-        fillVec(rvec, size, signals);
+        zeros();
+
+        int nWidths = 40;
+        signals.stream().forEach((signal) -> {
+            double d = signal.decay;
+            double f = signal.frequency;
+            if (!signalInPoints) {
+                d = d / getSW() * getSize();
+                f = refToPtD(f);
+            }
+            double a = signal.amplitude;
+            int start = (int) Math.round(f - nWidths / 2 * d);
+            int end = (int) Math.round(f + nWidths / 2 * d);
+            if (start < 0) {
+                start = 0;
+            }
+            if (end > (size - 1)) {
+                end = size - 1;
+            }
+            for (int j = start; j <= end; j++) {
+                double yTemp = a * lShape(j, d, f);
+                add(j, yTemp);
+            }
+        });
         return this;
     }
 
@@ -2587,13 +2613,13 @@ public class Vec extends VecBase {
         return x;
     }
 
-    static class OptimizeLineWidth implements UnivariateFunction {
+    public static class OptimizeLineWidth implements UnivariateFunction {
 
         final double[] signal;
         final Complex[] fd;
         final int[] useColumns;
 
-        OptimizeLineWidth(final double[] signal, final Complex[] fd, final int[] useColumns) {
+        public OptimizeLineWidth(final double[] signal, final Complex[] fd, final int[] useColumns) {
             this.signal = signal;
             this.fd = fd;
             this.useColumns = useColumns;
@@ -2652,7 +2678,7 @@ public class Vec extends VecBase {
         int nMax = AR.getColumnDimension();
         RealMatrix redAR = AR.copy();
         AmplitudeFitResult afR = nnlsFit(redAR, BR.copy());
-        System.out.println("nCols " + nCols + " rss " + afR.getRss() + " fit max " + afR.getMaxValue() + " indx " + afR.getMaxIndex() + " lw " + lineWidth);
+      //  System.out.println("nCols " + nCols + " rss " + afR.getRss() + " fit max " + afR.getMaxValue() + " indx " + afR.getMaxIndex() + " lw " + lineWidth);
         return afR;
     }
 
