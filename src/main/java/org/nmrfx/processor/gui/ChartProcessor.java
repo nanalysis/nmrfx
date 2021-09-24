@@ -1043,18 +1043,20 @@ public class ChartProcessor {
             if (entry.getValue() != null) {
                 String dimMode = entry.getKey().substring(0, 1);
                 String parDim = entry.getKey().substring(1);
-                int dimNum = -1;
-                try {
-                    dimNum = Integer.parseInt(parDim) - 1;
-                    if (dimNum >= nDim) {
-                        break;
+                if (dimMode.equals("D")) {
+                    int dimNum = -1;
+                    try {
+                        dimNum = Integer.parseInt(parDim) - 1;
+                        if (dimNum >= nDim) {
+                            break;
+                        }
+                        mapToDataset[dimNum] = -1;
+                    } catch (NumberFormatException nFE) {
                     }
-                    mapToDataset[dimNum] = -1;
-                } catch (NumberFormatException nFE) {
-                }
-                if (!processorController.refManager.getSkip(parDim)) {
-                    if (dimMode.equals("D") && (dimNum != -1)) {
-                        mapToDataset[dimNum] = nDatasetDims++;
+                    if (!processorController.refManager.getSkip(parDim)) {
+                        if (dimMode.equals("D") && (dimNum != -1)) {
+                            mapToDataset[dimNum] = nDatasetDims++;
+                        }
                     }
                 }
                 ArrayList<String> scriptList = (ArrayList<String>) entry.getValue();
@@ -1115,7 +1117,7 @@ public class ChartProcessor {
         int nDim = nmrData.getNDim();
         int nArray = 0;
         for (String acqOrderElem : acqOrder) {
-            if (acqOrderElem.charAt(0) == 'a') {
+            if ((acqOrderElem.length() > 0) && (acqOrderElem.charAt(0) == 'a')) {
                 nArray++;
             }
         }
