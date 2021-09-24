@@ -1057,6 +1057,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         haltProcessButton.disableProperty().bind(stateProperty.isNotEqualTo(Worker.State.RUNNING));
 
         codeAreaUtil = new ProcessingCodeAreaUtil(textArea);
+        textArea.setEditable(false);
 //        consoleUtil = new ConsoleUtil();
 //        consoleUtil.addHandler(consoleArea, chartProcessor.getInterpreter());
 //        consoleUtil.banner();
