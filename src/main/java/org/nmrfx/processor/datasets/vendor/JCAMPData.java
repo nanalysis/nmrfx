@@ -234,7 +234,7 @@ class JCAMPData implements NMRData {
     public boolean getNegateImag(int iDim) {
         return iDim > 0;
     }
-    
+
     @Override
     public String getFTType(int iDim) {
         return fttype[iDim];
@@ -1019,8 +1019,30 @@ class JCAMPData implements NMRData {
     }
 
     @Override
-    public void setAcqOrder(String[] acqOrder) {
-        this.acqOrder = acqOrder;
+    public void setAcqOrder(String[] newOrder) {
+        if (newOrder.length == 1) {
+            String s = newOrder[0];
+            final int len = s.length();
+            int nDim = getNDim();
+            int nIDim = nDim - 1;
+            if ((len == nDim) || (len == nIDim)) {
+                acqOrder = new String[nIDim * 2];
+                int j = 0;
+                for (int i = (len - 1); i >= 0; i--) {
+                    String dimStr = s.substring(i, i + 1);
+                    if (!dimStr.equals(nDim + "")) {
+                        acqOrder[j] = "p" + dimStr;
+                        j++;
+                    }
+                }
+                for (int i = 0; i < nIDim; i++) {
+                    acqOrder[i + nIDim] = "d" + (i + 1);
+                }
+            }
+        } else {
+            this.acqOrder = new String[newOrder.length];
+            System.arraycopy(newOrder, 0, this.acqOrder, 0, newOrder.length);
+        }
     }
 
     @Override
