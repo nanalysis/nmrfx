@@ -52,6 +52,9 @@ import org.apache.commons.math3.transform.FastFourierTransformer;
 import org.apache.commons.math3.transform.TransformType;
 import org.apache.commons.math3.util.FastMath;
 import org.apache.commons.math3.util.ResizableDoubleArray;
+import org.python.core.Py;
+import org.python.core.PyComplex;
+import org.python.core.PyObject;
 import org.python.core.PyType;
 
 /**
@@ -114,6 +117,221 @@ public class Vec extends VecBase {
         var vec = new Vec(size, name, complex);
         put(name, vec);
         return vec;
+    }
+
+    @Override
+    public int __len__() {
+        return size;
+    }
+
+    @Override
+    public Vec __radd__(PyObject pyO) {
+        return __add__(pyO);
+    }
+
+    /**
+     * Convert PyComplex value to Apache Commons Math Complex value
+     *
+     * @param pyC the value as PyComplex object
+     * @return the value as Commons Math Complex value
+     */
+    public Complex toComplex(PyComplex pyC) {
+        return new Complex(pyC.real, pyC.imag);
+    }
+
+    @Override
+    public Vec __add__(PyObject pyO) {
+        Vec vecNew = new Vec(this.getSize(), this.isComplex);
+        this.copy(vecNew);
+        if (pyO instanceof Vec) {
+            //  fixme check sizes
+            Vec vec = (Vec) pyO;
+            vecNew.add(vec);
+        } else if (pyO instanceof PyComplex) {
+            vecNew.add(toComplex((PyComplex) pyO));
+        } else if (pyO.isNumberType()) {
+            vecNew.add(pyO.asDouble());
+        } else {
+            throw Py.TypeError("can't apply '+' to object: " + pyO.getType().asString());
+        }
+        return vecNew;
+    }
+
+    @Override
+    public Vec __iadd__(PyObject pyO) {
+        if (pyO instanceof Vec) {
+            //  fixme check sizes
+            Vec vec = (Vec) pyO;
+            this.add(vec);
+        } else if (pyO instanceof PyComplex) {
+            this.add(toComplex((PyComplex) pyO));
+        } else if (pyO.isNumberType()) {
+            this.add(pyO.asDouble());
+        } else {
+            throw Py.TypeError("can't apply '+=' to object: " + pyO.getType().asString());
+        }
+        return this;
+    }
+
+    @Override
+    public Vec __rsub__(PyObject pyO) {
+        if (pyO instanceof Vec) {
+            return ((Vec) pyO).__sub__(this);
+        } else {
+            Vec vecNew = new Vec(this.getSize(), this.isComplex);
+            this.copy(vecNew);
+            if (pyO instanceof PyComplex) {
+                vecNew.scale(-1.0);
+                vecNew.add(toComplex((PyComplex) pyO));
+            } else if (pyO.isNumberType()) {
+                vecNew.scale(-1.0);
+                vecNew.add(pyO.asDouble());
+            } else {
+                throw Py.TypeError("can't apply '-' to object: " + pyO.getType().asString());
+            }
+            return vecNew;
+        }
+    }
+
+    @Override
+    public Vec __sub__(PyObject pyO) {
+        Vec vecNew = new Vec(this.getSize(), this.isComplex);
+        this.copy(vecNew);
+        if (pyO instanceof Vec) {
+            //  fixme check sizes
+            Vec vec = (Vec) pyO;
+            vecNew.sub(vec);
+        } else if (pyO instanceof PyComplex) {
+            PyComplex pyC = (PyComplex) pyO;
+            Complex addValue = new Complex(pyC.real, pyC.imag);
+            vecNew.sub(addValue);
+        } else if (pyO.isNumberType()) {
+            vecNew.sub(pyO.asDouble());
+        } else {
+            throw Py.TypeError("can't apply '-' to object: " + pyO.getType().asString());
+        }
+        return vecNew;
+    }
+
+    @Override
+    public Vec __isub__(PyObject pyO) {
+        if (pyO instanceof Vec) {
+            //  fixme check sizes
+            Vec vec = (Vec) pyO;
+            this.sub(vec);
+        } else if (pyO instanceof PyComplex) {
+            PyComplex pyC = (PyComplex) pyO;
+            Complex addValue = new Complex(pyC.real, pyC.imag);
+            this.sub(addValue);
+        } else if (pyO.isNumberType()) {
+            this.sub(pyO.asDouble());
+        } else {
+            throw Py.TypeError("can't apply '-=' to object: " + pyO.getType().asString());
+        }
+        return this;
+    }
+
+    @Override
+    public Vec __rmul__(PyObject pyO) {
+        return __mul__(pyO);
+    }
+
+    @Override
+    public Vec __mul__(PyObject pyO) {
+        Vec vecNew = new Vec(this.getSize(), this.isComplex);
+        this.copy(vecNew);
+
+        if (pyO instanceof Vec) {
+            //  fixme check sizes
+            Vec vec = (Vec) pyO;
+            vecNew.multiply(vec);
+        } else if (pyO instanceof PyComplex) {
+            if (!vecNew.isComplex) {
+                vecNew.makeApache();
+            }
+            vecNew.multiply(toComplex((PyComplex) pyO));
+        } else if (pyO.isNumberType()) {
+            vecNew.scale(pyO.asDouble());
+        } else {
+            throw Py.TypeError("can't apply '*' to object: " + pyO.getType().asString());
+        }
+        return vecNew;
+    }
+
+    @Override
+    public Vec __imul__(PyObject pyO) {
+
+        if (pyO instanceof Vec) {
+            //  fixme check sizes
+            Vec vec = (Vec) pyO;
+            this.multiply(vec);
+        } else if (pyO instanceof PyComplex) {
+            if (!this.isComplex) {
+                this.makeApache();
+            }
+            this.multiply(toComplex((PyComplex) pyO));
+        } else if (pyO.isNumberType()) {
+            this.scale(pyO.asDouble());
+        } else {
+            throw Py.TypeError("can't apply '*' to object: " + pyO.getType().asString());
+        }
+        return this;
+    }
+
+    @Override
+    public Vec __rdiv__(PyObject pyO) {
+        if (pyO instanceof Vec) {
+            return ((Vec) pyO).__div__(this);
+        } else {
+            Vec vecNew = new Vec(this.getSize(), this.isComplex);
+            this.copy(vecNew);
+            if (pyO instanceof PyComplex) {
+                vecNew.rdivide(toComplex((PyComplex) pyO));
+            } else if (pyO.isNumberType()) {
+                vecNew.rdivide(pyO.asDouble());
+            } else {
+                throw Py.TypeError("can't apply '/' to object: " + pyO.getType().asString());
+            }
+            return vecNew;
+        }
+    }
+
+    @Override
+    public Vec __div__(PyObject pyO) {
+        Vec vecNew = new Vec(this.getSize(), this.isComplex);
+        this.copy(vecNew);
+        if (pyO instanceof Vec) {
+            //  fixme check sizes
+            Vec vec = (Vec) pyO;
+            vecNew.divide(vec);
+        } else if (pyO instanceof PyComplex) {
+            PyComplex pyC = (PyComplex) pyO;
+            Complex addValue = new Complex(pyC.real, pyC.imag);
+            vecNew.divide(addValue);
+        } else if (pyO.isNumberType()) {
+            vecNew.divide(pyO.asDouble());
+        } else {
+            throw Py.TypeError("can't apply '/' to object: " + pyO.getType().asString());
+        }
+        return vecNew;
+    }
+
+    @Override
+    public Vec __idiv__(PyObject pyO) {
+        if (pyO instanceof Vec) {
+            //  fixme check sizes
+            Vec vec = (Vec) pyO;
+            this.divide(vec);
+        } else if (pyO instanceof PyComplex) {
+            PyComplex pyC = (PyComplex) pyO;
+            Complex addValue = new Complex(pyC.real, pyC.imag);
+            this.divide(addValue);
+        } else if (pyO.isNumberType()) {
+            this.divide(pyO.asDouble());
+        } else {
+            throw Py.TypeError("can't apply '/' to object: " + pyO.getType().asString());
+        }
+        return this;
     }
 
     /**
@@ -2678,7 +2896,7 @@ public class Vec extends VecBase {
         int nMax = AR.getColumnDimension();
         RealMatrix redAR = AR.copy();
         AmplitudeFitResult afR = nnlsFit(redAR, BR.copy());
-      //  System.out.println("nCols " + nCols + " rss " + afR.getRss() + " fit max " + afR.getMaxValue() + " indx " + afR.getMaxIndex() + " lw " + lineWidth);
+        //  System.out.println("nCols " + nCols + " rss " + afR.getRss() + " fit max " + afR.getMaxValue() + " indx " + afR.getMaxIndex() + " lw " + lineWidth);
         return afR;
     }
 
