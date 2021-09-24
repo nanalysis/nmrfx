@@ -2385,7 +2385,7 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
      */
     public double refToPtD(double ref) {
         // why add 1.0, empircally necessary in show wsvd table
-        return ((refValue - ref) * centerFreq * dwellTime * size) + 1.0;
+        return ((refValue - ref) * centerFreq * dwellTime * size);
     }
 
     /**
