@@ -190,24 +190,27 @@ public class SimData {
             simShifts.makeSpec(vec);
         }
         regions.sort((a, b) -> Double.compare(a[0], b[0]));
-        double min = regions.get(0)[0];
-        double max = regions.get(0)[1];
         List<Region> filteredRegions = new ArrayList<>();
-        int nProtons = 1;
-        for (int i = 1; i < regions.size(); i++) {
+
+        for (int i = 0; i < regions.size(); i++) {
             double[] region = regions.get(i);
-            if ((region[0] > max) || (i == regions.size() - 1)) {
-                if (i == regions.size() - 1) {
-                    max = region[1];
+            double min = region[0];
+            double max = region[1];
+            boolean overlaps = false;
+            for (Region fRegion : filteredRegions) {
+                if ((max < fRegion.min) || (min > fRegion.max)) {
+                    continue;
+                } else {
+                    overlaps = true;
+                    fRegion.min = min < fRegion.min ? min : fRegion.min;
+                    fRegion.max = max > fRegion.max ? max : fRegion.max;
+                    fRegion.nProtons++;
+                    break;
                 }
-                Region fRegion = new Region(min, max, nProtons);
+            }
+            if (!overlaps) {
+                Region fRegion = new Region(min, max, 1);
                 filteredRegions.add(fRegion);
-                min = region[0];
-                max = region[1];
-                nProtons = 1;
-            } else {
-                nProtons++;
-                max = region[1];
             }
         }
         filteredRegions.sort((a, b) -> Double.compare(b.min, a.min));
