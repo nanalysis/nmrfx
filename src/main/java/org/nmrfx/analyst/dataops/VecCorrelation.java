@@ -16,7 +16,8 @@ public class VecCorrelation {
     /**
      * ****************************************************************************
      *                                                                            *
-     * Aligns chromatographic profiles P and T using correlation optimized * warping (COW) * *
+     * Aligns chromatographic profiles P and T using correlation optimized *
+     * warping (COW) * *
      * ****************************************************************************
      */
     public static int[] cow(Vec src, Vec target, int m, int t) {
@@ -456,13 +457,17 @@ public class VecCorrelation {
 
     /**
      * *******************************************************************************************************
-     * Closeness index of the Spectral Alignment: The original closeness index: correlation coefficient (cc) may be
-     * influenced by a small number of large peaks. Therefore, as suggested by (Nicholson et al. 2009), local areas must
-     * be scaled to an equal variance and calculated separately. The redefined similarity index is the production of cc
-     * in segments. Also, it's suggest that bin size ?=0.02ppm (a few times the full width of half maximum of a typical
-     * peak) is more suitable if we need to ensure the equal contribution of both minor and major peaks in the alignment
-     * quality measure, whereas the bin size ?=0.08ppm is sufficient to minimize the contribution of minor peaks and is
-     * more suitable to evaluate the alignment of major peaks
+     * Closeness index of the Spectral Alignment: The original closeness index:
+     * correlation coefficient (cc) may be influenced by a small number of large
+     * peaks. Therefore, as suggested by (Nicholson et al. 2009), local areas
+     * must be scaled to an equal variance and calculated separately. The
+     * redefined similarity index is the production of cc in segments. Also,
+     * it's suggest that bin size ?=0.02ppm (a few times the full width of half
+     * maximum of a typical peak) is more suitable if we need to ensure the
+     * equal contribution of both minor and major peaks in the alignment quality
+     * measure, whereas the bin size ?=0.08ppm is sufficient to minimize the
+     * contribution of minor peaks and is more suitable to evaluate the
+     * alignment of major peaks
      * ******************************************************************************************************
      */
     public static double correlation_bin(double[] vecX, double[] vecY, double[] vecW, int bin_size) {
@@ -487,13 +492,16 @@ public class VecCorrelation {
 
     /**
      * *******************************************************************************************************
-     * FFT Correlation Spectral Alignment Algorithm: Given spectrum functions of the reference: r(x) and the testing
-     * sample s(x), calculate the correlation and optimal shift. Since FFT will be applied to the spectrum, rather than
-     * time-serial data, the resolution of spectrum will becomes an important issue. Just in case of information lose,
-     * it will be nice if the sampling rate meets Nyquist-Shannon sampling theorem.
+     * FFT Correlation Spectral Alignment Algorithm: Given spectrum functions of
+     * the reference: r(x) and the testing sample s(x), calculate the
+     * correlation and optimal shift. Since FFT will be applied to the spectrum,
+     * rather than time-serial data, the resolution of spectrum will becomes an
+     * important issue. Just in case of information lose, it will be nice if the
+     * sampling rate meets Nyquist-Shannon sampling theorem.
      *
-     * FFT(Corr_r,s_(u)-> R*(w)S(w) (a.k.a Discrete Correlation Theorem), after performing reverse Fourier transform,
-     * the maximal correlation will appear at the the optimal shift
+     * FFT(Corr_r,s_(u)-> R*(w)S(w) (a.k.a Discrete Correlation Theorem), after
+     * performing reverse Fourier transform, the maximal correlation will appear
+     * at the the optimal shift
      * ******************************************************************************************************
      */
     public static PositionValue fftCorr(Vec vec1, Vec vecMatS, int binSize, int maxShift) {
@@ -523,13 +531,33 @@ public class VecCorrelation {
         return pValue;
     }
 
+    public static PositionValue fftCorr(Vec vec1, Vec vecMatS, int maxShift, int pt1, int pt2) {
+        /* Inputs:
+         *     rList   -   Reference spectrum
+         *     sList   -   Testing sample spectrum to be alighed
+         *
+         * */
+        int n = pt2 - pt1 + 1;
+        int newN = n;
+
+        newN = (int) Math.round(Math.pow(2, Math.ceil((Math.log(newN) / Math.log(2)))));
+
+        double[] vecR = new double[newN];
+        double[] vecS = new double[newN];
+        System.arraycopy(vec1.getReal(), pt1, vecR, 0, n);
+        System.arraycopy(vecMatS.getReal(), pt1, vecS, 0, n);
+        standardize(vecR, n);
+        standardize(vecS, n);
+        PositionValue pValue = fftCorr(vecR, vecS, maxShift);
+        return pValue;
+    }
+
     public static PositionValue fftCorr(double[] vecR, double[] vecS, int maxShift) {
         /* Inputs:
          *     rList   -   Reference spectrum
          *     sList   -   Testing sample spectrum to be alighed
          *
          * */
-        int shifts = 0;
         int n = vecR.length;
         int m = vecS.length;
         if (n != m) {
@@ -552,21 +580,28 @@ public class VecCorrelation {
             double[] corr_rs_power = getMagnitude(corr_rs);
             //Find the position with maximal correlation
             double max_corr = 0.0;
-            if (maxShift > (n / 2)) {
-                maxShift = n / 2;
-            }
-            for (int i = -maxShift; i <= maxShift; i++) {
-                int j = i;
-                if (i < 0) {
-                    j = n + i;
+            int shift = 0;
+            if (true) {
+                for (int i = -maxShift; i <= maxShift; i++) {
+                    int j = i >= 0 ? i : n + i;
+                    if (corr_rs_power[j] > max_corr) {
+                        max_corr = corr_rs_power[j];
+                        shift = i;
+                    }
                 }
-
-                if (corr_rs_power[j] > max_corr) {
-                    max_corr = corr_rs_power[j];
-                    shifts = i;
+            } else {
+                for (int i = 0; i < corr_rs_power.length; i++) {
+                    if (corr_rs_power[i] > max_corr) {
+                        max_corr = corr_rs_power[i];
+                        shift = i;
+                    }
+                }
+                if (shift >= n / 2) {
+                    shift = shift - n;
                 }
             }
-            pValue = new PositionValue(shifts, max_corr);
+//            System.out.println("shift " + shift + " n " + n + " clen " + corr_rs_power.length + " " + maxShift);
+            pValue = new PositionValue(shift, max_corr);
         } catch (Exception e) {
             System.out.println("Exception " + e.toString());
             e.printStackTrace();
