@@ -1,0 +1,8 @@
+/target/
+/sandbox/
+/tmp/
+/installers/
+/.idea/
+structure.iml
+*.class
+.DS_Store
