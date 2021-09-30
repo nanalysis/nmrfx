@@ -1290,7 +1290,7 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
                 target.set(i, getReal(i));
             }
         }
-      VecBase.copyRef(this, target);
+        VecBase.copyRef(this, target);
     }
 
     /**
@@ -3159,7 +3159,7 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
         }
         String outFileName = String.format("%s%04d.%s", rootName, index + 1, suffix);
 
-        try ( FileOutputStream oStream = new FileOutputStream(outFileName)) {
+        try (FileOutputStream oStream = new FileOutputStream(outFileName)) {
             int nElem = isComplex ? 2 : 1;
             ByteBuffer byteBuffer = ByteBuffer.allocate(size * Double.SIZE / 8 * nElem);
             if (littleEndian) {
@@ -3180,7 +3180,7 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
             throw ioE;
         }
         String parFileName = String.format("%s%04d.%s.par", rootName, index + 1, suffix);
-        try ( FileOutputStream oStream = new FileOutputStream(parFileName)) {
+        try (FileOutputStream oStream = new FileOutputStream(parFileName)) {
             ByteBuffer byteBuffer = ByteBuffer.allocate(2 * Integer.SIZE / 8);
             if (littleEndian) {
                 byteBuffer.order(ByteOrder.LITTLE_ENDIAN);
@@ -3240,7 +3240,7 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
         }
         String inFileName = String.format("%s%04d.%s", rootName, index + 1, suffix);
 
-        try ( FileInputStream oStream = new FileInputStream(inFileName)) {
+        try (FileInputStream oStream = new FileInputStream(inFileName)) {
             int nElem = isComplex ? 2 : 1;
             ByteBuffer byteBuffer = ByteBuffer.allocate(size * Double.SIZE / 8 * nElem);
             if (littleEndian) {
