@@ -1,0 +1,6 @@
+/target/
+/nvfxtest
+/sandbox/
+/installers/
+/.idea/
+nmrfx-analyst.iml
