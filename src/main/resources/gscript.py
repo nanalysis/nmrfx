@@ -80,10 +80,16 @@ class NMRFxWindowScripting:
         else:
             return self.cmd.active()
 
-    def datasets(self, datasetNames=None):
-        if datasetNames == None:
+    def datasets(self, datasets=None):
+        if datasets == None:
             return self.cmd.datasets()
         else:
+            datasetNames = []
+            for dataset in datasets:
+                if isinstance(dataset,basestring):
+                    datasetNames.append(dataset)
+                else:
+                    datasetNames.append(dataset.getName())
             self.cmd.datasets(datasetNames)
 
     def openFID(self, fidName):
