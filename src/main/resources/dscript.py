@@ -63,6 +63,16 @@ class NMRFxDatasetScripting:
         vec = Vec(dataset.getSize(iDim), dataset.getComplex(iDim))
         return vec
 
+    def extract(self, dataset, iDim, *indices):
+        vec = Vec(dataset.getSize(iDim), dataset.getComplex(iDim))
+        dataset.readVector(vec, indices, iDim)
+        extension = '_d'+str(iDim+1)
+        for index in indices:
+            extension += '_'+str(index+1)
+        vec.setName(dataset.getName()[0:-3]+extension)
+        newData = Dataset(vec)
+        return newData
+
     def toPipe(self, dataset, fileName):
         np = NMRPipeData(dataset)
         np.saveFile(fileName)
