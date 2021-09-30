@@ -1,0 +1,24 @@
+.root {
+/*
+    -fx-base: rgba(100, 100, 100, 255); // dark
+*/
+    -fx-base: #ececec
+}
+
+.button {
+    -fx-font-weight: bold;
+}
+
+.toolButton {
+    -fx-content-display:top;
+    -fx-font-weight: normal;
+    -fx-font-size:10pt;
+    -fx-fill:#8A0808;
+}
+.toolButton > .glyph-icon  {
+    -fx-fill:black;
+}
+.menuButton {
+    -fx-font-weight: normal;
+    -fx-font-size:10pt;
+}
