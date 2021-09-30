@@ -1,0 +1,7 @@
+*.nv
+*.ucsf
+/target/
+/nvfxtest
+/sandbox/
+/installers/
+/logs/

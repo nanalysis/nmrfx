@@ -1,0 +1,10 @@
+<assembly>
+    <id>bin</id>
+    <formats>
+        <format>dir</format>
+    </formats>
+    <includeBaseDirectory>true</includeBaseDirectory>
+    <componentDescriptors>
+        <componentDescriptor>component.xml</componentDescriptor>
+    </componentDescriptors>
+</assembly>

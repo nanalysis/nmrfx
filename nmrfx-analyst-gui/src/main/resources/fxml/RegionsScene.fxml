@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import java.lang.*?>
+<?import javafx.scene.layout.*?>
+<?import org.controlsfx.control.*?>
+
+<BorderPane xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1"
+            styleClass="mainFxmlClass" fx:id="attrBorderPane"
+            fx:controller="org.nmrfx.analyst.gui.RegionController">
+    <top>
+        <VBox>
+            <children>
+                <HBox fx:id="menuBar" />
+                <HBox fx:id="toolBar" />
+                <HBox  fx:id = "regionToolBar" />
+                <HBox  fx:id = "peakToolBar"/>
+                <HBox  fx:id = "fittingToolBar"/>
+            </children>
+        </VBox>
+    </top>
+    <center>
+        <BorderPane>
+            <top>
+            </top>
+            <center>
+                <GridPane fx:id="gridPane"/>
+            </center>
+            <bottom>
+                <HBox  fx:id = "integralToolBar"/>
+            </bottom>
+        </BorderPane>
+    </center>
+    <bottom>
+        <HBox  fx:id = "typeToolBar"/>
+    </bottom>
+</BorderPane>
