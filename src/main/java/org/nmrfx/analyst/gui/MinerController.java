@@ -80,9 +80,13 @@ public class MinerController {
         maxAlignMenuItem.setOnAction(e -> alignToMax(e));
         MenuItem covMenuItem = new MenuItem("By Covariance");
         covMenuItem.setOnAction(e -> alignByCov(e));
+
+        MenuItem segmentMenuItem = new MenuItem("Segments");
+        segmentMenuItem.setOnAction(e -> alignBySegments(e));
+
         MenuItem undoAlignMenuItem = new MenuItem("Undo");
         undoAlignMenuItem.setOnAction(e -> undoAlign(e));
-        alignMenu.getItems().addAll(maxAlignMenuItem, covMenuItem, undoAlignMenuItem);
+        alignMenu.getItems().addAll(maxAlignMenuItem, covMenuItem, segmentMenuItem, undoAlignMenuItem);
     }
 
     @FXML
@@ -207,7 +211,7 @@ public class MinerController {
                 if (scannerController.hasColumn("offset")) {
                     valueList = scannerController.getValues("offset");
                 }
-                Double[] deltas = aligner.alignByCovStream(dataset, pt1, pt2, pStart, sectionLength, iWarp, tStart);
+                Double[] deltas = aligner.alignByCowStream(dataset, pt1, pt2, pStart, sectionLength, iWarp, tStart);
                 polyChart.refresh();
                 if (valueList != null) {
                     for (int i = 0; i < valueList.size(); i++) {
@@ -225,6 +229,43 @@ public class MinerController {
             }
         }
 
+    }
+
+    @FXML
+    public void alignBySegments(ActionEvent event) {
+        PolyChart polyChart = scannerController.getChart();
+        Dataset dataset = (Dataset) polyChart.getDataset();
+        if (dataset != null) {
+            double[] ppms = polyChart.getVerticalCrosshairPositions();
+            DatasetAttributes dataAttr = (DatasetAttributes) polyChart.getDatasetAttributes().get(0);
+            AXMODE axMode = polyChart.getAxMode(0);
+            int pt1 = axMode.getIndex(dataAttr, 0, ppms[0]);
+            int pt2 = axMode.getIndex(dataAttr, 0, ppms[1]);
+            Align aligner = new Align();
+            int sectionLength = 0;
+            int maxShift = 0;
+            try {
+                List<Double> valueList = null;
+                if (scannerController.hasColumn("offset")) {
+                    valueList = scannerController.getValues("offset");
+                }
+                Double[] deltas = aligner.alignBySegmentsStream(dataset, pt1, pt2, sectionLength, maxShift, true);
+                polyChart.refresh();
+                if (valueList != null) {
+                    for (int i = 0; i < valueList.size(); i++) {
+                        valueList.set(i, valueList.get(i) + deltas[i]);
+                    }
+                } else {
+                    valueList = Arrays.asList(deltas);
+                }
+                scannerController.getScanTable().addTableColumn("offset", "D");
+                scannerController.setItems("offset", valueList);
+                scannerController.getScanTable().refresh();
+
+            } catch (IOException ex) {
+                Logger.getLogger(MinerController.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
     }
 
     @FXML
