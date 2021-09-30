@@ -1,9 +1,0 @@
-#!/bin/sh
-cps=`ls -d ../nmrfx-processor-gui/target/nmrfx-processor-gui*-bin/nmrfx-processor-gui*/lib/*.jar`
-CLASSPATH="target/classes"
-for cp in $cps
-    do
-       CLASSPATH=${CLASSPATH}:$cp
-    done
-
-java -cp ${CLASSPATH} org.nmrfx.processor.gui.NMRApp
