@@ -61,8 +61,6 @@
         <dependency>
             <groupId>com.github.haifengl</groupId>
             <artifactId>smile-core</artifactId>
-            <version>2.6.0</version>
-            <!-- TODO bom needs to declare 2.5.3 for other modules... -->
         </dependency>
         <dependency>
             <groupId>com.github.haifengl</groupId>

@@ -676,8 +676,7 @@ public class PeakPathAnalyzer {
             weightValues[i] = dTol;
         }
         MercerKernel mKernel = new GaussianKernel(2000.0);
-//        GaussianProcessRegression gRegr = new GaussianProcessRegression(xValues, yValues, mKernel, 0.001);
-        KernelMachine gRegr = GaussianProcessRegression.fit(xValues, yValues, mKernel, 0.001);
+        var gRegr = GaussianProcessRegression.fit(xValues, yValues, mKernel, 0.001);
         Variogram vGram = new PowerVariogram(xValues, yValues);
         KrigingInterpolation krig = new KrigingInterpolation(xValues, yValues, vGram, weightValues);
         //    KrigingInterpolation krig = new KrigingInterpolation(xValues, yValues);

@@ -197,17 +197,17 @@
             <dependency>
                 <groupId>com.github.haifengl</groupId>
                 <artifactId>smile-core</artifactId>
-                <version>2.5.3</version>
+                <version>2.6.0</version>
             </dependency>
             <dependency>
                 <groupId>com.github.haifengl</groupId>
                 <artifactId>smile-interpolation</artifactId>
-                <version>2.5.3</version>
+                <version>2.6.0</version>
             </dependency>
             <dependency>
                 <groupId>com.github.haifengl</groupId>
                 <artifactId>smile-io</artifactId>
-                <version>2.5.3</version>
+                <version>2.6.0</version>
             </dependency>
             <dependency>
                 <groupId>org.bytedeco</groupId>
