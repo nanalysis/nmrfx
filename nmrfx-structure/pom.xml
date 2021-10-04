@@ -15,11 +15,6 @@
     <version>11.1.39</version>
     <name>nmrfx-nmrfxstructure</name>
 
-    <properties>
-        <nd4j.version>1.0.0-beta7</nd4j.version>
-        <dl4j.version>1.0.0-beta7</dl4j.version>
-    </properties>
-
     <dependencies>
         <dependency>
             <groupId>org.nmrfx</groupId>
@@ -29,89 +24,73 @@
         <dependency>
             <groupId>javax.vecmath</groupId>
             <artifactId>vecmath</artifactId>
-            <version>1.5.2</version>
         </dependency>
         <dependency>
             <groupId>tw.edu.ntu.csie</groupId>
             <artifactId>libsvm</artifactId>
-            <version>3.24</version>
         </dependency>
         <dependency>
             <groupId>commons-httpclient</groupId>
             <artifactId>commons-httpclient</artifactId>
-            <version>3.1</version>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-math3</artifactId>
-            <version>3.6</version>
         </dependency>
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>4.12</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.biojava</groupId>
             <artifactId>biojava-core</artifactId>
-            <version>4.0.0</version>
         </dependency>
         <dependency>
             <groupId>org.biojava</groupId>
             <artifactId>biojava-alignment</artifactId>
-            <version>4.0.0</version>
         </dependency>
         <dependency>
             <groupId>org.codehaus.janino</groupId>
             <artifactId>janino</artifactId>
-            <version>3.1.2</version>
         </dependency>
         <dependency>
             <groupId>org.yaml</groupId>
             <artifactId>snakeyaml</artifactId>
-            <version>1.25</version>
-            <type>jar</type>
         </dependency>
         <dependency>
             <groupId>com.github.haifengl</groupId>
             <artifactId>smile-core</artifactId>
             <version>2.6.0</version>
+            <!-- TODO bom needs to declare 2.5.3 for other modules... -->
         </dependency>
         <dependency>
             <groupId>com.github.haifengl</groupId>
             <artifactId>smile-interpolation</artifactId>
-            <version>2.5.3</version>
         </dependency>
         <dependency>
             <groupId>com.github.haifengl</groupId>
             <artifactId>smile-io</artifactId>
-            <version>2.5.3</version>
         </dependency>
         <dependency>
             <groupId>org.bytedeco</groupId>
             <artifactId>javacpp</artifactId>
-            <version>1.5.4</version>
         </dependency>
         <dependency>
             <groupId>org.bytedeco</groupId>
             <artifactId>openblas-platform</artifactId>
-            <version>0.3.10-1.5.4</version>
         </dependency>
         <dependency>
             <groupId>org.bytedeco</groupId>
             <artifactId>arpack-ng-platform</artifactId>
-            <version>3.7.0-1.5.4</version>
         </dependency>
         <dependency>
             <groupId>org.deeplearning4j</groupId>
             <artifactId>deeplearning4j-nn</artifactId>
-            <version>${dl4j.version}</version>
         </dependency>
         <dependency>
             <groupId>org.nd4j</groupId>
             <artifactId>nd4j-api</artifactId>
-            <version>${nd4j.version}</version>
         </dependency>
     </dependencies>
     <build>
