@@ -2,15 +2,19 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <groupId>org.nmrfx</groupId>
+
+    <parent>
+        <groupId>org.nmrfx</groupId>
+        <artifactId>nmrfx</artifactId>
+        <version>11.1.39</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
     <artifactId>nmrfx-processor</artifactId>
     <packaging>jar</packaging>
     <version>11.1.39</version>
     <name>nmrfx-processor</name>
-    <properties>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    </properties>
-    <url>http://maven.apache.org</url>
+
     <dependencies>
         <dependency>
             <groupId>org.nmrfx</groupId>
@@ -47,13 +51,12 @@
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-math3</artifactId>
             <version>3.6</version>
-            <scope>compile</scope>
         </dependency>
-      <dependency>
-        <groupId>com.google.guava</groupId>
-        <artifactId>guava</artifactId>
-        <version>28.2-jre</version>
-      </dependency>
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>28.2-jre</version>
+        </dependency>
         <dependency>
             <groupId>org.yaml</groupId>
             <artifactId>snakeyaml</artifactId>
@@ -95,27 +98,19 @@
             <artifactId>arpack-ng-platform</artifactId>
             <version>3.7.0-1.5.4</version>
         </dependency>
-      <dependency>
-          <groupId>io.netty</groupId>
-          <artifactId>netty-all</artifactId>
-          <version>4.1.45.Final</version>
-      </dependency>
-      <dependency>
-        <groupId>org.python</groupId>
-        <artifactId>jython-slim</artifactId>
-        <version>2.7.2</version>
-      </dependency>
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-all</artifactId>
+            <version>4.1.45.Final</version>
+        </dependency>
+        <dependency>
+            <groupId>org.python</groupId>
+            <artifactId>jython-slim</artifactId>
+            <version>2.7.2</version>
+        </dependency>
     </dependencies>
     <build>
         <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.8.1</version>
-                <configuration>
-                    <release>11</release>
-                </configuration>
-            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-ant-plugin</artifactId>

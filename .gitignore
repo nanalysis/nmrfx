@@ -1,0 +1,35 @@
+# maven
+*/target/
+*.class
+
+# intellij
+.idea/
+*.iml
+
+# netbeans
+nbproject/
+build/
+nbbuild/
+dist/
+nbdist/
+nbactions.xml
+
+# kdiff3
+*.orig
+
+# windows
+Thumbs.db
+
+# mac
+.DS_Store
+
+# NMRfx files
+*.nv
+*.ucsf
+
+# specific folders
+*/nvfxtest
+*/sandbox/
+*/installers/
+*/logs/
+*/tmp/
