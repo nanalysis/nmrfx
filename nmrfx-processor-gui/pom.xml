@@ -20,13 +20,11 @@
             <groupId>org.nmrfx</groupId>
             <artifactId>nmrfx-processor</artifactId>
             <version>11.1.39</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.nmrfx</groupId>
             <artifactId>nmrfx-utils</artifactId>
             <version>11.1.39</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>commons-beanutils</groupId>

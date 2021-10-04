@@ -25,7 +25,6 @@
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-math3</artifactId>
             <version>3.6</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>javax.vecmath</groupId>

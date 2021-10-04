@@ -22,33 +22,18 @@
     <dependencies>
         <dependency>
             <groupId>org.nmrfx</groupId>
-            <artifactId>nmrfx-processor</artifactId>
-            <version>11.1.39</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.nmrfx</groupId>
             <artifactId>nmrfx-processor-gui</artifactId>
             <version>11.1.39</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.nmrfx</groupId>
             <artifactId>nmrfx-analyst</artifactId>
             <version>11.1.39</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.nmrfx</groupId>
-            <artifactId>nmrfx-structure</artifactId>
-            <version>11.1.39</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.comdnmr</groupId>
             <artifactId>ringnmr-gui</artifactId>
             <version>1.04</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.openjfx</groupId>

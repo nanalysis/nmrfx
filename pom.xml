@@ -1,7 +1,7 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-  
+
     <groupId>org.nmrfx</groupId>
     <artifactId>nmrfx</artifactId>
     <version>11.1.39</version>
@@ -13,7 +13,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
-	<modules>
+    <modules>
         <module>nmrfx-utils</module>
         <module>nmrfx-core</module>
         <module>nmrfx-processor</module>
@@ -21,12 +21,12 @@
         <module>nmrfx-structure</module>
         <module>nmrfx-analyst</module>
         <module>nmrfx-analyst-gui</module>
-	</modules>
-	
+    </modules>
+
     <repositories>
         <repository>
             <id>nanalysis-public</id>
             <url>https://raw.githubusercontent.com/nanalysis/maven-repository/public/</url>
-        </repository>     
+        </repository>
     </repositories>
 </project>
