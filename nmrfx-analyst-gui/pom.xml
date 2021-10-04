@@ -1,17 +1,24 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>org.nmrfx</groupId>
+    <parent>
+        <groupId>org.nmrfx</groupId>
+        <artifactId>nmrfx</artifactId>
+        <version>11.1.39</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
     <artifactId>nmrfx-analyst-gui</artifactId>
     <version>11.1.39</version>
     <name>nmrfx-analyst-gui</name>
     <packaging>jar</packaging>
 
     <properties>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <mainClass> org.nmrfx.processor.gui.AnalystApp</mainClass>
+        <mainClass>org.nmrfx.processor.gui.AnalystApp</mainClass>
     </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.nmrfx</groupId>
@@ -240,7 +247,7 @@
                         </configuration>
                     </execution>
                 </executions>
-            </plugin>  
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-site-plugin</artifactId>

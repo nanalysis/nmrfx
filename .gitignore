@@ -1,0 +1,20 @@
+# maven
+*/target/
+
+# intellij
+.idea/
+*.iml
+
+# netbeans
+nbproject/
+build/
+nbbuild/
+dist/
+nbdist/
+nbactions.xml
+
+# kdiff3
+*.orig
+
+# windows
+Thumbs.db

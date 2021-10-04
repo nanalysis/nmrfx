@@ -2,18 +2,24 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <groupId>org.nmrfx</groupId>
+
+    <parent>
+        <groupId>org.nmrfx</groupId>
+        <artifactId>nmrfx</artifactId>
+        <version>11.1.39</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
     <artifactId>nmrfx-structure</artifactId>
     <packaging>jar</packaging>
     <version>11.1.39</version>
     <name>nmrfx-nmrfxstructure</name>
+
     <properties>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <nd4j.version>1.0.0-beta7</nd4j.version>
         <dl4j.version>1.0.0-beta7</dl4j.version>
     </properties>
-    <url>http://maven.apache.org</url>
+
     <dependencies>
         <dependency>
             <groupId>org.nmrfx</groupId>
@@ -150,7 +156,7 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
                 <configuration>
-                    <archive>                   
+                    <archive>
                         <manifest>
                             <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
                             <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
