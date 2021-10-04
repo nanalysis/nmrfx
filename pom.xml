@@ -14,6 +14,7 @@
     </properties>
 
     <modules>
+        <module>nmrfx-bom</module>
         <module>nmrfx-utils</module>
         <module>nmrfx-core</module>
         <module>nmrfx-processor</module>
@@ -29,6 +30,18 @@
             <url>https://raw.githubusercontent.com/nanalysis/maven-repository/public/</url>
         </repository>
     </repositories>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.nmrfx</groupId>
+                <artifactId>nmrfx-bom</artifactId>
+                <version>11.1.39</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <build>
         <plugins>
