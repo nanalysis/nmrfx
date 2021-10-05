@@ -140,6 +140,24 @@ public class FileTableItem {
         return extra == null ? 0.0 : extra;
     }
 
+    public Double getDouble(String eName) {
+        Double value = 0.0;
+        if (eName.equals("group")) {
+            value = (double) getGroup();
+        } else if (doubleExtras.containsKey(eName)) {
+            value = doubleExtras.get(eName);
+        } else if (intExtras.containsKey(eName)) {
+            value = intExtras.get(eName).doubleValue();
+        } else {
+            if (eName.equals("row")) {
+                value = row.doubleValue();
+            } else if (eName.equals("etime")) {
+                value = getDate().doubleValue();
+            }
+        }
+        return value;
+    }
+
     public Integer getIntegerExtra(String eName) {
         Integer extra = intExtras.get(eName);
         return extra == null ? 0 : extra;

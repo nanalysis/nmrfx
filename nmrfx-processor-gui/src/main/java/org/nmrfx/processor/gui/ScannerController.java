@@ -59,6 +59,7 @@ import static org.nmrfx.processor.gui.PreferencesController.getDatasetDirectory;
 import org.nmrfx.processor.gui.controls.FileTableItem;
 import org.nmrfx.processor.gui.controls.ScanTable;
 import org.nmrfx.processor.gui.tools.TRACTGUI;
+import org.nmrfx.processor.gui.tools.TablePlotGUI;
 import org.nmrfx.utils.GUIUtils;
 import org.nmrfx.utils.properties.DirectoryOperationItem;
 import org.nmrfx.utils.properties.TextOperationItem;
@@ -106,6 +107,7 @@ public class ScannerController implements Initializable {
     ChangeListener<String> outputDirListener;
     static Consumer createControllerAction = null;
     TRACTGUI tractGUI = null;
+    TablePlotGUI plotGUI = null;
 
     static final Pattern WPAT = Pattern.compile("([^:]+):([0-9\\.\\-]+)_([0-9\\.\\-]+)_([0-9\\.\\-]+)_([0-9\\.\\-]+)(_[VMmE]W)$");
     static final Pattern RPAT = Pattern.compile("([^:]+):([0-9\\.\\-]+)_([0-9\\.\\-]+)(_[VMmE][NR])?$");
@@ -562,6 +564,15 @@ public class ScannerController implements Initializable {
 
         }
         tractGUI.showMCplot();
+    }
+
+    @FXML
+    void showPlotGUI() {
+        if (plotGUI == null) {
+            plotGUI = new TablePlotGUI(tableView);
+
+        }
+        plotGUI.showPlotStage();
     }
 
     @FXML

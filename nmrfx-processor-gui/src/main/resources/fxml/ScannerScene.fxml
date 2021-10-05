@@ -47,6 +47,7 @@
                         <MenuButton  mnemonicParsing="false" text="Tools">
                             <items>
                                 <MenuItem mnemonicParsing="false" onAction="#showTRACTGUI" text="TRACT Analysis..." />
+                                <MenuItem mnemonicParsing="false" onAction="#showPlotGUI" text="Plot Table..." />
                             </items>
                         </MenuButton>
                     </items>

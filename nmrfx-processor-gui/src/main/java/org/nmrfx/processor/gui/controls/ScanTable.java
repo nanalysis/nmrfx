@@ -132,7 +132,7 @@ public class ScanTable {
     static Color color13 = Color.web("#311e3c");
     static Color color14 = Color.web("#7a3e2a");
     static Color color15 = Color.web("#4c2927");
-    List<String> standardHeaders;
+    static List<String> standardHeaders = Arrays.asList("path", "sequence", "row", "etime", "ndim");
 
 ////    static Color[] colors = {color11, color9, color15, color1, color4, color2, color13,
 ////        color8, color7, color6, color10, color0, color3, color14, color12, color5};
@@ -157,7 +157,6 @@ public class ScanTable {
     public ScanTable(ScannerController controller, TableView<FileTableItem> tableView) {
         this.scannerController = controller;
         this.tableView = tableView;
-        standardHeaders = Arrays.asList("path", "sequence", "row", "etime", "ndim");
         init();
     }
 
@@ -193,6 +192,10 @@ public class ScanTable {
 
     public void refresh() {
         tableView.refresh();
+    }
+
+    public static List<String> getStandardHeaders() {
+        return standardHeaders;
     }
 
     final protected String getActiveDatasetName() {
@@ -1115,7 +1118,7 @@ public class ScanTable {
         }
     }
 
-    private Color getGroupColor(int index) {
+    public static Color getGroupColor(int index) {
         index = Math.min(index, COLORS.length - 1);
         return COLORS[index];
     }
