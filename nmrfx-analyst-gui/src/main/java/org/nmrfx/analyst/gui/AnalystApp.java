@@ -543,6 +543,11 @@ public class AnalystApp extends MainApp {
      * @param args the command line arguments
      */
     public static void main(String[] args) {
+
+        //obvious bug to see if sonar finds it.
+        String x = null;
+        var bug = x.length();
+
         launch(args);
     }
 
