@@ -1,7 +1,19 @@
 /*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+ * NMRFx Processor : A Program for Processing NMR Data 
+ * Copyright (C) 2004-2018 One Moon Scientific, Inc., Westfield, N.J., USA
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 package org.nmrfx.chart;
 
@@ -38,12 +50,13 @@ public class XYCanvasBarChart extends XYCanvasChart {
         showLegend = false;
     }
 
+    @Override
     public void drawChart() {
         double width = getWidth();
         double height = getHeight();
         GraphicsContext gCC = canvas.getGraphicsContext2D();
         GraphicsContextInterface gC = new GraphicsContextProxy(gCC);
-            gC.clearRect(xPos, yPos, width, height);
+        gC.clearRect(xPos, yPos, width, height);
         drawChart(gC);
     }
 
@@ -82,99 +95,71 @@ public class XYCanvasBarChart extends XYCanvasChart {
             gC.strokeLine(xPos + leftBorder, yPos + topBorder, xPos + width - rightBorder, yPos + topBorder);
             gC.strokeLine(xPos + width - rightBorder, yPos + topBorder, xPos + width - rightBorder, yPos + height - bottomBorder);
             gC.rect(xPos + leftBorder, yPos + topBorder, xAxis.getWidth(), yAxis.getHeight());
-            gC.clip();
-            gC.beginPath();
-            annotate(gC);
-            int nSeries = getData().size();
-            for (int seriesIndex = 0; seriesIndex < getData().size(); seriesIndex++) {
-                DataSeries series = getData().get(seriesIndex);
-                Color fill = series.fill;
-                for (XYValue value : series.values) {
-                    double x = xAxis.getDisplayPosition(value.getXValue());
-                    double y = yAxis.getDisplayPosition(value.getYValue());
-                    double zeroPos = yAxis.getDisplayPosition(0.0);
-                    double barWidth;
-                    double fullWidth;
-                    double stepSize;
-                    double gap = 0.05;
-                    stepSize = (xAxis.getDisplayPosition(1.0) - xAxis.getDisplayPosition(0.0));
-                    fullWidth = stepSize / nSeries;
-                    barWidth = fullWidth - gap * stepSize / nSeries;
-                    double x1 = x - 0.5 * stepSize + gap * stepSize / 2.0 + barWidth * seriesIndex;
-                    double x2 = x1 + barWidth;
-                    double y0 = zeroPos;
-                    double y2 = y;
-                    gC.setFill(fill);
-                    double w = x2 - x1;
-                    double h = Math.abs(y0 - y2);
-                    if (y2 > y0) {
-                        y2 = y0;
-                    }
-                    gC.fillRect(x1, y2, w, h);
-                    if (value instanceof XYEValue) {
-                        double errValue = ((XYEValue) value).getError();
-                        if (errValue != 0.0) {
-                            double low = yAxis.getDisplayPosition(value.getYValue() - errValue);
-                            double high = yAxis.getDisplayPosition(value.getYValue() + errValue);
-                            gC.setStroke(Color.BLACK);
-                            double xc = x1 + barWidth / 2;
-                            gC.strokeLine(xc, low, xc, high);
-                        }
-                    }
 
-                }
-            }
         } catch (GraphicsIOException ioE) {
-            ioE.printStackTrace();
-
         }
+        gC.clip();
+        gC.beginPath();
+        annotate(gC);
+        drawSeries(gC);
         gC.restore();
-
     }
 
-    public Optional<Hit> pickChart(double mouseX, double mouseY, double hitRadius) {
-        double width = getWidth();
-        double height = getHeight();
+    void drawSeries(GraphicsContextInterface gC) {
+        doSeries(gC, null);
+    }
 
-        double minDimSize = width < height ? width : height;
+    @Override
+    public Optional<Hit> pickChart(double mouseX, double mouseY, double hitRadius) {
+        PickPoint pickPt = new PickPoint(mouseX, mouseY, hitRadius);
+        return doSeries(null, pickPt);
+    }
+
+    Optional<Hit> doSeries(GraphicsContextInterface gC, PickPoint pickPt) {
         Optional<Hit> hitOpt = Optional.empty();
+        double gap = 0.05;
         int nSeries = getData().size();
-        int seriesIndex = 0;
-        for (DataSeries series : data) {
-            double radius = series.radius;
-            if (series.radiusInPercent) {
-                radius = radius * minDimSize;
-            }
-            int i = 0;
+        double stepSize = (xAxis.getDisplayPosition(1.0) - xAxis.getDisplayPosition(0.0));
+        double fullWidth = stepSize / nSeries;
+        double barThickness = fullWidth * (1.0 - gap);
+        for (int seriesIndex = 0; seriesIndex < nSeries; seriesIndex++) {
+            DataSeries series = getData().get(seriesIndex);
+            BarMark barMark = new BarMark(series.fill, Color.BLACK, Orientation.VERTICAL);
+            int iValue = 0;
             for (XYValue value : series.values) {
                 double x = xAxis.getDisplayPosition(value.getXValue());
                 double y = yAxis.getDisplayPosition(value.getYValue());
-                double zeroPos = yAxis.getDisplayPosition(0.0);
-                double barWidth;
-                double fullWidth;
-                double stepSize;
-                double gap = 0.05;
-                stepSize = (xAxis.getDisplayPosition(1.0) - xAxis.getDisplayPosition(0.0));
-                fullWidth = stepSize / nSeries;
-                barWidth = fullWidth - gap * stepSize / nSeries;
-                double x1 = x - 0.5 * stepSize + gap * stepSize / 2.0 + barWidth * seriesIndex;
-                double x2 = x1 + barWidth;
-                double y1 = zeroPos;
-                double y2 = y;
-                if (y2 > y1) {
-                    double hold = y1;
-                    y1 = y2;
-                    y2 = hold;
+                double errValue = value instanceof XYEValue
+                        ? ((XYEValue) value).getError() : 0.0;
+                double low = 0.0;
+                double high = 0.0;
+                if ((errValue != 0.0)) {
+                    low = yAxis.getDisplayPosition(value.getYValue() - errValue);
+                    high = yAxis.getDisplayPosition(value.getYValue() + errValue);
                 }
-                if ((mouseX > x1) && (mouseX < x2)) {
-                    if ((mouseY > y2) && (mouseY < y1)) {
-                        Hit hit = new Hit(series, i, value);
+
+                double xC = x - 0.5 * stepSize + gap * stepSize / 2.0
+                        + barThickness * seriesIndex + barThickness / 2.0;
+                double yC = yAxis.getDisplayPosition(0.0);
+                double barLength = y - yC;
+                if (pickPt != null) {
+                    if (barMark.hit(xC, yC, barThickness, barLength, pickPt)) {
+                        Hit hit = new Hit(series, iValue, value);
                         hitOpt = Optional.of(hit);
+                        break;
+                    }
+                } else {
+                    if ((errValue != 0.0)) {
+                        barMark.draw(gC, xC, yC, barThickness, barLength, true, low, high);
+                    } else {
+                        barMark.draw(gC, xC, yC, barThickness, barLength);
                     }
                 }
-                i++;
+                iValue++;
             }
-            seriesIndex++;
+            if (hitOpt.isPresent()) {
+                break;
+            }
         }
         return hitOpt;
     }

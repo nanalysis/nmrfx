@@ -73,7 +73,7 @@ public class XYCanvasChart {
 
     private DoubleProperty widthProperty;
 
-    public DoubleProperty widthProperty() {
+    public final DoubleProperty widthProperty() {
         if (widthProperty == null) {
             widthProperty = new SimpleDoubleProperty(this, "width", 200.0);
         }
@@ -90,7 +90,7 @@ public class XYCanvasChart {
 
     private DoubleProperty heightProperty;
 
-    public DoubleProperty heightProperty() {
+    public final DoubleProperty heightProperty() {
         if (heightProperty == null) {
             heightProperty = new SimpleDoubleProperty(this, "height", 200.0);
         }
@@ -370,6 +370,18 @@ public class XYCanvasChart {
             ioE.printStackTrace();
         }
         gC.restore();
+    }
+
+    public class PickPoint {
+        double x;
+        double y;
+        double radius;
+
+        public PickPoint(double x, double y, double radius) {
+            this.x = x;
+            this.y = y;
+            this.radius = radius;
+        }
     }
 
     public class Hit {
