@@ -10,113 +10,54 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>nmrfx-analyst-gui</artifactId>
+    <artifactId>nmrfx-analyst-pro</artifactId>
     <version>11.1.39</version>
-    <name>nmrfx-analyst-gui</name>
+    <name>nmrfx-analyst-pro</name>
     <packaging>jar</packaging>
 
     <properties>
-        <mainClass>org.nmrfx.processor.gui.AnalystApp</mainClass>
+        <mainClass>com.onemoonsci.datachord.nvfx.MainApp</mainClass>
     </properties>
 
     <dependencies>
         <dependency>
             <groupId>org.nmrfx</groupId>
-            <artifactId>nmrfx-processor-gui</artifactId>
+            <artifactId>nmrfx-processor</artifactId>
             <version>11.1.39</version>
         </dependency>
         <dependency>
             <groupId>org.nmrfx</groupId>
-            <artifactId>nmrfx-analyst</artifactId>
+            <artifactId>nmrfx-structure</artifactId>
             <version>11.1.39</version>
         </dependency>
         <dependency>
-            <groupId>org.nmrfx</groupId>
-            <artifactId>nmrfx-analyst-pro</artifactId>
-            <version>11.1.39</version>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-collections4</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.comdnmr</groupId>
-            <artifactId>ringnmr-gui</artifactId>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.openjfx</groupId>
-            <artifactId>javafx-graphics</artifactId>
-            <classifier>mac</classifier>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-text</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.openjfx</groupId>
-            <artifactId>javafx-fxml</artifactId>
-            <classifier>mac</classifier>
+            <groupId>org.yaml</groupId>
+            <artifactId>snakeyaml</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.openjfx</groupId>
-            <artifactId>javafx-web</artifactId>
-            <classifier>mac</classifier>
+            <groupId>org.ejml</groupId>
+            <artifactId>ejml-fat</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.openjfx</groupId>
-            <artifactId>javafx-graphics</artifactId>
-            <classifier>linux</classifier>
-        </dependency>
-        <dependency>
-            <groupId>org.openjfx</groupId>
-            <artifactId>javafx-fxml</artifactId>
-            <classifier>linux</classifier>
-        </dependency>
-        <dependency>
-            <groupId>org.openjfx</groupId>
-            <artifactId>javafx-web</artifactId>
-            <classifier>linux</classifier>
-        </dependency>
-        <dependency>
-            <groupId>org.openjfx</groupId>
-            <artifactId>javafx-graphics</artifactId>
-            <classifier>win</classifier>
-        </dependency>
-        <dependency>
-            <groupId>org.openjfx</groupId>
-            <artifactId>javafx-fxml</artifactId>
-            <classifier>win</classifier>
-        </dependency>
-        <dependency>
-            <groupId>org.openjfx</groupId>
-            <artifactId>javafx-web</artifactId>
-            <classifier>win</classifier>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
     <build>
         <plugins>
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>versions-maven-plugin</artifactId>
-                <version>2.7</version>
-                <configuration>
-                    <generateBackupPoms>false</generateBackupPoms>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.openjfx</groupId>
-                <artifactId>javafx-maven-plugin</artifactId>
-                <version>0.0.4</version>
-                <configuration>
-                    <mainClass>org.nmrfx.processor.gui.MainApp</mainClass>
-                    <options>
-                        <option>--add-opens</option>
-                        <option>javafx.graphics/com.sun.javafx.scene.traversal=org.controlsfx.controls</option>
-                        <option>--add-opens</option>
-                        <option>javafx.graphics/com.sun.javafx.css=org.controlsfx.controls</option>
-                        <option>--add-opens</option>
-                        <option>javafx.controls/com.sun.javafx.scene.control=org.controlsfx.controls</option>
-                        <option>--add-opens</option>
-                        <option>javafx.controls/com.sun.javafx.scene.control.behavior=org.controlsfx.controls</option>
-                        <option>--add-opens</option>
-                        <option>javafx.controls/com.sun.javafx.scene.control.inputmap=org.controlsfx.controls</option>
-                        <option>--add-opens</option>
-                        <option>javafx.graphics/com.sun.javafx.css=org.controlsfx.controls</option>
-                    </options>
-                </configuration>
-            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
@@ -220,13 +161,13 @@
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-site-plugin</artifactId>
-                <version>3.7.1</version>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-project-info-reports-plugin</artifactId>
-                <version>3.0.0</version>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>2.16</version>
+                <configuration>
+                    <additionalClasspathElements>
+                        <additionalClasspathElement>${java.home}/lib/jfxrt.jar</additionalClasspathElement>
+                    </additionalClasspathElements>
+                </configuration>
             </plugin>
         </plugins>
     </build>

@@ -22,6 +22,7 @@ module org.nmrfx.analyst.gui {
     requires org.nmrfx.processor;
     requires org.nmrfx.structure;
     requires org.nmrfx.analyst;
+    requires org.nmrfx.analyst.pro;
     requires org.nmrfx.utils;
     requires org.comdnmr;
     requires org.comdnmr.gui;
