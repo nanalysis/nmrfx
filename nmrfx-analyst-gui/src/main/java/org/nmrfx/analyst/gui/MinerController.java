@@ -40,7 +40,6 @@ import org.nmrfx.analyst.dataops.Align;
 import org.nmrfx.analyst.dataops.Normalize;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.PolyChart;
-import org.nmrfx.processor.gui.ScannerController;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes.AXMODE;
 import org.nmrfx.processor.gui.spectra.NMRAxis;
 
@@ -50,9 +49,9 @@ import org.nmrfx.processor.gui.spectra.NMRAxis;
  */
 public class MinerController {
 
-    ScannerController scannerController;
+    ScannerTool scannerController;
 
-    public MinerController(ScannerController scannerController) {
+    public MinerController(ScannerTool scannerController) {
         this.scannerController = scannerController;
         makeMenus();
     }

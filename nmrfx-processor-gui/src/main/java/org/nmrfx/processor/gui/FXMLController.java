@@ -188,7 +188,6 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
     static boolean popOverMode = false;
     static PeakAttrController peakAttrController = null;
     ProcessorController processorController = null;
-    SimpleObjectProperty<ScannerController> scannerController = new SimpleObjectProperty(null);
     Stage stage = null;
     boolean isFID = true;
     static public final SimpleObjectProperty<FXMLController> activeController = new SimpleObjectProperty<>(null);
@@ -819,19 +818,6 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         }
         if (processorController != null) {
             processorController.getStage().show();
-        } else {
-            System.out.println("Coudn't make controller");
-        }
-    }
-
-    @FXML
-    public void showScannerAction(ActionEvent event) {
-        if (scannerController.get() == null) {
-            ScannerController sControl = ScannerController.create(this, stage, getActiveChart());
-            scannerController.set(sControl);
-        }
-        if (scannerController.get() != null) {
-            scannerController.get().getStage().show();
         } else {
             System.out.println("Coudn't make controller");
         }

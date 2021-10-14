@@ -21,7 +21,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package org.nmrfx.processor.gui.controls;
+package org.nmrfx.analyst.gui;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -83,7 +83,7 @@ import org.nmrfx.processor.gui.ChartProcessor;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.ProcessorController;
-import org.nmrfx.processor.gui.ScannerController;
+import org.nmrfx.processor.gui.controls.FileTableItem;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.utils.GUIUtils;
 import org.python.util.PythonInterpreter;
@@ -94,7 +94,7 @@ import org.python.util.PythonInterpreter;
  */
 public class ScanTable {
 
-    ScannerController scannerController;
+    ScannerTool scannerController;
     TableView<FileTableItem> tableView;
     TableFilter fileTableFilter;
     TableFilter.Builder builder = null;
@@ -154,7 +154,7 @@ public class ScanTable {
 
     }
 
-    public ScanTable(ScannerController controller, TableView<FileTableItem> tableView) {
+    public ScanTable(ScannerTool controller, TableView<FileTableItem> tableView) {
         this.scannerController = controller;
         this.tableView = tableView;
         standardHeaders = Arrays.asList("path", "sequence", "row", "etime", "ndim");
@@ -644,7 +644,7 @@ public class ScanTable {
         String firstDatasetName = "";
         if ((scanDir == null) || scanDir.trim().equals("")) {
             setScanDirectory(file.getParentFile());
-            scannerController.updateScanDirectory(scanDir);
+            //scannerController.updateScanDirectory(scanDir);
         }
 
         processingTable = true;
