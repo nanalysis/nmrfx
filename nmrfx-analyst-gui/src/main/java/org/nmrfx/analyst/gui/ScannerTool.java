@@ -52,6 +52,8 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+import org.apache.commons.math3.linear.ArrayRealVector;
+import org.apache.commons.math3.linear.RealVector;
 import org.controlsfx.control.PropertySheet;
 import org.controlsfx.control.PropertySheet.Item;
 import org.nmrfx.analyst.gui.tools.TRACTGUI;
@@ -154,6 +156,7 @@ public class ScannerTool implements ControllerTool {
         borderPane.setCenter(tableView);
         scannerBar.getItems().add(makeFileMenu());
         scannerBar.getItems().add(makeRegionMenu());
+        scannerBar.getItems().add(makeScoreMenu());
         MinerController miner = new MinerController(this);
         scanTable = new ScanTable(this, tableView);
     }
@@ -221,6 +224,14 @@ public class ScannerTool implements ControllerTool {
         clearAllMenuItem.setOnAction(e -> clearRegions());
         menu.getItems().addAll(addRegionMenuItem, measureMode, offsetMode, saveRegionsMenuItem, loadRegionsMenuItem,
                 measureMenuItem, showAllMenuItem, clearAllMenuItem);
+        return menu;
+    }
+
+    private MenuButton makeScoreMenu() {
+        MenuButton menu = new MenuButton("Score");
+        MenuItem scoreMenuItem = new MenuItem("Cosine Score");
+        scoreMenuItem.setOnAction(e -> scoreSimilarity());
+        menu.getItems().addAll(scoreMenuItem);
         return menu;
     }
 
@@ -385,6 +396,88 @@ public class ScannerTool implements ControllerTool {
         List<Double> values;
         try {
             values = measure.measure(dataset);
+        } catch (IOException ex) {
+            Logger.getLogger(ScannerTool.class.getName()).log(Level.SEVERE, null, ex);
+            return null;
+        }
+        return values;
+    }
+
+    @FXML
+    private void measureSearchBins() {
+        int nBins = 100;
+        DatasetBase dataset = chart.getDataset();
+        double[] ppms = chart.getVerticalCrosshairPositions();
+        double[] wppms = new double[2];
+        wppms[0] = chart.getAxis(0).getLowerBound();
+        wppms[1] = chart.getAxis(0).getUpperBound();
+        int extra = 1;
+
+        Measure measure = new Measure("binValues", 0, ppms[0], ppms[1], wppms[0], wppms[1], extra, getOffsetType(), getMeasureType());
+        measure.setName("bins");
+        List<double[]> allValues = new ArrayList<>();
+        List<FileTableItem> items = scanTable.getItems();
+
+        for (FileTableItem item : items) {
+            String datasetName = item.getDatasetName();
+            Dataset itemDataset = Dataset.getDataset(datasetName);
+
+            if (itemDataset == null) {
+                File datasetFile = new File(scanTable.getScanOutputDirectory(), datasetName);
+                try {
+                    itemDataset = new Dataset(datasetFile.getPath(), datasetFile.getPath(), true, false);
+                } catch (IOException ioE) {
+                    GUIUtils.warn("Measure", "Can't open dataset " + datasetFile.getPath());
+                    return;
+                }
+            }
+            System.out.println("measure " + itemDataset.getName());
+
+            List<double[]> values = measureBins(itemDataset, measure, nBins);
+            if (values == null) {
+                return;
+            }
+            allValues.addAll(values);
+            if (allValues.size() >= items.size()) {
+                break;
+            }
+        }
+        int iItem = 0;
+        for (FileTableItem item : items) {
+            item.setObjectExtra("binValues", allValues.get(iItem++));
+        }
+    }
+
+    void scoreSimilarity() {
+        FileTableItem refItem = tableView.getSelectionModel().getSelectedItem();
+        if (refItem != null) {
+            double[] refValues = (double[]) refItem.getObjectExtra("binValues");
+            if (refValues == null) {
+                measureSearchBins();
+            }
+            scoreSimilarity(refItem);
+        }
+    }
+
+    void scoreSimilarity(FileTableItem refItem) {
+        String newColumnName = "score";
+        List<FileTableItem> items = scanTable.getItems();
+        double[] refValues = (double[]) refItem.getObjectExtra("binValues");
+        RealVector refVec = new ArrayRealVector(refValues);
+        for (FileTableItem item : items) {
+            double[] itemValues = (double[]) item.getObjectExtra("binValues");
+            RealVector itemVec = new ArrayRealVector(itemValues);
+            double score = refVec.cosine(itemVec);
+            item.setExtra(newColumnName, score);
+        }
+        scanTable.addTableColumn(newColumnName, "D");
+        scanTable.refresh();
+    }
+
+    private List<double[]> measureBins(Dataset dataset, Measure measure, int nBins) {
+        List<double[]> values;
+        try {
+            values = measure.measureBins(dataset, nBins);
         } catch (IOException ex) {
             Logger.getLogger(ScannerTool.class.getName()).log(Level.SEVERE, null, ex);
             return null;
