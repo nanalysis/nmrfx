@@ -233,6 +233,49 @@ public class Measure {
         return values;
     }
 
+    public List<double[]> measureBins(DatasetBase dataset, int nBins) throws IOException {
+        int alongDim = iDim == 0 ? 1 : 0;
+        int nDim = dataset.getNDim();
+        int rows = nDim == 1 ? 1 : dataset.getSize(alongDim);
+        int rowSize = dataset.getSize(iDim);
+        int[] pt = new int[nDim];
+        int pt1 = dataset.ppmToPoint(iDim, ppm1);
+        int pt2 = dataset.ppmToPoint(iDim, ppm2);
+
+        if (pt1 > pt2) {
+            int hold = pt1;
+            pt1 = pt2;
+            pt2 = hold;
+        }
+        int regionSize = pt2 - pt1 + 1;
+        int binSize = regionSize / nBins;
+        if (binSize * nBins < regionSize) {
+            binSize++;
+        }
+        // fixme  need to switch dim for iDim != 0
+        List<double[]> result = new ArrayList<>();
+        for (int i = 0; i < rows; i++) {
+            if (nDim > 1) {
+                pt[1] = i;
+            }
+            double[] binnedValues = new double[nBins];
+            for (int iBin = 0; iBin < nBins; iBin++) {
+                double sum = 0.0;
+                for (int j = 0; j < binSize; j++) {
+                    int index = pt1 + iBin * binSize + j;
+                    if (index >= rowSize) {
+                        break;
+                    }
+                    pt[0] = index;
+                    sum += dataset.readPoint(pt);
+                }
+                binnedValues[iBin] = sum;
+            }
+            result.add(binnedValues);
+        }
+        return result;
+    }
+
     public String getColumnDescriptor() {
         String measureName = measureType.getSymbol();
         String columnDescriptor;
