@@ -111,9 +111,6 @@ public class ScannerTool implements ControllerTool {
     ToggleGroup measureTypeGroup = new ToggleGroup();
     ToggleGroup offsetTypeGroup = new ToggleGroup();
 
-    DirectoryOperationItem scanDirItem;
-    DirectoryOperationItem outputDirItem;
-    TextOperationItem outputFileItem;
     ChangeListener<String> scanDirListener;
     ChangeListener<String> outputDirListener;
     static Consumer createControllerAction = null;
@@ -153,6 +150,7 @@ public class ScannerTool implements ControllerTool {
 
         tableView = new TableView<>();
         tableView.setPrefHeight(250.0);
+        tableView.setOnMouseClicked(e -> openSelectedListFile(e));
         borderPane.setCenter(tableView);
         scannerBar.getItems().add(makeFileMenu());
         scannerBar.getItems().add(makeRegionMenu());
@@ -174,7 +172,7 @@ public class ScannerTool implements ControllerTool {
 
     private MenuButton makeFileMenu() {
         MenuButton menu = new MenuButton("File");
-        MenuItem scanMenuItem = new MenuItem("Scan Directory");
+        MenuItem scanMenuItem = new MenuItem("Scan Directory...");
         scanMenuItem.setOnAction(e -> scanDirAction(e));
         MenuItem openTableItem = new MenuItem("Open Table...");
         openTableItem.setOnAction(e -> loadTableAction(e));
@@ -309,27 +307,6 @@ public class ScannerTool implements ControllerTool {
 
     public ScanTable getScanTable() {
         return scanTable;
-    }
-
-    public String getScanDirectory() {
-        return scanDirItem.get();
-    }
-
-    public void setScanDirectory(String dirString) {
-        scanDirItem.setFromString(dirString);
-    }
-
-    public void updateScanDirectory(String dirString) {
-        scanDirItem.setFromString(dirString);
-        scanDirItem.updateEditor();
-    }
-
-    public String getOutputDirectory() {
-        return outputDirItem.get();
-    }
-
-    public String getOutputFileName() {
-        return outputFileItem.get();
     }
 
     private boolean hasColumnName(String columnName) {
