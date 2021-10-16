@@ -406,7 +406,6 @@ public class AnalystApp extends MainApp {
         readMol2Item.setOnAction(e -> readMolecule("mol2"));
         molFileMenu.getItems().add(readMol2Item);
 
-
         MenuItem seqGUIMenuItem = new MenuItem("Sequence Editor...");
         seqGUIMenuItem.setOnAction(e -> SequenceGUI.showGUI(this));
 
@@ -568,8 +567,12 @@ public class AnalystApp extends MainApp {
         spectrumFitLibraryMenuItem.disableProperty().bind(FXMLController.activeController.isNull());
         spectrumFitLibraryMenuItem.setOnAction(e -> showSpectrumFitter());
 
+        MenuItem minerMenuItem = new MenuItem("Show Parametric Tool");
+        minerMenuItem.disableProperty().bind(FXMLController.activeController.isNull());
+        minerMenuItem.setOnAction(e -> showParametricTool());
+
         oneDMenu.getItems().addAll(multipletToolItem, regionsMenuItem,
-                spectrumLibraryMenuItem, spectrumFitLibraryMenuItem);
+                spectrumLibraryMenuItem, spectrumFitLibraryMenuItem, minerMenuItem);
 
         Menu molMenu = new Menu("Molecule");
         MenuItem canvasMolMenuItem = new MenuItem("Show Molecule");
@@ -1179,6 +1182,29 @@ public class AnalystApp extends MainApp {
         FXMLController controller = FXMLController.getActiveController();
         controller.removeTool(RegionTool.class);
         controller.getBottomBox().getChildren().remove(regionTool.getBox());
+    }
+
+    public void showParametricTool() {
+        FXMLController controller = FXMLController.getActiveController();
+        if (!controller.containsTool(ParametricTool.class)) {
+            VBox vBox = new VBox();
+            controller.getBottomBox().getChildren().add(vBox);
+            ParametricTool parametricTool = new ParametricTool(controller, this::removeParametricTool);
+            parametricTool.initialize(vBox);
+            controller.addTool(parametricTool);
+        }
+    }
+
+    public ParametricTool getParametricTool() {
+        FXMLController controller = FXMLController.getActiveController();
+        ParametricTool parametricTool = (ParametricTool) controller.getTool(ParametricTool.class);
+        return parametricTool;
+    }
+
+    public void removeParametricTool(ParametricTool parametricTool) {
+        FXMLController controller = FXMLController.getActiveController();
+        controller.removeTool(ParametricTool.class);
+        controller.getBottomBox().getChildren().remove(parametricTool.getBox());
     }
 
     void addPrefs() {
