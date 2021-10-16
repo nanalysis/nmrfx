@@ -181,7 +181,6 @@ public class AnalystApp extends MainApp {
 //        System.out.println("update scanner " + scannerController);
 //        MinerController minerController = new MinerController(scannerController);
 //    }
-
     Object pickedPeakAction(Object peakObject) {
         if (assignOnPick.isSelected()) {
             Peak peak = (Peak) peakObject;
@@ -1200,6 +1199,8 @@ public class AnalystApp extends MainApp {
         FXMLController controller = FXMLController.getActiveController();
         controller.removeTool(ScannerTool.class);
         controller.getBottomBox().getChildren().remove(scannerTool.getBox());
+    }
+
     public void showParametricTool() {
         FXMLController controller = FXMLController.getActiveController();
         if (!controller.containsTool(ParametricTool.class)) {
