@@ -3,13 +3,14 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package org.nmrfx.processor.gui;
+package org.nmrfx.analyst.gui;
 
+import de.jensd.fx.glyphs.GlyphsDude;
+import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.net.URL;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -17,7 +18,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.ResourceBundle;
 import java.util.TreeSet;
 import java.util.function.Consumer;
 import java.util.logging.Level;
@@ -31,37 +31,47 @@ import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.event.Event;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
-import javafx.fxml.Initializable;
-import javafx.scene.Scene;
+import javafx.geometry.Orientation;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
+import javafx.scene.control.ContentDisplay;
+import javafx.scene.control.Menu;
+import javafx.scene.control.MenuButton;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.RadioMenuItem;
+import javafx.scene.control.Separator;
 import javafx.scene.control.TabPane;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextInputDialog;
+import javafx.scene.control.Toggle;
+import javafx.scene.control.ToggleGroup;
 import javafx.scene.control.ToolBar;
 import javafx.scene.input.MouseEvent;
-import javafx.scene.layout.Pane;
+import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
-import javafx.stage.StageStyle;
+import org.apache.commons.math3.linear.ArrayRealVector;
+import org.apache.commons.math3.linear.RealVector;
 import org.controlsfx.control.PropertySheet;
 import org.controlsfx.control.PropertySheet.Item;
+import org.nmrfx.analyst.gui.tools.TRACTGUI;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.datasets.DatasetRegion;
 import org.nmrfx.processor.datasets.Measure;
 import org.nmrfx.processor.datasets.Measure.MeasureTypes;
 import org.nmrfx.processor.datasets.Measure.OffsetTypes;
+import org.nmrfx.processor.gui.ChartProcessor;
+import org.nmrfx.processor.gui.ControllerTool;
+import org.nmrfx.processor.gui.FXMLController;
+import org.nmrfx.processor.gui.PolyChart;
 import static org.nmrfx.processor.gui.PreferencesController.getDatasetDirectory;
 import org.nmrfx.processor.gui.controls.FileTableItem;
-import org.nmrfx.processor.gui.controls.ScanTable;
-import org.nmrfx.processor.gui.tools.TRACTGUI;
-import org.nmrfx.processor.gui.tools.TablePlotGUI;
 import org.nmrfx.utils.GUIUtils;
 import org.nmrfx.utils.properties.DirectoryOperationItem;
+import org.nmrfx.utils.properties.NvFxPropertyEditorFactory;
 import org.nmrfx.utils.properties.TextOperationItem;
 
 /**
@@ -69,7 +79,9 @@ import org.nmrfx.utils.properties.TextOperationItem;
  *
  * @author Bruce Johnson
  */
-public class ScannerController implements Initializable {
+public class ScannerTool implements ControllerTool {
+
+    BorderPane borderPane;
 
     @FXML
     ToolBar scannerBar;
@@ -92,17 +104,15 @@ public class ScannerController implements Initializable {
     @FXML
     private PropertySheet parSheet;
     @FXML
-    private TabPane tabPane;
+    Consumer<ScannerTool> closeAction;
 
-    FXMLController fxmlController;
+    FXMLController controller;
     PolyChart chart;
     Stage stage;
     ScanTable scanTable;
-    ChoicePropertyItem measureItem;
-    OffsetPropertyItem offsetItem;
-    DirectoryOperationItem scanDirItem;
-    DirectoryOperationItem outputDirItem;
-    TextOperationItem outputFileItem;
+    ToggleGroup measureTypeGroup = new ToggleGroup();
+    ToggleGroup offsetTypeGroup = new ToggleGroup();
+
     ChangeListener<String> scanDirListener;
     ChangeListener<String> outputDirListener;
     static Consumer createControllerAction = null;
@@ -113,254 +123,149 @@ public class ScannerController implements Initializable {
     static final Pattern RPAT = Pattern.compile("([^:]+):([0-9\\.\\-]+)_([0-9\\.\\-]+)(_[VMmE][NR])?$");
     static final Pattern[] PATS = {WPAT, RPAT};
 
-    class CustomPropertyItem implements Item {
-
-        private String key;
-        private String category, name, description;
-        private String value;
-
-        public CustomPropertyItem(String name, String category, String description) {
-            this.name = name;
-            this.category = category;
-            this.description = description;
-        }
-
-        @Override
-        public Class<?> getType() {
-            return String.class;
-        }
-
-        @Override
-        public String getCategory() {
-            return category;
-        }
-
-        @Override
-        public String getName() {
-            return name;
-        }
-
-        @Override
-        public String getDescription() {
-            return "test";
-        }
-
-        @Override
-        public Object getValue() {
-            return value;
-        }
-
-        @Override
-        public void setValue(Object value) {
-            if (value == null) {
-                this.value = "";
-            } else {
-                this.value = value.toString();
-            }
-        }
-
-        @Override
-        public Optional<ObservableValue<? extends Object>> getObservableValue() {
-            return Optional.empty();
-        }
+    public ScannerTool(FXMLController controller, Consumer<ScannerTool> closeAction) {
+        this.controller = controller;
+        this.closeAction = closeAction;
+        chart = controller.getActiveChart();
     }
 
-    class ChoicePropertyItem implements Item {
+    public void initialize(BorderPane borderPane) {
+        this.borderPane = borderPane;
+        String iconSize = "12px";
+        String fontSize = "7pt";
+        scannerBar = new ToolBar();
+        Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "Close", iconSize, fontSize, ContentDisplay.TOP);
+        closeButton.setOnAction(e -> close());
+        scannerBar.getItems().add(closeButton);
+//        initMenus(scannerBar);
+//        ToolBarUtils.addFiller(scannerBar, 10, 500);
+//        initNavigator(scannerBar);
+//        ToolBarUtils.addFiller(scannerBar, 10, 20);
+//        initIntegralType(scannerBar);
+//        ToolBarUtils.addFiller(scannerBar, 10, 500);
+//
+//        ToolBar toolBar2 = new ToolBar();
+//        initTools(toolBar2);
 
-        private String key;
-        private String category, name, description;
-        private MeasureTypes value = MeasureTypes.V;
+        Separator vsep1 = new Separator(Orientation.HORIZONTAL);
+        Separator vsep2 = new Separator(Orientation.HORIZONTAL);
+        borderPane.setTop(scannerBar);
 
-        public ChoicePropertyItem(String name, String category, String description) {
-            this.name = name;
-            this.category = category;
-            this.description = description;
-        }
-
-        @Override
-        public Class<?> getType() {
-            return MeasureTypes.class;
-        }
-
-        @Override
-        public String getCategory() {
-            return category;
-        }
-
-        @Override
-        public String getName() {
-            return name;
-        }
-
-        @Override
-        public String getDescription() {
-            return description;
-        }
-
-        @Override
-        public MeasureTypes getValue() {
-            return value;
-        }
-
-        @Override
-        public void setValue(Object value) {
-            this.value = (MeasureTypes) value;
-        }
-
-        @Override
-        public Optional<ObservableValue<? extends Object>> getObservableValue() {
-            return Optional.empty();
-        }
-    }
-
-    class OffsetPropertyItem implements Item {
-
-        private String key;
-        private String category, name, description;
-        private OffsetTypes value = OffsetTypes.N;
-
-        public OffsetPropertyItem(String name, String category, String description) {
-            this.name = name;
-            this.category = category;
-            this.description = description;
-        }
-
-        @Override
-        public Class<?> getType() {
-            return OffsetTypes.class;
-        }
-
-        @Override
-        public String getCategory() {
-            return category;
-        }
-
-        @Override
-        public String getName() {
-            return name;
-        }
-
-        @Override
-        public String getDescription() {
-            return description;
-        }
-
-        @Override
-        public OffsetTypes getValue() {
-            return value;
-        }
-
-        @Override
-        public void setValue(Object value) {
-            this.value = (OffsetTypes) value;
-        }
-
-        @Override
-        public Optional<ObservableValue<? extends Object>> getObservableValue() {
-            return Optional.empty();
-        }
-    }
-
-    /**
-     * Initializes the controller class.
-     */
-    @Override
-    public void initialize(URL url, ResourceBundle rb) {
+        tableView = new TableView<>();
+        tableView.setPrefHeight(250.0);
+        tableView.setOnMouseClicked(e -> openSelectedListFile(e));
+        borderPane.setCenter(tableView);
+        scannerBar.getItems().add(makeFileMenu());
+        scannerBar.getItems().add(makeRegionMenu());
+        scannerBar.getItems().add(makeScoreMenu());
+        MinerController miner = new MinerController(this);
         scanTable = new ScanTable(this, tableView);
     }
 
-    public static ScannerController create(FXMLController fxmlController, Stage parent, PolyChart chart) {
-        FXMLLoader loader = new FXMLLoader(SpecAttrWindowController.class.getResource("/fxml/ScannerScene.fxml"));
-        final ScannerController controller;
-        Stage stage = new Stage(StageStyle.DECORATED);
-
-        try {
-            Scene scene = new Scene((Pane) loader.load());
-            stage.setScene(scene);
-            scene.getStylesheets().add("/styles/Styles.css");
-
-            controller = loader.<ScannerController>getController();
-            controller.fxmlController = fxmlController;
-            controller.stage = stage;
-            controller.chart = chart;
-            controller.initParSheet();
-            stage.setTitle("NMRFx Processor Scanner");
-
-            stage.initOwner(parent);
-            stage.show();
-            stage.setOnCloseRequest(e -> controller.stageClosed());
-            if (createControllerAction != null) {
-                createControllerAction.accept(controller);
-            }
-            return controller;
-        } catch (IOException ioE) {
-            ioE.printStackTrace();
-            System.out.println(ioE.getMessage());
-        }
-
-        return null;
-
-    }
-
-    public static void addCreateAction(Consumer<ScannerController> action) {
+    public static void addCreateAction(Consumer<ScannerTool> action) {
         createControllerAction = action;
     }
 
-    void stageClosed() {
-        chart.setDrawlist(Collections.EMPTY_LIST);
-        stage.close();
+    public void close() {
+        closeAction.accept(this);
     }
 
-    private void initParSheet() {
-        parSheet.setPropertyEditorFactory(new NvFxPropertyEditorFactory());
-        parSheet.setMode(PropertySheet.Mode.CATEGORY);
-        parSheet.setModeSwitcherVisible(false);
-        parSheet.setSearchBoxVisible(false);
-        measureItem = new ChoicePropertyItem("Mode", "Measure Parameters", "Measurement modes");
-        offsetItem = new OffsetPropertyItem("Offset", "Measure Parameters", "Offset modes");
-        ChangeListener stringListener = new ChangeListener<String>() {
-            @Override
-            public void changed(ObservableValue<? extends String> observableValue, String string, String string2) {
-            }
-        };
-        scanDirListener = (ObservableValue<? extends String> observableValue, String string, String string2) -> {
-            scanTable.setScanDirectory(new File(string2));
-        };
-        outputDirListener = (ObservableValue<? extends String> observableValue, String string, String string2) -> {
-            scanTable.setScanOutputDirectory(new File(string2));
-        };
+    public BorderPane getBox() {
+        return borderPane;
+    }
 
-        outputFileItem = new TextOperationItem(stringListener, "process.nv", "File Locations", "Output File", "Output FileName");
-        scanDirItem = new DirectoryOperationItem(scanDirListener, getDatasetDirectory().getPath(), "File Locations", "Scan Dir", "Directory to scan for datasets");
-        outputDirItem = new DirectoryOperationItem(outputDirListener, getDatasetDirectory().getPath(), "File Locations", "Output Dir", "Directory to put output files in");
+    private MenuButton makeFileMenu() {
+        MenuButton menu = new MenuButton("File");
+        MenuItem scanMenuItem = new MenuItem("Scan Directory...");
+        scanMenuItem.setOnAction(e -> scanDirAction(e));
+        MenuItem openTableItem = new MenuItem("Open Table...");
+        openTableItem.setOnAction(e -> loadTableAction(e));
+        MenuItem saveTableItem = new MenuItem("Save Table...");
+        saveTableItem.setOnAction(e -> saveTableAction(e));
+        MenuItem processAndCombineItem = new MenuItem("Process and Combine");
+        processAndCombineItem.setOnAction(e -> processScanDirAndCombine(e));
+        MenuItem processItem = new MenuItem("Process");
+        processItem.setOnAction(e -> processScanDir(e));
+        MenuItem loadFromDatasetItem = new MenuItem("Load From Dataset");
+        loadFromDatasetItem.setOnAction(e -> loadFromDataset(e));
+        menu.getItems().addAll(scanMenuItem, openTableItem, saveTableItem,
+                processAndCombineItem, processItem, loadFromDatasetItem);
+        return menu;
+    }
 
-        parSheet.getItems().addAll(scanDirItem, outputDirItem, outputFileItem, measureItem, offsetItem);
+    private MenuButton makeRegionMenu() {
+        MenuButton menu = new MenuButton("Regions");
+
+        Menu measureMode = new Menu("Measure Modes");
+        for (var mType : MeasureTypes.values()) {
+            RadioMenuItem menuItem = new RadioMenuItem(mType.toString());
+            menuItem.setUserData(mType);
+            menuItem.setToggleGroup(measureTypeGroup);
+            measureMode.getItems().add(menuItem);
+        }
+
+        Menu offsetMode = new Menu("Offset Modes");
+        for (var oType : OffsetTypes.values()) {
+            RadioMenuItem menuItem = new RadioMenuItem(oType.toString());
+            menuItem.setUserData(oType);
+            menuItem.setToggleGroup(offsetTypeGroup);
+            offsetMode.getItems().add(menuItem);
+        }
+        MenuItem addRegionMenuItem = new MenuItem("Add Crosshair Region");
+        addRegionMenuItem.setOnAction(e -> measure(e));
+        MenuItem saveRegionsMenuItem = new MenuItem("Save Regions...");
+        saveRegionsMenuItem.setOnAction(e -> saveRegions());
+        MenuItem loadRegionsMenuItem = new MenuItem("Load Regions...");
+        loadRegionsMenuItem.setOnAction(e -> loadRegions());
+        MenuItem measureMenuItem = new MenuItem("Measure All");
+        measureMenuItem.setOnAction(e -> measureRegions());
+        MenuItem showAllMenuItem = new MenuItem("Show All");
+        showAllMenuItem.setOnAction(e -> processScanDir(e));
+        MenuItem clearAllMenuItem = new MenuItem("Clear All");
+        clearAllMenuItem.setOnAction(e -> clearRegions());
+        menu.getItems().addAll(addRegionMenuItem, measureMode, offsetMode, saveRegionsMenuItem, loadRegionsMenuItem,
+                measureMenuItem, showAllMenuItem, clearAllMenuItem);
+        return menu;
+    }
+
+    private MenuButton makeScoreMenu() {
+        MenuButton menu = new MenuButton("Score");
+        MenuItem scoreMenuItem = new MenuItem("Cosine Score");
+        scoreMenuItem.setOnAction(e -> scoreSimilarity());
+        menu.getItems().addAll(scoreMenuItem);
+        return menu;
+    }
+
+    MeasureTypes getMeasureType() {
+        Toggle toggle = measureTypeGroup.getSelectedToggle();
+        return toggle != null ? (MeasureTypes) toggle.getUserData() : MeasureTypes.V;
+    }
+
+    OffsetTypes getOffsetType() {
+        Toggle toggle = offsetTypeGroup.getSelectedToggle();
+        return toggle != null ? (OffsetTypes) toggle.getUserData() : OffsetTypes.N;
     }
 
     @FXML
     private void processScanDirAndCombine(ActionEvent event) {
-        ChartProcessor chartProcessor = fxmlController.getChartProcessor();
+        ChartProcessor chartProcessor = controller.getChartProcessor();
         scanTable.processScanDir(stage, chartProcessor, true);
-        tabPane.getSelectionModel().select(1);
     }
 
     @FXML
     private void processScanDir(ActionEvent event) {
-        ChartProcessor chartProcessor = fxmlController.getChartProcessor();
+        ChartProcessor chartProcessor = controller.getChartProcessor();
         scanTable.processScanDir(stage, chartProcessor, false);
-        tabPane.getSelectionModel().select(1);
     }
 
     @FXML
     private void scanDirAction(ActionEvent event) {
         scanTable.loadScanFiles(stage);
-        tabPane.getSelectionModel().select(1);
     }
 
     @FXML
     private void loadTableAction(ActionEvent event) {
         scanTable.loadScanTable();
-        tabPane.getSelectionModel().select(1);
     }
 
     @FXML
@@ -409,32 +314,11 @@ public class ScannerController implements Initializable {
     }
 
     public FXMLController getFXMLController() {
-        return fxmlController;
+        return controller;
     }
 
     public ScanTable getScanTable() {
         return scanTable;
-    }
-
-    public String getScanDirectory() {
-        return scanDirItem.get();
-    }
-
-    public void setScanDirectory(String dirString) {
-        scanDirItem.setFromString(dirString);
-    }
-
-    public void updateScanDirectory(String dirString) {
-        scanDirItem.setFromString(dirString);
-        scanDirItem.updateEditor();
-    }
-
-    public String getOutputDirectory() {
-        return outputDirItem.get();
-    }
-
-    public String getOutputFileName() {
-        return outputFileItem.get();
     }
 
     private boolean hasColumnName(String columnName) {
@@ -474,7 +358,7 @@ public class ScannerController implements Initializable {
             wppms[1] = chart.getAxis(0).getUpperBound();
             int extra = 1;
 
-            Measure measure = new Measure(columnName, 0, ppms[0], ppms[1], wppms[0], wppms[1], extra, offsetItem.getValue(), measureItem.getValue());
+            Measure measure = new Measure(columnName, 0, ppms[0], ppms[1], wppms[0], wppms[1], extra, getOffsetType(), getMeasureType());
             String columnDescriptor = measure.getColumnDescriptor();
             String columnPrefix = scanTable.getNextColumnName(columnName, columnDescriptor);
             measure.setName(columnPrefix);
@@ -514,7 +398,89 @@ public class ScannerController implements Initializable {
         try {
             values = measure.measure(dataset);
         } catch (IOException ex) {
-            Logger.getLogger(ScannerController.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(ScannerTool.class.getName()).log(Level.SEVERE, null, ex);
+            return null;
+        }
+        return values;
+    }
+
+    @FXML
+    private void measureSearchBins() {
+        int nBins = 100;
+        DatasetBase dataset = chart.getDataset();
+        double[] ppms = chart.getVerticalCrosshairPositions();
+        double[] wppms = new double[2];
+        wppms[0] = chart.getAxis(0).getLowerBound();
+        wppms[1] = chart.getAxis(0).getUpperBound();
+        int extra = 1;
+
+        Measure measure = new Measure("binValues", 0, ppms[0], ppms[1], wppms[0], wppms[1], extra, getOffsetType(), getMeasureType());
+        measure.setName("bins");
+        List<double[]> allValues = new ArrayList<>();
+        List<FileTableItem> items = scanTable.getItems();
+
+        for (FileTableItem item : items) {
+            String datasetName = item.getDatasetName();
+            Dataset itemDataset = Dataset.getDataset(datasetName);
+
+            if (itemDataset == null) {
+                File datasetFile = new File(scanTable.getScanOutputDirectory(), datasetName);
+                try {
+                    itemDataset = new Dataset(datasetFile.getPath(), datasetFile.getPath(), true, false);
+                } catch (IOException ioE) {
+                    GUIUtils.warn("Measure", "Can't open dataset " + datasetFile.getPath());
+                    return;
+                }
+            }
+            System.out.println("measure " + itemDataset.getName());
+
+            List<double[]> values = measureBins(itemDataset, measure, nBins);
+            if (values == null) {
+                return;
+            }
+            allValues.addAll(values);
+            if (allValues.size() >= items.size()) {
+                break;
+            }
+        }
+        int iItem = 0;
+        for (FileTableItem item : items) {
+            item.setObjectExtra("binValues", allValues.get(iItem++));
+        }
+    }
+
+    void scoreSimilarity() {
+        FileTableItem refItem = tableView.getSelectionModel().getSelectedItem();
+        if (refItem != null) {
+            double[] refValues = (double[]) refItem.getObjectExtra("binValues");
+            if (refValues == null) {
+                measureSearchBins();
+            }
+            scoreSimilarity(refItem);
+        }
+    }
+
+    void scoreSimilarity(FileTableItem refItem) {
+        String newColumnName = "score";
+        List<FileTableItem> items = scanTable.getItems();
+        double[] refValues = (double[]) refItem.getObjectExtra("binValues");
+        RealVector refVec = new ArrayRealVector(refValues);
+        for (FileTableItem item : items) {
+            double[] itemValues = (double[]) item.getObjectExtra("binValues");
+            RealVector itemVec = new ArrayRealVector(itemValues);
+            double score = refVec.cosine(itemVec);
+            item.setExtra(newColumnName, score);
+        }
+        scanTable.addTableColumn(newColumnName, "D");
+        scanTable.refresh();
+    }
+
+    private List<double[]> measureBins(Dataset dataset, Measure measure, int nBins) {
+        List<double[]> values;
+        try {
+            values = measure.measureBins(dataset, nBins);
+        } catch (IOException ex) {
+            Logger.getLogger(ScannerTool.class.getName()).log(Level.SEVERE, null, ex);
             return null;
         }
         return values;
@@ -558,24 +524,6 @@ public class ScannerController implements Initializable {
     }
 
     @FXML
-    void showTRACTGUI() {
-        if (tractGUI == null) {
-            tractGUI = new TRACTGUI(this);
-
-        }
-        tractGUI.showMCplot();
-    }
-
-    @FXML
-    void showPlotGUI() {
-        if (plotGUI == null) {
-            plotGUI = new TablePlotGUI(tableView);
-
-        }
-        plotGUI.showPlotStage();
-    }
-
-    @FXML
     void measureRegions() {
         DatasetBase dataset = chart.getDataset();
         List<String> headers = scanTable.getHeaders();
@@ -586,7 +534,7 @@ public class ScannerController implements Initializable {
                     List<Double> values = measureOpt.get().measure(dataset);
                     setItems(header, values);
                 } catch (IOException ex) {
-                    Logger.getLogger(ScannerController.class.getName()).log(Level.SEVERE, null, ex);
+                    Logger.getLogger(ScannerTool.class.getName()).log(Level.SEVERE, null, ex);
                     return;
                 }
             }

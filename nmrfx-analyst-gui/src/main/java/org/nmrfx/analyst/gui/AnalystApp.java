@@ -55,6 +55,7 @@ import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.analyst.gui.molecule3D.MolSceneController;
 import static javafx.application.Application.launch;
 import javafx.collections.ObservableList;
+import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.StageStyle;
 import org.comdnmr.gui.PyController;
@@ -91,7 +92,6 @@ import org.nmrfx.processor.gui.PeakMenuBar;
 import org.nmrfx.processor.gui.PeakPicking;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.PreferencesController;
-import org.nmrfx.processor.gui.ScannerController;
 import org.nmrfx.processor.gui.SpectrumStatusBar;
 import org.nmrfx.processor.gui.utils.FxPropertyChangeSupport;
 import org.nmrfx.processor.project.Project;
@@ -155,7 +155,7 @@ public class AnalystApp extends MainApp {
         if (mainMenuBar == null) {
             mainMenuBar = makeMenuBar(appName);
         }
-        ScannerController.addCreateAction(e -> updateScannerGUI(e));
+//        ScannerController.addCreateAction(e -> updateScannerGUI(e));
         Parameters parameters = getParameters();
         System.out.println(parameters.getRaw());
 
@@ -177,10 +177,10 @@ public class AnalystApp extends MainApp {
         PDBFile.setLocalResLibDir(AnalystPrefs.getLocalResidueDirectory());
     }
 
-    private void updateScannerGUI(ScannerController scannerController) {
-        System.out.println("update scanner " + scannerController);
-        MinerController minerController = new MinerController(scannerController);
-    }
+//    private void updateScannerGUI(ScannerController scannerController) {
+//        System.out.println("update scanner " + scannerController);
+//        MinerController minerController = new MinerController(scannerController);
+//    }
 
     Object pickedPeakAction(Object peakObject) {
         if (assignOnPick.isSelected()) {
@@ -436,13 +436,10 @@ public class AnalystApp extends MainApp {
         MenuItem procMenuItem = new MenuItem("Show Processor");
         procMenuItem.setOnAction(e -> FXMLController.getActiveController().showProcessorAction(e));
 
-        MenuItem scannerMenuItem = new MenuItem("Show Scanner");
-        scannerMenuItem.setOnAction(e -> FXMLController.getActiveController().showScannerAction(e));
-
         MenuItem rnaPeakGenMenuItem = new MenuItem("Show RNA Label Scheme");
         rnaPeakGenMenuItem.setOnAction(e -> showRNAPeakGenerator(e));
 
-        viewMenu.getItems().addAll(consoleMenuItem, dataMenuItem, attrMenuItem, procMenuItem, scannerMenuItem, rnaPeakGenMenuItem);
+        viewMenu.getItems().addAll(consoleMenuItem, dataMenuItem, attrMenuItem, procMenuItem, rnaPeakGenMenuItem);
 
         Menu peakMenu = new Menu("Peaks");
 
@@ -591,6 +588,10 @@ public class AnalystApp extends MainApp {
         MenuItem peakSliderMenuItem = new MenuItem("Show Peak Slider");
         statusBar.addToToolMenu("Peak Tools", peakSliderMenuItem);
         peakSliderMenuItem.setOnAction(e -> showPeakSlider());
+
+        MenuItem scannerToolItem = new MenuItem("Show Scanner Tool");
+        statusBar.addToToolMenu("Peak Tools", scannerToolItem);
+        scannerToolItem.setOnAction(e -> showScannerTool());
 
     }
 
@@ -1184,6 +1185,21 @@ public class AnalystApp extends MainApp {
         controller.getBottomBox().getChildren().remove(regionTool.getBox());
     }
 
+    public void showScannerTool() {
+        FXMLController controller = FXMLController.getActiveController();
+        if (!controller.containsTool(ScannerTool.class)) {
+            BorderPane vBox = new BorderPane();
+            controller.getBottomBox().getChildren().add(vBox);
+            ScannerTool scannerTool = new ScannerTool(controller, this::removeScannerTool);
+            scannerTool.initialize(vBox);
+            controller.addTool(scannerTool);
+        }
+    }
+
+    public void removeScannerTool(ScannerTool scannerTool) {
+        FXMLController controller = FXMLController.getActiveController();
+        controller.removeTool(ScannerTool.class);
+        controller.getBottomBox().getChildren().remove(scannerTool.getBox());
     public void showParametricTool() {
         FXMLController controller = FXMLController.getActiveController();
         if (!controller.containsTool(ParametricTool.class)) {

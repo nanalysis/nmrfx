@@ -362,10 +362,7 @@ public class MainApp extends Application {
         MenuItem procMenuItem = new MenuItem("Show Processor");
         procMenuItem.setOnAction(e -> FXMLController.getActiveController().showProcessorAction(e));
 
-        MenuItem scannerMenuItem = new MenuItem("Show Scanner");
-        scannerMenuItem.setOnAction(e -> FXMLController.getActiveController().showScannerAction(e));
-
-        viewMenu.getItems().addAll(consoleMenuItem, dataMenuItem, attrMenuItem, procMenuItem, scannerMenuItem);
+        viewMenu.getItems().addAll(consoleMenuItem, dataMenuItem, attrMenuItem, procMenuItem);
 
         Menu peakMenu = new Menu("Peaks");
 

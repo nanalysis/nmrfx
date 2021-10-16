@@ -21,7 +21,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package org.nmrfx.processor.gui.controls;
+package org.nmrfx.analyst.gui;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -67,6 +67,7 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
+import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import org.controlsfx.control.PopOver;
@@ -83,7 +84,7 @@ import org.nmrfx.processor.gui.ChartProcessor;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.ProcessorController;
-import org.nmrfx.processor.gui.ScannerController;
+import org.nmrfx.processor.gui.controls.FileTableItem;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.utils.GUIUtils;
 import org.python.util.PythonInterpreter;
@@ -94,12 +95,13 @@ import org.python.util.PythonInterpreter;
  */
 public class ScanTable {
 
-    ScannerController scannerController;
+    ScannerTool scannerController;
     TableView<FileTableItem> tableView;
     TableFilter fileTableFilter;
     TableFilter.Builder builder = null;
     String scanDir = null;
     String scanOutputDir = null;
+    String combineFileName = "process.nv";
     PopOver popOver = new PopOver();
     ObservableList<FileTableItem> fileListItems = FXCollections.observableArrayList();
     HashMap<String, String> columnTypes = new HashMap<>();
@@ -154,7 +156,7 @@ public class ScanTable {
 
     }
 
-    public ScanTable(ScannerController controller, TableView<FileTableItem> tableView) {
+    public ScanTable(ScannerTool controller, TableView<FileTableItem> tableView) {
         this.scannerController = controller;
         this.tableView = tableView;
         init();
@@ -323,7 +325,6 @@ public class ScanTable {
             final File file = db.getFiles().get(0);
             if (file.isDirectory()) {
                 scanDir = file.getAbsolutePath();
-                scannerController.updateScanDirectory(scanDir);
                 Platform.runLater(new Runnable() {
                     @Override
                     public void run() {
@@ -380,10 +381,12 @@ public class ScanTable {
     }
 
     public void loadScanFiles(Stage stage) {
-        if ((scanDir == null) || scanDir.trim().equals("")) {
-            GUIUtils.warn("Scanner Error", "No scan directory");
+        DirectoryChooser dirChooser = new DirectoryChooser();
+        File scanDirFile = dirChooser.showDialog(null);
+        if (scanDirFile == null) {
             return;
         }
+        scanDir = scanDirFile.toString();
         int beginIndex = scanDir.length() + 1;
         ArrayList<String> nmrFiles = NMRDataUtil.findNMRDirectories(scanDir);
         String[] headers = {};
@@ -408,11 +411,24 @@ public class ScanTable {
             GUIUtils.warn("Scanner Error", "No scan directory");
             return;
         }
-        if ((scanOutputDir == null) || scanOutputDir.trim().equals("")) {
-            GUIUtils.warn("Scanner Error", "No scan output directory");
+        DirectoryChooser dirChooser = new DirectoryChooser();
+        dirChooser.setTitle("Output directory");
+        File scanOutputDirFile = dirChooser.showDialog(null);
+        if (scanOutputDirFile == null) {
             return;
         }
-        File scanOutputDirFile = new File(scanOutputDir);
+        scanOutputDir = scanOutputDirFile.toString();
+
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Output filename");
+        fileChooser.setInitialDirectory(scanOutputDirFile);
+        fileChooser.setInitialFileName(combineFileName);
+        File combineFile = fileChooser.showSaveDialog(null);
+        if (combineFile == null) {
+            return;
+        }
+        combineFileName = combineFile.getName();
+
         if (!scanOutputDirFile.exists() || !scanOutputDirFile.isDirectory() || !scanOutputDirFile.canWrite()) {
             GUIUtils.warn("Scanner Error", "Output dir is not a writable directory");
             return;
@@ -421,7 +437,6 @@ public class ScanTable {
         if (fileTableItems.isEmpty()) {
             return;
         }
-        String combineFileName = scannerController.getOutputFileName();
         if ((combineFileName == null) || combineFileName.equals("")) {
             return;
         }
@@ -647,7 +662,7 @@ public class ScanTable {
         String firstDatasetName = "";
         if ((scanDir == null) || scanDir.trim().equals("")) {
             setScanDirectory(file.getParentFile());
-            scannerController.updateScanDirectory(scanDir);
+            //scannerController.updateScanDirectory(scanDir);
         }
 
         processingTable = true;

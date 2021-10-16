@@ -15,9 +15,8 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.nmrfx.processor.gui.tools;
+package org.nmrfx.analyst.gui.tools;
 
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -34,7 +33,6 @@ import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.MenuButton;
 import javafx.scene.control.MenuItem;
-import javafx.scene.control.TableColumn;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ToolBar;
 import javafx.scene.input.KeyCode;
@@ -46,6 +44,8 @@ import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import org.apache.commons.math3.optim.PointValuePair;
 import org.controlsfx.dialog.ExceptionDialog;
+import org.nmrfx.analyst.gui.ScanTable;
+import org.nmrfx.analyst.gui.ScannerTool;
 import org.nmrfx.chart.Axis;
 import org.nmrfx.chart.DataSeries;
 import org.nmrfx.chart.XYCanvasChart;
@@ -54,9 +54,7 @@ import org.nmrfx.chart.XYValue;
 import org.nmrfx.graphicsio.GraphicsIOException;
 import org.nmrfx.graphicsio.SVGGraphicsContext;
 import org.nmrfx.processor.gui.PolyChart;
-import org.nmrfx.processor.gui.ScannerController;
 import org.nmrfx.processor.gui.controls.FileTableItem;
-import org.nmrfx.processor.gui.controls.ScanTable;
 import org.nmrfx.processor.math.TRACTSimFit;
 
 /**
@@ -65,7 +63,7 @@ import org.nmrfx.processor.math.TRACTSimFit;
  */
 public class TRACTGUI {
 
-    ScannerController scanController;
+    ScannerTool scanController;
     Stage stage = null;
     XYCanvasChart activeChart;
     BorderPane borderPane = new BorderPane();
@@ -79,7 +77,7 @@ public class TRACTGUI {
     TextField scaleField;
     PolyChart chart;
 
-    public TRACTGUI(ScannerController scanController) {
+    public TRACTGUI(ScannerTool scanController) {
         this.scanController = scanController;
         chart = PolyChart.getActiveChart();
     }
