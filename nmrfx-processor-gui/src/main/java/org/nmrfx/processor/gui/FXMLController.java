@@ -158,6 +158,8 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
     @FXML
     private BorderPane borderPane;
     @FXML
+    private StackPane processorPane;
+    @FXML
     private HBox dimHBox;
     @FXML
     private HBox dimHBox2;
@@ -594,13 +596,9 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
 
     public ProcessorController getProcessorController(boolean createIfNull) {
         if ((processorController == null) && createIfNull) {
-            processorController = ProcessorController.create(this, stage, getActiveChart());
+            processorController = ProcessorController.create(this, processorPane, getActiveChart());
         }
         return processorController;
-    }
-
-    public void processorCreated(Stage stage) {
-        processControllerVisible.bind(stage.showingProperty());
     }
 
     public ChartProcessor getChartProcessor() {
@@ -615,13 +613,13 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         isFID = true;
         if (chartProcessor == null) {
             if (processorController == null) {
-                processorController = ProcessorController.create(this, stage, getActiveChart());
+                processorController = ProcessorController.create(this, processorPane, getActiveChart());
             }
         }
         chartProcessor.setData(nmrData, clearOps);
         if (processorController != null) {
-            processorController.getStage().show();
             processorController.viewingDataset(false);
+            processorController.show();
         } else {
             System.out.println("Coudn't make controller");
         }
@@ -815,10 +813,10 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
     @FXML
     public void showProcessorAction(ActionEvent event) {
         if (processorController == null) {
-            processorController = ProcessorController.create(this, stage, getActiveChart());
+            processorController = ProcessorController.create(this, processorPane, getActiveChart());
         }
         if (processorController != null) {
-            processorController.getStage().show();
+            processorController.show();
         } else {
             System.out.println("Coudn't make controller");
         }

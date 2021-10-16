@@ -215,7 +215,7 @@ public class ScanTable {
         List<Integer> selected = tableView.getSelectionModel().getSelectedIndices();
 
         ProcessorController processorController = scannerController.getFXMLController().getProcessorController(false);
-        if ((processorController == null) || processorController.isViewingDataset() || !processorController.getStage().isShowing()) {
+        if ((processorController == null) || processorController.isViewingDataset()) {
             List<Integer> showRows = new ArrayList<>();
             if (selected.isEmpty()) {
                 for (int i = 0, n = tableView.getItems().size(); i < n; i++) {
