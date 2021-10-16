@@ -158,6 +158,7 @@ public class ScannerTool implements ControllerTool {
         scannerBar.getItems().add(makeFileMenu());
         scannerBar.getItems().add(makeRegionMenu());
         scannerBar.getItems().add(makeScoreMenu());
+        scannerBar.getItems().add(makeToolMenu());
         MinerController miner = new MinerController(this);
         scanTable = new ScanTable(this, tableView);
     }
@@ -233,6 +234,14 @@ public class ScannerTool implements ControllerTool {
         MenuItem scoreMenuItem = new MenuItem("Cosine Score");
         scoreMenuItem.setOnAction(e -> scoreSimilarity());
         menu.getItems().addAll(scoreMenuItem);
+        return menu;
+    }
+
+    private MenuButton makeToolMenu() {
+        MenuButton menu = new MenuButton("Tools");
+        MenuItem plotMenuItem = new MenuItem("Plot");
+        plotMenuItem.setOnAction(e -> showPlotGUI());
+        menu.getItems().addAll(plotMenuItem);
         return menu;
     }
 
@@ -683,5 +692,12 @@ public class ScannerTool implements ControllerTool {
         }
         return result;
 
+    }
+
+    void showPlotGUI() {
+        if (plotGUI == null) {
+            plotGUI = new TablePlotGUI(tableView);
+        }
+        plotGUI.showPlotStage();
     }
 }
