@@ -1396,7 +1396,7 @@ public class NMRStarReader {
         List<String> errColumn = loop.getColumnAsListIfExists("Val_err");
         List<String> RexValColumn = loop.getColumnAsListIfExists("Rex_val");
         List<String> RexErrColumn = loop.getColumnAsListIfExists("Rex_err");
-        if (expType.equals(relaxTypes.T2) || expType.equals(relaxTypes.T1RHO)) {
+        if (expType.equals(relaxTypes.R2) || expType.equals(relaxTypes.T1RHO)) {
             valColumn = loop.getColumnAsList(expType + "_val");
             errColumn = loop.getColumnAsList(expType + "_val_err");
         }
@@ -1421,7 +1421,7 @@ public class NMRStarReader {
             if (!errColumn.get(i).equals(".")) {
                 error = Double.parseDouble(errColumn.get(i));
             }
-            if (expType.equals(relaxTypes.T2) || expType.equals(relaxTypes.T1RHO)) {
+            if (expType.equals(relaxTypes.R2) || expType.equals(relaxTypes.T1RHO)) {
                 if (!RexValColumn.get(i).equals(".")) {
                     RexValue = Double.parseDouble(RexValColumn.get(i));
                 }
@@ -1450,7 +1450,7 @@ public class NMRStarReader {
                 //throw new ParseException("invalid atom in conformer saveframe \""+mapID+"."+atomName+"\"");
             }
 
-            if (expType.equals(relaxTypes.T1)) {
+            if (expType.equals(relaxTypes.R1)) {
                 RelaxationData relaxData = new RelaxationData(frameName, expType, atom, new ArrayList<>(), field, temperature, value, error, extras);
 //                System.out.println("reader " + relaxData);
                 atom.addRelaxationData(frameName, relaxData);
@@ -1840,7 +1840,7 @@ public class NMRStarReader {
             if (DEBUG) {
                 System.err.println("process T1");
             }
-            buildRelaxation(relaxTypes.T1);
+            buildRelaxation(relaxTypes.R1);
             if (DEBUG) {
                 System.err.println("process T1rho");
             }
@@ -1848,7 +1848,7 @@ public class NMRStarReader {
             if (DEBUG) {
                 System.err.println("process T2");
             }
-            buildRelaxation(relaxTypes.T2);
+            buildRelaxation(relaxTypes.R2);
             if (DEBUG) {
                 System.err.println("process Order");
             }

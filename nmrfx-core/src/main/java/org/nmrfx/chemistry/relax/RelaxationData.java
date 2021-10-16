@@ -34,7 +34,7 @@ import org.nmrfx.chemistry.MoleculeBase;
 public class RelaxationData implements RelaxationValues {
 
     public enum relaxTypes {
-        T1("T1"), T2("T2"), T1RHO("T1rho"), NOE("NOE"), S2("S2");
+        R1("R1"), R2("R2"), T1RHO("T1rho"), NOE("NOE"), S2("S2");
 
         private final String name;
 
@@ -72,10 +72,10 @@ public class RelaxationData implements RelaxationValues {
     }
 
     public static void add(String id, String type, Atom atom, double field, double value, double error) {
-        if (type.equalsIgnoreCase("r1")) {
-            type = "T1";
-        } else if (type.equalsIgnoreCase("r2")) {
-            type = "T2";
+        if (type.equalsIgnoreCase("t1")) {
+            type = "R1";
+        } else if (type.equalsIgnoreCase("t2")) {
+            type = "R2";
         }
         relaxTypes relaxType = relaxTypes.valueOf(type.toUpperCase());
         RelaxationData rData = new RelaxationData(id, relaxType, atom,
