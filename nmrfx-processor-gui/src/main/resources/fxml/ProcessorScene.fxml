@@ -46,7 +46,7 @@
         </ToolBar>
     </top>
     <center>
-        <TabPane minWidth="400" minHeight="100" VBox.vgrow="ALWAYS">
+        <TabPane minWidth="400" minHeight="100" maxWidth="400" VBox.vgrow="ALWAYS">
             <Tab text="Parameters" closable="false">
                 <VBox>
                     <children>
