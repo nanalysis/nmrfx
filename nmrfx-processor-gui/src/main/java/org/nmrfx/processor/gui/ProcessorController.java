@@ -1078,6 +1078,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
 
         codeAreaUtil = new ProcessingCodeAreaUtil(textArea);
         textArea.setEditable(false);
+        textArea.setWrapText(true);
 //        consoleUtil = new ConsoleUtil();
 //        consoleUtil.addHandler(consoleArea, chartProcessor.getInterpreter());
 //        consoleUtil.banner();
