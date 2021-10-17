@@ -42,6 +42,7 @@ import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.chart.Axis;
+import org.nmrfx.chart.BoxPlotData;
 import org.nmrfx.chart.DataSeries;
 import org.nmrfx.chart.XYCanvasChart;
 import org.nmrfx.chart.XYChartPane;
@@ -61,7 +62,8 @@ public class TablePlotGUI {
     XYCanvasChart activeChart;
     BorderPane borderPane = new BorderPane();
     Scene stageScene = new Scene(borderPane, 500, 500);
-
+    XYChartPane chartPane;
+    ChoiceBox<String> chartTypeChoice = new ChoiceBox<>();
     ChoiceBox<String> xArrayChoice = new ChoiceBox<>();
     ChoiceBox<String> yArrayChoice = new ChoiceBox<>();
 
@@ -84,13 +86,22 @@ public class TablePlotGUI {
         if (stage == null) {
             stage = new Stage();
             stage.setTitle("Table Plotter");
+            Label typelabel = new Label("  Type:  ");
             Label xlabel = new Label("  X Var:  ");
             Label ylabel = new Label("  Y Var:  ");
+            chartTypeChoice.setMinWidth(150);
+            chartTypeChoice.getItems().addAll("ScatterPlot", "BoxPlot");
+            chartTypeChoice.setValue("ScatterPlot");
             xArrayChoice.getItems().clear();
             yArrayChoice.getItems().clear();
             xArrayChoice.setMinWidth(150);
             yArrayChoice.setMinWidth(150);
             try {
+                chartTypeChoice.valueProperty().addListener((Observable x) -> {
+                    updateChartType();
+                    updateAxisChoices();
+                });
+
                 xArrayChoice.valueProperty().addListener((Observable x) -> {
                     updatePlot();
                 });
@@ -120,14 +131,14 @@ public class TablePlotGUI {
             HBox hBox = new HBox();
             HBox.setHgrow(hBox, Priority.ALWAYS);
             hBox.setMinWidth(600);
-            hBox.getChildren().addAll(xlabel,
-                    xArrayChoice, ylabel, yArrayChoice);
+            hBox.getChildren().addAll(typelabel, chartTypeChoice,
+                    xlabel, xArrayChoice, ylabel, yArrayChoice);
             hBox.setAlignment(Pos.CENTER);
 
             VBox vBox = new VBox();
             vBox.setMinWidth(600);
             vBox.getChildren().addAll(toolBar, hBox);
-            XYChartPane chartPane = new XYChartPane();
+            chartPane = new XYChartPane();
             activeChart = chartPane.getChart();
             borderPane.setTop(vBox);
             borderPane.setCenter(chartPane);
@@ -152,7 +163,75 @@ public class TablePlotGUI {
         return groups;
     }
 
+    private void updateChartType() {
+        if (chartTypeChoice.getValue().equals("ScatterPlot")) {
+            activeChart = chartPane.getXYChart();
+        } else {
+            activeChart = chartPane.getBoxChart();
+        }
+
+    }
+
     private void updatePlot() {
+        switch (chartTypeChoice.getValue()) {
+            case "ScatterPlot":
+                updateScatterPlot();
+                break;
+            case "BoxPlot":
+                updateBoxPlot();
+                break;
+            default:
+        }
+
+    }
+
+    private void updateBoxPlot() {
+        if (tableView != null) {
+            Axis xAxis = activeChart.getXAxis();
+            Axis yAxis = activeChart.getYAxis();
+            String xElem = xArrayChoice.getValue();
+            String yElem = yArrayChoice.getValue();
+            activeChart.setShowLegend(false);
+
+            if ((xElem != null) && (yElem != null)) {
+                xAxis.setLabel(xElem);
+                yAxis.setLabel(yElem);
+                xAxis.setZeroIncluded(true);
+                yAxis.setZeroIncluded(false);
+                xAxis.setAutoRanging(true);
+                yAxis.setAutoRanging(true);
+                activeChart.getData().clear();
+                //Prepare XYChart.Series objects by setting data
+                var groups = getGroups();
+                int iValue = 0;
+                for (var groupEntry : groups.entrySet()) {
+                    int groupNum = groupEntry.getKey();
+                    var items = groupEntry.getValue();
+                    DataSeries series = new DataSeries();
+                    series.setFill(ScanTable.getGroupColor(groupNum));
+
+                    series.getData().clear();
+                    double[] ddata = new double[items.size()];
+                    int i = 0;
+                    for (FileTableItem item : items) {
+                        double x = item.getDouble(xElem);
+                        double y = item.getDouble(yElem);
+                        ddata[i++] = y;
+                    }
+                    BoxPlotData fiveNum = new BoxPlotData(ddata);
+                    XYValue xy = new XYValue(iValue + 1.0, 0.0);
+                    xy.setExtraValue(fiveNum);
+                    series.add(xy);
+                    iValue++;
+
+                    activeChart.getData().add(series);
+                    activeChart.autoScale(true);
+                }
+            }
+        }
+    }
+
+    private void updateScatterPlot() {
         if (tableView != null) {
             Axis xAxis = activeChart.getXAxis();
             Axis yAxis = activeChart.getYAxis();
