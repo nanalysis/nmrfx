@@ -32,6 +32,7 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.ResourceBundle;
 import javafx.application.Platform;
 import javafx.beans.property.ReadOnlyObjectProperty;
@@ -597,8 +598,19 @@ public class ProcessorController implements Initializable, ProgressUpdater {
             textArea.replaceText(script);
             currentText = script;
         }
-
         chartProcessor.setScriptValid(true);
+    }
+
+    boolean fixDatasetName() {
+        String script = textArea.getText();
+        if (!chartProcessor.scriptHasDataset(script)) {
+            Optional<String> scriptOpt = chartProcessor.fixDatasetName(script);
+            if (scriptOpt.isEmpty()) {
+                return false;
+            }
+            textArea.replaceText(scriptOpt.get());
+        }
+        return true;
     }
 
     @FXML
@@ -871,7 +883,9 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         if (!chartProcessor.isScriptValid()) {
             updateScriptDisplay();
         }
-        ((Service) processDataset.worker).restart();
+        if (fixDatasetName()) {
+            ((Service) processDataset.worker).restart();
+        }
     }
 
     @FXML

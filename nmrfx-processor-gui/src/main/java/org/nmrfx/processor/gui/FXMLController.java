@@ -632,30 +632,6 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         if (!reload) {
             getActiveChart().full();
             getActiveChart().autoScale();
-            String filePath = nmrData.getFilePath();
-            File file = new File(filePath);
-            File lastFile = NMRDataUtil.findNewestFile((new File(chartProcessor.getScriptDir())).toPath());
-            if (lastFile != null) {
-                String datasetName = lastFile.getName();
-                int lastDot = datasetName.lastIndexOf(".");
-                if (lastDot != -1) {
-                    datasetName = datasetName.substring(0, lastDot);
-                }
-                chartProcessor.setDatasetName(datasetName);
-            } else {
-                String datasetName = chartProcessor.getDatasetNameFromScript();
-                int lastDot = datasetName.lastIndexOf(".");
-                if (lastDot != -1) {
-                    datasetName = datasetName.substring(0, lastDot);
-                }
-                if (datasetName.isEmpty()) {
-                    datasetName = chartProcessor.getDatasetNameFromScript();
-                }
-                if (!datasetName.isEmpty()) {
-                    chartProcessor.setDatasetName(datasetName);
-                }
-
-            }
             chartProcessor.loadDefaultScriptIfPresent();
         }
         getActiveChart().layoutPlotChildren();
