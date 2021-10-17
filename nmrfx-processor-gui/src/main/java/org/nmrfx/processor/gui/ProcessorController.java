@@ -190,6 +190,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
             Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "", iconSize, fontSize, ContentDisplay.GRAPHIC_ONLY);
             closeButton.setOnAction(e -> controller.hide());
             controller.toolBar.getItems().add(closeButton);
+            fxmlController.processorCreated(pane);
 
             stage.setWidth(width + pane.getMinWidth());
             return controller;

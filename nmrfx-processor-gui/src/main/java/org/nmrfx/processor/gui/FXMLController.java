@@ -310,6 +310,10 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         }
     }
 
+    public void processorCreated(Pane pane) {
+        processControllerVisible.bind(pane.parentProperty().isNotNull());
+    }
+
     public boolean isPhaseSliderVisible() {
         return (rightBox.getChildren().size() > 0);
     }
