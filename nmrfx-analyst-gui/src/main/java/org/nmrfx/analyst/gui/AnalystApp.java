@@ -1198,29 +1198,6 @@ public class AnalystApp extends MainApp {
         controller.getBottomBox().getChildren().remove(scannerTool.getBox());
     }
 
-    public void showParametricTool() {
-        FXMLController controller = FXMLController.getActiveController();
-        if (!controller.containsTool(ParametricTool.class)) {
-            VBox vBox = new VBox();
-            controller.getBottomBox().getChildren().add(vBox);
-            ParametricTool parametricTool = new ParametricTool(controller, this::removeParametricTool);
-            parametricTool.initialize(vBox);
-            controller.addTool(parametricTool);
-        }
-    }
-
-    public ParametricTool getParametricTool() {
-        FXMLController controller = FXMLController.getActiveController();
-        ParametricTool parametricTool = (ParametricTool) controller.getTool(ParametricTool.class);
-        return parametricTool;
-    }
-
-    public void removeParametricTool(ParametricTool parametricTool) {
-        FXMLController controller = FXMLController.getActiveController();
-        controller.removeTool(ParametricTool.class);
-        controller.getBottomBox().getChildren().remove(parametricTool.getBox());
-    }
-
     void addPrefs() {
         AnalystPrefs.addPrefs();
     }
