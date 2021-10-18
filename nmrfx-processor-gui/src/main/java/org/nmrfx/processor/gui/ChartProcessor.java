@@ -973,7 +973,7 @@ public class ChartProcessor {
             String datasetName = suggestDatasetName();
             String filePath = getNMRData().getFilePath();
             File nmrFile = new File(filePath);
-            File directory = nmrFile.getParentFile();
+            File directory = nmrFile.isDirectory() ? nmrFile : nmrFile.getParentFile();
             FileChooser fileChooser = new FileChooser();
             fileChooser.setInitialDirectory(directory);
             fileChooser.setInitialFileName(datasetName);
