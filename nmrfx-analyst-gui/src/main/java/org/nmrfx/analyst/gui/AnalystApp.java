@@ -405,6 +405,7 @@ public class AnalystApp extends MainApp {
         readMol2Item.setOnAction(e -> readMolecule("mol2"));
         molFileMenu.getItems().add(readMol2Item);
 
+
         MenuItem seqGUIMenuItem = new MenuItem("Sequence Editor...");
         seqGUIMenuItem.setOnAction(e -> SequenceGUI.showGUI(this));
 
@@ -563,12 +564,8 @@ public class AnalystApp extends MainApp {
         spectrumFitLibraryMenuItem.disableProperty().bind(FXMLController.activeController.isNull());
         spectrumFitLibraryMenuItem.setOnAction(e -> showSpectrumFitter());
 
-        MenuItem minerMenuItem = new MenuItem("Show Parametric Tool");
-        minerMenuItem.disableProperty().bind(FXMLController.activeController.isNull());
-        minerMenuItem.setOnAction(e -> showParametricTool());
-
         oneDMenu.getItems().addAll(multipletToolItem, regionsMenuItem,
-                spectrumLibraryMenuItem, spectrumFitLibraryMenuItem, minerMenuItem);
+                spectrumLibraryMenuItem, spectrumFitLibraryMenuItem);
 
         Menu molMenu = new Menu("Molecule");
         MenuItem canvasMolMenuItem = new MenuItem("Show Molecule");

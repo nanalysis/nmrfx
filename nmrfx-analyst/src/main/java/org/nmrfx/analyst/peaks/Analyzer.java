@@ -1141,7 +1141,7 @@ public class Analyzer {
         }
     }
 
-    public void findRegions() throws IOException {
+    private void findRegions() throws IOException {
         calculateThreshold();
         getThreshold();
         autoSetRegions();
