@@ -18,271 +18,322 @@
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-math3</artifactId>
                 <version>3.6</version>
+                <!-- license: Apache License, Version 2.0 -->
             </dependency>
             <dependency>
                 <groupId>javax.vecmath</groupId>
                 <artifactId>vecmath</artifactId>
                 <version>1.5.2</version>
+                <!-- license: GPLv2 license, includes the CLASSPATH exception -->
             </dependency>
             <dependency>
                 <groupId>org.python</groupId>
                 <artifactId>jython-slim</artifactId>
                 <version>2.7.2</version>
+                <!-- license: Jython license -->
             </dependency>
             <dependency>
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
                 <version>28.2-jre</version>
+                <!-- license: Apache License, Version 2.0 -->
             </dependency>
             <dependency>
                 <groupId>io.netty</groupId>
                 <artifactId>netty-all</artifactId>
                 <version>4.1.45.Final</version>
+                <!-- license: Apache License, Version 2.0 -->
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-lang3</artifactId>
                 <version>3.9</version>
+                <!-- license: Apache License, Version 2.0 -->
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-collections4</artifactId>
                 <version>4.4</version>
+                <!-- license: Apache License, Version 2.0 -->
             </dependency>
             <dependency>
                 <groupId>com.github.jnr</groupId>
                 <artifactId>jnr-posix</artifactId>
                 <version>3.0.54</version>
+                <!-- license: EPL2.0 / GPL2.0 / LGPL 2.1 -->
             </dependency>
             <dependency>
                 <groupId>com.jcraft</groupId>
                 <artifactId>jsch</artifactId>
                 <version>0.1.55</version>
+                <!-- license: BSD -->
             </dependency>
             <dependency>
                 <groupId>com.google.code.gson</groupId>
                 <artifactId>gson</artifactId>
                 <version>2.8.6</version>
+                <!-- license: Apache License, Version 2.0 -->
             </dependency>
             <dependency>
                 <groupId>junit</groupId>
                 <artifactId>junit</artifactId>
                 <version>4.13</version>
+                <!-- license: Eclipse Public License 1.0 -->
             </dependency>
             <dependency>
                 <groupId>org.deeplearning4j</groupId>
                 <artifactId>deeplearning4j-nn</artifactId>
                 <version>${dl4j.version}</version>
+                <!-- license: Apache License, Version 2.0 -->
             </dependency>
             <dependency>
                 <groupId>org.nd4j</groupId>
                 <artifactId>nd4j-native-platform</artifactId>
                 <version>${dl4j.version}</version>
+                <!-- license: Apache License, Version 2.0 -->
             </dependency>
             <dependency>
                 <groupId>org.controlsfx</groupId>
                 <artifactId>controlsfx</artifactId>
                 <version>11.1.0</version>
+                <!-- license: BSD (3 clause) -->
             </dependency>
             <dependency>
                 <groupId>de.jensd</groupId>
                 <artifactId>fontawesomefx</artifactId>
                 <version>8.9</version>
+                <!-- license: Apache License, Version 2.0 -->
             </dependency>
             <dependency>
                 <groupId>org.apache.pdfbox</groupId>
                 <artifactId>pdfbox</artifactId>
                 <version>2.0.15</version>
+                <!-- license: Apache License, Version 2.0 -->
             </dependency>
             <dependency>
                 <groupId>org.openjfx</groupId>
                 <artifactId>javafx-graphics</artifactId>
                 <version>15</version>
+                <!-- license: GPLv2 license, includes the CLASSPATH exception -->
             </dependency>
             <dependency>
                 <groupId>org.openjfx</groupId>
                 <artifactId>javafx-graphics</artifactId>
                 <version>15</version>
                 <classifier>win</classifier>
+                <!-- license: GPLv2 license, includes the CLASSPATH exception -->
             </dependency>
             <dependency>
                 <groupId>org.openjfx</groupId>
                 <artifactId>javafx-graphics</artifactId>
                 <version>15</version>
                 <classifier>mac</classifier>
+                <!-- license: GPLv2 license, includes the CLASSPATH exception -->
             </dependency>
             <dependency>
                 <groupId>org.openjfx</groupId>
                 <artifactId>javafx-graphics</artifactId>
                 <version>15</version>
                 <classifier>linux</classifier>
+                <!-- license: GPLv2 license, includes the CLASSPATH exception -->
             </dependency>
             <dependency>
                 <groupId>org.openjfx</groupId>
                 <artifactId>javafx-fxml</artifactId>
                 <version>15</version>
+                <!-- license: GPLv2 license, includes the CLASSPATH exception -->
             </dependency>
             <dependency>
                 <groupId>org.openjfx</groupId>
                 <artifactId>javafx-fxml</artifactId>
                 <version>15</version>
                 <classifier>win</classifier>
+                <!-- license: GPLv2 license, includes the CLASSPATH exception -->
             </dependency>
             <dependency>
                 <groupId>org.openjfx</groupId>
                 <artifactId>javafx-fxml</artifactId>
                 <version>15</version>
                 <classifier>mac</classifier>
+                <!-- license: GPLv2 license, includes the CLASSPATH exception -->
             </dependency>
             <dependency>
                 <groupId>org.openjfx</groupId>
                 <artifactId>javafx-fxml</artifactId>
                 <version>15</version>
                 <classifier>linux</classifier>
+                <!-- license: GPLv2 license, includes the CLASSPATH exception -->
             </dependency>
             <dependency>
                 <groupId>org.openjfx</groupId>
                 <artifactId>javafx-web</artifactId>
                 <version>15</version>
+                <!-- license: GPLv2 license, includes the CLASSPATH exception -->
             </dependency>
             <dependency>
                 <groupId>org.openjfx</groupId>
                 <artifactId>javafx-web</artifactId>
                 <version>15</version>
                 <classifier>win</classifier>
+                <!-- license: GPLv2 license, includes the CLASSPATH exception -->
             </dependency>
             <dependency>
                 <groupId>org.openjfx</groupId>
                 <artifactId>javafx-web</artifactId>
                 <version>15</version>
                 <classifier>mac</classifier>
+                <!-- license: GPLv2 license, includes the CLASSPATH exception -->
             </dependency>
             <dependency>
                 <groupId>org.openjfx</groupId>
                 <artifactId>javafx-web</artifactId>
                 <version>15</version>
                 <classifier>linux</classifier>
+                <!-- license: GPLv2 license, includes the CLASSPATH exception -->
             </dependency>
             <dependency>
                 <groupId>org.openjfx</groupId>
                 <artifactId>javafx-swing</artifactId>
                 <version>15</version>
+                <!-- license: GPLv2 license, includes the CLASSPATH exception -->
             </dependency>
             <dependency>
                 <groupId>org.openjfx</groupId>
                 <artifactId>javafx-controls</artifactId>
                 <version>14</version>
+                <!-- license: GPLv2 license, includes the CLASSPATH exception -->
             </dependency>
             <dependency>
                 <groupId>org.openjfx</groupId>
                 <artifactId>javafx-base</artifactId>
                 <version>14</version>
+                <!-- license: GPLv2 license, includes the CLASSPATH exception -->
             </dependency>
             <dependency>
                 <groupId>net.sourceforge.jdistlib</groupId>
                 <artifactId>jdistlib</artifactId>
                 <version>0.4.5</version>
+                <!-- license: GPLv2 license -->
             </dependency>
             <dependency>
                 <groupId>org.yaml</groupId>
                 <artifactId>snakeyaml</artifactId>
                 <version>1.25</version>
-                <type>jar</type>
+                <!-- license: Apache License, Version 2.0 -->
             </dependency>
             <dependency>
                 <groupId>org.codehaus.janino</groupId>
                 <artifactId>janino</artifactId>
                 <version>3.0.8</version>
+                <!-- license: BSD (3 clause) -->
             </dependency>
             <dependency>
                 <groupId>com.github.haifengl</groupId>
                 <artifactId>smile-core</artifactId>
                 <version>2.6.0</version>
+                <!-- license: LGPL 3 -->
             </dependency>
             <dependency>
                 <groupId>com.github.haifengl</groupId>
                 <artifactId>smile-interpolation</artifactId>
                 <version>2.6.0</version>
+                <!-- license: LGPL 3 -->
             </dependency>
             <dependency>
                 <groupId>com.github.haifengl</groupId>
                 <artifactId>smile-io</artifactId>
                 <version>2.6.0</version>
+                <!-- license: LGPL 3 -->
             </dependency>
             <dependency>
                 <groupId>org.bytedeco</groupId>
                 <artifactId>javacpp</artifactId>
                 <version>1.5.4</version>
+                <!-- license: Apache 2 / GPLv2 with ClassPath exception -->
             </dependency>
             <dependency>
                 <groupId>org.bytedeco</groupId>
                 <artifactId>openblas-platform</artifactId>
                 <version>0.3.10-1.5.4</version>
+                <!-- license: Apache 2 / GPLv2 with ClassPath exception -->
             </dependency>
             <dependency>
                 <groupId>org.bytedeco</groupId>
                 <artifactId>arpack-ng-platform</artifactId>
                 <version>3.7.0-1.5.4</version>
+                <!-- license: Apache 2 / GPLv2 with ClassPath exception -->
             </dependency>
             <dependency>
                 <groupId>tw.edu.ntu.csie</groupId>
                 <artifactId>libsvm</artifactId>
                 <version>3.24</version>
+                <!-- license: BSD (3 clause) -->
             </dependency>
             <dependency>
                 <groupId>commons-httpclient</groupId>
                 <artifactId>commons-httpclient</artifactId>
                 <version>3.1</version>
+                <!-- license: Apache License, Version 2.0 -->
             </dependency>
             <dependency>
                 <groupId>org.biojava</groupId>
                 <artifactId>biojava-core</artifactId>
                 <version>4.0.0</version>
+                <!-- license: LGPL 2.1 -->
             </dependency>
             <dependency>
                 <groupId>org.biojava</groupId>
                 <artifactId>biojava-alignment</artifactId>
                 <version>4.0.0</version>
+                <!-- license: LGPL 2.1 -->
             </dependency>
             <dependency>
                 <groupId>org.nd4j</groupId>
                 <artifactId>nd4j-api</artifactId>
                 <version>${nd4j.version}</version>
+                <!-- license: Apache License, Version 2.0 -->
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-text</artifactId>
                 <version>1.9</version>
+                <!-- license: Apache License, Version 2.0 -->
             </dependency>
             <dependency>
                 <groupId>org.ejml</groupId>
                 <artifactId>ejml-fat</artifactId>
                 <version>0.40</version>
+                <!-- license: Apache License, Version 2.0 -->
             </dependency>
             <dependency>
                 <groupId>commons-beanutils</groupId>
                 <artifactId>commons-beanutils</artifactId>
                 <version>1.9.4</version>
+                <!-- license: Apache License, Version 2.0 -->
             </dependency>
             <dependency>
                 <groupId>org.fxmisc.richtext</groupId>
                 <artifactId>richtextfx</artifactId>
                 <version>0.10.5</version>
+                <!-- license: BSD (2 clause) / GPLv2 with ClassPath exception -->
             </dependency>
             <dependency>
                 <groupId>org.eclipse.jgit</groupId>
                 <artifactId>org.eclipse.jgit</artifactId>
                 <version>5.6.1.202002131546-r</version>
+                <!-- license: Eclipse Distribution License (similar to BSD) -->
             </dependency>
             <dependency>
                 <groupId>de.jangassen</groupId>
                 <artifactId>nsmenufx</artifactId>
                 <version>3.0.2</version>
+                <!-- license: BSD (3 clause) -->
             </dependency>
             <dependency>
                 <groupId>org.comdnmr</groupId>
                 <artifactId>ringnmr-gui</artifactId>
                 <version>1.04</version>
+                <!-- license: GPLv3 -->
             </dependency>
         </dependencies>
     </dependencyManagement>
