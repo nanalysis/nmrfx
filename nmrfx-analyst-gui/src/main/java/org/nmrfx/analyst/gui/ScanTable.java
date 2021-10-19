@@ -451,9 +451,8 @@ public class ScanTable {
 
         PolyChart chart = scannerController.getChart();
         processingTable = true;
-        try {
+        try (PythonInterpreter processInterp = new PythonInterpreter()) {
             List<String> fileNames = new ArrayList<>();
-            PythonInterpreter processInterp = new PythonInterpreter();
 
             String initScript = ChartProcessor.buildInitScript();
             processInterp.exec(initScript);
