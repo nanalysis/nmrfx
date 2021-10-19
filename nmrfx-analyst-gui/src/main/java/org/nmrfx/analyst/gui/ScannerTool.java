@@ -628,7 +628,16 @@ public class ScannerTool implements ControllerTool {
         File file = chooser.showSaveDialog(null);
         if (file != null) {
             try {
-                file.createNewFile();
+                if (!file.exists()) {
+                    boolean created = file.createNewFile();
+                    if (!created) {
+                        Alert alert = new Alert(Alert.AlertType.ERROR);
+                        alert.setContentText("Couldn't create region file");
+                        alert.showAndWait();
+                        return;
+
+                    }
+                }
                 try (FileWriter writer = new FileWriter(file)) {
                     List<String> headers = scanTable.getHeaders();
                     for (String header : headers) {
