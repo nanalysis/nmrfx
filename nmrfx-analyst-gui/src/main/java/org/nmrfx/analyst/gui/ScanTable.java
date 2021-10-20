@@ -99,9 +99,12 @@ public class ScanTable {
     TableView<FileTableItem> tableView;
     TableFilter fileTableFilter;
     TableFilter.Builder builder = null;
-    String scanDir = null;
-    String scanOutputDir = null;
-    String combineFileName = "process.nv";
+    File scanDir = null;
+    File scanOutputDir = null;
+    File scanTable = null;
+    File scanOutputTable = null;
+    String outputFileName = "process.nv";
+
     PopOver popOver = new PopOver();
     ObservableList<FileTableItem> fileListItems = FXCollections.observableArrayList();
     HashMap<String, String> columnTypes = new HashMap<>();
@@ -249,7 +252,7 @@ public class ScanTable {
                 if ((dataset == null) || (chart.getDatasetAttributes().size() != 1) || !dataset.getName().equals(datasetName)) {
                     dataset = Dataset.getDataset(datasetName);
                     if (dataset == null) {
-                        File datasetFile = new File(scanOutputDir, datasetName);
+                        File datasetFile = new File(scanDir, datasetName);
                         FXMLController.getActiveController().openDataset(datasetFile, false);
                     } else {
                         List<String> datasetNames = new ArrayList<>();
@@ -324,15 +327,14 @@ public class ScanTable {
             // Only get the first file from the list
             final File file = db.getFiles().get(0);
             if (file.isDirectory()) {
-                scanDir = file.getAbsolutePath();
+                scanDir = file;
                 Platform.runLater(new Runnable() {
                     @Override
                     public void run() {
-                        int beginIndex = scanDir.length() + 1;
-                        ArrayList<String> nmrFiles = NMRDataUtil.findNMRDirectories(scanDir);
+                        ArrayList<String> nmrFiles = NMRDataUtil.findNMRDirectories(scanDir.getAbsolutePath());
                         String[] headers = {};
                         updateTable(headers);
-                        loadScanFiles(nmrFiles, beginIndex);
+                        loadScanFiles(nmrFiles);
                     }
                 });
             } else {
@@ -374,7 +376,7 @@ public class ScanTable {
 
     public void setScanDirectory(File selectedDir) {
         if (selectedDir != null) {
-            scanDir = selectedDir.getPath();
+            scanDir = selectedDir;
         } else {
             scanDir = null;
         }
@@ -386,15 +388,14 @@ public class ScanTable {
         if (scanDirFile == null) {
             return;
         }
-        scanDir = scanDirFile.toString();
-        int beginIndex = scanDir.length() + 1;
-        ArrayList<String> nmrFiles = NMRDataUtil.findNMRDirectories(scanDir);
+        scanDir = scanDirFile;
+        ArrayList<String> nmrFiles = NMRDataUtil.findNMRDirectories(scanDir.getAbsolutePath());
         String[] headers = {};
         processingTable = true;
         try {
             updateTable(headers);
             fileListItems.clear();
-            loadScanFiles(nmrFiles, beginIndex);
+            loadScanFiles(nmrFiles);
         } catch (Exception e) {
         } finally {
             processingTable = false;
@@ -407,27 +408,29 @@ public class ScanTable {
             return;
         }
 
-        if ((scanDir == null) || scanDir.trim().equals("")) {
+        if ((scanDir == null) || scanDir.toString().equals("")) {
             GUIUtils.warn("Scanner Error", "No scan directory");
             return;
         }
-        DirectoryChooser dirChooser = new DirectoryChooser();
-        dirChooser.setTitle("Output directory");
-        File scanOutputDirFile = dirChooser.showDialog(null);
-        if (scanOutputDirFile == null) {
+        String outDirName = GUIUtils.input("Output directory name", "output");
+        if (outDirName == null) {
             return;
         }
-        scanOutputDir = scanOutputDirFile.toString();
+        Path outDirPath = Paths.get(scanDir.toString(), outDirName);
+        File scanOutputDirFile = outDirPath.toFile();
+        if (!scanOutputDirFile.exists()) {
+            if (!scanOutputDirFile.mkdir()) {
+                GUIUtils.warn("Scanner Error", "Could not create output dir");
+                return;
+            }
+        }
 
-        FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle("Output filename");
-        fileChooser.setInitialDirectory(scanOutputDirFile);
-        fileChooser.setInitialFileName(combineFileName);
-        File combineFile = fileChooser.showSaveDialog(null);
-        if (combineFile == null) {
+        scanOutputDir = scanOutputDirFile;
+
+        String combineFileName = GUIUtils.input("Output file name", "process");
+        if (combineFileName == null) {
             return;
         }
-        combineFileName = combineFile.getName();
 
         if (!scanOutputDirFile.exists() || !scanOutputDirFile.isDirectory() || !scanOutputDirFile.canWrite()) {
             GUIUtils.warn("Scanner Error", "Output dir is not a writable directory");
@@ -472,9 +475,9 @@ public class ScanTable {
                 fileNames.add(datasetFilePath);
                 fileTableItem.setRow(rowNum++);
                 if (combineFileMode) {
-                    fileTableItem.setDatasetName(combineFileName);
+                    fileTableItem.setDatasetName(outDirName + "/" + combineFileName);
                 } else {
-                    fileTableItem.setDatasetName(datasetFile.getName());
+                    fileTableItem.setDatasetName(outDirName + "/" + datasetFile.getName());
                 }
             }
             updateFilter();
@@ -513,7 +516,7 @@ public class ScanTable {
             chart.full();
             chart.autoScale();
 
-            File saveTableFile = new File(scanOutputDir, "scntbl.txt");
+            File saveTableFile = new File(scanDir, "scntbl.txt");
             saveScanTable(saveTableFile);
 
         } finally {
@@ -524,7 +527,7 @@ public class ScanTable {
     public void openSelectedListFile() {
         int selItem = tableView.getSelectionModel().getSelectedIndex();
         if (selItem >= 0) {
-            if ((scanDir == null) || scanDir.trim().equals("")) {
+            if ((scanDir == null) || scanDir.toString().equals("")) {
                 return;
             }
             ProcessorController processorController = scannerController.getFXMLController().getProcessorController(true);
@@ -532,7 +535,8 @@ public class ScanTable {
                 String scriptString = processorController.getCurrentScript();
                 FileTableItem fileTableItem = (FileTableItem) tableView.getItems().get(selItem);
                 String fileName = fileTableItem.getFileName();
-                String filePath = Paths.get(scanDir, fileName).toString();
+                Path scanDirPath = scanDir.toPath();
+                String filePath = Paths.get(scanDir.getAbsolutePath(), fileName).toString();
 
                 scannerController.getChart().getFXMLController().openFile(filePath, false, false);
 
@@ -542,11 +546,12 @@ public class ScanTable {
         }
     }
 
-    private void loadScanFiles(ArrayList<String> nmrFiles, int beginIndex) {
+    private void loadScanFiles(ArrayList<String> nmrFiles) {
         fileListItems.clear();
         long firstDate = Long.MAX_VALUE;
         List<FileTableItem> items = new ArrayList<>();
         for (String filePath : nmrFiles) {
+            File file = new File(filePath);
             NMRData nmrData = null;
             try {
                 nmrData = NMRDataUtil.getNMRData(filePath);
@@ -558,7 +563,8 @@ public class ScanTable {
                 if (date < firstDate) {
                     firstDate = date;
                 }
-                items.add(new FileTableItem(filePath.substring(beginIndex), nmrData.getSequence(), nmrData.getNDim(), nmrData.getDate(), 0, ""));
+                Path relativePath = scanDir.toPath().relativize(file.toPath());
+                items.add(new FileTableItem(relativePath.toString(), nmrData.getSequence(), nmrData.getNDim(), nmrData.getDate(), 0, ""));
             }
         }
         items.sort(Comparator.comparingLong(FileTableItem::getDate));
@@ -580,13 +586,13 @@ public class ScanTable {
         }
     }
 
-    public String getScanOutputDirectory() {
+    public File getScanOutputDirectory() {
         return scanOutputDir;
     }
 
     public void setScanOutputDirectory(File selectedDir) {
         if (selectedDir != null) {
-            scanOutputDir = selectedDir.getAbsolutePath();
+            scanOutputDir = selectedDir;
         } else {
             scanOutputDir = null;
         }
@@ -638,9 +644,9 @@ public class ScanTable {
         updateDataFrame();
         String firstDatasetName = dataset.getFileName();
         if (firstDatasetName.length() > 0) {
-            String dirName = dataset.getFile().getParent();
+            File parentDir = dataset.getFile().getParentFile();
             if (scanOutputDir == null) {
-                scanOutputDir = dirName;
+                scanOutputDir = parentDir;
             }
             FXMLController.getActiveController().openDataset(dataset.getFile(), false);
             List<Integer> rows = new ArrayList<>();
@@ -659,7 +665,7 @@ public class ScanTable {
         boolean[] notDouble = null;
         boolean[] notInteger = null;
         String firstDatasetName = "";
-        if ((scanDir == null) || scanDir.trim().equals("")) {
+        if ((scanDir == null) || scanDir.toString().trim().equals("")) {
             setScanDirectory(file.getParentFile());
             //scannerController.updateScanDirectory(scanDir);
         }
@@ -729,10 +735,10 @@ public class ScanTable {
                                 System.out.println("No path field or value");
                                 return;
                             }
-                            if ((scanDir == null) || scanDir.trim().equals("")) {
+                            if ((scanDir == null) || scanDir.toString().trim().equals("")) {
                                 return;
                             }
-                            Path filePath = FileSystems.getDefault().getPath(scanDir, fileName);
+                            Path filePath = FileSystems.getDefault().getPath(scanDir.toString(), fileName);
 
                             NMRData nmrData = null;
                             try {
@@ -789,11 +795,11 @@ public class ScanTable {
             fileTableFilter.resetFilter();
             updateDataFrame();
             if (firstDatasetName.length() > 0) {
-                String dirName = file.getParent();
+                File parentDir = file.getParentFile();
                 if (scanOutputDir == null) {
-                    scanOutputDir = dirName;
+                    scanOutputDir = parentDir;
                 }
-                Path path = FileSystems.getDefault().getPath(dirName, firstDatasetName);
+                Path path = FileSystems.getDefault().getPath(parentDir.toString(), firstDatasetName);
                 FXMLController.getActiveController().openDataset(path.toFile(), false);
                 PolyChart chart = scannerController.getChart();
                 List<Integer> rows = new ArrayList<>();
@@ -813,7 +819,7 @@ public class ScanTable {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Save Table File");
         if (scanOutputDir != null) {
-            fileChooser.setInitialDirectory(new File(scanOutputDir));
+            fileChooser.setInitialDirectory(scanOutputDir);
         }
         File file = fileChooser.showSaveDialog(popOver);
         if (file != null) {
