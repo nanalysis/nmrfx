@@ -85,7 +85,8 @@ public class BoxMark extends ChartMark {
             PickPoint pt, Axis positionAxis, Axis valueAxis) {
         double whiskMin = valueAxis.getDisplayPosition(fiveNum.getMinWhisker());
         double whiskMax = valueAxis.getDisplayPosition(fiveNum.getMaxWhisker());
-        double p1 = position - thickness / 2.0;
+        double pixPos = positionAxis.getDisplayPosition(position);
+        double p1 = pixPos - thickness / 2.0;
         Rectangle2D rect;
         if (orientation == Orientation.VERTICAL) {
             rect = new Rectangle2D(p1, whiskMin, thickness, whiskMax - whiskMin);

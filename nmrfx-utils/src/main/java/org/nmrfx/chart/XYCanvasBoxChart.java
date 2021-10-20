@@ -157,19 +157,25 @@ public class XYCanvasBoxChart extends XYCanvasChart {
 
     Optional<Hit> doSeries(GraphicsContextInterface gC, PickPoint pickPt) {
         Optional<Hit> hitOpt = Optional.empty();
-        double gap = 0.05;
         int nSeries = getData().size();
         double stepSize = (xAxis.getDisplayPosition(1.0) - xAxis.getDisplayPosition(0.0));
-        double fullWidth = stepSize / nSeries;
         double barThickness = stepSize / 3.0;
         for (int seriesIndex = 0; seriesIndex < nSeries; seriesIndex++) {
             DataSeries series = getData().get(seriesIndex);
-            var barMark = new BoxMark(series.fill, Color.BLACK, Orientation.VERTICAL);
+            var boxMark = new BoxMark(series.fill, Color.BLACK, Orientation.VERTICAL);
             int iValue = 0;
             for (XYValue value : series.values) {
                 var fiveNum = (BoxPlotData) value.getExtraValue();
                 double x = value.getXValue();
-                barMark.draw(gC, x, barThickness, fiveNum, xAxis, yAxis);
+                if (pickPt != null) {
+                    if (boxMark.hit(xPos, barThickness, fiveNum, pickPt, xAxis, xAxis)) {
+                        Hit hit = new Hit(series, iValue, value);
+                        hitOpt = Optional.of(hit);
+                        break;
+                    }
+                } else {
+                    boxMark.draw(gC, x, barThickness, fiveNum, xAxis, yAxis);
+                }
                 iValue++;
             }
             if (hitOpt.isPresent()) {
