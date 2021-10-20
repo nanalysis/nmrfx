@@ -221,7 +221,7 @@ public class ScannerTool implements ControllerTool {
         MenuItem measureMenuItem = new MenuItem("Measure All");
         measureMenuItem.setOnAction(e -> measureRegions());
         MenuItem showAllMenuItem = new MenuItem("Show All");
-        showAllMenuItem.setOnAction(e -> processScanDir(e));
+        showAllMenuItem.setOnAction(e -> showRegions());
         MenuItem clearAllMenuItem = new MenuItem("Clear All");
         clearAllMenuItem.setOnAction(e -> clearRegions());
         menu.getItems().addAll(addRegionMenuItem, measureMode, offsetMode, saveRegionsMenuItem, loadRegionsMenuItem,
