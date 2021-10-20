@@ -129,11 +129,17 @@ public class XYCanvasBarChart extends XYCanvasChart {
             for (XYValue value : series.values) {
                 double x = xAxis.getDisplayPosition(value.getXValue());
                 double y = yAxis.getDisplayPosition(value.getYValue());
-                double errValue = value instanceof XYEValue
-                        ? ((XYEValue) value).getError() : 0.0;
+                boolean drawError = false;
+                double errValue = 0.0;
+                if (value instanceof XYEValue) {
+                    errValue = Math.abs(((XYEValue) value).getError());
+                    if (errValue > 1.0e-30) {
+                        drawError = true;
+                    }
+                }
                 double low = 0.0;
                 double high = 0.0;
-                if ((errValue != 0.0)) {
+                if (drawError) {
                     low = yAxis.getDisplayPosition(value.getYValue() - errValue);
                     high = yAxis.getDisplayPosition(value.getYValue() + errValue);
                 }
@@ -149,7 +155,7 @@ public class XYCanvasBarChart extends XYCanvasChart {
                         break;
                     }
                 } else {
-                    if ((errValue != 0.0)) {
+                    if (drawError) {
                         barMark.draw(gC, xC, yC, barThickness, barLength, true, low, high);
                     } else {
                         barMark.draw(gC, xC, yC, barThickness, barLength);
