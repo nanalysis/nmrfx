@@ -49,15 +49,15 @@ import org.nmrfx.processor.gui.spectra.NMRAxis;
  */
 public class MinerController {
 
-    ScannerTool scannerController;
+    ScannerTool scannerTool;
 
-    public MinerController(ScannerTool scannerController) {
-        this.scannerController = scannerController;
+    public MinerController(ScannerTool scannerTool) {
+        this.scannerTool = scannerTool;
         makeMenus();
     }
 
     private void makeMenus() {
-        ToolBar scannerBar = scannerController.getToolBar();
+        ToolBar scannerBar = scannerTool.getToolBar();
         MenuButton adjusterMenu = new MenuButton("Adjust");
         Menu normMenu = new Menu("Normalize");
         Menu alignMenu = new Menu("Align");
@@ -90,7 +90,7 @@ public class MinerController {
 
     @FXML
     public void undoAlign(ActionEvent event) {
-        PolyChart polyChart = scannerController.getChart();
+        PolyChart polyChart = scannerTool.getChart();
         Dataset dataset = (Dataset) polyChart.getDataset();
         if (dataset != null) {
             double[] ppms = polyChart.getVerticalCrosshairPositions();
@@ -104,8 +104,8 @@ public class MinerController {
             Align aligner = new Align();
             try {
                 List<Double> valueList;
-                if (scannerController.hasColumn("offset")) {
-                    valueList = scannerController.getValues("offset");
+                if (scannerTool.hasColumn("offset")) {
+                    valueList = scannerTool.getValues("offset");
                 } else {
                     return;
                 }
@@ -117,9 +117,9 @@ public class MinerController {
                 for (int i = 0; i < valueList.size(); i++) {
                     valueList.set(i, 0.0);
                 }
-                scannerController.getScanTable().addTableColumn("offset", "D");
-                scannerController.setItems("offset", valueList);
-                scannerController.getScanTable().refresh();
+                scannerTool.getScanTable().addTableColumn("offset", "D");
+                scannerTool.setItems("offset", valueList);
+                scannerTool.getScanTable().refresh();
             } catch (IOException ex) {
                 Logger.getLogger(MinerController.class.getName()).log(Level.SEVERE, null, ex);
             }
@@ -128,7 +128,7 @@ public class MinerController {
 
     @FXML
     public void alignToMax(ActionEvent event) {
-        PolyChart polyChart = scannerController.getChart();
+        PolyChart polyChart = scannerTool.getChart();
         Dataset dataset = (Dataset) polyChart.getDataset();
         if (dataset != null) {
             double[] ppms = polyChart.getVerticalCrosshairPositions();
@@ -142,8 +142,8 @@ public class MinerController {
             Align aligner = new Align();
             try {
                 List<Double> valueList = null;
-                if (scannerController.hasColumn("offset")) {
-                    valueList = scannerController.getValues("offset");
+                if (scannerTool.hasColumn("offset")) {
+                    valueList = scannerTool.getValues("offset");
                 }
                 Double[] deltas = aligner.alignByMaxStream(dataset, 0, pt1, pt2);
                 polyChart.refresh();
@@ -154,9 +154,9 @@ public class MinerController {
                 } else {
                     valueList = Arrays.asList(deltas);
                 }
-                scannerController.getScanTable().addTableColumn("offset", "D");
-                scannerController.setItems("offset", valueList);
-                scannerController.getScanTable().refresh();
+                scannerTool.getScanTable().addTableColumn("offset", "D");
+                scannerTool.setItems("offset", valueList);
+                scannerTool.getScanTable().refresh();
             } catch (IOException ex) {
                 Logger.getLogger(MinerController.class.getName()).log(Level.SEVERE, null, ex);
             }
@@ -165,7 +165,7 @@ public class MinerController {
 
     @FXML
     public void reorderByCorr(ActionEvent event) {
-        PolyChart polyChart = scannerController.getChart();
+        PolyChart polyChart = scannerTool.getChart();
         Dataset dataset = (Dataset) polyChart.getDataset();
         if (dataset != null) {
             double[] ppms = polyChart.getVerticalCrosshairPositions();
@@ -188,7 +188,7 @@ public class MinerController {
 
     @FXML
     public void alignByCov(ActionEvent event) {
-        PolyChart polyChart = scannerController.getChart();
+        PolyChart polyChart = scannerTool.getChart();
         Dataset dataset = (Dataset) polyChart.getDataset();
         if (dataset != null) {
             double[] ppms = polyChart.getVerticalCrosshairPositions();
@@ -207,8 +207,8 @@ public class MinerController {
 
             try {
                 List<Double> valueList = null;
-                if (scannerController.hasColumn("offset")) {
-                    valueList = scannerController.getValues("offset");
+                if (scannerTool.hasColumn("offset")) {
+                    valueList = scannerTool.getValues("offset");
                 }
                 Double[] deltas = aligner.alignByCowStream(dataset, pt1, pt2, pStart, sectionLength, iWarp, tStart);
                 polyChart.refresh();
@@ -219,9 +219,9 @@ public class MinerController {
                 } else {
                     valueList = Arrays.asList(deltas);
                 }
-                scannerController.getScanTable().addTableColumn("offset", "D");
-                scannerController.setItems("offset", valueList);
-                scannerController.getScanTable().refresh();
+                scannerTool.getScanTable().addTableColumn("offset", "D");
+                scannerTool.setItems("offset", valueList);
+                scannerTool.getScanTable().refresh();
 
             } catch (IOException ex) {
                 Logger.getLogger(MinerController.class.getName()).log(Level.SEVERE, null, ex);
@@ -232,7 +232,7 @@ public class MinerController {
 
     @FXML
     public void alignBySegments(ActionEvent event) {
-        PolyChart polyChart = scannerController.getChart();
+        PolyChart polyChart = scannerTool.getChart();
         Dataset dataset = (Dataset) polyChart.getDataset();
         if (dataset != null) {
             double[] ppms = polyChart.getVerticalCrosshairPositions();
@@ -245,8 +245,8 @@ public class MinerController {
             int maxShift = 0;
             try {
                 List<Double> valueList = null;
-                if (scannerController.hasColumn("offset")) {
-                    valueList = scannerController.getValues("offset");
+                if (scannerTool.hasColumn("offset")) {
+                    valueList = scannerTool.getValues("offset");
                 }
                 Double[] deltas = aligner.alignBySegmentsStream(dataset, pt1, pt2, sectionLength, maxShift, true);
                 polyChart.refresh();
@@ -257,9 +257,9 @@ public class MinerController {
                 } else {
                     valueList = Arrays.asList(deltas);
                 }
-                scannerController.getScanTable().addTableColumn("offset", "D");
-                scannerController.setItems("offset", valueList);
-                scannerController.getScanTable().refresh();
+                scannerTool.getScanTable().addTableColumn("offset", "D");
+                scannerTool.setItems("offset", valueList);
+                scannerTool.getScanTable().refresh();
 
             } catch (IOException ex) {
                 Logger.getLogger(MinerController.class.getName()).log(Level.SEVERE, null, ex);
@@ -288,7 +288,7 @@ public class MinerController {
     }
 
     public void normalize(String mode) {
-        PolyChart polyChart = scannerController.getChart();
+        PolyChart polyChart = scannerTool.getChart();
         Dataset dataset = (Dataset) polyChart.getDataset();
         if (dataset != null) {
             double[] ppms = polyChart.getVerticalCrosshairPositions();
@@ -299,8 +299,8 @@ public class MinerController {
             Normalize normalizer = new Normalize();
             try {
                 List<Double> valueList = null;
-                if (scannerController.hasColumn("scale")) {
-                    valueList = scannerController.getValues("scale");
+                if (scannerTool.hasColumn("scale")) {
+                    valueList = scannerTool.getValues("scale");
                 }
                 if (mode.equals("Undo")) {
                     if (valueList != null) {
@@ -320,10 +320,10 @@ public class MinerController {
                         valueList = Arrays.asList(values);
                     }
                 }
-                scannerController.getScanTable().addTableColumn("scale", "D");
-                scannerController.setItems("scale", valueList);
+                scannerTool.getScanTable().addTableColumn("scale", "D");
+                scannerTool.setItems("scale", valueList);
                 polyChart.refresh();
-                scannerController.getScanTable().refresh();
+                scannerTool.getScanTable().refresh();
             } catch (IOException ex) {
                 Logger.getLogger(MinerController.class.getName()).log(Level.SEVERE, null, ex);
             }

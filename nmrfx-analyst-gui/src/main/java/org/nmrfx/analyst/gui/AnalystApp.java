@@ -177,10 +177,6 @@ public class AnalystApp extends MainApp {
         PDBFile.setLocalResLibDir(AnalystPrefs.getLocalResidueDirectory());
     }
 
-//    private void updateScannerGUI(ScannerController scannerController) {
-//        System.out.println("update scanner " + scannerController);
-//        MinerController minerController = new MinerController(scannerController);
-//    }
     Object pickedPeakAction(Object peakObject) {
         if (assignOnPick.isSelected()) {
             Peak peak = (Peak) peakObject;

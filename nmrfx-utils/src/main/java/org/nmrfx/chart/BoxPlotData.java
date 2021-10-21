@@ -19,11 +19,6 @@ public class BoxPlotData {
     final double median;
     final double q3;
     final double max;
-
-    @Override
-    public String toString() {
-        return "FiveNumberSummary{" + "min=" + min + ", q1=" + q1 + ", median=" + median + ", q3=" + q3 + ", max=" + max + '}';
-    }
     final double[] outliers;
 
     public BoxPlotData(double[] data) {
@@ -38,24 +33,29 @@ public class BoxPlotData {
         outliers = Arrays.stream(data).filter(v -> (v < minW) || (v > maxW)).toArray();
     }
 
+    @Override
+    public String toString() {
+        return "FiveNumberSummary{" + "min=" + min + ", q1=" + q1 + ", median=" + median + ", q3=" + q3 + ", max=" + max + '}';
+    }
+
     public double getIQR() {
         return q3 - q1;
     }
 
-    public double getMinWhisker() {
+    public final double getMinWhisker() {
         return getMinWhisker(1.5);
     }
 
-    public double getMinWhisker(double extent) {
+    public final double getMinWhisker(double extent) {
         double min1 = q1 - getIQR() * extent;
         return Math.max(min, min1);
     }
 
-    public double getMaxWhisker() {
+    public final double getMaxWhisker() {
         return getMaxWhisker(1.5);
     }
 
-    public double getMaxWhisker(double extent) {
+    public final double getMaxWhisker(double extent) {
         double max1 = q3 + getIQR() * extent;
         return Math.min(max, max1);
     }

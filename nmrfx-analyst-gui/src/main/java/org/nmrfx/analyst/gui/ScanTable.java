@@ -95,7 +95,7 @@ import org.python.util.PythonInterpreter;
  */
 public class ScanTable {
 
-    ScannerTool scannerController;
+    ScannerTool scannerTool;
     TableView<FileTableItem> tableView;
     TableFilter fileTableFilter;
     TableFilter.Builder builder = null;
@@ -134,7 +134,7 @@ public class ScanTable {
     static Color color13 = Color.web("#311e3c");
     static Color color14 = Color.web("#7a3e2a");
     static Color color15 = Color.web("#4c2927");
-    static List<String> standardHeaders = Arrays.asList("path", "sequence", "row", "etime", "ndim");
+    static final List<String> standardHeaders = List.of("path", "sequence", "row", "etime", "ndim");
 
 ////    static Color[] colors = {color11, color9, color15, color1, color4, color2, color13,
 ////        color8, color7, color6, color10, color0, color3, color14, color12, color5};
@@ -157,7 +157,7 @@ public class ScanTable {
     }
 
     public ScanTable(ScannerTool controller, TableView<FileTableItem> tableView) {
-        this.scannerController = controller;
+        this.scannerTool = controller;
         this.tableView = tableView;
         init();
     }
@@ -201,7 +201,7 @@ public class ScanTable {
     }
 
     final protected String getActiveDatasetName() {
-        PolyChart chart = scannerController.getChart();
+        PolyChart chart = scannerTool.getChart();
         DatasetBase dataset = chart.getDataset();
         String name = "";
         if (dataset != null) {
@@ -219,7 +219,7 @@ public class ScanTable {
         Set<Integer> groupSet = new HashSet<>();
         List<Integer> selected = tableView.getSelectionModel().getSelectedIndices();
 
-        ProcessorController processorController = scannerController.getFXMLController().getProcessorController(false);
+        ProcessorController processorController = scannerTool.getFXMLController().getProcessorController(false);
         if ((processorController == null) || processorController.isViewingDataset()) {
             List<Integer> showRows = new ArrayList<>();
             if (selected.isEmpty()) {
@@ -229,7 +229,7 @@ public class ScanTable {
             } else {
                 showRows.addAll(selected);
             }
-            PolyChart chart = scannerController.getChart();
+            PolyChart chart = scannerTool.getChart();
             Optional<Double> curLvl = Optional.empty();
             if (!chart.getDatasetAttributes().isEmpty()) {
                 DatasetAttributes dataAttr = chart.getDatasetAttributes().get(0);
@@ -449,7 +449,7 @@ public class ScanTable {
             fileRoot = fileRoot.substring(0, fileRoot.lastIndexOf("."));
         }
 
-        PolyChart chart = scannerController.getChart();
+        PolyChart chart = scannerTool.getChart();
         processingTable = true;
         try (PythonInterpreter processInterp = new PythonInterpreter()) {
             List<String> fileNames = new ArrayList<>();
@@ -527,14 +527,14 @@ public class ScanTable {
             if ((scanDir == null) || scanDir.trim().equals("")) {
                 return;
             }
-            ProcessorController processorController = scannerController.getFXMLController().getProcessorController(true);
+            ProcessorController processorController = scannerTool.getFXMLController().getProcessorController(true);
             if (processorController != null) {
                 String scriptString = processorController.getCurrentScript();
                 FileTableItem fileTableItem = (FileTableItem) tableView.getItems().get(selItem);
                 String fileName = fileTableItem.getFileName();
                 String filePath = Paths.get(scanDir, fileName).toString();
 
-                scannerController.getChart().getFXMLController().openFile(filePath, false, false);
+                scannerTool.getChart().getFXMLController().openFile(filePath, false, false);
 
                 processorController.parseScript(scriptString);
             }
@@ -593,7 +593,7 @@ public class ScanTable {
     }
 
     public void loadFromDataset() {
-        PolyChart chart = scannerController.getChart();
+        PolyChart chart = scannerTool.getChart();
         DatasetBase dataset = chart.getDataset();
         fileListItems.clear();
         int nRows = dataset.getSize(1);
@@ -661,7 +661,6 @@ public class ScanTable {
         String firstDatasetName = "";
         if ((scanDir == null) || scanDir.trim().equals("")) {
             setScanDirectory(file.getParentFile());
-            //scannerController.updateScanDirectory(scanDir);
         }
 
         processingTable = true;
@@ -795,7 +794,7 @@ public class ScanTable {
                 }
                 Path path = FileSystems.getDefault().getPath(dirName, firstDatasetName);
                 FXMLController.getActiveController().openDataset(path.toFile(), false);
-                PolyChart chart = scannerController.getChart();
+                PolyChart chart = scannerTool.getChart();
                 List<Integer> rows = new ArrayList<>();
                 rows.add(0);
                 chart.setDrawlist(rows);

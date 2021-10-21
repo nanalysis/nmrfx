@@ -72,9 +72,10 @@ public class RelaxationData implements RelaxationValues {
     }
 
     public static void add(String id, String type, Atom atom, double field, double value, double error) {
-        if (type.equalsIgnoreCase("t1")) {
+        type = type.toUpperCase();
+        if (type.equals("T1")) {
             type = "R1";
-        } else if (type.equalsIgnoreCase("t2")) {
+        } else if (type.equals("T2")) {
             type = "R2";
         }
         relaxTypes relaxType = relaxTypes.valueOf(type.toUpperCase());

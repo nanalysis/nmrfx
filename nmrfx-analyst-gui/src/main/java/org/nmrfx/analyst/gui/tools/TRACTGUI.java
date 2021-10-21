@@ -63,7 +63,7 @@ import org.nmrfx.processor.math.TRACTSimFit;
  */
 public class TRACTGUI {
 
-    ScannerTool scanController;
+    ScannerTool scannerTool;
     Stage stage = null;
     XYCanvasChart activeChart;
     BorderPane borderPane = new BorderPane();
@@ -77,8 +77,8 @@ public class TRACTGUI {
     TextField scaleField;
     PolyChart chart;
 
-    public TRACTGUI(ScannerTool scanController) {
-        this.scanController = scanController;
+    public TRACTGUI(ScannerTool scannerTool) {
+        this.scannerTool = scannerTool;
         chart = PolyChart.getActiveChart();
     }
 
@@ -106,7 +106,7 @@ public class TRACTGUI {
                 alert.showAndWait();
                 return;
             }
-            ScanTable scanTable = scanController.getScanTable();
+            ScanTable scanTable = scannerTool.getScanTable();
             scanTable.getTableView().getColumns().
                     addListener((ListChangeListener) (c -> {
                         updateMCPlotChoices();
@@ -185,8 +185,8 @@ public class TRACTGUI {
     }
 
     void updateMCplot() {
-        if (scanController != null) {
-            ScanTable scanTable = scanController.getScanTable();
+        if (scannerTool != null) {
+            ScanTable scanTable = scannerTool.getScanTable();
 
             Axis xAxis = activeChart.getXAxis();
             Axis yAxis = activeChart.getYAxis();
@@ -223,8 +223,8 @@ public class TRACTGUI {
         System.out.println("up");
         xArrayChoice.getItems().clear();
         yArrayChoice.getItems().clear();
-        if (scanController != null) {
-            ScanTable scanTable = scanController.getScanTable();
+        if (scannerTool != null) {
+            ScanTable scanTable = scannerTool.getScanTable();
             List<String> headers = scanTable.getHeaders();
             for (String header : headers) {
                 if (scanTable.isData(header)) {
@@ -247,7 +247,7 @@ public class TRACTGUI {
         String yElem = yArrayChoice.getValue();
 
         if ((xElem != null) && (yElem != null)) {
-            ScanTable scanTable = scanController.getScanTable();
+            ScanTable scanTable = scannerTool.getScanTable();
             List<FileTableItem> items = scanTable.getItems();
             double[][] xValues = new double[2][items.size()];
             double[] yValues = new double[items.size()];
