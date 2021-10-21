@@ -100,7 +100,6 @@ public class ScanTable {
     TableFilter fileTableFilter;
     TableFilter.Builder builder = null;
     File scanDir = null;
-    File scanOutputDir = null;
     File scanTable = null;
     File scanOutputTable = null;
     String outputFileName = "process.nv";
@@ -245,7 +244,9 @@ public class ScanTable {
             for (Integer index : showRows) {
                 FileTableItem fileTableItem = (FileTableItem) tableView.getItems().get(index);
                 Integer row = fileTableItem.getRow();
-                String datasetName = fileTableItem.getDatasetName();
+                File datasetFile = new File(scanDir, fileTableItem.getDatasetName());
+                String datasetName = datasetFile.getName();
+
                 int iGroup = fileTableItem.getGroup();
                 groupSet.add(iGroup);
                 Color color = getGroupColor(iGroup);
@@ -254,7 +255,6 @@ public class ScanTable {
                 if ((dataset == null) || (chart.getDatasetAttributes().size() != 1) || !dataset.getName().equals(datasetName)) {
                     dataset = Dataset.getDataset(datasetName);
                     if (dataset == null) {
-                        File datasetFile = new File(scanDir, datasetName);
                         FXMLController.getActiveController().openDataset(datasetFile, false);
                     } else {
                         List<String> datasetNames = new ArrayList<>();
@@ -421,22 +421,20 @@ public class ScanTable {
             return;
         }
         Path outDirPath = Paths.get(scanDir.toString(), outDirName);
-        File scanOutputDirFile = outDirPath.toFile();
-        if (!scanOutputDirFile.exists()) {
-            if (!scanOutputDirFile.mkdir()) {
+        File scanOutputDir = outDirPath.toFile();
+        if (!scanOutputDir.exists()) {
+            if (!scanOutputDir.mkdir()) {
                 GUIUtils.warn("Scanner Error", "Could not create output dir");
                 return;
             }
         }
-
-        scanOutputDir = scanOutputDirFile;
 
         String combineFileName = GUIUtils.input("Output file name", "process");
         if (combineFileName == null) {
             return;
         }
 
-        if (!scanOutputDirFile.exists() || !scanOutputDirFile.isDirectory() || !scanOutputDirFile.canWrite()) {
+        if (!scanOutputDir.exists() || !scanOutputDir.isDirectory() || !scanOutputDir.canWrite()) {
             GUIUtils.warn("Scanner Error", "Output dir is not a writable directory");
             return;
         }
@@ -590,16 +588,8 @@ public class ScanTable {
         }
     }
 
-    public File getScanOutputDirectory() {
-        return scanOutputDir;
-    }
-
-    public void setScanOutputDirectory(File selectedDir) {
-        if (selectedDir != null) {
-            scanOutputDir = selectedDir;
-        } else {
-            scanOutputDir = null;
-        }
+    public File getScanDir() {
+        return scanDir;
     }
 
     public void loadFromDataset() {
@@ -649,9 +639,6 @@ public class ScanTable {
         String firstDatasetName = dataset.getFileName();
         if (firstDatasetName.length() > 0) {
             File parentDir = dataset.getFile().getParentFile();
-            if (scanOutputDir == null) {
-                scanOutputDir = parentDir;
-            }
             FXMLController.getActiveController().openDataset(dataset.getFile(), false);
             List<Integer> rows = new ArrayList<>();
             rows.add(0);
@@ -800,9 +787,6 @@ public class ScanTable {
             updateDataFrame();
             if (firstDatasetName.length() > 0) {
                 File parentDir = file.getParentFile();
-                if (scanOutputDir == null) {
-                    scanOutputDir = parentDir;
-                }
                 Path path = FileSystems.getDefault().getPath(parentDir.toString(), firstDatasetName);
                 FXMLController.getActiveController().openDataset(path.toFile(), false);
                 PolyChart chart = scannerController.getChart();
@@ -822,8 +806,8 @@ public class ScanTable {
     public void saveScanTable() {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Save Table File");
-        if (scanOutputDir != null) {
-            fileChooser.setInitialDirectory(scanOutputDir);
+        if (scanDir != null) {
+            fileChooser.setInitialDirectory(scanDir);
         }
         File file = fileChooser.showSaveDialog(popOver);
         if (file != null) {

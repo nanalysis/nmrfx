@@ -376,7 +376,7 @@ public class ScannerTool implements ControllerTool {
                 String datasetName = item.getDatasetName();
                 Dataset itemDataset = Dataset.getDataset(datasetName);
                 if (itemDataset == null) {
-                    File datasetFile = new File(scanTable.getScanOutputDirectory(), datasetName);
+                    File datasetFile = new File(scanTable.getScanDir(), datasetName);
                     try {
                         itemDataset = new Dataset(datasetFile.getPath(), datasetFile.getPath(), true, false);
                     } catch (IOException ioE) {
@@ -430,7 +430,7 @@ public class ScannerTool implements ControllerTool {
             Dataset itemDataset = Dataset.getDataset(datasetName);
 
             if (itemDataset == null) {
-                File datasetFile = new File(scanTable.getScanOutputDirectory(), datasetName);
+                File datasetFile = new File(scanTable.getScanDir(), datasetName);
                 try {
                     itemDataset = new Dataset(datasetFile.getPath(), datasetFile.getPath(), true, false);
                 } catch (IOException ioE) {
