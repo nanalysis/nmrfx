@@ -137,25 +137,15 @@ public class ScannerTool implements ControllerTool {
         Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "Close", iconSize, fontSize, ContentDisplay.TOP);
         closeButton.setOnAction(e -> close());
         scannerBar.getItems().add(closeButton);
-//        initMenus(scannerBar);
-//        ToolBarUtils.addFiller(scannerBar, 10, 500);
-//        initNavigator(scannerBar);
-//        ToolBarUtils.addFiller(scannerBar, 10, 20);
-//        initIntegralType(scannerBar);
-//        ToolBarUtils.addFiller(scannerBar, 10, 500);
-//
-//        ToolBar toolBar2 = new ToolBar();
-//        initTools(toolBar2);
-
         Separator vsep1 = new Separator(Orientation.HORIZONTAL);
         Separator vsep2 = new Separator(Orientation.HORIZONTAL);
         borderPane.setTop(scannerBar);
 
         tableView = new TableView<>();
         tableView.setPrefHeight(250.0);
-        tableView.setOnMouseClicked(e -> openSelectedListFile(e));
         borderPane.setCenter(tableView);
         scannerBar.getItems().add(makeFileMenu());
+        scannerBar.getItems().add(makeProcessMenu());
         scannerBar.getItems().add(makeRegionMenu());
         scannerBar.getItems().add(makeScoreMenu());
         scannerBar.getItems().add(makeToolMenu());
@@ -183,14 +173,23 @@ public class ScannerTool implements ControllerTool {
         openTableItem.setOnAction(e -> loadTableAction(e));
         MenuItem saveTableItem = new MenuItem("Save Table...");
         saveTableItem.setOnAction(e -> saveTableAction(e));
+        MenuItem loadFromDatasetItem = new MenuItem("Load From Dataset");
+        loadFromDatasetItem.setOnAction(e -> loadFromDataset(e));
+        menu.getItems().addAll(scanMenuItem, openTableItem, saveTableItem,
+                loadFromDatasetItem);
+        return menu;
+    }
+
+    private MenuButton makeProcessMenu() {
+        MenuButton menu = new MenuButton("Process");
+        MenuItem loadRowFIDItem = new MenuItem("Load Row FID");
+        loadRowFIDItem.setOnAction(e -> openSelectedListFile(e));
         MenuItem processAndCombineItem = new MenuItem("Process and Combine");
         processAndCombineItem.setOnAction(e -> processScanDirAndCombine(e));
         MenuItem processItem = new MenuItem("Process");
         processItem.setOnAction(e -> processScanDir(e));
-        MenuItem loadFromDatasetItem = new MenuItem("Load From Dataset");
-        loadFromDatasetItem.setOnAction(e -> loadFromDataset(e));
-        menu.getItems().addAll(scanMenuItem, openTableItem, saveTableItem,
-                processAndCombineItem, processItem, loadFromDatasetItem);
+        menu.getItems().addAll(loadRowFIDItem, processAndCombineItem,
+                processItem);
         return menu;
     }
 
@@ -221,7 +220,7 @@ public class ScannerTool implements ControllerTool {
         MenuItem measureMenuItem = new MenuItem("Measure All");
         measureMenuItem.setOnAction(e -> measureRegions());
         MenuItem showAllMenuItem = new MenuItem("Show All");
-        showAllMenuItem.setOnAction(e -> processScanDir(e));
+        showAllMenuItem.setOnAction(e -> showRegions());
         MenuItem clearAllMenuItem = new MenuItem("Clear All");
         clearAllMenuItem.setOnAction(e -> clearRegions());
         menu.getItems().addAll(addRegionMenuItem, measureMode, offsetMode, saveRegionsMenuItem, loadRegionsMenuItem,
@@ -239,9 +238,11 @@ public class ScannerTool implements ControllerTool {
 
     private MenuButton makeToolMenu() {
         MenuButton menu = new MenuButton("Tools");
-        MenuItem plotMenuItem = new MenuItem("Plot");
+        MenuItem plotMenuItem = new MenuItem("Show Plot Tool");
         plotMenuItem.setOnAction(e -> showPlotGUI());
-        menu.getItems().addAll(plotMenuItem);
+        MenuItem tractMenuItem = new MenuItem("Show TRACT Tool");
+        tractMenuItem.setOnAction(e -> showTRACTGUI());
+        menu.getItems().addAll(plotMenuItem, tractMenuItem);
         return menu;
     }
 
@@ -300,10 +301,8 @@ public class ScannerTool implements ControllerTool {
     }
 
     @FXML
-    private void openSelectedListFile(MouseEvent mouseEvent) {
-        if (mouseEvent.getClickCount() == 2) {
-            scanTable.openSelectedListFile();
-        }
+    private void openSelectedListFile(ActionEvent event) {
+        scanTable.openSelectedListFile();
     }
 
     @FXML
@@ -379,7 +378,7 @@ public class ScannerTool implements ControllerTool {
                 String datasetName = item.getDatasetName();
                 Dataset itemDataset = Dataset.getDataset(datasetName);
                 if (itemDataset == null) {
-                    File datasetFile = new File(scanTable.getScanOutputDirectory(), datasetName);
+                    File datasetFile = new File(scanTable.getScanDir(), datasetName);
                     try {
                         itemDataset = new Dataset(datasetFile.getPath(), datasetFile.getPath(), true, false);
                     } catch (IOException ioE) {
@@ -433,7 +432,7 @@ public class ScannerTool implements ControllerTool {
             Dataset itemDataset = Dataset.getDataset(datasetName);
 
             if (itemDataset == null) {
-                File datasetFile = new File(scanTable.getScanOutputDirectory(), datasetName);
+                File datasetFile = new File(scanTable.getScanDir(), datasetName);
                 try {
                     itemDataset = new Dataset(datasetFile.getPath(), datasetFile.getPath(), true, false);
                 } catch (IOException ioE) {
@@ -709,4 +708,13 @@ public class ScannerTool implements ControllerTool {
         }
         plotGUI.showPlotStage();
     }
+
+    void showTRACTGUI() {
+        if (tractGUI == null) {
+            tractGUI = new TRACTGUI(this);
+
+        }
+        tractGUI.showMCplot();
+    }
+
 }
