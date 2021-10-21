@@ -221,7 +221,7 @@ public class ScanTable {
         Set<Integer> groupSet = new HashSet<>();
         List<Integer> selected = tableView.getSelectionModel().getSelectedIndices();
 
-        ProcessorController processorController = scannerController.getFXMLController().getProcessorController(false);
+        ProcessorController processorController = scannerTool.getFXMLController().getProcessorController(false);
         if ((processorController == null)
                 || processorController.isViewingDataset()
                 || !processorController.isVisible()) {
