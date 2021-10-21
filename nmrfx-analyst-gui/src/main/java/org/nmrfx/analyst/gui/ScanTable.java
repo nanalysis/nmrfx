@@ -16,11 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
- /*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
+
 package org.nmrfx.analyst.gui;
 
 import java.io.BufferedReader;
@@ -34,7 +30,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -100,7 +95,6 @@ public class ScanTable {
     TableFilter fileTableFilter;
     TableFilter.Builder builder = null;
     File scanDir = null;
-    File scanTable = null;
     File scanOutputTable = null;
     String outputFileName = "process.nv";
 
@@ -422,11 +416,9 @@ public class ScanTable {
         }
         Path outDirPath = Paths.get(scanDir.toString(), outDirName);
         File scanOutputDir = outDirPath.toFile();
-        if (!scanOutputDir.exists()) {
-            if (!scanOutputDir.mkdir()) {
-                GUIUtils.warn("Scanner Error", "Could not create output dir");
-                return;
-            }
+        if (!scanOutputDir.exists() && !scanOutputDir.mkdir()) {
+            GUIUtils.warn("Scanner Error", "Could not create output dir");
+            return;
         }
 
         String combineFileName = GUIUtils.input("Output file name", "process");
@@ -537,7 +529,6 @@ public class ScanTable {
                 String scriptString = processorController.getCurrentScript();
                 FileTableItem fileTableItem = (FileTableItem) tableView.getItems().get(selItem);
                 String fileName = fileTableItem.getFileName();
-                Path scanDirPath = scanDir.toPath();
                 String filePath = Paths.get(scanDir.getAbsolutePath(), fileName).toString();
 
                 scannerTool.getChart().getFXMLController().openFile(filePath, false, false);
@@ -638,7 +629,6 @@ public class ScanTable {
         updateDataFrame();
         String firstDatasetName = dataset.getFileName();
         if (firstDatasetName.length() > 0) {
-            File parentDir = dataset.getFile().getParentFile();
             FXMLController.getActiveController().openDataset(dataset.getFile(), false);
             List<Integer> rows = new ArrayList<>();
             rows.add(0);
