@@ -238,9 +238,11 @@ public class ScannerTool implements ControllerTool {
 
     private MenuButton makeToolMenu() {
         MenuButton menu = new MenuButton("Tools");
-        MenuItem plotMenuItem = new MenuItem("Plot");
+        MenuItem plotMenuItem = new MenuItem("Show Plot Tool");
         plotMenuItem.setOnAction(e -> showPlotGUI());
-        menu.getItems().addAll(plotMenuItem);
+        MenuItem tractMenuItem = new MenuItem("Show TRACT Tool");
+        tractMenuItem.setOnAction(e -> showTRACTGUI());
+        menu.getItems().addAll(plotMenuItem, tractMenuItem);
         return menu;
     }
 
@@ -706,4 +708,13 @@ public class ScannerTool implements ControllerTool {
         }
         plotGUI.showPlotStage();
     }
+
+    void showTRACTGUI() {
+        if (tractGUI == null) {
+            tractGUI = new TRACTGUI(this);
+
+        }
+        tractGUI.showMCplot();
+    }
+
 }
