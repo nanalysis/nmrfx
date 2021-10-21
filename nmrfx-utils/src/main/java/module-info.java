@@ -21,6 +21,7 @@ module org.nmrfx.utils {
     requires pdfbox;
     requires fontbox;
     requires commons.logging;
+    requires commons.math3;
     requires javafx.controlsEmpty;
     requires javafx.controls;
     requires javafx.baseEmpty;

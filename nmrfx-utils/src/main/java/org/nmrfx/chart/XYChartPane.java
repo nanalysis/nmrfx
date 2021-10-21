@@ -34,6 +34,20 @@ public class XYChartPane extends Pane {
         return chart;
     }
 
+    public XYCanvasBoxChart getBoxChart() {
+        if (!(chart instanceof XYCanvasBoxChart)) {
+            chart = XYCanvasBoxChart.buildChart(canvas);
+        }
+        return (XYCanvasBoxChart) chart;
+    }
+
+    public XYCanvasChart getXYChart() {
+        if ((chart instanceof XYCanvasBoxChart)) {
+            chart = XYCanvasChart.buildChart(canvas);
+        }
+        return (XYCanvasChart) chart;
+    }
+
     void updateChart() {
         canvas.setWidth(getWidth());
         canvas.setHeight(getHeight());

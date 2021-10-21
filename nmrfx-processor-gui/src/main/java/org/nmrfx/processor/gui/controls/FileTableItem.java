@@ -42,6 +42,7 @@ public class FileTableItem {
     private HashMap<String, String> extras = new HashMap<>();
     private HashMap<String, Integer> intExtras = new HashMap<>();
     private HashMap<String, Double> doubleExtras = new HashMap<>();
+    private HashMap<String, Object> objectExtras = new HashMap<>();
 
     public FileTableItem(String fileName, String seqName, int nDim, long date, int row, String datasetName) {
         this.fileName = new SimpleStringProperty(fileName);
@@ -140,6 +141,24 @@ public class FileTableItem {
         return extra == null ? 0.0 : extra;
     }
 
+    public Double getDouble(String eName) {
+        Double value = 0.0;
+        if (eName.equals("group")) {
+            value = (double) getGroup();
+        } else if (doubleExtras.containsKey(eName)) {
+            value = doubleExtras.get(eName);
+        } else if (intExtras.containsKey(eName)) {
+            value = intExtras.get(eName).doubleValue();
+        } else {
+            if (eName.equals("row")) {
+                value = row.doubleValue();
+            } else if (eName.equals("etime")) {
+                value = getDate().doubleValue();
+            }
+        }
+        return value;
+    }
+
     public Integer getIntegerExtra(String eName) {
         Integer extra = intExtras.get(eName);
         return extra == null ? 0 : extra;
@@ -155,6 +174,15 @@ public class FileTableItem {
 
     public void setExtra(String name, Double value) {
         doubleExtras.put(name, value);
+    }
+
+    public void setObjectExtra(String name, Object value) {
+        objectExtras.put(name, value);
+    }
+
+    public Object getObjectExtra(String eName) {
+        Object extra = objectExtras.get(eName);
+        return extra;
     }
 
     public void setNDim(String eName, String value) {

@@ -878,7 +878,7 @@ public class NMRStarWriter {
      * Write the data lines in the NOE Data block of the STAR file.
      *
      * @param idx int. The line index
-     * @param listID int. The number of the T1/T2/T1rho/NOE block in the file.
+     * @param listID int. The number of the R1/R2/T1rho/NOE block in the file.
      * @param entityID int. The number of the molecular entity.
      * @param atom1 Atom. The first atom in the NOE atom pair.
      * @param atom2 Atom. The second atom in the NOE atom pair.
@@ -954,12 +954,12 @@ public class NMRStarWriter {
     }
 
     /**
-     * Write out the Relaxation Data (T1, T2, T1rho) sections of the STAR file.
+     * Write out the Relaxation Data (R1, R2, T1rho) sections of the STAR file.
      *
      * @param chan FileWriter. The FileWriter to use
      * @param molecule Molecule. The molecule to use
      * @param relaxDataA0 RelaxationData. The relaxation dataset.
-     * @param listID int. The number of the T1/T2/T1rho/NOE block in the file.
+     * @param listID int. The number of the R1/R2/T1rho/NOE block in the file.
      * @throws IOException
      * @throws InvalidMoleculeException
      */
@@ -1026,7 +1026,7 @@ public class NMRStarWriter {
         String[] loopStrings = {"ID", "Assembly_atom_ID", "Entity_assembly_ID", "Entity_ID", "Comp_index_ID", "Seq_ID",
             "Comp_ID", "Atom_ID", "Atom_type", "Atom_isotope_number", "Val", "Val_err", "Resonance_ID", "Auth_entity_assembly_ID",
             "Auth_seq_ID", "Auth_comp_ID", "Auth_atom_ID", "Entry_ID", "Heteronucl_" + expType + "_list_ID"};
-        if (expType.equals(relaxTypes.T2) || expType.equals(relaxTypes.T1RHO)) {
+        if (expType.equals(relaxTypes.R2) || expType.equals(relaxTypes.T1RHO)) {
             String[] loopStrings2 = {"ID", "Assembly_atom_ID", "Entity_assembly_ID", "Entity_ID", "Comp_index_ID", "Seq_ID",
                 "Comp_ID", "Atom_ID", "Atom_type", "Atom_isotope_number", expType + "_val", expType + "_val_err", "Rex_val", "Rex_err",
                 "Resonance_ID", "Auth_entity_assembly_ID", "Auth_seq_ID", "Auth_comp_ID", "Auth_atom_ID", "Entry_ID", "Heteronucl_" + expType + "_list_ID"};
@@ -1055,7 +1055,7 @@ public class NMRStarWriter {
                         List<Double> results = new ArrayList<>();
                         results.add(value);
                         results.add(error);
-                        if (expType.equals(relaxTypes.T2) || expType.equals(relaxTypes.T1RHO)) {
+                        if (expType.equals(relaxTypes.R2) || expType.equals(relaxTypes.T1RHO)) {
                             Double RexValue = ((RelaxationRex) relaxData).getRexValue();
                             Double RexError = ((RelaxationRex) relaxData).getRexError();
                             results.add(RexValue);
@@ -1078,12 +1078,12 @@ public class NMRStarWriter {
     }
 
     /**
-     * Write the data lines in the Relaxation Data (T1, T2, T1rho) blocks of the
-     * STAR file.
+     * Write the data lines in the Relaxation Data (R1, R2, T1rho) blocks of the
+ STAR file.
      *
      * @param idx int. The line index
-     * @param expType relaxTypes. The experiment type: T1, T2, T1rho.
-     * @param listID int. The number of the T1/T2/T1rho block in the file.
+     * @param expType relaxTypes. The experiment type: R1, R2, T1rho.
+     * @param listID int. The number of the R1/R2/T1rho block in the file.
      * @param entityID int. The number of the molecular entity.
      * @param atom Atom. The atom in the molecule.
      * @param results List<Double>. The relaxation and error values: {value,

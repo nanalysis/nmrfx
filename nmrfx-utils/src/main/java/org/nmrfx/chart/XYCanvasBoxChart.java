@@ -17,7 +17,9 @@
  */
 package org.nmrfx.chart;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import javafx.collections.ListChangeListener;
 import javafx.geometry.Orientation;
 import javafx.scene.canvas.Canvas;
@@ -31,16 +33,18 @@ import org.nmrfx.graphicsio.GraphicsIOException;
  *
  * @author brucejohnson
  */
-public class XYCanvasBarChart extends XYCanvasChart {
+public class XYCanvasBoxChart extends XYCanvasChart {
 
-    public static XYCanvasBarChart buildChart(Canvas canvas) {
+    Orientation orientation = Orientation.VERTICAL;
+
+    public static XYCanvasBoxChart buildChart(Canvas canvas) {
         Axis xAxis = new Axis(Orientation.HORIZONTAL, 0, 100, 400, 100.0);
         Axis yAxis = new Axis(Orientation.VERTICAL, 0, 1.0, 100, 400);
         yAxis.setZeroIncluded(true);
-        return new XYCanvasBarChart(canvas, xAxis, yAxis);
+        return new XYCanvasBoxChart(canvas, xAxis, yAxis);
     }
 
-    public XYCanvasBarChart(Canvas canvas, final Axis... AXIS) {
+    public XYCanvasBoxChart(Canvas canvas, final Axis... AXIS) {
         super(canvas, AXIS);
         xAxis = AXIS[0];
         yAxis = AXIS[1];
@@ -68,6 +72,7 @@ public class XYCanvasBarChart extends XYCanvasChart {
     public void drawChart(GraphicsContextInterface gC) {
         double width = getWidth();
         double height = getHeight();
+        List<String> names = data.stream().map(x -> x.getName()).collect(Collectors.toList());
         gC.save();
         try {
             xAxis.setTickFontSize(10);
@@ -105,6 +110,41 @@ public class XYCanvasBarChart extends XYCanvasChart {
         gC.restore();
     }
 
+    @Override
+    public double[] calcAutoScale() {
+        if (!data.isEmpty()) {
+            double pMin = 0.5;
+            double pMax = data.size() + 0.5;
+            double vMax = Double.NEGATIVE_INFINITY;
+            double vMin = Double.MAX_VALUE;
+            boolean ok = false;
+            for (DataSeries dataSeries : data) {
+                if (!dataSeries.values.isEmpty()) {
+                    ok = true;
+                    vMax = Math.max(vMax, dataSeries.values.stream().
+                            mapToDouble(v
+                                    -> ((BoxPlotData) v.getExtraValue()).max)
+                            .max().getAsDouble());
+
+                    vMin = Math.min(vMin, dataSeries.values.stream().
+                            mapToDouble(v
+                                    -> ((BoxPlotData) v.getExtraValue()).min)
+                            .min().getAsDouble());
+                }
+            }
+            if (ok) {
+                if (orientation == Orientation.VERTICAL) {
+                    double[] bounds = {pMin, pMax, vMin, vMax};
+                    return bounds;
+                } else {
+                    double[] bounds = {vMin, vMax, pMin, pMax};
+                    return bounds;
+                }
+            }
+        }
+        return null;
+    }
+
     void drawSeries(GraphicsContextInterface gC) {
         doSeries(gC, null);
     }
@@ -117,49 +157,24 @@ public class XYCanvasBarChart extends XYCanvasChart {
 
     Optional<Hit> doSeries(GraphicsContextInterface gC, PickPoint pickPt) {
         Optional<Hit> hitOpt = Optional.empty();
-        double gap = 0.05;
         int nSeries = getData().size();
         double stepSize = (xAxis.getDisplayPosition(1.0) - xAxis.getDisplayPosition(0.0));
-        double fullWidth = stepSize / nSeries;
-        double barThickness = fullWidth * (1.0 - gap);
+        double barThickness = stepSize / 3.0;
         for (int seriesIndex = 0; seriesIndex < nSeries; seriesIndex++) {
             DataSeries series = getData().get(seriesIndex);
-            BarMark barMark = new BarMark(series.fill, Color.BLACK, Orientation.VERTICAL);
+            var boxMark = new BoxMark(series.fill, Color.BLACK, Orientation.VERTICAL);
             int iValue = 0;
             for (XYValue value : series.values) {
-                double x = xAxis.getDisplayPosition(value.getXValue());
-                double y = yAxis.getDisplayPosition(value.getYValue());
-                boolean drawError = false;
-                double errValue = 0.0;
-                if (value instanceof XYEValue) {
-                    errValue = Math.abs(((XYEValue) value).getError());
-                    if (errValue > 1.0e-30) {
-                        drawError = true;
-                    }
-                }
-                double low = 0.0;
-                double high = 0.0;
-                if (drawError) {
-                    low = yAxis.getDisplayPosition(value.getYValue() - errValue);
-                    high = yAxis.getDisplayPosition(value.getYValue() + errValue);
-                }
-
-                double xC = x - 0.5 * stepSize + gap * stepSize / 2.0
-                        + barThickness * seriesIndex + barThickness / 2.0;
-                double yC = yAxis.getDisplayPosition(0.0);
-                double barLength = y - yC;
+                var fiveNum = (BoxPlotData) value.getExtraValue();
+                double x = value.getXValue();
                 if (pickPt != null) {
-                    if (barMark.hit(xC, yC, barThickness, barLength, pickPt)) {
+                    if (boxMark.hit(xPos, barThickness, fiveNum, pickPt, xAxis, xAxis)) {
                         Hit hit = new Hit(series, iValue, value);
                         hitOpt = Optional.of(hit);
                         break;
                     }
                 } else {
-                    if (drawError) {
-                        barMark.draw(gC, xC, yC, barThickness, barLength, true, low, high);
-                    } else {
-                        barMark.draw(gC, xC, yC, barThickness, barLength);
-                    }
+                    boxMark.draw(gC, x, barThickness, fiveNum, xAxis, yAxis);
                 }
                 iValue++;
             }

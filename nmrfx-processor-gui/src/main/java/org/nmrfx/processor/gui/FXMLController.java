@@ -158,6 +158,8 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
     @FXML
     private BorderPane borderPane;
     @FXML
+    private StackPane processorPane;
+    @FXML
     private HBox dimHBox;
     @FXML
     private HBox dimHBox2;
@@ -188,7 +190,6 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
     static boolean popOverMode = false;
     static PeakAttrController peakAttrController = null;
     ProcessorController processorController = null;
-    SimpleObjectProperty<ScannerController> scannerController = new SimpleObjectProperty(null);
     Stage stage = null;
     boolean isFID = true;
     static public final SimpleObjectProperty<FXMLController> activeController = new SimpleObjectProperty<>(null);
@@ -307,6 +308,10 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         } else {
             activeController.set(null);
         }
+    }
+
+    public void processorCreated(Pane pane) {
+        processControllerVisible.bind(pane.parentProperty().isNotNull());
     }
 
     public boolean isPhaseSliderVisible() {
@@ -594,13 +599,9 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
 
     public ProcessorController getProcessorController(boolean createIfNull) {
         if ((processorController == null) && createIfNull) {
-            processorController = ProcessorController.create(this, stage, getActiveChart());
+            processorController = ProcessorController.create(this, processorPane, getActiveChart());
         }
         return processorController;
-    }
-
-    public void processorCreated(Stage stage) {
-        processControllerVisible.bind(stage.showingProperty());
     }
 
     public ChartProcessor getChartProcessor() {
@@ -615,13 +616,13 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         isFID = true;
         if (chartProcessor == null) {
             if (processorController == null) {
-                processorController = ProcessorController.create(this, stage, getActiveChart());
+                processorController = ProcessorController.create(this, processorPane, getActiveChart());
             }
         }
         chartProcessor.setData(nmrData, clearOps);
         if (processorController != null) {
-            processorController.getStage().show();
             processorController.viewingDataset(false);
+            processorController.show();
         } else {
             System.out.println("Coudn't make controller");
         }
@@ -631,30 +632,6 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         if (!reload) {
             getActiveChart().full();
             getActiveChart().autoScale();
-            String filePath = nmrData.getFilePath();
-            File file = new File(filePath);
-            File lastFile = NMRDataUtil.findNewestFile((new File(chartProcessor.getScriptDir())).toPath());
-            if (lastFile != null) {
-                String datasetName = lastFile.getName();
-                int lastDot = datasetName.lastIndexOf(".");
-                if (lastDot != -1) {
-                    datasetName = datasetName.substring(0, lastDot);
-                }
-                chartProcessor.setDatasetName(datasetName);
-            } else {
-                String datasetName = chartProcessor.getDatasetNameFromScript();
-                int lastDot = datasetName.lastIndexOf(".");
-                if (lastDot != -1) {
-                    datasetName = datasetName.substring(0, lastDot);
-                }
-                if (datasetName.isEmpty()) {
-                    datasetName = chartProcessor.getDatasetNameFromScript();
-                }
-                if (!datasetName.isEmpty()) {
-                    chartProcessor.setDatasetName(datasetName);
-                }
-
-            }
             chartProcessor.loadDefaultScriptIfPresent();
         }
         getActiveChart().layoutPlotChildren();
@@ -815,23 +792,10 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
     @FXML
     public void showProcessorAction(ActionEvent event) {
         if (processorController == null) {
-            processorController = ProcessorController.create(this, stage, getActiveChart());
+            processorController = ProcessorController.create(this, processorPane, getActiveChart());
         }
         if (processorController != null) {
-            processorController.getStage().show();
-        } else {
-            System.out.println("Coudn't make controller");
-        }
-    }
-
-    @FXML
-    public void showScannerAction(ActionEvent event) {
-        if (scannerController.get() == null) {
-            ScannerController sControl = ScannerController.create(this, stage, getActiveChart());
-            scannerController.set(sControl);
-        }
-        if (scannerController.get() != null) {
-            scannerController.get().getStage().show();
+            processorController.show();
         } else {
             System.out.println("Coudn't make controller");
         }
@@ -1393,7 +1357,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         controllers.add(this);
 //        l.layoutBoundsProperty().addListener(e -> boundsUpdated(l));
 //        l2.layoutBoundsProperty().addListener(e -> boundsUpdated(l2));
-        statusBar.setMode(0);
+        statusBar.setMode(1);
         activeController.set(this);
         for (int iCross = 0; iCross < 2; iCross++) {
             for (int jOrient = 0; jOrient < 2; jOrient++) {

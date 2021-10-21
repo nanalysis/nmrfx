@@ -15,9 +15,8 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.nmrfx.processor.gui.tools;
+package org.nmrfx.analyst.gui.tools;
 
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -34,7 +33,6 @@ import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.MenuButton;
 import javafx.scene.control.MenuItem;
-import javafx.scene.control.TableColumn;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ToolBar;
 import javafx.scene.input.KeyCode;
@@ -46,6 +44,8 @@ import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import org.apache.commons.math3.optim.PointValuePair;
 import org.controlsfx.dialog.ExceptionDialog;
+import org.nmrfx.analyst.gui.ScanTable;
+import org.nmrfx.analyst.gui.ScannerTool;
 import org.nmrfx.chart.Axis;
 import org.nmrfx.chart.DataSeries;
 import org.nmrfx.chart.XYCanvasChart;
@@ -54,9 +54,7 @@ import org.nmrfx.chart.XYValue;
 import org.nmrfx.graphicsio.GraphicsIOException;
 import org.nmrfx.graphicsio.SVGGraphicsContext;
 import org.nmrfx.processor.gui.PolyChart;
-import org.nmrfx.processor.gui.ScannerController;
 import org.nmrfx.processor.gui.controls.FileTableItem;
-import org.nmrfx.processor.gui.controls.ScanTable;
 import org.nmrfx.processor.math.TRACTSimFit;
 
 /**
@@ -65,7 +63,7 @@ import org.nmrfx.processor.math.TRACTSimFit;
  */
 public class TRACTGUI {
 
-    ScannerController scanController;
+    ScannerTool scannerTool;
     Stage stage = null;
     XYCanvasChart activeChart;
     BorderPane borderPane = new BorderPane();
@@ -79,8 +77,8 @@ public class TRACTGUI {
     TextField scaleField;
     PolyChart chart;
 
-    public TRACTGUI(ScannerController scanController) {
-        this.scanController = scanController;
+    public TRACTGUI(ScannerTool scannerTool) {
+        this.scannerTool = scannerTool;
         chart = PolyChart.getActiveChart();
     }
 
@@ -108,7 +106,7 @@ public class TRACTGUI {
                 alert.showAndWait();
                 return;
             }
-            ScanTable scanTable = scanController.getScanTable();
+            ScanTable scanTable = scannerTool.getScanTable();
             scanTable.getTableView().getColumns().
                     addListener((ListChangeListener) (c -> {
                         updateMCPlotChoices();
@@ -187,8 +185,8 @@ public class TRACTGUI {
     }
 
     void updateMCplot() {
-        if (scanController != null) {
-            ScanTable scanTable = scanController.getScanTable();
+        if (scannerTool != null) {
+            ScanTable scanTable = scannerTool.getScanTable();
 
             Axis xAxis = activeChart.getXAxis();
             Axis yAxis = activeChart.getYAxis();
@@ -225,8 +223,8 @@ public class TRACTGUI {
         System.out.println("up");
         xArrayChoice.getItems().clear();
         yArrayChoice.getItems().clear();
-        if (scanController != null) {
-            ScanTable scanTable = scanController.getScanTable();
+        if (scannerTool != null) {
+            ScanTable scanTable = scannerTool.getScanTable();
             List<String> headers = scanTable.getHeaders();
             for (String header : headers) {
                 if (scanTable.isData(header)) {
@@ -249,7 +247,7 @@ public class TRACTGUI {
         String yElem = yArrayChoice.getValue();
 
         if ((xElem != null) && (yElem != null)) {
-            ScanTable scanTable = scanController.getScanTable();
+            ScanTable scanTable = scannerTool.getScanTable();
             List<FileTableItem> items = scanTable.getItems();
             double[][] xValues = new double[2][items.size()];
             double[] yValues = new double[items.size()];

@@ -17,6 +17,8 @@
  */
 package org.nmrfx.processor.gui;
 
+import de.jensd.fx.glyphs.GlyphsDude;
+import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import org.nmrfx.processor.gui.controls.ConsoleUtil;
 import org.nmrfx.processor.gui.controls.ProcessingCodeAreaUtil;
 import org.nmrfx.processor.processing.Processor;
@@ -30,6 +32,7 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.ResourceBundle;
 import javafx.application.Platform;
 import javafx.beans.property.ReadOnlyObjectProperty;
@@ -49,7 +52,6 @@ import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.geometry.Point2D;
 import javafx.scene.Node;
-import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.ListView;
 import javafx.scene.control.MenuButton;
@@ -57,6 +59,7 @@ import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.CheckBox;
+import javafx.scene.control.ContentDisplay;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.TableColumn;
@@ -72,7 +75,7 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.text.Text;
@@ -94,9 +97,11 @@ import org.nmrfx.utilities.ProgressUpdater;
 
 public class ProcessorController implements Initializable, ProgressUpdater {
 
-    protected Stage stage;
+    Pane processorPane;
+    Pane pane;
+
     @FXML
-    private VBox opBox;
+    private ToolBar toolBar;
     @FXML
     private TextField opTextField;
 
@@ -164,38 +169,40 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     Throwable processingThrowable;
     String currentText = "";
 
-    public static ProcessorController create(FXMLController fxmlController, Stage parent, PolyChart chart) {
+    public static ProcessorController create(FXMLController fxmlController, StackPane processorPane, PolyChart chart) {
+        String iconSize = "12px";
+        String fontSize = "7pt";
         FXMLLoader loader = new FXMLLoader(SpecAttrWindowController.class.getResource("/fxml/ProcessorScene.fxml"));
-        ProcessorController controller = null;
-        Stage stage = new Stage(StageStyle.DECORATED);
-
+        final ProcessorController controller;
+        Stage stage = fxmlController.getStage();
+        double width = stage.getWidth();
         try {
-            Scene scene = new Scene((Pane) loader.load());
-            stage.setScene(scene);
-            scene.getStylesheets().add("/styles/Styles.css");
+            Pane pane = (Pane) loader.load();
+            processorPane.getChildren().add(pane);
 
             controller = loader.<ProcessorController>getController();
             controller.fxmlController = fxmlController;
-            controller.stage = stage;
             controller.chart = chart;
-            stage.setTitle("NMRFx Processor");
-
-            stage.initOwner(parent);
             chart.setProcessorController(controller);
             controller.chartProcessor.setChart(chart);
             controller.chartProcessor.fxmlController = fxmlController;
-            fxmlController.processorCreated(stage);
-            stage.show();
+            controller.processorPane = processorPane;
+            controller.pane = pane;
+            Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "", iconSize, fontSize, ContentDisplay.GRAPHIC_ONLY);
+            closeButton.setOnAction(e -> controller.hide());
+            controller.toolBar.getItems().add(closeButton);
+            fxmlController.processorCreated(pane);
+
+            stage.setWidth(width + pane.getMinWidth());
+            return controller;
         } catch (IOException ioE) {
             ioE.printStackTrace();
             System.out.println(ioE.getMessage());
+            return null;
         }
-
-        return controller;
-
     }
     @FXML
-    private VBox mainBox;
+    private BorderPane mainBox;
     @FXML
     private ChoiceBox viewMode;
     @FXML
@@ -216,8 +223,23 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     ProcessingCodeAreaUtil codeAreaUtil;
     ConsoleUtil consoleUtil;
 
-    public Stage getStage() {
-        return stage;
+    public void show() {
+        if (processorPane.getChildren().isEmpty()) {
+            processorPane.getChildren().add(pane);
+            Stage stage = fxmlController.getStage();
+            double width = stage.getWidth();
+            stage.setWidth(width + pane.getMinWidth());
+        }
+    }
+
+    public void hide() {
+        if (!processorPane.getChildren().isEmpty()) {
+            processorPane.getChildren().clear();
+            Stage stage = fxmlController.getStage();
+            double width = stage.getWidth();
+            stage.setWidth(width - pane.getMinWidth());
+
+        }
     }
 
     public PropertyManager getPropertyManager() {
@@ -576,8 +598,19 @@ public class ProcessorController implements Initializable, ProgressUpdater {
             textArea.replaceText(script);
             currentText = script;
         }
-
         chartProcessor.setScriptValid(true);
+    }
+
+    boolean fixDatasetName() {
+        String script = textArea.getText();
+        if (!chartProcessor.scriptHasDataset(script)) {
+            Optional<String> scriptOpt = chartProcessor.fixDatasetName(script);
+            if (scriptOpt.isEmpty()) {
+                return false;
+            }
+            textArea.replaceText(scriptOpt.get());
+        }
+        return true;
     }
 
     @FXML
@@ -603,7 +636,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         if (initialDir != null) {
             fileChooser.setInitialDirectory(new File(initialDir));
         }
-        File selectedFile = fileChooser.showOpenDialog(stage);
+        File selectedFile = fileChooser.showOpenDialog(null);
         if (selectedFile != null) {
             openScript(selectedFile);
         }
@@ -621,7 +654,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         if (initialDir != null) {
             fileChooser.setInitialDirectory(new File(initialDir));
         }
-        File selectedFile = fileChooser.showOpenDialog(stage);
+        File selectedFile = fileChooser.showOpenDialog(null);
         if (selectedFile != null) {
             openVecScript(selectedFile);
         }
@@ -634,7 +667,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         if (initialDir != null) {
             fileChooser.setInitialDirectory(new File(initialDir));
         }
-        File saveFile = fileChooser.showSaveDialog(stage);
+        File saveFile = fileChooser.showSaveDialog(null);
         if (saveFile != null) {
             String script = getScript();
             chartProcessor.writeScript(script, saveFile);
@@ -784,7 +817,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         if (initialDir != null) {
             fileChooser.setInitialDirectory(new File(initialDir));
         }
-        File saveFile = fileChooser.showSaveDialog(stage);
+        File saveFile = fileChooser.showSaveDialog(null);
         if (saveFile != null) {
             String script = textArea.getText();
             chartProcessor.writeScript(script, saveFile);
@@ -850,7 +883,9 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         if (!chartProcessor.isScriptValid()) {
             updateScriptDisplay();
         }
-        ((Service) processDataset.worker).restart();
+        if (fixDatasetName()) {
+            ((Service) processDataset.worker).restart();
+        }
     }
 
     @FXML
@@ -1058,6 +1093,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
 
         codeAreaUtil = new ProcessingCodeAreaUtil(textArea);
         textArea.setEditable(false);
+        textArea.setWrapText(true);
 //        consoleUtil = new ConsoleUtil();
 //        consoleUtil.addHandler(consoleArea, chartProcessor.getInterpreter());
 //        consoleUtil.banner();

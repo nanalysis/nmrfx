@@ -6,12 +6,12 @@
     <parent>
         <groupId>org.nmrfx</groupId>
         <artifactId>nmrfx</artifactId>
-        <version>11.1.39</version>
+        <version>11.1.40</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
     <artifactId>nmrfx-utils</artifactId>
-    <version>11.1.39</version>
+    <version>11.1.40</version>
     <packaging>jar</packaging>
 
     <dependencies>
@@ -26,6 +26,10 @@
         <dependency>
             <groupId>org.apache.pdfbox</groupId>
             <artifactId>pdfbox</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-math3</artifactId>
         </dependency>
         <dependency>
             <groupId>junit</groupId>
@@ -73,6 +77,17 @@
                 <version>0.0.4</version>
                 <configuration>
                     <mainClass>HelloFX</mainClass>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>1.2.1</version>
+                <configuration>
+                    <mainClass>org.nmrfx.chart.PlotApp</mainClass>
+                    <arguments>
+                        <argument></argument>
+                    </arguments>
                 </configuration>
             </plugin>
         </plugins>

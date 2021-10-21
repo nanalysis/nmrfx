@@ -21,7 +21,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package org.nmrfx.processor.gui.controls;
+package org.nmrfx.analyst.gui;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -67,6 +67,7 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
+import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import org.controlsfx.control.PopOver;
@@ -83,7 +84,7 @@ import org.nmrfx.processor.gui.ChartProcessor;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.ProcessorController;
-import org.nmrfx.processor.gui.ScannerController;
+import org.nmrfx.processor.gui.controls.FileTableItem;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.utils.GUIUtils;
 import org.python.util.PythonInterpreter;
@@ -94,12 +95,13 @@ import org.python.util.PythonInterpreter;
  */
 public class ScanTable {
 
-    ScannerController scannerController;
+    ScannerTool scannerTool;
     TableView<FileTableItem> tableView;
     TableFilter fileTableFilter;
     TableFilter.Builder builder = null;
     String scanDir = null;
     String scanOutputDir = null;
+    String combineFileName = "process.nv";
     PopOver popOver = new PopOver();
     ObservableList<FileTableItem> fileListItems = FXCollections.observableArrayList();
     HashMap<String, String> columnTypes = new HashMap<>();
@@ -132,7 +134,7 @@ public class ScanTable {
     static Color color13 = Color.web("#311e3c");
     static Color color14 = Color.web("#7a3e2a");
     static Color color15 = Color.web("#4c2927");
-    List<String> standardHeaders;
+    static final List<String> standardHeaders = List.of("path", "sequence", "row", "etime", "ndim");
 
 ////    static Color[] colors = {color11, color9, color15, color1, color4, color2, color13,
 ////        color8, color7, color6, color10, color0, color3, color14, color12, color5};
@@ -154,10 +156,9 @@ public class ScanTable {
 
     }
 
-    public ScanTable(ScannerController controller, TableView<FileTableItem> tableView) {
-        this.scannerController = controller;
+    public ScanTable(ScannerTool controller, TableView<FileTableItem> tableView) {
+        this.scannerTool = controller;
         this.tableView = tableView;
-        standardHeaders = Arrays.asList("path", "sequence", "row", "etime", "ndim");
         init();
     }
 
@@ -195,8 +196,12 @@ public class ScanTable {
         tableView.refresh();
     }
 
+    public static List<String> getStandardHeaders() {
+        return standardHeaders;
+    }
+
     final protected String getActiveDatasetName() {
-        PolyChart chart = scannerController.getChart();
+        PolyChart chart = scannerTool.getChart();
         DatasetBase dataset = chart.getDataset();
         String name = "";
         if (dataset != null) {
@@ -214,8 +219,8 @@ public class ScanTable {
         Set<Integer> groupSet = new HashSet<>();
         List<Integer> selected = tableView.getSelectionModel().getSelectedIndices();
 
-        ProcessorController processorController = scannerController.getFXMLController().getProcessorController(false);
-        if ((processorController == null) || processorController.isViewingDataset() || !processorController.getStage().isShowing()) {
+        ProcessorController processorController = scannerTool.getFXMLController().getProcessorController(false);
+        if ((processorController == null) || processorController.isViewingDataset()) {
             List<Integer> showRows = new ArrayList<>();
             if (selected.isEmpty()) {
                 for (int i = 0, n = tableView.getItems().size(); i < n; i++) {
@@ -224,7 +229,7 @@ public class ScanTable {
             } else {
                 showRows.addAll(selected);
             }
-            PolyChart chart = scannerController.getChart();
+            PolyChart chart = scannerTool.getChart();
             Optional<Double> curLvl = Optional.empty();
             if (!chart.getDatasetAttributes().isEmpty()) {
                 DatasetAttributes dataAttr = chart.getDatasetAttributes().get(0);
@@ -320,7 +325,6 @@ public class ScanTable {
             final File file = db.getFiles().get(0);
             if (file.isDirectory()) {
                 scanDir = file.getAbsolutePath();
-                scannerController.updateScanDirectory(scanDir);
                 Platform.runLater(new Runnable() {
                     @Override
                     public void run() {
@@ -377,10 +381,12 @@ public class ScanTable {
     }
 
     public void loadScanFiles(Stage stage) {
-        if ((scanDir == null) || scanDir.trim().equals("")) {
-            GUIUtils.warn("Scanner Error", "No scan directory");
+        DirectoryChooser dirChooser = new DirectoryChooser();
+        File scanDirFile = dirChooser.showDialog(null);
+        if (scanDirFile == null) {
             return;
         }
+        scanDir = scanDirFile.toString();
         int beginIndex = scanDir.length() + 1;
         ArrayList<String> nmrFiles = NMRDataUtil.findNMRDirectories(scanDir);
         String[] headers = {};
@@ -405,11 +411,24 @@ public class ScanTable {
             GUIUtils.warn("Scanner Error", "No scan directory");
             return;
         }
-        if ((scanOutputDir == null) || scanOutputDir.trim().equals("")) {
-            GUIUtils.warn("Scanner Error", "No scan output directory");
+        DirectoryChooser dirChooser = new DirectoryChooser();
+        dirChooser.setTitle("Output directory");
+        File scanOutputDirFile = dirChooser.showDialog(null);
+        if (scanOutputDirFile == null) {
             return;
         }
-        File scanOutputDirFile = new File(scanOutputDir);
+        scanOutputDir = scanOutputDirFile.toString();
+
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Output filename");
+        fileChooser.setInitialDirectory(scanOutputDirFile);
+        fileChooser.setInitialFileName(combineFileName);
+        File combineFile = fileChooser.showSaveDialog(null);
+        if (combineFile == null) {
+            return;
+        }
+        combineFileName = combineFile.getName();
+
         if (!scanOutputDirFile.exists() || !scanOutputDirFile.isDirectory() || !scanOutputDirFile.canWrite()) {
             GUIUtils.warn("Scanner Error", "Output dir is not a writable directory");
             return;
@@ -418,7 +437,6 @@ public class ScanTable {
         if (fileTableItems.isEmpty()) {
             return;
         }
-        String combineFileName = scannerController.getOutputFileName();
         if ((combineFileName == null) || combineFileName.equals("")) {
             return;
         }
@@ -431,11 +449,10 @@ public class ScanTable {
             fileRoot = fileRoot.substring(0, fileRoot.lastIndexOf("."));
         }
 
-        PolyChart chart = scannerController.getChart();
+        PolyChart chart = scannerTool.getChart();
         processingTable = true;
-        try {
+        try (PythonInterpreter processInterp = new PythonInterpreter()) {
             List<String> fileNames = new ArrayList<>();
-            PythonInterpreter processInterp = new PythonInterpreter();
 
             String initScript = ChartProcessor.buildInitScript();
             processInterp.exec(initScript);
@@ -510,14 +527,14 @@ public class ScanTable {
             if ((scanDir == null) || scanDir.trim().equals("")) {
                 return;
             }
-            ProcessorController processorController = scannerController.getFXMLController().getProcessorController(true);
+            ProcessorController processorController = scannerTool.getFXMLController().getProcessorController(true);
             if (processorController != null) {
                 String scriptString = processorController.getCurrentScript();
                 FileTableItem fileTableItem = (FileTableItem) tableView.getItems().get(selItem);
                 String fileName = fileTableItem.getFileName();
                 String filePath = Paths.get(scanDir, fileName).toString();
 
-                scannerController.getChart().getFXMLController().openFile(filePath, false, false);
+                scannerTool.getChart().getFXMLController().openFile(filePath, false, false);
 
                 processorController.parseScript(scriptString);
             }
@@ -576,7 +593,7 @@ public class ScanTable {
     }
 
     public void loadFromDataset() {
-        PolyChart chart = scannerController.getChart();
+        PolyChart chart = scannerTool.getChart();
         DatasetBase dataset = chart.getDataset();
         fileListItems.clear();
         int nRows = dataset.getSize(1);
@@ -644,7 +661,6 @@ public class ScanTable {
         String firstDatasetName = "";
         if ((scanDir == null) || scanDir.trim().equals("")) {
             setScanDirectory(file.getParentFile());
-            scannerController.updateScanDirectory(scanDir);
         }
 
         processingTable = true;
@@ -778,7 +794,7 @@ public class ScanTable {
                 }
                 Path path = FileSystems.getDefault().getPath(dirName, firstDatasetName);
                 FXMLController.getActiveController().openDataset(path.toFile(), false);
-                PolyChart chart = scannerController.getChart();
+                PolyChart chart = scannerTool.getChart();
                 List<Integer> rows = new ArrayList<>();
                 rows.add(0);
                 chart.setDrawlist(rows);
@@ -1046,7 +1062,7 @@ public class ScanTable {
 
     private boolean isGroupable(String text) {
         return !standardHeaders.contains(text) && !text.equals("group")
-                && !text.contains(":") & !text.equals("dataset");
+                && !text.contains(":") && !text.equals("dataset");
     }
 
     public boolean isData(String text) {
@@ -1115,7 +1131,7 @@ public class ScanTable {
         }
     }
 
-    private Color getGroupColor(int index) {
+    public static Color getGroupColor(int index) {
         index = Math.min(index, COLORS.length - 1);
         return COLORS[index];
     }
