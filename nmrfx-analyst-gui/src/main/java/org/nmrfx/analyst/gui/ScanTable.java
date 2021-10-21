@@ -1062,7 +1062,7 @@ public class ScanTable {
 
     private boolean isGroupable(String text) {
         return !standardHeaders.contains(text) && !text.equals("group")
-                && !text.contains(":") & !text.equals("dataset");
+                && !text.contains(":") && !text.equals("dataset");
     }
 
     public boolean isData(String text) {
