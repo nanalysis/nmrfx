@@ -223,7 +223,9 @@ public class ScanTable {
         List<Integer> selected = tableView.getSelectionModel().getSelectedIndices();
 
         ProcessorController processorController = scannerController.getFXMLController().getProcessorController(false);
-        if ((processorController == null) || processorController.isViewingDataset()) {
+        if ((processorController == null)
+                || processorController.isViewingDataset()
+                || !processorController.isVisible()) {
             List<Integer> showRows = new ArrayList<>();
             if (selected.isEmpty()) {
                 for (int i = 0, n = tableView.getItems().size(); i < n; i++) {
@@ -289,6 +291,8 @@ public class ScanTable {
             }
             chart.refresh();
 
+        } else {
+            openSelectedListFile();
         }
     }
 
