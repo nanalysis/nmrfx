@@ -45,7 +45,6 @@ import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
-import javafx.event.EventHandler;
 import javafx.scene.Node;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
@@ -106,12 +105,9 @@ public class ScanTable {
     Set<String> groupNames = new TreeSet<>();
     Map<String, Map<String, Integer>> groupMap = new HashMap<>();
     int groupSize = 1;
-    ListChangeListener filterItemListener = new ListChangeListener() {
-        @Override
-        public void onChanged(ListChangeListener.Change c) {
-            getGroups();
-            selectionChanged();
-        }
+    ListChangeListener filterItemListener = (ListChangeListener) (ListChangeListener.Change c) -> {
+        getGroups();
+        selectionChanged();
     };
 
     static Color color0 = Color.web("#4d615d");
@@ -293,27 +289,11 @@ public class ScanTable {
     final protected void setDragHandlers(Node mouseNode
     ) {
 
-        mouseNode.setOnDragOver(new EventHandler<DragEvent>() {
-            @Override
-            public void handle(DragEvent event) {
-                mouseDragOver(event);
-            }
-        }
-        );
-        mouseNode.setOnDragDropped(new EventHandler<DragEvent>() {
-            @Override
-            public void handle(DragEvent event) {
-                mouseDragDropped(event);
-            }
-        }
-        );
-        mouseNode.setOnDragExited(new EventHandler<DragEvent>() {
-            @Override
-            public void handle(DragEvent event) {
-                mouseNode.setStyle("-fx-border-color: #C6C6C6;");
-            }
-        }
-        );
+        mouseNode.setOnDragOver(this::mouseDragOver);
+        mouseNode.setOnDragDropped(this::mouseDragDropped);
+        mouseNode.setOnDragExited((DragEvent event) -> {
+            mouseNode.setStyle("-fx-border-color: #C6C6C6;");
+        });
     }
 
     private void mouseDragDropped(final DragEvent e) {
@@ -326,21 +306,15 @@ public class ScanTable {
             final File file = db.getFiles().get(0);
             if (file.isDirectory()) {
                 scanDir = file;
-                Platform.runLater(new Runnable() {
-                    @Override
-                    public void run() {
-                        ArrayList<String> nmrFiles = NMRDataUtil.findNMRDirectories(scanDir.getAbsolutePath());
-                        String[] headers = {};
-                        updateTable(headers);
-                        loadScanFiles(nmrFiles);
-                    }
+                Platform.runLater(() -> {
+                    ArrayList<String> nmrFiles = NMRDataUtil.findNMRDirectories(scanDir.getAbsolutePath());
+                    String[] headers = {};
+                    updateTable(headers);
+                    loadScanFiles(nmrFiles);
                 });
             } else {
-                Platform.runLater(new Runnable() {
-                    @Override
-                    public void run() {
-                        loadScanTable(file);
-                    }
+                Platform.runLater(() -> {
+                    loadScanTable(file);
                 });
 
             }
@@ -434,9 +408,7 @@ public class ScanTable {
         if (fileTableItems.isEmpty()) {
             return;
         }
-        if ((combineFileName == null) || combineFileName.equals("")) {
-            return;
-        }
+        
         if (!combineFileName.contains(".")) {
             combineFileName += ".nv";
         }
@@ -786,7 +758,7 @@ public class ScanTable {
                 chart.autoScale();
             }
             addGroupColumn();
-        } catch (Exception e) {
+        } catch (NumberFormatException e) {
         } finally {
             processingTable = false;
         }
@@ -849,7 +821,7 @@ public class ScanTable {
                 columnName = name;
             } else {
                 for (String columnType : columnTypes.keySet()) {
-                    Integer columnNum = null;
+                    Integer columnNum;
                     if (columnType.startsWith("V.")) {
                         try {
                             int colonPos = columnType.indexOf(":");
@@ -945,30 +917,33 @@ public class ScanTable {
                 type = "S";
                 System.out.println("No type for " + header);
             }
-            if (type.equals("D")) {
-                TableColumn<FileTableItem, Number> doubleExtraColumn = new TableColumn<>(header);
-                doubleExtraColumn.setCellValueFactory((e) -> new SimpleDoubleProperty(e.getValue().getDoubleExtra(header)));
-                doubleExtraColumn.setCellFactory(col
-                        -> new TableCell<FileTableItem, Number>() {
-                    @Override
-                    public void updateItem(Number value, boolean empty) {
-                        super.updateItem(value, empty);
-                        if (empty) {
-                            setText(null);
-                        } else {
-                            setText(String.format("%.4f", value.doubleValue()));
-                        }
-                    }
-                });
-                tableView.getColumns().add(doubleExtraColumn);
-            } else if (type.equals("I")) {
-                TableColumn<FileTableItem, Number> intExtraColumn = new TableColumn<>(header);
-                intExtraColumn.setCellValueFactory((e) -> new SimpleIntegerProperty(e.getValue().getIntegerExtra(header)));
-                tableView.getColumns().add(intExtraColumn);
-            } else {
-                TableColumn<FileTableItem, String> extraColumn = new TableColumn<>(header);
-                extraColumn.setCellValueFactory((e) -> new SimpleStringProperty(String.valueOf(e.getValue().getExtra(header))));
-                tableView.getColumns().add(extraColumn);
+            switch (type) {
+                case "D":
+                    TableColumn<FileTableItem, Number> doubleExtraColumn = new TableColumn<>(header);
+                    doubleExtraColumn.setCellValueFactory((e) -> new SimpleDoubleProperty(e.getValue().getDoubleExtra(header)));
+                    doubleExtraColumn.setCellFactory(col
+                            -> new TableCell<FileTableItem, Number>() {
+                                @Override
+                                public void updateItem(Number value, boolean empty) {
+                                    super.updateItem(value, empty);
+                                    if (empty) {
+                                        setText(null);
+                                    } else {
+                                        setText(String.format("%.4f", value.doubleValue()));
+                                    }
+                                }
+                            }); tableView.getColumns().add(doubleExtraColumn);
+                    break;
+                case "I":
+                    TableColumn<FileTableItem, Number> intExtraColumn = new TableColumn<>(header);
+                    intExtraColumn.setCellValueFactory((e) -> new SimpleIntegerProperty(e.getValue().getIntegerExtra(header)));
+                    tableView.getColumns().add(intExtraColumn);
+                    break;
+                default:
+                    TableColumn<FileTableItem, String> extraColumn = new TableColumn<>(header);
+                    extraColumn.setCellValueFactory((e) -> new SimpleStringProperty(String.valueOf(e.getValue().getExtra(header))));
+                    tableView.getColumns().add(extraColumn);
+                    break;
             }
         }
         updateFilter();
@@ -998,7 +973,6 @@ public class ScanTable {
         String text = column.getText().toLowerCase();
         if (isGroupable(text)) {
             boolean isGrouped = groupNames.contains(text);
-            Node node = column.getGraphic();
             boolean isFiltered = isFiltered(column);
             StackPane stackPane = new StackPane();
             Rectangle rect = new Rectangle(10, 10);
@@ -1098,7 +1072,6 @@ public class ScanTable {
     }
 
     public void makeGroupMap() {
-        ObservableList<TableColumn<FileTableItem, ?>> columns = tableView.getColumns();
         groupMap.clear();
         for (String groupName : groupNames) {
             Set<String> group = new TreeSet<>();

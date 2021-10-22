@@ -39,9 +39,6 @@ import java.util.regex.Pattern;
 import javafx.beans.value.ChangeListener;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.event.ActionEvent;
-import javafx.event.Event;
-import javafx.geometry.Orientation;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ContentDisplay;
@@ -49,7 +46,6 @@ import javafx.scene.control.Menu;
 import javafx.scene.control.MenuButton;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.RadioMenuItem;
-import javafx.scene.control.Separator;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextInputDialog;
 import javafx.scene.control.Toggle;
@@ -118,8 +114,6 @@ public class ScannerTool implements ControllerTool {
         Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "Close", iconSize, fontSize, ContentDisplay.TOP);
         closeButton.setOnAction(e -> close());
         scannerBar.getItems().add(closeButton);
-        Separator vsep1 = new Separator(Orientation.HORIZONTAL);
-        Separator vsep2 = new Separator(Orientation.HORIZONTAL);
         borderPane.setTop(scannerBar);
 
         tableView = new TableView<>();
@@ -138,6 +132,7 @@ public class ScannerTool implements ControllerTool {
         createControllerAction = action;
     }
 
+    @Override
     public void close() {
         closeAction.accept(this);
     }
@@ -149,26 +144,28 @@ public class ScannerTool implements ControllerTool {
     private MenuButton makeFileMenu() {
         MenuButton menu = new MenuButton("File");
         MenuItem scanMenuItem = new MenuItem("Scan Directory...");
-        scanMenuItem.setOnAction(e -> scanDirAction(e));
+        scanMenuItem.setOnAction(e -> scanDirAction());
         MenuItem openTableItem = new MenuItem("Open Table...");
-        openTableItem.setOnAction(e -> loadTableAction(e));
+        openTableItem.setOnAction(e -> loadTableAction());
         MenuItem saveTableItem = new MenuItem("Save Table...");
-        saveTableItem.setOnAction(e -> saveTableAction(e));
+        saveTableItem.setOnAction(e -> saveTableAction());
+        MenuItem purgeInactiveItem = new MenuItem("Purge Inactive");
+        purgeInactiveItem.setOnAction(e -> purgeInactive());
         MenuItem loadFromDatasetItem = new MenuItem("Load From Dataset");
-        loadFromDatasetItem.setOnAction(e -> loadFromDataset(e));
+        loadFromDatasetItem.setOnAction(e -> loadFromDataset());
         menu.getItems().addAll(scanMenuItem, openTableItem, saveTableItem,
-                loadFromDatasetItem);
+                purgeInactiveItem, loadFromDatasetItem);
         return menu;
     }
 
     private MenuButton makeProcessMenu() {
         MenuButton menu = new MenuButton("Process");
         MenuItem loadRowFIDItem = new MenuItem("Load Row FID");
-        loadRowFIDItem.setOnAction(e -> openSelectedListFile(e));
+        loadRowFIDItem.setOnAction(e -> openSelectedListFile());
         MenuItem processAndCombineItem = new MenuItem("Process and Combine");
-        processAndCombineItem.setOnAction(e -> processScanDirAndCombine(e));
+        processAndCombineItem.setOnAction(e -> processScanDirAndCombine());
         MenuItem processItem = new MenuItem("Process");
-        processItem.setOnAction(e -> processScanDir(e));
+        processItem.setOnAction(e -> processScanDir());
         menu.getItems().addAll(loadRowFIDItem, processAndCombineItem,
                 processItem);
         return menu;
@@ -193,7 +190,7 @@ public class ScannerTool implements ControllerTool {
             offsetMode.getItems().add(menuItem);
         }
         MenuItem addRegionMenuItem = new MenuItem("Add Crosshair Region");
-        addRegionMenuItem.setOnAction(e -> measure(e));
+        addRegionMenuItem.setOnAction(e -> measure());
         MenuItem saveRegionsMenuItem = new MenuItem("Save Regions...");
         saveRegionsMenuItem.setOnAction(e -> saveRegions());
         MenuItem loadRegionsMenuItem = new MenuItem("Load Regions...");
@@ -237,47 +234,40 @@ public class ScannerTool implements ControllerTool {
         return toggle != null ? (OffsetTypes) toggle.getUserData() : OffsetTypes.N;
     }
 
-    private void processScanDirAndCombine(ActionEvent event) {
+    private void processScanDirAndCombine() {
         ChartProcessor chartProcessor = controller.getChartProcessor();
         scanTable.processScanDir(stage, chartProcessor, true);
     }
 
-    private void processScanDir(ActionEvent event) {
+    private void processScanDir() {
         ChartProcessor chartProcessor = controller.getChartProcessor();
         scanTable.processScanDir(stage, chartProcessor, false);
     }
 
-    private void scanDirAction(ActionEvent event) {
+    private void scanDirAction() {
         scanTable.loadScanFiles(stage);
     }
 
-    private void loadTableAction(ActionEvent event) {
+    private void loadTableAction() {
         scanTable.loadScanTable();
     }
 
-    private void saveTableAction(ActionEvent event) {
+    private void saveTableAction() {
         scanTable.saveScanTable();
     }
 
-    private void freezeSort(ActionEvent event) {
-
-    }
-
-    private void purgeInactive(ActionEvent event) {
+    private void purgeInactive() {
         ObservableList<FileTableItem> tempItems = FXCollections.observableArrayList();
         tempItems.addAll(tableView.getItems());
         scanTable.getItems().setAll(tempItems);
     }
 
-    private void loadFromDataset(ActionEvent event) {
+    private void loadFromDataset() {
         scanTable.loadFromDataset();
     }
 
-    private void openSelectedListFile(ActionEvent event) {
+    private void openSelectedListFile() {
         scanTable.openSelectedListFile();
-    }
-
-    private void loadScriptTab(Event event) {
     }
 
     public Stage getStage() {
@@ -315,7 +305,7 @@ public class ScannerTool implements ControllerTool {
         return result;
     }
 
-    private void measure(ActionEvent event) {
+    private void measure() {
         TextInputDialog textInput = new TextInputDialog();
         textInput.setHeaderText("New column name");
         Optional<String> columNameOpt = textInput.showAndWait();
@@ -329,7 +319,6 @@ public class ScannerTool implements ControllerTool {
                     return;
                 }
             }
-            DatasetBase dataset = chart.getDataset();
             double[] ppms = chart.getVerticalCrosshairPositions();
             double[] wppms = new double[2];
             wppms[0] = chart.getAxis(0).getLowerBound();
@@ -384,7 +373,6 @@ public class ScannerTool implements ControllerTool {
 
     private void measureSearchBins() {
         int nBins = 100;
-        DatasetBase dataset = chart.getDataset();
         double[] ppms = chart.getVerticalCrosshairPositions();
         double[] wppms = new double[2];
         wppms[0] = chart.getAxis(0).getLowerBound();
@@ -483,7 +471,6 @@ public class ScannerTool implements ControllerTool {
 
     public List<Double> getValues(String columnName) {
         ObservableList<FileTableItem> items = scanTable.getItems();
-        Map<Integer, FileTableItem> map = new HashMap<>();
         List<Double> values = new ArrayList<>(items.size());
         values.addAll(Collections.nCopies(items.size(), 0.0));
         for (FileTableItem item : items) {
