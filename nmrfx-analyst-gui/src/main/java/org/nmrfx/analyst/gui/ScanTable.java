@@ -15,8 +15,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
-
 package org.nmrfx.analyst.gui;
 
 import java.io.BufferedReader;
@@ -408,7 +406,7 @@ public class ScanTable {
         if (fileTableItems.isEmpty()) {
             return;
         }
-        
+
         if (!combineFileName.contains(".")) {
             combineFileName += ".nv";
         }
@@ -484,6 +482,7 @@ public class ScanTable {
 
             File saveTableFile = new File(scanDir, "scntbl.txt");
             saveScanTable(saveTableFile);
+            scannerTool.miner.setDisable(!combineFileMode);
 
         } finally {
             processingTable = false;
@@ -623,6 +622,7 @@ public class ScanTable {
         }
 
         processingTable = true;
+        boolean combineFileMode = true;
         try {
             fileListItems.clear();
             try (BufferedReader br = new BufferedReader(new FileReader(file))) {
@@ -679,6 +679,8 @@ public class ScanTable {
                             datasetName = fieldMap.get("dataset");
                             if (firstDatasetName.equals("")) {
                                 firstDatasetName = datasetName;
+                            } else if (!firstDatasetName.equals(datasetName)) {
+                                combineFileMode = false;
                             }
                         }
 
@@ -758,6 +760,8 @@ public class ScanTable {
                 chart.autoScale();
             }
             addGroupColumn();
+            scannerTool.miner.setDisable(!combineFileMode);
+
         } catch (NumberFormatException e) {
         } finally {
             processingTable = false;
@@ -923,16 +927,17 @@ public class ScanTable {
                     doubleExtraColumn.setCellValueFactory((e) -> new SimpleDoubleProperty(e.getValue().getDoubleExtra(header)));
                     doubleExtraColumn.setCellFactory(col
                             -> new TableCell<FileTableItem, Number>() {
-                                @Override
-                                public void updateItem(Number value, boolean empty) {
-                                    super.updateItem(value, empty);
-                                    if (empty) {
-                                        setText(null);
-                                    } else {
-                                        setText(String.format("%.4f", value.doubleValue()));
-                                    }
-                                }
-                            }); tableView.getColumns().add(doubleExtraColumn);
+                        @Override
+                        public void updateItem(Number value, boolean empty) {
+                            super.updateItem(value, empty);
+                            if (empty) {
+                                setText(null);
+                            } else {
+                                setText(String.format("%.4f", value.doubleValue()));
+                            }
+                        }
+                    });
+                    tableView.getColumns().add(doubleExtraColumn);
                     break;
                 case "I":
                     TableColumn<FileTableItem, Number> intExtraColumn = new TableColumn<>(header);

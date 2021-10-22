@@ -25,6 +25,7 @@ package org.nmrfx.analyst.gui;
 
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -50,6 +51,7 @@ import org.nmrfx.processor.gui.spectra.NMRAxis;
 public class MinerController {
 
     ScannerTool scannerTool;
+    List<Menu> menus = new ArrayList<>();
 
     public MinerController(ScannerTool scannerTool) {
         this.scannerTool = scannerTool;
@@ -86,6 +88,14 @@ public class MinerController {
         MenuItem undoAlignMenuItem = new MenuItem("Undo");
         undoAlignMenuItem.setOnAction(e -> undoAlign(e));
         alignMenu.getItems().addAll(maxAlignMenuItem, covMenuItem, segmentMenuItem, undoAlignMenuItem);
+        menus.add(normMenu);
+        menus.add(alignMenu);
+    }
+
+    public void setDisable(boolean state) {
+        for (var menu : menus) {
+            menu.setDisable(state);
+        }
     }
 
     @FXML

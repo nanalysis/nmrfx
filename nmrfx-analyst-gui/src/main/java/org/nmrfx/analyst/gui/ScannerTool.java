@@ -95,7 +95,7 @@ public class ScannerTool implements ControllerTool {
     static Consumer createControllerAction = null;
     TRACTGUI tractGUI = null;
     TablePlotGUI plotGUI = null;
-
+    MinerController miner;
     static final Pattern WPAT = Pattern.compile("([^:]+):([0-9\\.\\-]+)_([0-9\\.\\-]+)_([0-9\\.\\-]+)_([0-9\\.\\-]+)(_[VMmE]W)$");
     static final Pattern RPAT = Pattern.compile("([^:]+):([0-9\\.\\-]+)_([0-9\\.\\-]+)(_[VMmE][NR])?$");
     static final Pattern[] PATS = {WPAT, RPAT};
@@ -124,7 +124,7 @@ public class ScannerTool implements ControllerTool {
         scannerBar.getItems().add(makeRegionMenu());
         scannerBar.getItems().add(makeScoreMenu());
         scannerBar.getItems().add(makeToolMenu());
-        MinerController miner = new MinerController(this);
+        miner = new MinerController(this);
         scanTable = new ScanTable(this, tableView);
     }
 
