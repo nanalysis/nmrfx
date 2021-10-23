@@ -1882,14 +1882,16 @@ public class PolyChart implements PeakListener {
             axModes[0] = AXMODE.PPM;
             axModes[1] = AXMODE.PPM;
             for (int i = 2; i < nAxes; i++) {
-                //axes[i] = new NMRAxis(Orientation.HORIZONTAL, Position.BOTTOM, datasetAttrs.pt[i][0], datasetAttrs.pt[i][1], 4);
-                if (dataset.getFreqDomain(i)) {
-                    axModes[i] = AXMODE.PPM;
-                } else {
-                    axModes[i] = AXMODE.PTS;
+                if (axes[i] != null) {
+                    //axes[i] = new NMRAxis(Orientation.HORIZONTAL, Position.BOTTOM, datasetAttrs.pt[i][0], datasetAttrs.pt[i][1], 4);
+                    if (dataset.getFreqDomain(i)) {
+                        axModes[i] = AXMODE.PPM;
+                    } else {
+                        axModes[i] = AXMODE.PTS;
+                    }
+                    axes[i].lowerBoundProperty().addListener(new AxisChangeListener(this, i, 0));
+                    axes[i].upperBoundProperty().addListener(new AxisChangeListener(this, i, 1));
                 }
-                axes[i].lowerBoundProperty().addListener(new AxisChangeListener(this, i, 0));
-                axes[i].upperBoundProperty().addListener(new AxisChangeListener(this, i, 1));
             }
             drawSpectrum.setAxes(axes);
             drawSpectrum.setDisDim(disDimProp.getValue());

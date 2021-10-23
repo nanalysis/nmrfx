@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -26,6 +27,7 @@ import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.io.PeakReader;
 import org.nmrfx.peaks.io.PeakWriter;
 import org.nmrfx.processor.datasets.peaks.PeakListTools;
+import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
 import org.nmrfx.utils.GUIUtils;
 
@@ -137,6 +139,10 @@ public class PeakMenuBar {
         measureEVolumeItem.setOnAction(e -> measureEVolumes());
         measureMenu.getItems().add(measureEVolumeItem);
 
+        MenuItem measureEVolumeMultiItem = new MenuItem("EVolumes - Multi");
+        measureEVolumeMultiItem.setOnAction(e -> measureEVolumesMulti());
+        measureMenu.getItems().add(measureEVolumeMultiItem);
+
         menuBar.getItems().add(measureMenu);
 
         for (Entry<String, Consumer<PeakList>> entry : extras.entrySet()) {
@@ -209,7 +215,7 @@ public class PeakMenuBar {
     void clusterPeakListDim(int dim) {
         PeakList peakList = getPeakList();
         if ((peakList != null) && (peakList.getNDim() > dim)) {
-            PeakListTools.clusterPeakColumns(peakList,dim);
+            PeakListTools.clusterPeakColumns(peakList, dim);
         }
     }
 
@@ -269,6 +275,16 @@ public class PeakMenuBar {
             return;
         }
         PeakListTools.quantifyPeaks(getPeakList(), "evolume");
+        refreshPeakView();
+    }
+
+    void measureEVolumesMulti() {
+        PolyChart chart = PolyChart.getActiveChart();
+        var datasets = new ArrayList<Dataset>();
+        for (var dataAttr : chart.getDatasetAttributes()) {
+            datasets.add((Dataset) dataAttr.getDataset());
+        }
+        PeakListTools.quantifyPeaks(getPeakList(), datasets, "evolume");
         refreshPeakView();
     }
 
