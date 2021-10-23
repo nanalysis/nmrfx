@@ -168,6 +168,8 @@ public class GUIProject extends ProjectBase {
                             if (!readSTAR3) {
                                 System.out.println("readpeaks");
                                 loadProject(projectDir, "peaks");
+                            } else {
+                                loadProject(projectDir, "mpk2");
                             }
                             break;
                         case "shifts":

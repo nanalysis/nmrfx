@@ -103,7 +103,7 @@ public class ProjectBase {
         if (matcher.matches()) {
             fileNum = Optional.of(Integer.parseInt(matcher.group(1)));
         } else if (matcher2.matches()) {
-            fileNum = Optional.of(Integer.parseInt(matcher2.group(1)));            
+            fileNum = Optional.of(Integer.parseInt(matcher2.group(1)));
         }
         return fileNum;
     }
@@ -119,10 +119,10 @@ public class ProjectBase {
     public String getName() {
         return name;
     }
-    
+
     public Map<String, Compound> getCompoundMap() {
         return compoundMap;
-    }    
+    }
 
     public boolean removeDataset(String datasetName) {
         DatasetBase toRemove = datasetMap.get(datasetName);
@@ -284,6 +284,11 @@ public class ProjectBase {
     public void loadProject(Path projectDir, String subDir) throws IOException, IllegalStateException {
         ProjectBase currentProject = getActive();
         setActive();
+        boolean mpk2Mode = false;
+        if (subDir.equals("mpk2")) {
+            subDir = "peaks";
+            mpk2Mode = true;
+        }
         FileSystem fileSystem = FileSystems.getDefault();
         if (projectDir != null) {
             Path subDirectory = fileSystem.getPath(projectDir.toString(), subDir);
@@ -293,7 +298,11 @@ public class ProjectBase {
                         loadDatasets(subDirectory);
                         break;
                     case "peaks":
-                        loadPeaks(subDirectory);
+                        if (mpk2Mode) {
+                            loadMPKs(subDirectory);
+                        } else {
+                            loadPeaks(subDirectory);
+                        }
                         break;
                     default:
                         throw new IllegalStateException("Invalid subdir type");
@@ -336,6 +345,28 @@ public class ProjectBase {
                 throw new IOException(ex.getMessage());
             }
             peakReader.linkResonances();
+        }
+    }
+
+    void loadMPKs(Path directory) throws IOException {
+        if (Files.isDirectory(directory)) {
+            PeakReader peakReader = new PeakReader(true);
+            try (DirectoryStream<Path> fileStream = Files.newDirectoryStream(directory, "*.mpk2")) {
+                for (var f : fileStream) {
+
+                    String fileName = f.toFile().getName();
+                    String peakListName = fileName.substring(0, fileName.length() - 5);
+                    System.out.println(peakListName);
+                    PeakList peakList = PeakList.get(peakListName);
+                    if (peakList != null) {
+                        if (Files.exists(f)) {
+                            peakReader.readMPK2(peakList, f.toString());
+                        }
+                    }
+                }
+            } catch (DirectoryIteratorException | IOException ex) {
+                throw new IOException(ex.getMessage());
+            }
         }
     }
 
