@@ -1424,15 +1424,16 @@ public class NMRStarReader {
             String atomName = (String) atomColumn.get(i);
             Double value = null;
             Double error = null;
-            Double RexValue = null;
-            Double RexError = null;
+            Double RexValue = 0.0;
+            Double RexError = 0.0;
             if (!valColumn.get(i).equals(".")) {
                 value = Double.parseDouble(valColumn.get(i));
             }
             if (!errColumn.get(i).equals(".")) {
                 error = Double.parseDouble(errColumn.get(i));
             }
-            if (expType.equals(relaxTypes.R2) || expType.equals(relaxTypes.T1RHO)) {
+            if ((expType.equals(relaxTypes.R2) || expType.equals(relaxTypes.T1RHO))
+                    && (RexValColumn != null)) {
                 if (!RexValColumn.get(i).equals(".")) {
                     RexValue = Double.parseDouble(RexValColumn.get(i));
                 }
