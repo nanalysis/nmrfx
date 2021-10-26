@@ -28,6 +28,7 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -782,8 +783,9 @@ public class NMRStarWriter {
      * @throws IOException
      * @throws InvalidMoleculeException
      */
-    public static void writeNOE(FileWriter chan, MoleculeBase molecule, RelaxationData noeData0, int listID) throws IOException, InvalidMoleculeException {
+    public static void writeNOE(FileWriter chan, MoleculeBase molecule, List<RelaxationData> noeDataList, int listID) throws IOException, InvalidMoleculeException {
         List<Atom> atoms = molecule.getAtomArray();
+        RelaxationData noeData0 = noeDataList.get(0);
         String frameName = noeData0.getID();
         double field = noeData0.getField();
         chan.write("    ########################################\n");
@@ -846,26 +848,18 @@ public class NMRStarWriter {
         int idx = 1;
 
         List<String> prevRes = new ArrayList<>();
-        Iterator entityIterator = molecule.entityLabels.values().iterator();
-        while (entityIterator.hasNext()) {
-            Entity entity = (Entity) entityIterator.next();
+        for (RelaxationData noeData : noeDataList) {
+            var atom = noeData.getAtom();
+            Entity entity = atom.getTopEntity();
             int entityID = entity.getIDNum();
-            for (Atom atom : atoms) {
-                List<RelaxationData> noeDataList = atom.getRelaxationData(relaxTypes.NOE, field, null).stream()
-                        .filter(r -> r.getID().contains("RING_fit")).collect(Collectors.toList());
-                if (noeDataList != null) {
-                    for (RelaxationData noeData : noeDataList) {
-                        Double value = noeData.getValue();
-                        Double error = noeData.getError();
-                        Atom atom2 = noeData.getExtraAtoms().get(0);
-                        String outputLine = toStarNOEString(idx, listID, entityID, atom, atom2, value, error);
-                        if (outputLine != null && !prevRes.contains(entityID + "." + atom.getResidueNumber())) {
-                            chan.write("      " + outputLine + "\n");
-                            prevRes.add(entityID + "." + atom.getResidueNumber());
-                            idx++;
-                        }
-                    }
-                }
+            Double value = noeData.getValue();
+            Double error = noeData.getError();
+            Atom atom2 = noeData.getExtraAtoms().get(0);
+            String outputLine = toStarNOEString(idx, listID, entityID, atom, atom2, value, error);
+            if (outputLine != null && !prevRes.contains(entityID + "." + atom.getResidueNumber())) {
+                chan.write("      " + outputLine + "\n");
+                prevRes.add(entityID + "." + atom.getResidueNumber());
+                idx++;
             }
         }
 
@@ -963,8 +957,9 @@ public class NMRStarWriter {
      * @throws IOException
      * @throws InvalidMoleculeException
      */
-    public static void writeRelaxation(FileWriter chan, MoleculeBase molecule, RelaxationData relaxDataA0, int listID) throws IOException, InvalidMoleculeException {
+    public static void writeRelaxation(FileWriter chan, MoleculeBase molecule, List<RelaxationData> relaxDataList, int listID) throws IOException, InvalidMoleculeException {
         List<Atom> atoms = molecule.getAtomArray();
+        RelaxationData relaxDataA0 = relaxDataList.get(0);
         relaxTypes expType = relaxDataA0.getExpType();
         String expName = expType.getName().toUpperCase();
         if (expName.equals("R1")) {
@@ -1048,34 +1043,28 @@ public class NMRStarWriter {
         int idx = 1;
 
         List<String> prevRes = new ArrayList<>();
-        Iterator entityIterator = molecule.entityLabels.values().iterator();
-        while (entityIterator.hasNext()) {
-            Entity entity = (Entity) entityIterator.next();
+
+        for (RelaxationData relaxData : relaxDataList) {
+            var atom = relaxData.getAtom();
+            Entity entity = atom.getTopEntity();
             int entityID = entity.getIDNum();
-            for (Atom atom : atoms) {
-                List<RelaxationData> relaxDataList = atom.getRelaxationData(expType, field, null).stream()
-                        .filter(r -> r.getID().contains("RING_fit")).collect(Collectors.toList());
-                if (relaxDataList != null) {
-                    for (RelaxationData relaxData : relaxDataList) {
-                        Double value = relaxData.getValue();
-                        Double error = relaxData.getError();
-                        List<Double> results = new ArrayList<>();
-                        results.add(value);
-                        results.add(error);
-                        if (expName.equals(relaxTypes.R2) || expName.equals(relaxTypes.T1RHO)) {
-                            Double RexValue = ((RelaxationRex) relaxData).getRexValue();
-                            Double RexError = ((RelaxationRex) relaxData).getRexError();
-                            results.add(RexValue);
-                            results.add(RexError);
-                        }
-                        String outputLine = toStarRelaxationString(idx, expType, listID, entityID, atom, results);
-                        if (outputLine != null && !prevRes.contains(entityID + "." + atom.getResidueNumber())) {
-                            chan.write("      " + outputLine + "\n");
-                            prevRes.add(entityID + "." + atom.getResidueNumber());
-                            idx++;
-                        }
-                    }
-                }
+            Double value = relaxData.getValue();
+            Double error = relaxData.getError();
+            List<Double> results = new ArrayList<>();
+            results.add(value);
+            results.add(error);
+            if (expType.equals(relaxTypes.R2) || expType.equals(relaxTypes.T1RHO)) {
+                Double RexValue = ((RelaxationRex) relaxData).getRexValue();
+                Double RexError = ((RelaxationRex) relaxData).getRexError();
+                results.add(RexValue);
+                results.add(RexError);
+            }
+
+            String outputLine = toStarRelaxationString(idx, expType, listID, entityID, atom, results);
+            if (outputLine != null && !prevRes.contains(entityID + "." + atom.getResidueNumber())) {
+                chan.write("      " + outputLine + "\n");
+                prevRes.add(entityID + "." + atom.getResidueNumber());
+                idx++;
             }
         }
 
@@ -1217,22 +1206,17 @@ public class NMRStarWriter {
             iPath++;
         }
         if (molecule != null) {
-            Collection<RelaxationData> molRelaxData = RelaxationData.getRelaxationData(molecule.getAtomArray());
-            Set<relaxTypes> expTypes = RelaxationData.getExpTypes(molecule);
-            if (expTypes != null) {
-                for (relaxTypes expType : expTypes) {
-                    int listID = 1;
-                    List<RelaxationData> relaxDataList = molRelaxData.stream()
-                            .filter(d -> d.getID().contains("RING_fit") && d.getExpType().equals(expType))
-                            .collect(Collectors.toList());
-                    if (!relaxDataList.isEmpty()) {
-                        if (relaxDataList.get(0).getExpType().equals(relaxTypes.NOE)) {
-                            writeNOE(chan, molecule, relaxDataList.get(0), listID);
-                        } else {
-                            writeRelaxation(chan, molecule, relaxDataList.get(0), listID);
-                        }
-                        listID++;
+            var molRelaxData = RelaxationData.getRelaxationData(molecule.getAtomArray());
+            int listID = 1;
+            for (var relaxEntry : molRelaxData.entrySet()) {
+                var relaxDataList = relaxEntry.getValue();
+                if (!relaxDataList.isEmpty()) {
+                    if (relaxDataList.get(0).getExpType().equals(relaxTypes.NOE)) {
+                        writeNOE(chan, molecule, relaxDataList, listID);
+                    } else {
+                        writeRelaxation(chan, molecule, relaxDataList, listID);
                     }
+                    listID++;
                 }
             }
         }
