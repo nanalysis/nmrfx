@@ -129,8 +129,8 @@ public class OrderPar implements RelaxationValues {
                 Sf2, Sf2err,
                 Ss2, Ss2err,
                 sumSqErr, nValues, model);
-        double delSf = 1.0 - Sf2;
-        double delSs = 1.0 - Ss2;
+        double delSf = Sf2 == null ? 0.0 : 1.0 - Sf2;
+        double delSs = Ss2 == null ? 0.0 : 1.0 - Ss2;
         if ((delSf > 0.01) && (delSs > 0.01)) {
             if (TauF > 5.0e-12) {
                 newPar.modelNum = 5.0;
