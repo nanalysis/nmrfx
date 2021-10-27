@@ -294,7 +294,9 @@ public class OrderPar implements RelaxationValues {
         sBuilder.append(TauS).append(" ");
         sBuilder.append(Rex).append(" ");
         sBuilder.append(Sf2).append(" ");
-        sBuilder.append(Ss2);
+        sBuilder.append(Ss2).append(" ");
+        sBuilder.append(model).append(" ");
+        sBuilder.append(modelNum);
         return sBuilder.toString();
     }
 }
