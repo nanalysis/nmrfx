@@ -912,14 +912,13 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
     }
 
     public void setDrawList(List<Integer> indices) {
+        drawList.clear();
         if (indices.isEmpty()) {
-            drawList.clear();
             selectionList = null;
         } else {
-            drawList.clear();
             if (dim.length > 1) {
                 indices.stream().filter(i -> i >= 0 && i < theFile.getSize(dim[1])).
-                        forEach(i -> drawList.add(i));
+                        forEach(drawList::add);
                 selectionList = new boolean[indices.size()];
             } else {
                 selectionList = null;

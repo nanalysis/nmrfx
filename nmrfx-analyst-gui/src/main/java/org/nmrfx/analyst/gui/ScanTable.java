@@ -492,7 +492,7 @@ public class ScanTable {
     public void openSelectedListFile() {
         int selItem = tableView.getSelectionModel().getSelectedIndex();
         if (selItem >= 0) {
-            if ((scanDir == null) || scanDir.toString().equals("")) {
+            if ((scanDir == null) || scanDir.toString().isBlank()) {
                 return;
             }
             ProcessorController processorController = scannerTool.getFXMLController().getProcessorController(true);
@@ -617,7 +617,7 @@ public class ScanTable {
         boolean[] notDouble = null;
         boolean[] notInteger = null;
         String firstDatasetName = "";
-        if ((scanDir == null) || scanDir.toString().trim().equals("")) {
+        if ((scanDir == null) || scanDir.toString().isBlank()) {
             setScanDirectory(file.getParentFile());
         }
 
@@ -689,7 +689,7 @@ public class ScanTable {
                                 System.out.println("No path field or value");
                                 return;
                             }
-                            if ((scanDir == null) || scanDir.toString().trim().equals("")) {
+                            if ((scanDir == null) || scanDir.toString().isBlank()) {
                                 return;
                             }
                             Path filePath = FileSystems.getDefault().getPath(scanDir.toString(), fileName);
