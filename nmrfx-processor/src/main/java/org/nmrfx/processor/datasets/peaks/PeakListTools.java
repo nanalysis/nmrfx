@@ -997,6 +997,7 @@ public class PeakListTools {
 
     /**
      *
+     * @param peakList
      * @param dataset
      * @param f
      * @param mode
@@ -1014,6 +1015,7 @@ public class PeakListTools {
 
     /**
      *
+     * @param peakList
      * @param dataset
      * @param f
      * @param mode
@@ -1023,12 +1025,10 @@ public class PeakListTools {
         if (f == null) {
             throw new IllegalArgumentException("Unknown measurment type: " + mode);
         }
-        int[] planes = new int[1];
-        int[] pdim = peakList.getDimsForDataset(dataset, true);
 
         peakList.peaks().stream().forEach(peak -> {
             double[][] values = new double[2][nPlanes];
-            measurePlanes(nPlanes, peak, dataset, pdim, f, mode, values, 0);
+            measurePlanes(nPlanes, peak, dataset, f, mode, values, 0);
             setValues(peak, values, mode);
         });
         setMeasureX(peakList, dataset, nPlanes);
@@ -1036,7 +1036,8 @@ public class PeakListTools {
 
     /**
      *
-     * @param dataset
+     * @param peakList
+     * @param datasets
      * @param f
      * @param mode
      * @param nPlanes
@@ -1045,14 +1046,12 @@ public class PeakListTools {
         if (f == null) {
             throw new IllegalArgumentException("Unknown measurment type: " + mode);
         }
-        int[] planes = new int[1];
 
         peakList.peaks().stream().forEach(peak -> {
             double[][] values = new double[2][datasets.size() * nPlanes];
             int j = 0;
             for (Dataset dataset : datasets) {
-                int[] pdim = peakList.getDimsForDataset(dataset, true);
-                measurePlanes(nPlanes, peak, dataset, pdim, f, mode, values, j);
+                measurePlanes(nPlanes, peak, dataset, f, mode, values, j);
                 j += nPlanes;
             }
             setValues(peak, values, mode);
@@ -1074,9 +1073,10 @@ public class PeakListTools {
     }
 
     private static void measurePlanes(int nPlanes, Peak peak, Dataset dataset,
-            int[] pdim, java.util.function.Function<RegionData, Double> f,
+            java.util.function.Function<RegionData, Double> f,
             String mode, double[][] values, int iValue) {
         int[] planes = new int[1];
+        int[] pdim = peak.getPeakList().getDimsForDataset(dataset, true);
         for (int i = 0; i < nPlanes; i++) {
             planes[0] = i;
             try {
