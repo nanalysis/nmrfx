@@ -15,12 +15,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
- /*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package org.nmrfx.analyst.gui;
 
 import java.io.BufferedReader;
@@ -34,7 +28,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -50,7 +43,6 @@ import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
-import javafx.event.EventHandler;
 import javafx.scene.Node;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
@@ -99,9 +91,10 @@ public class ScanTable {
     TableView<FileTableItem> tableView;
     TableFilter fileTableFilter;
     TableFilter.Builder builder = null;
-    String scanDir = null;
-    String scanOutputDir = null;
-    String combineFileName = "process.nv";
+    File scanDir = null;
+    File scanOutputTable = null;
+    String outputFileName = "process.nv";
+
     PopOver popOver = new PopOver();
     ObservableList<FileTableItem> fileListItems = FXCollections.observableArrayList();
     HashMap<String, String> columnTypes = new HashMap<>();
@@ -110,12 +103,9 @@ public class ScanTable {
     Set<String> groupNames = new TreeSet<>();
     Map<String, Map<String, Integer>> groupMap = new HashMap<>();
     int groupSize = 1;
-    ListChangeListener filterItemListener = new ListChangeListener() {
-        @Override
-        public void onChanged(ListChangeListener.Change c) {
-            getGroups();
-            selectionChanged();
-        }
+    ListChangeListener filterItemListener = (ListChangeListener) (ListChangeListener.Change c) -> {
+        getGroups();
+        selectionChanged();
     };
 
     static Color color0 = Color.web("#4d615d");
@@ -220,7 +210,9 @@ public class ScanTable {
         List<Integer> selected = tableView.getSelectionModel().getSelectedIndices();
 
         ProcessorController processorController = scannerTool.getFXMLController().getProcessorController(false);
-        if ((processorController == null) || processorController.isViewingDataset()) {
+        if ((processorController == null)
+                || processorController.isViewingDataset()
+                || !processorController.isVisible()) {
             List<Integer> showRows = new ArrayList<>();
             if (selected.isEmpty()) {
                 for (int i = 0, n = tableView.getItems().size(); i < n; i++) {
@@ -240,7 +232,9 @@ public class ScanTable {
             for (Integer index : showRows) {
                 FileTableItem fileTableItem = (FileTableItem) tableView.getItems().get(index);
                 Integer row = fileTableItem.getRow();
-                String datasetName = fileTableItem.getDatasetName();
+                File datasetFile = new File(scanDir, fileTableItem.getDatasetName());
+                String datasetName = datasetFile.getName();
+
                 int iGroup = fileTableItem.getGroup();
                 groupSet.add(iGroup);
                 Color color = getGroupColor(iGroup);
@@ -249,7 +243,6 @@ public class ScanTable {
                 if ((dataset == null) || (chart.getDatasetAttributes().size() != 1) || !dataset.getName().equals(datasetName)) {
                     dataset = Dataset.getDataset(datasetName);
                     if (dataset == null) {
-                        File datasetFile = new File(scanOutputDir, datasetName);
                         FXMLController.getActiveController().openDataset(datasetFile, false);
                     } else {
                         List<String> datasetNames = new ArrayList<>();
@@ -286,33 +279,19 @@ public class ScanTable {
             }
             chart.refresh();
 
+        } else {
+            openSelectedListFile();
         }
     }
 
     final protected void setDragHandlers(Node mouseNode
     ) {
 
-        mouseNode.setOnDragOver(new EventHandler<DragEvent>() {
-            @Override
-            public void handle(DragEvent event) {
-                mouseDragOver(event);
-            }
-        }
-        );
-        mouseNode.setOnDragDropped(new EventHandler<DragEvent>() {
-            @Override
-            public void handle(DragEvent event) {
-                mouseDragDropped(event);
-            }
-        }
-        );
-        mouseNode.setOnDragExited(new EventHandler<DragEvent>() {
-            @Override
-            public void handle(DragEvent event) {
-                mouseNode.setStyle("-fx-border-color: #C6C6C6;");
-            }
-        }
-        );
+        mouseNode.setOnDragOver(this::mouseDragOver);
+        mouseNode.setOnDragDropped(this::mouseDragDropped);
+        mouseNode.setOnDragExited((DragEvent event) -> {
+            mouseNode.setStyle("-fx-border-color: #C6C6C6;");
+        });
     }
 
     private void mouseDragDropped(final DragEvent e) {
@@ -324,23 +303,16 @@ public class ScanTable {
             // Only get the first file from the list
             final File file = db.getFiles().get(0);
             if (file.isDirectory()) {
-                scanDir = file.getAbsolutePath();
-                Platform.runLater(new Runnable() {
-                    @Override
-                    public void run() {
-                        int beginIndex = scanDir.length() + 1;
-                        ArrayList<String> nmrFiles = NMRDataUtil.findNMRDirectories(scanDir);
-                        String[] headers = {};
-                        updateTable(headers);
-                        loadScanFiles(nmrFiles, beginIndex);
-                    }
+                scanDir = file;
+                Platform.runLater(() -> {
+                    ArrayList<String> nmrFiles = NMRDataUtil.findNMRDirectories(scanDir.getAbsolutePath());
+                    String[] headers = {};
+                    updateTable(headers);
+                    loadScanFiles(nmrFiles);
                 });
             } else {
-                Platform.runLater(new Runnable() {
-                    @Override
-                    public void run() {
-                        loadScanTable(file);
-                    }
+                Platform.runLater(() -> {
+                    loadScanTable(file);
                 });
 
             }
@@ -374,7 +346,7 @@ public class ScanTable {
 
     public void setScanDirectory(File selectedDir) {
         if (selectedDir != null) {
-            scanDir = selectedDir.getPath();
+            scanDir = selectedDir;
         } else {
             scanDir = null;
         }
@@ -386,15 +358,14 @@ public class ScanTable {
         if (scanDirFile == null) {
             return;
         }
-        scanDir = scanDirFile.toString();
-        int beginIndex = scanDir.length() + 1;
-        ArrayList<String> nmrFiles = NMRDataUtil.findNMRDirectories(scanDir);
+        scanDir = scanDirFile;
+        ArrayList<String> nmrFiles = NMRDataUtil.findNMRDirectories(scanDir.getAbsolutePath());
         String[] headers = {};
         processingTable = true;
         try {
             updateTable(headers);
             fileListItems.clear();
-            loadScanFiles(nmrFiles, beginIndex);
+            loadScanFiles(nmrFiles);
         } catch (Exception e) {
         } finally {
             processingTable = false;
@@ -407,29 +378,27 @@ public class ScanTable {
             return;
         }
 
-        if ((scanDir == null) || scanDir.trim().equals("")) {
+        if ((scanDir == null) || scanDir.toString().equals("")) {
             GUIUtils.warn("Scanner Error", "No scan directory");
             return;
         }
-        DirectoryChooser dirChooser = new DirectoryChooser();
-        dirChooser.setTitle("Output directory");
-        File scanOutputDirFile = dirChooser.showDialog(null);
-        if (scanOutputDirFile == null) {
+        String outDirName = GUIUtils.input("Output directory name", "output");
+        if (outDirName == null) {
             return;
         }
-        scanOutputDir = scanOutputDirFile.toString();
-
-        FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle("Output filename");
-        fileChooser.setInitialDirectory(scanOutputDirFile);
-        fileChooser.setInitialFileName(combineFileName);
-        File combineFile = fileChooser.showSaveDialog(null);
-        if (combineFile == null) {
+        Path outDirPath = Paths.get(scanDir.toString(), outDirName);
+        File scanOutputDir = outDirPath.toFile();
+        if (!scanOutputDir.exists() && !scanOutputDir.mkdir()) {
+            GUIUtils.warn("Scanner Error", "Could not create output dir");
             return;
         }
-        combineFileName = combineFile.getName();
 
-        if (!scanOutputDirFile.exists() || !scanOutputDirFile.isDirectory() || !scanOutputDirFile.canWrite()) {
+        String combineFileName = GUIUtils.input("Output file name", "process");
+        if (combineFileName == null) {
+            return;
+        }
+
+        if (!scanOutputDir.exists() || !scanOutputDir.isDirectory() || !scanOutputDir.canWrite()) {
             GUIUtils.warn("Scanner Error", "Output dir is not a writable directory");
             return;
         }
@@ -437,9 +406,7 @@ public class ScanTable {
         if (fileTableItems.isEmpty()) {
             return;
         }
-        if ((combineFileName == null) || combineFileName.equals("")) {
-            return;
-        }
+
         if (!combineFileName.contains(".")) {
             combineFileName += ".nv";
         }
@@ -472,9 +439,9 @@ public class ScanTable {
                 fileNames.add(datasetFilePath);
                 fileTableItem.setRow(rowNum++);
                 if (combineFileMode) {
-                    fileTableItem.setDatasetName(combineFileName);
+                    fileTableItem.setDatasetName(outDirName + "/" + combineFileName);
                 } else {
-                    fileTableItem.setDatasetName(datasetFile.getName());
+                    fileTableItem.setDatasetName(outDirName + "/" + datasetFile.getName());
                 }
             }
             updateFilter();
@@ -513,8 +480,9 @@ public class ScanTable {
             chart.full();
             chart.autoScale();
 
-            File saveTableFile = new File(scanOutputDir, "scntbl.txt");
+            File saveTableFile = new File(scanDir, "scntbl.txt");
             saveScanTable(saveTableFile);
+            scannerTool.miner.setDisable(!combineFileMode);
 
         } finally {
             processingTable = false;
@@ -524,7 +492,7 @@ public class ScanTable {
     public void openSelectedListFile() {
         int selItem = tableView.getSelectionModel().getSelectedIndex();
         if (selItem >= 0) {
-            if ((scanDir == null) || scanDir.trim().equals("")) {
+            if ((scanDir == null) || scanDir.toString().isBlank()) {
                 return;
             }
             ProcessorController processorController = scannerTool.getFXMLController().getProcessorController(true);
@@ -532,7 +500,7 @@ public class ScanTable {
                 String scriptString = processorController.getCurrentScript();
                 FileTableItem fileTableItem = (FileTableItem) tableView.getItems().get(selItem);
                 String fileName = fileTableItem.getFileName();
-                String filePath = Paths.get(scanDir, fileName).toString();
+                String filePath = Paths.get(scanDir.getAbsolutePath(), fileName).toString();
 
                 scannerTool.getChart().getFXMLController().openFile(filePath, false, false);
 
@@ -542,11 +510,12 @@ public class ScanTable {
         }
     }
 
-    private void loadScanFiles(ArrayList<String> nmrFiles, int beginIndex) {
+    private void loadScanFiles(ArrayList<String> nmrFiles) {
         fileListItems.clear();
         long firstDate = Long.MAX_VALUE;
         List<FileTableItem> items = new ArrayList<>();
         for (String filePath : nmrFiles) {
+            File file = new File(filePath);
             NMRData nmrData = null;
             try {
                 nmrData = NMRDataUtil.getNMRData(filePath);
@@ -558,7 +527,8 @@ public class ScanTable {
                 if (date < firstDate) {
                     firstDate = date;
                 }
-                items.add(new FileTableItem(filePath.substring(beginIndex), nmrData.getSequence(), nmrData.getNDim(), nmrData.getDate(), 0, ""));
+                Path relativePath = scanDir.toPath().relativize(file.toPath());
+                items.add(new FileTableItem(relativePath.toString(), nmrData.getSequence(), nmrData.getNDim(), nmrData.getDate(), 0, ""));
             }
         }
         items.sort(Comparator.comparingLong(FileTableItem::getDate));
@@ -580,16 +550,8 @@ public class ScanTable {
         }
     }
 
-    public String getScanOutputDirectory() {
-        return scanOutputDir;
-    }
-
-    public void setScanOutputDirectory(File selectedDir) {
-        if (selectedDir != null) {
-            scanOutputDir = selectedDir.getAbsolutePath();
-        } else {
-            scanOutputDir = null;
-        }
+    public File getScanDir() {
+        return scanDir;
     }
 
     public void loadFromDataset() {
@@ -638,10 +600,6 @@ public class ScanTable {
         updateDataFrame();
         String firstDatasetName = dataset.getFileName();
         if (firstDatasetName.length() > 0) {
-            String dirName = dataset.getFile().getParent();
-            if (scanOutputDir == null) {
-                scanOutputDir = dirName;
-            }
             FXMLController.getActiveController().openDataset(dataset.getFile(), false);
             List<Integer> rows = new ArrayList<>();
             rows.add(0);
@@ -659,11 +617,12 @@ public class ScanTable {
         boolean[] notDouble = null;
         boolean[] notInteger = null;
         String firstDatasetName = "";
-        if ((scanDir == null) || scanDir.trim().equals("")) {
+        if ((scanDir == null) || scanDir.toString().isBlank()) {
             setScanDirectory(file.getParentFile());
         }
 
         processingTable = true;
+        boolean combineFileMode = true;
         try {
             fileListItems.clear();
             try (BufferedReader br = new BufferedReader(new FileReader(file))) {
@@ -720,6 +679,8 @@ public class ScanTable {
                             datasetName = fieldMap.get("dataset");
                             if (firstDatasetName.equals("")) {
                                 firstDatasetName = datasetName;
+                            } else if (!firstDatasetName.equals(datasetName)) {
+                                combineFileMode = false;
                             }
                         }
 
@@ -728,10 +689,10 @@ public class ScanTable {
                                 System.out.println("No path field or value");
                                 return;
                             }
-                            if ((scanDir == null) || scanDir.trim().equals("")) {
+                            if ((scanDir == null) || scanDir.toString().isBlank()) {
                                 return;
                             }
-                            Path filePath = FileSystems.getDefault().getPath(scanDir, fileName);
+                            Path filePath = FileSystems.getDefault().getPath(scanDir.toString(), fileName);
 
                             NMRData nmrData = null;
                             try {
@@ -788,11 +749,8 @@ public class ScanTable {
             fileTableFilter.resetFilter();
             updateDataFrame();
             if (firstDatasetName.length() > 0) {
-                String dirName = file.getParent();
-                if (scanOutputDir == null) {
-                    scanOutputDir = dirName;
-                }
-                Path path = FileSystems.getDefault().getPath(dirName, firstDatasetName);
+                File parentDir = file.getParentFile();
+                Path path = FileSystems.getDefault().getPath(parentDir.toString(), firstDatasetName);
                 FXMLController.getActiveController().openDataset(path.toFile(), false);
                 PolyChart chart = scannerTool.getChart();
                 List<Integer> rows = new ArrayList<>();
@@ -802,7 +760,9 @@ public class ScanTable {
                 chart.autoScale();
             }
             addGroupColumn();
-        } catch (Exception e) {
+            scannerTool.miner.setDisable(!combineFileMode);
+
+        } catch (NumberFormatException e) {
         } finally {
             processingTable = false;
         }
@@ -811,8 +771,8 @@ public class ScanTable {
     public void saveScanTable() {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Save Table File");
-        if (scanOutputDir != null) {
-            fileChooser.setInitialDirectory(new File(scanOutputDir));
+        if (scanDir != null) {
+            fileChooser.setInitialDirectory(scanDir);
         }
         File file = fileChooser.showSaveDialog(popOver);
         if (file != null) {
@@ -865,7 +825,7 @@ public class ScanTable {
                 columnName = name;
             } else {
                 for (String columnType : columnTypes.keySet()) {
-                    Integer columnNum = null;
+                    Integer columnNum;
                     if (columnType.startsWith("V.")) {
                         try {
                             int colonPos = columnType.indexOf(":");
@@ -961,30 +921,34 @@ public class ScanTable {
                 type = "S";
                 System.out.println("No type for " + header);
             }
-            if (type.equals("D")) {
-                TableColumn<FileTableItem, Number> doubleExtraColumn = new TableColumn<>(header);
-                doubleExtraColumn.setCellValueFactory((e) -> new SimpleDoubleProperty(e.getValue().getDoubleExtra(header)));
-                doubleExtraColumn.setCellFactory(col
-                        -> new TableCell<FileTableItem, Number>() {
-                    @Override
-                    public void updateItem(Number value, boolean empty) {
-                        super.updateItem(value, empty);
-                        if (empty) {
-                            setText(null);
-                        } else {
-                            setText(String.format("%.4f", value.doubleValue()));
+            switch (type) {
+                case "D":
+                    TableColumn<FileTableItem, Number> doubleExtraColumn = new TableColumn<>(header);
+                    doubleExtraColumn.setCellValueFactory((e) -> new SimpleDoubleProperty(e.getValue().getDoubleExtra(header)));
+                    doubleExtraColumn.setCellFactory(col
+                            -> new TableCell<FileTableItem, Number>() {
+                        @Override
+                        public void updateItem(Number value, boolean empty) {
+                            super.updateItem(value, empty);
+                            if (empty) {
+                                setText(null);
+                            } else {
+                                setText(String.format("%.4f", value.doubleValue()));
+                            }
                         }
-                    }
-                });
-                tableView.getColumns().add(doubleExtraColumn);
-            } else if (type.equals("I")) {
-                TableColumn<FileTableItem, Number> intExtraColumn = new TableColumn<>(header);
-                intExtraColumn.setCellValueFactory((e) -> new SimpleIntegerProperty(e.getValue().getIntegerExtra(header)));
-                tableView.getColumns().add(intExtraColumn);
-            } else {
-                TableColumn<FileTableItem, String> extraColumn = new TableColumn<>(header);
-                extraColumn.setCellValueFactory((e) -> new SimpleStringProperty(String.valueOf(e.getValue().getExtra(header))));
-                tableView.getColumns().add(extraColumn);
+                    });
+                    tableView.getColumns().add(doubleExtraColumn);
+                    break;
+                case "I":
+                    TableColumn<FileTableItem, Number> intExtraColumn = new TableColumn<>(header);
+                    intExtraColumn.setCellValueFactory((e) -> new SimpleIntegerProperty(e.getValue().getIntegerExtra(header)));
+                    tableView.getColumns().add(intExtraColumn);
+                    break;
+                default:
+                    TableColumn<FileTableItem, String> extraColumn = new TableColumn<>(header);
+                    extraColumn.setCellValueFactory((e) -> new SimpleStringProperty(String.valueOf(e.getValue().getExtra(header))));
+                    tableView.getColumns().add(extraColumn);
+                    break;
             }
         }
         updateFilter();
@@ -1014,7 +978,6 @@ public class ScanTable {
         String text = column.getText().toLowerCase();
         if (isGroupable(text)) {
             boolean isGrouped = groupNames.contains(text);
-            Node node = column.getGraphic();
             boolean isFiltered = isFiltered(column);
             StackPane stackPane = new StackPane();
             Rectangle rect = new Rectangle(10, 10);
@@ -1114,7 +1077,6 @@ public class ScanTable {
     }
 
     public void makeGroupMap() {
-        ObservableList<TableColumn<FileTableItem, ?>> columns = tableView.getColumns();
         groupMap.clear();
         for (String groupName : groupNames) {
             Set<String> group = new TreeSet<>();

@@ -535,6 +535,7 @@ public class SpectrumStatusBar {
         setPlaneRanges(2, nRows);
         List<Node> nodes = new ArrayList<>();
         nodes.add(cursorMenuButton);
+        nodes.add(toolButton);
 
         HBox.setHgrow(filler1, Priority.ALWAYS);
         HBox.setHgrow(filler2, Priority.ALWAYS);

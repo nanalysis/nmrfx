@@ -581,8 +581,8 @@ public class AnalystApp extends MainApp {
         statusBar.addToToolMenu("Peak Tools", peakSliderMenuItem);
         peakSliderMenuItem.setOnAction(e -> showPeakSlider());
 
-        MenuItem scannerToolItem = new MenuItem("Show Scanner Tool");
-        statusBar.addToToolMenu("Peak Tools", scannerToolItem);
+        MenuItem scannerToolItem = new MenuItem("Show Scanner");
+        statusBar.addToToolMenu(scannerToolItem);
         scannerToolItem.setOnAction(e -> showScannerTool());
 
     }

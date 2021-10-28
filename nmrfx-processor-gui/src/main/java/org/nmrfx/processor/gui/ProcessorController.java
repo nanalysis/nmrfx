@@ -242,6 +242,10 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         }
     }
 
+    public boolean isVisible() {
+        return pane.getParent() != null;
+    }
+
     public PropertyManager getPropertyManager() {
         return propertyManager;
     }

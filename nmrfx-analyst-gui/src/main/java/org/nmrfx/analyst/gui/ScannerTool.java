@@ -1,7 +1,19 @@
 /*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+ * NMRFx Processor : A Program for Processing NMR Data 
+ * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 package org.nmrfx.analyst.gui;
 
@@ -25,37 +37,25 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.event.ActionEvent;
-import javafx.event.Event;
-import javafx.fxml.FXML;
-import javafx.geometry.Orientation;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
-import javafx.scene.control.CheckBox;
 import javafx.scene.control.ContentDisplay;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuButton;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.RadioMenuItem;
-import javafx.scene.control.Separator;
-import javafx.scene.control.TabPane;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextInputDialog;
 import javafx.scene.control.Toggle;
 import javafx.scene.control.ToggleGroup;
 import javafx.scene.control.ToolBar;
-import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import org.apache.commons.math3.linear.ArrayRealVector;
 import org.apache.commons.math3.linear.RealVector;
-import org.controlsfx.control.PropertySheet;
-import org.controlsfx.control.PropertySheet.Item;
 import org.nmrfx.analyst.gui.tools.TRACTGUI;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.processor.datasets.Dataset;
@@ -67,15 +67,11 @@ import org.nmrfx.processor.gui.ChartProcessor;
 import org.nmrfx.processor.gui.ControllerTool;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.PolyChart;
-import static org.nmrfx.processor.gui.PreferencesController.getDatasetDirectory;
 import org.nmrfx.processor.gui.controls.FileTableItem;
 import org.nmrfx.utils.GUIUtils;
-import org.nmrfx.utils.properties.DirectoryOperationItem;
-import org.nmrfx.utils.properties.NvFxPropertyEditorFactory;
-import org.nmrfx.utils.properties.TextOperationItem;
 
 /**
- * FXML Controller class
+ * ScannerTool class
  *
  * @author Bruce Johnson
  */
@@ -83,27 +79,8 @@ public class ScannerTool implements ControllerTool {
 
     BorderPane borderPane;
 
-    @FXML
     ToolBar scannerBar;
-    @FXML
-    private VBox mainBox;
-    @FXML
-    private VBox opBox;
-    @FXML
-    private Button scanDirChooserButton;
-    @FXML
-    private Button loadTableChooserButton;
-    @FXML
-    private Button processScanDirButton;
-    @FXML
-    private Button measureButton;
-    @FXML
-    private CheckBox combineFiles;
-    @FXML
     private TableView<FileTableItem> tableView;
-    @FXML
-    private PropertySheet parSheet;
-    @FXML
     Consumer<ScannerTool> closeAction;
 
     FXMLController controller;
@@ -118,7 +95,7 @@ public class ScannerTool implements ControllerTool {
     static Consumer createControllerAction = null;
     TRACTGUI tractGUI = null;
     TablePlotGUI plotGUI = null;
-
+    MinerController miner;
     static final Pattern WPAT = Pattern.compile("([^:]+):([0-9\\.\\-]+)_([0-9\\.\\-]+)_([0-9\\.\\-]+)_([0-9\\.\\-]+)(_[VMmE]W)$");
     static final Pattern RPAT = Pattern.compile("([^:]+):([0-9\\.\\-]+)_([0-9\\.\\-]+)(_[VMmE][NR])?$");
     static final Pattern[] PATS = {WPAT, RPAT};
@@ -137,29 +114,17 @@ public class ScannerTool implements ControllerTool {
         Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "Close", iconSize, fontSize, ContentDisplay.TOP);
         closeButton.setOnAction(e -> close());
         scannerBar.getItems().add(closeButton);
-//        initMenus(scannerBar);
-//        ToolBarUtils.addFiller(scannerBar, 10, 500);
-//        initNavigator(scannerBar);
-//        ToolBarUtils.addFiller(scannerBar, 10, 20);
-//        initIntegralType(scannerBar);
-//        ToolBarUtils.addFiller(scannerBar, 10, 500);
-//
-//        ToolBar toolBar2 = new ToolBar();
-//        initTools(toolBar2);
-
-        Separator vsep1 = new Separator(Orientation.HORIZONTAL);
-        Separator vsep2 = new Separator(Orientation.HORIZONTAL);
         borderPane.setTop(scannerBar);
 
         tableView = new TableView<>();
         tableView.setPrefHeight(250.0);
-        tableView.setOnMouseClicked(e -> openSelectedListFile(e));
         borderPane.setCenter(tableView);
         scannerBar.getItems().add(makeFileMenu());
+        scannerBar.getItems().add(makeProcessMenu());
         scannerBar.getItems().add(makeRegionMenu());
         scannerBar.getItems().add(makeScoreMenu());
         scannerBar.getItems().add(makeToolMenu());
-        MinerController miner = new MinerController(this);
+        miner = new MinerController(this);
         scanTable = new ScanTable(this, tableView);
     }
 
@@ -167,6 +132,7 @@ public class ScannerTool implements ControllerTool {
         createControllerAction = action;
     }
 
+    @Override
     public void close() {
         closeAction.accept(this);
     }
@@ -178,19 +144,30 @@ public class ScannerTool implements ControllerTool {
     private MenuButton makeFileMenu() {
         MenuButton menu = new MenuButton("File");
         MenuItem scanMenuItem = new MenuItem("Scan Directory...");
-        scanMenuItem.setOnAction(e -> scanDirAction(e));
+        scanMenuItem.setOnAction(e -> scanDirAction());
         MenuItem openTableItem = new MenuItem("Open Table...");
-        openTableItem.setOnAction(e -> loadTableAction(e));
+        openTableItem.setOnAction(e -> loadTableAction());
         MenuItem saveTableItem = new MenuItem("Save Table...");
-        saveTableItem.setOnAction(e -> saveTableAction(e));
-        MenuItem processAndCombineItem = new MenuItem("Process and Combine");
-        processAndCombineItem.setOnAction(e -> processScanDirAndCombine(e));
-        MenuItem processItem = new MenuItem("Process");
-        processItem.setOnAction(e -> processScanDir(e));
+        saveTableItem.setOnAction(e -> saveTableAction());
+        MenuItem purgeInactiveItem = new MenuItem("Purge Inactive");
+        purgeInactiveItem.setOnAction(e -> purgeInactive());
         MenuItem loadFromDatasetItem = new MenuItem("Load From Dataset");
-        loadFromDatasetItem.setOnAction(e -> loadFromDataset(e));
+        loadFromDatasetItem.setOnAction(e -> loadFromDataset());
         menu.getItems().addAll(scanMenuItem, openTableItem, saveTableItem,
-                processAndCombineItem, processItem, loadFromDatasetItem);
+                purgeInactiveItem, loadFromDatasetItem);
+        return menu;
+    }
+
+    private MenuButton makeProcessMenu() {
+        MenuButton menu = new MenuButton("Process");
+        MenuItem loadRowFIDItem = new MenuItem("Load Row FID");
+        loadRowFIDItem.setOnAction(e -> openSelectedListFile());
+        MenuItem processAndCombineItem = new MenuItem("Process and Combine");
+        processAndCombineItem.setOnAction(e -> processScanDirAndCombine());
+        MenuItem processItem = new MenuItem("Process");
+        processItem.setOnAction(e -> processScanDir());
+        menu.getItems().addAll(loadRowFIDItem, processAndCombineItem,
+                processItem);
         return menu;
     }
 
@@ -213,7 +190,7 @@ public class ScannerTool implements ControllerTool {
             offsetMode.getItems().add(menuItem);
         }
         MenuItem addRegionMenuItem = new MenuItem("Add Crosshair Region");
-        addRegionMenuItem.setOnAction(e -> measure(e));
+        addRegionMenuItem.setOnAction(e -> measure());
         MenuItem saveRegionsMenuItem = new MenuItem("Save Regions...");
         saveRegionsMenuItem.setOnAction(e -> saveRegions());
         MenuItem loadRegionsMenuItem = new MenuItem("Load Regions...");
@@ -221,7 +198,7 @@ public class ScannerTool implements ControllerTool {
         MenuItem measureMenuItem = new MenuItem("Measure All");
         measureMenuItem.setOnAction(e -> measureRegions());
         MenuItem showAllMenuItem = new MenuItem("Show All");
-        showAllMenuItem.setOnAction(e -> processScanDir(e));
+        showAllMenuItem.setOnAction(e -> showRegions());
         MenuItem clearAllMenuItem = new MenuItem("Clear All");
         clearAllMenuItem.setOnAction(e -> clearRegions());
         menu.getItems().addAll(addRegionMenuItem, measureMode, offsetMode, saveRegionsMenuItem, loadRegionsMenuItem,
@@ -239,9 +216,11 @@ public class ScannerTool implements ControllerTool {
 
     private MenuButton makeToolMenu() {
         MenuButton menu = new MenuButton("Tools");
-        MenuItem plotMenuItem = new MenuItem("Plot");
+        MenuItem plotMenuItem = new MenuItem("Show Plot Tool");
         plotMenuItem.setOnAction(e -> showPlotGUI());
-        menu.getItems().addAll(plotMenuItem);
+        MenuItem tractMenuItem = new MenuItem("Show TRACT Tool");
+        tractMenuItem.setOnAction(e -> showTRACTGUI());
+        menu.getItems().addAll(plotMenuItem, tractMenuItem);
         return menu;
     }
 
@@ -255,59 +234,40 @@ public class ScannerTool implements ControllerTool {
         return toggle != null ? (OffsetTypes) toggle.getUserData() : OffsetTypes.N;
     }
 
-    @FXML
-    private void processScanDirAndCombine(ActionEvent event) {
+    private void processScanDirAndCombine() {
         ChartProcessor chartProcessor = controller.getChartProcessor();
         scanTable.processScanDir(stage, chartProcessor, true);
     }
 
-    @FXML
-    private void processScanDir(ActionEvent event) {
+    private void processScanDir() {
         ChartProcessor chartProcessor = controller.getChartProcessor();
         scanTable.processScanDir(stage, chartProcessor, false);
     }
 
-    @FXML
-    private void scanDirAction(ActionEvent event) {
+    private void scanDirAction() {
         scanTable.loadScanFiles(stage);
     }
 
-    @FXML
-    private void loadTableAction(ActionEvent event) {
+    private void loadTableAction() {
         scanTable.loadScanTable();
     }
 
-    @FXML
-    private void saveTableAction(ActionEvent event) {
+    private void saveTableAction() {
         scanTable.saveScanTable();
     }
 
-    @FXML
-    private void freezeSort(ActionEvent event) {
-
-    }
-
-    @FXML
-    private void purgeInactive(ActionEvent event) {
+    private void purgeInactive() {
         ObservableList<FileTableItem> tempItems = FXCollections.observableArrayList();
         tempItems.addAll(tableView.getItems());
         scanTable.getItems().setAll(tempItems);
     }
 
-    @FXML
-    private void loadFromDataset(ActionEvent event) {
+    private void loadFromDataset() {
         scanTable.loadFromDataset();
     }
 
-    @FXML
-    private void openSelectedListFile(MouseEvent mouseEvent) {
-        if (mouseEvent.getClickCount() == 2) {
-            scanTable.openSelectedListFile();
-        }
-    }
-
-    @FXML
-    private void loadScriptTab(Event event) {
+    private void openSelectedListFile() {
+        scanTable.openSelectedListFile();
     }
 
     public Stage getStage() {
@@ -345,8 +305,7 @@ public class ScannerTool implements ControllerTool {
         return result;
     }
 
-    @FXML
-    private void measure(ActionEvent event) {
+    private void measure() {
         TextInputDialog textInput = new TextInputDialog();
         textInput.setHeaderText("New column name");
         Optional<String> columNameOpt = textInput.showAndWait();
@@ -360,7 +319,6 @@ public class ScannerTool implements ControllerTool {
                     return;
                 }
             }
-            DatasetBase dataset = chart.getDataset();
             double[] ppms = chart.getVerticalCrosshairPositions();
             double[] wppms = new double[2];
             wppms[0] = chart.getAxis(0).getLowerBound();
@@ -379,7 +337,7 @@ public class ScannerTool implements ControllerTool {
                 String datasetName = item.getDatasetName();
                 Dataset itemDataset = Dataset.getDataset(datasetName);
                 if (itemDataset == null) {
-                    File datasetFile = new File(scanTable.getScanOutputDirectory(), datasetName);
+                    File datasetFile = new File(scanTable.getScanDir(), datasetName);
                     try {
                         itemDataset = new Dataset(datasetFile.getPath(), datasetFile.getPath(), true, false);
                     } catch (IOException ioE) {
@@ -413,10 +371,8 @@ public class ScannerTool implements ControllerTool {
         return values;
     }
 
-    @FXML
     private void measureSearchBins() {
         int nBins = 100;
-        DatasetBase dataset = chart.getDataset();
         double[] ppms = chart.getVerticalCrosshairPositions();
         double[] wppms = new double[2];
         wppms[0] = chart.getAxis(0).getLowerBound();
@@ -433,7 +389,7 @@ public class ScannerTool implements ControllerTool {
             Dataset itemDataset = Dataset.getDataset(datasetName);
 
             if (itemDataset == null) {
-                File datasetFile = new File(scanTable.getScanOutputDirectory(), datasetName);
+                File datasetFile = new File(scanTable.getScanDir(), datasetName);
                 try {
                     itemDataset = new Dataset(datasetFile.getPath(), datasetFile.getPath(), true, false);
                 } catch (IOException ioE) {
@@ -515,7 +471,6 @@ public class ScannerTool implements ControllerTool {
 
     public List<Double> getValues(String columnName) {
         ObservableList<FileTableItem> items = scanTable.getItems();
-        Map<Integer, FileTableItem> map = new HashMap<>();
         List<Double> values = new ArrayList<>(items.size());
         values.addAll(Collections.nCopies(items.size(), 0.0));
         for (FileTableItem item : items) {
@@ -532,7 +487,6 @@ public class ScannerTool implements ControllerTool {
         return scanTable.getHeaders().contains(columnName);
     }
 
-    @FXML
     void measureRegions() {
         DatasetBase dataset = chart.getDataset();
         List<String> headers = scanTable.getHeaders();
@@ -551,7 +505,6 @@ public class ScannerTool implements ControllerTool {
         scanTable.refresh();
     }
 
-    @FXML
     void showRegions() {
         DatasetBase dataset = chart.getDataset();
         List<String> headers = scanTable.getHeaders();
@@ -571,7 +524,6 @@ public class ScannerTool implements ControllerTool {
         chart.refresh();
     }
 
-    @FXML
     void clearRegions() {
         DatasetBase dataset = chart.getDataset();
         TreeSet<DatasetRegion> regions = new TreeSet<>();
@@ -581,7 +533,6 @@ public class ScannerTool implements ControllerTool {
         chart.refresh();
     }
 
-    @FXML
     void loadRegions() {
         FileChooser chooser = new FileChooser();
         File file = chooser.showOpenDialog(null);
@@ -622,7 +573,6 @@ public class ScannerTool implements ControllerTool {
         }
     }
 
-    @FXML
     void saveRegions() {
         FileChooser chooser = new FileChooser();
         File file = chooser.showSaveDialog(null);
@@ -709,4 +659,13 @@ public class ScannerTool implements ControllerTool {
         }
         plotGUI.showPlotStage();
     }
+
+    void showTRACTGUI() {
+        if (tractGUI == null) {
+            tractGUI = new TRACTGUI(this);
+
+        }
+        tractGUI.showMCplot();
+    }
+
 }
