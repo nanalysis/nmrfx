@@ -1028,24 +1028,8 @@ public class PeakListTools {
 
         peakList.peaks().stream().forEach(peak -> {
             double[][] values = new double[2][nPlanes];
-            for (int i = 0; i < nPlanes; i++) {
-                planes[0] = i;
-                try {
-                    double[] value = peak.measurePeak(dataset, pdim, planes, f, mode);
-                    values[0][i] = value[0];
-                    values[1][i] = value[1];
-                } catch (IOException ex) {
-                    System.out.println(ex.getMessage());
-                }
-            }
-            if (mode.contains("vol")) {
-                peak.setVolume1((float) values[0][0]);
-                peak.setVolume1Err((float) values[1][0]);
-            } else {
-                peak.setIntensity((float) values[0][0]);
-                peak.setIntensityErr((float) values[1][0]);
-            }
-            peak.setMeasures(values);
+            measurePlanes(nPlanes, peak, dataset, pdim, f, mode, values, 0);
+            setValues(peak, values, mode);
         });
         setMeasureX(peakList, dataset, nPlanes);
     }
@@ -1068,30 +1052,42 @@ public class PeakListTools {
             int j = 0;
             for (Dataset dataset : datasets) {
                 int[] pdim = peakList.getDimsForDataset(dataset, true);
-                for (int i = 0; i < nPlanes; i++) {
-
-                    planes[0] = i;
-                    try {
-                        double[] value = peak.measurePeak(dataset, pdim, planes, f, mode);
-                        values[0][j] = value[0];
-                        values[1][j] = value[1];
-                        j++;
-                    } catch (IOException ex) {
-                        System.out.println(ex.getMessage());
-                    }
-                }
+                measurePlanes(nPlanes, peak, dataset, pdim, f, mode, values, j);
+                j += nPlanes;
             }
-            if (mode.contains("vol")) {
-                peak.setVolume1((float) values[0][0]);
-                peak.setVolume1Err((float) values[1][0]);
-            } else {
-                peak.setIntensity((float) values[0][0]);
-                peak.setIntensityErr((float) values[1][0]);
-            }
-            peak.setMeasures(values);
+            setValues(peak, values, mode);
 
         });
         setMeasureX(peakList, datasets, nPlanes);
+    }
+
+    private static void setValues(Peak peak, double[][] values, String mode) {
+        if (mode.contains("vol")) {
+            peak.setVolume1((float) values[0][0]);
+            peak.setVolume1Err((float) values[1][0]);
+        } else {
+            peak.setIntensity((float) values[0][0]);
+            peak.setIntensityErr((float) values[1][0]);
+        }
+        peak.setMeasures(values);
+
+    }
+
+    private static void measurePlanes(int nPlanes, Peak peak, Dataset dataset,
+            int[] pdim, java.util.function.Function<RegionData, Double> f,
+            String mode, double[][] values, int iValue) {
+        int[] planes = new int[1];
+        for (int i = 0; i < nPlanes; i++) {
+            planes[0] = i;
+            try {
+                double[] value = peak.measurePeak(dataset, pdim, planes, f, mode);
+                values[0][iValue] = value[0];
+                values[1][iValue] = value[1];
+                iValue++;
+            } catch (IOException ex) {
+                System.out.println(ex.getMessage());
+            }
+        }
     }
 
     public static void setMeasureX(PeakList peakList, Dataset dataset, int nValues) {
