@@ -970,8 +970,34 @@ public class PeakListTools {
         }
     }
 
+    public static void quantifyPeaks(PeakList peakList, List<Dataset> datasets, String mode) {
+        if ((peakList.peaks() == null) || peakList.peaks().isEmpty()) {
+            return;
+        }
+
+        java.util.function.Function<RegionData, Double> f = getMeasureFunction(mode);
+        if (f == null) {
+            throw new IllegalArgumentException("Invalid measurment mode: " + mode);
+        }
+        int nDataDim = datasets.get(0).getNDim();
+        int nDim = peakList.getNDim();
+        if (nDim == nDataDim) {
+            quantifyPeaks(peakList, datasets, f, mode, 1);  // fixme will this work
+        } else if (nDim == (nDataDim - 1)) {
+            int scanDim = 2;
+            int nPlanes = datasets.get(0).getSize(scanDim);
+            quantifyPeaks(peakList, datasets, f, mode, nPlanes);
+        } else if (nDim > nDataDim) {
+            throw new IllegalArgumentException("Peak list has more dimensions than dataset");
+
+        } else {
+            throw new IllegalArgumentException("Dataset has more than one extra dimension (relative to peak list)");
+        }
+    }
+
     /**
      *
+     * @param peakList
      * @param dataset
      * @param f
      * @param mode
@@ -989,6 +1015,7 @@ public class PeakListTools {
 
     /**
      *
+     * @param peakList
      * @param dataset
      * @param f
      * @param mode
@@ -998,31 +1025,69 @@ public class PeakListTools {
         if (f == null) {
             throw new IllegalArgumentException("Unknown measurment type: " + mode);
         }
-        int[] planes = new int[1];
-        int[] pdim = peakList.getDimsForDataset(dataset, true);
 
         peakList.peaks().stream().forEach(peak -> {
             double[][] values = new double[2][nPlanes];
-            for (int i = 0; i < nPlanes; i++) {
-                planes[0] = i;
-                try {
-                    double[] value = peak.measurePeak(dataset, pdim, planes, f, mode);
-                    values[0][i] = value[0];
-                    values[1][i] = value[1];
-                } catch (IOException ex) {
-                    System.out.println(ex.getMessage());
-                }
-            }
-            if (mode.contains("vol")) {
-                peak.setVolume1((float) values[0][0]);
-                peak.setVolume1Err((float) values[1][0]);
-            } else {
-                peak.setIntensity((float) values[0][0]);
-                peak.setIntensityErr((float) values[1][0]);
-            }
-            peak.setMeasures(values);
+            measurePlanes(nPlanes, peak, dataset, f, mode, values, 0);
+            setValues(peak, values, mode);
         });
         setMeasureX(peakList, dataset, nPlanes);
+    }
+
+    /**
+     *
+     * @param peakList
+     * @param datasets
+     * @param f
+     * @param mode
+     * @param nPlanes
+     */
+    public static void quantifyPeaks(PeakList peakList, List<Dataset> datasets, java.util.function.Function<RegionData, Double> f, String mode, int nPlanes) {
+        if (f == null) {
+            throw new IllegalArgumentException("Unknown measurment type: " + mode);
+        }
+
+        peakList.peaks().stream().forEach(peak -> {
+            double[][] values = new double[2][datasets.size() * nPlanes];
+            int j = 0;
+            for (Dataset dataset : datasets) {
+                measurePlanes(nPlanes, peak, dataset, f, mode, values, j);
+                j += nPlanes;
+            }
+            setValues(peak, values, mode);
+
+        });
+        setMeasureX(peakList, datasets, nPlanes);
+    }
+
+    private static void setValues(Peak peak, double[][] values, String mode) {
+        if (mode.contains("vol")) {
+            peak.setVolume1((float) values[0][0]);
+            peak.setVolume1Err((float) values[1][0]);
+        } else {
+            peak.setIntensity((float) values[0][0]);
+            peak.setIntensityErr((float) values[1][0]);
+        }
+        peak.setMeasures(values);
+
+    }
+
+    private static void measurePlanes(int nPlanes, Peak peak, Dataset dataset,
+            java.util.function.Function<RegionData, Double> f,
+            String mode, double[][] values, int iValue) {
+        int[] planes = new int[1];
+        int[] pdim = peak.getPeakList().getDimsForDataset(dataset, true);
+        for (int i = 0; i < nPlanes; i++) {
+            planes[0] = i;
+            try {
+                double[] value = peak.measurePeak(dataset, pdim, planes, f, mode);
+                values[0][iValue] = value[0];
+                values[1][iValue] = value[1];
+                iValue++;
+            } catch (IOException ex) {
+                System.out.println(ex.getMessage());
+            }
+        }
     }
 
     public static void setMeasureX(PeakList peakList, Dataset dataset, int nValues) {
@@ -1040,6 +1105,31 @@ public class PeakListTools {
             }
         }
         Measures measure = new Measures(pValues);
+        peakList.setMeasures(measure);
+    }
+
+    public static void setMeasureX(PeakList peakList, List<Dataset> datasets, int nValues) {
+        double[] allValues = new double[nValues * datasets.size()];
+        int j = 0;
+        for (Dataset dataset : datasets) {
+            double[] pValues = null;
+            for (int iDim = 0; iDim < dataset.getNDim(); iDim++) {
+                pValues = dataset.getValues(iDim);
+                if ((pValues != null) && (pValues.length == nValues)) {
+                    break;
+                }
+            }
+            if (pValues == null) {
+                pValues = new double[nValues];
+                for (int i = 0; i < pValues.length; i++) {
+                    pValues[i] = i;
+                }
+            }
+            for (int i = 0; i < pValues.length; i++) {
+                allValues[j++] = pValues[i];
+            }
+        }
+        Measures measure = new Measures(allValues);
         peakList.setMeasures(measure);
     }
 
