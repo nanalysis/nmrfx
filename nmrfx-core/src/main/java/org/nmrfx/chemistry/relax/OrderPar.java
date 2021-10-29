@@ -132,15 +132,15 @@ public class OrderPar implements RelaxationValues {
         double delSf = Sf2 == null ? 0.0 : 1.0 - Sf2;
         double delSs = Ss2 == null ? 0.0 : 1.0 - Ss2;
         if ((delSf > 0.01) && (delSs > 0.01)) {
-            if (TauF > 5.0e-12) {
+            if (TauF > 5.0e-3) {
                 newPar.modelNum = 5.0;
             } else {
                 newPar.modelNum = 4.0;
             }
         } else {
-            if ((delSs > 0.01) && (TauS > 5.0e-12)) {
+            if ((delSs > 0.01) && (TauS != null) && (TauS > 5.0e-3)) {
                 newPar.modelNum = 3.0;
-            } else if ((delSf > 0.01) && (TauF > 5.0e-12)) {
+            } else if ((delSf > 0.01) && (TauF != null) && (TauF > 5.0e-3)) {
                 newPar.modelNum = 2.0;
             } else {
                 newPar.modelNum = 1.0;
