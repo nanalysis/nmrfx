@@ -1,7 +1,7 @@
 package org.nmrfx.peaks;
 
-import java.io.FileWriter;
 import java.io.IOException;
+import java.io.Writer;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -1909,7 +1909,7 @@ public class PeakList {
         }
     }
 
-    public void writeSTAR3Header(FileWriter chan) throws IOException {
+    public void writeSTAR3Header(Writer chan) throws IOException {
         char stringQuote = '"';
         chan.write("save_" + getName() + "\n");
         chan.write("_Spectral_peak_list.Sf_category                 ");

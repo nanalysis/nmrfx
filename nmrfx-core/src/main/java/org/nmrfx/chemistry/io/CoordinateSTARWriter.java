@@ -17,8 +17,8 @@
  */
 
 package org.nmrfx.chemistry.io;
-import java.io.FileWriter;
 import java.io.IOException;
+import java.io.Writer;
 import java.util.Iterator;
 import org.nmrfx.chemistry.Atom;
 import org.nmrfx.chemistry.CoordSet;
@@ -32,7 +32,7 @@ import org.nmrfx.chemistry.SpatialSet;
  */
 public class CoordinateSTARWriter {
 
-    public static void writeToSTAR3(FileWriter chan, MoleculeBase molecule, int setNum)
+    public static void writeToSTAR3(Writer chan, MoleculeBase molecule, int setNum)
             throws IOException {
 
         String saveFrameName = "ensemble_of_conformers";
