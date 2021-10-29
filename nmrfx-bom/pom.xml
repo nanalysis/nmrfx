@@ -4,7 +4,7 @@
 
     <groupId>org.nmrfx</groupId>
     <artifactId>nmrfx-bom</artifactId>
-    <version>11.1.40</version>
+    <version>11.1.41</version>
     <packaging>pom</packaging>
 
     <properties>

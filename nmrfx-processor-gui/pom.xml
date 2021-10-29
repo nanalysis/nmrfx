@@ -6,12 +6,12 @@
     <parent>
         <groupId>org.nmrfx</groupId>
         <artifactId>nmrfx</artifactId>
-        <version>11.1.40</version>
+        <version>11.1.41</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
     <artifactId>nmrfx-processor-gui</artifactId>
-    <version>11.1.40</version>
+    <version>11.1.41</version>
     <name>nmrfx-processor-gui</name>
     <packaging>jar</packaging>
 
@@ -19,12 +19,12 @@
         <dependency>
             <groupId>org.nmrfx</groupId>
             <artifactId>nmrfx-processor</artifactId>
-            <version>11.1.40</version>
+            <version>11.1.41</version>
         </dependency>
         <dependency>
             <groupId>org.nmrfx</groupId>
             <artifactId>nmrfx-utils</artifactId>
-            <version>11.1.40</version>
+            <version>11.1.41</version>
         </dependency>
         <dependency>
             <groupId>commons-beanutils</groupId>
