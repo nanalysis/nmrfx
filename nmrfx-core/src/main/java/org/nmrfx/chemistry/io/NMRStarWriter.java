@@ -891,7 +891,10 @@ public class NMRStarWriter {
             String resName = ".";
             String nucName = ".";
             int isotope = 1;
+            int compID = 1;
             if (atom != null) {
+                Entity atomEntity = atom.getEntity();
+                compID = atomEntity.getIDNum();
                 resNum = atom.getResidueNumber();
                 resName = atom.getResidueName();
                 nucName = atom.getName();
@@ -915,7 +918,7 @@ public class NMRStarWriter {
             sBuilder.append(String.format("%-3s", "."));
             sBuilder.append(String.format("%-3d", entityID));
             sBuilder.append(String.format("%-3d", entityID));
-            sBuilder.append(String.format("%-6d", resNum));
+            sBuilder.append(String.format("%-6d", compID));
             sBuilder.append(String.format("%-6d", resNum));
             sBuilder.append(String.format("%-6s", resName)); //fixme writing out chainID, not compound name (e.g. B instead of SO4) when molecule loaded from CIF
             sBuilder.append(String.format("%-4s", nucName));
@@ -1093,8 +1096,12 @@ public class NMRStarWriter {
         String oneLetter = ".";
         String nucName = ".";
         int isotope = 1;
+        int compID = 1;
         if (atom != null) {
             resNum = atom.getResidueNumber();
+
+            Entity atomEntity = atom.getEntity();
+            compID = atomEntity.getIDNum();
             resName = atom.getResidueName();
             oneLetter = String.valueOf(((Residue) atom.entity).getOneLetter());
             nucName = atom.getName();
@@ -1121,7 +1128,7 @@ public class NMRStarWriter {
         sBuilder.append(String.format("%-3s", "."));
         sBuilder.append(String.format("%-3d", entityID));
         sBuilder.append(String.format("%-3d", entityID));
-        sBuilder.append(String.format("%-6d", resNum));
+        sBuilder.append(String.format("%-6d", compID));
         sBuilder.append(String.format("%-6d", resNum));
         sBuilder.append(String.format("%-6s", resName)); //fixme writing out chainID, not compound name (e.g. B instead of SO4) when molecule loaded from CIF
         sBuilder.append(String.format("%-4s", nucName));
