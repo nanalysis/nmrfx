@@ -131,19 +131,41 @@ public class OrderPar implements RelaxationValues {
                 sumSqErr, nValues, model);
         double delSf = Sf2 == null ? 0.0 : 1.0 - Sf2;
         double delSs = Ss2 == null ? 0.0 : 1.0 - Ss2;
-        if ((delSf > 0.01) && (delSs > 0.01)) {
-            if (TauF > 5.0e-3) {
+        double minTauLimit = 5.0e-3;
+        double minDelSLimit = 0.01;
+        double slowLimit = 0.15;
+        if ((delSf > minDelSLimit) && (delSs > minDelSLimit)) {
+            if ((TauF != null) && (TauF > minTauLimit)
+                    && (TauS != null) && (TauS > minTauLimit)) {
+                newPar.modelNum = 6.0;
+            } else if ((TauF != null) && (TauF > slowLimit)) {
+                newPar.modelNum = 5.0;
+            } else if ((TauS != null) && (TauS > slowLimit)) {
                 newPar.modelNum = 5.0;
             } else {
                 newPar.modelNum = 4.0;
             }
         } else {
-            if ((delSs > 0.01) && (TauS != null) && (TauS > 5.0e-3)) {
-                newPar.modelNum = 3.0;
-            } else if ((delSf > 0.01) && (TauF != null) && (TauF > 5.0e-3)) {
-                newPar.modelNum = 2.0;
-            } else {
-                newPar.modelNum = 1.0;
+            if (delSs > minDelSLimit) {
+                if ((TauS != null) && (TauS > minTauLimit)) {
+                    if (TauS > slowLimit) {
+                        newPar.modelNum = 3.0;
+                    } else {
+                        newPar.modelNum = 2.0;
+                    }
+                } else {
+                    newPar.modelNum = 1.0;
+                }
+            } else if (delSf > minDelSLimit) {
+                if ((TauF != null) && (TauF > minTauLimit)) {
+                    if (TauF > slowLimit) {
+                        newPar.modelNum = 3.0;
+                    } else {
+                        newPar.modelNum = 2.0;
+                    }
+                } else {
+                    newPar.modelNum = 1.0;
+                }
             }
         }
         return newPar;
@@ -185,17 +207,26 @@ public class OrderPar implements RelaxationValues {
             case "Sf2":
                 newPar.Sf2 = val;
                 newPar.Sf2err = err;
-                if ((value != null) && (val != null) && (Ss2 == null)) {
-                    newPar.Ss2 = value / val;
+                if ((val != null)) {
+                    if (newPar.Ss2 != null) {
+                        newPar.value = newPar.Sf2 * newPar.Ss2;
+                    } else {
+                        newPar.value = newPar.Sf2;
+                    }
                 }
                 break;
             case "Ss2":
                 newPar.Ss2 = val;
                 newPar.Ss2err = err;
-                if ((value != null) && (val != null) && (Sf2 == null)) {
-                    newPar.Sf2 = value / val;
+                if ((val != null)) {
+                    if (newPar.Sf2 != null) {
+                        newPar.value = newPar.Sf2 * newPar.Ss2;
+                    } else {
+                        newPar.value = newPar.Ss2;
+                    }
                 }
                 break;
+
             case "model":
                 newPar.modelNum = val;
                 break;
