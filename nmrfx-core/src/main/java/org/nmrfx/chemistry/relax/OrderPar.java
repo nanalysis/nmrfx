@@ -210,6 +210,11 @@ public class OrderPar implements RelaxationValues {
                 if ((val != null)) {
                     if (newPar.Ss2 != null) {
                         newPar.value = newPar.Sf2 * newPar.Ss2;
+                        if ((newPar.Sf2err != null) && (newPar.Ss2err != null)) {
+                            double dF = newPar.Sf2err / newPar.Sf2;
+                            double dS = newPar.Ss2err / newPar.Ss2;
+                            newPar.error = newPar.value * Math.sqrt(dF * dF + dS * dS);
+                        }
                     } else {
                         newPar.value = newPar.Sf2;
                     }
@@ -221,6 +226,11 @@ public class OrderPar implements RelaxationValues {
                 if ((val != null)) {
                     if (newPar.Sf2 != null) {
                         newPar.value = newPar.Sf2 * newPar.Ss2;
+                        if ((newPar.Sf2err != null) && (newPar.Ss2err != null)) {
+                            double dF = newPar.Sf2err / newPar.Sf2;
+                            double dS = newPar.Ss2err / newPar.Ss2;
+                            newPar.error = newPar.value * Math.sqrt(dF * dF + dS * dS);
+                        }
                     } else {
                         newPar.value = newPar.Ss2;
                     }
