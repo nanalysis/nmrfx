@@ -25,7 +25,7 @@ import org.nmrfx.chemistry.Atom;
  */
 public class OrderPar implements RelaxationValues {
 
-    static final String[] PAR_NAMES = {"S2", "Tau_e", "Tau_f", "Tau_s", "Rex", "Sf2", "Ss2", "model", "rms"};
+    static final String[] PAR_NAMES = {"S2", "Tau_e", "Tau_f", "Tau_s", "Rex", "Sf2", "Ss2", "model", "rchisq"};
     private Atom atom;
     private Double value;
     private Double error;
@@ -43,6 +43,7 @@ public class OrderPar implements RelaxationValues {
     private Double Ss2err;
     private Double sumSqErr;
     private Integer nValues;
+    private Integer nPars;
     private String model;
     private Double modelNum;
 
@@ -55,11 +56,11 @@ public class OrderPar implements RelaxationValues {
                 values[4], errs[4],
                 values[5], errs[5],
                 values[6], errs[6],
-                sumSqErr, null, model
+                sumSqErr, null, null, model
         );
     }
 
-    public OrderPar(Atom atom, Double[] values, Double[] errs, Double sumSqErr, Integer nValues, String model) {
+    public OrderPar(Atom atom, Double[] values, Double[] errs, Double sumSqErr, Integer nValues, Integer nPars, String model) {
         this(atom,
                 values[0], errs[0],
                 values[1], errs[1],
@@ -68,19 +69,19 @@ public class OrderPar implements RelaxationValues {
                 values[4], errs[4],
                 values[5], errs[5],
                 values[6], errs[6],
-                sumSqErr, nValues, model
+                sumSqErr, nValues, nPars, model
         );
     }
 
-    public OrderPar(Atom atom, Double value, Double error, Double sumSqErr, Integer nValues, String model) {
+    public OrderPar(Atom atom, Double value, Double error, Double sumSqErr, Integer nValues, Integer nPars, String model) {
         this(atom, value, error, null, null, null, null, null, null, null,
-                null, null, null, null, null, sumSqErr, nValues, model);
+                null, null, null, null, null, sumSqErr, nValues, nPars, model);
 
     }
 
-    public OrderPar(Atom atom, Double sumSqErr, Integer nValues, String model) {
+    public OrderPar(Atom atom, Double sumSqErr, Integer nValues, Integer nPars, String model) {
         this(atom, null, null, null, null, null, null, null, null, null,
-                null, null, null, null, null, sumSqErr, nValues, model);
+                null, null, null, null, null, sumSqErr, nValues, nPars, model);
 
     }
 
@@ -88,7 +89,7 @@ public class OrderPar implements RelaxationValues {
             Double TauEerr, Double TauF, Double TauFerr, Double TauS,
             Double TauSerr, Double Rex, Double Rexerr, Double Sf2,
             Double Sf2err, Double Ss2, Double Ss2err,
-            Double sumSqErr, Integer nValues, String model) {
+            Double sumSqErr, Integer nValues, Integer nPars, String model) {
         this.atom = atom;
         this.value = value;
         this.error = error;
@@ -106,6 +107,7 @@ public class OrderPar implements RelaxationValues {
         this.Ss2err = Ss2err;
         this.sumSqErr = sumSqErr;
         this.nValues = nValues;
+        this.nPars = nPars;
         this.model = model;
     }
 
@@ -117,7 +119,7 @@ public class OrderPar implements RelaxationValues {
                 val, err,
                 Sf2, Sf2err,
                 Ss2, Ss2err,
-                sumSqErr, nValues, model);
+                sumSqErr, nValues, nPars, model);
     }
 
     public OrderPar setModel() {
@@ -128,7 +130,7 @@ public class OrderPar implements RelaxationValues {
                 Rex, Rexerr,
                 Sf2, Sf2err,
                 Ss2, Ss2err,
-                sumSqErr, nValues, model);
+                sumSqErr, nValues, nPars, model);
         double delSf = Sf2 == null ? 0.0 : 1.0 - Sf2;
         double delSs = Ss2 == null ? 0.0 : 1.0 - Ss2;
         double minTauLimit = 5.0e-3;
@@ -179,7 +181,7 @@ public class OrderPar implements RelaxationValues {
                 Rex, Rexerr,
                 Sf2, Sf2err,
                 Ss2, Ss2err,
-                sumSqErr, nValues, model);
+                sumSqErr, nValues, nPars, model);
         switch (name) {
             case "S2":
                 newPar.value = val;
@@ -297,6 +299,12 @@ public class OrderPar implements RelaxationValues {
             case "rms":
                 if (nValues != null) {
                     return Math.sqrt(sumSqErr / nValues);
+                } else {
+                    return null;
+                }
+            case "rchisq":
+                if ((nValues != null) && (nPars != null)) {
+                    return sumSqErr / (nValues - nPars);
                 } else {
                     return null;
                 }
