@@ -415,6 +415,7 @@ public class RegionTool implements ControllerTool {
                 PeakList peakList = regionAnalyzer.getPeakList();
                 if (peakList != null) {
                     peakList.remove();
+                    regionAnalyzer.setPeakList(null);
                 }
                 regionAnalyzer.getDataset().setRegions(null);
                 chart.chartProps.setRegions(false);
