@@ -85,7 +85,7 @@ public class NMRStarReader {
         try {
             fileReader = new FileReader(starFile);
         } catch (FileNotFoundException ex) {
-            return null;
+            throw new ParseException("Could not find file " + starFile.toString());
         }
         BufferedReader bfR = new BufferedReader(fileReader);
 
@@ -1545,6 +1545,10 @@ public class NMRStarReader {
         List<Double>[] errColumns = new ArrayList[parNames.length];
         int iCol = 0;
         for (var parName : parNames) {
+            System.out.println(parName);
+            if (parName.equals("S2")) {
+                parName = "Order_param";
+            }
             valColumns[iCol] = loop.getColumnAsDoubleList(parName + "_val", null);
             errColumns[iCol] = loop.getColumnAsDoubleList(parName + "_val_fit_err", null);
             iCol++;

@@ -25,7 +25,7 @@ import org.nmrfx.chemistry.Atom;
  */
 public class OrderPar implements RelaxationValues {
 
-    static final String[] PAR_NAMES = {"S2", "Tau_e", "Tau_f", "Tau_s", "Rex", "Sf2", "Ss2", "model", "rchisq"};
+    static final String[] PAR_NAMES = {"S2", "Tau_e", "Tau_f", "Tau_s", "Rex", "Sf2", "Ss2", "model", "rms"};
     private Atom atom;
     private Double value;
     private Double error;
