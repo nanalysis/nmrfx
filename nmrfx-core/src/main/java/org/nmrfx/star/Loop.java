@@ -241,7 +241,10 @@ public class Loop {
         ArrayList<String> column = loopTags.get(tag);
         List<Double> values;
         if (column == null) {
-            values = Collections.nCopies(nRows, defaultValue);
+            values = new ArrayList<>();
+            for (int i = 0; i < nRows; i++) {
+                values.add(defaultValue);
+            }
         } else {
             values = new ArrayList<>();
             for (String s : column) {
