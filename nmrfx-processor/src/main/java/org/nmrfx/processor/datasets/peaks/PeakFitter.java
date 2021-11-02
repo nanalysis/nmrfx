@@ -625,6 +625,12 @@ public class PeakFitter {
 //            System.out.println(guess);
 //        }
         int extra = 5;
+        if (fitMode == PeakListTools.FIT_RMS) {
+            extra = 0;
+        } else if (fitMode == PeakListTools.FIT_MAX_DEV) {
+            extra = 0;
+        }
+
         int size = p2[0][1] - p2[0][0] + 1;
         int nFitPoints = (size + (2 * extra));
         double[][] xv = new double[1][nFitPoints];
@@ -654,6 +660,19 @@ public class PeakFitter {
         }
         //            lw  f   j  d         lw  f  j d
         //double[] a =     {2,   15, 10,30, 2, 59, 10, 5000};
+        PeakList peakList = peaks[0].getPeakList();
+        double minWidth = 2;
+        double maxWidth = 0.0;
+        if (peakList.size() > 4) {
+            if (peakList.hasProperty("minWidth")) {
+                double minWidthHz = Double.valueOf(peakList.getProperty("minWidth"));
+                minWidth = theFile.hzWidthToPoints(0, minWidthHz);
+            }
+            if (peakList.hasProperty("maxWidth")) {
+                double maxWidthHz = Double.valueOf(peakList.getProperty("maxWidth"));
+                maxWidth = theFile.hzWidthToPoints(0, maxWidthHz);
+            }
+        }
 
         for (int iPeak = 0; iPeak < nPeaks; iPeak++) {
             PeakDim peakDim = peaks[iPeak].getPeakDim(0);
@@ -662,11 +681,14 @@ public class PeakFitter {
             double lineWidthPPM = peakDim.getLineWidthValue();
             double c = theFile.ppmToDPoint(0, centerPPM);
             double c1 = theFile.ppmToDPoint(0, centerPPM + lineWidthPPM);
-            double lineWithPts = Math.abs(c1 - c);
+            double lineWidthPts = Math.abs(c1 - c);
+            double useMaxWidth = maxWidth < 1.0 ? lineWidthPts * 3.0 : maxWidth;
+            lineWidthPts = Math.max(minWidth * 1.1, lineWidthPts);
+            lineWidthPts = Math.min(useMaxWidth * 0.9, lineWidthPts);
 
             guesses[iPeak * 3] = intensity;
             guesses[iPeak * 3 + 1] = c - p2[0][0];
-            guesses[iPeak * 3 + 2] = lineWithPts;
+            guesses[iPeak * 3 + 2] = lineWidthPts;
 
             int cPos = (int) Math.round(c - p2[0][0]);
             if (intensity > 0.0) {
@@ -676,26 +698,26 @@ public class PeakFitter {
                 lower[iPeak * 3] = yv[cPos + extra] * 1.2;
                 upper[iPeak * 3] = 0.0;
             }
-            lower[iPeak * 3 + 2] = 2;
-            upper[iPeak * 3 + 2] = lineWithPts * 3;
+            lower[iPeak * 3 + 2] = minWidth;
+            upper[iPeak * 3 + 2] = useMaxWidth;
         }
         for (int iPeak = 0; iPeak < nPeaks; iPeak++) {
             double lineWidthPts = guesses[iPeak * 3 + 2];
             if (iPeak == 0) {
-                lower[iPeak * 3 + 1] = guesses[iPeak * 3 + 1] - lineWidthPts;
+                lower[iPeak * 3 + 1] = Math.max(extra + 1, guesses[iPeak * 3 + 1] - lineWidthPts);
             } else {
                 lower[iPeak * 3 + 1] = (guesses[iPeak * 3 + 1] + guesses[(iPeak - 1) * 3 + 1]) / 2;
             }
             if (iPeak == nPeaks - 1) {
-                upper[iPeak * 3 + 1] = guesses[iPeak * 3 + 1] + lineWidthPts;
+                upper[iPeak * 3 + 1] = Math.min(size - extra - 1, guesses[iPeak * 3 + 1] + lineWidthPts);
             } else {
                 upper[iPeak * 3 + 1] = (guesses[iPeak * 3 + 1] + guesses[(iPeak + 1) * 3 + 1]) / 2;
             }
         }
-//        System.out.println(peaks[0].getName());
-//        for (int i = 0; i < guesses.length; i++) {
-//            System.out.printf("%10.4f %10.4f %10.4f\n", guesses[i], lower[i], upper[i]);
-//        }
+        System.out.println(peaks[0].getName());
+        for (int i = 0; i < guesses.length; i++) {
+            System.out.printf("%10.4f %10.4f %10.4f\n", guesses[i], lower[i], upper[i]);
+        }
 
         PeakFit peakFit = new PeakFit(true);
         Fitter fitter = Fitter.getArrayFitter(peakFit::value);
@@ -710,6 +732,7 @@ public class PeakFitter {
         } else if (fitMode == PeakListTools.FIT_MAX_DEV) {
             double[] yCalc = peakFit.sim(guesses, xv);
             int maxPos = fitter.maxDevLoc(yCalc, 3);
+            System.out.println("maxPos " + extra + " " + maxPos);
             double centerPt = maxPos + p2[0][0];
             double centerPPM = theFile.pointToPPM(0, centerPt);
             return centerPPM;
