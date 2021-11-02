@@ -127,7 +127,8 @@ public class Analyzer {
             Logger.getLogger(Analyzer.class.getName()).log(Level.SEVERE, null, ex);
             return;
         }
-        sDev = vec.sdev(32); // fixme correct winsize
+        int sdevWin = Math.max(16, vec.getSize() / 64);
+        sDev = vec.sdev(sdevWin); // fixme correct winsize
         if (scaleToLargest) {
             int nIncr = size / nWin;
             List<Double> maxs = new ArrayList<>();
@@ -148,9 +149,8 @@ public class Analyzer {
         if (threshold < sdRatio * sDev) {
             if (dataset.getNucleus(0) == Nuclei.H1) {
                 threshold = sdRatio * sDev;
-                System.out.println(sdRatio + " " + sDev);
             } else {
-                threshold = sdRatio / 5.0 * sDev;
+                threshold = sdRatio / 3.0 * sDev;
             }
         }
     }
