@@ -1545,7 +1545,6 @@ public class NMRStarReader {
         List<Double>[] errColumns = new ArrayList[parNames.length];
         int iCol = 0;
         for (var parName : parNames) {
-            System.out.println(parName);
             if (parName.equals("S2")) {
                 parName = "Order_param";
             }
