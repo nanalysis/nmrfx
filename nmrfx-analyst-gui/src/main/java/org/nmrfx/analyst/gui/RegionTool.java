@@ -405,6 +405,11 @@ public class RegionTool implements ControllerTool {
             chart.chartProps.setRegions(false);
             chart.chartProps.setIntegrals(true);
             chart.updatePeakLists(peakListNames);
+            var dStat = peakList.widthDStats(0);
+            double minWidth = dStat.getPercentile(10);
+            double maxWidth = dStat.getPercentile(90);
+            peakList.setProperty("minWidth", String.valueOf(minWidth));
+            peakList.setProperty("maxWidth", String.valueOf(maxWidth));
         }
     }
 
