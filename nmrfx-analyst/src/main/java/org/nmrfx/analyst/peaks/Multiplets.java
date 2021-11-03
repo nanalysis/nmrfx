@@ -1090,9 +1090,10 @@ public class Multiplets {
         double sf = peakList.getSpectralDim(0).getSf();
         Dataset dataset = Dataset.getDataset(peakList.getDatasetName());
         Set<DatasetRegion> newRegions = new TreeSet<>();
+        int maxSplit = 4;
         for (DatasetRegion region : regions) {
             DatasetRegion testRegion = region;
-            while (true) {
+            for (int iSplit = 0; iSplit < maxSplit; iSplit++) {
                 DatasetRegion newRegion = splitRegion(peakList, dataset, vec, sf, dim, testRegion);
                 if (newRegion == null) {
                     break;
@@ -1101,7 +1102,6 @@ public class Multiplets {
                     testRegion = newRegion;
                 }
             }
-
         }
 
         if (!newRegions.isEmpty()) {
