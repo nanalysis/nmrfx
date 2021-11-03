@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Consumer;
 import java.util.logging.Level;
@@ -90,6 +91,7 @@ public class RegionTool implements ControllerTool {
     public RegionTool(FXMLController controller, Consumer<RegionTool> closeAction) {
         this.controller = controller;
         this.closeAction = closeAction;
+        chart = controller.getActiveChart();
     }
 
     public VBox getBox() {
@@ -121,6 +123,7 @@ public class RegionTool implements ControllerTool {
         Separator vsep1 = new Separator(Orientation.HORIZONTAL);
         Separator vsep2 = new Separator(Orientation.HORIZONTAL);
         vBox.getChildren().addAll(toolBar1, vsep1, toolBar2);
+        chart.setRegionConsumer(e -> regionAdded(e));
     }
 
     public void initMenus(ToolBar toolBar) {
@@ -310,7 +313,7 @@ public class RegionTool implements ControllerTool {
 
     void adjustPeakIntegrals() {
         activeRegion.ifPresent(region -> {
-            chart = PolyChart.getActiveChart();
+            chart = getChart();
             Dataset dataset = (Dataset) chart.getDataset();
             double norm = dataset.getNorm() / dataset.getScale();
             double integral = region.getIntegral();
@@ -322,7 +325,7 @@ public class RegionTool implements ControllerTool {
 
     public Analyzer getAnalyzer() {
         if (analyzer == null) {
-            chart = PolyChart.getActiveChart();
+            chart = getChart();
             Dataset dataset = (Dataset) chart.getDataset();
             if ((dataset == null) || (dataset.getNDim() > 1)) {
                 Alert alert = new Alert(Alert.AlertType.ERROR);
@@ -635,9 +638,8 @@ public class RegionTool implements ControllerTool {
     }
 
     PolyChart getChart() {
-        FXMLController controller = FXMLController.getActiveController();
-        PolyChart activeChart = controller.getActiveChart();
-        return activeChart;
+        chart = controller.getActiveChart();
+        return chart;
     }
 
     void refresh() {
@@ -686,14 +688,37 @@ public class RegionTool implements ControllerTool {
         chart.refresh();
     }
 
-    public void addRegion() {
-        Analyzer analyzer = getAnalyzer();
-        double ppm0 = chart.getVerticalCrosshairPositions()[0];
-        double ppm1 = chart.getVerticalCrosshairPositions()[1];
-        analyzer.addRegion(ppm0, ppm1);
-        RegionTool.this.updateRegion(false);
-        chart.refresh();
+    public void regionAdded(DatasetRegion region) {
+        addRegion(region);
+    }
 
+    public void addRegion() {
+        addRegion(null);
+    }
+
+    public void addRegion(DatasetRegion region) {
+        getAnalyzer();
+        double ppm0;
+        double ppm1;
+        if (region == null) {
+            ppm0 = chart.getVerticalCrosshairPositions()[0];
+            ppm1 = chart.getVerticalCrosshairPositions()[1];
+            Set<DatasetRegion> regions = getRegions();
+            DatasetRegion newRegion = new DatasetRegion(ppm0, ppm1);
+            regions.add(newRegion);
+            activeRegion = Optional.of(newRegion);
+        } else {
+            ppm0 = region.getRegionStart(0);
+            ppm1 = region.getRegionEnd(0);
+            activeRegion = Optional.of(region);
+        }
+        RegionTool.this.updateRegion(false);
+        PeakList peakList = analyzer.getPeakList();
+        if (peakList != null) {
+            analyzer.peakPickRegion(ppm0, ppm1);
+        }
+
+        chart.refresh();
     }
 
     public void removeRegion() {
