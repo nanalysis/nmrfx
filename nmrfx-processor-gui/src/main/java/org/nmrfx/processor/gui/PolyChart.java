@@ -610,6 +610,10 @@ public class PolyChart implements PeakListener {
     public void setRegionConsumer(Consumer<DatasetRegion> consumer) {
         newRegionConsumer = consumer;
     }
+    
+    public void clearRegionConsumer() {
+        newRegionConsumer = null;
+    }
 
     public void addRegion(double min, double max) {
         DatasetBase dataset = getDataset();
