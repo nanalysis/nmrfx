@@ -120,6 +120,7 @@ public class AnalystApp extends MainApp {
     public static PyController ringNMRController;
     public static WindowIO windowIO = null;
     public static SeqDisplayController seqDisplayController = null;
+    public static DatasetBrowserController browserController = null;
     PeakAtomPicker peakAtomPicker = null;
     CheckMenuItem assignOnPick;
     RDCGUI rdcGUI = null;
@@ -291,7 +292,7 @@ public class AnalystApp extends MainApp {
         MenuItem portMenuItem = new MenuItem("New NMRFx Server...");
         portMenuItem.setOnAction(e -> startServer(e));
         MenuItem datasetBrowserMenuItem = new MenuItem("Dataset Browser...");
-        datasetBrowserMenuItem.setOnAction(e -> createRemoteDatasets());
+        datasetBrowserMenuItem.setOnAction(e -> showDataBrowser());
 
         Menu projectMenu = new Menu("Projects");
 
@@ -346,6 +347,8 @@ public class AnalystApp extends MainApp {
         syncMenuItem.setOnAction(e -> PolyChart.getActiveChart().syncSceneMates());
 
         Menu arrangeMenu = new Menu("Arrange");
+        MenuItem createGridItem = new MenuItem("Add Grid...");
+        createGridItem.setOnAction(e -> FXMLController.getActiveController().addGrid());
         MenuItem horizItem = new MenuItem("Horizontal");
         horizItem.setOnAction(e -> FXMLController.getActiveController().arrange(FractionCanvas.ORIENTATION.HORIZONTAL));
         MenuItem vertItem = new MenuItem("Vertical");
@@ -359,7 +362,7 @@ public class AnalystApp extends MainApp {
         MenuItem normalizeItem = new MenuItem("Normal Borders");
         normalizeItem.setOnAction(e -> FXMLController.getActiveController().setBorderState(false));
 
-        arrangeMenu.getItems().addAll(horizItem, vertItem, gridItem, overlayItem, minimizeItem, normalizeItem);
+        arrangeMenu.getItems().addAll(createGridItem, horizItem, vertItem, gridItem, overlayItem, minimizeItem, normalizeItem);
         MenuItem alignMenuItem = new MenuItem("Align Spectra");
         alignMenuItem.setOnAction(e -> FXMLController.getActiveController().alignCenters());
         MenuItem stripsMenuItem = new MenuItem("Show Strips");
@@ -400,7 +403,6 @@ public class AnalystApp extends MainApp {
         MenuItem readMol2Item = new MenuItem("Read Mol2...");
         readMol2Item.setOnAction(e -> readMolecule("mol2"));
         molFileMenu.getItems().add(readMol2Item);
-
 
         MenuItem seqGUIMenuItem = new MenuItem("Sequence Editor...");
         seqGUIMenuItem.setOnAction(e -> SequenceGUI.showGUI(this));
@@ -1255,8 +1257,12 @@ public class AnalystApp extends MainApp {
         stage.show();
     }
 
-    void createRemoteDatasets() {
-        DatasetBrowserController browserController = DatasetBrowserController.create();
+    void showDataBrowser() {
+        if (browserController == null) {
+            browserController = DatasetBrowserController.create();
+        }
+        Stage browserStage = browserController.getStage();
+        browserStage.toFront();
+        browserStage.show();
     }
-
 }
