@@ -52,6 +52,7 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ToolBar;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.input.KeyCode;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.stage.DirectoryChooser;
@@ -90,12 +91,14 @@ public class DatasetBrowserController implements Initializable {
     FileSystem fileSystem = FileSystems.getDefault();
     RemoteDatasetAccess rdA = null;
     Button datasetButton;
+    Button fetchButton;
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
         localDir = AnalystPrefs.getLocalDirectory();
         initToolBar();
         initTable();
+        remoteDir = AnalystPrefs.getRemoteDirectory();
         //  loadIndex();
     }
 
@@ -107,7 +110,6 @@ public class DatasetBrowserController implements Initializable {
         if (rdA == null) {
             String remoteHost = AnalystPrefs.getRemoteHostName();
             String remoteUser = AnalystPrefs.getRemoteUserName();
-            remoteDir = AnalystPrefs.getRemoteDirectory();
             if (remoteHost.isEmpty()) {
                 GUIUtils.warn("Remote Access", "No host set in preferences");
                 return false;
@@ -164,11 +166,14 @@ public class DatasetBrowserController implements Initializable {
     void initToolBar() {
         Button retrieveIndexButton = new Button("Index");
         retrieveIndexButton.setOnAction(e -> retrieveIndex());
-        Button fetchButton = new Button("FID");
-        fetchButton.setOnAction(e -> fetchDataset(true));
+        Button fidButton = new Button("FID");
+        fidButton.setOnAction(e -> fetchDataset(true));
         datasetButton = new Button("Dataset");
         datasetButton.setOnAction(e -> fetchDataset(false));
-        toolBar.getItems().addAll(retrieveIndexButton, fetchButton, datasetButton);
+        fetchButton = new Button("Fetch");
+        fetchButton.setOnAction(e -> cacheDatasets());
+        fetchButton.setDisable(true);
+        toolBar.getItems().addAll(retrieveIndexButton, fidButton, datasetButton, fetchButton);
         Button button = GlyphsDude.createIconButton(FontAwesomeIcon.FOLDER_OPEN);
         button.setOnAction(e -> browseDirectory());
         hBox.getChildren().add(button);
@@ -185,18 +190,20 @@ public class DatasetBrowserController implements Initializable {
         dirTypeChoiceBox.getItems().addAll("Local", "Remote");
         dirTypeChoiceBox.setValue("Local");
         directoryTextField.setText(localDir);
+        directoryTextField.setOnKeyReleased(e -> {
+            if (e.getCode() == KeyCode.ENTER) {
+                if (localMode()) {
+                    localDir = directoryTextField.getText();
+                } else {
+                    remoteDir = directoryTextField.getText();
+                }
+                setDirPrefs();
+            }
+        });
         dirTypeChoiceBox.valueProperty().addListener(e -> updateDirType());
         updateColumns();
 
         tableView.getSelectionModel().getSelectedIndices().addListener(listener);
-//        tableView.setOnMouseClicked(e -> {
-//            if (e.getClickCount() == 2) {
-//                if (!tableView.getSelectionModel().getSelectedItems().isEmpty()) {
-//                    Noe peak = tableView.getSelectionModel().getSelectedItems().get(0);
-//                    showPeakInfo(peak);
-//                }
-//            }
-//        });
     }
 
     boolean localMode() {
@@ -205,12 +212,22 @@ public class DatasetBrowserController implements Initializable {
 
     void updateDirType() {
         if (!localMode()) {
-            directoryTextField.setText(AnalystPrefs.getRemoteDirectory());
+            fetchButton.setDisable(false);
+            directoryTextField.setText(remoteDir);
         } else {
+            fetchButton.setDisable(true);
             directoryTextField.setText(localDir);
         }
         updateColumns();
         loadIndex();
+    }
+
+    void setDirPrefs() {
+        if (localMode()) {
+            AnalystPrefs.setLocalDirectory(localDir);
+        } else {
+            AnalystPrefs.setRemoteDirectory(remoteDir);
+        }
     }
 
     void updateButtons(RemoteDataset rData) {
@@ -372,6 +389,7 @@ public class DatasetBrowserController implements Initializable {
     }
 
     void loadIndex() {
+        setDirPrefs();
         if (localMode()) {
             scanAndLoad();
             return;
@@ -389,12 +407,49 @@ public class DatasetBrowserController implements Initializable {
         tableView.setItems(items);
     }
 
+    void cacheDatasets() {
+        if (localMode()) {
+            return;
+        }
+        var rDataSets = tableView.getSelectionModel().getSelectedItems();
+        for (var rData : rDataSets) {
+            if (rData != null) {
+                String fileName = rData.getPath();
+                File file = new File(fileName);
+                String fileRoot = file.getParent().toString();
+                File localFileDir = fileSystem.getPath(getLocalDir().toString(), fileRoot).toFile();
+                if (!rData.isPresent()) {
+                    try {
+                        if (initRemoteDatasetAccess()) {
+                            String remoteFile = remoteDir + "/data/" + fileRoot + ".zip";
+                            File localZipFile = fileSystem.getPath(getLocalDir().toString(), fileRoot + ".zip").toFile();
+                            rdA.fetchFile(remoteFile, localZipFile);
+                            UnZipper unZipper = new UnZipper(localFileDir, localZipFile.toString());
+                            unZipper.unzip();
+                            localZipFile.delete();
+                            rData.setPresent(true);
+                            tableView.refresh();
+                        } else {
+                            return;
+                        }
+                    } catch (IOException ex) {
+                        GUIUtils.warn("Fetch", "Error fetching: " + ex.getMessage());
+                    }
+                }
+
+            }
+        }
+    }
+
     void fetchDataset(boolean useFID) {
         RemoteDataset rData = tableView.getSelectionModel().getSelectedItem();
         if (rData != null) {
             String fileName = rData.getPath();
+            File file = new File(fileName);
+            String fileRoot = file.getParent().toString();
             File localFile = fileSystem.getPath(getLocalDir().toString(), fileName).toFile();
-            if (!localFile.exists()) {
+            File localFileDir = fileSystem.getPath(getLocalDir().toString(), fileRoot).toFile();
+            if (localMode() && !localFile.exists()) {
                 GUIUtils.warn("Fetch", "File doesn't exist: " + localFile.toString());
                 return;
             }
@@ -408,10 +463,10 @@ public class DatasetBrowserController implements Initializable {
                 } else {
                     if (!rData.isPresent()) {
                         if (initRemoteDatasetAccess()) {
-                            String remoteFile = remoteDir + "/data/" + fileName + ".zip";
-                            File localZipFile = fileSystem.getPath(getLocalDir().toString(), fileName + ".zip").toFile();
+                            String remoteFile = remoteDir + "/data/" + fileRoot + ".zip";
+                            File localZipFile = fileSystem.getPath(getLocalDir().toString(), fileRoot + ".zip").toFile();
                             rdA.fetchFile(remoteFile, localZipFile);
-                            UnZipper unZipper = new UnZipper(getLocalDir().toFile(), localZipFile.toString());
+                            UnZipper unZipper = new UnZipper(localFileDir, localZipFile.toString());
                             unZipper.unzip();
                             localZipFile.delete();
                             rData.setPresent(true);
@@ -428,7 +483,8 @@ public class DatasetBrowserController implements Initializable {
         }
     }
 
-    void scanDirectory(List<RemoteDataset> items) {
+    void scanDirectory(List<RemoteDataset> items
+    ) {
         String localPathString = getLocalDir().toString();
         for (RemoteDataset rData : items) {
             String fileName = rData.getPath();
