@@ -237,6 +237,17 @@ public class Loop {
         return column;
     }
 
+    public List<String> getColumnAsList(String tag, String defaultValue) throws ParseException {
+        ArrayList<String> column = loopTags.get(tag);
+        if (column == null) {
+            column = new ArrayList<>();
+            for (int i = 0; i < nRows; i++) {
+                column.add(defaultValue);
+            }
+        }
+        return column;
+    }
+
     public List<Double> getColumnAsDoubleList(String tag, Double defaultValue) throws ParseException {
         ArrayList<String> column = loopTags.get(tag);
         List<Double> values;
