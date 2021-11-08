@@ -321,7 +321,7 @@ public interface NMRData {
      * @return true if data is complex
      */
     public boolean isComplex(int dim);
-    
+
     /**
      * Set whether the specified dimension has complex data
      *
@@ -329,7 +329,7 @@ public interface NMRData {
      * @param value if data is complex
      */
     public default void setComplex(int dim, boolean value) {
-        
+
     }
 
     /**
@@ -342,8 +342,8 @@ public interface NMRData {
     default boolean getNegatePairs(int dim) {
         return false;
     }
-    
-/**
+
+    /**
      * Return type of FT (FT or RFT) to perform in specified dimension
      *
      * @param dim data dimension index

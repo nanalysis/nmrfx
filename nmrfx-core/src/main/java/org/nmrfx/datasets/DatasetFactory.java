@@ -8,6 +8,7 @@ package org.nmrfx.datasets;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import org.nmrfx.math.VecBase;
 
 /**
@@ -33,7 +34,7 @@ public class DatasetFactory {
             int[] dimSizes, boolean closeDataset) {
         DatasetBase dataset = null;
         try {
-            Class c = Class.forName("org.nmrfx.processor.dataets.Dataset");
+            Class c = Class.forName("org.nmrfx.processor.datasets.Dataset");
             Class[] parameterTypes = {String.class, String.class, int[].class, boolean.class};
             Constructor constructor = c.getDeclaredConstructor(parameterTypes);
             dataset = (DatasetBase) constructor.newInstance(fullName, title, dimSizes, closeDataset);
@@ -45,12 +46,29 @@ public class DatasetFactory {
     public static DatasetBase newDataset(VecBase vec) {
         DatasetBase dataset = null;
         try {
-            Class c = Class.forName("org.nmrfx.processor.dataets.Dataset");
+            Class c = Class.forName("org.nmrfx.processor.datasets.Dataset");
             Class[] parameterTypes = {VecBase.class};
             Constructor constructor = c.getDeclaredConstructor(parameterTypes);
             dataset = (DatasetBase) constructor.newInstance(vec);
         } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException | SecurityException ex) {
         }
+        return dataset;
+    }
+
+    public static DatasetBase newLinkDataset(String name, String fullName) throws IOException {
+        DatasetBase dataset;
+        try {
+            Class c = Class.forName("org.nmrfx.processor.datasets.Dataset");
+            Class[] argTypes = {String.class, String.class};
+            Method m = c.getDeclaredMethod("newLinkDataset", argTypes);
+            String[] args = {name, fullName};
+            System.out.println("new link " + fullName);
+            dataset = (DatasetBase) m.invoke(null, args);
+        } catch (ClassNotFoundException | NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
+            System.out.println("exc " + ex.getMessage());
+            dataset = null;
+        }
+
         return dataset;
     }
 

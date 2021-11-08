@@ -126,6 +126,7 @@ import org.nmrfx.graphicsio.SVGGraphicsContext;
 import org.nmrfx.peaks.PeakDim;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.processor.datasets.peaks.PeakListAlign;
+import org.nmrfx.processor.datasets.vendor.BrukerData;
 import org.nmrfx.processor.gui.spectra.CanvasBindings;
 import org.nmrfx.processor.gui.spectra.ColorProperty;
 import org.nmrfx.processor.gui.spectra.CrossHairs;
@@ -459,7 +460,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         fileChooser.setInitialDirectory(getInitialDirectory());
         fileChooser.setTitle("Open NMR Dataset");
         fileChooser.getExtensionFilters().addAll(
-                new ExtensionFilter("NMR Dataset", "*.nv", "*.ucsf", "*.dx", "*.jdx"),
+                new ExtensionFilter("NMR Dataset", "*.nv", "*.ucsf", "*.dx", "*.jdx", "1r", "2rr", "3rrr", "4rrrr"),
                 new ExtensionFilter("Any File", "*.*")
         );
         File selectedFile = fileChooser.showOpenDialog(null);
@@ -470,13 +471,19 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         if (selectedFile != null) {
             try {
                 setInitialDirectory(selectedFile.getParentFile());
-                NMRData nmrData = NMRDataUtil.getFID(selectedFile.toString());
+                NMRData nmrData = NMRDataUtil.getNMRData(selectedFile.toString());
                 if (nmrData instanceof NMRViewData) {
                     PreferencesController.saveRecentDatasets(selectedFile.toString());
                     NMRViewData nvData = (NMRViewData) nmrData;
                     Dataset dataset = nvData.getDataset();
                     addDataset(dataset, append, false);
 
+                } else if (nmrData instanceof BrukerData) {
+                    BrukerData brukerData = (BrukerData) nmrData;
+                    String suggestedName = brukerData.suggestName(new File(brukerData.getFilePath()));
+                    String datasetName = GUIUtils.input("Dataset name", suggestedName);
+                    Dataset dataset = brukerData.toDataset(datasetName);
+                    addDataset(dataset, append, false);
                 }
             } catch (IOException ex) {
             }

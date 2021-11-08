@@ -54,6 +54,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.apache.commons.math3.complex.Complex;
 import org.apache.commons.math3.util.Precision;
+import org.nmrfx.datasets.DatasetLayout;
+import org.nmrfx.processor.datasets.Dataset;
 
 /**
  * BrukerData implements NMRData methods for opening and reading parameters and
@@ -127,6 +129,105 @@ public class BrukerData implements NMRData {
         }
     }
 
+    /**
+     * Open Bruker parameter and processed data files.
+     *
+     * @param path full path to the processed data file
+     * @throws java.io.IOException
+     */
+    public BrukerData(String path) throws IOException {
+        if (path.endsWith(File.separator)) {
+            path = path.substring(0, path.length() - 1);
+        }
+        File file = new File(path);
+        this.fpath = path;
+        this.nusFile = null;
+        openParFile(file.getParentFile().getParentFile().getParent());
+        scale = 1.0;
+    }
+
+    public Dataset toDataset(String datasetName) throws IOException {
+        DatasetLayout layout = new DatasetLayout(dim);
+        int lastBlockSize = 1;
+        int lastSize = 0;
+        int xdim = 0;
+        for (int i = 0; i < dim; i++) {
+            Integer thisBlockSize = getParInt("XWIN," + (i + 1));
+            if ((thisBlockSize == null) || (thisBlockSize == 0)) {
+                thisBlockSize = getParInt("SI," + (i + 1));
+            }
+            int thisSize = getParInt("SI," + (i + 1));
+            layout.setSize(i, thisSize);
+            if ((lastSize == lastBlockSize) && (thisSize == thisBlockSize)) {
+                xdim = 131072 / lastSize;
+                if (xdim > thisSize) {
+                    xdim = thisSize;
+                }
+                if ((thisSize % xdim) != 0) {
+                    xdim = thisSize;
+                }
+
+            } else {
+                xdim = thisBlockSize;
+            }
+            if (xdim > thisSize) {
+                xdim = thisSize;
+            }
+            layout.setBlockSize(i, xdim);
+            lastBlockSize = xdim;
+            lastSize = thisSize;
+
+        }
+        layout.dimDataset();
+        if (datasetName == null) {
+            File file = new File(fpath);
+            datasetName = suggestName(file);
+        }
+        Dataset dataset = new Dataset(fpath, datasetName, layout, false, 1);
+        dataset.newHeader();
+        for (int i = 0; i < dim; i++) {
+            dataset.setSf(i, getSF(i));
+            Double sW = getParDouble("SW_p," + (i + 1));
+            Double offset = getParDouble("OFFSET," + (i + 1));
+            if (sW != null) {
+                dataset.setSw(i, sW);
+                if (offset != null) {
+                    dataset.setRefValue(i, offset);
+                    dataset.setRefPt(0, 0);
+                }
+            } else {
+                dataset.setSw(i, getSW(i));
+                dataset.setRefValue(i, getRef(i));
+                dataset.setRefPt(i, dataset.getSize(i) / 2);
+            }
+            dataset.setComplex(i, false);
+            dataset.setFreqDomain(i, true);
+            dataset.setNucleus(i, getTN(i));
+            Integer ncProc = getParInt("NC_proc,1");
+            if (ncProc == null) {
+                ncProc = 0;
+            }
+            dataset.setScale(1.0e6 / Math.pow(2, ncProc));
+            dataset.syncPars(i);
+        }
+        dataset.setDataType(1);
+        return dataset;
+    }
+
+    public String suggestName(File file) {
+        File pdataNumFile = file.getParentFile();
+        File numFile = pdataNumFile.getParentFile().getParentFile();
+        File rootFile = numFile.getParentFile();
+        String rootName = rootFile != null ? rootFile.getName() : "";
+        rootName = rootName.replace(" ", "_");
+        StringBuilder sBuilder = new StringBuilder();
+        sBuilder.append(rootName).append("_").append(numFile.getName()).
+                append("_").append(pdataNumFile.getName()).append("_").
+                append(file.getName());
+        return sBuilder.toString();
+
+    }
+
     @Override
     public void close() {
         try {
@@ -144,55 +245,10 @@ public class BrukerData implements NMRData {
      * @return if data was successfully found or not
      */
     protected static boolean findData(StringBuilder bpath) {
-        boolean found = false;
-        if (findFIDFiles(bpath.toString())) {
-            // case: select numeric subdirectory, e.g. 'HMQC/4'
-            found = true;
-        } else {
-            // case: select 'ser', 'fid', or 'acqus' file
-            File f = new File(bpath.toString());
-            String s = f.getParent();
-            if (findFIDFiles(s)) {
-                int len2 = bpath.toString().length();
-                int len1 = s.length();
-                bpath = bpath.delete(len1, len2);
-                bpath.trimToSize();
-                found = true;
-            } else if (findFIDFiles(f.getParentFile().getParent())) {
-                s = f.getParentFile().getParent();
-                int len2 = bpath.toString().length();
-                int len1 = s.length();
-                bpath = bpath.delete(len1, len2);
-                bpath.trimToSize();
-                found = true;
+        File file = new File(bpath.toString());
+        String fileName = file.getName();
+        return isProcessedFile(fileName);
 
-            } else {
-                // case: select parent dir, e.g. 'HMQC'; look for subdir, e.g. 'HMQC/4'
-                if (bpath.toString().endsWith(File.separator)) {
-                    bpath.setLength(bpath.length() - 1);
-                    bpath.trimToSize();
-                }
-                Path bdir = Paths.get(bpath.toString());
-                if (bdir.toFile().isDirectory()) {
-                    try (DirectoryStream<Path> stream = Files.newDirectoryStream(bdir, "[0-9]")) {
-                        for (Path entry : stream) {
-                            s = entry.toString();
-                            if (findFIDFiles(s)) {
-                                s = s.substring(bdir.toString().length());
-                                bpath.append(s);
-                                found = true;
-                                break;
-                            }
-                        }
-                    } catch (DirectoryIteratorException | IOException ex) {
-                        // I/O error encounted during the iteration, the cause is an IOException
-                        //                    throw ex.getCause();
-                        LOGGER.log(Level.WARNING, ex.getMessage());
-                    }
-                }
-            }
-        }
-        return found;
     } // findData
 
     /**
@@ -269,6 +325,24 @@ public class BrukerData implements NMRData {
         }
         return found;
     } // findFIDFiles
+
+    public static boolean isProcessedFile(String name) {
+        boolean result = false;
+        if (!name.isBlank() && (name.length() > 1)
+                && Character.isDigit(name.charAt(0))) {
+            int nDim = Integer.parseInt(name.substring(0, 1));
+            if ((nDim > 0) && (nDim == (name.length() - 1))) {
+                result = true;
+                for (int i = 1; i < nDim; i++) {
+                    if (name.charAt(i) != 'r') {
+                        result = false;
+                        break;
+                    }
+                }
+            }
+        }
+        return result;
+    }
 
     @Override
     public String toString() {
@@ -1820,6 +1894,7 @@ public class BrukerData implements NMRData {
             }
         } catch (IOException e) {
             LOGGER.log(Level.WARNING, e.getMessage());
+
         }
     } // end fileout2
 

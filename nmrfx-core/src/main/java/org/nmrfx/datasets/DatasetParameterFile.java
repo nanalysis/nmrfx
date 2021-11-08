@@ -62,6 +62,8 @@ public class DatasetParameterFile {
             extLen = 3;
         } else if (fileName.endsWith(".ucsf")) {
             extLen = 5;
+        } else if (fileName.endsWith(".nvlnk")) {
+            extLen = 6;
         }
         parFileName = fileName.substring(0, len - extLen) + ".par";
         return parFileName;
