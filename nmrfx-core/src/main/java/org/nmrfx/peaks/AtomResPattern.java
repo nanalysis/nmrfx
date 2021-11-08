@@ -40,6 +40,24 @@ public class AtomResPattern {
         this.bondedDim = bondedDim;
     }
 
+    @Override
+    public String toString() {
+        StringBuilder sBuilder = new StringBuilder();
+        sBuilder.append(resLetter);
+        if (resDelta > 0) {
+            sBuilder.append("+").append(resDelta);
+
+        } else if (resDelta < 0) {
+            sBuilder.append(resDelta);
+        }
+        sBuilder.append(".");
+        sBuilder.append(aName);
+        if (!bondedDim.isBlank()) {
+            sBuilder.append("_D").append(bondedDim);
+        }
+        return sBuilder.toString();
+    }
+
     public static AtomResPatterns parsePattern(String pattern, String bondedDim) {
         var patternList = new ArrayList<AtomResPattern>();
         int dot = pattern.indexOf('.');
@@ -101,10 +119,16 @@ public class AtomResPattern {
         String aName;
         Integer resNum;
 
+        @Override
+        public String toString() {
+            return resNum + "." + aName;
+        }
+
         public ResAtom(String aName, Integer resNum) {
             this.aName = aName;
             this.resNum = resNum;
         }
+
     }
 
     static ResAtom getResAtom(String label) {
@@ -137,10 +161,12 @@ public class AtomResPattern {
         if (!atomResPatterns.atomResPatterns.isEmpty() && !atomResPatterns.ambiguousResidue
                 && !atomResPatterns.ambiguousANames) {
             AtomResPattern arPat = atomResPatterns.atomResPatterns.get(0);
-            Integer resNum = resMap.get(arPat.resLetter) + arPat.resDelta;
-            String aName = arPat.aName;
-            String newLabel = resNum.toString() + "." + aName;
-            peakDim.setLabel(newLabel);
+            if (resMap.containsKey(arPat.resLetter)) {
+                Integer resNum = resMap.get(arPat.resLetter) + arPat.resDelta;
+                String aName = arPat.aName;
+                String newLabel = resNum.toString() + "." + aName;
+                peakDim.setLabel(newLabel);
+            }
         }
     }
 

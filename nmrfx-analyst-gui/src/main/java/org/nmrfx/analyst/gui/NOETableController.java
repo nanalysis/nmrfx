@@ -70,6 +70,7 @@ import org.nmrfx.peaks.PeakList;
 import org.nmrfx.processor.project.Project;
 import org.nmrfx.structure.noe.NOEAssign;
 import org.nmrfx.structure.noe.NOECalibrator;
+import org.nmrfx.utils.GUIUtils;
 
 /**
  *
@@ -123,6 +124,12 @@ public class NOETableController implements Initializable {
     }
 
     public static NOETableController create() {
+        if (MoleculeFactory.getActive() == null) {
+            GUIUtils.warn("NOE Table", "No active molecule");        
+            return null;
+        }
+
+        
         FXMLLoader loader = new FXMLLoader(NOETableController.class.getResource("/fxml/NoeTableScene.fxml"));
         NOETableController controller = null;
         Stage stage = new Stage(StageStyle.DECORATED);

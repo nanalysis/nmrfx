@@ -777,6 +777,9 @@ public class AnalystApp extends MainApp {
     private void showNOETable() {
         if (noeTableController == null) {
             noeTableController = NOETableController.create();
+            if (noeTableController == null) {
+                return;
+            }
             Collection<NoeSet> noeSets = MoleculeFactory.getActive().getMolecularConstraints().noeSets();
 
             if (!noeSets.isEmpty()) {
