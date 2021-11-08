@@ -193,7 +193,7 @@ public class NMRStarWriter {
         return result.toString();
     }
 
-    static void writeEntityHeaderSTAR3(FileWriter chan, Compound compound, int entityID) throws ParseException, IOException {
+    static void writeCompoundHeaderSTAR3(Writer chan, Compound compound, int entityID) throws ParseException, IOException {
         String label = compound.label;
         chan.write("save_" + label + "\n");
         chan.write("_Entity.Sf_category                 ");
@@ -488,7 +488,7 @@ public class NMRStarWriter {
                     writeComponentsSTAR3(chan, polymer, cmpdSet);
                 }
             } else {
-                writeEntityHeaderSTAR3(chan, (Compound) entity, entityID);
+                writeCompoundHeaderSTAR3(chan, (Compound) entity, entityID);
                 chan.write("save_\n\n");
                 writeCompoundToSTAR3(chan, (Compound) entity, entityID, "");
             }
@@ -1079,8 +1079,8 @@ public class NMRStarWriter {
      * @param listID int. The number of the R1/R2/T1rho block in the file.
      * @param entityID int. The number of the molecular entity.
      * @param atom Atom. The atom in the molecule.
-     * @param results  The relaxation and error values: {value,
-     * error, RexValue, RexError}.
+     * @param results The relaxation and error values: {value, error, RexValue,
+     * RexError}.
      * @return
      */
     public static String toStarRelaxationString(int idx, relaxTypes expType, int listID, int entityID, Atom atom, List<Double> results) {
