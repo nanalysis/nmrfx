@@ -24,7 +24,9 @@ import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.processing.ProcessingException;
 import org.nmrfx.processor.operations.Util;
 import java.io.*;
+import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
+import java.nio.file.Files;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -38,6 +40,9 @@ import org.apache.commons.math3.stat.descriptive.rank.PSquarePercentile;
 import org.nmrfx.math.VecBase;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakList;
+import org.nmrfx.processor.datasets.vendor.BrukerData;
+import org.nmrfx.processor.datasets.vendor.NMRData;
+import org.nmrfx.processor.datasets.vendor.NMRDataUtil;
 import org.nmrfx.processor.operations.IDBaseline2;
 import org.nmrfx.processor.processing.LineShapeCatalog;
 import org.nmrfx.project.ProjectBase;
@@ -139,6 +144,66 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         setStrides();
         addFile(fileName);
         loadLSCatalog();
+    }
+
+    /**
+     * Create a new Dataset object that refers to an existing random access file
+     * in a format that can be described by this class.
+     *
+     * @param fullName The full path to the file
+     * @param name The short name (and initial title) to be used for the
+     * dataset.
+     * @param writable true if the file should be opened in a writable mode.
+     * @param useCacheFile true if the file will use StorageCache rather than
+     * memory mapping file. You should not use StorageCache if the file is to be
+     * opened for drawing in NMRFx (as thread interrupts may cause it to be
+     * closed)
+     * @throws IOException if an I/O error occurs
+     */
+    public Dataset(String fullName, String name, DatasetLayout datasetLayout,
+            boolean useCacheFile, int dataType)
+            throws IOException {
+        // fixme  FileUtil class needs to be public file = FileUtil.getFileObj(interp,fullName);
+        super(fullName, name, false, useCacheFile);
+        boolean writable = false;
+        RandomAccessFile raFile;
+        this.layout = datasetLayout;
+        raFile = new RandomAccessFile(file, "r");
+        if (raFile == null) {
+            throw new IllegalArgumentException(
+                    "Couldn't open file \"" + fullName + "\"");
+        }
+
+        initialized = true;
+        title = fileName;
+
+        scale = 1.0;
+        lvl = 0.1;
+        posneg = 1;
+        setDataType(dataType);
+        setByteOrder(ByteOrder.LITTLE_ENDIAN);
+        System.out.println(getByteOrder());
+        DatasetParameterFile parFile = new DatasetParameterFile(this, layout);
+        parFile.readFile();
+
+        if (layout != null) {
+            setNDim(layout.nDim);
+            if (useCacheFile) {
+                dataFile = new SubMatrixFile(this, file, layout, raFile, writable);
+            } else {
+                if (layout.getNDataBytes() > 512e6) {
+                    dataFile = new BigMappedMatrixFile(this, file, layout, raFile, writable);
+                } else {
+                    if (layout.isSubMatrix()) {
+                        dataFile = new MappedSubMatrixFile(this, file, layout, raFile, writable);
+                    } else {
+                        dataFile = new MappedMatrixFile(this, file, layout, raFile, writable);
+                    }
+                }
+            }
+        }
+        setStrides();
+        addFile(fileName);
     }
 
     /**
@@ -326,6 +391,18 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
             dataset.close();
             dataset = null;
         }
+        return dataset;
+    }
+
+    public static Dataset newLinkDataset(String name, String fullName) throws IOException {
+        File linkFile = new File(fullName);
+        System.out.println(fullName);
+        String fileString = Files.readString(linkFile.toPath());
+        System.out.println(fileString);
+        NMRData nmrData = NMRDataUtil.getNMRData(fileString);
+        System.out.println(nmrData);
+        BrukerData brukerData = (BrukerData) nmrData;
+        Dataset dataset = brukerData.toDataset(name);
         return dataset;
     }
 
