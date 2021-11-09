@@ -81,6 +81,7 @@ public class CoordinateSTARWriter {
                 while (entIterator.hasNext()) {
                     Entity entity = (Entity) entIterator.next();
                     for (Atom atom : entity.getAtoms()) {
+                        System.out.println(atom.getFullName() + " " + atom.getAtomicNumber());
                         if (atom.getAtomicNumber() != 0) {
                             SpatialSet spatialSet = atom.spatialSet;
                             result.setLength(0);

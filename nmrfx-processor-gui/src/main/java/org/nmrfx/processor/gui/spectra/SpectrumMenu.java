@@ -24,6 +24,7 @@ import javafx.scene.control.MenuItem;
 import org.nmrfx.processor.datasets.peaks.PeakListTools.ARRAYED_FIT_MODE;
 import org.nmrfx.processor.gui.PeakPicking;
 import org.nmrfx.processor.gui.PolyChart;
+import org.nmrfx.processor.gui.tools.PeakLinker;
 
 /**
  *
@@ -215,12 +216,38 @@ public class SpectrumMenu extends ChartMenu {
         });
         extractMenu.getItems().addAll(projectMenuItem, extractXMenuItem, extractYMenuItem, extractZMenuItem);
 
+        Menu linkMenu = new Menu("Peak Linking");
+        MenuItem linkColumnMenuItem = new MenuItem("Link Selected Column");
+        linkColumnMenuItem.setOnAction((ActionEvent e) -> {
+            PeakLinker.linkSelectedPeaks(0);
+        });
+        MenuItem linkRowMenuItem = new MenuItem("Link Selected Row");
+        linkRowMenuItem.setOnAction((ActionEvent e) -> {
+            PeakLinker.linkSelectedPeaks(1);
+        });
+
+        MenuItem unlinkSelectedMenuItem = new MenuItem("Unlink Selected");
+        unlinkSelectedMenuItem.setOnAction((ActionEvent e) -> {
+            PeakLinker.unlinkSelected();
+        });
+        MenuItem unlinkSelectedColumnMenuItem = new MenuItem("Unlink Selected Column");
+        unlinkSelectedColumnMenuItem.setOnAction((ActionEvent e) -> {
+            PeakLinker.unlinkSelected(0);
+        });
+        MenuItem unlinkSelectedRowMenuItem = new MenuItem("Unlink Selected Row");
+        unlinkSelectedRowMenuItem.setOnAction((ActionEvent e) -> {
+            PeakLinker.unlinkSelected(1);
+        });
+
+        linkMenu.getItems().addAll(linkColumnMenuItem, linkRowMenuItem,
+                unlinkSelectedMenuItem, unlinkSelectedColumnMenuItem, unlinkSelectedRowMenuItem);
+
         chartMenu.getItems().add(attrItem);
         chartMenu.getItems().add(viewMenu);
         chartMenu.getItems().add(peakMenu);
         chartMenu.getItems().add(refMenu);
         chartMenu.getItems().add(baselineMenu);
-        chartMenu.getItems().add(extractItem);
+        chartMenu.getItems().add(linkMenu);
         chartMenu.getItems().add(extractMenu);
     }
 }
