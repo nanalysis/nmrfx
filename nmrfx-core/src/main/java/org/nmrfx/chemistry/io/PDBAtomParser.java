@@ -59,6 +59,12 @@ public class PDBAtomParser extends AtomParser {
 // resName should only be in columns 17-19, but cyana uses four characters for rna/dna
         resName = string.substring(17, 21).trim();
         atomName = string.substring(12, 17);  // CYANA sticks ' char for atoms like HO2' in pos 16
+        elemName = atomName.substring(0,2).trim();
+        if (Character.isDigit(elemName.charAt(0)) || ((elemName.charAt(0) == 'H') && (atomName.trim().length() == 4))) {
+            elemName = "H";
+        }
+        
+        
         atomNum = string.substring(7, 11).trim();
         if (atomName.charAt(4) != '\'') {     // kluge for cyana
             atomName = atomName.substring(0, 4);

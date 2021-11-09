@@ -168,7 +168,8 @@ public class Atom implements IAtom {
 
     protected final void initialize(AtomParser atomParse) {
         name = atomParse.atomName;
-
+        
+System.out.println(name + " " + atomParse.elemName);
         if (!atomParse.elemName.equals("")) {
             aNum = getElementNumber(atomParse.elemName);
         } else {
@@ -176,9 +177,11 @@ public class Atom implements IAtom {
 
             while ((len > 0)
                     && ((aNum = getElementNumber(name.substring(0, len))) == 0)) {
+                System.out.println(name.substring(0,len) + " " + len + " " + aNum);
                 len--;
             }
         }
+        System.out.println("anum " + aNum);
 
         atomProperty = AtomProperty.get(aNum);
         radius = atomProperty.getRadius();

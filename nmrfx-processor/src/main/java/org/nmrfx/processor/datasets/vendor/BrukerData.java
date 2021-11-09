@@ -127,6 +127,109 @@ public class BrukerData implements NMRData {
         }
     }
 
+    /**
+     * Open Bruker parameter and processed data files.
+     *
+     * @param path full path to the processed data file
+     * @throws java.io.IOException
+     */
+    public BrukerData(String path) throws IOException {
+        if (path.endsWith(File.separator)) {
+            path = path.substring(0, path.length() - 1);
+        }
+        File file = new File(path);
+        this.fpath = path;
+        this.nusFile = null;
+        openParFile(file.getParentFile().getParentFile().getParent());
+        scale = 1.0;
+    }
+
+    public Dataset toDataset(String datasetName) throws IOException {
+        DatasetLayout layout = new DatasetLayout(dim);
+        int lastBlockSize = 1;
+        int lastSize = 0;
+        int xdim = 0;
+        for (int i = 0; i < dim; i++) {
+            Integer thisBlockSize = getParInt("XWIN," + (i + 1));
+            if ((thisBlockSize == null) || (thisBlockSize == 0)) {
+                thisBlockSize = getParInt("SI," + (i + 1));
+            }
+            int thisSize = getParInt("SI," + (i + 1));
+            layout.setSize(i, thisSize);
+            if ((lastSize == lastBlockSize) && (thisSize == thisBlockSize)) {
+                xdim = 131072 / lastSize;
+                if (xdim > thisSize) {
+                    xdim = thisSize;
+                }
+                if ((thisSize % xdim) != 0) {
+                    xdim = thisSize;
+                }
+
+            } else {
+                xdim = thisBlockSize;
+            }
+            if (xdim > thisSize) {
+                xdim = thisSize;
+            }
+            layout.setBlockSize(i, xdim);
+            lastBlockSize = xdim;
+            lastSize = thisSize;
+
+        }
+        layout.dimDataset();
+        if (datasetName == null) {
+            File file = new File(fpath);
+            datasetName = suggestName(file);
+        }
+        Dataset dataset = new Dataset(fpath, datasetName, layout, false, 1);
+        dataset.newHeader();
+        for (int i = 0; i < dim; i++) {
+            dataset.setSf(i, getSF(i));
+            Double sW = getParDouble("SW_p," + (i + 1));
+            Double offset = getParDouble("OFFSET," + (i + 1));
+            if (sW != null) {
+                dataset.setSw(i, sW);
+            } else {
+                dataset.setSw(i, getSW(i));
+            }
+            if (offset != null) {
+                dataset.setRefValue(i, offset);
+                dataset.setRefPt(i, 0);
+
+            } else {
+                dataset.setRefValue(i, getRef(i));
+                dataset.setRefPt(i, dataset.getSize(i) / 2);
+            }
+            dataset.setComplex(i, false);
+            dataset.setFreqDomain(i, true);
+            String nucLabel = getTN(i);
+            dataset.setNucleus(i, nucLabel);
+            dataset.setLabel(i, nucLabel + (i + 1));
+            dataset.syncPars(i);
+        }
+        Integer ncProc = getParInt("NC_proc,1");
+        if (ncProc == null) {
+            ncProc = 0;
+        }
+        dataset.setScale(1.0e6 / Math.pow(2, ncProc));
+        dataset.setDataType(1);
+        return dataset;
+    }
+
+    public String suggestName(File file) {
+        File pdataNumFile = file.getParentFile();
+        File numFile = pdataNumFile.getParentFile().getParentFile();
+        File rootFile = numFile.getParentFile();
+        String rootName = rootFile != null ? rootFile.getName() : "";
+        rootName = rootName.replace(" ", "_");
+        StringBuilder sBuilder = new StringBuilder();
+        sBuilder.append(rootName).append("_").append(numFile.getName()).
+                append("_").append(pdataNumFile.getName()).append("_").
+                append(file.getName());
+        return sBuilder.toString();
+
+    }
+
     @Override
     public void close() {
         try {

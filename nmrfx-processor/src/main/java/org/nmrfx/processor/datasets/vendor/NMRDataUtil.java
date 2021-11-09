@@ -358,7 +358,7 @@ public final class NMRDataUtil {
             var files = NMRDataUtil.findNMRDirectories(scanDir);
             for (String fileName : files) {
                 try {
-                    NMRData data = NMRDataUtil.getNMRData(fileName);
+                    NMRData data = NMRDataUtil.getFID(fileName);
                     if (data != null) {
                         Path path2 = Paths.get(fileName);
                         Path path3 = path1.relativize(path2);
