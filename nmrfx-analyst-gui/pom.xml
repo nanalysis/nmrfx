@@ -31,9 +31,16 @@
             <version>11.1.42</version>
         </dependency>
         <dependency>
+            <groupId>org.nmrfx</groupId>
+            <artifactId>nmrfx-plugin-api</artifactId>
+            <version>11.1.40</version>
+        </dependency>
+        <!--
+        <dependency>
             <groupId>org.comdnmr</groupId>
             <artifactId>ringnmr-gui</artifactId>
         </dependency>
+        -->
         <dependency>
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-graphics</artifactId>
