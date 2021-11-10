@@ -48,6 +48,7 @@ public class PeakFitter {
     final Dataset theFile;
     boolean rootedPeaks;
     int fitMode;
+    Double positionRestraint = null;
     Peak[] peaks;
     final int[][] p2;
     boolean fixWeakDoublet = true;
@@ -79,6 +80,10 @@ public class PeakFitter {
                 throw new IllegalArgumentException("Couln't find peak \"" + argv[iArg] + "\"");
             }
         }
+    }
+
+    public void setPositionRestraint(Double value) {
+        positionRestraint = value;
     }
 
     public void setup(List<Peak> peaksList) {
@@ -713,6 +718,11 @@ public class PeakFitter {
             } else {
                 upper[iPeak * 3 + 1] = (guesses[iPeak * 3 + 1] + guesses[(iPeak + 1) * 3 + 1]) / 2;
             }
+            if (positionRestraint != null) {
+                lower[iPeak * 3 + 1] = Math.max(lower[iPeak * 3 + 1], guesses[iPeak * 3 + 1] - lineWidthPts / positionRestraint);
+                upper[iPeak * 3 + 1] = Math.min(upper[iPeak * 3 + 1], guesses[iPeak * 3 + 1] + lineWidthPts / positionRestraint);
+            }
+
         }
         System.out.println(peaks[0].getName());
         for (int i = 0; i < guesses.length; i++) {
