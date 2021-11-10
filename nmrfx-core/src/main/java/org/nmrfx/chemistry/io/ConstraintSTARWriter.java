@@ -17,8 +17,8 @@
  */
 
 package org.nmrfx.chemistry.io;
-import java.io.FileWriter;
 import java.io.IOException;
+import java.io.Writer;
 import java.util.Iterator;
 import org.nmrfx.peaks.InvalidPeakException;
 import org.nmrfx.chemistry.constraints.Constraint;
@@ -30,7 +30,7 @@ import org.nmrfx.chemistry.constraints.ConstraintSet;
  */
 public class ConstraintSTARWriter {
 
-    public static void writeConstraintsSTAR3(FileWriter chan, ConstraintSet cSet, int setNum)
+    public static void writeConstraintsSTAR3(Writer chan, ConstraintSet cSet, int setNum)
             throws IOException, InvalidPeakException {
         String saveFrameName = cSet.getCategory() + setNum;
         String saveFrameCategory = cSet.getCategory();

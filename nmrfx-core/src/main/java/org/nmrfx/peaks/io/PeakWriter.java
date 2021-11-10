@@ -104,7 +104,7 @@ public class PeakWriter {
         }
     }
 
-    public void writePeaksXPK2(FileWriter chan, PeakList peakList) throws IOException, InvalidPeakException {
+    public void writePeaksXPK2(Writer chan, PeakList peakList) throws IOException, InvalidPeakException {
 
         Map<String, String> properties = peakList.getProperties();
         chan.write("peaklist\tdataset\tndim\tcondition\tscale");
@@ -159,7 +159,7 @@ public class PeakWriter {
         }
     }
 
-    public void writePeakMeasures(FileWriter chan, PeakList peakList) throws IOException, InvalidPeakException {
+    public void writePeakMeasures(Writer chan, PeakList peakList) throws IOException, InvalidPeakException {
         int nDim = peakList.nDim;
         StringBuilder result = new StringBuilder();
         String sep = "\t";
@@ -199,7 +199,7 @@ public class PeakWriter {
         }
     }
 
-    public void writePeaksXPK(FileWriter chan, PeakList peakList) throws IOException, IllegalArgumentException, InvalidPeakException {
+    public void writePeaksXPK(Writer chan, PeakList peakList) throws IOException, IllegalArgumentException, InvalidPeakException {
         if (chan == null) {
             throw new IllegalArgumentException("Channel null");
         }
@@ -214,7 +214,7 @@ public class PeakWriter {
         }
     }
 
-    public void writePeaks(FileWriter chan, PeakList peakList) throws IOException, IllegalArgumentException, InvalidPeakException {
+    public void writePeaks(Writer chan, PeakList peakList) throws IOException, IllegalArgumentException, InvalidPeakException {
         if (chan == null) {
             throw new IllegalArgumentException("Channel null");
         }
@@ -228,7 +228,7 @@ public class PeakWriter {
         }
     }
 
-    public void writePeaksNEF(FileWriter chan, PeakList peakList) throws IOException, InvalidPeakException {
+    public void writePeaksNEF(Writer chan, PeakList peakList) throws IOException, InvalidPeakException {
         char stringQuote = '"';
         chan.write("save_nef_nmr_spectrum_" + peakList.getName() + "\n");
         chan.write("_nef_nmr_spectrum.sf_category                 ");
@@ -273,7 +273,7 @@ public class PeakWriter {
         chan.write("\nsave_\n\n");
     }
 
-    public void writePeaksSTAR3(FileWriter chan, PeakList peakList) throws IOException, InvalidPeakException {
+    public void writePeaksSTAR3(Writer chan, PeakList peakList) throws IOException, InvalidPeakException {
         peakList.writeSTAR3Header(chan);
         String[] loopStrings = SpectralDim.getSTAR3LoopStrings();
         chan.write("loop_\n");
@@ -493,7 +493,7 @@ public class PeakWriter {
         chan.write("\nsave_\n\n");
     }
 
-    public void writePeaksToXML(FileWriter chan, PeakList peakList) throws IOException, IllegalArgumentException, InvalidPeakException {
+    public void writePeaksToXML(Writer chan, PeakList peakList) throws IOException, IllegalArgumentException, InvalidPeakException {
         int i;
         if (chan == null) {
             throw new IllegalArgumentException("Channel null");

@@ -20,6 +20,7 @@ package org.nmrfx.chemistry.relax;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -56,6 +57,7 @@ public class RelaxationData implements RelaxationValues {
     public Double value;
     public Double error;
     public Map<String, String> extras;
+    private String key;
 
     public RelaxationData(String ID, relaxTypes expType, Atom atom, List<Atom> extraAtoms, double field, double temperature,
             Double value, Double error, Map<String, String> extras) {
@@ -69,6 +71,30 @@ public class RelaxationData implements RelaxationValues {
         this.value = value;
         this.error = error;
         this.extras = extras;
+        this.key = toKey();
+    }
+
+    @Override
+    public String toString() {
+        return "RelaxationData{" + "ID=" + ID + ", expType=" + expType
+                + ", atom=" + atom.getFullName() + ", field=" + field
+                + ", temperature=" + temperature
+                + ", value=" + value + ", error=" + error + '}';
+    }
+
+    private String toKey() {
+        char sepChar = ':';
+        var stringBuilder = new StringBuilder();
+        stringBuilder.append(ID).append(sepChar).
+                append(expType.getName()).append(sepChar).
+                append(Math.round(field)).append(sepChar).
+                append(Math.round(temperature));
+        return stringBuilder.toString();
+
+    }
+
+    public String getKey() {
+        return key;
     }
 
     public static void add(String id, String type, Atom atom, double field, double value, double error) {
@@ -146,23 +172,19 @@ public class RelaxationData implements RelaxationValues {
         return extras;
     }
 
-    public static Collection<RelaxationData> getRelaxationData(List<Atom> atoms) {
-        List<RelaxationData> relaxDataSet = new ArrayList<>();
+    public static Map<String, List<RelaxationData>> getRelaxationData(List<Atom> atoms) {
+        var relaxationData = new HashMap<String, List<RelaxationData>>();
         atoms.forEach((atom) -> {
-            atom.getRelaxationData().keySet().forEach((key) -> {
-                relaxDataSet.add(atom.getRelaxationData(key));
-            });
+            for (var relaxEntry : atom.getRelaxationData().entrySet()) {
+                String relaxKey = relaxEntry.getValue().getKey();
+                List<RelaxationData> relaxList = relaxationData.get(relaxKey);
+                if (!relaxationData.containsKey(relaxKey)) {
+                    relaxList = new ArrayList<RelaxationData>();
+                    relaxationData.put(relaxKey, relaxList);
+                }
+                relaxList.add(relaxEntry.getValue());
+            }
         });
-        return relaxDataSet;
-    }
-
-    public static Set<relaxTypes> getExpTypes(MoleculeBase molecule) {
-        Set<relaxTypes> expTypeSet = new TreeSet<>();
-        Collection<RelaxationData> molRelaxData = getRelaxationData(molecule.getAtomArray());
-        molRelaxData.forEach((relaxData) -> {
-            expTypeSet.add(relaxData.getExpType());
-        });
-
-        return expTypeSet;
+        return relaxationData;
     }
 }

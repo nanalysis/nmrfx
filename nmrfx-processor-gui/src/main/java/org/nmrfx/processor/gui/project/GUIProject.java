@@ -168,6 +168,8 @@ public class GUIProject extends ProjectBase {
                             if (!readSTAR3) {
                                 System.out.println("readpeaks");
                                 loadProject(projectDir, "peaks");
+                            } else {
+                                loadProject(projectDir, "mpk2");
                             }
                             break;
                         case "shifts":
@@ -213,6 +215,7 @@ public class GUIProject extends ProjectBase {
             if (projectDir == null) {
                 throw new IllegalArgumentException("Project directory not set");
             }
+            checkSubDirs(projectDir);
             super.saveProject();
             NMRStarWriter.writeAll(getSTAR3FileName());
             saveShifts(false);
@@ -503,4 +506,15 @@ public class GUIProject extends ProjectBase {
         ObservableMap obsMap = (ObservableMap) datasetMap;
         return obsMap;
     }
+
+    public void checkSubDirs(Path projectDir) throws IOException {
+        for (String subDir : SUB_DIR_TYPES) {
+            Path subDirectory = Path.of(projectDir.toString(), subDir);
+            if (!subDirectory.toFile().exists()) {
+                Files.createDirectory(subDirectory);
+            }
+        }
+        this.projectDir = projectDir;
+    }
+
 }

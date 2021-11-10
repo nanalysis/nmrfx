@@ -17,8 +17,8 @@
  */
 package org.nmrfx.peaks;
 
-import java.io.FileWriter;
 import java.io.IOException;
+import java.io.Writer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -236,7 +236,7 @@ public class ResonanceFactory implements FreezeListener {
         }
     }
 
-    public void writeResonancesSTAR3(FileWriter chan)
+    public void writeResonancesSTAR3(Writer chan)
             throws IOException {
 
         chan.write("save_resonance_linker_list\n");

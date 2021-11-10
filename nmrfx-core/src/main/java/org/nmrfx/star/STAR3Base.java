@@ -7,11 +7,11 @@ package org.nmrfx.star;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.LineNumberReader;
 import java.io.PrintWriter;
 import java.io.StreamTokenizer;
+import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -445,7 +445,7 @@ public class STAR3Base {
         this.saveFrames = saveFrames;
     }
 
-    public static void writeLoopStrings(FileWriter chan, String[] loopStrings) throws ParseException, IOException {
+    public static void writeLoopStrings(Writer chan, String[] loopStrings) throws ParseException, IOException {
         chan.write("\nloop_\n");
         for (int j = 0; j < loopStrings.length; j++) {
             chan.write(loopStrings[j] + "\n");
@@ -453,7 +453,7 @@ public class STAR3Base {
         chan.write("\n\n");
     }
 
-    public static void writeLoopStrings(FileWriter chan, String category, List<String> loopStrings) throws ParseException, IOException {
+    public static void writeLoopStrings(Writer chan, String category, List<String> loopStrings) throws ParseException, IOException {
         chan.write("\nloop_\n");
         for (String loopString : loopStrings) {
             chan.write(category + "." + loopString + "\n");
@@ -461,7 +461,7 @@ public class STAR3Base {
         // chan.write("\n\n");
     }
 
-    public static void writeString(FileWriter chan, String s, int maxLen) throws ParseException, IOException {
+    public static void writeString(Writer chan, String s, int maxLen) throws ParseException, IOException {
         if (s.length() > maxLen) {
             chan.write("\n;");
             int propLen = s.length();

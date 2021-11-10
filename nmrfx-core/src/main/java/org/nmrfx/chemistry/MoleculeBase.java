@@ -1607,7 +1607,7 @@ public class MoleculeBase implements Serializable, ITree {
             }
 
             atomIterator = compound.atoms.iterator();
-            return true;
+            return atomIterator.hasNext();
         }
 
         public boolean nextEntity() {

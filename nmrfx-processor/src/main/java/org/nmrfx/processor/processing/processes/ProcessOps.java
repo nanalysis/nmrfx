@@ -189,8 +189,8 @@ public class ProcessOps implements Callable<Object> {
         vectors.add(vector);
     }
 
-    public void addVecList(ArrayList<Vec> vectors) {
-        vectors.addAll(vectors);
+    public void addVecList(ArrayList<Vec> addVectors) {
+        vectors.addAll(addVectors);
     }
 
     /**
