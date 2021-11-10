@@ -59,7 +59,7 @@ public class CanvasBindings {
                 menu = chart.getPeakMenu();
                 ((PeakMenu) menu).setActivePeak(hitPeak.get());
             } else {
-                Optional<IntegralHit> hitRegion = chart.hitRegion(x, y);
+                Optional<IntegralHit> hitRegion = chart.hitRegion(false, x, y);
                 System.out.println("hit reg " + hitRegion.isPresent());
                 if (hitRegion.isPresent()) {
                     menu = chart.getRegionMenu();
