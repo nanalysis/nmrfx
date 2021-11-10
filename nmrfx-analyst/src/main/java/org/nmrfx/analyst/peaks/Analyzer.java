@@ -1,5 +1,6 @@
 package org.nmrfx.analyst.peaks;
 
+import java.io.File;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.datasets.Nuclei;
 import org.nmrfx.datasets.DatasetRegion;
@@ -40,7 +41,7 @@ import org.nmrfx.processor.operations.Util;
  */
 public class Analyzer {
 
-    final Dataset dataset;
+    Dataset dataset;
     PeakList peakList;
 
     double trimRatio = 2.0;
@@ -70,6 +71,10 @@ public class Analyzer {
 
     public Dataset getDataset() {
         return dataset;
+    }
+
+    public void setDataset(Dataset dataset) {
+        this.dataset = dataset;
     }
 
     public void setPeakList(PeakList peakList) {
@@ -466,6 +471,26 @@ public class Analyzer {
             double start = region.getRegionStart(rDim);
             double end = region.getRegionEnd(rDim);
             if ((shift < start) || (shift > end)) {
+                newRegions.add(region);
+            }
+        });
+        regions.clear();
+        regions.addAll(newRegions);
+        if (peakList != null) {
+            removePeaksFromNonRegions();
+        }
+    }
+
+    public void removeRegion(double ppm1, double ppm2) {
+        Set<DatasetRegion> newRegions = new TreeSet<>();
+        Set<DatasetRegion> regions = getRegions();
+        int rDim = 0;
+        double ppmStart = ppm1 < ppm2 ? ppm1 : ppm2;
+        double ppmEnd = ppm2 > ppm1 ? ppm2 : ppm1;
+        regions.stream().forEach(region -> {
+            double start = region.getRegionStart(rDim);
+            double end = region.getRegionEnd(rDim);
+            if ((ppmEnd < start) || (ppmStart > end)) {
                 newRegions.add(region);
             }
         });
@@ -1187,5 +1212,15 @@ public class Analyzer {
         renumber();
         normalizeMultiplets();
         normalizeIntegrals();
+    }
+
+    public void loadRegions(File regionFile) throws IOException {
+        System.out.println("region " + regionFile.toString());
+        if (regionFile.canRead()) {
+            System.out.println("read");
+            TreeSet<DatasetRegion> regions = DatasetRegion.loadRegions(regionFile);
+            dataset.setRegions(regions);
+        }
+
     }
 }

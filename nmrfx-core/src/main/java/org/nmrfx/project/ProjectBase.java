@@ -455,15 +455,18 @@ public class ProjectBase {
             File datasetFile = dataset.getFile();
             if (datasetFile != null) {
                 Path currentPath = datasetFile.toPath();
-                Path fileName = currentPath.getFileName();
-                Path pathInProject = datasetDir.resolve(fileName);
-                // fixme should we have option to copy file, rather than make  link
-                // or add text file with path to original
-                if (!Files.exists(pathInProject)) {
-                    try {
-                        Files.createLink(pathInProject, currentPath);
-                    } catch (IOException | UnsupportedOperationException | SecurityException ex) {
-                        Files.createSymbolicLink(pathInProject, currentPath);
+                Path filePath = currentPath.getFileName();
+                String fileName = filePath.toString();
+                Path pathInProject;
+
+                if (fileName.endsWith(".nv") || fileName.endsWith(".ucsf")) {
+                    pathInProject = datasetDir.resolve(filePath);
+                    if (!Files.exists(pathInProject)) {
+                        try {
+                            Files.createLink(pathInProject, currentPath);
+                        } catch (IOException | UnsupportedOperationException | SecurityException ex) {
+                            Files.createSymbolicLink(pathInProject, currentPath);
+                        }
                     }
                 }
                 String parFilePath = DatasetParameterFile.getParameterFileName(pathInProject.toString());

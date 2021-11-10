@@ -7,6 +7,7 @@ package org.nmrfx.analyst.gui;
 
 import de.jensd.fx.glyphs.GlyphsDude;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -18,6 +19,7 @@ import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javafx.beans.value.ChangeListener;
+import javafx.collections.ListChangeListener;
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Orientation;
 import javafx.scene.Scene;
@@ -38,6 +40,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
+import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import org.controlsfx.dialog.ExceptionDialog;
@@ -92,6 +95,24 @@ public class RegionTool implements ControllerTool {
         this.controller = controller;
         this.closeAction = closeAction;
         chart = controller.getActiveChart();
+        chart.getDatasetAttributes().addListener((ListChangeListener) c -> {
+            System.out.println("data " + c);
+            if (chart.getDatasetAttributes().isEmpty()) {
+                analyzer = null;
+            } else {
+                Analyzer thisAnalyzer = getAnalyzer();
+                thisAnalyzer.setDataset((Dataset) chart.getDatasetAttributes().get(0).getDataset());
+            }
+        });
+        chart.getPeakListAttributes().addListener((ListChangeListener) c -> {
+            System.out.println("peak " + c);
+            Analyzer thisAnalyzer = getAnalyzer();
+            if (chart.getPeakListAttributes().isEmpty()) {
+                thisAnalyzer.setPeakList(null);
+            } else {
+                thisAnalyzer.setPeakList((PeakList) chart.getPeakListAttributes().get(0).getPeakList());
+            }
+        });
     }
 
     public VBox getBox() {
@@ -133,6 +154,9 @@ public class RegionTool implements ControllerTool {
         MenuItem findRegionsMenuItem = new MenuItem("Find Regions");
         findRegionsMenuItem.setOnAction(e -> findRegions());
 
+        MenuItem loadRegionsMenuItem = new MenuItem("Load Regions");
+        loadRegionsMenuItem.setOnAction(e -> loadRegions());
+
         MenuItem pickRegionsMenuItem = new MenuItem("Pick Regions");
         pickRegionsMenuItem.setOnAction(e -> pickRegions());
 
@@ -151,7 +175,8 @@ public class RegionTool implements ControllerTool {
         MenuItem clearThresholdMenuItem = new MenuItem("Clear Threshold");
         clearThresholdMenuItem.setOnAction(e -> clearThreshold());
 
-        menu.getItems().addAll(findRegionsMenuItem, pickRegionsMenuItem,
+        menu.getItems().addAll(findRegionsMenuItem, loadRegionsMenuItem,
+                pickRegionsMenuItem,
                 fitRegionsMenuItem, adjustPeakIntegralsMenuItem,
                 clearMenuItem, thresholdMenuItem, clearThresholdMenuItem);
     }
@@ -361,6 +386,24 @@ public class RegionTool implements ControllerTool {
         if (peakList != null) {
             peakListNames.add(peakList.getName());
             chart.updatePeakLists(peakListNames);
+        }
+    }
+
+    private void loadRegions() {
+        Analyzer analyzer = getAnalyzer();
+        if (analyzer != null) {
+            FileChooser chooser = new FileChooser();
+            chooser.setTitle("Read Regions File");
+            File regionFile = chooser.showOpenDialog(null);
+            if (regionFile != null) {
+                try {
+                    analyzer.loadRegions(regionFile);
+                    getChart().chartProps.setIntegrals(true);
+                    getChart().chartProps.setRegions(true);
+                    getChart().refresh();
+                } catch (IOException ioE) {
+                }
+            }
         }
     }
 
@@ -682,7 +725,7 @@ public class RegionTool implements ControllerTool {
         Analyzer analyzer = getAnalyzer();
         double ppm0 = chart.getVerticalCrosshairPositions()[0];
         double ppm1 = chart.getVerticalCrosshairPositions()[1];
-        analyzer.removeRegion((ppm0 + ppm1) / 2);
+        analyzer.removeRegion(ppm0, ppm1);
         analyzer.addRegion(ppm0, ppm1);
         RegionTool.this.updateRegion(false);
         chart.refresh();
