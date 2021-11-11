@@ -51,6 +51,7 @@ import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleObjectProperty;
+import javafx.beans.value.ChangeListener;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.MapChangeListener;
@@ -112,7 +113,6 @@ import org.nmrfx.processor.gui.spectra.MultipletSelection;
 import org.nmrfx.processor.gui.spectra.PeakMenu;
 import org.nmrfx.processor.gui.spectra.RegionMenu;
 import org.nmrfx.processor.gui.undo.ChartUndoScale;
-import org.nmrfx.processor.gui.utils.PeakListUpdater;
 import org.nmrfx.project.ProjectBase;
 import org.nmrfx.utils.GUIUtils;
 
@@ -200,6 +200,7 @@ public class PolyChart implements PeakListener {
     boolean disabled = false;
     public ChartProperties chartProps = new ChartProperties(this);
     FXMLController sliceController = null;
+    SimpleObjectProperty<DatasetRegion> activeRegion = new SimpleObjectProperty<>(null);
 
     int iVec = 0;
 //    Vec vec;
@@ -610,7 +611,7 @@ public class PolyChart implements PeakListener {
     public void setRegionConsumer(Consumer<DatasetRegion> consumer) {
         newRegionConsumer = consumer;
     }
-    
+
     public void clearRegionConsumer() {
         newRegionConsumer = null;
     }
@@ -2474,7 +2475,11 @@ public class PolyChart implements PeakListener {
                 x1 = x2;
                 x2 = hold;
             }
-            gC.setFill(Color.LIGHTYELLOW);
+            if (region == activeRegion.get()) {
+                gC.setFill(Color.YELLOW);
+            } else {
+                gC.setFill(Color.LIGHTYELLOW);
+            }
             gC.fillRect(x1, yPos + topBorder + 1, x2 - x1, chartHeight - 2);
 
         }
@@ -2584,15 +2589,33 @@ public class PolyChart implements PeakListener {
         return hit;
     }
 
-    public boolean selectRegion(double pickX, double pickY) {
+    public boolean selectRegion(boolean controls, double pickX, double pickY) {
         for (DatasetAttributes datasetAttr : datasetAttributesList) {
             datasetAttr.setActiveRegion(Optional.empty());
         }
-        Optional<IntegralHit> hit = hitRegion(pickX, pickY);
-        hit.ifPresent(iHit -> {
+        Optional<IntegralHit> hit = hitRegion(controls, pickX, pickY);
+        hit.ifPresentOrElse(iHit -> {
             iHit.getDatasetAttr().setActiveRegion(Optional.of(iHit));
-        });
+            activeRegion.set(hit.get().getDatasetRegion());
+        }, () -> activeRegion.set(null));
+
         return hit.isPresent();
+    }
+
+    public boolean selectRegionControls(double pickX, double pickY) {
+        for (DatasetAttributes datasetAttr : datasetAttributesList) {
+            datasetAttr.setActiveRegion(Optional.empty());
+        }
+        Optional<IntegralHit> hit = hitRegion(true, pickX, pickY);
+        hit.ifPresentOrElse(iHit -> {
+            iHit.getDatasetAttr().setActiveRegion(Optional.of(iHit));
+            activeRegion.set(hit.get().getDatasetRegion());
+        }, () -> activeRegion.set(null));
+        return hit.isPresent();
+    }
+
+    public void addRegionListener(ChangeListener<DatasetRegion> listener) {
+        activeRegion.addListener(listener);
     }
 
     public boolean selectIntegral(double pickX, double pickY) {
@@ -2635,7 +2658,7 @@ public class PolyChart implements PeakListener {
         }
     }
 
-    public Optional<IntegralHit> hitRegion(double pickX, double pickY) {
+    public Optional<IntegralHit> hitRegion(boolean controls, double pickX, double pickY) {
         Optional<IntegralHit> hit = Optional.empty();
         for (DatasetAttributes datasetAttr : datasetAttributesList) {
 
@@ -2644,7 +2667,7 @@ public class PolyChart implements PeakListener {
                 continue;
             }
             for (DatasetRegion region : regions) {
-                hit = drawSpectrum.hitRegion(datasetAttr, region, pickX, pickY);
+                hit = drawSpectrum.hitRegion(datasetAttr, region, controls, pickX, pickY);
                 if (hit.isPresent()) {
                     break;
                 }

@@ -213,7 +213,7 @@ public class MouseBindings {
                     } else {
                         Optional<Peak> hit = chart.hitPeak(x, y);
                         if (!hit.isPresent()) {
-                            Optional<IntegralHit> hitR = chart.hitRegion(x, y);
+                            Optional<IntegralHit> hitR = chart.hitRegion(false, x, y);
                             if (!hitR.isPresent()) {
                                 hitR = chart.hitIntegral(x, y);
                             }
@@ -231,17 +231,29 @@ public class MouseBindings {
                             boolean hitPeak = chart.selectPeaks(x, y, false);
                             if (!hitPeak) {
                                 boolean hadRegion = chart.hasActiveRegion();
-                                boolean hitRegion = chart.selectRegion(x, y);
-                                if (!hitRegion) {
-                                    hitRegion = chart.selectIntegral(x, y);
+                                boolean hitIntegrals = false;
+                                boolean hitControls = false;
+                                if (hadRegion) {
+                                    hitControls = chart.selectRegion(true, x, y);
+                                    if (hitControls) {
+                                        mouseAction = MOUSE_ACTION.DRAG_REGION;
+                                    }
                                 }
-                                if ((hadRegion && !hitRegion) || (!hadRegion && hitRegion)) {
-                                    chart.refresh();
-                                }
-                                if (hitRegion) {
-                                    mouseAction = MOUSE_ACTION.DRAG_REGION;
-                                } else {
-                                    mouseAction = MOUSE_ACTION.DRAG_EXPAND;
+                                if (!hitControls) {
+                                    hitIntegrals = chart.selectIntegral(x, y);
+
+                                    boolean hitRegion = false;
+                                    if (!hitIntegrals) {
+                                        hitRegion = chart.selectRegion(false, x, y);
+                                    }
+                                    if ((hadRegion && !hitRegion) || hitRegion || hitIntegrals) {
+                                        chart.refresh();
+                                    }
+                                    if (hitIntegrals) {
+                                        mouseAction = MOUSE_ACTION.DRAG_REGION;
+                                    } else if (!hitRegion) {
+                                        mouseAction = MOUSE_ACTION.DRAG_EXPAND;
+                                    }
                                 }
                             }
                             if (hit.isPresent() || hitPeak) {

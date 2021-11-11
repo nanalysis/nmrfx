@@ -59,21 +59,17 @@ public class CanvasBindings {
                 menu = chart.getPeakMenu();
                 ((PeakMenu) menu).setActivePeak(hitPeak.get());
             } else {
-                Optional<IntegralHit> hitRegion = chart.hitRegion(x, y);
-                System.out.println("hit reg " + hitRegion.isPresent());
-                if (hitRegion.isPresent()) {
-                    menu = chart.getRegionMenu();
+                Optional<IntegralHit> hitIntegral = chart.hitIntegral(x, y);
+                if (hitIntegral.isPresent()) {
+                    menu = chart.getIntegralMenu();
+                    ((IntegralMenu) menu).setHit(hitIntegral.get());
                 } else {
-                    Optional<IntegralHit> hitIntegral = chart.hitIntegral(x, y);
-                    System.out.println("hit int " + hitIntegral.isPresent());
-
-                    if (hitIntegral.isPresent()) {
-                        menu = chart.getIntegralMenu();
-                        ((IntegralMenu) menu).setHit(hitIntegral.get());
+                    Optional<IntegralHit> hitRegion = chart.hitRegion(false, x, y);
+                    if (hitRegion.isPresent()) {
+                        menu = chart.getRegionMenu();
                     } else {
                         Optional<CanvasAnnotation> hitAnno = chart.hitAnnotation(x, y);
                         if (hitAnno.isPresent()) {
-                            System.out.println("hit int " + hitAnno.isPresent());
                             menu = hitAnno.get().getMenu();
                         }
                     }

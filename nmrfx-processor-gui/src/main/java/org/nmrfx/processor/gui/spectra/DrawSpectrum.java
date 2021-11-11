@@ -1360,20 +1360,20 @@ public class DrawSpectrum {
     }
 
     public Optional<IntegralHit> drawActiveRegion(GraphicsContextInterface g2, DatasetAttributes datasetAttr, DatasetRegion region) throws GraphicsIOException {
-        return drawActiveRegion(g2, datasetAttr, region, false, 0, 0);
+        return drawActiveRegion(g2, datasetAttr, region, false, false, 0, 0);
     }
 
-    public Optional<IntegralHit> hitRegion(DatasetAttributes datasetAttr, DatasetRegion region, double pickX, double pickY) {
+    public Optional<IntegralHit> hitRegion(DatasetAttributes datasetAttr, DatasetRegion region, boolean controls, double pickX, double pickY) {
         Optional<IntegralHit> result;
         try {
-            result = drawActiveRegion(null, datasetAttr, region, true, pickX, pickY);
+            result = drawActiveRegion(null, datasetAttr, region, true, controls, pickX, pickY);
         } catch (GraphicsIOException ex) {
             result = Optional.empty();
         }
         return result;
     }
 
-    public Optional<IntegralHit> drawActiveRegion(GraphicsContextInterface g2, DatasetAttributes datasetAttr, DatasetRegion region, boolean pick, double pickX, double pickY) throws GraphicsIOException {
+    public Optional<IntegralHit> drawActiveRegion(GraphicsContextInterface g2, DatasetAttributes datasetAttr, DatasetRegion region, boolean pick, boolean pickControls, double pickX, double pickY) throws GraphicsIOException {
         Optional<IntegralHit> result = Optional.empty();
         double rx2 = region.getRegionStart(0);
         double rx1 = region.getRegionEnd(0);
@@ -1423,28 +1423,36 @@ public class DrawSpectrum {
         }
 
         if (pick) {
-            int[] deltas = new int[4];
-            int delP1 = (int) (Math.abs(pickX - pxb1));
-            int delP2 = (int) (Math.abs(pickY - pyb1));
-            deltas[0] = delP1 + delP2;
-            delP1 = (int) (Math.abs(pickX - pxb2));
-            delP2 = (int) (Math.abs(pickY - pyb2));
-            deltas[1] = delP1 + delP2;
-            delP1 = (int) (Math.abs(pickX - pxb1p));
-            delP2 = (int) (Math.abs(pickY - pyb1p));
-            deltas[2] = delP1 + delP2;
-            delP1 = (int) (Math.abs(pickX - pxb2p));
-            delP2 = (int) (Math.abs(pickY - pyb2p));
-            deltas[3] = delP1 + delP2;
             int minDelta = Integer.MAX_VALUE;
             int iMin = -1;
-            int iValue = 0;
-            for (int delta : deltas) {
-                if (delta < minDelta) {
-                    minDelta = delta;
-                    iMin = iValue;
+            if (!pickControls) {
+                if ((pickX > pxb1) && (pickX < pxb2)) {
+                    minDelta = 0;
+                    iMin = 0;
+
                 }
-                iValue++;
+            } else {
+                int[] deltas = new int[4];
+                int delP1 = (int) (Math.abs(pickX - pxb1));
+                int delP2 = (int) (Math.abs(pickY - pyb1));
+                deltas[0] = delP1 + delP2;
+                delP1 = (int) (Math.abs(pickX - pxb2));
+                delP2 = (int) (Math.abs(pickY - pyb2));
+                deltas[1] = delP1 + delP2;
+                delP1 = (int) (Math.abs(pickX - pxb1p));
+                delP2 = (int) (Math.abs(pickY - pyb1p));
+                deltas[2] = delP1 + delP2;
+                delP1 = (int) (Math.abs(pickX - pxb2p));
+                delP2 = (int) (Math.abs(pickY - pyb2p));
+                deltas[3] = delP1 + delP2;
+                int iValue = 0;
+                for (int delta : deltas) {
+                    if (delta < minDelta) {
+                        minDelta = delta;
+                        iMin = iValue;
+                    }
+                    iValue++;
+                }
             }
             double pickJiggle = 10.0;
             double minPickDel = 10.0;
