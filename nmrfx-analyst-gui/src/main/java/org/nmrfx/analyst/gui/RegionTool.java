@@ -19,17 +19,20 @@ import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.collections.ListChangeListener;
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Orientation;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.ContentDisplay;
 import javafx.scene.control.Label;
 import javafx.scene.control.MenuButton;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.Separator;
+import javafx.scene.control.Slider;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ToolBar;
 import javafx.scene.image.Image;
@@ -80,8 +83,9 @@ public class RegionTool implements ControllerTool {
     Button splitButton;
     Button splitRegionButton;
     TextField integralField;
-    TextField[] couplingFields;
-    TextField[] slopeFields;
+    CheckBox restraintPosCheckBox;
+    Slider restraintSlider;
+
     private PolyChart chart;
     Optional<DatasetRegion> activeRegion = Optional.empty();
     boolean ignoreCouplingChanges = false;
@@ -145,6 +149,16 @@ public class RegionTool implements ControllerTool {
         Separator vsep2 = new Separator(Orientation.HORIZONTAL);
         vBox.getChildren().addAll(toolBar1, vsep1, toolBar2);
         chart.setRegionConsumer(e -> regionAdded(e));
+        ChangeListener regionListener = new ChangeListener<DatasetRegion>() {
+            @Override
+            public void changed(ObservableValue<? extends DatasetRegion> observableValue, DatasetRegion region1, DatasetRegion region2) {
+                if (region2 != null) {
+                    activeRegion = Optional.of(region2);
+                    updateRegion(false);
+                }
+            }
+        };
+        chart.addRegionListener(regionListener);
     }
 
     public void initMenus(ToolBar toolBar) {
@@ -279,6 +293,9 @@ public class RegionTool implements ControllerTool {
         button.setOnAction(e -> objectiveDeconvolution());
         fitButtons.add(button);
 
+        restraintPosCheckBox = new CheckBox("Restraint");
+        restraintSlider = new Slider(0.02, 2.0, 1.0);
+
         Label regionLabel = new Label("Regions:");
         Label peakLabel = new Label("Peaks:");
         Label fitLabel = new Label("Fit: ");
@@ -307,6 +324,7 @@ public class RegionTool implements ControllerTool {
             button1.getStyleClass().add("toolButton");
             toolBar.getItems().add(button1);
         }
+        toolBar.getItems().addAll(restraintPosCheckBox, restraintSlider);
         Label integralLabel = new Label("N:");
         integralLabel.setPrefWidth(80);
     }
@@ -359,6 +377,9 @@ public class RegionTool implements ControllerTool {
                 return null;
             }
             analyzer = new Analyzer(dataset);
+            if (!chart.getPeakListAttributes().isEmpty()) {
+                analyzer.setPeakList(chart.getPeakListAttributes().get(0).getPeakList());
+            }
         }
         return analyzer;
     }
@@ -431,6 +452,7 @@ public class RegionTool implements ControllerTool {
         Analyzer analyzer = getAnalyzer();
         if (analyzer != null) {
             try {
+                restrainPosition();
                 analyzer.fitRegions();
             } catch (Exception ex) {
                 ExceptionDialog eDialog = new ExceptionDialog(ex);
@@ -697,10 +719,16 @@ public class RegionTool implements ControllerTool {
         return multiplets;
     }
 
+    private void restrainPosition() {
+        analyzer.setPositionRestraint(restraintPosCheckBox.isSelected()
+                ? restraintSlider.getValue() : null);
+    }
+
     public void fitSelected() {
         Analyzer analyzer = getAnalyzer();
         activeRegion.ifPresent(m -> {
             try {
+                restrainPosition();
                 Optional<Double> result = analyzer.fitRegion(m);
                 refresh();
             } catch (Exception ex) {
@@ -877,7 +905,7 @@ public class RegionTool implements ControllerTool {
                 Double[] ppms = {center};
                 double currentWidth = Math.abs(limits[0][0] - limits[0][1]);
                 Double[] widths = {bounds * widthScale};
-                if (currentWidth > 3.0 * widths[0]) {
+                if ((currentWidth > 3.0 * widths[0]) || (currentWidth < widths[0])) {
                     resize = true;
                 }
                 if (resize && (widthScale > 0.0)) {

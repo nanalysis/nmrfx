@@ -83,7 +83,7 @@ public class PeakFitter {
     }
 
     public void setPositionRestraint(Double value) {
-        positionRestraint = value;
+        positionRestraint = value == null ? null : Math.max(value, 0.01);
     }
 
     public void setup(List<Peak> peaksList) {
@@ -705,6 +705,11 @@ public class PeakFitter {
             }
             lower[iPeak * 3 + 2] = minWidth;
             upper[iPeak * 3 + 2] = useMaxWidth;
+            if (positionRestraint != null) {
+                double lineWidthRange = lineWidthPts * positionRestraint;
+                lower[iPeak * 3 + 2] = Math.max(minWidth, lineWidthPts - lineWidthRange);
+                upper[iPeak * 3 + 2] = Math.min(useMaxWidth, lineWidthPts + lineWidthRange);
+            }
         }
         for (int iPeak = 0; iPeak < nPeaks; iPeak++) {
             double lineWidthPts = guesses[iPeak * 3 + 2];
@@ -719,8 +724,8 @@ public class PeakFitter {
                 upper[iPeak * 3 + 1] = (guesses[iPeak * 3 + 1] + guesses[(iPeak + 1) * 3 + 1]) / 2;
             }
             if (positionRestraint != null) {
-                lower[iPeak * 3 + 1] = Math.max(lower[iPeak * 3 + 1], guesses[iPeak * 3 + 1] - lineWidthPts / positionRestraint);
-                upper[iPeak * 3 + 1] = Math.min(upper[iPeak * 3 + 1], guesses[iPeak * 3 + 1] + lineWidthPts / positionRestraint);
+                lower[iPeak * 3 + 1] = Math.max(lower[iPeak * 3 + 1], guesses[iPeak * 3 + 1] - lineWidthPts * positionRestraint);
+                upper[iPeak * 3 + 1] = Math.min(upper[iPeak * 3 + 1], guesses[iPeak * 3 + 1] + lineWidthPts * positionRestraint);
             }
 
         }
