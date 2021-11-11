@@ -446,9 +446,7 @@ public class DatasetBrowserController implements Initializable {
         if (rData != null) {
             String fileName = rData.getPath();
             File file = new File(fileName);
-            String fileRoot = file.getParent().toString();
             File localFile = fileSystem.getPath(getLocalDir().toString(), fileName).toFile();
-            File localFileDir = fileSystem.getPath(getLocalDir().toString(), fileRoot).toFile();
             if (localMode() && !localFile.exists()) {
                 GUIUtils.warn("Fetch", "File doesn't exist: " + localFile.toString());
                 return;
@@ -463,9 +461,11 @@ public class DatasetBrowserController implements Initializable {
                 } else {
                     if (!rData.isPresent()) {
                         if (initRemoteDatasetAccess()) {
+                            String fileRoot = file.getParent().toString();
                             String remoteFile = remoteDir + "/data/" + fileRoot + ".zip";
                             File localZipFile = fileSystem.getPath(getLocalDir().toString(), fileRoot + ".zip").toFile();
                             rdA.fetchFile(remoteFile, localZipFile);
+                            File localFileDir = fileSystem.getPath(getLocalDir().toString(), fileRoot).toFile();
                             UnZipper unZipper = new UnZipper(localFileDir, localZipFile.toString());
                             unZipper.unzip();
                             localZipFile.delete();
