@@ -458,9 +458,9 @@ public class ProjectBase {
                 Path filePath = currentPath.getFileName();
                 String fileName = filePath.toString();
                 Path pathInProject;
+                    pathInProject = datasetDir.resolve(filePath);
 
                 if (fileName.endsWith(".nv") || fileName.endsWith(".ucsf")) {
-                    pathInProject = datasetDir.resolve(filePath);
                     if (!Files.exists(pathInProject)) {
                         try {
                             Files.createLink(pathInProject, currentPath);
