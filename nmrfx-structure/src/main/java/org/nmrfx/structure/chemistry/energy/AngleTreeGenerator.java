@@ -138,6 +138,9 @@ public class AngleTreeGenerator {
         for (Atom atom : atoms) {
             for (int iBond = 0; iBond < atom.bonds.size(); iBond++) {
                 Bond bond = atom.bonds.get(iBond);
+                if (bond.getProperty(Bond.DEACTIVATE)) {
+                    continue;
+                }
                 Integer iNodeBegin = hash.get(bond.begin);
                 Integer iNodeEnd = hash.get(bond.end);
 
