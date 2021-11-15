@@ -441,10 +441,11 @@ public class RegionTool implements ControllerTool {
                 eDialog.showAndWait();
                 return;
             }
-            chart.chartProps.setRegions(false);
+            chart.chartProps.setRegions(true);
             chart.chartProps.setIntegrals(true);
+            activeRegion = Optional.empty();
+            chart.setActiveRegion(null);
             chart.refresh();
-            lastRegion();
         }
     }
 
@@ -554,13 +555,12 @@ public class RegionTool implements ControllerTool {
             double scale = getDataset().get().getNorm();
             double value = region.getIntegral() / scale;
             integralField.setText(String.format("%.2f", value));
-//            if (multiplet.isGenericMultiplet()) {
-//                splitButton.setDisable(true);
-//            } else {
-//                splitButton.setDisable(false);
-//            }
+            chart.setActiveRegion(activeRegion.get());
+            chart.refresh();
         } else {
             multipletIdField.setText("");
+            chart.setActiveRegion(null);
+            chart.refresh();
         }
     }
 
