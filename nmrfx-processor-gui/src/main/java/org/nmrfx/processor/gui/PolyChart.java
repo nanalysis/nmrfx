@@ -304,7 +304,7 @@ public class PolyChart implements PeakListener {
     Map<String, Integer> syncGroups = new HashMap<>();
     static int nSyncGroups = 0;
 
-    public static double overlapScale = 2.0;
+    public static double overlapScale = 3.0;
 
     public PolyChart(FXMLController controller, Pane plotContent, Canvas canvas, Canvas peakCanvas, Canvas annoCanvas) {
         this(controller, plotContent, canvas, peakCanvas, annoCanvas,
