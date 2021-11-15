@@ -129,16 +129,19 @@ public class PathGraph {
 
     private void loadEdges(ITree itree) {
         MoleculeBase molecule;
-        if (itree instanceof MoleculeBase){
+        if (itree instanceof MoleculeBase) {
             molecule = (MoleculeBase) itree;
-        }  else {
+        } else {
             Entity entity = (Entity) itree;
             molecule = entity.molecule;
         }
         molecule.updateBondArray();
         List<Bond> bonds = itree.getBondList();
         for (Bond bond : bonds) {
-            edges.add(new PathEdge(Arrays.asList(bond.begin, bond.end)));
+            if ((bond.getBeginAtom().getAtomicNumber() != 1)
+                    && (bond.getEndAtom().getAtomicNumber() != 1)) {
+                edges.add(new PathEdge(Arrays.asList(bond.begin, bond.end)));
+            }
         }
     }
 

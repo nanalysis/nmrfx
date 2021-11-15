@@ -914,12 +914,24 @@ public class Molecule extends MoleculeBase {
     }
 
     public void clearSelected() {
+        clearSelectedAtoms();
+        clearSelectedBonds();
+    }
+
+    public void clearSelectedAtoms() {
         for (SpatialSet spatialSet : globalSelected) {
             if (spatialSet != null) {
                 spatialSet.setSelected(0);
             }
         }
         globalSelected.clear();
+    }
+
+    public void clearSelectedBonds() {
+        for (var bond : bselected) {
+            bond.unsetProperty(Atom.SELECT);
+        }
+        bselected.clear();
     }
 
     public int setSelected(List<SpatialSet> selected, boolean append, boolean inverse) {
@@ -982,6 +994,28 @@ public class Molecule extends MoleculeBase {
 
             return globalSelected.size();
         }
+    }
+
+    public int selectBonds(String aName1, String aName2, boolean append) {
+        if (!append) {
+            for (var bond : bselected) {
+                bond.unsetProperty(Atom.SELECT);
+            }
+            bselected.clear();
+        }
+        Atom atomB = getAtomByName(aName1);
+        Atom atomE = getAtomByName(aName2);
+        if ((atomB != null) && (atomE != null)) {
+            for (var bond : atomB.getBonds()) {
+                if ((bond.getAtom(0) == atomB) && (bond.getAtom(1) == atomE)) {
+                    bselected.add((Bond) bond);
+                } else if ((bond.getAtom(1) == atomB) && (bond.getAtom(0) == atomE)) {
+                    bselected.add((Bond) bond);
+                }
+            }
+        }
+
+        return bselected.size();
     }
 
     public int selectBonds(String mode) {
@@ -1105,26 +1139,8 @@ public class Molecule extends MoleculeBase {
         setSelected(hitList, false, false);
     }
 
-    public List<Object> listBonds() {
-        int i;
-        Atom atomB;
-        Atom atomE;
-        Bond bond;
-        List<Object> list = new ArrayList<>();
-
-        for (i = 0; i < bselected.size(); i++) {
-            bond = bselected.get(i);
-            atomB = bond.begin;
-            atomE = bond.end;
-            if ((atomB != null) && (atomE != null)) {
-                list.add(atomB.spatialSet.getFullName());
-                list.add(atomE.spatialSet.getFullName());
-                list.add(bond.order);
-                int stereo = bond.stereo;
-                list.add(stereo);
-            }
-        }
-        return list;
+    public List<Bond> selectedBonds() {
+        return bselected;
     }
 
     public void setAtomProperty(int property, boolean state) {

@@ -91,8 +91,8 @@ public class Atom implements IAtom {
     public float bndCos = 1.0f;
     public float bndSinNR = 1.0f;
     public float bndCosNR = 1.0f;
-    public float valanceAngle = (float) (120.0 * Math.PI / 180.0);
-    public float dihedralAngle = (float) (109 * Math.PI / 180.0);
+    public float valanceAngle = (float) (109.4 * Math.PI / 180.0);
+    public float dihedralAngle = (float) (120.0 * Math.PI / 180.0);
     public String stereoStr = null;
     public float radius = 0.9f;
     public int aNum = 0;

@@ -68,6 +68,7 @@ import org.nmrfx.analyst.gui.molecule.MoleculeCanvas;
 import org.nmrfx.processor.project.Project;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.analyst.gui.molecule.SSViewer;
+import org.nmrfx.structure.chemistry.energy.AngleTreeGenerator;
 import org.nmrfx.structure.chemistry.energy.GradientRefinement;
 import org.nmrfx.structure.chemistry.energy.RotationalDynamics;
 import org.nmrfx.structure.rna.RNAAnalysis;
@@ -580,11 +581,10 @@ public class MolSceneController implements Initializable, MolSelectionListener, 
     public void drawOrientationSpheresZ() throws InvalidMoleculeException {
         molViewer.addOrientationSphere(0, 122, 3.0, 2, "osphereZ");
     }
-    
+
     public void drawOrientationCyl() throws InvalidMoleculeException {
         molViewer.addOrientationCyls(0, 122, 3.0, 2, "ocyls");
     }
-    
 
     public void drawBox() throws InvalidMoleculeException {
         System.out.println("add box");
@@ -682,14 +682,18 @@ public class MolSceneController implements Initializable, MolSelectionListener, 
     public void processSelection(String nodeDescriptor, MouseEvent event) {
         Molecule molecule = Molecule.getActive();
         if (molecule != null) {
+            boolean append = event.isShiftDown();
+            System.out.println(nodeDescriptor);
             String[] fields = nodeDescriptor.split(" ");
             if (fields.length > 0) {
                 if (fields[0].equals("atom") && (fields.length > 1)) {
                     try {
-                        molecule.selectAtoms(fields[1]);
+                        molecule.selectAtoms(fields[1], append, false);
                     } catch (InvalidMoleculeException ex) {
                         Logger.getLogger(MolSceneController.class.getName()).log(Level.SEVERE, null, ex);
                     }
+                } else if (fields[0].equals("bond") && (fields.length > 2)) {
+                    molecule.selectBonds(fields[1], fields[2], append);
                 } else if (fields[0].equals("clear")) {
                     molecule.clearSelected();
                 }
@@ -783,6 +787,43 @@ public class MolSceneController implements Initializable, MolSelectionListener, 
     @FXML
     private void calcStructureAction() {
         calcStructure();
+    }
+
+    @FXML
+    private void activateBondAction() {
+        Molecule molecule = Molecule.getActive();
+        if (molecule != null) {
+            for (Bond bond : molecule.getBondList()) {
+                bond.unsetProperty(Bond.DEACTIVATE);
+            }
+        }
+    }
+
+    @FXML
+    private void deactivateBondAction() {
+        Molecule molecule = Molecule.getActive();
+        if (molecule != null) {
+            List<Bond> bonds = molecule.selectedBonds();
+            for (var bond : bonds) {
+                System.out.println(bond);
+                bond.setProperty(Bond.DEACTIVATE);
+            }
+        }
+    }
+
+    @FXML
+    private void genPRF() {
+        genAngleTree();
+    }
+
+    private void genAngleTree() {
+        Molecule molecule = Molecule.getActive();
+        if (molecule.globalSelected.size() == 1) {
+            Atom startAtom = molecule.globalSelected.get(0).getAtom();
+            AngleTreeGenerator angleGen = new AngleTreeGenerator();
+            List<List<Atom>> aTree = angleGen.genTree(molecule, startAtom, null);
+            angleGen.dumpAtomTree(aTree);
+        }
     }
 
     private void calcStructure() {

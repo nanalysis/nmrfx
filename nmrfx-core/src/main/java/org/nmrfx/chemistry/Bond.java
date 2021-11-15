@@ -24,6 +24,7 @@ public class Bond implements IBond, Serializable {
 
     static final public int SELECT = 0;
     static final public int DISPLAY = 1;
+    static final public int DEACTIVATE = 2;
     static final public int STEREO_BOND_UP = 10;
     static final public int STEREO_BOND_DOWN = 11;
     static final public int STEREO_BOND_EITHER = 12;

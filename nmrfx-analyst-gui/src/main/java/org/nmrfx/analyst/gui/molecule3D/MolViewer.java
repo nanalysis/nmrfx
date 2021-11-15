@@ -811,12 +811,16 @@ public class MolViewer extends Pane {
     }
 
     void addSelSphere(Node node, boolean append) {
+        System.out.println("add node");
         if (!append) {
             clearSelSpheres();
         }
         if (node != null) {
             selGroup.getChildren().add(node);
             //drawText("hi", node);
+        }
+        for (var nd:selGroup.getChildren()) {
+            System.out.println(nd);
         }
     }
 
