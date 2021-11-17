@@ -169,10 +169,6 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         RandomAccessFile raFile;
         this.layout = datasetLayout;
         raFile = new RandomAccessFile(file, "r");
-        if (raFile == null) {
-            throw new IllegalArgumentException(
-                    "Couldn't open file \"" + fullName + "\"");
-        }
 
         initialized = true;
         title = fileName;

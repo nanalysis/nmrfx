@@ -198,7 +198,7 @@ public class BrukerData implements NMRData {
             } else {
                 dataset.setSw(i, getSW(i));
                 dataset.setRefValue(i, getRef(i));
-                dataset.setRefPt(i, dataset.getSize(i) / 2);
+                dataset.setRefPt(i, dataset.getSize(i) / 2.0);
             }
             dataset.setComplex(i, false);
             dataset.setFreqDomain(i, true);
