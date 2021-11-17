@@ -1672,16 +1672,18 @@ public class PeakList {
     }
 
     public void remove() {
-        for (Peak peak : peaks) {
-            for (PeakDim peakDim : peak.peakDims) {
-                peakDim.remove();
-                if (peakDim.hasMultiplet()) {
-                    Multiplet multiplet = peakDim.getMultiplet();
+        if (peaks != null) {
+            for (Peak peak : peaks) {
+                for (PeakDim peakDim : peak.peakDims) {
+                    peakDim.remove();
+                    if (peakDim.hasMultiplet()) {
+                        Multiplet multiplet = peakDim.getMultiplet();
+                    }
                 }
+                peak.markDeleted();
             }
-            peak.markDeleted();
+            peaks.clear();
         }
-        peaks.clear();
         peaks = null;
         if (updater != null) {
             updater.shutdown();

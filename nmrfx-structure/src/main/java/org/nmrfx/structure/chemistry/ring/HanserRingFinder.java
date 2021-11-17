@@ -25,8 +25,6 @@
  */
 package org.nmrfx.structure.chemistry.ring;
 
-;
-
 import org.nmrfx.chemistry.Ring;
 import org.nmrfx.chemistry.Atom;
 import java.util.ArrayList;
@@ -34,6 +32,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import org.nmrfx.chemistry.Bond;
 import org.nmrfx.chemistry.ITree;
@@ -139,7 +138,7 @@ public class HanserRingFinder implements RingFinder {
                         continue; // Already know the two smaller rings cannot make up larger 
                     }
                     for (int edgeIndex = 0; edgeIndex < largeRow.size(); edgeIndex++) {
-                        if (smallRow1.get(edgeIndex) ^ smallRow2.get(edgeIndex) == largeRow.get(edgeIndex)) {
+                        if (smallRow1.get(edgeIndex) ^ Objects.equals(smallRow2.get(edgeIndex), largeRow.get(edgeIndex))) {
                             isLargerRing = true;
                         } else {
                             isLargerRing = false;

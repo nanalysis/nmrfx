@@ -846,7 +846,7 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
         getAnalyzer();
         double ppm0 = chart.getVerticalCrosshairPositions()[0];
         double ppm1 = chart.getVerticalCrosshairPositions()[1];
-        analyzer.removeRegion((ppm0 + ppm1) / 2);
+        analyzer.removeRegion(ppm0, ppm1);
         analyzer.addRegion(ppm0, ppm1);
         try {
             activeMultiplet = analyzer.analyzeRegion((ppm0 + ppm1) / 2);

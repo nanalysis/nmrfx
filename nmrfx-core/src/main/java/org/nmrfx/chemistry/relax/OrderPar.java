@@ -43,6 +43,7 @@ public class OrderPar implements RelaxationValues {
     private Double Ss2err;
     private Double sumSqErr;
     private Integer nValues;
+    private Integer nPars;
     private String model;
     private Double modelNum;
 
@@ -55,11 +56,11 @@ public class OrderPar implements RelaxationValues {
                 values[4], errs[4],
                 values[5], errs[5],
                 values[6], errs[6],
-                sumSqErr, null, model
+                sumSqErr, null, null, model
         );
     }
 
-    public OrderPar(Atom atom, Double[] values, Double[] errs, Double sumSqErr, Integer nValues, String model) {
+    public OrderPar(Atom atom, Double[] values, Double[] errs, Double sumSqErr, Integer nValues, Integer nPars, String model) {
         this(atom,
                 values[0], errs[0],
                 values[1], errs[1],
@@ -68,19 +69,19 @@ public class OrderPar implements RelaxationValues {
                 values[4], errs[4],
                 values[5], errs[5],
                 values[6], errs[6],
-                sumSqErr, nValues, model
+                sumSqErr, nValues, nPars, model
         );
     }
 
-    public OrderPar(Atom atom, Double value, Double error, Double sumSqErr, Integer nValues, String model) {
+    public OrderPar(Atom atom, Double value, Double error, Double sumSqErr, Integer nValues, Integer nPars, String model) {
         this(atom, value, error, null, null, null, null, null, null, null,
-                null, null, null, null, null, sumSqErr, nValues, model);
+                null, null, null, null, null, sumSqErr, nValues, nPars, model);
 
     }
 
-    public OrderPar(Atom atom, Double sumSqErr, Integer nValues, String model) {
+    public OrderPar(Atom atom, Double sumSqErr, Integer nValues, Integer nPars, String model) {
         this(atom, null, null, null, null, null, null, null, null, null,
-                null, null, null, null, null, sumSqErr, nValues, model);
+                null, null, null, null, null, sumSqErr, nValues, nPars, model);
 
     }
 
@@ -88,7 +89,7 @@ public class OrderPar implements RelaxationValues {
             Double TauEerr, Double TauF, Double TauFerr, Double TauS,
             Double TauSerr, Double Rex, Double Rexerr, Double Sf2,
             Double Sf2err, Double Ss2, Double Ss2err,
-            Double sumSqErr, Integer nValues, String model) {
+            Double sumSqErr, Integer nValues, Integer nPars, String model) {
         this.atom = atom;
         this.value = value;
         this.error = error;
@@ -106,6 +107,7 @@ public class OrderPar implements RelaxationValues {
         this.Ss2err = Ss2err;
         this.sumSqErr = sumSqErr;
         this.nValues = nValues;
+        this.nPars = nPars;
         this.model = model;
     }
 
@@ -117,7 +119,7 @@ public class OrderPar implements RelaxationValues {
                 val, err,
                 Sf2, Sf2err,
                 Ss2, Ss2err,
-                sumSqErr, nValues, model);
+                sumSqErr, nValues, nPars, model);
     }
 
     public OrderPar setModel() {
@@ -128,22 +130,44 @@ public class OrderPar implements RelaxationValues {
                 Rex, Rexerr,
                 Sf2, Sf2err,
                 Ss2, Ss2err,
-                sumSqErr, nValues, model);
+                sumSqErr, nValues, nPars, model);
         double delSf = Sf2 == null ? 0.0 : 1.0 - Sf2;
         double delSs = Ss2 == null ? 0.0 : 1.0 - Ss2;
-        if ((delSf > 0.01) && (delSs > 0.01)) {
-            if (TauF > 5.0e-12) {
+        double minTauLimit = 5.0e-3;
+        double minDelSLimit = 0.01;
+        double slowLimit = 0.15;
+        if ((delSf > minDelSLimit) && (delSs > minDelSLimit)) {
+            if ((TauF != null) && (TauF > minTauLimit)
+                    && (TauS != null) && (TauS > minTauLimit)) {
+                newPar.modelNum = 6.0;
+            } else if ((TauF != null) && (TauF > slowLimit)) {
+                newPar.modelNum = 5.0;
+            } else if ((TauS != null) && (TauS > slowLimit)) {
                 newPar.modelNum = 5.0;
             } else {
                 newPar.modelNum = 4.0;
             }
         } else {
-            if ((delSs > 0.01) && (TauS > 5.0e-12)) {
-                newPar.modelNum = 3.0;
-            } else if ((delSf > 0.01) && (TauF > 5.0e-12)) {
-                newPar.modelNum = 2.0;
-            } else {
-                newPar.modelNum = 1.0;
+            if (delSs > minDelSLimit) {
+                if ((TauS != null) && (TauS > minTauLimit)) {
+                    if (TauS > slowLimit) {
+                        newPar.modelNum = 3.0;
+                    } else {
+                        newPar.modelNum = 2.0;
+                    }
+                } else {
+                    newPar.modelNum = 1.0;
+                }
+            } else if (delSf > minDelSLimit) {
+                if ((TauF != null) && (TauF > minTauLimit)) {
+                    if (TauF > slowLimit) {
+                        newPar.modelNum = 3.0;
+                    } else {
+                        newPar.modelNum = 2.0;
+                    }
+                } else {
+                    newPar.modelNum = 1.0;
+                }
             }
         }
         return newPar;
@@ -157,7 +181,7 @@ public class OrderPar implements RelaxationValues {
                 Rex, Rexerr,
                 Sf2, Sf2err,
                 Ss2, Ss2err,
-                sumSqErr, nValues, model);
+                sumSqErr, nValues, nPars, model);
         switch (name) {
             case "S2":
                 newPar.value = val;
@@ -185,17 +209,36 @@ public class OrderPar implements RelaxationValues {
             case "Sf2":
                 newPar.Sf2 = val;
                 newPar.Sf2err = err;
-                if ((value != null) && (val != null) && (Ss2 == null)) {
-                    newPar.Ss2 = value / val;
+                if ((val != null)) {
+                    if (newPar.Ss2 != null) {
+                        newPar.value = newPar.Sf2 * newPar.Ss2;
+                        if ((newPar.Sf2err != null) && (newPar.Ss2err != null)) {
+                            double dF = newPar.Sf2err / newPar.Sf2;
+                            double dS = newPar.Ss2err / newPar.Ss2;
+                            newPar.error = newPar.value * Math.sqrt(dF * dF + dS * dS);
+                        }
+                    } else {
+                        newPar.value = newPar.Sf2;
+                    }
                 }
                 break;
             case "Ss2":
                 newPar.Ss2 = val;
                 newPar.Ss2err = err;
-                if ((value != null) && (val != null) && (Sf2 == null)) {
-                    newPar.Sf2 = value / val;
+                if ((val != null)) {
+                    if (newPar.Sf2 != null) {
+                        newPar.value = newPar.Sf2 * newPar.Ss2;
+                        if ((newPar.Sf2err != null) && (newPar.Ss2err != null)) {
+                            double dF = newPar.Sf2err / newPar.Sf2;
+                            double dS = newPar.Ss2err / newPar.Ss2;
+                            newPar.error = newPar.value * Math.sqrt(dF * dF + dS * dS);
+                        }
+                    } else {
+                        newPar.value = newPar.Ss2;
+                    }
                 }
                 break;
+
             case "model":
                 newPar.modelNum = val;
                 break;
@@ -256,6 +299,12 @@ public class OrderPar implements RelaxationValues {
             case "rms":
                 if (nValues != null) {
                     return Math.sqrt(sumSqErr / nValues);
+                } else {
+                    return null;
+                }
+            case "rchisq":
+                if ((nValues != null) && (nPars != null)) {
+                    return sumSqErr / (nValues - nPars);
                 } else {
                     return null;
                 }
