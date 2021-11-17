@@ -175,7 +175,7 @@ public class PeakFitting {
         return value;
     }
 
-    public double jfitRegion(DatasetRegion region, List<PeakDim> peakDims, String fitModeString) throws Exception {
+    public double jfitRegion(DatasetRegion region, List<PeakDim> peakDims, String fitModeString, Double positionRestraint) throws Exception {
         double value = 0.0;
         int fitMode = getFitMode(fitModeString);
         List<Peak> peaks = new ArrayList<>();
@@ -190,6 +190,7 @@ public class PeakFitting {
         int i1 = dataset.ppmToPoint(0, region.getRegionStart(0));
         int i2 = dataset.ppmToPoint(0, region.getRegionEnd(0));
         PeakFitter peakFitter = new PeakFitter(dataset, false, fitMode);
+        peakFitter.setPositionRestraint(positionRestraint);
         int[] rows = new int[dataset.getNDim()];
         peakFitter.setup(peaks);
         int nTries = 1;
