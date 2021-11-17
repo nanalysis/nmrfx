@@ -578,6 +578,18 @@ public class PathIterator implements Iterator {
                 atoms[i].setFlag(flag, props[i][arIndex]);
             }
         }
+    }
 
+    public void setProperties(String propName, String propFlag, Boolean value) {
+        String[] propNames = nodeValidator.getPropertyNames();
+        int arIndex = getPropIndex(propNames, propName);
+        if (arIndex != -1) {
+            boolean[][] props = nodeValidator.getProperties();
+            for (int i = 0; i < props.length; i++) {
+                if (props[i][arIndex]) {
+                    atoms[i].setProperty(propFlag, value);
+                }
+            }
+        }
     }
 }
