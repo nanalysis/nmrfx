@@ -170,7 +170,7 @@ public class NMRStarReader {
             String resName = (String) compIDColumn.get(i);
             String seqNumber = (String) authSeqIDColumn.get(i);
             if ((seqNumber == null) || seqNumber.isBlank()) {
-                seqNumber = resName;                
+                seqNumber = resName;
             }
             String ccSaveFrameName = "save_chem_comp_" + resName;
             Saveframe ccSaveframe = saveframe.getSTAR3().getSaveframe(ccSaveFrameName);
@@ -564,7 +564,13 @@ public class NMRStarReader {
                     buildEntity(molecule, map, i);
                 }
                 molecule.updateSpatialSets();
-                molecule.genCoords(false);
+                try {
+                    molecule.genCoords(false);
+                } catch (IllegalArgumentException iAE) {
+                    System.out.println(iAE.getMessage());
+                } finally {
+
+                }
                 List<String> tags = saveframe.getTags("_Assembly");
                 for (String tag : tags) {
                     if (tag.startsWith("NvJ_prop")) {
