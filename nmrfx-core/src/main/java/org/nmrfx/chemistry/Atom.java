@@ -29,7 +29,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 import org.nmrfx.chemistry.relax.RelaxationData.relaxTypes;
 
-public class Atom implements IAtom {
+public class Atom implements IAtom, Comparable {
 
     public String type = "";
     public AtomEnergyProp atomEnergyProp = null;
@@ -168,8 +168,8 @@ public class Atom implements IAtom {
 
     protected final void initialize(AtomParser atomParse) {
         name = atomParse.atomName;
-        
-System.out.println(name + " " + atomParse.elemName);
+
+        System.out.println(name + " " + atomParse.elemName);
         if (!atomParse.elemName.equals("")) {
             aNum = getElementNumber(atomParse.elemName);
         } else {
@@ -177,7 +177,7 @@ System.out.println(name + " " + atomParse.elemName);
 
             while ((len > 0)
                     && ((aNum = getElementNumber(name.substring(0, len))) == 0)) {
-                System.out.println(name.substring(0,len) + " " + len + " " + aNum);
+                System.out.println(name.substring(0, len) + " " + len + " " + aNum);
                 len--;
             }
         }
@@ -282,23 +282,33 @@ System.out.println(name + " " + atomParse.elemName);
         return newAtom;
     }
 
+    @Override
+    public int compareTo(Object o) {
+        return Atom.compare(this, (Atom) o);
+    }
+
     public static class AtomComparator implements Comparator<Atom> {
 
         @Override
         public int compare(Atom atom1, Atom atom2) {
-            int entityID1 = atom1.getTopEntity().entityID;
-            int entityID2 = atom2.getTopEntity().entityID;
-            int result = Integer.compare(entityID1, entityID2);
-            if (result == 0) {
-                entityID1 = atom1.getEntity().entityID;
-                entityID2 = atom2.getEntity().entityID;
-                result = Integer.compare(entityID1, entityID2);
-                if (result == 0) {
-                    result = atom1.getName().compareTo(atom2.getName());
-                }
-            }
-            return result;
+            return Atom.compare(atom1, atom2);
         }
+
+    }
+
+    public static int compare(Atom atom1, Atom atom2) {
+        int entityID1 = atom1.getTopEntity().entityID;
+        int entityID2 = atom2.getTopEntity().entityID;
+        int result = Integer.compare(entityID1, entityID2);
+        if (result == 0) {
+            entityID1 = atom1.getResidueNumber();
+            entityID2 = atom2.getResidueNumber();
+            result = Integer.compare(entityID1, entityID2);
+            if (result == 0) {
+                result = Integer.compare(atom1.getIndex(), atom2.getIndex());
+            }
+        }
+        return result;
     }
 
     public void changed() {
