@@ -26,24 +26,27 @@ import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.regex.Pattern;
 //import org.apache.commons.math3.random.RandomDataGenerator;
 import org.apache.commons.math3.random.Well19937c;
 import org.apache.commons.math3.util.MultidimensionalCounter;
 
 /**
- * A SampleSchedule specifies the sequence of increments or array elements used to acquire data in a non-uniformly
- * sampled experiment, and processed with a non-uniform method such as Iterative Soft Thresholding (IST). The schedule
- * contains elements for which data is acquired, and is specified internally by an <i>int</i> array. The same schedule
- * must be used to both acquire and process data.
+ * A SampleSchedule specifies the sequence of increments or array elements used
+ * to acquire data in a non-uniformly sampled experiment, and processed with a
+ * non-uniform method such as Iterative Soft Thresholding (IST). The schedule
+ * contains elements for which data is acquired, and is specified internally by
+ * an <i>int</i> array. The same schedule must be used to both acquire and
+ * process data.
  * <p>
- * The schedule is created using the Sinusoidal Poisson-Gap method by Hyberts et al., J. Am. Chem. Soc. 132, 2145
- * (2010).
+ * The schedule is created using the Sinusoidal Poisson-Gap method by Hyberts et
+ * al., J. Am. Chem. Soc. 132, 2145 (2010).
  * <p>
- * IST_SCHEDULE : in python script <i>pyproc</i> - create a schedule from parameters, and write it to a file.
+ * IST_SCHEDULE : in python script <i>pyproc</i> - create a schedule from
+ * parameters, and write it to a file.
  * <p>
- * IST : in python script <i>pyproc</i> - read a schedule from a file, and perform IST processing.
+ * IST : in python script <i>pyproc</i> - read a schedule from a file, and
+ * perform IST processing.
  *
  * @see #v_samples
  * @see Ist
@@ -135,6 +138,12 @@ public class SampleSchedule {
      * Full path file name.
      */
     String fpath = "/tmp/sample_schedule.txt";
+    
+    /**
+     * Multiply index by this to get position in file;
+     * if 0 set to groupSize.  Can be used for special cases like tppi
+     */
+    int offsetMul = 0;
 
     /**
      * Create a SampleSchedule from parameters, and write it to a file.
@@ -324,23 +333,31 @@ public class SampleSchedule {
         }
     }
 
+    public void setOffsetMul(int value) {
+        offsetMul = value;
+    }
+
     /**
-     * Modifies a VecIndex object that represents position in non-NUS dataset to be consistent with sample schedule for
-     * this dataset. If the object represents a value that was not sampled it returns null.
+     * Modifies a VecIndex object that represents position in non-NUS dataset to
+     * be consistent with sample schedule for this dataset. If the object
+     * represents a value that was not sampled it returns null.
      *
      * @param fullIndex VecIndex assuming the dataset doesn't have NUS sampling
-     * @return vecIndex consistent with sampling schedule, or null if point not sampled.
+     * @return vecIndex consistent with sampling schedule, or null if point not
+     * sampled.
      * @see MultiVecCounter
      * @see VecIndex
      */
-    
     public VecIndex convertToNUSGroup(VecIndex fullIndex, int groupNum) {
         int groupSize = fullIndex.inVecs.length;
         int[] inVecs = fullIndex.inVecs;
-        //System.out.print("next index ");
+        // System.out.print("next index " + sampleIndices.length + " gs " + groupSize + " gNum " + groupNum + " ");
         boolean ok = true;
+        if (offsetMul == 0) {
+            offsetMul = groupSize;
+        }
         for (int i = 0; i < groupSize; i++) {
-            //System.out.print(inVecs[i]+" ");
+            // System.out.print(i + " inv " + inVecs[i]+" ");
             int j = inVecs[i];
             int phOff = j % groupSize;
             j /= groupSize;
@@ -349,12 +366,12 @@ public class SampleSchedule {
                 ok = false;
                 break;
             } else if (!demo) {
-                inVecs[i] = groupSize * index + phOff;
+                inVecs[i] = offsetMul * index + phOff;
             }
+            // System.out.print(inVecs[i]+" ");
         }
-        //System.out.print(inVecs[i]+" ");
 
-        //System.out.println(groupSize);
+        // System.out.println(ok);
         VecIndex nusIndex = null;
         if (ok) {
             nusIndex = fullIndex;
@@ -363,9 +380,10 @@ public class SampleSchedule {
     }
 
     /**
-     * Get next group of Vecs for processing. Input and output locations depend on demo mode. If demo, tmult contains
-     * correct input and output, but location depends on sample schedule (v_samples). If not demo, two MultiVecCounters
-     * are needed: tmult for input and outMult for output.
+     * Get next group of Vecs for processing. Input and output locations depend
+     * on demo mode. If demo, tmult contains correct input and output, but
+     * location depends on sample schedule (v_samples). If not demo, two
+     * MultiVecCounters are needed: tmult for input and outMult for output.
      *
      * @param vecGroup location in MultiVecCounter
      * @param tmult input MultiVecCounter
@@ -500,16 +518,20 @@ public class SampleSchedule {
     }
 
     /**
-     * Poisson distribution method from Knuth (1969), as used by Hyberts et al. (2010).
+     * Poisson distribution method from Knuth (1969), as used by Hyberts et al.
+     * (2010).
      * <p>
-     * Example: <i>createArray()</i> increments over <i>v_samples</i>, giving values in the range: 0 &lt; <i>lambda</i>
-     * &lt; 6, 1 &gt; <i>bigL</i> &gt; 0.002. Product of random doubles continues until <i>bigL</i> is reached,
-     * returning number of steps minus one.
+     * Example: <i>createArray()</i> increments over <i>v_samples</i>, giving
+     * values in the range: 0 &lt; <i>lambda</i>
+     * &lt; 6, 1 &gt; <i>bigL</i> &gt; 0.002. Product of random doubles
+     * continues until <i>bigL</i> is reached, returning number of steps minus
+     * one.
      *
      * @param lambda average gap length, calculated from p_sampled and z_total
      * @return gap size increment, zero or random positive integer
-     * @see <a href='http://www.itl.nist.gov/div898/handbook/eda/section3/eda366j.htm'>Poisson Distribution from
-     * NIST</a>
+     * @see
+     * <a href='http://www.itl.nist.gov/div898/handbook/eda/section3/eda366j.htm'>Poisson
+     * Distribution from NIST</a>
      */
     private int poisson(double lambda) {
         double bigL = Math.exp(-lambda);
