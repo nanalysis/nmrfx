@@ -520,7 +520,7 @@ public class Processor {
                 }
                 itemsToRead = totalVecs;
             }
-            System.out.println(" total vecs " + totalVecs + " " + tmult.getGroupSize());
+            System.out.println(" total vecs " + totalVecs + " " + tmult.getGroupSize() + " " + nmrData.getNVectors());
             if (isNUS()) {
                 sampleSchedule = nmrData.getSampleSchedule();
                 sampleSchedule.setOutMult(complex, acqOrderToUse);
