@@ -445,14 +445,15 @@ public class ChartProcessor {
 //                    System.out.println(index);
                     index = multiVecCounter.findOutGroup(rows);
                     vecIndex = multiVecCounter.getNextGroup(index);
-                    if (nmrData.getSampleSchedule() != null) {
-                        vecIndex = nmrData.getSampleSchedule().convertToNUSGroup(vecIndex, index);
-                        if (vecIndex != null) {
-                            vecIndex.printMe(index, 1);
-                        } else {
-                            System.out.println("No vec");
-                        }
+                }
+                if (nmrData.getSampleSchedule() != null) {
+                    vecIndex = nmrData.getSampleSchedule().convertToNUSGroup(vecIndex, index);
+                    if (vecIndex != null) {
+                        vecIndex.printMe(index, 1);
+                    } else {
+                        System.out.println("No vec");
                     }
+
                 }
             }
         }
@@ -463,8 +464,9 @@ public class ChartProcessor {
 
             if (vecDim == 0) {
                 if (vecIndex == null) {
-                    fileIndices[j] = index;
-                    nmrData.readVector(index, newVec);
+                    fileIndices[j] = -1;
+                    nmrData.readVector(0, newVec);
+                    newVec.zeros();
                 } else {
                     fileIndices[j] = vecIndex.getInVec(j);
                     nmrData.readVector(vecIndex.getInVec(j), newVec);
