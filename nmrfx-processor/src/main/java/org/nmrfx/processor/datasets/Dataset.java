@@ -126,19 +126,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         DatasetParameterFile parFile = new DatasetParameterFile(this, layout);
         parFile.readFile();
         if (layout != null) {
-            if (useCacheFile) {
-                dataFile = new SubMatrixFile(this, file, layout, raFile, writable);
-            } else {
-                if (layout.getNDataBytes() > 512e6) {
-                    dataFile = new BigMappedMatrixFile(this, file, layout, raFile, writable);
-                } else {
-                    if (layout.isSubMatrix()) {
-                        dataFile = new MappedSubMatrixFile(this, file, layout, raFile, writable);
-                    } else {
-                        dataFile = new MappedMatrixFile(this, file, layout, raFile, writable);
-                    }
-                }
-            }
+            createDataFile(raFile, writable);
         }
         System.out.println("new dataset " + fileName);
         setStrides();
@@ -184,19 +172,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
 
         if (layout != null) {
             setNDim(layout.nDim);
-            if (useCacheFile) {
-                dataFile = new SubMatrixFile(this, file, layout, raFile, writable);
-            } else {
-                if (layout.getNDataBytes() > 512e6) {
-                    dataFile = new BigMappedMatrixFile(this, file, layout, raFile, writable);
-                } else {
-                    if (layout.isSubMatrix()) {
-                        dataFile = new MappedSubMatrixFile(this, file, layout, raFile, writable);
-                    } else {
-                        dataFile = new MappedMatrixFile(this, file, layout, raFile, writable);
-                    }
-                }
-            }
+            createDataFile(raFile, writable);
         }
         setStrides();
         addFile(fileName);
@@ -305,19 +281,9 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
             }
             if (layout != null) {
                 layout.setFileHeaderSize(fileHeaderSize);
+                createDataFile(raFile, true);
                 if (useCacheFile) {
-                    dataFile = new SubMatrixFile(this, file, layout, raFile, true);
                     raFile.setLength(layout.getTotalSize());
-                } else {
-                    if (layout.getNDataBytes() > 512e6) {
-                        dataFile = new BigMappedMatrixFile(this, file, layout, raFile, true);
-                    } else {
-                        if (layout.isSubMatrix()) {
-                            dataFile = new MappedSubMatrixFile(this, file, layout, raFile, true);
-                        } else {
-                            dataFile = new MappedMatrixFile(this, file, layout, raFile, true);
-                        }
-                    }
                 }
             }
             setStrides();
@@ -364,6 +330,22 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
             dataFile.zero();
         } catch (IOException ioe) {
             throw new DatasetException("Can't create dataset " + ioe.getMessage());
+        }
+    }
+
+    private void createDataFile(RandomAccessFile raFile, boolean writable) throws IOException {
+        if (useCacheFile) {
+            dataFile = new SubMatrixFile(this, file, layout, raFile, writable);
+        } else {
+            if (layout.getNDataBytes() > 512e6) {
+                dataFile = new BigMappedMatrixFile(this, file, layout, raFile, writable);
+            } else {
+                if (layout.isSubMatrix()) {
+                    dataFile = new MappedSubMatrixFile(this, file, layout, raFile, writable);
+                } else {
+                    dataFile = new MappedMatrixFile(this, file, layout, raFile, writable);
+                }
+            }
         }
     }
 
