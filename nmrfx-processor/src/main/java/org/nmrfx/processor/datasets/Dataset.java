@@ -25,12 +25,10 @@ import org.nmrfx.processor.processing.ProcessingException;
 import org.nmrfx.processor.operations.Util;
 import java.io.*;
 import java.nio.ByteOrder;
-import java.nio.FloatBuffer;
 import java.nio.file.Files;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import org.apache.commons.collections4.map.LRUMap;
 import org.apache.commons.math3.complex.Complex;
 import org.apache.commons.math3.linear.ArrayRealVector;
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
@@ -59,10 +57,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
 
     static boolean useCacheFile = false;
 
-    private boolean initialized = false;
-    private boolean hasBeenWritten = false;
     private HashMap paths = null;
-    static private LRUMap vectorBuffer = new LRUMap(512);
     private boolean dirty = false;  // flag set if a vector has been written to dataset, should purge bufferVectors
     LineShapeCatalog simVecs = null;
     Map<String, double[]> buffers = new HashMap<>();
@@ -111,7 +106,6 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
                     "Couldn't open file \"" + fullName + "\"");
         }
 
-        initialized = true;
         title = fileName;
 
         scale = 1.0;
@@ -141,11 +135,13 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
      * @param fullName The full path to the file
      * @param name The short name (and initial title) to be used for the
      * dataset.
-     * @param writable true if the file should be opened in a writable mode.
+     * @param datasetLayout contains information about layout (sizes, blocksizes
+     * etc. of dataset to be created)
      * @param useCacheFile true if the file will use StorageCache rather than
      * memory mapping file. You should not use StorageCache if the file is to be
      * opened for drawing in NMRFx (as thread interrupts may cause it to be
      * closed)
+     * @param dataType
      * @throws IOException if an I/O error occurs
      */
     public Dataset(String fullName, String name, DatasetLayout datasetLayout,
@@ -158,7 +154,6 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         this.layout = datasetLayout;
         raFile = new RandomAccessFile(file, "r");
 
-        initialized = true;
         title = fileName;
 
         scale = 1.0;
@@ -166,7 +161,6 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         posneg = 1;
         setDataType(dataType);
         setByteOrder(ByteOrder.LITTLE_ENDIAN);
-        System.out.println(getByteOrder());
         DatasetParameterFile parFile = new DatasetParameterFile(this, layout);
         parFile.readFile();
 
@@ -185,7 +179,6 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
      */
     public Dataset(VecBase vector) {
 
-        FloatBuffer floatBuffer = FloatBuffer.allocate(vector.getSize());
         this.vecMat = (Vec) vector;
         fileName = vector.getName();
         canonicalName = vector.getName();
@@ -232,7 +225,6 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         rmsd = new double[1][1];
         values = new double[1][];
         //System.err.println("Opened file " + fileName + " with " + this.nDim + " dimensions");
-        initialized = true;
         addFile(fileName);
     }
 
@@ -259,13 +251,11 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
             this.extLast = new int[this.nDim];
             rmsd = new double[nDim][];
             values = new double[nDim][];
-            int nBytes = 4;
             fileSize = 1;
 
             for (i = 0; i < this.nDim; i++) {
                 fileDimSizes[i] = dimSizes[i];
                 fileSize *= dimSizes[i];
-                nBytes *= dimSizes[i];
             }
             layout = new DatasetLayout(dimSizes);
             layout.setBlockSize(4096);
@@ -361,6 +351,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
      * @param title The title to be used for the new dataset
      * @param dimSizes The sizes of the new dataset.
      * @param closeDataset If true, close dataset after creating
+     * @return the created Dataset
      * @throws DatasetException if an I/O error occurred when writing out file
      */
     public static Dataset createDataset(String fullName, String title, int[] dimSizes, boolean closeDataset) throws DatasetException {
@@ -433,58 +424,6 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         }
     }
 
-    /*
-      
-     * Resize the file to the specified sizes
-     *
-     * @param dimSizes The new sizes
-     * @throws IOException if an I/O error occurs
-    public void resize(int[] dimSizes) throws IOException {
-        if (nDim != dimSizes.length) {
-            throw new IllegalArgumentException("Can't change dataset dimensions when resizing");
-        }
-
-        if (hasBeenWritten) {
-            throw new IllegalArgumentException("Can't resize after writing");
-        }
-
-        boolean sizeChanged = false;
-
-        for (int i = 0; i < nDim; i++) {
-            if (getSize(i) != dimSizes[i]) {
-                sizeChanged = true;
-
-                break;
-            }
-        }
-
-        if (!sizeChanged) {
-            return;
-        }
-
-        int nBytes = 4;
-        fileSize = 1;
-
-        for (int i = 0; i < nDim; i++) {
-            setSize(i, dimSizes[i]);
-            fileSize *= dimSizes[i];
-            nBytes *= dimSizes[i];
-        }
-
-        reInitHeader();
-
-        //newHeader(this);
-        fileHeaderSize = NV_HEADER_SIZE;
-        setBlockSize(4096);
-        dimDataset();
-        writeHeader();
-        dataFile = new BigMappedMatrixFile(this, raFile, true);
-        dataFile.zero();
-        initialized = true;
-        hasBeenWritten = true;
-    }
-
-     */
     /**
      * Get the Vec object. Null if the dataset stores data in a data file,
      * rather than Vec object.
@@ -502,6 +441,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
      * @param iDim Dataset dimension index
      * @return the size
      */
+    @Override
     public int getSize(int iDim) {
         return vecMat == null ? layout.getSize(iDim) : vecMat.getSize();
     }
@@ -512,6 +452,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
      * @param iDim Dataset dimension index
      * @param size the size to set
      */
+    @Override
     public void setSize(final int iDim, final int size) {
         layout.setSize(iDim, size);
     }
@@ -548,6 +489,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
     /**
      * Close this dataset.
      */
+    @Override
     public void close() {
         removeFile(fileName);
         try {
@@ -573,54 +515,6 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
 
     }
 
-    //    if {$parfile eq ""} {
-//        eval set fullName [nv_dataset name $dataset]
-//        set parfile [file root $fullName].par
-//    }
-//    set f1 [open $parfile w]
-//    set ndim [nv_dataset ndim $dataset]
-//    set sizes ""
-//    set blksizes ""
-//    for {set i 1} {$i <= $ndim} {incr i} {
-//        lappend sizes [nv_dataset size $dataset $i]
-//        lappend blksizes [nv_dataset blksize $dataset $i]
-//    }
-//
-//
-//    puts $f1 "dim $ndim $sizes $blksizes"
-//    for {set i 1} {$i <= $ndim} {incr i} {
-//        foreach par  "sw sf label dlabel nucleus complex"  {
-//            set value [nv_dataset $par $dataset $i]
-//            if {$par eq "dlabel"} {
-//                set value [::nv::util::escapeUnicode $value]
-//            }
-//            puts $f1 "$par $i $value"
-//        }
-//
-//    }
-//    foreach par  "posneg lvl scale rdims datatype poscolor negcolor"  {
-//        puts $f1 "$par [nv_dataset $par $dataset]"
-//    }
-//
-//
-//    for {set i 1} {$i <= $ndim} {incr i} {
-//        puts $f1 "ref $i [nv_dataset ref $dataset $i] [nv_dataset refpt $dataset $i]"
-//    }
-//    foreach "prop value" [nv_dataset property $dataset] {
-//        puts $f1 "property $prop $value"
-//    }
-//    if {($cmd ne "") && ($handle ne "")} {
-//        puts $f1 "parid $cmd $parID"
-//        ::nv::data::io::writeVendorPar $cmd $handle $f1
-//        set fileText [::nv::util::getIfExists ::dcs::filemgr::datasetInfo($parID,text) ""]
-//        if {$fileText ne ""} {
-//            foreach line [split $fileText \n] {
-//                puts $f1 "text $line"
-//            }
-//            puts $f1 [list textend $parID]
-//        }
-//    }
-//    close $f1
     /**
      * Return whether dataset has a data file.
      *
@@ -759,6 +653,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
      * region
      * @throws java.io.IOException if an I/O error ocurrs
      */
+    @Override
     synchronized public RegionData analyzeRegion(int[][] pt, int[] cpt, double[] width, int[] dim)
             throws IOException {
         int[] iPointAbs = new int[nDim];
@@ -768,7 +663,6 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         double threshold = 0.0;
         double threshRatio = 0.25;
         int pass2;
-        int temp;
 
         if (vecMat != null) {
             setSize(0, vecMat.getSize());
@@ -1200,23 +1094,6 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         dirty = value;
     }
 
-    private static int getBufferSize() {
-        return vectorBuffer.size();
-    }
-
-    private synchronized static void purgeBufferVectors(Dataset dataset) {
-        System.err.println("purge buffer vectors " + dataset.fileName);
-        Iterator iter = vectorBuffer.keySet().iterator();
-        while (iter.hasNext()) {
-            BlockID id = (BlockID) iter.next();
-            if (id.getFile() == dataset) {
-                iter.remove();
-                id.close();
-            }
-        }
-        dataset.setDirty(false);
-    }
-
     /**
      * Get the intensities in the dataset at the specified points.
      *
@@ -1290,10 +1167,6 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
             }
 //            System.out.println("size " + iDim + " " + p2[iDim][0] + " " + p2[iDim][1] + " " + sizes[iDim]);
         }
-        int nPoints = 1;
-        for (int dimSize : sizes) {
-            nPoints *= dimSize;
-        }
 //        System.out.println("np " + nPoints);
         ArrayList<int[]> posArray = new ArrayList<>();
         DimCounter counter = new DimCounter(sizes);
@@ -1357,56 +1230,6 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         return layout;
     }
 
-    synchronized private void reInitHeader() {
-
-        //sf = new double[nDim];
-        //sw = new double[nDim];
-        //sw_r = new double[nDim];
-        //refPt = new double[nDim];
-        //refPt_r = new double[nDim];
-        //refValue = new double[nDim];
-        //refValue_r = new double[nDim];
-        //refUnits = new int[nDim];
-        foldUp = new double[nDim];
-        foldDown = new double[nDim];
-        complex = new boolean[nDim];
-        complex_r = new boolean[nDim];
-        freqDomain = new boolean[nDim];
-        freqDomain_r = new boolean[nDim];
-        label = new String[nDim];
-        dlabel = new String[nDim];
-        nucleus = new Nuclei[nDim];
-
-        int i;
-
-        for (i = 0; i < nDim; i++) {
-            //refUnits[i] = 3;
-            //sw[i] = 7000.0;
-            //sw_r[i] = 7000.0;
-            //sf[i] = 600.0;
-            //refPt[i] = size[i] / 2;
-            //refPt_r[i] = size[i] / 2;
-            //refValue[i] = 4.73;
-            //refValue_r[i] = 4.73;
-            setComplex(i, true);
-            setComplex_r(i, true);
-            setFreqDomain(i, false);
-            setFreqDomain_r(i, false);
-            label[i] = "D" + i;
-            nucleus[i] = null;
-        }
-
-        setFreqDomain(0, true);
-        setFreqDomain_r(0, true);
-        lvl = 0.0;
-        scale = 1.0;
-        rdims = nDim;
-        posneg = 1;
-
-        //rdims = 0;
-        //dataType = 0;
-    }
-
     /**
      * Flush the header values out to the dataset file.
      */
@@ -1416,6 +1239,8 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
 
     /**
      * Flush the header values out to the dataset file.
+     *
+     * @param nvExtra write extra values to dataset header
      */
     public final synchronized void writeHeader(boolean nvExtra) {
         dataFile.writeHeader(nvExtra);
@@ -1738,141 +1563,6 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         "_Experiment_file.Details",
         "_Experiment_file.Experiment_list_ID",};
 
-//    public static void writeDatasetsToSTAR3(Interp interp, String chanName) throws TclException {
-//        if (theFiles.isEmpty()) {
-//            return;
-//        }
-//        FileChannel chan = (FileChannel) TclIO.getChannel(interp, chanName);
-//
-//        if (chan == null) {
-//            throw new TclException(interp, "Couln't find channel " + chanName);
-//        }
-//
-//        try {
-//            chan.write(interp, "save_experiment_list_1\n");
-//
-//            chan.write(interp, "_Experiment_list.Sf_category                 ");
-//            chan.write(interp, "experiment_list\n");
-//
-//            chan.write(interp, "_Experiment_list.Sf_framecode                 ");
-//            chan.write(interp, "experiment_list_1\n");
-//
-//            chan.write(interp, "_Experiment_list.ID                          ");
-//            chan.write(interp, "1\n");
-//        } catch (IOException ioE) {
-//            throw new TclException(interp, "Error writing spectral dim data");
-//        }
-//        String[] loopStrings = exptListLoopString;
-//        String sep = " ";
-//        char stringQuote = '"';
-//        try {
-//            chan.write(interp, "loop_\n");
-//            for (int j = 0; j < loopStrings.length; j++) {
-//                chan.write(interp, loopStrings[j] + "\n");
-//            }
-//            chan.write(interp, "\n");
-//            int i = 1;
-//            for (Dataset dataset : theFiles.values()) {
-//                if (dataset.file == null) {
-//                    continue;
-//                }
-//                chan.write(interp, (i++) + sep);
-//                chan.write(interp, dataset.getName());
-//                chan.write(interp, sep);
-//
-//                chan.write(interp, "no");
-//                chan.write(interp, sep);
-//
-//                chan.write(interp, "?");
-//                chan.write(interp, sep);
-//                chan.write(interp, "?");
-//                chan.write(interp, sep);
-//                chan.write(interp, "?");
-//                chan.write(interp, sep);
-//                chan.write(interp, "?");
-//                chan.write(interp, sep);
-//                chan.write(interp, "?");
-//                chan.write(interp, sep);
-//                chan.write(interp, "?");
-//                chan.write(interp, sep);
-//                chan.write(interp, "?");
-//                chan.write(interp, sep);
-//                chan.write(interp, "?");
-//                chan.write(interp, sep);
-//                chan.write(interp, "?");
-//                chan.write(interp, sep);
-//                chan.write(interp, "?");
-//                chan.write(interp, sep);
-//                chan.write(interp, "?");
-//                chan.write(interp, sep);
-//                chan.write(interp, "?");
-//                chan.write(interp, sep);
-//                chan.write(interp, "?");
-//                chan.write(interp, sep);
-//                chan.write(interp, "?");
-//                chan.write(interp, sep);
-//                chan.write(interp, "?");
-//                chan.write(interp, sep);
-//                chan.write(interp, "?");
-//                chan.write(interp, sep);
-//                chan.write(interp, "?");
-//                chan.write(interp, sep);
-//                chan.write(interp, "?");
-//                chan.write(interp, sep);
-//
-//                chan.write(interp, "1");
-//                chan.write(interp, "\n");
-//
-//            }
-//            chan.write(interp, "stop_\n");
-//            chan.write(interp, "\n");
-//        } catch (IOException ioE) {
-//            throw new TclException(interp, "Error writing dataset info");
-//        }
-//        loopStrings = exptFileLoopString;
-//        try {
-//            chan.write(interp, "loop_\n");
-//            for (int j = 0; j < loopStrings.length; j++) {
-//                chan.write(interp, loopStrings[j] + "\n");
-//            }
-//            chan.write(interp, "\n");
-//            int i = 1;
-//            for (Dataset dataset : theFiles.values()) {
-//                if (dataset.file == null) {
-//                    continue;
-//                }
-//                chan.write(interp, (i++) + sep);
-//                chan.write(interp, stringQuote + dataset.file.getName() + stringQuote);
-//                chan.write(interp, sep);
-//
-//                chan.write(interp, "nmrview");
-//                chan.write(interp, sep);
-//                URI uri = dataset.file.getParentFile().toURI();
-//                String dirName = uri.getPath();
-//                if (dirName == null) {
-//                    chan.write(interp, "?");
-//                } else {
-//                    if (dirName.charAt(2) == ':') {
-//                        dirName = uri.getPath().substring(1);
-//                    }
-//                    chan.write(interp, stringQuote + dirName + stringQuote);
-//                }
-//                chan.write(interp, sep);
-//
-//                chan.write(interp, "?");
-//                chan.write(interp, sep);
-//
-//                chan.write(interp, "1");
-//                chan.write(interp, "\n");
-//            }
-//            chan.write(interp, "stop_\n");
-//            chan.write(interp, "\n");
-//            chan.write(interp, "save_\n");
-//            chan.write(interp, "\n\n");
-//        } catch (IOException ioE) {
-//            throw new TclException(interp, "Error writing dataset info");
-//        }
-//    }
     /**
      * Test of speed of accessing data in file
      *
@@ -1907,7 +1597,6 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
 
         counter = new DimCounter(counterSizes);
         cIter = counter.iterator();
-        int last = -1;
         while (cIter.hasNext()) {
             int[] points = cIter.next();
             readPoint(points);
@@ -1939,7 +1628,6 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
      */
     public void readVectorFromDatasetFile(int[][] pt, int[] dim, VecBase rwVector) throws IOException {
         //System.out.println("reading vector from dataset file");
-        int n = 0;
 
 //        if (vector != null) {
 //            throw new IllegalArgumentException("Don't call this method on a vector type dataset");
@@ -2236,7 +1924,6 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         }
 
         int nRows = rowIndices.length;
-        int nColumns = columnIndices.size();
 
         ArrayList<ArrayList<Integer>> bucketList = new ArrayList<>();
         ArrayList<Integer> bucketIndices = new ArrayList<>();
@@ -2306,7 +1993,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         return bMat;
     }
 
-    class Location {
+    public class Location {
 
         int[] dim;
         int[][] pt;
@@ -2350,6 +2037,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
      *
      * @param index the index of vector to read
      * @param iDim read values along this dimension index
+     * @return Vec the vector read from dataset
      * @throws IOException if an I/O error occurs
      */
     public Vec readVector(int index, int iDim) throws IOException {
@@ -2435,11 +2123,13 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
     }
 
     public void writeMatrixType(MatrixType matrixType) throws IOException {
-        if (matrixType instanceof Vec) {
-            writeVector((Vec) matrixType);
-        } else {
-            MatrixND matrix = (MatrixND) matrixType;
-            writeMatrixNDToDatasetFile(matrix.getDim(), matrix);
+        if (matrixType != null) {
+            if (matrixType instanceof Vec) {
+                writeVector((Vec) matrixType);
+            } else {
+                MatrixND matrix = (MatrixND) matrixType;
+                writeMatrixNDToDatasetFile(matrix.getDim(), matrix);
+            }
         }
     }
 
@@ -2471,7 +2161,6 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
      */
     public void writeVecToDatasetFile(int[][] pt, int[] dim, Vec vector) throws IOException {
 
-        int n = 0;
         if (vecMat != null) {
             throw new IllegalArgumentException("Don't call this method on a vector type dataset");
         }
@@ -2729,7 +2418,6 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
             }
             pt[0][1] = getSize(iDim) - 1;
             origSize = pt[0][1];
-            int newSize = pt[0][1] - pt[0][0] + 1;
             scanRegion = new ScanRegion(pt, dim, dataset);
         }
 
@@ -2862,10 +2550,8 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
 
     DimCounter.Iterator getPointIterator() {
         int[] counterSizes = new int[nDim];
-        int[] dim = new int[nDim];
         for (int i = 0; i < nDim; i++) {
             counterSizes[i] = getSize(i);
-            dim[i] = i;
         }
         DimCounter counter = new DimCounter(counterSizes);
         DimCounter.Iterator cIter = counter.iterator();
@@ -2901,7 +2587,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         return buffer;
     }
 
-    public void toBuffer(String bufferName) throws IOException {
+    public double[] toBuffer(String bufferName) throws IOException {
         double[] buffer = getBuffer(bufferName);
         DimCounter.Iterator cIter = getPointIterator();
         int j = 0;
@@ -2910,6 +2596,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
             double value = readPoint(points);
             buffer[j++] = value;
         }
+        return buffer;
     }
 
     public void fromBuffer(String bufferName) throws IOException {
@@ -2956,7 +2643,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         }
         DatasetPhaser phaser = new DatasetPhaser(this);
         phaser.setup(iDim, winSize, ratio, threshMode);
-        double dph0 = 0.0;
+        double dph0;
         double dph1 = 0.0;
         if (firstOrder) {
             double[] phases = phaser.getPhase(ph1Limit);
