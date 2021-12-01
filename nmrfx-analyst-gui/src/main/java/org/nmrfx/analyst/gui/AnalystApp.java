@@ -102,24 +102,22 @@ public class AnalystApp extends MainApp {
 
     private static String version = null;
     static String appName = "NMRFx Analyst";
-    MenuToolkit menuTk;
     private static MenuBar mainMenuBar = null;
-    Boolean isMac = null;
-
     static AnalystApp analystApp = null;
-
-    public static MultipletController multipletController;
-    public static RegionController regionController;
-    public static AtomController atomController;
-    public static LigandScannerController scannerController;
-    public static MolSceneController molController;
-    public static AtomBrowser atomBrowser;
-    public static RNAPeakGeneratorSceneController rnaPeakGenController;
-    public static PeakTableController peakTableController;
-    public static NOETableController noeTableController;
-    public static PyController ringNMRController;
-    public static WindowIO windowIO = null;
-    public static SeqDisplayController seqDisplayController = null;
+    private static MultipletController multipletController;
+    private static AtomController atomController;
+    private static LigandScannerController scannerController;
+    private static MolSceneController molController;
+    private static AtomBrowser atomBrowser;
+    private static RNAPeakGeneratorSceneController rnaPeakGenController;
+    private static PeakTableController peakTableController;
+    private static NOETableController noeTableController;
+    private static PyController ringNMRController;
+    private static WindowIO windowIO = null;
+    private static SeqDisplayController seqDisplayController = null;
+    private static DatasetBrowserController browserController = null;
+    MenuToolkit menuTk;
+    Boolean isMac = null;
     PeakAtomPicker peakAtomPicker = null;
     CheckMenuItem assignOnPick;
     RDCGUI rdcGUI = null;
@@ -291,7 +289,7 @@ public class AnalystApp extends MainApp {
         MenuItem portMenuItem = new MenuItem("New NMRFx Server...");
         portMenuItem.setOnAction(e -> startServer(e));
         MenuItem datasetBrowserMenuItem = new MenuItem("Dataset Browser...");
-        datasetBrowserMenuItem.setOnAction(e -> createRemoteDatasets());
+        datasetBrowserMenuItem.setOnAction(e -> showDataBrowser());
 
         Menu projectMenu = new Menu("Projects");
 
@@ -346,6 +344,8 @@ public class AnalystApp extends MainApp {
         syncMenuItem.setOnAction(e -> PolyChart.getActiveChart().syncSceneMates());
 
         Menu arrangeMenu = new Menu("Arrange");
+        MenuItem createGridItem = new MenuItem("Add Grid...");
+        createGridItem.setOnAction(e -> FXMLController.getActiveController().addGrid());
         MenuItem horizItem = new MenuItem("Horizontal");
         horizItem.setOnAction(e -> FXMLController.getActiveController().arrange(FractionCanvas.ORIENTATION.HORIZONTAL));
         MenuItem vertItem = new MenuItem("Vertical");
@@ -359,7 +359,7 @@ public class AnalystApp extends MainApp {
         MenuItem normalizeItem = new MenuItem("Normal Borders");
         normalizeItem.setOnAction(e -> FXMLController.getActiveController().setBorderState(false));
 
-        arrangeMenu.getItems().addAll(horizItem, vertItem, gridItem, overlayItem, minimizeItem, normalizeItem);
+        arrangeMenu.getItems().addAll(createGridItem, horizItem, vertItem, gridItem, overlayItem, minimizeItem, normalizeItem);
         MenuItem alignMenuItem = new MenuItem("Align Spectra");
         alignMenuItem.setOnAction(e -> FXMLController.getActiveController().alignCenters());
         MenuItem stripsMenuItem = new MenuItem("Show Strips");
@@ -400,7 +400,6 @@ public class AnalystApp extends MainApp {
         MenuItem readMol2Item = new MenuItem("Read Mol2...");
         readMol2Item.setOnAction(e -> readMolecule("mol2"));
         molFileMenu.getItems().add(readMol2Item);
-
 
         MenuItem seqGUIMenuItem = new MenuItem("Sequence Editor...");
         seqGUIMenuItem.setOnAction(e -> SequenceGUI.showGUI(this));
@@ -895,17 +894,6 @@ public class AnalystApp extends MainApp {
         multipletController.getStage().toFront();
     }
 
-    @FXML
-    private void showRegionAnalyzer(ActionEvent event) {
-        if (regionController == null) {
-            regionController = regionController.create();
-        } else {
-            regionController.initMultiplet();
-        }
-        regionController.getStage().show();
-        regionController.getStage().toFront();
-    }
-
     void closeProject() {
         if (GUIUtils.affirm("Close all project information")) {
             ((GUIProject) getActive()).close();
@@ -1258,8 +1246,12 @@ public class AnalystApp extends MainApp {
         stage.show();
     }
 
-    void createRemoteDatasets() {
-        DatasetBrowserController browserController = DatasetBrowserController.create();
+    static void showDataBrowser() {
+        if (browserController == null) {
+            browserController = DatasetBrowserController.create();
+        }
+        Stage browserStage = browserController.getStage();
+        browserStage.toFront();
+        browserStage.show();
     }
-
 }
