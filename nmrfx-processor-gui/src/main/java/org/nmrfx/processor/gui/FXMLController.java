@@ -2007,6 +2007,33 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         chartGroup.layoutChildren();
     }
 
+    public void addGrid() {
+        String rows = GUIUtils.input("nRows");
+        try {
+            if ((rows != null) && !rows.isBlank()) {
+                String columns = GUIUtils.input("nColumns");
+                if ((columns != null) && !columns.isBlank()) {
+                    int nRows = Integer.parseInt(rows);
+                    int nColumns = Integer.parseInt(columns);
+                    addCharts(nRows, nColumns);
+                }
+            }
+        } catch (NumberFormatException nfe) {
+            GUIUtils.warn("Grid Values", "Entry not an integer");
+        }
+    }
+
+    public void addCharts(int nRows, int nColumns) {
+        setChartDisable(true);
+        int nCharts = nRows * nColumns;
+        setNCharts(nCharts);
+        arrange(nRows);
+        var chartActive = charts.get(0);
+        setActiveChart(chartActive);
+        setChartDisable(false);
+        draw();
+    }
+
     public void arrange(int nRows) {
         chartGroup.setRows(nRows);
         int nCols = chartGroup.getColumns();

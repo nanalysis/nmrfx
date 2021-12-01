@@ -34,14 +34,16 @@ public class UnZipper extends SimpleFileVisitor<Path> {
         final Enumeration<? extends ZipEntry> entries = inFile.entries();
         while (entries.hasMoreElements()) {
             ZipEntry entry = entries.nextElement();
-            String filePath = destDir.getPath() + File.separator + entry.getName();
+            File file = Path.of(destDir.getPath(), entry.getName()).toFile();
+            if (!file.getParentFile().exists()) {
+                file.getParentFile().mkdirs();
+            }
             if (!entry.isDirectory()) {
                 // if the entry is a file, extracts it
-                extractFile(inFile, entry, filePath);
+                extractFile(inFile, entry, file.toString());
             } else {
                 // if the entry is a directory, make the directory
-                File dir = new File(filePath);
-                dir.mkdir();
+                file.mkdirs();
             }
         }
         inFile.close();
