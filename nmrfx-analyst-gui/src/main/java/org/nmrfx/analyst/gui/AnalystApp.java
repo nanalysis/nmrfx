@@ -109,7 +109,6 @@ public class AnalystApp extends MainApp {
     static AnalystApp analystApp = null;
 
     public static MultipletController multipletController;
-    public static RegionController regionController;
     public static AtomController atomController;
     public static LigandScannerController scannerController;
     public static MolSceneController molController;
@@ -892,17 +891,6 @@ public class AnalystApp extends MainApp {
         }
         multipletController.getStage().show();
         multipletController.getStage().toFront();
-    }
-
-    @FXML
-    private void showRegionAnalyzer(ActionEvent event) {
-        if (regionController == null) {
-            regionController = regionController.create();
-        } else {
-            regionController.initMultiplet();
-        }
-        regionController.getStage().show();
-        regionController.getStage().toFront();
     }
 
     void closeProject() {

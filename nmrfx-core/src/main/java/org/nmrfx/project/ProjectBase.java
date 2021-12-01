@@ -417,7 +417,7 @@ public class ProjectBase {
     }
 
     public void loadDatasets(Path directory) throws IOException {
-        Pattern pattern = Pattern.compile("(.+)\\.(nv|ucsf)");
+        Pattern pattern = Pattern.compile("(.+)\\.(nv|ucsf|nvlnk)");
         Predicate<String> predicate = pattern.asPredicate();
         if (Files.isDirectory(directory)) {
             Files.list(directory).sequential().filter(path -> predicate.test(path.getFileName().toString())).
@@ -427,13 +427,18 @@ public class ProjectBase {
                         String fileName = path.getFileName().toString();
 
                         try {
-                            DatasetBase dataset = DatasetFactory.newDataset(pathName, fileName, false, false);
-                            File regionFile = DatasetRegion.getRegionFile(path.toString());
-                            System.out.println("region " + regionFile.toString());
-                            if (regionFile.canRead()) {
-                                System.out.println("read");
-                                TreeSet<DatasetRegion> regions = DatasetRegion.loadRegions(regionFile);
-                                dataset.setRegions(regions);
+                            if (fileName.endsWith(".nvlnk")) {
+                                String newName = fileName.substring(0, fileName.length() - 6);
+                                DatasetBase dataset = (DatasetBase) DatasetFactory.newLinkDataset(newName, pathName);
+                            } else {
+                                DatasetBase dataset = DatasetFactory.newDataset(pathName, fileName, false, false);
+                                File regionFile = DatasetRegion.getRegionFile(path.toString());
+                                System.out.println("region " + regionFile.toString());
+                                if (regionFile.canRead()) {
+                                    System.out.println("read");
+                                    TreeSet<DatasetRegion> regions = DatasetRegion.loadRegions(regionFile);
+                                    dataset.setRegions(regions);
+                                }
                             }
 
                         } catch (IOException ex) {
@@ -456,15 +461,21 @@ public class ProjectBase {
             if (datasetFile != null) {
                 Path currentPath = datasetFile.toPath();
                 Path fileName = currentPath.getFileName();
-                Path pathInProject = datasetDir.resolve(fileName);
-                // fixme should we have option to copy file, rather than make  link
-                // or add text file with path to original
-                if (!Files.exists(pathInProject)) {
-                    try {
-                        Files.createLink(pathInProject, currentPath);
-                    } catch (IOException | UnsupportedOperationException | SecurityException ex) {
-                        Files.createSymbolicLink(pathInProject, currentPath);
+                Path pathInProject;
+
+                if (fileName.endsWith(".nv") || fileName.endsWith(".ucsf")) {
+                    pathInProject = datasetDir.resolve(fileName);
+                    if (!Files.exists(pathInProject)) {
+                        try {
+                            Files.createLink(pathInProject, currentPath);
+                        } catch (IOException | UnsupportedOperationException | SecurityException ex) {
+                            Files.createSymbolicLink(pathInProject, currentPath);
+                        }
                     }
+                } else {
+                    String fileLinkName = dataset.getName() + ".nvlnk";
+                    pathInProject = datasetDir.resolve(fileLinkName);
+                    Files.writeString(pathInProject, datasetFile.getAbsolutePath());
                 }
                 String parFilePath = DatasetParameterFile.getParameterFileName(pathInProject.toString());
                 dataset.writeParFile(parFilePath);

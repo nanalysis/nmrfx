@@ -21,6 +21,7 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.apache.commons.math3.complex.Complex;
@@ -35,6 +36,7 @@ public class MemoryFile implements DatasetStorageInterface, Closeable {
     private final int dataType;
     final boolean writable;
     private final FloatBuffer floatBuffer;
+    private final IntBuffer intBuffer;
     int BYTES = Float.BYTES;
 
     public MemoryFile(final Dataset dataset, final boolean writable) {
@@ -56,7 +58,13 @@ public class MemoryFile implements DatasetStorageInterface, Closeable {
         //System.out.println("size " + totalSize);
         totalSize = size;
         ByteBuffer byteBuffer = ByteBuffer.allocateDirect((int) totalSize * Float.BYTES);
-        floatBuffer = byteBuffer.asFloatBuffer();
+        if (dataType == 1) {
+            intBuffer = byteBuffer.asIntBuffer();
+            floatBuffer = null;
+        } else {
+            floatBuffer = byteBuffer.asFloatBuffer();
+            intBuffer = null;
+        }
         try {
             zero();
         } catch (IOException ex) {
@@ -109,7 +117,7 @@ public class MemoryFile implements DatasetStorageInterface, Closeable {
         if (p >= totalSize) {
             throw new PositionException("Out of range in MemoryFile setFloat", totalSize, p, offsets);
         }
-        return floatBuffer.get(p);
+        return floatBuffer != null ? floatBuffer.get(p) : intBuffer.get(p);
     }
 
     @Override
@@ -182,15 +190,18 @@ public class MemoryFile implements DatasetStorageInterface, Closeable {
         int stride = (int) strides[dim];
         if (vector.isComplex()) {
             for (int i = first; i <= last; i += 2) {
-                double real = floatBuffer.get(position) / scale;
+                double real = dataType == 0 ? floatBuffer.get(position) / scale
+                        : intBuffer.get(position) / scale;
                 position += stride;
-                double imag = floatBuffer.get(position) / scale;
+                double imag = dataType == 0 ? floatBuffer.get(position) / scale
+                        : intBuffer.get(position) / scale;
                 position += stride;
                 vector.set(j++, new Complex(real, imag));
             }
         } else {
             for (int i = first; i <= last; i++) {
-                double real = floatBuffer.get(position) / scale;
+                double real = dataType == 0 ? floatBuffer.get(position) / scale
+                        : intBuffer.get(position) / scale;
                 position += stride;
                 vector.set(j++, real);
             }

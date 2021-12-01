@@ -137,7 +137,7 @@ public final class NMRDataUtil {
             } else if (RS2DData.findFID(bpath)) {
                 return new RS2DData(bpath.toString(), null);
             } else if (BrukerData.findData(bpath)) {
-                return new BrukerData(bpath.toString(), null);
+                return new BrukerData(bpath.toString());
             } else if (VarianData.findFID(bpath)) {
                 return new VarianData(bpath.toString());
             } else if (JCAMPData.findData(bpath)) {
@@ -297,12 +297,11 @@ public final class NMRDataUtil {
 
     public static List<Path> findProcessedFiles(Path path) throws IOException {
         List<Path> result;
-        try (Stream<Path> pathStream = Files.find(path,
-                1,
-                (p, basicFileAttributes)
+        try (Stream<Path> pathStream = Files.find(path, 1, (p, basicFileAttributes)
                 -> {
             String name = p.getFileName().toString();
-            return name.endsWith(".nv") || name.endsWith(".ucsf");
+            return name.endsWith(".nv") || name.endsWith(".ucsf")
+                    || BrukerData.isProcessedFile(name);
         }
         )) {
             result = pathStream.collect(Collectors.toList());
