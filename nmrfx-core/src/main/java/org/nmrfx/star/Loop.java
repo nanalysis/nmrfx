@@ -1,6 +1,6 @@
 /*
  * NMRFx Processor : A Program for Processing NMR Data 
- * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
+ * Copyright (C) 2004-2021 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -39,6 +39,8 @@ public class Loop {
 
     /**
      * Creates a new instance of Loop
+     *
+     * @param saveFrame the saveframe this loop is in
      */
     public Loop(Saveframe saveFrame) {
         this.saveFrame = saveFrame;
@@ -108,7 +110,7 @@ public class Loop {
                 star3.usePrevious = true;
                 break;
             } else {
-                String[] tokenPair = star3.getTokenPair(token);
+                String[] tokenPair = STAR3Base.getTokenPair(token);
                 if (firstTag) {
                     name = tokenPair[0];
                     firstTag = false;
@@ -167,9 +169,7 @@ public class Loop {
     public Map getRowMap(String tag, int loopIndex) throws ParseException {
         Map map = new LinkedHashMap();
 
-        Iterator iter = loopTags.entrySet().iterator();
-        while (iter.hasNext()) {
-            Map.Entry eSet = (Map.Entry) iter.next();
+        for (Map.Entry eSet : loopTags.entrySet()) {
             ArrayList column = (ArrayList) eSet.getValue();
             if ((loopIndex < 0) || (loopIndex >= column.size())) {
                 throw new ParseException("Invalid loop index \"" + loopIndex + "\"");
@@ -223,8 +223,8 @@ public class Loop {
             throw new ParseException("Invalid loop index \"" + loopIndex + "\"");
         }
         List<String> list = new ArrayList<>();
-        for (int i = 0; i < columns.length; i++) {
-            list.add(columns[i].get(loopIndex));
+        for (ArrayList<String> column : columns) {
+            list.add(column.get(loopIndex));
         }
         return list;
     }
@@ -237,7 +237,7 @@ public class Loop {
         return column;
     }
 
-    public List<String> getColumnAsList(String tag, String defaultValue) throws ParseException {
+    public List<String> getColumnAsList(String tag, String defaultValue) {
         ArrayList<String> column = loopTags.get(tag);
         if (column == null) {
             column = new ArrayList<>();
@@ -259,12 +259,16 @@ public class Loop {
         } else {
             values = new ArrayList<>();
             for (String s : column) {
-                if (s.equals(".")) {
-                    values.add(defaultValue);
-                } else if (s.equals("?")) {
-                    values.add(defaultValue);
-                } else {
-                    values.add(Double.parseDouble(s));
+                switch (s) {
+                    case ".":
+                        values.add(defaultValue);
+                        break;
+                    case "?":
+                        values.add(defaultValue);
+                        break;
+                    default:
+                        values.add(Double.parseDouble(s));
+                        break;
                 }
             }
         }
@@ -279,12 +283,16 @@ public class Loop {
         } else {
             values = new ArrayList<>();
             for (String s : column) {
-                if (s.equals(".")) {
-                    values.add(defaultValue);
-                } else if (s.equals("?")) {
-                    values.add(defaultValue);
-                } else {
-                    values.add(Integer.parseInt(s));
+                switch (s) {
+                    case ".":
+                        values.add(defaultValue);
+                        break;
+                    case "?":
+                        values.add(defaultValue);
+                        break;
+                    default:
+                        values.add(Integer.parseInt(s));
+                        break;
                 }
             }
         }
