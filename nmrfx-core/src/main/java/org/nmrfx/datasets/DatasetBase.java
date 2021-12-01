@@ -175,7 +175,7 @@ public class DatasetBase {
      *
      * @param order Byte Order
      */
-    public void setByteOrder(ByteOrder order) {
+    public final void setByteOrder(ByteOrder order) {
         littleEndian = order == ByteOrder.LITTLE_ENDIAN;
     }
 
@@ -518,7 +518,7 @@ public class DatasetBase {
      *
      * @param value the datatype to set
      */
-    public void setDataType(int value) {
+    public final void setDataType(int value) {
         dataType = value;
     }
 
