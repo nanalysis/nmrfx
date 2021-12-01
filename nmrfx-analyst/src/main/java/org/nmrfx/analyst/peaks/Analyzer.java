@@ -1,5 +1,6 @@
 package org.nmrfx.analyst.peaks;
 
+import java.io.File;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.datasets.Nuclei;
 import org.nmrfx.datasets.DatasetRegion;
@@ -40,7 +41,7 @@ import org.nmrfx.processor.operations.Util;
  */
 public class Analyzer {
 
-    final Dataset dataset;
+    Dataset dataset;
     PeakList peakList;
 
     double trimRatio = 2.0;
@@ -59,6 +60,7 @@ public class Analyzer {
     double sDev = 0.0;
     double threshold = 0.0;
     double filter = 0.0;
+    Double positionRestraint = null;
     Optional<Double> manThreshold = Optional.empty();
     Solvents solvents;
 
@@ -70,6 +72,10 @@ public class Analyzer {
 
     public Dataset getDataset() {
         return dataset;
+    }
+
+    public void setDataset(Dataset dataset) {
+        this.dataset = dataset;
     }
 
     public void setPeakList(PeakList peakList) {
@@ -127,7 +133,8 @@ public class Analyzer {
             Logger.getLogger(Analyzer.class.getName()).log(Level.SEVERE, null, ex);
             return;
         }
-        sDev = vec.sdev(32); // fixme correct winsize
+        int sdevWin = Math.max(16, vec.getSize() / 64);
+        sDev = vec.sdev(sdevWin);
         if (scaleToLargest) {
             int nIncr = size / nWin;
             List<Double> maxs = new ArrayList<>();
@@ -148,9 +155,8 @@ public class Analyzer {
         if (threshold < sdRatio * sDev) {
             if (dataset.getNucleus(0) == Nuclei.H1) {
                 threshold = sdRatio * sDev;
-                System.out.println(sdRatio + " " + sDev);
             } else {
-                threshold = sdRatio / 5.0 * sDev;
+                threshold = sdRatio / 3.0 * sDev;
             }
         }
     }
@@ -242,7 +248,7 @@ public class Analyzer {
         } else {
             PeakFitting peakFitting = new PeakFitting(dataset);
             try {
-                double value = peakFitting.jfitRegion(region, peakDims, mode);
+                double value = peakFitting.jfitRegion(region, peakDims, mode, positionRestraint);
                 result = Optional.of(value);
             } catch (IllegalArgumentException | PeakFitException | IOException ex) {
                 System.out.println("error in fit " + ex.getMessage());
@@ -466,6 +472,26 @@ public class Analyzer {
             double start = region.getRegionStart(rDim);
             double end = region.getRegionEnd(rDim);
             if ((shift < start) || (shift > end)) {
+                newRegions.add(region);
+            }
+        });
+        regions.clear();
+        regions.addAll(newRegions);
+        if (peakList != null) {
+            removePeaksFromNonRegions();
+        }
+    }
+
+    public void removeRegion(double ppm1, double ppm2) {
+        Set<DatasetRegion> newRegions = new TreeSet<>();
+        Set<DatasetRegion> regions = getRegions();
+        int rDim = 0;
+        double ppmStart = ppm1 < ppm2 ? ppm1 : ppm2;
+        double ppmEnd = ppm2 > ppm1 ? ppm2 : ppm1;
+        regions.stream().forEach(region -> {
+            double start = region.getRegionStart(rDim);
+            double end = region.getRegionEnd(rDim);
+            if ((ppmEnd < start) || (ppmStart > end)) {
                 newRegions.add(region);
             }
         });
@@ -776,6 +802,10 @@ public class Analyzer {
         return result;
     }
 
+    public void setPositionRestraint(Double restraint) {
+        this.positionRestraint = restraint;
+    }
+    
     public void fitRegions() throws Exception {
         for (DatasetRegion region : getRegions()) {
             fitRegion(region);
@@ -791,7 +821,7 @@ public class Analyzer {
                 for (PeakDim peakDim : peakDims) {
                     peakDim.getPeak().setFlag(4, false);
                 }
-                double rms = peakFitting.jfitRegion(region, peakDims, "all");
+                double rms = peakFitting.jfitRegion(region, peakDims, "all", positionRestraint);
                 result = Optional.of(rms);
             }
         }
@@ -851,7 +881,7 @@ public class Analyzer {
         double rms = Double.MAX_VALUE;
         double minBIC = Double.MAX_VALUE;
         if (!peakDims.isEmpty()) {
-            rms = peakFitting.jfitRegion(region, peakDims, "all");
+            rms = peakFitting.jfitRegion(region, peakDims, "all", positionRestraint);
             minBIC = peakFitting.getBIC();
         }
         System.out.println("start " + rms + " " + minBIC);
@@ -860,7 +890,7 @@ public class Analyzer {
             if (result.isPresent()) {
                 addPeaksToRegion(region, result.get());
                 peakDims = Multiplets.findPeaksInRegion(peakList, region);
-                rms = peakFitting.jfitRegion(region, peakDims, "all");
+                rms = peakFitting.jfitRegion(region, peakDims, "all", positionRestraint);
                 double BIC = peakFitting.getBIC();
                 System.out.println(result.get() + " " + rms + " " + BIC);
                 if (BIC < minBIC) {
@@ -891,7 +921,7 @@ public class Analyzer {
                     restorePeaks(tempList);
                     if (!peakDims.get(i).getPeak().isDeleted()) {
                         peakDims.get(i).getPeak().setStatus(-1);
-                        rms = peakFitting.jfitRegion(region, peakDims, "all");
+                        rms = peakFitting.jfitRegion(region, peakDims, "all", positionRestraint);
                         double BIC = peakFitting.getBIC();
                         System.out.println(i + " " + rms + " " + BIC);
                         peakDims.get(i).getPeak().setStatus(0);
@@ -924,7 +954,7 @@ public class Analyzer {
         System.out.println("restored rms " + rmsOpt.get());
         renumber();
         peakDims = Multiplets.findPeaksInRegion(peakList, region);
-        rms = peakFitting.jfitRegion(region, peakDims, "all");
+        rms = peakFitting.jfitRegion(region, peakDims, "all", positionRestraint);
         double BIC = peakFitting.getBIC();
         System.out.println("finish " + rms + " " + BIC + " " + peakDims.size());
 
@@ -1141,7 +1171,7 @@ public class Analyzer {
         }
     }
 
-    private void findRegions() throws IOException {
+    public void findRegions() throws IOException {
         calculateThreshold();
         getThreshold();
         autoSetRegions();
@@ -1187,5 +1217,13 @@ public class Analyzer {
         renumber();
         normalizeMultiplets();
         normalizeIntegrals();
+    }
+
+    public void loadRegions(File regionFile) throws IOException {
+        if (regionFile.canRead()) {
+            TreeSet<DatasetRegion> regions = DatasetRegion.loadRegions(regionFile);
+            dataset.setRegions(regions);
+        }
+
     }
 }

@@ -54,6 +54,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.apache.commons.math3.complex.Complex;
 import org.apache.commons.math3.util.Precision;
+import org.nmrfx.datasets.DatasetLayout;
+import org.nmrfx.processor.datasets.Dataset;
 
 /**
  * BrukerData implements NMRData methods for opening and reading parameters and
@@ -247,55 +249,10 @@ public class BrukerData implements NMRData {
      * @return if data was successfully found or not
      */
     protected static boolean findData(StringBuilder bpath) {
-        boolean found = false;
-        if (findFIDFiles(bpath.toString())) {
-            // case: select numeric subdirectory, e.g. 'HMQC/4'
-            found = true;
-        } else {
-            // case: select 'ser', 'fid', or 'acqus' file
-            File f = new File(bpath.toString());
-            String s = f.getParent();
-            if (findFIDFiles(s)) {
-                int len2 = bpath.toString().length();
-                int len1 = s.length();
-                bpath = bpath.delete(len1, len2);
-                bpath.trimToSize();
-                found = true;
-            } else if (findFIDFiles(f.getParentFile().getParent())) {
-                s = f.getParentFile().getParent();
-                int len2 = bpath.toString().length();
-                int len1 = s.length();
-                bpath = bpath.delete(len1, len2);
-                bpath.trimToSize();
-                found = true;
+        File file = new File(bpath.toString());
+        String fileName = file.getName();
+        return isProcessedFile(fileName);
 
-            } else {
-                // case: select parent dir, e.g. 'HMQC'; look for subdir, e.g. 'HMQC/4'
-                if (bpath.toString().endsWith(File.separator)) {
-                    bpath.setLength(bpath.length() - 1);
-                    bpath.trimToSize();
-                }
-                Path bdir = Paths.get(bpath.toString());
-                if (bdir.toFile().isDirectory()) {
-                    try (DirectoryStream<Path> stream = Files.newDirectoryStream(bdir, "[0-9]")) {
-                        for (Path entry : stream) {
-                            s = entry.toString();
-                            if (findFIDFiles(s)) {
-                                s = s.substring(bdir.toString().length());
-                                bpath.append(s);
-                                found = true;
-                                break;
-                            }
-                        }
-                    } catch (DirectoryIteratorException | IOException ex) {
-                        // I/O error encounted during the iteration, the cause is an IOException
-                        //                    throw ex.getCause();
-                        LOGGER.log(Level.WARNING, ex.getMessage());
-                    }
-                }
-            }
-        }
-        return found;
     } // findData
 
     /**
@@ -372,6 +329,24 @@ public class BrukerData implements NMRData {
         }
         return found;
     } // findFIDFiles
+
+    public static boolean isProcessedFile(String name) {
+        boolean result = false;
+        if (!name.isBlank() && (name.length() > 1)
+                && Character.isDigit(name.charAt(0))) {
+            int nDim = Integer.parseInt(name.substring(0, 1));
+            if ((nDim > 0) && (nDim == (name.length() - 1))) {
+                result = true;
+                for (int i = 1; i < nDim; i++) {
+                    if (name.charAt(i) != 'r') {
+                        result = false;
+                        break;
+                    }
+                }
+            }
+        }
+        return result;
+    }
 
     @Override
     public String toString() {
@@ -1923,6 +1898,7 @@ public class BrukerData implements NMRData {
             }
         } catch (IOException e) {
             LOGGER.log(Level.WARNING, e.getMessage());
+
         }
     } // end fileout2
 

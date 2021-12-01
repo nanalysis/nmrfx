@@ -35,7 +35,8 @@ public class AtomResPatterns {
         if (atomResPatterns.size() > 1) {
             AtomResPattern firstPattern = atomResPatterns.get(0);
             for (AtomResPattern atomResPattern : atomResPatterns) {
-                if (!atomResPattern.aName.equals(firstPattern.aName)) {
+                if (!atomResPattern.aName.equals(firstPattern.aName)
+                        || atomResPattern.aName.contains("*")) {
                     ambiguousANames = true;
                 }
                 if (atomResPattern.resDelta != firstPattern.resDelta) {
@@ -43,10 +44,24 @@ public class AtomResPatterns {
                 }
 
             }
+        } else if (atomResPatterns.size() == 1) {
+            if (atomResPatterns.get(0).aName.contains("*")) {
+                ambiguousANames = true;
+            }
         } else {
             ambiguousResidue = false;
             ambiguousANames = false;
         }
 
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder sBuilder = new StringBuilder();
+        for (var pat : atomResPatterns) {
+            sBuilder.append(pat.toString()).append(" ");
+        }
+        sBuilder.append(ambiguousResidue).append(" ").append(ambiguousANames);
+        return sBuilder.toString();
     }
 }

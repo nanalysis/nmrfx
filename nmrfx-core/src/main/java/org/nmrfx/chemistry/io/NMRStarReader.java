@@ -169,6 +169,9 @@ public class NMRStarReader {
         for (int i = 0; i < compIDColumn.size(); i++) {
             String resName = (String) compIDColumn.get(i);
             String seqNumber = (String) authSeqIDColumn.get(i);
+            if ((seqNumber == null) || seqNumber.isBlank()) {
+                seqNumber = resName;                
+            }
             String ccSaveFrameName = "save_chem_comp_" + resName;
             Saveframe ccSaveframe = saveframe.getSTAR3().getSaveframe(ccSaveFrameName);
             if (ccSaveframe == null) {
@@ -192,7 +195,7 @@ public class NMRStarReader {
         Loop loop = saveframe.getLoop("_Entity_comp_index");
         if (loop != null) {
             List<String> idColumn = loop.getColumnAsList("ID");
-            List<String> authSeqIDColumn = loop.getColumnAsList("Auth_seq_ID");
+            List<String> authSeqIDColumn = loop.getColumnAsList("Auth_seq_ID", "");
             List<String> entityIDColumn = loop.getColumnAsList("Entity_ID");
             List<String> compIDColumn = loop.getColumnAsList("Comp_ID");
             nmrStar.addCompound(mapID, compound);
