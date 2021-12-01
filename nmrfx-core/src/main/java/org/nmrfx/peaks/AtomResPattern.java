@@ -119,14 +119,14 @@ public class AtomResPattern {
         String aName;
         Integer resNum;
 
-        @Override
-        public String toString() {
-            return resNum + "." + aName;
-        }
-
         public ResAtom(String aName, Integer resNum) {
             this.aName = aName;
             this.resNum = resNum;
+        }
+
+        @Override
+        public String toString() {
+            return resNum + "." + aName;
         }
 
     }

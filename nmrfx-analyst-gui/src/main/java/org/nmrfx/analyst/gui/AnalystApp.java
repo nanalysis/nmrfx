@@ -783,13 +783,9 @@ public class AnalystApp extends MainApp {
                 noeTableController.setNoeSet(noeSets.stream().findFirst().get());
             }
         }
-        if (noeTableController != null) {
-            noeTableController.getStage().show();
-            noeTableController.getStage().toFront();
-            noeTableController.updateNoeSetMenu();
-        } else {
-            System.out.println("Couldn't make NOE table controller");
-        }
+        noeTableController.getStage().show();
+        noeTableController.getStage().toFront();
+        noeTableController.updateNoeSetMenu();
     }
 
     public static ProjectBase getActive() {
