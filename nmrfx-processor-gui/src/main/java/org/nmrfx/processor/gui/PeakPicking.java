@@ -92,7 +92,9 @@ public class PeakPicking {
         }
         PeakPicker picker = new PeakPicker(peakPickPar);
         String canonFileName = dataset.getCanonicalFile();
-        String listFileName = canonFileName.substring(0, canonFileName.lastIndexOf(".")) + ".xpk2";
+        int lastDot = canonFileName.lastIndexOf(".");
+        String listFileName = lastDot < 0 ? canonFileName + ".xpk2"
+                : canonFileName.substring(0, lastDot) + ".xpk2";
         PeakList peakList = null;
         try {
             if (refineLS) {
@@ -145,7 +147,9 @@ public class PeakPicking {
         }
         PeakPicker picker = new PeakPicker(peakPickPar);
         String canonFileName = dataset.getCanonicalFile();
-        String listFileName = canonFileName.substring(0, canonFileName.lastIndexOf(".")) + ".xpk2";
+        int lastDot = canonFileName.lastIndexOf(".");
+        String listFileName = lastDot < 0 ? canonFileName + ".xpk2"
+                : canonFileName.substring(0, lastDot) + ".xpk2";
         PeakList peakList = null;
         Peak peak = null;
         try {
