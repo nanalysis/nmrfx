@@ -102,24 +102,22 @@ public class AnalystApp extends MainApp {
 
     private static String version = null;
     static String appName = "NMRFx Analyst";
-    MenuToolkit menuTk;
     private static MenuBar mainMenuBar = null;
-    Boolean isMac = null;
-
     static AnalystApp analystApp = null;
-
-    public static MultipletController multipletController;
-    public static AtomController atomController;
-    public static LigandScannerController scannerController;
-    public static MolSceneController molController;
-    public static AtomBrowser atomBrowser;
-    public static RNAPeakGeneratorSceneController rnaPeakGenController;
-    public static PeakTableController peakTableController;
-    public static NOETableController noeTableController;
-    public static PyController ringNMRController;
-    public static WindowIO windowIO = null;
-    public static SeqDisplayController seqDisplayController = null;
-    public static DatasetBrowserController browserController = null;
+    private static MultipletController multipletController;
+    private static AtomController atomController;
+    private static LigandScannerController scannerController;
+    private static MolSceneController molController;
+    private static AtomBrowser atomBrowser;
+    private static RNAPeakGeneratorSceneController rnaPeakGenController;
+    private static PeakTableController peakTableController;
+    private static NOETableController noeTableController;
+    private static PyController ringNMRController;
+    private static WindowIO windowIO = null;
+    private static SeqDisplayController seqDisplayController = null;
+    private static DatasetBrowserController browserController = null;
+    MenuToolkit menuTk;
+    Boolean isMac = null;
     PeakAtomPicker peakAtomPicker = null;
     CheckMenuItem assignOnPick;
     RDCGUI rdcGUI = null;
@@ -1245,7 +1243,7 @@ public class AnalystApp extends MainApp {
         stage.show();
     }
 
-    void showDataBrowser() {
+    static void showDataBrowser() {
         if (browserController == null) {
             browserController = DatasetBrowserController.create();
         }
