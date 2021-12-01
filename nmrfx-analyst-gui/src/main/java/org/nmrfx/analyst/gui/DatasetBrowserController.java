@@ -416,7 +416,7 @@ public class DatasetBrowserController implements Initializable {
             if (rData != null) {
                 String fileName = rData.getPath();
                 File file = new File(fileName);
-                String fileRoot = file.getParent().toString();
+                String fileRoot = file.getParent();
                 File localFileDir = fileSystem.getPath(getLocalDir().toString(), fileRoot).toFile();
                 if (!rData.isPresent()) {
                     try {
@@ -426,14 +426,16 @@ public class DatasetBrowserController implements Initializable {
                             rdA.fetchFile(remoteFile, localZipFile);
                             UnZipper unZipper = new UnZipper(localFileDir, localZipFile.toString());
                             unZipper.unzip();
-                            localZipFile.delete();
+                            Files.delete(localZipFile.toPath());
                             rData.setPresent(true);
                             tableView.refresh();
                         } else {
                             return;
                         }
                     } catch (IOException ex) {
-                        GUIUtils.warn("Fetch", "Error fetching: " + ex.getMessage());
+                        var title = "Retrieve Selected Data";
+                        GUIUtils.warn(title, "Error: " + ex.getMessage());
+                        break;
                     }
                 }
 
@@ -445,7 +447,6 @@ public class DatasetBrowserController implements Initializable {
         RemoteDataset rData = tableView.getSelectionModel().getSelectedItem();
         if (rData != null) {
             String fileName = rData.getPath();
-            File file = new File(fileName);
             File localFile = fileSystem.getPath(getLocalDir().toString(), fileName).toFile();
             if (localMode() && !localFile.exists()) {
                 GUIUtils.warn("Fetch", "File doesn't exist: " + localFile.toString());
@@ -461,7 +462,8 @@ public class DatasetBrowserController implements Initializable {
                 } else {
                     if (!rData.isPresent()) {
                         if (initRemoteDatasetAccess()) {
-                            String fileRoot = file.getParent().toString();
+                            File file = new File(fileName);
+                            String fileRoot = file.getParent();
                             String remoteFile = remoteDir + "/data/" + fileRoot + ".zip";
                             File localZipFile = fileSystem.getPath(getLocalDir().toString(), fileRoot + ".zip").toFile();
                             rdA.fetchFile(remoteFile, localZipFile);
@@ -478,7 +480,8 @@ public class DatasetBrowserController implements Initializable {
                     controller.openFile(localFile.toString(), true, false);
                 }
             } catch (IOException ex) {
-                GUIUtils.warn("Fetch", "Error fetching: " + ex.getMessage());
+                String mode = useFID ? "FID" : "Dataset";
+                GUIUtils.warn("Open " + mode, "Error opening: " + ex.getMessage());
             }
         }
     }
