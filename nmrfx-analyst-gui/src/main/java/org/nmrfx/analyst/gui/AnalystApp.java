@@ -774,19 +774,18 @@ public class AnalystApp extends MainApp {
     private void showNOETable() {
         if (noeTableController == null) {
             noeTableController = NOETableController.create();
+            if (noeTableController == null) {
+                return;
+            }
             Collection<NoeSet> noeSets = MoleculeFactory.getActive().getMolecularConstraints().noeSets();
 
             if (!noeSets.isEmpty()) {
                 noeTableController.setNoeSet(noeSets.stream().findFirst().get());
             }
         }
-        if (noeTableController != null) {
-            noeTableController.getStage().show();
-            noeTableController.getStage().toFront();
-            noeTableController.updateNoeSetMenu();
-        } else {
-            System.out.println("Couldn't make NOE table controller");
-        }
+        noeTableController.getStage().show();
+        noeTableController.getStage().toFront();
+        noeTableController.updateNoeSetMenu();
     }
 
     public static ProjectBase getActive() {
