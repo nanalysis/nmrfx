@@ -309,7 +309,7 @@ public class Loop {
         ArrayList<String> list = new ArrayList<>();
         for (int i = 0; i < nRows; i++) {
             String value = column.get(i);
-            list.add(tag);
+            list.add(value);
         }
         return list;
     }
