@@ -333,6 +333,14 @@ public class Residue extends Compound {
         return calcChi(0);
     }
 
+    private Atom[] getAtoms(String... names) {
+        Atom[] atoms = new Atom[names.length];
+        for (int i = 0; i < names.length; i++) {
+            atoms[i] = getAtom(names[i]);
+        }
+        return atoms;
+    }
+
     public Atom[] getChiAtoms() {
         switch (name) {
             case "ALA":
@@ -340,21 +348,11 @@ public class Residue extends Compound {
                 return null;
             case "U":
             case "C": {
-                Atom[] atoms = new Atom[4];
-                atoms[0] = getAtom("O4'");
-                atoms[1] = getAtom("C1'");
-                atoms[2] = getAtom("N1");
-                atoms[3] = getAtom("C2");
-                return atoms;
+                return getAtoms("O4'", "C1'", "N1", "C2");
             }
             case "G":
             case "A": {
-                Atom[] atoms = new Atom[4];
-                atoms[0] = getAtom("O4'");
-                atoms[1] = getAtom("C1'");
-                atoms[2] = getAtom("N9");
-                atoms[3] = getAtom("C4");
-                return atoms;
+                return getAtoms("O4'", "C1'", "N9", "C4");
             }
             default: {
                 Atom[] atoms = new Atom[4];
