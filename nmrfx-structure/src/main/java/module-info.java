@@ -1,6 +1,7 @@
 module org.nmrfx.structure {
     exports org.nmrfx.structure.chemistry;
     exports org.nmrfx.structure.chemistry.energy;
+    exports org.nmrfx.structure.chemistry.miner;
     exports org.nmrfx.structure.noe;
     exports org.nmrfx.structure.rna;
     exports org.nmrfx.structure.rdc;

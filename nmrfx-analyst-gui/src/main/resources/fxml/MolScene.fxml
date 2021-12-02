@@ -78,6 +78,13 @@
                                                 <MenuItem mnemonicParsing="false" onAction="#calcStructureAction" text="Calc Structure" />
                                             </items>
                                         </MenuButton>
+                                        <MenuButton  mnemonicParsing="false" text="Edit">
+                                            <items>
+                                                <MenuItem mnemonicParsing="false" onAction="#deactivateBondAction" text="Deactivate Bond" />
+                                                <MenuItem mnemonicParsing="false" onAction="#activateBondAction" text="Reactivate Bonds" />
+                                                <MenuItem mnemonicParsing="false" onAction="#genPRF" text="Gen PRF" />
+                                            </items>
+                                        </MenuButton>
 
                                     </children>
                                 </HBox>

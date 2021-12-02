@@ -494,7 +494,6 @@ public class MolViewer extends Pane {
      * @throws InvalidMoleculeException
      */
     public void addBox(int iStructure, double radius, String tag) throws InvalidMoleculeException {
-        System.out.println("add box");
         Molecule mol = Molecule.getActive();
         if (mol == null) {
             return;
@@ -566,7 +565,6 @@ public class MolViewer extends Pane {
             double scale = 10.0;
 
             if (type.equals("rdc")) {
-                System.out.println("add RDC axes");
                 axes = mol.getRDCAxes(endPts);
                 if (axes == null) {
                     return;
@@ -577,14 +575,12 @@ public class MolViewer extends Pane {
                 scale = 15.0;
 
             } else if (type.equals("svd")) {
-                System.out.println("add SVD axes");
                 axes = svdAxes;
                 scale = 2.0;
                 colors[0] = Color.MAGENTA;
                 colors[1] = Color.SEAGREEN;
                 colors[2] = Color.CYAN;
             } else {
-                System.out.println("add original axes");
                 colors[0] = Color.RED;
                 colors[1] = Color.GREEN;
                 colors[2] = Color.BLUE;
@@ -620,7 +616,6 @@ public class MolViewer extends Pane {
         } else {
             return;
         }
-        System.out.println(rotMat.toString());
         double[][] rotMatData = rotMat.getData();
 
         double mxx = rotMatData[0][0];
@@ -846,7 +841,6 @@ public class MolViewer extends Pane {
         items.add("all");
         for (Node node : molGroup.getChildren()) {
             if (node instanceof MolItem) {
-                MolItem item = (MolItem) node;
                 items.add(node.getId());
             }
         }

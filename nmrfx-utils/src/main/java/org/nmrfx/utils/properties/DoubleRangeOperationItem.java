@@ -53,7 +53,7 @@ public class DoubleRangeOperationItem extends DoubleOperationItem {
         super(listener, defaultValue, min, max, amin, amax, category, name, description);
         zoomable = true;
     }
-
+    
     @Override
     public Class<?> getType() {
         return DoubleRangeOperationItem.class;
