@@ -1,0 +1,3 @@
+NMRfx and its modules are dual-licensed:
+* GPLv3 (see GPLv3.txt for the license text)
+* internal, proprietary license for use in Nanalysis, RS2D and OneMoonScientific projects
