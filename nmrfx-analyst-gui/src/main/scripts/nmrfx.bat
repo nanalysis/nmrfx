@@ -18,7 +18,7 @@ set nvjpmain=org.nmrfx.analyst.gui.NMRAnalystApp
 set dir=%~dp0
 
 set javaexe=java
-set cp="%dir%nmrfx-analyst-gui-%nvjver%.jar;%dir%lib/Manifest.jar/%dir%lib/plugins/*"
+set cp="%dir%nmrfx-analyst-gui-%nvjver%.jar;%dir%lib/Manifest.jar;%dir%plugins/*"
 
 set testjava="%dir%jre\bin\java.exe"
 

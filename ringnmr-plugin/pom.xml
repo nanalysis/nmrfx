@@ -7,12 +7,12 @@
     <parent>
         <groupId>org.nmrfx</groupId>
         <artifactId>nmrfx</artifactId>
-        <version>11.1.40</version>
+        <version>11.1.42</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
     <artifactId>ringnmr-plugin</artifactId>
-    <version>11.1.40</version>
+    <version>11.1.42</version>
     <packaging>jar</packaging>
 
     <build>
@@ -49,11 +49,13 @@
         <dependency>
             <groupId>org.nmrfx</groupId>
             <artifactId>nmrfx-plugin-api</artifactId>
-            <version>11.1.40</version>
+            <version>11.1.42</version>
         </dependency>
         <dependency>
             <groupId>org.comdnmr</groupId>
             <artifactId>ringnmr-gui</artifactId>
+            <version>1.06</version>
+            <!-- license: GPLv3 -->
         </dependency>
     </dependencies>
 </project>

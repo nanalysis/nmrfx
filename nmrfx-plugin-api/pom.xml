@@ -13,7 +13,7 @@
 
     <artifactId>nmrfx-plugin-api</artifactId>
     <packaging>jar</packaging>
-    <version>11.1.40</version>
+    <version>11.1.42</version>
 
     <dependencies>
         <dependency>

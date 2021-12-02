@@ -37,6 +37,7 @@ import org.apache.commons.lang3.SystemUtils;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.analyst.gui.molecule.CanvasMolecule;
 import org.nmrfx.analyst.gui.molecule3D.MolSceneController;
+import org.nmrfx.analyst.gui.plugin.PluginLoader;
 import org.nmrfx.analyst.gui.tools.RunAboutGUI;
 import org.nmrfx.chemistry.InvalidMoleculeException;
 import org.nmrfx.chemistry.MoleculeFactory;
@@ -50,6 +51,7 @@ import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakLabeller;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.io.PeakReader;
+import org.nmrfx.plugin.api.EntryPoint;
 import org.nmrfx.plugin.api.NMRFxPlugin;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.*;
@@ -481,13 +483,8 @@ public class AnalystApp extends MainApp {
         helpMenu.getItems().addAll(docsMenuItem, webSiteMenuItem, mailingListItem, versionMenuItem, refMenuItem, openSourceItem);
 
         Menu pluginsMenu = new Menu("Plugins");
-        // TODO load plugins, fill menu
-        ServiceLoader<NMRFxPlugin> serviceLoader = ServiceLoader.load(NMRFxPlugin.class);
-        String plugins = serviceLoader.stream().map(ServiceLoader.Provider::get).map(NMRFxPlugin::getName).collect(Collectors.joining(", "));
-        System.out.println("found plugins: " + plugins);
-        serviceLoader.stream().map(ServiceLoader.Provider::get)
-                .flatMap(plugin -> plugin.getMenus().stream())
-                .forEach(pluginsMenu.getItems()::add);
+        PluginLoader.getInstance().registerPluginsOnEntryPoint(EntryPoint.MENU_PLUGINS, pluginsMenu);
+        pluginsMenu.setVisible(!pluginsMenu.getItems().isEmpty());
 
         if (tk != null) {
             Menu windowMenu = new Menu("Window");
