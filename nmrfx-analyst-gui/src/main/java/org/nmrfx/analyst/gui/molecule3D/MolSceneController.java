@@ -587,7 +587,6 @@ public class MolSceneController implements Initializable, MolSelectionListener, 
     }
 
     public void drawBox() throws InvalidMoleculeException {
-        System.out.println("add box");
         molViewer.deleteItems("delete", "box");
         molViewer.addBox(0, 0.3, "box " + getIndex());
     }
@@ -598,7 +597,6 @@ public class MolSceneController implements Initializable, MolSelectionListener, 
      * @throws InvalidMoleculeException
      */
     public void drawAxes() throws InvalidMoleculeException {
-        System.out.println("add axes");
         molViewer.deleteItems("delete", "axes");
         molViewer.addAxes(0, 0.3, "axes " + getIndex(), "original");
     }
@@ -609,7 +607,6 @@ public class MolSceneController implements Initializable, MolSelectionListener, 
      * @throws InvalidMoleculeException
      */
     public void drawSVDAxes() throws InvalidMoleculeException {
-        System.out.println("add SVD axes");
         molViewer.deleteItems("delete", "svdaxes");
         molViewer.addAxes(0, 0.3, "svdaxes " + getIndex(), "svd");
     }
@@ -620,19 +617,16 @@ public class MolSceneController implements Initializable, MolSelectionListener, 
      * @throws InvalidMoleculeException
      */
     public void drawRDCAxes() throws InvalidMoleculeException {
-        System.out.println("add RDC axes");
         molViewer.deleteItems("delete", "rdcaxes");
         molViewer.addAxes(0, 0.3, "rdcaxes " + getIndex(), "rdc");
     }
 
     public void rotateMoleculeRDC() throws InvalidMoleculeException {
-        System.out.println("rotate molecule to RDC axes");
         molViewer.resetTransform();
         molViewer.rotateSVDRDC("rdc");
     }
 
     public void rotateMoleculeSVD() throws InvalidMoleculeException {
-        System.out.println("rotate molecule to SVD axes");
         molViewer.resetTransform();
         molViewer.rotateSVDRDC("svd");
     }
@@ -683,7 +677,6 @@ public class MolSceneController implements Initializable, MolSelectionListener, 
         Molecule molecule = Molecule.getActive();
         if (molecule != null) {
             boolean append = event.isShiftDown();
-            System.out.println(nodeDescriptor);
             String[] fields = nodeDescriptor.split(" ");
             if (fields.length > 0) {
                 if (fields[0].equals("atom") && (fields.length > 1)) {
@@ -805,7 +798,6 @@ public class MolSceneController implements Initializable, MolSelectionListener, 
         if (molecule != null) {
             List<Bond> bonds = molecule.selectedBonds();
             for (var bond : bonds) {
-                System.out.println(bond);
                 bond.setProperty(Bond.DEACTIVATE);
             }
         }
@@ -822,7 +814,7 @@ public class MolSceneController implements Initializable, MolSelectionListener, 
             Atom startAtom = molecule.globalSelected.get(0).getAtom();
             AngleTreeGenerator angleGen = new AngleTreeGenerator();
             List<List<Atom>> aTree = angleGen.genTree(molecule, startAtom, null);
-            angleGen.dumpAtomTree(aTree);
+            AngleTreeGenerator.dumpAtomTree(aTree);
         }
     }
 
@@ -898,7 +890,6 @@ public class MolSceneController implements Initializable, MolSelectionListener, 
                     return new Task() {
                         protected Object call() {
                             script = getScript();
-                            System.out.println("script " + script);
                             PythonInterpreter processInterp = new PythonInterpreter();
                             updateStatus("Start calculating");
                             updateTitle("Start calculating");
