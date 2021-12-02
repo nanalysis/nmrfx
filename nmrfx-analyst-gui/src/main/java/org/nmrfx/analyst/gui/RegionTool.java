@@ -60,6 +60,7 @@ import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.processor.gui.spectra.MultipletSelection;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
 import org.nmrfx.processor.gui.utils.ToolBarUtils;
+import org.nmrfx.utils.GUIUtils;
 import static org.nmrfx.utils.GUIUtils.affirm;
 import static org.nmrfx.utils.GUIUtils.warn;
 
@@ -100,7 +101,6 @@ public class RegionTool implements ControllerTool {
         this.closeAction = closeAction;
         chart = controller.getActiveChart();
         chart.getDatasetAttributes().addListener((ListChangeListener) c -> {
-            System.out.println("data " + c);
             if (chart.getDatasetAttributes().isEmpty()) {
                 analyzer = null;
             } else {
@@ -109,7 +109,6 @@ public class RegionTool implements ControllerTool {
             }
         });
         chart.getPeakListAttributes().addListener((ListChangeListener) c -> {
-            System.out.println("peak " + c);
             Analyzer thisAnalyzer = getAnalyzer();
             if (chart.getPeakListAttributes().isEmpty()) {
                 thisAnalyzer.setPeakList(null);
@@ -423,6 +422,7 @@ public class RegionTool implements ControllerTool {
                     getChart().chartProps.setRegions(true);
                     getChart().refresh();
                 } catch (IOException ioE) {
+                    GUIUtils.warn("Error reading regions file", ioE.getMessage());
                 }
             }
         }
@@ -441,10 +441,11 @@ public class RegionTool implements ControllerTool {
                 eDialog.showAndWait();
                 return;
             }
-            chart.chartProps.setRegions(false);
+            chart.chartProps.setRegions(true);
             chart.chartProps.setIntegrals(true);
+            activeRegion = Optional.empty();
+            chart.setActiveRegion(null);
             chart.refresh();
-            lastRegion();
         }
     }
 
@@ -554,13 +555,12 @@ public class RegionTool implements ControllerTool {
             double scale = getDataset().get().getNorm();
             double value = region.getIntegral() / scale;
             integralField.setText(String.format("%.2f", value));
-//            if (multiplet.isGenericMultiplet()) {
-//                splitButton.setDisable(true);
-//            } else {
-//                splitButton.setDisable(false);
-//            }
+            chart.setActiveRegion(activeRegion.get());
+            chart.refresh();
         } else {
             multipletIdField.setText("");
+            chart.setActiveRegion(null);
+            chart.refresh();
         }
     }
 

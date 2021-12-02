@@ -304,7 +304,7 @@ public class PolyChart implements PeakListener {
     Map<String, Integer> syncGroups = new HashMap<>();
     static int nSyncGroups = 0;
 
-    public static double overlapScale = 2.0;
+    public static double overlapScale = 3.0;
 
     public PolyChart(FXMLController controller, Pane plotContent, Canvas canvas, Canvas peakCanvas, Canvas annoCanvas) {
         this(controller, plotContent, canvas, peakCanvas, annoCanvas,
@@ -2587,6 +2587,14 @@ public class PolyChart implements PeakListener {
             }
         }
         return hit;
+    }
+
+    public void setActiveRegion(DatasetRegion region) {
+        activeRegion.set(region);
+    }
+
+    public void clearActiveRegion() {
+        activeRegion.set(null);
     }
 
     public boolean selectRegion(boolean controls, double pickX, double pickY) {

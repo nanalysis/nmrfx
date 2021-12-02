@@ -17,6 +17,7 @@
  */
 
 module org.nmrfx.analyst.gui {
+    exports org.nmrfx.analyst.gui;
     requires org.nmrfx.core;
     requires org.nmrfx.processor.gui;
     requires org.nmrfx.processor;

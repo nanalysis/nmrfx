@@ -714,14 +714,14 @@ public class PeakFitter {
         for (int iPeak = 0; iPeak < nPeaks; iPeak++) {
             double lineWidthPts = guesses[iPeak * 3 + 2];
             if (iPeak == 0) {
-                lower[iPeak * 3 + 1] = Math.max(extra + 1, guesses[iPeak * 3 + 1] - lineWidthPts);
+                lower[iPeak * 3 + 1] = Math.max(extra + 1.0, guesses[iPeak * 3 + 1] - lineWidthPts);
             } else {
-                lower[iPeak * 3 + 1] = (guesses[iPeak * 3 + 1] + guesses[(iPeak - 1) * 3 + 1]) / 2;
+                lower[iPeak * 3 + 1] = (guesses[iPeak * 3 + 1] + guesses[(iPeak - 1) * 3 + 1]) / 2.0;
             }
             if (iPeak == nPeaks - 1) {
-                upper[iPeak * 3 + 1] = Math.min(size - extra - 1, guesses[iPeak * 3 + 1] + lineWidthPts);
+                upper[iPeak * 3 + 1] = Math.min(size - extra - 1.0, guesses[iPeak * 3 + 1] + lineWidthPts);
             } else {
-                upper[iPeak * 3 + 1] = (guesses[iPeak * 3 + 1] + guesses[(iPeak + 1) * 3 + 1]) / 2;
+                upper[iPeak * 3 + 1] = (guesses[iPeak * 3 + 1] + guesses[(iPeak + 1) * 3 + 1]) / 2.0;
             }
             if (positionRestraint != null) {
                 lower[iPeak * 3 + 1] = Math.max(lower[iPeak * 3 + 1], guesses[iPeak * 3 + 1] - lineWidthPts * positionRestraint);

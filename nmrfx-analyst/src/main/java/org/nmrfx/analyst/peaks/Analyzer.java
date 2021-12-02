@@ -134,7 +134,7 @@ public class Analyzer {
             return;
         }
         int sdevWin = Math.max(16, vec.getSize() / 64);
-        sDev = vec.sdev(sdevWin); // fixme correct winsize
+        sDev = vec.sdev(sdevWin);
         if (scaleToLargest) {
             int nIncr = size / nWin;
             List<Double> maxs = new ArrayList<>();
@@ -1171,7 +1171,7 @@ public class Analyzer {
         }
     }
 
-    private void findRegions() throws IOException {
+    public void findRegions() throws IOException {
         calculateThreshold();
         getThreshold();
         autoSetRegions();
@@ -1220,9 +1220,7 @@ public class Analyzer {
     }
 
     public void loadRegions(File regionFile) throws IOException {
-        System.out.println("region " + regionFile.toString());
         if (regionFile.canRead()) {
-            System.out.println("read");
             TreeSet<DatasetRegion> regions = DatasetRegion.loadRegions(regionFile);
             dataset.setRegions(regions);
         }
