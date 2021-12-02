@@ -226,7 +226,13 @@ public class AtomController implements Initializable, FreezeListener {
             atomTableView.refresh();
         }
         );
-        editMenu.getItems().addAll(clearPPMItem, clearRefItem, getPPMItem);
+        MenuItem getAllPPMItem = new MenuItem("Get PPM");
+        getAllPPMItem.setOnAction(e -> {
+            PeakList.resFactory().assignFromPeaks(null);
+            atomTableView.refresh();
+        }
+        );
+        editMenu.getItems().addAll(clearPPMItem, clearRefItem, getPPMItem, getAllPPMItem);
 
         menuBar.getItems().add(editMenu);
 

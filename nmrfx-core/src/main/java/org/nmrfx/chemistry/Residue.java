@@ -42,6 +42,7 @@ public class Residue extends Compound {
     public Residue pairedTo = null;
     public SecondaryStructure secStruct = null;
     public final static Map<String, String> PSEUDO_MAP = new HashMap<>();
+    boolean libraryMode = false;
 
     static {
         String[] standardResidues = {
@@ -198,6 +199,14 @@ public class Residue extends Compound {
         return atom;
     }
 
+    public void libraryMode(boolean value) {
+        this.libraryMode = value;
+    }
+
+    public boolean libraryMode() {
+        return libraryMode;
+    }
+
     public boolean isStandard() {
         return standard;
     }
@@ -324,33 +333,28 @@ public class Residue extends Compound {
         return calcChi(0);
     }
 
+    private Atom[] getAtoms(String... names) {
+        Atom[] atoms = new Atom[names.length];
+        for (int i = 0; i < names.length; i++) {
+            atoms[i] = getAtom(names[i]);
+        }
+        return atoms;
+    }
+
     public Atom[] getChiAtoms() {
         switch (name) {
             case "ALA":
             case "GLY":
                 return null;
             case "U":
-            case "C":
-            {
-                Atom[] atoms = new Atom[4];
-                atoms[0] = getAtom("O4'");
-                atoms[1] = getAtom("C1'");
-                atoms[2] = getAtom("N1");
-                atoms[3] = getAtom("C2");
-                return atoms;
+            case "C": {
+                return getAtoms("O4'", "C1'", "N1", "C2");
             }
             case "G":
-            case "A":
-            {
-                Atom[] atoms = new Atom[4];
-                atoms[0] = getAtom("O4'");
-                atoms[1] = getAtom("C1'");
-                atoms[2] = getAtom("N9");
-                atoms[3] = getAtom("C4");
-                return atoms;
+            case "A": {
+                return getAtoms("O4'", "C1'", "N9", "C4");
             }
-            default:
-            {
+            default: {
                 Atom[] atoms = new Atom[4];
                 atoms[0] = getAtom("N");
                 atoms[1] = getAtom("CA");
@@ -756,7 +760,7 @@ public class Residue extends Compound {
 
     /**
      * Converts sequence information to a String in NEF format.
-     * 
+     *
      * @param idx int. The line index.
      * @param link String. Linkage (e.g. start, end, single).
      * @return String in NEF format.
@@ -784,7 +788,7 @@ public class Residue extends Compound {
 
     /**
      * Converts sequence information to a String in mmCIF format.
-     * 
+     *
      * @param pdb boolean. Whether to write lines in PDBX format.
      * @return String in mmCIF format.
      */
@@ -824,7 +828,7 @@ public class Residue extends Compound {
 
     /**
      * Convert chemical composition information to String in mmCIF format.
-     * 
+     *
      * @param weightMap Map<String, Double>. Map of atom molecular weights.
      * @param fullResName String. The full residue name.
      * @return String in mmCIF format.
@@ -908,7 +912,7 @@ public class Residue extends Compound {
 
     /**
      * Convert structure configuration information to a String in mmCIF format.
-     * 
+     *
      * @param idx int. The line index.
      * @param lastRes Residue. The last residue in the sequence.
      * @return String in mmCIF format.
@@ -966,7 +970,7 @@ public class Residue extends Compound {
 
     /**
      * Convert sheet information to a String in mmCIF format.
-     * 
+     *
      * @param idx int. The line index.
      * @param lastRes Residue. The last residue in the sequence.
      * @return
@@ -1012,7 +1016,7 @@ public class Residue extends Compound {
 
     /**
      * Convert torsion angle information to a String in mmCIF format.
-     * 
+     *
      * @param angles double[]. List of the torsion angles: [phi, psi].
      * @param idx int. The line index.
      * @param pdbModelNum int. The PDB model number.

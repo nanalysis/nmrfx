@@ -459,6 +459,7 @@ public class Sequence {
         ArrayList<String[]> fieldArray = loadResidue(fileName, throwTclException);
         boolean result = false;
         if (fieldArray.size() > 0) {
+            residue.libraryMode(true);
             result = true;
             for (String[] fields : fieldArray) {
                 try {

@@ -230,19 +230,21 @@ public class NMRStarWriter {
         int i = 1;
         while (residueIterator.hasNext()) {
             Residue residue = (Residue) residueIterator.next();
-            String mode;
-            if (i == 1) {
-                mode = "." + i;
-            } else if (!residueIterator.hasNext()) {
-                mode = "." + i;
-            } else {
-                mode = "";
+            if (!residue.libraryMode()) {
+                String mode;
+                if (i == 1) {
+                    mode = "." + i;
+                } else if (!residueIterator.hasNext()) {
+                    mode = "." + i;
+                } else {
+                    mode = "";
+                }
+                if (!cmpdSet.contains(residue.label + mode)) {
+                    writeCompoundToSTAR3(chan, residue, i, mode);
+                    cmpdSet.add(residue.label + mode);
+                }
+                i++;
             }
-            if (!cmpdSet.contains(residue.label + mode)) {
-                writeCompoundToSTAR3(chan, residue, i, mode);
-                cmpdSet.add(residue.label + mode);
-            }
-            i++;
         }
     }
 
@@ -484,7 +486,7 @@ public class NMRStarWriter {
                 Polymer polymer = (Polymer) entity;
                 writeEntitySeqSTAR3(chan, polymer, entityID);
                 chan.write("save_\n\n");
-                if (!polymer.getNomenclature().equals("IUPAC") && !polymer.getNomenclature().equals("XPLOR")) {
+                if (!polymer.getNomenclature().equals("IUPAC") && !polymer.getNomenclature().equals("XPLOR") || true) {
                     writeComponentsSTAR3(chan, polymer, cmpdSet);
                 }
             } else {

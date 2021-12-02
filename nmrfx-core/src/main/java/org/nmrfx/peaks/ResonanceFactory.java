@@ -209,6 +209,22 @@ public class ResonanceFactory implements FreezeListener {
         }
     }
 
+    public void assignFromPeaks(String condition) {
+        for (AtomResonance res : map.values()) {
+            for (PeakDim peakDim : res.getPeakDims()) {
+                Double ppmAvg = res.getPPMAvg(condition);
+                Atom atom = MoleculeBase.getAtomByName(peakDim.getLabel());
+                if (atom != null) {
+                    atom.setPPM(ppmAvg);
+                    res.setAtomName(atom.getFullName());
+                    break;
+                }
+
+            }
+
+        }
+    }
+
     @Override
     public void freezeHappened(Peak peak, boolean state) {
         System.out.println("freeze " + peak.getName() + " " + state);

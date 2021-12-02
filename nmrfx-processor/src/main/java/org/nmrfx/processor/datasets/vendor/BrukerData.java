@@ -191,25 +191,29 @@ public class BrukerData implements NMRData {
             Double offset = getParDouble("OFFSET," + (i + 1));
             if (sW != null) {
                 dataset.setSw(i, sW);
-                if (offset != null) {
-                    dataset.setRefValue(i, offset);
-                    dataset.setRefPt(0, 0);
-                }
             } else {
                 dataset.setSw(i, getSW(i));
+            }
+            if (offset != null) {
+                dataset.setRefValue(i, offset);
+                dataset.setRefPt(i, 0);
+
+            } else {
                 dataset.setRefValue(i, getRef(i));
                 dataset.setRefPt(i, dataset.getSize(i) / 2.0);
             }
             dataset.setComplex(i, false);
             dataset.setFreqDomain(i, true);
-            dataset.setNucleus(i, getTN(i));
-            Integer ncProc = getParInt("NC_proc,1");
-            if (ncProc == null) {
-                ncProc = 0;
-            }
-            dataset.setScale(1.0e6 / Math.pow(2, ncProc));
+            String nucLabel = getTN(i);
+            dataset.setNucleus(i, nucLabel);
+            dataset.setLabel(i, nucLabel + (i + 1));
             dataset.syncPars(i);
         }
+        Integer ncProc = getParInt("NC_proc,1");
+        if (ncProc == null) {
+            ncProc = 0;
+        }
+        dataset.setScale(1.0e6 / Math.pow(2, ncProc));
         dataset.setDataType(1);
         return dataset;
     }

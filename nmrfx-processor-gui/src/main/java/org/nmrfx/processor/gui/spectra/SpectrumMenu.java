@@ -24,6 +24,7 @@ import javafx.scene.control.MenuItem;
 import org.nmrfx.processor.datasets.peaks.PeakListTools.ARRAYED_FIT_MODE;
 import org.nmrfx.processor.gui.PeakPicking;
 import org.nmrfx.processor.gui.PolyChart;
+import org.nmrfx.processor.gui.tools.PeakLinker;
 
 /**
  *
@@ -43,50 +44,32 @@ public class SpectrumMenu extends ChartMenu {
         });
         Menu viewMenu = new Menu("View");
         MenuItem expandItem = new MenuItem("Expand");
-        expandItem.setOnAction((ActionEvent e) -> {
-            chart.expand();
-        });
+        expandItem.setOnAction((ActionEvent e) -> chart.expand());
         viewMenu.getItems().add(expandItem);
 
         MenuItem fullItem = new MenuItem("Full");
-        fullItem.setOnAction((ActionEvent e) -> {
-            chart.full();
-        });
+        fullItem.setOnAction((ActionEvent e) -> chart.full());
         viewMenu.getItems().add(fullItem);
 
         MenuItem zoomInItem = new MenuItem("Zoom In");
-        zoomInItem.setOnAction((ActionEvent e) -> {
-            chart.zoom(1.2);
-        });
+        zoomInItem.setOnAction((ActionEvent e) -> chart.zoom(1.2));
         viewMenu.getItems().add(zoomInItem);
         MenuItem zoomOutItem = new MenuItem("Zoom Out");
-        zoomOutItem.setOnAction((ActionEvent e) -> {
-            chart.zoom(0.8);
-        });
+        zoomOutItem.setOnAction((ActionEvent e) -> chart.zoom(0.8));
         viewMenu.getItems().add(zoomOutItem);
         MenuItem popOutItem = new MenuItem("Pop View Out");
-        popOutItem.setOnAction((ActionEvent e) -> {
-            chart.popView();
-        });
+        popOutItem.setOnAction((ActionEvent e) -> chart.popView());
         viewMenu.getItems().add(popOutItem);
 
         Menu baselineMenu = new Menu("Baseline");
         MenuItem addBaselineItem = new MenuItem("Add Baseline Region");
-        addBaselineItem.setOnAction((ActionEvent e) -> {
-            chart.addBaselineRange(false);
-        });
+        addBaselineItem.setOnAction((ActionEvent e) -> chart.addBaselineRange(false));
         MenuItem clearBaselineItem = new MenuItem("Clear Baseline Region");
-        clearBaselineItem.setOnAction((ActionEvent e) -> {
-            chart.addBaselineRange(true);
-        });
+        clearBaselineItem.setOnAction((ActionEvent e) -> chart.addBaselineRange(true));
         MenuItem clearAllBaselineItem = new MenuItem("Clear Baseline Regions");
-        clearAllBaselineItem.setOnAction((ActionEvent e) -> {
-            chart.clearBaselineRanges();
-        });
+        clearAllBaselineItem.setOnAction((ActionEvent e) -> chart.clearBaselineRanges());
         MenuItem extractItem = new MenuItem("Add Extract Region");
-        extractItem.setOnAction((ActionEvent e) -> {
-            chart.addRegionRange();
-        });
+        extractItem.setOnAction((ActionEvent e) -> chart.addRegionRange());
 
         baselineMenu.getItems().add(addBaselineItem);
         baselineMenu.getItems().add(clearBaselineItem);
@@ -95,28 +78,22 @@ public class SpectrumMenu extends ChartMenu {
         Menu peakFitMenu = new Menu("Fit");
 
         MenuItem inspectPeakItem = new MenuItem("Inspect Peak");
-        inspectPeakItem.setOnAction((ActionEvent e) -> {
-            chart.showHitPeak(chart.getMouseBindings().getMousePressX(), chart.getMouseBindings().getMousePressY());
-        });
+        inspectPeakItem.setOnAction((ActionEvent e) -> chart.showHitPeak(
+                chart.getMouseBindings().getMousePressX(),
+                chart.getMouseBindings().getMousePressY()));
 
         peakMenu.getItems().add(inspectPeakItem);
 
         MenuItem adjustLabelsItem = new MenuItem("Adjust Labels");
-        adjustLabelsItem.setOnAction((ActionEvent e) -> {
-            chart.adjustLabels();
-        });
+        adjustLabelsItem.setOnAction((ActionEvent e) -> chart.adjustLabels());
         peakMenu.getItems().add(adjustLabelsItem);
 
         MenuItem tweakPeakItem = new MenuItem("Tweak Selected");
-        tweakPeakItem.setOnAction((ActionEvent e) -> {
-            chart.tweakPeaks();
-        });
+        tweakPeakItem.setOnAction((ActionEvent e) -> chart.tweakPeaks());
         peakMenu.getItems().add(tweakPeakItem);
 
         MenuItem tweakListItem = new MenuItem("Tweak All Lists");
-        tweakListItem.setOnAction((ActionEvent e) -> {
-            chart.tweakPeakLists();
-        });
+        tweakListItem.setOnAction((ActionEvent e) -> chart.tweakPeakLists());
         peakMenu.getItems().add(tweakListItem);
 
         MenuItem duplicatePeakMenuItem = new MenuItem("Add Duplicate Peak List");
@@ -215,12 +192,38 @@ public class SpectrumMenu extends ChartMenu {
         });
         extractMenu.getItems().addAll(projectMenuItem, extractXMenuItem, extractYMenuItem, extractZMenuItem);
 
+        Menu linkMenu = new Menu("Peak Linking");
+        MenuItem linkColumnMenuItem = new MenuItem("Link Selected Column");
+        linkColumnMenuItem.setOnAction((ActionEvent e) -> {
+            PeakLinker.linkSelectedPeaks(0);
+        });
+        MenuItem linkRowMenuItem = new MenuItem("Link Selected Row");
+        linkRowMenuItem.setOnAction((ActionEvent e) -> {
+            PeakLinker.linkSelectedPeaks(1);
+        });
+
+        MenuItem unlinkSelectedMenuItem = new MenuItem("Unlink Selected");
+        unlinkSelectedMenuItem.setOnAction((ActionEvent e) -> {
+            PeakLinker.unlinkSelected();
+        });
+        MenuItem unlinkSelectedColumnMenuItem = new MenuItem("Unlink Selected Column");
+        unlinkSelectedColumnMenuItem.setOnAction((ActionEvent e) -> {
+            PeakLinker.unlinkSelected(0);
+        });
+        MenuItem unlinkSelectedRowMenuItem = new MenuItem("Unlink Selected Row");
+        unlinkSelectedRowMenuItem.setOnAction((ActionEvent e) -> {
+            PeakLinker.unlinkSelected(1);
+        });
+
+        linkMenu.getItems().addAll(linkColumnMenuItem, linkRowMenuItem,
+                unlinkSelectedMenuItem, unlinkSelectedColumnMenuItem, unlinkSelectedRowMenuItem);
+
         chartMenu.getItems().add(attrItem);
         chartMenu.getItems().add(viewMenu);
         chartMenu.getItems().add(peakMenu);
         chartMenu.getItems().add(refMenu);
         chartMenu.getItems().add(baselineMenu);
-        chartMenu.getItems().add(extractItem);
+        chartMenu.getItems().add(linkMenu);
         chartMenu.getItems().add(extractMenu);
     }
 }

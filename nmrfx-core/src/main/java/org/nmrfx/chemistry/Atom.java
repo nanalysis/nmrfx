@@ -168,7 +168,7 @@ public class Atom implements IAtom {
 
     protected final void initialize(AtomParser atomParse) {
         name = atomParse.atomName;
-
+        
         if (!atomParse.elemName.equals("")) {
             aNum = getElementNumber(atomParse.elemName);
         } else {
