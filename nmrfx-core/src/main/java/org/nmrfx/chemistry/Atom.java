@@ -29,7 +29,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 import org.nmrfx.chemistry.relax.RelaxationData.relaxTypes;
 
-public class Atom implements IAtom, Comparable {
+public class Atom implements IAtom, Comparable<Atom> {
 
     public String type = "";
     public AtomEnergyProp atomEnergyProp = null;
@@ -279,8 +279,8 @@ public class Atom implements IAtom, Comparable {
     }
 
     @Override
-    public int compareTo(Object o) {
-        return Atom.compare(this, (Atom) o);
+    public int compareTo(Atom atom) {
+        return Atom.compare(this, atom);
     }
 
     public static class AtomComparator implements Comparator<Atom> {
@@ -293,15 +293,27 @@ public class Atom implements IAtom, Comparable {
     }
 
     public static int compare(Atom atom1, Atom atom2) {
-        int entityID1 = atom1.getTopEntity().entityID;
-        int entityID2 = atom2.getTopEntity().entityID;
-        int result = Integer.compare(entityID1, entityID2);
+        if (atom1 == atom2) {
+            return 0;
+        }
+        int result = 0;
+
+        MoleculeBase mol1 = atom1.getEntity().molecule;
+        MoleculeBase mol2 = atom2.getEntity().molecule;
+        if ((mol1 != null) && (mol2 != null) && (mol1 != mol2)) {
+            result = mol1.getName().compareTo(mol2.getName());
+        }
         if (result == 0) {
-            entityID1 = atom1.getResidueNumber();
-            entityID2 = atom2.getResidueNumber();
+            int entityID1 = atom1.getTopEntity().entityID;
+            int entityID2 = atom2.getTopEntity().entityID;
             result = Integer.compare(entityID1, entityID2);
             if (result == 0) {
-                result = Integer.compare(atom1.getIndex(), atom2.getIndex());
+                entityID1 = atom1.getResidueNumber();
+                entityID2 = atom2.getResidueNumber();
+                result = Integer.compare(entityID1, entityID2);
+                if (result == 0) {
+                    result = Integer.compare(atom1.getIndex(), atom2.getIndex());
+                }
             }
         }
         return result;
