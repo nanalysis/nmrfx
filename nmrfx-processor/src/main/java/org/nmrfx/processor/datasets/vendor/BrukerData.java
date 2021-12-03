@@ -931,7 +931,7 @@ public class BrukerData implements NMRData {
         if (gotSchedule) {
             int[] dims = sampleSchedule.getDims();
             for (int i = 0; i < dims.length; i++) {
-                tdsize[i + 1] = dims[i] * 2;
+                tdsize[i + 1] = dims[i] * (isComplex(i + 1) ? 2 : 1);
                 dim = i + 2;
             }
         } else {
@@ -1033,7 +1033,7 @@ public class BrukerData implements NMRData {
         // fixme need to figure out if complex or not
         int num = 1;
         for (int i = 1; i < nDim; i++) {
-            num *= getSize(i) * 2;
+            num *= getSize(i) * (isComplex(i) ? 2 : 1);
         }
         nvectors = num;
     }
@@ -1063,6 +1063,9 @@ public class BrukerData implements NMRData {
                         complexDim[i - 1] = false;
                         fttype[i - 1] = "rft";
                         f1coefS[i - 1] = "real";
+                        if (sampleSchedule != null) {
+                            sampleSchedule.setOffsetMul(2);
+                        }
                         break;
                     case 4: // f1coef[i-1] = "1 0 0 0 0 0 1 0";
                         f1coef[i - 1] = new double[]{1, 0, 0, 0, 0, 0, 1, 0};
@@ -1364,12 +1367,10 @@ public class BrukerData implements NMRData {
             if (dvec.useApache()) {
                 readVector(iDim, iVec + shiftAmount, dvec.getCvec());
             } else {
-// fixme
-                readVector(iVec + shiftAmount, dvec.rvec, dvec.ivec);
+                readVector(iDim, iVec + shiftAmount, null, dvec.rvec, dvec.ivec);
             }
         } else {
-// fixme
-            readVector(iVec, dvec.rvec);
+            readVector(iDim, iVec, null, dvec.rvec, null);
         }
         dvec.dwellTime = 1.0 / getSW(iDim);
         dvec.centerFreq = getSF(iDim);
@@ -1419,15 +1420,19 @@ public class BrukerData implements NMRData {
     }
 
     public void readVector(int iDim, int iVec, Complex[] cdata) {
+        readVector(iDim, iVec, cdata, null, null);
+    }
+
+    public void readVector(int iDim, int iVec, Complex[] cdata, double[] rvec, double[] ivec) {
         int size = getSize(iDim);
         int nPer = 1;
         if (isComplex(iDim)) {
             nPer = 2;
         }
         int nPoints = size * nPer;
-        byte[] dataBuf = new byte[nPoints * 4 * 2];
+        byte[] dataBuf = new byte[nPoints * 4 * nPer];
         IntBuffer ibuf = ByteBuffer.wrap(dataBuf).asIntBuffer();
-        for (int j = 0; j < (nPoints * 2); j++) {
+        for (int j = 0; j < (nPoints * nPer); j++) {
             ibuf.put(j, 0);
         }
         int stride = tbytes;
@@ -1441,21 +1446,36 @@ public class BrukerData implements NMRData {
                 int index = sampleSchedule.getIndex(point);
                 if (index != -1) {
                     index = index * 2 + (i % 2);
-                    readValue(iDim, stride, index, i, iVec, dataBuf);
+                    readValue(iDim, stride, index, i, iVec, dataBuf, nPer);
                 }
             } else {
-
-                readValue(iDim, stride, i, i, iVec, dataBuf);
+                readValue(iDim, stride, i, i, iVec, dataBuf, nPer);
             }
         }
-        for (int j = 0; j < (nPoints * 2); j += 2) {
-            int px = ibuf.get(j);
-            int py = ibuf.get(j + 1);
-            if (swapBits) {
-                px = Integer.reverseBytes(px);
-                py = Integer.reverseBytes(py);
+        if ((rvec != null) && (ivec == null)) {
+            for (int j = 0; j < nPoints; j++) {
+                int px = ibuf.get(j);
+                if (swapBits) {
+                    px = Integer.reverseBytes(px);
+                }
+                rvec[j] = px / scale;
             }
-            cdata[j / 2] = new Complex((double) px / scale, (double) py / scale);
+
+        } else {
+            for (int j = 0; j < (nPoints * 2); j += 2) {
+                int px = ibuf.get(j);
+                int py = ibuf.get(j + 1);
+                if (swapBits) {
+                    px = Integer.reverseBytes(px);
+                    py = Integer.reverseBytes(py);
+                }
+                if ((rvec != null) && (ivec != null)) {
+                    rvec[j / 2] = px / scale;
+                    ivec[j / 2] = py / scale;
+                } else {
+                    cdata[j / 2] = new Complex(px / scale, py / scale);
+                }
+            }
         }
     }
 
@@ -1493,13 +1513,12 @@ public class BrukerData implements NMRData {
 
     // read value along dim
     // fixme only works for 2nd dim
-    private void readValue(int iDim, int stride, int fileIndex, int vecIndex, int xCol, byte[] dataBuf) {
+    private void readValue(int iDim, int stride, int fileIndex, int vecIndex, int xCol, byte[] dataBuf, int nPer) {
         try {
             int nread = 0;
             //int skips = fileIndex * tbytes + xCol * 4 * 2;
-            int skips = fileIndex * stride + xCol * 4 * 2;
-            //System.out.println(fileIndex + " " + xCol + " " + (skips/4));
-            ByteBuffer buf = ByteBuffer.wrap(dataBuf, vecIndex * 4 * 2, 4 * 2);
+            int skips = fileIndex * stride + xCol * 4 * nPer;
+            ByteBuffer buf = ByteBuffer.wrap(dataBuf, vecIndex * 4 * nPer, 4 * nPer);
             nread = fc.read(buf, skips);
         } catch (EOFException e) {
             LOGGER.log(Level.WARNING, e.getMessage());
@@ -1817,7 +1836,7 @@ public class BrukerData implements NMRData {
         if (!isComplex(iDim)) {
             // second test is because sometimes the vclist/vdlist can be smaller than the td for the dimension
             // so we assume we assume if there are arrayed values the smallest dim is the one that is arrayed
-            if ((arrayValues != null) && ((arrayValues.size() == getSize(iDim)) || (iDim == minDim))) {
+            if ((arrayValues != null) && (arrayValues.size() > 0) && ((arrayValues.size() == getSize(iDim)) || (iDim == minDim))) {
                 result = false;
             }
         }
