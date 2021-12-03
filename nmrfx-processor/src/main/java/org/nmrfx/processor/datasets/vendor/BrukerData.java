@@ -1458,7 +1458,7 @@ public class BrukerData implements NMRData {
                 if (swapBits) {
                     px = Integer.reverseBytes(px);
                 }
-                rvec[j] = (double) px / scale;
+                rvec[j] = px / scale;
             }
 
         } else {
@@ -1469,11 +1469,11 @@ public class BrukerData implements NMRData {
                     px = Integer.reverseBytes(px);
                     py = Integer.reverseBytes(py);
                 }
-                if (ivec != null) {
-                    rvec[j / 2] = (double) px / scale;
-                    ivec[j / 2] = (double) py / scale;
+                if ((rvec != null) && (ivec != null)) {
+                    rvec[j / 2] = px / scale;
+                    ivec[j / 2] = py / scale;
                 } else {
-                    cdata[j / 2] = new Complex((double) px / scale, (double) py / scale);
+                    cdata[j / 2] = new Complex(px / scale, py / scale);
                 }
             }
         }
