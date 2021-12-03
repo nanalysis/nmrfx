@@ -466,7 +466,9 @@ public class ChartProcessor {
                 if (vecIndex == null) {
                     fileIndices[j] = -1;
                     nmrData.readVector(0, newVec);
-                    newVec.zeros();
+                    if (nmrData.getSampleSchedule() != null) {
+                        newVec.zeros();
+                    }
                 } else {
                     fileIndices[j] = vecIndex.getInVec(j);
                     nmrData.readVector(vecIndex.getInVec(j), newVec);
