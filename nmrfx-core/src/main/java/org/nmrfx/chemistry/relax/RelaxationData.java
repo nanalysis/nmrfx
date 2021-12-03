@@ -18,15 +18,11 @@
 package org.nmrfx.chemistry.relax;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.TreeSet;
 import org.nmrfx.chemistry.Atom;
-import org.nmrfx.chemistry.MoleculeBase;
 
 /**
  *
@@ -48,24 +44,22 @@ public class RelaxationData implements RelaxationValues {
         }
     }
 
-    public String ID;
+    public String id;
     public relaxTypes expType;
-    public List<Atom> extraAtoms;
-    Atom atom;
+    ResonanceSource resSource;
     public double field;
     public double temperature;
     public Double value;
     public Double error;
     public Map<String, String> extras;
-    private String key;
+    private final String key;
 
-    public RelaxationData(String ID, relaxTypes expType, Atom atom, List<Atom> extraAtoms, double field, double temperature,
+    public RelaxationData(String id, relaxTypes expType, ResonanceSource resSource, double field, double temperature,
             Double value, Double error, Map<String, String> extras) {
 
-        this.ID = ID;
+        this.id = id;
         this.expType = expType;
-        this.atom = atom;
-        this.extraAtoms = extraAtoms;
+        this.resSource = resSource;
         this.field = field;
         this.temperature = temperature;
         this.value = value;
@@ -76,8 +70,8 @@ public class RelaxationData implements RelaxationValues {
 
     @Override
     public String toString() {
-        return "RelaxationData{" + "ID=" + ID + ", expType=" + expType
-                + ", atom=" + atom.getFullName() + ", field=" + field
+        return "RelaxationData{" + "ID=" + id + ", expType=" + expType
+                + ", atom=" + resSource.toString() + ", field=" + field
                 + ", temperature=" + temperature
                 + ", value=" + value + ", error=" + error + '}';
     }
@@ -85,7 +79,7 @@ public class RelaxationData implements RelaxationValues {
     private String toKey() {
         char sepChar = ':';
         var stringBuilder = new StringBuilder();
-        stringBuilder.append(ID).append(sepChar).
+        stringBuilder.append(id).append(sepChar).
                 append(expType.getName()).append(sepChar).
                 append(Math.round(field)).append(sepChar).
                 append(Math.round(temperature));
@@ -97,7 +91,7 @@ public class RelaxationData implements RelaxationValues {
         return key;
     }
 
-    public static void add(String id, String type, Atom atom, double field, double value, double error) {
+    public static void add(String id, String type, ResonanceSource resSource, double field, double value, double error) {
         type = type.toUpperCase();
         if (type.equals("T1")) {
             type = "R1";
@@ -105,33 +99,37 @@ public class RelaxationData implements RelaxationValues {
             type = "R2";
         }
         relaxTypes relaxType = relaxTypes.valueOf(type.toUpperCase());
-        RelaxationData rData = new RelaxationData(id, relaxType, atom,
-                Collections.EMPTY_LIST, field,
+        RelaxationData rData = new RelaxationData(id, relaxType, resSource,
+                field,
                 25.0, value, error, Collections.EMPTY_MAP);
-        atom.addRelaxationData(id, rData);
+        resSource.getAtom().addRelaxationData(id, rData);
     }
 
+    @Override
     public String getName() {
         return expType.getName();
     }
 
     public String getID() {
-        return ID;
+        return id;
     }
 
-    public Atom getAtom() {
-        return atom;
+    @Override
+    public ResonanceSource getResonanceSource() {
+        return resSource;
     }
 
     public relaxTypes getExpType() {
         return expType;
     }
 
+    @Override
     public String[] getParNames() {
         String[] parNames = {expType.getName()};
         return parNames;
     }
 
+    @Override
     public Double getValue(String name) {
         if (name.equals(expType.getName())) {
             return value;
@@ -140,16 +138,13 @@ public class RelaxationData implements RelaxationValues {
         }
     }
 
+    @Override
     public Double getError(String name) {
         if (name.equals(expType.getName())) {
             return error;
         } else {
             return null;
         }
-    }
-
-    public List<Atom> getExtraAtoms() {
-        return extraAtoms;
     }
 
     public double getField() {
@@ -160,10 +155,12 @@ public class RelaxationData implements RelaxationValues {
         return temperature;
     }
 
+    @Override
     public Double getValue() {
         return value;
     }
 
+    @Override
     public Double getError() {
         return error;
     }
@@ -179,7 +176,7 @@ public class RelaxationData implements RelaxationValues {
                 String relaxKey = relaxEntry.getValue().getKey();
                 List<RelaxationData> relaxList = relaxationData.get(relaxKey);
                 if (!relaxationData.containsKey(relaxKey)) {
-                    relaxList = new ArrayList<RelaxationData>();
+                    relaxList = new ArrayList<>();
                     relaxationData.put(relaxKey, relaxList);
                 }
                 relaxList.add(relaxEntry.getValue());

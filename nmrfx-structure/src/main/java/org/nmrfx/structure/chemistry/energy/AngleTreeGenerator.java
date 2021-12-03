@@ -104,12 +104,9 @@ public class AngleTreeGenerator {
         return startAtom;
     }
 
-    public List<List<Atom>> genTree(ITree itree, Atom startAtom, Atom endAtom) {
-        MTree mTree = new MTree();
+    public List<List<Atom>> genTree(ITree itree, Atom startAtom, Atom endAtom)
+            throws IllegalArgumentException {
 
-        Map<Atom, Integer> hash = new HashMap<>();
-        int i = 0;
-        int startIndex = -1;
         List<Atom> atoms = itree.getAtomArray();
         for (Atom atom : atoms) {
             atom.parent = null;
@@ -117,11 +114,18 @@ public class AngleTreeGenerator {
 
         if (startAtom == null) {
             startAtom = findStartAtom(itree);
+            if (startAtom == null) {
+                throw new IllegalArgumentException("Didn't find start atom");
+            }
         } else {
             if (!checkStartAtom(startAtom)) {
                 //throw new IllegalArgumentException("Start atom has more than 1 bond \"" + startAtom.getShortName() + "\"");
             }
         }
+        Map<Atom, Integer> hash = new HashMap<>();
+        MTree mTree = new MTree();
+        int i = 0;
+        int startIndex = -1;
         for (Atom atom : atoms) {
             if (atom == startAtom) {
                 startIndex = i;
@@ -132,7 +136,7 @@ public class AngleTreeGenerator {
             i++;
         }
         if (startIndex == -1) {
-            throw new IllegalArgumentException("Didnt' find start atom\"" + startAtom.getShortName() + "\"");
+            throw new IllegalArgumentException("Didn't find start atom\"" + startAtom.getShortName() + "\"");
         }
 
         for (Atom atom : atoms) {

@@ -581,7 +581,8 @@ public class Molecule extends MoleculeBase {
         setupGenCoords(false);
     }
 
-    public void setupGenCoords(boolean fillCoords) throws RuntimeException {
+    public void setupGenCoords(boolean fillCoords) throws IllegalArgumentException,
+            RuntimeException {
         updateAtomArray();
         if (atomTree == null) {
             AngleTreeGenerator aTreeGen = new AngleTreeGenerator();

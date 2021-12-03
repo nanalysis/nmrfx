@@ -847,12 +847,13 @@ public class NMRStarWriter {
 
         List<String> prevRes = new ArrayList<>();
         for (RelaxationData noeData : noeDataList) {
-            var atom = noeData.getAtom();
+            var resSource = noeData.getResonanceSource();
+            var atom = resSource.getAtom();
             Entity entity = atom.getTopEntity();
             int entityID = entity.getIDNum();
             Double value = noeData.getValue();
             Double error = noeData.getError();
-            Atom atom2 = noeData.getExtraAtoms().get(0);
+            Atom atom2 = resSource.getAtoms()[1];
             String outputLine = toStarNOEString(idx, listID, entityID, atom, atom2, value, error);
             if (outputLine != null && !prevRes.contains(entityID + "." + atom.getResidueNumber())) {
                 chan.write("      " + outputLine + "\n");
@@ -1044,7 +1045,8 @@ public class NMRStarWriter {
         List<String> prevRes = new ArrayList<>();
 
         for (RelaxationData relaxData : relaxDataList) {
-            var atom = relaxData.getAtom();
+            var resSource = relaxData.getResonanceSource();
+            var atom = resSource.getAtom();
             Entity entity = atom.getTopEntity();
             int entityID = entity.getIDNum();
             Double value = relaxData.getValue();

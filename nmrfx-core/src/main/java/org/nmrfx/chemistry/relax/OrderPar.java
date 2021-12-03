@@ -17,8 +17,6 @@
  */
 package org.nmrfx.chemistry.relax;
 
-import org.nmrfx.chemistry.Atom;
-
 /**
  *
  * @author brucejohnson
@@ -26,7 +24,7 @@ import org.nmrfx.chemistry.Atom;
 public class OrderPar implements RelaxationValues {
 
     static final String[] PAR_NAMES = {"S2", "Tau_e", "Tau_f", "Tau_s", "Rex", "Sf2", "Ss2", "model", "rms"};
-    private Atom atom;
+    private ResonanceSource resSource;
     private Double value;
     private Double error;
     private Double TauE;
@@ -47,8 +45,8 @@ public class OrderPar implements RelaxationValues {
     private String model;
     private Double modelNum;
 
-    public OrderPar(Atom atom, Double[] values, Double[] errs, Double sumSqErr, String model) {
-        this(atom,
+    public OrderPar(ResonanceSource resSource, Double[] values, Double[] errs, Double sumSqErr, String model) {
+        this(resSource,
                 values[0], errs[0],
                 values[1], errs[1],
                 values[2], errs[2],
@@ -60,8 +58,8 @@ public class OrderPar implements RelaxationValues {
         );
     }
 
-    public OrderPar(Atom atom, Double[] values, Double[] errs, Double sumSqErr, Integer nValues, Integer nPars, String model) {
-        this(atom,
+    public OrderPar(ResonanceSource resSource, Double[] values, Double[] errs, Double sumSqErr, Integer nValues, Integer nPars, String model) {
+        this(resSource,
                 values[0], errs[0],
                 values[1], errs[1],
                 values[2], errs[2],
@@ -73,24 +71,24 @@ public class OrderPar implements RelaxationValues {
         );
     }
 
-    public OrderPar(Atom atom, Double value, Double error, Double sumSqErr, Integer nValues, Integer nPars, String model) {
-        this(atom, value, error, null, null, null, null, null, null, null,
+    public OrderPar(ResonanceSource resSource, Double value, Double error, Double sumSqErr, Integer nValues, Integer nPars, String model) {
+        this(resSource, value, error, null, null, null, null, null, null, null,
                 null, null, null, null, null, sumSqErr, nValues, nPars, model);
 
     }
 
-    public OrderPar(Atom atom, Double sumSqErr, Integer nValues, Integer nPars, String model) {
-        this(atom, null, null, null, null, null, null, null, null, null,
+    public OrderPar(ResonanceSource resSource, Double sumSqErr, Integer nValues, Integer nPars, String model) {
+        this(resSource, null, null, null, null, null, null, null, null, null,
                 null, null, null, null, null, sumSqErr, nValues, nPars, model);
 
     }
 
-    public OrderPar(Atom atom, Double value, Double error, Double TauE,
+    public OrderPar(ResonanceSource resSource, Double value, Double error, Double TauE,
             Double TauEerr, Double TauF, Double TauFerr, Double TauS,
             Double TauSerr, Double Rex, Double Rexerr, Double Sf2,
             Double Sf2err, Double Ss2, Double Ss2err,
             Double sumSqErr, Integer nValues, Integer nPars, String model) {
-        this.atom = atom;
+        this.resSource = resSource;
         this.value = value;
         this.error = error;
         this.TauE = TauE;
@@ -112,7 +110,7 @@ public class OrderPar implements RelaxationValues {
     }
 
     public OrderPar rEx(Double val, Double err) {
-        return new OrderPar(atom, value, error,
+        return new OrderPar(resSource, value, error,
                 TauE, TauEerr,
                 TauF, TauFerr,
                 TauS, TauSerr,
@@ -123,7 +121,7 @@ public class OrderPar implements RelaxationValues {
     }
 
     public OrderPar setModel() {
-        OrderPar newPar = new OrderPar(atom, value, error,
+        OrderPar newPar = new OrderPar(resSource, value, error,
                 TauE, TauEerr,
                 TauF, TauFerr,
                 TauS, TauSerr,
@@ -174,7 +172,7 @@ public class OrderPar implements RelaxationValues {
     }
 
     public OrderPar set(String name, Double val, Double err) {
-        OrderPar newPar = new OrderPar(atom, value, error,
+        OrderPar newPar = new OrderPar(resSource, value, error,
                 TauE, TauEerr,
                 TauF, TauFerr,
                 TauS, TauSerr,
@@ -262,8 +260,8 @@ public class OrderPar implements RelaxationValues {
     }
 
     @Override
-    public Atom getAtom() {
-        return atom;
+    public ResonanceSource getResonanceSource() {
+        return resSource;
     }
 
     @Override
@@ -335,6 +333,7 @@ public class OrderPar implements RelaxationValues {
         }
     }
 
+    @Override
     public String toString() {
         StringBuilder sBuilder = new StringBuilder();
         sBuilder.append(value).append(" ");

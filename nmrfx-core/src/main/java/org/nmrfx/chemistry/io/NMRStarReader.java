@@ -51,6 +51,7 @@ import org.nmrfx.peaks.Peak;
 import org.nmrfx.utilities.NvUtil;
 import org.nmrfx.peaks.io.PeakPathReader;
 import org.nmrfx.chemistry.relax.RelaxationData.relaxTypes;
+import org.nmrfx.chemistry.relax.ResonanceSource;
 
 /**
  *
@@ -170,7 +171,7 @@ public class NMRStarReader {
             String resName = (String) compIDColumn.get(i);
             String seqNumber = (String) authSeqIDColumn.get(i);
             if ((seqNumber == null) || seqNumber.isBlank()) {
-                seqNumber = resName;                
+                seqNumber = resName;
             }
             String ccSaveFrameName = "save_chem_comp_" + resName;
             Saveframe ccSaveframe = saveframe.getSTAR3().getSaveframe(ccSaveFrameName);
@@ -564,7 +565,10 @@ public class NMRStarReader {
                     buildEntity(molecule, map, i);
                 }
                 molecule.updateSpatialSets();
-                molecule.genCoords(false);
+                try {
+                    molecule.genCoords(false);
+                } catch (IllegalArgumentException iAE) {
+                }
                 List<String> tags = saveframe.getTags("_Assembly");
                 for (String tag : tags) {
                     if (tag.startsWith("NvJ_prop")) {
@@ -1362,10 +1366,9 @@ public class NMRStarReader {
                 compound.addAtom(atom2);
             }
 
-            List<Atom> atoms = new ArrayList<>();
-            atoms.add(atom2);
+            ResonanceSource resSource = new ResonanceSource(atom, atom2);
 
-            RelaxationData relaxData = new RelaxationData(frameName, relaxTypes.NOE, atom, atoms, Double.parseDouble(field), temperature, value, error, extras);
+            RelaxationData relaxData = new RelaxationData(frameName, relaxTypes.NOE, resSource, Double.parseDouble(field), temperature, value, error, extras);
 //            System.out.println("reader NOE" + relaxData);
             atom.addRelaxationData(frameName, relaxData);
 //            System.out.println(atom.relaxData);
@@ -1463,14 +1466,15 @@ public class NMRStarReader {
                 atom = Atom.genAtomWithElement(atomName, atomName.substring(0, 1));
                 compound.addAtom(atom);
             }
+            ResonanceSource resSource = new ResonanceSource(atom);
 
             if (expType.equals(relaxTypes.R1)) {
-                RelaxationData relaxData = new RelaxationData(frameName, expType, atom, new ArrayList<>(), field, temperature, value, error, extras);
+                RelaxationData relaxData = new RelaxationData(frameName, expType, resSource, field, temperature, value, error, extras);
 //                System.out.println("reader " + relaxData);
                 atom.addRelaxationData(frameName, relaxData);
 //                System.out.println("reader atom.relaxData = " + atom + " " + atom.relaxData);
             } else {
-                RelaxationRex relaxData = new RelaxationRex(frameName, expType, atom, new ArrayList<>(), field, temperature, value, error, RexValue, RexError, extras);
+                RelaxationRex relaxData = new RelaxationRex(frameName, expType, resSource, field, temperature, value, error, RexValue, RexError, extras);
                 atom.addRelaxationData(frameName, relaxData);
             }
         }
@@ -1571,7 +1575,8 @@ public class NMRStarReader {
                 }
                 Double modelSSErr = modelColumn.get(i);
                 String modelName = modelNameColumn.get(i);
-                OrderPar orderPar = new OrderPar(atomOpt.get(), values, errs, modelSSErr, modelName);
+                ResonanceSource resSource = new ResonanceSource(atomOpt.get());
+                OrderPar orderPar = new OrderPar(resSource, values, errs, modelSSErr, modelName);
                 atomOpt.get().addOrderPar(frameName, orderPar);
             }
         }

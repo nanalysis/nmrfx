@@ -17,9 +17,7 @@
  */
 package org.nmrfx.chemistry.relax;
 
-import java.util.List;
 import java.util.Map;
-import org.nmrfx.chemistry.Atom;
 
 /**
  *
@@ -30,10 +28,10 @@ public class RelaxationRex extends RelaxationData {
     Double RexValue;
     Double RexError;
 
-    public RelaxationRex(String ID, relaxTypes expType, Atom atom, List<Atom> extraAtoms, double field, double temperature,
+    public RelaxationRex(String ID, relaxTypes expType, ResonanceSource resSource, double field, double temperature,
             Double value, Double error, Double RexValue, Double RexError, Map<String, String> extras) {
 
-        super(ID, expType, atom, extraAtoms, field, temperature, value, error, extras);
+        super(ID, expType, resSource, field, temperature, value, error, extras);
 
         this.RexValue = RexValue;
         this.RexError = RexError;
