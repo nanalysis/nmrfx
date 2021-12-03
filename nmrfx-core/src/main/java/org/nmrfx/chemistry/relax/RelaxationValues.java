@@ -17,26 +17,24 @@
  */
 package org.nmrfx.chemistry.relax;
 
-import org.nmrfx.chemistry.Atom;
-
 /**
  *
  * @author brucejohnson
  */
 public interface RelaxationValues {
 
-    public Double getValue();
+    Double getValue();
 
-    public Double getError();
+    Double getError();
 
-    public String[] getParNames();
+    String[] getParNames();
 
-    public String getName();
+    String getName();
 
-    public Double getValue(String name);
+    Double getValue(String name);
 
-    public Double getError(String name);
+    Double getError(String name);
 
-    public ResonanceSource getResonanceSource();
+    ResonanceSource getResonanceSource();
 
 }

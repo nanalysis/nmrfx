@@ -106,11 +106,7 @@ public class AngleTreeGenerator {
 
     public List<List<Atom>> genTree(ITree itree, Atom startAtom, Atom endAtom)
             throws IllegalArgumentException {
-        MTree mTree = new MTree();
 
-        Map<Atom, Integer> hash = new HashMap<>();
-        int i = 0;
-        int startIndex = -1;
         List<Atom> atoms = itree.getAtomArray();
         for (Atom atom : atoms) {
             atom.parent = null;
@@ -126,6 +122,10 @@ public class AngleTreeGenerator {
                 //throw new IllegalArgumentException("Start atom has more than 1 bond \"" + startAtom.getShortName() + "\"");
             }
         }
+        Map<Atom, Integer> hash = new HashMap<>();
+        MTree mTree = new MTree();
+        int i = 0;
+        int startIndex = -1;
         for (Atom atom : atoms) {
             if (atom == startAtom) {
                 startIndex = i;

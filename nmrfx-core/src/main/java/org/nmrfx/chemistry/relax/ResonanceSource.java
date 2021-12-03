@@ -14,7 +14,7 @@ import org.nmrfx.peaks.Peak;
  *
  * @author brucejohnson
  */
-public class ResonanceSource implements Comparable {
+public class ResonanceSource implements Comparable<ResonanceSource> {
 
     final Peak peak;
     final Atom[] atoms;
@@ -29,6 +29,7 @@ public class ResonanceSource implements Comparable {
         this.peak = null;
     }
 
+    @Override
     public String toString() {
         StringBuilder sBuilder = new StringBuilder();
         sBuilder.append("peak ").append(peak).append(" atoms:");
@@ -63,10 +64,7 @@ public class ResonanceSource implements Comparable {
         if (!Objects.equals(this.peak, other.peak)) {
             return false;
         }
-        if (!Arrays.deepEquals(this.atoms, other.atoms)) {
-            return false;
-        }
-        return true;
+        return Arrays.deepEquals(this.atoms, other.atoms);
     }
 
     public Atom getAtom() {
@@ -82,12 +80,11 @@ public class ResonanceSource implements Comparable {
     }
 
     @Override
-    public int compareTo(Object o) {
+    public int compareTo(ResonanceSource other) {
         int result = 0;
-        if (this.equals(o)) {
+        if (this.equals(other)) {
             return result;
         } else {
-            ResonanceSource other = (ResonanceSource) o;
             for (int i = 0; i < this.atoms.length; i++) {
                 if (i >= other.atoms.length) {
                     result = 1;

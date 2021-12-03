@@ -17,9 +17,7 @@
  */
 package org.nmrfx.chemistry.relax;
 
-import java.util.List;
 import java.util.Map;
-import org.nmrfx.chemistry.Atom;
 
 /**
  *

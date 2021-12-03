@@ -17,8 +17,6 @@
  */
 package org.nmrfx.chemistry.relax;
 
-import org.nmrfx.chemistry.Atom;
-
 /**
  *
  * @author brucejohnson
@@ -335,6 +333,7 @@ public class OrderPar implements RelaxationValues {
         }
     }
 
+    @Override
     public String toString() {
         StringBuilder sBuilder = new StringBuilder();
         sBuilder.append(value).append(" ");
