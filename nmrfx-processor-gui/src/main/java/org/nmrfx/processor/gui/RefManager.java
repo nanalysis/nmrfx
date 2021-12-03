@@ -324,7 +324,7 @@ public class RefManager {
                     while (permIter.hasNext()) {
                         ArrayList<Integer> permDims = (ArrayList<Integer>) permIter.next();
                         sBuilder.setLength(0);
-                        if (nmrData.getVendor().equals("bruker")) {
+                        if (nmrData.getVendor().equals("bruker") || nmrData.getVendor().equals("rs2d")) {
                             sBuilder.append(nmrData.getNDim());
                         }
                         for (Integer iVal : permDims) {

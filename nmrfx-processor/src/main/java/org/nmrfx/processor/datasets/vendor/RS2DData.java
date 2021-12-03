@@ -160,7 +160,7 @@ public class RS2DData implements NMRData {
                 String nucleus = getPar("NUCLEUS_" + (i + 1));
                 if (nucleus.equals(obsNucleus)) {
                     System.out.println("nuclues is obs " + nucleus);
-                    Sf[i] = obsFreq;       
+                    Sf[i] = obsFreq;
                     Sw[i] = obsSW;  // fixme  this is kluge to fis some files that have wrong SPECTRAL_WIDTH_2D
                     sfNames[i] = baseSFName;
                 } else {
@@ -200,11 +200,11 @@ public class RS2DData implements NMRData {
 
     private static List<String> getParamValue(Document xml, String paramName) throws XPathExpressionException {
         if (!paramName.contains("'")) {
-            paramName =  "'" + paramName + "'";
+            paramName = "'" + paramName + "'";
         } else if (!paramName.contains("\"")) {
-            paramName =  "\"" + paramName + "\"";
+            paramName = "\"" + paramName + "\"";
         } else {
-            paramName =   "concat('" + paramName.replace("'", "',\"'\",'") + "')";
+            paramName = "concat('" + paramName.replace("'", "',\"'\",'") + "')";
         }
         String expression = "/header/params/entry/key[text()=" + paramName + "]/../value/value";
         XPath path = XPathFactory.newInstance().newXPath();
@@ -390,12 +390,12 @@ public class RS2DData implements NMRData {
         }
         return vendorPars;
     }
-   
+
     @Override
     public String getFTType(int iDim) {
         return fttype[iDim];
     }
-    
+
     @Override
     public int getNVectors() {
         return nvectors;
@@ -543,12 +543,12 @@ public class RS2DData implements NMRData {
     public boolean isComplex(int dim) {
         return complexDim[dim];
     }
-    
+
     @Override
     public void setComplex(int dim, boolean value) {
-         complexDim[dim] = value;
+        complexDim[dim] = value;
     }
-    
+
     @Override
     public boolean getNegateImag(int iDim) {
         return negateImag[iDim];
@@ -822,6 +822,7 @@ public class RS2DData implements NMRData {
             cdata[j / 2] = new Complex(px / scale, py / scale);
         }
     }
+
     public void readVector(int iDim, int iVec, double[] data) {
         int size = getSize(iDim);
         int nPer = 1;
@@ -829,7 +830,7 @@ public class RS2DData implements NMRData {
             nPer = 2;
         }
         int nPoints = size * nPer;
-        byte[] dataBuf = new byte[nPoints * Float.BYTES ];
+        byte[] dataBuf = new byte[nPoints * Float.BYTES];
         FloatBuffer floatBuffer = ByteBuffer.wrap(dataBuf).asFloatBuffer();
         for (int j = 0; j < nPoints; j++) {
             floatBuffer.put(j, 0);
@@ -954,25 +955,84 @@ public class RS2DData implements NMRData {
         if (newOrder.length == 1) {
             String s = newOrder[0];
             final int len = s.length();
+            int nDim = getNDim();
             int nIDim = nDim - 1;
             if ((len == nDim) || (len == nIDim)) {
                 acqOrder = new String[nIDim * 2];
                 int j = 0;
-                for (int i = (len - 1); i >= 0; i--) {
-                    String dimStr = s.substring(i, i + 1);
-                    if (!dimStr.equals(nDim + "")) {
-                        acqOrder[j] = "p" + dimStr;
-                        j++;
+                if ((sampleSchedule != null) && !sampleSchedule.isDemo()) {
+                    for (int i = (len - 1); i >= 0; i--) {
+                        String dimStr = s.substring(i, i + 1);
+                        if (!dimStr.equals(nDim + "")) {
+                            acqOrder[j++] = "p" + dimStr;
+                        }
+                    }
+                    for (int i = (len - 1); i >= 0; i--) {
+                        String dimStr = s.substring(i, i + 1);
+                        if (!dimStr.equals(nDim + "")) {
+                            acqOrder[j++] = "d" + dimStr;
+                        }
+                    }
+                } else {
+                    for (int i = (len - 1); i >= 0; i--) {
+                        String dimStr = s.substring(i, i + 1);
+                        if (!dimStr.equals(nDim + "")) {
+                            acqOrder[j++] = "p" + dimStr;
+                            acqOrder[j++] = "d" + dimStr;
+                        }
                     }
                 }
-                for (int i = 0; i < nIDim; i++) {
-                    acqOrder[i + nIDim] = "d" + (i + 1);
+            } else if (len > nDim) {
+                acqOrder = new String[(len - 1) * 2];
+                int j = 0;
+                if ((sampleSchedule != null) && !sampleSchedule.isDemo()) {
+                    for (int i = (len - 1); i >= 0; i--) {
+                        String dimStr = s.substring(i, i + 1);
+                        if (!dimStr.equals((nDim + 1) + "")) {
+                            acqOrder[j++] = "p" + dimStr;
+                        }
+                    }
+                    for (int i = (len - 1); i >= 0; i--) {
+                        String dimStr = s.substring(i, i + 1);
+                        if (!dimStr.equals((nDim + 1) + "")) {
+                            acqOrder[j++] = "d" + dimStr;
+                        }
+                    }
+                } else {
+                    for (int i = (len - 1); i >= 0; i--) {
+                        String dimStr = s.substring(i, i + 1);
+                        if (!dimStr.equals((nDim + 1) + "")) {
+                            acqOrder[j++] = "p" + dimStr;
+                            acqOrder[j++] = "d" + dimStr;
+                        }
+                    }
                 }
             }
         } else {
             this.acqOrder = new String[newOrder.length];
             System.arraycopy(newOrder, 0, this.acqOrder, 0, newOrder.length);
         }
+    }
+
+    @Override
+    public String getAcqOrderShort() {
+        String[] acqOrderArray = getAcqOrder();
+        StringBuilder builder = new StringBuilder();
+        int nDim = getNDim();
+        if (acqOrderArray.length / 2 == nDim) {
+            builder.append(acqOrderArray.length / 2 + 1);
+        } else {
+            builder.append(nDim);
+        }
+        for (int i = acqOrderArray.length - 1; i >= 0; i--) {
+            String elem = acqOrderArray[i];
+            if (elem.substring(0, 1).equals("p")) {
+                builder.append(elem.substring(1, 2));
+            } else if (elem.substring(0, 1).equals("a")) {
+                return "";
+            }
+        }
+        return builder.toString();
     }
 
     @Override
