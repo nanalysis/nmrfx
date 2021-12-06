@@ -1270,7 +1270,7 @@ public class ChartProcessor {
     public void reloadData() {
         chart.setPh0(0);
         chart.setPh1(0);
-        chart.setPivot(0);
+        chart.setPivot(null);
         NMRData nmrData = getNMRData();
         int nDim = nmrData.getNDim();
         iVec = 0;
