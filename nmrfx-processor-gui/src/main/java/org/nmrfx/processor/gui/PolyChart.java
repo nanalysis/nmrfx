@@ -221,7 +221,7 @@ public class PolyChart implements PeakListener {
     int datasetPhaseDim = 0;
     int phaseAxis = 0;
     double phaseFraction = 0.0;
-    double[] pivotPosition = new double[15];
+    Double[] pivotPosition = new Double[15];
     boolean useImmediateMode = true;
     private final List<ConnectPeakAttributes> peakPaths = new ArrayList<>();
     Consumer<DatasetRegion> newRegionConsumer = null;
@@ -1380,9 +1380,10 @@ public class PolyChart implements PeakListener {
     protected void setPhasePivot() {
         DatasetBase dataset = getDataset();
         if (dataset == null) {
-            return;
+            setPivot(null);
+        } else {
+            setPivot(crossHairPositions[0][(phaseAxis + 1) % 2]);
         }
-        setPivot(crossHairPositions[0][(phaseAxis + 1) % 2]);
     }
 
     protected void autoPhaseFlat(boolean doFirst) {
@@ -3641,26 +3642,38 @@ public class PolyChart implements PeakListener {
     /**
      * @param pivot the pivot to set
      */
-    public void setPivot(double pivot) {
-        String vecDimName = "";
-        if ((controller.chartProcessor != null) && controller.processControllerVisible.get()) {
-            vecDimName = controller.chartProcessor.getVecDimName();
-        }
-        DatasetBase dataset = getDataset();
-        DatasetAttributes datasetAttributes = datasetAttributesList.get(0);
-        int datasetDim = -1;
-        if (is1D() || vecDimName.equals("D1")) {
-            datasetDim = datasetAttributes.dim[0];
-            int position = axModes[0].getIndex(datasetAttributes, 0, pivot);
-            pivotPosition[datasetDim] = pivot;
-            int size = dataset.getSize(datasetDim);
-            phaseFraction = position / (size - 1.0);
-        } else if (datasetPhaseDim >= 0) {
-            datasetDim = datasetAttributes.dim[phaseAxis];
-            int position = axModes[phaseAxis].getIndex(datasetAttributes, phaseAxis, pivot);
-            int size = dataset.getSize(datasetDim);
-            phaseFraction = position / (size - 1.0);
-            pivotPosition[datasetDim] = pivot;
+    public void setPivot(Double pivot) {
+        if (!datasetAttributesList.isEmpty()) {
+            String vecDimName = "";
+            if ((controller.chartProcessor != null) && controller.processControllerVisible.get()) {
+                vecDimName = controller.chartProcessor.getVecDimName();
+            }
+            DatasetBase dataset = getDataset();
+            DatasetAttributes datasetAttributes = datasetAttributesList.get(0);
+            int datasetDim = -1;
+            if (is1D() || vecDimName.equals("D1")) {
+                datasetDim = datasetAttributes.dim[0];
+                if (pivot == null) {
+                    pivotPosition[datasetDim] = null;
+                    phaseFraction = 0;
+                } else {
+                    int position = axModes[0].getIndex(datasetAttributes, 0, pivot);
+                    pivotPosition[datasetDim] = pivot;
+                    int size = dataset.getSize(datasetDim);
+                    phaseFraction = position / (size - 1.0);
+                }
+            } else if (datasetPhaseDim >= 0) {
+                datasetDim = datasetAttributes.dim[phaseAxis];
+                if (pivot == null) {
+                    pivotPosition[datasetDim] = null;
+                    phaseFraction = 0;
+                } else {
+                    int position = axModes[phaseAxis].getIndex(datasetAttributes, phaseAxis, pivot);
+                    int size = dataset.getSize(datasetDim);
+                    phaseFraction = position / (size - 1.0);
+                    pivotPosition[datasetDim] = pivot;
+                }
+            }
         }
         //System.out.printf("pivot %.3f map %d dDim %d size %d pos %.3f frac %.3f\n",pivot, mapDim,datasetDim,size,position,phaseFraction);
     }
@@ -3891,27 +3904,29 @@ public class PolyChart implements PeakListener {
         }
         if (drawPivotAxis == 0) {
             int dataDim = datasetAttributesList.get(0).dim[0];
-            double dispPos = axes[0].getDisplayPosition(pivotPosition[dataDim]);
-            if ((dispPos > 1) && (dispPos < leftBorder + axes[0].getWidth())) {
-                gC.setStroke(Color.GREEN);
-                gC.strokeLine(dispPos - 10, topBorder, dispPos, topBorder + 20);
-                gC.strokeLine(dispPos + 10, topBorder, dispPos, topBorder + 20);
-                gC.strokeLine(dispPos, topBorder + axes[1].getHeight() - 20, dispPos - 10, topBorder + axes[1].getHeight());
-                gC.strokeLine(dispPos, topBorder + axes[1].getHeight() - 20, dispPos + 10, topBorder + axes[1].getHeight());
+            if (pivotPosition[dataDim] != null) {
+                double dispPos = axes[0].getDisplayPosition(pivotPosition[dataDim]);
+                if ((dispPos > 1) && (dispPos < leftBorder + axes[0].getWidth())) {
+                    gC.setStroke(Color.GREEN);
+                    gC.strokeLine(dispPos - 10, topBorder, dispPos, topBorder + 20);
+                    gC.strokeLine(dispPos + 10, topBorder, dispPos, topBorder + 20);
+                    gC.strokeLine(dispPos, topBorder + axes[1].getHeight() - 20, dispPos - 10, topBorder + axes[1].getHeight());
+                    gC.strokeLine(dispPos, topBorder + axes[1].getHeight() - 20, dispPos + 10, topBorder + axes[1].getHeight());
+                }
             }
 
         } else if (drawPivotAxis == 1) {
             int dataDim = datasetAttributesList.get(0).dim[1];
-            double dispPos = axes[1].getDisplayPosition(pivotPosition[dataDim]);
-            if ((dispPos > 1) && (dispPos < topBorder + axes[1].getHeight())) {
-                gC.setStroke(Color.GREEN);
-                gC.strokeLine(leftBorder, dispPos - 10, leftBorder + 20, dispPos);
-                gC.strokeLine(leftBorder, dispPos + 10, leftBorder + 20, dispPos);
-                gC.strokeLine(leftBorder + axes[0].getWidth(), dispPos + 10, leftBorder + axes[0].getWidth() - 20, dispPos);
-                gC.strokeLine(leftBorder + axes[0].getWidth(), dispPos - 10, leftBorder + axes[0].getWidth() - 20, dispPos);
-
+            if (pivotPosition[dataDim] != null) {
+                double dispPos = axes[1].getDisplayPosition(pivotPosition[dataDim]);
+                if ((dispPos > 1) && (dispPos < topBorder + axes[1].getHeight())) {
+                    gC.setStroke(Color.GREEN);
+                    gC.strokeLine(leftBorder, dispPos - 10, leftBorder + 20, dispPos);
+                    gC.strokeLine(leftBorder, dispPos + 10, leftBorder + 20, dispPos);
+                    gC.strokeLine(leftBorder + axes[0].getWidth(), dispPos + 10, leftBorder + axes[0].getWidth() - 20, dispPos);
+                    gC.strokeLine(leftBorder + axes[0].getWidth(), dispPos - 10, leftBorder + axes[0].getWidth() - 20, dispPos);
+                }
             }
-
         }
     }
 
