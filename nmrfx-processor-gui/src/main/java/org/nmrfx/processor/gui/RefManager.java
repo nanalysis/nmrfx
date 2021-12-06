@@ -133,7 +133,6 @@ public class RefManager {
             refresh = true;
         } else if (propName.equals("dataset")) {
             String datasetName = updateItem.getValue().toString();
-            chartProcessor.setDatasetName(datasetName);
         } else if (propName.equals("extension")) {
             String extension = updateItem.getValue().toString();
             chartProcessor.setExtension(extension);
@@ -307,7 +306,6 @@ public class RefManager {
         ObservableList<PropertySheet.Item> newItems = FXCollections.observableArrayList();
         String dimName = "" + (dim + 1);
         if (dim == 0) {
-            newItems.add(new TextOperationItem(stringListener, chartProcessor.getDatasetName(), dimName, "dataset", "Enter the name of the dataset"));
             ArrayList<String> extensionChoices = new ArrayList<>();
             extensionChoices.add(".nv");
             extensionChoices.add(".ucsf");

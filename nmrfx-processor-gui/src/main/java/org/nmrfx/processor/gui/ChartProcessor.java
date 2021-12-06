@@ -46,6 +46,7 @@ import org.python.util.InteractiveInterpreter;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.stage.FileChooser;
 import org.nmrfx.processor.processing.processes.ProcessOps;
+import org.nmrfx.utils.GUIUtils;
 
 
 /*
@@ -94,11 +95,6 @@ public class ChartProcessor {
      * (for IST matrix processing, for example).
      */
     private String vecDimName = "D1";
-    /**
-     * The name of the datasetFile that will be created when whole data file is
-     * processed.
-     */
-    private String datasetName = "";
     /**
      * The name of the datasetFile that will be created when whole data file is
      * processed.
@@ -728,14 +724,6 @@ public class ChartProcessor {
         return vecDim;
     }
 
-    public void setDatasetName(String name) {
-        datasetName = name;
-    }
-
-    public String getDatasetName() {
-        return datasetName;
-    }
-
     public void setExtension(String value) {
         extension = value;
     }
@@ -744,13 +732,13 @@ public class ChartProcessor {
         return extension;
     }
 
-    public void writeScript() {
+    public void writeScript() throws IOException {
         String script = buildScript();
         writeScript(script);
     }
 
-    public String getScriptDir() {
-        String directory = null;
+    public File getScriptDir() {
+        File directory = null;
         String locMode = PreferencesController.getLocation();
         File dirFile;
         if (locMode.startsWith("FID") && (getNMRData() != null)) {
@@ -760,41 +748,43 @@ public class ChartProcessor {
         }
         if (dirFile != null) {
             if (dirFile.isDirectory()) {
-                directory = dirFile.getPath();
+                directory = dirFile;
             } else {
-                directory = dirFile.getParent();
+                directory = dirFile.getParentFile();
             }
         }
         return directory;
     }
 
-    public String getDefaultScriptName() {
+    public File getDefaultScriptFile() {
         String scriptName = "process.py";
         String locMode = PreferencesController.getLocation();
+        File scriptFile;
         if (!locMode.startsWith("FID")) {
-            scriptName = getDatasetName() + "_process.py";
+            scriptFile = datasetFile.getParentFile().toPath().resolve(datasetFile.getName() + "_process.py").toFile();
+        } else {
+            File scriptDir = getScriptDir();
+            scriptFile = scriptDir.toPath().resolve(scriptName).toFile();
+
         }
-        return scriptName;
+        return scriptFile;
     }
 
-    public void writeScript(String script) {
-        String parent = getScriptDir();
-        File scriptFile = new File(parent, getDefaultScriptName());
+    public void writeScript(String script) throws IOException {
+        File scriptFile = getDefaultScriptFile();
         writeScript(script, scriptFile);
     }
 
-    public void writeScript(String script, File scriptFile) {
+    public void writeScript(String script, File scriptFile) throws IOException {
         Path path = scriptFile.toPath();
-        try {
-            Files.write(path, script.getBytes());
-        } catch (IOException ioE) {
-            System.out.println(ioE.getMessage());
+        if (!path.getParent().toFile().canWrite()) {
+            throw new IOException("Can't write to script directory");
         }
+        Files.write(path, script.getBytes());
     }
 
     public String getDatasetNameFromScript() {
-        String scriptDirName = getScriptDir();
-        File file = new File(scriptDirName, getDefaultScriptName());
+        File file = getDefaultScriptFile();
         StringBuilder resultBuilder = new StringBuilder();
         if (file.exists()) {
             try {
@@ -805,7 +795,6 @@ public class ChartProcessor {
                         String filePath = line.substring(firstParen + 2, lastParen - 1);
                         File datasetFile = new File(filePath);
                         String datasetName = datasetFile.getName();
-                        File newFile = Paths.get(scriptDirName, datasetName).toFile();
                         resultBuilder.append(datasetName);
                         return;
                     }
@@ -819,8 +808,7 @@ public class ChartProcessor {
     }
 
     public void loadDefaultScriptIfPresent() {
-        String parent = getScriptDir();
-        File scriptFile = new File(parent, getDefaultScriptName());
+        File scriptFile = getDefaultScriptFile();
         if (scriptFile.exists() && scriptFile.canRead()) {
             processorController.openScript(scriptFile);
         }
@@ -835,8 +823,8 @@ public class ChartProcessor {
         if (nmrData == null) {
             return "";
         }
-        String parent = getScriptDir();
-        File file = new File(nmrData.getFilePath());
+        File scriptDir = getScriptDir();
+        File nmrDataFile = new File(nmrData.getFilePath());
 
         int nDim = nmrData.getNDim();
         String lineSep = System.lineSeparator();
@@ -844,11 +832,9 @@ public class ChartProcessor {
         scriptBuilder.append("import os").append(lineSep);
         scriptBuilder.append("from pyproc import *").append(lineSep);
         scriptBuilder.append("procOpts(nprocess=").append(PreferencesController.getNProcesses()).append(")").append(lineSep);
-        scriptBuilder.append("FID('").append(file.getPath().replace("\\", "/")).append("')").append(lineSep);
+        scriptBuilder.append("FID('").append(nmrDataFile.getPath().replace("\\", "/")).append("')").append(lineSep);
 
-        if (!getDatasetName().isBlank()) {
-            datasetFile = new File(parent, getDatasetName() + extension);
-            datasetFileTemp = new File(parent, getDatasetName() + extension + ".tmp");
+        if (datasetFile != null) {
             scriptBuilder.append("CREATE('").append(datasetFile.getPath().replace("\\", "/")).append("')").append(lineSep);
         } else {
             scriptBuilder.append("CREATE(").append("_DATASET_").append(")").append(lineSep);
@@ -983,12 +969,21 @@ public class ChartProcessor {
             fileChooser.setInitialFileName(datasetName);
             File file = fileChooser.showSaveDialog(null);
             if (file != null) {
+                if (file.exists() && !file.canWrite()) {
+                    GUIUtils.warn("Dataset creation", "Dataset exists and can't be overwritten");
+                    return result;
+                }
+                if (!file.exists()) {
+                    File parentFile = file.getParentFile();
+                    if (!parentFile.canWrite()) {
+                        GUIUtils.warn("Dataset creation", "Can't create dataset in this directory");
+                        return result;
+                    }
+                }
+
                 String fileString = file.getAbsoluteFile().toString();
                 if (!fileString.endsWith(".nv") && !fileString.endsWith(".ucsf")) {
-                    setDatasetName(file.getName());
                     fileString += getExtension();
-                } else {
-                    setDatasetName(file.getName().substring(0, file.getName().lastIndexOf(".")));
                 }
                 datasetFile = new File(fileString);
                 datasetFileTemp = new File(fileString + ".tmp");
@@ -1003,9 +998,9 @@ public class ChartProcessor {
     }
 
     private void setDatasetFile(String datasetName) {
-        String parent = getScriptDir();
-        datasetFile = new File(parent, datasetName + extension);
-        datasetFileTemp = new File(parent, datasetName + extension + ".tmp");
+        File scriptDir = getScriptDir();
+        datasetFile = scriptDir.toPath().resolve(datasetName + extension).toFile();
+        datasetFileTemp = scriptDir.toPath().resolve(datasetName + extension + ".tmp").toFile();
     }
 
     private String suggestDatasetName() {
@@ -1016,7 +1011,7 @@ public class ChartProcessor {
         if (fileName.toLowerCase().endsWith(".dx") || fileName.toLowerCase().endsWith(".jdx")) {
             datasetName = fileName;
         } else {
-            File lastFile = NMRDataUtil.findNewestFile((new File(getScriptDir())).toPath());
+            File lastFile = NMRDataUtil.findNewestFile(getScriptDir().toPath());
             if (lastFile != null) {
                 datasetName = lastFile.getName();
             } else {
@@ -1233,7 +1228,8 @@ public class ChartProcessor {
 
     public void setData(NMRData data, boolean clearOps) {
         setNMRData(data);
-        setDatasetName("");
+        datasetFile = null;
+        datasetFileTemp = null;
         Map<String, Boolean> flags = new HashMap<>();
         flags.put("fixdsp", fixDSP);
         setFlags(flags);
