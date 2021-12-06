@@ -823,7 +823,6 @@ public class ChartProcessor {
         if (nmrData == null) {
             return "";
         }
-        File scriptDir = getScriptDir();
         File nmrDataFile = new File(nmrData.getFilePath());
 
         int nDim = nmrData.getNDim();

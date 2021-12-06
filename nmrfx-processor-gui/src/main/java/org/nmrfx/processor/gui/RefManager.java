@@ -63,42 +63,18 @@ public class RefManager {
     RefManager(ProcessorController processorController, PropertySheet refSheet) {
         this.processorController = processorController;
         this.refSheet = refSheet;
-        doubleListener = new ChangeListener<Number>() {
-            @Override
-            public void changed(ObservableValue<? extends Number> observableValue, Number number, Number number2) {
-                updateOp((PropertySheet.Item) observableValue);
-            }
-        };
-        intListener = new ChangeListener<Number>() {
-            @Override
-            public void changed(ObservableValue<? extends Number> observableValue, Number number, Number number2) {
-                updateOp((PropertySheet.Item) observableValue);
-            }
-        };
-        boolListener = new ChangeListener<Boolean>() {
-            @Override
-            public void changed(ObservableValue<? extends Boolean> observableValue, Boolean bool, Boolean bool2) {
-                updateOp((PropertySheet.Item) observableValue);
-            }
-        };
-        stringListener = new ChangeListener<String>() {
-            @Override
-            public void changed(ObservableValue<? extends String> observableValue, String string, String string2) {
-                updateOp((PropertySheet.Item) observableValue);
-            }
-        };
-        complexListener = new ChangeListener<String>() {
-            @Override
-            public void changed(ObservableValue<? extends String> observableValue, String c1, String c2) {
-                updateOp((PropertySheet.Item) observableValue);
-            }
-        };
-        listListener = new ChangeListener<String>() {
-            @Override
-            public void changed(ObservableValue<? extends String> observableValue, String c1, String c2) {
-                updateOp((PropertySheet.Item) observableValue);
-            }
-        };
+        doubleListener = (ObservableValue<? extends Number> observableValue, Number number, Number number2)
+                -> updateOp((PropertySheet.Item) observableValue);
+        intListener = (ObservableValue<? extends Number> observableValue, Number number, Number number2)
+                -> updateOp((PropertySheet.Item) observableValue);
+        boolListener = (ObservableValue<? extends Boolean> observableValue, Boolean bool, Boolean bool2)
+                -> updateOp((PropertySheet.Item) observableValue);
+        stringListener = (ObservableValue<? extends String> observableValue, String string, String string2)
+                -> updateOp((PropertySheet.Item) observableValue);
+        complexListener = (ObservableValue<? extends String> observableValue, String c1, String c2)
+                -> updateOp((PropertySheet.Item) observableValue);
+        listListener = (ObservableValue<? extends String> observableValue, String c1, String c2)
+                -> updateOp((PropertySheet.Item) observableValue);
 
         refSheet.setPropertyEditorFactory(new NvFxPropertyEditorFactory(processorController));
         refSheet.setMode(PropertySheet.Mode.NAME);
@@ -124,33 +100,39 @@ public class RefManager {
         }
         //System.out.println(nameWithDim + " value is " + value + " was " + updateItem.getValue().toString());
         boolean refresh = true;
-        if (propName.equals("fixdsp")) {
-            chartProcessor.setFixDSP((Boolean) updateItem.getValue());
-            refresh = true;
-        } else if (propName.equals("EchoAntiecho")) {
-            boolean boolValue = (Boolean) updateItem.getValue();
-            chartProcessor.setEchoAntiEcho(boolValue);
-            refresh = true;
-        } else if (propName.equals("dataset")) {
-            String datasetName = updateItem.getValue().toString();
-        } else if (propName.equals("extension")) {
-            String extension = updateItem.getValue().toString();
-            chartProcessor.setExtension(extension);
-        } else if (propName.equals("acqOrder")) {
-            String acqOrder = updateItem.getValue().toString();
-            chartProcessor.setAcqOrder(acqOrder);
-        } else if (propName.equals("acqarray")) {
-            String acqArray = updateItem.getValue().toString();
-            int dim = 0;
-            int arraySize = 0;
-            try {
-                dim = Integer.parseInt(dimName);
-                dim--;
-                arraySize = Integer.parseInt(acqArray);
-                chartProcessor.setArraySize(dim, arraySize);
-            } catch (NumberFormatException nFE) {
-                System.out.println("set array size error " + nFE.getMessage());
-            }
+        switch (propName) {
+            case "fixdsp":
+                chartProcessor.setFixDSP((Boolean) updateItem.getValue());
+                refresh = true;
+                break;
+            case "EchoAntiecho":
+                boolean boolValue = (Boolean) updateItem.getValue();
+                chartProcessor.setEchoAntiEcho(boolValue);
+                refresh = true;
+                break;
+            case "dataset":
+                break;
+            case "extension":
+                String extension = updateItem.getValue().toString();
+                chartProcessor.setExtension(extension);
+                break;
+            case "acqOrder":
+                String acqOrder = updateItem.getValue().toString();
+                chartProcessor.setAcqOrder(acqOrder);
+                break;
+            case "acqarray":
+                String acqArray = updateItem.getValue().toString();
+                try {
+                    int dim = Integer.parseInt(dimName);
+                    dim--;
+                    int arraySize = Integer.parseInt(acqArray);
+                    chartProcessor.setArraySize(dim, arraySize);
+                } catch (NumberFormatException nFE) {
+                    System.out.println("set array size error " + nFE.getMessage());
+                }
+                break;
+            default:
+                break;
         }
         chartProcessor.setScriptValid(false);
         if (refresh) {
@@ -397,20 +379,25 @@ public class RefManager {
                 String propName = s.substring(0, index);
                 String args = s.substring(index + 1, s.length() - 1);
                 List<String> parValues = CSVLineParse.parseLine(args);
-                if (propName.equals("acqOrder")) {
-                    chartProcessor.setAcqOrder(args);
-                } else if (propName.equals("acqarray")) {
-                    chartProcessor.setArraySize(args);
-                } else if (propName.equals("fixdsp")) {
-                    chartProcessor.setFixDSP(args.equals("True"));
-                } else {
-                    int dim = 0;
-                    for (String parValue : parValues) {
-                        String dimName = "" + (dim + 1);
-                        String nameWithDim = propName + dimName;
-                        refMap.put(nameWithDim, parValue);
-                        dim++;
-                    }
+                switch (propName) {
+                    case "acqOrder":
+                        chartProcessor.setAcqOrder(args);
+                        break;
+                    case "acqarray":
+                        chartProcessor.setArraySize(args);
+                        break;
+                    case "fixdsp":
+                        chartProcessor.setFixDSP(args.equals("True"));
+                        break;
+                    default:
+                        int dim = 0;
+                        for (String parValue : parValues) {
+                            String dimName = "" + (dim + 1);
+                            String nameWithDim = propName + dimName;
+                            refMap.put(nameWithDim, parValue);
+                            dim++;
+                        }
+                        break;
                 }
             }
 
@@ -422,10 +409,9 @@ public class RefManager {
     }
 
     public boolean getSkip(String dimName) {
-        int dim = 0;
         String propValue = "0";
         try {
-            dim = Integer.parseInt(dimName);
+            int dim = Integer.parseInt(dimName);
             dim--;
             propValue = getPropValue(dim, "skip", false);
         } catch (NumberFormatException nFE) {
