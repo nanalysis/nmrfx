@@ -17,86 +17,65 @@
  */
 package org.nmrfx.analyst.gui;
 
-import org.nmrfx.processor.datasets.Dataset;
 import de.jangassen.MenuToolkit;
 import de.jangassen.dialogs.about.AboutStageBuilder;
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Path;
-import java.util.Calendar;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javafx.application.Platform;
-import javafx.scene.control.Menu;
-import javafx.scene.control.MenuBar;
-import javafx.scene.control.MenuItem;
-import javafx.stage.Stage;
-import org.python.util.InteractiveInterpreter;
+import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.scene.control.SeparatorMenuItem;
-import javafx.scene.image.Image;
-import org.apache.commons.lang3.SystemUtils;
-import org.controlsfx.dialog.ExceptionDialog;
 import javafx.geometry.Point2D;
 import javafx.scene.canvas.Canvas;
-import javafx.scene.control.Alert;
+import javafx.scene.control.*;
 import javafx.scene.control.Alert.AlertType;
-import javafx.scene.control.CheckMenuItem;
-import javafx.scene.control.ToolBar;
-import javafx.stage.DirectoryChooser;
-import javafx.stage.FileChooser;
-import org.nmrfx.processor.gui.controls.FractionCanvas;
-import org.nmrfx.processor.utilities.WebConnect;
-import org.nmrfx.structure.chemistry.Molecule;
-import org.nmrfx.analyst.gui.molecule3D.MolSceneController;
-import static javafx.application.Application.launch;
-import javafx.collections.ObservableList;
+import javafx.scene.image.Image;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
-import javafx.stage.StageStyle;
-import org.comdnmr.gui.PyController;
+import javafx.stage.DirectoryChooser;
+import javafx.stage.FileChooser;
+import javafx.stage.Stage;
+import org.apache.commons.lang3.SystemUtils;
+import org.controlsfx.dialog.ExceptionDialog;
+import org.nmrfx.analyst.gui.molecule.CanvasMolecule;
+import org.nmrfx.analyst.gui.molecule3D.MolSceneController;
+import org.nmrfx.analyst.gui.plugin.PluginLoader;
+import org.nmrfx.analyst.gui.tools.RunAboutGUI;
 import org.nmrfx.chemistry.InvalidMoleculeException;
 import org.nmrfx.chemistry.MoleculeFactory;
 import org.nmrfx.chemistry.constraints.MolecularConstraints;
 import org.nmrfx.chemistry.constraints.NoeSet;
-import org.nmrfx.chemistry.io.MMcifReader;
-import org.nmrfx.chemistry.io.MoleculeIOException;
-import org.nmrfx.chemistry.io.NMRStarReader;
-import org.nmrfx.chemistry.io.NMRStarWriter;
-import org.nmrfx.chemistry.io.PDBFile;
-import org.nmrfx.chemistry.io.SDFile;
-import org.nmrfx.chemistry.io.Sequence;
+import org.nmrfx.chemistry.io.*;
+import org.nmrfx.chemistry.utilities.NvUtil;
+import org.nmrfx.console.ConsoleController;
 import org.nmrfx.peaks.InvalidPeakException;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakLabeller;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.io.PeakReader;
+import org.nmrfx.plugin.api.EntryPoint;
+import org.nmrfx.plugin.api.NMRFxPlugin;
+import org.nmrfx.processor.datasets.Dataset;
+import org.nmrfx.processor.gui.*;
+import org.nmrfx.processor.gui.controls.FractionCanvas;
+import org.nmrfx.processor.gui.project.GUIProject;
 import org.nmrfx.processor.gui.spectra.KeyBindings;
 import org.nmrfx.processor.gui.spectra.WindowIO;
-import org.nmrfx.utils.GUIUtils;
-import org.python.util.PythonInterpreter;
-import org.nmrfx.analyst.gui.molecule.CanvasMolecule;
-import org.nmrfx.processor.gui.project.GUIProject;
-import org.nmrfx.analyst.gui.tools.RunAboutGUI;
-import org.nmrfx.chemistry.io.Mol2File;
-import org.nmrfx.chemistry.utilities.NvUtil;
-import org.nmrfx.console.ConsoleController;
-import org.nmrfx.processor.gui.DatasetsController;
-import org.nmrfx.processor.gui.FXMLController;
-import org.nmrfx.processor.gui.MainApp;
-import org.nmrfx.processor.gui.PeakMenuBar;
-import org.nmrfx.processor.gui.PeakPicking;
-import org.nmrfx.processor.gui.PolyChart;
-import org.nmrfx.processor.gui.PreferencesController;
-import org.nmrfx.processor.gui.SpectrumStatusBar;
 import org.nmrfx.processor.gui.utils.FxPropertyChangeSupport;
 import org.nmrfx.processor.project.Project;
+import org.nmrfx.processor.utilities.WebConnect;
 import org.nmrfx.project.ProjectBase;
 import org.nmrfx.star.ParseException;
+import org.nmrfx.structure.chemistry.Molecule;
+import org.nmrfx.utils.GUIUtils;
+import org.python.util.InteractiveInterpreter;
+import org.python.util.PythonInterpreter;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Path;
+import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 public class AnalystApp extends MainApp {
 
@@ -112,7 +91,6 @@ public class AnalystApp extends MainApp {
     private static RNAPeakGeneratorSceneController rnaPeakGenController;
     private static PeakTableController peakTableController;
     private static NOETableController noeTableController;
-    private static PyController ringNMRController;
     private static WindowIO windowIO = null;
     private static SeqDisplayController seqDisplayController = null;
     private static DatasetBrowserController browserController = null;
@@ -474,11 +452,6 @@ public class AnalystApp extends MainApp {
                 noeTableMenuItem,
                 assignCascade);
 
-        Menu dynamicsMenu = new Menu("Dynamics");
-        MenuItem ringNMRMenuItem = new MenuItem("Show RINGNMRGui");
-        ringNMRMenuItem.setOnAction(e -> showRING());
-        dynamicsMenu.getItems().addAll(ringNMRMenuItem);
-
         // Window Menu
         // TBD standard window menu items
         // Help Menu (items TBD)
@@ -509,17 +482,21 @@ public class AnalystApp extends MainApp {
         //
         helpMenu.getItems().addAll(docsMenuItem, webSiteMenuItem, mailingListItem, versionMenuItem, refMenuItem, openSourceItem);
 
+        Menu pluginsMenu = new Menu("Plugins");
+        PluginLoader.getInstance().registerPluginsOnEntryPoint(EntryPoint.MENU_PLUGINS, pluginsMenu);
+        pluginsMenu.setVisible(!pluginsMenu.getItems().isEmpty());
+
         if (tk != null) {
             Menu windowMenu = new Menu("Window");
             windowMenu.getItems().addAll(tk.createMinimizeMenuItem(), tk.createZoomMenuItem(), tk.createCycleWindowsItem(),
                     new SeparatorMenuItem(), tk.createBringAllToFrontItem());
-            menuBar.getMenus().addAll(appMenu, fileMenu, projectMenu, spectraMenu, molMenu, viewMenu, peakMenu, dynamicsMenu, windowMenu, helpMenu);
+            menuBar.getMenus().addAll(appMenu, fileMenu, projectMenu, spectraMenu, molMenu, viewMenu, peakMenu, pluginsMenu, windowMenu, helpMenu);
             tk.autoAddWindowMenuItems(windowMenu);
             tk.setGlobalMenuBar(menuBar);
         } else {
             fileMenu.getItems().add(prefsItem);
             fileMenu.getItems().add(quitItem);
-            menuBar.getMenus().addAll(fileMenu, projectMenu, spectraMenu, molMenu, viewMenu, peakMenu, dynamicsMenu, helpMenu);
+            menuBar.getMenus().addAll(fileMenu, projectMenu, spectraMenu, molMenu, viewMenu, peakMenu, pluginsMenu, helpMenu);
             helpMenu.getItems().add(0, aboutItem);
         }
         return menuBar;
@@ -1232,15 +1209,6 @@ public class AnalystApp extends MainApp {
         RunAboutGUI.create();
     }
 
-    void showRING() {
-        if (ringNMRController == null) {
-            Stage stage = new Stage(StageStyle.DECORATED);
-            ringNMRController = PyController.create(stage);
-        }
-        Stage stage = ringNMRController.getStage();
-        stage.toFront();
-        stage.show();
-    }
 
     static void showDataBrowser() {
         if (browserController == null) {

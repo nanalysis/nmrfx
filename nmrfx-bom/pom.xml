@@ -329,12 +329,6 @@
                 <version>3.0.2</version>
                 <!-- license: BSD (3 clause) -->
             </dependency>
-            <dependency>
-                <groupId>org.comdnmr</groupId>
-                <artifactId>ringnmr-gui</artifactId>
-                <version>1.06</version>
-                <!-- license: GPLv3 -->
-            </dependency>
         </dependencies>
     </dependencyManagement>
 </project>

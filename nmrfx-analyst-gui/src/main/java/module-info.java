@@ -18,14 +18,14 @@
 
 module org.nmrfx.analyst.gui {
     exports org.nmrfx.analyst.gui;
+    uses org.nmrfx.plugin.api.NMRFxPlugin;
     requires org.nmrfx.core;
     requires org.nmrfx.processor.gui;
     requires org.nmrfx.processor;
     requires org.nmrfx.structure;
     requires org.nmrfx.analyst;
     requires org.nmrfx.utils;
-    requires org.comdnmr;
-    requires org.comdnmr.gui;
+    requires org.nmrfx.plugin.api;
     requires javafx.graphics;
     requires javafx.controls;
     requires javafx.base;
