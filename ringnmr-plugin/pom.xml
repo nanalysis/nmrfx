@@ -54,7 +54,7 @@
         <dependency>
             <groupId>org.comdnmr</groupId>
             <artifactId>ringnmr-gui</artifactId>
-            <version>1.06</version>
+            <version>1.07</version>
             <!-- license: GPLv3 -->
         </dependency>
     </dependencies>
