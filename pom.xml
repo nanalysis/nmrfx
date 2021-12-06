@@ -27,7 +27,6 @@
         <module>nmrfx-analyst</module>
         <module>nmrfx-analyst-gui</module>
         <module>nmrfx-launchers</module>
-        <module>ringnmr-plugin</module>
     </modules>
 
     <repositories>
