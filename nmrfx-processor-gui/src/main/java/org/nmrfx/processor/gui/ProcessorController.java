@@ -81,7 +81,6 @@ import javafx.scene.shape.Circle;
 import javafx.scene.text.Text;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
-import javafx.stage.StageStyle;
 import javafx.util.Callback;
 import org.apache.commons.lang3.SystemUtils;
 import org.controlsfx.control.PopOver;
@@ -94,6 +93,7 @@ import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.vendor.NMRData;
 import org.nmrfx.processor.datasets.vendor.VendorPar;
 import org.nmrfx.utilities.ProgressUpdater;
+import org.nmrfx.utils.GUIUtils;
 
 public class ProcessorController implements Initializable, ProgressUpdater {
 
@@ -619,9 +619,9 @@ public class ProcessorController implements Initializable, ProgressUpdater {
 
     @FXML
     private void openDefaultScriptAction(ActionEvent event) {
-        String parent = chartProcessor.getScriptDir();
+        File parent = chartProcessor.getScriptDir();
         if (parent != null) {
-            File scriptFile = new File(parent, chartProcessor.getDefaultScriptName());
+            File scriptFile = chartProcessor.getDefaultScriptFile();
             openScript(scriptFile);
         } else {
             openScriptAction(event);
@@ -630,7 +630,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
 
     @FXML
     private void openScriptAction(ActionEvent event) {
-        String initialDir = chartProcessor.getScriptDir();
+        File initialDir = chartProcessor.getScriptDir();
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Open Script");
         fileChooser.getExtensionFilters().addAll(
@@ -638,7 +638,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
                 new FileChooser.ExtensionFilter("Any File", "*")
         );
         if (initialDir != null) {
-            fileChooser.setInitialDirectory(new File(initialDir));
+            fileChooser.setInitialDirectory(initialDir);
         }
         File selectedFile = fileChooser.showOpenDialog(null);
         if (selectedFile != null) {
@@ -648,7 +648,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
 
     @FXML
     private void openVecScriptAction(ActionEvent event) {
-        String initialDir = chartProcessor.getScriptDir();
+        File initialDir = chartProcessor.getScriptDir();
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Open Vector Script");
         fileChooser.getExtensionFilters().addAll(
@@ -656,7 +656,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
                 new FileChooser.ExtensionFilter("Any File", "*")
         );
         if (initialDir != null) {
-            fileChooser.setInitialDirectory(new File(initialDir));
+            fileChooser.setInitialDirectory(initialDir);
         }
         File selectedFile = fileChooser.showOpenDialog(null);
         if (selectedFile != null) {
@@ -667,14 +667,18 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     @FXML
     private void writeVecScriptAction(ActionEvent event) {
         FileChooser fileChooser = new FileChooser();
-        String initialDir = chartProcessor.getScriptDir();
+        File initialDir = chartProcessor.getScriptDir();
         if (initialDir != null) {
-            fileChooser.setInitialDirectory(new File(initialDir));
+            fileChooser.setInitialDirectory(initialDir);
         }
         File saveFile = fileChooser.showSaveDialog(null);
         if (saveFile != null) {
             String script = getScript();
-            chartProcessor.writeScript(script, saveFile);
+            try {
+                chartProcessor.writeScript(script, saveFile);
+            } catch (IOException ex) {
+                GUIUtils.warn("Write Script Error", ex.getMessage());
+            }
         }
     }
 
@@ -804,11 +808,15 @@ public class ProcessorController implements Initializable, ProgressUpdater {
 
     @FXML
     private void writeDefaultScriptAction(ActionEvent event) {
-        String parent = chartProcessor.getScriptDir();
+        File parent = chartProcessor.getScriptDir();
         if (parent != null) {
-            File scriptFile = new File(parent, chartProcessor.getDefaultScriptName());
+            File scriptFile = chartProcessor.getDefaultScriptFile();
             String script = textArea.getText();
-            chartProcessor.writeScript(script, scriptFile);
+            try {
+                chartProcessor.writeScript(script, scriptFile);
+            } catch (IOException ex) {
+                GUIUtils.warn("Write Script Error", ex.getMessage());
+            }
         } else {
             writeScriptAction(event);
         }
@@ -817,14 +825,18 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     @FXML
     private void writeScriptAction(ActionEvent event) {
         FileChooser fileChooser = new FileChooser();
-        String initialDir = chartProcessor.getScriptDir();
+        File initialDir = chartProcessor.getScriptDir();
         if (initialDir != null) {
-            fileChooser.setInitialDirectory(new File(initialDir));
+            fileChooser.setInitialDirectory(initialDir);
         }
         File saveFile = fileChooser.showSaveDialog(null);
         if (saveFile != null) {
             String script = textArea.getText();
-            chartProcessor.writeScript(script, saveFile);
+            try {
+                chartProcessor.writeScript(script, saveFile);
+            } catch (IOException ex) {
+                GUIUtils.warn("Write Script Error", ex.getMessage());
+            }
         }
     }
 
@@ -925,7 +937,11 @@ public class ProcessorController implements Initializable, ProgressUpdater {
             ((Service<Integer>) worker).setOnSucceeded(event -> {
                 processable = true;
                 finishProcessing();
-                writeScript(script);
+                try {
+                    writeScript(script);
+                } catch (IOException ex) {
+                    GUIUtils.warn("Write Script Error", ex.getMessage());
+                }
                 setProcessingOff();
                 if (doProcessWhenDone) {
                     processIfIdle();
@@ -945,7 +961,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         }
     }
 
-    public void writeScript(String script) {
+    public void writeScript(String script) throws IOException {
         chartProcessor.writeScript(script);
     }
 
