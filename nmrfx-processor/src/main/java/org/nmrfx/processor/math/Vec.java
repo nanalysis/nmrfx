@@ -1762,6 +1762,17 @@ public class Vec extends VecBase {
         return phaseResult;
     }
 
+    public double testAutoPhase(int winSize, double ratio, int mode,
+            double negativePenalty) {
+        return testAutoPhase(winSize, ratio, mode, negativePenalty, 0.0, 0.0);
+    }
+
+    public double testAutoPhase(int winSize, double ratio, int mode,
+            double negativePenalty, double phase0, double phase1) {
+        TestBasePoints tbPoints = new TestBasePoints(this, winSize, ratio, mode, negativePenalty);
+        return tbPoints.testFit(phase0, phase1);
+    }
+
     /**
      * Automatically phase spectrum by maximizing the sum of intensities
      *
