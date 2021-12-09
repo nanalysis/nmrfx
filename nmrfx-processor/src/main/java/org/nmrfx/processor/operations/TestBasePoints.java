@@ -142,7 +142,15 @@ public class TestBasePoints implements MultivariateFunction {
 
     public double[] autoPhase(double ph1Limit) {
         if (bList.size() == 1) {
-            return autoPhaseZero();
+            if (mode == 0) {
+                return autoPhaseZero();
+            } else {
+                var reg = bList.get(0);
+                double width = reg.sig2 - reg.sig1;
+                if ((width / vector.getSize()) < 0.1) {
+                    return autoPhaseZero();
+                }
+            }
         }
         double minPhase0 = 0.0;
         double minPhase1 = 0.0;
@@ -171,9 +179,7 @@ public class TestBasePoints implements MultivariateFunction {
         }
         // add penalty of 5% per degree to value of p1
         p1Penalty = Math.abs(minRMSD) * p1PenaltyWeight / 360.0;
-//         System.out.println("gridMin "+minRMSD + " " + minPhase0+" "+minPhase1);
-        double phases[] = doNMMin(minPhase0 - stepSize0 / 4, minPhase0 + stepSize0 / 4, minPhase1 - stepSize1 / 4, minPhase1 + stepSize1 / 4, ph1Limit);
-//          System.out.println(phases[0]+" "+phases[1]);
+        double phases[] = doNMMin(minPhase0 - stepSize0 / 2, minPhase0 + stepSize0 / 2, minPhase1 - stepSize1 / 2, minPhase1 + stepSize1 / 2, ph1Limit);
         int checkSign = getSign(phases[0], phases[1]);
         //System.out.println(netSign);
         if (checkSign < 0) {
@@ -189,6 +195,10 @@ public class TestBasePoints implements MultivariateFunction {
 
         return phases;
 
+    }
+
+    public double testFit(double phase0, double phase1) {
+        return testEnds(phase0, phase1);
     }
 
     void useRegions(Vec vector, boolean maxMode) {
@@ -478,10 +488,11 @@ public class TestBasePoints implements MultivariateFunction {
         startPoint[0] = (p0a + p0b) / 2.0;
         startPoint[1] = (p1a + p1b) / 2.0;
         int nSteps = 500;
-        double[] lowerBounds = {-360.0, -ph1Limit};
-        double[] upperBounds = {360.0, ph1Limit};
+        double extra = (p0b - p0a) / 2.0;
+        double[] lowerBounds = {p0a - extra, p1a - extra};
+        double[] upperBounds = {p0b + extra, p1b + extra};
 
-        BOBYQAOptimizer optim = new BOBYQAOptimizer(5, 10.0, 1.0e-2);
+        BOBYQAOptimizer optim = new BOBYQAOptimizer(5, 5.0, 1.0e-2);
         PointValuePair rpVP = null;
         try {
             rpVP = optim.optimize(
@@ -514,11 +525,7 @@ public class TestBasePoints implements MultivariateFunction {
     }
 
     double testEnds(double p0) {
-        if (mode == 0) {
-            return testEnds(p0, 0.0);
-        } else {
-            return getEntropyMeasure(p0, 0.0);
-        }
+        return testEnds(p0, 0.0);
     }
 
     class RegionPositions {
@@ -755,8 +762,10 @@ public class TestBasePoints implements MultivariateFunction {
     public double testEnds(double p0, double p1) {
         if (mode == 0) {
             return testEndsDeltaMean(p0, p1);
+        } else if (mode == 1) {
+            return getDerivEntropyMeasure(p0, p1);
         } else {
-            return getEntropyMeasure(p0, p1);
+            return getDeltaMax(p0, p1);
         }
     }
 
@@ -921,6 +930,103 @@ public class TestBasePoints implements MultivariateFunction {
             }
         }
         return sum;
+    }
+
+    public double getDeltaMax(double p0, double p1) {
+        double dDelta = p1 / (vector.getSize() - 1);
+        double sum = 0.0;
+        for (var reg : bList) {
+            int regStart = reg.base1 + (reg.base2 - reg.base1) / 2;
+            int regEnd = reg.base3 + (reg.base4 - reg.base3) / 2;
+            double sumBase = 0.0;
+            int n = 0;
+            for (int i = regStart; i < reg.sig1; i++) {
+                double p = p0 + i * dDelta;
+                double re = Math.cos(p * DEGTORAD);
+                double im = -Math.sin(p * DEGTORAD);
+                sumBase += rvec[i] * re - ivec[i] * im;
+                n++;
+            }
+            for (int i = reg.sig2; i < regEnd; i++) {
+                double p = p0 + i * dDelta;
+                double re = Math.cos(p * DEGTORAD);
+                double im = -Math.sin(p * DEGTORAD);
+                sumBase += rvec[i] * re - ivec[i] * im;
+                n++;
+            }
+            double avg = sumBase / n;
+            double regionSum = 0.0;
+            for (int i = reg.sig1; i <= reg.sig2; i++) {
+                double p = p0 + i * dDelta;
+                double re = Math.cos(p * DEGTORAD);
+                double im = -Math.sin(p * DEGTORAD);
+                double delta = (rvec[i] * re - ivec[i] * im) - avg;
+                if (delta < 0.0) {
+                    regionSum += delta;
+                }
+                //regionSum += (rvec[i] * re - ivec[i] * im);
+            }
+            sum += regionSum;
+        }
+        sum *= -1.0;
+        return sum;
+    }
+
+    public double getDerivEntropyMeasure(double p0, double p1) {
+        double dDelta = p1 / (vector.getSize() - 1);
+        int k = 0;
+        double maxSqr = Double.NEGATIVE_INFINITY;
+        int incr = 9;
+        for (var reg : bList) {
+            int regStart = reg.base1 + (reg.base2 - reg.base1) / 8;
+            int regEnd = reg.base3 + (reg.base4 - reg.base3) / 8;
+            for (int i = regStart; i <= regEnd; i += incr) {
+                double sum = 0.0;
+                double sqr = 0.0;
+                for (int j = 0; j < incr; j++) {
+                    int ij = i + j;
+                    if ((ij >= 0) && (ij < vector.getSize())) {
+                        double p = p0 + ij * dDelta;
+                        double re = FastMath.cos(p * DEGTORAD);
+                        double im = -FastMath.sin(p * DEGTORAD);
+                        sum += rvec[ij] * re - ivec[ij] * im;
+                        sqr += rvec[ij] * rvec[ij] + ivec[ij] * ivec[ij];
+                    }
+                }
+                maxSqr = Math.max(sqr, maxSqr);
+                values[k++] = sum;
+            }
+        }
+
+        double penalty = 0.0;
+        double sumDeriv = 0.0;
+        double prev = values[0];
+        for (int i = 1; i < k - 1; i++) {
+            double next = values[i + 1];
+            double deriv = (next - prev) / 2.0;
+            double value = values[i];
+            if (value < 0.0) {
+                penalty += (value * value) / maxSqr;
+            }
+            prev = values[i];
+            values[i] = deriv;
+            sumDeriv += Math.abs(deriv);
+        }
+        double entropy = 0.0;
+        for (int i = 1; i < k - 1; i++) {
+            double value = values[i];
+            double h = Math.abs(value) / sumDeriv;
+            if (h > 1.0e-12) {
+                entropy += -h * Math.log(h);
+            }
+        }
+
+        penalty *= negativePenalty;
+        double result = entropy + penalty;
+//        System.out.println(n + " k " + k + " " + p0 + " " + p1 + " " + penalty + " " + entropy + " " + result);
+
+        return result;
+
     }
 
     public double getEntropyMeasure(double p0, double p1) {
