@@ -2742,7 +2742,7 @@ def AUTOPHASE(firstOrder=False, maxMode=False, winSize=2, ratio=25.0, mode='flat
         min : 1.0
         max : 100.0
         Ratio relative to noise used in determining if region is signal or baseline.
-    mode : {'flat','entropy'}
+    mode : {'flat','entropy','leastneg'}
         Name of algorithm to use.
     ph1Limit : real
         amin : 0.0
@@ -2764,6 +2764,8 @@ def AUTOPHASE(firstOrder=False, maxMode=False, winSize=2, ratio=25.0, mode='flat
     imode = 0
     if mode == 'entropy':
         imode = 1
+    elif mode == 'leastneg':
+        imode = 2
 
     op = AutoPhase(firstOrder, maxMode, winSize, ratio, imode, ph1Limit, negativePenalty)
 
@@ -3697,7 +3699,8 @@ def genScript(arrayed=False):
         trim = fidInfo.fidObj.getTrim()
         if trim > 1.0e-3:
             script += 'TRIM(ftrim=' + str(trim) +')\n'
-        script += 'AUTOPHASE(firstOrder=True)\n'
+        phases = NMRDataUtil.autoPhase(fidInfo.fidObj);
+        script += 'PHASE(ph0='+str(round(phases[0],1))+',ph1='+str(round(phases[1]))+')\n'
     else:
         script += psspecial.scriptMods(fidInfo, 0)
         script += 'DIM(1)\n'
