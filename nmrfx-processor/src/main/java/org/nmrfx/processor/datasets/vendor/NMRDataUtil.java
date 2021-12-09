@@ -36,6 +36,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.nmrfx.processor.math.Vec;
+import org.nmrfx.processor.operations.Expd;
 import org.nmrfx.utilities.RemoteDataset;
 
 /**
@@ -382,5 +384,20 @@ public final class NMRDataUtil {
         digest.update(input.getBytes());
         Encoder base64 = Base64.getEncoder();
         return base64.encodeToString(digest.digest());
+    }
+
+    public static double[] autoPhase(NMRData nmrData) {
+        int n = nmrData.getNPoints();
+        Vec vec = new Vec(n, true);
+        nmrData.readVector(0, vec);
+        double lb = nmrData.getTN(0).contains("H") ? 2.0 : 10.0;
+        Expd expD = new Expd(lb, 1.0, false);
+        expD.eval(vec);
+        vec.fft();
+        int winSize = vec.getSize() / 256;
+        winSize = Math.max(4, winSize);
+        winSize = Math.min(64, winSize);
+        double[] phases = vec.autoPhase(true, winSize, 25.0, 2, 360.0, 50.0);
+        return phases;
     }
 }
