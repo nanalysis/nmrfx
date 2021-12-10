@@ -745,10 +745,12 @@ class JCAMPData implements NMRData {
             dvec.resize(n, false);
             for (int i = 0; i < n; i++) {
                 dvec.set(i, rValues.get(i));
+                dvec.setTDSize(n);
             }
         } else {
             ArrayList<Double> iValues = iparser.getYValues();
             dvec.resize(n, true);
+            dvec.setTDSize(n);
             for (int i = 0; i < n; i++) {
                 dvec.set(i, iValues.get(i), rValues.get(i));
             }
@@ -772,7 +774,6 @@ class JCAMPData implements NMRData {
             // fixme which is correct (use ceil or not)
             //shiftAmount = (int)Math.round(Math.ceil(groupDelay));
             shiftAmount = (int) Math.round(groupDelay);
-            System.out.println(iVec + " " + groupDelay + " " + shiftAmount);
         }
         if (dvec.isComplex()) {
             if (dvec.useApache()) {
