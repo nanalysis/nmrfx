@@ -31,14 +31,16 @@ import org.apache.commons.math3.linear.SingularValueDecomposition;
 import org.apache.commons.math3.util.MathArrays;
 
 /**
- * Utility functions involving Vectors, mostly pulled from VecMat and the Math package.
+ * Utility functions involving Vectors, mostly pulled from VecMat and the Math
+ * package.
  *
  * @author johnsonb
  */
 public class Util {
 
     /**
-     * If the caller provides a list of points they must also set the proper flag.
+     * If the caller provides a list of points they must also set the proper
+     * flag.
      */
     static ArrayList<Integer> getBasePoints(final Vec vec, ArrayList<Double> realPoints, String type, boolean invert) throws OperationException {
 
