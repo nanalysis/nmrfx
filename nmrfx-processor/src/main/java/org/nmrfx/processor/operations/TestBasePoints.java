@@ -78,17 +78,16 @@ public class TestBasePoints implements MultivariateFunction {
         this.winSize = winSize;
     }
 
-    public TestBasePoints(int winSize, String name) {
-        this.winSize = winSize;
-        tbMap.put(name, this);
-    }
-
     public static TestBasePoints get(String name) {
         return tbMap.get(name);
     }
 
     public static void remove(String name) {
         tbMap.remove(name);
+    }
+
+    public static void add(String name, TestBasePoints tbPoints) {
+        tbMap.put(name, tbPoints);
     }
 
     public int getRegionCount() {
@@ -146,7 +145,7 @@ public class TestBasePoints implements MultivariateFunction {
                 return autoPhaseZero();
             } else {
                 var reg = bList.get(0);
-                double width = reg.sig2 - reg.sig1;
+                double width = (double) reg.sig2 - reg.sig1;
                 if ((width / vector.getSize()) < 0.1) {
                     return autoPhaseZero();
                 }
@@ -179,7 +178,9 @@ public class TestBasePoints implements MultivariateFunction {
         }
         // add penalty of 5% per degree to value of p1
         p1Penalty = Math.abs(minRMSD) * p1PenaltyWeight / 360.0;
-        double phases[] = doNMMin(minPhase0 - stepSize0 / 2, minPhase0 + stepSize0 / 2, minPhase1 - stepSize1 / 2, minPhase1 + stepSize1 / 2, ph1Limit);
+        double[] phases = doNMMin(minPhase0 - stepSize0 / 2,
+                minPhase0 + stepSize0 / 2, minPhase1 - stepSize1 / 2,
+                minPhase1 + stepSize1 / 2);
         int checkSign = getSign(phases[0], phases[1]);
         //System.out.println(netSign);
         if (checkSign < 0) {
@@ -476,14 +477,7 @@ public class TestBasePoints implements MultivariateFunction {
 
     }
 
-    public double[] doNMMin(double p0a, double p0b, double p1a, double p1b, double ph1Limit) {
-        double[][] vertices = new double[3][2];
-        vertices[0][0] = p0a;
-        vertices[0][1] = p1a;
-        vertices[1][0] = p0b;
-        vertices[1][1] = p1b;
-        vertices[2][0] = p0a;
-        vertices[2][1] = p1b;
+    public double[] doNMMin(double p0a, double p0b, double p1a, double p1b) {
         double[] startPoint = new double[2];
         startPoint[0] = (p0a + p0b) / 2.0;
         startPoint[1] = (p1a + p1b) / 2.0;
@@ -641,7 +635,6 @@ public class TestBasePoints implements MultivariateFunction {
     }
 
     void genEndsList(final boolean maxMode) {
-        int n = bList.size();
         double max = 0.0;
         BRegionData bRDMax = null;
         // PAR
@@ -672,13 +665,9 @@ public class TestBasePoints implements MultivariateFunction {
 //            System.out.println(start1 + " " + r1Start + " " + end1 + " " + start2 + " " + r2End + " " + end2);
 
             int regionSize = 0;
-            double regionSumR = 0.0;
-            double regionSumI = 0.0;
             DescriptiveStatistics rStat = new DescriptiveStatistics();
             DescriptiveStatistics iStat = new DescriptiveStatistics();
             for (int j = r1Start; j < end1; j++) {
-                regionSumR += rvec[j];
-                regionSumI += ivec[j];
                 regionSize++;
                 rStat.addValue(rvec[j]);
                 iStat.addValue(ivec[j]);
@@ -694,8 +683,6 @@ public class TestBasePoints implements MultivariateFunction {
             RegionData region1 = new RegionData(meanR, meanI, regionCenter, regionSize);
 
             double absMaxSq = 0.0;
-            regionSumR = 0.0;
-            regionSumI = 0.0;
             double centerR = 0.0;
             double centerI = 0.0;
             for (int j = (end1 + 1); j < start2; j++) {
@@ -712,13 +699,9 @@ public class TestBasePoints implements MultivariateFunction {
             double absMax = Math.sqrt(absMaxSq);
 
             regionSize = 0;
-            regionSumR = 0.0;
-            regionSumI = 0.0;
             rStat.clear();
             iStat.clear();
             for (int j = start2; j < r2End; j++) {
-                regionSumR += rvec[j];
-                regionSumI += ivec[j];
                 regionSize++;
                 rStat.addValue(rvec[j]);
                 iStat.addValue(ivec[j]);
@@ -760,28 +743,21 @@ public class TestBasePoints implements MultivariateFunction {
     }
 
     public double testEnds(double p0, double p1) {
-        if (mode == 0) {
-            return testEndsDeltaMean(p0, p1);
-        } else if (mode == 1) {
-            return getDerivEntropyMeasure(p0, p1);
-        } else {
-            return getDeltaMax(p0, p1);
+        switch (mode) {
+            case 0:
+                return testEndsDeltaMean(p0, p1);
+            case 1:
+                return getDerivEntropyMeasure(p0, p1);
+            default:
+                return getDeltaMax(p0, p1);
         }
     }
 
     public double testEndsDeltaMean(double p0, double p1) {
-        int nValues = 0;
-        double a = 0.0;
-        double b = 0.0;
-        double c = 0.0;
         double sum = 0.0;
-        int nRegions = b2List.size();
         int iRegion = -1;
         for (BRegionData regData : b2List) {
             iRegion++;
-//            if ((iRegion > 6) && (iRegion < (nRegions-6))) {
-//                continue;
-//            }
             double meanR1 = regData.region1.meanR;
             double meanI1 = regData.region1.meanI;
             double meanR2 = regData.region2.meanR;
@@ -898,7 +874,6 @@ public class TestBasePoints implements MultivariateFunction {
     public double testMax(double p0, double p1) {
         double tol = 0.0001;
         double sum = 0.0;
-        int n = dVec.getSize();
         double dDelta = p1 / (vector.getSize() - 1);
         for (BRegionData regData : b2List) {
             for (int j = 0; j < 2; j++) {
@@ -954,7 +929,7 @@ public class TestBasePoints implements MultivariateFunction {
                 sumBase += rvec[i] * re - ivec[i] * im;
                 n++;
             }
-            double avg = sumBase / n;
+            double avg = n == 0 ? 0.0 : sumBase / n;
             double regionSum = 0.0;
             for (int i = reg.sig1; i <= reg.sig2; i++) {
                 double p = p0 + i * dDelta;
@@ -964,7 +939,6 @@ public class TestBasePoints implements MultivariateFunction {
                 if (delta < 0.0) {
                     regionSum += delta;
                 }
-                //regionSum += (rvec[i] * re - ivec[i] * im);
             }
             sum += regionSum;
         }
@@ -1001,23 +975,25 @@ public class TestBasePoints implements MultivariateFunction {
         double penalty = 0.0;
         double sumDeriv = 0.0;
         double prev = values[0];
-        for (int i = 1; i < k - 1; i++) {
-            double next = values[i + 1];
-            double deriv = (next - prev) / 2.0;
-            double value = values[i];
-            if (value < 0.0) {
-                penalty += (value * value) / maxSqr;
-            }
-            prev = values[i];
-            values[i] = deriv;
-            sumDeriv += Math.abs(deriv);
-        }
         double entropy = 0.0;
-        for (int i = 1; i < k - 1; i++) {
-            double value = values[i];
-            double h = Math.abs(value) / sumDeriv;
-            if (h > 1.0e-12) {
-                entropy += -h * Math.log(h);
+        if (k > 2) {
+            for (int i = 1; i < k - 1; i++) {
+                double next = values[i + 1];
+                double deriv = (next - prev) / 2.0;
+                double value = values[i];
+                if (value < 0.0) {
+                    penalty += (value * value) / maxSqr;
+                }
+                prev = values[i];
+                values[i] = deriv;
+                sumDeriv += Math.abs(deriv);
+            }
+            for (int i = 1; i < k - 1; i++) {
+                double value = values[i];
+                double h = Math.abs(value) / sumDeriv;
+                if (h > 1.0e-12) {
+                    entropy += -h * Math.log(h);
+                }
             }
         }
 
@@ -1098,7 +1074,6 @@ public class TestBasePoints implements MultivariateFunction {
     }
 
     public int getNetSign() {
-        int n = bList.size();
         ArrayList<Double> valuesP = new ArrayList<>();
         ArrayList<Double> valuesM = new ArrayList<>();
         //double sdev = VecMat.sdev(testVec.getRvec(), testVec.getSize(), 16, 4);
@@ -1131,13 +1106,13 @@ public class TestBasePoints implements MultivariateFunction {
                 continue;
             }
 
-            double mean = sum / totalPoints;
+            double edgeMeans = sum / totalPoints;
             //System.out.println(mean);
             //System.out.println(sum);
 
             double max = 0.0;
             for (int j = end1; j < start2; j++) {
-                double delta = (testVec.getReal(j) - mean);
+                double delta = (testVec.getReal(j) - edgeMeans);
                 if (Math.abs(delta) > Math.abs(max)) {
                     max = delta;
                 }
@@ -1162,11 +1137,6 @@ public class TestBasePoints implements MultivariateFunction {
     }
 
     public int getSign(double p0, double p1) {
-        int nValues = 0;
-        double a = 0.0;
-        double b = 0.0;
-        double c = 0.0;
-        double sum = 0.0;
         double tol = 0.0001;
         double dDelta = p1 / (vector.getSize() - 1);
         double sumPlus = 0;
