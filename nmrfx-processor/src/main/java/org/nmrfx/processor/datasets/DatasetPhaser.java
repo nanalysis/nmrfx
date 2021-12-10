@@ -115,7 +115,8 @@ public class DatasetPhaser {
 
         Vec testVec = new Vec(newSize, false);
         Vec phaseVec = new Vec(newSize, false);
-        testBase = new TestBasePoints(phaseWinSize, "test");
+        testBase = new TestBasePoints(phaseWinSize);
+        TestBasePoints.add("test", testBase);
 
         ScanRegion scanRegion = new ScanRegion(pt, dim, dataset);
         int nEntries = scanRegion.buildIndex();
