@@ -21,7 +21,6 @@ import javafx.event.ActionEvent;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.MenuItem;
 import org.nmrfx.datasets.DatasetBase;
-import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.datasets.DatasetRegion;
 import org.nmrfx.processor.gui.PolyChart;
 
@@ -40,8 +39,9 @@ public class IntegralMenu extends ChartMenu {
     @Override
     public void makeChartMenu() {
         chartMenu = new ContextMenu();
-        for (int i = 1; i <= 6; i++) {
-            final int iNorm = i;
+        int[] norms = {1, 2, 3, 4, 5, 6, 9, 100};
+        for (var norm : norms) {
+            final int iNorm = norm;
             MenuItem normItem = new MenuItem(String.valueOf(iNorm));
             normItem.setOnAction((ActionEvent e) -> {
                 setIntegralNorm(iNorm);
@@ -60,7 +60,7 @@ public class IntegralMenu extends ChartMenu {
         DatasetRegion region = hit.getDatasetRegion();
         double integral = region.getIntegral();
         DatasetBase dataset = hit.getDatasetAttr().getDataset();
-        dataset.setNorm(integral * dataset.getScale() /  iNorm);
+        dataset.setNorm(integral * dataset.getScale() / iNorm);
         chart.refresh();
 
     }

@@ -186,6 +186,7 @@ public class MouseBindings {
         moved = false;
         mouseAction = MOUSE_ACTION.NOTHING;
         activeAnno = Optional.empty();
+        int clickCount = mouseEvent.getClickCount();
 
 //        System.out.println("sh " + mouseEvent.isShiftDown() + " alt " + mouseEvent.isAltDown()
 //                + " meta " + mouseEvent.isMetaDown() + " cntrl " + mouseEvent.isControlDown());
@@ -244,7 +245,9 @@ public class MouseBindings {
 
                                     boolean hitRegion = false;
                                     if (!hitIntegrals) {
-                                        hitRegion = chart.selectRegion(false, x, y);
+                                        if (clickCount == 2) {
+                                            hitRegion = chart.selectRegion(false, x, y);
+                                        }
                                     }
                                     if ((hadRegion && !hitRegion) || hitRegion || hitIntegrals) {
                                         chart.refresh();

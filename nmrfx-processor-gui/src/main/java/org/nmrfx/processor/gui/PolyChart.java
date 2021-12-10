@@ -2598,6 +2598,14 @@ public class PolyChart implements PeakListener {
         activeRegion.set(null);
     }
 
+    public Optional<DatasetRegion> getActiveRegion() {
+        Optional<DatasetRegion> region = Optional.empty();
+        if (activeRegion.get() != null) {
+            region = Optional.of(activeRegion.get());
+        }
+        return region;
+    }
+
     public boolean selectRegion(boolean controls, double pickX, double pickY) {
         for (DatasetAttributes datasetAttr : datasetAttributesList) {
             datasetAttr.setActiveRegion(Optional.empty());

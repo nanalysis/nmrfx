@@ -66,7 +66,10 @@ public class CanvasBindings {
                 } else {
                     Optional<IntegralHit> hitRegion = chart.hitRegion(false, x, y);
                     if (hitRegion.isPresent()) {
-                        menu = chart.getRegionMenu();
+                        if (chart.getActiveRegion().isPresent() && (chart.getActiveRegion().get() == hitRegion.get().getDatasetRegion())) {
+                            menu = chart.getRegionMenu();
+                            ((RegionMenu) menu).setHit(hitRegion.get());
+                        }
                     } else {
                         Optional<CanvasAnnotation> hitAnno = chart.hitAnnotation(x, y);
                         if (hitAnno.isPresent()) {
