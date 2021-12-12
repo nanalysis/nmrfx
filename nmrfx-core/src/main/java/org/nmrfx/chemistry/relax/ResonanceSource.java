@@ -18,15 +18,18 @@ public class ResonanceSource implements Comparable<ResonanceSource> {
 
     final Peak peak;
     final Atom[] atoms;
+    final String atomKey;
 
     public ResonanceSource(Peak peak, Atom[] atoms) {
         this.atoms = atoms;
         this.peak = peak;
+        this.atomKey = makeAtomKey(atoms);
     }
 
     public ResonanceSource(Atom... atoms) {
         this.atoms = atoms;
         this.peak = null;
+        this.atomKey = makeAtomKey(atoms);
     }
 
     @Override
@@ -67,6 +70,17 @@ public class ResonanceSource implements Comparable<ResonanceSource> {
         return Arrays.deepEquals(this.atoms, other.atoms);
     }
 
+    private String makeAtomKey(Atom[] keyAtoms) {
+        StringBuilder sBuilder = new StringBuilder();
+        for (Atom atom : keyAtoms) {
+            if (sBuilder.length() > 0) {
+                sBuilder.append("_");
+            }
+            sBuilder.append(atom.getFullName());
+        }
+        return sBuilder.toString();
+    }
+
     public Atom getAtom() {
         return atoms[0];
     }
@@ -77,6 +91,10 @@ public class ResonanceSource implements Comparable<ResonanceSource> {
 
     public Peak getPeak() {
         return peak;
+    }
+
+    public String getAtomKey() {
+        return atomKey;
     }
 
     @Override
