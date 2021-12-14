@@ -27,7 +27,6 @@ module org.nmrfx.structure {
     requires vecmath;
     requires biojava.alignment;
     requires biojava.core;
-    requires biojava.phylo;
     requires libsvm;
     requires deeplearning4j.nn;
     requires nd4j.api;

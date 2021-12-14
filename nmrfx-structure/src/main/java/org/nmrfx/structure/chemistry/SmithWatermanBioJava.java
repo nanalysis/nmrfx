@@ -15,37 +15,28 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package org.nmrfx.structure.chemistry;
 
+import java.util.*;
+import org.biojava.nbio.alignment.Alignments;
+import org.biojava.nbio.alignment.Alignments.PairwiseSequenceAlignerType;
 import org.biojava.nbio.alignment.SimpleGapPenalty;
-import org.biojava.nbio.alignment.SimpleSubstitutionMatrix;
-import org.biojava.nbio.alignment.SmithWaterman;
-
 import org.biojava.nbio.alignment.template.GapPenalty;
-import org.biojava.nbio.alignment.template.SequencePair;
-import org.biojava.nbio.alignment.template.SubstitutionMatrix;
+import org.biojava.nbio.core.alignment.matrices.SimpleSubstitutionMatrix;
+import org.biojava.nbio.core.alignment.template.SequencePair;
+import org.biojava.nbio.core.alignment.template.SubstitutionMatrix;
+import org.biojava.nbio.core.exceptions.CompoundNotFoundException;
 import org.biojava.nbio.core.sequence.ProteinSequence;
 import org.biojava.nbio.core.sequence.compound.AminoAcidCompound;
-import org.biojava.nbio.core.sequence.template.Sequence;
-import org.biojava.nbio.core.exceptions.CompoundNotFoundException;
-import java.util.*;
 
 public class SmithWatermanBioJava {
 
-    private static final double MISMATCH_PENALTY = -0.5333;
     private final String aString;
     private final String bString;
-    private final int nRows;
-    private final int nCols;
-    private final ArrayList<Integer> indexA = new ArrayList<Integer>();
-    private final ArrayList<Integer> indexB = new ArrayList<Integer>();
+    private final ArrayList<Integer> indexA = new ArrayList<>();
+    private final ArrayList<Integer> indexB = new ArrayList<>();
 
     public SmithWatermanBioJava(String aString, String bString) {
-        int n = aString.length();
-        int m = bString.length();
-        nRows = n + 1;
-        nCols = m + 1;
         this.aString = aString;
         this.bString = bString;
     }
@@ -69,12 +60,10 @@ public class SmithWatermanBioJava {
         }
         GapPenalty gapPenalty = new SimpleGapPenalty();
         SubstitutionMatrix<AminoAcidCompound> matrix = SimpleSubstitutionMatrix.getBlosum62();
-        SmithWaterman sm = new SmithWaterman(sequence1, sequence2, gapPenalty, matrix);
-        Sequence q = sm.getQuery();
-        Sequence t = sm.getTarget();
-        SequencePair pair = sm.getPair();
+        SequencePair<ProteinSequence, AminoAcidCompound> pair
+                = Alignments.getPairwiseAlignment(sequence1, sequence2,
+                        PairwiseSequenceAlignerType.GLOBAL, gapPenalty, matrix);
 
-        //System.out.printf("%s\n%d identical %d\n", pair, pair.getNumIdenticals(), pair.getLength());
         indexA.clear();
         indexB.clear();
         for (int i = 1; i <= sequence1.getLength(); i++) {
@@ -96,9 +85,5 @@ public class SmithWatermanBioJava {
             }
         }
         return pair;
-    }
-
-    public static void main(String args[]) {
-        SmithWatermanBioJava smithWaterman = new SmithWatermanBioJava(args[0], args[1]);
     }
 }
