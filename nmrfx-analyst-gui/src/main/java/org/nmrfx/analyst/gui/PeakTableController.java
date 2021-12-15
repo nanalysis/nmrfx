@@ -74,10 +74,14 @@ import org.nmrfx.processor.project.Project;
 public class PeakTableController implements PeakMenuTarget, PeakListener, Initializable {
 
     private Stage stage;
-    @FXML
-    private ToolBar toolBar;
+
+
     @FXML
     private TableView<Peak> tableView;
+
+    @FXML
+    private ToolBar toolBar;
+
     private PeakList peakList;
 
     private int currentDims = 0;
