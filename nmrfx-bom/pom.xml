@@ -278,13 +278,13 @@
             <dependency>
                 <groupId>org.biojava</groupId>
                 <artifactId>biojava-core</artifactId>
-                <version>4.0.0</version>
+                <version>6.0.2</version>
                 <!-- license: LGPL 2.1 -->
             </dependency>
             <dependency>
                 <groupId>org.biojava</groupId>
                 <artifactId>biojava-alignment</artifactId>
-                <version>4.0.0</version>
+                <version>6.0.2</version>
                 <!-- license: LGPL 2.1 -->
             </dependency>
             <dependency>

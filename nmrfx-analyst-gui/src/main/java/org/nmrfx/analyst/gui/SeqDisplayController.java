@@ -711,6 +711,9 @@ public class SeqDisplayController implements Initializable {
         verticalResNums = showResNumberItem.get().equals("Vertical");
         for (Polymer polymer : mol.getPolymers()) {
             Residue firstRes = polymer.getFirstResidue();
+            if (firstRes.getResNum() == null) {
+                continue;
+            }
             int firstResNum = firstRes.getResNum();
             int iRes = 0;
             var aNames = getValidAtoms(polymer);
