@@ -53,12 +53,15 @@ import javafx.scene.control.MenuItem;
 import javafx.scene.control.SelectionMode;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn.CellDataFeatures;
+import javafx.scene.layout.Background;
+import javafx.scene.layout.BackgroundFill;
 import javafx.scene.paint.Color;
 import javafx.util.Callback;
 import javafx.util.StringConverter;
 import javafx.util.converter.DefaultStringConverter;
 import org.nmrfx.peaks.Multiplet;
 import org.nmrfx.peaks.Peak;
+import org.nmrfx.peaks.PeakDim;
 import org.nmrfx.peaks.PeakEvent;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.PeakListener;
@@ -73,6 +76,7 @@ import org.nmrfx.processor.project.Project;
  */
 public class PeakTableController implements PeakMenuTarget, PeakListener, Initializable {
 
+    static Background ERROR_BACKGROUND = new Background(new BackgroundFill(Color.RED, null, null))
     private Stage stage;
     @FXML
     private ToolBar toolBar;
@@ -200,6 +204,17 @@ public class PeakTableController implements PeakMenuTarget, PeakListener, Initia
 
         PeakStringFieldTableCell(StringConverter converter) {
             super(converter);
+            setBackground(new Background(new BackgroundFill(Color.YELLOW, null, null)));
+        }
+
+        @Override
+        public void updateItem(String item, boolean empty) {
+            super.updateItem(item, empty);
+            Peak peak = (Peak) getTableRow().getItem();
+            if (item != null) {
+                setText(String.valueOf(item));
+            } else {
+            }
         }
 
     }
@@ -277,7 +292,6 @@ public class PeakTableController implements PeakMenuTarget, PeakListener, Initia
 
         for (int i = 0; i < nDim; i++) {
             DimTableColumn<Peak, String> labelCol = new DimTableColumn<>("label", i);
-            labelCol.setCellFactory(tc -> new PeakStringFieldTableCell(sConverter));
             labelCol.setCellValueFactory((CellDataFeatures<Peak, String> p) -> {
                 Peak peak = p.getValue();
                 int iDim = labelCol.peakDim;
@@ -285,10 +299,33 @@ public class PeakTableController implements PeakMenuTarget, PeakListener, Initia
                 return new ReadOnlyObjectWrapper(label);
             });
 
+            labelCol.setCellFactory((TableColumn<Peak, String> column) -> new TableCell<Peak, String>() {
+                @Override
+                protected void updateItem(String item, boolean empty) {
+                    super.updateItem(item, empty);
+                    setText(null);
+                    Peak peak = (Peak) getTableRow().getItem();
+                    if (peak != null) {
+                        int iDim = labelCol.peakDim;
+                        PeakDim peakDim = peak.getPeakDim(iDim);
+                        if (!peakDim.isLabelValid()) {
+                            setBackground(ERROR_BACKGROUND);
+                        } else {
+                            setBackground(Background.EMPTY);
+                        }
+                        if (item != null) {
+                            setText(String.valueOf(item));
+                        }
+                    }
+                }
+            });
+
             labelCol.setPrefWidth(75);
             tableView.getColumns().add(labelCol);
         }
-        for (int i = 0; i < nDim; i++) {
+        for (int i = 0;
+                i < nDim;
+                i++) {
             DimTableColumn<Peak, Float> shiftCol = new DimTableColumn<>("shift", i);
             shiftCol.setCellValueFactory((CellDataFeatures<Peak, Float> p) -> {
                 Peak peak = p.getValue();

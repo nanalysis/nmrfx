@@ -51,4 +51,8 @@ public interface Resonance {
 
     public void add(PeakDim peakDim);
 
+    public default boolean isLabelValid() {
+        return true;
+    }
+
 }

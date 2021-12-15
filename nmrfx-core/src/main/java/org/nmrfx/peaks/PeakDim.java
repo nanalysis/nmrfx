@@ -22,6 +22,9 @@ import org.nmrfx.utilities.ConvUtil;
 import org.nmrfx.utilities.Format;
 import java.util.ArrayList;
 import java.util.List;
+import org.nmrfx.chemistry.Atom;
+import org.nmrfx.chemistry.MoleculeBase;
+import org.nmrfx.chemistry.MoleculeFactory;
 
 public class PeakDim {
 
@@ -734,6 +737,10 @@ public class PeakDim {
         peakDimUpdated();
     }
 
+    public boolean isLabelValid() {
+        return resonance.isLabelValid();
+    }
+
     public char[] getError() {
         return error.clone();
     }
@@ -770,12 +777,17 @@ public class PeakDim {
         return myPeak;
     }
 
-    public PeakList getPeakList() { return myPeak.peakList; }
+    public PeakList getPeakList() {
+        return myPeak.peakList;
+    }
 
-    public String getSampleConditionLabel() { return myPeak.peakList.getSampleConditionLabel(); }
+    public String getSampleConditionLabel() {
+        return myPeak.peakList.getSampleConditionLabel();
+    }
 
-    public String getSampleLabel() { return myPeak.peakList.getSampleLabel(); }
-
+    public String getSampleLabel() {
+        return myPeak.peakList.getSampleLabel();
+    }
 
     public boolean isLinked() {
         return (getLinkedPeakDims().size() > 2);
@@ -884,8 +896,8 @@ public class PeakDim {
         String condition = myPeak.peakList.getSampleConditionLabel();
         String sample = myPeak.peakList.getSampleLabel();
         for (PeakDim peakDim : links) {
-            if ((peakDim != this) && (useAllConditions || (peakDim.myPeak.peakList.getSampleConditionLabel().equals(condition) &&
-                    peakDim.myPeak.peakList.getSampleLabel().equals(sample)))) {
+            if ((peakDim != this) && (useAllConditions || (peakDim.myPeak.peakList.getSampleConditionLabel().equals(condition)
+                    && peakDim.myPeak.peakList.getSampleLabel().equals(sample)))) {
                 // use field so we don't fire recursive freezeDims
                 peakDim.frozen = frozen;
                 peakDim.myPeak.updateFrozenColor();

@@ -21,6 +21,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.nmrfx.chemistry.Atom;
+import org.nmrfx.chemistry.AtomResonance;
+import org.nmrfx.chemistry.AtomSpecifier;
 
 /**
  *
@@ -100,11 +103,11 @@ public class AtomResPattern {
             AtomResPatterns atomResPatterns = peakDim.getSpectralDimObj().getAtomResPatterns();
             String label = peakDim.getLabel();
             if (!label.isBlank()) {
-                ResAtom resAtom = getResAtom(label);
+                AtomSpecifier atomSpecifier = getResAtom(label);
                 if (!atomResPatterns.atomResPatterns.isEmpty() && !atomResPatterns.ambiguousResidue) {
                     AtomResPattern arPat = atomResPatterns.atomResPatterns.get(0);
-                    if (resAtom.resNum != null) {
-                        resMap.put(arPat.resLetter, resAtom.resNum);
+                    if (atomSpecifier.getResNum() != null) {
+                        resMap.put(arPat.resLetter, atomSpecifier.getResNum());
                     }
 
                 }
@@ -114,45 +117,21 @@ public class AtomResPattern {
 
     }
 
-    static class ResAtom {
-
-        String aName;
-        Integer resNum;
-
-        public ResAtom(String aName, Integer resNum) {
-            this.aName = aName;
-            this.resNum = resNum;
-        }
-
-        @Override
-        public String toString() {
-            return resNum + "." + aName;
-        }
-
-    }
-
-    static ResAtom getResAtom(String label) {
+    static AtomSpecifier getResAtom(String label) {
+        AtomSpecifier atomSpecifier;
         int dot = label.indexOf(".");
         Integer resNum = null;
-        String atomStr = null;
         if (dot != -1) {
-            String resStr = label.substring(0, dot);
-            try {
-                resNum = Integer.parseInt(resStr);
-            } catch (NumberFormatException nfE) {
-                throw new IllegalArgumentException("Can't parse label");
-            }
-            atomStr = label.substring(dot + 1);
+            atomSpecifier = AtomSpecifier.parseString(label);
         } else {
             try {
                 resNum = Integer.parseInt(label);
+                atomSpecifier = new AtomSpecifier(label, null, null);
             } catch (NumberFormatException nfE) {
-                resNum = null;
-                atomStr = label;
+                atomSpecifier = new AtomSpecifier(null, null, label);
             }
         }
-        ResAtom resAtom = new ResAtom(atomStr, resNum);
-        return resAtom;
+        return atomSpecifier;
 
     }
 
@@ -170,9 +149,29 @@ public class AtomResPattern {
         }
     }
 
-    public static boolean assign(String label, PeakDim setPeakDim, PeakDim[] peakDims) throws IllegalArgumentException {
-        ResAtom resAtom = getResAtom(label);
+    static void setFromRelation(PeakDim activeDim, PeakDim[] peakDims) {
+        AtomResPatterns atomResPatterns = activeDim.getSpectralDimObj().getAtomResPatterns();
+        if (!atomResPatterns.atomResPatterns.isEmpty()) {
+            AtomResPattern arPat = atomResPatterns.atomResPatterns.get(0);
+            if (!arPat.bondedDim.isBlank()) {
 
+                AtomResonance atomRes = (AtomResonance) activeDim.getResonance();
+                Atom atom = atomRes.getPossibleAtom();
+                if (atom != null) {
+                    Atom parent = atom.getParent();
+
+                    for (PeakDim peakDim : peakDims) {
+                        if (peakDim.getSpectralDimObj().getDimName().equals(arPat.bondedDim)) {
+                            peakDim.setLabel(parent.getShortName());
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    public static boolean assign(String label, PeakDim setPeakDim, PeakDim[] peakDims) throws IllegalArgumentException {
+        AtomSpecifier atomSpecifier = getResAtom(label);
         AtomResPatterns atomResPatterns = setPeakDim.getSpectralDimObj().getAtomResPatterns();
 
         var resMap = new HashMap<String, Integer>();
@@ -182,15 +181,15 @@ public class AtomResPattern {
             String resLetter = arPat.resLetter;
             int resDelta = arPat.resDelta;
 
-            if ((resAtom.resNum != null) && !atomResPatterns.ambiguousResidue) {
-                resMap.put(resLetter, resAtom.resNum - resDelta);
-                if ((resAtom.aName == null) && !atomResPatterns.ambiguousANames) {
-                    resAtom.aName = arPat.aName;
+            if ((atomSpecifier.getResNum() != null) && !atomResPatterns.ambiguousResidue) {
+                resMap.put(resLetter, atomSpecifier.getResNum() - resDelta);
+                if ((atomSpecifier.getAtomName() == null) && !atomResPatterns.ambiguousANames) {
+                    atomSpecifier = atomSpecifier.setAtomName(arPat.aName);
                 }
 
-                String newLabel = resAtom.resNum.toString() + "." + resAtom.aName;
+                String newLabel = atomSpecifier.getAtomName() == null ? label
+                        : atomSpecifier.getResNumString() + "." + atomSpecifier.getAtomName();
                 setPeakDim.setLabel(newLabel);
-
                 for (PeakDim peakDim : peakDims) {
                     if (peakDim != setPeakDim) {
                         setResidue(peakDim, resMap);
@@ -201,9 +200,19 @@ public class AtomResPattern {
             for (PeakDim peakDim : peakDims) {
                 setResidue(peakDim, resMap2);
             }
+            setFromRelation(setPeakDim, peakDims);
         }
 
         return true;
+    }
+
+    public static void assignDim(PeakDim peakDim, String label) {
+        Peak peak = peakDim.getPeak();
+        peakDim.setLabel(label);
+        PeakDim[] peakDims = peak.peakDims;
+        if (!label.isBlank()) {
+            assign(label, peakDim, peakDims);
+        }
     }
 
 }

@@ -48,9 +48,38 @@ public class AtomResonance extends SimpleResonance {
 
     Object resonanceSet = null;
     Object ssID = null;
+    boolean labelValid = true;
 
     public AtomResonance(long id) {
         super(id);
+    }
+
+    @Override
+    public void setName(List<String> newNames) {
+        super.setName(newNames);
+        boolean valid = true;
+        for (var name : newNames) {
+            if (!isLabelValid(name)) {
+                valid = false;
+                break;
+            }
+        }
+        labelValid = valid;
+    }
+
+    private boolean isLabelValid(String name) {
+        MoleculeBase molBase = MoleculeFactory.getActive();
+        boolean result = true;
+        if (!name.isBlank() && (molBase != null)) {
+            Atom atom = molBase.findAtom(name);
+            result = atom != null;
+        }
+        return result;
+    }
+
+    @Override
+    public boolean isLabelValid() {
+        return labelValid;
     }
 
     @Override
@@ -68,6 +97,20 @@ public class AtomResonance extends SimpleResonance {
 
     public Atom getAtom() {
         return atom;
+    }
+
+    public Atom getPossibleAtom() {
+        if (atom != null) {
+            return atom;
+        } else {
+            Atom possibleAtom = null;
+            MoleculeBase molBase = MoleculeFactory.getActive();
+            String name = getName();
+            if (!name.isBlank() && (molBase != null)) {
+                possibleAtom = molBase.findAtom(name);
+            }
+            return possibleAtom;
+        }
     }
 
     public static void processSTAR3ResonanceList(final NMRStarReader nmrStar,

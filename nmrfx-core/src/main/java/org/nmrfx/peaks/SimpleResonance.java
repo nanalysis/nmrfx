@@ -80,11 +80,7 @@ public class SimpleResonance implements Resonance {
 
     @Override
     public void setName(String name) {
-        if (names == null) {
-            names = new ArrayList<>();
-        }
-        names.clear();
-        names.add(name);
+        setName(List.of(name));
     }
 
     public void setAtomName(String aName) {
