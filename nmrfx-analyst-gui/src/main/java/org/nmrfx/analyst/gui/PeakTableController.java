@@ -78,10 +78,13 @@ public class PeakTableController implements PeakMenuTarget, PeakListener, Initia
 
     static Background ERROR_BACKGROUND = new Background(new BackgroundFill(Color.RED, null, null))
     private Stage stage;
+
     @FXML
     private ToolBar toolBar;
+
     @FXML
     private TableView<Peak> tableView;
+
     private PeakList peakList;
 
     private int currentDims = 0;
