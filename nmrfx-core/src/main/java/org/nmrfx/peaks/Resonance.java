@@ -25,30 +25,34 @@ import java.util.List;
  */
 public interface Resonance {
 
-    public String getName();
+    String getName();
 
-    public void setName(String name);
+    void setName(String name);
 
-    public void setName(List<String> names);
+    void setName(List<String> names);
 
-    public void remove(PeakDim peakDim);
+    void remove(PeakDim peakDim);
 
-    public List<PeakDim> getPeakDims();
+    List<PeakDim> getPeakDims();
 
-    public String getAtomName();
+    String getAtomName();
 
-    public String getIDString();
+    String getIDString();
 
-    public long getID();
+    long getID();
 
-    public void setID(long value);
+    void setID(long value);
 
-    public void merge(Resonance resB);
+    void merge(Resonance resB);
 
-    public static void merge(Resonance resA, Resonance resB) {
+    static void merge(Resonance resA, Resonance resB) {
         resA.merge(resB);
     }
 
-    public void add(PeakDim peakDim);
+    void add(PeakDim peakDim);
+
+    default boolean isLabelValid() {
+        return true;
+    }
 
 }
