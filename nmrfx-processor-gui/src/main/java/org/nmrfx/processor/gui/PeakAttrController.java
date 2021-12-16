@@ -500,7 +500,7 @@ public class PeakAttrController implements Initializable, PeakNavigable, PeakMen
         peakMenuBar.initMenuBar(menuBar);
     }
 
-    class FloatStringConverter2 extends FloatStringConverter {
+    static class FloatStringConverter2 extends FloatStringConverter {
 
         public Float fromString(String s) {
             Float v;
@@ -514,7 +514,7 @@ public class PeakAttrController implements Initializable, PeakNavigable, PeakMen
 
     }
 
-    class TextFieldTableCellFloat extends TextFieldTableCell<PeakDim, Float> {
+    static class TextFieldTableCellFloat extends TextFieldTableCell<PeakDim, Float> {
 
         public TextFieldTableCellFloat(StringConverter s) {
             super(s);
@@ -530,7 +530,7 @@ public class PeakAttrController implements Initializable, PeakNavigable, PeakMen
         }
     };
 
-    class TextFieldTableCellPeakLabel extends TextFieldTableCell<PeakDim, String> {
+    static class TextFieldTableCellPeakLabel extends TextFieldTableCell<PeakDim, String> {
 
         public TextFieldTableCellPeakLabel(StringConverter s) {
             super(s);
@@ -539,7 +539,7 @@ public class PeakAttrController implements Initializable, PeakNavigable, PeakMen
         @Override
         public void updateItem(String item, boolean empty) {
             super.updateItem(item, empty);
-            PeakDim peakDim = (PeakDim) getTableRow().getItem();
+            PeakDim peakDim = getTableRow().getItem();
             setText(null);
             setGraphic(null);
             if (!empty && (peakDim != null)) {
@@ -551,9 +551,9 @@ public class PeakAttrController implements Initializable, PeakNavigable, PeakMen
                 setText(String.valueOf(item));
             }
         }
-    };
+    }
 
-    class TextFieldRefTableCell extends TextFieldTableCell<SpectralDim, Double> {
+    static class TextFieldRefTableCell extends TextFieldTableCell<SpectralDim, Double> {
 
         public TextFieldRefTableCell(StringConverter s) {
             super(s);
@@ -567,15 +567,15 @@ public class PeakAttrController implements Initializable, PeakNavigable, PeakMen
             } else {
             }
         }
-    };
+    }
 
-    class ComboTableCell<SpectralDim, String> extends ComboBoxTableCell<SpectralDim, String> {
+    static class ComboTableCell<SpectralDim, String> extends ComboBoxTableCell<SpectralDim, String> {
 
         @Override
         public void updateItem(String item, boolean empty) {
             super.updateItem(item, empty);
         }
-    };
+    }
 
     void initTable() {
         DoubleStringConverter dsConverter = new DoubleStringConverter();

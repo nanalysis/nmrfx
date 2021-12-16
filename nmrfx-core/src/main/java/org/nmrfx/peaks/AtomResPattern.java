@@ -120,12 +120,11 @@ public class AtomResPattern {
     static AtomSpecifier getResAtom(String label) {
         AtomSpecifier atomSpecifier;
         int dot = label.indexOf(".");
-        Integer resNum = null;
         if (dot != -1) {
             atomSpecifier = AtomSpecifier.parseString(label);
         } else {
             try {
-                resNum = Integer.parseInt(label);
+                Integer.parseInt(label);
                 atomSpecifier = new AtomSpecifier(label, null, null);
             } catch (NumberFormatException nfE) {
                 atomSpecifier = new AtomSpecifier(null, null, label);

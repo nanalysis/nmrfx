@@ -22,9 +22,6 @@ import org.nmrfx.utilities.ConvUtil;
 import org.nmrfx.utilities.Format;
 import java.util.ArrayList;
 import java.util.List;
-import org.nmrfx.chemistry.Atom;
-import org.nmrfx.chemistry.MoleculeBase;
-import org.nmrfx.chemistry.MoleculeFactory;
 
 public class PeakDim {
 

@@ -71,8 +71,8 @@ public class AtomResonance extends SimpleResonance {
         MoleculeBase molBase = MoleculeFactory.getActive();
         boolean result = true;
         if (!name.isBlank() && (molBase != null)) {
-            Atom atom = molBase.findAtom(name);
-            result = atom != null;
+            Atom testAtom = molBase.findAtom(name);
+            result = testAtom != null;
         }
         return result;
     }
@@ -185,7 +185,6 @@ public class AtomResonance extends SimpleResonance {
 //                    continue;
 //                }
                 String atomName = "";
-                String entityName = "";
                 String iRes = "";
                 String entityAssemblyID = "";
                 String entityID = "";
