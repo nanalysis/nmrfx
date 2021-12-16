@@ -73,14 +73,19 @@ import javafx.scene.control.ToolBar;
 import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.scene.control.cell.ComboBoxTableCell;
 import javafx.scene.input.KeyCode;
+import javafx.scene.layout.Background;
+import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.paint.Color;
 import javafx.util.StringConverter;
+import javafx.util.converter.DefaultStringConverter;
 import javafx.util.converter.FloatStringConverter;
 import javafx.util.converter.IntegerStringConverter;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.datasets.Nuclei;
+import org.nmrfx.peaks.AtomResPattern;
 import org.nmrfx.peaks.PeakDim;
 import org.nmrfx.peaks.SpectralDim;
 import org.nmrfx.processor.datasets.Dataset;
@@ -495,7 +500,7 @@ public class PeakAttrController implements Initializable, PeakNavigable, PeakMen
         peakMenuBar.initMenuBar(menuBar);
     }
 
-    class FloatStringConverter2 extends FloatStringConverter {
+    static class FloatStringConverter2 extends FloatStringConverter {
 
         public Float fromString(String s) {
             Float v;
@@ -509,7 +514,7 @@ public class PeakAttrController implements Initializable, PeakNavigable, PeakMen
 
     }
 
-    class TextFieldTableCellFloat extends TextFieldTableCell<PeakDim, Float> {
+    static class TextFieldTableCellFloat extends TextFieldTableCell<PeakDim, Float> {
 
         public TextFieldTableCellFloat(StringConverter s) {
             super(s);
@@ -525,7 +530,30 @@ public class PeakAttrController implements Initializable, PeakNavigable, PeakMen
         }
     };
 
-    class TextFieldRefTableCell extends TextFieldTableCell<SpectralDim, Double> {
+    static class TextFieldTableCellPeakLabel extends TextFieldTableCell<PeakDim, String> {
+
+        public TextFieldTableCellPeakLabel(StringConverter s) {
+            super(s);
+        }
+
+        @Override
+        public void updateItem(String item, boolean empty) {
+            super.updateItem(item, empty);
+            PeakDim peakDim = getTableRow().getItem();
+            setText(null);
+            setGraphic(null);
+            if (!empty && (peakDim != null)) {
+                if (!peakDim.isLabelValid()) {
+                    setBackground(new Background(new BackgroundFill(Color.RED, null, null)));
+                } else {
+                    setBackground(Background.EMPTY);
+                }
+                setText(String.valueOf(item));
+            }
+        }
+    }
+
+    static class TextFieldRefTableCell extends TextFieldTableCell<SpectralDim, Double> {
 
         public TextFieldRefTableCell(StringConverter s) {
             super(s);
@@ -539,15 +567,15 @@ public class PeakAttrController implements Initializable, PeakNavigable, PeakMen
             } else {
             }
         }
-    };
+    }
 
-    class ComboTableCell<SpectralDim, String> extends ComboBoxTableCell<SpectralDim, String> {
+    static class ComboTableCell<SpectralDim, String> extends ComboBoxTableCell<SpectralDim, String> {
 
         @Override
         public void updateItem(String item, boolean empty) {
             super.updateItem(item, empty);
         }
-    };
+    }
 
     void initTable() {
         DoubleStringConverter dsConverter = new DoubleStringConverter();
@@ -562,11 +590,16 @@ public class PeakAttrController implements Initializable, PeakNavigable, PeakMen
 
         TableColumn<PeakDim, String> labelCol = new TableColumn<>("Label");
         labelCol.setCellValueFactory(new PropertyValueFactory("Label"));
-        labelCol.setCellFactory(TextFieldTableCell.forTableColumn());
+        labelCol.setCellFactory(tc -> new TextFieldTableCellPeakLabel(new DefaultStringConverter()));
+
         labelCol.setEditable(true);
         labelCol.setOnEditCommit((CellEditEvent<PeakDim, String> t) -> {
             String value = t.getNewValue();
-            t.getRowValue().setLabel(value == null ? "" : value);
+            PeakDim peakDim = t.getRowValue();
+            if (value == null) {
+                value = "";
+            }
+            AtomResPattern.assignDim(peakDim, value);
             TablePosition tPos = t.getTablePosition();
             int col = tPos.getColumn();
             int row = tPos.getRow();

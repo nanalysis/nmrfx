@@ -189,7 +189,7 @@ public class NMRStarWriter {
         result.append(sep);
         result.append(atom.getResName());
         result.append(sep);
-        result.append(atom.getName());
+        result.append(atom.getAtomName());
         return result.toString();
     }
 
