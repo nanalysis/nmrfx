@@ -76,7 +76,7 @@ import org.nmrfx.processor.project.Project;
  */
 public class PeakTableController implements PeakMenuTarget, PeakListener, Initializable {
 
-    static Background ERROR_BACKGROUND = new Background(new BackgroundFill(Color.RED, null, null));
+    static final Background ERROR_BACKGROUND = new Background(new BackgroundFill(Color.RED, null, null));
     private Stage stage;
 
     @FXML
@@ -213,10 +213,10 @@ public class PeakTableController implements PeakMenuTarget, PeakListener, Initia
         @Override
         public void updateItem(String item, boolean empty) {
             super.updateItem(item, empty);
-            Peak peak = (Peak) getTableRow().getItem();
             if (item != null) {
                 setText(String.valueOf(item));
             } else {
+                setText(null);
             }
         }
 
@@ -248,7 +248,6 @@ public class PeakTableController implements PeakMenuTarget, PeakListener, Initia
         tableView.getItems().clear();
         tableView.getColumns().clear();
         currentDims = nDim;
-        StringConverter sConverter = new DefaultStringConverter();
 
         TableColumn<Peak, Integer> idNumCol = new TableColumn<>("id");
         idNumCol.setCellValueFactory(new PropertyValueFactory("IdNum"));
@@ -342,6 +341,7 @@ public class PeakTableController implements PeakMenuTarget, PeakListener, Initia
             tableView.getColumns().addAll(shiftCol);
         }
         if (nDim == 1) {
+            StringConverter sConverter = new DefaultStringConverter();
             TableColumn<Peak, String> multipletCol = new TableColumn<>("multiplet");
             multipletCol.setCellFactory(tc -> new PeakStringFieldTableCell(sConverter));
             multipletCol.setCellValueFactory((CellDataFeatures<Peak, String> p) -> {
