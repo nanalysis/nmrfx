@@ -4,10 +4,11 @@
 
     <groupId>org.nmrfx</groupId>
     <artifactId>nmrfx-bom</artifactId>
-    <version>11.2.1</version>
+    <version>${revision}</version>
     <packaging>pom</packaging>
 
     <properties>
+        <revision>11.2.1</revision>
         <nd4j.version>1.0.0-beta7</nd4j.version>
         <dl4j.version>1.0.0-beta7</dl4j.version>
     </properties>

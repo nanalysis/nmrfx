@@ -6,12 +6,11 @@
     <parent>
         <groupId>org.nmrfx</groupId>
         <artifactId>nmrfx</artifactId>
-        <version>11.2.1</version>
+        <version>${revision}</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
     <artifactId>nmrfx-utils</artifactId>
-    <version>11.2.1</version>
     <packaging>jar</packaging>
 
     <dependencies>
