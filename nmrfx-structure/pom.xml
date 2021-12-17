@@ -12,7 +12,19 @@
 
     <artifactId>nmrfx-structure</artifactId>
     <packaging>jar</packaging>
-    <name>nmrfx-nmrfxstructure</name>
+
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.nmrfx</groupId>
+                <artifactId>nmrfx-bom</artifactId>
+                <version>${revision}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <dependencies>
         <dependency>

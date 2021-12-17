@@ -11,12 +11,24 @@
     </parent>
 
     <artifactId>nmrfx-analyst-gui</artifactId>
-    <name>nmrfx-analyst-gui</name>
     <packaging>jar</packaging>
 
     <properties>
         <mainClass>org.nmrfx.processor.gui.AnalystApp</mainClass>
     </properties>
+
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.nmrfx</groupId>
+                <artifactId>nmrfx-bom</artifactId>
+                <version>${revision}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <dependencies>
         <dependency>

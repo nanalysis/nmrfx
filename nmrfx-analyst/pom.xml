@@ -11,12 +11,24 @@
     </parent>
 
     <artifactId>nmrfx-analyst</artifactId>
-    <name>nmrfx-analyst</name>
     <packaging>jar</packaging>
 
     <properties>
         <mainClass>com.onemoonsci.datachord.nvfx.MainApp</mainClass>
     </properties>
+
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.nmrfx</groupId>
+                <artifactId>nmrfx-bom</artifactId>
+                <version>${revision}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <dependencies>
         <dependency>
