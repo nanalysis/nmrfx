@@ -210,12 +210,6 @@
                 <!-- license: GPLv2 license, includes the CLASSPATH exception -->
             </dependency>
             <dependency>
-                <groupId>net.sourceforge.jdistlib</groupId>
-                <artifactId>jdistlib</artifactId>
-                <version>0.4.5</version>
-                <!-- license: GPLv2 license -->
-            </dependency>
-            <dependency>
                 <groupId>org.yaml</groupId>
                 <artifactId>snakeyaml</artifactId>
                 <version>1.25</version>

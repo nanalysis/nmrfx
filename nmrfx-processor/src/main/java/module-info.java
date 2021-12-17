@@ -22,7 +22,6 @@ module org.nmrfx.processor {
     requires io.netty.all;
     requires java.logging;
     requires java.desktop;
-    requires jdistlib;
     requires com.google.common;
     requires janino;
     requires commons.compiler;

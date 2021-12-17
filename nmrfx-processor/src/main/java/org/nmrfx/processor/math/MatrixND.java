@@ -29,13 +29,13 @@ import java.nio.DoubleBuffer;
 import java.nio.IntBuffer;
 import java.nio.channels.FileChannel;
 import java.util.ArrayList;
-import net.sourceforge.jdistlib.math.Bessel;
 import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
 import org.apache.commons.math3.util.MultidimensionalCounter;
 import org.apache.commons.math3.transform.DftNormalization;
 import org.apache.commons.math3.transform.FastFourierTransformer;
 import org.apache.commons.math3.transform.TransformType;
 import org.apache.commons.math3.util.FastMath;
+import org.nmrfx.math.Bessel;
 
 public class MatrixND implements MatrixType {
 
@@ -247,11 +247,11 @@ public class MatrixND implements MatrixType {
     public double getPh0(int i) {
         return phases0[i];
     }
-    
+
     public double getPh1(int i) {
         return phases1[i];
     }
-    
+
     private static int[] calcStrides(int[] shape) {
         int[] strides = new int[shape.length];
         int stride = 1;
@@ -496,7 +496,6 @@ public class MatrixND implements MatrixType {
         double end = 0.99;
         double c = 0.5;
         double beta = 10.0;
-        double start = offset * Math.PI;
 
         double delta = ((end - offset)) / (apodSize - 1);
         for (int i = 0; i < apodSize; i++) {
@@ -505,7 +504,7 @@ public class MatrixND implements MatrixType {
             double deltaPos = i;
             double v1 = beta * Math.sqrt(1.0 - Math.pow(2.0 * deltaPos * delta, 2));
             double v2 = beta;
-            double scale = Bessel.i(v1, 0, false) / Bessel.i(v2, 0, false);
+            double scale = Bessel.i0(v1) / Bessel.i0(v2);
             if (i == 0) {
                 scale *= c;
             }
