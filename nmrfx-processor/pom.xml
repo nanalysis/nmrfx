@@ -6,20 +6,30 @@
     <parent>
         <groupId>org.nmrfx</groupId>
         <artifactId>nmrfx</artifactId>
-        <version>11.2.1</version>
+        <version>${revision}</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
     <artifactId>nmrfx-processor</artifactId>
     <packaging>jar</packaging>
-    <version>11.2.1</version>
-    <name>nmrfx-processor</name>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.nmrfx</groupId>
+                <artifactId>nmrfx-bom</artifactId>
+                <version>${revision}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <dependencies>
         <dependency>
             <groupId>org.nmrfx</groupId>
             <artifactId>nmrfx-core</artifactId>
-            <version>11.2.1</version>
+            <version>${revision}</version>
         </dependency>
         <dependency>
             <groupId>com.github.jnr</groupId>
