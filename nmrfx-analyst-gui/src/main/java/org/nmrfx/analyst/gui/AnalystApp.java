@@ -52,7 +52,6 @@ import org.nmrfx.peaks.PeakLabeller;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.io.PeakReader;
 import org.nmrfx.plugin.api.EntryPoint;
-import org.nmrfx.plugin.api.NMRFxPlugin;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.*;
 import org.nmrfx.processor.gui.controls.FractionCanvas;
@@ -75,7 +74,6 @@ import java.nio.file.Path;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 public class AnalystApp extends MainApp {
 
@@ -151,6 +149,8 @@ public class AnalystApp extends MainApp {
         KeyBindings.registerGlobalKeyAction("pa", this::assignPeak);
         Project.setPCS(new FxPropertyChangeSupport(this));
         PDBFile.setLocalResLibDir(AnalystPrefs.getLocalResidueDirectory());
+
+        PluginLoader.getInstance().registerPluginsOnEntryPoint(EntryPoint.STARTUP, null);
     }
 
     Object pickedPeakAction(Object peakObject) {

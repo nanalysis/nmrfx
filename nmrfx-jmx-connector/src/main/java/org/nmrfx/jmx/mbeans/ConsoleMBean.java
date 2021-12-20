@@ -15,12 +15,17 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.nmrfx.plugin.api;
+package org.nmrfx.jmx.mbeans;
 
 /**
- * EntryPoints are locations where a plugin could register itself inside NMRfx.
- * The obvious ones would be menus and scenes.
+ * Use NMRfx's console from JMX.
  */
-public enum EntryPoint {
-    STARTUP, MENU_PLUGINS
+public interface ConsoleMBean {
+    String NAME = "org.nmrfx:type=Console";
+
+    /**
+     * Execute any python script in the console
+     * @param script the line to evaluate
+     */
+    void run(String script);
 }

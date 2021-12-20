@@ -15,12 +15,19 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.nmrfx.plugin.api;
+package org.nmrfx.jmx.mbeans;
+
+import org.nmrfx.console.ConsoleController;
+import org.nmrfx.jmx.mbeans.ConsoleMBean;
 
 /**
- * EntryPoints are locations where a plugin could register itself inside NMRfx.
- * The obvious ones would be menus and scenes.
+ * Use NMRfx's console from JMX.
  */
-public enum EntryPoint {
-    STARTUP, MENU_PLUGINS
+public class Console implements ConsoleMBean {
+    @Override
+    public void run(String script) {
+        // This might be a bad idea: what if some text is already being typed by the user?
+        // Probably be better to use the interpreter only, and not set any visual text here.
+        ConsoleController.getConsoleController().writeAndRun(script);
+    }
 }
