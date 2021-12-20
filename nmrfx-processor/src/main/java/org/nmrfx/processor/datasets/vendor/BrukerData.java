@@ -183,7 +183,8 @@ public class BrukerData implements NMRData {
             File file = new File(fpath);
             datasetName = suggestName(file);
         }
-        Dataset dataset = new Dataset(fpath, datasetName, layout, false, 1);
+        Dataset dataset = new Dataset(fpath, datasetName, layout, false,
+                ByteOrder.LITTLE_ENDIAN, 1);
         dataset.newHeader();
         for (int i = 0; i < dim; i++) {
             dataset.setSf(i, getSF(i));

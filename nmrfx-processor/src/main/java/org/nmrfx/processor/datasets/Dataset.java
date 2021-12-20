@@ -145,7 +145,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
      * @throws IOException if an I/O error occurs
      */
     public Dataset(String fullName, String name, DatasetLayout datasetLayout,
-            boolean useCacheFile, int dataType)
+            boolean useCacheFile, ByteOrder byteOrder, int dataType)
             throws IOException {
         // fixme  FileUtil class needs to be public file = FileUtil.getFileObj(interp,fullName);
         super(fullName, name, false, useCacheFile);
@@ -160,7 +160,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         lvl = 0.1;
         posneg = 1;
         setDataType(dataType);
-        setByteOrder(ByteOrder.LITTLE_ENDIAN);
+        setByteOrder(byteOrder);
         DatasetParameterFile parFile = new DatasetParameterFile(this, layout);
         parFile.readFile();
 
