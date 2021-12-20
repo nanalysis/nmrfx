@@ -9,6 +9,7 @@ import java.io.EOFException;
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.Path;
@@ -30,6 +31,8 @@ import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 import javax.xml.xpath.XPathNodes;
 import org.apache.commons.math3.complex.Complex;
+import org.nmrfx.datasets.DatasetLayout;
+import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.parameters.FPMult;
 import org.nmrfx.processor.datasets.parameters.GaussianWt;
 import org.nmrfx.processor.datasets.parameters.LPParams;
@@ -83,14 +86,73 @@ public class RS2DData implements NMRData {
     double tempK = 298.15;
 
     public RS2DData(String path, File nusFile) throws IOException {
+        this(path, nusFile, false);
+    }
+
+    public RS2DData(String path, File nusFile, boolean processed) throws IOException {
         if (path.endsWith(File.separator)) {
             path = path.substring(0, path.length() - 1);
         }
         this.fpath = path;
         this.nusFile = nusFile;
-        openParFile(path);
+        openParFile(path, processed);
         openDataFile(path);
 
+    }
+
+    public Dataset toDataset(String datasetName) throws IOException {
+        File file = new File(fpath);
+        Path path;
+        if (file.isDirectory()) {
+            path = Paths.get(file.getAbsolutePath(), "data.dat");
+        } else {
+            path = file.toPath();
+        }
+
+        DatasetLayout layout = new DatasetLayout(nDim);
+        for (int i = 0; i < nDim; i++) {
+            if (i == 0) {
+                layout.setSize(i, 2 * getSize(i));
+                layout.setBlockSize(i, 2 * getSize(0));
+            } else {
+                layout.setSize(i, getSize(i));
+                layout.setBlockSize(i, 1);
+            }
+        }
+        layout.dimDataset();
+        if (datasetName == null) {
+            datasetName = "testRS2D";
+        }
+        Dataset dataset = new Dataset(path.toString(), datasetName, layout,
+                false, ByteOrder.BIG_ENDIAN, 0);
+        dataset.newHeader();
+        for (int i = 0; i < nDim; i++) {
+            dataset.setSf(i, getSF(i));
+            Double sW = null;
+            Double offset = null;
+            if (sW != null) {
+                dataset.setSw(i, sW);
+            } else {
+                dataset.setSw(i, getSW(i));
+            }
+            if (offset != null) {
+                dataset.setRefValue(i, offset);
+                dataset.setRefPt(i, 0);
+
+            } else {
+                dataset.setRefValue(i, getRef(i));
+                dataset.setRefPt(i, dataset.getSize(i) / 2.0);
+            }
+            dataset.setComplex(i, i == 0);
+            dataset.setFreqDomain(i, true);
+            String nucLabel = getTN(i);
+            dataset.setNucleus(i, nucLabel);
+            dataset.setLabel(i, nucLabel + (i + 1));
+            dataset.syncPars(i);
+        }
+        dataset.setScale(1.0e6);
+        dataset.setDataType(0);
+        return dataset;
     }
 
     /**
@@ -127,7 +189,7 @@ public class RS2DData implements NMRData {
         return headerPath.toFile().exists() && dataPath.toFile().exists();
     }
 
-    private void openParFile(String parpath) throws IOException {
+    private void openParFile(String parpath, boolean processed) throws IOException {
         parMap = new LinkedHashMap<>(200);
         Path path = Paths.get(parpath, "header.xml");
         Document xml;
@@ -149,14 +211,28 @@ public class RS2DData implements NMRData {
             for (int i = 0; i < MAXDIM; i++) {
                 String nucleus = getPar("NUCLEUS_" + (i + 1));
                 if (nucleus.equals(obsNucleus)) {
-                    obsFreq = getParDouble("BASE_FREQ_" + (i + 1));
+                    obsFreq = getParDouble("BASE_FREQ_" + (i + 1)) / 1.0e6;
                     baseSFName = "BASE_FREQ_" + (i + 1);
                     break;
                 }
             }
+            if (processed) {
+                List<String> dataModes = parMap.get("DATA_REPRESENTATION");
+                if (!dataModes.isEmpty()) {
+                    for (int i = 0; i < MAXDIM; i++) {
+                        setComplex(i, dataModes.get(i).equals("COMPLEX"));
+                    }
+                }
+            }
+
             System.out.println(" obs " + obsNucleus + " " + obsFreq + " " + baseSFName);
             for (int i = 0; i < MAXDIM; i++) {
-                int dimSize = getParInt("ACQUISITION_MATRIX_DIMENSION_" + (i + 1) + "D");
+                int dimSize;
+                if (processed) {
+                    dimSize = getParInt("MATRIX_DIMENSION_" + (i + 1) + "D");
+                } else {
+                    dimSize = getParInt("ACQUISITION_MATRIX_DIMENSION_" + (i + 1) + "D");
+                }
                 String nucleus = getPar("NUCLEUS_" + (i + 1));
                 if (nucleus.equals(obsNucleus)) {
                     System.out.println("nuclues is obs " + nucleus);
@@ -166,7 +242,7 @@ public class RS2DData implements NMRData {
                 } else {
                     System.out.println("nuclues is not obs " + nucleus);
                     Double baseFreq = getParDouble("BASE_FREQ_" + (i + 1));
-                    Sf[i] = baseFreq;
+                    Sf[i] = baseFreq / 1.0e6;
                     sfNames[i] = "BASE_FREQ_" + (i + 1);
                 }
                 tdsize[i] = dimSize;
@@ -180,7 +256,9 @@ public class RS2DData implements NMRData {
                     }
                 }
             }
-            setFTPars();
+            if (!processed) {
+                setFTPars();
+            }
         } catch (ParserConfigurationException | SAXException | XPathExpressionException | NullPointerException ex) {
             throw new IOException(ex.getMessage());
         }
@@ -444,7 +522,8 @@ public class RS2DData implements NMRData {
         } else {
             Double dpar;
             if ((dpar = getParDouble("BASE_FREQ_" + (iDim + 1))) != null) {
-                sf = dpar;
+                sf = dpar / 1.0e6;
+                Sf[iDim] = sf;
             }
         }
         return sf;
