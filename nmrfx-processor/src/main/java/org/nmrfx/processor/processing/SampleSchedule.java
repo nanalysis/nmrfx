@@ -138,7 +138,7 @@ public class SampleSchedule {
      * Full path file name.
      */
     String fpath = "/tmp/sample_schedule.txt";
-    
+
     /**
      * Multiply index by this to get position in file;
      * if 0 set to groupSize.  Can be used for special cases like tppi
