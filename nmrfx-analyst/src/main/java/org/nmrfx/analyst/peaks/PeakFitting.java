@@ -234,7 +234,7 @@ public class PeakFitting {
             }
         }
         int i1 = 0;
-        int i2 = dataset.getSize(0) - 1;
+        int i2 = dataset.getSizeTotal(0) - 1;
         if (!ppmRegions.isEmpty()) {
             ppmRegions.sort(null);
             double rMin = ppmRegions.get(0);

@@ -100,8 +100,8 @@ public class DatasetPhaser {
 
             dim[i] = j;
             pt[i][0] = 0;
-            pt[i][1] = dataset.getSize(dim[i]) - 1;
-            dimSize[i] = dataset.getSize(dim[i]);
+            pt[i][1] = dataset.getSizeTotal(dim[i]) - 1;
+            dimSize[i] = dataset.getSizeTotal(dim[i]);
             nTotal *= nSegments;
             j++;
         }
@@ -110,7 +110,7 @@ public class DatasetPhaser {
             regionMax[i] = null;
 
         }
-        pt[0][1] = dataset.getSize(iDim) - 1;
+        pt[0][1] = dataset.getSizeTotal(iDim) - 1;
         int newSize = pt[0][1] - pt[0][0] + 1;
 
         Vec testVec = new Vec(newSize, false);
@@ -121,7 +121,7 @@ public class DatasetPhaser {
         ScanRegion scanRegion = new ScanRegion(pt, dim, dataset);
         int nEntries = scanRegion.buildIndex();
 
-        int winSize = dataset.getSize(iDim) / 32;
+        int winSize = dataset.getSizeTotal(iDim) / 32;
         int nWin = 4;
         int origSize = pt[0][1];
         for (int iEntry = 0; iEntry < nEntries; iEntry++) {
@@ -198,10 +198,10 @@ public class DatasetPhaser {
 
             dim[i] = j;
             pt[i][0] = 0;
-            pt[i][1] = dataset.getSize(dim[i]) - 1;
+            pt[i][1] = dataset.getSizeTotal(dim[i]) - 1;
             j++;
         }
-        pt[0][1] = dataset.getSize(iDim) - 1;
+        pt[0][1] = dataset.getSizeTotal(iDim) - 1;
         int newSize = pt[0][1] - pt[0][0] + 1;
 
         Vec phaseVec = new Vec(newSize, false);

@@ -1206,7 +1206,7 @@ public class Multiplets {
             return;
         }
         Dataset dataset = Dataset.getDataset(peakList.getDatasetName());
-        Vec vec = new Vec(dataset.getSize(0));
+        Vec vec = new Vec(dataset.getSizeTotal(0));
         dataset.readVector(vec, 0, 0);
 
         splitRegionsByPeakSep(regions, peakList, vec);

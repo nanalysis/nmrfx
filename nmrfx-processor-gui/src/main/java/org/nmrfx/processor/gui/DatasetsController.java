@@ -329,7 +329,7 @@ public class DatasetsController implements Initializable, PropertyChangeListener
             int size = 0;
             int iDim = getDimNum();
             if (dataset.getNDim() > iDim) {
-                size = dataset.getSize(iDim);
+                size = dataset.getSizeReal(iDim);
             }
             return new ReadOnlyObjectWrapper(size);
         });
@@ -561,7 +561,7 @@ public class DatasetsController implements Initializable, PropertyChangeListener
             }
             if (valueList.isEmpty()) {
                 if (valueDataset.getNFreqDims() < nDim) {
-                    for (int i = 0; i < valueDataset.getSize(nDim - 1); i++) {
+                    for (int i = 0; i < valueDataset.getSizeReal(nDim - 1); i++) {
                         valueList.add(new ValueItem(i, 0.0));
                     }
                 }

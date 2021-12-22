@@ -23,8 +23,6 @@
  */
 package org.nmrfx.datasets;
 
-import org.nmrfx.datasets.DatasetBase;
-
 /**
  * Instances of this class can calculate and store statistical information about
  * a region of the dataset.
@@ -69,8 +67,8 @@ public class RegionData {
         boolean inTol = true;
         for (int ii = 0; ii < dataset.getNDim(); ii++) {
             int delta = Math.abs(iPointAbs[ii] - cpt[ii]);
-            if (delta > dataset.getSize(dim[ii]) / 2) {
-                delta = dataset.getSize(dim[ii]) - delta;
+            if (delta > dataset.getSizeTotal(dim[ii]) / 2) {
+                delta = dataset.getSizeTotal(dim[ii]) - delta;
             }
             if (delta > iTol[ii]) {
                 inTol = false;
@@ -107,8 +105,8 @@ public class RegionData {
             // so don't check r2 distance from center
             if (width[ii] > 1.0e-6) {
                 int delta = Math.abs(iPointAbs[ii] - cpt[ii]);
-                if (delta > dataset.getSize(dim[ii]) / 2) {
-                    delta = dataset.getSize(dim[ii]) - delta;
+                if (delta > dataset.getSizeTotal(dim[ii]) / 2) {
+                    delta = dataset.getSizeTotal(dim[ii]) - delta;
                 }
                 r2 += (delta * delta) / (0.47 * width[ii] * width[ii]);
             }

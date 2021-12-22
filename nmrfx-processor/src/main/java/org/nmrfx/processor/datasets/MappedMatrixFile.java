@@ -78,7 +78,7 @@ public class MappedMatrixFile implements DatasetStorageInterface, Closeable {
             } else {
                 strides[i] = strides[i - 1] * layout.sizes[i - 1];
             }
-            System.err.println("mapped " + i + " " + dataset.getSize(i) + " " + strides[i]);
+            System.err.println("mapped " + i + " " + dataset.getSizeTotal(i) + " " + strides[i]);
         }
         //System.out.println("size " + totalSize);
         totalSize = size;

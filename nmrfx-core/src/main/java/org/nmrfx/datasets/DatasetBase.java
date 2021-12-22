@@ -280,8 +280,8 @@ public class DatasetBase {
             sw[i] = 7000.0;
             sw_r[i] = 7000.0;
             sf[i] = 600.0;
-            refPt[i] = getSize(i) / 2;
-            refPt_r[i] = getSize(i) / 2;
+            refPt[i] = getSizeTotal(i) / 2;
+            refPt_r[i] = getSizeTotal(i) / 2;
             refValue[i] = 4.73;
             refValue_r[i] = 4.73;
             complex[i] = true;
@@ -337,8 +337,8 @@ public class DatasetBase {
         for (i = 0; i < nDim; i++) {
             if (pt[i] < 0) {
                 throw new IllegalArgumentException("point < 0 " + i + " " + pt[i]);
-            } else if (pt[i] >= getSize(i)) {
-                throw new IllegalArgumentException("point >= size " + i + " " + pt[i] + " " + getSize(i));
+            } else if (pt[i] >= getSizeTotal(i)) {
+                throw new IllegalArgumentException("point >= size " + i + " " + pt[i] + " " + getSizeTotal(i));
             }
         }
         return dataFile.getFloat(pt) / scale;
@@ -366,8 +366,8 @@ public class DatasetBase {
         for (i = 0; i < nDim; i++) {
             if (pt[i] < 0) {
                 throw new IllegalArgumentException("pointd < 0 " + i + " " + pt[i]);
-            } else if (pt[i] >= getSize(dim[i])) {
-                throw new IllegalArgumentException("pointd >= size " + i + " " + dim[i] + " " + pt[i] + " " + getSize(dim[i]));
+            } else if (pt[i] >= getSizeTotal(dim[i])) {
+                throw new IllegalArgumentException("pointd >= size " + i + " " + dim[i] + " " + pt[i] + " " + getSizeTotal(dim[i]));
             }
         }
         int[] rPt = new int[nDim];
@@ -397,8 +397,8 @@ public class DatasetBase {
             for (i = 0; i < nDim; i++) {
                 if (pt[i] < 0) {
                     throw new IllegalArgumentException("point < 0 " + i + " " + pt[i]);
-                } else if (pt[i] >= getSize(i)) {
-                    throw new IllegalArgumentException("point >= size " + i + " " + pt[i] + " " + getSize(i));
+                } else if (pt[i] >= getSizeTotal(i)) {
+                    throw new IllegalArgumentException("point >= size " + i + " " + pt[i] + " " + getSizeTotal(i));
                 }
             }
             dataFile.setFloat((float) (value * scale), pt);
@@ -737,7 +737,7 @@ public class DatasetBase {
      */
     public double ppmToHz(int iDim, double ppm) {
         double pt = ppmToDPoint(iDim, ppm);
-        double hz = pt / getSize(iDim) * getSw(iDim);
+        double hz = pt / getSizeTotal(iDim) * getSw(iDim);
 
         return (hz);
     }
@@ -750,7 +750,7 @@ public class DatasetBase {
      * @return position in Hz
      */
     public double pointToHz(int iDim, double pt) {
-        double hz = pt / getSize(iDim) * getSw(iDim);
+        double hz = pt / getSizeTotal(iDim) * getSw(iDim);
 
         return (hz);
     }
@@ -763,30 +763,30 @@ public class DatasetBase {
      */
     synchronized public int size(int iDim) {
         if ((iDim == 0) && (vecMat != null)) {
-            setSize(0, vecMat.getSize());
+            setSizeTotal(0, vecMat.getSize());
 
             return (vecMat.getSize());
         } else {
-            return (getSize(iDim));
+            return (getSizeTotal(iDim));
         }
     }
 
     int fold(int iDim, int pt) {
         while (pt < 0) {
-            pt += getSize(iDim);
+            pt += getSizeTotal(iDim);
         }
-        while (pt >= getSize(iDim)) {
-            pt -= getSize(iDim);
+        while (pt >= getSizeTotal(iDim)) {
+            pt -= getSizeTotal(iDim);
         }
         return pt;
     }
 
     double fold(int iDim, double pt) {
         while (pt < 0) {
-            pt += getSize(iDim);
+            pt += getSizeTotal(iDim);
         }
-        while (pt >= getSize(iDim)) {
-            pt -= getSize(iDim);
+        while (pt >= getSizeTotal(iDim)) {
+            pt -= getSizeTotal(iDim);
         }
         return pt;
     }
@@ -852,23 +852,51 @@ public class DatasetBase {
     }
 
     /**
-     * Get the size of the dataset along the specified dimension.
+     * Get the size of the dataset along the specified dimension. If the data is real
+     * this is the number of points.  If the data is complex it is the number of
+     * real plus imaginary points (twice the number of complex points).
      *
      * @param iDim Dataset dimension index
      * @return the size
      */
-    public int getSize(int iDim) {
+    public int getSizeTotal(int iDim) {
         return size[iDim];
     }
 
     /**
-     * Set the size of the dataset along the specified dimension.
+     * Set the size of the dataset along the specified dimension.  If the data is real
+     *      * this is the number of points.  If the data is complex it is the number of
+     *      * real plus imaginary points (twice the number of complex points).
      *
      * @param iDim Dataset dimension index
      * @param newSize the size to set
      */
-    public void setSize(final int iDim, final int newSize) {
+    public void setSizeTotal(final int iDim, final int newSize) {
         size[iDim] = newSize;
+    }
+
+    /**
+     * Get the size of the dataset along the specified dimension. If the data is real
+     * this is the number of points.  If the data is complex it is the number of
+     * complex points).
+     *
+     * @param iDim Dataset dimension index
+     * @return the size
+     */
+    public int getSizeReal(int iDim) {
+        return getSizeTotal(iDim)/ (getComplex(iDim) ? 2 : 1);
+    }
+
+    /**
+     * Set the size of the dataset along the specified dimension.  If the data is real
+     *      * this is the number of points.  If the data is complex it is the number of
+     *      * complex points).
+     *
+     * @param iDim Dataset dimension index
+     * @param newSize the size to set
+     */
+    public void setSizeReal(final int iDim, final int newSize) {
+       setSizeTotal(iDim, newSize * (getComplex(iDim) ? 2 : 1));
     }
 
     /**
@@ -984,7 +1012,7 @@ public class DatasetBase {
     public int[] getSizes() {
         int[] sizes = new int[nDim];
         for (int i = 0; i < nDim; i++) {
-            sizes[i] = getSize(i);
+            sizes[i] = getSizeTotal(i);
         }
         return sizes;
     }
@@ -1074,7 +1102,7 @@ public class DatasetBase {
     public void setRefPt(final int iDim, final double refPt) {
         this.refPt[iDim] = refPt;
         if (vecMat != null) {
-            double delRef = getRefPt(iDim) * getSw(iDim) / getSf(iDim) / getSize(iDim);
+            double delRef = getRefPt(iDim) * getSw(iDim) / getSf(iDim) / getSizeTotal(iDim);
             vecMat.refValue = refValue[iDim] + delRef;
         }
 
@@ -1091,7 +1119,7 @@ public class DatasetBase {
         if (vecMat == null) {
             value = refValue[iDim];
         } else {
-            double delRef = getRefPt(iDim) * getSw(iDim) / getSf(iDim) / getSize(iDim);
+            double delRef = getRefPt(iDim) * getSw(iDim) / getSf(iDim) / getSizeTotal(iDim);
             value = vecMat.refValue - delRef;
         }
         return value;
@@ -1106,7 +1134,7 @@ public class DatasetBase {
     public void setRefValue(final int iDim, final double refValue) {
         this.refValue[iDim] = refValue;
         if (vecMat != null) {
-            double delRef = getRefPt(iDim) * getSw(iDim) / getSf(iDim) / getSize(iDim);
+            double delRef = getRefPt(iDim) * getSw(iDim) / getSf(iDim) / getSizeTotal(iDim);
             vecMat.refValue = refValue + delRef;
         }
     }
@@ -1229,7 +1257,7 @@ public class DatasetBase {
     public void setRefPt_r(final int iDim, final double refPt_r) {
         this.refPt_r[iDim] = refPt_r;
         if (vecMat != null) {
-            double delRef = getRefPt_r(iDim) * getSw(iDim) / getSf(iDim) / getSize(iDim);
+            double delRef = getRefPt_r(iDim) * getSw(iDim) / getSf(iDim) / getSizeTotal(iDim);
             vecMat.refValue = refValue_r[iDim] + delRef;
         }
     }
@@ -1245,7 +1273,7 @@ public class DatasetBase {
         if (vecMat == null) {
             value = refValue_r[iDim];
         } else {
-            double delRef = getRefPt_r(iDim) * getSw_r(iDim) / getSf(iDim) / getSize(iDim);
+            double delRef = getRefPt_r(iDim) * getSw_r(iDim) / getSf(iDim) / getSizeTotal(iDim);
             value = vecMat.refValue - delRef;
         }
         return value;
@@ -1260,7 +1288,7 @@ public class DatasetBase {
     public void setRefValue_r(final int iDim, final double refValue_r) {
         this.refValue_r[iDim] = refValue_r;
         if (vecMat != null) {
-            double delRef = getRefPt_r(iDim) * getSw_r(iDim) / getSf(iDim) / getSize(iDim);
+            double delRef = getRefPt_r(iDim) * getSw_r(iDim) / getSf(iDim) / getSizeTotal(iDim);
             vecMat.refValue = refValue_r + delRef;
         }
     }
@@ -1860,7 +1888,7 @@ public class DatasetBase {
     public final void setStrides() {
         strides[0] = 1;
         for (int i = 1; i < nDim; i++) {
-            strides[i] = strides[i - 1] * getSize(i - 1);
+            strides[i] = strides[i - 1] * getSizeTotal(i - 1);
         }
     }
 
@@ -2029,8 +2057,8 @@ public class DatasetBase {
         if (values == null) {
             this.values[iDim] = null;
         } else {
-            if (values.length != getSize(iDim)) {
-                throw new IllegalArgumentException("Number of values (" + values.length + ") must equal dimension size (" + getSize(iDim) + ") for dim " + iDim);
+            if (values.length != getSizeTotal(iDim)) {
+                throw new IllegalArgumentException("Number of values (" + values.length + ") must equal dimension size (" + getSizeTotal(iDim) + ") for dim " + iDim);
             }
             this.values[iDim] = values.clone();
         }
@@ -2049,8 +2077,8 @@ public class DatasetBase {
         if ((values == null) || values.isEmpty()) {
             this.values[iDim] = null;
         } else {
-            if (values.size() != getSize(iDim)) {
-                throw new IllegalArgumentException("Number of values (" + values.size() + ") must equal dimension size (" + getSize(iDim) + ") for dim " + iDim);
+            if (values.size() != getSizeTotal(iDim)) {
+                throw new IllegalArgumentException("Number of values (" + values.size() + ") must equal dimension size (" + getSizeTotal(iDim) + ") for dim " + iDim);
             }
             this.values[iDim] = new double[values.size()];
             for (int i = 0; i < values.size(); i++) {

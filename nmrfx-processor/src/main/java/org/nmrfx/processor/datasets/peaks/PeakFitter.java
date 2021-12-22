@@ -281,8 +281,8 @@ public class PeakFitter {
         }
 //        }
 
-        if (p2[0][1] >= theFile.getSize(pdim[0])) {
-            p2[0][1] = theFile.getSize(pdim[0]) - 1;
+        if (p2[0][1] >= theFile.getSizeTotal(pdim[0])) {
+            p2[0][1] = theFile.getSizeTotal(pdim[0]) - 1;
         }
 //        for (double guess : guessList) {
 //            System.out.println(guess);
@@ -623,8 +623,8 @@ public class PeakFitter {
         }
 //        }
 
-        if (p2[0][1] >= theFile.getSize(pdim[0])) {
-            p2[0][1] = theFile.getSize(pdim[0]) - 1;
+        if (p2[0][1] >= theFile.getSizeTotal(pdim[0])) {
+            p2[0][1] = theFile.getSizeTotal(pdim[0]) - 1;
         }
 //        for (double guess : guessList) {
 //            System.out.println(guess);
@@ -866,8 +866,8 @@ public class PeakFitter {
                 cw0 = 0;
             }
 
-            if (cw1 >= theFile.getSize(fitDim[0])) {
-                cw1 = theFile.getSize(fitDim[0]) - 1;
+            if (cw1 >= theFile.getSizeTotal(fitDim[0])) {
+                cw1 = theFile.getSizeTotal(fitDim[0]) - 1;
             }
 
             if (firstComp) {

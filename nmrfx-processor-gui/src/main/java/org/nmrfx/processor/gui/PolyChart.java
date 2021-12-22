@@ -763,7 +763,7 @@ public class PolyChart implements PeakListener {
         int dataSize = 0;
         DatasetBase dataset = getDataset();
         if (dataset != null) {
-            dataSize = dataset.getSize(dimNum);
+            dataSize = dataset.getSizeReal(dimNum);
         }
         return dataSize;
     }
@@ -1497,14 +1497,14 @@ public class PolyChart implements PeakListener {
         double centerPPM;
         if (is1D() || vecDimName.equals("D1")) {
             position = axModes[0].getIndex(datasetAttributes, 0, crossHairPositions[0][1]);
-            size = dataset.getSize(datasetAttributes.dim[0]);
+            size = dataset.getSizeReal(datasetAttributes.dim[0]);
             refPoint = dataset.getRefPt(datasetAttributes.dim[0]);
             refPPM = dataset.getRefValue(datasetAttributes.dim[0]);
             ppmPosition = dataset.pointToPPM(0, position);
             centerPPM = dataset.pointToPPM(0, size / 2);
         } else {
             position = axModes[vecDim].getIndex(datasetAttributes, vecDim, crossHairPositions[0][0]);
-            size = dataset.getSize(datasetAttributes.dim[vecDim]);
+            size = dataset.getSizeReal(datasetAttributes.dim[vecDim]);
             refPoint = dataset.getRefPt(datasetAttributes.dim[0]);
             refPPM = dataset.getRefValue(datasetAttributes.dim[0]);
             ppmPosition = dataset.pointToPPM(datasetAttributes.dim[vecDim], position);
@@ -1535,11 +1535,11 @@ public class PolyChart implements PeakListener {
         if (is1D() || vecDimName.equals("D1")) {
             min = axModes[0].getIndex(datasetAttributes, 0, crossHairPositions[0][1]);
             max = axModes[0].getIndex(datasetAttributes, 0, crossHairPositions[1][1]);
-            size = dataset.getSize(datasetAttributes.dim[0]);
+            size = dataset.getSizeReal(datasetAttributes.dim[0]);
         } else {
             min = axModes[vecDim].getIndex(datasetAttributes, vecDim, crossHairPositions[0][0]);
             max = axModes[vecDim].getIndex(datasetAttributes, vecDim, crossHairPositions[1][0]);
-            size = dataset.getSize(datasetAttributes.dim[vecDim]);
+            size = dataset.getSizeReal(datasetAttributes.dim[vecDim]);
         }
         int[] currentRegion = controller.getExtractRegion(vecDimName, size);
         //System.out.printf("%.3f %.3f %d %d %d\n", min, max, size, currentRegion[0], currentRegion[1]);
@@ -1585,11 +1585,11 @@ public class PolyChart implements PeakListener {
         if (is1D() || vecDimName.equals("D1")) {
             min = axModes[0].getIndex(datasetAttributes, 0, crossHairPositions[0][1]);
             max = axModes[0].getIndex(datasetAttributes, 0, crossHairPositions[1][1]);
-            size = dataset.getSize(datasetAttributes.dim[0]);
+            size = dataset.getSizeReal(datasetAttributes.dim[0]);
         } else {
             min = axModes[vecDim].getIndex(datasetAttributes, vecDim, crossHairPositions[0][0]);
             max = axModes[vecDim].getIndex(datasetAttributes, vecDim, crossHairPositions[1][0]);
-            size = dataset.getSize(datasetAttributes.dim[vecDim]);
+            size = dataset.getSizeReal(datasetAttributes.dim[vecDim]);
         }
 
         ArrayList<Double> currentRegions = controller.getBaselineRegions(vecDimName);
@@ -1797,8 +1797,8 @@ public class PolyChart implements PeakListener {
                 if (value < 0) {
                     value = 0;
                 }
-                if (value >= dataset.getSize(1)) {
-                    value = dataset.getSize(1) - 1;
+                if (value >= dataset.getSizeReal(1)) {
+                    value = dataset.getSizeReal(1) - 1;
                 }
 
                 datasetAttributes.setDrawList(value);
@@ -3667,7 +3667,7 @@ public class PolyChart implements PeakListener {
                 } else {
                     int position = axModes[0].getIndex(datasetAttributes, 0, pivot);
                     pivotPosition[datasetDim] = pivot;
-                    int size = dataset.getSize(datasetDim);
+                    int size = dataset.getSizeReal(datasetDim);
                     phaseFraction = position / (size - 1.0);
                 }
             } else if (datasetPhaseDim >= 0) {
@@ -3677,7 +3677,7 @@ public class PolyChart implements PeakListener {
                     phaseFraction = 0;
                 } else {
                     int position = axModes[phaseAxis].getIndex(datasetAttributes, phaseAxis, pivot);
-                    int size = dataset.getSize(datasetDim);
+                    int size = dataset.getSizeReal(datasetDim);
                     phaseFraction = position / (size - 1.0);
                     pivotPosition[datasetDim] = pivot;
                 }

@@ -54,7 +54,7 @@ public class Dept extends DatasetOperation {
     }
 
     public void deptCombine(Dataset dataset) throws ProcessingException {
-        int size2 = dataset.getSize(1);
+        int size2 = dataset.getSizeTotal(1);
         double[][] coefs;
         switch (size2) {
             case 8:
@@ -68,7 +68,7 @@ public class Dept extends DatasetOperation {
         }
         int nCoefs = coefs[0].length;
         int nOut = coefs.length;
-        int n = dataset.getSize(0);
+        int n = dataset.getSizeTotal(0);
         Vec[] vecs = new Vec[nCoefs];
         Vec[] outVecs = new Vec[1];
         try {
