@@ -19,7 +19,7 @@ jobs:
   # This workflow contains a single job called "build"
   build:
     # The type of runner that the job will run on
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
@@ -29,6 +29,13 @@ jobs:
         with:
           # Check-out the submodules as well
           submodules: 'recursive'
+
+      - name: Setup Java
+        uses: actions/setup-java@v2
+        with:
+          distribution: 'zulu'
+          java-version: '15'
+          cache: 'maven'
 
       - name: Cache SonarCloud packages
         uses: actions/cache@v2

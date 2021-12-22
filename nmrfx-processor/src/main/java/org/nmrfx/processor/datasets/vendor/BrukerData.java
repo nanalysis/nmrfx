@@ -70,7 +70,6 @@ public class BrukerData implements NMRData {
     private final static int MAXDIM = 10;
     private int tbytes = 0;             // TD,1
     private int np;                   // TD,1
-    private int nvectors;             // NS,1
     private int dim = 0;                // from acqu[n]s files
     private int dType = 0;
     private boolean swapBits = false; // BYTORDA,1
@@ -441,7 +440,11 @@ public class BrukerData implements NMRData {
 
     @Override
     public int getNVectors() {  // number of vectors
-        return nvectors;
+        int num = 1;
+        for (int i = 1; i < dim; i++) {
+            num *= getSize(i) * (isComplex(i) ? 2 : 1);
+        }
+        return num;
     }
 
     @Override
@@ -872,7 +875,6 @@ public class BrukerData implements NMRData {
 //            System.out.println("  "+name+" : "+parMap.get(name));
 //        }
         setPars();
-        setArrayPars(acqdim);
 //        System.out.println("parsize="+parMap.size()+" acqdim="+acqdim+" procdim="
 //                +procdim+" np="+getNPoints()+" nvectors="+
 //                getNVectors()+" tbytes="+tbytes+" tdsize="+tdsize[0]+" swapBits="+
@@ -916,6 +918,8 @@ public class BrukerData implements NMRData {
             }
             tdsize[0] = np / 2 - shiftAmount; // tcl line 348, lines 448-459
         }
+        arrayValues = getArrayValues();
+        setFTpars();
         String tdpar = "TD,";
         boolean gotSchedule = false;
         if (nusFile == null) {
@@ -932,25 +936,33 @@ public class BrukerData implements NMRData {
         if (gotSchedule) {
             int[] dims = sampleSchedule.getDims();
             for (int i = 0; i < dims.length; i++) {
-                tdsize[i + 1] = dims[i] * (isComplex(i + 1) ? 2 : 1);
+                tdsize[i + 1] = dims[i];
                 dim = i + 2;
             }
         } else {
             for (int i = 2; i <= dim; i++) {
                 tdsize[i - 1] = 1;
                 if ((ipar = getParInt(tdpar + i)) != null) {
-                    tdsize[i - 1] = ipar;
+                    tdsize[i - 1] = ipar / (isComplex(i - 1) ? 2 : 1);
                 }
             }
         }
-        arrayValues = getArrayValues();
-        setArrayPars(dim);  // must be before setFTpars()
+        for (int j = 0; j < tdsize.length; j++) {
+            if (tdsize[j] == 0) {
+                tdsize[j] = 1;
+                complexDim[j] = false;
+            }
+            maxSize[j] = tdsize[j];
+        }
+        if ((arrayValues != null) && !arrayValues.isEmpty()) {
+            arrayValues = fixArraySize(arrayValues, getMinDim());
+        }
+
         if ((ipar = getParInt("BYTORDA,1")) != null) {
             if (ipar == 0) {
                 setSwapBitsOn();
             }
         }
-        setFTpars();
     }
 
     private List<Double> getArrayValues() {
@@ -1001,9 +1013,6 @@ public class BrukerData implements NMRData {
                     }
                 }
             }
-            if ((result != null) && !result.isEmpty()) {
-                result = fixArraySize(result, smallDim);
-            }
         }
         return result;
     }
@@ -1027,16 +1036,6 @@ public class BrukerData implements NMRData {
             }
         }
         return values;
-    }
-
-    private void setArrayPars(int nDim) {
-        // set nvectors, see tcl lines 405, 418
-        // fixme need to figure out if complex or not
-        int num = 1;
-        for (int i = 1; i < nDim; i++) {
-            num *= getSize(i) * (isComplex(i) ? 2 : 1);
-        }
-        nvectors = num;
     }
 
     private void setFTpars() {
@@ -1064,14 +1063,10 @@ public class BrukerData implements NMRData {
                         complexDim[i - 1] = false;
                         fttype[i - 1] = "rft";
                         f1coefS[i - 1] = "real";
-                        if (sampleSchedule != null) {
-                            sampleSchedule.setOffsetMul(2);
-                        }
                         break;
                     case 4: // f1coef[i-1] = "1 0 0 0 0 0 1 0";
                         f1coef[i - 1] = new double[]{1, 0, 0, 0, 0, 0, 1, 0};
                         f1coefS[i - 1] = "hyper-r";
-                        tdsize[i - 1] = tdsize[i - 1] / 2;
                         break;
                     case 0:
                     case 5: // f1coef[i-1] = "1 0 0 0 0 0 1 0";
@@ -1079,13 +1074,11 @@ public class BrukerData implements NMRData {
                         complexDim[i - 1] = true;
                         fttype[i - 1] = "negate";
                         f1coefS[i - 1] = "hyper";
-                        tdsize[i - 1] = tdsize[i - 1] / 2;
                         break;
                     case 6: // f1coef[i-1] = "1 0 -1 0 0 1 0 1";
                         f1coef[i - 1] = new double[]{1, 0, -1, 0, 0, 1, 0, 1};
                         deltaPh0_2 = 90.0;
                         f1coefS[i - 1] = "echo-antiecho-r";
-                        tdsize[i - 1] = tdsize[i - 1] / 2;
                         break;
                     case 1: // f1coef[i-1] = "1 0 0 1";
                         f1coefS[i - 1] = "sep";
@@ -1093,25 +1086,15 @@ public class BrukerData implements NMRData {
                             complexDim[i - 1] = false;
                         } else {
                             complexDim[i - 1] = true;
-                            tdsize[i - 1] = tdsize[i - 1] / 2;
                         }
 
                         break;
                     default:
                         f1coef[i - 1] = new double[]{1, 0, 0, 1};
                         f1coefS[i - 1] = "sep";
-                        //tdsize[i - 1] = tdsize[i - 1] * 2;
-                        tdsize[i - 1] = tdsize[i - 1] / 2;
                         break;
                 }
             }
-        }
-        for (int j = 0; j < tdsize.length; j++) {
-            if (tdsize[j] == 0) {
-                tdsize[j] = 1;
-                complexDim[j] = false;
-            }
-            maxSize[j] = tdsize[j];
         }
     }
 
@@ -1869,6 +1852,7 @@ public class BrukerData implements NMRData {
                 bw.write("rawfile header");
                 bw.newLine();
                 int px;
+                int nvectors = getNVectors();
                 for (int i = 0; i < nvectors; i++) {
                     bw.write("block " + i + " ");
                     for (int j = 0; j < np * 2; j++) {  // data
@@ -1899,6 +1883,8 @@ public class BrukerData implements NMRData {
                     StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.CREATE, StandardOpenOption.WRITE)) {
                 bw.write("rawfile header");
                 bw.newLine();
+                int nvectors = getNVectors();
+
                 for (int i = 0; i < nvectors; i++) {
                     bw.write("block " + i + " ");
                     Vec vc = new Vec(np, true);
