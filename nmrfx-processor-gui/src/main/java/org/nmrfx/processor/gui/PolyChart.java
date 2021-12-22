@@ -2860,7 +2860,7 @@ public class PolyChart implements PeakListener {
         double[] dragPos = {x, y};
         for (DatasetAttributes datasetAttr : datasetAttributesList) {
             if (datasetAttr.getActiveRegion().isPresent()) {
-                datasetAttr.moveRegion(axes, dragStart, dragPos);
+                datasetAttr.moveRegion(axes, dragPos);
                 refresh();
             }
         }
