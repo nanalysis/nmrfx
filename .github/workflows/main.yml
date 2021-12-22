@@ -75,6 +75,7 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: mvn -B org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=nanalysis_nmrfx
 
-      - name: Assemble application archives
-        run: |
-          mvn -f ./nmrfx-analyst/pom.xml -Dmaven.test.skip=true package
+      # We can't assemble a single module when using ${revision} in poms.
+      #- name: Assemble application archives
+      #  run: |
+      #    mvn -f ./nmrfx-analyst/pom.xml -Dmaven.test.skip=true package

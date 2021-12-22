@@ -15,12 +15,12 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.nmrfx.plugin.api;
+package org.nmrfx.jmx;
 
 /**
- * EntryPoints are locations where a plugin could register itself inside NMRfx.
- * The obvious ones would be menus and scenes.
+ * The type of notifications that can be sent through JMX.
+ * New types can be added to filter on messages more easily.
  */
-public enum EntryPoint {
-    STARTUP, MENU_PLUGINS
+public enum NotificationType {
+    MESSAGE
 }
