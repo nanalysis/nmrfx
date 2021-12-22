@@ -17,9 +17,9 @@
  */
 package org.nmrfx.processor.operations;
 
-import net.sourceforge.jdistlib.math.Bessel;
 import org.nmrfx.processor.math.MatrixND;
 import org.nmrfx.datasets.MatrixType;
+import org.nmrfx.math.Bessel;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.processing.ProcessingException;
 
@@ -82,7 +82,7 @@ public class Kaiser extends Apodization implements Invertible {
                 double tt = (-1.0 + offset * 2.0) + end * 2.0 * (1.0 - offset) * deltaPos / (apodSize2 - 1.0);
                 double v1 = beta * Math.sqrt(1.0 - Math.pow(tt, 2));
                 double v2 = beta;
-                apodVec[i] = Bessel.i(v1, 0.0, false) / Bessel.i(v2, 0.0, false);
+                apodVec[i] = Bessel.i0(v1) / Bessel.i0(v2);
 
             }
             apodVec[vStart] *= c;

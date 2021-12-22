@@ -43,9 +43,6 @@ open module org.nmrfx.processor.gui {
     requires jnr.a64asm;
     requires jnr.x86asm;
     requires jnr.constants;
-    requires jdistlib;
-    requires JTransforms;
-    requires JLargeArrays;
     requires commons.math3;
     requires com.google.common;
     requires failureaccess;
