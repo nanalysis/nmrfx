@@ -141,7 +141,8 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
      * memory mapping file. You should not use StorageCache if the file is to be
      * opened for drawing in NMRFx (as thread interrupts may cause it to be
      * closed)
-     * @param dataType
+     * @param byteOrder Spcify little or big endian
+     * @param dataType 0 is float, 1 is integer
      * @throws IOException if an I/O error occurs
      */
     public Dataset(String fullName, String name, DatasetLayout datasetLayout,
@@ -1250,8 +1251,6 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
      * Read an N dimensional matrix of values within the specified region of the
      * matrix
      *
-     * @param theFile The dataset to read. Redundant since this is an instance
-     * method. fixme
      * @param pt The region to read
      * @param dim The dataset dimensions used by the region points
      * @param matrix A matrix in which to store the read values. Must be at
@@ -1259,7 +1258,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
      * @return The maximum of the absolute values of the read values
      * @throws java.io.IOException if an I/O error ocurrs
      */
-    synchronized public float readMatrix(Dataset theFile, int[][] pt,
+    synchronized public float readMatrix(int[][] pt,
             int[] dim, float[][] matrix) throws IOException {
         float maxValue = Float.NEGATIVE_INFINITY;
         float minValue = Float.MAX_VALUE;
@@ -1292,8 +1291,6 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
      * Read an N dimensional matrix of values within the specified region of the
      * matrix
      *
-     * @param theFile The dataset to read. Redundant since this is an instance
-     * method. fixme
      * @param pt The region to read
      * @param dim The dataset dimensions used by the region points
      * @param matrix A matrix in which to store the read values. Must be at
@@ -1301,7 +1298,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
      * @return The maximum of the absolute values of the read values
      * @throws java.io.IOException if an I/O error ocurrs
      */
-    synchronized public double readMatrix(Dataset theFile, int[][] pt,
+    synchronized public double readMatrix(int[][] pt,
             int[] dim, double[][] matrix) throws IOException {
         double maxValue = Double.NEGATIVE_INFINITY;
         double minValue = Double.MAX_VALUE;

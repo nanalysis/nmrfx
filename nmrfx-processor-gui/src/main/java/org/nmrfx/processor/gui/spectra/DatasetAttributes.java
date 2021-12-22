@@ -1371,7 +1371,7 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
 
         float[][] matrix = new float[apt[1][1] - apt[1][0] + 1][apt[0][1]
                 - apt[0][0] + 1];
-        theFile.readMatrix(theFile, apt, dim, matrix);
+        theFile.readMatrix(apt, dim, matrix);
 
         return (matrix);
     }
@@ -1504,7 +1504,7 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
 //        for (int i=0;i<dim.length;i++) {
 //            System.out.println(i + " " + dim[i] + " " + apt[i][1] + " " + apt[i][0]);
 //        }
-        float maxValue = theFile.readMatrix(theFile, apt, dim, matrix);
+        float maxValue = theFile.readMatrix(apt, dim, matrix);
         extremes.put(chunkLabelStr + iChunk, new Float(maxValue));
 
         return (matrix);
