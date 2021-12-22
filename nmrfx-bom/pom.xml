@@ -2,9 +2,14 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>org.nmrfx</groupId>
+    <parent>
+        <groupId>org.nmrfx</groupId>
+        <artifactId>nmrfx</artifactId>
+        <version>${revision}</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
     <artifactId>nmrfx-bom</artifactId>
-    <version>11.2.1</version>
     <packaging>pom</packaging>
 
     <properties>
@@ -208,12 +213,6 @@
                 <artifactId>javafx-base</artifactId>
                 <version>14</version>
                 <!-- license: GPLv2 license, includes the CLASSPATH exception -->
-            </dependency>
-            <dependency>
-                <groupId>net.sourceforge.jdistlib</groupId>
-                <artifactId>jdistlib</artifactId>
-                <version>0.4.5</version>
-                <!-- license: GPLv2 license -->
             </dependency>
             <dependency>
                 <groupId>org.yaml</groupId>
