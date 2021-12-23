@@ -689,7 +689,7 @@ public class Processor {
         for (int i = 0; i < dataset.getNDim(); ++i) {  // read dims from dataset
             pt[i][0] = 0;
             if (dim[i] == 0) {
-                pt[i][1] = dataset.getSize(dim[i]) - 1;
+                pt[i][1] = dataset.getSizeTotal(dim[i]) - 1;
             } else {
                 pt[i][1] = dataset.getVSize(dim[i]) - 1;
                 // fixme should we use vsize this.pt[i][1] = dataset.getVSize_r(dim[i]) - 1;

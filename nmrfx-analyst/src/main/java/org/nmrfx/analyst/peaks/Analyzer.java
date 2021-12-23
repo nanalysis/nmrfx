@@ -116,7 +116,7 @@ public class Analyzer {
     }
 
     public void calculateThreshold() {
-        int size = dataset.getSize(0);
+        int size = dataset.getSizeTotal(0);
         Vec vec = new Vec(size);
 
         int dataDim = dataset.getNDim();
@@ -509,7 +509,7 @@ public class Analyzer {
     }
 
     public void baselineCorrect() {
-        int size = dataset.getSize(0);
+        int size = dataset.getSizeTotal(0);
         Vec vec = new Vec(size);
         int winSize = 32;
         int minBase = 32;
@@ -664,7 +664,7 @@ public class Analyzer {
     }
 
     public void autoSetRegions() {
-        int size = dataset.getSize(0);
+        int size = dataset.getSizeTotal(0);
         Vec vec = new Vec(size);
 
         int dataDim = dataset.getNDim();

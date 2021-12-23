@@ -60,13 +60,13 @@ public class Normalize {
             p1 = regionStart;
             p2 = regionEnd;
         }
-        List<int[][]> indices = dataset.getIndices(iDim, 0, dataset.getSize(iDim) - 1);
+        List<int[][]> indices = dataset.getIndices(iDim, 0, dataset.getSizeTotal(iDim) - 1);
         int[] dim = new int[dataset.getNDim()];
         for (int i = 0; i < dim.length; i++) {
             dim[i] = i;
         }
         int[][] pt = indices.get(iRow);
-        final int vecSize = dataset.getSize(iDim);
+        final int vecSize = dataset.getSizeTotal(iDim);
         Vec fixedVec = new Vec(vecSize);
         dataset.readVectorFromDatasetFile(pt, dim, fixedVec);
         int nPoints = p2 - p1 + 1;
@@ -106,13 +106,13 @@ public class Normalize {
             p1 = regionStart;
             p2 = regionEnd;
         }
-        List<int[][]> indices = dataset.getIndices(iDim, 0, dataset.getSize(iDim) - 1);
+        List<int[][]> indices = dataset.getIndices(iDim, 0, dataset.getSizeTotal(iDim) - 1);
         int[] dim = new int[dataset.getNDim()];
         for (int i = 0; i < dim.length; i++) {
             dim[i] = i;
         }
         int[][] pt = indices.get(iRow);
-        final int vecSize = dataset.getSize(iDim);
+        final int vecSize = dataset.getSizeTotal(iDim);
         indices.stream().parallel().forEach(vi -> {
             Vec movingVec = new Vec(vecSize);
             try {

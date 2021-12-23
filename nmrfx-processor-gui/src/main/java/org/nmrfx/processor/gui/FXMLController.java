@@ -678,7 +678,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         if (maxNDim.isPresent()) {
             if (getActiveChart().is1D() && (maxNDim.getAsInt() > 1)) {
                 OptionalInt maxRows = datasetAttrList.stream().
-                        mapToInt(d -> d.nDim == 1 ? 1 : d.getDataset().getSize(1)).max();
+                        mapToInt(d -> d.nDim == 1 ? 1 : d.getDataset().getSizeReal(1)).max();
                 statusBar.set1DArray(maxNDim.getAsInt(), maxRows.getAsInt());
             } else {
                 statusBar.setMode(maxNDim.getAsInt());

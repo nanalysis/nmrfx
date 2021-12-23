@@ -151,7 +151,7 @@ public class NMRPipeData implements NMRData {
         FIELDS.setInt(fileHeader, "2DPHASE", 2);
         FIELDS.setFloat(fileHeader, "TEMPERATURE", (float) dataset.getTempK());
         for (int iDim = 0; iDim < getNDim(); iDim++) {
-            setSize(iDim, dataset.getSize(iDim));
+            setSize(iDim, dataset.getSizeTotal(iDim));
             FIELDS.setFloat(fileHeader, iDim, "OBS", (float) dataset.getSf(iDim));
             FIELDS.setFloat(fileHeader, iDim, "SW", (float) dataset.getSw(iDim));
             FIELDS.setInt(fileHeader, iDim, "TDSIZE", dataset.getTDSize(iDim));
@@ -177,7 +177,7 @@ public class NMRPipeData implements NMRData {
             FIELDS.setInt(fileHeader, iDim, "TDSIZE", dataset.getTDSize(iDim));
             FIELDS.setInt(fileHeader, iDim, "QUADFLAG", 1);
             FIELDS.setInt(fileHeader, iDim, "FTFLAG", 1);
-            double origenPPM = dataset.pointToPPM(iDim, dataset.getSize(iDim) - 1);
+            double origenPPM = dataset.pointToPPM(iDim, dataset.getSizeTotal(iDim) - 1);
             double origenHz = origenPPM * dataset.getSf(iDim);
             FIELDS.setFloat(fileHeader, iDim, "ORIG", (float) origenHz);
             FIELDS.setFloat(fileHeader, iDim, "P0", (float) dataset.getPh0(iDim));
@@ -1445,8 +1445,8 @@ public class NMRPipeData implements NMRData {
         this.template = template;
         ByteOrder byteOrder = ByteOrder.LITTLE_ENDIAN;
         int[] indices = new int[2];
-        int nBytes = dataSource.getSize(0) * Float.BYTES;
-        int nPlanes = dataSource.getNDim() > 2 ? dataSource.getSize(2) : 1;
+        int nBytes = dataSource.getSizeTotal(0) * Float.BYTES;
+        int nPlanes = dataSource.getNDim() > 2 ? dataSource.getSizeTotal(2) : 1;
         for (int iPlane = 0; iPlane < nPlanes; iPlane++) {
             indices[1] = iPlane;
             String fileName = getTemplateFile(iPlane);
@@ -1454,8 +1454,8 @@ public class NMRPipeData implements NMRData {
                 outFile.write(fileHeader.bBuffer.array());
                 ByteBuffer byteBuffer = ByteBuffer.allocate(nBytes);
                 FloatBuffer floatBuffer = byteBuffer.order(byteOrder).asFloatBuffer();
-                Vec vec = new Vec(dataSource.getSize(0));
-                for (int i = 0, nRows = dataSource.getSize(1); i < nRows; i++) {
+                Vec vec = new Vec(dataSource.getSizeTotal(0));
+                for (int i = 0, nRows = dataSource.getSizeTotal(1); i < nRows; i++) {
                     indices[0] = i;
                     dataSource.readVector(vec, indices, 0);
                     for (int j = 0, n = vec.getSize(); j < n; j++) {

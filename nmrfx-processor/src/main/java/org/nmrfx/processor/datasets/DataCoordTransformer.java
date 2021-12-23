@@ -30,7 +30,7 @@ public class DataCoordTransformer {
         this.sw = new double[nDim];
         this.ppm = new double[nDim][2];
         for (int i = 0; i < nDim; i++) {
-            this.size[i] = dataset.getSize(dim[i]);
+            this.size[i] = dataset.getSizeTotal(dim[i]);
             this.sw[i] = dataset.getSw(dim[i]);
             this.ppm[i][0] = dataset.pointToPPM(dim[i], 0);
             this.ppm[i][1] = dataset.pointToPPM(dim[i], size[i] - 1);

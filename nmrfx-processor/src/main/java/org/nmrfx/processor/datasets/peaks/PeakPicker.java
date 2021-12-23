@@ -76,7 +76,7 @@ public class PeakPicker {
     }
 
     int getSize(int i) {
-        return dataset.getSize(i);
+        return dataset.getSizeTotal(i);
     }
 
     public int getNPeaks() {
@@ -106,7 +106,7 @@ public class PeakPicker {
 
         for (i = 0; i < nDim; i++) {
             if (regionSizeHz > 0.1) {
-                regionSize[i] = (int) (regionSizeHz / dataset.getSw(i) * dataset.getSize(i));
+                regionSize[i] = (int) (regionSizeHz / dataset.getSw(i) * dataset.getSizeTotal(i));
             } else {
                 regionSize[i] = 2;
             }
@@ -138,8 +138,8 @@ public class PeakPicker {
                         checkPoint[i] = pt[i] + deltaPoint[i];
                         if (checkPoint[i] < 0) {
                             ok = false;
-                        } else if (checkPoint[i] >= dataset.getSize(dim[i])) {
-                            checkPoint[i] = checkPoint[i] - dataset.getSize(dim[i]);
+                        } else if (checkPoint[i] >= dataset.getSizeTotal(dim[i])) {
+                            checkPoint[i] = checkPoint[i] - dataset.getSizeTotal(dim[i]);
                         }
                     } else {
                         checkPoint[i] = pt[i];
@@ -215,7 +215,7 @@ public class PeakPicker {
         centerValue = sign * readPoint(pt, dim);
         if (!measurePeak) {
             for (i = 0; i < nDim; i++) {
-                double bndHz = 15.0 * dataset.getSize(dim[i]) / dataset.getSw(dim[i]);
+                double bndHz = 15.0 * dataset.getSizeTotal(dim[i]) / dataset.getSw(dim[i]);
                 peak.peakDims[i].setLineWidthValue((float) dataset.ptWidthToPPM(dim[i], bndHz / 2.0));
                 peak.peakDims[i].setBoundsValue((float) dataset.ptWidthToPPM(dim[i], bndHz));
                 fPt = (float) cpt[i];
@@ -226,7 +226,7 @@ public class PeakPicker {
         }
 
         for (i = 0; i < nDim; i++) {
-            maxWidth[i] = (int) ((200.0 * dataset.getSize(dim[i])) / dataset.getSw(dim[i]));
+            maxWidth[i] = (int) ((200.0 * dataset.getSizeTotal(dim[i])) / dataset.getSw(dim[i]));
 
             if (maxWidth[i] < 3) {
                 maxWidth[i] = 3;
@@ -270,7 +270,7 @@ public class PeakPicker {
                 for (j = 1; j < maxWidth[i]; j++) {
                     checkPoint[i] += delta;
 
-                    if (checkPoint[i] >= dataset.getSize(dim[i])) {
+                    if (checkPoint[i] >= dataset.getSizeTotal(dim[i])) {
                         if (fold[i] && firstTime) {
                             checkPoint[i] = 0;
                             firstTime = false;
@@ -281,7 +281,7 @@ public class PeakPicker {
 
                     if (checkPoint[i] < 0) {
                         if (fold[i] && firstTime) {
-                            checkPoint[i] = dataset.getSize(dim[i]) - 1;
+                            checkPoint[i] = dataset.getSizeTotal(dim[i]) - 1;
                             firstTime = false;
                         } else {
                             break;

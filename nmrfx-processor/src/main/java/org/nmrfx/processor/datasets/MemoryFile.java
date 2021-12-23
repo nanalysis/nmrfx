@@ -46,14 +46,14 @@ public class MemoryFile implements DatasetStorageInterface, Closeable {
         this.writable = writable;
         long size = 1;
         for (int i = 0; i < dataset.getNDim(); i++) {
-            sizes[i] = dataset.getSize(i);
+            sizes[i] = dataset.getSizeTotal(i);
             size *= sizes[i];
             if (i == 0) {
                 strides[i] = 1;
             } else {
                 strides[i] = strides[i - 1] * sizes[i - 1];
             }
-            System.err.println("mem file " + i + " " + dataset.getSize(i) + " " + strides[i]);
+            System.err.println("mem file " + i + " " + dataset.getSizeTotal(i) + " " + strides[i]);
         }
         //System.out.println("size " + totalSize);
         totalSize = size;

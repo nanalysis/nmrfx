@@ -154,14 +154,14 @@ public class NMRViewData implements NMRData {
         int nVec = 1;
         int nDim = dataset.getNDim();
         for (int i = 1; i < nDim; i++) {
-            nVec *= dataset.getSize(i);
+            nVec *= dataset.getSizeTotal(i);
         }
         return nVec;
     }
 
     @Override
     public int getNPoints() {  // points per vector
-        int np = dataset.getSize(0);
+        int np = dataset.getSizeTotal(0);
         if (dataset.getComplex(0)) {
             np /= 2;
         }
@@ -447,7 +447,7 @@ public class NMRViewData implements NMRData {
 
     @Override
     public int getSize(int iDim) {
-        int size = dataset.getSize(iDim);
+        int size = dataset.getSizeTotal(iDim);
         if (dataset.getComplex(iDim)) {
             size /= 2;
         }
@@ -563,14 +563,14 @@ public class NMRViewData implements NMRData {
         int[][] pt = new int[nDim][2];
         int[] dim = new int[nDim];
         pt[0][0] = 0;
-        pt[0][1] = dataset.getSize(0) - 1;
+        pt[0][1] = dataset.getSizeTotal(0) - 1;
         int offset = iVec;
         int[] strides = new int[nDim];
         strides[0] = 1;
         int nIndirect = nDim - 1;
 
         for (int i = 1; i < nIndirect; i++) {
-            strides[i] = strides[i - 1] * dataset.getSize(i);
+            strides[i] = strides[i - 1] * dataset.getSizeTotal(i);
         }
         for (int i = nIndirect; i > 0; i--) {
             int index = iVec / strides[i - 1];

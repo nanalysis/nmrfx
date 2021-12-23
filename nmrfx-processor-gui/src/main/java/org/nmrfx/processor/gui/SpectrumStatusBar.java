@@ -23,7 +23,6 @@
  */
 package org.nmrfx.processor.gui;
 
-import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.utils.properties.CustomNumberTextField;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import de.jensd.fx.glyphs.GlyphsDude;
@@ -34,7 +33,6 @@ import java.util.HashMap;
 import java.util.List;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
-import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -426,7 +424,7 @@ public class SpectrumStatusBar {
 
                 int center = (indexL + indexU) / 2;
                 int dDim = dataAttr.dim[axNum];
-                int size = dataAttr.getDataset().getSize(dDim);
+                int size = dataAttr.getDataset().getSizeReal(dDim);
                 setPlaneRanges(axNum, size);
                 updatePlaneSpinner(center, axNum);
             }

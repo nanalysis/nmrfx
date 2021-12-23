@@ -443,8 +443,12 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
      * @return the size
      */
     @Override
-    public int getSize(int iDim) {
-        return vecMat == null ? layout.getSize(iDim) : vecMat.getSize();
+    public int getSizeTotal(int iDim) {
+        if (vecMat == null) {
+            return layout.getSize(iDim);
+        } else {
+            return vecMat.getSize() * (vecMat.isComplex() ? 2 : 1);
+        }
     }
 
     /**
@@ -454,7 +458,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
      * @param size the size to set
      */
     @Override
-    public void setSize(final int iDim, final int size) {
+    public void setSizeTotal(final int iDim, final int size) {
         layout.setSize(iDim, size);
     }
 
@@ -543,11 +547,11 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
             System.arraycopy(maxPoint, 0, points, 0, nDim);
             points[j] = maxPoint[j] - 1;
             if (points[j] < 0) {
-                points[j] = getSize(dim[j]) - 1;
+                points[j] = getSizeTotal(dim[j]) - 1;
             }
             f[0] = readPoint(points, dim);
             points[j] = maxPoint[j] + 1;
-            if (points[j] >= getSize(dim[j])) {
+            if (points[j] >= getSizeTotal(dim[j])) {
                 points[j] = 0;
             }
             f[1] = readPoint(points, dim);
@@ -624,10 +628,10 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
             for (int i = 0; i < nDim; i++) {
                 dim[i] = i;
                 pt[i][0] = 4;
-                if (pt[i][0] >= getSize(i)) {
-                    pt[i][0] = getSize(i) - 1;
+                if (pt[i][0] >= getSizeTotal(i)) {
+                    pt[i][0] = getSizeTotal(i) - 1;
                 }
-                pt[i][1] = getSize(i) / 8;
+                pt[i][1] = getSizeTotal(i) / 8;
                 cpt[i] = (pt[i][0] + pt[i][1]) / 2;
                 width[i] = (double) Math.abs(pt[i][0] - pt[i][1]);
             }
@@ -666,7 +670,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         int pass2;
 
         if (vecMat != null) {
-            setSize(0, vecMat.getSize());
+            setSizeTotal(0, vecMat.getSize());
         }
 
         int[] counterSizes = new int[nDim];
@@ -674,7 +678,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
             if (pt[i][1] >= pt[i][0]) {
                 counterSizes[i] = pt[i][1] - pt[i][0] + 1;
             } else {
-                counterSizes[i] = getSize(dim[i]) + (pt[i][1] - pt[i][0] + 1);
+                counterSizes[i] = getSizeTotal(dim[i]) + (pt[i][1] - pt[i][0] + 1);
             }
             iTol[i] = fTol * Math.abs(counterSizes[i]);
         }
@@ -691,8 +695,8 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
                 int[] points = cIter.next();
                 for (int i = 0; i < nDim; i++) {
                     points[i] += pt[i][0];
-                    if (points[i] >= getSize(dim[i])) {
-                        points[i] = points[i] - getSize(dim[i]);
+                    if (points[i] >= getSizeTotal(dim[i])) {
+                        points[i] = points[i] - getSizeTotal(dim[i]);
                     }
                     iPointAbs[i] = points[i];
                 }
@@ -810,7 +814,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
             if (pt[i][1] >= pt[i][0]) {
                 counterSizes[i] = pt[i][1] - pt[i][0] + 1;
             } else {
-                counterSizes[i] = getSize(dim[i]) + (pt[i][1] - pt[i][0] + 1);
+                counterSizes[i] = getSizeTotal(dim[i]) + (pt[i][1] - pt[i][0] + 1);
             }
         }
         DimCounter counter = new DimCounter(counterSizes);
@@ -819,8 +823,8 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
             int[] points = cIter.next();
             for (int i = 0; i < nDim; i++) {
                 points[i] += pt[i][0];
-                if (points[i] >= getSize(dim[i])) {
-                    points[i] = points[i] - getSize(dim[i]);
+                if (points[i] >= getSizeTotal(dim[i])) {
+                    points[i] = points[i] - getSizeTotal(dim[i]);
                 }
             }
             double value = readPoint(points, dim);
@@ -844,7 +848,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
             if (pt[i][1] >= pt[i][0]) {
                 counterSizes[i] = pt[i][1] - pt[i][0] + 1;
             } else {
-                counterSizes[i] = getSize(dim[i]) + (pt[i][1] - pt[i][0] + 1);
+                counterSizes[i] = getSizeTotal(dim[i]) + (pt[i][1] - pt[i][0] + 1);
             }
         }
         DimCounter counter = new DimCounter(counterSizes);
@@ -856,8 +860,8 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
             int[] points = cIter.next();
             for (int i = 0; i < nDim; i++) {
                 points[i] += pt[i][0];
-                if (points[i] >= getSize(dim[i])) {
-                    points[i] = points[i] - getSize(dim[i]);
+                if (points[i] >= getSizeTotal(dim[i])) {
+                    points[i] = points[i] - getSizeTotal(dim[i]);
                 }
             }
             double value = readPoint(points, dim);
@@ -923,11 +927,11 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
 
             dim[i] = j;
             pt[i][0] = 0;
-            pt[i][1] = getSize(dim[i]) - 1;
-            faceSize *= getSize(dim[i]);
+            pt[i][1] = getSizeTotal(dim[i]) - 1;
+            faceSize *= getSizeTotal(dim[i]);
             j++;
         }
-        pt[0][1] = getSize(iDim) - 1;
+        pt[0][1] = getSizeTotal(iDim) - 1;
         int newSize = pt[0][1] - pt[0][0] + 1;
 
         Vec rmsdVec = new Vec(newSize, false);
@@ -935,7 +939,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         ScanRegion scanRegion = new ScanRegion(pt, dim, this);
         int nEntries = scanRegion.buildIndex();
 
-        int winSize = getSize(iDim) / 32;
+        int winSize = getSizeTotal(iDim) / 32;
         int nWin = 4;
         rmsd[iDim] = new double[faceSize];
         int origSize = pt[0][1];
@@ -952,7 +956,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
             int index = 0;
             for (int i = 1; i < pt.length; i++) {
                 index += pt[i][0] * dSize;
-                dSize = getSize(dim[i]);
+                dSize = getSizeTotal(dim[i]);
             }
             rmsd[iDim][index] = sdev;
         }
@@ -982,7 +986,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         int[] dim = getSliceDims(iDim);
         for (int i = 1; i < pt.length; i++) {
             index += pt[i] * dSize;
-            dSize = getSize(dim[i]);
+            dSize = getSizeTotal(dim[i]);
         }
         if ((rmsd[iDim] == null) || (index >= rmsd[iDim].length)) {
             return null;
@@ -1179,10 +1183,10 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
             boolean inDataset = true;
             for (int value : counts) {
                 aCounts[j] = value + p2[j][0];
-                if (aCounts[j] >= getSize(j)) {
-                    aCounts[j] -= getSize(j);
+                if (aCounts[j] >= getSizeTotal(j)) {
+                    aCounts[j] -= getSizeTotal(j);
                 } else if (aCounts[j] < 0) {
-                    aCounts[j] += getSize(j);
+                    aCounts[j] += getSizeTotal(j);
                 }
                 j++;
             }
@@ -1223,7 +1227,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
      */
     public void syncSize(int iDim) {
         if (iDim > 0) {
-            setSize(iDim, getVSize(iDim));
+            setSizeTotal(iDim, getVSize(iDim));
         }
     }
 
@@ -1580,7 +1584,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         int[] counterSizes = new int[nDim];
         int[] dim = new int[nDim];
         for (int i = 0; i < nDim; i++) {
-            counterSizes[i] = getSize(i);
+            counterSizes[i] = getSizeTotal(i);
             dim[i] = i;
         }
         DimCounter counter = new DimCounter(counterSizes);
@@ -1644,7 +1648,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
                 rwVector.dwellTime *= (double) dSize / rwVector.getSize();
             }
         } else {
-            int dSize = getSize(dim[0]);
+            int dSize = getSizeTotal(dim[0]);
             if (rwVector.getSize() != dSize) {
                 if (rwVector.getFreqDomain()) {
                     rwVector.dwellTime *= (double) dSize / rwVector.getSize();
@@ -1657,7 +1661,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         rwVector.setTDSize(getTDSize(dim[0]));
         rwVector.setPt(pt, dim);
 
-        double delRef = ((getRefPt_r(dim[0]) - pt[0][0]) * getSw_r(dim[0])) / getSf(dim[0]) / getSize(dim[0]);
+        double delRef = ((getRefPt_r(dim[0]) - pt[0][0]) * getSw_r(dim[0])) / getSf(dim[0]) / getSizeTotal(dim[0]);
         rwVector.refValue = getRefValue_r(dim[0]) + delRef;
         rwVector.setFreqDomain(getFreqDomain_r(dim[0]));
 
@@ -1711,7 +1715,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
      * @throws IOException if an I/O error occurs
      */
     public ArrayRealVector getRowVector(int row) throws IOException {
-        int vecSize = getSize(0);
+        int vecSize = getSizeTotal(0);
         int[] pt = new int[nDim];
         pt[1] = row;
         ArrayRealVector vector = new ArrayRealVector(vecSize);
@@ -1755,7 +1759,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
      * @throws IOException if an I/O error occurs
      */
     public ArrayRealVector getColumnVector(int column) throws IOException {
-        int vecSize = getSize(1);
+        int vecSize = getSizeTotal(1);
         int[] pt = new int[nDim];
         pt[0] = column;
         ArrayRealVector vector = new ArrayRealVector(vecSize);
@@ -1881,7 +1885,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
 
     public BucketedMatrix getBucketedSubMatrixFromRegions(int bucketSize) throws IOException {
 
-        int[] rowIndices = new int[getSize(1)];
+        int[] rowIndices = new int[getSizeTotal(1)];
         for (int i = 0; i < rowIndices.length; i++) {
             rowIndices[i] = i;
         }
@@ -2038,7 +2042,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
      * @throws IOException if an I/O error occurs
      */
     public Vec readVector(int index, int iDim) throws IOException {
-        Vec vector = new Vec(getSize(iDim), getComplex(iDim));
+        Vec vector = new Vec(getSizeTotal(iDim), getComplex(iDim));
         readVector(vector, index, iDim);
         return vector;
 
@@ -2272,8 +2276,8 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         for (int i = 0; i < nDim; i++) {
             dim[i] = i;
             pt[i][0] = 0;
-            pt[i][1] = getSize(i) - 1;
-            datasetSizes[i] = getSize(i);
+            pt[i][1] = getSizeTotal(i) - 1;
+            datasetSizes[i] = getSizeTotal(i);
         }
         int newSize = pt[0][1] - pt[0][0] + 1;
 
@@ -2345,10 +2349,10 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
 
                 dim[i] = j;
                 pt[i][0] = 0;
-                pt[i][1] = getSize(dim[i]) - 1;
+                pt[i][1] = getSizeTotal(dim[i]) - 1;
                 j++;
             }
-            pt[0][1] = getSize(iDim) - 1;
+            pt[0][1] = getSizeTotal(iDim) - 1;
             origSize = pt[0][1];
             int newSize = pt[0][1] - pt[0][0] + 1;
             vec = new Vec(newSize, false);
@@ -2410,10 +2414,10 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
 
                 dim[i] = j;
                 pt[i][0] = 0;
-                pt[i][1] = getSize(dim[i]) - 1;
+                pt[i][1] = getSizeTotal(dim[i]) - 1;
                 j++;
             }
-            pt[0][1] = getSize(iDim) - 1;
+            pt[0][1] = getSizeTotal(iDim) - 1;
             origSize = pt[0][1];
             scanRegion = new ScanRegion(pt, dim, dataset);
         }
@@ -2489,7 +2493,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
     synchronized public Iterator pointIterator() throws IOException {
         int[] mPoint = new int[nDim];
         for (int i = 0; i < nDim; i++) {
-            mPoint[nDim - i - 1] = getSize(i) - 1;
+            mPoint[nDim - i - 1] = getSizeTotal(i) - 1;
         }
         MultidimensionalCounter counter = new MultidimensionalCounter(mPoint);
         MultidimensionalCounter.Iterator iter = counter.iterator();
@@ -2502,8 +2506,8 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         if (start < 0) {
             start = 0;
         }
-        if (end >= getSize(iDim)) {
-            end = getSize(iDim) - 1;
+        if (end >= getSizeTotal(iDim)) {
+            end = getSizeTotal(iDim) - 1;
         }
         while (iter.hasNext()) {
             int[][] pt = iter.next();
@@ -2548,7 +2552,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
     DimCounter.Iterator getPointIterator() {
         int[] counterSizes = new int[nDim];
         for (int i = 0; i < nDim; i++) {
-            counterSizes[i] = getSize(i);
+            counterSizes[i] = getSizeTotal(i);
         }
         DimCounter counter = new DimCounter(counterSizes);
         DimCounter.Iterator cIter = counter.iterator();
@@ -2575,7 +2579,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         double[] buffer = buffers.get(bufferName);
         int bufferSize = 1;
         for (int i = 0; i < nDim; i++) {
-            bufferSize *= getSize(i);
+            bufferSize *= getSizeTotal(i);
         }
         if ((buffer == null) || (buffer.length != bufferSize)) {
             buffer = new double[bufferSize];
@@ -2673,7 +2677,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         if (projections == null) {
             projections = new Dataset[getNDim()];
         }
-        Vec projVec = new Vec(getSize(iDim));
+        Vec projVec = new Vec(getSizeTotal(iDim));
         projVec.setName(getName() + "_proj_" + (iDim + 1));
         readVector(projVec, 0, iDim);
         projVec.zeros();

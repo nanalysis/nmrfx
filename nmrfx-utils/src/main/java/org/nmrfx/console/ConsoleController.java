@@ -27,6 +27,7 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import javafx.application.Platform;
+import javafx.event.Event;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -144,6 +145,19 @@ public class ConsoleController extends OutputStream implements Initializable {
 
         textArea.appendText("> ");
 
+    }
+
+    public void writeAndRun(String text) {
+        KeyEvent dummy = new KeyEvent(null, Event.NULL_SOURCE_TARGET, KeyEvent.KEY_TYPED, "\n", text, KeyCode.ENTER, false, false, false, false);
+        if (Platform.isFxApplicationThread()) {
+            textArea.appendText(text);
+            filterEnter(dummy);
+        } else {
+            Platform.runLater(() -> {
+                textArea.appendText(text);
+                filterEnter(dummy);
+            });
+        }
     }
 
     public void write(String text) {

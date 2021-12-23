@@ -960,7 +960,7 @@ public class PeakListTools {
             quantifyPeaks(peakList, dataset, f, mode);
         } else if (nDim == (nDataDim - 1)) {
             int scanDim = 2;
-            int nPlanes = dataset.getSize(scanDim);
+            int nPlanes = dataset.getSizeTotal(scanDim);
             quantifyPeaks(peakList, dataset, f, mode, nPlanes);
         } else if (nDim > nDataDim) {
             throw new IllegalArgumentException("Peak list has more dimensions than dataset");
@@ -985,7 +985,7 @@ public class PeakListTools {
             quantifyPeaks(peakList, datasets, f, mode, 1);  // fixme will this work
         } else if (nDim == (nDataDim - 1)) {
             int scanDim = 2;
-            int nPlanes = datasets.get(0).getSize(scanDim);
+            int nPlanes = datasets.get(0).getSizeTotal(scanDim);
             quantifyPeaks(peakList, datasets, f, mode, nPlanes);
         } else if (nDim > nDataDim) {
             throw new IllegalArgumentException("Peak list has more dimensions than dataset");
@@ -1443,7 +1443,7 @@ public class PeakListTools {
             }
             if ((dataDim - nPeakDim) == 1) {
                 if (arrayedFitMode != ARRAYED_FIT_MODE.SINGLE) {
-                    nPlanes = theFile.getSize(dataDim - 1);
+                    nPlanes = theFile.getSizeTotal(dataDim - 1);
                 }
             }
             // if rate mode add guesses for relaxation time constant 1/rate and
