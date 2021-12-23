@@ -620,8 +620,8 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
         return Optional.ofNullable(activeRegion);
     }
 
-    public void setActiveRegion(Optional<IntegralHit> activeRegion) {
-        this.activeRegion = activeRegion.orElse(null);
+    public void setActiveRegion(IntegralHit activeRegion) {
+        this.activeRegion = activeRegion;
     }
 
     public void setMapColor(int index, String colorName) {
@@ -776,7 +776,7 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
             pt[i][0] = 0;
             ptd[i][0] = 0;
             pt[i][1] = theFile.getSizeReal(i) - 1;
-            ptd[i][1] = theFile.getSizeReal(i) - 1;
+            ptd[i][1] = theFile.getSizeReal(i) - 1.0;
         }
 
         pt[0][0] = 0;
@@ -786,7 +786,7 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
             pt[1][0] = 0;
             ptd[1][0] = 0;
             pt[1][1] = theFile.getSizeReal(1) - 1;
-            ptd[1][1] = theFile.getSizeReal(1) - 1;
+            ptd[1][1] = theFile.getSizeReal(1) - 1.0;
         }
 
         chunkSize = new int[theFile.getNDim()];
@@ -823,7 +823,7 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
             pt[i][0] = 0;
             ptd[i][0] = 0;
             pt[i][1] = theFile.getSizeReal(i) - 1;
-            ptd[i][1] = theFile.getSizeReal(i) - 1;
+            ptd[i][1] = theFile.getSizeReal(i) - 1.0;
         }
 
         pt[0][0] = 0;
@@ -833,7 +833,7 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
             pt[1][0] = 0;
             ptd[1][0] = 0;
             pt[1][1] = theFile.getSizeReal(1) - 1;
-            ptd[1][1] = theFile.getSizeReal(1) - 1;
+            ptd[1][1] = theFile.getSizeReal(1) - 1.0;
         }
 
         chunkSize = new int[theFile.getNDim()];
@@ -1039,7 +1039,7 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
                     localPtD[i][1] = axModes[i].getIndexD(this, i, axes[1].getUpperBound());
                 } else {
                     localPtD[i][0] = 0;
-                    localPtD[i][0] = theFile.getSizeReal(dim[i]) - 1;
+                    localPtD[i][0] = theFile.getSizeReal(dim[i]) - 1.0;
                 }
             } else if (axModes.length <= i) {
                 localPtD[i][0] = theFile.getSizeReal(dim[i]) / 2.0;
@@ -1378,7 +1378,7 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
             if (i > 1) {
                 chunkSize[i] = 1;
 //                if (drawList != null) {
-                //                   dimSize = drawList.length; 
+                //                   dimSize = drawList.length;
                 //              }
             }
             chunkOffset[i] = chunkOffset[i - 1] * (((dimSize - 1) / chunkSize[i - 1]) + 1);
@@ -1545,7 +1545,6 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
                 for (int j = 0; j < dim.length; j++) {
                     if (theFile.getNucleus(j).toString().equals(matchAttr.theFile.getNucleus(matchDim[i]).toString())) {
                         dim[i] = j;
-                        match = true;
                     }
                 }
             }
