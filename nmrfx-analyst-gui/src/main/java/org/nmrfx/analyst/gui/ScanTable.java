@@ -558,7 +558,7 @@ public class ScanTable {
         PolyChart chart = scannerTool.getChart();
         DatasetBase dataset = chart.getDataset();
         fileListItems.clear();
-        int nRows = dataset.getSize(1);
+        int nRows = dataset.getSizeTotal(1);
         HashMap<String, String> fieldMap = new HashMap();
         double[] values = dataset.getValues(1);
         for (int iRow = 0; iRow < nRows; iRow++) {

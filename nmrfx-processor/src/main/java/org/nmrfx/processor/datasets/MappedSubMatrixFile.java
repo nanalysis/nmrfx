@@ -72,7 +72,7 @@ public class MappedSubMatrixFile implements DatasetStorageInterface, Closeable {
         System.err.println(dataset.getFileName());
         System.err.println("header size " + layout.getFileHeaderSize());
         for (int i = 0; i < dataset.getNDim(); i++) {
-            System.err.println("map sub " + i + " " + layout.blockSize[i] + " " + layout.nBlocks[i] + " " + dataset.getSize(i));
+            System.err.println("map sub " + i + " " + layout.blockSize[i] + " " + layout.nBlocks[i] + " " + dataset.getSizeTotal(i));
             matSize *= (layout.blockSize[i] + blockHeaderSize) * layout.nBlocks[i];
         }
         totalSize = matSize / BYTES;

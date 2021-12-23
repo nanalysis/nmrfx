@@ -79,7 +79,7 @@ public class BigMappedMatrixFile implements DatasetStorageInterface, Closeable {
         System.err.println("header size " + layout.getFileHeaderSize());
         strides[0] = 1;
         for (int i = 0; i < dataset.getNDim(); i++) {
-            System.err.println("big map " + i + " " + layout.blockSize[i] + " " + layout.nBlocks[i] + " " + dataset.getSize(i));
+            System.err.println("big map " + i + " " + layout.blockSize[i] + " " + layout.nBlocks[i] + " " + dataset.getSizeTotal(i));
             matSize *= (layout.blockSize[i] + blockHeaderSize) * layout.nBlocks[i];
             // strides only relevant if no block header and not submatrix
             if (i > 0) {

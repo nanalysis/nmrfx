@@ -40,7 +40,7 @@ public class Align {
     }
 
     public int findClosest(final Dataset dataset, Vec vec1, Vec vec2, int row, final int pt1, final int pt2) throws IOException {
-        int nVec = dataset.getSize(1);
+        int nVec = dataset.getSizeTotal(1);
         int index = 0;
         double maxCorr = Double.NEGATIVE_INFINITY;
         for (int j = row + 1; j < nVec; j++) {
@@ -58,9 +58,9 @@ public class Align {
     }
 
     public void sortByCorr(final Dataset dataset, int row, final int pt1, final int pt2) throws IOException {
-        int nVec = dataset.getSize(1);
-        Vec vec1 = new Vec(dataset.getSize(0), false);
-        Vec vec2 = new Vec(dataset.getSize(0), false);
+        int nVec = dataset.getSizeTotal(1);
+        Vec vec1 = new Vec(dataset.getSizeTotal(0), false);
+        Vec vec2 = new Vec(dataset.getSizeTotal(0), false);
         double maxCenter = Double.NEGATIVE_INFINITY;
         if (row < 0) {
             int index = 0;
@@ -85,13 +85,13 @@ public class Align {
     }
 
     public void align(final Dataset dataset, List<Double> deltas) throws IOException {
-        List<int[][]> indices = dataset.getIndices(0, 0, dataset.getSize(0) - 1);
+        List<int[][]> indices = dataset.getIndices(0, 0, dataset.getSizeTotal(0) - 1);
         int[] dim = new int[dataset.getNDim()];
         for (int i = 0; i < dim.length; i++) {
             dim[i] = i;
         }
 
-        final int vecSize = dataset.getSize(0);
+        final int vecSize = dataset.getSizeTotal(0);
         indices.stream().parallel().forEach(vi -> {
             Vec vec = new Vec(vecSize);
             try {
@@ -119,14 +119,14 @@ public class Align {
             p1 = pt1;
             p2 = pt2;
         }
-        List<int[][]> indices = dataset.getIndices(0, 0, dataset.getSize(0) - 1);
+        List<int[][]> indices = dataset.getIndices(0, 0, dataset.getSizeTotal(0) - 1);
         int[] dim = new int[dataset.getNDim()];
         for (int i = 0; i < dim.length; i++) {
             dim[i] = i;
         }
         int[][] pt = indices.get(row);
 
-        final int vecSize = dataset.getSize(0);
+        final int vecSize = dataset.getSizeTotal(0);
         Vec fixedVec = new Vec(vecSize);
         dataset.readVectorFromDatasetFile(pt, dim, fixedVec);
         IndexValue indexValue = fixedVec.maxIndex(pt1, pt2);
@@ -150,7 +150,7 @@ public class Align {
     }
 
     public Double[] alignByCowStream(final Dataset dataset, final int fixStart, final int fixEnd, final int pStart, int sectionLength, final int iWarp, final int tStart) throws IOException {
-        List<int[][]> indices = dataset.getIndices(0, 0, dataset.getSize(0) - 1);
+        List<int[][]> indices = dataset.getIndices(0, 0, dataset.getSizeTotal(0) - 1);
         int[] dim = new int[dataset.getNDim()];
         int[][] pt = indices.get(0);
         int[][] startVecPos = new int[dim.length][2];
@@ -162,7 +162,7 @@ public class Align {
         }
         startVecPos[0][0] = fixStart;
         startVecPos[0][1] = fixEnd;
-        final int vecSize = dataset.getSize(0);
+        final int vecSize = dataset.getSizeTotal(0);
         Vec fixedVec = new Vec(fixEnd - fixStart + 1);
         dataset.readVectorFromDatasetFile(startVecPos, dim, fixedVec);
 //        indices = indices.subList(0, 2);
@@ -326,12 +326,12 @@ public class Align {
     }
 
     public Vec getAverageVector(final Dataset dataset) throws IOException {
-        List<int[][]> indices = dataset.getIndices(0, 0, dataset.getSize(0) - 1);
+        List<int[][]> indices = dataset.getIndices(0, 0, dataset.getSizeTotal(0) - 1);
         int[] dim = new int[dataset.getNDim()];
         for (int i = 0; i < dim.length; i++) {
             dim[i] = i;
         }
-        final int vecSize = dataset.getSize(0);
+        final int vecSize = dataset.getSizeTotal(0);
         Vec avgVec = dataset.readVector(0, 0);
         avgVec.zeros();
         indices.stream().forEach(vi -> {
@@ -351,7 +351,7 @@ public class Align {
     }
 
     public Double[] alignBySegmentsStream(final Dataset dataset, final int fixStart, final int fixEnd, int sectionLength, int maxShift, boolean useAverage) throws IOException {
-        List<int[][]> indices = dataset.getIndices(0, 0, dataset.getSize(0) - 1);
+        List<int[][]> indices = dataset.getIndices(0, 0, dataset.getSizeTotal(0) - 1);
         final int[][] skipIndices;
         int[] dim = new int[dataset.getNDim()];
         int[][] pt = indices.get(0);
@@ -364,7 +364,7 @@ public class Align {
         }
         startVecPos[0][0] = fixStart;
         startVecPos[0][1] = fixEnd;
-        final int vecSize = dataset.getSize(0);
+        final int vecSize = dataset.getSizeTotal(0);
         Vec fixedVec;
         if (useAverage) {
             fixedVec = getAverageVector(dataset);

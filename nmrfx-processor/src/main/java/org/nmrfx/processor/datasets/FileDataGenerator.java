@@ -114,18 +114,18 @@ public class FileDataGenerator extends DataGenerator implements Cloneable {
         for (i = 0; i < theFile.getNDim(); i++) {
             pt[i][0] = 0;
             ptd[i][0] = 0;
-            pt[i][1] = theFile.getSize(i) - 1;
-            ptd[i][1] = theFile.getSize(i) - 1;
+            pt[i][1] = theFile.getSizeTotal(i) - 1;
+            ptd[i][1] = theFile.getSizeTotal(i) - 1;
         }
 
         pt[0][0] = 0;
-        pt[0][1] = theFile.getSize(0) - 1;
+        pt[0][1] = theFile.getSizeTotal(0) - 1;
 
         if (theFile.getNDim() > 1) {
             pt[1][0] = 0;
             ptd[1][0] = 0;
-            pt[1][1] = theFile.getSize(1) - 1;
-            ptd[1][1] = theFile.getSize(1) - 1;
+            pt[1][1] = theFile.getSizeTotal(1) - 1;
+            ptd[1][1] = theFile.getSizeTotal(1) - 1;
         }
 
         chunkSize = new int[theFile.getNDim()];
@@ -208,10 +208,10 @@ public class FileDataGenerator extends DataGenerator implements Cloneable {
         }
         if (iDim == 2) {
             ptC[2][0] = 0;
-            ptC[2][1] = theFile.getSize(dim[2]) - 1;
+            ptC[2][1] = theFile.getSizeTotal(dim[2]) - 1;
         } else if (iDim == 3) {
             ptC[3][0] = 0;
-            ptC[3][1] = theFile.getSize(dim[3]) - 1;
+            ptC[3][1] = theFile.getSizeTotal(dim[3]) - 1;
         }
         rearrangeDim(dimC, ptC);
         specVec.resize(ptC[0][1] - ptC[0][0] + 1, theFile.getComplex_r(dimC[0]));
@@ -493,7 +493,7 @@ public class FileDataGenerator extends DataGenerator implements Cloneable {
 
         for (i = 1; i < theFile.getNDim(); i++) {
             chunkLabel.append(dim[i]).append(".");
-            int dimSize = theFile.getSize(dim[i - 1]);
+            int dimSize = theFile.getSizeTotal(dim[i - 1]);
 
             if (i > 1) {
                 chunkSize[i] = 1;
@@ -561,8 +561,8 @@ public class FileDataGenerator extends DataGenerator implements Cloneable {
                     }
                 }
 
-                if (apt[i][1] >= theFile.getSize(dim[i])) {
-                    apt[i][1] = theFile.getSize(dim[i]) - 1;
+                if (apt[i][1] >= theFile.getSizeTotal(dim[i])) {
+                    apt[i][1] = theFile.getSizeTotal(dim[i]) - 1;
                 }
             }
 
@@ -747,7 +747,7 @@ public class FileDataGenerator extends DataGenerator implements Cloneable {
         } else {
             limit[0] = (double) theFile.pointToPPM(dim[i], 0.0);
             limit[1] = (double) theFile.pointToPPM(dim[i],
-                    (double) (theFile.getSize(dim[i]) - 1));
+                    (double) (theFile.getSizeTotal(dim[i]) - 1));
         }
 
         return (limit);
@@ -759,7 +759,7 @@ public class FileDataGenerator extends DataGenerator implements Cloneable {
     }
 
     public double getPlaneThickness(int i) {
-        double thickness = theFile.getSw(dim[i]) / theFile.getSf(dim[i]) / (theFile.getSize(dim[i])
+        double thickness = theFile.getSw(dim[i]) / theFile.getSf(dim[i]) / (theFile.getSizeTotal(dim[i])
                 - 1);
 
         return thickness;

@@ -182,7 +182,7 @@ public class SimFitMolController extends SimMolController {
         Dataset dataset = getExpDataset();
         Vec vec = dataset.getVec();
         if (vec == null) {
-            vec = new Vec(dataset.getSize(0));
+            vec = new Vec(dataset.getSizeTotal(0));
             try {
                 dataset.readVector(vec, 0, 0);
             } catch (IOException ex) {
