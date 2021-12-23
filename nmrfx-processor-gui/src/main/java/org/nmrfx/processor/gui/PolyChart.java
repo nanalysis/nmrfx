@@ -2608,11 +2608,11 @@ public class PolyChart implements PeakListener {
 
     public boolean selectRegion(boolean controls, double pickX, double pickY) {
         for (DatasetAttributes datasetAttr : datasetAttributesList) {
-            datasetAttr.setActiveRegion(Optional.empty());
+            datasetAttr.setActiveRegion(null);
         }
         Optional<IntegralHit> hit = hitRegion(controls, pickX, pickY);
         hit.ifPresentOrElse(iHit -> {
-            iHit.getDatasetAttr().setActiveRegion(Optional.of(iHit));
+            iHit.getDatasetAttr().setActiveRegion(iHit);
             activeRegion.set(hit.get().getDatasetRegion());
         }, () -> activeRegion.set(null));
 
@@ -2621,11 +2621,11 @@ public class PolyChart implements PeakListener {
 
     public boolean selectRegionControls(double pickX, double pickY) {
         for (DatasetAttributes datasetAttr : datasetAttributesList) {
-            datasetAttr.setActiveRegion(Optional.empty());
+            datasetAttr.setActiveRegion(null);
         }
         Optional<IntegralHit> hit = hitRegion(true, pickX, pickY);
         hit.ifPresentOrElse(iHit -> {
-            iHit.getDatasetAttr().setActiveRegion(Optional.of(iHit));
+            iHit.getDatasetAttr().setActiveRegion(iHit);
             activeRegion.set(hit.get().getDatasetRegion());
         }, () -> activeRegion.set(null));
         return hit.isPresent();
@@ -2637,11 +2637,11 @@ public class PolyChart implements PeakListener {
 
     public boolean selectIntegral(double pickX, double pickY) {
         for (DatasetAttributes datasetAttr : datasetAttributesList) {
-            datasetAttr.setActiveRegion(Optional.empty());
+            datasetAttr.setActiveRegion(null);
         }
         Optional<IntegralHit> hit = hitIntegral(pickX, pickY);
         hit.ifPresent(iHit -> {
-            iHit.getDatasetAttr().setActiveRegion(hit);
+            iHit.getDatasetAttr().setActiveRegion(iHit);
         });
         return hit.isPresent();
 
@@ -2665,7 +2665,7 @@ public class PolyChart implements PeakListener {
                 if (datasetAttr.getActiveRegion().isPresent()) {
                     hadHit = true;
                 }
-                datasetAttr.setActiveRegion(Optional.empty());
+                datasetAttr.setActiveRegion(null);
             }
             if (hadHit) {
                 refresh();

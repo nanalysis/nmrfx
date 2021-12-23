@@ -620,8 +620,8 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
         return Optional.ofNullable(activeRegion);
     }
 
-    public void setActiveRegion(Optional<IntegralHit> activeRegion) {
-        this.activeRegion = activeRegion.orElse(null);
+    public void setActiveRegion(IntegralHit activeRegion) {
+        this.activeRegion = activeRegion;
     }
 
     public void setMapColor(int index, String colorName) {
@@ -1378,7 +1378,7 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
             if (i > 1) {
                 chunkSize[i] = 1;
 //                if (drawList != null) {
-                //                   dimSize = drawList.length; 
+                //                   dimSize = drawList.length;
                 //              }
             }
             chunkOffset[i] = chunkOffset[i - 1] * (((dimSize - 1) / chunkSize[i - 1]) + 1);
@@ -1545,7 +1545,6 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
                 for (int j = 0; j < dim.length; j++) {
                     if (theFile.getNucleus(j).toString().equals(matchAttr.theFile.getNucleus(matchDim[i]).toString())) {
                         dim[i] = j;
-                        match = true;
                     }
                 }
             }
