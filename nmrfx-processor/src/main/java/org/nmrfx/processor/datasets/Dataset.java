@@ -443,7 +443,11 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
      */
     @Override
     public int getSizeTotal(int iDim) {
-        return vecMat == null ? layout.getSize(iDim) : vecMat.getSize();
+        if (vecMat == null) {
+            return layout.getSize(iDim);
+        } else {
+            return vecMat.getSize() * (vecMat.isComplex() ? 2 : 1);
+        }
     }
 
     /**

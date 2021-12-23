@@ -763,11 +763,11 @@ public class DatasetBase {
      */
     synchronized public int size(int iDim) {
         if ((iDim == 0) && (vecMat != null)) {
-            setSizeTotal(0, vecMat.getSize());
+            setSizeReal(0, vecMat.getSize());
 
             return (vecMat.getSize());
         } else {
-            return (getSizeTotal(iDim));
+            return (getSizeReal(iDim));
         }
     }
 
