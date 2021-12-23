@@ -17,6 +17,7 @@
  */
 package org.nmrfx.jmx.mbeans;
 
+import javafx.stage.Stage;
 import org.nmrfx.jmx.NotificationType;
 import org.nmrfx.jmx.mbeans.AnalystMBean;
 import org.nmrfx.processor.gui.FXMLController;
@@ -36,6 +37,15 @@ public class Analyst extends NotificationBroadcasterSupport implements AnalystMB
         ConsoleUtil.runOnFxThread(() -> {
             FXMLController.getActiveController().openFile(path, false, true);
             sendNotification(NotificationType.MESSAGE, "File opened", path);
+        });
+    }
+
+    @Override
+    public void setWindowOnFront() {
+        ConsoleUtil.runOnFxThread(() -> {
+            Stage stage = FXMLController.getActiveController().getStage();
+            stage.toFront();
+            stage.requestFocus();
         });
     }
 

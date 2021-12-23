@@ -28,4 +28,9 @@ public interface AnalystMBean {
      * @param path the dataset path
      */
     void open(String path);
+
+    /**
+     * Show current stage on front of other windows.
+     */
+    void setWindowOnFront();
 }
