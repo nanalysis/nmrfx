@@ -46,7 +46,8 @@ import org.xml.sax.SAXException;
  * @author brucejohnson
  */
 public class RS2DData implements NMRData {
-
+    final static String DATA_FILE_NAME = "data.dat";
+    final static String BASE_FREQ_PAR = "BASE_FREQ_";
     final static Logger LOGGER = Logger.getLogger(RS2DData.class.getCanonicalName());
 
     static final int MAXDIM = 4;
@@ -109,7 +110,7 @@ public class RS2DData implements NMRData {
             File parent = f.getParentFile();
             if (findFIDFiles(parent.getAbsolutePath())) {
                 String fileName = f.getName();
-                if (fileName.equals("data.dat")) {
+                if (fileName.equals(DATA_FILE_NAME)) {
                     found = true;
                 }
                 bpath.setLength(0);
@@ -121,7 +122,7 @@ public class RS2DData implements NMRData {
 
     private static boolean findFIDFiles(String dirPath) {
         Path headerPath = Paths.get(dirPath, "header.xml");
-        Path dataPath = Paths.get(dirPath, "data.dat");
+        Path dataPath = Paths.get(dirPath, DATA_FILE_NAME);
         System.out.println(headerPath.toString() + " " + headerPath.toFile().exists());
         System.out.println(dataPath.toString() + " " + dataPath.toFile().exists());
         return headerPath.toFile().exists() && dataPath.toFile().exists();
@@ -149,8 +150,8 @@ public class RS2DData implements NMRData {
             for (int i = 0; i < MAXDIM; i++) {
                 String nucleus = getPar("NUCLEUS_" + (i + 1));
                 if (nucleus.equals(obsNucleus)) {
-                    obsFreq = getParDouble("BASE_FREQ_" + (i + 1));
-                    baseSFName = "BASE_FREQ_" + (i + 1);
+                    obsFreq = getParDouble(BASE_FREQ_PAR + (i + 1));
+                    baseSFName = BASE_FREQ_PAR + (i + 1);
                     break;
                 }
             }
@@ -165,9 +166,9 @@ public class RS2DData implements NMRData {
                     sfNames[i] = baseSFName;
                 } else {
                     System.out.println("nuclues is not obs " + nucleus);
-                    Double baseFreq = getParDouble("BASE_FREQ_" + (i + 1));
+                    Double baseFreq = getParDouble(BASE_FREQ_PAR + (i + 1));
                     Sf[i] = baseFreq;
-                    sfNames[i] = "BASE_FREQ_" + (i + 1);
+                    sfNames[i] = BASE_FREQ_PAR + (i + 1);
                 }
                 tdsize[i] = dimSize;
                 if (dimSize > 1) {
@@ -231,7 +232,7 @@ public class RS2DData implements NMRData {
         File file = new File(datapath);
         Path path;
         if (file.isDirectory()) {
-            path = Paths.get(file.getAbsolutePath(), "data.dat");
+            path = Paths.get(file.getAbsolutePath(), DATA_FILE_NAME);
         } else {
             path = file.toPath();
         }
@@ -443,7 +444,7 @@ public class RS2DData implements NMRData {
             sf = Sf[iDim];
         } else {
             Double dpar;
-            if ((dpar = getParDouble("BASE_FREQ_" + (iDim + 1))) != null) {
+            if ((dpar = getParDouble(BASE_FREQ_PAR + (iDim + 1))) != null) {
                 sf = dpar;
             }
         }

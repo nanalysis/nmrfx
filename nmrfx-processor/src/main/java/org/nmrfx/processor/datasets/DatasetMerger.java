@@ -42,7 +42,7 @@ public class DatasetMerger {
                 File outFile = new File(outFileName);
                 int[] dimSizes = new int[nDim + 1];
                 for (int i = 0; i < nDim; i++) {
-                    dimSizes[i] = inputDataset.getSize(i);
+                    dimSizes[i] = inputDataset.getSizeTotal(i);
                 }
                 dimSizes[nDim] = nInputFiles;
                 outputDataset = Dataset.createDataset(outFileName, outFile.getName(), dimSizes, false);
@@ -51,7 +51,7 @@ public class DatasetMerger {
                     outputDataset.syncPars(i);
                 }
                 outputDataset.setNFreqDims(nDim);
-                inVec = new Vec(inputDataset.getSize(0));
+                inVec = new Vec(inputDataset.getSizeTotal(0));
                 indices = new int[nDim];
             }
             if (nDim == 1) {
@@ -59,7 +59,7 @@ public class DatasetMerger {
                 indices[0] = iFile;
                 outputDataset.writeVector(inVec, indices, 0);
             } else if (nDim == 2) {
-                int nRows = inputDataset.getSize(1);
+                int nRows = inputDataset.getSizeTotal(1);
                 for (int iRow = 0; iRow < nRows; iRow++) {
                     inputDataset.readVector(inVec, iRow, 0);
                     indices[0] = iRow;

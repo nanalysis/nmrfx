@@ -135,7 +135,7 @@ public class Measure {
     public List<Double> measure(DatasetBase dataset) throws IOException {
         int alongDim = iDim == 0 ? 1 : 0;
         int nDim = dataset.getNDim();
-        int size = nDim == 1 ? 1 : dataset.getSize(alongDim);
+        int size = nDim == 1 ? 1 : dataset.getSizeTotal(alongDim);
         int[] dim = new int[nDim];
         int[][] pt = new int[nDim][2];
         int[] edge1 = new int[nDim];
@@ -236,8 +236,8 @@ public class Measure {
     public List<double[]> measureBins(DatasetBase dataset, int nBins) throws IOException {
         int alongDim = iDim == 0 ? 1 : 0;
         int nDim = dataset.getNDim();
-        int rows = nDim == 1 ? 1 : dataset.getSize(alongDim);
-        int rowSize = dataset.getSize(iDim);
+        int rows = nDim == 1 ? 1 : dataset.getSizeTotal(alongDim);
+        int rowSize = dataset.getSizeTotal(iDim);
         int[] pt = new int[nDim];
         int pt1 = dataset.ppmToPoint(iDim, ppm1);
         int pt2 = dataset.ppmToPoint(iDim, ppm2);

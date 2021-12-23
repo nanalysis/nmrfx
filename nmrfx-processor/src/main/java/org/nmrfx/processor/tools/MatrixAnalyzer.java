@@ -79,7 +79,7 @@ public class MatrixAnalyzer {
                     }
                 }
                 if (!match) {
-                    nIncr = dataset.getSize(i);
+                    nIncr = dataset.getSizeTotal(i);
                 }
             }
 

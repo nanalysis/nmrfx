@@ -94,7 +94,7 @@ public class DatasetParameterFile {
             int nDim = dataset.getNDim();
             pStream.printf("dim %d", nDim);
             for (int i = 0; i < nDim; i++) {
-                pStream.printf(" %d", dataset.getSize(i));
+                pStream.printf(" %d", dataset.getSizeTotal(i));
             }
             for (int i = 0; i < nDim; i++) {
                 pStream.printf(" %d", layout.getBlockSize(i));
@@ -295,7 +295,7 @@ public class DatasetParameterFile {
                     for (int i = 0; i < nDim; i++) {
                         int size = Integer.parseInt(fields[2 + i]);
                         int blockSize = Integer.parseInt(fields[2 + i + nDim]);
-                        if ((size != dataset.getSize(i)) || (blockSize != layout.getBlockSize(i))) {
+                        if ((size != dataset.getSizeTotal(i)) || (blockSize != layout.getBlockSize(i))) {
                             sameSize = false;
                             break;
                         }
