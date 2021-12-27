@@ -478,14 +478,15 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
                     NMRViewData nvData = (NMRViewData) nmrData;
                     Dataset dataset = nvData.getDataset();
                     addDataset(dataset, append, false);
-
                 } else if (nmrData instanceof BrukerData) {
+                    PreferencesController.saveRecentDatasets(selectedFile.toString());
                     BrukerData brukerData = (BrukerData) nmrData;
                     String suggestedName = brukerData.suggestName(new File(brukerData.getFilePath()));
                     String datasetName = GUIUtils.input("Dataset name", suggestedName);
                     Dataset dataset = brukerData.toDataset(datasetName);
                     addDataset(dataset, append, false);
                 } else if (nmrData instanceof RS2DData) {
+                    PreferencesController.saveRecentDatasets(selectedFile.toString());
                     RS2DData rs2dData = (RS2DData) nmrData;
                     String suggestedName = rs2dData.suggestName(new File(rs2dData.getFilePath()));
                     String datasetName = GUIUtils.input("Dataset name", suggestedName);
