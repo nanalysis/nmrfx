@@ -67,8 +67,8 @@ public class RegionData {
         boolean inTol = true;
         for (int ii = 0; ii < dataset.getNDim(); ii++) {
             int delta = Math.abs(iPointAbs[ii] - cpt[ii]);
-            if (delta > dataset.getSizeTotal(dim[ii]) / 2) {
-                delta = dataset.getSizeTotal(dim[ii]) - delta;
+            if (delta > dataset.getSizeReal(dim[ii]) / 2) {
+                delta = dataset.getSizeReal(dim[ii]) - delta;
             }
             if (delta > iTol[ii]) {
                 inTol = false;
@@ -105,8 +105,8 @@ public class RegionData {
             // so don't check r2 distance from center
             if (width[ii] > 1.0e-6) {
                 int delta = Math.abs(iPointAbs[ii] - cpt[ii]);
-                if (delta > dataset.getSizeTotal(dim[ii]) / 2) {
-                    delta = dataset.getSizeTotal(dim[ii]) - delta;
+                if (delta > dataset.getSizeReal(dim[ii]) / 2) {
+                    delta = dataset.getSizeReal(dim[ii]) - delta;
                 }
                 r2 += (delta * delta) / (0.47 * width[ii] * width[ii]);
             }
