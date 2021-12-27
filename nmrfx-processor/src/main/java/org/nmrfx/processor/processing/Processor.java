@@ -1009,7 +1009,7 @@ public class Processor {
             pt[2][0] = matrixCount;
             try {
                 matrix = new Matrix(nPlanes, nRows, writePt);
-                dataset.readMatrix(dataset, pt, dim, matrix.getMatrix());
+                dataset.readMatrix(pt, dim, matrix.getMatrix());
             } catch (IOException ex) {
                 ex.printStackTrace();
 //                Logger.getLogger(Processor.class.getName()).log(Level.SEVERE, null, ex);

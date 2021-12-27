@@ -67,6 +67,7 @@ public class DatasetBase {
     protected boolean[] complex_r;
     protected boolean[] freqDomain;
     protected boolean[] freqDomain_r;
+    protected boolean[] axisReversed;
     protected double[][] rmsd;
     protected int posneg;
     protected double lvl;
@@ -237,6 +238,7 @@ public class DatasetBase {
         foldDown = new double[nDim];
         complex = new boolean[nDim];
         complex_r = new boolean[nDim];
+        axisReversed = new boolean[nDim];
         freqDomain = new boolean[nDim];
         freqDomain_r = new boolean[nDim];
         rmsd = new double[nDim][];
@@ -265,6 +267,7 @@ public class DatasetBase {
         foldDown = new double[nDim];
         complex = new boolean[nDim];
         complex_r = new boolean[nDim];
+        axisReversed = new boolean[nDim];
         freqDomain = new boolean[nDim];
         freqDomain_r = new boolean[nDim];
         label = new String[nDim];
@@ -1461,6 +1464,27 @@ public class DatasetBase {
     public void setComplex_r(final int iDim, final boolean complex_r) {
         this.complex_r[iDim] = complex_r;
     }
+
+    /**
+     * Get the axis reversed mode for the specified dimension.
+     *
+     * @param iDim Dataset dimension index
+     * @return true if data in the specified dimension is written to file in reversed order
+     */
+    public boolean getAxisReversed(final int iDim) {
+        return axisReversed[iDim];
+    }
+
+    /**
+     * Set the axis reversed mode for the specified dimension.
+     *
+     * @param iDim Dataset dimension index
+     * @param axisReversed the value to set
+     */
+    public void setAxisReversed(final int iDim, final boolean axisReversed) {
+        this.axisReversed[iDim] = axisReversed;
+    }
+
 
     /**
      * Get the frequency domain mode of the specified dimension

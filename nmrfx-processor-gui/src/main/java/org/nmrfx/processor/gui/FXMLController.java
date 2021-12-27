@@ -127,6 +127,7 @@ import org.nmrfx.peaks.PeakDim;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.processor.datasets.peaks.PeakListAlign;
 import org.nmrfx.processor.datasets.vendor.BrukerData;
+import org.nmrfx.processor.datasets.vendor.RS2DData;
 import org.nmrfx.processor.gui.spectra.CanvasBindings;
 import org.nmrfx.processor.gui.spectra.ColorProperty;
 import org.nmrfx.processor.gui.spectra.CrossHairs;
@@ -460,7 +461,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         fileChooser.setInitialDirectory(getInitialDirectory());
         fileChooser.setTitle("Open NMR Dataset");
         fileChooser.getExtensionFilters().addAll(
-                new ExtensionFilter("NMR Dataset", "*.nv", "*.ucsf", "*.dx", "*.jdx", "1r", "2rr", "3rrr", "4rrrr"),
+                new ExtensionFilter("NMR Dataset", "*.nv", "*.ucsf", "*.dx", "*.jdx", "1r", "2rr", "3rrr", "4rrrr", "data.dat"),
                 new ExtensionFilter("Any File", "*.*")
         );
         File selectedFile = fileChooser.showOpenDialog(null);
@@ -483,6 +484,12 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
                     String suggestedName = brukerData.suggestName(new File(brukerData.getFilePath()));
                     String datasetName = GUIUtils.input("Dataset name", suggestedName);
                     Dataset dataset = brukerData.toDataset(datasetName);
+                    addDataset(dataset, append, false);
+                } else if (nmrData instanceof RS2DData) {
+                    RS2DData rs2dData = (RS2DData) nmrData;
+                    String suggestedName = rs2dData.suggestName(new File(rs2dData.getFilePath()));
+                    String datasetName = GUIUtils.input("Dataset name", suggestedName);
+                    Dataset dataset = rs2dData.toDataset(datasetName);
                     addDataset(dataset, append, false);
                 }
             } catch (IOException ex) {

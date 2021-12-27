@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -141,11 +141,12 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
      * memory mapping file. You should not use StorageCache if the file is to be
      * opened for drawing in NMRFx (as thread interrupts may cause it to be
      * closed)
-     * @param dataType
+     * @param byteOrder Spcify little or big endian
+     * @param dataType 0 is float, 1 is integer
      * @throws IOException if an I/O error occurs
      */
     public Dataset(String fullName, String name, DatasetLayout datasetLayout,
-            boolean useCacheFile, int dataType)
+            boolean useCacheFile, ByteOrder byteOrder, int dataType)
             throws IOException {
         // fixme  FileUtil class needs to be public file = FileUtil.getFileObj(interp,fullName);
         super(fullName, name, false, useCacheFile);
@@ -160,7 +161,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         lvl = 0.1;
         posneg = 1;
         setDataType(dataType);
-        setByteOrder(ByteOrder.LITTLE_ENDIAN);
+        setByteOrder(byteOrder);
         DatasetParameterFile parFile = new DatasetParameterFile(this, layout);
         parFile.readFile();
 
@@ -546,11 +547,11 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
             System.arraycopy(maxPoint, 0, points, 0, nDim);
             points[j] = maxPoint[j] - 1;
             if (points[j] < 0) {
-                points[j] = getSizeTotal(dim[j]) - 1;
+                points[j] = getSizeReal(dim[j]) - 1;
             }
             f[0] = readPoint(points, dim);
             points[j] = maxPoint[j] + 1;
-            if (points[j] >= getSizeTotal(dim[j])) {
+            if (points[j] >= getSizeReal(dim[j])) {
                 points[j] = 0;
             }
             f[1] = readPoint(points, dim);
@@ -677,7 +678,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
             if (pt[i][1] >= pt[i][0]) {
                 counterSizes[i] = pt[i][1] - pt[i][0] + 1;
             } else {
-                counterSizes[i] = getSizeTotal(dim[i]) + (pt[i][1] - pt[i][0] + 1);
+                counterSizes[i] = getSizeReal(dim[i]) + (pt[i][1] - pt[i][0] + 1);
             }
             iTol[i] = fTol * Math.abs(counterSizes[i]);
         }
@@ -694,8 +695,8 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
                 int[] points = cIter.next();
                 for (int i = 0; i < nDim; i++) {
                     points[i] += pt[i][0];
-                    if (points[i] >= getSizeTotal(dim[i])) {
-                        points[i] = points[i] - getSizeTotal(dim[i]);
+                    if (points[i] >= getSizeReal(dim[i])) {
+                        points[i] = points[i] - getSizeReal(dim[i]);
                     }
                     iPointAbs[i] = points[i];
                 }
@@ -1254,8 +1255,6 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
      * Read an N dimensional matrix of values within the specified region of the
      * matrix
      *
-     * @param theFile The dataset to read. Redundant since this is an instance
-     * method. fixme
      * @param pt The region to read
      * @param dim The dataset dimensions used by the region points
      * @param matrix A matrix in which to store the read values. Must be at
@@ -1263,11 +1262,16 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
      * @return The maximum of the absolute values of the read values
      * @throws java.io.IOException if an I/O error ocurrs
      */
-    synchronized public float readMatrix(Dataset theFile, int[][] pt,
+    synchronized public float readMatrix(int[][] pt,
             int[] dim, float[][] matrix) throws IOException {
         float maxValue = Float.NEGATIVE_INFINITY;
         float minValue = Float.MAX_VALUE;
         int[] point = new int[nDim];
+        int[] mul = new int[2];
+        for (int i =0;i<2;i++) {
+            mul[i] = getComplex(dim[i]) ? 2 : 1;
+        }
+
         for (int i = 2; i < nDim; i++) {
             point[dim[i]] = pt[i][0];
         }
@@ -1276,8 +1280,16 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
             for (int j = pt[1][0]; j <= pt[1][1]; j++) {
                 int jj = j - pt[1][0];
 // fixme is this right for 3D rotated matrix
-                point[dim[0]] = i;
-                point[dim[1]] = j;
+                if (axisReversed[dim[0]]) {
+                    point[dim[0]] = getSizeTotal(dim[0]) - 1 - i * mul[0];
+                } else {
+                    point[dim[0]] =  i * mul[0];
+                }
+                if (axisReversed[dim[1]]) {
+                    point[dim[1]] = getSizeTotal(dim[1]) - 1 - j * mul[1];
+                } else {
+                    point[dim[1]] =  j * mul[1];
+                }
                 float value = (float) readPoint(point);
                 matrix[jj][ii] = value;
                 if (value > maxValue) {
@@ -1296,8 +1308,6 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
      * Read an N dimensional matrix of values within the specified region of the
      * matrix
      *
-     * @param theFile The dataset to read. Redundant since this is an instance
-     * method. fixme
      * @param pt The region to read
      * @param dim The dataset dimensions used by the region points
      * @param matrix A matrix in which to store the read values. Must be at
@@ -1305,7 +1315,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
      * @return The maximum of the absolute values of the read values
      * @throws java.io.IOException if an I/O error ocurrs
      */
-    synchronized public double readMatrix(Dataset theFile, int[][] pt,
+    synchronized public double readMatrix(int[][] pt,
             int[] dim, double[][] matrix) throws IOException {
         double maxValue = Double.NEGATIVE_INFINITY;
         double minValue = Double.MAX_VALUE;
