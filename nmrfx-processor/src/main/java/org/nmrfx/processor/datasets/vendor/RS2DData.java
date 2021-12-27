@@ -121,7 +121,7 @@ public class RS2DData implements NMRData {
         }
         layout.dimDataset();
         if (datasetName == null) {
-            datasetName = "testRS2D";
+            datasetName = suggestName(path.toFile());
         }
         Dataset dataset = new Dataset(path.toString(), datasetName, layout,
                 false, ByteOrder.BIG_ENDIAN, 0);
@@ -156,6 +156,23 @@ public class RS2DData implements NMRData {
         dataset.setScale(1.0e6);
         dataset.setDataType(0);
         return dataset;
+    }
+
+    public String suggestName(File file) {
+        if (file.isDirectory()) {
+            file = Paths.get(file.getAbsolutePath(), "data.dat").toFile();
+        }
+
+        File procNumFile = file.getParentFile();
+        File numFile = procNumFile.getParentFile().getParentFile();
+        File rootFile = numFile.getParentFile();
+        String rootName = rootFile != null ? rootFile.getName() : "";
+        rootName = rootName.replace(" ", "_");
+        StringBuilder sBuilder = new StringBuilder();
+        sBuilder.append(rootName).append("_").append(numFile.getName()).
+                append("_").append(procNumFile.getName());
+        return sBuilder.toString();
+
     }
 
     /**
