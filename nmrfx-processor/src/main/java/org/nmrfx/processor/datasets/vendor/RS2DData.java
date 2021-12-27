@@ -5,7 +5,23 @@
  */
 package org.nmrfx.processor.datasets.vendor;
 
-import java.io.EOFException;
+import org.apache.commons.math3.complex.Complex;
+import org.nmrfx.datasets.DatasetLayout;
+import org.nmrfx.processor.datasets.Dataset;
+import org.nmrfx.processor.datasets.parameters.FPMult;
+import org.nmrfx.processor.datasets.parameters.GaussianWt;
+import org.nmrfx.processor.datasets.parameters.LPParams;
+import org.nmrfx.processor.datasets.parameters.SinebellWt;
+import org.nmrfx.processor.math.Vec;
+import org.nmrfx.processor.processing.SampleSchedule;
+import org.w3c.dom.Document;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
+
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.xpath.*;
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -21,28 +37,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.xpath.XPath;
-import javax.xml.xpath.XPathConstants;
-import javax.xml.xpath.XPathEvaluationResult;
-import javax.xml.xpath.XPathExpression;
-import javax.xml.xpath.XPathExpressionException;
-import javax.xml.xpath.XPathFactory;
-import javax.xml.xpath.XPathNodes;
-import org.apache.commons.math3.complex.Complex;
-import org.nmrfx.datasets.DatasetLayout;
-import org.nmrfx.processor.datasets.Dataset;
-import org.nmrfx.processor.datasets.parameters.FPMult;
-import org.nmrfx.processor.datasets.parameters.GaussianWt;
-import org.nmrfx.processor.datasets.parameters.LPParams;
-import org.nmrfx.processor.datasets.parameters.SinebellWt;
-import org.nmrfx.processor.math.Vec;
-import org.nmrfx.processor.processing.SampleSchedule;
-import org.w3c.dom.Document;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-import org.xml.sax.SAXException;
 
 /**
  *
@@ -57,25 +51,24 @@ public class RS2DData implements NMRData {
     private final String fpath;
     private FileChannel fc = null;
     private HashMap<String, List<String>> parMap = null;
-    File nusFile = null;
+    File nusFile;
 
     int nDim = 0;
-    private final int tdsize[] = new int[MAXDIM];
+    private final int[] tdsize = new int[MAXDIM];
     private final Double[] Ref = new Double[MAXDIM];
     private final Double[] Sw = new Double[MAXDIM];
     private final Double[] Sf = new Double[MAXDIM];
     private final boolean[] negateImag = new boolean[MAXDIM];
     private final String[] obsNuc = new String[MAXDIM];
     private final boolean[] complexDim = new boolean[MAXDIM];
-    private final double[] f1coef[] = new double[MAXDIM][];
+    private final double[][] f1coef = new double[MAXDIM][];
     private final String[] f1coefS = new String[MAXDIM];
-    private final String fttype[] = new String[MAXDIM];
+    private final String[] fttype = new String[MAXDIM];
     private final String[] sfNames = new String[MAXDIM];
     private double groupDelay = 0.0;
     private SampleSchedule sampleSchedule = null;
 
     private String[] acqOrder;
-    int receiverCount = 1;
     int nvectors = 1;
     int np = 1;
     int tbytes = 1;
@@ -128,21 +121,9 @@ public class RS2DData implements NMRData {
         dataset.newHeader();
         for (int i = 0; i < nDim; i++) {
             dataset.setSf(i, getSF(i));
-            Double sW = null;
-            Double offset = null;
-            if (sW != null) {
-                dataset.setSw(i, sW);
-            } else {
-                dataset.setSw(i, getSW(i));
-            }
-            if (offset != null) {
-                dataset.setRefValue(i, offset);
-                dataset.setRefPt(i, 0);
-
-            } else {
-                dataset.setRefValue(i, getRef(i));
-                dataset.setRefPt(i, dataset.getSizeReal(i));
-            }
+            dataset.setSw(i, getSW(i));
+            dataset.setRefValue(i, getRef(i));
+            dataset.setRefPt(i, dataset.getSizeReal(i));
             dataset.setComplex(i, i == 0);
             dataset.setFreqDomain(i, true);
             String nucLabel = getTN(i);
@@ -168,10 +149,8 @@ public class RS2DData implements NMRData {
         File rootFile = numFile.getParentFile();
         String rootName = rootFile != null ? rootFile.getName() : "";
         rootName = rootName.replace(" ", "_");
-        StringBuilder sBuilder = new StringBuilder();
-        sBuilder.append(rootName).append("_").append(numFile.getName()).
-                append("_").append(procNumFile.getName());
-        return sBuilder.toString();
+        return rootName + "_" + numFile.getName() +
+                "_" + procNumFile.getName();
 
     }
 
@@ -745,7 +724,7 @@ public class RS2DData implements NMRData {
             }
             names.add(name);
         }
-        return names.toArray(new String[names.size()]);
+        return names.toArray(new String[0]);
     }
 
     @Override
@@ -781,9 +760,9 @@ public class RS2DData implements NMRData {
             px = dBuffer.get(j);
             py = dBuffer.get(j + 1);
             if (exchangeXY) {
-                cdata[j / 2] = new Complex((double) py / scale, (double) px / scale);
+                cdata[j / 2] = new Complex(py / scale, px / scale);
             } else {
-                cdata[j / 2] = new Complex((double) px / scale, -(double) py / scale);
+                cdata[j / 2] = new Complex(px / scale, -(double) py / scale);
             }
         }
         if (negatePairs) {
@@ -799,10 +778,10 @@ public class RS2DData implements NMRData {
             px = dBuffer.get(j);
             py = dBuffer.get(j + 1);
             if (exchangeXY) {
-                rdata[j / 2] = (double) py / scale;
-                idata[j / 2] = (double) px / scale;
+                rdata[j / 2] = py / scale;
+                idata[j / 2] = px / scale;
             } else {
-                rdata[j / 2] = (double) px / scale;
+                rdata[j / 2] = px / scale;
                 idata[j / 2] = -(double) py / scale;
             }
         }
@@ -818,11 +797,11 @@ public class RS2DData implements NMRData {
             px = dBuffer.get(j);
             py = dBuffer.get(j + 1);
             if (exchangeXY) {
-                data[j] = (double) py / scale;
-                data[j + 1] = (double) px / scale;
+                data[j] = py / scale;
+                data[j + 1] = px / scale;
             } else {
-                data[j] = (double) px / scale;
-                data[j + 1] = -(double) py / scale;
+                data[j] = px / scale;
+                data[j + 1] = -py / scale;
             }
         }
         if (negatePairs) {
@@ -861,15 +840,11 @@ public class RS2DData implements NMRData {
             System.out.println(iVec + " " + groupDelay + " " + shiftAmount);
         }
         if (dvec.isComplex()) {
-            if (dvec.useApache()) {
-                readVector(iDim, iVec + shiftAmount, dvec.getCvec());
-            } else {
-// fixme
+            if (!dvec.useApache()) {
                 dvec.makeApache();
-                readVector(iDim, iVec + shiftAmount, dvec.getCvec());
             }
+            readVector(iDim, iVec + shiftAmount, dvec.getCvec());
         } else {
-// fixme
             readVector(iDim, iVec, dvec.rvec);
         }
         dvec.dwellTime = 1.0 / getSW(iDim);
@@ -977,15 +952,6 @@ public class RS2DData implements NMRData {
                     }
                 }
             }
-        } catch (EOFException e) {
-            LOGGER.log(Level.WARNING, e.getMessage());
-            if (fc != null) {
-                try {
-                    fc.close();
-                } catch (IOException ex) {
-                    LOGGER.log(Level.WARNING, ex.getMessage());
-                }
-            }
         } catch (IOException e) {
             LOGGER.log(Level.WARNING, e.getMessage());
             if (fc != null) {
@@ -1009,15 +975,6 @@ public class RS2DData implements NMRData {
                 throw new ArrayIndexOutOfBoundsException("file index " + i + " out of bounds " + nread + " " + tbytes);
             }
             //System.out.println("readVecBlock read "+nread+" bytes");
-        } catch (EOFException e) {
-            LOGGER.log(Level.WARNING, e.getMessage());
-            if (fc != null) {
-                try {
-                    fc.close();
-                } catch (IOException ex) {
-                    LOGGER.log(Level.WARNING, ex.getMessage());
-                }
-            }
         } catch (IOException e) {
             LOGGER.log(Level.WARNING, e.getMessage());
             if (fc != null) {
@@ -1125,9 +1082,9 @@ public class RS2DData implements NMRData {
         }
         for (int i = acqOrderArray.length - 1; i >= 0; i--) {
             String elem = acqOrderArray[i];
-            if (elem.substring(0, 1).equals("p")) {
-                builder.append(elem.substring(1, 2));
-            } else if (elem.substring(0, 1).equals("a")) {
+            if (elem.charAt(0) == 'p') {
+                builder.append(elem.charAt(1));
+            } else if (elem.charAt(0) == 'a') {
                 return "";
             }
         }
