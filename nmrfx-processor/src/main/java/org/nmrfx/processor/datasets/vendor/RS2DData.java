@@ -141,7 +141,7 @@ public class RS2DData implements NMRData {
 
             } else {
                 dataset.setRefValue(i, getRef(i));
-                dataset.setRefPt(i, dataset.getSize(i) / 2.0);
+                dataset.setRefPt(i, dataset.getSizeReal(i));
             }
             dataset.setComplex(i, i == 0);
             dataset.setFreqDomain(i, true);
@@ -149,6 +149,9 @@ public class RS2DData implements NMRData {
             dataset.setNucleus(i, nucLabel);
             dataset.setLabel(i, nucLabel + (i + 1));
             dataset.syncPars(i);
+        }
+        if (nDim > 1) {
+            dataset.setAxisReversed(1, true);
         }
         dataset.setScale(1.0e6);
         dataset.setDataType(0);

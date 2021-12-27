@@ -1278,9 +1278,14 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
             return (false);
         }
         rearrangeDim(dimC, ptC);
-        specVec.resize(ptC[0][1] - ptC[0][0] + 1, false);
+        specVec.resize(ptC[0][1] - ptC[0][0] + 1, theFile.getComplex(dimC[0]));
         Vec vec = theFile.getVec();
         if (vec == null) {
+            if (specVec.isComplex()) {
+                ptC[0][0] *= 2;
+                ptC[0][1] *= 2;
+            }
+
             theFile.readVectorFromDatasetFile(ptC, dimC, specVec);
         } else {
             int j = 0;
