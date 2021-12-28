@@ -29,6 +29,8 @@ import org.nmrfx.math.VecException;
 import org.nmrfx.processor.operations.Util;
 import org.nmrfx.processor.operations.TestBasePoints;
 
+import java.nio.ByteBuffer;
+import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import org.apache.commons.math3.complex.Complex;
 import org.nmrfx.processor.processing.SampleSchedule;
@@ -3341,5 +3343,18 @@ public class Vec extends VecBase {
         for (int i = 0; i < size; i++) {
             setReal(i, Math.max(getReal(i), vec.getReal(i)));
         }
+    }
+
+    public byte[] toFloatBytes() {
+        int nBytes = size * (isComplex ? 2 : 1) * Float.BYTES;
+        byte[] array = new byte[nBytes];
+        FloatBuffer buffer = ByteBuffer.wrap(array).asFloatBuffer();
+        for (int i = 0; i < size; i++) {
+            buffer.put((float) getReal(i));
+            if (isComplex) {
+                buffer.put((float) getImag(i));
+            }
+        }
+        return array;
     }
 }

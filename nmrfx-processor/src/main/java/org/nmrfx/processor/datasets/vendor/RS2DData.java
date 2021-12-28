@@ -22,8 +22,7 @@ import org.xml.sax.SAXException;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.xpath.*;
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
@@ -31,10 +30,7 @@ import java.nio.channels.FileChannel;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -1102,4 +1098,51 @@ public class RS2DData implements NMRData {
         this.sampleSchedule = sampleSchedule;
     }
 
+    public static void saveToRS2DFile(Dataset dataset, String filePath) throws IOException {
+        try (BufferedOutputStream fOut = new BufferedOutputStream(new FileOutputStream(filePath))) {
+            int nDim = dataset.getNDim();
+            if (dataset.getNDim() == 1) {
+                Vec vec = dataset.readVector(0, 0);
+                byte[] array = vec.toFloatBytes();
+                fOut.write(array);
+            } else {
+                int[] sizes = new int[dataset.getNDim() - 1];
+                for (int i = 1; i < dataset.getNDim(); i++) {
+                    sizes[i - 1] = dataset.getSizeReal(i);
+                }
+                Vec vec = new Vec(dataset.getSizeReal(0), dataset.getComplex(0));
+
+                int[] pt = new int[dataset.getNDim() - 1];
+                pt[0] = dataset.getSizeReal(0);
+
+                while (true) {
+                    int nRows = sizes[0];
+                    for (int k = nRows - 1; k >= 0; k--) {
+                        pt[0] = k;
+                        vec.makeReal();
+                        dataset.readVector(vec, pt, 0);
+                        vec.makeComplex();
+                        byte[] array = vec.toFloatBytes();
+                        fOut.write(array);
+                    }
+                    boolean done = true;
+                    for (int j = 2; j < nDim; j++) {
+                        pt[j - 1]++;
+                        if (pt[j - 1] >= sizes[j - 1]) {
+                            if (j == (nDim - 1)) {
+                                break;
+                            }
+                            pt[j - 1] = 0;
+                        } else {
+                            done = false;
+                            break;
+                        }
+                    }
+                    if (done) {
+                        break;
+                    }
+                }
+            }
+        }
+    }
 }
