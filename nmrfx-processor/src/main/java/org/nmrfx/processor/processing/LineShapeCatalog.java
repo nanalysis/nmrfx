@@ -461,7 +461,7 @@ public class LineShapeCatalog {
 //                System.out.print(j + " " + pt[j] + " " + dpt[j] + " ");
             }
             if (ok) {
-                double dataValue = dataset.readPoint(dpt);
+                double dataValue = dataset.readPointRaw(dpt);
                 double value = scale;
                 for (int j = 0; j < values.length; j++) {
                     value *= values[j][pt[j]];
@@ -506,7 +506,7 @@ public class LineShapeCatalog {
 //                System.out.print(j + " " + pt[j] + " " + dpt[j] + " ");
             }
             if (ok) {
-                double dataValue = dataset.readPoint(dpt);
+                double dataValue = dataset.readPointRaw(dpt);
                 double value = scale;
                 for (int j = 0; j < indices.length; j++) {
                     value *= data[j][indices[j]][pt[j]];
