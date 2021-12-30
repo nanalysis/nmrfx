@@ -1,7 +1,5 @@
 package org.nmrfx.datasets;
 
-import org.nmrfx.datasets.DatasetBase;
-
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -438,8 +436,6 @@ public class DatasetRegion implements Comparator, Comparable {
 
         for (int i = istart; i <= iend; i++) {
             pt[0] = i;
-            
-
             double value = dataset.readPoint(pt);
             value -= offset;
             offset += delta;

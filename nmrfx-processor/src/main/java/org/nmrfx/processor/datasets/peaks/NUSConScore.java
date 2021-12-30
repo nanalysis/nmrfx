@@ -218,7 +218,7 @@ public class NUSConScore {
         double min = Double.MAX_VALUE;
         for (int i = first; i <= last; i++) {
             pt[iDim] = i;
-            double value = dataset.readPoint(pt, dim);
+            double value = dataset.readPointRaw(pt, dim);
             min = Math.min(value, min);
         }
         double vps = 1.0 - ((2.0 * min) / (Math.abs(int1) + Math.abs(int2)));

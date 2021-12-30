@@ -53,7 +53,6 @@ import javafx.scene.text.TextAlignment;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.math.VecBase;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
-import org.nmrfx.processor.math.Vec;
 
 /**
  *
