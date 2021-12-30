@@ -691,7 +691,7 @@ public double[] getPercentile(double p, int[][] pt, int[] dim) throws IOExceptio
                     points[i] = points[i] - getSizeTotal(dim[i]);
                 }
             }
-            double value = readPoint(points, dim);
+            double value = readPointRaw(points, dim);
 
             if ((value != Double.MAX_VALUE) && (value >= 0.0)) {
                 pSquarePos.increment(value);
@@ -727,7 +727,7 @@ public double[] getPercentile(double p, int[][] pt, int[] dim) throws IOExceptio
                     points[i] = points[i] - getSizeTotal(dim[i]);
                 }
             }
-            double value = readPoint(points, dim);
+            double value = readPointRaw(points, dim);
             if (value != Double.MAX_VALUE) {
                 sum += value;
                 sumSq += value * value;
@@ -929,7 +929,7 @@ public double[] getPercentile(double p, int[][] pt, int[] dim) throws IOExceptio
         }
         int iPoint = 0;
         for (int[] pValues : posArray) {
-            intensities[iPoint++] = readPoint(pValues, dim);
+            intensities[iPoint++] = readPointRaw(pValues, dim);
         }
         return intensities;
     }
@@ -958,7 +958,7 @@ public double[] getPercentile(double p, int[][] pt, int[] dim) throws IOExceptio
             for (int i = 0; i < nDim; i++) {
                 points[i] += region[i][0];
             }
-            intensities[iPoint++] = readPoint(points, dim);
+            intensities[iPoint++] = readPointRaw(points, dim);
         }
         return intensities;
 
@@ -1063,7 +1063,8 @@ public double[] getPercentile(double p, int[][] pt, int[] dim) throws IOExceptio
 
     /**
      * Read an N dimensional matrix of values within the specified region of the
-     * matrix
+     * matrix.  The region is specified in complex or real (if dimensionis real)
+     * points and translated to raw indices based on whether dimension is complex or not.
      *
      * @param pt The region to read
      * @param dim The dataset dimensions used by the region points
@@ -1100,7 +1101,7 @@ public double[] getPercentile(double p, int[][] pt, int[] dim) throws IOExceptio
                 } else {
                     point[dim[1]] =  j * mul[1];
                 }
-                float value = (float) readPoint(point);
+                float value = (float) readPointRaw(point);
                 matrix[jj][ii] = value;
                 if (value > maxValue) {
                     maxValue = value;
@@ -1139,7 +1140,7 @@ public double[] getPercentile(double p, int[][] pt, int[] dim) throws IOExceptio
                 int rowOffset = row - pt[0][0];
                 point[dim[0]] = row;
                 point[dim[1]] = plane;
-                double value = readPoint(point);
+                double value = readPointRaw(point);
                 matrix[planeOffset][rowOffset] = value;
                 if (value > maxValue) {
                     maxValue = value;
@@ -1183,7 +1184,7 @@ public double[] getPercentile(double p, int[][] pt, int[] dim) throws IOExceptio
             for (int i = 0; i < index.length; i++) {
                 point[dim[i]] = index[i];
             }
-            double value = readPoint(point);
+            double value = readPointRaw(point);
             matrix.setValue(value, index);
             if (value > maxValue) {
                 maxValue = value;
@@ -1364,7 +1365,7 @@ public double[] getPercentile(double p, int[][] pt, int[] dim) throws IOExceptio
         cIter = counter.iterator();
         while (cIter.hasNext()) {
             int[] points = cIter.next();
-            readPoint(points);
+            readPointRaw(points);
         }
         times[5] = System.currentTimeMillis();
         System.out.println("xxx");
@@ -1373,7 +1374,7 @@ public double[] getPercentile(double p, int[][] pt, int[] dim) throws IOExceptio
         cIter = counter.iterator();
         while (cIter.hasNext()) {
             int[] points = cIter.next();
-            readPoint(points, dim);
+            readPointRaw(points, dim);
         }
         times[6] = System.currentTimeMillis();
         System.out.println("xxx");
@@ -1447,14 +1448,14 @@ public double[] getPercentile(double p, int[][] pt, int[] dim) throws IOExceptio
                 point[dim[0]] = i;
                 if (rwVector.isComplex()) {
                     if ((i % 2) != 0) {
-                        double dImaginary = readPoint(point);
+                        double dImaginary = readPointRaw(point);
                         rwVector.set(j, new Complex(dReal, dImaginary));
                         j++;
                     } else {
-                        dReal = readPoint(point);
+                        dReal = readPointRaw(point);
                     }
                 } else {
-                    rwVector.set(j, readPoint(point));
+                    rwVector.set(j, readPointRaw(point));
                     j++;
                 }
             }
@@ -1476,7 +1477,7 @@ public double[] getPercentile(double p, int[][] pt, int[] dim) throws IOExceptio
         ArrayRealVector vector = new ArrayRealVector(vecSize);
         for (int i = 0; i < vecSize; i++) {
             pt[0] = i;
-            vector.setEntry(i, readPoint(pt));
+            vector.setEntry(i, readPointRaw(pt));
         }
         return vector;
     }
@@ -1501,7 +1502,7 @@ public double[] getPercentile(double p, int[][] pt, int[] dim) throws IOExceptio
         pt[1] = row;
         for (int i = 0; i < vecSize; i++) {
             pt[0] = indices.get(i);
-            vector.setEntry(i, readPoint(pt));
+            vector.setEntry(i, readPointRaw(pt));
         }
         return vector;
     }
@@ -1520,7 +1521,7 @@ public double[] getPercentile(double p, int[][] pt, int[] dim) throws IOExceptio
         ArrayRealVector vector = new ArrayRealVector(vecSize);
         for (int i = 0; i < vecSize; i++) {
             pt[1] = i;
-            vector.setEntry(i, readPoint(pt));
+            vector.setEntry(i, readPointRaw(pt));
         }
         return vector;
     }
@@ -1545,7 +1546,7 @@ public double[] getPercentile(double p, int[][] pt, int[] dim) throws IOExceptio
         pt[0] = column;
         for (int i = 0; i < vecSize; i++) {
             pt[1] = indices.get(i);
-            vector.setEntry(i, readPoint(pt));
+            vector.setEntry(i, readPointRaw(pt));
         }
         return vector;
     }
@@ -1607,7 +1608,7 @@ public double[] getPercentile(double p, int[][] pt, int[] dim) throws IOExceptio
             for (int j = 0; j < nColumns; j++) {
                 pt[0] = columnIndices[j];
                 pt[1] = rowIndices[i];
-                matrix.setEntry(i, j, readPoint(pt));
+                matrix.setEntry(i, j, readPointRaw(pt));
             }
         }
         return matrix;
@@ -1738,7 +1739,7 @@ public double[] getPercentile(double p, int[][] pt, int[] dim) throws IOExceptio
                     pt[1] = rowIndices[i];
                     sumPPM += pointToPPM(0, pt[0]);
                     sumCol += pt[0];
-                    sum += readPoint(pt);
+                    sum += readPointRaw(pt);
                 }
                 matrix[i][k] = sum;
                 ppms[k] = sumPPM / colList.size();
@@ -2343,7 +2344,7 @@ public double[] getPercentile(double p, int[][] pt, int[] dim) throws IOExceptio
         int j = 0;
         while (cIter.hasNext()) {
             int[] points = cIter.next();
-            double value = readPoint(points);
+            double value = readPointRaw(points);
             buffer[j++] = value;
         }
         return buffer;
