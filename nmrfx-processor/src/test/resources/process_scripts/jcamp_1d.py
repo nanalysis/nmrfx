@@ -1,7 +1,7 @@
 import os
 from pyproc import *
-FID('../testfids/jcamp/TESTFID.DX')
-CREATE('../../tmp/tst_jcamp1d.nv')
+FID(FIDHOME+'jcamp/TESTFID.DX')
+CREATE(TMPHOME+'tst_jcamp_1d.nv')
 acqOrder()
 skip(0)
 label('1H')

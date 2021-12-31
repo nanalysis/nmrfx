@@ -1,8 +1,8 @@
 import os
 from pyproc import *
 procOpts(nprocess=7)
-FID('../testfids/bruker/ubiq_t2/5')
-CREATE('../../tmp/tst_ubiq_t2.nv')
+FID(FIDHOME+'bruker/ubiq_t2/5')
+CREATE(TMPHOME+'tst_ubiq_t2.nv')
 acqOrder('312')
 acqarray(0,0,0)
 fixdsp(True)

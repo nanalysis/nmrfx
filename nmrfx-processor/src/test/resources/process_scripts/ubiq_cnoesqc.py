@@ -1,7 +1,7 @@
 import os
 from pyproc import *
-FID('../testfids/agilent/cnoesqc.fid')
-CREATE('../../tmp/tst_ubiq_cnoesqc.nv')
+FID(FIDHOME+'agilent/cnoesqc.fid')
+CREATE(TMPHOME+'tst_ubiq_cnoesqc.nv')
 acqOrder('12')
 skip(0,0,0)
 label('1H','1H_2','13C')

@@ -1,7 +1,7 @@
 from pyproc import *
 
-FID('../testfids/agilent/hnco3d.fid')
-CREATE('../../tmp/tst_ubiq_hnco_skip2.nv')
+FID(FIDHOME+'agilent/hnco3d.fid')
+CREATE(TMPHOME+'tst_ubiq_hnco_skip2.nv')
 skip(0,1,0)
 sw('sw','sw1','sw2')
 sf('sfrq','dfrq','dfrq2')

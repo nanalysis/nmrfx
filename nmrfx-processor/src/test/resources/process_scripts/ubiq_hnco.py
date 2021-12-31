@@ -1,7 +1,7 @@
 from pyproc import *
 
-FID('../testfids/agilent/hnco3d.fid')
-CREATE('../../tmp/tst_ubiq_hnco.nv')
+FID(FIDHOME+'agilent/hnco3d.fid')
+CREATE(TMPHOME+'tst_ubiq_hnco.nv')
 sw('sw','sw1','sw2')
 sf('sfrq','dfrq','dfrq2')
 ref('h2o','C','N')

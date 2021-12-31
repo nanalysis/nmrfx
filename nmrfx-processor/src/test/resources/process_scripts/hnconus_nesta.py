@@ -1,7 +1,7 @@
 import os
 from pyproc import *
-FID('../testfids/bruker/hnconus/7')
-CREATE('../../tmp/tst_hnconus_nesta.nv')
+FID(FIDHOME+'bruker/hnconus/7')
+CREATE(TMPHOME+'tst_hnconus_nesta.nv')
 acqOrder('321')
 skip(0,0,0)
 label('1H','15N','13C')

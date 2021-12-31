@@ -1,8 +1,8 @@
 import os
 from pyproc import *
 procOpts(nprocess=7)
-FID('../testfids/jeol/indanone_HSQC-1-1.jdf')
-CREATE('../../tmp/tst_jeol_hsqc.nv')
+FID(FIDHOME+'jeol/indanone_HSQC-1-1.jdf')
+CREATE(TMPHOME+'tst_jeol_hsqc.nv')
 fixdsp(True)
 label('1H','13C')
 sf('X_FREQ','Y_FREQ')

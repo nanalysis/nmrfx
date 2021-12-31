@@ -1,7 +1,7 @@
 from pyproc import *
 procOpts(nprocess=1)
-FID('../testfids/agilent/15Nhsqc.fid')
-CREATE('../../tmp/tst_ubiq_hsqc.nv')
+FID(FIDHOME+'agilent/15Nhsqc.fid')
+CREATE(TMPHOME+'tst_ubiq_hsqc.nv')
 label('1H','15N')
 sf('sfrq','dfrq2')
 sw('sw','sw1')

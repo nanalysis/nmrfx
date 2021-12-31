@@ -1,8 +1,8 @@
 import os
 from pyproc import *
 procOpts(nprocess=4)
-FID('../../testfids/agilent/hnca3d.fid')
-CREATE('../../tmp/tst_ubiq_hnca.nv')
+FID(FIDHOME+'agilent/hnca3d.fid')
+CREATE(TMPHOME+'tst_ubiq_hnca.nv')
 acqOrder('21')
 acqarray(0,0,0)
 skip(0,0,0)

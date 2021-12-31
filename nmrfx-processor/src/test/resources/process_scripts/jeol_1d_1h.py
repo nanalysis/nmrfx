@@ -1,8 +1,8 @@
 import os
 from pyproc import *
 procOpts(nprocess=7)
-FID('../testfids/jeol/isoCamp_PROTON-1-1.jdf')
-CREATE('../../tmp/tst_jeol_1d_1h.nv')
+FID(FIDHOME+'jeol/isoCamp_PROTON-1-1.jdf')
+CREATE(TMPHOME+'tst_jeol_1d_1h.nv')
 acqOrder()
 acqarray(0)
 fixdsp(True)
