@@ -2155,8 +2155,8 @@ public class DatasetBase {
         if (values == null) {
             this.values[iDim] = null;
         } else {
-            if (values.length != getSizeReal(iDim)) {
-                throw new IllegalArgumentException("Number of values (" + values.length + ") must equal dimension size (" + getSizeReal(iDim) + ") for dim " + iDim);
+            if (values.length != getSizeTotal(iDim)) {
+                throw new IllegalArgumentException("Number of values (" + values.length + ") must equal dimension size (" + getSizeTotal(iDim) + ") for dim " + iDim);
             }
             this.values[iDim] = values.clone();
         }
@@ -2175,8 +2175,8 @@ public class DatasetBase {
         if ((values == null) || values.isEmpty()) {
             this.values[iDim] = null;
         } else {
-            if (values.size() != getSizeReal(iDim)) {
-                throw new IllegalArgumentException("Number of values (" + values.size() + ") must equal dimension size (" + getSizeReal(iDim) + ") for dim " + iDim);
+            if (values.size() != getSizeTotal(iDim)) {
+                throw new IllegalArgumentException("Number of values (" + values.size() + ") must equal dimension size (" + getSizeTotal(iDim) + ") for dim " + iDim);
             }
             this.values[iDim] = new double[values.size()];
             for (int i = 0; i < values.size(); i++) {
