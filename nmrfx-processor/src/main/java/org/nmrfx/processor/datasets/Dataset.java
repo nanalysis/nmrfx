@@ -317,6 +317,81 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         }
     }
 
+    // create in memory file
+    /**
+     * Create a dataset in memory for fast access. This is an experimental mode,
+     * and the dataset is not currently written to disk so can't be persisted.
+     *
+     * @param title Dataset title
+     * @param nDim Number of dataset dimensions
+     * @throws DatasetException if an I/O error occurs
+     */
+    public Dataset(String title, int nDim) throws DatasetException {
+        this.nDim = nDim;
+
+        int i;
+        setNDim(nDim);
+
+        for (i = 0; i < this.nDim; i++) {
+            fileDimSizes[i] = 0;
+        }
+        layout = null;
+        this.title = title;
+        this.fileName = title;
+        newHeader();
+        dataFile = null;
+    }
+
+    public void resize(int directDimSize, int nVectors) throws DatasetException {
+        System.out.println("resize " + directDimSize + " " + nVectors);
+        int[] dimSizes = new int[nDim];
+        dimSizes[0] = directDimSize;
+        if (nDim > 1) {
+            int idSize = (int) Math.round(Math.pow(nVectors, 1.0 / (nDim - 1)));
+            dimSizes[1] = idSize;
+            for (int i = 2; i < nDim; i++) {
+                dimSizes[i] = idSize;
+            }
+        }
+        try {
+            layout = DatasetLayout.createFullMatrix(dimSizes);
+            setStrides();
+            for (int i = 0; i < nDim; i++) {
+                refPt[i] = getSizeReal(i) / 2;
+                refPt_r[i] = getSizeReal(i) / 2;
+            }
+            dataFile = new MemoryFile(this, true);
+            dataFile.zero();
+        } catch (IOException ioe) {
+            throw new DatasetException("Can't create dataset " + ioe.getMessage());
+        }
+    }
+
+    public void resizeDim(int iDim, int dimSize) throws DatasetException {
+        System.out.println("resize dim " + iDim + " " + dimSize);
+        int[] dimSizes = new int[nDim];
+        for (int i = 0; i < nDim; i++) {
+            dimSizes[i] = getSizeTotal(i);
+            if (i == iDim) {
+                dimSizes[i] = dimSize;
+            }
+            System.out.println("new size " + i + " " + dimSizes[i]);
+        }
+        try {
+            DatasetLayout oldLayout = layout;
+            layout = DatasetLayout.createFullMatrix(dimSizes);
+            setStrides();
+            refPt[iDim] = getSizeReal(iDim) / 2;
+            refPt_r[iDim] = getSizeReal(iDim) / 2;
+            MemoryFile oldFile = (MemoryFile) dataFile;
+            dataFile = new MemoryFile(this, true);
+            dataFile.zero();
+            oldFile.copyTo((MemoryFile) dataFile);
+        } catch (IOException ioe) {
+            throw new DatasetException("Can't resize dataset " + ioe.getMessage());
+        }
+    }
+
     private void createDataFile(RandomAccessFile raFile, boolean writable) throws IOException {
         if (useCacheFile) {
             dataFile = new SubMatrixFile(this, file, layout, raFile, writable);
@@ -436,10 +511,14 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
      */
     @Override
     public int getSizeTotal(int iDim) {
-        if (vecMat == null) {
-            return layout.getSize(iDim);
+        if (vecMat != null) {
+            return vecMat.getSize();
         } else {
-            return vecMat.getSize() * (vecMat.isComplex() ? 2 : 1);
+            if (layout == null) {
+                return 0;
+            } else {
+                return layout.getSize(iDim);
+            }
         }
     }
 
@@ -1058,7 +1137,9 @@ public double[] getPercentile(double p, int[][] pt, int[] dim) throws IOExceptio
      * @param nvExtra write extra values to dataset header
      */
     public final synchronized void writeHeader(boolean nvExtra) {
-        dataFile.writeHeader(nvExtra);
+        if (dataFile != null) {
+            dataFile.writeHeader(nvExtra);
+        }
     }
 
     /**

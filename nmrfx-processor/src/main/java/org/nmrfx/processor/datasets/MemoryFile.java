@@ -22,9 +22,11 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
+import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.apache.commons.math3.complex.Complex;
+import org.apache.commons.math3.util.MultidimensionalCounter;
 import org.nmrfx.datasets.DatasetStorageInterface;
 import org.nmrfx.processor.math.Vec;
 
@@ -207,4 +209,32 @@ public class MemoryFile implements DatasetStorageInterface, Closeable {
             }
         }
     }
+
+    /**
+     * Get iterator that allows iterating over all the points in the file
+     *
+     * @return iterator an Iterator to iterate over points in dataset
+     * @throws IOException if an I/O error occurs
+     */
+    synchronized public MultidimensionalCounter.Iterator pointIterator() {
+        int nDim = sizes.length;
+        int[] mPoint = new int[nDim];
+        for (int i = 0; i < nDim; i++) {
+            mPoint[i] = sizes[i];
+        }
+        MultidimensionalCounter counter = new MultidimensionalCounter(mPoint);
+        MultidimensionalCounter.Iterator iter = counter.iterator();
+        return iter;
+    }
+
+    public void copyTo(MemoryFile target) throws IOException {
+        MultidimensionalCounter.Iterator iter = pointIterator();
+        while (iter.hasNext()) {
+            iter.next();
+            int[] pt = iter.getCounts();
+            float value = getFloat(pt);
+            target.setFloat(value, pt);
+        }
+    }
+
 }

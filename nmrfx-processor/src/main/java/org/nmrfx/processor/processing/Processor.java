@@ -178,10 +178,6 @@ public class Processor {
      */
     public int nDim = 0;
     /**
-     * The sizes of dimensions in dataset.
-     */
-    public int[] datasetSizes = null;
-    /**
      * The sizes of dataset to actually populate.
      */
     public int[] acqSizesToUse = null;
@@ -249,13 +245,6 @@ public class Processor {
             createDefaultProcess();
         }
         return processor;
-    }
-
-    public static void resetProcessor() {
-        processor = null;
-        processes = null;
-        dimProcesses = null;
-        getProcessor();
     }
 
     /**
@@ -527,7 +516,7 @@ public class Processor {
                 }
                 itemsToRead = totalVecs;
             }
-            System.out.println(" total vecs " + totalVecs + " " + tmult.getGroupSize() + " " + nmrData.getNVectors());
+            System.out.println(" total vecs " + totalVecs + " " + tmult.getGroupSize());
             if (isNUS()) {
                 sampleSchedule = nmrData.getSampleSchedule();
                 sampleSchedule.setOutMult(complex, acqOrderToUse);
@@ -634,6 +623,10 @@ public class Processor {
 
 //        nvDataset = true;
         return true;
+    }
+
+    public int getNVectors() {
+        return itemsToWrite;
     }
 
     public boolean setMatDims(int[] dims) {
@@ -840,41 +833,39 @@ public class Processor {
         return memoryMode;
     }
 
-    public boolean createNV(String outputFile, int datasetSizes[], int[] useSizes) {
-        boolean memoryMode = useMemoryMode(datasetSizes);
-        createNV(outputFile, datasetSizes, useSizes, memoryMode);
+    public boolean createNV(String outputFile, int[] useSizes) {
+        boolean memoryMode = useMemoryMode(useSizes);
+        createNV(outputFile, useSizes, memoryMode);
         return true;
     }
 
-    public boolean createNV(String outputFile, int datasetSizes[], int[] useSizes, Map flags) {
-        boolean memoryMode = useMemoryMode(datasetSizes);
-        createNV(outputFile, datasetSizes, useSizes, memoryMode);
+    public boolean createNV(String outputFile, int[] useSizes, Map flags) {
+        boolean memoryMode = useMemoryMode(useSizes);
+        createNV(outputFile, useSizes, memoryMode);
         setFidFlags(flags);
         return true;
     }
 
-    public boolean createNVInMemory(String outputFile, int datasetSizes[], int[] useSizes) {
-        createNV(outputFile, datasetSizes, useSizes, true);
+    public boolean createNVInMemory(String outputFile, int[] useSizes) {
+        createNV(outputFile, useSizes, true);
         return true;
     }
 
-    public boolean createNV(String outputFile, int datasetSizes[], int[] useSizes, boolean inMemory) {
+    public boolean createNV(String outputFile, int[] useSizes, boolean inMemory) {
         if (progressUpdater != null) {
             progressUpdater.updateStatus("Create output dataset");
         }
-        this.datasetSizes = datasetSizes;
-        this.acqSizesToUse = useSizes;  // fixme
-        if (nDim > datasetSizes.length) {
-            if (useSizes == null) {
-                Logger.getLogger(Processor.class.getName()).log(Level.SEVERE, null, "specify useSizes if not using all dimensions");
-                return false;
-            }
+        int nDimToUse = 0;
+        for (var sz : useSizes) {
+            System.out.println("usz " + sz);
+            nDimToUse += sz > 1 ? 1 : 0;
         }
+        this.acqSizesToUse = useSizes;  // fixme
         try {
             if (inMemory) {
-                this.dataset = new Dataset(outputFile, datasetSizes);
+                this.dataset = new Dataset(outputFile, nDimToUse);
             } else {
-                this.dataset = Dataset.createDataset(outputFile, outputFile, datasetSizes, false);
+                //  this.dataset = Dataset.createDataset(outputFile, outputFile, datasetSizes, false);
             }
         } catch (DatasetException ex) {
             Logger.getLogger(Processor.class.getName()).log(Level.SEVERE, null, ex);
@@ -897,6 +888,7 @@ public class Processor {
             }
             for (int i = 0; i < dataset.getNDim(); i++) {
                 dataset.setLabel(i, nmrData.getTN(mapToFID(i)));
+                System.out.println(i + " " + dataset.getLabel(i) + " " + mapToFID(i));
                 dataset.setSf(i, nmrData.getSF(mapToFID(i)));
                 dataset.setSw(i, nmrData.getSW(mapToFID(i)));
                 dataset.setRefValue(i, nmrData.getRef(mapToFID(i)));
@@ -1492,11 +1484,11 @@ public class Processor {
      * @param p
      */
     public void run(ProcessOps p) {
+        System.out.println("run " + p.getDim());
         if (processor.getProcessorError()) {
             return;
         }
         synchronized (isRunning) {
-            useIOController = dataset.isCacheFile();
             doneWriting.set(false);
             matrixMode.set(p.isMatrix());
 
@@ -1516,11 +1508,13 @@ public class Processor {
                     datasetWriter.shutdown();
                 }
                 datasetWriter = new MatrixTypeService(this, queueLimit, itemsToRead, itemsToWrite);
+                System.out.println("got writer");
             }
 
             for (Runnable process : processes) {
                 completedProcesses.add(pool.submit(process));
             }
+            System.out.println("submitted");
 
             for (Future future : completedProcesses) {
                 try {

@@ -830,35 +830,24 @@ def initMSize(fidInfo, size):
     return msize
 
 
-def createDataset(nvFileName=None, datasetSize=None):
+def createDataset(nvFileName=None):
     global fidInfo
     global dataInfo
-    print 'create',datasetSize,dataInfo.msize,'extra',dataInfo.extra
-#   fidInfo.flags['dmx'] = False
-#   fidInfo.flags = {'dmx':True, 'exchangeXY':False, 'swapBits':True, 'negatePairs':True}
+    print 'create',dataInfo.msize,'extra',dataInfo.extra
 
     if (nvFileName == None):
         nvFileName = dataInfo.filename
-    if (datasetSize == None):
-        datasetSize = dataInfo.msize
-        datasetSize[0] = dataInfo.size[0]
     useSize = []
     j=0
-    newDatasetSize = []
-    for i,datasetSize in enumerate(datasetSize):
-        if (fidInfo.mapToDatasetList[i] >= 0) and (datasetSize > 1):
-            newDatasetSize.append(datasetSize)
+    for i,sz in enumerate(dataInfo.msize):
+        if (fidInfo.mapToDatasetList[i] >= 0) and (sz > 1):
             useSize.append(fidInfo.useSize[i])
             j += 1
         else:
             useSize.append(1)
     if dataInfo.extra != 0:
         useSize.append(dataInfo.extra)
-        newDatasetSize.append(dataInfo.extra)
-    #useSize = [956,1,32]
-    datasetSize = list(newDatasetSize)
         
-    dataInfo.createdSize = datasetSize
     if not processor.isDatasetOpen():
         try:
             os.remove(nvFileName)
@@ -871,19 +860,18 @@ def createDataset(nvFileName=None, datasetSize=None):
         except OSError:
             pass
         if dataInfo.inMemory:
-            processor.createNVInMemory(nvFileName, datasetSize, useSize)
+            processor.createNVInMemory(nvFileName, useSize)
         elif (fidInfo and fidInfo.flags):
-            processor.createNV(nvFileName, datasetSize, useSize, fidInfo.flags)
+            processor.createNV(nvFileName, useSize, fidInfo.flags)
             print 'exists',os.path.exists(nvFileName)
         else:
-            processor.createNV(nvFileName, datasetSize, useSize)
+            processor.createNV(nvFileName, useSize)
             print 'exists',os.path.exists(nvFileName)
 
         dataset = processor.getDataset()
         psspecial.datasetMods(dataset, fidInfo)
 
     dataInfo.resizeable = False  # dataInfo.size is fixed, createNV has been run
-    setDataInfo(datasetSize)
 
 def closeDataset():
     if not processor.isDatasetOpen():
@@ -920,15 +908,6 @@ def getAcqOrder():
     '''return nmrData acquisition order'''
     global fidInfo
     return fidInfo.acqOrder
-
-def setDataInfoSize(curDim, size):
-    global dataInfo
-    global fidInfo
-    print 'setsize',curDim,size
-    if fidInfo.mapToDatasetList[curDim] != -1:
-        dataInfo.size[curDim] = size
-        if size > dataInfo.msize[curDim]:
-            dataInfo.msize[curDim] = size
 
 def OPEN(nvFileName, resize=False):
     global fidInfo
@@ -1330,10 +1309,6 @@ def COMB(coef=None, numInVec=0, numOutVec=0, inVec=None, outVec=None, keepImag=F
         op.eval(arrList)
     else:
         process.addOperation(op)
-        if len(coef) == 4:
-            if (dataInfo.resizeable):
-                curDim = dataInfo.curDim
-                setDataInfoSize(curDim+1, dataInfo.size[curDim+1]*2)
     return op
 
 def TDCOMB(dim=2,coef=None, numInVec=0, numOutVec=0, inVec=None, outVec=None, disabled=False, process=None):
@@ -1596,9 +1571,6 @@ def LP(fitStart=0, fitEnd=0, predictStart=0, predictEnd=0, npred=0, ncoef=0,
         op.eval(vector)
     else:
         process.addOperation(op)
-        if (dataInfo.resizeable):
-            curDim = dataInfo.curDim
-            setDataInfoSize(curDim, getExtendSize(dataInfo.size[curDim],predictEnd,False))
     return op
 
 def LPR(fitStart=0, fitEnd=0, predictStart=0, predictEnd=0, npred=0, ncoef=0,
@@ -1653,9 +1625,6 @@ def LPR(fitStart=0, fitEnd=0, predictStart=0, predictEnd=0, npred=0, ncoef=0,
         op.eval(vector)
     else:
         process.addOperation(op)
-        if (dataInfo.resizeable):
-            curDim = dataInfo.curDim
-            setDataInfoSize(curDim,getExtendSize(dataInfo.size[curDim],predictEnd,True))
     return op
 
 def EXTRACTP(fstart=0.0, fend=0.0,  disabled=False, vector=None, process=None):
@@ -1685,11 +1654,6 @@ def EXTRACTP(fstart=0.0, fend=0.0,  disabled=False, vector=None, process=None):
         op.eval(vector)
     else:
         process.addOperation(op)
-        if (dataInfo.resizeable):
-            curDim = dataInfo.curDim
-            setDataInfoSize(curDim, getExtractSize(dataInfo.size[curDim],f1,f2))
-
-
 
 def EXTRACT(start=0, end=0, mode='left', disabled=False, vector=None, process=None):
     '''Extract a specified range of points.
@@ -1741,14 +1705,7 @@ def EXTRACT(start=0, end=0, mode='left', disabled=False, vector=None, process=No
         op.eval(vector)
     else:
         process.addOperation(op)
-        if (dataInfo.resizeable):
-            curDim = dataInfo.curDim
-            if (fmode):
-                setDataInfoSize(curDim, getExtractSize(dataInfo.size[curDim],fstart,fend))
-            else:
-                if end == 0:
-                    end = dataInfo.size[curDim]-1
-                setDataInfoSize(curDim, end - start + 1)
+
 def TRIM(ftrim=0.1, disabled=False, vector=None, process=None):
     '''Trim a fraction of vector from each end.
     Parameters
@@ -1772,9 +1729,6 @@ def TRIM(ftrim=0.1, disabled=False, vector=None, process=None):
         op.eval(vector)
     else:
         process.addOperation(op)
-        if (dataInfo.resizeable):
-            curDim = dataInfo.curDim
-            setDataInfoSize(curDim, getExtractSize(dataInfo.size[curDim],fstart,fend))
 
 def DCFID(fraction=0.06, disabled=False, vector=None, process=None):
     ''' Correct DC offset of FID real and imaginary channels 
@@ -1885,11 +1839,6 @@ def BZ(alg='ph', phase=0.0, scale=1.0, pt2=0.0, delay=None, disabled=False, vect
         except:
             delay = 0.0
             pass
-    if (dataInfo.resizeable):
-        try:
-            setDataInfoSize(curDim, getBzSize(dataInfo.size[curDim], delay, alg))
-        except:
-            pass
     op = Bz(alg, delay, scale, phase, pt2)
     if (vector != None):
         op.eval(vector)
@@ -1973,11 +1922,6 @@ def FILTER(type='notch', offset=0, width=0.05, factor=4, groupFactor=8, mode='ze
         ncoefs = ncoefs or nc
         ncoefs = int(ncoefs)    # groupDelay is ncoefs/2, not groupFactor
         op = FFilter(type, mode, 1.0-width, ncoefs, offset)
-        if (dataInfo.resizeable):
-            try:
-                setDataInfoSize(curDim, getFilterSize(dataInfo.size[curDim], ncoefs, 1))
-            except:
-                pass
     else:  # type = 'lowpass'
         factor = int(factor)
         nc = 2 * groupFactor * factor + 1
@@ -1985,11 +1929,6 @@ def FILTER(type='notch', offset=0, width=0.05, factor=4, groupFactor=8, mode='ze
         ncoefs = ncoefs or nc
         ncoefs = int(ncoefs)    # groupDelay is ncoefs/2, groupFactor
         op = FFilter(type, mode, factor, ncoefs, offset)
-        if (dataInfo.resizeable):
-            try:
-                setDataInfoSize(curDim, getFilterSize(dataInfo.size[curDim], ncoefs, factor))
-            except:
-                pass
 
     if (vector != None):
         op.eval(vector)
@@ -2931,11 +2870,6 @@ def GRINS(noise=0.0, scale=0.5, zf=0, phase=None, preserve=False, synthetic=Fals
         process.addOperation(op)
         curDims = dataInfo.curDims
         print 'curdims', curDims
-        if (dataInfo.resizeable):
-            for curDim in curDims:
-                print zf,curDim,zf,dataInfo.size[curDim]
-                setDataInfoSize(curDim, getZfSize(dataInfo.size[curDim],zf,-1))
-                print dataInfo.size[curDim]
     return op
 
 
@@ -3444,9 +3378,6 @@ def VECREF(size=8, sf=500.0, sw=5000.0,disabled=False, process=None, vector=None
         op.eval(vector)
     else:
         process.addOperation(op)
-        if size != None:
-            if (dataInfo.resizeable):
-                setDataInfoSize(curDim, size)
     return op
 
 def ZEROS(disabled=False, process=None, vector=None):
@@ -3494,8 +3425,6 @@ A size can be specified instead of a factor which will be the exact number of po
         op.eval(vector)
     else:
         process.addOperation(op)
-        if (dataInfo.resizeable):
-            setDataInfoSize(curDim, getZfSize(dataInfo.size[curDim],factor,size))
     return op
 
 def makeDataNames(filePath,baseDir=None,outDir=None,iFile=None,baseName='data',multiMode=False):

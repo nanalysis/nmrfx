@@ -31,6 +31,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.nmrfx.datasets.MatrixType;
+import org.nmrfx.processor.math.MatrixND;
+import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.processing.Processor;
 
 /**
@@ -71,6 +73,7 @@ public class MatrixTypeService {
         unprocessedItemQueue = new LinkedBlockingQueue<>();
         processedItemQueue = new LinkedBlockingQueue<>();
         futureTask = new FutureTask(() -> readWriteItems());
+        System.out.println("mts " + itemsToRead + " " + itemsToWrite);
         executor.execute(futureTask);
     }
 
@@ -146,20 +149,63 @@ public class MatrixTypeService {
         }
     }
 
-    private void writeItems(List<MatrixType> temp) {
+    private boolean writeItems(List<MatrixType> temp) {
         for (MatrixType vector : temp) {
             try {
                 //vector.printLocation();
+                Dataset dataset = processor.getDataset();
+                checkDataset(dataset, vector);
                 processor.getDataset().writeMatrixType(vector);
                 nWritten.incrementAndGet();
 //                System.out.println("n written " + nWritten.get() + " of " + itemsToWrite);
-            } catch (IOException ex) {
+            } catch (Exception ex) {
                 ex.printStackTrace();
                 Logger.getLogger(Processor.class.getName()).log(Level.SEVERE, null, ex);
+                return false;
             }
         }
+        return true;
     }
-    
+
+    private void checkDataset(Dataset dataset, MatrixType matrixType) throws DatasetException {
+        if (matrixType instanceof Vec) {
+            Vec vec = (Vec) matrixType;
+            checkVector(dataset, vec);
+        } else {
+            MatrixND matrix = (MatrixND) matrixType;
+        }
+        for (int i = 0; i < dataset.getNDim(); i++) {
+
+        }
+    }
+
+    private void checkVector(Dataset dataset, Vec vec) throws DatasetException {
+        int[][] pt = vec.getPt();
+        int[] dim = vec.getDim();
+        int nDim = dataset.getNDim();
+        if (!dataset.hasLayout()) {
+            int nVectors = processor.getNVectors();
+            int size = vec.getSize();
+//            System.out.println("nDim " + nDim + " nvecs " + nVectors + " size " + size);
+            dataset.resize(size, nVectors);
+        }
+        for (int i = 0; i < nDim; i++) {
+//            System.out.printf("wv i %4d dim %4d pt0 %4d pt1 %4d size %4d vsize %4d fsize %4d\n",
+//                    i, dim[i], pt[i][0], pt[i][1], dataset.getSize(dim[i]),
+//                    dataset.getVSize(dim[i]), dataset.getFileDimSize(dim[i]));
+            if (pt[i][0] == pt[i][1]) {
+                if ((pt[i][0] + 1) > dataset.getFileDimSize(dim[i])) {
+
+                }
+            } else {
+                if ((pt[i][1] + 1) > dataset.getFileDimSize(dim[i])) {
+                    dataset.resizeDim(dim[i], pt[i][1] + 1);
+                }
+            }
+        }
+
+    }
+
     /**
      * Writes all of the items from the processedItemQueue to file.
      */
@@ -167,7 +213,7 @@ public class MatrixTypeService {
         List<MatrixType> temp = null;
         while (true) {
             try {
-//                System.out.println(unprocessedItemQueue.size() + " " + processedItemQueue.size() + " " + nWritten.get() + " " +itemsToWrite + " " + this);
+//                System.out.println(unprocessedItemQueue.size() + " " + processedItemQueue.size() + " " + nWritten.get() + " " + itemsToWrite + " " + this);
                 if (nRead.get() < itemsToRead) {
                     if ((unprocessedItemQueue.size() < processedQueueLimit.get()) && (processedItemQueue.size() < processedQueueLimit.get())) {
                         for (int i = 0; i < 4; i++) {
@@ -181,8 +227,12 @@ public class MatrixTypeService {
                 }
 
                 temp = processedItemQueue.poll(100, TimeUnit.MILLISECONDS);
+//                System.out.println("temp " + temp);
                 if (temp != null) {
-                    writeItems(temp);
+                    boolean ok = writeItems(temp);
+                    if (!ok) {
+                        return false;
+                    }
                 } else {
                     if (nWritten.get() >= itemsToWrite) {
                         System.out.println("finished writing");
