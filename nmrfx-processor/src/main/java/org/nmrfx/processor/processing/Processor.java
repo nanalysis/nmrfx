@@ -251,6 +251,13 @@ public class Processor {
         return processor;
     }
 
+    public static void resetProcessor() {
+        processor = null;
+        processes = null;
+        dimProcesses = null;
+        getProcessor();
+    }
+
     /**
      * @create and return only processor
      */
