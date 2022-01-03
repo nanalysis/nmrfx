@@ -342,17 +342,15 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         dataFile = null;
     }
 
-    public void resize(int directDimSize, int nVectors) throws DatasetException {
-        System.out.println("resize " + directDimSize + " " + nVectors);
+    public void resize(int directDimSize, int[] idSizes) throws DatasetException {
+        System.out.print("resize " + directDimSize);
         int[] dimSizes = new int[nDim];
         dimSizes[0] = directDimSize;
-        if (nDim > 1) {
-            int idSize = (int) Math.round(Math.pow(nVectors, 1.0 / (nDim - 1)));
-            dimSizes[1] = idSize;
-            for (int i = 2; i < nDim; i++) {
-                dimSizes[i] = idSize;
-            }
+        for (int i = 1; i < nDim; i++) {
+            dimSizes[i] = idSizes[i - 1];
+            System.out.print(" " + dimSizes[i]);
         }
+        System.out.println("");
         try {
             layout = DatasetLayout.createFullMatrix(dimSizes);
             setStrides();
@@ -1503,7 +1501,7 @@ public double[] getPercentile(double p, int[][] pt, int[] dim) throws IOExceptio
         rwVector.setTDSize(getTDSize(dim[0]));
         rwVector.setPt(pt, dim);
 
-        double delRef = ((getRefPt_r(dim[0]) - pt[0][0]) * getSw_r(dim[0])) / getSf(dim[0]) / getSizeTotal(dim[0]);
+        double delRef = ((getRefPt_r(dim[0]) - pt[0][0]) * getSw_r(dim[0])) / getSf(dim[0]) / rwVector.getSize();
         rwVector.refValue = getRefValue_r(dim[0]) + delRef;
         rwVector.setFreqDomain(getFreqDomain_r(dim[0]));
 

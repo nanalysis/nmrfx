@@ -173,6 +173,7 @@ public class MatrixTypeService {
             checkVector(dataset, vec);
         } else {
             MatrixND matrix = (MatrixND) matrixType;
+            checkMatrix(dataset, matrix);
         }
         for (int i = 0; i < dataset.getNDim(); i++) {
 
@@ -184,18 +185,38 @@ public class MatrixTypeService {
         int[] dim = vec.getDim();
         int nDim = dataset.getNDim();
         if (!dataset.hasLayout()) {
-            int nVectors = processor.getNVectors();
+            int[] idNVectors = processor.getIndirectSizes();
             int size = vec.getSize();
-//            System.out.println("nDim " + nDim + " nvecs " + nVectors + " size " + size);
-            dataset.resize(size, nVectors);
+            System.out.println("nDim " + nDim + " nvecs " + " size " + size + " " + vec.getDim()[0]);
+            dataset.resize(size, idNVectors);
         }
         for (int i = 0; i < nDim; i++) {
 //            System.out.printf("wv i %4d dim %4d pt0 %4d pt1 %4d size %4d vsize %4d fsize %4d\n",
-//                    i, dim[i], pt[i][0], pt[i][1], dataset.getSize(dim[i]),
+//                    i, dim[i], pt[i][0], pt[i][1], dataset.getSizeTotal(dim[i]),
 //                    dataset.getVSize(dim[i]), dataset.getFileDimSize(dim[i]));
             if (pt[i][0] == pt[i][1]) {
                 if ((pt[i][0] + 1) > dataset.getFileDimSize(dim[i])) {
+                    dataset.resizeDim(dim[i], pt[i][1] + 1);
+                }
+            } else {
+                if ((pt[i][1] + 1) > dataset.getFileDimSize(dim[i])) {
+                    dataset.resizeDim(dim[i], pt[i][1] + 1);
+                }
+            }
+        }
 
+    }
+    private void checkMatrix(Dataset dataset, MatrixND matrix) throws DatasetException {
+        int[][] pt = matrix.getPt();
+        int[] dim = matrix.getDim();
+        int nDim = dataset.getNDim();
+        for (int i = 0; i < nDim; i++) {
+//            System.out.printf("wv i %4d dim %4d pt0 %4d pt1 %4d size %4d vsize %4d fsize %4d\n",
+//                    i, dim[i], pt[i][0], pt[i][1], dataset.getSizeTotal(dim[i]),
+//                    dataset.getVSize(dim[i]), dataset.getFileDimSize(dim[i]));
+            if (pt[i][0] == pt[i][1]) {
+                if ((pt[i][0] + 1) > dataset.getFileDimSize(dim[i])) {
+                    dataset.resizeDim(dim[i], pt[i][1] + 1);
                 }
             } else {
                 if ((pt[i][1] + 1) > dataset.getFileDimSize(dim[i])) {

@@ -2175,9 +2175,6 @@ public class DatasetBase {
         if ((values == null) || values.isEmpty()) {
             this.values[iDim] = null;
         } else {
-            if (values.size() != getSizeTotal(iDim)) {
-                throw new IllegalArgumentException("Number of values (" + values.size() + ") must equal dimension size (" + getSizeTotal(iDim) + ") for dim " + iDim);
-            }
             this.values[iDim] = new double[values.size()];
             for (int i = 0; i < values.size(); i++) {
                 this.values[iDim][i] = values.get(i);

@@ -31,7 +31,7 @@ import org.apache.commons.math3.util.MultidimensionalCounter;
  */
 public class MultiVecCounter {
 
-    public static boolean showDebugInfo = false;
+    public static boolean showDebugInfo = true;
     int[] osizes;
     int[] isizes;
     int[] inPhases;
@@ -227,6 +227,14 @@ public class MultiVecCounter {
      */
     public int[] getOutSizes() {
         return osizes;
+    }
+
+    public int[] getIndirectSizes() {
+        int[] dimSizes = new int[outPoints.length];
+        for (int i =0;i<outPoints.length;i++) {
+            dimSizes[i] = osizes[outPoints[i]] * osizes[outPhases[i]];
+        }
+        return dimSizes;
     }
 
     /**

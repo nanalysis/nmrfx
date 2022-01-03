@@ -891,7 +891,7 @@ def setDataInfo(dSize):
                     dataset.setRefValue(iDim,fidInfo.ref[fidDim])
                     dataset.setRefValue_r(iDim,fidInfo.ref[fidDim])
                 if fidInfo.refpt:
-                    center = dSize[iDim]/2
+                    center = fidInfo.refpt[iDim]*2
                     dataset.setRefPt(iDim,center)
                     dataset.setRefPt_r(iDim,center)
                 if fidInfo.sw:
@@ -900,6 +900,7 @@ def setDataInfo(dSize):
                     dataset.setSf(iDim,fidInfo.sf[fidDim])
                 if fidInfo.label:
                     dataset.setLabel(iDim,fidInfo.label[fidDim])
+                print dataset.getRefValue_r(iDim),dataset.getRefPt_r(iDim)
         if fidInfo.label:
             if (nDim > len(fidInfo.label)):
                 dataset.setLabel(nDim-1,'array')
@@ -3492,6 +3493,7 @@ def run(process=None):
       The run command must be present at the end of processing operations or no processing will happen.'''
     if (dataInfo.resizeable):
         createDataset()
+        setDataInfo(dataInfo.createdSize)
     else:
         setDataInfo(dataInfo.createdSize)
     if (process == None):

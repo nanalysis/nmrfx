@@ -516,7 +516,7 @@ public class Processor {
                 }
                 itemsToRead = totalVecs;
             }
-            System.out.println(" total vecs " + totalVecs + " " + tmult.getGroupSize());
+            System.out.println(" total vecs " + totalVecs + " " + tmult.getGroupSize() + " " + dataset.getLabel(1));
             if (isNUS()) {
                 sampleSchedule = nmrData.getSampleSchedule();
                 sampleSchedule.setOutMult(complex, acqOrderToUse);
@@ -627,6 +627,10 @@ public class Processor {
 
     public int getNVectors() {
         return itemsToWrite;
+    }
+
+    public int[] getIndirectSizes() {
+        return tmult != null ? tmult.getIndirectSizes() : new int[0];
     }
 
     public boolean setMatDims(int[] dims) {
@@ -888,7 +892,6 @@ public class Processor {
             }
             for (int i = 0; i < dataset.getNDim(); i++) {
                 dataset.setLabel(i, nmrData.getTN(mapToFID(i)));
-                System.out.println(i + " " + dataset.getLabel(i) + " " + mapToFID(i));
                 dataset.setSf(i, nmrData.getSF(mapToFID(i)));
                 dataset.setSw(i, nmrData.getSW(mapToFID(i)));
                 dataset.setRefValue(i, nmrData.getRef(mapToFID(i)));
