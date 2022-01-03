@@ -227,7 +227,7 @@ public class SimFitMolController extends SimMolController {
                 if (datasets[iDataset] == null) {
                     Vec vec = SimData.prepareVec(names.get(iDataset), pars);
                     vec.setFreqDomain(true);
-                    vec.setRef(pars.getVref());
+                    vec.setRefValue(pars.getRef());
                     datasets[iDataset] = new Dataset(vec);
                     datasets[iDataset].setLabel(0, pars.getLabel());
                 }

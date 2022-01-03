@@ -241,7 +241,7 @@ public class CompoundData {
         } else {
             vec.resize(n, false);
         }
-        vec.refValue = ref;
+        vec.setRefValue(ref, 0.0);
         vec.dwellTime = 1.0 / sw;
         vec.centerFreq = sf;
         vec.setFreqDomain(true);

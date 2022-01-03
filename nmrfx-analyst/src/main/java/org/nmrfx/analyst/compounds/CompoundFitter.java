@@ -41,7 +41,6 @@ import org.apache.commons.math3.stat.correlation.SpearmansCorrelation;
 import org.apache.commons.math3.util.FastMath;
 import org.nmrfx.math.Interpolator;
 import org.nmrfx.processor.math.AmplitudeFitResult;
-import org.nmrfx.math.Interpolator;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.math.VecUtil;
 
@@ -130,7 +129,7 @@ public class CompoundFitter implements MultivariateFunction {
         double size = vec.getSize();
         ppmDeltaToPoint = size / (sw / sf);
         vecHzToPoint = size / sw;
-        vecRef = vec.refValue;
+        vecRef = vec.getZeroRefValue();
     }
 
     double vecPPMToPoint(final double ppm) {

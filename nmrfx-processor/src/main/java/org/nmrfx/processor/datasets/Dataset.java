@@ -203,14 +203,14 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         sf[0] = vector.centerFreq;
         sw[0] = 1.0 / vector.dwellTime;
         sw_r[0] = sw[0];
-        refValue[0] = vector.refValue;
+        refValue[0] = vector.getRefValue();
         refValue_r[0] = refValue[0];
         ph0[0] = vector.getPH0();
         ph1[0] = vector.getPH1();
         ph0_r[0] = ph0[0];
         ph1_r[0] = ph1[0];
-        refPt[0] = 0;
-        refPt_r[0] = 0;
+        refPt[0] = vector.getSize() / 2;
+        refPt_r[0] = vector.getSize() / 2;
         complex[0] = vector.isComplex();
         complex_r[0] = vector.isComplex();
         freqDomain[0] = vector.freqDomain();
@@ -1501,8 +1501,8 @@ public double[] getPercentile(double p, int[][] pt, int[] dim) throws IOExceptio
         rwVector.setTDSize(getTDSize(dim[0]));
         rwVector.setPt(pt, dim);
 
-        double delRef = ((getRefPt_r(dim[0]) - pt[0][0]) * getSw_r(dim[0])) / getSf(dim[0]) / rwVector.getSize();
-        rwVector.refValue = getRefValue_r(dim[0]) + delRef;
+      //  rwVector.setRefValue(getRefValue_r(dim[0]), (getRefPt_r(dim[0])-pt[0][0]));
+        rwVector.setRefValue(getRefValue_r(dim[0]));
         rwVector.setFreqDomain(getFreqDomain_r(dim[0]));
 
         int[] point = new int[nDim];
@@ -2032,8 +2032,7 @@ public double[] getPercentile(double p, int[][] pt, int[] dim) throws IOExceptio
 
         //  FIXME should have flag to allow/disallow updating reference
         double dimRefPoint = (getVSize(dim[0]) / 2);
-        double delRef = dimRefPoint * getSw(dim[0]) / getSf(dim[0]) / getVSize(dim[0]);
-        double dimRefValue = vector.refValue - delRef;
+        double dimRefValue = vector.getRefValue();
 
         setRefValue(dim[0], dimRefValue);
         setRefPt(dim[0], dimRefPoint);

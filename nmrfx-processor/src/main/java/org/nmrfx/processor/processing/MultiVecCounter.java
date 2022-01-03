@@ -31,7 +31,7 @@ import org.apache.commons.math3.util.MultidimensionalCounter;
  */
 public class MultiVecCounter {
 
-    public static boolean showDebugInfo = true;
+    public static boolean showDebugInfo = false;
     int[] osizes;
     int[] isizes;
     int[] inPhases;

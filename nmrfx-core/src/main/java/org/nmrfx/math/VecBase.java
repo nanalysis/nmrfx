@@ -47,10 +47,7 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
      *
      */
     public double centerFreq = 1.0;
-    /**
-     *
-     */
-    public double refValue = 0.0;
+    private double refValue = 0.0;
     // number of valid data values in arrays.
     protected int size;
     // original size of time domain data (need to keep track of this for undoing zero filling)
@@ -1356,18 +1353,43 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
      * @param newSize the new size of the vector
      */
     public void adjustRef(double shift, int newSize) {
-        refValue -= ((shift / (dwellTime * centerFreq)) / ((double) size));
+        double newCenter = shift + newSize / 2;
+        double deltaPt = size / 2 - newCenter;
+        double delRef =  ((deltaPt / (dwellTime * centerFreq)) / ((double) size));
+        refValue += delRef;
         dwellTime = (dwellTime * size) / ((double) newSize);
     }
 
     /**
-     * Set the reference value
      *
-     * @param value the new reference value.
      */
-    public void setRef(double value) {
-        refValue = value;
+    public double getRefValue() {
+        return refValue;
     }
+
+    public double getZeroRefValue() {
+        double delRef = ((1.0 / dwellTime) / centerFreq) / 2.0;
+        return refValue + delRef;
+    }
+
+    public void setRefValue(double refValue) {
+        this.refValue = refValue;
+    }
+
+    public void setRefValue(double refValue, double refPt) {
+        this.refValue = refValue + getDeltaRef(refPt);
+    }
+    public void setZeroRefValue(double refValue) {
+        double delRef = getDeltaRef(0.0);
+        this.refValue = refValue - delRef;
+    }
+
+    public double getDeltaRef(double refPt) {
+        double deltaFrac = 0.5 - refPt /size;
+        double delRef = (deltaFrac / dwellTime) / centerFreq;
+        return delRef;
+    }
+
 
     /**
      * Add a real value v to the i'th value in the Vector and modify the value.
@@ -2373,7 +2395,7 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
      * @return position in PPM
      */
     public double pointToPPM(double pt) {
-        return refValue - (pt / (centerFreq * dwellTime * size));
+        return (-(pt - size/2) * ((pt / (centerFreq * dwellTime * size)) + refValue));
     }
 
     /**
@@ -2384,8 +2406,7 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
      * @return position in points
      */
     public double refToPtD(double ref) {
-        // why add 1.0, empircally necessary in show wsvd table
-        return ((refValue - ref) * centerFreq * dwellTime * size);
+        return ((refValue - ref) * centerFreq * dwellTime * size) + size /2;
     }
 
     /**

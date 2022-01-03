@@ -1541,14 +1541,14 @@ public class Vec extends VecBase {
         rVec.freqDomain = getFreqDomain();
         rVec.dwellTime = dwellTime;
         rVec.centerFreq = centerFreq;
-        rVec.refValue = refValue;
+        rVec.setRefValue(getRefValue());
         rVec.ph0 = ph0;
         rVec.ph1 = ph1;
         iVec.isComplex = false;
         iVec.freqDomain = getFreqDomain();
         iVec.dwellTime = dwellTime;
         iVec.centerFreq = centerFreq;
-        iVec.refValue = refValue;
+        iVec.setRefValue(getRefValue());
 
     }
 

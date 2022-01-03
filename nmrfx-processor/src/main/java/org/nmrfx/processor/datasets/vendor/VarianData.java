@@ -860,8 +860,7 @@ class VarianData implements NMRData {
         }
         dvec.dwellTime = 1.0 / getSW(0);
         dvec.centerFreq = getSF(0);
-        double delRef = (dvec.getSize() / 2 - 0) * (1.0 / dvec.dwellTime) / dvec.centerFreq / dvec.getSize();
-        dvec.refValue = getRef(0) + delRef;
+        dvec.setRefValue(getRef(0));
 
         //dvec.setPh0(getPH0(0));
         //dvec.setPh1(getPH1(0));
@@ -880,8 +879,7 @@ class VarianData implements NMRData {
         }
         dvec.dwellTime = 1.0 / getSW(iDim);
         dvec.centerFreq = getSF(iDim);
-        double delRef = (dvec.getSize() / 2 - 0) * (1.0 / dvec.dwellTime) / dvec.centerFreq / dvec.getSize();
-        dvec.refValue = getRef(iDim) + delRef;
+        dvec.setRefValue(getRef(iDim));
         dvec.setPh0(getPH0(iDim));
         dvec.setPh1(getPH1(iDim));
     }

@@ -1179,8 +1179,7 @@ public class DatasetBase {
     public void setRefPt(final int iDim, final double refPt) {
         this.refPt[iDim] = refPt;
         if (vecMat != null) {
-            double delRef = getRefPt(iDim) * getSw(iDim) / getSf(iDim) / getSizeReal(iDim);
-            vecMat.refValue = refValue[iDim] + delRef;
+            vecMat.setRefValue(refValue[iDim], refPt);
         }
 
     }
@@ -1197,7 +1196,7 @@ public class DatasetBase {
             value = refValue[iDim];
         } else {
             double delRef = getRefPt(iDim) * getSw(iDim) / getSf(iDim) / getSizeReal(iDim);
-            value = vecMat.refValue - delRef;
+            value = vecMat.getRefValue() - delRef;
         }
         return value;
     }
@@ -1211,8 +1210,7 @@ public class DatasetBase {
     public void setRefValue(final int iDim, final double refValue) {
         this.refValue[iDim] = refValue;
         if (vecMat != null) {
-            double delRef = getRefPt(iDim) * getSw(iDim) / getSf(iDim) / getSizeReal(iDim);
-            vecMat.refValue = refValue + delRef;
+            vecMat.setRefValue(refValue, getRefPt(iDim));
         }
     }
 
@@ -1334,8 +1332,7 @@ public class DatasetBase {
     public void setRefPt_r(final int iDim, final double refPt_r) {
         this.refPt_r[iDim] = refPt_r;
         if (vecMat != null) {
-            double delRef = getRefPt_r(iDim) * getSw(iDim) / getSf(iDim) / getSizeReal(iDim);
-            vecMat.refValue = refValue_r[iDim] + delRef;
+            vecMat.setRefValue(refValue_r[iDim], getRefPt_r(iDim));
         }
     }
 
@@ -1351,7 +1348,7 @@ public class DatasetBase {
             value = refValue_r[iDim];
         } else {
             double delRef = getRefPt_r(iDim) * getSw_r(iDim) / getSf(iDim) / getSizeReal(iDim);
-            value = vecMat.refValue - delRef;
+            value = vecMat.getRefValue() - delRef;
         }
         return value;
     }
@@ -1365,8 +1362,7 @@ public class DatasetBase {
     public void setRefValue_r(final int iDim, final double refValue_r) {
         this.refValue_r[iDim] = refValue_r;
         if (vecMat != null) {
-            double delRef = getRefPt_r(iDim) * getSw_r(iDim) / getSf(iDim) / getSizeReal(iDim);
-            vecMat.refValue = refValue_r + delRef;
+            vecMat.setRefValue(refValue_r, getRefPt_r(iDim));
         }
     }
 
