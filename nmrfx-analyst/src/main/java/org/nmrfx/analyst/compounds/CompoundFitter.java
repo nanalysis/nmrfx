@@ -8,6 +8,7 @@ import java.io.PrintWriter;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import org.apache.commons.math3.analysis.MultivariateFunction;
@@ -89,7 +90,7 @@ public class CompoundFitter implements MultivariateFunction {
 
     /**
      *
-     * @param vecName
+     * @param vec Vec object to set
      */
     public void setVec(Vec vec) {
         this.vec = vec;
@@ -98,16 +99,14 @@ public class CompoundFitter implements MultivariateFunction {
         }
         vData = vec.getReal();
         maskData = new double[vData.length];
-        for (int i = 0; i < maskData.length; i++) {
-            maskData[i] = 1.0;
-        }
+        Arrays.fill(maskData, 1.0);
         setVScale(vec);
     }
 
     /**
      *
-     * @param vecName
-     * @param maskName
+     * @param vecName name of Vec to lookup and use
+     * @param maskName name of Vec to lookup and use as mask
      */
     public void setVecWithMask(String vecName, String maskName) {
         Vec vec = (Vec) Vec.get(vecName);
@@ -133,8 +132,7 @@ public class CompoundFitter implements MultivariateFunction {
     }
 
     double vecPPMToPoint(final double ppm) {
-        double point = (vecRef - ppm) * ppmDeltaToPoint;
-        return point;
+        return (vecRef - ppm) * ppmDeltaToPoint;
     }
 
     int vecPPMToIntPoint(final double ppm) {
@@ -148,19 +146,18 @@ public class CompoundFitter implements MultivariateFunction {
         double deltaPoints = regionWidthHz * vecHzToPoint;
         double start = center - deltaPoints / 2.0;
         double end = start + deltaPoints;
-        double[] result = {start, end};
-        return result;
+        return new double[]{start, end};
     }
 
     /**
      *
-     * @param bcNum
+     * @param bcNum order of baseline correction polynomial
      */
     public void setBC(final int bcNum) {
-        this.bcNum = bcNum < 0 ? 0 : bcNum;
+        this.bcNum = Math.max(bcNum, 0);
     }
 
-    class CompoundRegion {
+    static class CompoundRegion {
 
         private final CompoundMatch cMatch;
         private final int[] regions;
@@ -207,7 +204,7 @@ public class CompoundFitter implements MultivariateFunction {
 
     /**
      *
-     * @param cmpdID
+     * @param cMatch
      * @param region
      * @param shift
      * @param minShift
@@ -228,6 +225,7 @@ public class CompoundFitter implements MultivariateFunction {
 
     /**
      *
+     * @param cMatch
      * @param cmpdID
      * @param regions
      * @param shifts

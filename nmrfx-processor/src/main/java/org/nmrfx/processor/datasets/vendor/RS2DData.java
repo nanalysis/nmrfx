@@ -175,7 +175,7 @@ public class RS2DData implements NMRData {
                     found = true;
                 }
                 bpath.setLength(0);
-                bpath.append(parent.toString());
+                bpath.append(parent);
             }
         }
         return found;
@@ -184,8 +184,8 @@ public class RS2DData implements NMRData {
     private static boolean findFIDFiles(String dirPath) {
         Path headerPath = Paths.get(dirPath, "header.xml");
         Path dataPath = Paths.get(dirPath, DATA_FILE_NAME);
-        System.out.println(headerPath.toString() + " " + headerPath.toFile().exists());
-        System.out.println(dataPath.toString() + " " + dataPath.toFile().exists());
+        System.out.println(headerPath + " " + headerPath.toFile().exists());
+        System.out.println(dataPath + " " + dataPath.toFile().exists());
         return headerPath.toFile().exists() && dataPath.toFile().exists();
     }
 
