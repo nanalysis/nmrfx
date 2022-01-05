@@ -1,4 +1,4 @@
-package org.nmrfx.analyst.gui;
+package org.nmrfx.analyst.gui.peaks;
 
 import java.util.HashMap;
 import java.util.List;
@@ -14,7 +14,8 @@ import javafx.scene.layout.HBox;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
-import org.nmrfx.analyst.gui.AtomBrowser.AtomDelta;
+import org.nmrfx.analyst.gui.peaks.AtomBrowser;
+import org.nmrfx.analyst.gui.peaks.AtomBrowser.AtomDelta;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakDim;

@@ -3,17 +3,16 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package org.nmrfx.analyst.gui;
+package org.nmrfx.analyst.gui.tools;
 
 import de.jensd.fx.glyphs.GlyphsDude;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import java.io.IOException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.ResourceBundle;
+import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javafx.beans.value.ChangeListener;
@@ -21,44 +20,62 @@ import javafx.beans.value.ObservableValue;
 import javafx.collections.ObservableSet;
 import javafx.collections.SetChangeListener;
 import javafx.event.ActionEvent;
-import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
-import javafx.fxml.Initializable;
-import javafx.scene.Scene;
+import javafx.geometry.Orientation;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.ContentDisplay;
 import javafx.scene.control.Label;
+import javafx.scene.control.Menu;
 import javafx.scene.control.MenuButton;
 import javafx.scene.control.MenuItem;
+import javafx.scene.control.Separator;
 import javafx.scene.control.TextField;
+import javafx.scene.control.ToolBar;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.Clipboard;
+import javafx.scene.input.ClipboardContent;
+import javafx.scene.input.DataFormat;
 import javafx.scene.input.KeyCode;
-import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
+import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
-import javafx.stage.StageStyle;
+import org.controlsfx.dialog.ExceptionDialog;
+import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.analyst.peaks.Analyzer;
+import org.nmrfx.analyst.peaks.JournalFormat;
+import org.nmrfx.analyst.peaks.JournalFormatPeaks;
 import org.nmrfx.analyst.peaks.Multiplets;
+import org.nmrfx.datasets.DatasetRegion;
+import org.nmrfx.peaks.AbsMultipletComponent;
 import org.nmrfx.peaks.ComplexCoupling;
 import org.nmrfx.peaks.Coupling;
 import org.nmrfx.peaks.CouplingPattern;
 import org.nmrfx.peaks.Multiplet;
 import org.nmrfx.peaks.Peak;
+import org.nmrfx.peaks.PeakEvent;
 import org.nmrfx.peaks.PeakList;
+import org.nmrfx.peaks.PeakListener;
 import org.nmrfx.peaks.Singlet;
 import org.nmrfx.processor.datasets.Dataset;
+import org.nmrfx.analyst.gui.annotations.AnnoJournalFormat;
+import org.nmrfx.processor.gui.controls.ConsoleUtil;
+import org.nmrfx.analyst.gui.molecule.CanvasMolecule;
+import org.nmrfx.processor.gui.CanvasAnnotation;
+import org.nmrfx.processor.gui.ControllerTool;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.spectra.CrossHairs;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.processor.gui.spectra.MultipletSelection;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
+import org.nmrfx.processor.gui.utils.ToolBarUtils;
+import org.nmrfx.structure.chemistry.Molecule;
 import static org.nmrfx.utils.GUIUtils.affirm;
 import static org.nmrfx.utils.GUIUtils.warn;
 
@@ -66,50 +83,55 @@ import static org.nmrfx.utils.GUIUtils.warn;
  *
  * @author brucejohnson
  */
-public class MultipletController implements Initializable, SetChangeListener<MultipletSelection> {
+public class MultipletTool implements SetChangeListener<MultipletSelection>, ControllerTool, PeakListener {
 
     Stage stage = null;
-    HBox navigatorToolBar;
+    VBox vBox;
+    HBox navigatorToolBar = new HBox();
     TextField multipletIdField;
-    @FXML
-    HBox menuBar;
-    @FXML
-    HBox toolBar;
-    @FXML
-    HBox regionToolBar;
-    @FXML
-    HBox peakToolBar;
-    @FXML
-    HBox multipletToolBar;
-    @FXML
-    HBox fittingToolBar;
-    @FXML
-    HBox integralToolBar;
-    @FXML
-    HBox typeToolBar;
-    @FXML
-    GridPane gridPane;
-    @FXML
+    HBox menuBar = new HBox();
+    HBox toolBar = new HBox();
+    HBox regionToolBar = new HBox();
+    HBox peakToolBar = new HBox();
+    HBox multipletToolBar = new HBox();
+    HBox fittingToolBar = new HBox();
+    HBox integralToolBar = new HBox();
+    HBox typeToolBar = new HBox();
+    GridPane gridPane = new GridPane();
     Button splitButton;
-    @FXML
     Button splitRegionButton;
-    @FXML
     ChoiceBox<String> peakTypeChoice;
     ChoiceBox<String>[] patternChoices;
     TextField integralField;
     TextField[] couplingFields;
     TextField[] slopeFields;
+    FXMLController controller;
+    Consumer<MultipletTool> closeAction;
+
     private PolyChart chart;
     Optional<Multiplet> activeMultiplet = Optional.empty();
     boolean ignoreCouplingChanges = false;
     ChangeListener<String> patternListener;
     Analyzer analyzer = null;
+    CheckBox journalCheckBox;
+    CheckBox molButton;
+    CanvasMolecule cMol = null;
 
-    public MultipletController() {
+    public MultipletTool(FXMLController controller, Consumer<MultipletTool> closeAction) {
+        this.controller = controller;
+        this.closeAction = closeAction;
     }
 
-    @Override
-    public void initialize(URL location, ResourceBundle resources) {
+    public VBox getBox() {
+        return vBox;
+    }
+
+    public void close() {
+        closeAction.accept(this);
+    }
+
+    public void initialize(VBox vBox) {
+        this.vBox = vBox;
         String[] patterns = {"d", "t", "q", "p", "h", "dd", "ddd", "dddd"};
         int nCouplings = 5;
         double width1 = 30;
@@ -118,9 +140,6 @@ public class MultipletController implements Initializable, SetChangeListener<Mul
         patternChoices = new ChoiceBox[nCouplings];
         couplingFields = new TextField[nCouplings];
         slopeFields = new TextField[nCouplings];
-        Button doubletButton = new Button("To Doublets");
-        doubletButton.setOnAction(e -> toDoublets());
-        gridPane.add(doubletButton, 0, 0, 2, 1);
         for (int iRow = 0; iRow < nCouplings; iRow++) {
             patternChoices[iRow] = new ChoiceBox<>();
             patternChoices[iRow].setPrefWidth(width2);
@@ -136,34 +155,88 @@ public class MultipletController implements Initializable, SetChangeListener<Mul
             couplingFields[iRow] = new TextField();
             slopeFields[iRow] = new TextField();
             couplingFields[iRow].setPrefWidth(width3);
+            final int couplingIndex = iRow;
+            couplingFields[iRow].setOnKeyReleased(e -> {
+                System.out.println(e.getCode());
+                if (e.getCode() == KeyCode.ENTER) {
+                    couplingValueTyped(couplingIndex);
+                }
+            });
             slopeFields[iRow].setPrefWidth(width3);
-            gridPane.add(patternChoices[iRow], 0, iRow + 1);
-            gridPane.add(couplingFields[iRow], 1, iRow + 1);
-            gridPane.add(slopeFields[iRow], 2, iRow + 1);
+            gridPane.add(patternChoices[iRow], iRow * 3 + 0, 0);
+            gridPane.add(couplingFields[iRow], iRow * 3 + 1, 0);
+            gridPane.add(slopeFields[iRow], iRow * 3 + 2, 0);
         }
-        initMenus();
-        initNavigator(toolBar);
-        initTools();
+        String iconSize = "12px";
+        String fontSize = "7pt";
+        ToolBar toolBar1 = new ToolBar();
+        Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "Close", iconSize, fontSize, ContentDisplay.TOP);
+        closeButton.setOnAction(e -> close());
+        toolBar1.getItems().add(closeButton);
+        initMenus(toolBar1);
+        ToolBarUtils.addFiller(toolBar1, 10, 500);
+        initNavigator(toolBar1);
+        ToolBarUtils.addFiller(toolBar1, 10, 20);
+        initIntegralType(toolBar1);
+        ToolBarUtils.addFiller(toolBar1, 25, 50);
+
+        journalCheckBox = new CheckBox("Text");
+        journalCheckBox.setOnAction(e -> toggleJournalFormatDisplay());
+        journalCheckBox.getStyleClass().add("toolButton");
+
+        molButton = new CheckBox("Molecule");
+        molButton.getStyleClass().add("toolButton");
+        molButton.setOnAction(e -> toggleMoleculeDisplay());
+
+        toolBar1.getItems().addAll(journalCheckBox, molButton);
+
+        ToolBarUtils.addFiller(toolBar1, 10, 500);
+
+        ToolBar toolBar2 = new ToolBar();
+        initTools(toolBar2);
+
+        Separator vsep1 = new Separator(Orientation.HORIZONTAL);
+        Separator vsep2 = new Separator(Orientation.HORIZONTAL);
+        vBox.getChildren().addAll(toolBar1, vsep1, toolBar2, vsep2, gridPane);
+
         patternListener = (ObservableValue<? extends String> observable, String oldValue, String newValue) -> {
             couplingChanged();
         };
         addPatternListener();
         FXMLController controller = FXMLController.getActiveController();
         controller.selPeaks.addListener(e -> setActivePeaks(controller.selPeaks.get()));
+        chart = controller.getActiveChart();
+        chart.addMultipletListener(this);
+        initMultiplet();
+        chart.setRegionConsumer(e -> regionAdded(e));
 
     }
 
-    public void initMenus() {
+    public void regionAdded(DatasetRegion region) {
+        addRegion(region);
+    }
+
+    public void initMenus(ToolBar toolBar) {
         MenuButton menu = new MenuButton("Actions");
-        menuBar.getChildren().add(menu);
+        toolBar.getItems().add(menu);
         MenuItem analyzeMenuItem = new MenuItem("Analyze");
-        analyzeMenuItem.setOnAction(e -> analyze1D());
+        analyzeMenuItem.setOnAction(e -> analyze1D(true));
+
+        Menu stepMenu = new Menu("Stepwise");
+
+        MenuItem findRegionsMenuItem = new MenuItem("Find Regions");
+        findRegionsMenuItem.setOnAction(e -> findRegions());
 
         MenuItem pickRegionsMenuItem = new MenuItem("Pick Regions");
         pickRegionsMenuItem.setOnAction(e -> pickRegions());
 
+        MenuItem analyzePeaksMenuItem = new MenuItem("Analyze Peaks");
+        analyzePeaksMenuItem.setOnAction(e -> analyze1D(false));
+
         MenuItem clearMenuItem = new MenuItem("Clear");
-        clearMenuItem.setOnAction(e -> clearAnalysis());
+        clearMenuItem.setOnAction(e -> clearAnalysis(true));
+
+        Menu thresholdMenu = new Menu("Threshold");
 
         MenuItem thresholdMenuItem = new MenuItem("Set Threshold");
         thresholdMenuItem.setOnAction(e -> setThreshold());
@@ -171,11 +244,19 @@ public class MultipletController implements Initializable, SetChangeListener<Mul
         MenuItem clearThresholdMenuItem = new MenuItem("Clear Threshold");
         clearThresholdMenuItem.setOnAction(e -> clearThreshold());
 
-        menu.getItems().addAll(analyzeMenuItem, pickRegionsMenuItem, clearMenuItem, thresholdMenuItem, clearThresholdMenuItem);
+        thresholdMenu.getItems().addAll(thresholdMenuItem, clearThresholdMenuItem);
+
+        Menu reportMenu = new Menu("Report");
+        MenuItem copyJournalFormatMenuItem = new MenuItem("Copy");
+
+        copyJournalFormatMenuItem.setOnAction(e -> journalFormatToClipboard());
+        reportMenu.getItems().addAll(copyJournalFormatMenuItem);
+
+        menu.getItems().addAll(analyzeMenuItem, stepMenu, clearMenuItem, thresholdMenu, reportMenu);
+        stepMenu.getItems().addAll(findRegionsMenuItem, pickRegionsMenuItem, analyzePeaksMenuItem);
     }
 
-    public void initNavigator(HBox toolBar) {
-        this.navigatorToolBar = toolBar;
+    public void initNavigator(ToolBar toolBar) {
         multipletIdField = new TextField();
         multipletIdField.setMinWidth(35);
         multipletIdField.setMaxWidth(35);
@@ -205,11 +286,11 @@ public class MultipletController implements Initializable, SetChangeListener<Mul
         deleteButton.setOnKeyPressed(e -> e.consume());
         deleteButton.setOnAction(e -> deleteMultiplet());
 
-        toolBar.getChildren().addAll(buttons);
-        toolBar.getChildren().add(multipletIdField);
-        toolBar.getChildren().add(deleteButton);
+        toolBar.getItems().addAll(buttons);
+        toolBar.getItems().add(multipletIdField);
+        toolBar.getItems().add(deleteButton);
         HBox spacer = new HBox();
-        toolBar.getChildren().add(spacer);
+        toolBar.getItems().add(spacer);
         HBox.setHgrow(spacer, Priority.ALWAYS);
 
         multipletIdField.setOnKeyReleased(kE -> {
@@ -232,7 +313,7 @@ public class MultipletController implements Initializable, SetChangeListener<Mul
         return imageView;
     }
 
-    void initTools() {
+    void initTools(ToolBar toolBar) {
         Font font = new Font(7);
         List<Button> peakButtons = new ArrayList<>();
         List<Button> regionButtons = new ArrayList<>();
@@ -241,7 +322,7 @@ public class MultipletController implements Initializable, SetChangeListener<Mul
         Button button;
 
         button = new Button("Add", getIcon("region_add"));
-        button.setOnAction(e -> addRegion());
+        button.setOnAction(e -> addRegion(null));
         regionButtons.add(button);
 
         button = new Button("Adjust", getIcon("region_adjust"));
@@ -284,6 +365,10 @@ public class MultipletController implements Initializable, SetChangeListener<Mul
         button.setOnAction(e -> transferPeaks());
         multipletButtons.add(button);
 
+        Button doubletButton = new Button("Doublets", getIcon("tree"));
+        doubletButton.setOnAction(e -> toDoublets());
+        multipletButtons.add(doubletButton);
+
         button = new Button("Fit", getIcon("reload"));
         button.setOnAction(e -> fitSelected());
         fitButtons.add(button);
@@ -291,36 +376,52 @@ public class MultipletController implements Initializable, SetChangeListener<Mul
         button = new Button("BICFit", getIcon("reload"));
         button.setOnAction(e -> objectiveDeconvolution());
         fitButtons.add(button);
+        Label regionLabel = new Label("Regions:");
+        Label peakLabel = new Label("Peaks:");
+        Label multipletLabel = new Label("Multiplets:");
+        Label fitLabel = new Label("Fit: ");
+
+        ToolBarUtils.addFiller(toolBar, 2, 200);
+        toolBar.getItems().add(regionLabel);
 
         for (Button button1 : regionButtons) {
             button1.setContentDisplay(ContentDisplay.TOP);
             button1.setFont(font);
             button1.getStyleClass().add("toolButton");
-            regionToolBar.getChildren().add(button1);
+            toolBar.getItems().add(button1);
         }
+        ToolBarUtils.addFiller(toolBar, 5, 20);
+        toolBar.getItems().add(peakLabel);
         for (Button button1 : peakButtons) {
             button1.setContentDisplay(ContentDisplay.TOP);
             button1.setFont(font);
             button1.getStyleClass().add("toolButton");
-            peakToolBar.getChildren().add(button1);
+            toolBar.getItems().add(button1);
         }
+        ToolBarUtils.addFiller(toolBar, 5, 20);
+        toolBar.getItems().add(multipletLabel);
         for (Button button1 : multipletButtons) {
             button1.setContentDisplay(ContentDisplay.TOP);
             button1.setFont(font);
             button1.getStyleClass().add("toolButton");
-            multipletToolBar.getChildren().add(button1);
+            toolBar.getItems().add(button1);
         }
+        ToolBarUtils.addFiller(toolBar, 5, 20);
+        toolBar.getItems().add(fitLabel);
         for (Button button1 : fitButtons) {
             button1.setContentDisplay(ContentDisplay.TOP);
             button1.setFont(font);
             button1.getStyleClass().add("toolButton");
-            fittingToolBar.getChildren().add(button1);
+            toolBar.getItems().add(button1);
         }
-        Label integralLabel = new Label("N:");
-        integralLabel.setPrefWidth(80);
+        ToolBarUtils.addFiller(toolBar, 2, 200);
+
+    }
+
+    void initIntegralType(ToolBar toolBar) {
+        Label integralLabel = new Label("N: ");
         integralField = new TextField();
-        integralField.setPrefWidth(120);
-        integralToolBar.getChildren().addAll(integralLabel, integralField);
+        integralField.setPrefWidth(70);
 
         integralField.setOnKeyReleased(k -> {
             if (k.getCode() == KeyCode.ENTER) {
@@ -340,39 +441,46 @@ public class MultipletController implements Initializable, SetChangeListener<Mul
         });
 
         Label peakTypeLabel = new Label("Type: ");
-        peakTypeLabel.setPrefWidth(80);
         peakTypeChoice = new ChoiceBox();
         typeToolBar.getChildren().addAll(peakTypeLabel, peakTypeChoice);
         peakTypeChoice.getItems().addAll(Peak.getPeakTypes());
         peakTypeChoice.valueProperty().addListener(e -> setPeakType());
         peakTypeChoice.setPrefWidth(120);
-
-        /*
-extract.png				region_add.png		wizard
-merge.png				region_adjust.png
-		region_delete.png
-
-
-         */
+        toolBar.getItems().addAll(integralLabel, integralField);
+        toolBar.getItems().addAll(peakTypeLabel, peakTypeChoice);
     }
 
     public void getAnalyzer() {
+        Dataset dataset = (Dataset) chart.getDataset();
+        PeakList activePeaklist = null;
+        if (!chart.getPeakListAttributes().isEmpty()) {
+            activePeaklist = chart.getPeakListAttributes().get(0).getPeakList();
+        }
         if (analyzer == null) {
-            chart = PolyChart.getActiveChart();
-            Dataset dataset = (Dataset) chart.getDataset();
             if ((dataset == null) || (dataset.getNDim() > 1)) {
                 Alert alert = new Alert(Alert.AlertType.ERROR);
                 alert.setContentText("Chart must have a 1D dataset");
                 alert.showAndWait();
                 analyzer = null;
+                return;
             }
             analyzer = new Analyzer(dataset);
+        } else {
+            if (analyzer.getDataset() != dataset) {
+                analyzer = new Analyzer(dataset);
+            }
+        }
+        if (activePeaklist != null) {
+            analyzer.setPeakList(activePeaklist);
         }
     }
 
-    private void analyze1D() {
+    private void analyze1D(boolean clear) {
         getAnalyzer();
         if (analyzer != null) {
+            if (clear) {
+                clearAnalysis(false);
+            }
             try {
                 analyzer.analyze();
                 PeakList peakList = analyzer.getPeakList();
@@ -387,10 +495,35 @@ merge.png				region_adjust.png
         }
     }
 
+    private void findRegions() {
+        getAnalyzer();
+        if (analyzer != null) {
+            analyzer.calculateThreshold();
+            analyzer.getThreshold();
+            analyzer.autoSetRegions();
+            try {
+                analyzer.integrate();
+            } catch (IOException ex) {
+                ExceptionDialog eDialog = new ExceptionDialog(ex);
+                eDialog.showAndWait();
+                return;
+            }
+            chart.chartProps.setRegions(false);
+            chart.chartProps.setIntegrals(true);
+            chart.refresh();
+        }
+    }
+
     private void pickRegions() {
         getAnalyzer();
         if (analyzer != null) {
             analyzer.peakPickRegions();
+            analyzer.renumber();
+            analyzer.setVolumesFromIntegrals();
+            try {
+                analyzer.fitRegions();
+            } catch (Exception ex) {
+            }
             PeakList peakList = analyzer.getPeakList();
             List<String> peakListNames = new ArrayList<>();
             peakListNames.add(peakList.getName());
@@ -400,12 +533,15 @@ merge.png				region_adjust.png
         }
     }
 
-    private void clearAnalysis() {
+    private void clearAnalysis(boolean prompt) {
         getAnalyzer();
         if (analyzer != null) {
-            if (affirm("Clear Analysis")) {
+            if (!prompt || affirm("Clear Analysis")) {
                 PeakList peakList = analyzer.getPeakList();
-                PeakList.remove(peakList.getName());
+                if (peakList != null) {
+                    PeakList.remove(peakList.getName());
+                }
+                analyzer.clearRegions();
                 chart.chartProps.setRegions(false);
                 chart.chartProps.setIntegrals(false);
                 chart.refresh();
@@ -434,10 +570,17 @@ merge.png				region_adjust.png
     }
 
     void deleteMultiplet() {
+        activeMultiplet.ifPresent(m -> {
+            double shift = m.getCenter();
+            getAnalyzer();
+            analyzer.removeRegion(shift);
+        });
+        refresh();
 
     }
 
     public void initMultiplet() {
+        getAnalyzer();
         if (!gotoSelectedMultiplet()) {
             List<Peak> peaks = getPeaks();
             if (!peaks.isEmpty()) {
@@ -449,6 +592,7 @@ merge.png				region_adjust.png
     }
 
     public boolean gotoSelectedMultiplet() {
+        getAnalyzer();
         boolean result = false;
         List<MultipletSelection> multiplets = chart.getSelectedMultiplets();
         if (!multiplets.isEmpty()) {
@@ -475,6 +619,7 @@ merge.png				region_adjust.png
     }
 
     void updateMultipletField(boolean resetView) {
+        getAnalyzer();
         if (activeMultiplet.isPresent()) {
             Multiplet multiplet = activeMultiplet.get();
             multipletIdField.setText(String.valueOf(multiplet.getIDNum()));
@@ -500,6 +645,7 @@ merge.png				region_adjust.png
     }
 
     void setPeakType() {
+        getAnalyzer();
         activeMultiplet.ifPresent(m -> {
             String peakType = peakTypeChoice.getValue();
             m.getOrigin().setType(Peak.getType(peakType));
@@ -620,34 +766,6 @@ merge.png				region_adjust.png
 
     }
 
-    public static MultipletController create() {
-        FXMLLoader loader = new FXMLLoader(MinerController.class.getResource("/fxml/MultipletScene.fxml"));
-        MultipletController controller = null;
-        Stage stage = new Stage(StageStyle.DECORATED);
-        try {
-            Scene scene = new Scene((BorderPane) loader.load());
-            stage.setScene(scene);
-            scene.getStylesheets().add("/styles/Styles.css");
-
-            controller = loader.<MultipletController>getController();
-            controller.stage = stage;
-            stage.setTitle("Multiplets");
-            stage.setScene(scene);
-            stage.setMinWidth(200);
-            stage.setMinHeight(475);
-            stage.show();
-            stage.toFront();
-            controller.chart = controller.getChart();
-            controller.chart.addMultipletListener(controller);
-            controller.initMultiplet();
-
-        } catch (IOException ioE) {
-            ioE.printStackTrace();
-            System.out.println(ioE.getMessage());
-        }
-        return controller;
-    }
-
     public Stage getStage() {
         return stage;
     }
@@ -658,7 +776,7 @@ merge.png				region_adjust.png
         if (!attrs.isEmpty()) {
             peakListOpt = Optional.of(attrs.get(0).getPeakList());
         } else {
-        getAnalyzer();
+            getAnalyzer();
             PeakList peakList = analyzer.getPeakList();
             if (peakList != null) {
                 List<String> peakListNames = new ArrayList<>();
@@ -729,7 +847,7 @@ merge.png				region_adjust.png
         getAnalyzer();
         double ppm0 = chart.getVerticalCrosshairPositions()[0];
         double ppm1 = chart.getVerticalCrosshairPositions()[1];
-        analyzer.removeRegion((ppm0 + ppm1) / 2);
+        analyzer.removeRegion(ppm0, ppm1);
         analyzer.addRegion(ppm0, ppm1);
         try {
             activeMultiplet = analyzer.analyzeRegion((ppm0 + ppm1) / 2);
@@ -739,11 +857,20 @@ merge.png				region_adjust.png
         }
     }
 
-    public void addRegion() {
+    public void addRegion(DatasetRegion region) {
         getAnalyzer();
-        double ppm0 = chart.getVerticalCrosshairPositions()[0];
-        double ppm1 = chart.getVerticalCrosshairPositions()[1];
-        analyzer.addRegion(ppm0, ppm1);
+        double ppm0;
+        double ppm1;
+        if (region == null) {
+            ppm0 = chart.getVerticalCrosshairPositions()[0];
+            ppm1 = chart.getVerticalCrosshairPositions()[1];
+            analyzer.addRegion(ppm0, ppm1);
+        } else {
+            ppm0 = region.getRegionStart(0);
+            ppm1 = region.getRegionEnd(0);
+            analyzer.peakPickRegion(ppm0, ppm1);
+
+        }
         try {
             activeMultiplet = analyzer.analyzeRegion((ppm0 + ppm1) / 2);
             // this will force updating peaklist and adding to chart if not there
@@ -763,6 +890,7 @@ merge.png				region_adjust.png
     }
 
     public void removeRegion() {
+        getAnalyzer();
         activeMultiplet.ifPresent(m -> {
             int id = m.getIDNum();
             double ppm = m.getCenter();
@@ -782,6 +910,7 @@ merge.png				region_adjust.png
     }
 
     public void objectiveDeconvolution() {
+        getAnalyzer();
         activeMultiplet.ifPresent(m -> {
             analyzer.objectiveDeconvolution(m);
             chart.refresh();
@@ -790,6 +919,7 @@ merge.png				region_adjust.png
     }
 
     public void addAuto() {
+        getAnalyzer();
         activeMultiplet.ifPresent(m -> {
             Optional<Double> result = Multiplets.deviation(m);
             if (result.isPresent()) {
@@ -814,6 +944,7 @@ merge.png				region_adjust.png
     }
 
     public void addPeaks(boolean both) {
+        getAnalyzer();
         activeMultiplet.ifPresent(m -> {
             double ppm1 = chart.getVerticalCrosshairPositions()[0];
             double ppm2 = chart.getVerticalCrosshairPositions()[1];
@@ -850,21 +981,45 @@ merge.png				region_adjust.png
         refresh();
     }
 
+    List<Multiplet> getSelMultiplets(List<MultipletSelection> mSet) {
+        List<Multiplet> multiplets = new ArrayList<>();
+        for (MultipletSelection mSel : mSet) {
+            if (!multiplets.contains(mSel.getMultiplet())) {
+                multiplets.add(mSel.getMultiplet());
+            }
+        }
+        return multiplets;
+    }
+
     public void extractMultiplet() {
-        // fixme
-//        List<Peak> peaks = chart.getSelectedPeaks();
-//        if (peaks.size() > 0) {
-//            Peak peak0 = peaks.get(0);
-//            List<PeakDim> peakDims = peak0.getPeakDim(0).getCoupledPeakDims();
-//            if (peaks.size() == peakDims.size()) {
-//                Alert alert = new Alert(Alert.AlertType.ERROR);
-//                alert.setContentText("Can't extract all peaks in multiplet");
-//                alert.showAndWait();
-//                return;
-//            }
-//            activeMultiplet = Multiplets.extractMultiplet(peaks);
-//            refresh();
-//        }
+        List<MultipletSelection> mSet = chart.getSelectedMultiplets();
+        List<Multiplet> multiplets = getSelMultiplets(mSet);
+        if (multiplets.size() > 1) {
+
+        } else if (!multiplets.isEmpty()) {
+
+            Multiplet multiplet = multiplets.get(0);
+            List<AbsMultipletComponent> comps1 = new ArrayList<>();
+            List<AbsMultipletComponent> comps2 = new ArrayList<>();
+
+            List<AbsMultipletComponent> comps = multiplet.getAbsComponentList();
+
+            for (MultipletSelection mSel : mSet) {
+                comps1.add(comps.get(mSel.getLine()));
+            }
+            for (AbsMultipletComponent comp : comps) {
+                if (!comps1.contains(comp)) {
+                    comps2.add(comp);
+                }
+            }
+            PeakList peakList = multiplet.getPeakList();
+            multiplet.updateCoupling(comps1);
+            Peak newPeak = multiplet.getOrigin().copy(peakList);
+            peakList.addPeak(newPeak);
+            Multiplet newMultiplet = newPeak.getPeakDim(0).getMultiplet();
+            newMultiplet.updateCoupling(comps2);
+            refresh();
+        }
     }
 
     public void transferPeaks() {
@@ -880,7 +1035,7 @@ merge.png				region_adjust.png
     public void mergePeaks() {
         List<Peak> peaks = chart.getSelectedPeaks();
         if (peaks.size() > 0) {
-            // fixme  activeMultiplet = Multiplets.mergePeaks(peaks);
+            activeMultiplet = Multiplets.mergePeaks(peaks);
             refresh();
         }
     }
@@ -905,6 +1060,7 @@ merge.png				region_adjust.png
     }
 
     private void couplingChanged() {
+        getAnalyzer();
         activeMultiplet.ifPresent(m -> {
             StringBuilder sBuilder = new StringBuilder();
             for (ChoiceBox<String> choice : patternChoices) {
@@ -923,6 +1079,29 @@ merge.png				region_adjust.png
                 refresh();
             }
         });
+    }
+
+    private void couplingValueTyped(int iRow) {
+        if (activeMultiplet.isPresent()) {
+            String couplingStr = couplingFields[iRow].getText();
+            String couplingType = patternChoices[iRow].getValue();
+            if ((couplingType != null) && !couplingType.equals("")) {
+                try {
+                    double newValue = Double.parseDouble(couplingStr);
+                    if (newValue > 0.1) {
+                        Multiplet multiplet = activeMultiplet.get();
+                        Coupling coupling = multiplet.getCoupling();
+                        if (coupling instanceof CouplingPattern) {
+                            CouplingPattern cPattern = (CouplingPattern) coupling;
+                            cPattern.adjustCouplings(iRow, newValue);
+                        }
+                        refresh();
+                    }
+                } catch (NumberFormatException nfE) {
+
+                }
+            }
+        }
     }
 
     @Override
@@ -956,5 +1135,109 @@ merge.png				region_adjust.png
             activeMultiplet = Optional.of(peak.getPeakDim(0).getMultiplet());
             updateMultipletField(false);
         }
+    }
+
+    public void journalFormatToClipboard() {
+        JournalFormat format = JournalFormatPeaks.getFormat("JMedCh");
+        getAnalyzer();
+        if (analyzer != null) {
+            PeakList peakList = analyzer.getPeakList();
+            String journalText = format.genOutput(peakList);
+            String plainText = JournalFormatPeaks.formatToPlain(journalText);
+            String rtfText = JournalFormatPeaks.formatToRTF(journalText);
+
+            Clipboard clipBoard = Clipboard.getSystemClipboard();
+            ClipboardContent content = new ClipboardContent();
+            content.put(DataFormat.PLAIN_TEXT, plainText);
+            content.put(DataFormat.RTF, rtfText);
+            clipBoard.setContent(content);
+        }
+    }
+
+    public void toggleMoleculeDisplay() {
+        if (molButton.isSelected()) {
+            addMolecule();
+        } else {
+            removeMolecule();
+        }
+    }
+
+    void addMolecule() {
+        Molecule activeMol = Molecule.getActive();
+        if (activeMol == null) {
+            ((AnalystApp) AnalystApp.getMainApp()).readMolecule("mol");
+            activeMol = Molecule.getActive();
+        }
+        if (activeMol != null) {
+            if (cMol == null) {
+                cMol = new CanvasMolecule(FXMLController.getActiveController().getActiveChart());
+                cMol.setPosition(0.1, 0.1, 0.3, 0.3, "FRACTION", "FRACTION");
+            }
+
+            cMol.setMolName(activeMol.getName());
+            activeMol.label = Molecule.LABEL_NONHC;
+            activeMol.clearSelected();
+
+            PolyChart chart = FXMLController.getActiveController().getActiveChart();
+            chart.clearAnnoType(CanvasMolecule.class);
+            chart.addAnnotation(cMol);
+            chart.refresh();
+        }
+    }
+
+    void removeMolecule() {
+        PolyChart chart = FXMLController.getActiveController().getActiveChart();
+        chart.clearAnnoType(CanvasMolecule.class);
+        chart.refresh();
+    }
+
+    public void toggleJournalFormatDisplay() {
+        if (journalCheckBox.isSelected()) {
+            showJournalFormatOnChart();
+        } else {
+            removeJournalFormatOnChart();
+        }
+    }
+
+    public void showJournalFormatOnChart() {
+        getAnalyzer();
+        if (analyzer != null) {
+            PeakList peakList = analyzer.getPeakList();
+            if (peakList == null) {
+                removeJournalFormatOnChart();
+            } else {
+                peakList.registerListener(this);
+                AnnoJournalFormat annoText = new AnnoJournalFormat(0.1, 20, 0.9, 100,
+                        CanvasAnnotation.POSTYPE.FRACTION,
+                        CanvasAnnotation.POSTYPE.PIXEL,
+                        peakList.getName());
+                chart.chartProps.setTopBorderSize(50);
+
+                chart.clearAnnoType(AnnoJournalFormat.class);
+                chart.addAnnotation(annoText);
+                chart.refresh();
+            }
+        }
+    }
+
+    public void removeJournalFormatOnChart() {
+        getAnalyzer();
+        PeakList peakList = analyzer.getPeakList();
+        if (peakList != null) {
+            peakList.removeListener(this);
+        }
+
+        chart.chartProps.setTopBorderSize(7);
+        chart.clearAnnoType(AnnoJournalFormat.class);
+        chart.refresh();
+    }
+
+    @Override
+    public void peakListChanged(PeakEvent peakEvent) {
+        ConsoleUtil.runOnFxThread(() -> {
+            if (journalCheckBox.isSelected()) {
+                showJournalFormatOnChart();
+            }
+        });
     }
 }

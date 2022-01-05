@@ -44,8 +44,6 @@ import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import org.apache.commons.math3.optim.PointValuePair;
 import org.controlsfx.dialog.ExceptionDialog;
-import org.nmrfx.analyst.gui.ScanTable;
-import org.nmrfx.analyst.gui.ScannerTool;
 import org.nmrfx.chart.Axis;
 import org.nmrfx.chart.DataSeries;
 import org.nmrfx.chart.XYCanvasChart;

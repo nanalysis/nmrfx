@@ -17,9 +17,34 @@
  */
 package org.nmrfx.processor.gui;
 
-import org.nmrfx.processor.datasets.Dataset;
 import de.jangassen.MenuToolkit;
 import de.jangassen.dialogs.about.AboutStageBuilder;
+import javafx.application.Application;
+import javafx.application.HostServices;
+import javafx.application.Platform;
+import javafx.event.ActionEvent;
+import javafx.fxml.FXML;
+import javafx.scene.control.*;
+import javafx.scene.control.Alert.AlertType;
+import javafx.scene.image.Image;
+import javafx.scene.text.Font;
+import javafx.stage.DirectoryChooser;
+import javafx.stage.FileChooser;
+import javafx.stage.Stage;
+import org.apache.commons.lang3.SystemUtils;
+import org.controlsfx.dialog.ExceptionDialog;
+import org.nmrfx.chemistry.io.MoleculeIOException;
+import org.nmrfx.console.ConsoleController;
+import org.nmrfx.peaks.PeakList;
+import org.nmrfx.peaks.io.PeakReader;
+import org.nmrfx.processor.datasets.Dataset;
+import org.nmrfx.processor.gui.controls.FractionCanvas;
+import org.nmrfx.processor.gui.project.GUIProject;
+import org.nmrfx.processor.utilities.WebConnect;
+import org.nmrfx.project.ProjectBase;
+import org.nmrfx.server.Server;
+import org.python.util.InteractiveInterpreter;
+
 import java.beans.PropertyChangeSupport;
 import java.io.File;
 import java.io.IOException;
@@ -32,35 +57,6 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import javafx.application.Application;
-import javafx.application.Platform;
-import javafx.application.HostServices;
-import javafx.scene.control.Menu;
-import javafx.scene.control.MenuBar;
-import javafx.scene.control.MenuItem;
-import javafx.stage.Stage;
-import org.python.util.InteractiveInterpreter;
-import javafx.event.ActionEvent;
-import javafx.fxml.FXML;
-import javafx.scene.control.SeparatorMenuItem;
-import javafx.scene.image.Image;
-import org.apache.commons.lang3.SystemUtils;
-import org.controlsfx.dialog.ExceptionDialog;
-import javafx.scene.control.Alert;
-import javafx.scene.control.Alert.AlertType;
-import javafx.stage.DirectoryChooser;
-import javafx.stage.FileChooser;
-import org.nmrfx.peaks.io.PeakReader;
-import org.nmrfx.processor.gui.controls.FractionCanvas;
-import org.nmrfx.processor.gui.project.GUIProject;
-import org.nmrfx.server.Server;
-import static javafx.application.Application.launch;
-import javafx.scene.text.Font;
-import org.nmrfx.chemistry.io.MoleculeIOException;
-import org.nmrfx.peaks.PeakList;
-import org.nmrfx.processor.utilities.WebConnect;
-import org.nmrfx.project.ProjectBase;
-import org.nmrfx.console.ConsoleController;
 
 public class MainApp extends Application {
 
@@ -180,6 +176,10 @@ public class MainApp extends Application {
 
     public static MenuBar getMenuBar() {
         return mainApp.makeMenuBar(appName);
+    }
+
+    public static MenuBar getMainMenuBar() {
+        return mainMenuBar;
     }
 
     public void addStatusBarTools(SpectrumStatusBar statusBar) {

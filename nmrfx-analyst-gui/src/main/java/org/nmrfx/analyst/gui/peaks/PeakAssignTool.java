@@ -1,4 +1,4 @@
-package org.nmrfx.analyst.gui;
+package org.nmrfx.analyst.gui.peaks;
 
 import de.jensd.fx.glyphs.GlyphsDude;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
@@ -16,7 +16,7 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
-import org.nmrfx.analyst.gui.AtomBrowser.AtomDelta;
+import org.nmrfx.analyst.gui.peaks.AtomBrowser.AtomDelta;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakDim;

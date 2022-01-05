@@ -20,60 +20,46 @@ package org.nmrfx.analyst.gui;
 import de.jangassen.MenuToolkit;
 import de.jangassen.dialogs.about.AboutStageBuilder;
 import javafx.application.Platform;
-import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.geometry.Point2D;
-import javafx.scene.canvas.Canvas;
 import javafx.scene.control.*;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.image.Image;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
-import javafx.stage.DirectoryChooser;
-import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import org.apache.commons.lang3.SystemUtils;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.analyst.gui.molecule.CanvasMolecule;
-import org.nmrfx.analyst.gui.molecule3D.MolSceneController;
+import org.nmrfx.analyst.gui.molecule.MoleculeMenuActions;
+import org.nmrfx.analyst.gui.peaks.MultipletController;
+import org.nmrfx.analyst.gui.peaks.PeakAssignTool;
+import org.nmrfx.analyst.gui.peaks.PeakMenuActions;
 import org.nmrfx.analyst.gui.plugin.PluginLoader;
-import org.nmrfx.analyst.gui.tools.RunAboutGUI;
-import org.nmrfx.chemistry.InvalidMoleculeException;
-import org.nmrfx.chemistry.MoleculeFactory;
-import org.nmrfx.chemistry.constraints.MolecularConstraints;
-import org.nmrfx.chemistry.constraints.NoeSet;
+import org.nmrfx.analyst.gui.spectra.SpectrumMenuActions;
+import org.nmrfx.analyst.gui.spectra.StripController;
+import org.nmrfx.analyst.gui.tools.*;
 import org.nmrfx.chemistry.io.*;
 import org.nmrfx.chemistry.utilities.NvUtil;
 import org.nmrfx.console.ConsoleController;
-import org.nmrfx.peaks.InvalidPeakException;
-import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakLabeller;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.io.PeakReader;
 import org.nmrfx.plugin.api.EntryPoint;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.*;
-import org.nmrfx.processor.gui.controls.FractionCanvas;
 import org.nmrfx.processor.gui.project.GUIProject;
 import org.nmrfx.processor.gui.spectra.KeyBindings;
-import org.nmrfx.processor.gui.spectra.WindowIO;
 import org.nmrfx.processor.gui.utils.FxPropertyChangeSupport;
 import org.nmrfx.processor.project.Project;
 import org.nmrfx.processor.utilities.WebConnect;
 import org.nmrfx.project.ProjectBase;
-import org.nmrfx.star.ParseException;
 import org.nmrfx.structure.chemistry.Molecule;
-import org.nmrfx.utils.GUIUtils;
 import org.python.util.InteractiveInterpreter;
-import org.python.util.PythonInterpreter;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Path;
 import java.util.*;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class AnalystApp extends MainApp {
 
@@ -82,21 +68,16 @@ public class AnalystApp extends MainApp {
     private static MenuBar mainMenuBar = null;
     static AnalystApp analystApp = null;
     private static MultipletController multipletController;
-    private static AtomController atomController;
-    private static LigandScannerController scannerController;
-    private static MolSceneController molController;
-    private static AtomBrowser atomBrowser;
-    private static RNAPeakGeneratorSceneController rnaPeakGenController;
-    private static PeakTableController peakTableController;
-    private static NOETableController noeTableController;
-    private static WindowIO windowIO = null;
-    private static SeqDisplayController seqDisplayController = null;
-    private static DatasetBrowserController browserController = null;
+
+    private static FileMenuActions fileMenuActions;
+    private static MoleculeMenuActions molMenuActions;
+    private static PeakMenuActions peakMenuActions;
+    private static SpectrumMenuActions spectrumMenuActions;
+    private static ProjectMenuActions projectMenuActions;
+    private static ViewMenuItems viewMenuActions;
+
     MenuToolkit menuTk;
     Boolean isMac = null;
-    PeakAtomPicker peakAtomPicker = null;
-    CheckMenuItem assignOnPick;
-    RDCGUI rdcGUI = null;
 
     public void waitForCommit() {
         int nTries = 30;
@@ -153,22 +134,10 @@ public class AnalystApp extends MainApp {
         PluginLoader.getInstance().registerPluginsOnEntryPoint(EntryPoint.STARTUP, null);
     }
 
-    Object pickedPeakAction(Object peakObject) {
-        if (assignOnPick.isSelected()) {
-            Peak peak = (Peak) peakObject;
-            System.out.println(peak.getName());
-            PolyChart chart = FXMLController.getActiveController().getActiveChart();
-            double x = chart.getMouseX();
-            double y = chart.getMouseY();
-            Canvas canvas = chart.getCanvas();
-            Point2D sXY = canvas.localToScreen(x, y);
-            if (peakAtomPicker == null) {
-                peakAtomPicker = new PeakAtomPicker();
-                peakAtomPicker.create();
-            }
-            peakAtomPicker.show(sXY.getX(), sXY.getY(), peak);
+    void pickedPeakAction(Object peakObject) {
+        if (peakMenuActions != null) {
+            peakMenuActions.pickedPeakAction(peakObject);
         }
-        return null;
     }
 
     public static boolean isMac() {
@@ -178,9 +147,16 @@ public class AnalystApp extends MainApp {
     public static MenuBar getMenuBar() {
         return mainApp.makeMenuBar(appName);
     }
+    public static MenuBar getMainMenuBar() {
+        return mainMenuBar;
+    }
 
     public static AnalystApp getAnalystApp() {
         return analystApp;
+    }
+
+    public static String getAppName() {
+        return appName;
     }
 
     public static PreferencesController getPreferencesController() {
@@ -204,6 +180,7 @@ public class AnalystApp extends MainApp {
         return aboutStageBuilder.build();
     }
 
+    @Override
     public MenuBar makeMenuBar(String appName) {
         MenuToolkit tk = null;
         if (isMac()) {
@@ -238,223 +215,29 @@ public class AnalystApp extends MainApp {
         }
         // File Menu (items TBD)
         Menu fileMenu = new Menu("File");
-        MenuItem openMenuItem = new MenuItem("Open FID...");
-        openMenuItem.setOnAction(e -> FXMLController.getActiveController().openFIDAction(e));
-        MenuItem openDatasetMenuItem = new MenuItem("Open Dataset...");
-        openDatasetMenuItem.setOnAction(e -> FXMLController.getActiveController().openDatasetAction(e));
-        MenuItem addMenuItem = new MenuItem("Open Dataset (No Display) ...");
-        addMenuItem.setOnAction(e -> FXMLController.getActiveController().addNoDrawAction(e));
-        MenuItem newMenuItem = new MenuItem("New Window...");
-        newMenuItem.setOnAction(e -> newGraphics(e));
-        Menu recentFIDMenuItem = new Menu("Recent FIDs");
-        Menu recentDatasetMenuItem = new Menu("Recent Datasets");
-        PreferencesController.setupRecentMenus(recentFIDMenuItem, recentDatasetMenuItem);
-
-        MenuItem pdfMenuItem = new MenuItem("Export PDF...");
-        pdfMenuItem.disableProperty().bind(FXMLController.activeController.isNull());
-        pdfMenuItem.setOnAction(e -> FXMLController.getActiveController().exportPDFAction(e));
-
-        MenuItem svgMenuItem = new MenuItem("Export SVG...");
-        svgMenuItem.setOnAction(e -> FXMLController.getActiveController().exportSVGAction(e));
-        svgMenuItem.disableProperty().bind(FXMLController.activeController.isNull());
-
-        MenuItem pngMenuItem = new MenuItem("Export PNG...");
-        pngMenuItem.setOnAction(e -> FXMLController.getActiveController().exportPNG(e));
-        pngMenuItem.disableProperty().bind(FXMLController.activeController.isNull());
-
-        MenuItem loadPeakListMenuItem = new MenuItem("Load PeakLists");
-        loadPeakListMenuItem.setOnAction(e -> loadPeakLists());
-        MenuItem portMenuItem = new MenuItem("New NMRFx Server...");
-        portMenuItem.setOnAction(e -> startServer(e));
-        MenuItem datasetBrowserMenuItem = new MenuItem("Dataset Browser...");
-        datasetBrowserMenuItem.setOnAction(e -> showDataBrowser());
+        fileMenuActions = new FileMenuActions(this, fileMenu);
+        fileMenuActions.basic();
 
         Menu projectMenu = new Menu("Projects");
-
-        MenuItem projectOpenMenuItem = new MenuItem("Open...");
-        projectOpenMenuItem.setOnAction(e -> loadProject());
-
-        MenuItem projectSaveAsMenuItem = new MenuItem("Save As...");
-        projectSaveAsMenuItem.setOnAction(e -> saveProjectAs());
-
-        MenuItem projectSaveMenuItem = new MenuItem("Save");
-        projectSaveMenuItem.setOnAction(e -> saveProject());
-        Menu recentProjectMenuItem = new Menu("Open Recent");
-
-        MenuItem closeProjectMenuItem = new MenuItem("Close");
-        closeProjectMenuItem.setOnAction(e -> closeProject());
-
-        MenuItem openSTARMenuItem = new MenuItem("Open STAR3...");
-        openSTARMenuItem.setOnAction(e -> readSTAR());
-
-        MenuItem saveSTARMenuItem = new MenuItem("Save STAR3...");
-        saveSTARMenuItem.setOnAction(e -> writeSTAR());
-
-        MenuItem openSparkyMenuItem = new MenuItem("Open Sparky Project...");
-        openSparkyMenuItem.setOnAction(e -> readSparkyProject());
-
-        List<Path> recentProjects = PreferencesController.getRecentProjects();
-        for (Path path : recentProjects) {
-            int count = path.getNameCount();
-            int first = count - 3;
-            first = first >= 0 ? first : 0;
-            Path subPath = path.subpath(first, count);
-
-            MenuItem projectMenuItem = new MenuItem(subPath.toString());
-            projectMenuItem.setOnAction(e -> loadProject(path));
-            recentProjectMenuItem.getItems().add(projectMenuItem);
-        }
-
-        projectMenu.getItems().addAll(projectOpenMenuItem, recentProjectMenuItem,
-                projectSaveMenuItem, projectSaveAsMenuItem, closeProjectMenuItem,
-                openSTARMenuItem, saveSTARMenuItem, openSparkyMenuItem);
-
-        fileMenu.getItems().addAll(openMenuItem, openDatasetMenuItem, addMenuItem,
-                recentFIDMenuItem, recentDatasetMenuItem, datasetBrowserMenuItem, newMenuItem,
-                portMenuItem, new SeparatorMenuItem(), svgMenuItem, pdfMenuItem, pngMenuItem,
-                loadPeakListMenuItem);
+        projectMenuActions = new ProjectMenuActions(this, projectMenu);
+        projectMenuActions.basic();
 
         Menu spectraMenu = new Menu("Spectra");
-        spectraMenu.disableProperty().bind(FXMLController.activeController.isNull());
-        MenuItem deleteItem = new MenuItem("Delete Spectrum");
-        deleteItem.setOnAction(e -> FXMLController.getActiveController().getActiveChart().removeSelected());
-        MenuItem syncMenuItem = new MenuItem("Sync Axes");
-        syncMenuItem.setOnAction(e -> PolyChart.getActiveChart().syncSceneMates());
+        spectrumMenuActions = new SpectrumMenuActions(this, spectraMenu);
+        spectrumMenuActions.basic();
 
-        Menu arrangeMenu = new Menu("Arrange");
-        MenuItem createGridItem = new MenuItem("Add Grid...");
-        createGridItem.setOnAction(e -> FXMLController.getActiveController().addGrid());
-        MenuItem horizItem = new MenuItem("Horizontal");
-        horizItem.setOnAction(e -> FXMLController.getActiveController().arrange(FractionCanvas.ORIENTATION.HORIZONTAL));
-        MenuItem vertItem = new MenuItem("Vertical");
-        vertItem.setOnAction(e -> FXMLController.getActiveController().arrange(FractionCanvas.ORIENTATION.VERTICAL));
-        MenuItem gridItem = new MenuItem("Grid");
-        gridItem.setOnAction(e -> FXMLController.getActiveController().arrange(FractionCanvas.ORIENTATION.GRID));
-        MenuItem overlayItem = new MenuItem("Overlay");
-        overlayItem.setOnAction(e -> FXMLController.getActiveController().overlay());
-        MenuItem minimizeItem = new MenuItem("Minimize Borders");
-        minimizeItem.setOnAction(e -> FXMLController.getActiveController().setBorderState(true));
-        MenuItem normalizeItem = new MenuItem("Normal Borders");
-        normalizeItem.setOnAction(e -> FXMLController.getActiveController().setBorderState(false));
-
-        arrangeMenu.getItems().addAll(createGridItem, horizItem, vertItem, gridItem, overlayItem, minimizeItem, normalizeItem);
-        MenuItem alignMenuItem = new MenuItem("Align Spectra");
-        alignMenuItem.setOnAction(e -> FXMLController.getActiveController().alignCenters());
-        MenuItem stripsMenuItem = new MenuItem("Show Strips");
-        stripsMenuItem.setOnAction(e -> showStripsBar());
-        MenuItem favoritesMenuItem = new MenuItem("Favorites");
-        favoritesMenuItem.setOnAction(e -> showFavorites());
-        MenuItem copyItem = new MenuItem("Copy Spectrum as SVG Text");
-        copyItem.setOnAction(e -> FXMLController.getActiveController().copySVGAction(e));
-        spectraMenu.getItems().addAll(deleteItem, arrangeMenu, favoritesMenuItem, syncMenuItem,
-                alignMenuItem,
-                stripsMenuItem, copyItem);
-
-        // Format (items TBD)
-//        Menu formatMenu = new Menu("Format");
-//        formatMenu.getItems().addAll(new MenuItem("TBD"));
-        // View Menu (items TBD)
         Menu molMenu = new Menu("Molecules");
-        Menu molFileMenu = new Menu("File");
-
-        MenuItem readSeqItem = new MenuItem("Read Sequence...");
-        readSeqItem.setOnAction(e -> readMolecule("seq"));
-        molFileMenu.getItems().add(readSeqItem);
-        MenuItem readPDBItem = new MenuItem("Read PDB...");
-        readPDBItem.setOnAction(e -> readMolecule("pdb"));
-        molFileMenu.getItems().add(readPDBItem);
-        MenuItem readCoordinatesItem = new MenuItem("Read Coordinates ...");
-        readCoordinatesItem.setOnAction(e -> readMolecule("pdb xyz"));
-        molFileMenu.getItems().add(readCoordinatesItem);
-        MenuItem readPDBxyzItem = new MenuItem("Read PDB XYZ...");
-        readPDBxyzItem.setOnAction(e -> readMolecule("pdbx"));
-        molFileMenu.getItems().add(readPDBxyzItem);
-        MenuItem readMMCIFItem = new MenuItem("Read mmCIF...");
-        readMMCIFItem.setOnAction(e -> readMolecule("mmcif"));
-        molFileMenu.getItems().add(readMMCIFItem);
-        MenuItem readMolItem = new MenuItem("Read Mol...");
-        readMolItem.setOnAction(e -> readMolecule("mol"));
-        molFileMenu.getItems().add(readMolItem);
-        MenuItem readMol2Item = new MenuItem("Read Mol2...");
-        readMol2Item.setOnAction(e -> readMolecule("mol2"));
-        molFileMenu.getItems().add(readMol2Item);
-
-        MenuItem seqGUIMenuItem = new MenuItem("Sequence Editor...");
-        seqGUIMenuItem.setOnAction(e -> SequenceGUI.showGUI(this));
-
-        MenuItem atomsMenuItem = new MenuItem("Atom Table...");
-        atomsMenuItem.setOnAction(e -> showAtoms(e));
-        MenuItem sequenceMenuItem = new MenuItem("Sequence Viewer...");
-        sequenceMenuItem.setOnAction(e -> showSequence(e));
-
-        MenuItem molMenuItem = new MenuItem("Viewer");
-        molMenuItem.setOnAction(e -> showMols());
-
-        MenuItem rdcMenuItem = new MenuItem("RDC Analysis...");
-        rdcMenuItem.setOnAction(e -> showRDCGUI());
-
-        molMenu.getItems().addAll(molFileMenu, seqGUIMenuItem, atomsMenuItem,
-                sequenceMenuItem, molMenuItem, rdcMenuItem);
-
-        Menu viewMenu = new Menu("View");
-        MenuItem dataMenuItem = new MenuItem("Show Datasets");
-        dataMenuItem.setOnAction(e -> showDatasetsTable(e));
-
-        MenuItem consoleMenuItem = new MenuItem("Show Console");
-        consoleMenuItem.setOnAction(e -> showConsole(e));
-
-        MenuItem attrMenuItem = new MenuItem("Show Attributes");
-        attrMenuItem.setOnAction(e -> FXMLController.getActiveController().showSpecAttrAction(e));
-
-        MenuItem procMenuItem = new MenuItem("Show Processor");
-        procMenuItem.setOnAction(e -> FXMLController.getActiveController().showProcessorAction(e));
-
-        MenuItem rnaPeakGenMenuItem = new MenuItem("Show RNA Label Scheme");
-        rnaPeakGenMenuItem.setOnAction(e -> showRNAPeakGenerator(e));
-
-        viewMenu.getItems().addAll(consoleMenuItem, dataMenuItem, attrMenuItem, procMenuItem, rnaPeakGenMenuItem);
+        molMenuActions = new MoleculeMenuActions(this, molMenu);
+        molMenuActions.basic();
 
         Menu peakMenu = new Menu("Peaks");
+        peakMenuActions = new PeakMenuActions(this, peakMenu);
+        peakMenuActions.basic();
 
-        MenuItem peakAttrMenuItem = new MenuItem("Show Peak Tool");
-        peakAttrMenuItem.setOnAction(e -> FXMLController.getActiveController().showPeakAttrAction(e));
+        Menu viewMenu = new Menu("View");
+        viewMenuActions = new ViewMenuItems(this, viewMenu);
+        viewMenuActions.basic();
 
-        MenuItem peakTableMenuItem = new MenuItem("Show Peak Table");
-        peakTableMenuItem.setOnAction(e -> showPeakTable());
-
-        MenuItem linkPeakDimsMenuItem = new MenuItem("Link by Labels");
-        linkPeakDimsMenuItem.setOnAction(e -> FXMLController.getActiveController().linkPeakDims());
-
-        MenuItem ligandScannerMenuItem = new MenuItem("Show Ligand Scanner");
-        ligandScannerMenuItem.disableProperty().bind(FXMLController.activeController.isNull());
-        ligandScannerMenuItem.setOnAction(e -> showLigandScanner(e));
-
-        MenuItem noeTableMenuItem = new MenuItem("Show NOE Table");
-        noeTableMenuItem.setOnAction(e -> showNOETable());
-
-        Menu assignCascade = new Menu("Assign Tools");
-
-        assignOnPick = new CheckMenuItem("Assign on Pick");
-
-        MenuItem atomBrowserMenuItem = new MenuItem("Show Atom Browser");
-        atomBrowserMenuItem.disableProperty().bind(FXMLController.activeController.isNull());
-        atomBrowserMenuItem.setOnAction(e -> showAtomBrowser());
-
-        MenuItem runAboutMenuItem = new MenuItem("Show RunAboutX");
-        runAboutMenuItem.setOnAction(e -> showRunAbout());
-
-        assignCascade.getItems().addAll(assignOnPick,
-                atomBrowserMenuItem, runAboutMenuItem);
-
-        peakMenu.getItems().addAll(peakAttrMenuItem,
-                peakTableMenuItem, linkPeakDimsMenuItem,
-                ligandScannerMenuItem,
-                noeTableMenuItem,
-                assignCascade);
-
-        // Window Menu
-        // TBD standard window menu items
-        // Help Menu (items TBD)
         Menu helpMenu = new Menu("Help");
 
         MenuItem webSiteMenuItem = new MenuItem("NMRFx Web Site");
@@ -477,9 +260,6 @@ public class AnalystApp extends MainApp {
         MenuItem openSourceItem = new MenuItem("Open Source Libraries");
         openSourceItem.setOnAction(e -> showOpenSourceAction(e));
 
-        // home
-        // mailing list
-        //
         helpMenu.getItems().addAll(docsMenuItem, webSiteMenuItem, mailingListItem, versionMenuItem, refMenuItem, openSourceItem);
 
         Menu pluginsMenu = new Menu("Plugins");
@@ -500,6 +280,39 @@ public class AnalystApp extends MainApp {
             helpMenu.getItems().add(0, aboutItem);
         }
         return menuBar;
+    }
+
+    private Optional<Menu> getMenu(MenuBar menuBar, String menuName) {
+        return menuBar.getMenus().stream().filter(m -> m.getText().equals(menuName)).findFirst();
+    }
+
+    public void advanced(MenuItem startAdvancedItem) {
+        if (molMenuActions != null) {
+            molMenuActions.activateAdvanced();
+        }
+        if (fileMenuActions != null) {
+            fileMenuActions.activateAdvanced();
+        }
+        if (spectrumMenuActions != null) {
+            spectrumMenuActions.activateAdvanced();
+        }
+        if (projectMenuActions != null) {
+            projectMenuActions.activateAdvanced();
+        }
+        if (peakMenuActions != null) {
+            peakMenuActions.activateAdvanced();
+        }
+        if (viewMenuActions != null) {
+            viewMenuActions.activateAdvanced();
+        }
+        startAdvancedItem.setDisable(true);
+
+    }
+
+    public void readMolecule(String type) {
+        if (molMenuActions != null) {
+            molMenuActions.readMolecule(type);
+        }
     }
 
     /**
@@ -597,10 +410,6 @@ public class AnalystApp extends MainApp {
         alert.showAndWait();
     }
 
-    private void showConsole(ActionEvent event) {
-        AnalystApp.getConsoleController().show();
-    }
-
     @FXML
     private void showPreferences(ActionEvent event) {
         if (preferencesController == null) {
@@ -612,22 +421,6 @@ public class AnalystApp extends MainApp {
         } else {
             System.out.println("Coudn't make controller");
         }
-    }
-
-    private void newGraphics(ActionEvent event) {
-        FXMLController controller = FXMLController.create();
-    }
-
-    @FXML
-    void showDatasetsTable(ActionEvent event) {
-        if (datasetController == null) {
-            datasetController = DatasetsController.create();
-        }
-        GUIProject project = (GUIProject) Project.getActive();
-        ObservableList datasetObs = (ObservableList) project.getDatasets();
-        datasetController.setDatasetList(datasetObs);
-        datasetController.getStage().show();
-        datasetController.getStage().toFront();
     }
 
     void loadPeakLists() {
@@ -668,192 +461,15 @@ public class AnalystApp extends MainApp {
         }
     }
 
-    @FXML
-    private void showRNAPeakGenerator(ActionEvent event) {
-        if (rnaPeakGenController == null) {
-            rnaPeakGenController = RNAPeakGeneratorSceneController.create();
-        }
-        if (rnaPeakGenController != null) {
-            rnaPeakGenController.getStage().show();
-            rnaPeakGenController.getStage().toFront();
-        } else {
-            System.out.println("Couldn't make rnaPeakGenController ");
-        }
-    }
-
-    @FXML
-    private void showAtoms(ActionEvent event) {
-        if (atomController == null) {
-            atomController = AtomController.create();
-        }
-        if (atomController != null) {
-            atomController.getStage().show();
-            atomController.getStage().toFront();
-        } else {
-            System.out.println("Couldn't make atom controller");
-        }
-    }
-
-    private void showSequence(ActionEvent event) {
-        if (seqDisplayController == null) {
-            seqDisplayController = SeqDisplayController.create();
-        }
-        if (seqDisplayController != null) {
-            seqDisplayController.getStage().show();
-            seqDisplayController.getStage().toFront();
-        } else {
-            System.out.println("Couldn't make seqDisplayController");
-        }
-    }
-
-    @FXML
-    private void showMols() {
-        if (molController == null) {
-            molController = MolSceneController.create();
-        }
-        if (molController != null) {
-            molController.getStage().show();
-            molController.getStage().toFront();
-        } else {
-            System.out.println("Couldn't make molController");
-        }
-    }
-
-    @FXML
-    private void showLigandScanner(ActionEvent event) {
-        if (scannerController == null) {
-            scannerController = LigandScannerController.create();
-        }
-        if (scannerController != null) {
-            scannerController.getStage().show();
-            scannerController.getStage().toFront();
-        } else {
-            System.out.println("Couldn't make atom controller");
-        }
-    }
-
-    private void showPeakTable() {
-        if (peakTableController == null) {
-            peakTableController = PeakTableController.create();
-            List<String> names = Project.getActive().getPeakListNames();
-            if (!names.isEmpty()) {
-                peakTableController.setPeakList(Project.getActive().getPeakList(names.get(0)));
-            }
-        }
-        if (peakTableController != null) {
-            peakTableController.getStage().show();
-            peakTableController.getStage().toFront();
-        } else {
-            System.out.println("Couldn't make peak table controller");
-        }
-    }
-
-    private void showNOETable() {
-        if (noeTableController == null) {
-            noeTableController = NOETableController.create();
-            if (noeTableController == null) {
-                return;
-            }
-            Collection<NoeSet> noeSets = MoleculeFactory.getActive().getMolecularConstraints().noeSets();
-
-            if (!noeSets.isEmpty()) {
-                noeTableController.setNoeSet(noeSets.stream().findFirst().get());
-            }
-        }
-        noeTableController.getStage().show();
-        noeTableController.getStage().toFront();
-        noeTableController.updateNoeSetMenu();
-    }
-
     public static ProjectBase getActive() {
         return GUIProject.getActive();
     }
 
-    private void loadProject() {
-        DirectoryChooser chooser = new DirectoryChooser();
-        chooser.setTitle("Project Chooser");
-        File directoryFile = chooser.showDialog(null);
-        if (directoryFile != null) {
-            loadProject(directoryFile.toPath());
-        }
-    }
-
-    private void loadProject(Path path) {
-        if (path != null) {
-            String projectName = path.getFileName().toString();
-            GUIProject project = new GUIProject(projectName);
-            try {
-                project.loadGUIProject(path);
-            } catch (IOException | MoleculeIOException | IllegalStateException ex) {
-                ExceptionDialog dialog = new ExceptionDialog(ex);
-                dialog.showAndWait();
-            }
-        }
-
-    }
-
-    private void saveProjectAs() {
-        FileChooser chooser = new FileChooser();
-        chooser.setTitle("Project Creator");
-        File directoryFile = chooser.showSaveDialog(null);
-        if (directoryFile != null) {
-            GUIProject activeProject = (GUIProject) getActive();
-            if (activeProject != null) {
-                GUIProject newProject = GUIProject.replace(appName, activeProject);
-
-                try {
-                    newProject.createProject(directoryFile.toPath());
-                    newProject.saveProject();
-                } catch (IOException ex) {
-                    ExceptionDialog dialog = new ExceptionDialog(ex);
-                    dialog.showAndWait();
-                }
-            }
-        }
-
-    }
-
-    private void saveProject() {
-        GUIProject project = (GUIProject) getActive();
-        if (project.hasDirectory()) {
-            try {
-                project.saveProject();
-            } catch (IOException ex) {
-                ExceptionDialog dialog = new ExceptionDialog(ex);
-                dialog.showAndWait();
-            }
-        }
-    }
-
-    public void showAtomBrowser() {
-        if (atomBrowser == null) {
-            ToolBar navBar = new ToolBar();
-            FXMLController controller = FXMLController.getActiveController();
-            controller.getBottomBox().getChildren().add(navBar);
-            atomBrowser = new AtomBrowser(controller, this::removeAtomBrowser);
-            atomBrowser.initSlider(navBar);
-        }
-    }
-
-    public void removeAtomBrowser(Object o) {
-        if (atomBrowser != null) {
-            FXMLController controller = FXMLController.getActiveController();
-            controller.getBottomBox().getChildren().remove(atomBrowser.getToolBar());
-            atomBrowser = null;
-        }
-    }
 
     public void assignPeak(String keyStr, PolyChart chart) {
-        assignPeak();
-    }
-
-    public void assignPeak() {
-        if (peakAtomPicker == null) {
-            peakAtomPicker = new PeakAtomPicker();
-            peakAtomPicker.create();
+        if (peakMenuActions != null) {
+            peakMenuActions.assignPeak();
         }
-        peakAtomPicker.show(300, 300, null);
-
     }
 
     @FXML
@@ -867,138 +483,6 @@ public class AnalystApp extends MainApp {
         multipletController.getStage().toFront();
     }
 
-    void closeProject() {
-        if (GUIUtils.affirm("Close all project information")) {
-            ((GUIProject) getActive()).close();
-        }
-    }
-
-    @FXML
-    void readSTAR() {
-        FileChooser chooser = new FileChooser();
-        chooser.setTitle("Read STAR3 File");
-        File starFile = chooser.showOpenDialog(null);
-        if (starFile != null) {
-            try {
-                NMRStarReader.read(starFile);
-                if (rdcGUI != null) {
-                    rdcGUI.bmrbFile.setText(starFile.getName());
-                    rdcGUI.setChoice.getItems().clear();
-                    MolecularConstraints molConstr = MoleculeFactory.getActive().getMolecularConstraints();
-                    if (!molConstr.getRDCSetNames().isEmpty()) {
-                        rdcGUI.setChoice.getItems().addAll(molConstr.getRDCSetNames());
-                        rdcGUI.setChoice.setValue(rdcGUI.setChoice.getItems().get(0));
-                    }
-
-                }
-            } catch (ParseException ex) {
-                ExceptionDialog dialog = new ExceptionDialog(ex);
-                dialog.showAndWait();
-                return;
-            }
-        }
-    }
-
-    void writeSTAR() {
-        FileChooser chooser = new FileChooser();
-        chooser.setTitle("Write STAR3 File");
-        File starFile = chooser.showSaveDialog(null);
-        if (starFile != null) {
-            try {
-                NMRStarWriter.writeAll(starFile);
-            } catch (IOException | InvalidPeakException | InvalidMoleculeException ex) {
-                ExceptionDialog dialog = new ExceptionDialog(ex);
-                dialog.showAndWait();
-                return;
-            } catch (org.nmrfx.star.ParseException ex) {
-                Logger.getLogger(AnalystApp.class.getName()).log(Level.SEVERE, null, ex);
-            }
-        }
-    }
-
-    void readMolecule(String type) {
-        FileChooser fileChooser = new FileChooser();
-        File file = fileChooser.showOpenDialog(null);
-        if (file != null) {
-            try {
-                switch (type) {
-                    case "pdb": {
-                        PDBFile pdbReader = new PDBFile();
-                        pdbReader.readSequence(file.toString(), false, 0);
-                        System.out.println("read mol: " + file.toString());
-                        break;
-                    }
-                    case "pdbx": {
-                        PDBFile pdbReader = new PDBFile();
-                        pdbReader.read(file.toString());
-                        System.out.println("read mol: " + file.toString());
-                        break;
-                    }
-                    case "pdb xyz":
-                        PDBFile pdb = new PDBFile();
-                        pdb.readCoordinates(file.getPath(), 0, false, true);
-                        Molecule mol = Molecule.getActive();
-                        mol.updateAtomArray();
-                        System.out.println("read mol: " + file.toString());
-                        if (rdcGUI != null) {
-                            rdcGUI.pdbFile.setText(file.getName());
-                        }
-                        break;
-                    case "sdf":
-                    case "mol":
-                        SDFile.read(file.toString(), null);
-                        break;
-                    case "mol2":
-                        Mol2File.read(file.toString(), null);
-                        break;
-                    case "seq":
-                        Sequence seq = new Sequence();
-                        seq.read(file.toString());
-                        break;
-                    case "mmcif": {
-                        MMcifReader.read(file);
-                        System.out.println("read mol: " + file.toString());
-                        break;
-                    }
-                    default:
-                        break;
-                }
-                showMols();
-            } catch (MoleculeIOException ioE) {
-                ExceptionDialog dialog = new ExceptionDialog(ioE);
-                dialog.showAndWait();
-            } catch (org.nmrfx.star.ParseException ex) {
-                Logger.getLogger(AnalystApp.class.getName()).log(Level.SEVERE, null, ex);
-            }
-
-            if (atomController != null) {
-                atomController.setFilterString("");
-            }
-        }
-    }
-
-    void readSparkyProject() {
-        FileChooser chooser = new FileChooser();
-        chooser.setTitle("Read Sparky Project");
-        File sparkyFile = chooser.showOpenDialog(null);
-        Map<String, Object> pMap = null;
-        if (sparkyFile != null) {
-            PythonInterpreter interpreter = new PythonInterpreter();
-            interpreter.exec("import sparky");
-            String rdString;
-            interpreter.set("pMap", pMap);
-            interpreter.exec("sparky.pMap=pMap");
-            rdString = String.format("sparky.loadProjectFile('%s')", sparkyFile.toString());
-            interpreter.exec(rdString);
-        }
-    }
-
-    void showRDCGUI() {
-        if (rdcGUI == null) {
-            rdcGUI = new RDCGUI(this);
-        }
-        rdcGUI.showRDCplot();
-    }
 
     public void showSpectrumLibrary() {
         FXMLController controller = FXMLController.getActiveController();
@@ -1038,27 +522,11 @@ public class AnalystApp extends MainApp {
         controller.getBottomBox().getChildren().remove(simMolController.getBox());
     }
 
-    public void showStripsBar() {
-        FXMLController controller = FXMLController.getActiveController();
-        if (!controller.containsTool(StripController.class)) {
-            VBox vBox = new VBox();
-            controller.getBottomBox().getChildren().add(vBox);
-            StripController stripsController = new StripController(controller, this::removeStripsBar);
-            stripsController.initialize(vBox);
-            controller.addTool(stripsController);
-        }
-    }
 
     public StripController getStripsTool() {
         FXMLController controller = FXMLController.getActiveController();
         StripController stripsController = (StripController) controller.getTool(StripController.class);
         return stripsController;
-    }
-
-    public void removeStripsBar(StripController stripsController) {
-        FXMLController controller = FXMLController.getActiveController();
-        controller.removeTool(StripController.class);
-        controller.getBottomBox().getChildren().remove(stripsController.getBox());
     }
 
     public void showMultipletTool() {
@@ -1162,28 +630,6 @@ public class AnalystApp extends MainApp {
         AnalystPrefs.addPrefs();
     }
 
-    void showFavorites() {
-        if (windowIO == null) {
-            windowIO = new WindowIO();
-            windowIO.create();
-        }
-        Stage stage = windowIO.getStage();
-        stage.show();
-        stage.toFront();
-        windowIO.updateFavorites();
-        try {
-            ProjectBase project = ProjectBase.getActive();
-            if (project != null) {
-                Path projectDir = project.getDirectory();
-                if (projectDir != null) {
-                    Path path = projectDir.getFileSystem().getPath(projectDir.toString(), "windows");
-                    windowIO.setupWatcher(path);
-                }
-            }
-        } catch (IOException ex) {
-        }
-    }
-
     void addMolecule() {
         Molecule activeMol = Molecule.getActive();
         if (activeMol != null) {
@@ -1203,19 +649,5 @@ public class AnalystApp extends MainApp {
         PolyChart chart = FXMLController.getActiveController().getActiveChart();
         chart.clearAnnoType(CanvasMolecule.class);
         chart.refresh();
-    }
-
-    void showRunAbout() {
-        RunAboutGUI.create();
-    }
-
-
-    static void showDataBrowser() {
-        if (browserController == null) {
-            browserController = DatasetBrowserController.create();
-        }
-        Stage browserStage = browserController.getStage();
-        browserStage.toFront();
-        browserStage.show();
     }
 }

@@ -95,4 +95,5 @@ open module org.nmrfx.processor.gui {
     requires javafx.web;
     requires javafx.mediaEmpty;
     requires javafx.media;
+    requires org.apache.commons.lang3;
 }

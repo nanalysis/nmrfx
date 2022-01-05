@@ -2,6 +2,7 @@ package org.nmrfx.analyst.gui;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.nmrfx.analyst.gui.tools.ScannerTool;
 
 public class ScannerToolTest {
 

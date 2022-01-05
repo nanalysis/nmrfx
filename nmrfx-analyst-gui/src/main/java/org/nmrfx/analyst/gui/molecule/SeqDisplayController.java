@@ -1,4 +1,4 @@
-package org.nmrfx.analyst.gui;
+package org.nmrfx.analyst.gui.molecule;
 
 import java.io.File;
 import java.io.IOException;
@@ -32,6 +32,7 @@ import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import org.controlsfx.control.MasterDetailPane;
 import org.controlsfx.control.PropertySheet;
+import org.nmrfx.analyst.gui.tools.MinerController;
 import org.nmrfx.chart.Symbol;
 import org.nmrfx.chemistry.Atom;
 import org.nmrfx.chemistry.MoleculeFactory;

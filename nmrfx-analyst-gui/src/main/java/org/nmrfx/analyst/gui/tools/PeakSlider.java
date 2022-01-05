@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package org.nmrfx.analyst.gui;
+package org.nmrfx.analyst.gui.tools;
 
 import de.jensd.fx.glyphs.GlyphsDude;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
@@ -94,7 +94,7 @@ public class PeakSlider implements ControllerTool {
         closeAction.accept(this);
     }
 
-    void initSlider(ToolBar toolBar) {
+    public void initSlider(ToolBar toolBar) {
         this.sliderToolBar = toolBar;
 
         String iconSize = "16px";

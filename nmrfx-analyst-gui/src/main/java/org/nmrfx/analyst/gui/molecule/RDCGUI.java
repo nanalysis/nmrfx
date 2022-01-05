@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.nmrfx.analyst.gui;
+package org.nmrfx.analyst.gui.molecule;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -43,6 +43,7 @@ import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.controlsfx.dialog.ExceptionDialog;
+import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.chart.Axis;
 import org.nmrfx.chart.DataSeries;
 import org.nmrfx.chart.XYCanvasChart;
@@ -73,7 +74,7 @@ public class RDCGUI {
     BorderPane borderPane = new BorderPane();
     Scene stageScene = new Scene(borderPane, 900, 600);
 
-    ChoiceBox<String> setChoice = new ChoiceBox<>();
+    public ChoiceBox<String> setChoice = new ChoiceBox<>();
     DataSeries series0 = new DataSeries();
     DataSeries series1 = new DataSeries();
     TextField qRMSField = new TextField("");
@@ -86,7 +87,7 @@ public class RDCGUI {
 
     RDCConstraintSet localRDCSet;
     Label pdbFile = new Label("");
-    Label bmrbFile = new Label("");
+    public Label bmrbFile = new Label("");
     SVDFit svdFit;
     AlignmentMatrix aMat;
 

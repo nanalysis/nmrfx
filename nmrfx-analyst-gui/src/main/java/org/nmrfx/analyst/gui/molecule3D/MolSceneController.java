@@ -63,7 +63,7 @@ import org.nmrfx.peaks.FreezeListener;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.processor.datasets.Dataset;
-import org.nmrfx.analyst.gui.AtomController;
+import org.nmrfx.analyst.gui.molecule.AtomController;
 import org.nmrfx.analyst.gui.molecule.MoleculeCanvas;
 import org.nmrfx.processor.project.Project;
 import org.nmrfx.structure.chemistry.Molecule;
