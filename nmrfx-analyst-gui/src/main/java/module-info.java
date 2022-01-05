@@ -41,5 +41,6 @@ module org.nmrfx.analyst.gui {
     requires nsmenufx;
     requires fontawesomefx;
     requires commons.math3;
+    requires jsch;
 
 }
