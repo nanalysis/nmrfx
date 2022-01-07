@@ -17,24 +17,12 @@
  */
 package org.nmrfx.analyst.gui.molecule;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
 import javafx.beans.Observable;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
-import javafx.scene.control.Alert;
-import javafx.scene.control.Button;
-import javafx.scene.control.ChoiceBox;
-import javafx.scene.control.Label;
-import javafx.scene.control.Slider;
-import javafx.scene.control.TextField;
-import javafx.scene.control.ToolBar;
+import javafx.scene.control.*;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -44,11 +32,7 @@ import javafx.stage.Stage;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.analyst.gui.AnalystApp;
-import org.nmrfx.chart.Axis;
-import org.nmrfx.chart.DataSeries;
-import org.nmrfx.chart.XYCanvasChart;
-import org.nmrfx.chart.XYChartPane;
-import org.nmrfx.chart.XYValue;
+import org.nmrfx.chart.*;
 import org.nmrfx.chemistry.MoleculeBase;
 import org.nmrfx.chemistry.MoleculeFactory;
 import org.nmrfx.chemistry.RDC;
@@ -61,6 +45,13 @@ import org.nmrfx.structure.rdc.AlignmentCalc;
 import org.nmrfx.structure.rdc.AlignmentMatrix;
 import org.nmrfx.structure.rdc.RDCFitQuality;
 import org.nmrfx.structure.rdc.SVDFit;
+
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
 
 /**
  *
@@ -268,13 +259,6 @@ public class RDCGUI {
             RealMatrix directionMatrix = AlignmentMatrix.setupDirectionMatrix(rdcValues);
             if (modeBox.getValue().equals("SVD")) {
                 svdFit = new SVDFit(directionMatrix, rdcValues);
-
-                if (svdFit == null) {
-                    Alert alert = new Alert(Alert.AlertType.ERROR);
-                    alert.setContentText("SVD Analysis failed");
-                    alert.showAndWait();
-                    return;
-                }
                 aMat = svdFit.fit();
                 aMat.calcAlignment();
             } else {
@@ -332,15 +316,18 @@ public class RDCGUI {
     }
 
     void saveToFile() {
-        try {
-            FileChooser chooser = new FileChooser();
-            chooser.setTitle("Save RDC Results");
-            File directoryFile = chooser.showSaveDialog(null);
-            FileWriter fileWriter = new FileWriter(directoryFile);
-            fileWriter.write(aMat.toString());
-        } catch (IOException ex) {
-            ExceptionDialog dialog = new ExceptionDialog(ex);
-            dialog.showAndWait();
+        FileChooser chooser = new FileChooser();
+        chooser.setTitle("Save RDC Results");
+        File directoryFile = chooser.showSaveDialog(null);
+        if (directoryFile != null) {
+            try {
+                try (FileWriter fileWriter = new FileWriter(directoryFile)) {
+                    fileWriter.write(aMat.toString());
+                }
+            } catch (IOException ex) {
+                ExceptionDialog dialog = new ExceptionDialog(ex);
+                dialog.showAndWait();
+            }
         }
     }
 

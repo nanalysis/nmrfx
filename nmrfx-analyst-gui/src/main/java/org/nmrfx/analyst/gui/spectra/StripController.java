@@ -476,8 +476,8 @@ public class StripController implements ControllerTool {
         posSlider.valueProperty().removeListener(limitListener);
         nSlider.valueProperty().removeListener(limitListener);
         cells.clear();
-        posSlider.setMin(0);
-        posSlider.setMax(peaks.size() - 1);
+        posSlider.setMin(0.0);
+        posSlider.setMax(peaks.size() - 1.0);
         posSlider.setValue(0);
         nSlider.setMin(1);
         nSlider.setMax(30);

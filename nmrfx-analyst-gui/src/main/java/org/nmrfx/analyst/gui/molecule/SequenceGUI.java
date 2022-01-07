@@ -59,8 +59,10 @@ public class SequenceGUI {
             SequenceGUI seqGui = new SequenceGUI(analystApp);
             seqGui.create();
         }
-        stage.show();
-        stage.toFront();
+        if (stage != null) {
+            stage.show();
+            stage.toFront();
+        }
     }
 
     void create() {
@@ -69,7 +71,7 @@ public class SequenceGUI {
         stage.setTitle("Sequence GUI");
         textArea.setPrefHeight(200);
         ToolBar toolBar = new ToolBar();
-        polymerType = new ChoiceBox();
+        polymerType = new ChoiceBox<>();
         polymerType.getItems().addAll("Protein", "RNA", "DNA");
         Button openButton = new Button("Add Entity");
         openButton.setOnAction(e -> addEntity());

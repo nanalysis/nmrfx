@@ -552,11 +552,13 @@ public class SeqDisplayController implements Initializable {
         var last = y;
         int i = 0;
         for (var v : values) {
-            var f = v / sum;
-            double delta = f * height;
-            gC.setFill(colors2ndStr[i % colors2ndStr.length]);
-            gC.fillRect(x1, last - delta, atomBarWidth, delta);
-            last = last - delta;
+            if (sum != 0.0) {
+                var f = v / sum;
+                double delta = f * height;
+                gC.setFill(colors2ndStr[i % colors2ndStr.length]);
+                gC.fillRect(x1, last - delta, atomBarWidth, delta);
+                last = last - delta;
+            }
             i++;
         }
     }
@@ -732,9 +734,9 @@ public class SeqDisplayController implements Initializable {
             double resNumHeight;
             if (verticalResNums) {
                 int nChars = String.valueOf(polymer.getResidues().get(nResidues - 1).getResNum()).length();
-                resNumHeight = nChars * labelFontSize + 5;
+                resNumHeight = nChars * labelFontSize + 5.0;
             } else {
-                resNumHeight = labelFontSize + 5;
+                resNumHeight = labelFontSize + 5.0;
             }
 
             for (Residue residue : polymer.getResidues()) {
@@ -851,7 +853,7 @@ public class SeqDisplayController implements Initializable {
                             drawLine(gC, xOrigin, y1, xOrigin + resWidth, y1);
                             gC.setFont(font);
                             drawYAxisLabel(gC, xOrigin, y1, "0.0");
-                            y1 = y + smallGap + zIDRHeight * (1.0 - ((maxZ - minZ) / (maxZ - minZ)));
+                            y1 = y + smallGap;
                             drawYAxisLabel(gC, xOrigin, y1, String.valueOf(maxZ));
                             y1 = y + zIDRHeight / 2.0;
                             gC.setFont(labelFont);

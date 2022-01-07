@@ -32,7 +32,6 @@ import org.apache.commons.lang3.SystemUtils;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.analyst.gui.molecule.CanvasMolecule;
 import org.nmrfx.analyst.gui.molecule.MoleculeMenuActions;
-import org.nmrfx.analyst.gui.peaks.MultipletController;
 import org.nmrfx.analyst.gui.peaks.PeakAssignTool;
 import org.nmrfx.analyst.gui.peaks.PeakMenuActions;
 import org.nmrfx.analyst.gui.plugin.PluginLoader;
@@ -63,11 +62,10 @@ import java.util.*;
 
 public class AnalystApp extends MainApp {
 
-    private static String version = null;
+    private static final String version = null;
     static String appName = "NMRFx Analyst";
     private static MenuBar mainMenuBar = null;
     static AnalystApp analystApp = null;
-    private static MultipletController multipletController;
 
     private static FileMenuActions fileMenuActions;
     private static MoleculeMenuActions molMenuActions;
@@ -124,7 +122,7 @@ public class AnalystApp extends MainApp {
         interpreter.set("argv", parameters.getRaw());
         interpreter.exec("parseArgs(argv)");
         ConsoleController.create(interpreter, "NMRFx Console");
-        PeakPicking.registerSinglePickAction((c) -> pickedPeakAction(c));
+        PeakPicking.registerSinglePickAction(this::pickedPeakAction);
         PeakMenuBar.addExtra("Add Residue Prefix", PeakLabeller::labelWithSingleResidueChar);
         PeakMenuBar.addExtra("Remove Residue Prefix", PeakLabeller::removeSingleResidueChar);
         KeyBindings.registerGlobalKeyAction("pa", this::assignPeak);
@@ -192,7 +190,7 @@ public class AnalystApp extends MainApp {
         // TBD: services menu
         Menu appMenu = new Menu(appName); // Name for appMenu can't be set at
         // Runtime
-        MenuItem aboutItem = null;
+        MenuItem aboutItem;
         Stage aboutStage = makeAbout(appName);
         if (tk != null) {
             aboutItem = tk.createAboutMenuItem(appName, aboutStage);
@@ -202,7 +200,7 @@ public class AnalystApp extends MainApp {
         }
         MenuItem prefsItem = new MenuItem("Preferences...");
         MenuItem quitItem;
-        prefsItem.setOnAction(e -> showPreferences(e));
+        prefsItem.setOnAction(this::showPreferences);
         if (tk != null) {
             quitItem = tk.createQuitMenuItem(appName);
             quitItem.setOnAction(e -> quit());
@@ -241,24 +239,22 @@ public class AnalystApp extends MainApp {
         Menu helpMenu = new Menu("Help");
 
         MenuItem webSiteMenuItem = new MenuItem("NMRFx Web Site");
-        webSiteMenuItem.setOnAction(e -> showWebSiteAction(e));
+        webSiteMenuItem.setOnAction(AnalystApp::showWebSiteAction);
 
         MenuItem docsMenuItem = new MenuItem("Online Documentation");
-        docsMenuItem.setOnAction(e -> showDocAction(e));
+        docsMenuItem.setOnAction(AnalystApp::showDocAction);
 
         MenuItem versionMenuItem = new MenuItem("Check Version");
-        versionMenuItem.setOnAction(e -> showVersionAction(e));
+        versionMenuItem.setOnAction(this::showVersionAction);
 
         MenuItem mailingListItem = new MenuItem("Mailing List Site");
-        mailingListItem.setOnAction(e -> showMailingListAction(e));
+        mailingListItem.setOnAction(AnalystApp::showMailingListAction);
 
         MenuItem refMenuItem = new MenuItem("NMRFx Publication");
-        refMenuItem.setOnAction(e -> {
-            AnalystApp.hostServices.showDocument("http://link.springer.com/article/10.1007/s10858-016-0049-6");
-        });
+        refMenuItem.setOnAction(e -> AnalystApp.hostServices.showDocument("http://link.springer.com/article/10.1007/s10858-016-0049-6"));
 
         MenuItem openSourceItem = new MenuItem("Open Source Libraries");
-        openSourceItem.setOnAction(e -> showOpenSourceAction(e));
+        openSourceItem.setOnAction(AnalystApp::showOpenSourceAction);
 
         helpMenu.getItems().addAll(docsMenuItem, webSiteMenuItem, mailingListItem, versionMenuItem, refMenuItem, openSourceItem);
 
@@ -423,32 +419,6 @@ public class AnalystApp extends MainApp {
         }
     }
 
-    void loadPeakLists() {
-        PeakReader peakReader = new PeakReader();
-        Dataset.datasets().stream().forEach(dataset -> {
-            String canonFileName = dataset.getCanonicalFile();
-            File canonFile = new File(canonFileName);
-            if (canonFile.exists()) {
-                int dotIndex = canonFileName.lastIndexOf(".");
-                if (dotIndex != -1) {
-                    String listFileName = canonFileName.substring(0, dotIndex) + ".xpk2";
-                    File listFile = new File(listFileName);
-                    String listName = listFile.getName();
-                    dotIndex = listName.lastIndexOf('.');
-                    listName = listName.substring(0, dotIndex);
-                    if (PeakList.get(listName) == null) {
-                        try {
-                            peakReader.readXPK2Peaks(listFileName);
-                        } catch (IOException ioE) {
-                            ExceptionDialog dialog = new ExceptionDialog(ioE);
-                            dialog.showAndWait();
-                        }
-                    }
-                }
-            }
-        });
-    }
-
     public static InteractiveInterpreter getInterpreter() {
         return interpreter;
     }
@@ -471,18 +441,6 @@ public class AnalystApp extends MainApp {
             peakMenuActions.assignPeak();
         }
     }
-
-    @FXML
-    private void showMultipletAnalyzer(ActionEvent event) {
-        if (multipletController == null) {
-            multipletController = MultipletController.create();
-        } else {
-            multipletController.initMultiplet();
-        }
-        multipletController.getStage().show();
-        multipletController.getStage().toFront();
-    }
-
 
     public void showSpectrumLibrary() {
         FXMLController controller = FXMLController.getActiveController();
@@ -525,8 +483,7 @@ public class AnalystApp extends MainApp {
 
     public StripController getStripsTool() {
         FXMLController controller = FXMLController.getActiveController();
-        StripController stripsController = (StripController) controller.getTool(StripController.class);
-        return stripsController;
+        return (StripController) controller.getTool(StripController.class);
     }
 
     public void showMultipletTool() {
@@ -576,8 +533,7 @@ public class AnalystApp extends MainApp {
 
     public MultipletTool getMultipletTool() {
         FXMLController controller = FXMLController.getActiveController();
-        MultipletTool multipletTool = (MultipletTool) controller.getTool(MultipletTool.class);
-        return multipletTool;
+        return (MultipletTool) controller.getTool(MultipletTool.class);
     }
 
     public void removeMultipletToolBar(MultipletTool multipletTool) {
@@ -599,8 +555,7 @@ public class AnalystApp extends MainApp {
 
     public RegionTool getRegionTool() {
         FXMLController controller = FXMLController.getActiveController();
-        RegionTool regionTool = (RegionTool) controller.getTool(RegionTool.class);
-        return regionTool;
+        return (RegionTool) controller.getTool(RegionTool.class);
     }
 
     public void removeRegionTool(RegionTool regionTool) {

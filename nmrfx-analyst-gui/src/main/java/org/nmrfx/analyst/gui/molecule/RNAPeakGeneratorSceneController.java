@@ -277,7 +277,7 @@ public class RNAPeakGeneratorSceneController implements Initializable {
                                 ok = false;
                                 break;
                         }
-                        if (!basePat.matcher(atomType).matches()) {
+                        if ((basePat == null) || !basePat.matcher(atomType).matches()) {
                             ok = false;
                         }
                     }
