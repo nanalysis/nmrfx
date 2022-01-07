@@ -19,7 +19,7 @@ package org.nmrfx.jmx.mbeans;
 
 import javafx.stage.Stage;
 import org.nmrfx.jmx.NotificationType;
-import org.nmrfx.jmx.mbeans.AnalystMBean;
+import org.nmrfx.processor.gui.ChartProcessor;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.controls.ConsoleUtil;
 
@@ -46,6 +46,17 @@ public class Analyst extends NotificationBroadcasterSupport implements AnalystMB
             Stage stage = FXMLController.getActiveController().getStage();
             stage.toFront();
             stage.requestFocus();
+        });
+    }
+
+    @Override
+    public void generateAutoScript() {
+        ConsoleUtil.runOnFxThread(() -> {
+            // getting the chart processor must be done in fx thread, because otherwise, a client calling
+            // open() then generateAutoScript() could try to access the chart processor before its creation.
+            ChartProcessor chartProcessor = FXMLController.getActiveController().getChartProcessor();
+            String script = chartProcessor.getGenScript(false);
+            FXMLController.getActiveController().getProcessorController(true).parseScript(script);
         });
     }
 

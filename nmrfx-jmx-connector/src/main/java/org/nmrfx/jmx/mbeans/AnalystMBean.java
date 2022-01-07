@@ -33,4 +33,9 @@ public interface AnalystMBean {
      * Show current stage on front of other windows.
      */
     void setWindowOnFront();
+
+    /**
+     * Generate an automatic processing script.
+     */
+    void generateAutoScript();
 }
