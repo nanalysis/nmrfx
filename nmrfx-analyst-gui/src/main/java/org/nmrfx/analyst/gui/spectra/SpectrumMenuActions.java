@@ -25,10 +25,9 @@ public class SpectrumMenuActions extends MenuActions {
 
     @Override
     public void basic() {
-        menu.disableProperty().bind(FXMLController.activeController.isNull());
 
         MenuItem newMenuItem = new MenuItem("New Window...");
-        newMenuItem.setOnAction(e -> newGraphics(e));
+        newMenuItem.setOnAction(this::newGraphics);
 
 
         MenuItem deleteItem = new MenuItem("Delete Spectrum");
@@ -58,6 +57,10 @@ public class SpectrumMenuActions extends MenuActions {
         MenuItem copyItem = new MenuItem("Copy Spectrum as SVG Text");
         copyItem.setOnAction(e -> FXMLController.getActiveController().copySVGAction(e));
         menu.getItems().addAll(newMenuItem, deleteItem, arrangeMenu, favoritesMenuItem, syncMenuItem, copyItem);
+        MenuItem[] disableItems = {deleteItem, arrangeMenu, favoritesMenuItem, syncMenuItem, copyItem};
+        for (var item:disableItems) {
+            item.disableProperty().bind(FXMLController.activeController.isNull());
+        }
     }
 
     @Override
