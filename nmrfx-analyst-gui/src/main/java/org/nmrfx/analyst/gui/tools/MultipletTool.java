@@ -1119,11 +1119,10 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
 
             }
             if (!allreadyPresent) {
-                for (MultipletSelection mSel : mSet) {
+                mSet.stream().findFirst().ifPresent(mSel -> {
                     activeMultiplet = Optional.of(mSel.getMultiplet());
-                    updateMultipletField(false);
-                    break;
-                }
+                    updateMultipletField();
+                });
             }
         }
     }

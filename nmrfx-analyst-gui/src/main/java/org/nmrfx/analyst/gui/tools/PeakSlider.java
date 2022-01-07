@@ -780,7 +780,7 @@ public class PeakSlider implements ControllerTool {
                         double peakShift = p.getPeakDim(dim).getChemShift();
                         double shiftDiff = Math.abs(peakShift - matchPeakShift);
                         System.out.println(String.format("\t\tIn dimension '%d', shift difference b/t experimental peak '%s' compared to peak '%s' is '%f'.", matchDim, matchingPeak, p, shiftDiff));
-                        if (shiftDiff != 0.0 && shiftDiff < tolerance) {
+                        if ((shiftDiff > 0.0) && (shiftDiff < tolerance)) {
                             peaksWithinTol.add(p);
                         }
                     });
