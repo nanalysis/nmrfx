@@ -143,7 +143,6 @@ public class NOETableController implements Initializable {
             stage.setTitle("Peaks");
             stage.show();
         } catch (IOException ioE) {
-            ioE.printStackTrace();
             System.out.println(ioE.getMessage());
         }
 

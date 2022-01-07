@@ -119,7 +119,6 @@ public class PeakTableController implements PeakMenuTarget, PeakListener, Initia
             stage.setTitle("Peaks");
             stage.show();
         } catch (IOException ioE) {
-            ioE.printStackTrace();
             System.out.println(ioE.getMessage());
         }
 

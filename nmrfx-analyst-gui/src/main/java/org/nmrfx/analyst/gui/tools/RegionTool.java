@@ -639,7 +639,6 @@ public class RegionTool implements ControllerTool {
             controller.initMultiplet();
 
         } catch (IOException ioE) {
-            ioE.printStackTrace();
             System.out.println(ioE.getMessage());
         }
         return controller;

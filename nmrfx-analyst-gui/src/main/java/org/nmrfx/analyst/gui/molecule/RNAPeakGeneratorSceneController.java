@@ -660,7 +660,6 @@ public class RNAPeakGeneratorSceneController implements Initializable {
             stage.setTitle("RNA Label Schemes");
             stage.show();
         } catch (IOException ioE) {
-            ioE.printStackTrace();
             System.out.println(ioE.getMessage());
         }
 

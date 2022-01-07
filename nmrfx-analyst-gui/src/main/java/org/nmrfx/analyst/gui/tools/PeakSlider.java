@@ -34,6 +34,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
 import javafx.scene.paint.Color;
+import org.apache.commons.math3.random.RandomDataGenerator;
 import org.nmrfx.chemistry.Atom;
 import org.nmrfx.peaks.FreezeListener;
 import org.nmrfx.peaks.Peak;
@@ -77,7 +78,7 @@ public class PeakSlider implements ControllerTool {
     List<Peak> selPeaks;
     List<FreezeListener> listeners = new ArrayList<>();
     PeakClusterMatcher[] matchers = new PeakClusterMatcher[2];
-    Random rand = new Random();
+    RandomDataGenerator rand = new RandomDataGenerator();
 
     public PeakSlider(FXMLController controller, Consumer<PeakSlider> closeAction) {
         this.controller = controller;
@@ -400,7 +401,7 @@ public class PeakSlider implements ControllerTool {
                 if (randomize) {
                     Double errPPM = atom.getSDevRefPPM();
                     if (errPPM != null) {
-                        refPPM += rand.nextGaussian() * errPPM * 0.5;
+                        refPPM += rand.nextGaussian(0, errPPM * 0.5);
                     }
                 }
                 shiftMap.put(atom, refPPM);

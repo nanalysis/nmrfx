@@ -262,7 +262,6 @@ public class SeqDisplayController implements Initializable {
             stage.toFront();
 
         } catch (IOException ioE) {
-            ioE.printStackTrace();
             System.out.println(ioE.getMessage());
         }
         return controller;
