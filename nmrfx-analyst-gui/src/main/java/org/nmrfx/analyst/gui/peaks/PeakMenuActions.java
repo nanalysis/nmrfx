@@ -111,9 +111,7 @@ public class PeakMenuActions extends MenuActions {
             }
             Collection<NoeSet> noeSets = MoleculeFactory.getActive().getMolecularConstraints().noeSets();
 
-            if (!noeSets.isEmpty()) {
-                noeTableController.setNoeSet(noeSets.stream().findFirst().get());
-            }
+            noeSets.stream().findFirst().ifPresent(noeTableController::setNoeSet);
         }
         noeTableController.getStage().show();
         noeTableController.getStage().toFront();

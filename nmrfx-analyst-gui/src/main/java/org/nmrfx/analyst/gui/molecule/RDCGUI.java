@@ -268,13 +268,6 @@ public class RDCGUI {
             RealMatrix directionMatrix = AlignmentMatrix.setupDirectionMatrix(rdcValues);
             if (modeBox.getValue().equals("SVD")) {
                 svdFit = new SVDFit(directionMatrix, rdcValues);
-
-                if (svdFit == null) {
-                    Alert alert = new Alert(Alert.AlertType.ERROR);
-                    alert.setContentText("SVD Analysis failed");
-                    alert.showAndWait();
-                    return;
-                }
                 aMat = svdFit.fit();
                 aMat.calcAlignment();
             } else {

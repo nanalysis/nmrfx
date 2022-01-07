@@ -732,9 +732,9 @@ public class SeqDisplayController implements Initializable {
             double resNumHeight;
             if (verticalResNums) {
                 int nChars = String.valueOf(polymer.getResidues().get(nResidues - 1).getResNum()).length();
-                resNumHeight = nChars * labelFontSize + 5;
+                resNumHeight = nChars * labelFontSize + 5.0;
             } else {
-                resNumHeight = labelFontSize + 5;
+                resNumHeight = labelFontSize + 5.0;
             }
 
             for (Residue residue : polymer.getResidues()) {

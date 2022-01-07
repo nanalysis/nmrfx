@@ -176,13 +176,14 @@ public class ProjectMenuActions extends MenuActions {
         File sparkyFile = chooser.showOpenDialog(null);
         Map<String, Object> pMap = null;
         if (sparkyFile != null) {
-            PythonInterpreter interpreter = new PythonInterpreter();
-            interpreter.exec("import sparky");
-            String rdString;
-            interpreter.set("pMap", pMap);
-            interpreter.exec("sparky.pMap=pMap");
-            rdString = String.format("sparky.loadProjectFile('%s')", sparkyFile);
-            interpreter.exec(rdString);
+            try (PythonInterpreter interpreter = new PythonInterpreter()) {
+                interpreter.exec("import sparky");
+                String rdString;
+                interpreter.set("pMap", pMap);
+                interpreter.exec("sparky.pMap=pMap");
+                rdString = String.format("sparky.loadProjectFile('%s')", sparkyFile);
+                interpreter.exec(rdString);
+            }
         }
     }
 }

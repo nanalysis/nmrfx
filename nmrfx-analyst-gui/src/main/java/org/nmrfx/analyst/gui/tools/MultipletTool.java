@@ -624,7 +624,7 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
             Multiplet multiplet = activeMultiplet.get();
             multipletIdField.setText(String.valueOf(multiplet.getIDNum()));
             if (resetView) {
-                refreshPeakView(multiplet);
+                refreshPeakView(multiplet, false);
             }
             String mult = multiplet.getMultiplicity();
             Coupling coup = multiplet.getCoupling();
@@ -1040,8 +1040,7 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
         }
     }
 
-    public void refreshPeakView(Multiplet multiplet) {
-        boolean resize = false;
+    public void refreshPeakView(Multiplet multiplet, boolean resize) {
         if (multiplet != null) {
             double bounds = multiplet.getBoundsValue();
             double center = multiplet.getCenter();
