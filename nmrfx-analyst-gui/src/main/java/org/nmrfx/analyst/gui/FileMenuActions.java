@@ -24,9 +24,6 @@ public class FileMenuActions extends MenuActions {
         MenuItem openDatasetMenuItem = new MenuItem("Open Dataset...");
         openDatasetMenuItem.setOnAction(e -> FXMLController.getActiveController().openDatasetAction(e));
 
-        MenuItem addMenuItem = new MenuItem("Open Dataset (No Display) ...");
-        addMenuItem.setOnAction(e -> FXMLController.getActiveController().addNoDrawAction(e));
-
         Menu recentFIDMenuItem = new Menu("Recent FIDs");
         Menu recentDatasetMenuItem = new Menu("Recent Datasets");
         PreferencesController.setupRecentMenus(recentFIDMenuItem, recentDatasetMenuItem);
@@ -55,7 +52,7 @@ public class FileMenuActions extends MenuActions {
         startAdvancedItem.setOnAction(e -> app.advanced(startAdvancedItem));
 
 
-        menu.getItems().addAll(openMenuItem, openDatasetMenuItem, addMenuItem,
+        menu.getItems().addAll(openMenuItem, openDatasetMenuItem,
                 recentFIDMenuItem, recentDatasetMenuItem, datasetBrowserMenuItem,
                 graphicsMenu);
         menu.getItems().add(startAdvancedItem);
@@ -63,6 +60,10 @@ public class FileMenuActions extends MenuActions {
     }
     @Override
     protected void advanced() {
+        MenuItem addMenuItem = new MenuItem("Open Dataset (No Display) ...");
+        addMenuItem.setOnAction(e -> FXMLController.getActiveController().addNoDrawAction(e));
+        menu.getItems().addAll(addMenuItem);
+
     }
     void showDataBrowser() {
         if (browserController == null) {
