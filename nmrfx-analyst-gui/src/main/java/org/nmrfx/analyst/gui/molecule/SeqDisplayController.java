@@ -549,10 +549,11 @@ public class SeqDisplayController implements Initializable {
         for (var v : values) {
             sum += v;
         }
+        sum = Math.abs(sum);
         var last = y;
         int i = 0;
         for (var v : values) {
-            if (sum != 0.0) {
+            if (sum > 0.0) {
                 var f = v / sum;
                 double delta = f * height;
                 gC.setFill(colors2ndStr[i % colors2ndStr.length]);

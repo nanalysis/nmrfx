@@ -49,7 +49,7 @@ public class RNAPeakGeneratorSceneController implements Initializable {
 
     String baseAAtoms = "28";
 
-    Pattern quickPat0 = Pattern.compile("^([AGCU][nrH1-9']+)+$");
+    Pattern quickPat0 = Pattern.compile("^([AGCU][nrH1-9']+)++$");
     Pattern quickPat1 = Pattern.compile("([AGCU][nrH1-9']+)");
     Pattern quickPat2 = Pattern.compile("(n|r|H|[1-5]'|[2-8])");
     Pattern quickPatA = Pattern.compile("([1-5]'|[28])");
