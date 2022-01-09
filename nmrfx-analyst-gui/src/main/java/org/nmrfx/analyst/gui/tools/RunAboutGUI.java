@@ -1,5 +1,7 @@
 package org.nmrfx.analyst.gui.tools;
 
+import org.nmrfx.peaks.*;
+import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.structure.seqassign.RunAbout;
 import de.jensd.fx.glyphs.GlyphsDude;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
@@ -52,11 +54,6 @@ import org.nmrfx.chemistry.Polymer;
 import org.nmrfx.chemistry.Residue;
 import org.nmrfx.chemistry.io.AtomParser;
 import org.nmrfx.datasets.DatasetBase;
-import org.nmrfx.peaks.Peak;
-import org.nmrfx.peaks.PeakDim;
-import org.nmrfx.peaks.PeakEvent;
-import org.nmrfx.peaks.PeakList;
-import org.nmrfx.peaks.PeakListener;
 import org.nmrfx.processor.gui.CanvasAnnotation;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.PeakNavigable;
@@ -1439,15 +1436,24 @@ def getType(types, row, dDir):
         return dName;
     }
 
-    Double[] getDimWidth(List<String> dims) {
-        Double[] widths = new Double[dims.size()];
+    Double[] getDimWidth(PeakList peakList, Dataset dataset, List<String> dimNames, int[] iDims) {
+        Double[] widths = new Double[iDims.length];
         int j = 0;
-        for (String dim : dims) {
+        for (String dim : dimNames) {
             Double width;
             int sepPos = dim.indexOf("_");
-            System.out.println(dim + " " + sepPos);
+            int iDim = iDims[j];
+            String dataDimName = dataset.getLabel(iDim);
             if (sepPos != -1) {
                 width = Double.parseDouble(dim.substring(sepPos + 1));
+                if (peakList != null) {
+                    String dimName = dim.substring(0, sepPos);
+                    SpectralDim sDim = peakList.getSpectralDim(dataDimName);
+                    if (sDim != null) {
+                        var widthStats = peakList.widthStatsPPM(sDim.getDataDim());
+                        width = 10.0 * widthStats.getAverage();
+                    }
+                }
             } else {
                 width = null;
             }
@@ -1496,7 +1502,7 @@ def getType(types, row, dDir):
                         Optional<DatasetBase> datasetOpt =  runAbout.getDataset(typeName.get());
                         System.out.println(datasetOpt);
                         if (datasetOpt.isPresent()) {
-                            DatasetBase dataset = datasetOpt.get();
+                            Dataset dataset = (Dataset) datasetOpt.get();
                             dataset.setTitle(typeName.get());
                             PeakList peakList = runAbout.getPeakList(typeName.get());
                             String dName = dataset.getName();
@@ -1506,7 +1512,7 @@ def getType(types, row, dDir):
                             DatasetAttributes dataAttr = chart.getDatasetAttributes().get(0);
 
                             int[] iDims = runAbout.getIDims(dataset, typeName.get(), dimNames);
-                            widths[iChart] = getDimWidth(dimNames);
+                            widths[iChart] = getDimWidth(peakList, dataset, dimNames, iDims);
                             for (int id = 0; id < widths[iChart].length; id++) {
                                 System.out.println(id + " " + widths[iChart][id]);
                             }
