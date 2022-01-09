@@ -1,0 +1,121 @@
+types:
+  - name : NOESY
+    dims :
+      - name: H
+        pattern : i.H*
+        bonds :
+      - name : H
+        pattern : j.H*
+        bonds :
+  - name : COSY
+    dims :
+      - name: H
+        pattern : i.H*
+        bonds :
+      - name : H
+        pattern : i.H*
+        bonds :
+  - name : 15N-HSQC
+    dims :
+      - name: H
+        pattern : i.H*
+        bonds : N
+      - name : N
+        pattern : i.N*
+        bonds :
+  - name : 13N-HSQC
+    dims :
+      - name: H
+        pattern : i.H*
+        bonds : C
+      - name : C
+        pattern : i.C*
+        bonds :
+  - name: HNCO
+    dims:
+      - name: H
+        pattern: i.H
+        bonds: N
+      - name: C
+        pattern: i.1.C
+        bonds:
+      - name: N
+        pattern: i.N
+        bonds:
+  - name: HNCACO
+    dims:
+      - name: H
+        pattern: i.H
+        bonds: N
+      - name: C
+        pattern: "i,i-1.C"
+        bonds:
+      - name: N
+        pattern: i.N
+        bonds:
+  - name: HNCOCA
+    dims:
+      - name: H
+        pattern: i.H
+        bonds: N
+      - name: C
+        pattern: "i-1.CA"
+        bonds:
+      - name: N
+        pattern: i.N
+        bonds:
+  - name: HNCACB
+    dims:
+      - name: H
+        pattern: i.H
+        bonds: N
+      - name: C
+        pattern: "i,i-1.CA,CB-"
+        bonds:
+      - name: N
+        pattern: i.N
+        bonds:
+  - name: HNCOCACB
+    dims:
+      - name: H
+        pattern: i.H
+        bonds: N
+      - name: C
+        pattern: "i-1.CA-,CB"
+        bonds:
+      - name: N
+        pattern: i.N
+        bonds:
+  - name: CBCACONNH
+    dims:
+      - name: H
+        pattern: i.H
+        bonds: N
+      - name: C
+        pattern: "i-1.CB,CA"
+        bonds:
+      - name: N
+        pattern: i.N
+        bonds:
+  - name: HBHACONNH
+    dims:
+      - name: H
+        pattern: i.H
+        bonds: N
+      - name: C
+        pattern: "i-1.HB2,HB3,HA"
+        bonds:
+      - name: N
+        pattern: i.N
+        bonds:
+  - name: HBHANNH
+    dims:
+      - name: H
+        pattern: i.H
+        bonds: N
+      - name: C
+        pattern: "i-1,i.HB2,HB3,HA"
+        bonds:
+      - name: N
+        pattern: i.N
+        bonds:

@@ -10,6 +10,7 @@ import org.apache.commons.math3.exception.MaxCountExceededException;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.datasets.Nuclei;
 import org.nmrfx.math.Clusters;
+import org.nmrfx.peaks.types.PeakListType;
 import org.nmrfx.project.ProjectBase;
 import org.nmrfx.utilities.Util;
 
@@ -708,6 +709,9 @@ public class PeakList {
         this.sampleConditionLabel = sampleConditionLabel;
     }
 
+    public void setType(PeakListType peakListType) {
+
+    }
     /**
      *
      * @return

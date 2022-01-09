@@ -15,6 +15,7 @@ module org.nmrfx.core {
     exports org.nmrfx.project;
     exports org.nmrfx.server;
     exports org.nmrfx.utilities;
+    exports org.nmrfx.peaks.types;
     requires commons.math3;
     requires org.apache.commons.lang3;
     requires org.apache.commons.collections4;
@@ -26,4 +27,5 @@ module org.nmrfx.core {
     requires jython.slim;
     requires jsch;
     requires com.google.gson;
+    requires org.yaml.snakeyaml;
 }
