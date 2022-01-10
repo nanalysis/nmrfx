@@ -58,7 +58,7 @@ types:
       - name: H
         pattern: i.H
         bonds: N
-      - name: C
+      - name: CA
         pattern: "i-1.CA"
         bonds:
       - name: N
@@ -69,8 +69,19 @@ types:
       - name: H
         pattern: i.H
         bonds: N
-      - name: C
+      - name: CACB
         pattern: "i,i-1.CA,CB-"
+        bonds:
+      - name: N
+        pattern: i.N
+        bonds:
+  - name: HNCA
+    dims:
+      - name: H
+        pattern: i.H
+        bonds: N
+      - name: CA
+        pattern: "i,i-1.CA"
         bonds:
       - name: N
         pattern: i.N
@@ -80,7 +91,7 @@ types:
       - name: H
         pattern: i.H
         bonds: N
-      - name: C
+      - name: CACB
         pattern: "i-1.CA-,CB"
         bonds:
       - name: N
@@ -91,7 +102,7 @@ types:
       - name: H
         pattern: i.H
         bonds: N
-      - name: C
+      - name: CACB
         pattern: "i-1.CB,CA"
         bonds:
       - name: N
@@ -102,7 +113,7 @@ types:
       - name: H
         pattern: i.H
         bonds: N
-      - name: C
+      - name: HAB
         pattern: "i-1.HB2,HB3,HA"
         bonds:
       - name: N
@@ -113,7 +124,7 @@ types:
       - name: H
         pattern: i.H
         bonds: N
-      - name: C
+      - name: HAB
         pattern: "i-1,i.HB2,HB3,HA"
         bonds:
       - name: N
