@@ -50,12 +50,12 @@ public class Analyst extends NotificationBroadcasterSupport implements AnalystMB
     }
 
     @Override
-    public void generateAutoScript() {
+    public void generateAutoScript(boolean isPseudo2D) {
         ConsoleUtil.runOnFxThread(() -> {
             // getting the chart processor must be done in fx thread, because otherwise, a client calling
             // open() then generateAutoScript() could try to access the chart processor before its creation.
             ChartProcessor chartProcessor = FXMLController.getActiveController().getChartProcessor();
-            String script = chartProcessor.getGenScript(false);
+            String script = chartProcessor.getGenScript(isPseudo2D);
             FXMLController.getActiveController().getProcessorController(true).parseScript(script);
         });
     }

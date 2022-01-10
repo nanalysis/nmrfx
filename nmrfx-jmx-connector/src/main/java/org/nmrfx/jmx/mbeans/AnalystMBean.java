@@ -36,6 +36,7 @@ public interface AnalystMBean {
 
     /**
      * Generate an automatic processing script.
+     * @param isPseudo2D whether to generate a script for a pseudo 2D experiment (ie, do FT only in the direct dimension)
      */
-    void generateAutoScript();
+    void generateAutoScript(boolean isPseudo2D);
 }
