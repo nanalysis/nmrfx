@@ -1,90 +1,68 @@
 package org.nmrfx.analyst.gui.tools;
 
-import org.nmrfx.peaks.*;
-import org.nmrfx.processor.datasets.Dataset;
-import org.nmrfx.structure.seqassign.RunAbout;
 import de.jensd.fx.glyphs.GlyphsDude;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.function.Consumer;
 import javafx.application.Platform;
+import javafx.collections.FXCollections;
+import javafx.collections.ListChangeListener;
 import javafx.collections.MapChangeListener;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.geometry.Side;
 import javafx.scene.Group;
 import javafx.scene.Node;
-import javafx.scene.control.Button;
-import javafx.scene.control.CheckBox;
-import javafx.scene.control.ContentDisplay;
-import javafx.scene.control.Label;
-import javafx.scene.control.Menu;
-import javafx.scene.control.MenuButton;
-import javafx.scene.control.MenuItem;
-import javafx.scene.control.Spinner;
-import javafx.scene.control.SpinnerValueFactory;
-import javafx.scene.control.TextField;
-import javafx.scene.control.ToggleButton;
-import javafx.scene.control.ToolBar;
-import javafx.scene.control.Tooltip;
-import javafx.scene.layout.Background;
-import javafx.scene.layout.BackgroundFill;
-import javafx.scene.layout.CornerRadii;
-import javafx.scene.layout.GridPane;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Pane;
-import javafx.scene.layout.Priority;
-import javafx.scene.layout.StackPane;
-import javafx.scene.layout.VBox;
+import javafx.scene.control.*;
+import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextAlignment;
 import javafx.stage.FileChooser;
+import org.controlsfx.control.CheckListView;
 import org.nmrfx.chemistry.Polymer;
 import org.nmrfx.chemistry.Residue;
 import org.nmrfx.chemistry.io.AtomParser;
 import org.nmrfx.datasets.DatasetBase;
+import org.nmrfx.peaks.*;
+import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.CanvasAnnotation;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.PeakNavigable;
 import org.nmrfx.processor.gui.PolyChart;
-import org.nmrfx.structure.seqassign.SpinSystem;
-import org.nmrfx.structure.seqassign.SpinSystem.PeakMatch;
-import org.nmrfx.structure.seqassign.SpinSystemMatch;
 import org.nmrfx.processor.gui.annotations.AnnoLine;
 import org.nmrfx.processor.gui.annotations.AnnoText;
+import org.nmrfx.processor.gui.project.GUIProject;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
-import static org.nmrfx.processor.gui.spectra.DatasetAttributes.AXMODE.PPM;
 import org.nmrfx.processor.gui.spectra.PeakDisplayParameters;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
 import org.nmrfx.processor.gui.utils.ToolBarUtils;
 import org.nmrfx.processor.project.Project;
 import org.nmrfx.structure.chemistry.Molecule;
-import org.nmrfx.structure.seqassign.FragmentScoring;
+import org.nmrfx.structure.seqassign.*;
 import org.nmrfx.structure.seqassign.FragmentScoring.AAScore;
-import org.nmrfx.structure.seqassign.ResidueSeqScore;
 import org.nmrfx.structure.seqassign.RunAbout.TypeInfo;
-import org.nmrfx.structure.seqassign.SeqFragment;
 import org.nmrfx.structure.seqassign.SpinSystem.AtomPresent;
+import org.nmrfx.structure.seqassign.SpinSystem.PeakMatch;
 import org.nmrfx.utils.GUIUtils;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.*;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
+
+import static org.nmrfx.processor.gui.spectra.DatasetAttributes.AXMODE.PPM;
 
 /*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
+
 /**
- *
  * @author Bruce Johnson
  */
 public class RunAboutGUI implements PeakListener {
@@ -144,11 +122,11 @@ public class RunAboutGUI implements PeakListener {
     public static RunAboutGUI create() {
         FXMLController controller = FXMLController.create();
         controller.getStage();
-
-        VBox vBox = new VBox();
+        TabPane tabPane = new TabPane();
+        tabPane.setSide(Side.LEFT);
         RunAboutGUI runAbout = new RunAboutGUI(controller);
         runAbout.controller = controller;
-        runAbout.initialize(vBox);
+        runAbout.initialize(tabPane);
         return runAbout;
     }
 
@@ -231,11 +209,57 @@ public class RunAboutGUI implements PeakListener {
 
     }
 
-    RunAboutGUI initialize(VBox vBox) {
+    RunAboutGUI initialize(TabPane tabPane) {
+        Tab helmTab = new Tab("Helm");
+        helmTab.setClosable(false);
+        tabPane.getTabs().add(helmTab);
+        VBox vBox = new VBox();
+        helmTab.setContent(vBox);
+        initHelm(vBox);
+
+        Tab prefTab = new Tab("Prefs");
+        prefTab.setClosable(false);
+        tabPane.getTabs().add(prefTab);
+        HBox hBox = new HBox();
+        prefTab.setContent(hBox);
+        initPreferences(hBox);
+
+        controller.getBottomBox().getChildren().add(tabPane);
+        return this;
+    }
+
+    void initPreferences(HBox hBox) {
+        GUIProject.getActive().getPeakLists();
+        ObservableList<PeakList> peakLists = FXCollections.observableArrayList(PeakList.peakLists().stream().collect(Collectors.toList()));
+        VBox listsBox = new VBox();
+        VBox.setVgrow(listsBox,Priority.ALWAYS);
+        CheckBox allBox = new CheckBox("PeakLists");
+        CheckListView peakListCheckView = new CheckListView(peakLists);
+        peakListCheckView.setMinHeight(100);
+        peakListCheckView.setPrefHeight(100);
+        VBox.setVgrow(peakListCheckView,Priority.ALWAYS);
+        listsBox.getChildren().addAll(allBox, peakListCheckView);
+        hBox.getChildren().add(listsBox);
+        allBox.setOnAction(e -> {
+            boolean allOn = allBox.isSelected();
+            for (var item : peakListCheckView.getItems()) {
+                if (!allOn) {
+                    peakListCheckView.getCheckModel().clearCheck(item);
+                } else {
+                    peakListCheckView.getCheckModel().check(item);
+                }
+            }
+        });
+        peakListCheckView.getCheckModel().getCheckedItems().addListener((ListChangeListener) e -> {
+            allBox.setSelected(peakListCheckView.getCheckModel().getCheckedItems().size() == peakListCheckView.getItems().size());
+        });
+    }
+
+    void initHelm(VBox vBox) {
         this.vBox = vBox;
+
         ToolBar navBar = new ToolBar();
         vBox.getChildren().add(navBar);
-        controller.getBottomBox().getChildren().add(vBox);
         spinStatus = new SpinStatus();
         vBox.getChildren().add(spinStatus.build());
 
@@ -256,9 +280,7 @@ public class RunAboutGUI implements PeakListener {
         vBox.getChildren().add(clusterStatus.build());
         vBox.getChildren().add(clusterPane);
         vBox.getChildren().add(seqPane);
-
         initPeakNavigator(navBar);
-        return this;
     }
 
     void initPeakNavigator(ToolBar toolBar) {
@@ -677,8 +699,7 @@ public class RunAboutGUI implements PeakListener {
                 Label nLabel = new Label(" N:");
                 hBox.getChildren().addAll(nLabel, nMatchFields[i]);
                 Label recipLabel = new Label(" RAV:");
-                hBox.getChildren().addAll(recipLabel, recipLabels[i],
-                        availLabels[i], viableLabels[i]);
+                hBox.getChildren().addAll(recipLabel, recipLabels[i], availLabels[i], viableLabels[i]);
                 hBox.getChildren().add(selectedButtons[i]);
 
                 Pane pane2 = new Pane();
@@ -700,8 +721,7 @@ public class RunAboutGUI implements PeakListener {
                     boolean ok = false;
                     if (spinSys != null) {
                         List<SpinSystemMatch> matches = i == 0 ? spinSys.getMatchToPrevious() : spinSys.getMatchToNext();
-                        SpinnerValueFactory.IntegerSpinnerValueFactory factory
-                                = (SpinnerValueFactory.IntegerSpinnerValueFactory) spinners[i].getValueFactory();
+                        SpinnerValueFactory.IntegerSpinnerValueFactory factory = (SpinnerValueFactory.IntegerSpinnerValueFactory) spinners[i].getValueFactory();
                         factory.setMax(matches.size() - 1);
 
                     }
@@ -1364,8 +1384,7 @@ public class RunAboutGUI implements PeakListener {
                 } else {
                     Platform.runLater(() -> {
                         peakNavigable.refreshPeakView();
-                    }
-                    );
+                    });
                 }
             }
         }
@@ -1499,7 +1518,7 @@ def getType(types, row, dDir):
                     System.out.println(typeName);
                     if (typeName.isPresent()) {
                         chartTypes.put(iChart, typeName.get());
-                        Optional<DatasetBase> datasetOpt =  runAbout.getDataset(typeName.get());
+                        Optional<DatasetBase> datasetOpt = runAbout.getDataset(typeName.get());
                         System.out.println(datasetOpt);
                         if (datasetOpt.isPresent()) {
                             Dataset dataset = (Dataset) datasetOpt.get();
@@ -1663,8 +1682,7 @@ def getType(types, row, dDir):
                         if (!typePresent.isIntraResidue()) {
                             text = text.toLowerCase();
                         }
-                        AnnoText annoText = new AnnoText(x, -8, x + delta, -8,
-                                CanvasAnnotation.POSTYPE.PIXEL, CanvasAnnotation.POSTYPE.PIXEL, text);
+                        AnnoText annoText = new AnnoText(x, -8, x + delta, -8, CanvasAnnotation.POSTYPE.PIXEL, CanvasAnnotation.POSTYPE.PIXEL, text);
                         annoText.setFont(font);
                         chart.addAnnotation(annoText);
                         Color presentColor = typePresent.isPresent() ? Color.LIGHTGREEN : Color.RED;
@@ -1674,8 +1692,7 @@ def getType(types, row, dDir):
                         chart.addAnnotation(annoLine2);
                         x += delta;
                     }
-                    AnnoText annoText = new AnnoText(x, -8, x + textWidth, -8,
-                            CanvasAnnotation.POSTYPE.PIXEL, CanvasAnnotation.POSTYPE.PIXEL, String.valueOf(nPeaks - nExpected));
+                    AnnoText annoText = new AnnoText(x, -8, x + textWidth, -8, CanvasAnnotation.POSTYPE.PIXEL, CanvasAnnotation.POSTYPE.PIXEL, String.valueOf(nPeaks - nExpected));
                     annoText.setFont(font);
                     chart.addAnnotation(annoText);
 

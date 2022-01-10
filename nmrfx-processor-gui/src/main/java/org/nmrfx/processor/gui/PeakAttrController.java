@@ -239,7 +239,7 @@ public class PeakAttrController implements Initializable, PeakNavigable, PeakMen
         }
         try {
             PeakListTypes peakListTypes = PeakPatternReader.loadYaml();
-            for (PeakListType peakListType : peakListTypes.getPeakTypes()) {
+            for (PeakListType peakListType : peakListTypes.getTypes()) {
                 MenuItem menuItem = new MenuItem(peakListType.getName());
                 peakListTypeMenu.getItems().add(menuItem);
                 menuItem.setOnAction(e -> setPeakListType(peakListType));
