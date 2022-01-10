@@ -27,6 +27,14 @@ public class PeakListType {
         this.name = name;
     }
 
+    public static void setPeakList(PeakList peakList, String name) {
+        for (int i = 0; i < peakList.getNDim(); i++) {
+            var sDim = peakList.getSpectralDim(i);
+            sDim.setRelation("");
+            sDim.setPattern("");
+        }
+        peakList.setType(name);
+    }
     public void setPeakList(PeakList peakList) throws IllegalArgumentException {
         if (getDims().size() != peakList.getNDim()) {
             throw new IllegalArgumentException(("Peak list type has wrong number of dimensions"));
@@ -64,6 +72,7 @@ public class PeakListType {
                 }
             }
         }
+        peakList.setType(name);
     }
     @Override
     public String toString() {

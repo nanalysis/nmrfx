@@ -89,7 +89,7 @@
                                     <children>
                                         <Label text="List Name" GridPane.columnIndex="0" />
                                         <TextField fx:id="peakListNameField" GridPane.columnIndex="1" />
-                                        <MenuButton fx:id="peakListTypeMenu" text="Set Type" GridPane.columnIndex="2" />
+                                        <ChoiceBox fx:id="peakListTypeChoice"  GridPane.columnIndex="2" />
 
                                         <Label text="Dataset Name" GridPane.columnIndex="0" GridPane.rowIndex="1" />
                                         <ComboBox fx:id="datasetNameField" GridPane.columnIndex="1" GridPane.rowIndex="1" />

@@ -99,11 +99,15 @@ public class PeakNavigator implements PeakListener {
     }
 
     public PeakNavigator initialize(ToolBar toolBar) {
-        initPeakNavigator(toolBar, null);
+        initPeakNavigator(toolBar, null, null);
+        return this;
+    }
+    public PeakNavigator initialize(ToolBar toolBar, MenuButton peakListMenuButton) {
+        initPeakNavigator(toolBar, null, peakListMenuButton);
         return this;
     }
 
-    void initPeakNavigator(ToolBar toolBar, PeakNavigator parentNavigator) {
+    void initPeakNavigator(ToolBar toolBar, PeakNavigator parentNavigator, MenuButton peakListMenuButton) {
         this.navigatorToolBar = toolBar;
         peakIdField = new TextField();
         peakIdField.setMinWidth(75);
@@ -142,8 +146,12 @@ public class PeakNavigator implements PeakListener {
             navigatorToolBar.getItems().add(closeButton);
         }
         if (parentNavigator == null) {
-            peakListMenuButton = new MenuButton("List");
-            navigatorToolBar.getItems().add(peakListMenuButton);
+            if (peakListMenuButton == null) {
+                this.peakListMenuButton = new MenuButton("List");
+                navigatorToolBar.getItems().add(peakListMenuButton);
+            } else {
+                this.peakListMenuButton = peakListMenuButton;
+            }
             updatePeakListMenu();
         } else {
             parentNavigator.peakIdField.textProperty().bindBidirectional(peakIdField.textProperty());

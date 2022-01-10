@@ -38,13 +38,18 @@ import org.nmrfx.utils.GUIUtils;
 public class PeakMenuBar {
 
     final PeakMenuTarget menuTarget;
+    MenuButton peakListMenu = null;
     static Map<String, Consumer<PeakList>> extras = new LinkedHashMap<>();
 
     public PeakMenuBar(PeakMenuTarget menuTarget) {
         this.menuTarget = menuTarget;
     }
 
-    public void initMenuBar(ToolBar menuBar) {
+    public void initMenuBar(ToolBar menuBar, boolean initPeakListMenu) {
+        if (initPeakListMenu) {
+            peakListMenu = new MenuButton("List");
+            menuBar.getItems().add(peakListMenu);
+        }
         MenuButton fileMenu = new MenuButton("File");
 
         MenuItem saveXPK2 = new MenuItem("Save XPK2...");
@@ -151,6 +156,10 @@ public class PeakMenuBar {
             menuItem.setOnAction(e -> consumer.accept(getPeakList()));
             editMenu.getItems().add(menuItem);
         }
+    }
+
+    public MenuButton getPeakListMenu() {
+        return peakListMenu;
     }
 
     void refreshPeakView() {

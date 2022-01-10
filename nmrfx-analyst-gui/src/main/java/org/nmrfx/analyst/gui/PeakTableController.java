@@ -133,7 +133,7 @@ public class PeakTableController implements PeakMenuTarget, PeakListener, Initia
         toolBar.getItems().add(peakListMenuButton);
         updatePeakListMenu();
         peakMenuBar = new PeakMenuBar(this);
-        peakMenuBar.initMenuBar(toolBar);
+        peakMenuBar.initMenuBar(toolBar, false);
         MapChangeListener<String, PeakList> mapChangeListener = (MapChangeListener.Change<? extends String, ? extends PeakList> change) -> {
             updatePeakListMenu();
         };

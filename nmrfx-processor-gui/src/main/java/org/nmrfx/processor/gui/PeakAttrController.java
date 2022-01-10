@@ -73,7 +73,7 @@ import java.util.stream.Collectors;
 public class PeakAttrController implements Initializable, PeakNavigable, PeakMenuTarget {
 
     static final DecimalFormat formatter = new DecimalFormat();
-
+    static PeakListTypes peakListTypes = null;
     private Stage stage;
     @FXML
     private TabPane tabPane;
@@ -96,7 +96,7 @@ public class PeakAttrController implements Initializable, PeakNavigable, PeakMen
     @FXML
     private TextField peakListNameField;
     @FXML
-    private MenuButton peakListTypeMenu;
+    private ChoiceBox<String> peakListTypeChoice;
     @FXML
     private ComboBox datasetNameField;
     @FXML
@@ -192,8 +192,8 @@ public class PeakAttrController implements Initializable, PeakNavigable, PeakMen
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
-        initMenuBar();
-        peakNavigator = PeakNavigator.create(this).initialize(peakNavigatorToolBar);
+        MenuButton peakListMenuButton = initMenuBar();
+        peakNavigator = PeakNavigator.create(this).initialize(peakNavigatorToolBar, peakListMenuButton);
         initTable();
         initReferenceTable();
         setFieldActions();
@@ -238,14 +238,17 @@ public class PeakAttrController implements Initializable, PeakNavigable, PeakMen
             }
         }
         try {
-            PeakListTypes peakListTypes = PeakPatternReader.loadYaml();
-            for (PeakListType peakListType : peakListTypes.getTypes()) {
-                MenuItem menuItem = new MenuItem(peakListType.getName());
-                peakListTypeMenu.getItems().add(menuItem);
-                menuItem.setOnAction(e -> setPeakListType(peakListType));
+            if (peakListTypes == null) {
+                peakListTypes = PeakPatternReader.loadYaml();
             }
         } catch (IOException e) {
         }
+        if (peakListTypes != null) {
+            for (PeakListType peakListType : peakListTypes.getTypes()) {
+                peakListTypeChoice.getItems().add(peakListType.getName());
+            }
+        }
+        peakListTypeChoice.setOnAction(this::setPeakListType);
 
         generateButton.setDisable(true);
 
@@ -439,6 +442,7 @@ public class PeakAttrController implements Initializable, PeakNavigable, PeakMen
             peakListNameField.setText(peakList.getName());
             datasetNameField.setValue(peakList.getDatasetName());
             conditionField.setValue(peakList.getSampleConditionLabel());
+            peakListTypeChoice.setValue(peakList.getExperimentType());
             stage.setTitle(peakList.getName());
         } else {
             referenceTableView.getItems().clear();
@@ -478,9 +482,10 @@ public class PeakAttrController implements Initializable, PeakNavigable, PeakMen
         peakNavigator.setPeakList(peakList);
     }
 
-    void initMenuBar() {
+    MenuButton initMenuBar() {
         PeakMenuBar peakMenuBar = new PeakMenuBar(this);
-        peakMenuBar.initMenuBar(menuBar);
+        peakMenuBar.initMenuBar(menuBar, true);
+        return peakMenuBar.getPeakListMenu();
     }
 
     static class FloatStringConverter2 extends FloatStringConverter {
@@ -843,13 +848,22 @@ public class PeakAttrController implements Initializable, PeakNavigable, PeakMen
         }
     }
 
-    void setPeakListType(PeakListType peakListType) {
-        try {
-            peakListType.setPeakList(peakList);
-            referenceTableView.refresh();
-        } catch (IllegalArgumentException iaE) {
-            GUIUtils.warn("Set Peak List Type ", iaE.getMessage());
-        }
+    void setPeakListType(ActionEvent actionEvent) {
+        String peakListTypeName = peakListTypeChoice.getValue();
+        peakListTypes.getTypes().stream().filter(pType -> pType.getName().equals(peakListTypeName)).findFirst().ifPresentOrElse(peakListType -> {
+            try {
+                peakListType.setPeakList(peakList);
+            } catch (IllegalArgumentException iaE) {
+                GUIUtils.warn("Set Peak List Type ", iaE.getMessage());
+            }
+
+        },this::setPeakListName);
+        referenceTableView.refresh();
+    }
+
+    void setPeakListName() {
+        String peakListTypeName = peakListTypeChoice.getValue();
+        PeakListType.setPeakList(peakList, peakListTypeName);
     }
 
     void selectSimDataset() {
