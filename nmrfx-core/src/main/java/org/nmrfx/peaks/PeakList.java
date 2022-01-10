@@ -41,6 +41,7 @@ public class PeakList {
     protected String details = "";
     protected String sampleLabel = "";
     protected String sampleConditionLabel = "";
+    protected String experimentType = "";
     protected List<Peak> peaks;
     protected final Map<Integer, Peak> indexMap = new HashMap<>();
     boolean slideable = false;
@@ -693,6 +694,10 @@ public class PeakList {
         return specDim;
     }
 
+    public List<SpectralDim> getSpectralDims() {
+        return Arrays.asList(spectralDims);
+    }
+
     /**
      *
      * @return
@@ -709,7 +714,7 @@ public class PeakList {
         this.sampleConditionLabel = sampleConditionLabel;
     }
 
-    public void setType(PeakListType peakListType) {
+    public void setExperimentType(PeakListType peakListType) {
 
     }
     /**
@@ -726,6 +731,21 @@ public class PeakList {
      */
     public void setDetails(String details) {
         this.details = details;
+    }
+
+    /**
+     *
+     * @return
+     */
+    public String getExperimentType() {
+        return experimentType;
+    }
+    /**
+     *
+     * @param type
+     */
+    public void setType(String type) {
+        this.experimentType = type;
     }
 
     /**
@@ -1943,6 +1963,10 @@ public class PeakList {
         } else {
             chan.write(".\n");
         }
+        chan.write("_Spectral_peak_list.Experiment_type              ");
+        String expType = getExperimentType().isBlank() ? "." : getExperimentType();
+        chan.write(expType + "\n");
+
         chan.write("_Spectral_peak_list.Slidable                      ");
         String slidable = isSlideable() ? "yes" : "no";
         chan.write(slidable + "\n");

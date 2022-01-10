@@ -713,6 +713,7 @@ public class NMRStarReader {
         String datasetName = saveframe.getLabelValue("_Spectral_peak_list", "Experiment_name");
         String nDimString = saveframe.getValue("_Spectral_peak_list", "Number_of_spectral_dimensions");
         String dataFormat = saveframe.getOptionalValue("_Spectral_peak_list", "Text_data_format");
+        String expType = saveframe.getOptionalValue("_Spectral_peak_list", "Experiment_type");
         String details = saveframe.getOptionalValue("_Spectral_peak_list", "Details");
         String slidable = saveframe.getOptionalValue("_Spectral_peak_list", "Slidable");
         String scaleStr = saveframe.getOptionalValue("_Spectral_peak_list", "Scale");
@@ -741,6 +742,7 @@ public class NMRStarReader {
         peakList.setSampleConditionLabel(sampleConditionLabel);
         peakList.setDatasetName(datasetName);
         peakList.setDetails(details);
+        peakList.setType(expType);
         peakList.setSlideable(slidable.equals("yes"));
         if (scaleStr.length() > 0) {
             peakList.setScale(NvUtil.toDouble(scaleStr));
