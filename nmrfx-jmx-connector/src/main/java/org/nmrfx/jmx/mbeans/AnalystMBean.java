@@ -33,4 +33,10 @@ public interface AnalystMBean {
      * Show current stage on front of other windows.
      */
     void setWindowOnFront();
+
+    /**
+     * Generate an automatic processing script.
+     * @param isPseudo2D whether to generate a script for a pseudo 2D experiment (ie, do FT only in the direct dimension)
+     */
+    void generateAutoScript(boolean isPseudo2D);
 }
