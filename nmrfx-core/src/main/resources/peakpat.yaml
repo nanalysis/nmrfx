@@ -37,7 +37,7 @@ types:
         pattern: i.H
         bonds: N
       - name: C
-        pattern: i.1.C
+        pattern: i-1.C
         bonds:
       - name: N
         pattern: i.N
@@ -93,6 +93,17 @@ types:
         bonds: N
       - name: CACB
         pattern: "i-1.CA-,CB"
+        bonds:
+      - name: N
+        pattern: i.N
+        bonds:
+  - name: HNCOcaCB
+    dims:
+      - name: H
+        pattern: i.H
+        bonds: N
+      - name: CACB
+        pattern: "i-1.CB"
         bonds:
       - name: N
         pattern: i.N

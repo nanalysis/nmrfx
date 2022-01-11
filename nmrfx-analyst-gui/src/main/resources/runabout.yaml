@@ -1,0 +1,65 @@
+arrangements :
+   HC:
+     rows: [CB,CA,C]
+     cols:
+        - dir : i-1
+          dims : [H,C,N]
+          widths : &Pfp [peak,full,plane]
+        - dir : i
+          dims : [H,C,N]
+          widths : *Pfp
+   HC_hij:
+     rows: [CB,CA,C]
+     cols:
+        - dir : h-1
+          dims : [H,C,N]
+          widths : *Pfp
+        - dir : h
+          dims : [H,C,N]
+          widths : *Pfp
+        - dir : i-1
+          dims : [H,C,N]
+          widths : *Pfp
+        - dir : i
+          dims : [H,C,N]
+          widths : *Pfp
+        - dir : j-1
+          dims : [H,C,N]
+          widths : *Pfp
+        - dir : j
+          dims : [H,C,N]
+          widths : *Pfp
+   HC_NC:
+     rows: [CB,CA,C]
+     cols:
+        - dir : i-1
+          dims : [N,C,H]
+          widths : *Pfp
+        - dir : i-1
+          dims : [H,C,N]
+          widths : *Pfp
+        - dir : i
+          dims : [H,C,N]
+          widths : *Pfp
+        - dir : i
+          dims : [N,C,H]
+          widths : *Pfp
+   HN:
+     rows: [CB,CA,C]
+     cols:
+        - dir : i-1
+          dims : [H,N]
+          widths : *Pfp
+        - dir : i
+          dims : [H,N]
+          widths : *Pfp
+
+   HNfull:
+     rows: [CB,CA,C]
+     cols:
+        - dir : i-1
+          dims : [H,N]
+          widths : [full,full]
+        - dir : i
+          dims : [H,N]
+          widths : [full,full]

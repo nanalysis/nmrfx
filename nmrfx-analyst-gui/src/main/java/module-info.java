@@ -36,5 +36,6 @@ module org.nmrfx.analyst.gui {
     requires jython.slim;
     requires nsmenufx;
     requires fontawesomefx;
+    requires org.yaml.snakeyaml;
 
 }

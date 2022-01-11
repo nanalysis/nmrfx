@@ -720,6 +720,9 @@ public class SpinSystem {
             String peakListName = entry.getKey();
             String typeName = spinSystems.runAbout.peakListTypes.get(peakListName);
             TypeInfo typeInfo = spinSystems.runAbout.typeInfoMap.get(typeName);
+            System.out.println(spinSystems.runAbout.peakListTypes);
+            System.out.println(spinSystems.runAbout.typeInfoMap);
+            System.out.println("get norm " + peakListName + " " + typeName);
             int nExpected = typeInfo.nTotal;
             List<PeakMatch> matches = entry.getValue();
             matches.sort((a, b)

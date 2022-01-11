@@ -20,12 +20,10 @@ import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextAlignment;
-import javafx.stage.FileChooser;
 import org.controlsfx.control.CheckListView;
 import org.nmrfx.chemistry.Polymer;
 import org.nmrfx.chemistry.Residue;
 import org.nmrfx.chemistry.io.AtomParser;
-import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.peaks.*;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.CanvasAnnotation;
@@ -48,7 +46,6 @@ import org.nmrfx.structure.seqassign.SpinSystem.AtomPresent;
 import org.nmrfx.structure.seqassign.SpinSystem.PeakMatch;
 import org.nmrfx.utils.GUIUtils;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.*;
 import java.util.function.Consumer;
@@ -56,11 +53,7 @@ import java.util.stream.Collectors;
 
 import static org.nmrfx.processor.gui.spectra.DatasetAttributes.AXMODE.PPM;
 
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
+
 
 /**
  * @author Bruce Johnson
@@ -72,7 +65,7 @@ public class RunAboutGUI implements PeakListener {
     ToolBar navigatorToolBar;
     TextField peakIdField;
     MenuButton peakListMenuButton;
-    Menu arrangeMenu;
+    MenuButton arrangeMenuButton;
     ToggleButton deleteButton;
     PeakNavigable peakNavigable;
     PeakList refPeakList;
@@ -102,7 +95,8 @@ public class RunAboutGUI implements PeakListener {
     Map<String, ResidueLabel> aaLabelMap = new HashMap<>();
     Map<Integer, String> chartTypes = new HashMap<>();
     Map<String, ResidueLabel> clusterLabelMap = new HashMap<>();
-
+    RunAboutArrangements runAboutArrangements;
+    CheckListView peakListCheckView;
     boolean useSpinSystem = false;
     Double[][] widths;
     int[] resOffsets = null;
@@ -174,7 +168,6 @@ public class RunAboutGUI implements PeakListener {
             setWidth(vBox.getWidth());
             int rows = getNRows();
             setHeight(rows * resWidth);
-            System.out.println("set seq pane " + rows + " " + (rows * resWidth) + " " + vBox.getWidth());
             super.layoutChildren();
             updateSeqCanvas();
         }
@@ -202,7 +195,6 @@ public class RunAboutGUI implements PeakListener {
             setWidth(vBox.getWidth());
             int rows = getNRows();
             setHeight(rows * resWidth);
-            System.out.println("set cluster pane " + rows + " " + (rows * resWidth) + vBox.getWidth());
             super.layoutChildren();
             updateClusterCanvas();
         }
@@ -225,6 +217,14 @@ public class RunAboutGUI implements PeakListener {
         initPreferences(hBox);
 
         controller.getBottomBox().getChildren().add(tabPane);
+
+        try {
+            runAboutArrangements = RunAboutYamlReader.loadYaml();
+            setupArrangements();
+        } catch (IOException e) {
+            GUIUtils.warn("RunAbout:load yaml", e.getMessage());
+        }
+
         return this;
     }
 
@@ -234,9 +234,12 @@ public class RunAboutGUI implements PeakListener {
         VBox listsBox = new VBox();
         VBox.setVgrow(listsBox,Priority.ALWAYS);
         CheckBox allBox = new CheckBox("PeakLists");
-        CheckListView peakListCheckView = new CheckListView(peakLists);
+        peakListCheckView = new CheckListView(peakLists);
         peakListCheckView.setMinHeight(100);
         peakListCheckView.setPrefHeight(100);
+        peakListCheckView.setCellFactory(e -> {
+
+        });
         VBox.setVgrow(peakListCheckView,Priority.ALWAYS);
         listsBox.getChildren().addAll(allBox, peakListCheckView);
         hBox.getChildren().add(listsBox);
@@ -272,6 +275,7 @@ public class RunAboutGUI implements PeakListener {
         clusterPane = new ClusterPane();
         clusterGroup = new Group();
         clusterPane.getChildren().add(clusterGroup);
+        clusterPane.setMinHeight(60.0);
         clusterPane.setMinHeight(60.0);
         clusterPane.setMinWidth(500.0);
 
@@ -325,20 +329,19 @@ public class RunAboutGUI implements PeakListener {
         navigatorToolBar.getItems().add(peakListMenuButton);
         updatePeakListMenu();
 
+        arrangeMenuButton = new MenuButton("Arrangements");
+        navigatorToolBar.getItems().add(arrangeMenuButton);
+
         MenuButton actionMenuButton = new MenuButton("Actions");
         navigatorToolBar.getItems().add(actionMenuButton);
         ToolBarUtils.addFiller(navigatorToolBar, 40, 300);
 
-        actionMenuButton.getStyleClass().add("toolButton");
-
-        MenuItem loadItem = new MenuItem("Load");
-        loadItem.setOnAction(e -> {
-            loadYaml();
+        MenuItem setupItem = new MenuItem("Setup");
+        setupItem.setOnAction(e -> {
+            setupRunAbout();
         });
-        actionMenuButton.getItems().add(loadItem);
 
-        arrangeMenu = new Menu("Arrangement");
-        actionMenuButton.getItems().add(arrangeMenu);
+        actionMenuButton.getItems().add(setupItem);
 
         MenuItem filterItem = new MenuItem("Filter");
         filterItem.setOnAction(e -> {
@@ -1180,7 +1183,6 @@ public class RunAboutGUI implements PeakListener {
             currentSpinSystem = 0;
         }
         gotoSpinSystems();
-        System.out.println("next " + currentSpinSystem);
     }
 
     public void previousSpinSystem() {
@@ -1390,44 +1392,14 @@ public class RunAboutGUI implements PeakListener {
         }
     }
 
-    void loadYaml() {
-        try {
-            FileChooser fileChooser = new FileChooser();
-            fileChooser.setTitle("RunAbout Yaml file");
-            File file = fileChooser.showOpenDialog(null);
-            if (file != null) {
-                runAbout.loadYaml(file.toString());
-                Map<String, Object> yamlData = runAbout.getYamlData();
-                arrangeMenu.getItems().clear();
-                Map<String, Map<String, List<String>>> arrangments = (Map<String, Map<String, List<String>>>) yamlData.get("arrangements");
-                for (String arrangment : arrangments.keySet()) {
-                    MenuItem item = new MenuItem(arrangment);
-                    arrangeMenu.getItems().add(item);
-                    item.setOnAction(e -> genWin(arrangment));
-                }
-            }
-        } catch (IOException ex) {
-            System.out.println(ex.getMessage());
-        }
-
+    void setupArrangements() {
+        runAboutArrangements.getArrangements().forEach((name, arrangment) -> {
+            MenuItem item = new MenuItem(name);
+            arrangeMenuButton.getItems().add(item);
+            item.setOnAction(e -> genWin(name));
+        });
     }
 
-
-    /*
-    def getDataset(datasets, type):
-    if type in datasets:
-        return datasets[type]
-    else:
-        return None
-
-
-def getType(types, row, dDir):
-    for type in types:
-       if type['row'] == row and type['dir'] == dDir:
-           return type['name']
-    return ""
-
-     */
     List<List<String>> getAtomsFromPatterns(List<String> patElems) {
         List<List<String>> allAtomPats = new ArrayList<>();
         for (int i = 0; i < patElems.size(); i++) {
@@ -1455,38 +1427,48 @@ def getType(types, row, dDir):
         return dName;
     }
 
-    Double[] getDimWidth(PeakList peakList, Dataset dataset, List<String> dimNames, int[] iDims) {
+    Double[] getDimWidth(PeakList peakList, Dataset dataset, List<String> dimNames, int[] iDims, List<String> widthTypes) {
         Double[] widths = new Double[iDims.length];
-        int j = 0;
-        for (String dim : dimNames) {
-            Double width;
-            int sepPos = dim.indexOf("_");
-            int iDim = iDims[j];
+        for (int i=0;i<dimNames.size();i++) {
+            Double width = null;
+            String dimName = dimNames.get(i);
+            String widthType = widthTypes.get(i);
+            int iDim = iDims[i];
             String dataDimName = dataset.getLabel(iDim);
-            if (sepPos != -1) {
-                width = Double.parseDouble(dim.substring(sepPos + 1));
-                if (peakList != null) {
-                    String dimName = dim.substring(0, sepPos);
-                    SpectralDim sDim = peakList.getSpectralDim(dataDimName);
-                    if (sDim != null) {
-                        var widthStats = peakList.widthStatsPPM(sDim.getDataDim());
-                        width = 10.0 * widthStats.getAverage();
-                    }
+            if (widthType.equals(("peak"))) {
+                SpectralDim sDim = peakList.getSpectralDim(dataDimName);
+                if (sDim != null) {
+                    var widthStats = peakList.widthStatsPPM(sDim.getDataDim());
+                    width = 10.0 * widthStats.getAverage();
                 }
-            } else {
+            } else if (widthType.equals(("full"))) {
                 width = null;
+            } else {
+                width = 0.0;
             }
-            widths[j] = width;
-            j++;
+            widths[i] = width;
+
         }
         return widths;
     }
 
+    void setupRunAbout() {
+        if (!runAbout.isActive() ||
+                GUIUtils.affirm("Peak lists already setup, Setup again?")) {
+            List<PeakList> peakLists = peakListCheckView.getCheckModel().getCheckedItems();
+            if (peakLists.isEmpty()) {
+                GUIUtils.warn("RunAbout", "No peak lists selected");
+            } else {
+                runAbout.setPeakLists(peakListCheckView.getCheckModel().getCheckedItems());
+            }
+        }
+    }
+
     void genWin(String arrangeName) {
         if (runAbout.isActive()) {
-            Map<String, List<String>> rowCols = runAbout.getArrangements().get(arrangeName);
-            List<String> rows = rowCols.get("rows");
-            List<String> cols = rowCols.get("cols");
+            RunAboutArrangement arrangement = runAboutArrangements.getArrangements().get(arrangeName);
+            List<String> rows = arrangement.getRows();
+            List<RunAboutDim> cols = arrangement.getCols();
             int nCharts = rows.size() * cols.size();
             controller.setNCharts(nCharts);
             controller.arrange(rows.size());
@@ -1497,51 +1479,46 @@ def getType(types, row, dDir):
             intraResidue = new boolean[cols.size()];
             int iCol = 0;
 
-            for (String col : cols) {
-                String[] colElems = col.split("\\.");
-                char resChar = colElems[0].charAt(0);
+            for (RunAboutDim col : cols) {
+                String dir = col.getDir();
+                char resChar = dir.charAt(0);
                 int del = resChar - 'i';
-                intraResidue[iCol] = !colElems[0].endsWith("-1");
+                intraResidue[iCol] = !dir.endsWith("-1");
                 resOffsets[iCol++] = del;
                 minOffset = Math.min(del, minOffset);
             }
             int iChart = 0;
             winPatterns.clear();
             for (String row : rows) {
-                for (String col : cols) {
+                for (RunAboutDim col : cols) {
                     PolyChart chart = charts.get(iChart);
                     chart.clearDataAndPeaks();
-                    String[] colElems = col.split("\\.");
-                    Optional<String> typeName = runAbout.getTypeName(row, colElems[0]);
-                    winPatterns.add(runAbout.getPatterns(row, colElems[0]));
-                    List<String> dimNames = runAbout.getDimLabel(colElems[1]);
-                    System.out.println(typeName);
-                    if (typeName.isPresent()) {
-                        chartTypes.put(iChart, typeName.get());
-                        Optional<DatasetBase> datasetOpt = runAbout.getDataset(typeName.get());
-                        System.out.println(datasetOpt);
-                        if (datasetOpt.isPresent()) {
-                            Dataset dataset = (Dataset) datasetOpt.get();
-                            dataset.setTitle(typeName.get());
-                            PeakList peakList = runAbout.getPeakList(typeName.get());
-                            String dName = dataset.getName();
-                            List<String> datasets = Collections.singletonList(dName);
-                            chart.setActiveChart();
-                            chart.updateDatasets(datasets);
-                            DatasetAttributes dataAttr = chart.getDatasetAttributes().get(0);
+                    String dir = col.getDir();
+                    List<String> widthTypes = col.getWidths();
 
-                            int[] iDims = runAbout.getIDims(dataset, typeName.get(), dimNames);
-                            widths[iChart] = getDimWidth(peakList, dataset, dimNames, iDims);
-                            for (int id = 0; id < widths[iChart].length; id++) {
-                                System.out.println(id + " " + widths[iChart][id]);
-                            }
-                            dataAttr.setDims(iDims);
-                            if (peakList != null) {
-                                List<String> peakLists = Collections.singletonList(peakList.getName());
-                                chart.updatePeakLists(peakLists);
-                            }
-                        }
-                    }
+                    Optional<PeakList> peakListOptional = runAbout.getPeakListForCell(row, dir);
+                    final int jChart = iChart;
+                    peakListOptional.ifPresent(peakList -> {
+
+                        String datasetName = peakList.getDatasetName();
+                        Dataset dataset = Dataset.getDataset(datasetName);
+                        String typeName = peakList.getExperimentType();
+                        chartTypes.put(jChart, typeName);
+                        dataset.setTitle(typeName);
+                        String dName = dataset.getName();
+                        List<String> datasets = Collections.singletonList(dName);
+                        chart.setActiveChart();
+                        chart.updateDatasets(datasets);
+                        List<String> dimNames = col.getDims();
+                        DatasetAttributes dataAttr = chart.getDatasetAttributes().get(0);
+                        int[] iDims = runAbout.getIDims(dataset, typeName, dimNames);
+                        var sDims = runAbout.getPeakListDims(peakList, dataset, iDims);
+                        widths[jChart] = getDimWidth(peakList, dataset, dimNames, iDims, widthTypes);
+                        dataAttr.setDims(iDims);
+                        List<String> peakLists = Collections.singletonList(peakList.getName());
+                        chart.updatePeakLists(peakLists);
+                        winPatterns.add(sDims.stream().map(sDim -> sDim.getPattern()).collect(Collectors.toList()));
+                    });
                     iChart++;
                 }
             }
@@ -1664,7 +1641,6 @@ def getType(types, row, dDir):
                         double ppm = spinSystem.getValue(isIntra ? 1 : 0, atomIndex);
                         AnnoLine annoLine = new AnnoLine(f1, ppm, f2, ppm, CanvasAnnotation.POSTYPE.FRACTION, CanvasAnnotation.POSTYPE.WORLD);
                         annoLine.setStroke(color);
-//                        System.out.println("draw at " + iDim + " " + aName + " " + +ppm);
                         chart.addAnnotation(annoLine);
                     }
                 }
@@ -1711,7 +1687,6 @@ def getType(types, row, dDir):
         Double[] ppms = new Double[cDim];
         for (int i = 0; i < aDim; i++) {
             PeakDim peakDim = peak.getPeakDim(dataAttr.getLabel(i));
-//            System.out.println(i + " " + iChart + " " + widths[iChart] + " " + peak.getName() + " " + dataAttr.getLabel(i) + " " + peakDim.getName());
             if ((widths[iChart] != null) && (peakDim != null)) {
                 ppms[i] = Double.valueOf(peakDim.getChemShiftValue());
                 if (widths[iChart][i] == null) {
@@ -1734,36 +1709,4 @@ def getType(types, row, dDir):
         }
         chart.refresh();
     }
-
-    /*
-    hPPM = [7.7,8.3]
-    hCPPM = 8.0
-    nPPM = [117.0,123.0]
-    nCPPM = 117.0
-    for row in rows:
-        for col in cols:
-            dDir,label = col.split('.')
-            type = getType(yd['types'], row,dDir)
-            datasetName = getDataset(yd['datasets'],type)
-            dims = yd['dims'][label]
-            iDims = getIDims(datasetName,dims)
-            print iChart,row,col,type,datasetName,dims,iDims
-            nw.active(iChart)
-            nw.datasets(datasetName)
-            nw.setDims(datasetName, iDims)
-            #nw.unsync()
-            #nw.proportional()
-            if label == "HC":
-                nw.lim(x=hPPM,y=nCPPM)
-                nw.full('y')
-            elif label == "NC":
-                nw.lim(x=nPPM,y=hCPPM)
-                nw.full('y')
-            elif label == "HN":
-                nw.full()
-                nw.full('z')
-            nw.draw()
-
-
-     */
 }
