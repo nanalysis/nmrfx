@@ -1406,6 +1406,9 @@ public class RunAboutGUI implements PeakListener {
                 GUIUtils.warn("RunAbout", "No peak lists selected");
             } else {
                 runAbout.setPeakLists(peakListCheckView.getCheckModel().getCheckedItems());
+                for (var peakList:peakLists) {
+                    peakList.registerListener(this);
+                }
             }
         }
     }
@@ -1642,6 +1645,13 @@ public class RunAboutGUI implements PeakListener {
                         pos = dataAttr.getDataset().ppmToDPoint(dDim, ppms[i]);
                     }
                     chart.moveTo(i, pos, widths[iChart][i]);
+                }
+                if (i == 0) {
+                    AnnoLine annoLine = new AnnoLine(ppms[0], 0.0, ppms[0], 1.0, CanvasAnnotation.POSTYPE.WORLD, CanvasAnnotation.POSTYPE.
+                            FRACTION);
+                    annoLine.setStroke(Color.BLUE);
+                    annoLine.setLineWidth(0.0);
+                    chart.addAnnotation(annoLine);
                 }
             } else {
                 chart.full(i);
