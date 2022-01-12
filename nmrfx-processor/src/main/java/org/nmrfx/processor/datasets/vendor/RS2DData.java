@@ -131,7 +131,7 @@ public class RS2DData implements NMRData {
         if (nDim > 1) {
             dataset.setAxisReversed(1, true);
         }
-        dataset.setScale(1.0e6);
+        dataset.setScale(scale);
         dataset.setDataType(0);
         return dataset;
     }
@@ -171,7 +171,7 @@ public class RS2DData implements NMRData {
                     found = true;
                 }
                 bpath.setLength(0);
-                bpath.append(parent.toString());
+                bpath.append(parent);
             }
         }
         return found;
@@ -180,8 +180,8 @@ public class RS2DData implements NMRData {
     private static boolean findFIDFiles(String dirPath) {
         Path headerPath = Paths.get(dirPath, "header.xml");
         Path dataPath = Paths.get(dirPath, DATA_FILE_NAME);
-        System.out.println(headerPath.toString() + " " + headerPath.toFile().exists());
-        System.out.println(dataPath.toString() + " " + dataPath.toFile().exists());
+        System.out.println(headerPath + " " + headerPath.toFile().exists());
+        System.out.println(dataPath + " " + dataPath.toFile().exists());
         return headerPath.toFile().exists() && dataPath.toFile().exists();
     }
 
@@ -745,9 +745,6 @@ public class RS2DData implements NMRData {
         //double delRef = (dvec.getSize() / 2 - 0) * (1.0 / dvec.dwellTime) / dvec.centerFreq / dvec.getSize();
         double delRef = ((1.0 / dvec.dwellTime) / dvec.centerFreq) / 2.0;
         dvec.refValue = getRef(0) + delRef;
-        //System.out.println("zeroref " + dvec.refValue);
-        //dvec.setPh0(getPH0(1));
-        //dvec.setPh1(getPH1(1));
     }
 
     private void copyFloatVecData(byte[] dataBuf, Complex[] cdata) {

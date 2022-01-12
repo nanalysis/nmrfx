@@ -8,6 +8,7 @@ import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 
 public class DatasetCompare {
+
     public static long compare(File refFile, File testFile) throws IOException {
         long refLen = refFile.length();
         long testLen = testFile.length();
