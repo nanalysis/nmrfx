@@ -94,7 +94,7 @@ public class PeakListUpdater implements Updater {
         while (iter.hasNext()) {
             PeakList peakList = (PeakList) iter.next();
             if ((peakList != null) && (peakList.thisListUpdated.get())) {
-                peakList.setUpdatedFlag(false);
+                peakList.thisListUpdated.set(false);
                 // fixme should only do if necessary
                 //peakList.sortMultiplets();
                 peakList.notifyListeners();
