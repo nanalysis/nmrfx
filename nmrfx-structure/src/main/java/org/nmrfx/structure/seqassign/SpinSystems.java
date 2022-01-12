@@ -19,6 +19,8 @@ public class SpinSystems {
 
     RunAbout runAbout;
     List<SpinSystem> systems = new ArrayList<>();
+    Map<PeakList, Integer> peakMap = new HashMap<>();
+    double[][] sums;
 
     public SpinSystems(RunAbout runAbout) {
         this.runAbout = runAbout;
@@ -130,8 +132,31 @@ public class SpinSystems {
         return sums;
     }
 
+    public void addPeak(SpinSystem spinSys, Peak pkB) {
+        Peak rootPeak = spinSys.rootPeak;
+        if (rootPeak != pkB) {
+            PeakList peakListB = pkB.getPeakList();
+            if (rootPeak.getPeakList() != peakListB) {
+                Integer jList = peakMap.get(peakListB);
+                if (jList == null) {
+                    System.out.println("n peakListb " + peakListB);
+                } else {
+                    int[] aMatch = matchDims(rootPeak.getPeakList(), peakListB);
+                    double f = comparePeaks(rootPeak, pkB, aMatch);
+                    if (f >= 0.0) {
+                        double p = f / sums[pkB.getIndex()][jList];
+                        spinSys.addPeak(pkB, p);
+                    }
+                }
+            }
+        }
+    }
+
+
+
+
     public void assembleWithClustering(List<PeakList> peakLists) {
-        double[][] sums = calcNormalization(peakLists);
+        sums = calcNormalization(peakLists);
         PeakList refList = peakLists.get(0);
         PeakList.clusterOrigin = refList;
         boolean[] useDim = new boolean[refList.getNDim()];
@@ -158,7 +183,7 @@ public class SpinSystems {
             nPeakTypes += totalCount;
         }
         final int nExpected = nPeakTypes;
-        Map<PeakList, Integer> peakMap = new HashMap<>();
+        peakMap.clear();
         int j = 0;
         for (PeakList peakList : peakLists) {
             if (peakList != refList) {
