@@ -57,7 +57,6 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
 
     static boolean useCacheFile = false;
 
-    private HashMap paths = null;
     private boolean dirty = false;  // flag set if a vector has been written to dataset, should purge bufferVectors
     LineShapeCatalog simVecs = null;
     Map<String, double[]> buffers = new HashMap<>();
@@ -100,10 +99,6 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
             raFile = new RandomAccessFile(file, "rw");
         } else {
             raFile = new RandomAccessFile(file, "r");
-        }
-        if (raFile == null) {
-            throw new IllegalArgumentException(
-                    "Couldn't open file \"" + fullName + "\"");
         }
 
         title = fileName;
@@ -180,7 +175,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
      */
     public Dataset(VecBase vector) {
 
-        this.vecMat = (Vec) vector;
+        this.vecMat = vector;
         fileName = vector.getName();
         canonicalName = vector.getName();
         dataFile = vector;
@@ -195,8 +190,6 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         extFirst = new int[1];
         extLast = new int[1];
         strides[0] = 1;
-        vsize[0] = 0;
-        vsize_r[0] = 0;
         tdSize[0] = vector.getTDSize();
         fileSize = vector.getSize();
         layout = DatasetLayout.createFullMatrix(vsize);
@@ -372,8 +365,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         NMRData nmrData = NMRDataUtil.getNMRData(fileString);
         System.out.println(nmrData);
         BrukerData brukerData = (BrukerData) nmrData;
-        Dataset dataset = brukerData.toDataset(name);
-        return dataset;
+        return brukerData.toDataset(name);
     }
 
     /**
@@ -412,7 +404,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
      * Change the writable state of the file to the specified value
      *
      * @param writable The new writable state for the file
-     * @throws java.io.IOException
+     * @throws java.io.IOException if datafile write state can't be changed
      */
     public void changeWriteMode(boolean writable) throws IOException {
         if (dataFile != null) {
@@ -568,49 +560,6 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
 
         return dmaxPoint;
     }
-    //    public void applyToRegion(final Interp interp, final int[][] pt, final int[] dim, final int iChunk, final int nChunk, final String script)
-    //            throws TclException {
-    //        ScanRegion scanRegion = new ScanRegion(pt, dim, this);
-    //        int nEntries = scanRegion.buildIndex();
-    //        String vecName = "applyVec" + iChunk;
-    //        int newSize = pt[0][1] - pt[0][0] + 1;
-    //        if (getComplex_r(dim[0])) {
-    //            newSize /= 2;
-    //        }
-    //
-    //        Vec regionVector = new Vec(newSize, false);
-    //        int origSize = pt[0][1];
-    //        int chunkSize = nEntries / nChunk;
-    //        if ((chunkSize * nChunk) < nEntries) {
-    //            chunkSize++;
-    //        }
-    //        int start = iChunk * chunkSize;
-    //        int end = start + chunkSize;
-    //        if (end > nEntries) {
-    //            end = nEntries;
-    //        }
-    //        for (int i = start; i < end; i++) {
-    //            int[] iE = scanRegion.getIndexEntry(i);
-    //            pt[0][1] = origSize;
-    //            for (int iDim = 1; iDim < nDim; iDim++) {
-    //                pt[iDim][0] = iE[iDim];
-    //                pt[iDim][1] = iE[iDim];
-    //            }
-    //            regionVector.resize(newSize);
-    //            try {
-    //                readVectorFromDatasetFile(pt, dim, regionVector);
-    //            } catch (IOException ioE) {
-    //                throw new TclException(interp, ioE.getMessage());
-    //            }
-    //            interp.eval(script);
-    //            pt[0][1] = regionVector.getSize() - 1;
-    //            try {
-    //                readVectorFromDatasetFile(pt, dim, regionVector);
-    //            } catch (IOException ioE) {
-    //                throw new TclException(interp, ioE.getMessage());
-    //            }
-    //        }
-    //    }
 
     /**
      * Calculate a noise level for the dataset by analyzing the rms value of
@@ -633,7 +582,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
                 }
                 pt[i][1] = getSizeTotal(i) / 8;
                 cpt[i] = (pt[i][0] + pt[i][1]) / 2;
-                width[i] = (double) Math.abs(pt[i][0] - pt[i][1]);
+                width[i] = Math.abs(pt[i][0] - pt[i][1]);
             }
             try {
                 RegionData rData = analyzeRegion(pt, cpt, width, dim);
@@ -690,9 +639,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
                 threshold = threshRatio * rData.getCenter();
             }
             DimCounter counter = new DimCounter(counterSizes);
-            DimCounter.Iterator cIter = counter.iterator();
-            while (cIter.hasNext()) {
-                int[] points = cIter.next();
+            for (int[] points : counter) {
                 for (int i = 0; i < nDim; i++) {
                     points[i] += pt[i][0];
                     if (points[i] >= getSizeReal(dim[i])) {
@@ -724,88 +671,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         return rData;
     }
 
-//    public static void analyzeRegion(Interp interp, Dataset dataset,
-//            int[][] pt, int[] cpt, double[] width, int[] dim)
-//            throws TclException {
-//        RegionData rData;
-//        try {
-//            rData = dataset.analyzeRegion(pt, cpt, width, dim);
-//        } catch (IOException ioE) {
-//            throw new TclException(interp, ioE.getMessage());
-//        }
-//        TclObject list = TclList.newInstance();
-//
-//        TclList.append(interp, list, TclString.newInstance("center"));
-//        TclList.append(interp, list, TclDouble.newInstance(rData.getCenter()));
-//        interp.setVar("Nv_Value(center)", TclDouble.newInstance(rData.getCenter()),
-//                TCL.GLOBAL_ONLY);
-//
-//        TclList.append(interp, list, TclString.newInstance("jitter"));
-//        TclList.append(interp, list, TclDouble.newInstance(rData.getJitter()));
-//        interp.setVar("Nv_Value(jitter)", TclDouble.newInstance(rData.getJitter()),
-//                TCL.GLOBAL_ONLY);
-//
-//        TclList.append(interp, list, TclString.newInstance("min"));
-//        TclList.append(interp, list, TclDouble.newInstance(rData.getMin()));
-//        interp.setVar("Nv_Value(min)", TclDouble.newInstance(rData.getMin()),
-//                TCL.GLOBAL_ONLY);
-//
-//        TclList.append(interp, list, TclString.newInstance("max"));
-//        TclList.append(interp, list, TclDouble.newInstance(rData.getMax()));
-//        interp.setVar("Nv_Value(max)", TclDouble.newInstance(rData.getMax()),
-//                TCL.GLOBAL_ONLY);
-//
-//        TclList.append(interp, list, TclString.newInstance("extreme"));
-//        TclList.append(interp, list, TclDouble.newInstance(rData.getExtreme()));
-//        interp.setVar("Nv_Value(extreme)", TclDouble.newInstance(rData.getExtreme()),
-//                TCL.GLOBAL_ONLY);
-//
-//        TclList.append(interp, list, TclString.newInstance("volume"));
-//        TclList.append(interp, list, TclDouble.newInstance(rData.getVolume_r()));
-//        interp.setVar("Nv_Value(volume)", TclDouble.newInstance(rData.getVolume_r()),
-//                TCL.GLOBAL_ONLY);
-//
-//        TclList.append(interp, list, TclString.newInstance("evolume"));
-//        TclList.append(interp, list, TclDouble.newInstance(rData.getVolume_e()));
-//        interp.setVar("Nv_Value(evolume)", TclDouble.newInstance(rData.getVolume_e()),
-//                TCL.GLOBAL_ONLY);
-//
-//        TclList.append(interp, list, TclString.newInstance("mean"));
-//        TclList.append(interp, list, TclDouble.newInstance(rData.getMean()));
-//        interp.setVar("Nv_Value(mean)", TclDouble.newInstance(rData.getMean()),
-//                TCL.GLOBAL_ONLY);
-//
-//        TclList.append(interp, list, TclString.newInstance("sdev"));
-//        TclList.append(interp, list, TclDouble.newInstance(rData.getSumSq()));
-//        interp.setVar("Nv_Value(sdev)", TclDouble.newInstance(rData.getSumSq()),
-//                TCL.GLOBAL_ONLY);
-//
-//        TclList.append(interp, list, TclString.newInstance("scale"));
-//        TclList.append(interp, list, TclDouble.newInstance(dataset.scale));
-//        interp.setVar("Nv_Value(scale)", TclDouble.newInstance(dataset.scale),
-//                TCL.GLOBAL_ONLY);
-//
-//        TclList.append(interp, list, TclString.newInstance("n"));
-//        TclList.append(interp, list, TclInteger.newInstance(rData.getNpoints()));
-//        interp.setVar("Nv_Value(n)", TclInteger.newInstance(rData.getNpoints()),
-//                TCL.GLOBAL_ONLY);
-//
-//        for (int i = 0; i < dataset.getNDim(); i++) {
-//            TclList.append(interp, list, TclString.newInstance("p" + i + "b"));
-//            TclList.append(interp, list, TclInteger.newInstance(pt[i][0]));
-//
-//            TclList.append(interp, list, TclString.newInstance("p" + i + "e"));
-//            TclList.append(interp, list, TclInteger.newInstance(pt[i][1]));
-//        }
-//        for (int i = 0; i < dataset.getNDim(); i++) {
-//            TclList.append(interp, list, TclString.newInstance("max" + i));
-//            double maxPointPPM = dataset.pointToPPM(dim[i], rData.dmaxPoint[i]);
-//            TclList.append(interp, list, TclDouble.newInstance(maxPointPPM));
-//        }
-//
-//        interp.setResult(list);
-//    }
-    public double[] getPercentile(double p, int[][] pt, int[] dim) throws IOException {
+public double[] getPercentile(double p, int[][] pt, int[] dim) throws IOException {
         PSquarePercentile pSquarePos = new PSquarePercentile(p);
         PSquarePercentile pSquareNeg = new PSquarePercentile(p);
 
@@ -818,25 +684,22 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
             }
         }
         DimCounter counter = new DimCounter(counterSizes);
-        DimCounter.Iterator cIter = counter.iterator();
-        while (cIter.hasNext()) {
-            int[] points = cIter.next();
+        for (int[] points : counter) {
             for (int i = 0; i < nDim; i++) {
                 points[i] += pt[i][0];
                 if (points[i] >= getSizeTotal(dim[i])) {
                     points[i] = points[i] - getSizeTotal(dim[i]);
                 }
             }
-            double value = readPoint(points, dim);
+            double value = readPointRaw(points, dim);
 
             if ((value != Double.MAX_VALUE) && (value >= 0.0)) {
                 pSquarePos.increment(value);
-            } else if ((value != Double.MAX_VALUE) && (value <= 0.0)) {
+            } else if ((value <= 0.0)) {
                 pSquareNeg.increment(value);
             }
         }
-        double[] result = {pSquarePos.getResult(), pSquareNeg.getResult()};
-        return result;
+        return new double[]{pSquarePos.getResult(), pSquareNeg.getResult()};
 
     }
 
@@ -864,7 +727,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
                     points[i] = points[i] - getSizeTotal(dim[i]);
                 }
             }
-            double value = readPoint(points, dim);
+            double value = readPointRaw(points, dim);
             if (value != Double.MAX_VALUE) {
                 sum += value;
                 sumSq += value * value;
@@ -1043,54 +906,6 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         return level / rmsdAtPoint;
     }
 
-//    public void scaleByNoise(Interp interp) throws TclException {
-//        String rmsdVec = "rmsdVec";
-//        int iDim = 1;
-//        int[][] pt = new int[nDim][2];
-//        int[] dim = new int[nDim];
-//        dim[0] = iDim;
-//        pt[0][0] = 0;
-//        pt[0][1] = 0;
-//
-//        int j = 0;
-//        for (int i = 1; i < nDim; i++) {
-//            if (j == iDim) {
-//                j++;
-//            }
-//
-//            dim[i] = j;
-//            pt[i][0] = 0;
-//            pt[i][1] = getSize(dim[i]) - 1;
-//            j++;
-//        }
-//
-//        Vec rmsdVec = Vec.get(rmsdVec);
-//
-//        if (rmsdVec == null) {
-//            rmsdVec = new Vec(32, rmsdVec);
-//        }
-//
-//        scanRegion = initScanner();
-//        scanRegion.setup(interp, this, pt, dim, rmsdVec);
-//        int vecSize = rmsdVec.size;
-//        int[] gPt = new int[nDim];
-//        while (true) {
-//            int mpt[][] = scanRegion.scanGet(interp);
-//            if (mpt == null) {
-//                break;
-//            }
-//            for (j = 1; j < nDim; j++) {
-//                gPt[dim[j]] = mpt[j][0];
-//            }
-//            // adjust for scanDim
-//            for (int i = 0; i < vecSize; i++) {
-//                gPt[dim[0]] = i;
-//                double noise = getRMSDAtPoint(gPt);
-//                rmsdVec.vec[i] /= noise;
-//            }
-//            scanRegion.scanPut(interp);
-//        }
-//    }
     boolean isDirty() {
         return dirty;
     }
@@ -1114,7 +929,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         }
         int iPoint = 0;
         for (int[] pValues : posArray) {
-            intensities[iPoint++] = readPoint(pValues, dim);
+            intensities[iPoint++] = readPointRaw(pValues, dim);
         }
         return intensities;
     }
@@ -1143,7 +958,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
             for (int i = 0; i < nDim; i++) {
                 points[i] += region[i][0];
             }
-            intensities[iPoint++] = readPoint(points, dim);
+            intensities[iPoint++] = readPointRaw(points, dim);
         }
         return intensities;
 
@@ -1175,12 +990,9 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
 //        System.out.println("np " + nPoints);
         ArrayList<int[]> posArray = new ArrayList<>();
         DimCounter counter = new DimCounter(sizes);
-        DimCounter.Iterator iterator = counter.iterator();
-        while (iterator.hasNext()) {
-            int[] counts = iterator.next();
+        for (int[] counts : counter) {
             int[] aCounts = new int[counts.length];
             int j = 0;
-            boolean inDataset = true;
             for (int value : counts) {
                 aCounts[j] = value + p2[j][0];
                 if (aCounts[j] >= getSizeTotal(j)) {
@@ -1190,30 +1002,28 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
                 }
                 j++;
             }
-            if (inDataset) {
-                boolean ok = false;
-                for (int iPeak = 0; iPeak < cpt.length; iPeak++) {
-                    int iDim = 0;
-                    double delta2 = 0.0;
-                    for (int value : aCounts) {
-                        if ((iDim >= sizes.length) || (iPeak > width.length)) {
-                            System.out.println(iPeak + " " + sizes.length + " " + width.length);
-                            posArray.clear();
-                            return posArray;
-                        }
-                        if (width[iPeak][iDim] != 0.0) {
-                            delta2 += ((value - cpt[iPeak][iDim]) * (value - cpt[iPeak][iDim])) / (0.47 * width[iPeak][iDim] * width[iPeak][iDim]);
-                        }
-                        iDim++;
+            boolean ok = false;
+            for (int iPeak = 0; iPeak < cpt.length; iPeak++) {
+                int iDim = 0;
+                double delta2 = 0.0;
+                for (int value : aCounts) {
+                    if ((iDim >= sizes.length) || (iPeak > width.length)) {
+                        System.out.println(iPeak + " " + sizes.length + " " + width.length);
+                        posArray.clear();
+                        return posArray;
                     }
-                    if (delta2 < 1.0) {
-                        ok = true;
-                        break;
+                    if (width[iPeak][iDim] != 0.0) {
+                        delta2 += ((value - cpt[iPeak][iDim]) * (value - cpt[iPeak][iDim])) / (0.47 * width[iPeak][iDim] * width[iPeak][iDim]);
                     }
+                    iDim++;
                 }
-                if (ok) {
-                    posArray.add(aCounts);
+                if (delta2 < 1.0) {
+                    ok = true;
+                    break;
                 }
+            }
+            if (ok) {
+                posArray.add(aCounts);
             }
         }
         return posArray;
@@ -1253,7 +1063,8 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
 
     /**
      * Read an N dimensional matrix of values within the specified region of the
-     * matrix
+     * matrix.  The region is specified in complex or real (if dimensionis real)
+     * points and translated to raw indices based on whether dimension is complex or not.
      *
      * @param pt The region to read
      * @param dim The dataset dimensions used by the region points
@@ -1290,7 +1101,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
                 } else {
                     point[dim[1]] =  j * mul[1];
                 }
-                float value = (float) readPoint(point);
+                float value = (float) readPointRaw(point);
                 matrix[jj][ii] = value;
                 if (value > maxValue) {
                     maxValue = value;
@@ -1300,8 +1111,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
                 }
             }
         }
-        return (Math.abs(maxValue) > Math.abs(minValue)) ? Math.abs(maxValue)
-                : Math.abs(minValue);
+        return Math.max(Math.abs(maxValue), Math.abs(minValue));
     }
 
     /**
@@ -1323,9 +1133,6 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         for (int i = 2; i < nDim; i++) {
             point[dim[i]] = pt[i][0];
         }
-//        for (int i = 0; i < nDim; i++) {
-//            System.out.printf("%3d %3d %3d %3d\n", i, dim[i], pt[i][0], pt[i][1]);
-//        }
 
         for (int plane = pt[1][0]; plane <= pt[1][1]; plane++) {
             int planeOffset = plane - pt[1][0];
@@ -1333,7 +1140,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
                 int rowOffset = row - pt[0][0];
                 point[dim[0]] = row;
                 point[dim[1]] = plane;
-                double value = readPoint(point);
+                double value = readPointRaw(point);
                 matrix[planeOffset][rowOffset] = value;
                 if (value > maxValue) {
                     maxValue = value;
@@ -1343,8 +1150,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
                 }
             }
         }
-        return (Math.abs(maxValue) > Math.abs(minValue)) ? Math.abs(maxValue)
-                : Math.abs(minValue);
+        return Math.max(Math.abs(maxValue), Math.abs(minValue));
     }
 
     /**
@@ -1369,13 +1175,6 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         for (int i = 0; i < nDim - 1; i++) {
             mPoint[i] = pt[i][1] + 1;
         }
-//        for (int i = 0; i < nDim; i++) {
-//            if (i < (nDim - 1)) {
-//                System.out.printf("%3d %3d %3d %3d %3d\n", i, dim[i], pt[i][0], pt[i][1], mPoint[i]);
-//            } else {
-//                System.out.printf("%3d %3d %3d %3d\n", i, dim[i], pt[i][0], pt[i][1]);
-//            }
-//        }
 
         MultidimensionalCounter counter = new MultidimensionalCounter(mPoint);
         MultidimensionalCounter.Iterator iter = counter.iterator();
@@ -1385,7 +1184,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
             for (int i = 0; i < index.length; i++) {
                 point[dim[i]] = index[i];
             }
-            double value = readPoint(point);
+            double value = readPointRaw(point);
             matrix.setValue(value, index);
             if (value > maxValue) {
                 maxValue = value;
@@ -1394,8 +1193,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
                 minValue = value;
             }
         }
-        return (Math.abs(maxValue) > Math.abs(minValue)) ? Math.abs(maxValue)
-                : Math.abs(minValue);
+        return Math.max(Math.abs(maxValue), Math.abs(minValue));
     }
 
     /**
@@ -1431,17 +1229,6 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         for (int i = 2; i < nDim; i++) {
             point[dim[i]] = pt[i][0];
         }
-//        for (int i = 0; i < nDim; i++) {
-//            if (pt[i][0] == pt[i][1]) {
-//                if ((pt[i][0] + 1) > vsize[dim[i]]) {
-//                    vsize[dim[i]] = (pt[i][0] + 1);
-//                }
-//            } else {
-//                if ((pt[i][1] + 1) > vsize[dim[i]]) {
-//                    vsize[dim[i]] = (pt[i][1] + 1);
-//                }
-//            }
-//        }
         for (int plane = pt[1][0]; plane <= pt[1][1]; plane++) {
             int planeOffset = plane - pt[1][0];
             for (int row = pt[0][0]; row <= pt[0][1]; row++) {
@@ -1511,41 +1298,6 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         return ProjectBase.getActive().getDatasetNames();
     }
 
-    /**
-     * Reads a contour file. Unused in current version
-     *
-     * @throws IOException if an I/O error occurs
-     * @throws ClassNotFoundException if Contour object can't be marshalled
-     */
-    public void readContours() throws IOException, ClassNotFoundException {
-        String contourFileName = file.getPath() + ".ser";
-
-        FileInputStream in;
-        in = new FileInputStream(contourFileName);
-        ObjectInputStream is = new ObjectInputStream(in);
-        paths = (HashMap) is.readObject();
-        in.close();
-    }
-
-    /**
-     * Write contours to a file
-     *
-     * @throws IOException if an I/O error occurs
-     */
-    public void writeContours() throws IOException {
-        if (paths == null) {
-            return;
-        }
-
-        String contourFileName = file.getPath() + ".ser";
-
-        try (FileOutputStream out = new FileOutputStream(contourFileName)) {
-            ObjectOutputStream os = new ObjectOutputStream(out);
-            os.writeObject(paths);
-            os.flush();
-        }
-    }
-
     static String[] exptListLoopString = {
         "_Experiment.ID",
         "_Experiment.Name",
@@ -1613,7 +1365,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         cIter = counter.iterator();
         while (cIter.hasNext()) {
             int[] points = cIter.next();
-            readPoint(points);
+            readPointRaw(points);
         }
         times[5] = System.currentTimeMillis();
         System.out.println("xxx");
@@ -1622,7 +1374,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         cIter = counter.iterator();
         while (cIter.hasNext()) {
             int[] points = cIter.next();
-            readPoint(points, dim);
+            readPointRaw(points, dim);
         }
         times[6] = System.currentTimeMillis();
         System.out.println("xxx");
@@ -1641,11 +1393,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
      * @throws IOException if an I/O error occurs
      */
     public void readVectorFromDatasetFile(int[][] pt, int[] dim, VecBase rwVector) throws IOException {
-        //System.out.println("reading vector from dataset file");
 
-//        if (vector != null) {
-//            throw new IllegalArgumentException("Don't call this method on a vector type dataset");
-//        }
         rwVector.resize(rwVector.getSize(), getComplex_r(dim[0]));
         rwVector.centerFreq = getSf(dim[0]);
         rwVector.dwellTime = 1.0 / getSw_r(dim[0]);
@@ -1678,15 +1426,10 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         rwVector.refValue = getRefValue_r(dim[0]) + delRef;
         rwVector.setFreqDomain(getFreqDomain_r(dim[0]));
 
-        //System.err.printf("read %d %d %4d %4d %4d %4d %7.3f %7.3f %7.3f %7.3f %7.3f cmplx %b fd %b\n", dim[0],dim[1],pt[0][0],pt[0][1],pt[1][0],pt[1][1],(1.0/rwVector.dwellTime),(rwVector.refValue-delRef),rwVector.refValue,delRef,refPt_r[dim[0]],rwVector.isComplex(),rwVector.getFreqDomain());
-        //System.err.println("read " + pt[dim[1]][1] + " sw "+dim[0]+" "+(1.0/rwVector.dwellTime)+" "+(rwVector.refValue-delRef)+" " + rwVector.refValue+" "+delRef+" "+refPt_r[dim[0]]+" cmplx "+rwVector.isComplex()+" fd " + rwVector.getFreqDomain());
         int[] point = new int[nDim];
         for (int i = 1; i < nDim; i++) {
             point[dim[i]] = pt[i][0];
         }
-//        for (int i = 0; i < nDim; i++) {
-//            System.out.printf("rv i %4d dim %4d pt0 %4d pt1 %4d size %4d vsize %4d fsize %4d\n",i,dim[i],pt[i][0],pt[i][1],size[dim[i]],vsize[dim[i]],fileDimSizes[dim[i]]);
-//        }
         if (vecMat != null) {
             int j = 0;
             for (int i = pt[0][0]; i <= pt[0][1]; i++) {
@@ -1705,14 +1448,14 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
                 point[dim[0]] = i;
                 if (rwVector.isComplex()) {
                     if ((i % 2) != 0) {
-                        double dImaginary = readPoint(point);
+                        double dImaginary = readPointRaw(point);
                         rwVector.set(j, new Complex(dReal, dImaginary));
                         j++;
                     } else {
-                        dReal = readPoint(point);
+                        dReal = readPointRaw(point);
                     }
                 } else {
-                    rwVector.set(j, readPoint(point));
+                    rwVector.set(j, readPointRaw(point));
                     j++;
                 }
             }
@@ -1734,7 +1477,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         ArrayRealVector vector = new ArrayRealVector(vecSize);
         for (int i = 0; i < vecSize; i++) {
             pt[0] = i;
-            vector.setEntry(i, readPoint(pt));
+            vector.setEntry(i, readPointRaw(pt));
         }
         return vector;
     }
@@ -1759,7 +1502,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         pt[1] = row;
         for (int i = 0; i < vecSize; i++) {
             pt[0] = indices.get(i);
-            vector.setEntry(i, readPoint(pt));
+            vector.setEntry(i, readPointRaw(pt));
         }
         return vector;
     }
@@ -1778,7 +1521,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         ArrayRealVector vector = new ArrayRealVector(vecSize);
         for (int i = 0; i < vecSize; i++) {
             pt[1] = i;
-            vector.setEntry(i, readPoint(pt));
+            vector.setEntry(i, readPointRaw(pt));
         }
         return vector;
     }
@@ -1803,7 +1546,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         pt[0] = column;
         for (int i = 0; i < vecSize; i++) {
             pt[1] = indices.get(i);
-            vector.setEntry(i, readPoint(pt));
+            vector.setEntry(i, readPointRaw(pt));
         }
         return vector;
     }
@@ -1865,7 +1608,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
             for (int j = 0; j < nColumns; j++) {
                 pt[0] = columnIndices[j];
                 pt[1] = rowIndices[i];
-                matrix.setEntry(i, j, readPoint(pt));
+                matrix.setEntry(i, j, readPointRaw(pt));
             }
         }
         return matrix;
@@ -1991,20 +1734,19 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
                 colList = bucketList.get(k);
                 double sumPPM = 0.0;
                 double sumCol = 0.0;
-                for (int j = 0; j < colList.size(); j++) {
-                    pt[0] = colList.get(j);
+                for (Integer integer : colList) {
+                    pt[0] = integer;
                     pt[1] = rowIndices[i];
                     sumPPM += pointToPPM(0, pt[0]);
                     sumCol += pt[0];
-                    sum += readPoint(pt);
+                    sum += readPointRaw(pt);
                 }
                 matrix[i][k] = sum;
                 ppms[k] = sumPPM / colList.size();
                 colCenters[k] = (int) Math.round(sumCol / colList.size());
             }
         }
-        BucketedMatrix bMat = new BucketedMatrix(matrix, rowIndices, colIndices, colCenters, ppms, dataTbl);
-        return bMat;
+        return new BucketedMatrix(matrix, rowIndices, colIndices, colCenters, ppms, dataTbl);
     }
 
     public class Location {
@@ -2480,8 +2222,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
      * @throws IOException if an I/O error occurs
      */
     synchronized public Iterator<Vec> vectors(int iDim) throws IOException {
-        VecIterator vecIter = new VecIterator(this, iDim);
-        return vecIter;
+        return new VecIterator(this, iDim);
     }
 
     /**
@@ -2493,24 +2234,21 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
      * @throws IOException if an I/O error occurs
      */
     synchronized public Iterator<int[][]> indexer(int iDim) throws IOException {
-        VecIndexIterator vecIter = new VecIndexIterator(this, iDim);
-        return vecIter;
+        return new VecIndexIterator(this, iDim);
     }
 
     /**
      * Get iterator that allows iterating over all the points in the file
      *
      * @return iterator an Iterator to iterate over points in dataset
-     * @throws IOException if an I/O error occurs
      */
-    synchronized public Iterator pointIterator() throws IOException {
+    synchronized public Iterator pointIterator() {
         int[] mPoint = new int[nDim];
         for (int i = 0; i < nDim; i++) {
             mPoint[nDim - i - 1] = getSizeTotal(i) - 1;
         }
         MultidimensionalCounter counter = new MultidimensionalCounter(mPoint);
-        MultidimensionalCounter.Iterator iter = counter.iterator();
-        return iter;
+        return counter.iterator();
     }
 
     public List<int[][]> getIndices(int iDim, int start, int end) throws IOException {
@@ -2568,8 +2306,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
             counterSizes[i] = getSizeTotal(i);
         }
         DimCounter counter = new DimCounter(counterSizes);
-        DimCounter.Iterator cIter = counter.iterator();
-        return cIter;
+        return counter.iterator();
     }
 
     public void clear() throws IOException {
@@ -2607,7 +2344,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         int j = 0;
         while (cIter.hasNext()) {
             int[] points = cIter.next();
-            double value = readPoint(points);
+            double value = readPointRaw(points);
             buffer[j++] = value;
         }
         return buffer;
@@ -2674,8 +2411,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         setPh1_r(iDim, dph1);
         writeHeader();
         dataFile.force();
-        double[] result = {dph0, dph1};
-        return result;
+        return new double[]{dph0, dph1};
     }
 
     public Dataset getProjection(int iDim) {

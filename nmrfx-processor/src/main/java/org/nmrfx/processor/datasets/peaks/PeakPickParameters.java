@@ -107,9 +107,9 @@ public class PeakPickParameters {
 
         for (int i = 0; i < dataDim; i++) {
             pt[i][0] = 0;
-            pt[i][1] = theFile.getSizeTotal(i) - 1;
+            pt[i][1] = theFile.getSizeReal(i) - 1;
             ptMax[i][0] = 0;
-            ptMax[i][1] = theFile.getSizeTotal(i) - 1;
+            ptMax[i][1] = theFile.getSizeReal(i) - 1;
             dim[i] = i;
             cpt[i] = (pt[i][0] + pt[i][1]) / 2.0;
         }
