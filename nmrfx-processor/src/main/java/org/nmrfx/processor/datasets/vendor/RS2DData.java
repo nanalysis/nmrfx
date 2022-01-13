@@ -21,12 +21,19 @@ import org.xml.sax.SAXException;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
 import javax.xml.xpath.*;
 import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 import java.nio.channels.FileChannel;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
@@ -47,6 +54,8 @@ public class RS2DData implements NMRData {
 
     private final String fpath;
     private FileChannel fc = null;
+    private Document xmlDocument;
+
     private HashMap<String, List<String>> parMap = null;
     File nusFile;
 
@@ -188,12 +197,11 @@ public class RS2DData implements NMRData {
     private void openParFile(String parpath, boolean processed) throws IOException {
         parMap = new LinkedHashMap<>(200);
         Path path = Paths.get(parpath, "header.xml");
-        Document xml;
         try {
-            xml = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(path.toFile());
-            var parNames = getParams(xml);
+            xmlDocument = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(path.toFile());
+            var parNames = getParams(xmlDocument);
             for (String parName : parNames) {
-                List<String> parValues = getParamValue(xml, parName);
+                List<String> parValues = getParamValue(xmlDocument, parName);
                 parMap.put(parName, parValues);
             }
             groupDelay = 0.0;
@@ -258,6 +266,9 @@ public class RS2DData implements NMRData {
         } catch (ParserConfigurationException | SAXException | XPathExpressionException | NullPointerException ex) {
             throw new IOException(ex.getMessage());
         }
+    }
+    public Document getXmlDocument() {
+        return xmlDocument;
     }
 
     private List<String> getParams(Document xml) throws XPathExpressionException {
@@ -1141,5 +1152,43 @@ public class RS2DData implements NMRData {
                 }
             }
         }
+    }
+
+    public void writeOutputFile(Dataset dataset, int procNum, String outFilePath) throws IOException {
+
+        if (outFilePath == null) {
+            outFilePath = fpath;
+        }
+        File procDir = Path.of(outFilePath, "Proc").toFile();
+
+
+        if (!procDir.exists()) {
+            procDir.mkdir();
+        }
+        File procNumDir = Path.of(procDir.toString(),String.valueOf(procNum)).toFile();
+        if (!procNumDir.exists()) {
+            procNumDir.mkdir();
+        }
+        File dataFile = Path.of(procNumDir.toString(),"data.dat").toFile();
+        File headerFile = Path.of(procNumDir.toString(),"header.xml").toFile();
+        saveToRS2DFile(dataset,dataFile.toString());
+        try {
+            writeHeader(headerFile);
+        } catch (TransformerException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void writeHeader(File outFile) throws TransformerException, IOException {
+        DOMSource source = new DOMSource(xmlDocument);
+        StreamResult result =  new StreamResult(new StringWriter());
+
+        TransformerFactory transformerFactory = TransformerFactory.newInstance();
+        Transformer transformer = transformerFactory.newTransformer();
+        transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+        transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "5");
+        transformer.transform(source, result);
+        String xmlString = result.getWriter().toString();
+        Files.writeString(outFile.toPath(),xmlString);
     }
 }
