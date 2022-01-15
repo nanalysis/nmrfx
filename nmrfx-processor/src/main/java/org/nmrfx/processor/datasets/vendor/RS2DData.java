@@ -5,6 +5,7 @@
  */
 package org.nmrfx.processor.datasets.vendor;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.math3.complex.Complex;
 import org.nmrfx.datasets.DatasetLayout;
 import org.nmrfx.processor.datasets.Dataset;
@@ -15,13 +16,13 @@ import org.nmrfx.processor.datasets.parameters.SinebellWt;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.processing.SampleSchedule;
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
@@ -40,6 +41,8 @@ import java.nio.file.StandardOpenOption;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  *
@@ -47,6 +50,8 @@ import java.util.logging.Logger;
  */
 public class RS2DData implements NMRData {
     final static String DATA_FILE_NAME = "data.dat";
+    final static String HEADER_FILE_NAME = "header.xml";
+    final static String SERIES_FILE_NAME = "Serie.xml";
     final static String BASE_FREQ_PAR = "BASE_FREQ_";
     final static Logger LOGGER = Logger.getLogger(RS2DData.class.getCanonicalName());
 
@@ -54,7 +59,8 @@ public class RS2DData implements NMRData {
 
     private final String fpath;
     private FileChannel fc = null;
-    private Document xmlDocument;
+    private Document headerDocument;
+    private Document seriesDocument;
 
     private HashMap<String, List<String>> parMap = null;
     File nusFile;
@@ -186,22 +192,44 @@ public class RS2DData implements NMRData {
         return found;
     }
 
+    public static List<Integer> findProcNums(Path procDirectory) throws IOException {
+        List<Integer> procNums = new ArrayList<>();
+        if (procDirectory.toFile().exists()) {
+            try (Stream<Path> paths = Files.walk(procDirectory, 1)) {
+                procNums.addAll(paths.filter(Files::isDirectory).
+                        map(path -> path.getFileName().toString()).
+                        filter(StringUtils::isNumeric).
+                        map(Integer::parseInt).
+                        sorted().collect(Collectors.toList()));
+            }
+        }
+        return procNums;
+    }
+
+    public static Optional<Integer> findLastProcNum(Path procDirectory) throws IOException {
+        var procNums = findProcNums(procDirectory);
+        int nDirs = procNums.size();
+        return nDirs > 0 ? Optional.of(procNums.get(nDirs-1)) : Optional.empty();
+    }
+
     private static boolean findFIDFiles(String dirPath) {
-        Path headerPath = Paths.get(dirPath, "header.xml");
+        Path headerPath = Paths.get(dirPath, HEADER_FILE_NAME);
         Path dataPath = Paths.get(dirPath, DATA_FILE_NAME);
-        System.out.println(headerPath + " " + headerPath.toFile().exists());
-        System.out.println(dataPath + " " + dataPath.toFile().exists());
         return headerPath.toFile().exists() && dataPath.toFile().exists();
     }
 
     private void openParFile(String parpath, boolean processed) throws IOException {
         parMap = new LinkedHashMap<>(200);
-        Path path = Paths.get(parpath, "header.xml");
+        Path headerPath = Paths.get(parpath, HEADER_FILE_NAME);
+        Path seriesPath = Paths.get(parpath, SERIES_FILE_NAME);
         try {
-            xmlDocument = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(path.toFile());
-            var parNames = getParams(xmlDocument);
+            headerDocument = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(headerPath.toFile());
+            if (seriesPath.toFile().exists()) {
+                seriesDocument = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(seriesPath.toFile());
+            }
+            var parNames = getParams(headerDocument);
             for (String parName : parNames) {
-                List<String> parValues = getParamValue(xmlDocument, parName);
+                List<String> parValues = getParamValue(headerDocument, parName);
                 parMap.put(parName, parValues);
             }
             groupDelay = 0.0;
@@ -229,7 +257,6 @@ public class RS2DData implements NMRData {
                 }
             }
 
-            System.out.println(" obs " + obsNucleus + " " + obsFreq + " " + baseSFName);
             for (int i = 0; i < MAXDIM; i++) {
                 int dimSize;
                 if (processed) {
@@ -239,12 +266,10 @@ public class RS2DData implements NMRData {
                 }
                 String nucleus = getPar("NUCLEUS_" + (i + 1));
                 if (nucleus.equals(obsNucleus)) {
-                    System.out.println("nuclues is obs " + nucleus);
                     Sf[i] = obsFreq;
                     Sw[i] = obsSW;  // fixme  this is kluge to fis some files that have wrong SPECTRAL_WIDTH_2D
                     sfNames[i] = baseSFName;
                 } else {
-                    System.out.println("nuclues is not obs " + nucleus);
                     Double baseFreq = getParDouble(BASE_FREQ_PAR + (i + 1));
                     Sf[i] = baseFreq / 1.0e6;
                     sfNames[i] = BASE_FREQ_PAR + (i + 1);
@@ -267,8 +292,11 @@ public class RS2DData implements NMRData {
             throw new IOException(ex.getMessage());
         }
     }
-    public Document getXmlDocument() {
-        return xmlDocument;
+    public Document getHeaderDocument() {
+        return headerDocument;
+    }
+    public Document getSeriesDocument() {
+        return seriesDocument;
     }
 
     private List<String> getParams(Document xml) throws XPathExpressionException {
@@ -283,7 +311,33 @@ public class RS2DData implements NMRData {
         return nodeValues;
     }
 
-    private static List<String> getParamValue(Document xml, String paramName) throws XPathExpressionException {
+    static List<Node> getParamNode(Document xml, String paramName) throws XPathExpressionException {
+        if (!paramName.contains("'")) {
+            paramName = "'" + paramName + "'";
+        } else if (!paramName.contains("\"")) {
+            paramName = "\"" + paramName + "\"";
+        } else {
+            paramName = "concat('" + paramName.replace("'", "',\"'\",'") + "')";
+        }
+        String expression = "/header/params/entry/key[text()=" + paramName + "]/../value/value";
+        XPath path = XPathFactory.newInstance().newXPath();
+        XPathEvaluationResult<?> result = path.evaluateExpression(expression, xml.getDocumentElement());
+        List<Node> nodeResult = new ArrayList<>();
+        switch (result.type()) {
+            case NODESET:
+                XPathNodes nodes = (XPathNodes) result.value();
+                for (Node node : nodes) {
+                    nodeResult.add(node);
+                }
+                break;
+            case NODE:
+                Node node = (Node) result.value();
+                nodeResult.add(node);
+        }
+        return nodeResult;
+    }
+
+    static List<String> getParamValue(Document xml, String paramName) throws XPathExpressionException {
         if (!paramName.contains("'")) {
             paramName = "'" + paramName + "'";
         } else if (!paramName.contains("\"")) {
@@ -842,7 +896,6 @@ public class RS2DData implements NMRData {
             // fixme which is correct (use ceil or not)
             //shiftAmount = (int)Math.round(Math.ceil(groupDelay));
             shiftAmount = (int) Math.round(groupDelay);
-            System.out.println(iVec + " " + groupDelay + " " + shiftAmount);
         }
         if (dvec.isComplex()) {
             if (!dvec.useApache()) {
@@ -944,7 +997,6 @@ public class RS2DData implements NMRData {
             int nPer = isComplex(iDim) ? 2 : 1;
             //int skips = fileIndex * tbytes + xCol * 4 * 2;
             int skips = fileIndex * stride + xCol * 4 * 2;
-            //System.out.println(fileIndex + " " + xCol + " " + (skips/4));
             ByteBuffer buf = ByteBuffer.wrap(dataBuf, vecIndex * 4 * nPer, 4 * nPer);
             int nread = fc.read(buf, skips);
             if (nread != 4 * nPer) {
@@ -979,7 +1031,6 @@ public class RS2DData implements NMRData {
             {
                 throw new ArrayIndexOutOfBoundsException("file index " + i + " out of bounds " + nread + " " + tbytes);
             }
-            //System.out.println("readVecBlock read "+nread+" bytes");
         } catch (IOException e) {
             LOGGER.log(Level.WARNING, e.getMessage());
             if (fc != null) {
@@ -1125,11 +1176,17 @@ public class RS2DData implements NMRData {
 
                 while (true) {
                     int nRows = sizes[0];
-                    for (int k = nRows - 1; k >= 0; k--) {
+                    for (int k = 0; k < nRows; k++) {
                         pt[0] = k;
-                        vec.makeReal();
+                        if (dataset.getComplex(0)) {
+                            vec.makeComplex();
+                        } else {
+                            vec.makeReal();
+                        }
                         dataset.readVector(vec, pt, 0);
-                        vec.makeComplex();
+                        if (!dataset.getComplex(0)) {
+                            vec.makeComplex();
+                        }
                         byte[] array = vec.toFloatBytes();
                         fOut.write(array);
                     }
@@ -1154,6 +1211,23 @@ public class RS2DData implements NMRData {
         }
     }
 
+    public void setParam(String paramName, String paramValue) throws XPathExpressionException {
+        var nodes = RS2DData.getParamNode(headerDocument, paramName);
+        if (!nodes.isEmpty()) {
+            nodes.get(0).setTextContent(paramValue);
+        }
+
+    }
+    public void setHeaderMatrixDimensions(Dataset dataset) throws XPathExpressionException {
+        for (int iDim = 1;iDim<=RS2DData.MAXDIM;iDim++) {
+            setParam("MATRIX_DIMENSION_" + iDim + "D", String.valueOf(dataset.getSizeReal(iDim - 1)));
+        }
+    }
+    public void setHeaderPhases(Dataset dataset) throws XPathExpressionException {
+        setParam("PHASE_0", String.valueOf(dataset.getPh0(0)));
+        setParam("PHASE_1", String.valueOf(dataset.getPh0(1)));
+    }
+
     public void writeOutputFile(Dataset dataset, int procNum, String outFilePath) throws IOException {
 
         if (outFilePath == null) {
@@ -1161,32 +1235,39 @@ public class RS2DData implements NMRData {
         }
         File procDir = Path.of(outFilePath, "Proc").toFile();
 
-
         if (!procDir.exists()) {
-            procDir.mkdir();
+            if (!procDir.mkdir()) {
+                throw new IOException(("Can't create " + procDir));
+            }
         }
         File procNumDir = Path.of(procDir.toString(),String.valueOf(procNum)).toFile();
         if (!procNumDir.exists()) {
-            procNumDir.mkdir();
+            if (!procNumDir.mkdir()) {
+                throw new IOException(("Can't create " + procNumDir));
+            }
         }
         File dataFile = Path.of(procNumDir.toString(),"data.dat").toFile();
-        File headerFile = Path.of(procNumDir.toString(),"header.xml").toFile();
+        File headerFile = Path.of(procNumDir.toString(),HEADER_FILE_NAME).toFile();
+        File seriesFile = Path.of(procNumDir.toString(),SERIES_FILE_NAME).toFile();
         saveToRS2DFile(dataset,dataFile.toString());
         try {
-            writeHeader(headerFile);
+            Element testElem = headerDocument.createElement("TESTELEM");
+            testElem.setNodeValue("testValue");
+            headerDocument.getDocumentElement().appendChild(testElem);
+            writeDocument(headerDocument, headerFile);
+            if (seriesDocument != null) {
+                writeDocument(seriesDocument,seriesFile);
+            }
         } catch (TransformerException e) {
             e.printStackTrace();
         }
     }
 
-    public void writeHeader(File outFile) throws TransformerException, IOException {
-        DOMSource source = new DOMSource(xmlDocument);
+    public void writeDocument(Document document, File outFile) throws TransformerException, IOException {
+        DOMSource source = new DOMSource(document);
         StreamResult result =  new StreamResult(new StringWriter());
-
         TransformerFactory transformerFactory = TransformerFactory.newInstance();
         Transformer transformer = transformerFactory.newTransformer();
-        transformer.setOutputProperty(OutputKeys.INDENT, "yes");
-        transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "5");
         transformer.transform(source, result);
         String xmlString = result.getWriter().toString();
         Files.writeString(outFile.toPath(),xmlString);
