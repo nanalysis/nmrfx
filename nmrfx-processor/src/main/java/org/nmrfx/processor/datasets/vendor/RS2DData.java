@@ -21,6 +21,7 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
+import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.Transformer;
@@ -49,11 +50,11 @@ import java.util.stream.Stream;
  * @author brucejohnson
  */
 public class RS2DData implements NMRData {
-    final static String DATA_FILE_NAME = "data.dat";
-    final static String HEADER_FILE_NAME = "header.xml";
-    final static String SERIES_FILE_NAME = "Serie.xml";
-    final static String BASE_FREQ_PAR = "BASE_FREQ_";
-    final static Logger LOGGER = Logger.getLogger(RS2DData.class.getCanonicalName());
+    static final String DATA_FILE_NAME = "data.dat";
+    static final String HEADER_FILE_NAME = "header.xml";
+    static final String SERIES_FILE_NAME = "Serie.xml";
+    static final String BASE_FREQ_PAR = "BASE_FREQ_";
+    static final Logger LOGGER = Logger.getLogger(RS2DData.class.getCanonicalName());
 
     static final int MAXDIM = 4;
 
@@ -218,14 +219,20 @@ public class RS2DData implements NMRData {
         return headerPath.toFile().exists() && dataPath.toFile().exists();
     }
 
+    private Document readDocument(Path filePath) throws ParserConfigurationException, IOException, SAXException {
+        var factory = DocumentBuilderFactory.newInstance();
+        factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+        return factory.newDocumentBuilder().parse(filePath.toFile());
+    }
+
     private void openParFile(String parpath, boolean processed) throws IOException {
         parMap = new LinkedHashMap<>(200);
         Path headerPath = Paths.get(parpath, HEADER_FILE_NAME);
         Path seriesPath = Paths.get(parpath, SERIES_FILE_NAME);
         try {
-            headerDocument = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(headerPath.toFile());
+            headerDocument = readDocument(headerPath);
             if (seriesPath.toFile().exists()) {
-                seriesDocument = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(seriesPath.toFile());
+                seriesDocument = readDocument(seriesPath);
             }
             var parNames = getParams(headerDocument);
             for (String parName : parNames) {
@@ -1245,7 +1252,7 @@ public class RS2DData implements NMRData {
                 writeDocument(seriesDocument,seriesFile);
             }
         } catch (TransformerException e) {
-            e.printStackTrace();
+            throw new IOException(e.getMessage());
         }
     }
 
@@ -1253,6 +1260,9 @@ public class RS2DData implements NMRData {
         DOMSource source = new DOMSource(document);
         StreamResult result =  new StreamResult(new StringWriter());
         TransformerFactory transformerFactory = TransformerFactory.newInstance();
+        transformerFactory.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "");
+        transformerFactory.setAttribute(XMLConstants.ACCESS_EXTERNAL_STYLESHEET, "");
+
         Transformer transformer = transformerFactory.newTransformer();
         transformer.transform(source, result);
         String xmlString = result.getWriter().toString();
