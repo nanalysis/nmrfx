@@ -1162,6 +1162,9 @@ public class RS2DData implements NMRData {
             int nDim = dataset.getNDim();
             if (dataset.getNDim() == 1) {
                 Vec vec = dataset.readVector(0, 0);
+                if (!vec.isComplex()) {
+                    vec.hft();
+                }
                 byte[] array = vec.toFloatBytes();
                 fOut.write(array);
             } else {
@@ -1219,36 +1222,19 @@ public class RS2DData implements NMRData {
 
     }
     public void setHeaderMatrixDimensions(Dataset dataset) throws XPathExpressionException {
-        for (int iDim = 1;iDim<=RS2DData.MAXDIM;iDim++) {
+        for (int iDim = 1; (iDim <= RS2DData.MAXDIM) && (iDim <= dataset.getNDim()); iDim++) {
             setParam("MATRIX_DIMENSION_" + iDim + "D", String.valueOf(dataset.getSizeReal(iDim - 1)));
         }
     }
     public void setHeaderPhases(Dataset dataset) throws XPathExpressionException {
         setParam("PHASE_0", String.valueOf(dataset.getPh0(0)));
-        setParam("PHASE_1", String.valueOf(dataset.getPh0(1)));
+        setParam("PHASE_1", String.valueOf(dataset.getPh1(0)));
     }
 
-    public void writeOutputFile(Dataset dataset, int procNum, String outFilePath) throws IOException {
-
-        if (outFilePath == null) {
-            outFilePath = fpath;
-        }
-        File procDir = Path.of(outFilePath, "Proc").toFile();
-
-        if (!procDir.exists()) {
-            if (!procDir.mkdir()) {
-                throw new IOException(("Can't create " + procDir));
-            }
-        }
-        File procNumDir = Path.of(procDir.toString(),String.valueOf(procNum)).toFile();
-        if (!procNumDir.exists()) {
-            if (!procNumDir.mkdir()) {
-                throw new IOException(("Can't create " + procNumDir));
-            }
-        }
-        File dataFile = Path.of(procNumDir.toString(),"data.dat").toFile();
-        File headerFile = Path.of(procNumDir.toString(),HEADER_FILE_NAME).toFile();
-        File seriesFile = Path.of(procNumDir.toString(),SERIES_FILE_NAME).toFile();
+    public void writeOutputFile(Dataset dataset, Path procNumPath) throws IOException {
+        File dataFile = procNumPath.resolve("data.dat").toFile();
+        File headerFile = procNumPath.resolve(HEADER_FILE_NAME).toFile();
+        File seriesFile = procNumPath.resolve(SERIES_FILE_NAME).toFile();
         saveToRS2DFile(dataset,dataFile.toString());
         try {
             Element testElem = headerDocument.createElement("TESTELEM");

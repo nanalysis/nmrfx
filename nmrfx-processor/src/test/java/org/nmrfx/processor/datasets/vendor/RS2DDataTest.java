@@ -21,10 +21,11 @@ public class RS2DDataTest {
     public void save1DToRS2DFile() throws IOException, TransformerException {
         File inFile = Path.of(fidHome, "rs2d/1Dproton/680/Proc/0").toFile();
         File inFileDat = Path.of(fidHome, "rs2d/1Dproton/680/Proc/0/data.dat").toFile();
-        File outFile = Path.of(tmpHome, "Proc/1/data.dat").toFile();
+        Path procNumPath = Path.of(tmpHome,"Proc","1");
+        File outFile = procNumPath.resolve("data.dat").toFile();
         RS2DData rs2DData = new RS2DData(inFile.toString(), null,true);
         var dataset = rs2DData.toDataset("test.nv");
-        rs2DData.writeOutputFile(dataset,1, tmpHome);
+        rs2DData.writeOutputFile(dataset,procNumPath);
         long compareResult = DatasetCompare.compare(inFileDat, outFile);
         Assert.assertEquals(0, compareResult);
     }
@@ -32,10 +33,11 @@ public class RS2DDataTest {
     public void save2DToRS2DFile() throws IOException, TransformerException {
         File inFile = Path.of(fidHome, "rs2d/2Dhetero/688/Proc/0").toFile();
         File inFileDat = Path.of(fidHome, "rs2d/2Dhetero/688/Proc/0/data.dat").toFile();
-        File outFile = Path.of(tmpHome, "Proc/2/data.dat").toFile();
+        Path procNumPath = Path.of(tmpHome,"Proc","2");
+        File outFile = procNumPath.resolve("data.dat").toFile();
         RS2DData rs2DData = new RS2DData(inFile.toString(), null,true);
         var dataset = rs2DData.toDataset("test.nv");
-        rs2DData.writeOutputFile(dataset,2, tmpHome);
+        rs2DData.writeOutputFile(dataset, procNumPath);
         long compareResult = DatasetCompare.compare(inFileDat, outFile);
         if (compareResult != 0) {
             DatasetCompare.compareFloat(inFileDat,outFile);

@@ -22,6 +22,7 @@ import org.nmrfx.datasets.DatasetParameterFile;
 import org.nmrfx.processor.datasets.vendor.NMRData;
 import org.nmrfx.processor.datasets.vendor.NMRDataUtil;
 import org.nmrfx.processor.datasets.vendor.NMRViewData;
+import org.nmrfx.processor.datasets.vendor.RS2DData;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.processing.MultiVecCounter;
 import org.nmrfx.processor.processing.VecIndex;
@@ -963,10 +964,29 @@ public class ChartProcessor {
             String filePath = getNMRData().getFilePath();
             File nmrFile = new File(filePath);
             File directory = nmrFile.isDirectory() ? nmrFile : nmrFile.getParentFile();
-            FileChooser fileChooser = new FileChooser();
-            fileChooser.setInitialDirectory(directory);
-            fileChooser.setInitialFileName(datasetName);
-            File file = fileChooser.showSaveDialog(null);
+            File file;
+            if (getExtension().equals(".rs2d")) {
+                Path procDir = Path.of(directory.toString(),"Proc");
+                int procNum;
+                try {
+                    procNum = RS2DData.findLastProcNum(procDir).orElse(0);
+                } catch (IOException e) {
+                    procNum = 0;
+                }
+                String procNumStr = GUIUtils.input("Proc Number",String.valueOf(procNum)).trim();
+                File procNumDir = Path.of(directory.toString(),"Proc",procNumStr).toFile();
+                if (!procNumDir.mkdirs()) {
+                    if (!procNumDir.exists()) {
+                        return result;
+                    }
+                }
+                file = Path.of(procNumDir.toString(),"data.dat").toFile();
+            } else {
+                FileChooser fileChooser = new FileChooser();
+                fileChooser.setInitialDirectory(directory);
+                fileChooser.setInitialFileName(datasetName);
+                file = fileChooser.showSaveDialog(null);
+            }
             if (file != null) {
                 if (file.exists() && !file.canWrite()) {
                     GUIUtils.warn("Dataset creation", "Dataset exists and can't be overwritten");
@@ -981,10 +1001,17 @@ public class ChartProcessor {
                 }
 
                 String fileString = file.getAbsoluteFile().toString();
-                if (!fileString.endsWith(".nv") && !fileString.endsWith(".ucsf") && !fileString.endsWith(".rs2d")) {
-                    fileString += getExtension();
+                if (!fileString.endsWith(".nv") && !fileString.endsWith(".ucsf")) {
+                    if (getExtension().equals(".rs2d")) {
+                        datasetFile = file;
+                        fileString = datasetFile.toString();
+                    } else {
+                        fileString += getExtension();
+                        datasetFile = new File(fileString);
+                    }
+                } else {
+                    datasetFile = new File(fileString);
                 }
-                datasetFile = new File(fileString);
                 datasetFileTemp = new File(fileString + ".tmp");
                 fileString = fileString.replace("\\", "/");
                 script = script.replace("_DATASET_", "'" + fileString + "'");

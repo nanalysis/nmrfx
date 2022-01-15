@@ -1462,7 +1462,7 @@ public class Processor {
         if (dataset != null) {
             if (dataset.isMemoryFile()) {
                 try {
-                    if (dataset.getFileName().endsWith("rs2d") && (getNMRData() instanceof RS2DData)) {
+                    if (dataset.getFileName().endsWith("data.dat") && (getNMRData() instanceof RS2DData)) {
                         RS2DData rs2DData = (RS2DData) getNMRData();
                         File file = new File(dataset.getFileName());
                         System.out.println("file is " + file);
@@ -1472,7 +1472,7 @@ public class Processor {
                         } catch (XPathExpressionException e) {
                             throw new IOException(e.getMessage());
                         }
-                        rs2DData.writeOutputFile(dataset, 1, file.getParentFile().toString());
+                        rs2DData.writeOutputFile(dataset, file.getParentFile().toPath());
                     } else {
                         dataset.saveMemoryFile();
                     }
