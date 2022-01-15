@@ -494,6 +494,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
                     addDataset(dataset, append, false);
                 }
             } catch (IOException ex) {
+                GUIUtils.warn("Open Dataset", ex.getMessage());
             }
         }
         stage.setResizable(true);
