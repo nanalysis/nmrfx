@@ -981,7 +981,7 @@ public class ChartProcessor {
                 }
 
                 String fileString = file.getAbsoluteFile().toString();
-                if (!fileString.endsWith(".nv") && !fileString.endsWith(".ucsf")) {
+                if (!fileString.endsWith(".nv") && !fileString.endsWith(".ucsf") && !fileString.endsWith(".rs2d")) {
                     fileString += getExtension();
                 }
                 datasetFile = new File(fileString);

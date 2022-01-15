@@ -291,6 +291,7 @@ public class RefManager {
             ArrayList<String> extensionChoices = new ArrayList<>();
             extensionChoices.add(".nv");
             extensionChoices.add(".ucsf");
+            extensionChoices.add(".rs2d");
             newItems.add(new ChoiceOperationItem(stringListener, chartProcessor.getExtension(), extensionChoices, dimName, "extension", "Filename extension (determines dataset type)"));
             if (nmrData != null) {
                 ArrayList<String> choices = new ArrayList<>();
