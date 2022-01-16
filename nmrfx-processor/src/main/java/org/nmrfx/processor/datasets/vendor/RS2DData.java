@@ -110,7 +110,7 @@ public class RS2DData implements NMRData {
         File file = new File(fpath);
         Path path;
         if (file.isDirectory()) {
-            path = Paths.get(file.getAbsolutePath(), "data.dat");
+            path = Paths.get(file.getAbsolutePath(), DATA_FILE_NAME);
         } else {
             path = file.toPath();
         }
@@ -154,7 +154,7 @@ public class RS2DData implements NMRData {
 
     public String suggestName(File file) {
         if (file.isDirectory()) {
-            file = Paths.get(file.getAbsolutePath(), "data.dat").toFile();
+            file = Paths.get(file.getAbsolutePath(), DATA_FILE_NAME).toFile();
         }
 
         File procNumFile = file.getParentFile();
@@ -1238,8 +1238,40 @@ public class RS2DData implements NMRData {
         setParam("PHASE_1", String.valueOf(dataset.getPh1(0)));
     }
 
+    public boolean isValidDatasetPath(Path procNumPath) {
+        if (StringUtils.isNumeric(procNumPath.getFileName().toString())) {
+            if (procNumPath.getParent().getFileName().toString().equals("Proc")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public void writeOutputFile(Dataset dataset, Path procNumPath) throws IOException {
-        File dataFile = procNumPath.resolve("data.dat").toFile();
+        if (!isValidDatasetPath(procNumPath)) {
+            throw new IllegalArgumentException("Invalid Spinit Path " + procNumPath);
+        }
+        File procNumDir = procNumPath.toFile();
+
+        File procDir = procNumPath.getParent().toFile();
+        File parentDir = procDir.getParentFile();
+        System.out.println("parentDir " + parentDir);
+        if (!parentDir.exists()) {
+            if (!parentDir.mkdir()) {
+                throw new IOException(("Can't create " + parentDir));
+            }
+        }
+        if (!procDir.exists()) {
+            if (!procDir.mkdir()) {
+                throw new IOException(("Can't create " + procDir));
+            }
+        }
+        if (!procNumDir.exists()) {
+            if (!procNumDir.mkdir()) {
+                throw new IOException(("Can't create " + procNumDir));
+            }
+        }
+        File dataFile = procNumPath.resolve(DATA_FILE_NAME).toFile();
         File headerFile = procNumPath.resolve(HEADER_FILE_NAME).toFile();
         File seriesFile = procNumPath.resolve(SERIES_FILE_NAME).toFile();
         saveToRS2DFile(dataset,dataFile.toString());
