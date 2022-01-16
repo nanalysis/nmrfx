@@ -1164,6 +1164,21 @@ public class RS2DData implements NMRData {
         this.sampleSchedule = sampleSchedule;
     }
 
+    private static void writeRow(Dataset dataset, Vec vec, int[] pt, BufferedOutputStream fOut) throws IOException {
+        if (dataset.getComplex(0)) {
+            vec.makeComplex();
+        } else {
+            vec.makeReal();
+        }
+        dataset.readVector(vec, pt, 0);
+        if (!dataset.getComplex(0)) {
+            vec.makeComplex();
+        }
+        byte[] array = vec.toFloatBytes();
+        fOut.write(array);
+
+    }
+
     public static void saveToRS2DFile(Dataset dataset, String filePath) throws IOException {
         try (BufferedOutputStream fOut = new BufferedOutputStream(new FileOutputStream(filePath))) {
             int nDim = dataset.getNDim();
@@ -1186,19 +1201,16 @@ public class RS2DData implements NMRData {
 
                 while (true) {
                     int nRows = sizes[0];
-                    for (int k = 0; k < nRows; k++) {
-                        pt[0] = k;
-                        if (dataset.getComplex(0)) {
-                            vec.makeComplex();
-                        } else {
-                            vec.makeReal();
+                    if (dataset.getAxisReversed(1)) {
+                        for (int k = 0; k < nRows; k++) {
+                            pt[0] = k;
+                            writeRow(dataset, vec, pt, fOut);
                         }
-                        dataset.readVector(vec, pt, 0);
-                        if (!dataset.getComplex(0)) {
-                            vec.makeComplex();
+                    } else {
+                        for (int k = nRows - 1; k >= 0; k--) {
+                            pt[0] = k;
+                            writeRow(dataset, vec, pt, fOut);
                         }
-                        byte[] array = vec.toFloatBytes();
-                        fOut.write(array);
                     }
                     boolean done = true;
                     for (int j = 2; j < nDim; j++) {
