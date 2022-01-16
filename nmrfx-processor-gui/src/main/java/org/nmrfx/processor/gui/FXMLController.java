@@ -489,8 +489,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
                     PreferencesController.saveRecentDatasets(selectedFile.toString());
                     RS2DData rs2dData = (RS2DData) nmrData;
                     String suggestedName = rs2dData.suggestName(new File(rs2dData.getFilePath()));
-                    String datasetName = GUIUtils.input("Dataset name", suggestedName);
-                    Dataset dataset = rs2dData.toDataset(datasetName);
+                    Dataset dataset = rs2dData.toDataset(suggestedName);
                     addDataset(dataset, append, false);
                 }
             } catch (IOException ex) {
