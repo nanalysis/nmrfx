@@ -112,9 +112,9 @@ public class RefManager {
                 break;
             case "dataset":
                 break;
-            case "extension":
-                String extension = updateItem.getValue().toString();
-                chartProcessor.setExtension(extension);
+            case "datatype":
+                String dataType = updateItem.getValue().toString();
+                chartProcessor.setDatasetType(dataType);
                 break;
             case "acqOrder":
                 String acqOrder = updateItem.getValue().toString();
@@ -288,11 +288,11 @@ public class RefManager {
         ObservableList<PropertySheet.Item> newItems = FXCollections.observableArrayList();
         String dimName = "" + (dim + 1);
         if (dim == 0) {
-            ArrayList<String> extensionChoices = new ArrayList<>();
-            extensionChoices.add(".nv");
-            extensionChoices.add(".ucsf");
-            extensionChoices.add(".rs2d");
-            newItems.add(new ChoiceOperationItem(stringListener, chartProcessor.getExtension(), extensionChoices, dimName, "extension", "Filename extension (determines dataset type)"));
+            ArrayList<String> datasetTypeChoices = new ArrayList<>();
+            datasetTypeChoices.add("nv");
+            datasetTypeChoices.add("ucsf");
+            datasetTypeChoices.add("SPINit");
+            newItems.add(new ChoiceOperationItem(stringListener, chartProcessor.getDatasetType(), datasetTypeChoices, dimName, "datatype", "Dataset type"));
             if (nmrData != null) {
                 ArrayList<String> choices = new ArrayList<>();
                 if (nmrData.getNDim() > 1) {

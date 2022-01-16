@@ -100,7 +100,7 @@ public class ChartProcessor {
      * The name of the datasetFile that will be created when whole data file is
      * processed.
      */
-    private String extension = ".nv";
+    private String datasetType = "nv";
 
     /**
      * List of commands to be executed at beginning of script.
@@ -725,12 +725,12 @@ public class ChartProcessor {
         return vecDim;
     }
 
-    public void setExtension(String value) {
-        extension = value;
+    public void setDatasetType(String value) {
+        datasetType = value;
     }
 
-    public String getExtension() {
-        return extension;
+    public String getDatasetType() {
+        return datasetType;
     }
 
     public void writeScript() throws IOException {
@@ -965,7 +965,7 @@ public class ChartProcessor {
             File nmrFile = new File(filePath);
             File directory = nmrFile.isDirectory() ? nmrFile : nmrFile.getParentFile();
             File file;
-            if (getExtension().equals(".rs2d")) {
+            if (getDatasetType().equals("SPINit")) {
                 Path procDir = Path.of(directory.toString(),"Proc");
                 int procNum;
                 try {
@@ -1002,11 +1002,11 @@ public class ChartProcessor {
 
                 String fileString = file.getAbsoluteFile().toString();
                 if (!fileString.endsWith(".nv") && !fileString.endsWith(".ucsf")) {
-                    if (getExtension().equals(".rs2d")) {
+                    if (getDatasetType().equals("SPINit")) {
                         datasetFile = file;
                         fileString = datasetFile.toString();
                     } else {
-                        fileString += getExtension();
+                        fileString += "." + getDatasetType();
                         datasetFile = new File(fileString);
                     }
                 } else {
@@ -1025,8 +1025,8 @@ public class ChartProcessor {
 
     private void setDatasetFile(String datasetName) {
         File scriptDir = getScriptDir();
-        datasetFile = scriptDir.toPath().resolve(datasetName + extension).toFile();
-        datasetFileTemp = scriptDir.toPath().resolve(datasetName + extension + ".tmp").toFile();
+        datasetFile = scriptDir.toPath().resolve(datasetName + datasetType).toFile();
+        datasetFileTemp = scriptDir.toPath().resolve(datasetName + datasetType + ".tmp").toFile();
     }
 
     private String suggestDatasetName() {
