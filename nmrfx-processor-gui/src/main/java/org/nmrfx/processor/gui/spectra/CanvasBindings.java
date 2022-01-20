@@ -121,6 +121,8 @@ public class CanvasBindings {
             mouseNode.requestFocus();
         });
 
+
+
         mouseNode.setOnMouseMoved((MouseEvent mouseEvent) -> {
             PolyChart chart = controller.getActiveChart();
             if (chart != null) {

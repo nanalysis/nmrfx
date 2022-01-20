@@ -343,6 +343,9 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
     }
 
     public void setActiveChart(PolyChart chart) {
+        if (activeChart != chart) {
+            deselectCharts();
+        }
         activeChart = chart;
         PolyChart.activeChart.set(chart);
         if (specAttrWindowController != null) {
@@ -355,6 +358,12 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
 
     public PolyChart getActiveChart() {
         return activeChart;
+    }
+
+    public void deselectCharts() {
+        for (var chart:charts) {
+            chart.selectChart(false);
+        }
     }
 
     public Stage getStage() {

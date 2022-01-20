@@ -17,47 +17,27 @@
  */
 package org.nmrfx.processor.gui.spectra;
 
-import java.lang.reflect.InvocationTargetException;
-import org.nmrfx.peaks.Peak;
-import org.nmrfx.processor.gui.PolyChart;
-import static org.nmrfx.processor.gui.spectra.DrawPeaks.minHitSize;
-import org.nmrfx.processor.gui.spectra.PeakDisplayParameters.DisplayTypes;
-import static org.nmrfx.processor.gui.spectra.PeakDisplayParameters.LabelTypes.Number;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.util.stream.Collectors;
-import javafx.beans.property.BooleanProperty;
-import javafx.beans.property.IntegerProperty;
-import javafx.beans.property.ObjectProperty;
-import javafx.beans.property.SimpleBooleanProperty;
-import javafx.beans.property.SimpleIntegerProperty;
-import javafx.beans.property.SimpleObjectProperty;
-import javafx.beans.property.SimpleStringProperty;
-import javafx.beans.property.StringProperty;
+import javafx.beans.property.*;
 import javafx.collections.FXCollections;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import org.apache.commons.beanutils.PropertyUtils;
 import org.nmrfx.datasets.DatasetBase;
-import org.nmrfx.peaks.AbsMultipletComponent;
-import org.nmrfx.peaks.ComplexCoupling;
-import org.nmrfx.peaks.Coupling;
-import org.nmrfx.peaks.CouplingPattern;
-import org.nmrfx.peaks.Multiplet;
-import org.nmrfx.peaks.PeakDim;
+import org.nmrfx.peaks.*;
 import org.nmrfx.processor.datasets.Dataset;
-import org.nmrfx.peaks.PeakEvent;
-import org.nmrfx.peaks.PeakList;
-import org.nmrfx.peaks.PeakListener;
+import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.controls.ConsoleUtil;
 import org.nmrfx.processor.gui.spectra.PeakDisplayParameters.ColorTypes;
+import org.nmrfx.processor.gui.spectra.PeakDisplayParameters.DisplayTypes;
+
+import java.lang.reflect.InvocationTargetException;
+import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.stream.Collectors;
+
+import static org.nmrfx.processor.gui.spectra.DrawPeaks.minHitSize;
+import static org.nmrfx.processor.gui.spectra.PeakDisplayParameters.LabelTypes.Number;
 
 /**
  *
@@ -456,6 +436,24 @@ public class PeakListAttributes implements PeakListener {
             } else {
                 hit = peaksInRegion.get().stream().parallel().filter(peak -> peak.getStatus() >= 0)
                         .filter((peak) -> drawPeaks.pick1DPeak(this, peak, peakDim, pickX, pickY)).findFirst();
+            }
+        }
+        return hit;
+    }
+
+    public Optional<MultipletSelection> hitMultiplet(DrawPeaks drawPeaks, double pickX, double pickY) {
+        Optional<MultipletSelection> hit = Optional.empty();
+        if (peaksInRegion.isPresent()) {
+            int[] peakDim = getPeakDim();
+            xAxis = (NMRAxis) chart.getXAxis();
+            yAxis = (NMRAxis) chart.getYAxis();
+            if (peakList.nDim == 1) {
+                var pickResult = peaksInRegion.get().stream().filter(peak -> peak.getStatus() >= 0).
+                        map(peak -> peak.getPeakDim(0).getMultiplet())
+                        .map((multiplet) -> drawPeaks.pick1DMultiplet(this, peakDim, multiplet, pickX, pickY)).findFirst();
+                if (pickResult.isPresent()) {
+                    hit = pickResult.get();
+                }
             }
         }
         return hit;

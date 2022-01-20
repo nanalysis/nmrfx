@@ -2016,10 +2016,9 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
         return offsets;
     }
 
-    public void moveRegion(NMRAxis[] axes, double[] newValue) {
-        getActiveRegion().ifPresent(iHit -> {
-            DatasetRegion r = iHit.getDatasetRegion();
+    public void moveRegion(IntegralHit iHit, NMRAxis[] axes, double[] newValue) {
             int handle = iHit.handle;
+            DatasetRegion r = iHit.getDatasetRegion();
             double newX = axes[0].getValueForDisplay(newValue[0]).doubleValue();
             double newY = axes[1].getValueForDisplay(newValue[1]).doubleValue();
             switch (handle) {
@@ -2045,8 +2044,6 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
                 default:
                     break;
             }
-
-        });
     }
 
     public int[] getMatchDim(DatasetAttributes dataAttr2, boolean looseMode) {
