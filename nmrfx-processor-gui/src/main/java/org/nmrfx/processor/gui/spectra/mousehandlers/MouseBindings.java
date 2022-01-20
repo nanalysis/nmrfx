@@ -15,14 +15,13 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.nmrfx.processor.gui.mousehandlers;
+package org.nmrfx.processor.gui.spectra.mousehandlers;
 
 import javafx.event.Event;
 import javafx.scene.input.MouseEvent;
 import org.nmrfx.datasets.DatasetRegion;
 import org.nmrfx.processor.gui.MainApp;
 import org.nmrfx.processor.gui.PolyChart;
-import org.nmrfx.processor.gui.mousehandlers.*;
 
 import java.util.Optional;
 

@@ -1,4 +1,4 @@
-package org.nmrfx.processor.gui.mousehandlers;
+package org.nmrfx.processor.gui.spectra.mousehandlers;
 
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.spectra.IntegralHit;

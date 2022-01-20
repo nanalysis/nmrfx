@@ -1,4 +1,4 @@
-package org.nmrfx.processor.gui.mousehandlers;
+package org.nmrfx.processor.gui.spectra.mousehandlers;
 
 import javafx.scene.input.MouseEvent;
 import org.nmrfx.processor.gui.CanvasAnnotation;
