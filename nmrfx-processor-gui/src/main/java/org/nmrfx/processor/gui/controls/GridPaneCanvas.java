@@ -41,7 +41,7 @@ public class GridPaneCanvas extends GridPane {
     public enum ORIENTATION {
         VERTICAL,
         HORIZONTAL,
-        GRID;
+        GRID
     }
 
     FXMLController controller;
@@ -73,7 +73,6 @@ public class GridPaneCanvas extends GridPane {
     }
 
 
-
     @Override
     public void layoutChildren() {
         super.layoutChildren();
@@ -97,7 +96,7 @@ public class GridPaneCanvas extends GridPane {
 
     Point2D getLocal(double x, double y) {
         Transform transform = getLocalToSceneTransform();
-        Point2D result = null;
+        Point2D result;
         try {
             Transform inverseTrans = transform.createInverse();
             result = inverseTrans.transform(x, y);
@@ -110,7 +109,7 @@ public class GridPaneCanvas extends GridPane {
 
     Point2D getFraction(double x, double y) {
         Transform transform = getLocalToSceneTransform();
-        Point2D result = null;
+        Point2D result;
         try {
             Transform inverseTrans = transform.createInverse();
             Point2D point = inverseTrans.transform(x, y);
@@ -129,7 +128,7 @@ public class GridPaneCanvas extends GridPane {
 
     public boolean setOrientation(ORIENTATION orient, boolean force) {
         int nChildren = getChildren().size();
-        int newRows = 0;
+        int newRows;
         if (orient == ORIENTATION.VERTICAL) {
             newRows = nChildren;
         } else if (orient == ORIENTATION.HORIZONTAL) {
@@ -156,7 +155,7 @@ public class GridPaneCanvas extends GridPane {
 
     public void setRows(int nRows) {
         this.nRows = nRows;
-        updateConstraints();
+        updateGrid();
     }
 
     public int getRows() {
@@ -172,62 +171,33 @@ public class GridPaneCanvas extends GridPane {
         return nColumns;
     }
 
-    public void updateConstraints() {
-        double[][] borderGrid = controller.prepareChildren(nRows, getColumns());
-
+    private void updateGrid() {
         int nChildren = getChildren().size();
         int nColumns = getColumns();
         disableCharts(true);
         int iChild = 0;
-        int borderExtra = 50;
-        ColumnConstraints column1 = new ColumnConstraints();
-        column1.setHgrow(Priority.ALWAYS);
-        RowConstraints row1 = new RowConstraints();
-        row1.setVgrow(Priority.ALWAYS);
-        ColumnConstraints columnExtra = new ColumnConstraints();
-        columnExtra.setPrefWidth(borderGrid[0][0]);
-        columnExtra.setHgrow(Priority.NEVER);
-        RowConstraints rowExtra = new RowConstraints();
-        rowExtra.setPrefHeight(borderGrid[2][nRows -1]);
-        rowExtra.setVgrow(Priority.NEVER);
 
-        boolean minBorders = controller.getMinBorders();
         for (int iRow = 0; iRow < nRows; iRow++) {
             for (int jColumn = 0; jColumn < nColumns; jColumn++) {
                 if (iChild >= nChildren) {
                     break;
                 }
                 var node = getChildren().get(iChild);
-                int columnOffset = (minBorders && (jColumn != 0)) ? 1 : 0;
-                int columnSpan = (minBorders && (jColumn == 0)) ? 2 : 1;
-                int rowSpan = (minBorders && (iRow == (nRows-1))) ? 2 : 1;
-
-                setRowIndex(node, iRow);
-                setRowSpan(node, rowSpan);
-                setColumnIndex(node, jColumn + columnOffset);
-                setColumnSpan(node, columnSpan);
+                setRowIndex(node, iRow * 2);
+                setRowSpan(node, 2);
+                setColumnIndex(node, jColumn * 2);
+                setColumnSpan(node, 2);
                 iChild++;
             }
         }
-        getRowConstraints().clear();
-        getColumnConstraints().clear();
-        for (int iRow = 0; iRow < nRows; iRow++) {
-            getRowConstraints().add(row1);
-        }
-        if (minBorders) {
-            getRowConstraints().add(rowExtra);
-            getColumnConstraints().add(columnExtra);
-        }
-        for (int jColumn = 0; jColumn < nColumns; jColumn++) {
-            getColumnConstraints().add(column1);
-        }
+        updateConstraints();
         disableCharts(false);
         layoutChildren();
     }
 
     public void addChart(PolyChart chart) {
         getChildren().add(chart);
-        updateConstraints();
+        updateGrid();
     }
 
     public void addChart(int position, PolyChart chart) {
@@ -236,7 +206,62 @@ public class GridPaneCanvas extends GridPane {
         } else {
             getChildren().add(chart);
         }
-        updateConstraints();
+        updateGrid();
+    }
+
+    public void addCharts(int nRows, List<PolyChart> charts) {
+        disableCharts(charts, true);
+        getChildren().clear();
+        getChildren().addAll(charts);
+        setRows(nRows);
+        updateGrid();
+    }
+
+    public void addChart(PolyChart chart, int chartColumn, int chartRow, int columnSpan, int rowSpan) {
+        add(chart, chartColumn * 2, chartRow * 2, columnSpan * 2, rowSpan * 2);
+    }
+
+    public void updateConstraints() {
+        disableCharts(true);
+        int nColumns = 0;
+        int nRows = 0;
+        for (var node : getChildren()) {
+            Integer column = getColumnIndex(node);
+            Integer row = getRowIndex(node);
+            if ((column == null) || (row == null)) {
+                break;
+            }
+            Integer columnSpan = getColumnSpan(node);
+            Integer rowSpan = getRowSpan(node);
+            columnSpan = columnSpan == null ? 1 : columnSpan;
+            rowSpan = rowSpan == null ? 1 : rowSpan;
+            nColumns = Math.max(nColumns, column + columnSpan + 1);
+            nRows = Math.max(nRows, row + rowSpan + 1);
+        }
+        if ((nColumns > 0) && (nRows > 0)) {
+            int nChartColumns = nColumns / 2;
+            int nChartRows = nRows / 2;
+            getRowConstraints().clear();
+            getColumnConstraints().clear();
+            double[][] borderGrid = controller.prepareChildren(nRows, getColumns());
+            for (int i = 0; i < nChartColumns; i++) {
+                ColumnConstraints borderConstraint = new ColumnConstraints();
+                borderConstraint.setPrefWidth(borderGrid[0][i]);
+                borderConstraint.setHgrow(Priority.NEVER);
+                ColumnConstraints chartConstraint = new ColumnConstraints();
+                chartConstraint.setHgrow(Priority.ALWAYS);
+                getColumnConstraints().addAll(borderConstraint, chartConstraint);
+            }
+            for (int i = 0; i < nChartRows; i++) {
+                RowConstraints borderConstraint = new RowConstraints();
+                borderConstraint.setPrefHeight(borderGrid[2][i]);
+                borderConstraint.setVgrow(Priority.NEVER);
+                RowConstraints chartConstraint = new RowConstraints();
+                chartConstraint.setVgrow(Priority.ALWAYS);
+                getRowConstraints().addAll(borderConstraint, chartConstraint);
+            }
+        }
+        disableCharts(false);
     }
 
     private void disableCharts(boolean state) {
@@ -254,12 +279,4 @@ public class GridPaneCanvas extends GridPane {
         }
     }
 
-    public void addCharts(int nRows, List<PolyChart> charts) {
-        disableCharts(charts, true);
-        getChildren().clear();
-        getChildren().addAll(charts);
-        setRows(nRows);
-        disableCharts(charts, false);
-        layoutChildren();
-    }
 }
