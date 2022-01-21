@@ -52,7 +52,7 @@ public class GridPaneCanvas extends GridPane {
         this.controller = controller;
         this.canvas = canvas;
         layoutBoundsProperty().addListener((ObservableValue<? extends Bounds> arg0, Bounds arg1, Bounds arg2) -> {
-            if (arg2.getWidth() == 0 || arg2.getHeight() == 0) {
+            if (arg2.getWidth() < 1.0 || arg2.getHeight() < 1.0) {
                 return;
             }
             requestLayout();
