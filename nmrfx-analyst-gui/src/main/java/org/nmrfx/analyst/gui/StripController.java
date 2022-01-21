@@ -52,7 +52,7 @@ import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.ControllerTool;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.PolyChart;
-import org.nmrfx.processor.gui.controls.FractionPane;
+import org.nmrfx.processor.gui.controls.GridPaneCanvas;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.processor.gui.spectra.PeakDisplayParameters;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
@@ -651,7 +651,7 @@ public class StripController implements ControllerTool {
         if ((currentRows != rows) || (currentColumns != columns)) {
             int nCharts = rows * columns;
             if (nCharts > 0) {
-                FractionPane.ORIENTATION orient = FractionPane.getOrientation("grid");
+                GridPaneCanvas.ORIENTATION orient = GridPaneCanvas.getOrientation("grid");
                 controller.setNCharts(nCharts);
                 controller.arrange(rows);
                 controller.setBorderState(true);
