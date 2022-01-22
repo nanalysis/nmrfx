@@ -3,8 +3,10 @@ package org.nmrfx.analyst.gui.tools;
 import de.jensd.fx.glyphs.GlyphsDude;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import javafx.application.Platform;
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
-import javafx.collections.ListChangeListener;
 import javafx.collections.MapChangeListener;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -15,22 +17,21 @@ import javafx.geometry.Side;
 import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.control.*;
+import javafx.scene.control.cell.CheckBoxTableCell;
+import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextAlignment;
-import org.controlsfx.control.CheckListView;
 import org.nmrfx.chemistry.Polymer;
 import org.nmrfx.chemistry.Residue;
 import org.nmrfx.chemistry.io.AtomParser;
 import org.nmrfx.peaks.*;
 import org.nmrfx.processor.datasets.Dataset;
-import org.nmrfx.processor.gui.CanvasAnnotation;
-import org.nmrfx.processor.gui.FXMLController;
-import org.nmrfx.processor.gui.PeakNavigable;
-import org.nmrfx.processor.gui.PolyChart;
+import org.nmrfx.processor.datasets.peaks.PeakListAlign;
+import org.nmrfx.processor.gui.*;
 import org.nmrfx.processor.gui.annotations.AnnoLine;
 import org.nmrfx.processor.gui.annotations.AnnoText;
 import org.nmrfx.processor.gui.project.GUIProject;
@@ -69,7 +70,8 @@ public class RunAboutGUI implements PeakListener {
     MenuButton arrangeMenuButton;
     ToggleButton deleteButton;
     PeakNavigable peakNavigable;
-    PeakList refPeakList;
+    PeakList navigationPeakList;
+    SimpleObjectProperty<PeakList> refListObj = new SimpleObjectProperty<>();
     Peak currentPeak;
     static Background deleteBackground = new Background(new BackgroundFill(Color.RED, CornerRadii.EMPTY, Insets.EMPTY));
     Background defaultBackground = null;
@@ -94,7 +96,7 @@ public class RunAboutGUI implements PeakListener {
     Map<String, ResidueLabel> residueLabelMap = new HashMap<>();
     Map<Integer, String> chartTypes = new HashMap<>();
     RunAboutArrangements runAboutArrangements;
-    CheckListView<PeakList> peakListCheckView;
+    TableView<PeakListSelection> peakTableView = new TableView<>();
     boolean useSpinSystem = false;
     Double[][] widths;
     int[] resOffsets = null;
@@ -155,6 +157,52 @@ public class RunAboutGUI implements PeakListener {
 
     }
 
+    public static class PeakListSelection {
+        PeakList peakList;
+        private BooleanProperty active;
+
+        public BooleanProperty activeProperty() {
+            if (active == null) {
+                active = new SimpleBooleanProperty(this, "+on", false);
+            }
+            return active;
+        }
+        public void setActive(boolean value) {
+            System.out.println("set value " + value);
+            activeProperty().set(value);
+        }
+        public boolean getActive() {
+            return activeProperty().get();
+        }
+        PeakListSelection(PeakList peakList) {
+            this.peakList = peakList;
+        }
+
+        public String getName() {
+            return peakList.getName();
+        }
+
+        public int getSize() {
+            return peakList.peaks().size();
+        }
+
+        public String getType() {
+            return peakList.getExperimentType();
+        }
+
+        public boolean getPattern() {
+            boolean hasPattern = true;
+            for (var sDim:peakList.getSpectralDims()) {
+                if (sDim.getPattern().isBlank()) {
+                    hasPattern = false;
+                }
+            }
+            return hasPattern;
+        }
+
+
+    }
+
     class ClusterPane extends Pane {
 
         double resWidth = 12.0;
@@ -209,27 +257,83 @@ public class RunAboutGUI implements PeakListener {
     void initPreferences(HBox hBox) {
         GUIProject.getActive().getPeakLists();
         ObservableList<PeakList> peakLists = FXCollections.observableArrayList(new ArrayList<>(PeakList.peakLists()));
-        VBox listsBox = new VBox();
-        VBox.setVgrow(listsBox,Priority.ALWAYS);
-        CheckBox allBox = new CheckBox("PeakLists");
-        peakListCheckView = new CheckListView<>(peakLists);
-        peakListCheckView.setMinHeight(100);
-        peakListCheckView.setPrefHeight(100);
-        VBox.setVgrow(peakListCheckView,Priority.ALWAYS);
-        listsBox.getChildren().addAll(allBox, peakListCheckView);
-        hBox.getChildren().add(listsBox);
-        allBox.setOnAction(e -> {
-            boolean allOn = allBox.isSelected();
-            for (var item : peakListCheckView.getItems()) {
-                if (!allOn) {
-                    peakListCheckView.getCheckModel().clearCheck(item);
-                } else {
-                    peakListCheckView.getCheckModel().check(item);
-                }
+
+        GridPane gridBox1 = new GridPane();
+        Label refLabel = new Label("Ref List");
+        ChoiceBox<PeakList> referenceChoice = new ChoiceBox();
+        gridBox1.add(refLabel, 0, 0);
+        gridBox1.add(referenceChoice, 1, 0);
+        referenceChoice.getItems().addAll(peakLists);
+        refListObj.set(peakLists.get(0));
+        referenceChoice.valueProperty().bindBidirectional(refListObj);
+
+        VBox vBox2 = new VBox();
+        VBox.setVgrow(vBox2,Priority.ALWAYS);
+
+        peakTableView.setMinHeight(100);
+        peakTableView.setPrefHeight(100);
+        peakTableView.setEditable(true);
+        VBox.setVgrow(peakTableView,Priority.ALWAYS);
+        TableColumn<PeakListSelection, String> peakListNameColumn = new TableColumn<>("Name");
+        peakListNameColumn.setCellValueFactory(new PropertyValueFactory<>("Name"));
+        peakListNameColumn.setEditable(false);
+
+        TableColumn<PeakListSelection, String> peakTypeColumn = new TableColumn<>("Type");
+        peakTypeColumn.setCellValueFactory(new PropertyValueFactory<>("Type"));
+        peakTypeColumn.setEditable(false);
+
+        TableColumn<PeakListSelection, Boolean> peakListPatternColumn = new TableColumn<>("Pattern");
+        peakListPatternColumn.setCellValueFactory(new PropertyValueFactory<>("pattern"));
+       // peakListPatternColumn.setCellFactory(param -> new CheckBoxTableCell<>());
+        peakListPatternColumn.setEditable(false);
+
+        TableColumn<PeakListSelection, Integer> peakListSizeColumn = new TableColumn<>("Size");
+        peakListSizeColumn.setCellValueFactory(new PropertyValueFactory<>("Size"));
+        peakListSizeColumn.setEditable(false);
+
+        TableColumn<PeakListSelection, Boolean> peakListSelectedColumn = new TableColumn<>("Active");
+        peakListSelectedColumn.setCellValueFactory(new PropertyValueFactory<>("active"));
+        peakListSelectedColumn.setEditable(true);
+        peakListSelectedColumn.setCellFactory(param -> new CheckBoxTableCell<>());
+        var peakListSelectors = peakLists.stream().map(PeakListSelection::new).collect(Collectors.toList());
+
+        peakTableView.getItems().addAll(peakListSelectors);
+        peakTableView.getColumns().addAll(peakListNameColumn, peakTypeColumn, peakListPatternColumn,
+                peakListSizeColumn, peakListSelectedColumn);
+
+        MapChangeListener<String, PeakList> peakmapChangeListener =
+                (MapChangeListener.Change<? extends String, ? extends PeakList> change) -> System.out.println("pkl changed");
+
+        Project.getActive().addPeakListListener(peakmapChangeListener);
+
+        Button configureButton = new Button("Inspector");
+        configureButton.setOnAction(e-> inspectPeakList());
+
+        vBox2.getChildren().addAll(configureButton, peakTableView);
+
+        hBox.getChildren().addAll(gridBox1, vBox2);
+        var model = peakTableView.getSelectionModel();
+        configureButton.setDisable(true);
+        model.selectedIndexProperty().addListener(e -> {
+            System.out.println("selected " + model.getSelectedIndices());
+            if (model.getSelectedIndices().isEmpty()) {
+                configureButton.setDisable(true);
+            } else {
+                configureButton.setDisable(false);
             }
         });
-        peakListCheckView.getCheckModel().getCheckedItems().addListener((ListChangeListener) e ->
-                allBox.setSelected(peakListCheckView.getCheckModel().getCheckedItems().size() == peakListCheckView.getItems().size()));
+    }
+
+    private void inspectPeakList() {
+        var items = peakTableView.getSelectionModel().getSelectedItems();
+        if (!items.isEmpty()) {
+            PeakListSelection item = items.get(0);
+            PeakList peakList = item.peakList;
+            controller.showPeakAttr();
+            controller.getPeakAttrController().setPeakList(peakList);
+            controller.getPeakAttrController().getStage().toFront();
+            controller.getPeakAttrController().selectTab("Reference");
+        }
     }
 
     void initHelm(VBox vBox) {
@@ -311,6 +415,10 @@ public class RunAboutGUI implements PeakListener {
         setupItem.setOnAction(e -> setupRunAbout());
 
         actionMenuButton.getItems().add(setupItem);
+
+        MenuItem alignItem = new MenuItem("Align");
+        alignItem.setOnAction(e -> alignCenters());
+        actionMenuButton.getItems().add(alignItem);
 
         MenuItem filterItem = new MenuItem("Filter");
         filterItem.setOnAction(e -> runAbout.filterPeaks());
@@ -947,7 +1055,7 @@ public class RunAboutGUI implements PeakListener {
     }
 
     public void setPeakList() {
-        if (refPeakList == null) {
+        if (navigationPeakList == null) {
             PeakList testList = null;
             FXMLController controller = FXMLController.getActiveController();
             PolyChart chart = controller.getActiveChart();
@@ -966,28 +1074,28 @@ public class RunAboutGUI implements PeakListener {
     }
 
     public void removePeakList() {
-        if (refPeakList != null) {
-            refPeakList.removeListener(this);
+        if (navigationPeakList != null) {
+            navigationPeakList.removeListener(this);
         }
-        refPeakList = null;
+        navigationPeakList = null;
         currentPeak = null;
     }
 
     public void setPeakList(String listName) {
-        refPeakList = PeakList.get(listName);
-        PeakList.clusterOrigin = refPeakList;
-        RunAboutGUI.this.setPeakList(refPeakList);
+        navigationPeakList = PeakList.get(listName);
+        PeakList.clusterOrigin = navigationPeakList;
+        RunAboutGUI.this.setPeakList(navigationPeakList);
     }
 
     public void setPeakList(PeakList newPeakList) {
-        refPeakList = newPeakList;
-        if (refPeakList != null) {
-            currentPeak = refPeakList.getPeak(0);
+        navigationPeakList = newPeakList;
+        if (navigationPeakList != null) {
+            currentPeak = navigationPeakList.getPeak(0);
             setPeakIdField();
-            refPeakList.registerListener(this);
+            navigationPeakList.registerListener(this);
         }
         peakNavigable.refreshPeakView(currentPeak);
-        peakNavigable.refreshPeakListView(refPeakList);
+        peakNavigable.refreshPeakListView(navigationPeakList);
     }
 
     public Peak getPeak() {
@@ -1081,7 +1189,7 @@ public class RunAboutGUI implements PeakListener {
 
     }
 
-    public void firstPeak(ActionEvent event) {
+    public void firstPeak(ActionEvent ignoredEvent) {
         if (useSpinSystem) {
             firstSpinSystem();
         } else {
@@ -1173,16 +1281,16 @@ public class RunAboutGUI implements PeakListener {
             currentPeak.setStatus(-1);
             currList.compress();
             currList.reNumber();
-            if (peakIndex >= refPeakList.size()) {
-                peakIndex = refPeakList.size() - 1;
+            if (peakIndex >= navigationPeakList.size()) {
+                peakIndex = navigationPeakList.size() - 1;
             }
             setPeak(currList.getPeak(peakIndex));
         }
     }
 
     void firstPeak() {
-        if (refPeakList != null) {
-            Peak peak = refPeakList.getPeak(0);
+        if (navigationPeakList != null) {
+            Peak peak = navigationPeakList.getPeak(0);
             setPeak(peak);
         }
     }
@@ -1194,7 +1302,7 @@ public class RunAboutGUI implements PeakListener {
             if (peakIndex < 0) {
                 peakIndex = 0;
             }
-            Peak peak = refPeakList.getPeak(peakIndex);
+            Peak peak = navigationPeakList.getPeak(peakIndex);
             setPeak(peak);
         }
     }
@@ -1203,18 +1311,18 @@ public class RunAboutGUI implements PeakListener {
         if (currentPeak != null) {
             int peakIndex = currentPeak.getIndex();
             peakIndex++;
-            if (peakIndex >= refPeakList.size()) {
-                peakIndex = refPeakList.size() - 1;
+            if (peakIndex >= navigationPeakList.size()) {
+                peakIndex = navigationPeakList.size() - 1;
             }
-            Peak peak = refPeakList.getPeak(peakIndex);
+            Peak peak = navigationPeakList.getPeak(peakIndex);
             setPeak(peak);
         }
     }
 
     public void lastPeak() {
-        if (refPeakList != null) {
-            int peakIndex = refPeakList.size() - 1;
-            Peak peak = refPeakList.getPeak(peakIndex);
+        if (navigationPeakList != null) {
+            int peakIndex = navigationPeakList.size() - 1;
+            Peak peak = navigationPeakList.getPeak(peakIndex);
             setPeak(peak);
         }
     }
@@ -1225,10 +1333,10 @@ public class RunAboutGUI implements PeakListener {
             pattern = pattern.substring(2).trim();
             if (pattern.contains(":")) {
                 String[] matchStrings = pattern.split(":");
-                result = refPeakList.matchPeaks(matchStrings, true, true);
+                result = navigationPeakList.matchPeaks(matchStrings, true, true);
             } else {
                 String[] matchStrings = pattern.split(",");
-                result = refPeakList.matchPeaks(matchStrings, true, false);
+                result = navigationPeakList.matchPeaks(matchStrings, true, false);
             }
         } else {
             if (pattern.contains(":")) {
@@ -1240,7 +1348,7 @@ public class RunAboutGUI implements PeakListener {
                 }
 
                 String[] matchStrings = pattern.split(":");
-                result = refPeakList.matchPeaks(matchStrings, false, true);
+                result = navigationPeakList.matchPeaks(matchStrings, false, true);
             } else {
                 if (pattern.charAt(0) == ',') {
                     pattern = " " + pattern;
@@ -1249,7 +1357,7 @@ public class RunAboutGUI implements PeakListener {
                     pattern = pattern + " ";
                 }
                 String[] matchStrings = pattern.split(",");
-                result = refPeakList.matchPeaks(matchStrings, false, false);
+                result = navigationPeakList.matchPeaks(matchStrings, false, false);
             }
         }
         return result;
@@ -1265,7 +1373,7 @@ public class RunAboutGUI implements PeakListener {
 
             }
         } else {
-            if (refPeakList != null) {
+            if (navigationPeakList != null) {
                 matchPeaks.clear();
                 int id = Integer.MIN_VALUE;
                 if (idString.length() != 0) {
@@ -1284,10 +1392,10 @@ public class RunAboutGUI implements PeakListener {
                     if (id != Integer.MIN_VALUE) {
                         if (id < 0) {
                             id = 0;
-                        } else if (id >= refPeakList.size()) {
-                            id = refPeakList.size() - 1;
+                        } else if (id >= navigationPeakList.size()) {
+                            id = navigationPeakList.size() - 1;
                         }
-                        Peak peak = refPeakList.getPeakByID(id);
+                        Peak peak = navigationPeakList.getPeakByID(id);
                         setPeak(peak);
                     }
                 }
@@ -1324,7 +1432,7 @@ public class RunAboutGUI implements PeakListener {
     public void peakListChanged(PeakEvent peakEvent) {
         if (peakEvent.getSource() instanceof PeakList) {
             PeakList sourceList = (PeakList) peakEvent.getSource();
-            if (sourceList == refPeakList) {
+            if (sourceList == navigationPeakList) {
                 if (Platform.isFxApplicationThread()) {
                     peakNavigable.refreshPeakView();
                 } else {
@@ -1401,12 +1509,16 @@ public class RunAboutGUI implements PeakListener {
     void setupRunAbout() {
         if (!runAbout.isActive() ||
                 GUIUtils.affirm("Peak lists already setup, Setup again?")) {
-            List<PeakList> peakLists = peakListCheckView.getCheckModel().getCheckedItems();
+            var peakLists = peakTableView.getItems().stream().
+                    filter(PeakListSelection::getActive).
+                    map(p -> p.peakList).
+                    collect(Collectors.toList());
             if (peakLists.isEmpty()) {
                 GUIUtils.warn("RunAbout", "No peak lists selected");
             } else {
-                runAbout.setPeakLists(peakListCheckView.getCheckModel().getCheckedItems());
-                for (var peakList:peakLists) {
+                runAbout.setPeakLists(peakLists);
+                runAbout.setRefList(refListObj.get());
+                for (var peakList : peakLists) {
                     peakList.registerListener(this);
                 }
             }
@@ -1658,5 +1770,20 @@ public class RunAboutGUI implements PeakListener {
             }
         }
         chart.refresh();
+    }
+
+    void alignCenters() {
+        List<String> dimNames = new ArrayList<>();
+        for (var sDim:refListObj.get().getSpectralDims()) {
+            if (sDim.getPattern().equalsIgnoreCase("i.h") || sDim.getPattern().equalsIgnoreCase("i.n")) {
+                dimNames.add(sDim.getDimName());
+            }
+        }
+        if (dimNames.size() != 2) {
+            GUIUtils.warn("Alignment", "Can't find H and N dims");
+        } else {
+            List<PeakList> movingLists = runAbout.getPeakLists();
+            PeakListAlign.alignCenters(refListObj.get(), dimNames, movingLists);
+        }
     }
 }

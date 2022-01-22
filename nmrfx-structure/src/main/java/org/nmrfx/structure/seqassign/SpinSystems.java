@@ -155,9 +155,8 @@ public class SpinSystems {
 
 
 
-    public void assembleWithClustering(List<PeakList> peakLists) {
+    public void assembleWithClustering(PeakList refList, List<PeakList> peakLists) {
         sums = calcNormalization(peakLists);
-        PeakList refList = peakLists.get(0);
         PeakList.clusterOrigin = refList;
         boolean[] useDim = new boolean[refList.getNDim()];
         for (int i = 0; i < useDim.length; i++) {

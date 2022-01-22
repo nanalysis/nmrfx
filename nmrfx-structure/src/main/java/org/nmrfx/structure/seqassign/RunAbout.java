@@ -17,6 +17,7 @@ public class RunAbout {
 
     SpinSystems spinSystems = new SpinSystems(this);
     Map<String, PeakList> peakListMap = new LinkedHashMap<>();
+    PeakList refList;
     List<PeakList> peakLists = new ArrayList<>();
     Map<String, List<String>> dimLabels;
     Map<String, String> peakListTypes = new HashMap<>();
@@ -182,7 +183,12 @@ public class RunAbout {
         }
     }
 
+    public void setRefList(PeakList peakList) {
+        refList = peakList;
+    }
+
     public void setPeakLists(List<PeakList> lists) {
+        refList = lists.get(0);
         List<String> stdNames = Arrays.asList(SpinSystem.ATOM_TYPES);
         int[][] counts = new int[2][stdNames.size()];
         peakLists.clear();
@@ -304,7 +310,7 @@ public class RunAbout {
 
     public void assemble() {
         System.out.println("assemble " + peakListMap.keySet());
-        getSpinSystems().assembleWithClustering(peakLists);
+        getSpinSystems().assembleWithClustering(refList, peakLists);
     }
 
     public void calcCombinations() {
