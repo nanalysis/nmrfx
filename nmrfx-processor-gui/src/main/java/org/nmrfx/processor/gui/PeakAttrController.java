@@ -327,6 +327,11 @@ public class PeakAttrController implements Initializable, PeakNavigable, PeakMen
 
     }
 
+    public void selectTab(String tabName) {
+        var tabOpt = tabPane.getTabs().stream().filter(t -> t.getText().equals(tabName)).findFirst();
+        tabOpt.ifPresent(t -> tabPane.getSelectionModel().select(t));
+    }
+
     public void refreshPeakView() {
         refreshPeakView(currentPeak);
     }
