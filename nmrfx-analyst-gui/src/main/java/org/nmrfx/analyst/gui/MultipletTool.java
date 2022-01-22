@@ -1205,7 +1205,7 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
             if (peakList == null) {
                 removeJournalFormatOnChart();
             } else {
-                peakList.registerListener(this);
+                peakList.registerPeakChangeListener(this);
                 AnnoJournalFormat annoText = new AnnoJournalFormat(0.1, 20, 0.9, 100,
                         CanvasAnnotation.POSTYPE.FRACTION,
                         CanvasAnnotation.POSTYPE.PIXEL,
@@ -1223,7 +1223,7 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
         getAnalyzer();
         PeakList peakList = analyzer.getPeakList();
         if (peakList != null) {
-            peakList.removeListener(this);
+            peakList.removePeakChangeListener(this);
         }
 
         chart.chartProps.setTopBorderSize(7);

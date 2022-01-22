@@ -120,7 +120,7 @@ public class PeakPaths implements PeakListener {
         this.peakLists = new ArrayList<>();
         this.datasetNames = new ArrayList<>();
         for (PeakList peakList : peakLists) {
-            peakList.registerListener(this);
+            peakList.registerPeakChangeListener(this);
             this.peakLists.add(peakList);
             this.datasetNames.add(peakList.getDatasetName());
         }

@@ -50,9 +50,13 @@ public class PeakList {
     protected List<SearchDim> searchDims = new ArrayList<>();
     Optional<Measures> measures = Optional.empty();
     Map<String, String> properties = new HashMap<>();
-    List<PeakListener> listeners = new ArrayList<>();
+    List<PeakListener> peakChangeListeners = new ArrayList<>();
+    List<PeakListener> peakListChangeListeners = new ArrayList<>();
+    List<PeakListener> peakCountChangeListeners = new ArrayList<>();
     protected boolean changed = false;
-    public AtomicBoolean thisListUpdated = new AtomicBoolean(false);
+    public AtomicBoolean peakUpdated = new AtomicBoolean(false);
+    public AtomicBoolean peakListUpdated = new AtomicBoolean(false);
+    public AtomicBoolean peakCountUpdated = new AtomicBoolean(false);
     Updater updater = null;
 
     /**
@@ -480,27 +484,72 @@ public class PeakList {
     public List<SearchDim> getSearchDims() {
         return searchDims;
     }
-
     /**
      *
      * @param oldListener
      */
-    public void removeListener(PeakListener oldListener) {
-        listeners.remove(oldListener);
+    public void removePeakCountChangeListener(PeakListener oldListener) {
+        peakCountChangeListeners.remove(oldListener);
     }
 
     /**
      *
      * @param newListener
      */
-    public void registerListener(PeakListener newListener) {
-        if (!listeners.contains(newListener)) {
-            listeners.add(newListener);
+    public void registerPeakCountChangeListener(PeakListener newListener) {
+        if (!peakCountChangeListeners.contains(newListener)) {
+            peakCountChangeListeners.add(newListener);
         }
     }
 
-    public void notifyListeners() {
-        for (PeakListener listener : listeners) {
+    public void notifyPeakCountChangeListeners() {
+        for (PeakListener listener : peakCountChangeListeners) {
+            listener.peakListChanged(new PeakEvent(this));
+        }
+    }
+    /**
+     *
+     * @param oldListener
+     */
+    public void removePeakListChangeListener(PeakListener oldListener) {
+        peakListChangeListeners.remove(oldListener);
+    }
+
+    /**
+     *
+     * @param newListener
+     */
+    public void registerPeakListChangeListener(PeakListener newListener) {
+        if (!peakListChangeListeners.contains(newListener)) {
+            peakListChangeListeners.add(newListener);
+        }
+    }
+
+    public void notifyPeakListChangeListeners() {
+        for (PeakListener listener : peakListChangeListeners) {
+            listener.peakListChanged(new PeakEvent(this));
+        }
+    }
+    /**
+     *
+     * @param oldListener
+     */
+    public void removePeakChangeListener(PeakListener oldListener) {
+        peakChangeListeners.remove(oldListener);
+    }
+
+    /**
+     *
+     * @param newListener
+     */
+    public void registerPeakChangeListener(PeakListener newListener) {
+        if (!peakChangeListeners.contains(newListener)) {
+            peakChangeListeners.add(newListener);
+        }
+    }
+
+    public void notifyPeakChangeListeners() {
+        for (PeakListener listener : peakChangeListeners) {
             listener.peakListChanged(new PeakEvent(this));
         }
     }
@@ -633,7 +682,7 @@ public class PeakList {
     public void peakListUpdated(Object object) {
         changed = true;
         if (updater != null) {
-            updater.update();
+            updater.update(object);
         }
     }
 
@@ -746,6 +795,8 @@ public class PeakList {
      */
     public void setType(String type) {
         this.experimentType = type;
+        peakListUpdated(this);
+
     }
 
     /**
@@ -806,6 +857,7 @@ public class PeakList {
      */
     public void addPeakWithoutResonance(Peak newPeak) {
         peaks.add(newPeak);
+        peakListUpdated(peaks);
         clearIndex();
     }
 
@@ -816,6 +868,7 @@ public class PeakList {
     public Peak addPeak(Peak newPeak) {
         newPeak.initPeakDimContribs();
         peaks.add(newPeak);
+        peakListUpdated(peaks);
         clearIndex();
         return newPeak;
     }
@@ -1818,6 +1871,7 @@ public class PeakList {
             idLast--;
         }
         peaks.remove(peak);
+        peakListUpdated(peaks);
         reIndex();
     }
 
@@ -1917,6 +1971,7 @@ public class PeakList {
                 PeakList.unLinkPeak(peaks.get(i));
                 (peaks.get(i)).markDeleted();
                 peaks.remove(i);
+                peakListUpdated(peaks);
                 nRemoved++;
             }
         }

@@ -365,7 +365,7 @@ public class PeakTableController implements PeakMenuTarget, PeakListener, Initia
     @Override
     public void setPeakList(PeakList peakList) {
         if (this.peakList != null) {
-            peakList.removeListener(this);
+            peakList.removePeakChangeListener(this);
         }
         this.peakList = peakList;
         if (tableView == null) {
@@ -379,7 +379,7 @@ public class PeakTableController implements PeakMenuTarget, PeakListener, Initia
                 updateColumns(peakList.getNDim());
                 tableView.setItems(peaks);
                 stage.setTitle("Peaks: " + peakList.getName());
-                peakList.registerListener(this);
+                peakList.registerPeakChangeListener(this);
             }
         }
 

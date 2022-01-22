@@ -1085,7 +1085,7 @@ public class RunAboutGUI implements PeakListener {
 
     public void removePeakList() {
         if (navigationPeakList != null) {
-            navigationPeakList.removeListener(this);
+            navigationPeakList.removePeakChangeListener(this);
         }
         navigationPeakList = null;
         currentPeak = null;
@@ -1102,7 +1102,7 @@ public class RunAboutGUI implements PeakListener {
         if (navigationPeakList != null) {
             currentPeak = navigationPeakList.getPeak(0);
             setPeakIdField();
-            navigationPeakList.registerListener(this);
+            navigationPeakList.registerPeakChangeListener(this);
         }
         peakNavigable.refreshPeakView(currentPeak);
         peakNavigable.refreshPeakListView(navigationPeakList);
@@ -1529,7 +1529,8 @@ public class RunAboutGUI implements PeakListener {
                 runAbout.setPeakLists(peakLists);
                 runAbout.setRefList(refListObj.get());
                 for (var peakList : peakLists) {
-                    peakList.registerListener(this);
+                    peakList.registerPeakListChangeListener(this);
+                    peakList.registerPeakCountChangeListener(this);
                 }
             }
         }
