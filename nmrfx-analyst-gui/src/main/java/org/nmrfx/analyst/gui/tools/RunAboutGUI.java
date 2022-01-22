@@ -611,6 +611,8 @@ public class RunAboutGUI implements PeakListener {
             int nTypes = SpinSystem.getNAtomTypes();
             double[][] ppms = new double[2][2];
             for (int k = 0; k < 2; k++) {
+                ppms[k][0] = Double.NaN;
+                ppms[k][1] = Double.NaN;
                 for (int i = 0; i < nTypes; i++) {
                     int n = SpinSystem.getNPeaksForType(k, i);
                     if (n != 0) {
@@ -639,13 +641,20 @@ public class RunAboutGUI implements PeakListener {
                     String name = AtomParser.convert3To1(aaScore.getName());
                     ResidueLabel resLabel = k == 0 ? leftResidues.get(iScore) : rightResidues.get(iScore);
                     Color color = Color.WHITE;
+                    Color color2 = Color.LIGHTGRAY;
+                    color = color2.interpolate(color,aaScore.getNorm());
                     if (aaScore.getNorm() < 1.0e-3) {
                         name = name.toLowerCase();
-                        color = Color.LIGHTGRAY;
+                        color = Color.DARKGRAY;
                     }
                     resLabel.setText(name);
                     resLabel.setColor(color);
                     iScore++;
+                }
+                for (int i=iScore;i < leftResidues.size();i++) {
+                    ResidueLabel resLabel = k == 0 ? leftResidues.get(i) : rightResidues.get(i);
+                    resLabel.setText("");
+                    resLabel.setColor(Color.DARKGRAY);
                 }
             }
         }
@@ -915,6 +924,7 @@ public class RunAboutGUI implements PeakListener {
         void setText(String text) {
             textItem.setText(text);
         }
+
     }
 
     void gotoResidue(ResidueLabel resLabel) {
