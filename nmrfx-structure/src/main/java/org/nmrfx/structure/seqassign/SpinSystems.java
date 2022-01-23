@@ -133,6 +133,9 @@ public class SpinSystems {
     }
 
     public void addPeak(SpinSystem spinSys, Peak pkB) {
+        if ((sums == null) || (sums.length != spinSys.rootPeak.getPeakList().size())) {
+            sums = calcNormalization(runAbout.getPeakLists());
+        }
         Peak rootPeak = spinSys.rootPeak;
         if (rootPeak != pkB) {
             PeakList peakListB = pkB.getPeakList();
@@ -144,7 +147,7 @@ public class SpinSystems {
                     int[] aMatch = matchDims(rootPeak.getPeakList(), peakListB);
                     double f = comparePeaks(rootPeak, pkB, aMatch);
                     if (f >= 0.0) {
-                        double p = f / sums[pkB.getIndex()][jList];
+                        double p = f / sums[rootPeak.getIndex()][jList];
                         spinSys.addPeak(pkB, p);
                     }
                 }
