@@ -856,6 +856,7 @@ public class PeakList {
      * @param newPeak
      */
     public void addPeakWithoutResonance(Peak newPeak) {
+        newPeak.setIndex(peaks.size());
         peaks.add(newPeak);
         peakListUpdated(peaks);
         clearIndex();
@@ -867,6 +868,7 @@ public class PeakList {
      */
     public Peak addPeak(Peak newPeak) {
         newPeak.initPeakDimContribs();
+        newPeak.setIndex(peaks.size());
         peaks.add(newPeak);
         peakListUpdated(peaks);
         clearIndex();
