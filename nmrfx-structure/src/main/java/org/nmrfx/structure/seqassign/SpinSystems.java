@@ -1,15 +1,11 @@
 package org.nmrfx.structure.seqassign;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.SpectralDim;
+
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  *
@@ -150,24 +146,24 @@ public class SpinSystems {
                         double p = f / sums[rootPeak.getIndex()][jList];
                         spinSys.addPeak(pkB, p);
                     }
+
+                    for (int iDim = 0; iDim < aMatch.length; iDim++) {
+                        if (aMatch[iDim] >= 0) {
+                            PeakList.linkPeakDims(spinSys.getRootPeak().getPeakDim(iDim), pkB.getPeakDim(aMatch[iDim]));
+                        }
+                    }
                 }
             }
         }
     }
 
-
-
-
-    public void assembleWithClustering(PeakList refList, List<PeakList> peakLists) {
-        sums = calcNormalization(peakLists);
-        PeakList.clusterOrigin = refList;
+    public static boolean[] getUseDims(PeakList refList, List<PeakList> peakLists) {
         boolean[] useDim = new boolean[refList.getNDim()];
         for (int i = 0; i < useDim.length; i++) {
             useDim[i] = true;
         }
         int nPeakTypes = 0;
         for (PeakList peakList : peakLists) {
-            peakList.unLinkPeaks();
             if (peakList != refList) {
                 int[] aMatch = matchDims(refList, peakList);
                 for (int i = 0; i < aMatch.length; i++) {
@@ -176,15 +172,17 @@ public class SpinSystems {
                     }
                 }
             }
-            int totalCount = 1;
-            int[] counts = SpinSystem.getCounts(peakList);
-            for (int count : counts) {
-                totalCount *= count;
-            }
-            System.out.println("nt " + peakList.getName() + " " + totalCount);
-            nPeakTypes += totalCount;
         }
-        final int nExpected = nPeakTypes;
+        return useDim;
+    }
+
+    public void assembleWithClustering(PeakList refList, List<PeakList> peakLists) {
+        sums = calcNormalization(peakLists);
+        PeakList.clusterOrigin = refList;
+        for (PeakList peakList : peakLists) {
+            peakList.unLinkPeaks();
+        }
+        boolean[] useDim = getUseDims(refList, peakLists);
         peakMap.clear();
         int j = 0;
         for (PeakList peakList : peakLists) {
@@ -227,7 +225,6 @@ public class SpinSystems {
             }
             i++;
             int nPeaks = spinSys.peakMatches.size();
-            System.out.println("cluster " + pkA.getName() + " " + nExpected + " " + nPeaks);
         }
     }
 
@@ -300,6 +297,9 @@ public class SpinSystems {
         compare();
     }
 
+    public List<SpinSystem> getSystemsByType() {
+        systems.stream().filter(s -> s.)
+    }
     public List<SpinSystem> getSortedSystems() {
         Set<SeqFragment> fragments = new HashSet<>();
         List<SpinSystem> unconnectedSystems = new ArrayList<>();
@@ -321,4 +321,14 @@ public class SpinSystems {
         return uniqueSystems;
     }
 
+   public Optional<SpinSystem> findSpinSystem(Peak peak) {
+        for (var spinSys:systems) {
+            for (var peakMatch:spinSys.peakMatches) {
+                if (peak == peakMatch.peak) {
+                    return Optional.of(spinSys);
+                }
+            }
+        }
+        return Optional.empty();
+    }
 }

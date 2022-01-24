@@ -252,6 +252,7 @@ public class RunAboutGUI implements PeakListener {
         } catch (IOException e) {
             GUIUtils.warn("RunAbout:load yaml", e.getMessage());
         }
+        PeakPicking.registerSinglePickAction((c) -> pickedPeakAction(c));
     }
 
     void initPreferences(HBox hBox) {
@@ -430,6 +431,7 @@ public class RunAboutGUI implements PeakListener {
             clusterStatus.refresh();
         });
         actionMenuButton.getItems().add(assembleItem);
+
         MenuItem calcCombItem = new MenuItem("Combinations");
         calcCombItem.setOnAction(e -> runAbout.calcCombinations());
         actionMenuButton.getItems().add(calcCombItem);
@@ -440,9 +442,22 @@ public class RunAboutGUI implements PeakListener {
         toolBar.getItems().addAll(buttons);
         toolBar.getItems().add(peakIdField);
         toolBar.getItems().add(deleteButton);
-        Button analyzeButton = new Button("Analyze");
-        analyzeButton.setOnAction(e -> analyzeSystem());
-        toolBar.getItems().add(analyzeButton);
+
+        MenuButton spinSysMenuButton = new MenuButton("SpinSys Actions");
+
+        MenuItem splitItem = new MenuItem("Split");
+        splitItem.setOnAction(e -> splitSystem());
+        spinSysMenuButton.getItems().add(splitItem);
+
+        MenuItem moveItem = new MenuItem("Move to Cluster");
+        moveItem.setOnAction(e -> moveToThisCluster());
+        spinSysMenuButton.getItems().add(moveItem);
+
+        MenuItem analyzeItem = new MenuItem("Analyze");
+        analyzeItem.setOnAction(e -> analyzeSystem());
+        spinSysMenuButton.getItems().add(analyzeItem);
+        toolBar.getItems().add(spinSysMenuButton);
+
         ToolBarUtils.addFiller(navigatorToolBar, 40, 300);
         ToolBarUtils.addFiller(navigatorToolBar, 70, 70);
 
@@ -1114,7 +1129,8 @@ public class RunAboutGUI implements PeakListener {
 
     void analyzeSystem() {
         SpinSystem spinSys = runAbout.getSpinSystems().get(currentSpinSystem);
-        spinSys.calcCombinations(true);
+        spinSys.calcCombinations(false);
+        gotoSpinSystems();
     }
 
     public void setSpinSystems(List<SpinSystem> spinSystems) {
@@ -1796,5 +1812,48 @@ public class RunAboutGUI implements PeakListener {
             List<PeakList> movingLists = runAbout.getPeakLists();
             PeakListAlign.alignCenters(refListObj.get(), dimNames, movingLists);
         }
+    }
+
+    Object pickedPeakAction(Object peakObject) {
+        Peak peak = (Peak) peakObject;
+        if (useSpinSystem) {
+            if (GUIUtils.affirm("Add to cluster " + currentSpinSystem)) {
+                SpinSystems spinSystems = runAbout.getSpinSystems();
+                var spinSys = spinSystems.get(currentSpinSystem);
+                spinSystems.addPeak(spinSys, peak);
+                PeakList rootList = spinSys.getRootPeak().getPeakList();
+                int[] aMatch = spinSystems.matchDims(rootList, peak.getPeakList());
+                for (int iDim = 0; iDim < aMatch.length; iDim++) {
+                    if (aMatch[iDim] >= 0) {
+                        PeakList.linkPeakDims(spinSys.getRootPeak().getPeakDim(iDim), peak.getPeakDim(aMatch[iDim]));
+                    }
+                }
+                PolyChart chart = FXMLController.getActiveController().getActiveChart();
+                chart.refresh();
+            }
+        }
+        return null;
+    }
+
+    void splitSystem() {
+        SpinSystems spinSystems = runAbout.getSpinSystems();
+        var spinSys = spinSystems.get(currentSpinSystem);
+        spinSys.split();
+        controller.draw();
+    }
+
+    void moveToThisCluster() {
+        SpinSystems spinSystems = runAbout.getSpinSystems();
+        var spinSys = spinSystems.get(currentSpinSystem);
+        for (var chart:controller.getCharts()) {
+            var selPeaks = chart.getSelectedPeaks();
+            for (Peak peak:selPeaks) {
+                PeakList.unLinkPeak(peak);
+                var spinSysOpt = spinSystems.findSpinSystem(peak);
+                spinSysOpt.ifPresent(s -> s.removePeak(peak));
+                spinSystems.addPeak(spinSys, peak);
+            }
+        }
+        controller.getCharts().get(0).getSelectedPeaks();
     }
 }
