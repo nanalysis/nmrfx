@@ -7,11 +7,21 @@ import org.nmrfx.peaks.SpectralDim;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static org.nmrfx.structure.seqassign.SpinSystems.ClusterModes.ALL;
+
 /**
  *
  * @author brucejohnson
  */
 public class SpinSystems {
+   public enum ClusterModes {
+        ALL,
+        CORRECT,
+        LONELY,
+        MISSING,
+        MISSING_PPM,
+        EXTRA;
+    }
 
     RunAbout runAbout;
     List<SpinSystem> systems = new ArrayList<>();
@@ -297,9 +307,26 @@ public class SpinSystems {
         compare();
     }
 
-    public List<SpinSystem> getSystemsByType() {
-        systems.stream().filter(s -> s.)
+    public List<SpinSystem> getSystemsByType(ClusterModes clusterMode) {
+        return systems.stream().filter(s -> {
+                    int extraOrMissing = runAbout.getExtraOrMissing(s);
+                    if (clusterMode == ClusterModes.CORRECT) {
+                        return extraOrMissing == 0;
+                    } else if (clusterMode == ClusterModes.EXTRA) {
+                        return (extraOrMissing & 1) != 0;
+                    } else if (clusterMode == ClusterModes.MISSING) {
+                        return (extraOrMissing & 2) != 0;
+                    } else if (clusterMode == ClusterModes.LONELY) {
+                        return s.peakMatches.size() < 3;
+                    } else if (clusterMode == ClusterModes.MISSING_PPM) {
+                        return !runAbout.getHasAllAtoms(s);
+                    } else {
+                        return true;
+                    }
+                }
+        ).collect(Collectors.toList());
     }
+
     public List<SpinSystem> getSortedSystems() {
         Set<SeqFragment> fragments = new HashSet<>();
         List<SpinSystem> unconnectedSystems = new ArrayList<>();

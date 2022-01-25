@@ -69,6 +69,7 @@ public class RunAboutGUI implements PeakListener {
     MenuButton peakListMenuButton;
     MenuButton arrangeMenuButton;
     ToggleButton deleteButton;
+    ChoiceBox<SpinSystems.ClusterModes> clusterModesChoiceBox;
     PeakNavigable peakNavigable;
     PeakList navigationPeakList;
     SimpleObjectProperty<PeakList> refListObj = new SimpleObjectProperty<>();
@@ -398,6 +399,7 @@ public class RunAboutGUI implements PeakListener {
         deleteButton.setOnKeyPressed(Event::consume);
         deleteButton.setOnAction(e -> delete());
 
+
         if (closeAction != null) {
             navigatorToolBar.getItems().add(closeButton);
         }
@@ -443,6 +445,14 @@ public class RunAboutGUI implements PeakListener {
         toolBar.getItems().add(peakIdField);
         toolBar.getItems().add(deleteButton);
 
+        clusterModesChoiceBox = new ChoiceBox<>();
+        clusterModesChoiceBox.getItems().addAll(SpinSystems.ClusterModes.values());
+        clusterModesChoiceBox.setValue(SpinSystems.ClusterModes.ALL);
+        toolBar.getItems().add(clusterModesChoiceBox);
+
+        clusterModesChoiceBox.valueProperty().addListener(e-> updateClusterCanvas());
+
+
         MenuButton spinSysMenuButton = new MenuButton("SpinSys Actions");
 
         MenuItem splitItem = new MenuItem("Split");
@@ -456,6 +466,12 @@ public class RunAboutGUI implements PeakListener {
         MenuItem analyzeItem = new MenuItem("Analyze");
         analyzeItem.setOnAction(e -> analyzeSystem());
         spinSysMenuButton.getItems().add(analyzeItem);
+
+        MenuItem trimItem = new MenuItem("Trim");
+        trimItem.setOnAction(e -> trimSystem());
+        spinSysMenuButton.getItems().add(trimItem);
+
+
         toolBar.getItems().add(spinSysMenuButton);
 
         ToolBarUtils.addFiller(navigatorToolBar, 40, 300);
@@ -981,7 +997,13 @@ public class RunAboutGUI implements PeakListener {
     }
 
     void updateClusterCanvas() {
-        List<SpinSystem> sortedSystems = runAbout.getSpinSystems().getSortedSystems();
+        List<SpinSystem> sortedSystems;
+        String mode = "all";
+        if (clusterModesChoiceBox.getValue() != SpinSystems.ClusterModes.ALL) {
+            sortedSystems = runAbout.getSpinSystems().getSystemsByType(clusterModesChoiceBox.getValue());
+        } else {
+            sortedSystems = runAbout.getSpinSystems().getSortedSystems();
+        }
         int n = countSpinSysItems(sortedSystems);
         if (clusterGroup.getChildren().size() != n) {
             clusterGroup.getChildren().clear();
@@ -1855,5 +1877,13 @@ public class RunAboutGUI implements PeakListener {
             }
         }
         controller.getCharts().get(0).getSelectedPeaks();
+    }
+
+    void trimSystem() {
+        SpinSystems spinSystems = runAbout.getSpinSystems();
+        var spinSys = spinSystems.get(currentSpinSystem);
+        runAbout.trim(spinSys);
+        gotoSpinSystems();
+        updateClusterCanvas();
     }
 }

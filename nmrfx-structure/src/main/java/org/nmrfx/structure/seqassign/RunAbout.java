@@ -10,7 +10,6 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- *
  * @author brucejohnson
  */
 public class RunAbout {
@@ -63,7 +62,7 @@ public class RunAbout {
         double[] tols = {0.04, 0.5, 0.6}; // fixme
         List<String> patElems = new ArrayList<>();
         List<String> aTypes = new ArrayList<>();
-        for (var sDim:peakList.getSpectralDims()) {
+        for (var sDim : peakList.getSpectralDims()) {
             String patElem = sDim.getPattern();
             patElems.add(patElem);
             int dotPos = patElem.indexOf(".");
@@ -197,10 +196,10 @@ public class RunAbout {
         peakListTypes.clear();
         peakLists.addAll(lists);
 
-        for (var peakList:peakLists) {
+        for (var peakList : peakLists) {
             String typeName = peakList.getExperimentType();
             peakListMap.put(typeName, peakList);
-            peakListTypes.put(peakList.getName(),typeName);
+            peakListTypes.put(peakList.getName(), typeName);
             datasetMap.put(typeName, DatasetBase.getDataset(peakList.getDatasetName()));
             List<String> patElems = getPatterns(peakList);
             setAtomCount(typeName, patElems, counts, stdNames);
@@ -238,9 +237,9 @@ public class RunAbout {
 
     public boolean checkRowType(String pattern, String testType) {
         pattern = pattern.toUpperCase();
-        String[] types = {"CB","CA","C"};
+        String[] types = {"CB", "CA", "C"};
         String patternType = "";
-        for (var type:types) {
+        for (var type : types) {
             if (pattern.contains(type)) {
                 patternType = type;
                 break;
@@ -280,7 +279,7 @@ public class RunAbout {
 
     public List<SpectralDim> getPeakListDims(PeakList peakList, DatasetBase dataset, int[] iDims) {
         List<SpectralDim> sDims = new ArrayList<>();
-        for (int i=0;i<dataset.getNDim();i++) {
+        for (int i = 0; i < dataset.getNDim(); i++) {
             int iDim = iDims[i];
             String dataDimName = dataset.getLabel(iDim);
             SpectralDim sDim = peakList.getSpectralDim(dataDimName);
@@ -394,4 +393,81 @@ public class RunAbout {
         }
     }
 
+    public boolean getHasAllAtoms(SpinSystem spinSystem) {
+        int nTypes = SpinSystem.getNAtomTypes();
+        boolean ok = true;
+        for (int k = 0; k < 2; k++) {
+            boolean isGly = false;
+            boolean justCB = true;
+            for (int i = 0; i < nTypes; i++) {
+                int n = SpinSystem.getNPeaksForType(k, i);
+                if (n != 0) {
+                    String aName = SpinSystem.getAtomName(i);
+                    if (k == 0) {
+                        aName = aName.toLowerCase();
+                    } else {
+                        aName = aName.toUpperCase();
+                    }
+                    double value = spinSystem.getValue(k, i);
+                    if (!Double.isNaN(value) && aName.equalsIgnoreCase("ca")) {
+                        if ((value < 50.0)  && (value > 40.0)) {
+                            isGly = true;
+                        }
+                    }
+                    if (Double.isNaN(value)) {
+                        if (!aName.equalsIgnoreCase("cb")) {
+                            justCB = false;
+                        }
+                        ok = false;
+                    }
+                }
+            }
+            if (!ok && justCB && isGly) {
+                ok = true;
+            }
+        }
+        return ok;
+    }
+
+    public int getExtraOrMissing(SpinSystem spinSys) {
+        int result = 0;
+        for (var peakList : peakLists) {
+            String typeName = peakList.getExperimentType();
+            int nExpected = getTypeCount(typeName);
+            int nPeaks = 0;
+            for (var peakMatch : spinSys.peakMatches()) {
+                if (peakMatch.getPeak().getPeakList() == peakList) {
+                    nPeaks++;
+                }
+            }
+            if (nPeaks > nExpected) {
+                result |= 1;
+            } else if (nPeaks < nExpected) {
+                result |= 2;
+            }
+        }
+        return result;
+    }
+
+    public void trim(SpinSystem spinSys) {
+        for (var peakList : peakLists) {
+            String typeName = peakList.getExperimentType();
+            int nExpected = getTypeCount(typeName);
+            int nPeaks = 0;
+            for (var peakMatch : spinSys.peakMatches()) {
+                if (peakMatch.getPeak().getPeakList() == peakList) {
+                    nPeaks++;
+                }
+            }
+            if (nPeaks > nExpected) {
+                spinSys.peakMatches().stream().
+                        map(SpinSystem.PeakMatch::getPeak).
+                        sorted(Comparator.comparingDouble(a -> Math.abs(a.getIntensity()))).
+                        limit(nPeaks - nExpected).
+                        forEach(Peak::delete);
+                spinSys.purgeDeleted();
+                peakList.compress();
+            }
+        }
+    }
 }

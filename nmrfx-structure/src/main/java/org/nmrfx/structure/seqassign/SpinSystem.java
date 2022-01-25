@@ -1,23 +1,20 @@
 package org.nmrfx.structure.seqassign;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Optional;
 import org.apache.commons.math3.util.MultidimensionalCounter;
 import org.apache.commons.math3.util.MultidimensionalCounter.Iterator;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakDim;
 import org.nmrfx.peaks.PeakList;
-import org.nmrfx.peaks.PeakList.SearchDim;
 import org.nmrfx.peaks.SpectralDim;
 import org.nmrfx.structure.seqassign.RunAbout.TypeInfo;
-import static org.nmrfx.structure.seqassign.SpinSystems.comparePeaks;
-import static org.nmrfx.structure.seqassign.SpinSystems.matchDims;
 import smile.clustering.KMeans;
 import smile.math.MathEx;
+
+import java.util.*;
+import java.util.Map.Entry;
+
+import static org.nmrfx.structure.seqassign.SpinSystems.comparePeaks;
+import static org.nmrfx.structure.seqassign.SpinSystems.matchDims;
 
 /**
  *
@@ -42,9 +39,10 @@ public class SpinSystem {
             atomIndexMap.put(atomType, atomIndex++);
         }
     }
+
     static int[][] nAtmPeaks = {
-        {0, 0, 2, 0, 2, 2},
-        {7, 7, 1, 0, 1, 1}
+            {0, 0, 2, 0, 2, 2},
+            {7, 7, 1, 0, 1, 1}
     };
     static int[] RES_MTCH = {2, 4, 5};
 
@@ -293,7 +291,7 @@ public class SpinSystem {
     }
 
     public void removePeak(Peak peak) {
-        for (var peakMatch:peakMatches) {
+        for (var peakMatch : peakMatches) {
             if (peak == peakMatch.peak) {
                 peakMatches.remove(peakMatch);
                 break;
@@ -739,7 +737,7 @@ public class SpinSystem {
             List<PeakMatch> matches = entry.getValue();
             matches.sort((a, b)
                     -> Double.compare(Math.abs(a.getPeak().getIntensity()),
-                            Math.abs(b.getPeak().getIntensity())));
+                    Math.abs(b.getPeak().getIntensity())));
             int nExtra = matches.size() - nExpected;
             for (int i = 0; i < nExtra; i++) {
                 matches.get(i).getPeak().setFlag(1, true);
@@ -756,7 +754,7 @@ public class SpinSystem {
     }
 
     boolean getShifts(int nPeaks, List<ResAtomPattern>[] resAtomPatterns,
-            List<Double>[][] shiftList, int[] pt
+                      List<Double>[][] shiftList, int[] pt
     ) {
         for (int i = 0; i < ATOM_TYPES.length; i++) {
             shiftList[0][i].clear();
@@ -1035,7 +1033,7 @@ public class SpinSystem {
         purgeDeleted();
         boolean[] useDims = SpinSystems.getUseDims(spinSystems.runAbout.refList, spinSystems.runAbout.getPeakLists());
         int nUseDims = 0;
-        for (boolean useDim:useDims) {
+        for (boolean useDim : useDims) {
             if (useDim) {
                 nUseDims++;
             }
@@ -1048,12 +1046,12 @@ public class SpinSystem {
             Peak peak = peakMatch.peak;
             PeakList.unLinkPeak(peak);
             int j = 0;
-            for (int iDim=0;iDim<useDims.length;iDim++) {
+            for (int iDim = 0; iDim < useDims.length; iDim++) {
                 if (useDims[iDim]) {
                     double refShift = refPeak.getPeakDim(refList.getSpectralDim(iDim).getDimName()).getChemShiftValue();
                     double shift = peak.getPeakDim(refList.getSpectralDim(iDim).getDimName()).getChemShiftValue();
                     double tol = refList.getSpectralDim(iDim).getIdTol();
-                    values[i][j++] = (shift-refShift) / tol;
+                    values[i][j++] = (shift - refShift) / tol;
                 }
             }
             i++;
@@ -1075,7 +1073,7 @@ public class SpinSystem {
         Peak newRoot = rootPeak.getPeakList().getNewPeak();
         rootPeak.copyTo(newRoot);
         int j = 0;
-        for (int iDim=0;iDim<useDims.length;iDim++) {
+        for (int iDim = 0; iDim < useDims.length; iDim++) {
             if (useDims[iDim]) {
                 double tol = refList.getSpectralDim(iDim).getIdTol();
                 double refShift = refPeak.getPeakDim(refList.getSpectralDim(iDim).getDimName()).getChemShiftValue();
@@ -1157,7 +1155,7 @@ public class SpinSystem {
     }
 
     public void purgeDeleted() {
-        for (int i = peakMatches.size()-1;i>=0;i--) {
+        for (int i = peakMatches.size() - 1; i >= 0; i--) {
             PeakMatch peakMatch = peakMatches.get(i);
             if (!peakMatch.peak.isValid() || peakMatch.peak.isDeleted()) {
                 PeakList.unLinkPeak(peakMatch.peak);
