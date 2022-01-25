@@ -21,7 +21,6 @@ import static org.nmrfx.structure.seqassign.SpinSystems.matchDims;
  * @author brucejohnson
  */
 public class SpinSystem {
-
     SpinSystems spinSystems;
     final Peak rootPeak;
     List<PeakMatch> peakMatches = new ArrayList<>();
@@ -1084,7 +1083,7 @@ public class SpinSystem {
         }
 
         SpinSystem newSys = new SpinSystem(newRoot, spinSystems);
-        spinSystems.systems.add(newSys);
+        spinSystems.add(newSys);
 
         List<PeakMatch> oldPeaks = new ArrayList<>();
         oldPeaks.addAll(peakMatches);
@@ -1127,20 +1126,16 @@ public class SpinSystem {
         spinMatchS.clear();
         double sumsP = 0.0;
         double sumsS = 0.0;
-        for (SpinSystem spinSysB : spinSystems.systems) {
-            if (this != spinSysB) {
-                Optional<SpinSystemMatch> result = compare(spinSysB, true);
-                if (result.isPresent()) {
-                    spinMatchP.add(result.get());
-                    sumsP += result.get().score;
-                }
-                result = compare(spinSysB, false);
-                if (result.isPresent()) {
-                    spinMatchS.add(result.get());
-                    sumsS += result.get().score;
-                }
-            }
+        spinMatchP.addAll(spinSystems.compare(this, true));
+        spinMatchS.addAll(spinSystems.compare(this, false));
+        for (var match:spinMatchP) {
+            sumsP += match.score;
         }
+        for (var match:spinMatchS) {
+            sumsS += match.score;
+        }
+
+
         for (SpinSystemMatch spinMatch : spinMatchP) {
             spinMatch.norm(sumsP);
         }
@@ -1163,4 +1158,45 @@ public class SpinSystem {
             }
         }
     }
+
+    private void removeMatches(SpinSystem spinSys) {
+        for (int i=spinMatchP.size();i>=0;i--) {
+            var match = spinMatchP.get(i);
+            if (match.getSpinSystemA() == spinSys) {
+                spinMatchP.remove(i);
+            }
+        }
+        for (int i=spinMatchS.size();i>=0;i--) {
+            var match = spinMatchS.get(i);
+            if (match.getSpinSystemB() == spinSys) {
+                spinMatchS.remove(i);
+            }
+        }
+    }
+
+    public void delete() {
+        for (var spinMatch:spinMatchP) {
+            var spinA = spinMatch.getSpinSystemA();
+            spinA.removeMatches(this);
+        }
+        for (var spinMatch:spinMatchS) {
+            var spinB = spinMatch.getSpinSystemB();
+            spinB.removeMatches(this);
+        }
+        if (confirmP.isPresent()) {
+            var match = confirmP.get();
+            match.getSpinSystemA().unconfirm(match,false);
+        }
+        if (confirmS.isPresent()) {
+            var match = confirmS.get();
+            match.getSpinSystemB().unconfirm(match,false);
+        }
+        for (var peakMatch : peakMatches) {
+            peakMatch.getPeak().delete();
+        }
+        purgeDeleted();
+        spinSystems.remove(this);
+        spinSystems.runAbout.refList.compress();
+    }
+
 }

@@ -7,8 +7,6 @@ import org.nmrfx.peaks.SpectralDim;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static org.nmrfx.structure.seqassign.SpinSystems.ClusterModes.ALL;
-
 /**
  *
  * @author brucejohnson
@@ -24,7 +22,7 @@ public class SpinSystems {
     }
 
     RunAbout runAbout;
-    List<SpinSystem> systems = new ArrayList<>();
+    private List<SpinSystem> systems = new ArrayList<>();
     Map<PeakList, Integer> peakMap = new HashMap<>();
     double[][] sums;
 
@@ -32,12 +30,16 @@ public class SpinSystems {
         this.runAbout = runAbout;
     }
 
-    public List<SpinSystem> getSystems() {
-        return systems;
-    }
-
     public int getSize() {
         return systems.size();
+    }
+
+    public void add(SpinSystem spinSystem) {
+        systems.add(spinSystem);
+    }
+
+    public void remove(SpinSystem spinSystem) {
+        systems.remove(spinSystem);
     }
 
     public SpinSystem get(int i) {
@@ -276,6 +278,17 @@ public class SpinSystems {
                 });
             });
         });
+    }
+
+    public List<SpinSystemMatch> compare(SpinSystem spinSystemA, boolean prevMode) {
+        List<SpinSystemMatch> matches = new ArrayList<>();
+        for (SpinSystem spinSysB : systems) {
+            if (spinSystemA != spinSysB) {
+                Optional<SpinSystemMatch> result = spinSystemA.compare(spinSysB, prevMode);
+                result.ifPresent(matches::add);
+            }
+        }
+        return matches;
     }
 
     public void compare() {

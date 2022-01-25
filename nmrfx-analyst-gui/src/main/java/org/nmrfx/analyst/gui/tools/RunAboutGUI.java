@@ -1333,6 +1333,12 @@ public class RunAboutGUI implements PeakListener {
                 peakIndex = navigationPeakList.size() - 1;
             }
             setPeak(currList.getPeak(peakIndex));
+        } else {
+            if (GUIUtils.affirm("Delete cluster and its peaks")) {
+                SpinSystem spinSystem = runAbout.getSpinSystems().get(currentSpinSystem);
+                spinSystem.delete();
+                gotoSpinSystems();
+            }
         }
     }
 
