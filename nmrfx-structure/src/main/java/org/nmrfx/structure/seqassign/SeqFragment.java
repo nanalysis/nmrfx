@@ -1,10 +1,12 @@
 package org.nmrfx.structure.seqassign;
 
+import org.nmrfx.chemistry.Polymer;
+import org.nmrfx.chemistry.Residue;
+import org.nmrfx.structure.chemistry.Molecule;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import org.nmrfx.chemistry.Polymer;
-import org.nmrfx.chemistry.Residue;
 
 /**
  *
@@ -14,19 +16,34 @@ public class SeqFragment {
 
     List<SpinSystemMatch> spinSystemMatches = new ArrayList<>();
 
+    public static SeqFragment getTestFragment(SpinSystemMatch spinSysMatch) {
+        SpinSystem spinSysA = spinSysMatch.spinSystemA;
+        SpinSystem spinSysB = spinSysMatch.spinSystemB;
+        SeqFragment result = new SeqFragment();
+
+        if (spinSysA.fragment.isPresent()) {
+            SeqFragment fragmentA = spinSysA.fragment.get();
+            result.spinSystemMatches.addAll(fragmentA.spinSystemMatches);
+        }
+        result.spinSystemMatches.add(spinSysMatch);
+        if (spinSysB.fragment.isPresent()) {
+            SeqFragment fragmentB = spinSysB.fragment.get();
+            result.spinSystemMatches.addAll(fragmentB.spinSystemMatches);
+        }
+        return result;
+    }
+
     public static SeqFragment join(SpinSystemMatch spinSysMatch, boolean testMode) {
         SpinSystem spinSysA = spinSysMatch.spinSystemA;
         SpinSystem spinSysB = spinSysMatch.spinSystemB;
         SeqFragment result;
-        if (!spinSysA.fragment.isPresent() && !spinSysB.fragment.isPresent()) {
+        if (spinSysA.fragment.isEmpty() && spinSysB.fragment.isEmpty()) {
             result = new SeqFragment();
             result.spinSystemMatches.add(spinSysMatch);
         } else if (spinSysA.fragment.isPresent() && spinSysB.fragment.isPresent()) {
             result = spinSysA.fragment.get();
             result.spinSystemMatches.add(spinSysMatch);
-            for (SpinSystemMatch match : spinSysB.fragment.get().spinSystemMatches) {
-                result.spinSystemMatches.add(match);
-            }
+            result.spinSystemMatches.addAll(spinSysB.fragment.get().spinSystemMatches);
 
         } else if (spinSysA.fragment.isPresent()) {
             result = spinSysA.fragment.get();
@@ -63,7 +80,7 @@ public class SeqFragment {
             SeqFragment currentFragment = spinSysA.fragment.get();
             List<SpinSystemMatch> spinSystemMatches = currentFragment.spinSystemMatches;
 
-            System.out.println("remove " + spinSysMatch.toString());
+            System.out.println("remove " + spinSysMatch);
             System.out.println("from");
             currentFragment.dump();
 
@@ -134,7 +151,7 @@ public class SeqFragment {
     public double[][] getShifts() {
         double[][] result = new double[spinSystemMatches.size() + 2][SpinSystem.RES_MTCH.length];
         int iSys = 0;
-        SpinSystem spinSysA = null;
+        SpinSystem spinSysA;
         SpinSystem spinSysB = null;
         for (SpinSystemMatch spinMatch : spinSystemMatches) {
             spinSysA = spinMatch.spinSystemA;
@@ -168,23 +185,23 @@ public class SeqFragment {
             }
         }
 
-        for (int i = 0; i < result.length; i++) {
-            for (int k = 0; k < result[i].length; k++) {
-                System.out.printf("%7.2f ", result[i][k]);
+        for (double[] doubles : result) {
+            for (double aDouble : doubles) {
+                System.out.printf("%7.2f ", aDouble);
             }
-            System.out.println("");
+            System.out.println();
         }
         return result;
     }
 
     List<List<AtomShiftValue>> getShiftValues(double[][] shifts) {
         List<List<AtomShiftValue>> result = new ArrayList<>();
-        for (int i = 0; i < shifts.length; i++) {
+        for (double[] shift : shifts) {
             List<AtomShiftValue> values = new ArrayList<>();
-            for (int k = 0; k < shifts[i].length; k++) {
+            for (int k = 0; k < shift.length; k++) {
                 String aName = SpinSystem.getAtomName(SpinSystem.RES_MTCH[k]);
-                double value = shifts[i][k];
-                if (value != Double.NaN) {
+                double value = shift[k];
+                if (!Double.isNaN(value)) {
                     AtomShiftValue atomValue = new AtomShiftValue(aName, value, null);
                     values.add(atomValue);
                 }
@@ -217,7 +234,7 @@ public class SeqFragment {
                 pScore *= ppmScore.getTotalScore();
             }
             if (ok) {
-                System.out.println(i + " " + residues.get(i).getName() + residues.get(i).getNumber());
+                System.out.println(i + " " + residues.get(i).getName() + residues.get(i).getNumber() + pScore);
                 ResidueSeqScore resScore = new ResidueSeqScore(residues.get(i), winSize, pScore);
                 result.add(resScore);
             }
@@ -229,5 +246,19 @@ public class SeqFragment {
         }
         return result;
 
+    }
+
+    public static boolean testFrag(SpinSystemMatch spinSystemMatch) {
+        SeqFragment fragment = getTestFragment(spinSystemMatch);
+        Molecule molecule = Molecule.getActive();
+        boolean ok = false;
+        for (Polymer polymer : molecule.getPolymers()) {
+            List<ResidueSeqScore> resSeqScores = fragment.scoreFragment(polymer);
+            if (!resSeqScores.isEmpty()) {
+                ok = true;
+                break;
+            }
+        }
+        return ok;
     }
 }
