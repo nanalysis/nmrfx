@@ -171,7 +171,7 @@ public class FragmentScoring {
                 if (stdShift != null) {
                     //result = Math.abs(stdShift.avg-ppm)/stdShift.sdev;
                     double normDev = (stdShift.getAvg() - ppm) / (stdShift.getSdev() * sdevMul);
-                    result = new Double(normDev * normDev);
+                    result = normDev * normDev;
                 }
             }
         }
@@ -189,7 +189,7 @@ public class FragmentScoring {
         for (AtomShiftValue atomShiftValue : atomShiftValues) {
             Double score = scoreAtomPPM(residue, atomShiftValue.getAName(), atomShiftValue.getPPM(), sdevMul);
             if (score != null) {
-                resScore += score.doubleValue();
+                resScore += score;
                 nValues++;
             }
         }
@@ -197,7 +197,7 @@ public class FragmentScoring {
         ChiSquareDistribution chiSquare = new ChiSquareDistribution(nValues);
         double pValue = chiSquare.p(resScore);
 
-        if (pValue < pOK) {
+        if (Double.isNaN(pValue) || (pValue < pOK)) {
             matchScore.ok = false;
         }
 
