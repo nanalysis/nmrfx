@@ -42,13 +42,49 @@ public class SpinSystems {
         systems.remove(spinSystem);
     }
 
+    public Optional<SpinSystem> find(int idNum) {
+        return systems.stream().filter(s -> s.getId() == idNum).findFirst();
+    }
     public SpinSystem get(int i) {
         return systems.get(i);
     }
 
-    public SpinSystem get(int i, int dir, int pIndex, int sIndex) {
-        SpinSystem spinSystem = systems.get(i);
-        System.out.println(spinSystem);
+    public SpinSystem firstSpinSystem() {
+        return systems.get(0);
+    }
+
+    public SpinSystem lastSpinSystem() {
+        int lastIndex = systems.size() - 1;
+        return systems.get(lastIndex);
+    }
+
+    public SpinSystem nextSpinSystem(SpinSystem currentSpinSystem) {
+        int index = systems.indexOf(currentSpinSystem);
+        if (index >= 0) {
+            index++;
+            if (index >= systems.size()) {
+                index = systems.size() - 1;
+            }
+        } else {
+            index = 0;
+        }
+        return systems.get(index);
+    }
+
+    public SpinSystem previousSpinSystem(SpinSystem currentSpinSystem) {
+        int index = systems.indexOf(currentSpinSystem);
+        if (index >= 0) {
+            index--;
+            if (index < 0) {
+                index = 0;
+            }
+        } else {
+            index = 0;
+        }
+        return systems.get(index);
+    }
+
+    public SpinSystem get(SpinSystem spinSystem, int dir, int pIndex, int sIndex) {
         if (dir == -1) {
             if (!spinSystem.spinMatchP.isEmpty()) {
                 if (pIndex >= spinSystem.spinMatchP.size()) {

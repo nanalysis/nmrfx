@@ -87,7 +87,7 @@ public class RunAboutGUI implements PeakListener {
     Label atomYLabel;
     Label intensityLabel;
     RunAbout runAbout = new RunAbout();
-    int currentSpinSystem = -1;
+    SpinSystem currentSpinSystem = null;
     SpinStatus spinStatus;
     ClusterStatus clusterStatus;
     SeqPane seqPane;
@@ -253,7 +253,7 @@ public class RunAboutGUI implements PeakListener {
         } catch (IOException e) {
             GUIUtils.warn("RunAbout:load yaml", e.getMessage());
         }
-        PeakPicking.registerSinglePickAction((c) -> pickedPeakAction(c));
+        PeakPicking.registerSinglePickAction(this::pickedPeakAction);
     }
 
     void initPreferences(HBox hBox) {
@@ -262,7 +262,7 @@ public class RunAboutGUI implements PeakListener {
 
         GridPane gridBox1 = new GridPane();
         Label refLabel = new Label("Ref List");
-        ChoiceBox<PeakList> referenceChoice = new ChoiceBox();
+        ChoiceBox<PeakList> referenceChoice = new ChoiceBox<>();
         gridBox1.add(refLabel, 0, 0);
         gridBox1.add(referenceChoice, 1, 0);
         referenceChoice.getItems().addAll(peakLists);
@@ -471,6 +471,10 @@ public class RunAboutGUI implements PeakListener {
         trimItem.setOnAction(e -> trimSystem());
         spinSysMenuButton.getItems().add(trimItem);
 
+        MenuItem extendItem = new MenuItem("Extend");
+        extendItem.setOnAction(e -> extendSystem());
+        spinSysMenuButton.getItems().add(extendItem);
+
 
         toolBar.getItems().add(spinSysMenuButton);
 
@@ -638,7 +642,7 @@ public class RunAboutGUI implements PeakListener {
 
         void setLabels() {
             clearLabels();
-            SpinSystem spinSystem = runAbout.getSpinSystems().get(currentSpinSystem);
+            SpinSystem spinSystem = currentSpinSystem;
             int nTypes = SpinSystem.getNAtomTypes();
             double[][] ppms = new double[2][2];
             for (int k = 0; k < 2; k++) {
@@ -748,8 +752,12 @@ public class RunAboutGUI implements PeakListener {
         }
 
         void gotoSystem(int index) {
-            currentSpinSystem = Integer.parseInt(sysFields[index].getText());
-            gotoSpinSystems();
+            int id = Integer.parseInt(sysFields[index].getText());
+            var optSys = runAbout.getSpinSystems().find(id);
+            if (optSys.isPresent()) {
+                currentSpinSystem = optSys.get();
+                gotoSpinSystems();
+            }
         }
 
         HBox build() {
@@ -845,6 +853,7 @@ public class RunAboutGUI implements PeakListener {
                             int index = spinners[i].getValue();
                             System.out.println("i " + i + " index " + index);
                             SpinSystemMatch spinMatch = matches.get(index);
+                            boolean viable = SeqFragment.testFrag(spinMatch);
 
                             if (i == 0) {
                                 otherSys = spinMatch.getSpinSystemA();
@@ -876,10 +885,15 @@ public class RunAboutGUI implements PeakListener {
                                 availLabels[i].setText("a");
                                 availLabels[i].setStyle("-fx-background-color:YELLOW");
                             }
-                            viableLabels[i].setText("V");
-                            viableLabels[i].setStyle("-fx-background-color:LIGHTGREEN");
+                            if (viable) {
+                                viableLabels[i].setText("V");
+                                viableLabels[i].setStyle("-fx-background-color:LIGHTGREEN");
+                            } else {
+                                viableLabels[i].setText("v");
+                                viableLabels[i].setStyle("-fx-background-color:YELLOW");
+                            }
 
-                            sysFields[i].setText(String.valueOf(otherSys.getRootPeak().getIdNum()));
+                            sysFields[i].setText(String.valueOf(otherSys.getId()));
                             nMatchFields[i].setText(String.valueOf(spinMatch.getN()));
                             scoreFields[i].setText(String.format("%4.2f", spinMatch.getScore()));
                             ok = true;
@@ -963,9 +977,12 @@ public class RunAboutGUI implements PeakListener {
     }
 
     void gotoCluster(ResidueLabel resLabel) {
-        currentSpinSystem = Integer.parseInt(resLabel.textItem.getText());
-        gotoSpinSystems();
-
+        int id = Integer.parseInt(resLabel.textItem.getText());
+        var optSys = runAbout.getSpinSystems().find(id);
+        if (optSys.isPresent()) {
+            currentSpinSystem = optSys.get();
+            gotoSpinSystems();
+        }
     }
 
     void updateCluster(ResidueLabel resLabel, int i, SpinSystem spinSys) {
@@ -998,7 +1015,6 @@ public class RunAboutGUI implements PeakListener {
 
     void updateClusterCanvas() {
         List<SpinSystem> sortedSystems;
-        String mode = "all";
         if (clusterModesChoiceBox.getValue() != SpinSystems.ClusterModes.ALL) {
             sortedSystems = runAbout.getSpinSystems().getSystemsByType(clusterModesChoiceBox.getValue());
         } else {
@@ -1150,7 +1166,7 @@ public class RunAboutGUI implements PeakListener {
     }
 
     void analyzeSystem() {
-        SpinSystem spinSys = runAbout.getSpinSystems().get(currentSpinSystem);
+        var spinSys = currentSpinSystem;
         spinSys.calcCombinations(false);
         gotoSpinSystems();
     }
@@ -1167,10 +1183,8 @@ public class RunAboutGUI implements PeakListener {
         } else {
             int iPeak = peaks.size() > 1 ? 1 : 0;
             currentPeak = peaks.get(iPeak);
-            if (peaks != null) {
-                drawWins(peaks);
-                updateDeleteStatus();
-            }
+            drawWins(peaks);
+            updateDeleteStatus();
             updateAtomLabels(peaks.get(iPeak));
         }
         setPeakIdField();
@@ -1221,10 +1235,10 @@ public class RunAboutGUI implements PeakListener {
 
     private void setPeakIdField() {
         if (useSpinSystem) {
-            if (currentSpinSystem < 0) {
+            if (currentSpinSystem == null) {
                 peakIdField.setText("");
             } else {
-                peakIdField.setText(String.valueOf(currentSpinSystem));
+                peakIdField.setText(String.valueOf(currentSpinSystem.getId()));
             }
         } else {
             if (currentPeak == null) {
@@ -1270,45 +1284,29 @@ public class RunAboutGUI implements PeakListener {
     }
 
     public void firstSpinSystem() {
-        currentSpinSystem = 0;
+        currentSpinSystem = runAbout.getSpinSystems().firstSpinSystem();
         gotoSpinSystems();
-
     }
 
     public void lastSpinSystem() {
-        currentSpinSystem = runAbout.getSpinSystems().getSize() - 1;
+        currentSpinSystem = runAbout.getSpinSystems().lastSpinSystem();
         gotoSpinSystems();
     }
 
     public void nextSpinSystem() {
-        if (currentSpinSystem >= 0) {
-            currentSpinSystem++;
-            if (currentSpinSystem >= runAbout.getSpinSystems().getSize()) {
-                currentSpinSystem = runAbout.getSpinSystems().getSize() - 1;
-            }
-        } else {
-            currentSpinSystem = 0;
-        }
+        currentSpinSystem = runAbout.getSpinSystems().nextSpinSystem(currentSpinSystem);
         gotoSpinSystems();
     }
 
     public void previousSpinSystem() {
-        List<SpinSystem> spinSystems = new ArrayList<>();
-        if (currentSpinSystem >= 0) {
-            currentSpinSystem--;
-            if (currentSpinSystem < 0) {
-                currentSpinSystem = 0;
-            }
-        } else {
-            currentSpinSystem = 0;
-        }
+        currentSpinSystem = runAbout.getSpinSystems().previousSpinSystem(currentSpinSystem);
         gotoSpinSystems();
     }
 
     public void gotoSpinSystems() {
         gotoSpinSystems(0, 0);
         clusterStatus.setLabels();
-        SpinSystem spinSys = runAbout.getSpinSystems().get(currentSpinSystem);
+        var spinSys = currentSpinSystem;
         spinStatus.updateFragment(spinSys);
 
     }
@@ -1335,7 +1333,7 @@ public class RunAboutGUI implements PeakListener {
             setPeak(currList.getPeak(peakIndex));
         } else {
             if (GUIUtils.affirm("Delete cluster and its peaks")) {
-                SpinSystem spinSystem = runAbout.getSpinSystems().get(currentSpinSystem);
+                var spinSystem = currentSpinSystem;
                 spinSystem.delete();
                 gotoSpinSystems();
             }
@@ -1421,10 +1419,14 @@ public class RunAboutGUI implements PeakListener {
         String idString = idField.getText().trim();
         if (useSpinSystem) {
             try {
-                currentSpinSystem = Integer.parseInt(idString);
-                gotoSpinSystems();
+                int id = Integer.parseInt(idString);
+                var optSys = runAbout.getSpinSystems().find(id);
+                if (optSys.isPresent()) {
+                    currentSpinSystem = optSys.get();
+                    gotoSpinSystems();
+                }
             } catch (NumberFormatException nfE) {
-
+                GUIUtils.warn("SpinSystem","Value not integer");
             }
         } else {
             if (navigationPeakList != null) {
@@ -1845,12 +1847,12 @@ public class RunAboutGUI implements PeakListener {
     Object pickedPeakAction(Object peakObject) {
         Peak peak = (Peak) peakObject;
         if (useSpinSystem) {
-            if (GUIUtils.affirm("Add to cluster " + currentSpinSystem)) {
+            if (GUIUtils.affirm("Add to cluster " + currentSpinSystem.getId())) {
                 SpinSystems spinSystems = runAbout.getSpinSystems();
-                var spinSys = spinSystems.get(currentSpinSystem);
+                var spinSys = currentSpinSystem;
                 spinSystems.addPeak(spinSys, peak);
                 PeakList rootList = spinSys.getRootPeak().getPeakList();
-                int[] aMatch = spinSystems.matchDims(rootList, peak.getPeakList());
+                int[] aMatch = SpinSystems.matchDims(rootList, peak.getPeakList());
                 for (int iDim = 0; iDim < aMatch.length; iDim++) {
                     if (aMatch[iDim] >= 0) {
                         PeakList.linkPeakDims(spinSys.getRootPeak().getPeakDim(iDim), peak.getPeakDim(aMatch[iDim]));
@@ -1864,15 +1866,14 @@ public class RunAboutGUI implements PeakListener {
     }
 
     void splitSystem() {
-        SpinSystems spinSystems = runAbout.getSpinSystems();
-        var spinSys = spinSystems.get(currentSpinSystem);
+        var spinSys = currentSpinSystem;
         spinSys.split();
         controller.draw();
     }
 
     void moveToThisCluster() {
         SpinSystems spinSystems = runAbout.getSpinSystems();
-        var spinSys = spinSystems.get(currentSpinSystem);
+        var spinSys = currentSpinSystem;
         for (var chart:controller.getCharts()) {
             var selPeaks = chart.getSelectedPeaks();
             for (Peak peak:selPeaks) {
@@ -1887,8 +1888,14 @@ public class RunAboutGUI implements PeakListener {
 
     void trimSystem() {
         SpinSystems spinSystems = runAbout.getSpinSystems();
-        var spinSys = spinSystems.get(currentSpinSystem);
+        var spinSys = currentSpinSystem;
         runAbout.trim(spinSys);
+        gotoSpinSystems();
+        updateClusterCanvas();
+    }
+
+    void extendSystem() {
+        SpinSystem.extend(currentSpinSystem, 0.5);
         gotoSpinSystems();
         updateClusterCanvas();
     }
