@@ -475,6 +475,10 @@ public class RunAboutGUI implements PeakListener {
         extendItem.setOnAction(e -> extendSystem());
         spinSysMenuButton.getItems().add(extendItem);
 
+        MenuItem freezeItem = new MenuItem("Freeze");
+        freezeItem.setOnAction(e -> freezeSystem());
+        spinSysMenuButton.getItems().add(freezeItem);
+
 
         toolBar.getItems().add(spinSysMenuButton);
 
@@ -735,17 +739,18 @@ public class RunAboutGUI implements PeakListener {
             Optional<SeqFragment> fragmentOpt = spinSys.getFragment();
             fragmentOpt.ifPresent(frag -> {
                 Molecule molecule = Molecule.getActive();
-                for (Polymer polymer : molecule.getPolymers()) {
-                    List<ResidueSeqScore> resSeqScores = frag.scoreFragment(polymer);
-                    for (ResidueSeqScore resSeqScore : resSeqScores) {
-                        System.out.println(resSeqScore.getFirstResidue().getNumber() + " " + resSeqScore.getScore());
-                        Residue residue = resSeqScore.getFirstResidue();
-                        for (int iRes = 0; iRes < resSeqScore.getNResidues(); iRes++) {
-                            String key = polymer.getName() + residue.getNumber();
-                            ResidueLabel resLabel = residueLabelMap.get(key);
-                            resLabel.setColor(Color.LIGHTGREEN);
-                            residue = residue.getNext();
-                        }
+                List<ResidueSeqScore> resSeqScores = frag.scoreFragment(molecule);
+                if (resSeqScores.size() == 1) {
+                    frag.setResSeqScore(resSeqScores.get(0));
+                }
+                for (ResidueSeqScore resSeqScore : resSeqScores) {
+                    System.out.println(resSeqScore.getFirstResidue().getNumber() + " " + resSeqScore.getScore());
+                    Residue residue = resSeqScore.getFirstResidue();
+                    for (int iRes = 0; iRes < resSeqScore.getNResidues(); iRes++) {
+                        String key = residue.getPolymer().getName() + residue.getNumber();
+                        ResidueLabel resLabel = residueLabelMap.get(key);
+                        resLabel.setColor(Color.LIGHTGREEN);
+                        residue = residue.getNext();
                     }
                 }
             });
@@ -1898,5 +1903,13 @@ public class RunAboutGUI implements PeakListener {
         SpinSystem.extend(currentSpinSystem, 0.5);
         gotoSpinSystems();
         updateClusterCanvas();
+    }
+
+    void freezeSystem() {
+        currentSpinSystem.getFragment().ifPresent(frag -> {
+            if (frag.getResSeqScore() != null) {
+                frag.freezeFragment(frag.getResSeqScore());
+            }
+        });
     }
 }

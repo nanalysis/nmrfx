@@ -374,7 +374,6 @@ public class SpinSystem {
         }
         SeqFragment fragment = SeqFragment.join(spinSysMatch, false);
         fragment.dump();
-        fragment.getShifts();
     }
 
     public void unconfirm(SpinSystemMatch spinSysMatch, boolean prev) {
@@ -396,7 +395,6 @@ public class SpinSystem {
             if (fragment != null) {
                 System.out.println("FRrag");
                 fragment.dump();
-                fragment.getShifts();
             }
         }
     }

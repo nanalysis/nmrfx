@@ -15,6 +15,7 @@ import java.util.Optional;
 public class SeqFragment {
 
     List<SpinSystemMatch> spinSystemMatches = new ArrayList<>();
+    ResidueSeqScore resSeqScore = null;
 
     public static SeqFragment getTestFragment(SpinSystemMatch spinSysMatch) {
         SpinSystem spinSysA = spinSysMatch.spinSystemA;
@@ -31,6 +32,14 @@ public class SeqFragment {
             result.spinSystemMatches.addAll(fragmentB.spinSystemMatches);
         }
         return result;
+    }
+
+    public ResidueSeqScore getResSeqScore() {
+        return resSeqScore;
+    }
+
+    public void setResSeqScore(ResidueSeqScore residueSeqScore) {
+        this.resSeqScore = residueSeqScore;
     }
 
     public static SeqFragment join(SpinSystemMatch spinSysMatch, boolean testMode) {
@@ -210,6 +219,15 @@ public class SeqFragment {
         }
         return result;
     }
+    public List<ResidueSeqScore> scoreFragment(Molecule molecule) {
+        List<ResidueSeqScore> result = new ArrayList<>();
+        for (Polymer polymer:molecule.getPolymers()) {
+            if (polymer.isPeptide()) {
+                result.addAll(scoreFragment(polymer));
+            }
+        }
+        return result;
+    }
 
     public List<ResidueSeqScore> scoreFragment(Polymer polymer) {
         double sDevMul = 2.0;
@@ -245,7 +263,27 @@ public class SeqFragment {
             result.sort(null);
         }
         return result;
+    }
 
+    private void assignResidue(Residue residue, List<AtomShiftValue> atomShiftValues) {
+        for (AtomShiftValue atomShiftValue:atomShiftValues) {
+            String aName = atomShiftValue.getAName();
+            double ppm = atomShiftValue.getPPM();
+            residue.getAtom(aName).setPPM(ppm);
+        }
+    }
+
+    public void freezeFragment(ResidueSeqScore resSeqScore) {
+        double[][] shifts = getShifts();
+        List<List<AtomShiftValue>> atomShiftValues = getShiftValues(shifts);
+        int winSize = atomShiftValues.size();
+        Residue firstResidue = resSeqScore.getFirstResidue();
+        Polymer polymer = firstResidue.getPolymer();
+        Residue residue = firstResidue;
+        for (var atomShiftValueList:atomShiftValues) {
+            assignResidue(residue, atomShiftValueList);
+            residue = residue.getNext();
+        }
     }
 
     public static boolean testFrag(SpinSystemMatch spinSystemMatch) {
