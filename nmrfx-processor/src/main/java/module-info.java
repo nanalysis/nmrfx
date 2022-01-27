@@ -26,5 +26,6 @@ module org.nmrfx.processor {
     requires janino;
     requires commons.compiler;
     requires jython.slim;
+    requires com.nanalysis.jcamp;
     requires eventbus.java;
 }
