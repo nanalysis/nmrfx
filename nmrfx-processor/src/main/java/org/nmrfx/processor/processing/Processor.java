@@ -17,6 +17,7 @@
  */
 package org.nmrfx.processor.processing;
 
+import org.greenrobot.eventbus.EventBus;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.datasets.MatrixType;
 import org.nmrfx.math.VecBase;
@@ -28,6 +29,7 @@ import org.nmrfx.processor.datasets.vendor.BrukerData;
 import org.nmrfx.processor.datasets.vendor.NMRData;
 import org.nmrfx.processor.datasets.vendor.NMRDataUtil;
 import org.nmrfx.processor.datasets.vendor.RS2DData;
+import org.nmrfx.processor.events.DatasetSavedEvent;
 import org.nmrfx.processor.math.Matrix;
 import org.nmrfx.processor.math.MatrixND;
 import org.nmrfx.processor.math.Vec;
@@ -40,6 +42,7 @@ import org.nmrfx.utilities.ProgressUpdater;
 import javax.xml.xpath.XPathExpressionException;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -1472,7 +1475,10 @@ public class Processor {
                         } catch (XPathExpressionException e) {
                             throw new IOException(e.getMessage());
                         }
-                        rs2DData.writeOutputFile(dataset, file.getParentFile().toPath());
+                        Path procNumPath = file.getParentFile().toPath();
+                        rs2DData.writeOutputFile(dataset, procNumPath);
+
+                        EventBus.getDefault().post(new DatasetSavedEvent(RS2DData.DATASET_TYPE, procNumPath));
                     } else {
                         dataset.saveMemoryFile();
                     }

@@ -18,8 +18,10 @@
 package org.nmrfx.jmx.mbeans;
 
 import javafx.stage.Stage;
+import org.greenrobot.eventbus.EventBus;
+import org.greenrobot.eventbus.Subscribe;
 import org.nmrfx.jmx.NotificationType;
-import org.nmrfx.jmx.mbeans.AnalystMBean;
+import org.nmrfx.processor.events.DatasetSavedEvent;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.controls.ConsoleUtil;
 
@@ -31,6 +33,10 @@ import javax.management.NotificationBroadcasterSupport;
  */
 public class Analyst extends NotificationBroadcasterSupport implements AnalystMBean {
     private int notificationSequenceNumber = 0;
+
+    public Analyst() {
+        EventBus.getDefault().register(this);
+    }
 
     @Override
     public void open(String path) {
@@ -47,6 +53,11 @@ public class Analyst extends NotificationBroadcasterSupport implements AnalystMB
             stage.toFront();
             stage.requestFocus();
         });
+    }
+
+    @Subscribe
+    public void onDatasetSavedEvent(DatasetSavedEvent event) {
+        sendNotification(NotificationType.DATASET_SAVED, event.getType(), event.getPath().toAbsolutePath().toString());
     }
 
     protected void sendNotification(NotificationType type, String message, Object userData) {
