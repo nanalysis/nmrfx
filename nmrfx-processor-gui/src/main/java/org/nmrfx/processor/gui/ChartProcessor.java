@@ -965,28 +965,23 @@ public class ChartProcessor {
             File nmrFile = new File(filePath);
             File directory = nmrFile.isDirectory() ? nmrFile : nmrFile.getParentFile();
             File file;
-            if (getDatasetType().equals("SPINit")) {
-                Path procDir = Path.of(directory.toString(),"Proc");
-                int procNum;
+            if (getDatasetType().equals(RS2DData.DATASET_TYPE)) {
+                Path datasetDir = directory.toPath();
+                Path newProcPath = RS2DData.findNextProcPath(datasetDir);
                 try {
-                    procNum = RS2DData.findLastProcNum(procDir).orElse(0);
+                    Files.createDirectories(newProcPath);
                 } catch (IOException e) {
-                    procNum = 0;
+                    GUIUtils.warn("Dataset creation", "Unable to create new dataset directory");
                 }
-                String procNumStr = GUIUtils.input("Proc Number",String.valueOf(procNum)).trim();
-                File procNumDir = Path.of(directory.toString(),"Proc",procNumStr).toFile();
-                if (!procNumDir.mkdirs()) {
-                    if (!procNumDir.exists()) {
-                        return result;
-                    }
-                }
-                file = Path.of(procNumDir.toString(),"data.dat").toFile();
+
+                file = newProcPath.resolve(RS2DData.DATA_FILE_NAME).toFile();
             } else {
                 FileChooser fileChooser = new FileChooser();
                 fileChooser.setInitialDirectory(directory);
                 fileChooser.setInitialFileName(datasetName);
                 file = fileChooser.showSaveDialog(null);
             }
+
             if (file != null) {
                 if (file.exists() && !file.canWrite()) {
                     GUIUtils.warn("Dataset creation", "Dataset exists and can't be overwritten");

@@ -43,7 +43,6 @@ import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  *
@@ -195,24 +194,53 @@ public class RS2DData implements NMRData {
         return found;
     }
 
-    public static List<Integer> findProcNums(Path procDirectory) throws IOException {
-        List<Integer> procNums = new ArrayList<>();
-        if (procDirectory.toFile().exists()) {
-            try (Stream<Path> paths = Files.walk(procDirectory, 1)) {
-                procNums.addAll(paths.filter(Files::isDirectory).
-                        map(path -> path.getFileName().toString()).
-                        filter(StringUtils::isNumeric).
-                        map(Integer::parseInt).
-                        sorted().collect(Collectors.toList()));
-            }
-        }
-        return procNums;
+    public static Optional<Path> getLastProcPath(Path datasetDir) {
+        return findLastProcId(datasetDir).stream()
+                .mapToObj(id -> datasetDir.resolve(PROC_DIR).resolve(String.valueOf(id)))
+                .findFirst();
     }
 
-    public static Optional<Integer> findLastProcNum(Path procDirectory) throws IOException {
-        var procNums = findProcNums(procDirectory);
-        int nDirs = procNums.size();
-        return nDirs > 0 ? Optional.of(procNums.get(nDirs-1)) : Optional.empty();
+    public static List<Integer> listProcIds(Path datasetDir) {
+        try {
+            return Files.list(datasetDir.resolve(PROC_DIR))
+                    .filter(Files::isDirectory)
+                    .map(path -> path.getFileName().toString())
+                    .filter(StringUtils::isNumeric)
+                    .mapToInt(Integer::parseInt)
+                    .sorted()
+                    .boxed()
+                    .collect(Collectors.toList());
+        } catch (IOException e) {
+            LOGGER.log(Level.WARNING, "Unable to list processed directories", e);
+            return Collections.emptyList();
+        }
+    }
+
+    public static int findNextProcId(Path datasetDir) {
+        OptionalInt max = findLastProcId(datasetDir);
+        return max.isPresent() ? max.getAsInt() + 1 : 0;
+    }
+
+    public static Path findNextProcPath(Path datasetDir) {
+        return datasetDir.resolve(PROC_DIR).resolve(String.valueOf(findNextProcId(datasetDir)));
+    }
+
+    /**
+     * Get the last process id for this dataset.
+     * Returns empty (not null) if no valid process dir was found.
+     */
+    public static OptionalInt findLastProcId(Path datasetDir) {
+        try {
+            return Files.list(datasetDir.resolve(PROC_DIR))
+                    .filter(Files::isDirectory)
+                    .map(path -> path.getFileName().toString())
+                    .filter(StringUtils::isNumeric)
+                    .mapToInt(Integer::parseInt)
+                    .max();
+        } catch (IOException e) {
+            LOGGER.log(Level.WARNING, "Unable to list processed directories", e);
+            return OptionalInt.empty();
+        }
     }
 
     private static boolean findFIDFiles(String dirPath) {
@@ -1214,6 +1242,7 @@ public class RS2DData implements NMRData {
                             writeRow(dataset, vec, pt, fOut);
                         }
                     }
+
                     boolean done = true;
                     for (int j = 2; j < nDim; j++) {
                         pt[j - 1]++;
@@ -1253,52 +1282,28 @@ public class RS2DData implements NMRData {
     }
 
     public boolean isValidDatasetPath(Path procNumPath) {
-        if (StringUtils.isNumeric(procNumPath.getFileName().toString())) {
-            if (procNumPath.getParent().getFileName().toString().equals("Proc")) {
-                return true;
-            }
-        }
-        return false;
+        return StringUtils.isNumeric(procNumPath.getFileName().toString())
+                && procNumPath.getParent().getFileName().toString().equals(PROC_DIR);
     }
 
     public void writeOutputFile(Dataset dataset, Path procNumPath) throws IOException {
         if (!isValidDatasetPath(procNumPath)) {
             throw new IllegalArgumentException("Invalid Spinit Path " + procNumPath);
         }
-        File procNumDir = procNumPath.toFile();
 
-        File procDir = procNumPath.getParent().toFile();
-        File parentDir = procDir.getParentFile();
-        System.out.println("parentDir " + parentDir);
-        if (!parentDir.exists()) {
-            if (!parentDir.mkdir()) {
-                throw new IOException(("Can't create " + parentDir));
-            }
-        }
-        if (!procDir.exists()) {
-            if (!procDir.mkdir()) {
-                throw new IOException(("Can't create " + procDir));
-            }
-        }
-        if (!procNumDir.exists()) {
-            if (!procNumDir.mkdir()) {
-                throw new IOException(("Can't create " + procNumDir));
-            }
-        }
+        Files.createDirectories(procNumPath);
         File dataFile = procNumPath.resolve(DATA_FILE_NAME).toFile();
         File headerFile = procNumPath.resolve(HEADER_FILE_NAME).toFile();
         File seriesFile = procNumPath.resolve(SERIES_FILE_NAME).toFile();
         saveToRS2DFile(dataset,dataFile.toString());
+
         try {
-            Element testElem = headerDocument.createElement("TESTELEM");
-            testElem.setNodeValue("testValue");
-            headerDocument.getDocumentElement().appendChild(testElem);
             writeDocument(headerDocument, headerFile);
             if (seriesDocument != null) {
                 writeDocument(seriesDocument,seriesFile);
             }
         } catch (TransformerException e) {
-            throw new IOException(e.getMessage());
+            throw new IOException(e);
         }
     }
 
