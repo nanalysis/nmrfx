@@ -50,9 +50,11 @@ import java.util.stream.Stream;
  * @author brucejohnson
  */
 public class RS2DData implements NMRData {
-    static final String DATA_FILE_NAME = "data.dat";
-    static final String HEADER_FILE_NAME = "header.xml";
-    static final String SERIES_FILE_NAME = "Serie.xml";
+    public static final String DATASET_TYPE = "SPINit";
+    public static final String DATA_FILE_NAME = "data.dat";
+    public static final String HEADER_FILE_NAME = "header.xml";
+    public static final String SERIES_FILE_NAME = "Serie.xml";
+    static final String PROC_DIR = "Proc";
     static final String BASE_FREQ_PAR = "BASE_FREQ_";
     static final Logger LOGGER = Logger.getLogger(RS2DData.class.getCanonicalName());
 

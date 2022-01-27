@@ -1002,7 +1002,7 @@ public class ChartProcessor {
 
                 String fileString = file.getAbsoluteFile().toString();
                 if (!fileString.endsWith(".nv") && !fileString.endsWith(".ucsf")) {
-                    if (getDatasetType().equals("SPINit")) {
+                    if (getDatasetType().equals(RS2DData.DATASET_TYPE)) {
                         datasetFile = file;
                         fileString = datasetFile.toString();
                     } else {
