@@ -162,16 +162,18 @@ public class FragmentScoring {
             if (!(resName.equalsIgnoreCase("gly")
                     && atomName.equalsIgnoreCase("cb"))) {
                 Atom atom = residue.getAtom(atomName);
-                StandardPPM stdShift = null;
-                PPMv ppmV = atom.spatialSet.getRefPPM();
-                if ((ppmV != null) && ppmV.isValid()) {
-                    stdShift = new StandardPPM(ppmV.getValue(), ppmV.getError());
+                if (atom != null) {
+                    StandardPPM stdShift = null;
+                    PPMv ppmV = atom.spatialSet.getRefPPM();
+                    if ((ppmV != null) && ppmV.isValid()) {
+                        stdShift = new StandardPPM(ppmV.getValue(), ppmV.getError());
 
-                }
-                if (stdShift != null) {
-                    //result = Math.abs(stdShift.avg-ppm)/stdShift.sdev;
-                    double normDev = (stdShift.getAvg() - ppm) / (stdShift.getSdev() * sdevMul);
-                    result = normDev * normDev;
+                    }
+                    if (stdShift != null) {
+                        //result = Math.abs(stdShift.avg-ppm)/stdShift.sdev;
+                        double normDev = (stdShift.getAvg() - ppm) / (stdShift.getSdev() * sdevMul);
+                        result = normDev * normDev;
+                    }
                 }
             }
         }

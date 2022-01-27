@@ -43,7 +43,7 @@ public class SpinSystem {
             {0, 0, 2, 0, 2, 2},
             {7, 7, 1, 0, 1, 1}
     };
-    static int[] RES_MTCH = {2, 4, 5};
+    static boolean[] RES_MTCH = {false, false, true, false, true, true};
 
     static final int CA_INDEX = ATOM_TYPES.length - 2;
     static final int CB_INDEX = ATOM_TYPES.length - 1;
@@ -974,9 +974,8 @@ public class SpinSystem {
         double sum = 0.0;
         boolean ok = false;
         int nMatch = 0;
-        boolean[] matched = new boolean[RES_MTCH.length];
-        int j = 0;
-        for (int i : RES_MTCH) {
+        boolean[] matched = new boolean[ATOM_TYPES.length];
+        for (int i =0;i<ATOM_TYPES.length;i++) {
             double vA = getValue(idxA, i);
             double vB = spinSysB.getValue(idxB, i);
             double tolA = tols[i];
@@ -987,13 +986,12 @@ public class SpinSystem {
                     ok = false;
                     break;
                 } else {
-                    matched[j] = true;
+                    matched[i] = true;
                     delta /= tolA;
                     sum += delta * delta;
                     nMatch++;
                 }
             }
-            j++;
         }
         Optional<SpinSystemMatch> result = Optional.empty();
         if (ok) {

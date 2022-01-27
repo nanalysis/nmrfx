@@ -21,15 +21,32 @@ public class SeqFragment {
         SpinSystem spinSysA = spinSysMatch.spinSystemA;
         SpinSystem spinSysB = spinSysMatch.spinSystemB;
         SeqFragment result = new SeqFragment();
-
+        SeqFragment fragmentA = null;
+        SeqFragment fragmentB = null;
         if (spinSysA.fragment.isPresent()) {
-            SeqFragment fragmentA = spinSysA.fragment.get();
-            result.spinSystemMatches.addAll(fragmentA.spinSystemMatches);
+            fragmentA = spinSysA.fragment.get();
         }
-        result.spinSystemMatches.add(spinSysMatch);
         if (spinSysB.fragment.isPresent()) {
-            SeqFragment fragmentB = spinSysB.fragment.get();
+            fragmentB = spinSysB.fragment.get();
+        }
+        if ((fragmentA != null) && (fragmentA == fragmentB)) {
+            result.spinSystemMatches.addAll(fragmentA.spinSystemMatches);
+        } else if (fragmentA != null) {
+            result.spinSystemMatches.addAll(fragmentA.spinSystemMatches);
+            result.spinSystemMatches.add(spinSysMatch);
+            if (fragmentB != null) {
+                result.spinSystemMatches.addAll(fragmentB.spinSystemMatches);
+            }
+        } else if (fragmentB != null) {
+            result.spinSystemMatches.add(spinSysMatch);
             result.spinSystemMatches.addAll(fragmentB.spinSystemMatches);
+        } else {
+            result.spinSystemMatches.add(spinSysMatch);
+        }
+        for (int i = result.getSpinSystemMatches().size() - 1; i >= 1; i--) {
+            if (result.getSpinSystemMatches().get(i) == result.getSpinSystemMatches().get(i - 1)) {
+                result.getSpinSystemMatches().remove(i);
+            }
         }
         return result;
     }
@@ -158,7 +175,7 @@ public class SeqFragment {
     }
 
     public double[][] getShifts() {
-        double[][] result = new double[spinSystemMatches.size() + 2][SpinSystem.RES_MTCH.length];
+        double[][] result = new double[spinSystemMatches.size() + 2][SpinSystem.ATOM_TYPES.length];
         int iSys = 0;
         SpinSystem spinSysA;
         SpinSystem spinSysB = null;
@@ -166,31 +183,30 @@ public class SeqFragment {
             spinSysA = spinMatch.spinSystemA;
             spinSysB = spinMatch.spinSystemB;
             if (iSys == 0) {
-                int j = 0;
-                for (int idx : SpinSystem.RES_MTCH) {
-                    result[iSys][j++] = spinSysA.getValue(0, idx);
+                for (int idx = 0;idx<SpinSystem.ATOM_TYPES.length;idx++) {
+                    result[iSys][idx] = spinSysA.getValue(0, idx);
                 }
                 iSys++;
             }
-            int j = 0;
-            for (int idx : SpinSystem.RES_MTCH) {
-                if (spinMatch.matched[j]) {
-                    double vA = spinSysA.getValue(1, idx);
-                    double vB = spinSysB.getValue(0, idx);
-                    double avg = (vA + vB) / 2.0;
-                    result[iSys][j] = avg;
+            for (int idx = 0;idx<SpinSystem.ATOM_TYPES.length;idx++) {
+                if (SpinSystem.RES_MTCH[idx]) {
+                    if (spinMatch.matched[idx]) {
+                        double vA = spinSysA.getValue(1, idx);
+                        double vB = spinSysB.getValue(0, idx);
+                        double avg = (vA + vB) / 2.0;
+                        result[iSys][idx] = avg;
+                    } else {
+                        result[iSys][idx] = Double.NaN;
+                    }
                 } else {
-                    result[iSys][j] = Double.NaN;
+                    result[iSys][idx] = spinSysA.getValue(1,idx);
                 }
-                j++;
             }
             iSys++;
         }
         if (spinSysB != null) {
-            int j = 0;
-            for (int idx : SpinSystem.RES_MTCH) {
-                result[iSys][j] = spinSysB.getValue(1, idx);
-                j++;
+            for (int idx = 0;idx<SpinSystem.ATOM_TYPES.length;idx++) {
+                result[iSys][idx] = spinSysB.getValue(1, idx);
             }
         }
 
@@ -208,7 +224,7 @@ public class SeqFragment {
         for (double[] shift : shifts) {
             List<AtomShiftValue> values = new ArrayList<>();
             for (int k = 0; k < shift.length; k++) {
-                String aName = SpinSystem.getAtomName(SpinSystem.RES_MTCH[k]);
+                String aName = SpinSystem.getAtomName(k);
                 double value = shift[k];
                 if (!Double.isNaN(value)) {
                     AtomShiftValue atomValue = new AtomShiftValue(aName, value, null);
@@ -231,7 +247,7 @@ public class SeqFragment {
 
     public List<ResidueSeqScore> scoreFragment(Polymer polymer) {
         double sDevMul = 2.0;
-        double pOK = 0.05;
+        double pOK = 0.01;
         double[][] shifts = getShifts();
         List<ResidueSeqScore> result = new ArrayList<>();
         List<List<AtomShiftValue>> atomShiftValues = getShiftValues(shifts);

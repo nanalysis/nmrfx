@@ -289,7 +289,7 @@ public class RunAbout {
     }
 
     public int[] getIDims(DatasetBase dataset, String typeName, List<String> dims) {
-        int[] iDims = new int[dims.size()];
+        int[] iDims = new int[dataset.getNDim()];
         System.out.println(typeName + " " + dims);
         int j = 0;
         for (String dim : dims) {

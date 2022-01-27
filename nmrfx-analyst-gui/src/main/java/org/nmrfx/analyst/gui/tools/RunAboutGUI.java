@@ -867,8 +867,8 @@ public class RunAboutGUI implements PeakListener {
                                 otherSys = spinMatch.getSpinSystemB();
                                 matchSys = otherSys.getMatchToPrevious().get(0).getSpinSystemA();
                             }
-                            boolean available = !otherSys.confirmed(i == 0);
                             boolean confirmed = spinSys.confirmed(spinMatch, i == 0);
+                            boolean available =  confirmed ? true : !otherSys.confirmed(i == 1);
                             selectedButtons[i].setSelected(confirmed);
 
                             boolean reciprocal = matchSys == spinSys;
