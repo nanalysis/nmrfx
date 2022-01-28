@@ -1194,6 +1194,11 @@ public class RS2DData implements NMRData {
         this.sampleSchedule = sampleSchedule;
     }
 
+    @Override
+    public String getPreferredDatasetType() {
+        return DATASET_TYPE;
+    }
+
     private static void writeRow(Dataset dataset, Vec vec, int[] pt, BufferedOutputStream fOut) throws IOException {
         if (dataset.getComplex(0)) {
             vec.makeComplex();

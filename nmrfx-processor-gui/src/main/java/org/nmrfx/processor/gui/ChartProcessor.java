@@ -62,6 +62,7 @@ import org.nmrfx.utils.GUIUtils;
  * @author brucejohnson
  */
 public class ChartProcessor {
+    public static final String DEFAULT_DATASET_TYPE = "nv";
 
     private SimpleObjectProperty nmrDataObj;
 
@@ -100,7 +101,7 @@ public class ChartProcessor {
      * The name of the datasetFile that will be created when whole data file is
      * processed.
      */
-    private String datasetType = "nv";
+    private String datasetType = DEFAULT_DATASET_TYPE;
 
     /**
      * List of commands to be executed at beginning of script.
@@ -1249,6 +1250,8 @@ public class ChartProcessor {
 
     public void setData(NMRData data, boolean clearOps) {
         setNMRData(data);
+        setDatasetType(data.getPreferredDatasetType());
+
         datasetFile = null;
         datasetFileTemp = null;
         Map<String, Boolean> flags = new HashMap<>();
@@ -1264,10 +1267,7 @@ public class ChartProcessor {
         Map<String, List<String>> listOfScripts = getScriptList();
         List<String> saveHeaderList = new ArrayList<>();
         saveHeaderList.addAll(headerList);
-        //System.out.println("saved");
-        for (Map.Entry<String, List<String>> entry : listOfScripts.entrySet()) {
-            //System.out.println(entry.toString());
-        }
+
         // when setting data reset vecdim back to 0 as it could have been set to
         // a value higher than the number of dimensions
         vecDim = 0;

@@ -848,4 +848,8 @@ public interface NMRData {
         rData.setTime(getZonedDate().format(DateTimeFormatter.ISO_DATE_TIME));
         return rData;
     }
+
+    public default String getPreferredDatasetType() {
+        return "nv";
+    }
 }
