@@ -23,6 +23,7 @@ import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextAlignment;
 import org.nmrfx.chemistry.Atom;
@@ -62,6 +63,8 @@ import static org.nmrfx.processor.gui.spectra.DatasetAttributes.AXMODE.PPM;
  * @author Bruce Johnson
  */
 public class RunAboutGUI implements PeakListener {
+    static Font activeFont = Font.font(null, FontWeight.BOLD, 14);
+    static Font regularFont = Font.font(null, FontWeight.NORMAL, 14);
 
     FXMLController controller;
     VBox vBox;
@@ -742,18 +745,17 @@ public class RunAboutGUI implements PeakListener {
 
         void updateFragment(SpinSystem spinSys) {
             for (ResidueLabel resLabel : residueLabelMap.values()) {
-                resLabel.setTextColor(Color.BLACK);
+                resLabel.setInactive();
                 var optResidue = resLabel.getResidue();
                 optResidue.ifPresent( residue -> {
                     Atom atom = residue.getAtom("CA");
                     if (atom != null) {
                         Double ppm = atom.getPPM();
                         if (ppm != null) {
-                            resLabel.setTextColor(Color.BLUE);
+                            resLabel.setActive();
                         }
                     }
                 });
-                resLabel.setColor(Color.WHITE);
             }
             Optional<SeqFragment> fragmentOpt = spinSys.getFragment();
             fragmentOpt.ifPresent(frag -> {
@@ -976,7 +978,7 @@ public class RunAboutGUI implements PeakListener {
             rect.setStroke(null);
             rect.setFill(Color.WHITE);
             textItem.setFill(Color.BLACK);
-            textItem.setFont(Font.font(fontSize));
+            textItem.setFont(regularFont);
             textItem.setMouseTransparent(true);
             stack.getChildren().addAll(rect, textItem);
             stack.setAlignment(Pos.CENTER);
@@ -1002,6 +1004,18 @@ public class RunAboutGUI implements PeakListener {
 
         void setTextColor(Color color) {
             textItem.setFill(color);
+        }
+
+        void setActive() {
+            textItem.setFont(activeFont);
+            textItem.setFill(Color.BLUE);
+            setColor(Color.WHITE);
+        }
+
+        void setInactive() {
+            textItem.setFont(regularFont);
+            textItem.setFill(Color.BLACK);
+            setColor(Color.LIGHTGRAY);
         }
 
         Optional<Residue> getResidue() {
