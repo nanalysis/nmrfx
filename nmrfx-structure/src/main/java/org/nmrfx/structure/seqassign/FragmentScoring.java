@@ -195,12 +195,16 @@ public class FragmentScoring {
                 nValues++;
             }
         }
-
-        ChiSquareDistribution chiSquare = new ChiSquareDistribution(nValues);
-        double pValue = chiSquare.p(resScore);
-
-        if (Double.isNaN(pValue) || (pValue < pOK)) {
+        double pValue;
+        if (nValues < 1) {
             matchScore.ok = false;
+            pValue = 0.0;
+        } else {
+            ChiSquareDistribution chiSquare = new ChiSquareDistribution(nValues);
+            pValue = chiSquare.p(resScore);
+            if (Double.isNaN(pValue) || (pValue < pOK)) {
+                matchScore.ok = false;
+            }
         }
 
         matchScore.totalScore = pValue;
