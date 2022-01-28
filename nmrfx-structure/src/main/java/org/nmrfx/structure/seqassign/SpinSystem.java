@@ -44,6 +44,7 @@ public class SpinSystem {
             {7, 7, 1, 0, 1, 1}
     };
     static boolean[] RES_MTCH = {false, false, true, false, true, true};
+    static boolean[] RES_SCORE_ATOM = {false, false, true, false, true, true};
 
     static final int CA_INDEX = ATOM_TYPES.length - 2;
     static final int CB_INDEX = ATOM_TYPES.length - 1;

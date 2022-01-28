@@ -13,10 +13,13 @@ import java.util.Optional;
  * @author brucejohnson
  */
 public class SeqFragment {
-
+    static private double fragmentScoreProbability = 0.02;
     List<SpinSystemMatch> spinSystemMatches = new ArrayList<>();
     ResidueSeqScore resSeqScore = null;
 
+    public static void setFragmentScoreProbability(double value) {
+        fragmentScoreProbability = value;
+    }
     public static SeqFragment getTestFragment(SpinSystemMatch spinSysMatch) {
         SpinSystem spinSysA = spinSysMatch.spinSystemA;
         SpinSystem spinSysB = spinSysMatch.spinSystemB;
@@ -219,16 +222,18 @@ public class SeqFragment {
         return result;
     }
 
-    List<List<AtomShiftValue>> getShiftValues(double[][] shifts) {
+    List<List<AtomShiftValue>> getShiftValues(double[][] shifts, boolean useAll) {
         List<List<AtomShiftValue>> result = new ArrayList<>();
         for (double[] shift : shifts) {
             List<AtomShiftValue> values = new ArrayList<>();
             for (int k = 0; k < shift.length; k++) {
-                String aName = SpinSystem.getAtomName(k);
-                double value = shift[k];
-                if (!Double.isNaN(value)) {
-                    AtomShiftValue atomValue = new AtomShiftValue(aName, value, null);
-                    values.add(atomValue);
+                if (useAll || SpinSystem.RES_SCORE_ATOM[k]) {
+                    String aName = SpinSystem.getAtomName(k);
+                    double value = shift[k];
+                    if (!Double.isNaN(value)) {
+                        AtomShiftValue atomValue = new AtomShiftValue(aName, value, null);
+                        values.add(atomValue);
+                    }
                 }
             }
             result.add(values);
@@ -247,10 +252,9 @@ public class SeqFragment {
 
     public List<ResidueSeqScore> scoreFragment(Polymer polymer) {
         double sDevMul = 2.0;
-        double pOK = 0.01;
         double[][] shifts = getShifts();
         List<ResidueSeqScore> result = new ArrayList<>();
-        List<List<AtomShiftValue>> atomShiftValues = getShiftValues(shifts);
+        List<List<AtomShiftValue>> atomShiftValues = getShiftValues(shifts, false);
         int winSize = atomShiftValues.size();
         List<Residue> residues = polymer.getResidues();
         int nResidues = residues.size();
@@ -260,7 +264,7 @@ public class SeqFragment {
             double pScore = 1.0;
             for (int j = 0; j < winSize; j++) {
                 Residue residue = residues.get(i + j);
-                PPMScore ppmScore = FragmentScoring.scoreAtomPPM(pOK, sDevMul, residue, atomShiftValues.get(j));
+                PPMScore ppmScore = FragmentScoring.scoreAtomPPM(fragmentScoreProbability, sDevMul, residue, atomShiftValues.get(j));
                 if (!ppmScore.ok()) {
                     ok = false;
                     break;
@@ -291,7 +295,7 @@ public class SeqFragment {
 
     public void freezeFragment(ResidueSeqScore resSeqScore) {
         double[][] shifts = getShifts();
-        List<List<AtomShiftValue>> atomShiftValues = getShiftValues(shifts);
+        List<List<AtomShiftValue>> atomShiftValues = getShiftValues(shifts, true);
         int winSize = atomShiftValues.size();
         Residue firstResidue = resSeqScore.getFirstResidue();
         Polymer polymer = firstResidue.getPolymer();

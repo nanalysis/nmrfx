@@ -25,6 +25,7 @@ import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextAlignment;
+import org.nmrfx.chemistry.Atom;
 import org.nmrfx.chemistry.Polymer;
 import org.nmrfx.chemistry.Residue;
 import org.nmrfx.chemistry.io.AtomParser;
@@ -482,6 +483,13 @@ public class RunAboutGUI implements PeakListener {
 
         toolBar.getItems().add(spinSysMenuButton);
 
+        Slider probSlider = new Slider(1,100, 20.0);
+        toolBar.getItems().add(probSlider);
+        Label probField = new Label();
+        probField.setPrefWidth(100);
+        probField.setText("0.02");
+        probSlider.valueProperty().addListener(v -> probSliderChanged(probSlider, probField));
+
         ToolBarUtils.addFiller(navigatorToolBar, 40, 300);
         ToolBarUtils.addFiller(navigatorToolBar, 70, 70);
 
@@ -734,6 +742,17 @@ public class RunAboutGUI implements PeakListener {
 
         void updateFragment(SpinSystem spinSys) {
             for (ResidueLabel resLabel : residueLabelMap.values()) {
+                resLabel.setTextColor(Color.BLACK);
+                var optResidue = resLabel.getResidue();
+                optResidue.ifPresent( residue -> {
+                    Atom atom = residue.getAtom("CA");
+                    if (atom != null) {
+                        Double ppm = atom.getPPM();
+                        if (ppm != null) {
+                            resLabel.setTextColor(Color.BLUE);
+                        }
+                    }
+                });
                 resLabel.setColor(Color.WHITE);
             }
             Optional<SeqFragment> fragmentOpt = spinSys.getFragment();
@@ -842,91 +861,95 @@ public class RunAboutGUI implements PeakListener {
                         List<SpinSystemMatch> matches = i == 0 ? spinSys.getMatchToPrevious() : spinSys.getMatchToNext();
                         SpinnerValueFactory.IntegerSpinnerValueFactory factory = (SpinnerValueFactory.IntegerSpinnerValueFactory) spinners[i].getValueFactory();
                         factory.setMax(matches.size() - 1);
-
+                        showScore(spinSys);
                     }
-                }
-                for (int i = 0; i < nFields; i++) {
-                    boolean ok = false;
-                    if (spinSys != null) {
-                        List<SpinSystemMatch> matches = i == 0 ? spinSys.getMatchToPrevious() : spinSys.getMatchToNext();
-                        if (!matches.isEmpty()) {
-                            selectedButtons[i].setDisable(false);
-                            sysFields[i].setDisable(false);
-                            spinners[i].setDisable(false);
-                            SpinSystem otherSys;
-                            SpinSystem matchSys;
-                            int index = spinners[i].getValue();
-                            System.out.println("i " + i + " index " + index);
-                            SpinSystemMatch spinMatch = matches.get(index);
-                            boolean viable = SeqFragment.testFrag(spinMatch);
-
-                            if (i == 0) {
-                                otherSys = spinMatch.getSpinSystemA();
-                                matchSys = otherSys.getMatchToNext().get(0).getSpinSystemB();
-                            } else {
-                                otherSys = spinMatch.getSpinSystemB();
-                                matchSys = otherSys.getMatchToPrevious().get(0).getSpinSystemA();
-                            }
-                            boolean confirmed = spinSys.confirmed(spinMatch, i == 0);
-                            boolean available =  confirmed ? true : !otherSys.confirmed(i == 1);
-                            selectedButtons[i].setSelected(confirmed);
-
-                            boolean reciprocal = matchSys == spinSys;
-                            if (reciprocal) {
-                                recipLabels[i].setText("R");
-                                recipLabels[i].setStyle("-fx-background-color:LIGHTGREEN");
-                            } else {
-                                String matchLabel = "";
-                                if (matchSys != null) {
-                                    matchLabel = String.valueOf(matchSys.getRootPeak().getIdNum());
-                                }
-                                recipLabels[i].setText(matchLabel);
-                                recipLabels[i].setStyle("-fx-background-color:YELLOW");
-                            }
-                            if (available) {
-                                availLabels[i].setText("A");
-                                availLabels[i].setStyle("-fx-background-color:LIGHTGREEN");
-                            } else {
-                                availLabels[i].setText("a");
-                                availLabels[i].setStyle("-fx-background-color:YELLOW");
-                            }
-                            if (viable) {
-                                viableLabels[i].setText("V");
-                                viableLabels[i].setStyle("-fx-background-color:LIGHTGREEN");
-                            } else {
-                                viableLabels[i].setText("v");
-                                viableLabels[i].setStyle("-fx-background-color:YELLOW");
-                            }
-
-                            sysFields[i].setText(String.valueOf(otherSys.getId()));
-                            nMatchFields[i].setText(String.valueOf(spinMatch.getN()));
-                            scoreFields[i].setText(String.format("%4.2f", spinMatch.getScore()));
-                            ok = true;
-                        } else {
-                            sysFields[i].setText("");
-                            sysFields[i].setDisable(true);
-                            nMatchFields[i].setText("0");
-                            scoreFields[i].setText("0.0");
-                            selectedButtons[i].setSelected(false);
-                            selectedButtons[i].setDisable(true);
-                            spinners[i].setDisable(true);
-                            recipLabels[i].setText("");
-                            recipLabels[i].setStyle("");
-                            availLabels[i].setText("");
-                            availLabels[i].setStyle("");
-                            viableLabels[i].setText("");
-                            viableLabels[i].setStyle("");
-                        }
-                    }
-                    if (!ok) {
-                        sysFields[i].setText("");
-                    }
-//scoreField[i].setText(String.format("%4.2f", spinMatch.score));
                 }
             }
-
         }
+
+        void showScore(SpinSystem spinSys) {
+            for (int i = 0; i < nFields; i++) {
+                boolean ok = false;
+                if (spinSys != null) {
+                    List<SpinSystemMatch> matches = i == 0 ? spinSys.getMatchToPrevious() : spinSys.getMatchToNext();
+                    if (!matches.isEmpty()) {
+                        selectedButtons[i].setDisable(false);
+                        sysFields[i].setDisable(false);
+                        spinners[i].setDisable(false);
+                        SpinSystem otherSys;
+                        SpinSystem matchSys;
+                        int index = spinners[i].getValue();
+                        System.out.println("i " + i + " index " + index);
+                        SpinSystemMatch spinMatch = matches.get(index);
+                        boolean viable = SeqFragment.testFrag(spinMatch);
+
+                        if (i == 0) {
+                            otherSys = spinMatch.getSpinSystemA();
+                            matchSys = otherSys.getMatchToNext().get(0).getSpinSystemB();
+                        } else {
+                            otherSys = spinMatch.getSpinSystemB();
+                            matchSys = otherSys.getMatchToPrevious().get(0).getSpinSystemA();
+                        }
+                        boolean confirmed = spinSys.confirmed(spinMatch, i == 0);
+                        boolean available = confirmed ? true : !otherSys.confirmed(i == 1);
+                        selectedButtons[i].setSelected(confirmed);
+
+                        boolean reciprocal = matchSys == spinSys;
+                        if (reciprocal) {
+                            recipLabels[i].setText("R");
+                            recipLabels[i].setStyle("-fx-background-color:LIGHTGREEN");
+                        } else {
+                            String matchLabel = "";
+                            if (matchSys != null) {
+                                matchLabel = String.valueOf(matchSys.getRootPeak().getIdNum());
+                            }
+                            recipLabels[i].setText(matchLabel);
+                            recipLabels[i].setStyle("-fx-background-color:YELLOW");
+                        }
+                        if (available) {
+                            availLabels[i].setText("A");
+                            availLabels[i].setStyle("-fx-background-color:LIGHTGREEN");
+                        } else {
+                            availLabels[i].setText("a");
+                            availLabels[i].setStyle("-fx-background-color:YELLOW");
+                        }
+                        if (viable) {
+                            viableLabels[i].setText("V");
+                            viableLabels[i].setStyle("-fx-background-color:LIGHTGREEN");
+                        } else {
+                            viableLabels[i].setText("v");
+                            viableLabels[i].setStyle("-fx-background-color:YELLOW");
+                        }
+
+                        sysFields[i].setText(String.valueOf(otherSys.getId()));
+                        nMatchFields[i].setText(String.valueOf(spinMatch.getN()));
+                        scoreFields[i].setText(String.format("%4.2f", spinMatch.getScore()));
+                        ok = true;
+                    } else {
+                        sysFields[i].setText("");
+                        sysFields[i].setDisable(true);
+                        nMatchFields[i].setText("0");
+                        scoreFields[i].setText("0.0");
+                        selectedButtons[i].setSelected(false);
+                        selectedButtons[i].setDisable(true);
+                        spinners[i].setDisable(true);
+                        recipLabels[i].setText("");
+                        recipLabels[i].setStyle("");
+                        availLabels[i].setText("");
+                        availLabels[i].setStyle("");
+                        viableLabels[i].setText("");
+                        viableLabels[i].setStyle("");
+                    }
+                }
+                if (!ok) {
+                    sysFields[i].setText("");
+                }
+//scoreField[i].setText(String.format("%4.2f", spinMatch.score));
+            }
+        }
+
     }
+
 
     static class ResidueLabel extends StackPane {
 
@@ -934,9 +957,11 @@ public class RunAboutGUI implements PeakListener {
         double width = 20;
         Rectangle rect;
         Text textItem;
+        Residue residue;
 
         ResidueLabel(Group group, Residue residue) {
             this(group, residue.getOneLetter());
+            this.residue = residue;
         }
 
         ResidueLabel(Group group, char resChar) {
@@ -975,6 +1000,13 @@ public class RunAboutGUI implements PeakListener {
             textItem.setText(text);
         }
 
+        void setTextColor(Color color) {
+            textItem.setFill(color);
+        }
+
+        Optional<Residue> getResidue() {
+            return Optional.ofNullable(residue);
+        }
     }
 
     void gotoResidue(ResidueLabel resLabel) {
@@ -1098,6 +1130,15 @@ public class RunAboutGUI implements PeakListener {
         }
     }
 
+    void probSliderChanged(Slider slider, Label probField) {
+        if (useSpinSystem) {
+            double prob = slider.getValue() / 1000.0;
+            probField.setText(String.format("%.3f", prob));
+            SeqFragment.setFragmentScoreProbability(prob);
+            spinStatus.showScore(currentSpinSystem);
+            scoreFragment();
+        }
+    }
     void assemble() {
         runAbout.assemble();
         updatePeakListMenu();
@@ -1314,6 +1355,11 @@ public class RunAboutGUI implements PeakListener {
         var spinSys = currentSpinSystem;
         spinStatus.updateFragment(spinSys);
 
+    }
+
+    public void scoreFragment() {
+        var spinSys = currentSpinSystem;
+        spinStatus.updateFragment(spinSys);
     }
 
     public void gotoSpinSystems(int pIndex, int sIndex) {
@@ -1910,6 +1956,7 @@ public class RunAboutGUI implements PeakListener {
             if (frag.getResSeqScore() != null) {
                 frag.freezeFragment(frag.getResSeqScore());
             }
+            spinStatus.updateFragment(currentSpinSystem);
         });
     }
 }
