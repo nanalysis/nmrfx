@@ -164,10 +164,14 @@ public class FragmentScoring {
                 Atom atom = residue.getAtom(atomName);
                 if (atom != null) {
                     StandardPPM stdShift = null;
-                    PPMv ppmV = atom.spatialSet.getRefPPM();
+                    PPMv ppmV = atom.spatialSet.getPPM(0);
                     if ((ppmV != null) && ppmV.isValid()) {
-                        stdShift = new StandardPPM(ppmV.getValue(), ppmV.getError());
-
+                        stdShift = new StandardPPM(ppmV.getValue(), 0.05);
+                    } else {
+                        PPMv refPPMV = atom.spatialSet.getRefPPM();
+                        if ((refPPMV != null) && refPPMV.isValid()) {
+                            stdShift = new StandardPPM(refPPMV.getValue(), refPPMV.getError());
+                        }
                     }
                     if (stdShift != null) {
                         //result = Math.abs(stdShift.avg-ppm)/stdShift.sdev;
@@ -177,13 +181,10 @@ public class FragmentScoring {
                 }
             }
         }
-
         return result;
     }
 
     public static PPMScore scoreAtomPPM(final double pOK, final double sdevMul, final Residue residue, final List<AtomShiftValue> atomShiftValues) {
-        //Standard stdVals = (Standard) scoreMap.get(atomName);
-        //System.out.println("scoreAtomPPM "+resName);
         PPMScore matchScore = new PPMScore(atomShiftValues);
 
         double resScore = 0.0;
@@ -201,7 +202,7 @@ public class FragmentScoring {
             pValue = 0.0;
         } else {
             ChiSquareDistribution chiSquare = new ChiSquareDistribution(nValues);
-            pValue = chiSquare.p(resScore);
+            pValue = 1.0 - chiSquare.cdf(resScore);
             if (Double.isNaN(pValue) || (pValue < pOK)) {
                 matchScore.ok = false;
             }
