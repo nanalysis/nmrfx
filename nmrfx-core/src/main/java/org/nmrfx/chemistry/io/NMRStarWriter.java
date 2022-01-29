@@ -35,6 +35,7 @@ import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.InvalidPeakException;
 import org.nmrfx.peaks.io.PeakPathWriter;
 import org.nmrfx.peaks.io.PeakWriter;
+import org.nmrfx.project.ProjectBase;
 import org.nmrfx.star.ParseException;
 import org.nmrfx.star.STAR3;
 import org.nmrfx.peaks.PeakPaths;
@@ -1250,6 +1251,6 @@ public class NMRStarWriter {
                 }
             }
         }
+        ProjectBase.getActive().writeSaveframes(chan);
     }
-
 }

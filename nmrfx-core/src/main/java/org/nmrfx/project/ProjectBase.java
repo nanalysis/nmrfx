@@ -20,6 +20,7 @@ import java.beans.PropertyChangeSupport;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.Writer;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.file.*;
@@ -32,6 +33,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import org.nmrfx.chemistry.Compound;
 import org.nmrfx.datasets.DatasetFactory;
+import org.nmrfx.star.SaveframeIO;
 
 /**
  *
@@ -64,6 +66,7 @@ public class ProjectBase {
     protected Map<String, DatasetBase> datasetMap = new HashMap<>();
     protected List<DatasetBase> datasets = new ArrayList<>();
     protected Map<String, PeakList> peakLists = new HashMap<>();
+    protected List<SaveframeIO> extraSaveframes = new ArrayList<>();
     static ProjectBase activeProject = null;
     public static PropertyChangeSupport pcs = null;
 
@@ -160,6 +163,16 @@ public class ProjectBase {
     public List<DatasetBase> getDatasets() {
 //        System.out.println("get datasets " + datasets.toString());
         return datasets;
+    }
+
+    public void addSaveframe(SaveframeIO saveframeIO) {
+        extraSaveframes.add(saveframeIO);
+    }
+
+    public void writeSaveframes(Writer chan) {
+        for (SaveframeIO saveframeIO:extraSaveframes) {
+            saveframeIO.write(chan);
+        }
     }
 
     public void addDataset(DatasetBase dataset, String datasetName) {
