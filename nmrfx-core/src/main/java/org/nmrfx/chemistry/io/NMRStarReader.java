@@ -28,6 +28,7 @@ import org.nmrfx.chemistry.*;
 import org.nmrfx.chemistry.constraints.*;
 import org.nmrfx.chemistry.Residue.RES_POSITION;
 import org.nmrfx.chemistry.AtomResonance;
+import org.nmrfx.project.ProjectBase;
 import org.nmrfx.star.Loop;
 import org.nmrfx.star.ParseException;
 import org.nmrfx.star.STAR3;
@@ -1887,6 +1888,9 @@ public class NMRStarReader {
                 System.err.println("clean resonances");
             }
             resFactory.clean();
+
+            ProjectBase.processExtraSaveFrames(star3);
+
             if (DEBUG) {
                 System.err.println("process done");
             }
