@@ -55,7 +55,7 @@ public class Polymer extends Entity {
         "O", "N", "2.271"
     };
 
-    class PolymerIterator implements Iterator {
+    class PolymerIterator implements Iterator<Residue> {
 
         Residue current = getFirstResidue();
 
@@ -63,8 +63,8 @@ public class Polymer extends Entity {
             return (current != null);
         }
 
-        public Object next() {
-            Object result = current;
+        public Residue next() {
+            Residue result = current;
             if (current == null) {
                 throw new NoSuchElementException();
             }
@@ -93,7 +93,7 @@ public class Polymer extends Entity {
         residues = new HashMap<>();
     }
 
-    public Iterator iterator() {
+    public Iterator<Residue> iterator() {
         return new PolymerIterator();
     }
 

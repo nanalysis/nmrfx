@@ -35,6 +35,7 @@ import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.InvalidPeakException;
 import org.nmrfx.peaks.io.PeakPathWriter;
 import org.nmrfx.peaks.io.PeakWriter;
+import org.nmrfx.project.ProjectBase;
 import org.nmrfx.star.ParseException;
 import org.nmrfx.star.STAR3;
 import org.nmrfx.peaks.PeakPaths;
@@ -59,6 +60,38 @@ public class NMRStarWriter {
     private static final String[] chemCompAtomLoopStrings = {"_Chem_comp_atom.Atom_ID", "_Chem_comp_atom.PDB_atom_ID", "_Chem_comp_atom.Alt_atom_ID", "_Chem_comp_atom.Auth_atom_ID", "_Chem_comp_atom.Type_symbol", "_Chem_comp_atom.Isotope_number", "_Chem_comp_atom.Chirality", "_Chem_comp_atom.Charge", "_Chem_comp_atom.Partial_charge", "_Chem_comp_atom.Oxidation_number", "_Chem_comp_atom.PDBx_aromatic_flag", "_Chem_comp_atom.PDBx_leaving_atom_flag", "_Chem_comp_atom.Substruct_code", "_Chem_comp_atom.Ionizable", "_Chem_comp_atom.Details", "_Chem_comp_atom.Entry_ID", "_Chem_comp_atom.Comp_ID", "_Chem_comp_atom.Unpaired_electron_number"};
     static String[] chemShiftAssignmentStrings = {"_Atom_chem_shift.ID", "_Atom_chem_shift.Assembly_atom_ID", "_Atom_chem_shift.Entity_assembly_ID", "_Atom_chem_shift.Entity_ID", "_Atom_chem_shift.Comp_index_ID", "_Atom_chem_shift.Seq_ID", "_Atom_chem_shift.Comp_ID", "_Atom_chem_shift.Atom_ID", "_Atom_chem_shift.Atom_type", "_Atom_chem_shift.Atom_isotope_number", "_Atom_chem_shift.Val", "_Atom_chem_shift.Val_err", "_Atom_chem_shift.Assign_fig_of_merit", "_Atom_chem_shift.Ambiguity_code", "_Atom_chem_shift.Occupancy", "_Atom_chem_shift.Resonance_ID", "_Atom_chem_shift.Auth_seq_ID", "_Atom_chem_shift.Auth_comp_ID", "_Atom_chem_shift.Auth_atom_ID", "_Atom_chem_shift.Details", "_Atom_chem_shift.Assigned_chem_shift_list_ID"};
     private static final String[] atomCoordinateLoopStrings = {"_Atom_site.Assembly_ID", "_Atom_site.Model_ID", "_Atom_site.Model_site_ID", "_Atom_site.ID", "_Atom_site.Assembly_atom_ID", "_Atom_site.Label_entity_assembly_ID", "_Atom_site.Label_entity_ID", "_Atom_site.Label_comp_index_ID", "_Atom_site.Label_comp_ID", "_Atom_site.Label_atom_ID", "_Atom_site.Type_symbol", "_Atom_site.Cartn_x", "_Atom_site.Cartn_y", "_Atom_site.Cartn_z", "_Atom_site.Cartn_x_esd", "_Atom_site.Cartn_y_esd", "_Atom_site.Cartn_z_esd", "_Atom_site.Occupancy", "_Atom_site.Occupancy_esd", "_Atom_site.Uncertainty", "_Atom_site.Ordered_flag", "_Atom_site.Footnote_ID", "_Atom_site.Details", "_Atom_site.Entry_ID", "_Atom_site.Conformer_family_coord_set_ID"};
+
+    public static void initSaveFrameOutput(StringBuilder sBuilder, String category, String categoryName, String id) {
+        sBuilder.append("save_").append(categoryName).append("_").append(id).append("\n");
+        NMRStarWriter.appendSTAR(sBuilder,category,"Sf_category",categoryName);
+        NMRStarWriter.appendSTAR(sBuilder,category,"Sf_framecode",categoryName+"_"+id);
+        NMRStarWriter.appendSTAR(sBuilder,category,"Entry_ID",".");
+        NMRStarWriter.appendSTAR(sBuilder,category,"ID",String.valueOf(id));
+    }
+
+    public static void appendSTAR(StringBuilder sBuilder,String category,String tag, String value) {
+        String fullSpace = "                                        ";
+        int length = 3 + category.length() + 1 + tag.length();
+        int spaceLength = Math.max(2,42 - length);
+        sBuilder.append("   ").append(category).append(".").append(tag).
+                append(fullSpace, 0, spaceLength + 1).append(value).append("\n");
+    }
+
+    public static void openLoop(StringBuilder sBuilder, String category, List<String> tags) {
+        sBuilder.append("   loop_\n");
+        for (String tag: tags) {
+            appendLoopTag(sBuilder, category,tag);
+        }
+        sBuilder.append("\n");
+    }
+
+    public static void appendLoopTag(StringBuilder sBuilder,String category,String tag) {
+        sBuilder.append("      ").append(category).append(".").append(tag).append("\n");
+    }
+
+    public static void endLoop(StringBuilder sBuilder) {
+        sBuilder.append("\n").append("   ").append("stop_\n");
+    }
 
     static String toSTAR3CompoundString(int ID, Atom atom, int entityID) {
         StringBuilder result = new StringBuilder();
@@ -95,7 +128,7 @@ public class NMRStarWriter {
         result.append(sep);
         result.append(entityID);
         result.append(sep);
-        result.append(((Compound) atom.entity).label);
+        result.append(atom.entity.label);
         result.append(sep);
         result.append("?");
         return result.toString();
@@ -103,9 +136,8 @@ public class NMRStarWriter {
 
     public static void writeEntityCommonNamesSTAR3(Writer chan, Entity entity, int entityID) throws IOException {
         if (entity.getCommonNames().size() > 0) {
-            String[] loopStrings = NMRStarWriter.entityCommonNameLoopStrings;
             chan.write("loop_\n");
-            for (String loopString : loopStrings) {
+            for (String loopString : NMRStarWriter.entityCommonNameLoopStrings) {
                 chan.write(loopString + "\n");
             }
             chan.write("\n");
@@ -183,14 +215,12 @@ public class NMRStarWriter {
     }
 
     static String toSTAR3AtomIndexString(final AtomSpecifier atom) {
-        StringBuilder result = new StringBuilder();
         String sep = " ";
-        result.append(atom.getResNum());
-        result.append(sep);
-        result.append(atom.getResName());
-        result.append(sep);
-        result.append(atom.getAtomName());
-        return result.toString();
+        return atom.getResNum() +
+                sep +
+                atom.getResName() +
+                sep +
+                atom.getAtomName();
     }
 
     static void writeCompoundHeaderSTAR3(Writer chan, Compound compound, int entityID) throws ParseException, IOException {
@@ -226,10 +256,10 @@ public class NMRStarWriter {
     }
 
     public static void writeComponentsSTAR3(Writer chan, Polymer polymer, Set<String> cmpdSet) throws IOException, ParseException {
-        Iterator residueIterator = polymer.iterator();
+        Iterator<Residue> residueIterator = polymer.iterator();
         int i = 1;
         while (residueIterator.hasNext()) {
-            Residue residue = (Residue) residueIterator.next();
+            Residue residue = residueIterator.next();
             if (!residue.libraryMode()) {
                 String mode;
                 if (i == 1) {
@@ -373,7 +403,7 @@ public class NMRStarWriter {
         result.append(sep);
         result.append(entityID);
         result.append(sep);
-        result.append(((Compound) bond.begin.entity).label);
+        result.append(bond.begin.entity.label);
         return result.toString();
     }
 
@@ -412,10 +442,10 @@ public class NMRStarWriter {
             chan.write(loopString + "\n");
         }
         chan.write("\n");
-        Iterator residueIterator = polymer.iterator();
+        Iterator<Residue> residueIterator = polymer.iterator();
         int i = 1;
         while (residueIterator.hasNext()) {
-            Residue residue = (Residue) residueIterator.next();
+            Residue residue = residueIterator.next();
             chan.write(toSTAR3CompIndexString(i++, residue, entityID));
             chan.write("\n");
         }
@@ -470,7 +500,7 @@ public class NMRStarWriter {
     }
 
     public static void writeMoleculeSTAR3(Writer chan, MoleculeBase molecule, int assemblyID) throws IOException, ParseException {
-        Iterator entityIterator = molecule.entityLabels.values().iterator();
+        Iterator<Entity> entityIterator = molecule.entityLabels.values().iterator();
         Set<String> cmpdSet = new HashSet<>();
         int entityID = 1;
         chan.write("\n\n");
@@ -479,7 +509,7 @@ public class NMRStarWriter {
         chan.write("    ####################################\n");
         chan.write("\n\n");
         while (entityIterator.hasNext()) {
-            Entity entity = (Entity) entityIterator.next();
+            Entity entity = entityIterator.next();
             if (entity instanceof Polymer) {
                 writeEntityHeaderSTAR3(chan, entity, entityID);
                 writeEntityCommonNamesSTAR3(chan, entity, entityID);
@@ -575,7 +605,7 @@ public class NMRStarWriter {
         result.append(sep);
         result.append(".");
         result.append(sep);
-        PPMv ppmv = (PPMv) spatialSet.getPPM(ppmSet);
+        PPMv ppmv = spatialSet.getPPM(ppmSet);
         if ((ppmv != null) && ppmv.isValid()) {
             result.append(String.format("%.4f", ppmv.getValue()));
             result.append(sep);
@@ -667,19 +697,17 @@ public class NMRStarWriter {
         STAR3.writeLoopStrings(chan, chemShiftAssignmentStrings);
         boolean wroteAtLeastOne = false;
         int iAtom = 1;
-        List<Atom> atoms = new ArrayList();
+        List<Atom> atoms = new ArrayList<>();
         MolFilter molFilter = new MolFilter("*.*");
         MoleculeBase.selectAtomsForTable(molFilter, atoms);
-        for (int i = 0; i < atoms.size(); i++) {
-            SpatialSet spatialSet = atoms.get(i).getSpatialSet();
-            PPMv ppmv = (PPMv) spatialSet.getPPM(ppmSet);
+        for (Atom atom : atoms) {
+            SpatialSet spatialSet = atom.getSpatialSet();
+            PPMv ppmv = spatialSet.getPPM(ppmSet);
             if ((ppmv != null) && ppmv.isValid()) {
                 String string = NMRStarWriter.toSTARChemShiftAssignmentString(spatialSet, iAtom, ppmSet);
-                if (string != null) {
-                    chan.write(string + "\n");
-                    iAtom++;
-                    wroteAtLeastOne = true;
-                }
+                chan.write(string + "\n");
+                iAtom++;
+                wroteAtLeastOne = true;
             }
         }
         if (!wroteAtLeastOne) {
@@ -718,7 +746,7 @@ public class NMRStarWriter {
         chan.write("\nstop_\n\n");
     }
 
-    public static void writeXYZ(MoleculeBase molecule, Writer chan, int whichStruct) throws IOException, InvalidMoleculeException {
+    public static void writeXYZ(MoleculeBase molecule, Writer chan, int whichStruct) throws IOException {
         int i = 0;
         int iStruct;
         chan.write("loop_\n");
@@ -735,8 +763,8 @@ public class NMRStarWriter {
         chan.write("  _Atom_coord_y\n");
         chan.write("  _Atom_coord_z\n");
         int[] structureList = molecule.getActiveStructures();
-        for (int jStruct = 0; jStruct < structureList.length; jStruct++) {
-            iStruct = structureList[jStruct];
+        for (int j : structureList) {
+            iStruct = j;
             if ((whichStruct >= 0) && (iStruct != whichStruct)) {
                 continue;
             }
@@ -777,12 +805,11 @@ public class NMRStarWriter {
      *
      * @param chan Writer. The FileWriter to use
      * @param molecule Molecule. The molecule to use
-     * @param noeDataList
+     * @param noeDataList List of NOE relaxation data
      * @param listID int. The number of the NOE block in the file.
      * @throws IOException
-     * @throws InvalidMoleculeException
      */
-    public static void writeNOE(Writer chan, MoleculeBase molecule, List<RelaxationData> noeDataList, int listID) throws IOException, InvalidMoleculeException {
+    public static void writeNOE(Writer chan, MoleculeBase molecule, List<RelaxationData> noeDataList, int listID) throws IOException {
         RelaxationData noeData0 = noeDataList.get(0);
         String frameName = noeData0.getID();
         double field = noeData0.getField();
@@ -804,7 +831,7 @@ public class NMRStarWriter {
         chan.write("   _Heteronucl_NOE_list.Sample_condition_list_label    ");
         chan.write("$sample_conditions_" + listID + "\n");
         chan.write("   _Heteronucl_NOE_list.Spectrometer_frequency_1H      ");
-        chan.write(String.valueOf(field) + "\n");
+        chan.write(field + "\n");
         chan.write("   _Heteronucl_NOE_list.Heteronuclear_NOE_val_type      ");
         chan.write(STAR3.quote("peak height") + "\n");
         chan.write("   _Heteronucl_NOE_list.ref_val      ");
@@ -994,7 +1021,7 @@ public class NMRStarWriter {
         chan.write("   _Heteronucl_" + expName + "_list.Temp_control_method            ");
         chan.write(STAR3.quote("no temperature control applied") + "\n");
         chan.write("   _Heteronucl_" + expName + "_list.Spectrometer_frequency_1H      ");
-        chan.write(String.valueOf(field) + "\n");
+        chan.write(field + "\n");
         chan.write("   _Heteronucl_" + expName + "_list." + expName + "_coherence_type              ");
         chan.write(coherenceType + "\n");
         chan.write("   _Heteronucl_" + expName + "_list." + expName + "_val_units                   ");
@@ -1029,10 +1056,9 @@ public class NMRStarWriter {
             "Comp_ID", "Atom_ID", "Atom_type", "Atom_isotope_number", "Val", "Val_err", "Resonance_ID", "Auth_entity_assembly_ID",
             "Auth_seq_ID", "Auth_comp_ID", "Auth_atom_ID", "Entry_ID", "Heteronucl_" + expName + "_list_ID"};
         if (expType.equals(relaxTypes.R2) || expType.equals(relaxTypes.T1RHO)) {
-            String[] loopStrings2 = {"ID", "Assembly_atom_ID", "Entity_assembly_ID", "Entity_ID", "Comp_index_ID", "Seq_ID",
+            loopStrings = new String[]{"ID", "Assembly_atom_ID", "Entity_assembly_ID", "Entity_ID", "Comp_index_ID", "Seq_ID",
                 "Comp_ID", "Atom_ID", "Atom_type", "Atom_isotope_number", expName + "_val", expName + "_val_err", "Rex_val", "Rex_err",
                 "Resonance_ID", "Auth_entity_assembly_ID", "Auth_seq_ID", "Auth_comp_ID", "Auth_atom_ID", "Entry_ID", "Heteronucl_" + expName + "_list_ID"};
-            loopStrings = loopStrings2;
         }
         chan.write("   loop_\n");
         for (String loopString : loopStrings) {
@@ -1062,7 +1088,7 @@ public class NMRStarWriter {
             }
 
             String outputLine = toStarRelaxationString(idx, expType, listID, entityID, atom, results);
-            if (outputLine != null && !prevRes.contains(entityID + "." + atom.getResidueNumber())) {
+            if (!prevRes.contains(entityID + "." + atom.getResidueNumber())) {
                 chan.write("      " + outputLine + "\n");
                 prevRes.add(entityID + "." + atom.getResidueNumber());
                 idx++;
@@ -1085,7 +1111,7 @@ public class NMRStarWriter {
      * @param atom Atom. The atom in the molecule.
      * @param results The relaxation and error values: {value, error, RexValue,
      * RexError}.
-     * @return
+     * @return String ready for STAR output
      */
     public static String toStarRelaxationString(int idx, relaxTypes expType, int listID, int entityID, Atom atom, List<Double> results) {
 
@@ -1167,17 +1193,17 @@ public class NMRStarWriter {
 
         Date date = new Date(System.currentTimeMillis());
         chan.write("    ######################################\n");
-        chan.write("    # Saved " + date.toString() + " #\n");
+        chan.write("    # Saved " + date + " #\n");
         chan.write("    ######################################\n");
         MoleculeBase molecule = MoleculeFactory.getActive();
         if (molecule != null) {
             writeMoleculeSTAR3(chan, molecule, 1);
         }
         // fixme Dataset.writeDatasetsToSTAR3(channelName);
-        Iterator iter = PeakList.iterator();
+        Iterator<PeakList> iter = PeakList.iterator();
         PeakWriter peakWriter = new PeakWriter();
         while (iter.hasNext()) {
-            PeakList peakList = (PeakList) iter.next();
+            PeakList peakList = iter.next();
             peakWriter.writePeaksSTAR3(chan, peakList);
         }
 
@@ -1225,6 +1251,6 @@ public class NMRStarWriter {
                 }
             }
         }
+        ProjectBase.getActive().writeSaveframes(chan);
     }
-
 }

@@ -672,7 +672,7 @@ public class PeakList {
      *
      * @return
      */
-    public static Iterator iterator() {
+    public static Iterator<PeakList> iterator() {
         return ProjectBase.getActive().getPeakLists().iterator();
     }
 
