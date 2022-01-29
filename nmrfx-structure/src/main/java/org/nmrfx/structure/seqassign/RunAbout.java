@@ -5,14 +5,20 @@ import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakDim;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.SpectralDim;
+import org.nmrfx.project.ProjectBase;
+import org.nmrfx.star.ParseException;
+import org.nmrfx.star.Saveframe;
+import org.nmrfx.star.SaveframeIO;
 
+import java.io.IOException;
+import java.io.Writer;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author brucejohnson
  */
-public class RunAbout {
+public class RunAbout implements SaveframeIO  {
 
     SpinSystems spinSystems = new SpinSystems(this);
     Map<String, PeakList> peakListMap = new LinkedHashMap<>();
@@ -26,6 +32,10 @@ public class RunAbout {
     boolean active = false;
 
     List<Map<String, Object>> typeList;
+
+    public RunAbout() {
+        ProjectBase.getActive().addSaveframe(this);
+    }
 
     public boolean isActive() {
         return active;
@@ -470,4 +480,15 @@ public class RunAbout {
             }
         }
     }
+
+    @Override
+    public void write(Writer chan) throws ParseException, IOException {
+        spinSystems.writeToSTAR(chan);
+    }
+
+    @Override
+    public void read(Saveframe saveFrame) {
+
+    }
+
 }

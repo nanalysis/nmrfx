@@ -2,14 +2,18 @@ package org.nmrfx.structure.seqassign;
 
 import org.apache.commons.math3.util.MultidimensionalCounter;
 import org.apache.commons.math3.util.MultidimensionalCounter.Iterator;
+import org.nmrfx.chemistry.Compound;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakDim;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.SpectralDim;
+import org.nmrfx.star.ParseException;
 import org.nmrfx.structure.seqassign.RunAbout.TypeInfo;
 import smile.clustering.KMeans;
 import smile.math.MathEx;
 
+import java.io.IOException;
+import java.io.Writer;
 import java.util.*;
 import java.util.Map.Entry;
 
@@ -21,6 +25,8 @@ import static org.nmrfx.structure.seqassign.SpinSystems.matchDims;
  * @author brucejohnson
  */
 public class SpinSystem {
+    static final List<String> systemLoopTags = List.of("ID", "Spectral_peak_list_ID", "Peak_ID","Confirmed_previous_ID", "Confirmed_next_ID");
+    static final List<String> peakLoopTags = List.of("Spin_system_ID", "Spectral_peak_list_ID", "Peak_ID");
     SpinSystems spinSystems;
     final Peak rootPeak;
     List<PeakMatch> peakMatches = new ArrayList<>();
@@ -31,6 +37,7 @@ public class SpinSystem {
     Optional<SeqFragment> fragment = Optional.empty();
     static final String[] ATOM_TYPES = {"h", "n", "c", "ha", "ca", "cb"};
     static final Map<String, Integer> atomIndexMap = new HashMap<>();
+
 
     static {
         int atomIndex = 0;
@@ -1248,4 +1255,16 @@ public class SpinSystem {
         }
     }
 
+    String getSystemSTARString() {
+        String confirmedPrev = confirmP.isPresent() ? String.valueOf(confirmP.get().getSpinSystemA().getId()) : ".";
+        String confirmedNext = confirmS.isPresent() ? String.valueOf(confirmS.get().getSpinSystemB().getId()) : ".";
+        return String.format("%3d %2d %3d %4s %4s", getId(), rootPeak.getPeakList().getId(),rootPeak.getIdNum(), confirmedPrev, confirmedNext);
+    }
+
+    int getPeakSTARString(StringBuilder sBuilder, int i) {
+        for (PeakMatch match:peakMatches) {
+            sBuilder.append(String.format("%4d %4d %2d %3d\n", i++, getId(), match.peak.getPeakList().getId(), match.peak.getIdNum()));
+        }
+        return i;
+    }
 }
