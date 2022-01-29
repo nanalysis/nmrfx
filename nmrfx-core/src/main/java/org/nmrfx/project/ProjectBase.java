@@ -33,7 +33,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import org.nmrfx.chemistry.Compound;
 import org.nmrfx.datasets.DatasetFactory;
-import org.nmrfx.star.SaveframeIO;
+import org.nmrfx.star.*;
 
 /**
  *
@@ -45,6 +45,7 @@ public class ProjectBase {
     static final public Pattern INDEX2_PATTERN = Pattern.compile("^.*_([0-9]+).*");
     static final public Predicate<String> INDEX_PREDICATE = INDEX_PATTERN.asPredicate();
     static final public Predicate<String> INDEX2_PREDICATE = INDEX2_PATTERN.asPredicate();
+    static final private Map<String, SaveframeProcessor> saveframeProcessors = new HashMap<>();
     final String name;
     public Path projectDir = null;
     public Map<String, PeakPaths> peakPaths;
@@ -66,7 +67,7 @@ public class ProjectBase {
     protected Map<String, DatasetBase> datasetMap = new HashMap<>();
     protected List<DatasetBase> datasets = new ArrayList<>();
     protected Map<String, PeakList> peakLists = new HashMap<>();
-    protected List<SaveframeIO> extraSaveframes = new ArrayList<>();
+    protected List<SaveframeWriter> extraSaveframes = new ArrayList<>();
     static ProjectBase activeProject = null;
     public static PropertyChangeSupport pcs = null;
 
@@ -165,13 +166,29 @@ public class ProjectBase {
         return datasets;
     }
 
-    public void addSaveframe(SaveframeIO saveframeIO) {
-        extraSaveframes.add(saveframeIO);
+    public void addSaveframe(SaveframeWriter saveframeWriter) {
+        extraSaveframes.add(saveframeWriter);
     }
 
-    public void writeSaveframes(Writer chan) {
-        for (SaveframeIO saveframeIO:extraSaveframes) {
-            saveframeIO.write(chan);
+    public static void addSaveframeProcessor(String category, SaveframeProcessor saveframeProcessor) {
+        saveframeProcessors.put(category, saveframeProcessor);
+    }
+
+    public void writeSaveframes(Writer chan) throws ParseException, IOException {
+        for (SaveframeWriter saveframeWriter :extraSaveframes) {
+            saveframeWriter.write(chan);
+        }
+    }
+
+    public static void processExtraSaveFrames(STAR3 star3) throws ParseException {
+        for (Saveframe saveframe: star3.getSaveFrames().values()) {
+            if (saveframeProcessors.containsKey(saveframe.getCategoryName())) {
+                try {
+                    saveframeProcessors.get(saveframe.getCategoryName()).process(saveframe);
+                } catch (IOException e) {
+                    throw new ParseException(e.getMessage());
+                }
+            }
         }
     }
 
