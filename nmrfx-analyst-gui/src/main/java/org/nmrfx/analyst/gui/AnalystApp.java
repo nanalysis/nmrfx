@@ -444,11 +444,8 @@ public class AnalystApp extends MainApp {
         atomBrowserMenuItem.disableProperty().bind(FXMLController.activeController.isNull());
         atomBrowserMenuItem.setOnAction(e -> showAtomBrowser());
 
-        MenuItem runAboutMenuItem = new MenuItem("Show RunAboutX");
-        runAboutMenuItem.setOnAction(e -> showRunAbout());
-
         assignCascade.getItems().addAll(assignOnPick,
-                atomBrowserMenuItem, runAboutMenuItem);
+                atomBrowserMenuItem);
 
         peakMenu.getItems().addAll(peakAttrMenuItem,
                 peakTableMenuItem, linkPeakDimsMenuItem,
@@ -564,6 +561,12 @@ public class AnalystApp extends MainApp {
         MenuItem scannerToolItem = new MenuItem("Show Scanner");
         statusBar.addToToolMenu(scannerToolItem);
         scannerToolItem.setOnAction(e -> showScannerTool());
+
+        Menu proteinMenu = new Menu("Protein Tools");
+        MenuItem runAboutToolItem = new MenuItem("Show RunAbout");
+        statusBar.addToToolMenu(proteinMenu);
+        proteinMenu.getItems().add(runAboutToolItem);
+        runAboutToolItem.setOnAction(e -> showRunAboutTool());
 
     }
 
@@ -1162,6 +1165,26 @@ public class AnalystApp extends MainApp {
         controller.getBottomBox().getChildren().remove(scannerTool.getBox());
     }
 
+
+    public void showRunAboutTool() {
+        System.out.println("show runabout");
+        FXMLController controller = FXMLController.getActiveController();
+        if (!controller.containsTool(RunAboutGUI.class)) {
+            TabPane tabPane = new TabPane();
+            controller.getBottomBox().getChildren().add(tabPane);
+            RunAboutGUI runaboutTool = new RunAboutGUI(controller, this::removeRunaboutTool);
+            System.out.println("init");
+            runaboutTool.initialize(tabPane);
+            controller.addTool(runaboutTool);
+        }
+    }
+
+    public void removeRunaboutTool(RunAboutGUI runaboutTool) {
+        FXMLController controller = FXMLController.getActiveController();
+        controller.removeTool(RunAboutGUI.class);
+        controller.getBottomBox().getChildren().remove(runaboutTool.getTabPane());
+    }
+
     void addPrefs() {
         AnalystPrefs.addPrefs();
     }
@@ -1208,11 +1231,6 @@ public class AnalystApp extends MainApp {
         chart.clearAnnoType(CanvasMolecule.class);
         chart.refresh();
     }
-
-    void showRunAbout() {
-        RunAboutGUI.create();
-    }
-
 
     static void showDataBrowser() {
         if (browserController == null) {

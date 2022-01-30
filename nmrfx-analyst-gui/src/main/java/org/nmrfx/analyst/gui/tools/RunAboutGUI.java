@@ -26,6 +26,7 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextAlignment;
+import org.nmrfx.analyst.gui.ScannerTool;
 import org.nmrfx.chemistry.Atom;
 import org.nmrfx.chemistry.Polymer;
 import org.nmrfx.chemistry.Residue;
@@ -62,12 +63,13 @@ import static org.nmrfx.processor.gui.spectra.DatasetAttributes.AXMODE.PPM;
 /**
  * @author Bruce Johnson
  */
-public class RunAboutGUI implements PeakListener {
+public class RunAboutGUI implements PeakListener, ControllerTool {
     static Font activeFont = Font.font(null, FontWeight.BOLD, 14);
     static Font regularFont = Font.font(null, FontWeight.NORMAL, 14);
 
     FXMLController controller;
     VBox vBox;
+    TabPane tabPane;
     ToolBar navigatorToolBar;
     TextField peakIdField;
     MenuButton peakListMenuButton;
@@ -113,14 +115,9 @@ public class RunAboutGUI implements PeakListener {
         this.peakNavigable = peakNavigable;
     }
 
-    public static RunAboutGUI create() {
-        FXMLController controller = FXMLController.create();
-        TabPane tabPane = new TabPane();
-        tabPane.setSide(Side.LEFT);
-        RunAboutGUI runAbout = new RunAboutGUI(controller);
-        runAbout.controller = controller;
-        runAbout.initialize(tabPane);
-        return runAbout;
+    public RunAboutGUI(FXMLController controller, Consumer<RunAboutGUI> closeAction) {
+        this.controller = controller;
+        this.closeAction = closeAction;
     }
 
     public ToolBar getToolBar() {
@@ -129,6 +126,10 @@ public class RunAboutGUI implements PeakListener {
 
     public void close() {
         closeAction.accept(this);
+    }
+
+    public TabPane getTabPane() {
+        return tabPane;
     }
 
     class SeqPane extends Pane {
@@ -234,7 +235,9 @@ public class RunAboutGUI implements PeakListener {
 
     }
 
-    void initialize(TabPane tabPane) {
+    public void initialize(TabPane tabPane) {
+        this.tabPane = tabPane;
+        tabPane.setSide(Side.LEFT);
         runAbout = RunAbout.getRunAbout(1);
         if (runAbout != null) {
             registerPeakLists();
@@ -254,9 +257,6 @@ public class RunAboutGUI implements PeakListener {
         HBox hBox = new HBox();
         prefTab.setContent(hBox);
         initPreferences(hBox);
-
-        controller.getBottomBox().getChildren().add(tabPane);
-
 
         try {
             runAboutArrangements = RunAboutYamlReader.loadYaml();
