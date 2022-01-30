@@ -2001,6 +2001,14 @@ public class FXMLController implements  Initializable, PeakNavigable {
         draw();
     }
 
+    public int arrangeGetRows() {
+        return chartGroup.getRows();
+    }
+
+    public int arrangeGetColumns() {
+        return chartGroup.getColumns();
+    }
+
     public void arrange(int nRows) {
         chartGroup.setRows(nRows);
     }
