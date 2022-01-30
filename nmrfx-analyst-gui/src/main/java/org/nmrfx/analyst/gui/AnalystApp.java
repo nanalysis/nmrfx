@@ -64,6 +64,7 @@ import org.nmrfx.processor.utilities.WebConnect;
 import org.nmrfx.project.ProjectBase;
 import org.nmrfx.star.ParseException;
 import org.nmrfx.structure.chemistry.Molecule;
+import org.nmrfx.structure.seqassign.RunAboutSaveFrameProcessor;
 import org.nmrfx.utils.GUIUtils;
 import org.python.util.InteractiveInterpreter;
 import org.python.util.PythonInterpreter;
@@ -97,6 +98,7 @@ public class AnalystApp extends MainApp {
     PeakAtomPicker peakAtomPicker = null;
     CheckMenuItem assignOnPick;
     RDCGUI rdcGUI = null;
+    RunAboutSaveFrameProcessor runAboutSaveFrameProcessor;
 
     public void waitForCommit() {
         int nTries = 30;
@@ -149,6 +151,8 @@ public class AnalystApp extends MainApp {
         KeyBindings.registerGlobalKeyAction("pa", this::assignPeak);
         Project.setPCS(new FxPropertyChangeSupport(this));
         PDBFile.setLocalResLibDir(AnalystPrefs.getLocalResidueDirectory());
+        runAboutSaveFrameProcessor = new RunAboutSaveFrameProcessor();
+        ProjectBase.addSaveframeProcessor("runabout", runAboutSaveFrameProcessor);
 
         PluginLoader.getInstance().registerPluginsOnEntryPoint(EntryPoint.STARTUP, null);
     }

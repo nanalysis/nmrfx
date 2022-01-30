@@ -65,14 +65,16 @@ public class SeqFragment {
     public static SeqFragment join(SpinSystemMatch spinSysMatch, boolean testMode) {
         SpinSystem spinSysA = spinSysMatch.spinSystemA;
         SpinSystem spinSysB = spinSysMatch.spinSystemB;
-        SeqFragment result;
+        SeqFragment result = null;
         if (spinSysA.fragment.isEmpty() && spinSysB.fragment.isEmpty()) {
             result = new SeqFragment();
             result.spinSystemMatches.add(spinSysMatch);
         } else if (spinSysA.fragment.isPresent() && spinSysB.fragment.isPresent()) {
-            result = spinSysA.fragment.get();
-            result.spinSystemMatches.add(spinSysMatch);
-            result.spinSystemMatches.addAll(spinSysB.fragment.get().spinSystemMatches);
+            if (spinSysA.fragment.get() != spinSysB.fragment.get()) {
+                result = spinSysA.fragment.get();
+                result.spinSystemMatches.add(spinSysMatch);
+                result.spinSystemMatches.addAll(spinSysB.fragment.get().spinSystemMatches);
+            }
 
         } else if (spinSysA.fragment.isPresent()) {
             result = spinSysA.fragment.get();
@@ -81,9 +83,8 @@ public class SeqFragment {
         } else {
             result = spinSysB.fragment.get();
             result.spinSystemMatches.add(0, spinSysMatch);
-
         }
-        if (!testMode) {
+        if ((result != null) && !testMode) {
             result.updateFragment();
         }
         return result;
@@ -164,7 +165,6 @@ public class SeqFragment {
         for (SpinSystemMatch spinSysMatch : spinSystemMatches) {
             spinSysMatch.spinSystemA.fragment = Optional.of(this);
             spinSysMatch.spinSystemB.fragment = Optional.of(this);
-
         }
     }
 

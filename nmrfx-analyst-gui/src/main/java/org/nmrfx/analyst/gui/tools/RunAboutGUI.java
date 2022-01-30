@@ -90,7 +90,7 @@ public class RunAboutGUI implements PeakListener {
     Label atomXLabel;
     Label atomYLabel;
     Label intensityLabel;
-    RunAbout runAbout = new RunAbout();
+    RunAbout runAbout;
     SpinSystem currentSpinSystem = null;
     SpinStatus spinStatus;
     ClusterStatus clusterStatus;
@@ -235,6 +235,12 @@ public class RunAboutGUI implements PeakListener {
     }
 
     void initialize(TabPane tabPane) {
+        runAbout = RunAbout.getRunAbout(1);
+        if (runAbout != null) {
+            registerPeakLists();
+        } else {
+            runAbout = new RunAbout();
+        }
         Tab helmTab = new Tab("Helm");
         helmTab.setClosable(false);
         tabPane.getTabs().add(helmTab);
@@ -251,6 +257,7 @@ public class RunAboutGUI implements PeakListener {
 
         controller.getBottomBox().getChildren().add(tabPane);
 
+
         try {
             runAboutArrangements = RunAboutYamlReader.loadYaml();
             setupArrangements();
@@ -258,6 +265,9 @@ public class RunAboutGUI implements PeakListener {
             GUIUtils.warn("RunAbout:load yaml", e.getMessage());
         }
         PeakPicking.registerSinglePickAction(this::pickedPeakAction);
+        if (runAbout.getSpinSystems().getSize() != 0) {
+            clusterStatus.refresh();
+        }
     }
 
     void initPreferences(HBox hBox) {
@@ -303,9 +313,17 @@ public class RunAboutGUI implements PeakListener {
         peakListSelectedColumn.setCellFactory(param -> new CheckBoxTableCell<>());
         var peakListSelectors = peakLists.stream().map(PeakListSelection::new).collect(Collectors.toList());
 
-        peakTableView.getItems().addAll(peakListSelectors);
         peakTableView.getColumns().addAll(peakListNameColumn, peakTypeColumn, peakListPatternColumn,
                 peakListSizeColumn, peakListSelectedColumn);
+        if (runAbout != null) {
+            var runaboutLists = runAbout.getPeakLists();
+            for (var selector:peakListSelectors) {
+                if (runaboutLists.contains(selector.peakList)) {
+                    selector.setActive(true);
+                }
+            }
+        }
+        peakTableView.getItems().addAll(peakListSelectors);
 
         MapChangeListener<String, PeakList> peakmapChangeListener =
                 (MapChangeListener.Change<? extends String, ? extends PeakList> change) -> System.out.println("pkl changed");
@@ -1639,11 +1657,15 @@ public class RunAboutGUI implements PeakListener {
             } else {
                 runAbout.setPeakLists(peakLists);
                 runAbout.setRefList(refListObj.get());
-                for (var peakList : peakLists) {
-                    peakList.registerPeakListChangeListener(this);
-                    peakList.registerPeakCountChangeListener(this);
-                }
+                registerPeakLists();
             }
+        }
+    }
+
+    void registerPeakLists() {
+        for (var peakList : runAbout.getPeakLists()) {
+            peakList.registerPeakListChangeListener(this);
+            peakList.registerPeakCountChangeListener(this);
         }
     }
 
@@ -1682,25 +1704,26 @@ public class RunAboutGUI implements PeakListener {
                     Optional<PeakList> peakListOptional = runAbout.getPeakListForCell(row, dir);
                     final int jChart = iChart;
                     peakListOptional.ifPresent(peakList -> {
-
                         String datasetName = peakList.getDatasetName();
                         Dataset dataset = Dataset.getDataset(datasetName);
-                        String typeName = peakList.getExperimentType();
-                        chartTypes.put(jChart, typeName);
-                        dataset.setTitle(typeName);
-                        String dName = dataset.getName();
-                        List<String> datasets = Collections.singletonList(dName);
-                        chart.setActiveChart();
-                        chart.updateDatasets(datasets);
-                        List<String> dimNames = col.getDims();
-                        DatasetAttributes dataAttr = chart.getDatasetAttributes().get(0);
-                        int[] iDims = runAbout.getIDims(dataset, typeName, dimNames);
-                        var sDims = runAbout.getPeakListDims(peakList, dataset, iDims);
-                        widths[jChart] = getDimWidth(peakList, dataset, dimNames, iDims, widthTypes);
-                        dataAttr.setDims(iDims);
-                        List<String> peakLists = Collections.singletonList(peakList.getName());
-                        chart.updatePeakLists(peakLists);
-                        winPatterns.add(sDims.stream().map(SpectralDim::getPattern).collect(Collectors.toList()));
+                        if (dataset != null) {
+                            String typeName = peakList.getExperimentType();
+                            chartTypes.put(jChart, typeName);
+                            dataset.setTitle(typeName);
+                            String dName = dataset.getName();
+                            List<String> datasets = Collections.singletonList(dName);
+                            chart.setActiveChart();
+                            chart.updateDatasets(datasets);
+                            List<String> dimNames = col.getDims();
+                            DatasetAttributes dataAttr = chart.getDatasetAttributes().get(0);
+                            int[] iDims = runAbout.getIDims(dataset, typeName, dimNames);
+                            var sDims = runAbout.getPeakListDims(peakList, dataset, iDims);
+                            widths[jChart] = getDimWidth(peakList, dataset, dimNames, iDims, widthTypes);
+                            dataAttr.setDims(iDims);
+                            List<String> peakLists = Collections.singletonList(peakList.getName());
+                            chart.updatePeakLists(peakLists);
+                            winPatterns.add(sDims.stream().map(SpectralDim::getPattern).collect(Collectors.toList()));
+                        }
                     });
                     iChart++;
                 }

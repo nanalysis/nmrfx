@@ -1,14 +1,16 @@
 package org.nmrfx.structure.seqassign;
 
+import org.nmrfx.chemistry.io.NMRStarWriter;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakDim;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.SpectralDim;
 import org.nmrfx.project.ProjectBase;
+import org.nmrfx.star.Loop;
 import org.nmrfx.star.ParseException;
 import org.nmrfx.star.Saveframe;
-import org.nmrfx.star.SaveframeIO;
+import org.nmrfx.star.SaveframeWriter;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -18,8 +20,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * @author brucejohnson
  */
-public class RunAbout implements SaveframeIO  {
-
+public class RunAbout implements SaveframeWriter {
+    static final List<String> peakListTags = List.of("ID", "Spectral_peak_list_ID");
+    static final private Map<Integer, RunAbout> runaboutMap = new HashMap<>();
+    int id = 1;
     SpinSystems spinSystems = new SpinSystems(this);
     Map<String, PeakList> peakListMap = new LinkedHashMap<>();
     PeakList refList;
@@ -35,6 +39,11 @@ public class RunAbout implements SaveframeIO  {
 
     public RunAbout() {
         ProjectBase.getActive().addSaveframe(this);
+        runaboutMap.put(id, this);
+    }
+
+    public static final RunAbout getRunAbout(int id) {
+        return runaboutMap.get(id);
     }
 
     public boolean isActive() {
@@ -481,14 +490,65 @@ public class RunAbout implements SaveframeIO  {
         }
     }
 
+    void readSTARSaveFrame(Saveframe saveframe) throws ParseException {
+        String category = "_Runabout";
+        String frameCode = saveframe.getValue(category, "Sf_framecode");
+        String id = saveframe.getValue(category, "ID");
+        readPeakLists(saveframe);
+        spinSystems.readSTARSaveFrame(saveframe);
+    }
+
+
     @Override
     public void write(Writer chan) throws ParseException, IOException {
-        spinSystems.writeToSTAR(chan);
+        writeToSTAR(chan);
     }
 
-    @Override
-    public void read(Saveframe saveFrame) {
+    void writeToSTAR(Writer chan) throws ParseException, IOException {
+        String category = "_Runabout";
+        String categoryName = "runabout";
+        StringBuilder sBuilder = new StringBuilder();
+        NMRStarWriter.initSaveFrameOutput(sBuilder, category, categoryName, String.valueOf(id));
 
+        writePeakLists(sBuilder);
+
+        spinSystems.writeSpinSystems(sBuilder);
+
+        spinSystems.writeSpinSystemPeaks(sBuilder);
+
+        chan.write(sBuilder.toString());
+        chan.write("save_");
     }
 
+
+    void writePeakLists(StringBuilder sBuilder) {
+
+        NMRStarWriter.openLoop(sBuilder, "_Runabout_peak_lists", peakListTags);
+        int i = 1;
+        sBuilder.append(String.format("%3d %3d\n", i, refList.getId()));
+        for (PeakList peakList : peakLists) {
+            if (peakList != refList) {
+                sBuilder.append(String.format("%3d %3d\n", i++, peakList.getId()));
+            }
+        }
+        NMRStarWriter.endLoop(sBuilder);
+    }
+
+    void readPeakLists(Saveframe saveframe) throws ParseException {
+        Loop peakListLoop = saveframe.getLoop("_Runabout_peak_lists");
+
+        if (peakListLoop != null) {
+            List<PeakList> loopLists = new ArrayList<>();
+            List<Integer> idColumn = peakListLoop.getColumnAsIntegerList("ID", -1);
+            List<Integer> peakListIDColumn = peakListLoop.getColumnAsIntegerList("Spectral_peak_list_ID", -1);
+            for (int i = 0; i < idColumn.size(); i++) {
+                Optional<PeakList> peakListOpt = PeakList.get(peakListIDColumn.get(i));
+                if (peakListOpt.isPresent()) {
+                    PeakList peakList = peakListOpt.get();
+                    loopLists.add(peakList);
+                }
+            }
+            setPeakLists(loopLists);
+        }
+    }
 }

@@ -26,7 +26,7 @@ import static org.nmrfx.structure.seqassign.SpinSystems.matchDims;
  */
 public class SpinSystem {
     static final List<String> systemLoopTags = List.of("ID", "Spectral_peak_list_ID", "Peak_ID","Confirmed_previous_ID", "Confirmed_next_ID");
-    static final List<String> peakLoopTags = List.of("Spin_system_ID", "Spectral_peak_list_ID", "Peak_ID");
+    static final List<String> peakLoopTags = List.of("ID", "Spin_system_ID", "Spectral_peak_list_ID", "Peak_ID", "Match_score");
     SpinSystems spinSystems;
     final Peak rootPeak;
     List<PeakMatch> peakMatches = new ArrayList<>();
@@ -381,7 +381,9 @@ public class SpinSystem {
             target.confirmP = Optional.of(spinSysMatch);
         }
         SeqFragment fragment = SeqFragment.join(spinSysMatch, false);
-        fragment.dump();
+        if (fragment != null) {
+            fragment.dump();
+        }
     }
 
     public void unconfirm(SpinSystemMatch spinSysMatch, boolean prev) {
@@ -910,7 +912,6 @@ public class SpinSystem {
                     Integer iAtom = atomIndexMap.get(atomType);
                     if (iAtom != null) {
                         shiftList[k][iAtom].add(peakDim.getChemShift().doubleValue());
-
                         peakMatch.setIndex(iDim, iAtom);
                         peakMatch.setIntraResidue(iDim, k == 1);
                     }
@@ -1263,7 +1264,7 @@ public class SpinSystem {
 
     int getPeakSTARString(StringBuilder sBuilder, int i) {
         for (PeakMatch match:peakMatches) {
-            sBuilder.append(String.format("%4d %4d %2d %3d\n", i++, getId(), match.peak.getPeakList().getId(), match.peak.getIdNum()));
+            sBuilder.append(String.format("%4d %4d %2d %3d %10.7f\n", i++, getId(), match.peak.getPeakList().getId(), match.peak.getIdNum(), match.prob));
         }
         return i;
     }

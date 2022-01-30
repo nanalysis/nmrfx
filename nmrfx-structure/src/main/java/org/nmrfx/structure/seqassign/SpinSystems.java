@@ -8,8 +8,6 @@ import org.nmrfx.star.Loop;
 import org.nmrfx.star.ParseException;
 import org.nmrfx.star.Saveframe;
 
-import java.io.IOException;
-import java.io.Writer;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -414,46 +412,104 @@ public class SpinSystems {
         return Optional.empty();
     }
 
-    void writeToSTAR(Writer chan) throws ParseException, IOException {
-        String category = "_Spin_system";
-        String categoryName = "spin_system";
-        StringBuilder sBuilder = new StringBuilder();
-        NMRStarWriter.initSaveFrameOutput(sBuilder, category, categoryName, String.valueOf(spinSystemID));
+    void readSTARSaveFrame(Saveframe saveframe) throws ParseException {
+        Loop systemLoop = saveframe.getLoop("_Spin_system");
+        Loop peakLoop = saveframe.getLoop("_Spin_system_peaks");
+        List<SpinSystem> nextSystems = new ArrayList<>();
+        List<SpinSystem> previousSystems = new ArrayList<>();
+        if ((systemLoop != null) && (peakLoop != null)) {
+            List<Integer> idColumn = systemLoop.getColumnAsIntegerList("Spin_system_ID", -1);
+            List<Integer> peakListIDColumn = systemLoop.getColumnAsIntegerList("Spectral_peak_list_ID", -1);
+            List<Integer> peakIDColumn = systemLoop.getColumnAsIntegerList("Peak_ID", -1);
+            List<Integer> previousIDColumn = systemLoop.getColumnAsIntegerList("Confirmed_previous_ID", -1);
+            List<Integer> nextIDColumn = systemLoop.getColumnAsIntegerList("Confirmed_next_ID", -1);
+            for (int i = 0; i < idColumn.size(); i++) {
+                Optional<PeakList> peakListOpt = PeakList.get(peakListIDColumn.get(i));
+                if (peakListOpt.isPresent()) {
+                    PeakList peakList = peakListOpt.get();
+                    Peak peak = peakList.getPeakByID(peakIDColumn.get(i));
+                    SpinSystem spinSystem = new SpinSystem(peak, this);
+                    systems.add(spinSystem);
+                }
+            }
+            for (int i = 0; i < idColumn.size(); i++) {
+                Optional<PeakList> peakListOpt = PeakList.get(peakListIDColumn.get(i));
+                if (peakListOpt.isPresent()) {
+                    Integer prev = previousIDColumn.get(i);
+                    SpinSystem prevSystem = prev != -1 ? systems.get(prev) : null;
+                    Integer next = nextIDColumn.get(i);
+                    SpinSystem nextSystem = next != -1 ? systems.get(next) : null;
+                    nextSystems.add(nextSystem);
+                    previousSystems.add(prevSystem);
+                }
+            }
+
+
+            idColumn = peakLoop.getColumnAsIntegerList("ID", -1);
+            List<Integer> spinSystemIDColumn = peakLoop.getColumnAsIntegerList("Spin_system_ID", -1);
+            peakListIDColumn = peakLoop.getColumnAsIntegerList("Spectral_peak_list_ID", -1);
+            peakIDColumn = peakLoop.getColumnAsIntegerList("Peak_ID", -1);
+            List<Double> matchScoreColumn = peakLoop.getColumnAsDoubleList("Match_score", 0.0);
+            for (int i = 0; i < idColumn.size(); i++) {
+                Optional<PeakList> peakListOpt = PeakList.get(peakListIDColumn.get(i));
+                if (peakListOpt.isPresent()) {
+                    PeakList peakList = peakListOpt.get();
+                    Peak peak = peakList.getPeakByID(peakIDColumn.get(i));
+                    SpinSystem spinSystem = systems.get(spinSystemIDColumn.get(i));
+                    if (peak != spinSystem.rootPeak) {
+                        double score = matchScoreColumn.get(i);
+                        spinSystem.addPeak(peak, score);
+                    }
+                }
+            }
+            for (SpinSystem spinSystem : systems) {
+                spinSystem.updateSpinSystem();
+            }
+            compare();
+
+            for (int i = 0; i < systems.size(); i++) {
+                SpinSystem system = systems.get(i);
+                SpinSystem previousSystem = previousSystems.get(i);
+                SpinSystem nextSystem = nextSystems.get(i);
+                if (previousSystem != null) {
+                    // find match that is to previous, confirm and add to a fragment
+                    for (SpinSystemMatch match : system.getMatchToPrevious()) {
+                        if (match.getSpinSystemA() == previousSystem) {
+                            system.confirmP = Optional.of(match);
+                            SeqFragment.join(match, false);
+                        }
+                    }
+                }
+                if (nextSystem != null) {
+                    // find match that is to next, confirm and add to a fragment
+                    for (SpinSystemMatch match : system.getMatchToNext()) {
+                        if (match.getSpinSystemB() == nextSystem) {
+                            system.confirmS = Optional.of(match);
+                            SeqFragment.join(match, false);
+                        }
+                    }
+                }
+            }
+        }
+
+    }
+
+
+
+    void writeSpinSystems(StringBuilder sBuilder) {
         NMRStarWriter.openLoop(sBuilder, "_Spin_system", SpinSystem.systemLoopTags);
         for (SpinSystem spinSystem : systems) {
             sBuilder.append(spinSystem.getSystemSTARString()).append("\n");
         }
         NMRStarWriter.endLoop(sBuilder);
+    }
 
+    void writeSpinSystemPeaks(StringBuilder sBuilder) {
         NMRStarWriter.openLoop(sBuilder, "_Spin_system_peaks", SpinSystem.peakLoopTags);
         int i = 1;
         for (SpinSystem spinSystem : systems) {
             i = spinSystem.getPeakSTARString(sBuilder, i);
         }
         NMRStarWriter.endLoop(sBuilder);
-        chan.write(sBuilder.toString());
     }
-
-    void readSTARSaveFrame(Saveframe saveframe) throws ParseException {
-        String category = "_Spin_system";
-        String frameCode = saveframe.getValue(category, "Sf_framecode");
-        String id = saveframe.getValue(category, "ID");
-
-        Loop loop = saveframe.getLoop("_Spin_system");
-        if (loop != null) {
-            List<Integer> idColumn = loop.getColumnAsIntegerList("Spin_system_ID", -1);
-            List<Integer> peakListIDColumn = loop.getColumnAsIntegerList("Spectral_peak_list_ID", -1);
-            List<Integer> peakIDColumn = loop.getColumnAsIntegerList("Peak_ID", -1);
-            List<Integer> previousIDColumn = loop.getColumnAsIntegerList("Confirmed_previous_ID", -1);
-            List<Integer> nextIDColumn = loop.getColumnAsIntegerList("Confirmed_next_ID", -1);
-        }
-        loop = saveframe.getLoop("_Spin_system");
-        if (loop != null) {
-            List<Integer> idColumn = loop.getColumnAsIntegerList("Spin_system_ID", -1);
-            List<Integer> peakListIDColumn = loop.getColumnAsIntegerList("Spectral_peak_list_ID", -1);
-            List<Integer> peakIDColumn = loop.getColumnAsIntegerList("Peak_ID", -1);
-        }
-
-    }
-
 }

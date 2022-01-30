@@ -182,8 +182,10 @@ public class ProjectBase {
 
     public static void processExtraSaveFrames(STAR3 star3) throws ParseException {
         for (Saveframe saveframe: star3.getSaveFrames().values()) {
+            System.out.println("extra save frames " + saveframe.getName());
             if (saveframeProcessors.containsKey(saveframe.getCategoryName())) {
                 try {
+                    System.out.println("process");
                     saveframeProcessors.get(saveframe.getCategoryName()).process(saveframe);
                 } catch (IOException e) {
                     throw new ParseException(e.getMessage());
