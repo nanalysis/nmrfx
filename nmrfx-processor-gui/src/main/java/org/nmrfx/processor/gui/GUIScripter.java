@@ -491,11 +491,11 @@ public class GUIScripter {
     public List<Integer> grid() throws InterruptedException, ExecutionException {
         FutureTask<List<Integer>> future = new FutureTask(() -> {
             PolyChart chart = getChart();
-//            int nRows = chart.getController().arrangeGetRows();
-//            int nColumns = chart.getController().arrangeGetColumns();
+            int nRows = chart.getController().arrangeGetRows();
+            int nColumns = chart.getController().arrangeGetColumns();
             List<Integer> result = new ArrayList<>();
-//            result.add(nRows);
-//            result.add(nColumns);
+            result.add(nRows);
+            result.add(nColumns);
             return result;
 
         });
