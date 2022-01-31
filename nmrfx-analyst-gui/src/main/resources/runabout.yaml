@@ -49,10 +49,10 @@ arrangements :
      cols:
         - dir : i-1
           dims : [H,N]
-          widths : *Pfp
+          widths : [peak,peak]
         - dir : i
           dims : [H,N]
-          widths : *Pfp
+          widths : [peak,peak]
 
    HNfull:
      rows: [CB,CA,C]
