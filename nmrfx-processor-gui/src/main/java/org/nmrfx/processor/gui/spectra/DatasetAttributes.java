@@ -1039,7 +1039,7 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
                     localPtD[i][1] = axModes[i].getIndexD(this, i, axes[1].getUpperBound());
                 } else {
                     localPtD[i][0] = 0;
-                    localPtD[i][0] = theFile.getSizeReal(dim[i]) - 1.0;
+                    localPtD[i][1] = theFile.getSizeReal(dim[i]) - 1.0;
                 }
             } else if (axModes.length <= i) {
                 localPtD[i][0] = theFile.getSizeReal(dim[i]) / 2.0;
@@ -1500,9 +1500,9 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
         return dim.clone();
     }
 
-    public void setDims(int[] dims) {
-        for (int i = 0; i < dims.length; i++) {
-            setDim(i, dims[i]);
+    public void setDims(int[] newDims) {
+        for (int i = 0; i < newDims.length; i++) {
+            setDim(newDims[i],i);
         }
     }
 
