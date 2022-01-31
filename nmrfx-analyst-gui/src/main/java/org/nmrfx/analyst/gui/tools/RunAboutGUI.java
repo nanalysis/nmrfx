@@ -26,7 +26,6 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextAlignment;
-import org.nmrfx.analyst.gui.ScannerTool;
 import org.nmrfx.chemistry.Atom;
 import org.nmrfx.chemistry.Polymer;
 import org.nmrfx.chemistry.Residue;
@@ -84,7 +83,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
     Background defaultBackground = null;
     List<Peak> matchPeaks = new ArrayList<>();
     int matchIndex = 0;
-    Consumer<RunAboutGUI> closeAction = null;
+    Consumer<RunAboutGUI> closeAction;
     boolean showAtoms = false;
     Label atomXFieldLabel;
     Label atomYFieldLabel;
@@ -110,10 +109,6 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
     List<List<String>> winPatterns = new ArrayList<>();
     boolean[] intraResidue = null;
     int minOffset = 0;
-
-    private RunAboutGUI(PeakNavigable peakNavigable) {
-        this.peakNavigable = peakNavigable;
-    }
 
     public RunAboutGUI(FXMLController controller, Consumer<RunAboutGUI> closeAction) {
         this.controller = controller;
@@ -341,11 +336,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         configureButton.setDisable(true);
         model.selectedIndexProperty().addListener(e -> {
             System.out.println("selected " + model.getSelectedIndices());
-            if (model.getSelectedIndices().isEmpty()) {
-                configureButton.setDisable(true);
-            } else {
-                configureButton.setDisable(false);
-            }
+            configureButton.setDisable(model.getSelectedIndices().isEmpty());
         });
     }
 
@@ -909,7 +900,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
                             matchSys = otherSys.getMatchToPrevious().get(0).getSpinSystemA();
                         }
                         boolean confirmed = spinSys.confirmed(spinMatch, i == 0);
-                        boolean available = confirmed ? true : !otherSys.confirmed(i == 1);
+                        boolean available = confirmed || !otherSys.confirmed(i == 1);
                         selectedButtons[i].setSelected(confirmed);
 
                         boolean reciprocal = matchSys == spinSys;
@@ -971,7 +962,6 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
 
     static class ResidueLabel extends StackPane {
 
-        double fontSize = 14;
         double width = 20;
         Rectangle rect;
         Text textItem;
@@ -1006,20 +996,12 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
             setTranslateY(y - width / 2 + 1);
         }
 
-        void add(Group group) {
-            group.getChildren().add(this);
-        }
-
         void setColor(Color color) {
             rect.setFill(color);
         }
 
         void setText(String text) {
             textItem.setText(text);
-        }
-
-        void setTextColor(Color color) {
-            textItem.setFill(color);
         }
 
         void setActive() {
@@ -1298,7 +1280,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         if (defaultBackground == null) {
             defaultBackground = peakIdField.getBackground();
         }
-        if (!useSpinSystem && (currentPeak == null)) {
+        if (!useSpinSystem && (currentPeak != null)) {
             if (currentPeak.getStatus() < 0) {
                 deleteButton.setSelected(true);
                 peakIdField.setBackground(deleteBackground);
@@ -1393,7 +1375,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
     }
 
     public void gotoSpinSystems(int pIndex, int sIndex) {
-        if (!checkArrangement()) {
+        if (notArranged()) {
             return;
         }
         List<SpinSystem> spinSystems = new ArrayList<>();
@@ -1576,9 +1558,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
                 if (Platform.isFxApplicationThread()) {
                     peakNavigable.refreshPeakView();
                 } else {
-                    Platform.runLater(() -> {
-                        peakNavigable.refreshPeakView();
-                    });
+                    Platform.runLater(() -> peakNavigable.refreshPeakView());
                 }
             }
         }
@@ -1621,12 +1601,8 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
 
     Double[] getDimWidth(PeakList peakList, Dataset dataset, List<String> dimNames, int[] iDims, List<String> widthTypes) {
         Double[] widths = new Double[dataset.getNDim()];
-        for (int i =0;i<widths.length;i++) {
-            widths[i] = null;
-        }
         for (int i=0;i<dimNames.size();i++) {
             Double width;
-            String dimName = dimNames.get(i);
             String widthType = widthTypes.get(i);
             int iDim = iDims[i];
             String dataDimName = dataset.getLabel(iDim);
@@ -1673,12 +1649,12 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         }
     }
 
-    boolean checkArrangement() {
+    boolean notArranged() {
         if (resOffsets == null) {
             GUIUtils.warn("RunAbout", "Please select an arrangment first");
-            return false;
-        } else {
             return true;
+        } else {
+            return false;
         }
     }
 
@@ -1753,7 +1729,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
     }
 
     void drawWins(List<Peak> peaks) {
-        if (!checkArrangement()) {
+        if (notArranged()) {
             return;
         }
         List<PolyChart> charts = controller.getCharts();
@@ -1765,8 +1741,6 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
                 peakAttr.setLabelType(PeakDisplayParameters.LabelTypes.Number);
             }
             int iCol = iChart % resOffsets.length;
-            int resOffset = resOffsets[iCol] - minOffset;
-            resOffset = resOffset >= peaks.size() ? 0 : resOffset;
             iCol = iCol >= peaks.size() ? 0 : iCol;
             Peak peak = peaks.get(iCol);
             chart.clearAnnotations();
@@ -1779,13 +1753,11 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
 
     void drawSpinSystems(List<SpinSystem> spinSystems) {
         updateSeqCanvas();
-        if (!checkArrangement()) {
+        if (notArranged()) {
             return;
         }
         List<PolyChart> charts = controller.getCharts();
         int iChart = 0;
-        Font font = Font.font(12.0);
-        double textWidth = GUIUtils.getTextWidth("CB", font);
 
         spinStatus.showScore(spinSystems);
 
@@ -1793,8 +1765,6 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
             chart.chartProps.setTopBorderSize(25);
             chart.chartProps.setTitles(true);
             int iCol = iChart % resOffsets.length;
-            int resOffset = resOffsets[iCol] - minOffset;
-            resOffset = resOffset >= spinSystems.size() ? 0 : resOffset;
             iCol = iCol >= spinSystems.size() ? 0 : iCol;
             SpinSystem spinSystem = spinSystems.get(iCol);
             if (spinSystem == null) {
@@ -1817,7 +1787,6 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
                     peakAttr.setLabelType(PeakDisplayParameters.LabelTypes.Cluster);
                     currentList = peakAttr.getPeakList();
                 }
-                int nPeaks = spinSystem.getNPeaksWithList(currentList);
                 for (PeakMatch peakMatch : spinSystem.peakMatches()) {
                     PeakDim peakDim = peakMatch.getPeak().getPeakDim(dataAttr.getLabel(1));
                     if (peakDim != null) {
@@ -1855,9 +1824,6 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
                         if (isIntra && !intraResidue[iCol]) {
                             continue;
                         }
-                        if (isIntra && intraResidue[iCol]) {
-
-                        }
 
                         double ppm = spinSystem.getValue(isIntra ? 1 : 0, atomIndex);
                         AnnoLine annoLine = new AnnoLine(f1, ppm, f2, ppm, CanvasAnnotation.POSTYPE.FRACTION, CanvasAnnotation.POSTYPE.WORLD);
@@ -1865,39 +1831,48 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
                         chart.addAnnotation(annoLine);
                     }
                 }
-                String typeName = chartTypes.get(iChart);
-                if (typeName != null) {
-                    int nExpected = runAbout.getTypeCount(typeName);
-
-                    TypeInfo typeInfo = runAbout.getTypeInfo(typeName);
-                    int dim = currentList.getSpectralDim(dataAttr.getLabel(1)).getDataDim();
-                    List<AtomPresent> typesPresent = spinSystem.getTypesPresent(typeInfo, currentList, dim);
-                    double x = 100.0;
-                    double delta = textWidth + 5.0;
-                    for (AtomPresent typePresent : typesPresent) {
-                        String text = typePresent.getName();
-                        if (!typePresent.isIntraResidue()) {
-                            text = text.toLowerCase();
-                        }
-                        AnnoText annoText = new AnnoText(x, -8, x + delta, -8, CanvasAnnotation.POSTYPE.PIXEL, CanvasAnnotation.POSTYPE.PIXEL, text);
-                        annoText.setFont(font);
-                        chart.addAnnotation(annoText);
-                        Color presentColor = typePresent.isPresent() ? Color.LIGHTGREEN : Color.RED;
-                        AnnoLine annoLine2 = new AnnoLine(x, -2, x + textWidth, -2, CanvasAnnotation.POSTYPE.PIXEL, CanvasAnnotation.POSTYPE.PIXEL);
-                        annoLine2.setStroke(presentColor);
-                        annoLine2.setLineWidth(6);
-                        chart.addAnnotation(annoLine2);
-                        x += delta;
-                    }
-                    AnnoText annoText = new AnnoText(x, -8, x + textWidth, -8, CanvasAnnotation.POSTYPE.PIXEL, CanvasAnnotation.POSTYPE.PIXEL, String.valueOf(nPeaks - nExpected));
-                    annoText.setFont(font);
-                    chart.addAnnotation(annoText);
-
+                if (currentList != null) {
+                    drawAnno(iChart, chart, dataAttr, currentList, spinSystem);
                 }
                 chart.refresh();
-
             }
             iChart++;
+        }
+    }
+
+    void drawAnno(int iChart, PolyChart chart,  DatasetAttributes dataAttr, PeakList currentList, SpinSystem spinSystem) {
+        Font font = Font.font(12.0);
+        double textWidth = GUIUtils.getTextWidth("CB", font);
+        String typeName = chartTypes.get(iChart);
+        int nPeaks = spinSystem.getNPeaksWithList(currentList);
+        if (typeName != null) {
+            int nExpected = runAbout.getTypeCount(typeName);
+            TypeInfo typeInfo = runAbout.getTypeInfo(typeName);
+            var sDim = currentList.getSpectralDim(dataAttr.getLabel(1));
+            if (sDim != null) {
+                int dim = sDim.getDataDim();
+                List<AtomPresent> typesPresent = spinSystem.getTypesPresent(typeInfo, currentList, dim);
+                double x = 100.0;
+                double delta = textWidth + 5.0;
+                for (AtomPresent typePresent : typesPresent) {
+                    String text = typePresent.getName();
+                    if (!typePresent.isIntraResidue()) {
+                        text = text.toLowerCase();
+                    }
+                    AnnoText annoText = new AnnoText(x, -8, x + delta, -8, CanvasAnnotation.POSTYPE.PIXEL, CanvasAnnotation.POSTYPE.PIXEL, text);
+                    annoText.setFont(font);
+                    chart.addAnnotation(annoText);
+                    Color presentColor = typePresent.isPresent() ? Color.LIGHTGREEN : Color.RED;
+                    AnnoLine annoLine2 = new AnnoLine(x, -2, x + textWidth, -2, CanvasAnnotation.POSTYPE.PIXEL, CanvasAnnotation.POSTYPE.PIXEL);
+                    annoLine2.setStroke(presentColor);
+                    annoLine2.setLineWidth(6);
+                    chart.addAnnotation(annoLine2);
+                    x += delta;
+                }
+                AnnoText annoText = new AnnoText(x, -8, x + textWidth, -8, CanvasAnnotation.POSTYPE.PIXEL, CanvasAnnotation.POSTYPE.PIXEL, String.valueOf(nPeaks - nExpected));
+                annoText.setFont(font);
+                chart.addAnnotation(annoText);
+            }
         }
     }
 
@@ -2000,7 +1975,6 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
     }
 
     void trimSystem() {
-        SpinSystems spinSystems = runAbout.getSpinSystems();
         var spinSys = currentSpinSystem;
         runAbout.trim(spinSys);
         gotoSpinSystems();
