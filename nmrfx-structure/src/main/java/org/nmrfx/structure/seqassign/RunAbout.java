@@ -298,7 +298,7 @@ public class RunAbout implements SaveframeWriter {
 
     public List<SpectralDim> getPeakListDims(PeakList peakList, DatasetBase dataset, int[] iDims) {
         List<SpectralDim> sDims = new ArrayList<>();
-        for (int i = 0; i < dataset.getNDim(); i++) {
+        for (int i = 0; i < iDims.length; i++) {
             int iDim = iDims[i];
             String dataDimName = dataset.getLabel(iDim);
             SpectralDim sDim = peakList.getSpectralDim(dataDimName);
@@ -307,9 +307,8 @@ public class RunAbout implements SaveframeWriter {
         return sDims;
     }
 
-    public int[] getIDims(DatasetBase dataset, String typeName, List<String> dims) {
-        int[] iDims = new int[dataset.getNDim()];
-        System.out.println(typeName + " " + dims);
+    public int[] getIDims(DatasetBase dataset, PeakList peakList, String typeName, List<String> dims) {
+        int[] iDims = new int[dims.size()];
         int j = 0;
         for (String dim : dims) {
             String dimName;
@@ -319,8 +318,9 @@ public class RunAbout implements SaveframeWriter {
             } else {
                 dimName = dim;
             }
-            int index = aTypeMap.get(typeName).indexOf(dimName);
-            iDims[index] = j;
+            int peakDim = aTypeMap.get(typeName).indexOf(dimName);
+            String peakListDimName = peakList.getSpectralDim(peakDim).getDimName();
+            iDims[j] = dataset.getDim(peakListDimName);
             j++;
         }
         return iDims;

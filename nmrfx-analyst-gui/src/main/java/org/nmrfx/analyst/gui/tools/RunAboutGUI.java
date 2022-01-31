@@ -1619,7 +1619,10 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
     }
 
     Double[] getDimWidth(PeakList peakList, Dataset dataset, List<String> dimNames, int[] iDims, List<String> widthTypes) {
-        Double[] widths = new Double[iDims.length];
+        Double[] widths = new Double[dataset.getNDim()];
+        for (int i =0;i<widths.length;i++) {
+            widths[i] = null;
+        }
         for (int i=0;i<dimNames.size();i++) {
             Double width;
             String dimName = dimNames.get(i);
@@ -1716,7 +1719,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
                             chart.updateDatasets(datasets);
                             List<String> dimNames = col.getDims();
                             DatasetAttributes dataAttr = chart.getDatasetAttributes().get(0);
-                            int[] iDims = runAbout.getIDims(dataset, typeName, dimNames);
+                            int[] iDims = runAbout.getIDims(dataset, peakList, typeName, dimNames);
                             var sDims = runAbout.getPeakListDims(peakList, dataset, iDims);
                             widths[jChart] = getDimWidth(peakList, dataset, dimNames, iDims, widthTypes);
                             dataAttr.setDims(iDims);
@@ -1805,7 +1808,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
                         int iDim = peakDim.getSpectralDim();
                         int atomIndex = peakMatch.getIndex(iDim);
                         String aName = SpinSystem.getAtomName(atomIndex).toUpperCase();
-                        if (!atomPatterns.get(iDim).contains(aName)) {
+                        if ((iDim >= atomPatterns.size()) || !atomPatterns.get(iDim).contains(aName)) {
                             continue;
 
                         }
