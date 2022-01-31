@@ -267,6 +267,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         PeakPicking.registerSinglePickAction(this::pickedPeakAction);
         if (runAbout.getSpinSystems().getSize() != 0) {
             clusterStatus.refresh();
+            useSpinSystem = true;
         }
     }
 
@@ -873,9 +874,6 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
             this.spinSystems = spinSystems;
             if (!spinSystems.isEmpty()) {
                 spinSys = spinSystems.size() > 2 ? spinSystems.get(2) : spinSystems.get(0);
-                for (int i = 0; i < resOffsets.length; i++) {
-                    System.out.println(i + " " + resOffsets[i]);
-                }
                 for (int i = 0; i < nFields; i++) {
                     if (spinSys != null) {
                         List<SpinSystemMatch> matches = i == 0 ? spinSys.getMatchToPrevious() : spinSys.getMatchToNext();
@@ -1395,6 +1393,9 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
     }
 
     public void gotoSpinSystems(int pIndex, int sIndex) {
+        if (!checkArrangement()) {
+            return;
+        }
         List<SpinSystem> spinSystems = new ArrayList<>();
         for (int resOffset : resOffsets) {
             SpinSystem spinSystem = runAbout.getSpinSystems().get(currentSpinSystem, resOffset, pIndex, sIndex);
@@ -1672,6 +1673,15 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         }
     }
 
+    boolean checkArrangement() {
+        if (resOffsets == null) {
+            GUIUtils.warn("RunAbout", "Please select an arrangment first");
+            return false;
+        } else {
+            return true;
+        }
+    }
+
     void genWin(String arrangeName) {
         if (runAbout.isActive()) {
             RunAboutArrangement arrangement = runAboutArrangements.getArrangements().get(arrangeName);
@@ -1743,6 +1753,9 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
     }
 
     void drawWins(List<Peak> peaks) {
+        if (!checkArrangement()) {
+            return;
+        }
         List<PolyChart> charts = controller.getCharts();
         int iChart = 0;
         for (PolyChart chart : charts) {
@@ -1766,6 +1779,9 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
 
     void drawSpinSystems(List<SpinSystem> spinSystems) {
         updateSeqCanvas();
+        if (!checkArrangement()) {
+            return;
+        }
         List<PolyChart> charts = controller.getCharts();
         int iChart = 0;
         Font font = Font.font(12.0);
