@@ -203,10 +203,12 @@ public class RunAbout implements SaveframeWriter {
 
     public void setRefList(PeakList peakList) {
         refList = peakList;
+        PeakList.clusterOrigin = refList;
     }
 
     public void setPeakLists(List<PeakList> lists) {
         refList = lists.get(0);
+        PeakList.clusterOrigin = refList;
         List<String> stdNames = Arrays.asList(SpinSystem.ATOM_TYPES);
         int[][] counts = new int[2][stdNames.size()];
         peakLists.clear();
