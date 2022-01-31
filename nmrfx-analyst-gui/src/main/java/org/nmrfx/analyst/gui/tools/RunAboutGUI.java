@@ -1912,6 +1912,12 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
                     annoLine.setStroke(Color.BLUE);
                     annoLine.setLineWidth(0.0);
                     chart.addAnnotation(annoLine);
+                } else if (i == 1) {
+                    AnnoLine annoLine = new AnnoLine(0.0, ppms[1], 1.0, ppms[1], CanvasAnnotation.POSTYPE.FRACTION, CanvasAnnotation.POSTYPE.
+                            WORLD);
+                    annoLine.setStroke(Color.BLUE);
+                    annoLine.setLineWidth(0.0);
+                    chart.addAnnotation(annoLine);
                 }
             } else {
                 chart.full(i);
