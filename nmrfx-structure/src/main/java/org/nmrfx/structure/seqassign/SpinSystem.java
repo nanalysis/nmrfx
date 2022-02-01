@@ -924,6 +924,23 @@ public class SpinSystem {
         saveShifts(shiftList);
     }
 
+    public boolean userFieldsSet() {
+        boolean userFieldSet = false;
+        for (PeakMatch match : peakMatches ) {
+            Peak peak = match.peak;
+            for (PeakDim peakDim : peak.getPeakDims()) {
+               if (!peakDim.getUser().isBlank()) {
+                   userFieldSet = true;
+                   break;
+               }
+            }
+            if (userFieldSet) {
+                break;
+            }
+        }
+        return userFieldSet;
+    }
+
     void setUserFields(List<ResAtomPattern>[] resAtomPatterns, int[] pt) {
         StringBuilder sBuilder = new StringBuilder();
         String linkDim = RunAbout.getNDimName(rootPeak.getPeakList()); // fixme

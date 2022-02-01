@@ -1947,19 +1947,33 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
     Object pickedPeakAction(Object peakObject) {
         Peak peak = (Peak) peakObject;
         if (useSpinSystem) {
-            if (GUIUtils.affirm("Add to cluster " + currentSpinSystem.getId())) {
-                SpinSystems spinSystems = runAbout.getSpinSystems();
-                var spinSys = currentSpinSystem;
-                spinSystems.addPeak(spinSys, peak);
-                PeakList rootList = spinSys.getRootPeak().getPeakList();
-                int[] aMatch = SpinSystems.matchDims(rootList, peak.getPeakList());
-                for (int iDim = 0; iDim < aMatch.length; iDim++) {
-                    if (aMatch[iDim] >= 0) {
-                        PeakList.linkPeakDims(spinSys.getRootPeak().getPeakDim(iDim), peak.getPeakDim(aMatch[iDim]));
-                    }
+            SpinSystems spinSystems = runAbout.getSpinSystems();
+            var spinSys = currentSpinSystem;
+            PeakList rootList = spinSys.getRootPeak().getPeakList();
+            if (peak.getPeakList() == rootList) {
+                if (GUIUtils.affirm("Add new spinsystem")) {
+                    SpinSystem spinSystem = new SpinSystem(peak, spinSystems);
+                    spinSystems.add(spinSystem);
+                    currentSpinSystem = spinSystem;
+                    gotoSpinSystems();
                 }
-                PolyChart chart = FXMLController.getActiveController().getActiveChart();
-                chart.refresh();
+            } else {
+                if (GUIUtils.affirm("Add to cluster " + currentSpinSystem.getId())) {
+                    spinSystems.addPeak(spinSys, peak);
+                    int[] aMatch = SpinSystems.matchDims(rootList, peak.getPeakList());
+                    for (int iDim = 0; iDim < aMatch.length; iDim++) {
+                        if (aMatch[iDim] >= 0) {
+                            PeakList.linkPeakDims(spinSys.getRootPeak().getPeakDim(iDim), peak.getPeakDim(aMatch[iDim]));
+                        }
+                    }
+                    if (spinSys.userFieldsSet()) {
+                        spinSys.calcCombinations(false);
+                        if (!spinSys.confirmed(false) && !spinSys.confirmed(true)) {
+                            spinSys.compare();
+                        }
+                    }
+                    gotoSpinSystems();
+                }
             }
         }
         return null;
