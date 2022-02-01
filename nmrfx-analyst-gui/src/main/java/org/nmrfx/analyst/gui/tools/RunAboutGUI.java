@@ -2,7 +2,6 @@ package org.nmrfx.analyst.gui.tools;
 
 import de.jensd.fx.glyphs.GlyphsDude;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
-import javafx.application.Platform;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleObjectProperty;
@@ -30,8 +29,13 @@ import org.nmrfx.chemistry.Atom;
 import org.nmrfx.chemistry.Polymer;
 import org.nmrfx.chemistry.Residue;
 import org.nmrfx.chemistry.io.AtomParser;
-import org.nmrfx.peaks.*;
+import org.nmrfx.peaks.Peak;
+import org.nmrfx.peaks.PeakDim;
+import org.nmrfx.peaks.PeakList;
+import org.nmrfx.peaks.SpectralDim;
+import org.nmrfx.peaks.events.PeakCountEvent;
 import org.nmrfx.peaks.events.PeakEvent;
+import org.nmrfx.peaks.events.PeakListEvent;
 import org.nmrfx.peaks.events.PeakListener;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.peaks.PeakListAlign;
@@ -324,7 +328,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         peakTableView.getItems().addAll(peakListSelectors);
 
         MapChangeListener<String, PeakList> peakmapChangeListener =
-                (MapChangeListener.Change<? extends String, ? extends PeakList> change) -> System.out.println("pkl changed");
+                (MapChangeListener.Change<? extends String, ? extends PeakList> change) -> updatePeakTableView();
 
         Project.getActive().addPeakListListener(peakmapChangeListener);
 
@@ -342,6 +346,16 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         });
     }
 
+    private void updatePeakTableView() {
+        var peakListSelectors = PeakList.peakLists().stream().map(PeakListSelection::new).collect(Collectors.toList());
+        peakTableView.getItems().setAll(peakListSelectors);
+        for (var peakListSelector:peakListSelectors) {
+            if (runAbout.getPeakLists().contains(peakListSelector.peakList)) {
+                 peakListSelector.setActive(true);
+            }
+        }
+        registerPeakLists();
+    }
     private void inspectPeakList() {
         var items = peakTableView.getSelectionModel().getSelectedItems();
         if (!items.isEmpty()) {
@@ -1217,8 +1231,6 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
             setPeakIdField();
             navigationPeakList.registerPeakChangeListener(this);
         }
-        peakNavigable.refreshPeakView(currentPeak);
-        peakNavigable.refreshPeakListView(navigationPeakList);
     }
 
     public Peak getPeak() {
@@ -1547,7 +1559,6 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
             } else {
                 currentPeak.setStatus(0);
             }
-            peakNavigable.refreshPeakView(currentPeak);
         }
         updateDeleteStatus();
     }
@@ -1556,12 +1567,11 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
     public void peakListChanged(PeakEvent peakEvent) {
         if (peakEvent.getSource() instanceof PeakList) {
             PeakList sourceList = (PeakList) peakEvent.getSource();
-            if (sourceList == navigationPeakList) {
-                if (Platform.isFxApplicationThread()) {
-                    peakNavigable.refreshPeakView();
-                } else {
-                    Platform.runLater(() -> peakNavigable.refreshPeakView());
-                }
+            if (peakEvent instanceof PeakListEvent) {
+                peakTableView.refresh();
+            } else if (peakEvent instanceof PeakCountEvent) {
+                PeakCountEvent countEvent = (PeakCountEvent) peakEvent;
+                peakTableView.refresh();
             }
         }
     }
@@ -1645,7 +1655,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
     }
 
     void registerPeakLists() {
-        for (var peakList : runAbout.getPeakLists()) {
+        for (var peakList : PeakList.peakLists()) {
             peakList.registerPeakListChangeListener(this);
             peakList.registerPeakCountChangeListener(this);
         }
