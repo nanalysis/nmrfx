@@ -10,6 +10,10 @@ import javax.xml.xpath.XPathExpressionException;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.List;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 public class RS2DDataTest {
     public static String fidHome = "../../nmrfxp_tests/testfids/";
@@ -37,7 +41,7 @@ public class RS2DDataTest {
         var dataset = rs2DData.toDataset("test.nv");
         rs2DData.writeOutputFile(dataset, procNumPath);
         long compareResult = DatasetCompare.compare(inFileDat, outFile);
-        Assert.assertEquals(0, compareResult);
+        assertEquals(0, compareResult);
     }
 
     @Test
@@ -56,7 +60,7 @@ public class RS2DDataTest {
         if (compareResult != 0) {
             DatasetCompare.compareFloat(inFileDat, outFile);
         }
-        Assert.assertEquals(0, compareResult);
+        assertEquals(0, compareResult);
     }
 
     @Test
@@ -75,26 +79,23 @@ public class RS2DDataTest {
     }
 
     @Test
-    public void findProcNums() throws IOException, XPathExpressionException, TransformerException {
-        Path procDirectory = Path.of(fidHome, "rs2d/1Dproton/680/Proc");
-        if (!testFilesPresent(procDirectory.toFile())) {
+    public void findProcNums() {
+        Path seriesDirectory = Path.of(fidHome, "rs2d/1Dproton/680");
+        if (!testFilesPresent(seriesDirectory.toFile())) {
             return;
         }
-        var procNums = RS2DData.findProcNums(procDirectory);
-        Assert.assertEquals(1, procNums.size());
-        if (!procNums.isEmpty()) {
-            Assert.assertEquals(0, procNums.get(0).intValue());
-        }
 
+        var procNums = RS2DData.listProcIds(seriesDirectory);
+        assertEquals(List.of(1), procNums);
     }
 
     @Test
-    public void findLastProcNum() throws IOException, XPathExpressionException, TransformerException {
-        Path procDirectory = Path.of(fidHome, "rs2d/1Dproton/680/Proc");
-        if (!testFilesPresent(procDirectory.toFile())) {
+    public void findLastProcNum() {
+        Path seriesDirectory = Path.of(fidHome, "rs2d/1Dproton/680");
+        if (!testFilesPresent(seriesDirectory.toFile())) {
             return;
         }
-        int lastProcNum = RS2DData.findLastProcNum(procDirectory).orElse(-1);
-        Assert.assertEquals(0, lastProcNum);
+        int lastProcNum = RS2DData.findLastProcId(seriesDirectory).orElse(-1);
+        assertEquals(0, lastProcNum);
     }
 }

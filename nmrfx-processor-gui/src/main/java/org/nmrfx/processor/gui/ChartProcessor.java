@@ -62,6 +62,7 @@ import org.nmrfx.utils.GUIUtils;
  * @author brucejohnson
  */
 public class ChartProcessor {
+    public static final String DEFAULT_DATASET_TYPE = "nv";
 
     private SimpleObjectProperty nmrDataObj;
 
@@ -100,7 +101,7 @@ public class ChartProcessor {
      * The name of the datasetFile that will be created when whole data file is
      * processed.
      */
-    private String datasetType = "nv";
+    private String datasetType = DEFAULT_DATASET_TYPE;
 
     /**
      * List of commands to be executed at beginning of script.
@@ -965,28 +966,23 @@ public class ChartProcessor {
             File nmrFile = new File(filePath);
             File directory = nmrFile.isDirectory() ? nmrFile : nmrFile.getParentFile();
             File file;
-            if (getDatasetType().equals("SPINit")) {
-                Path procDir = Path.of(directory.toString(),"Proc");
-                int procNum;
+            if (getDatasetType().equals(RS2DData.DATASET_TYPE)) {
+                Path datasetDir = directory.toPath();
+                Path newProcPath = RS2DData.findNextProcPath(datasetDir);
                 try {
-                    procNum = RS2DData.findLastProcNum(procDir).orElse(0);
+                    Files.createDirectories(newProcPath);
                 } catch (IOException e) {
-                    procNum = 0;
+                    GUIUtils.warn("Dataset creation", "Unable to create new dataset directory");
                 }
-                String procNumStr = GUIUtils.input("Proc Number",String.valueOf(procNum)).trim();
-                File procNumDir = Path.of(directory.toString(),"Proc",procNumStr).toFile();
-                if (!procNumDir.mkdirs()) {
-                    if (!procNumDir.exists()) {
-                        return result;
-                    }
-                }
-                file = Path.of(procNumDir.toString(),"data.dat").toFile();
+
+                file = newProcPath.resolve(RS2DData.DATA_FILE_NAME).toFile();
             } else {
                 FileChooser fileChooser = new FileChooser();
                 fileChooser.setInitialDirectory(directory);
                 fileChooser.setInitialFileName(datasetName);
                 file = fileChooser.showSaveDialog(null);
             }
+
             if (file != null) {
                 if (file.exists() && !file.canWrite()) {
                     GUIUtils.warn("Dataset creation", "Dataset exists and can't be overwritten");
@@ -1002,7 +998,7 @@ public class ChartProcessor {
 
                 String fileString = file.getAbsoluteFile().toString();
                 if (!fileString.endsWith(".nv") && !fileString.endsWith(".ucsf")) {
-                    if (getDatasetType().equals("SPINit")) {
+                    if (getDatasetType().equals(RS2DData.DATASET_TYPE)) {
                         datasetFile = file;
                         fileString = datasetFile.toString();
                     } else {
@@ -1254,6 +1250,8 @@ public class ChartProcessor {
 
     public void setData(NMRData data, boolean clearOps) {
         setNMRData(data);
+        setDatasetType(data.getPreferredDatasetType());
+
         datasetFile = null;
         datasetFileTemp = null;
         Map<String, Boolean> flags = new HashMap<>();
@@ -1269,10 +1267,7 @@ public class ChartProcessor {
         Map<String, List<String>> listOfScripts = getScriptList();
         List<String> saveHeaderList = new ArrayList<>();
         saveHeaderList.addAll(headerList);
-        //System.out.println("saved");
-        for (Map.Entry<String, List<String>> entry : listOfScripts.entrySet()) {
-            //System.out.println(entry.toString());
-        }
+
         // when setting data reset vecdim back to 0 as it could have been set to
         // a value higher than the number of dimensions
         vecDim = 0;

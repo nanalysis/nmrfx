@@ -23,6 +23,7 @@
  */
 package org.nmrfx.processor.gui;
 
+import org.nmrfx.processor.datasets.vendor.RS2DData;
 import org.nmrfx.utils.properties.MenuTextOperationItem;
 import org.nmrfx.utils.properties.ChoiceOperationItem;
 import org.nmrfx.utils.properties.IntOperationItem;
@@ -291,7 +292,7 @@ public class RefManager {
             ArrayList<String> datasetTypeChoices = new ArrayList<>();
             datasetTypeChoices.add("nv");
             datasetTypeChoices.add("ucsf");
-            datasetTypeChoices.add("SPINit");
+            datasetTypeChoices.add(RS2DData.DATASET_TYPE);
             newItems.add(new ChoiceOperationItem(stringListener, chartProcessor.getDatasetType(), datasetTypeChoices, dimName, "datatype", "Dataset type"));
             if (nmrData != null) {
                 ArrayList<String> choices = new ArrayList<>();

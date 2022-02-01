@@ -1462,7 +1462,7 @@ public class Processor {
         if (dataset != null) {
             if (dataset.isMemoryFile()) {
                 try {
-                    if (dataset.getFileName().endsWith("data.dat") && (getNMRData() instanceof RS2DData)) {
+                    if (dataset.getFileName().endsWith(RS2DData.DATA_FILE_NAME) && (getNMRData() instanceof RS2DData)) {
                         RS2DData rs2DData = (RS2DData) getNMRData();
                         File file = new File(dataset.getFileName());
                         System.out.println("file is " + file);
@@ -1476,9 +1476,7 @@ public class Processor {
                     } else {
                         dataset.saveMemoryFile();
                     }
-                } catch (IOException ex) {
-                    Logger.getLogger(Processor.class.getName()).log(Level.SEVERE, null, ex);
-                } catch (DatasetException ex) {
+                } catch (IOException | DatasetException ex) {
                     Logger.getLogger(Processor.class.getName()).log(Level.SEVERE, null, ex);
                 }
             }
