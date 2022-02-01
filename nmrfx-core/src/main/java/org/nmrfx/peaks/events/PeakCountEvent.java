@@ -43,4 +43,8 @@ public class PeakCountEvent extends PeakEvent {
         super(object);
         this.size = size;
     }
+
+    public int getSize() {
+        return size;
+    }
 }
