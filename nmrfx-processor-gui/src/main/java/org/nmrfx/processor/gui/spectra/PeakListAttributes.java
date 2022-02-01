@@ -53,9 +53,9 @@ import org.nmrfx.peaks.CouplingPattern;
 import org.nmrfx.peaks.Multiplet;
 import org.nmrfx.peaks.PeakDim;
 import org.nmrfx.processor.datasets.Dataset;
-import org.nmrfx.peaks.PeakEvent;
+import org.nmrfx.peaks.events.PeakEvent;
 import org.nmrfx.peaks.PeakList;
-import org.nmrfx.peaks.PeakListener;
+import org.nmrfx.peaks.events.PeakListener;
 import org.nmrfx.processor.gui.controls.ConsoleUtil;
 import org.nmrfx.processor.gui.spectra.PeakDisplayParameters.ColorTypes;
 

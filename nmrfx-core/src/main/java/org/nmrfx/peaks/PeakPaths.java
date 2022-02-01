@@ -18,6 +18,8 @@
 package org.nmrfx.peaks;
 
 import org.nmrfx.datasets.DatasetBase;
+import org.nmrfx.peaks.events.PeakEvent;
+import org.nmrfx.peaks.events.PeakListener;
 import org.nmrfx.project.ProjectBase;
 
 import java.io.File;
