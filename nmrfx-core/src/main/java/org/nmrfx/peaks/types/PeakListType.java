@@ -33,7 +33,7 @@ public class PeakListType {
             sDim.setRelation("");
             sDim.setPattern("");
         }
-        peakList.setType(name);
+        peakList.setExperimentType(name);
     }
     public void setPeakList(PeakList peakList) throws IllegalArgumentException {
         if (getDims().size() != peakList.getNDim()) {
@@ -68,11 +68,13 @@ public class PeakListType {
                 String bond = dim.getBonds();
                 if ((bond != null) && !bond.isBlank()) {
                     var sDim2 = sDims.get(bond);
-                    sDim.setRelation(sDim2.getDimName());
+                    if (sDim2 != null) {
+                        sDim.setRelation(sDim2.getDimName());
+                    }
                 }
             }
         }
-        peakList.setType(name);
+        peakList.setExperimentType(name);
     }
     @Override
     public String toString() {

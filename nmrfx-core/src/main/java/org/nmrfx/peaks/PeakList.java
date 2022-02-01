@@ -11,7 +11,6 @@ import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.datasets.Nuclei;
 import org.nmrfx.math.Clusters;
 import org.nmrfx.peaks.events.*;
-import org.nmrfx.peaks.types.PeakListType;
 import org.nmrfx.project.ProjectBase;
 import org.nmrfx.utilities.Util;
 
@@ -764,9 +763,6 @@ public class PeakList {
         this.sampleConditionLabel = sampleConditionLabel;
     }
 
-    public void setExperimentType(PeakListType peakListType) {
-
-    }
     /**
      *
      * @return
@@ -794,10 +790,9 @@ public class PeakList {
      *
      * @param type
      */
-    public void setType(String type) {
+    public void setExperimentType(String type) {
         this.experimentType = type;
         peakListUpdated(this);
-
     }
 
     /**

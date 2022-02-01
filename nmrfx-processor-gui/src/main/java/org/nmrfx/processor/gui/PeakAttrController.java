@@ -447,7 +447,9 @@ public class PeakAttrController implements Initializable, PeakNavigable, PeakMen
             peakListNameField.setText(peakList.getName());
             datasetNameField.setValue(peakList.getDatasetName());
             conditionField.setValue(peakList.getSampleConditionLabel());
+            peakListTypeChoice.setOnAction(null);
             peakListTypeChoice.setValue(peakList.getExperimentType());
+            peakListTypeChoice.setOnAction(this::setPeakListType);
             stage.setTitle(peakList.getName());
         } else {
             referenceTableView.getItems().clear();

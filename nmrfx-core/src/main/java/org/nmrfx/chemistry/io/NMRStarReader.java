@@ -743,7 +743,7 @@ public class NMRStarReader {
         peakList.setSampleConditionLabel(sampleConditionLabel);
         peakList.setDatasetName(datasetName);
         peakList.setDetails(details);
-        peakList.setType(expType);
+        peakList.setExperimentType(expType);
         peakList.setSlideable(slidable.equals("yes"));
         if (scaleStr.length() > 0) {
             peakList.setScale(NvUtil.toDouble(scaleStr));
