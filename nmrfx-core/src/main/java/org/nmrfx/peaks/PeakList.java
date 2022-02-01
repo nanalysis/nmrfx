@@ -10,6 +10,7 @@ import org.apache.commons.math3.exception.MaxCountExceededException;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.datasets.Nuclei;
 import org.nmrfx.math.Clusters;
+import org.nmrfx.peaks.events.*;
 import org.nmrfx.peaks.types.PeakListType;
 import org.nmrfx.project.ProjectBase;
 import org.nmrfx.utilities.Util;
@@ -504,7 +505,7 @@ public class PeakList {
 
     public void notifyPeakCountChangeListeners() {
         for (PeakListener listener : peakCountChangeListeners) {
-            listener.peakListChanged(new PeakEvent(this));
+            listener.peakListChanged(new PeakCountEvent(this, size()));
         }
     }
     /**
@@ -527,7 +528,7 @@ public class PeakList {
 
     public void notifyPeakListChangeListeners() {
         for (PeakListener listener : peakListChangeListeners) {
-            listener.peakListChanged(new PeakEvent(this));
+            listener.peakListChanged(new PeakListEvent(this));
         }
     }
     /**

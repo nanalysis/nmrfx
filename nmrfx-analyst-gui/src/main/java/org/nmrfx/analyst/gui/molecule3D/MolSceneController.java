@@ -59,7 +59,7 @@ import org.nmrfx.chemistry.Compound;
 import org.nmrfx.chemistry.InvalidMoleculeException;
 import org.nmrfx.chemistry.Polymer;
 import org.nmrfx.chemistry.SpatialSet;
-import org.nmrfx.peaks.FreezeListener;
+import org.nmrfx.peaks.events.FreezeListener;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.processor.datasets.Dataset;

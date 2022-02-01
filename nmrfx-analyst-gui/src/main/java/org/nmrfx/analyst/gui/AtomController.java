@@ -74,7 +74,7 @@ import org.nmrfx.chemistry.io.MoleculeIOException;
 import org.nmrfx.chemistry.io.NMRStarReader;
 import org.nmrfx.chemistry.io.PDBFile;
 import org.nmrfx.chemistry.io.PPMFiles;
-import org.nmrfx.peaks.FreezeListener;
+import org.nmrfx.peaks.events.FreezeListener;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.star.ParseException;

@@ -26,9 +26,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.nmrfx.peaks.Peak;
-import org.nmrfx.peaks.PeakEvent;
+import org.nmrfx.peaks.events.PeakEvent;
 import org.nmrfx.peaks.PeakList;
-import org.nmrfx.peaks.PeakListener;
+import org.nmrfx.peaks.events.PeakListener;
 import org.nmrfx.utilities.Updater;
 
 /**

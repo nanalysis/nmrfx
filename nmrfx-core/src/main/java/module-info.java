@@ -16,6 +16,7 @@ module org.nmrfx.core {
     exports org.nmrfx.server;
     exports org.nmrfx.utilities;
     exports org.nmrfx.peaks.types;
+    exports org.nmrfx.peaks.events;
     requires commons.math3;
     requires org.apache.commons.lang3;
     requires org.apache.commons.collections4;

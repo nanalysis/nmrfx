@@ -24,7 +24,7 @@
  * To change this template, choose Tools | Template Manager
  * and open the template in the editor.
  */
-package org.nmrfx.peaks;
+package org.nmrfx.peaks.events;
 
 import java.util.EventObject;
 
@@ -40,6 +40,5 @@ public class PeakEvent extends EventObject {
      */
     public PeakEvent(Object object) {
         super(object);
-
     }
 }

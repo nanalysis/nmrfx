@@ -31,6 +31,8 @@ import org.nmrfx.chemistry.Polymer;
 import org.nmrfx.chemistry.Residue;
 import org.nmrfx.chemistry.io.AtomParser;
 import org.nmrfx.peaks.*;
+import org.nmrfx.peaks.events.PeakEvent;
+import org.nmrfx.peaks.events.PeakListener;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.peaks.PeakListAlign;
 import org.nmrfx.processor.gui.*;
