@@ -1223,7 +1223,22 @@ public class SpinSystem {
 
     public static void extend(SpinSystem startSys, double minScore) {
         SpinSystem spinSys = startSys;
-        while(spinSys.confirmP.isEmpty()) {
+        while (spinSys.confirmP.isPresent()) {
+            SpinSystemMatch match = spinSys.confirmP.get();
+            spinSys = match.getSpinSystemA();
+        }
+        extendPrevious(spinSys, minScore);
+        spinSys = startSys;
+        while (spinSys.confirmS.isPresent()) {
+            SpinSystemMatch match = spinSys.confirmS.get();
+            spinSys = match.getSpinSystemB();
+        }
+        extendNext(spinSys, minScore);
+    }
+
+    private static void extendPrevious(SpinSystem startSys, double minScore) {
+        SpinSystem spinSys = startSys;
+        while (spinSys.confirmP.isEmpty()) {
             System.out.println("pre " + spinSys.getId() + " " + spinSys.confirmP.isPresent() + " " + spinSys.confirmS.isPresent());
             if (spinSys.getMatchToPrevious().isEmpty()) {
                 System.out.println("match empty ");
@@ -1245,7 +1260,9 @@ public class SpinSystem {
                 break;
             }
         }
-        spinSys = startSys;
+    }
+    private static void extendNext(SpinSystem startSys, double minScore) {
+        SpinSystem spinSys = startSys;
         while(spinSys.confirmS.isEmpty()) {
             System.out.println("suc " + spinSys.getId() + " " + spinSys.confirmP.isPresent() + " " + spinSys.confirmS.isPresent());
             if (spinSys.getMatchToNext().isEmpty()) {
