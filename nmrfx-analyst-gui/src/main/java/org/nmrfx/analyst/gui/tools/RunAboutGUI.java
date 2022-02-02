@@ -266,6 +266,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
             GUIUtils.warn("RunAbout:load yaml", e.getMessage());
         }
         PeakPicking.registerSinglePickAction(this::pickedPeakAction);
+        PolyChart.registerPeakDeleteAction(this::peakDeleteAction);
         if (runAbout.getSpinSystems().getSize() != 0) {
             clusterStatus.refresh();
             useSpinSystem = true;
@@ -1941,6 +1942,24 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         } else {
             List<PeakList> movingLists = runAbout.getPeakLists();
             PeakListAlign.alignCenters(refListObj.get(), dimNames, movingLists);
+        }
+    }
+
+    void peakDeleteAction(PeakDeleteEvent event) {
+        var modifiedSpinSystems = new HashSet<SpinSystem>();
+        for (Peak peak:event.getPeaks()) {
+            runAbout.getSpinSystems().findSpinSystem(peak).ifPresent( spinSys -> {
+                spinSys.removePeak(peak);
+                modifiedSpinSystems.add(spinSys);
+            });
+        }
+        for (var spinSys:modifiedSpinSystems) {
+            if (spinSys.userFieldsSet()) {
+                spinSys.calcCombinations(false);
+                if (!spinSys.confirmed(false) && !spinSys.confirmed(true)) {
+                    spinSys.compare();
+                }
+            }
         }
     }
 
