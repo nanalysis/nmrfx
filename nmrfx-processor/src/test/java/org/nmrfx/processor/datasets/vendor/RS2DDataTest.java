@@ -1,6 +1,5 @@
 package org.nmrfx.processor.datasets.vendor;
 
-import org.junit.Assert;
 import org.junit.Test;
 import org.nmrfx.processor.datasets.DatasetCompare;
 import org.w3c.dom.Document;
@@ -19,20 +18,20 @@ public class RS2DDataTest {
     public static String fidHome = "../../nmrfxp_tests/testfids/";
     public static String tmpHome = "../../nmrfxp_tests/tmp/";
 
-    boolean testFilesPresent(File testFile) {
+    boolean testFilesMissing(File testFile) {
         if (!testFile.exists()) {
             System.out.println("File " + testFile + " doesn't exist, skipping test");
-            return false;
-        } else {
             return true;
+        } else {
+            return false;
         }
     }
 
     @Test
-    public void save1DToRS2DFile() throws IOException, TransformerException {
+    public void save1DToRS2DFile() throws IOException {
         File inFile = Path.of(fidHome, "rs2d/1Dproton/680/Proc/0").toFile();
         File inFileDat = Path.of(fidHome, "rs2d/1Dproton/680/Proc/0/data.dat").toFile();
-        if (!testFilesPresent(inFileDat)) {
+        if (testFilesMissing(inFileDat)) {
             return;
         }
         Path procNumPath = Path.of(tmpHome, "Proc", "1");
@@ -45,10 +44,10 @@ public class RS2DDataTest {
     }
 
     @Test
-    public void save2DToRS2DFile() throws IOException, TransformerException {
+    public void save2DToRS2DFile() throws IOException {
         File inFile = Path.of(fidHome, "rs2d/2Dhetero/688/Proc/0").toFile();
         File inFileDat = Path.of(fidHome, "rs2d/2Dhetero/688/Proc/0/data.dat").toFile();
-        if (!testFilesPresent(inFileDat)) {
+        if (testFilesMissing(inFileDat)) {
             return;
         }
         Path procNumPath = Path.of(tmpHome, "Proc", "2");
@@ -58,7 +57,7 @@ public class RS2DDataTest {
         rs2DData.writeOutputFile(dataset, procNumPath);
         long compareResult = DatasetCompare.compare(inFileDat, outFile);
         if (compareResult != 0) {
-            DatasetCompare.compareFloat(inFileDat, outFile);
+            compareResult = DatasetCompare.compareFloat(inFileDat, outFile);
         }
         assertEquals(0, compareResult);
     }
@@ -66,7 +65,7 @@ public class RS2DDataTest {
     @Test
     public void modifyRS2DHeaderFile() throws IOException, XPathExpressionException, TransformerException {
         File inFile = Path.of(fidHome, "rs2d/1Dproton/680").toFile();
-        if (!testFilesPresent(inFile)) {
+        if (testFilesMissing(inFile)) {
             return;
         }
         File outHeader = Path.of(tmpHome, "header_mod.xml").toFile();
@@ -81,7 +80,7 @@ public class RS2DDataTest {
     @Test
     public void findProcNums() {
         Path seriesDirectory = Path.of(fidHome, "rs2d/1Dproton/680");
-        if (!testFilesPresent(seriesDirectory.toFile())) {
+        if (testFilesMissing(seriesDirectory.toFile())) {
             return;
         }
 
@@ -92,7 +91,7 @@ public class RS2DDataTest {
     @Test
     public void findLastProcNum() {
         Path seriesDirectory = Path.of(fidHome, "rs2d/1Dproton/680");
-        if (!testFilesPresent(seriesDirectory.toFile())) {
+        if (testFilesMissing(seriesDirectory.toFile())) {
             return;
         }
         int lastProcNum = RS2DData.findLastProcId(seriesDirectory).orElse(-1);
