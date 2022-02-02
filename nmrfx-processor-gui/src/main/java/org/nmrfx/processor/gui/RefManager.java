@@ -289,10 +289,7 @@ public class RefManager {
         ObservableList<PropertySheet.Item> newItems = FXCollections.observableArrayList();
         String dimName = "" + (dim + 1);
         if (dim == 0) {
-            ArrayList<String> datasetTypeChoices = new ArrayList<>();
-            datasetTypeChoices.add("nv");
-            datasetTypeChoices.add("ucsf");
-            datasetTypeChoices.add(RS2DData.DATASET_TYPE);
+            List<String> datasetTypeChoices = List.of("nv", "ucsf",RS2DData.DATASET_TYPE);
             newItems.add(new ChoiceOperationItem(stringListener, chartProcessor.getDatasetType(), datasetTypeChoices, dimName, "datatype", "Dataset type"));
             if (nmrData != null) {
                 ArrayList<String> choices = new ArrayList<>();
