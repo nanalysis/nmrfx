@@ -85,7 +85,7 @@ public class RS2DDataTest {
         }
 
         var procNums = RS2DData.listProcIds(seriesDirectory);
-        assertEquals(List.of(1), procNums);
+        assertEquals(List.of(0), procNums);
     }
 
     @Test
