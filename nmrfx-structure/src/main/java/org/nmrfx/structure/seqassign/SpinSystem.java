@@ -2,18 +2,14 @@ package org.nmrfx.structure.seqassign;
 
 import org.apache.commons.math3.util.MultidimensionalCounter;
 import org.apache.commons.math3.util.MultidimensionalCounter.Iterator;
-import org.nmrfx.chemistry.Compound;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakDim;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.SpectralDim;
-import org.nmrfx.star.ParseException;
 import org.nmrfx.structure.seqassign.RunAbout.TypeInfo;
 import smile.clustering.KMeans;
 import smile.math.MathEx;
 
-import java.io.IOException;
-import java.io.Writer;
 import java.util.*;
 import java.util.Map.Entry;
 

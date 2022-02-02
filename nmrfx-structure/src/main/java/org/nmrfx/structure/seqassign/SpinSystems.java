@@ -28,7 +28,7 @@ public class SpinSystems {
     RunAbout runAbout;
     private List<SpinSystem> systems = new ArrayList<>();
     Map<PeakList, Integer> peakMap = new HashMap<>();
-    double[][] sums;
+    Map<PeakList, double[]> sums;
 
     public SpinSystems(RunAbout runAbout) {
         this.runAbout = runAbout;
@@ -160,9 +160,9 @@ public class SpinSystems {
         return result;
     }
 
-    double[][] calcNormalization(List<PeakList> peakLists) {
+    Map<PeakList, double[]> calcNormalization(List<PeakList> peakLists) {
         PeakList refList = peakLists.get(0);
-        double[][] sums = new double[refList.peaks().size()][peakLists.size() - 1];
+        Map<PeakList, double[]> sumMap = new HashMap<>();
         int i = 0;
         for (Peak pkA : refList.peaks()) {
             int j = 0;
@@ -171,38 +171,39 @@ public class SpinSystems {
                 if (peakListB != refList) {
                     double sumF = peakListB.peaks().stream().filter(pkB -> pkB.getStatus() >= 0).
                             mapToDouble(pkB -> comparePeaks(pkA, pkB, aMatch)).sum();
-                    sums[i][j] = sumF;
+                    double[] sumArray = sumMap.get(peakListB);
+                    if (sumArray == null) {
+                        sumArray = new double[refList.size()];
+                        sumMap.put(peakListB, sumArray);
+                    }
+                    sumArray[pkA.getIndex()] = sumF;
                     j++;
                 }
             }
             i++;
         }
-        return sums;
+        return sumMap;
     }
 
     public void addPeak(SpinSystem spinSys, Peak pkB) {
-        if ((sums == null) || (sums.length != spinSys.rootPeak.getPeakList().size())) {
+        if ((sums == null) || (sums.get(pkB.getPeakList()).length != spinSys.rootPeak.getPeakList().size())) {
             sums = calcNormalization(runAbout.getPeakLists());
         }
         Peak rootPeak = spinSys.rootPeak;
         if (rootPeak != pkB) {
             PeakList peakListB = pkB.getPeakList();
+            double[] sumArray = sums.get(peakListB);
             if (rootPeak.getPeakList() != peakListB) {
-                Integer jList = peakMap.get(peakListB);
-                if (jList == null) {
-                    System.out.println("n peakListb " + peakListB);
-                } else {
-                    int[] aMatch = matchDims(rootPeak.getPeakList(), peakListB);
-                    double f = comparePeaks(rootPeak, pkB, aMatch);
-                    if (f >= 0.0) {
-                        double p = f / sums[rootPeak.getIndex()][jList];
-                        spinSys.addPeak(pkB, p);
-                    }
+                int[] aMatch = matchDims(rootPeak.getPeakList(), peakListB);
+                double f = comparePeaks(rootPeak, pkB, aMatch);
+                if (f >= 0.0) {
+                    double p = f / sumArray[rootPeak.getIndex()];
+                    spinSys.addPeak(pkB, p);
+                }
 
-                    for (int iDim = 0; iDim < aMatch.length; iDim++) {
-                        if (aMatch[iDim] >= 0) {
-                            PeakList.linkPeakDims(spinSys.getRootPeak().getPeakDim(iDim), pkB.getPeakDim(aMatch[iDim]));
-                        }
+                for (int iDim = 0; iDim < aMatch.length; iDim++) {
+                    if (aMatch[iDim] >= 0) {
+                        PeakList.linkPeakDims(spinSys.getRootPeak().getPeakDim(iDim), pkB.getPeakDim(aMatch[iDim]));
                     }
                 }
             }
@@ -260,6 +261,7 @@ public class SpinSystems {
             for (Peak pkB : PeakList.getLinks(pkA, 0)) {// fixme calculate correct dim
                 if (pkA != pkB) {
                     PeakList peakListB = pkB.getPeakList();
+                    double[] sumArray = sums.get(peakListB);
                     if (refList != peakListB) {
                         Integer jList = peakMap.get(peakListB);
                         if (jList == null) {
@@ -268,7 +270,7 @@ public class SpinSystems {
                             int[] aMatch = matchDims(refList, peakListB);
                             double f = comparePeaks(pkA, pkB, aMatch);
                             if (f >= 0.0) {
-                                double p = f / sums[i][jList];
+                                double p = f / sumArray[pkA.getIndex()];
                                 spinSys.addPeak(pkB, p);
                             }
                         }
