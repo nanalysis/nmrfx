@@ -7,6 +7,7 @@ package org.nmrfx.processor.datasets.vendor;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.math3.complex.Complex;
+import org.apache.commons.math3.util.MultidimensionalCounter;
 import org.nmrfx.datasets.DatasetLayout;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.parameters.FPMult;
@@ -16,7 +17,6 @@ import org.nmrfx.processor.datasets.parameters.SinebellWt;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.processing.SampleSchedule;
 import org.w3c.dom.Document;
-import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
@@ -1230,40 +1230,16 @@ public class RS2DData implements NMRData {
                     sizes[i - 1] = dataset.getSizeReal(i);
                 }
                 Vec vec = new Vec(dataset.getSizeReal(0), dataset.getComplex(0));
-
-                int[] pt = new int[dataset.getNDim() - 1];
-                pt[0] = dataset.getSizeReal(0);
-
-                while (true) {
-                    int nRows = sizes[0];
-                    if (dataset.getAxisReversed(1)) {
-                        for (int k = 0; k < nRows; k++) {
-                            pt[0] = k;
-                            writeRow(dataset, vec, pt, fOut);
-                        }
-                    } else {
-                        for (int k = nRows - 1; k >= 0; k--) {
-                            pt[0] = k;
-                            writeRow(dataset, vec, pt, fOut);
-                        }
+                MultidimensionalCounter counter = new MultidimensionalCounter(sizes);
+                var counterIterator = counter.iterator();
+                while (counterIterator.hasNext()) {
+                    counterIterator.next();
+                    int[] pt = counterIterator.getCounts();
+                    if (!dataset.getAxisReversed(1)) {
+                        int lastRow = sizes[0] - 1;
+                        pt[0] = lastRow - pt[0];
                     }
-
-                    boolean done = true;
-                    for (int j = 2; j < nDim; j++) {
-                        pt[j - 1]++;
-                        if (pt[j - 1] >= sizes[j - 1]) {
-                            if (j == (nDim - 1)) {
-                                break;
-                            }
-                            pt[j - 1] = 0;
-                        } else {
-                            done = false;
-                            break;
-                        }
-                    }
-                    if (done) {
-                        break;
-                    }
+                    writeRow(dataset, vec, pt, fOut);
                 }
             }
         }
