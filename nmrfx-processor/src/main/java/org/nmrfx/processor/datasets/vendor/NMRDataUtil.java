@@ -145,7 +145,7 @@ public final class NMRDataUtil {
             } else if (JCAMPData.findData(bpath)) {
                 return new JCAMPData(bpath.toString());
             } else {
-                throw new IOException("FID not found: " + fpath);
+                throw new IOException("Dataset not found: " + fpath);
             }
         } catch (NullPointerException nullE) {
             return null;

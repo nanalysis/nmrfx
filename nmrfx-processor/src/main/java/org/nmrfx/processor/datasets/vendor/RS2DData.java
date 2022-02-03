@@ -10,6 +10,7 @@ import org.apache.commons.math3.complex.Complex;
 import org.apache.commons.math3.util.MultidimensionalCounter;
 import org.nmrfx.datasets.DatasetLayout;
 import org.nmrfx.processor.datasets.Dataset;
+import org.nmrfx.processor.datasets.DatasetType;
 import org.nmrfx.processor.datasets.parameters.FPMult;
 import org.nmrfx.processor.datasets.parameters.GaussianWt;
 import org.nmrfx.processor.datasets.parameters.LPParams;
@@ -49,7 +50,7 @@ import java.util.stream.Collectors;
  * @author brucejohnson
  */
 public class RS2DData implements NMRData {
-    public static final String DATASET_TYPE = "SPINit";
+    public static final DatasetType DATASET_TYPE = DatasetType.SPINit;
     public static final String DATA_FILE_NAME = "data.dat";
     public static final String HEADER_FILE_NAME = "header.xml";
     public static final String SERIES_FILE_NAME = "Serie.xml";
@@ -1195,7 +1196,7 @@ public class RS2DData implements NMRData {
     }
 
     @Override
-    public String getPreferredDatasetType() {
+    public DatasetType getPreferredDatasetType() {
         return DATASET_TYPE;
     }
 

@@ -23,6 +23,7 @@
  */
 package org.nmrfx.processor.gui;
 
+import org.nmrfx.processor.datasets.DatasetType;
 import org.nmrfx.processor.datasets.vendor.RS2DData;
 import org.nmrfx.utils.properties.MenuTextOperationItem;
 import org.nmrfx.utils.properties.ChoiceOperationItem;
@@ -115,7 +116,7 @@ public class RefManager {
                 break;
             case "datatype":
                 String dataType = updateItem.getValue().toString();
-                chartProcessor.setDatasetType(dataType);
+                chartProcessor.setDatasetType(DatasetType.valueOf(dataType));
                 break;
             case "acqOrder":
                 String acqOrder = updateItem.getValue().toString();
@@ -289,8 +290,8 @@ public class RefManager {
         ObservableList<PropertySheet.Item> newItems = FXCollections.observableArrayList();
         String dimName = "" + (dim + 1);
         if (dim == 0) {
-            List<String> datasetTypeChoices = List.of("nv", "ucsf",RS2DData.DATASET_TYPE);
-            newItems.add(new ChoiceOperationItem(stringListener, chartProcessor.getDatasetType(), datasetTypeChoices, dimName, "datatype", "Dataset type"));
+            newItems.add(new ChoiceOperationItem(stringListener, chartProcessor.getDatasetType().toString(),
+                    DatasetType.names(), dimName, "datatype", "Dataset type"));
             if (nmrData != null) {
                 ArrayList<String> choices = new ArrayList<>();
                 if (nmrData.getNDim() > 1) {
