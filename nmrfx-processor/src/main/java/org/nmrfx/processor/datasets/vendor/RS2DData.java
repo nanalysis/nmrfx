@@ -1210,7 +1210,7 @@ public class RS2DData implements NMRData {
         if (!dataset.getComplex(0)) {
             vec.makeComplex();
         }
-        byte[] array = vec.toFloatBytes();
+        byte[] array = vec.toFloatBytes(ByteOrder.BIG_ENDIAN);
         fOut.write(array);
 
     }
@@ -1223,7 +1223,7 @@ public class RS2DData implements NMRData {
                 if (!vec.isComplex()) {
                     vec.hft();
                 }
-                byte[] array = vec.toFloatBytes();
+                byte[] array = vec.toFloatBytes(ByteOrder.BIG_ENDIAN);
                 fOut.write(array);
             } else {
                 int[] sizes = new int[dataset.getNDim() - 1];
@@ -1266,6 +1266,17 @@ public class RS2DData implements NMRData {
     public boolean isValidDatasetPath(Path procNumPath) {
         return StringUtils.isNumeric(procNumPath.getFileName().toString())
                 && procNumPath.getParent().getFileName().toString().equals(PROC_DIR);
+    }
+
+    public void saveDataset(Dataset dataset) throws IOException {
+        File file = new File(dataset.getFileName());
+        try {
+            setHeaderMatrixDimensions(dataset);
+            setHeaderPhases(dataset);
+        } catch (XPathExpressionException e) {
+            throw new IOException(e.getMessage());
+        }
+        writeOutputFile(dataset, file.getParentFile().toPath());
     }
 
     public void writeOutputFile(Dataset dataset, Path procNumPath) throws IOException {

@@ -30,6 +30,7 @@ import org.nmrfx.processor.operations.Util;
 import org.nmrfx.processor.operations.TestBasePoints;
 
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import org.apache.commons.math3.complex.Complex;
@@ -3346,9 +3347,13 @@ public class Vec extends VecBase {
     }
 
     public byte[] toFloatBytes() {
+        return toFloatBytes(ByteOrder.BIG_ENDIAN);
+    }
+
+    public byte[] toFloatBytes(ByteOrder byteOrder) {
         int nBytes = size * (isComplex ? 2 : 1) * Float.BYTES;
         byte[] array = new byte[nBytes];
-        FloatBuffer buffer = ByteBuffer.wrap(array).asFloatBuffer();
+        FloatBuffer buffer = ByteBuffer.wrap(array).order(byteOrder).asFloatBuffer();
         for (int i = 0; i < size; i++) {
             buffer.put((float) getReal(i));
             if (isComplex) {
