@@ -950,6 +950,10 @@ public class ChartProcessor {
         return !script.contains("_DATASET_");
     }
 
+    String removeDatasetName(String script) {
+        return script.replaceFirst("CREATE\\([^\\)]++\\)", "CREATE(_DATASET_)");
+    }
+
     Optional<String> fixDatasetName(String script) {
         final Optional<String> emptyResult = Optional.empty();
         final Optional<String> result;
