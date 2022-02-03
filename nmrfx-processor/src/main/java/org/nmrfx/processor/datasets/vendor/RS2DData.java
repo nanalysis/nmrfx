@@ -44,6 +44,7 @@ import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  *
@@ -202,8 +203,8 @@ public class RS2DData implements NMRData {
     }
 
     public static List<Integer> listProcIds(Path datasetDir) {
-        try {
-            return Files.list(datasetDir.resolve(PROC_DIR))
+        try (Stream<Path> fileStream = Files.list(datasetDir.resolve(PROC_DIR))) {
+            return fileStream.filter(Files::isDirectory)
                     .filter(Files::isDirectory)
                     .map(path -> path.getFileName().toString())
                     .filter(StringUtils::isNumeric)
@@ -231,9 +232,8 @@ public class RS2DData implements NMRData {
      * Returns empty (not null) if no valid process dir was found.
      */
     public static OptionalInt findLastProcId(Path datasetDir) {
-        try {
-            return Files.list(datasetDir.resolve(PROC_DIR))
-                    .filter(Files::isDirectory)
+        try (Stream<Path> fileStream = Files.list(datasetDir.resolve(PROC_DIR))) {
+            return fileStream.filter(Files::isDirectory)
                     .map(path -> path.getFileName().toString())
                     .filter(StringUtils::isNumeric)
                     .mapToInt(Integer::parseInt)
