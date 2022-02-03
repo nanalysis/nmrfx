@@ -1268,7 +1268,7 @@ public class RS2DData implements NMRData {
                 && procNumPath.getParent().getFileName().toString().equals(PROC_DIR);
     }
 
-    public void saveDataset(Dataset dataset) throws IOException {
+    public Path saveDataset(Dataset dataset) throws IOException {
         File file = new File(dataset.getFileName());
         try {
             setHeaderMatrixDimensions(dataset);
@@ -1276,7 +1276,9 @@ public class RS2DData implements NMRData {
         } catch (XPathExpressionException e) {
             throw new IOException(e.getMessage());
         }
-        writeOutputFile(dataset, file.getParentFile().toPath());
+        Path procNumPath = file.getParentFile().toPath();
+        writeOutputFile(dataset, procNumPath);
+        return procNumPath;
     }
 
     public void writeOutputFile(Dataset dataset, Path procNumPath) throws IOException {

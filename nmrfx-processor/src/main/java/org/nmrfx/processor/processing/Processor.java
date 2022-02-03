@@ -39,6 +39,7 @@ import org.nmrfx.utilities.ProgressUpdater;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -1463,7 +1464,7 @@ public class Processor {
                 try {
                     if (dataset.getFileName().endsWith(RS2DData.DATA_FILE_NAME) && (getNMRData() instanceof RS2DData)) {
                         RS2DData rs2DData = (RS2DData) getNMRData();
-                        rs2DData.saveDataset(dataset);
+                        Path procNumPath = rs2DData.saveDataset(dataset);
                     } else {
                         dataset.saveMemoryFile();
                     }
