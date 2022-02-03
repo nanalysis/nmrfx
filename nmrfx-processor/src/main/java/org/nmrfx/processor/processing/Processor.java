@@ -37,7 +37,6 @@ import org.nmrfx.processor.processing.processes.IncompleteProcessException;
 import org.nmrfx.processor.processing.processes.ProcessOps;
 import org.nmrfx.utilities.ProgressUpdater;
 
-import javax.xml.xpath.XPathExpressionException;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -1464,15 +1463,7 @@ public class Processor {
                 try {
                     if (dataset.getFileName().endsWith(RS2DData.DATA_FILE_NAME) && (getNMRData() instanceof RS2DData)) {
                         RS2DData rs2DData = (RS2DData) getNMRData();
-                        File file = new File(dataset.getFileName());
-                        System.out.println("file is " + file);
-                        try {
-                            rs2DData.setHeaderMatrixDimensions(dataset);
-                            rs2DData.setHeaderPhases(dataset);
-                        } catch (XPathExpressionException e) {
-                            throw new IOException(e.getMessage());
-                        }
-                        rs2DData.writeOutputFile(dataset, file.getParentFile().toPath());
+                        rs2DData.saveDataset(dataset);
                     } else {
                         dataset.saveMemoryFile();
                     }
@@ -1578,7 +1569,8 @@ public class Processor {
             p.getOperations().clear();
             isRunning = false;
             if (getProcessorError()) {
-                closeDataset();
+                dataset.close();
+                dataset = null;
                 throw new ProcessingException(errorMessage.get());
             }
         }
