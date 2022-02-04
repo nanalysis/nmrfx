@@ -56,6 +56,7 @@ import org.controlsfx.control.StatusBar;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.fxmisc.richtext.CodeArea;
 import org.nmrfx.processor.datasets.Dataset;
+import org.nmrfx.processor.datasets.DatasetType;
 import org.nmrfx.processor.datasets.vendor.NMRData;
 import org.nmrfx.processor.datasets.vendor.VendorPar;
 import org.nmrfx.processor.gui.controls.ConsoleUtil;
@@ -274,6 +275,14 @@ public class ProcessorController implements Initializable, ProgressUpdater {
             Platform.runLater(() -> {
                 setProcessingStatus(s, true);
             });
+        }
+    }
+
+    void updateFileButton() {
+        if (chartProcessor.getDatasetType() == DatasetType.SPINit) {
+            datasetFileButton.setText("Next ProcNum");
+        } else {
+            datasetFileButton.setText("File...");
         }
     }
 
