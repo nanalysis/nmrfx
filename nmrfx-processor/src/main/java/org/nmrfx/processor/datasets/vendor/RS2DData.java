@@ -1260,19 +1260,20 @@ public class RS2DData implements NMRData {
     }
     public void setParams(String paramName, List<String> paramValues) throws XPathExpressionException {
         var nodes = RS2DData.getParamNode(headerDocument, paramName);
-        Node lastNode = null;
-        for (int i = 0;i< paramValues.size();i++) {
-            if (i < nodes.size()) {
-                nodes.get(i).setTextContent(paramValues.get(i));
-                lastNode = nodes.get(i);
-            } else {
-                Node node = nodes.get(0).cloneNode(true);
-                node.setTextContent(paramValues.get(i));
-                lastNode.getParentNode().appendChild(node);
-                lastNode = node;
+        if (!nodes.isEmpty()) {
+            Node lastNode = nodes.get(0);
+            for (int i = 0; i < paramValues.size(); i++) {
+                if (i < nodes.size()) {
+                    nodes.get(i).setTextContent(paramValues.get(i));
+                    lastNode = nodes.get(i);
+                } else {
+                    Node node = nodes.get(0).cloneNode(true);
+                    node.setTextContent(paramValues.get(i));
+                    lastNode.getParentNode().appendChild(node);
+                    lastNode = node;
+                }
             }
         }
-        System.out.println(nodes);
     }
     public void setHeaderMatrixDimensions(Dataset dataset) throws XPathExpressionException {
         for (int iDim = 1; (iDim <= RS2DData.MAXDIM) && (iDim <= dataset.getNDim()); iDim++) {
