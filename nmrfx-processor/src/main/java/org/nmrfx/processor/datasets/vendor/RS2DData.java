@@ -83,6 +83,7 @@ public class RS2DData implements NMRData {
     private final String[] sfNames = new String[MAXDIM];
     private double groupDelay = 0.0;
     private SampleSchedule sampleSchedule = null;
+    private DatasetType preferredDatasetType = DatasetType.NMRFX;
 
     private String[] acqOrder;
     int nvectors = 1;
@@ -481,6 +482,11 @@ public class RS2DData implements NMRData {
                 complexDim[j] = false;
             }
         }
+    }
+
+    @Override
+    public void setPreferredDatasetType(DatasetType datasetType) {
+        this.preferredDatasetType = datasetType;
     }
 
     @Override
@@ -1197,7 +1203,7 @@ public class RS2DData implements NMRData {
 
     @Override
     public DatasetType getPreferredDatasetType() {
-        return DATASET_TYPE;
+        return preferredDatasetType;
     }
 
     private static void writeRow(Dataset dataset, Vec vec, int[] pt, BufferedOutputStream fOut) throws IOException {

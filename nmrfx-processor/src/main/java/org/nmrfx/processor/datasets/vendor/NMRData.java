@@ -850,7 +850,8 @@ public interface NMRData {
         return rData;
     }
 
-    public default DatasetType getPreferredDatasetType() {
-        return DatasetType.NMRFX;
-    }
+    public DatasetType getPreferredDatasetType();
+
+    public void setPreferredDatasetType(DatasetType datasetType);
+
 }

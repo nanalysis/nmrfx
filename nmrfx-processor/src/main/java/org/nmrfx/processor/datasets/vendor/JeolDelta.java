@@ -28,6 +28,7 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.apache.commons.math3.complex.Complex;
+import org.nmrfx.processor.datasets.DatasetType;
 import org.nmrfx.processor.datasets.parameters.FPMult;
 import org.nmrfx.processor.datasets.parameters.GaussianWt;
 import org.nmrfx.processor.datasets.parameters.LPParams;
@@ -49,6 +50,7 @@ public class JeolDelta implements NMRData {
     private Strip[] strips;
     private int subMatrixPointCount;
     private int sectionByteCount;
+    private DatasetType preferredDatasetType = DatasetType.NMRFX;
     static final Logger LOGGER = Logger.getLogger("org.nmrfx.processor.datasets.Dataset");
     private final int nPoints;                   // TD,1
     private final int nVectors;             // NS,1
@@ -73,6 +75,16 @@ public class JeolDelta implements NMRData {
     @Override
     public String getFilePath() {
         return file.getAbsolutePath();
+    }
+
+    @Override
+    public DatasetType getPreferredDatasetType() {
+        return preferredDatasetType;
+    }
+
+    @Override
+    public void setPreferredDatasetType(DatasetType datasetType) {
+        this.preferredDatasetType = datasetType;
     }
 
     @Override
