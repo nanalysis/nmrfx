@@ -23,24 +23,20 @@
  */
 package org.nmrfx.processor.gui;
 
-import org.nmrfx.processor.datasets.vendor.RS2DData;
-import org.nmrfx.utils.properties.MenuTextOperationItem;
-import org.nmrfx.utils.properties.ChoiceOperationItem;
-import org.nmrfx.utils.properties.IntOperationItem;
-import org.nmrfx.utils.properties.BooleanOperationItem;
-import org.nmrfx.utils.properties.EditableChoiceOperationItem;
-import org.nmrfx.utils.properties.TextOperationItem;
-import org.nmrfx.processor.datasets.vendor.NMRData;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.List;
-import java.util.ArrayList;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import org.controlsfx.control.PropertySheet;
 import org.apache.commons.collections4.iterators.PermutationIterator;
+import org.controlsfx.control.PropertySheet;
+import org.nmrfx.processor.datasets.DatasetType;
+import org.nmrfx.processor.datasets.vendor.NMRData;
+import org.nmrfx.utils.properties.*;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  *
@@ -115,7 +111,10 @@ public class RefManager {
                 break;
             case "datatype":
                 String dataType = updateItem.getValue().toString();
-                chartProcessor.setDatasetType(dataType);
+                if (DatasetType.valueOf(dataType) != chartProcessor.getDatasetType()) {
+                    processorController.unsetDatasetName();
+                }
+                chartProcessor.setDatasetType(DatasetType.valueOf(dataType));
                 break;
             case "acqOrder":
                 String acqOrder = updateItem.getValue().toString();
@@ -289,11 +288,8 @@ public class RefManager {
         ObservableList<PropertySheet.Item> newItems = FXCollections.observableArrayList();
         String dimName = "" + (dim + 1);
         if (dim == 0) {
-            ArrayList<String> datasetTypeChoices = new ArrayList<>();
-            datasetTypeChoices.add("nv");
-            datasetTypeChoices.add("ucsf");
-            datasetTypeChoices.add(RS2DData.DATASET_TYPE);
-            newItems.add(new ChoiceOperationItem(stringListener, chartProcessor.getDatasetType(), datasetTypeChoices, dimName, "datatype", "Dataset type"));
+            newItems.add(new ChoiceOperationItem(stringListener, chartProcessor.getDatasetType().toString(),
+                    DatasetType.names(), dimName, "datatype", "Dataset type"));
             if (nmrData != null) {
                 ArrayList<String> choices = new ArrayList<>();
                 if (nmrData.getNDim() > 1) {

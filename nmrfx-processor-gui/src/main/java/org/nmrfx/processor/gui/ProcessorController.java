@@ -19,21 +19,6 @@ package org.nmrfx.processor.gui;
 
 import de.jensd.fx.glyphs.GlyphsDude;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
-import org.nmrfx.processor.gui.controls.ConsoleUtil;
-import org.nmrfx.processor.gui.controls.ProcessingCodeAreaUtil;
-import org.nmrfx.processor.processing.Processor;
-import java.io.File;
-import java.io.IOException;
-import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Map;
-import java.util.TreeMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.ResourceBundle;
 import javafx.application.Platform;
 import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.value.ChangeListener;
@@ -52,30 +37,12 @@ import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.geometry.Point2D;
 import javafx.scene.Node;
-import javafx.scene.control.Button;
-import javafx.scene.control.ListView;
-import javafx.scene.control.MenuButton;
-import javafx.scene.control.Menu;
-import javafx.scene.control.MenuItem;
-import javafx.scene.control.ChoiceBox;
-import javafx.scene.control.CheckBox;
-import javafx.scene.control.ContentDisplay;
-import javafx.scene.control.Label;
-import javafx.scene.control.ListCell;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableView;
-import javafx.scene.control.TextField;
-import javafx.scene.control.TitledPane;
-import javafx.scene.control.ToolBar;
+import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.GridPane;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Pane;
-import javafx.scene.layout.StackPane;
+import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.text.Text;
@@ -87,13 +54,23 @@ import org.controlsfx.control.PopOver;
 import org.controlsfx.control.PropertySheet;
 import org.controlsfx.control.StatusBar;
 import org.controlsfx.dialog.ExceptionDialog;
-import org.python.util.PythonInterpreter;
 import org.fxmisc.richtext.CodeArea;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.vendor.NMRData;
 import org.nmrfx.processor.datasets.vendor.VendorPar;
+import org.nmrfx.processor.gui.controls.ConsoleUtil;
+import org.nmrfx.processor.gui.controls.ProcessingCodeAreaUtil;
+import org.nmrfx.processor.processing.Processor;
 import org.nmrfx.utilities.ProgressUpdater;
 import org.nmrfx.utils.GUIUtils;
+import org.python.util.PythonInterpreter;
+
+import java.io.File;
+import java.io.IOException;
+import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.*;
 
 public class ProcessorController implements Initializable, ProgressUpdater {
 
@@ -205,6 +182,8 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     private BorderPane mainBox;
     @FXML
     private ChoiceBox viewMode;
+    @FXML
+    private Button datasetFileButton;
     @FXML
     private Button processDatasetButton;
     @FXML
@@ -615,6 +594,20 @@ public class ProcessorController implements Initializable, ProgressUpdater {
             textArea.replaceText(scriptOpt.get());
         }
         return true;
+    }
+
+    void unsetDatasetName() {
+        String script = textArea.getText();
+        if (chartProcessor.scriptHasDataset(script)) {
+            script = chartProcessor.removeDatasetName(script);
+            textArea.replaceText(script);
+        }
+    }
+
+    @FXML
+    private void datasetFileAction(ActionEvent event) {
+        unsetDatasetName();
+        fixDatasetName();
     }
 
     @FXML
