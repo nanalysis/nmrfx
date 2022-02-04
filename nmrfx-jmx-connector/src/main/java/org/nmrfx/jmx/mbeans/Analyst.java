@@ -69,7 +69,7 @@ public class Analyst extends NotificationBroadcasterSupport implements AnalystMB
 
     @Subscribe
     public void onDatasetSavedEvent(DatasetSavedEvent event) {
-        sendNotification(NotificationType.DATASET_SAVED, event.getType(), event.getPath().toAbsolutePath().toString());
+        sendNotification(NotificationType.DATASET_SAVED, event.getType().name(), event.getPath().toAbsolutePath().toString());
     }
 
     protected void sendNotification(NotificationType type, String message, Object userData) {
