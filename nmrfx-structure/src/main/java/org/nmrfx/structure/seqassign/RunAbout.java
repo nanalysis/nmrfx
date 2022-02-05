@@ -514,6 +514,8 @@ public class RunAbout implements SaveframeWriter {
 
         writePeakLists(sBuilder);
 
+        spinSystems.writeSpinSystemFragments(sBuilder);
+
         spinSystems.writeSpinSystems(sBuilder);
 
         spinSystems.writeSpinSystemPeaks(sBuilder);
@@ -522,7 +524,6 @@ public class RunAbout implements SaveframeWriter {
         chan.write("save_");
     }
 
-
     void writePeakLists(StringBuilder sBuilder) {
 
         NMRStarWriter.openLoop(sBuilder, "_Runabout_peak_lists", peakListTags);
@@ -530,15 +531,15 @@ public class RunAbout implements SaveframeWriter {
         sBuilder.append(String.format("%3d %3d\n", i, refList.getId()));
         for (PeakList peakList : peakLists) {
             if (peakList != refList) {
-                sBuilder.append(String.format("%3d %3d\n", i++, peakList.getId()));
+                sBuilder.append(String.format("%3d %3d\n", i, peakList.getId()));
             }
+            i++;
         }
         NMRStarWriter.endLoop(sBuilder);
     }
 
     void readPeakLists(Saveframe saveframe) throws ParseException {
         Loop peakListLoop = saveframe.getLoop("_Runabout_peak_lists");
-
         if (peakListLoop != null) {
             List<PeakList> loopLists = new ArrayList<>();
             List<Integer> idColumn = peakListLoop.getColumnAsIntegerList("ID", -1);

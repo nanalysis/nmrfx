@@ -17,13 +17,12 @@
  */
 package org.nmrfx.peaks;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+
 import org.nmrfx.chemistry.Atom;
 import org.nmrfx.chemistry.AtomResonance;
 import org.nmrfx.chemistry.AtomSpecifier;
+import org.nmrfx.chemistry.Residue;
 
 /**
  *
@@ -146,6 +145,30 @@ public class AtomResPattern {
                 peakDim.setLabel(newLabel);
             }
         }
+    }
+
+    public static Optional<Atom> setLabelFromUserField(PeakDim peakDim, Residue residue) {
+        Atom atom = null;
+        AtomResPatterns atomResPatterns = parsePattern(peakDim.getUser(),"");
+        if (!atomResPatterns.atomResPatterns.isEmpty() && !atomResPatterns.ambiguousResidue
+                && !atomResPatterns.ambiguousANames) {
+            AtomResPattern arPat = atomResPatterns.atomResPatterns.get(0);
+            if (arPat.resLetter.equals("i")) {
+                int iResidue = residue.getResNum();
+                StringBuilder stringBuilder = new StringBuilder();
+                if (residue.molecule.getPolymers().size() > 1) {
+                    stringBuilder.append(residue.getPolymer().getName()).append((":"));
+                }
+                iResidue += arPat.resDelta;
+                stringBuilder.append(iResidue).append(".");
+                String aName = arPat.aName;
+                stringBuilder.append(aName);
+                atom = residue.getAtom(aName);
+                String newLabel = stringBuilder.toString();
+                peakDim.setLabel(newLabel);
+            }
+        }
+        return Optional.ofNullable(atom);
     }
 
     static void setFromRelation(PeakDim activeDim, PeakDim[] peakDims) {

@@ -1,5 +1,9 @@
 package org.nmrfx.structure.seqassign;
 
+import org.nmrfx.chemistry.MoleculeBase;
+import org.nmrfx.chemistry.MoleculeFactory;
+import org.nmrfx.chemistry.Polymer;
+import org.nmrfx.chemistry.Residue;
 import org.nmrfx.chemistry.io.NMRStarWriter;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakList;
@@ -27,7 +31,6 @@ public class SpinSystems {
     int spinSystemID = 1;
     RunAbout runAbout;
     private List<SpinSystem> systems = new ArrayList<>();
-    Map<PeakList, Integer> peakMap = new HashMap<>();
     Map<PeakList, double[]> sums;
 
     public SpinSystems(RunAbout runAbout) {
@@ -236,13 +239,7 @@ public class SpinSystems {
             peakList.unLinkPeaks();
         }
         boolean[] useDim = getUseDims(refList, peakLists);
-        peakMap.clear();
-        int j = 0;
         for (PeakList peakList : peakLists) {
-            if (peakList != refList) {
-                peakMap.put(peakList, j);
-                j++;
-            }
             peakList.clearSearchDims();
             int[] aMatch = matchDims(refList, peakList);
             for (int i = 0; i < aMatch.length; i++) {
@@ -263,16 +260,11 @@ public class SpinSystems {
                     PeakList peakListB = pkB.getPeakList();
                     double[] sumArray = sums.get(peakListB);
                     if (refList != peakListB) {
-                        Integer jList = peakMap.get(peakListB);
-                        if (jList == null) {
-                            System.out.println("n peakListb " + peakListB);
-                        } else {
-                            int[] aMatch = matchDims(refList, peakListB);
-                            double f = comparePeaks(pkA, pkB, aMatch);
-                            if (f >= 0.0) {
-                                double p = f / sumArray[pkA.getIndex()];
-                                spinSys.addPeak(pkB, p);
-                            }
+                        int[] aMatch = matchDims(refList, peakListB);
+                        double f = comparePeaks(pkA, pkB, aMatch);
+                        if (f >= 0.0) {
+                            double p = f / sumArray[pkA.getIndex()];
+                            spinSys.addPeak(pkB, p);
                         }
                     }
                 }
@@ -382,23 +374,55 @@ public class SpinSystems {
         ).collect(Collectors.toList());
     }
 
-    public List<SpinSystem> getSortedSystems() {
+    public List<SeqFragment>  getSortedFragments() {
         Set<SeqFragment> fragments = new HashSet<>();
-        List<SpinSystem> unconnectedSystems = new ArrayList<>();
         for (SpinSystem spinSys : systems) {
             if (spinSys.fragment.isPresent()) {
                 fragments.add(spinSys.fragment.get());
-            } else {
+            }
+        }
+        List<SeqFragment> sortedFragments = fragments.stream().sorted((e1, e2)
+                        -> Integer.compare(e2.spinSystemMatches.size(),
+                        e1.spinSystemMatches.size())).
+                collect(Collectors.toList());
+        return sortedFragments;
+    }
+
+    public List<SpinSystem> getUnconnectedSpinSystems() {
+        List<SpinSystem> unconnectedSystems = new ArrayList<>();
+        for (SpinSystem spinSys : systems) {
+            if (spinSys.fragment.isEmpty()) {
                 unconnectedSystems.add(spinSys);
             }
         }
+        return unconnectedSystems;
+    }
 
-        List<SpinSystem> uniqueSystems = fragments.stream().sorted((e1, e2)
-                -> Integer.compare(e2.spinSystemMatches.size(),
-                        e1.spinSystemMatches.size())).
+    public List<SpinSystem> getConnectedSpinSystems() {
+        List<SeqFragment> sortedFragments = getSortedFragments();
+        List<SpinSystem> spinSystems = new ArrayList<>();
+        for (SeqFragment fragment : sortedFragments) {
+            int iPos = 0;
+            List<SpinSystemMatch> spinMatches = fragment.getSpinSystemMatches();
+            SpinSystem spinSystem = spinMatches.get(0).spinSystemA;
+            spinSystem.fragmentPosition = iPos++;
+            spinSystems.add(spinSystem);
+            for (SpinSystemMatch spinMatch : spinMatches) {
+                spinSystem = spinMatch.getSpinSystemB();
+                spinSystem.fragmentPosition = iPos++;
+                spinSystems.add(spinSystem);
+            }
+        }
+        return spinSystems;
+    }
+
+    public List<SpinSystem> getSortedSystems() {
+        List<SeqFragment> sortedFragments = getSortedFragments();
+        List<SpinSystem> unconnectedSystems = getUnconnectedSpinSystems();
+
+        List<SpinSystem> uniqueSystems = sortedFragments.stream().
                 map(frag -> frag.spinSystemMatches.get(0).spinSystemA).
                 collect(Collectors.toList());
-
         uniqueSystems.addAll(unconnectedSystems);
         return uniqueSystems;
     }
@@ -415,25 +439,61 @@ public class SpinSystems {
     }
 
     void readSTARSaveFrame(Saveframe saveframe) throws ParseException {
+        Loop fragmentLoop = saveframe.getLoop("_Fragments");
         Loop systemLoop = saveframe.getLoop("_Spin_system");
         Loop peakLoop = saveframe.getLoop("_Spin_system_peaks");
+
+        Map<Integer, SeqFragment> fragmentMap = new HashMap<>();
+        Map<Integer, SpinSystem> systemMap = new HashMap<>();
+        if (fragmentLoop != null) {
+            List<Integer> idColumn = fragmentLoop.getColumnAsIntegerList("ID", -1);
+            List<Integer> polymerIDColumn = fragmentLoop.getColumnAsIntegerList("Polymer_ID", -1);
+            List<Integer> residueIDColumn = fragmentLoop.getColumnAsIntegerList("First_residue_ID", -1);
+            List<Integer> nResiduesColumn = fragmentLoop.getColumnAsIntegerList("Residue_count", -1);
+            List<Double> scoreColumn = fragmentLoop.getColumnAsDoubleList("Score", 0.0);
+            MoleculeBase molecule = MoleculeFactory.getActive();
+            for (int i = 0; i < idColumn.size(); i++) {
+                SeqFragment fragment = new SeqFragment();
+                fragment.id = idColumn.get(i);
+                int polymerID = polymerIDColumn.get(i);
+                if (polymerID != -1) {
+                    int residueID = residueIDColumn.get(i);
+                    int nResidues = nResiduesColumn.get(i);
+                    double score = scoreColumn.get(i);
+                    Polymer polymer = molecule.getPolymers().get(polymerID - 1);
+                    Residue residue = polymer.getResidue(residueID);
+                    ResidueSeqScore residueSeqScore = new ResidueSeqScore(residue, nResidues, score);
+                    fragment.setResSeqScore(residueSeqScore);
+                    fragment.setFrozen(true);
+                }
+                fragmentMap.put(fragment.id, fragment);
+            }
+
+        }
+        List<SpinSystem> thisSystems = new ArrayList<>();
         List<SpinSystem> nextSystems = new ArrayList<>();
         List<SpinSystem> previousSystems = new ArrayList<>();
         if ((systemLoop != null) && (peakLoop != null)) {
-            List<Integer> idColumn = systemLoop.getColumnAsIntegerList("Spin_system_ID", -1);
+            List<Integer> idColumn = systemLoop.getColumnAsIntegerList("ID", -1);
             List<Integer> peakListIDColumn = systemLoop.getColumnAsIntegerList("Spectral_peak_list_ID", -1);
             List<Integer> peakIDColumn = systemLoop.getColumnAsIntegerList("Peak_ID", -1);
             List<Integer> previousIDColumn = systemLoop.getColumnAsIntegerList("Confirmed_previous_ID", -1);
             List<Integer> nextIDColumn = systemLoop.getColumnAsIntegerList("Confirmed_next_ID", -1);
+            List<Integer> fragmentIDColumn = systemLoop.getColumnAsIntegerList("Fragment_ID", -1);
+            List<Integer> fragmentIndexColumn = systemLoop.getColumnAsIntegerList("Fragment_index", -1);
             for (int i = 0; i < idColumn.size(); i++) {
                 Optional<PeakList> peakListOpt = PeakList.get(peakListIDColumn.get(i));
                 if (peakListOpt.isPresent()) {
                     PeakList peakList = peakListOpt.get();
                     Peak peak = peakList.getPeakByID(peakIDColumn.get(i));
+                    int id = idColumn.get(i);
                     SpinSystem spinSystem = new SpinSystem(peak, this);
-                    systems.add(spinSystem);
+                    thisSystems.add(spinSystem);
+                    systemMap.put(id, spinSystem);
                 }
             }
+            systems = systemMap.values().stream().
+                    sorted(Comparator.comparingInt(SpinSystem::getId)).collect(Collectors.toList());
             for (int i = 0; i < idColumn.size(); i++) {
                 Optional<PeakList> peakListOpt = PeakList.get(peakListIDColumn.get(i));
                 if (peakListOpt.isPresent()) {
@@ -470,24 +530,20 @@ public class SpinSystems {
             compare();
 
             for (int i = 0; i < systems.size(); i++) {
-                SpinSystem system = systems.get(i);
+                SpinSystem system = thisSystems.get(i);
                 SpinSystem previousSystem = previousSystems.get(i);
                 SpinSystem nextSystem = nextSystems.get(i);
-                if (previousSystem != null) {
-                    // find match that is to previous, confirm and add to a fragment
-                    for (SpinSystemMatch match : system.getMatchToPrevious()) {
-                        if (match.getSpinSystemA() == previousSystem) {
-                            system.confirmP = Optional.of(match);
-                            SeqFragment.join(match, false);
-                        }
-                    }
+                SeqFragment fragment = fragmentMap.get(fragmentIDColumn.get(i));
+                if (fragment != null) {
+                    system.fragment = Optional.of(fragment);
                 }
                 if (nextSystem != null) {
                     // find match that is to next, confirm and add to a fragment
                     for (SpinSystemMatch match : system.getMatchToNext()) {
-                        if (match.getSpinSystemB() == nextSystem) {
+                        if ((match.getSpinSystemA() == system) && (match.getSpinSystemB() == nextSystem)) {
+                            fragment.getSpinSystemMatches().add(match);
                             system.confirmS = Optional.of(match);
-                            SeqFragment.join(match, false);
+                            nextSystem.confirmP = Optional.of(match);
                         }
                     }
                 }
@@ -496,11 +552,28 @@ public class SpinSystems {
 
     }
 
+    public void extendAll(double minScore) {
+        for (SpinSystem spinSystem : systems) {
+            if (spinSystem.confirmP.isEmpty() || spinSystem.confirmS.isEmpty()) {
+                SpinSystem.extend(spinSystem, minScore);
+            }
+        }
+    }
 
+    public void clearAll() {
+        for (SpinSystem spinSystem : systems) {
+            spinSystem.confirmS = Optional.empty();
+            spinSystem.confirmP = Optional.empty();
+            spinSystem.fragment = Optional.empty();
+        }
+    }
 
     void writeSpinSystems(StringBuilder sBuilder) {
         NMRStarWriter.openLoop(sBuilder, "_Spin_system", SpinSystem.systemLoopTags);
-        for (SpinSystem spinSystem : systems) {
+        List<SpinSystem> allSystems = new ArrayList<>();
+        allSystems.addAll(getConnectedSpinSystems());
+        allSystems.addAll(getUnconnectedSpinSystems());
+        for (SpinSystem spinSystem : allSystems) {
             sBuilder.append(spinSystem.getSystemSTARString()).append("\n");
         }
         NMRStarWriter.endLoop(sBuilder);
@@ -511,6 +584,16 @@ public class SpinSystems {
         int i = 1;
         for (SpinSystem spinSystem : systems) {
             i = spinSystem.getPeakSTARString(sBuilder, i);
+        }
+        NMRStarWriter.endLoop(sBuilder);
+    }
+    void writeSpinSystemFragments(StringBuilder sBuilder) {
+        NMRStarWriter.openLoop(sBuilder, "_Fragments", SpinSystem.fragmentLoopTags);
+        int i = 0;
+        for (SeqFragment fragment:getSortedFragments()) {
+            fragment.setId(i);
+            sBuilder.append(fragment.getFragmentSTARString());
+            i++;
         }
         NMRStarWriter.endLoop(sBuilder);
     }

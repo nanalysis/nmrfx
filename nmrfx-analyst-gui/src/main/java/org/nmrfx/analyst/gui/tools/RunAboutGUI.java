@@ -20,6 +20,7 @@ import javafx.scene.control.cell.CheckBoxTableCell;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
+import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
@@ -506,9 +507,17 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         extendItem.setOnAction(e -> extendSystem());
         spinSysMenuButton.getItems().add(extendItem);
 
+        MenuItem extendAllItem = new MenuItem("Extend All");
+        extendAllItem.setOnAction(e -> extendAllSystems());
+        spinSysMenuButton.getItems().add(extendAllItem);
+
         MenuItem freezeItem = new MenuItem("Freeze");
         freezeItem.setOnAction(e -> freezeSystem());
         spinSysMenuButton.getItems().add(freezeItem);
+
+        MenuItem thawItem = new MenuItem("Thaw");
+        thawItem.setOnAction(e -> thawSystem());
+        spinSysMenuButton.getItems().add(thawItem);
 
 
         toolBar.getItems().add(spinSysMenuButton);
@@ -773,6 +782,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         void updateFragment(SpinSystem spinSys) {
             for (ResidueLabel resLabel : residueLabelMap.values()) {
                 resLabel.setInactive();
+                resLabel.setTopLineVisible(false);
                 var optResidue = resLabel.getResidue();
                 optResidue.ifPresent( residue -> {
                     Atom atom = residue.getAtom("CA");
@@ -780,6 +790,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
                         Double ppm = atom.getPPM();
                         if (ppm != null) {
                             resLabel.setActive();
+                            resLabel.setTopLineVisible(true);
                         }
                     }
                 });
@@ -905,7 +916,6 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
                         SpinSystem otherSys;
                         SpinSystem matchSys;
                         int index = spinners[i].getValue();
-                        System.out.println("i " + i + " index " + index);
                         SpinSystemMatch spinMatch = matches.get(index);
                         boolean viable = SeqFragment.testFrag(spinMatch);
 
@@ -981,6 +991,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
 
         double width = 20;
         Rectangle rect;
+        Line line;
         Text textItem;
         Residue residue;
 
@@ -998,13 +1009,18 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
             StackPane stack = this;
             textItem = new Text(label);
             rect = new Rectangle(width, width, Color.WHITE);
+            line = new Line(0,0,width,0);
+            line.setStrokeWidth(2);
+            line.setFill(Color.BLACK);
             rect.setStroke(null);
             rect.setFill(Color.WHITE);
             textItem.setFill(Color.BLACK);
             textItem.setFont(regularFont);
             textItem.setMouseTransparent(true);
-            stack.getChildren().addAll(rect, textItem);
+            stack.getChildren().addAll(rect, textItem, line);
             stack.setAlignment(Pos.CENTER);
+            StackPane.setAlignment(line,Pos.TOP_CENTER);
+            line.setVisible(false);
             group.getChildren().add(stack);
         }
 
@@ -1031,6 +1047,10 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
             textItem.setFont(regularFont);
             textItem.setFill(Color.BLACK);
             setColor(Color.LIGHTGRAY);
+        }
+
+        void setTopLineVisible(boolean value) {
+            line.setVisible(value);
         }
 
         Optional<Residue> getResidue() {
@@ -1101,14 +1121,18 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
             Optional<SeqFragment> fragmentOpt = spinSys.getFragment();
             if (fragmentOpt.isPresent()) {
                 SeqFragment fragment = fragmentOpt.get();
+                boolean frozen = fragment.isFrozen();
                 List<SpinSystemMatch> spinMatches = fragment.getSpinSystemMatches();
                 ResidueLabel resLabel = (ResidueLabel) nodes.get(i);
                 updateCluster(resLabel, i++, spinMatches.get(0).getSpinSystemA());
                 resLabel.setColor(color);
+                resLabel.setTopLineVisible(frozen);
+
                 for (SpinSystemMatch spinMatch : spinMatches) {
                     resLabel = (ResidueLabel) nodes.get(i);
                     updateCluster(resLabel, i++, spinMatch.getSpinSystemB());
                     resLabel.setColor(color);
+                    resLabel.setTopLineVisible(frozen);
                 }
                 color = color == Color.YELLOW ? Color.ORANGE : Color.YELLOW;
             } else {
@@ -1116,6 +1140,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
                 ResidueLabel resLabel = (ResidueLabel) nodes.get(i);
                 updateCluster(resLabel, i++, spinSys);
                 resLabel.setColor(color);
+                resLabel.setTopLineVisible(false);
             }
         }
     }
@@ -2032,10 +2057,24 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         updateClusterCanvas();
     }
 
+    void extendAllSystems() {
+        runAbout.getSpinSystems().extendAll(0.5);
+        gotoSpinSystems();
+        updateClusterCanvas();
+    }
+
     void freezeSystem() {
         currentSpinSystem.getFragment().ifPresent(frag -> {
             if (frag.getResSeqScore() != null) {
                 frag.freezeFragment(frag.getResSeqScore());
+            }
+            spinStatus.updateFragment(currentSpinSystem);
+        });
+    }
+    void thawSystem() {
+        currentSpinSystem.getFragment().ifPresent(frag -> {
+            if (frag.getResSeqScore() != null) {
+                frag.thawFragment();
             }
             spinStatus.updateFragment(currentSpinSystem);
         });
