@@ -1700,7 +1700,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         if (runAbout.isActive()) {
             RunAboutArrangement arrangement = runAboutArrangements.getArrangements().get(arrangeName);
             List<String> rows = arrangement.getRows();
-            List<RunAboutDim> cols = arrangement.getCols();
+            List<RunAboutDim> cols = arrangement.getColumnArrangement();
             int nCharts = rows.size() * cols.size();
             controller.setNCharts(nCharts);
             controller.arrange(rows.size());
