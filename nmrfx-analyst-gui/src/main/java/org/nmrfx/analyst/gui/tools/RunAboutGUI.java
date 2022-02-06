@@ -74,6 +74,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
     static Font regularFont = Font.font(null, FontWeight.NORMAL, 14);
 
     FXMLController controller;
+    FXMLController refController;
     VBox vBox;
     TabPane tabPane;
     ToolBar navigatorToolBar;
@@ -448,8 +449,11 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
 
         MenuItem setupItem = new MenuItem("Setup");
         setupItem.setOnAction(e -> setupRunAbout());
-
         actionMenuButton.getItems().add(setupItem);
+
+        MenuItem refDisplayItem = new MenuItem("Show Ref Chart");
+        refDisplayItem.setOnAction(e -> showRefChart());
+        actionMenuButton.getItems().add(refDisplayItem);
 
         MenuItem alignItem = new MenuItem("Align");
         alignItem.setOnAction(e -> alignCenters());
@@ -1293,6 +1297,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         if (peak != null) {
             drawWins(Collections.singletonList(peak));
             updateDeleteStatus();
+            refreshRefChart(peak);
         }
         updateAtomLabels(peak);
         setPeakIdField();
@@ -1406,6 +1411,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         clusterStatus.setLabels();
         var spinSys = currentSpinSystem;
         spinStatus.updateFragment(spinSys);
+        refreshRefChart(currentSpinSystem.getRootPeak());
 
     }
 
@@ -1676,6 +1682,45 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
                 runAbout.setPeakLists(peakLists);
                 runAbout.setRefList(refListObj.get());
                 registerPeakLists();
+            }
+        }
+    }
+
+    void showRefChart() {
+        if (runAbout.isActive()) {
+            refController = FXMLController.create();
+            PeakList refList = runAbout.getPeakLists().get(0);
+            String datasetName = refList.getDatasetName();
+            Dataset dataset = Dataset.getDataset(datasetName);
+            if (dataset != null) {
+                PolyChart chart = refController.getActiveChart();
+                chart.updateDatasets(List.of(dataset.getName()));
+                DatasetAttributes dataAttr = chart.getDatasetAttributes().get(0);
+                int[] iDims = runAbout.getIDims(dataset, refList, refList.getExperimentType(), List.of("H","N"));
+                var sDims = runAbout.getPeakListDims(refList, dataset, iDims);
+                dataAttr.setDims(iDims);
+                List<String> peakLists = Collections.singletonList(refList.getName());
+                chart.updatePeakLists(peakLists);
+            }
+        }
+    }
+
+    void refreshRefChart(Peak peak) {
+        if (refController != null) {
+            refController.refreshPeakView(peak);
+            for (var chart : refController.getCharts()) {
+                chart.clearAnnotations();
+                var peakAttr = chart.getPeakListAttributes().get(0);
+                for (int iDim = 0; iDim < 2; iDim++) {
+                    double ppm = peak.getPeakDim(peakAttr.getPeakDim()[iDim]).getChemShiftValue();
+                    AnnoLine annoLine = iDim == 0 ?
+                            new AnnoLine(ppm, 0.0, ppm, 1.0, CanvasAnnotation.POSTYPE.WORLD, CanvasAnnotation.POSTYPE.FRACTION) :
+                            new AnnoLine(0.0, ppm, 1.0, ppm, CanvasAnnotation.POSTYPE.FRACTION, CanvasAnnotation.POSTYPE.WORLD);
+                    var color = Color.BLUE;
+                    annoLine.setStroke(color);
+                    chart.addAnnotation(annoLine);
+                }
+                chart.refresh();
             }
         }
     }
