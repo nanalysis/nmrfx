@@ -108,13 +108,13 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
     ClusterPane clusterPane;
     Group clusterGroup;
     Map<String, ResidueLabel> residueLabelMap = new HashMap<>();
-    Map<Integer, String> chartTypes = new HashMap<>();
+    Map<PolyChart, String> chartTypes = new HashMap<>();
     RunAboutArrangements runAboutArrangements;
     TableView<PeakListSelection> peakTableView = new TableView<>();
     boolean useSpinSystem = false;
     Double[][] widths;
     int[] resOffsets = null;
-    List<List<String>> winPatterns = new ArrayList<>();
+    Map<PolyChart,List<String>> winPatterns = new HashMap<>();
     boolean[] intraResidue = null;
     int minOffset = 0;
 
@@ -1804,7 +1804,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
                         Dataset dataset = Dataset.getDataset(datasetName);
                         if (dataset != null) {
                             String typeName = peakList.getExperimentType();
-                            chartTypes.put(jChart, typeName);
+                            chartTypes.put(chart, typeName);
                             dataset.setTitle(typeName);
                             String dName = dataset.getName();
                             List<String> datasets = Collections.singletonList(dName);
@@ -1818,7 +1818,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
                             dataAttr.setDims(iDims);
                             List<String> peakLists = Collections.singletonList(peakList.getName());
                             chart.updatePeakLists(peakLists);
-                            winPatterns.add(sDims.stream().map(SpectralDim::getPattern).collect(Collectors.toList()));
+                            winPatterns.put(chart, sDims.stream().map(SpectralDim::getPattern).collect(Collectors.toList()));
                         }
                     });
                     iChart++;
@@ -1884,62 +1884,19 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
             // spinSystem.dumpPeakMatches();
             Peak peak = spinSystem.getRootPeak();
             chart.clearAnnotations();
-            List<List<String>> atomPatterns = getAtomsFromPatterns(winPatterns.get(iChart));
             if (peak != null && !chart.getDatasetAttributes().isEmpty()) {
                 refreshChart(chart, iChart, peak);
-                DatasetAttributes dataAttr = chart.getDatasetAttributes().get(0);
                 PeakList currentList = null;
                 if (!chart.getPeakListAttributes().isEmpty()) {
                     PeakListAttributes peakAttr = chart.getPeakListAttributes().get(0);
                     peakAttr.setLabelType(PeakDisplayParameters.LabelTypes.Cluster);
                     currentList = peakAttr.getPeakList();
                 }
-                for (PeakMatch peakMatch : spinSystem.peakMatches()) {
-                    PeakDim peakDim = peakMatch.getPeak().getPeakDim(dataAttr.getLabel(1));
-                    if (peakDim != null) {
-                        int iDim = peakDim.getSpectralDim();
-                        int atomIndex = peakMatch.getIndex(iDim);
-                        String aName = SpinSystem.getAtomName(atomIndex).toUpperCase();
-                        if ((iDim >= atomPatterns.size()) || !atomPatterns.get(iDim).contains(aName)) {
-                            continue;
-
-                        }
-                        boolean isIntra = peakMatch.getIntraResidue(iDim);
-                        final double f1;
-                        final double f2;
-                        Color color;
-                        if (intraResidue[iCol]) {
-                            if (isIntra) {
-                                color = Color.BLUE;
-                                f1 = 0.5;
-                                f2 = 1.0;
-                            } else {
-                                color = Color.GREEN;
-                                f1 = 0.0;
-                                f2 = 0.5;
-                            }
-
-                        } else {
-                            if (isIntra) {
-                                continue;
-                            } else {
-                                color = Color.GREEN;
-                                f1 = 0.0;
-                                f2 = 1.0;
-                            }
-                        }
-                        if (isIntra && !intraResidue[iCol]) {
-                            continue;
-                        }
-
-                        double ppm = spinSystem.getValue(isIntra ? 1 : 0, atomIndex);
-                        AnnoLine annoLine = new AnnoLine(f1, ppm, f2, ppm, CanvasAnnotation.POSTYPE.FRACTION, CanvasAnnotation.POSTYPE.WORLD);
-                        annoLine.setStroke(color);
-                        chart.addAnnotation(annoLine);
-                    }
+                if (winPatterns.containsKey(chart)) {
+                    drawPakTypeAnno(chart, spinSystem, iCol);
                 }
                 if (currentList != null) {
-                    drawAnno(iChart, chart, dataAttr, currentList, spinSystem);
+                    drawAnno(chart, currentList, spinSystem);
                 }
                 chart.refresh();
             }
@@ -1947,10 +1904,59 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         }
     }
 
-    void drawAnno(int iChart, PolyChart chart,  DatasetAttributes dataAttr, PeakList currentList, SpinSystem spinSystem) {
+    void drawPakTypeAnno(PolyChart chart, SpinSystem spinSystem, int iCol) {
+        DatasetAttributes dataAttr = chart.getDatasetAttributes().get(0);
+        List<List<String>> atomPatterns = getAtomsFromPatterns(winPatterns.get(chart));
+        for (PeakMatch peakMatch : spinSystem.peakMatches()) {
+            PeakDim peakDim = peakMatch.getPeak().getPeakDim(dataAttr.getLabel(1));
+            if (peakDim != null) {
+                int iDim = peakDim.getSpectralDim();
+                int atomIndex = peakMatch.getIndex(iDim);
+                String aName = SpinSystem.getAtomName(atomIndex).toUpperCase();
+                if ((iDim >= atomPatterns.size()) || !atomPatterns.get(iDim).contains(aName)) {
+                    continue;
+
+                }
+                boolean isIntra = peakMatch.getIntraResidue(iDim);
+                final double f1;
+                final double f2;
+                Color color;
+                if (intraResidue[iCol]) {
+                    if (isIntra) {
+                        color = Color.BLUE;
+                        f1 = 0.5;
+                        f2 = 1.0;
+                    } else {
+                        color = Color.GREEN;
+                        f1 = 0.0;
+                        f2 = 0.5;
+                    }
+
+                } else {
+                    if (isIntra) {
+                        continue;
+                    } else {
+                        color = Color.GREEN;
+                        f1 = 0.0;
+                        f2 = 1.0;
+                    }
+                }
+                if (isIntra && !intraResidue[iCol]) {
+                    continue;
+                }
+
+                double ppm = spinSystem.getValue(isIntra ? 1 : 0, atomIndex);
+                AnnoLine annoLine = new AnnoLine(f1, ppm, f2, ppm, CanvasAnnotation.POSTYPE.FRACTION, CanvasAnnotation.POSTYPE.WORLD);
+                annoLine.setStroke(color);
+                chart.addAnnotation(annoLine);
+            }
+        }
+    }
+    void drawAnno(PolyChart chart, PeakList currentList, SpinSystem spinSystem) {
+        DatasetAttributes dataAttr = chart.getDatasetAttributes().get(0);
         Font font = Font.font(12.0);
         double textWidth = GUIUtils.getTextWidth("CB", font);
-        String typeName = chartTypes.get(iChart);
+        String typeName = chartTypes.get(chart);
         int nPeaks = spinSystem.getNPeaksWithList(currentList);
         if (typeName != null) {
             int nExpected = runAbout.getTypeCount(typeName);
