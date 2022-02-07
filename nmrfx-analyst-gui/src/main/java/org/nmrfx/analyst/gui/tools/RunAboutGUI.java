@@ -649,10 +649,12 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
             double x = 10.0;
             double y = 15.0;
             int i = 0;
+            leftResidues.clear();
+            rightResidues.clear();
             for (String aaName : AtomParser.getAANames()) {
                 String aaChar = AtomParser.convert3To1(aaName);
-                ResidueLabel leftLabel = new ResidueLabel(drawingGroup, aaChar.charAt(0));
-                ResidueLabel rightLabel = new ResidueLabel(drawingGroup, aaChar.charAt(0));
+                ResidueLabel leftLabel = new ResidueLabel(aaChar.charAt(0));
+                ResidueLabel rightLabel = new ResidueLabel(aaChar.charAt(0));
                 leftResidues.add(leftLabel);
                 rightResidues.add(rightLabel);
                 leftGroup.getChildren().add(leftLabel);
@@ -813,6 +815,8 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
                         String key = residue.getPolymer().getName() + residue.getNumber();
                         ResidueLabel resLabel = residueLabelMap.get(key);
                         resLabel.setColor(Color.LIGHTGREEN);
+                        SpinSystem iSpinSystem = frag.getSpinSystem(iRes);
+                        resLabel.setSpinSystem(iSpinSystem);
                         residue = residue.getNext();
                     }
                 }
@@ -998,17 +1002,20 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         Line line;
         Text textItem;
         Residue residue;
+        SpinSystem spinSystem;
+        Tooltip tooltip;
 
-        ResidueLabel(Group group, Residue residue) {
-            this(group, residue.getOneLetter());
+
+        ResidueLabel(Residue residue) {
+            this(residue.getOneLetter());
             this.residue = residue;
         }
 
-        ResidueLabel(Group group, char resChar) {
-            this(group, String.valueOf(resChar));
+        ResidueLabel(char resChar) {
+            this(String.valueOf(resChar));
         }
 
-        ResidueLabel(Group group, String label) {
+        ResidueLabel(String label) {
             super();
             StackPane stack = this;
             textItem = new Text(label);
@@ -1020,12 +1027,15 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
             rect.setFill(Color.WHITE);
             textItem.setFill(Color.BLACK);
             textItem.setFont(regularFont);
+            rect.setMouseTransparent(true);
+            line.setMouseTransparent(true);
             textItem.setMouseTransparent(true);
             stack.getChildren().addAll(rect, textItem, line);
             stack.setAlignment(Pos.CENTER);
             StackPane.setAlignment(line,Pos.TOP_CENTER);
             line.setVisible(false);
-            group.getChildren().add(stack);
+            tooltip = new Tooltip(label);
+            Tooltip.install(this, tooltip);
         }
 
         void place(double x, double y) {
@@ -1041,6 +1051,10 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
             textItem.setText(text);
         }
 
+        void setTooltip(String text) {
+            tooltip.setText(text);
+        }
+
         void setActive() {
             textItem.setFont(activeFont);
             textItem.setFill(Color.BLUE);
@@ -1053,6 +1067,10 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
             setColor(Color.LIGHTGRAY);
         }
 
+        void setSpinSystem(SpinSystem spinSystem) {
+            this.spinSystem = spinSystem;
+        }
+
         void setTopLineVisible(boolean value) {
             line.setVisible(value);
         }
@@ -1063,7 +1081,10 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
     }
 
     void gotoResidue(ResidueLabel resLabel) {
-
+        if (resLabel.spinSystem != null) {
+            currentSpinSystem = resLabel.spinSystem;
+            gotoSpinSystems();
+        }
     }
 
     void gotoCluster(ResidueLabel resLabel) {
@@ -1086,7 +1107,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         double x = 25.0 + iX * width;
         double y = 25.0 + jY * width;
         resLabel.place(x, y);
-
+        resLabel.setSpinSystem(spinSys);
     }
 
     int countSpinSysItems(List<SpinSystem> sortedSystems) {
@@ -1114,7 +1135,8 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         if (clusterGroup.getChildren().size() != n) {
             clusterGroup.getChildren().clear();
             for (int i = 0; i < n; i++) {
-                ResidueLabel resLabel = new ResidueLabel(clusterGroup, String.valueOf(i));
+                ResidueLabel resLabel = new ResidueLabel(String.valueOf(i));
+                clusterGroup.getChildren().add(resLabel);
             }
         }
         List<Node> nodes = clusterGroup.getChildren();
@@ -1158,9 +1180,11 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
                 for (Polymer polymer : molecule.getPolymers()) {
                     if (polymer.isPeptide()) {
                         for (Residue residue : polymer.getResidues()) {
-                            ResidueLabel resLabel = new ResidueLabel(drawingGroup, residue);
+                            ResidueLabel resLabel = new ResidueLabel(residue);
+                            drawingGroup.getChildren().add(resLabel);
                             String key = polymer.getName() + residue.getNumber();
                             residueLabelMap.put(key, resLabel);
+                            resLabel.setTooltip(residue.getNumber());
                         }
                     }
 

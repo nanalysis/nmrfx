@@ -118,6 +118,16 @@ public class SeqFragment {
         return spinSystems;
     }
 
+    public SpinSystem getSpinSystem(int index) {
+        SpinSystem spinSystem;
+        if (index < 2) {
+            spinSystem = spinSystemMatches.get(0).getSpinSystemA();
+        } else {
+            spinSystem = spinSystemMatches.get(index-2).getSpinSystemB();
+        }
+        return spinSystem;
+    }
+
     public void dump() {
         for (SpinSystemMatch match : spinSystemMatches) {
             System.out.println(match.toString());

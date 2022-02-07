@@ -26,7 +26,7 @@ public class SpinSystems {
         LONELY,
         MISSING,
         MISSING_PPM,
-        EXTRA;
+        EXTRA
     }
     int spinSystemID = 1;
     RunAbout runAbout;
@@ -215,9 +215,7 @@ public class SpinSystems {
 
     public static boolean[] getUseDims(PeakList refList, List<PeakList> peakLists) {
         boolean[] useDim = new boolean[refList.getNDim()];
-        for (int i = 0; i < useDim.length; i++) {
-            useDim[i] = true;
-        }
+        Arrays.fill(useDim, true);
         int nPeakTypes = 0;
         for (PeakList peakList : peakLists) {
             if (peakList != refList) {
@@ -250,6 +248,7 @@ public class SpinSystems {
             }
         }
 
+        systems.clear();
         PeakList.clusterPeaks(peakLists);
         int i = 0;
         for (Peak pkA : refList.peaks()) {
@@ -276,9 +275,7 @@ public class SpinSystems {
 
     public void assemble(List<PeakList> peakLists) {
         systems.clear();
-        peakLists.forEach(peakListA -> {
-            peakListA.unLinkPeaks();
-        });
+        peakLists.forEach(peakListA -> peakListA.unLinkPeaks());
         peakLists.forEach(peakListA -> {
             // set status to 0 for all active (status >= 0) peaks
             peakListA.peaks().stream().filter(p -> p.getStatus() >= 0).forEach(p -> p.setStatus(0));
