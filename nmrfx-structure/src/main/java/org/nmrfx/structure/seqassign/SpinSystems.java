@@ -230,6 +230,57 @@ public class SpinSystems {
         return useDim;
     }
 
+    public void addLists(PeakList refList, List<PeakList> newPeakLists) {
+        for (PeakList peakList : newPeakLists) {
+            peakList.unLinkPeaks();
+        }
+
+        List<PeakList> allLists = new ArrayList<>();
+        allLists.addAll(runAbout.getPeakLists());
+        allLists.addAll(newPeakLists);
+        runAbout.setPeakLists(allLists);
+        sums = calcNormalization(allLists);
+        var searchDims = refList.getSearchDims();
+        double[] ppm = new double[searchDims.size()];
+        int[] refDims = new int[searchDims.size()];
+        int[] iDims = new int[searchDims.size()];
+        for (var peakList : newPeakLists) {
+            double[] sumArray = sums.get(peakList);
+            int[] aMatch = matchDims(refList, peakList);
+
+            int i = 0;
+            for (var searchDim : refList.getSearchDims()) {
+                var sDim = refList.getSpectralDim(searchDim.getDim());
+                refDims[i] = sDim.getDataDim();
+                iDims[i] = peakList.getSpectralDim(sDim.getDimName()).getDataDim();
+                i++;
+            }
+            for (Peak peak : peakList.peaks()) {
+                for (int j = 0; j < refDims.length; j++) {
+                    ppm[j] = peak.getPeakDim(iDims[j]).getChemShiftValue();
+                }
+                var foundPeaks = refList.findPeaks(ppm);
+                if (!foundPeaks.isEmpty()) {
+                    Peak refPeak = foundPeaks.get(0);
+                    findSpinSystem(refPeak).ifPresent(spinSystem -> {
+                        for (int j = 0; j < refDims.length; j++) {
+                            PeakList.linkPeaks(refPeak, refDims[j], peak, iDims[j]);
+                        }
+                        for (int iDim : iDims) {
+                            PeakList.linkPeaks(refPeak, 0, peak, iDim);
+                        }
+
+                        double f = comparePeaks(refPeak, peak, aMatch);
+                        if (f >= 0.0) {
+                            double p = f / sumArray[refPeak.getIndex()];
+                            spinSystem.addPeak(peak, p);
+                        }
+                    });
+                }
+            }
+        }
+    }
+
     public void assembleWithClustering(PeakList refList, List<PeakList> peakLists) {
         sums = calcNormalization(peakLists);
         PeakList.clusterOrigin = refList;

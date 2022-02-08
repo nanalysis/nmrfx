@@ -100,6 +100,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
     Label atomYLabel;
     Label intensityLabel;
     RunAbout runAbout;
+    String currentArrangement;
     SpinSystem currentSpinSystem = null;
     SpinStatus spinStatus;
     ClusterStatus clusterStatus;
@@ -254,7 +255,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         helmTab.setContent(vBox);
         initHelm(vBox);
 
-        Tab prefTab = new Tab("Prefs");
+        Tab prefTab = new Tab("Configure");
         prefTab.setClosable(false);
         tabPane.getTabs().add(prefTab);
         HBox hBox = new HBox();
@@ -338,7 +339,18 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         Button configureButton = new Button("Inspector");
         configureButton.setOnAction(e-> inspectPeakList());
 
-        vBox2.getChildren().addAll(configureButton, peakTableView);
+        Button setupButton = new Button("Setup");
+        setupButton.setOnAction(e-> setupRunAbout());
+
+        Button autoTolButton = new Button("AutoTol");
+        autoTolButton.setOnAction(e-> autoSetTolerances());
+
+        Button addListButton = new Button("Add Lists");
+        addListButton.setOnAction(e-> addLists());
+
+        HBox buttonBar = new HBox();
+        buttonBar.getChildren().addAll(configureButton, setupButton, autoTolButton, addListButton);
+        vBox2.getChildren().addAll(buttonBar, peakTableView);
 
         hBox.getChildren().addAll(gridBox1, vBox2);
         var model = peakTableView.getSelectionModel();
@@ -446,10 +458,6 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         MenuButton actionMenuButton = new MenuButton("Actions");
         navigatorToolBar.getItems().add(actionMenuButton);
         ToolBarUtils.addFiller(navigatorToolBar, 40, 300);
-
-        MenuItem setupItem = new MenuItem("Setup");
-        setupItem.setOnAction(e -> setupRunAbout());
-        actionMenuButton.getItems().add(setupItem);
 
         MenuItem refDisplayItem = new MenuItem("Show Ref Chart");
         refDisplayItem.setOnAction(e -> showRefChart());
@@ -1110,11 +1118,11 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         resLabel.setSpinSystem(spinSys);
     }
 
-    int countSpinSysItems(List<SpinSystem> sortedSystems) {
+    int countSpinSysItems(List<SpinSystem> sortedSystems, boolean fragmentMode) {
         int n = 0;
         for (SpinSystem spinSys : sortedSystems) {
             Optional<SeqFragment> fragmentOpt = spinSys.getFragment();
-            if (fragmentOpt.isPresent()) {
+            if (fragmentMode && fragmentOpt.isPresent()) {
                 SeqFragment fragment = fragmentOpt.get();
                 n += fragment.getSpinSystemMatches().size() + 1;
             } else {
@@ -1126,12 +1134,15 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
 
     void updateClusterCanvas() {
         List<SpinSystem> sortedSystems;
+        boolean fragmentMode;
         if (clusterModesChoiceBox.getValue() != SpinSystems.ClusterModes.ALL) {
+            fragmentMode = false;
             sortedSystems = runAbout.getSpinSystems().getSystemsByType(clusterModesChoiceBox.getValue());
         } else {
+            fragmentMode = true;
             sortedSystems = runAbout.getSpinSystems().getSortedSystems();
         }
-        int n = countSpinSysItems(sortedSystems);
+        int n = countSpinSysItems(sortedSystems, fragmentMode);
         if (clusterGroup.getChildren().size() != n) {
             clusterGroup.getChildren().clear();
             for (int i = 0; i < n; i++) {
@@ -1145,7 +1156,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         Color color = Color.YELLOW;
         for (SpinSystem spinSys : sortedSystems) {
             Optional<SeqFragment> fragmentOpt = spinSys.getFragment();
-            if (fragmentOpt.isPresent()) {
+            if (fragmentMode && fragmentOpt.isPresent()) {
                 SeqFragment fragment = fragmentOpt.get();
                 boolean frozen = fragment.isFrozen();
                 List<SpinSystemMatch> spinMatches = fragment.getSpinSystemMatches();
@@ -1710,6 +1721,30 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         }
     }
 
+    void autoSetTolerances() {
+        if (runAbout.isActive()) {
+            runAbout.autoSetTolerance(1.0);
+        }
+    }
+
+    void addLists() {
+        if (!runAbout.isActive()) {
+            GUIUtils.warn("RunAbout", "Can't add more lists before setup");
+            return;
+        }
+        var currentLists = runAbout.getPeakLists();
+        var peakLists = peakTableView.getItems().stream().
+                filter(PeakListSelection::getActive).
+                map(p -> p.peakList).
+                filter( p -> !currentLists.contains(p)).
+                collect(Collectors.toList());
+        runAbout.addLists(peakLists);
+        clusterStatus.refresh();
+        genWin(currentArrangement);
+        gotoSpinSystems();
+        registerPeakLists();
+    }
+
     void showRefChart() {
         if (runAbout.isActive()) {
             refController = FXMLController.create();
@@ -1734,15 +1769,19 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
             refController.refreshPeakView(peak);
             for (var chart : refController.getCharts()) {
                 chart.clearAnnotations();
-                var peakAttr = chart.getPeakListAttributes().get(0);
+                var dataAttr = chart.getDatasetAttributes().get(0);
                 for (int iDim = 0; iDim < 2; iDim++) {
-                    double ppm = peak.getPeakDim(peakAttr.getPeakDim()[iDim]).getChemShiftValue();
-                    AnnoLine annoLine = iDim == 0 ?
-                            new AnnoLine(ppm, 0.0, ppm, 1.0, CanvasAnnotation.POSTYPE.WORLD, CanvasAnnotation.POSTYPE.FRACTION) :
-                            new AnnoLine(0.0, ppm, 1.0, ppm, CanvasAnnotation.POSTYPE.FRACTION, CanvasAnnotation.POSTYPE.WORLD);
-                    var color = Color.BLUE;
-                    annoLine.setStroke(color);
-                    chart.addAnnotation(annoLine);
+                    String dataLabel = dataAttr.getLabel(iDim);
+                    PeakDim peakDim = peak.getPeakDim(dataLabel);
+                    if (peakDim != null) {
+                        double ppm = peakDim.getChemShiftValue();
+                        AnnoLine annoLine = iDim == 0 ?
+                                new AnnoLine(ppm, 0.0, ppm, 1.0, CanvasAnnotation.POSTYPE.WORLD, CanvasAnnotation.POSTYPE.FRACTION) :
+                                new AnnoLine(0.0, ppm, 1.0, ppm, CanvasAnnotation.POSTYPE.FRACTION, CanvasAnnotation.POSTYPE.WORLD);
+                        var color = Color.BLUE;
+                        annoLine.setStroke(color);
+                        chart.addAnnotation(annoLine);
+                    }
                 }
                 chart.refresh();
             }
@@ -1767,6 +1806,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
 
     void genWin(String arrangeName) {
         if (runAbout.isActive()) {
+            currentArrangement = arrangeName;
             RunAboutArrangement arrangement = runAboutArrangements.getArrangements().get(arrangeName);
             List<String> rows = arrangement.getRows();
             List<RunAboutDim> cols = arrangement.getColumnArrangement();

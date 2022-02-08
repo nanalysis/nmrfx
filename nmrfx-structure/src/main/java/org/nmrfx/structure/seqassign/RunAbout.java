@@ -333,6 +333,25 @@ public class RunAbout implements SaveframeWriter {
         getSpinSystems().assembleWithClustering(refList, peakLists);
     }
 
+    public void addLists(List<PeakList> newPeakLists) {
+        getSpinSystems().addLists(refList, newPeakLists);
+    }
+
+    public void autoSetTolerance(double scale) {
+        autoSetTolerance(peakLists, scale);
+    }
+
+    public void autoSetTolerance(Collection<PeakList> peakLists, double scale) {
+        for (var peakList:peakLists) {
+            int nDim = peakList.getNDim();
+            for (int i=0;i<nDim;i++) {
+                var stat = peakList.widthDStatsPPM(i);
+                double median = stat.getPercentile(50.0);
+                peakList.getSpectralDim(i).setIdTol(median * scale);
+            }
+        }
+    }
+
     public void calcCombinations() {
         for (PeakList peakList : peakLists) {
             for (Peak peak : peakList.peaks()) {
