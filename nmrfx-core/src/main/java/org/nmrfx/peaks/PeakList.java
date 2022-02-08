@@ -2093,6 +2093,17 @@ public class PeakList {
      * @param iDim
      * @return
      */
+    public DescriptiveStatistics widthDStatsPPM(int iDim) {
+        DescriptiveStatistics stats = new DescriptiveStatistics();
+        peaks.stream().filter((p) -> p.getStatus() >= 0).mapToDouble((p) -> p.peakDims[iDim].getLineWidth()).forEach((v) -> stats.addValue(v));
+        return stats;
+    }
+
+    /**
+     *
+     * @param iDim
+     * @return
+     */
     public DoubleSummaryStatistics widthStats(int iDim) {
         DoubleSummaryStatistics stats = peaks.stream().filter((p) -> p.getStatus() >= 0).mapToDouble((p) -> p.peakDims[iDim].getLineWidthHz()).summaryStatistics();
         return stats;
