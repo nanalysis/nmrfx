@@ -1234,16 +1234,20 @@ public class RS2DData implements NMRData {
             } else {
                 int[] sizes = new int[dataset.getNDim() - 1];
                 for (int i = 1; i < dataset.getNDim(); i++) {
-                    sizes[i - 1] = dataset.getSizeReal(i);
+                    sizes[nDim - i -1] = dataset.getSizeReal(i);
                 }
                 Vec vec = new Vec(dataset.getSizeReal(0), dataset.getComplex(0));
                 MultidimensionalCounter counter = new MultidimensionalCounter(sizes);
                 var counterIterator = counter.iterator();
+                int[] pt = new int[sizes.length];
                 while (counterIterator.hasNext()) {
                     counterIterator.next();
-                    int[] pt = counterIterator.getCounts();
+                    int[] counts = counterIterator.getCounts();
+                    for (int i = 0; i < counts.length; i++) {
+                        pt[i] = counts[counts.length - i - 1];
+                    }
                     if (!dataset.getAxisReversed(1)) {
-                        int lastRow = sizes[0] - 1;
+                        int lastRow = sizes[sizes.length-1] - 1;
                         pt[0] = lastRow - pt[0];
                     }
                     writeRow(dataset, vec, pt, fOut);
