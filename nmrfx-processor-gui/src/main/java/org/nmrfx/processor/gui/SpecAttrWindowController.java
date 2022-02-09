@@ -214,6 +214,8 @@ public class SpecAttrWindowController implements Initializable {
     @FXML
     private CheckBox gridCheckBox;
     @FXML
+    private CheckBox intensityAxisCheckBox;
+    @FXML
     private ComboBox<Integer> leftBorderSizeComboBox;
     @FXML
     private ComboBox<Integer> rightBorderSizeComboBox;
@@ -1530,6 +1532,7 @@ public class SpecAttrWindowController implements Initializable {
         chart.chartProps.setTopBorderSize(topBorderSizeComboBox.getValue());
         chart.chartProps.setBottomBorderSize(bottomBorderSizeComboBox.getValue());
         chart.chartProps.setGrid(gridCheckBox.isSelected());
+        chart.chartProps.setIntensityAxis(intensityAxisCheckBox.isSelected());
         chart.chartProps.setTitles(titlesCheckBox.isSelected());
 
     }
@@ -1646,6 +1649,7 @@ public class SpecAttrWindowController implements Initializable {
         topBorderSizeComboBox.setValue(polyChart.chartProps.getTopBorderSize());
         bottomBorderSizeComboBox.setValue(polyChart.chartProps.getBottomBorderSize());
         gridCheckBox.setSelected(polyChart.chartProps.getGrid());
+        intensityAxisCheckBox.setSelected(polyChart.chartProps.getIntensityAxis());
         integralPosSlider.setLowValue(polyChart.chartProps.getIntegralLowPos());
         integralPosSlider.setHighValue(polyChart.chartProps.getIntegralHighPos());
         integralCheckBox.setSelected(chart.chartProps.getIntegrals());

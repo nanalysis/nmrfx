@@ -170,6 +170,10 @@
                                                         <Label text="Titles" GridPane.columnIndex="3" GridPane.rowIndex="2" />
                                                         <CheckBox fx:id="titlesCheckBox" mnemonicParsing="false" onAction="#sliceAction" text="" selected="false"
                                                                   GridPane.columnIndex="4" GridPane.rowIndex="2"/>
+                                                        <Label text="IntAxis" GridPane.columnIndex="5" GridPane.rowIndex="2" />
+                                                        <CheckBox fx:id="intensityAxisCheckBox" mnemonicParsing="false" onAction="#sliceAction" text="" selected="true"
+                                                                  GridPane.columnIndex="6" GridPane.rowIndex="2"/>
+
                                                     </children>
                                                 </GridPane>
                                                 <GridPane BorderPane.alignment="CENTER"  GridPane.columnIndex="2" GridPane.rowIndex="2" GridPane.columnSpan="5" GridPane.rowSpan="4">

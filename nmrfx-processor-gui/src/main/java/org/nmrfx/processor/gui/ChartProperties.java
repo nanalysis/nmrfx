@@ -46,6 +46,7 @@ public class ChartProperties {
     private IntegerProperty rightBorderSize;
     private IntegerProperty topBorderSize;
     private IntegerProperty bottomBorderSize;
+    private BooleanProperty intensityAxis;
     private DoubleProperty labelFontSize;
     private DoubleProperty ticFontSize;
     private ColorProperty cross0Color;
@@ -71,6 +72,7 @@ public class ChartProperties {
         destProps.setRightBorderSize(getRightBorderSize());
         destProps.setTopBorderSize(getTopBorderSize());
         destProps.setBottomBorderSize(getBottomBorderSize());
+        destProps.setIntensityAxis(getIntensityAxis());
 
         destProps.setLabelFontSize(getLabelFontSize());
         destProps.setTicFontSize(getTicFontSize());
@@ -148,6 +150,20 @@ public class ChartProperties {
         return bottomBorderSize;
     }
 
+    public BooleanProperty intensityAxisProperty() {
+        if (intensityAxis == null) {
+            intensityAxis = new SimpleBooleanProperty(polyChart, "onedAxis", true);
+        }
+        return intensityAxis;
+    }
+
+    public void setIntensityAxis(boolean value) {
+        intensityAxisProperty().set(value);
+    }
+
+    public boolean getIntensityAxis() {
+        return intensityAxisProperty().get();
+    }
     public double getLabelFontSize() {
         return labelFontSizeProperty().get();
     }
@@ -380,7 +396,7 @@ public class ChartProperties {
     public Map<String, Object> config() {
         Map<String, Object> data = new HashMap<>();
         String[] beanNames = {"ticFontSize", "labelFontSize", "bgColor",
-            "axesColor", "cross0Color", "cross1Color", "grid",
+            "axesColor", "cross0Color", "cross1Color", "grid", "intensityAxis",
             "leftBorderSize", "rightBorderSize",
             "topBorderSize", "bottomBorderSize", "regions", "integrals",
             "integralLowPos", "integralHighPos", "titles", "aspect", "aspectRatio"};
