@@ -21,6 +21,7 @@ import javafx.stage.Stage;
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 import org.nmrfx.jmx.NotificationType;
+import org.nmrfx.processor.datasets.DatasetType;
 import org.nmrfx.processor.events.DatasetSavedEvent;
 import org.nmrfx.processor.gui.ChartProcessor;
 import org.nmrfx.processor.gui.FXMLController;
@@ -28,6 +29,7 @@ import org.nmrfx.processor.gui.controls.ConsoleUtil;
 
 import javax.management.Notification;
 import javax.management.NotificationBroadcasterSupport;
+import java.io.File;
 
 /**
  * The main entrypoint to control NMRFx Analyst Gui by JMX.
@@ -41,8 +43,10 @@ public class Analyst extends NotificationBroadcasterSupport implements AnalystMB
 
     @Override
     public void open(String path) {
+        DatasetType preferredProcessedFormat = DatasetType.typeFromFile(new File(path)).orElse(DatasetType.NMRFX);
+
         ConsoleUtil.runOnFxThread(() -> {
-            FXMLController.getActiveController().openFile(path, false, true);
+            FXMLController.getActiveController().openFile(path, false, true, preferredProcessedFormat);
             sendNotification(NotificationType.MESSAGE, "File opened", path);
         });
     }
