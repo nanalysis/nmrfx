@@ -115,6 +115,7 @@ public class RefManager {
                     processorController.unsetDatasetName();
                 }
                 chartProcessor.setDatasetType(DatasetType.valueOf(dataType));
+                processorController.updateFileButton();
                 break;
             case "acqOrder":
                 String acqOrder = updateItem.getValue().toString();

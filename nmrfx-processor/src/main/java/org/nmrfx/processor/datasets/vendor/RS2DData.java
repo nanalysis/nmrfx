@@ -83,6 +83,7 @@ public class RS2DData implements NMRData {
     private final String[] sfNames = new String[MAXDIM];
     private double groupDelay = 0.0;
     private SampleSchedule sampleSchedule = null;
+    private DatasetType preferredDatasetType = DatasetType.NMRFX;
 
     private String[] acqOrder;
     int nvectors = 1;
@@ -481,6 +482,11 @@ public class RS2DData implements NMRData {
                 complexDim[j] = false;
             }
         }
+    }
+
+    @Override
+    public void setPreferredDatasetType(DatasetType datasetType) {
+        this.preferredDatasetType = datasetType;
     }
 
     @Override
@@ -1197,7 +1203,7 @@ public class RS2DData implements NMRData {
 
     @Override
     public DatasetType getPreferredDatasetType() {
-        return DATASET_TYPE;
+        return preferredDatasetType;
     }
 
     private static void writeRow(Dataset dataset, Vec vec, int[] pt, BufferedOutputStream fOut) throws IOException {
@@ -1228,16 +1234,20 @@ public class RS2DData implements NMRData {
             } else {
                 int[] sizes = new int[dataset.getNDim() - 1];
                 for (int i = 1; i < dataset.getNDim(); i++) {
-                    sizes[i - 1] = dataset.getSizeReal(i);
+                    sizes[nDim - i -1] = dataset.getSizeReal(i);
                 }
                 Vec vec = new Vec(dataset.getSizeReal(0), dataset.getComplex(0));
                 MultidimensionalCounter counter = new MultidimensionalCounter(sizes);
                 var counterIterator = counter.iterator();
+                int[] pt = new int[sizes.length];
                 while (counterIterator.hasNext()) {
                     counterIterator.next();
-                    int[] pt = counterIterator.getCounts();
+                    int[] counts = counterIterator.getCounts();
+                    for (int i = 0; i < counts.length; i++) {
+                        pt[i] = counts[counts.length - i - 1];
+                    }
                     if (!dataset.getAxisReversed(1)) {
-                        int lastRow = sizes[0] - 1;
+                        int lastRow = sizes[sizes.length-1] - 1;
                         pt[0] = lastRow - pt[0];
                     }
                     writeRow(dataset, vec, pt, fOut);
@@ -1251,7 +1261,23 @@ public class RS2DData implements NMRData {
         if (!nodes.isEmpty()) {
             nodes.get(0).setTextContent(paramValue);
         }
-
+    }
+    public void setParams(String paramName, List<String> paramValues) throws XPathExpressionException {
+        var nodes = RS2DData.getParamNode(headerDocument, paramName);
+        if (!nodes.isEmpty()) {
+            Node lastNode = nodes.get(0);
+            for (int i = 0; i < paramValues.size(); i++) {
+                if (i < nodes.size()) {
+                    nodes.get(i).setTextContent(paramValues.get(i));
+                    lastNode = nodes.get(i);
+                } else {
+                    Node node = nodes.get(0).cloneNode(true);
+                    node.setTextContent(paramValues.get(i));
+                    lastNode.getParentNode().appendChild(node);
+                    lastNode = node;
+                }
+            }
+        }
     }
     public void setHeaderMatrixDimensions(Dataset dataset) throws XPathExpressionException {
         for (int iDim = 1; (iDim <= RS2DData.MAXDIM) && (iDim <= dataset.getNDim()); iDim++) {
@@ -1259,8 +1285,14 @@ public class RS2DData implements NMRData {
         }
     }
     public void setHeaderPhases(Dataset dataset) throws XPathExpressionException {
-        setParam("PHASE_0", String.valueOf(dataset.getPh0(0)));
-        setParam("PHASE_1", String.valueOf(dataset.getPh1(0)));
+        List<String> phase0Values = new ArrayList<>();
+        List<String> phase1Values = new ArrayList<>();
+        for (int i=0;i<dataset.getNDim();i++) {
+            phase0Values.add(String.format("%.2f",dataset.getPh0(i)));
+            phase1Values.add(String.format("%.2f",dataset.getPh1(i)));
+        }
+        setParams("PHASE_0", phase0Values);
+        setParams("PHASE_1", phase1Values);
     }
 
     public boolean isValidDatasetPath(Path procNumPath) {
