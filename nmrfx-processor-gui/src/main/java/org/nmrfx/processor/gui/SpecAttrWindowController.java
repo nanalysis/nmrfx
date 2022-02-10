@@ -293,9 +293,17 @@ public class SpecAttrWindowController implements Initializable {
         bottomBorderSizeComboBox.getItems().addAll(0, 1, 2, 5, 10, 15, 20, 25, 30, 40, 50, 75, 100, 125, 150);
 
         bgColorPicker.disableProperty().bind(bgColorCheckBox.selectedProperty().not());
+        bgColorPicker.valueProperty().addListener(e -> updateBGColor());
+        bgColorCheckBox.selectedProperty().addListener(e -> updateBGColor());
         axisColorPicker.disableProperty().bind(axisColorCheckBox.selectedProperty().not());
+        axisColorPicker.valueProperty().addListener(e -> updateBGColor());
+        axisColorCheckBox.selectedProperty().addListener(e -> updateBGColor());
         cross0ColorPicker.disableProperty().bind(cross0ColorCheckBox.selectedProperty().not());
+        cross0ColorPicker.valueProperty().addListener(e -> updateBGColor());
+        cross0ColorCheckBox.selectedProperty().addListener(e -> updateBGColor());
         cross1ColorPicker.disableProperty().bind(cross1ColorCheckBox.selectedProperty().not());
+        cross1ColorPicker.valueProperty().addListener(e -> updateBGColor());
+        cross1ColorCheckBox.selectedProperty().addListener(e -> updateBGColor());
 
         integralPosSlider.setMin(0.0);
         integralPosSlider.setMax(1.0);
@@ -1385,6 +1393,7 @@ public class SpecAttrWindowController implements Initializable {
             }
         }
         updateProps();
+        refreshLater();
     }
 
     @FXML
