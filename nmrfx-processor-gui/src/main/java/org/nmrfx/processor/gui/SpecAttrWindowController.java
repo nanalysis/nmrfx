@@ -939,6 +939,7 @@ public class SpecAttrWindowController implements Initializable {
         fileNameCol.setEditable(false);
 
         TableColumn<DatasetAttributes, String> levelCol = new TableColumn<>("lvl");
+        levelCol.setSortable(false);
         levelCol.setCellValueFactory(new PropertyValueFactory("lvl"));
         levelCol.setCellFactory(tc -> new TextFieldTableCell(dsConverter));
 
@@ -949,6 +950,7 @@ public class SpecAttrWindowController implements Initializable {
         levelMenu.getItems().addAll(unifyLevelItem);
 
         TableColumn<DatasetAttributes, String> offsetCol = new TableColumn<>("offset");
+        offsetCol.setSortable(false);
         offsetCol.setCellValueFactory(new PropertyValueFactory("offset"));
         offsetCol.setCellFactory(tc -> new TextFieldTableCell(dsConverter));
 
@@ -962,6 +964,7 @@ public class SpecAttrWindowController implements Initializable {
         offsetCol.setPrefWidth(50);
 
         TableColumn<DatasetAttributes, String> nLevelsCol = new TableColumn<>("nLvl");
+        nLevelsCol.setSortable(false);
         nLevelsCol.setCellValueFactory(new PropertyValueFactory("nlvls"));
         nLevelsCol.setCellFactory(tc -> new TextFieldTableCell(isConverter));
         nLevelsCol.setPrefWidth(35);
@@ -973,6 +976,7 @@ public class SpecAttrWindowController implements Initializable {
         nLvlMenu.getItems().addAll(unifyNLvlItem);
 
         TableColumn<DatasetAttributes, String> clmCol = new TableColumn<>("clm");
+        clmCol.setSortable(false);
         clmCol.setCellValueFactory(new PropertyValueFactory("clm"));
         clmCol.setCellFactory(tc -> new TextFieldTableCell(dsConverter));
         clmCol.setPrefWidth(50);
@@ -984,6 +988,7 @@ public class SpecAttrWindowController implements Initializable {
         clmlMenu.getItems().addAll(unifyCLMItem);
 
         TableColumn<DatasetAttributes, Boolean> posDrawOnCol = new TableColumn<>("on");
+        posDrawOnCol.setSortable(false);
         posDrawOnCol.setCellValueFactory(new PropertyValueFactory("pos"));
         posDrawOnCol.setCellFactory(tc -> new CheckBoxTableCell<>());
         posDrawOnCol.setPrefWidth(25);
@@ -999,6 +1004,7 @@ public class SpecAttrWindowController implements Initializable {
         posOnMenu.getItems().addAll(allPosOnItem, allPosOffItem);
 
         TableColumn<DatasetAttributes, String> posLineWidthCol = new TableColumn<>("width");
+        posLineWidthCol.setSortable(false);
         posLineWidthCol.setCellValueFactory(new PropertyValueFactory("posWidth"));
         posLineWidthCol.setCellFactory(tc -> new TextFieldTableCell(dsConverter));
         posLineWidthCol.setPrefWidth(50);
@@ -1010,6 +1016,7 @@ public class SpecAttrWindowController implements Initializable {
         posWidthMenu.getItems().addAll(unifyPosWidthItem);
 
         TableColumn<DatasetAttributes, Color> posColorCol = new TableColumn<>("color");
+        posColorCol.setSortable(false);
         posColorCol.setPrefWidth(50);
         posColorCol.setCellValueFactory(new PropertyValueFactory("posColor"));
         posColorCol.setCellValueFactory(cellData -> cellData.getValue().posColorProperty());
@@ -1049,6 +1056,7 @@ public class SpecAttrWindowController implements Initializable {
         posColorMenu.getItems().addAll(unifyPosColorItem, interpPosColor, schemaPosColor);
 
         TableColumn<DatasetAttributes, Boolean> negDrawOnCol = new TableColumn<>("on");
+        negDrawOnCol.setSortable(false);
         negDrawOnCol.setCellValueFactory(new PropertyValueFactory("neg"));
         negDrawOnCol.setCellFactory(tc -> new CheckBoxTableCell<>());
         negDrawOnCol.setPrefWidth(25);
@@ -1064,6 +1072,7 @@ public class SpecAttrWindowController implements Initializable {
         negOnMenu.getItems().addAll(allNegOnItem, allNegOffItem);
 
         TableColumn<DatasetAttributes, Double> negLineWidthCol = new TableColumn<>("width");
+        negLineWidthCol.setSortable(false);
         negLineWidthCol.setCellValueFactory(new PropertyValueFactory("negWidth"));
         negLineWidthCol.setPrefWidth(50);
 
@@ -1074,6 +1083,7 @@ public class SpecAttrWindowController implements Initializable {
         negWidthMenu.getItems().addAll(unifyNegWidthItem);
 
         TableColumn<DatasetAttributes, Color> negColorCol = new TableColumn<>("color");
+        negColorCol.setSortable(false);
         negColorCol.setPrefWidth(50);
         negColorCol.setCellValueFactory(cellData -> cellData.getValue().negColorProperty());
         negColorCol.setCellFactory(column -> new TableCell<>() {
@@ -1109,7 +1119,9 @@ public class SpecAttrWindowController implements Initializable {
         negColorMenu.getItems().addAll(unifyNegColorItem, interpNegColorItem, schemaNegColor);
 
         TableColumn positiveColumn = new TableColumn("Positive");
+        positiveColumn.setSortable(false);
         TableColumn negativeColumn = new TableColumn("Negative");
+        negativeColumn.setSortable(false);
         positiveColumn.getColumns().setAll(posDrawOnCol, posColorCol, posLineWidthCol);
         negativeColumn.getColumns().setAll(negDrawOnCol, negColorCol, negLineWidthCol);
         datasetTableView.getColumns().setAll(fileNameCol, levelCol, offsetCol, nLevelsCol, clmCol, positiveColumn, negativeColumn);
