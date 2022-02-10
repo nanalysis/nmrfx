@@ -23,81 +23,38 @@
  */
 package org.nmrfx.processor.gui;
 
-import org.nmrfx.processor.datasets.Dataset;
-import org.nmrfx.processor.gui.spectra.NMRAxis;
-import org.nmrfx.processor.gui.spectra.DatasetAttributes;
-import org.nmrfx.processor.gui.spectra.PeakDisplayParameters;
-import org.nmrfx.processor.gui.spectra.PeakListAttributes;
 import de.jensd.fx.glyphs.GlyphsDude;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
-import java.io.IOException;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.ResourceBundle;
+import javafx.animation.PauseTransition;
 import javafx.beans.property.StringProperty;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
+import javafx.collections.FXCollections;
+import javafx.collections.ListChangeListener;
+import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.event.Event;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
+import javafx.scene.Node;
 import javafx.scene.Scene;
-import javafx.scene.control.Button;
-import javafx.scene.control.ColorPicker;
-import javafx.scene.control.ComboBox;
-import javafx.scene.control.MenuButton;
-import javafx.scene.control.MenuItem;
-import javafx.scene.control.TableCell;
-import javafx.scene.control.TableColumn;
+import javafx.scene.control.*;
 import javafx.scene.control.TableColumn.CellEditEvent;
-import javafx.scene.control.TableView;
-import javafx.scene.control.TextField;
-import javafx.scene.control.ToolBar;
 import javafx.scene.control.cell.CheckBoxTableCell;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.control.cell.TextFieldTableCell;
-import javafx.scene.input.MouseEvent;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.GridPane;
-import javafx.scene.layout.Pane;
+import javafx.scene.effect.InnerShadow;
+import javafx.scene.input.*;
+import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
+import javafx.scene.shape.Polygon;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
-import javafx.util.converter.DoubleStringConverter;
-import java.text.DecimalFormat;
-import java.text.ParseException;
-import java.util.Collections;
-import java.util.List;
-import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
-import javafx.collections.FXCollections;
-import javafx.collections.ListChangeListener;
-import javafx.collections.ObservableList;
-import javafx.scene.Node;
-import javafx.scene.control.ButtonBase;
-import javafx.scene.control.CheckBox;
-import javafx.scene.control.ChoiceBox;
-import javafx.scene.control.ContentDisplay;
-import javafx.scene.control.ContextMenu;
-import javafx.scene.control.Label;
-import javafx.scene.control.ListCell;
-import javafx.scene.control.ListView;
-import javafx.scene.control.RadioButton;
-import javafx.scene.control.SelectionMode;
-import javafx.scene.control.Slider;
-import javafx.scene.control.Tab;
-import javafx.scene.control.TabPane;
-import javafx.scene.control.ToggleGroup;
-import javafx.scene.effect.InnerShadow;
-import javafx.scene.input.ClipboardContent;
-import javafx.scene.input.DragEvent;
-import javafx.scene.input.Dragboard;
-import javafx.scene.input.TransferMode;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Priority;
-import javafx.scene.layout.StackPane;
-import javafx.scene.shape.Polygon;
 import javafx.util.Callback;
+import javafx.util.Duration;
+import javafx.util.converter.DoubleStringConverter;
 import javafx.util.converter.IntegerStringConverter;
 import org.controlsfx.control.ListSelectionView;
 import org.controlsfx.control.PopOver;
@@ -105,11 +62,27 @@ import org.controlsfx.control.RangeSlider;
 import org.controlsfx.control.SegmentedButton;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.peaks.PeakList;
+import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.PolyChart.DISDIM;
-import static org.nmrfx.processor.gui.PolyChart.DISDIM.OneDX;
-import static org.nmrfx.processor.gui.PolyChart.DISDIM.TwoD;
+import org.nmrfx.processor.gui.controls.ConsoleUtil;
+import org.nmrfx.processor.gui.spectra.DatasetAttributes;
+import org.nmrfx.processor.gui.spectra.NMRAxis;
+import org.nmrfx.processor.gui.spectra.PeakDisplayParameters;
+import org.nmrfx.processor.gui.spectra.PeakListAttributes;
 import org.nmrfx.processor.gui.utils.ColorSchemes;
 import org.nmrfx.utilities.DictionarySort;
+
+import java.io.IOException;
+import java.net.URL;
+import java.text.DecimalFormat;
+import java.text.ParseException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.ResourceBundle;
+
+import static org.nmrfx.processor.gui.PolyChart.DISDIM.OneDX;
+import static org.nmrfx.processor.gui.PolyChart.DISDIM.TwoD;
 
 /**
  *
@@ -208,21 +181,21 @@ public class SpecAttrWindowController implements Initializable {
     private ColorPicker bgColorPicker;
 
     @FXML
-    private ComboBox<Double> ticFontSizeComboBox;
+    private ComboBox<Number> ticFontSizeComboBox;
     @FXML
-    private ComboBox<Double> labelFontSizeComboBox;
+    private ComboBox<Number> labelFontSizeComboBox;
     @FXML
     private CheckBox gridCheckBox;
     @FXML
     private CheckBox intensityAxisCheckBox;
     @FXML
-    private ComboBox<Integer> leftBorderSizeComboBox;
+    private ComboBox<Number> leftBorderSizeComboBox;
     @FXML
-    private ComboBox<Integer> rightBorderSizeComboBox;
+    private ComboBox<Number> rightBorderSizeComboBox;
     @FXML
-    private ComboBox<Integer> topBorderSizeComboBox;
+    private ComboBox<Number> topBorderSizeComboBox;
     @FXML
-    private ComboBox<Integer> bottomBorderSizeComboBox;
+    private ComboBox<Number> bottomBorderSizeComboBox;
     @FXML
     private CheckBox titlesCheckBox;
 
@@ -339,10 +312,28 @@ public class SpecAttrWindowController implements Initializable {
         integralPosSlider.setLowValue(0.8);
         integralPosSlider.setHighValue(0.95);
 
+        ticFontSizeComboBox.valueProperty().addListener(e -> refreshLater());
+        labelFontSizeComboBox.valueProperty().addListener(e -> refreshLater());
+        titlesCheckBox.selectedProperty().addListener(e -> refreshLater());
+        intensityAxisCheckBox.selectedProperty().addListener(e -> refreshLater());
+        leftBorderSizeComboBox.valueProperty().addListener(e -> refreshLater());
+        rightBorderSizeComboBox.valueProperty().addListener(e -> refreshLater());
+        topBorderSizeComboBox.valueProperty().addListener(e -> refreshLater());
+        bottomBorderSizeComboBox.valueProperty().addListener(e -> refreshLater());
         integralPosSlider.lowValueProperty().addListener(e -> updateIntegralState());
         integralPosSlider.highValueProperty().addListener(e -> updateIntegralState());
-        integralCheckBox.selectedProperty().addListener(e -> updateIntegralState());
-        regionCheckBox.selectedProperty().addListener(e -> updateIntegralState());
+        regionCheckBox.selectedProperty().addListener(e -> refreshLater());
+        integralCheckBox.selectedProperty().addListener(e -> refreshLater());
+        gridCheckBox.selectedProperty().addListener(e -> refreshLater());
+        offsetTrackingCheckBox.selectedProperty().addListener(e -> refreshLater());
+        useDatasetColorCheckBox.selectedProperty().addListener(e -> refreshLater());
+        slice1StateCheckBox.selectedProperty().addListener(e -> refreshLater());
+        slice2StateCheckBox.selectedProperty().addListener(e -> refreshLater());
+        xOffsetSlider.valueProperty().addListener(e -> refreshLater());
+        yOffsetSlider.valueProperty().addListener(e -> refreshLater());
+        scaleSlider.valueProperty().addListener(e -> refreshLater());
+        slice1ColorPicker.valueProperty().addListener(e -> refreshLater());
+        slice2ColorPicker.valueProperty().addListener(e -> refreshLater());
 
         aspectCheckBox.selectedProperty().addListener(e -> updateAspectRatio());
         aspectSlider.setMin(0.1);
@@ -527,15 +518,9 @@ public class SpecAttrWindowController implements Initializable {
     }
 
     void updateIntegralState() {
-        chart.chartProps.setRegions(regionCheckBox.isSelected());
-        chart.chartProps.setIntegrals(integralCheckBox.isSelected());
-        double lowValue = integralPosSlider.getLowValue();
-        double highValue = integralPosSlider.getHighValue();
-        chart.chartProps.setIntegralLowPos(lowValue);
-        chart.chartProps.setIntegralHighPos(highValue);
-        integralLowValue.setText(String.format("%.2f", lowValue));
-        integralHighValue.setText(String.format("%.2f", highValue));
-        chart.refresh();
+        integralLowValue.setText(String.format("%.2f", integralPosSlider.getLowValue()));
+        integralHighValue.setText(String.format("%.2f", integralPosSlider.getHighValue()));
+        refreshLater();
     }
 
     List<PolyChart> getCharts(boolean all) {
@@ -1525,16 +1510,15 @@ public class SpecAttrWindowController implements Initializable {
         } else {
             chart.chartProps.setCross1Color(null);
         }
-        chart.chartProps.setTicFontSize(ticFontSizeComboBox.getValue());
-        chart.chartProps.setLabelFontSize(labelFontSizeComboBox.getValue());
-        chart.chartProps.setLeftBorderSize(leftBorderSizeComboBox.getValue());
-        chart.chartProps.setRightBorderSize(rightBorderSizeComboBox.getValue());
-        chart.chartProps.setTopBorderSize(topBorderSizeComboBox.getValue());
-        chart.chartProps.setBottomBorderSize(bottomBorderSizeComboBox.getValue());
-        chart.chartProps.setGrid(gridCheckBox.isSelected());
-        chart.chartProps.setIntensityAxis(intensityAxisCheckBox.isSelected());
-        chart.chartProps.setTitles(titlesCheckBox.isSelected());
+    }
 
+    // add delay so bindings between properties and controsl activate before refresh
+    private void refreshLater() {
+        PauseTransition wait = new PauseTransition(Duration.millis(50.0));
+        wait.setOnFinished((e) -> {
+            ConsoleUtil.runOnFxThread(chart::refresh);
+        });
+        wait.play();
     }
 
     private void refreshAction() {
@@ -1613,15 +1597,18 @@ public class SpecAttrWindowController implements Initializable {
             //limitFields[i][1].unbind();
 //            limitFields[i][1].bind(axis.upperBoundProperty().asString());
         }
-        polyChart.sliceAttributes.offsetTrackingProperty().bindBidirectional(offsetTrackingCheckBox.selectedProperty());
-        polyChart.sliceAttributes.useDatasetColorProperty().bindBidirectional(useDatasetColorCheckBox.selectedProperty());
-        polyChart.sliceAttributes.slice1StateProperty().bindBidirectional(slice1StateCheckBox.selectedProperty());
-        polyChart.sliceAttributes.slice2StateProperty().bindBidirectional(slice2StateCheckBox.selectedProperty());
-        polyChart.sliceAttributes.offsetXValueProperty().bindBidirectional(xOffsetSlider.valueProperty());
-        polyChart.sliceAttributes.offsetYValueProperty().bindBidirectional(yOffsetSlider.valueProperty());
-        polyChart.sliceAttributes.scaleValueProperty().bindBidirectional(scaleSlider.valueProperty());
-        slice1ColorPicker.setValue(polyChart.sliceAttributes.slice1ColorProperty().get());
-        slice2ColorPicker.setValue(polyChart.sliceAttributes.slice2ColorProperty().get());
+
+
+        offsetTrackingCheckBox.selectedProperty().bindBidirectional(polyChart.sliceAttributes.offsetTrackingProperty());
+        useDatasetColorCheckBox.selectedProperty().bindBidirectional(polyChart.sliceAttributes.useDatasetColorProperty());
+        slice1StateCheckBox.selectedProperty().bindBidirectional(polyChart.sliceAttributes.slice1StateProperty());
+        slice2StateCheckBox.selectedProperty().bindBidirectional(polyChart.sliceAttributes.slice2StateProperty());
+        xOffsetSlider.valueProperty().bindBidirectional(polyChart.sliceAttributes.offsetXValueProperty());
+        yOffsetSlider.valueProperty().bindBidirectional(polyChart.sliceAttributes.offsetYValueProperty());
+        scaleSlider.valueProperty().bindBidirectional(polyChart.sliceAttributes.scaleValueProperty());
+        slice1ColorPicker.valueProperty().bindBidirectional(polyChart.sliceAttributes.slice1ColorProperty());
+        slice2ColorPicker.valueProperty().bindBidirectional(polyChart.sliceAttributes.slice2ColorProperty());
+
         if (chart.chartProps.getAxesColor() == null) {
             axisColorCheckBox.setSelected(false);
         } else {
@@ -1642,22 +1629,32 @@ public class SpecAttrWindowController implements Initializable {
         } else {
             cross1ColorPicker.setValue(polyChart.chartProps.cross1ColorProperty().get());
         }
-        ticFontSizeComboBox.setValue(polyChart.chartProps.getTicFontSize());
-        labelFontSizeComboBox.setValue(polyChart.chartProps.getLabelFontSize());
-        leftBorderSizeComboBox.setValue(polyChart.chartProps.getLeftBorderSize());
-        rightBorderSizeComboBox.setValue(polyChart.chartProps.getRightBorderSize());
-        topBorderSizeComboBox.setValue(polyChart.chartProps.getTopBorderSize());
-        bottomBorderSizeComboBox.setValue(polyChart.chartProps.getBottomBorderSize());
-        gridCheckBox.setSelected(polyChart.chartProps.getGrid());
-        intensityAxisCheckBox.setSelected(polyChart.chartProps.getIntensityAxis());
-        integralPosSlider.setLowValue(polyChart.chartProps.getIntegralLowPos());
-        integralPosSlider.setHighValue(polyChart.chartProps.getIntegralHighPos());
-        integralCheckBox.setSelected(chart.chartProps.getIntegrals());
-        regionCheckBox.setSelected(chart.chartProps.getRegions());
-        titlesCheckBox.setSelected(polyChart.chartProps.getTitles());
+
+
+        intensityAxisCheckBox.selectedProperty().bindBidirectional(polyChart.chartProps.intensityAxisProperty());
+        ticFontSizeComboBox.valueProperty().bindBidirectional(polyChart.chartProps.ticFontSizeProperty());
+        labelFontSizeComboBox.valueProperty().bindBidirectional(polyChart.chartProps.labelFontSizeProperty());
+
+        leftBorderSizeComboBox.valueProperty().bindBidirectional(polyChart.chartProps.leftBorderSizeProperty());
+        rightBorderSizeComboBox.valueProperty().bindBidirectional(polyChart.chartProps.rightBorderSizeProperty());
+        topBorderSizeComboBox.valueProperty().bindBidirectional(polyChart.chartProps.topBorderSizeProperty());
+        bottomBorderSizeComboBox.valueProperty().bindBidirectional(polyChart.chartProps.bottomBorderSizeProperty());
+
+
+        gridCheckBox.selectedProperty().bindBidirectional(polyChart.chartProps.gridProperty());
+        regionCheckBox.selectedProperty().bindBidirectional(polyChart.chartProps.regionsProperty());
+        integralCheckBox.selectedProperty().bindBidirectional(polyChart.chartProps.integralsProperty());
+
+        integralPosSlider.lowValueProperty().bindBidirectional(polyChart.chartProps.integralLowPosProperty());
+        integralPosSlider.highValueProperty().bindBidirectional(polyChart.chartProps.integralHighPosProperty());
+
+        titlesCheckBox.selectedProperty().bindBidirectional(polyChart.chartProps.titlesProperty());
+
+        aspectSlider.valueProperty().bindBidirectional(polyChart.chartProps.aspectRatioProperty());
+        aspectCheckBox.selectedProperty().bindBidirectional((polyChart.chartProps.aspectProperty()));
+
         DISDIM curDisDim = polyChart.disDimProp.get();
         disDimCombo.setValue(curDisDim);
-        aspectSlider.setValue(polyChart.chartProps.getAspectRatio());
         // polyChart.disDimProp.bindBidirectional(disDimCombo.valueProperty());
     }
 
