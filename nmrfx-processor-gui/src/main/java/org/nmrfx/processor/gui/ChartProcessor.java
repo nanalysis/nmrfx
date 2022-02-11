@@ -17,36 +17,30 @@
  */
 package org.nmrfx.processor.gui;
 
+import javafx.beans.property.SimpleObjectProperty;
+import javafx.stage.FileChooser;
 import org.nmrfx.processor.datasets.Dataset;
-import org.nmrfx.datasets.DatasetParameterFile;
+import org.nmrfx.processor.datasets.DatasetType;
 import org.nmrfx.processor.datasets.vendor.NMRData;
 import org.nmrfx.processor.datasets.vendor.NMRDataUtil;
 import org.nmrfx.processor.datasets.vendor.NMRViewData;
+import org.nmrfx.processor.datasets.vendor.RS2DData;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.processing.MultiVecCounter;
+import org.nmrfx.processor.processing.Processor;
 import org.nmrfx.processor.processing.VecIndex;
 import org.nmrfx.processor.processing.processes.IncompleteProcessException;
-import org.nmrfx.processor.processing.Processor;
+import org.nmrfx.processor.processing.processes.ProcessOps;
+import org.nmrfx.utils.GUIUtils;
+import org.python.core.PyException;
+import org.python.core.PyObject;
+import org.python.util.InteractiveInterpreter;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.TreeMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import org.python.core.PyException;
-import org.python.core.PyObject;
-import org.python.util.InteractiveInterpreter;
-import javafx.beans.property.SimpleObjectProperty;
-import javafx.stage.FileChooser;
-import org.nmrfx.processor.processing.processes.ProcessOps;
-import org.nmrfx.utils.GUIUtils;
+import java.util.*;
 
 
 /*
@@ -61,6 +55,7 @@ import org.nmrfx.utils.GUIUtils;
  * @author brucejohnson
  */
 public class ChartProcessor {
+    public static final DatasetType DEFAULT_DATASET_TYPE = DatasetType.NMRFX;
 
     private SimpleObjectProperty nmrDataObj;
 
@@ -99,7 +94,7 @@ public class ChartProcessor {
      * The name of the datasetFile that will be created when whole data file is
      * processed.
      */
-    private String extension = ".nv";
+    private DatasetType datasetType = DEFAULT_DATASET_TYPE;
 
     /**
      * List of commands to be executed at beginning of script.
@@ -724,12 +719,12 @@ public class ChartProcessor {
         return vecDim;
     }
 
-    public void setExtension(String value) {
-        extension = value;
+    public void setDatasetType(DatasetType value) {
+        datasetType = value;
     }
 
-    public String getExtension() {
-        return extension;
+    public DatasetType getDatasetType() {
+        return datasetType;
     }
 
     public void writeScript() throws IOException {
@@ -955,51 +950,70 @@ public class ChartProcessor {
         return !script.contains("_DATASET_");
     }
 
+    String removeDatasetName(String script) {
+        return script.replaceFirst("CREATE\\([^\\)]++\\)", "CREATE(_DATASET_)");
+    }
+
     Optional<String> fixDatasetName(String script) {
-        Optional<String> result = Optional.empty();
+        final Optional<String> emptyResult = Optional.empty();
+        final Optional<String> result;
 
         if (!scriptHasDataset(script)) {
             String datasetName = suggestDatasetName();
             String filePath = getNMRData().getFilePath();
             File nmrFile = new File(filePath);
             File directory = nmrFile.isDirectory() ? nmrFile : nmrFile.getParentFile();
-            FileChooser fileChooser = new FileChooser();
-            fileChooser.setInitialDirectory(directory);
-            fileChooser.setInitialFileName(datasetName);
-            File file = fileChooser.showSaveDialog(null);
-            if (file != null) {
-                if (file.exists() && !file.canWrite()) {
-                    GUIUtils.warn("Dataset creation", "Dataset exists and can't be overwritten");
-                    return result;
+            File file;
+            if (getDatasetType()== DatasetType.SPINit) {
+                Path datasetDir = directory.toPath();
+                Path newProcPath = RS2DData.findNextProcPath(datasetDir);
+                try {
+                    Files.createDirectories(newProcPath);
+                } catch (IOException e) {
+                    GUIUtils.warn("Dataset creation", "Unable to create new dataset directory");
+                    return emptyResult;
                 }
-                if (!file.exists()) {
-                    File parentFile = file.getParentFile();
-                    if (!parentFile.canWrite()) {
-                        GUIUtils.warn("Dataset creation", "Can't create dataset in this directory");
-                        return result;
+                file = newProcPath.toFile();
+            } else {
+                FileChooser fileChooser = new FileChooser();
+                fileChooser.setInitialDirectory(directory);
+                fileChooser.setInitialFileName(datasetName);
+                file = fileChooser.showSaveDialog(null);
+                if (file == null) {
+                    return emptyResult;
+                }
+                Optional<DatasetType> fileTypeOpt = DatasetType.typeFromFile(file);
+                if (fileTypeOpt.isPresent()) {
+                    DatasetType fileType = fileTypeOpt.get();
+                    if (fileType != getDatasetType()) {
+                        GUIUtils.warn("Dataset creation", "File extension not consistent with dataset type");
+                        return emptyResult;
                     }
                 }
-
-                String fileString = file.getAbsoluteFile().toString();
-                if (!fileString.endsWith(".nv") && !fileString.endsWith(".ucsf")) {
-                    fileString += getExtension();
-                }
-                datasetFile = new File(fileString);
-                datasetFileTemp = new File(fileString + ".tmp");
-                fileString = fileString.replace("\\", "/");
-                script = script.replace("_DATASET_", "'" + fileString + "'");
-                result = Optional.of(script);
             }
+
+            file = getDatasetType().addExtension(file);
+            if (file.exists() && !file.canWrite()) {
+                GUIUtils.warn("Dataset creation", "Dataset exists and can't be overwritten");
+                return emptyResult;
+            }
+            if (!file.exists()) {
+                File parentFile = file.getParentFile();
+                if (!parentFile.canWrite()) {
+                    GUIUtils.warn("Dataset creation", "Can't create dataset in this directory");
+                    return emptyResult;
+                }
+            }
+            datasetFile = file;
+            String fileString = file.getAbsoluteFile().toString();
+            datasetFileTemp = new File(fileString + ".tmp");
+            fileString = fileString.replace("\\", "/");
+            script = script.replace("_DATASET_", "'" + fileString + "'");
+            result = Optional.of(script);
         } else {
             result = Optional.of(script);
         }
         return result;
-    }
-
-    private void setDatasetFile(String datasetName) {
-        File scriptDir = getScriptDir();
-        datasetFile = scriptDir.toPath().resolve(datasetName + extension).toFile();
-        datasetFileTemp = scriptDir.toPath().resolve(datasetName + extension + ".tmp").toFile();
     }
 
     private String suggestDatasetName() {
@@ -1025,26 +1039,6 @@ public class ChartProcessor {
             datasetName = datasetName.substring(0, lastDot);
         }
         return datasetName;
-    }
-
-    public void renameDataset() throws IOException {
-        fxmlController.closeFile(datasetFileTemp);
-        fxmlController.closeFile(datasetFile);
-
-        Path target = datasetFile.toPath();
-        Path source = datasetFileTemp.toPath();
-        Path parTarget = Paths.get(DatasetParameterFile.getParameterFileName(datasetFile.toString()));
-        Path parSource = Paths.get(DatasetParameterFile.getParameterFileName(datasetFileTemp.toString()));
-        try {
-            Files.move(source, target, StandardCopyOption.REPLACE_EXISTING);
-            if (Files.exists(parSource)) {
-                Files.move(parSource, parTarget, StandardCopyOption.REPLACE_EXISTING);
-            }
-        } catch (IOException ioE) {
-            MainApp.writeOutput(ioE.getMessage() + "\n");
-            throw ioE;
-        } finally {
-        }
     }
 
     public int mapToDataset(int iDim) {
@@ -1227,6 +1221,8 @@ public class ChartProcessor {
 
     public void setData(NMRData data, boolean clearOps) {
         setNMRData(data);
+        setDatasetType(data.getPreferredDatasetType());
+
         datasetFile = null;
         datasetFileTemp = null;
         Map<String, Boolean> flags = new HashMap<>();
@@ -1242,10 +1238,7 @@ public class ChartProcessor {
         Map<String, List<String>> listOfScripts = getScriptList();
         List<String> saveHeaderList = new ArrayList<>();
         saveHeaderList.addAll(headerList);
-        //System.out.println("saved");
-        for (Map.Entry<String, List<String>> entry : listOfScripts.entrySet()) {
-            //System.out.println(entry.toString());
-        }
+
         // when setting data reset vecdim back to 0 as it could have been set to
         // a value higher than the number of dimensions
         vecDim = 0;

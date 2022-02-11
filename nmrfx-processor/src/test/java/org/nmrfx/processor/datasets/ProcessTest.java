@@ -27,15 +27,22 @@ public class ProcessTest {
     }
 
     public long runAndCompare(String fileName) throws IOException {
-        File refFile = Path.of(validHome, fileName + ".nv").toFile();
+        File refFile;
+        File testFile;
+        if (fileName.contains("rs2d")) {
+            refFile=Path.of(validHome, fileName, "Proc","1","data.dat").toFile();
+            testFile = Path.of(tmpHome, "tst_" + fileName,"Proc","1","data.dat").toFile();
+        } else {
+            refFile=Path.of(validHome, fileName + ".nv").toFile();
+            testFile = Path.of(tmpHome, "tst_" + fileName + ".nv").toFile();
+        }
         // someone running the tests may not have the test files as they take up a lot of disk space
         // so, currently,  if file doesn't exist a message is printed and the test passes
         if (!refFile.exists()) {
-            System.out.println("File " + fileName + " doesn't exist, skipping test");
+            System.out.println(refFile + " doesn't exist, skipping test");
             return 0;
         } else {
             executeScript(fileName);
-            File testFile = Path.of(tmpHome, "tst_" + fileName + ".nv").toFile();
             long result = DatasetCompare.compare(refFile, testFile);
             return result;
         }
@@ -139,6 +146,18 @@ public class ProcessTest {
     @Test
     public void test_ubiq_t2() throws IOException {
         long result = runAndCompare("ubiq_t2");
+        Assert.assertEquals(0, result);
+    }
+
+    @Test
+    public void test_rs2d_1d() throws IOException {
+        long result = runAndCompare("rs2d_1dproton");
+        Assert.assertEquals(0, result);
+    }
+
+    @Test
+    public void test_rs2d_2d() throws IOException {
+        long result = runAndCompare("rs2d_2dhetero");
         Assert.assertEquals(0, result);
     }
 
