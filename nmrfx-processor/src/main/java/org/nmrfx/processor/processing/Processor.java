@@ -17,6 +17,7 @@
  */
 package org.nmrfx.processor.processing;
 
+import org.greenrobot.eventbus.EventBus;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.datasets.MatrixType;
 import org.nmrfx.math.VecBase;
@@ -28,6 +29,7 @@ import org.nmrfx.processor.datasets.vendor.BrukerData;
 import org.nmrfx.processor.datasets.vendor.NMRData;
 import org.nmrfx.processor.datasets.vendor.NMRDataUtil;
 import org.nmrfx.processor.datasets.vendor.RS2DData;
+import org.nmrfx.processor.events.DatasetSavedEvent;
 import org.nmrfx.processor.math.Matrix;
 import org.nmrfx.processor.math.MatrixND;
 import org.nmrfx.processor.math.Vec;
@@ -1465,6 +1467,7 @@ public class Processor {
                     if (dataset.getFileName().endsWith(RS2DData.DATA_FILE_NAME) && (getNMRData() instanceof RS2DData)) {
                         RS2DData rs2DData = (RS2DData) getNMRData();
                         Path procNumPath = rs2DData.saveDataset(dataset);
+                        EventBus.getDefault().post(new DatasetSavedEvent(RS2DData.DATASET_TYPE, procNumPath));
                     } else {
                         dataset.saveMemoryFile();
                     }
