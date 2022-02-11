@@ -694,17 +694,6 @@ public class EnergyLists {
         writer.close();
     }
 
-    class EnergyStat {
-
-        double vdw = 0.0;
-        int nVdw = 0;
-        double distance = 0.0;
-        int nDistance = 0;
-        double bond = 0.0;
-        int nBond = 0;
-        double total = 0.0;
-    }
-
     public static double grabDihedral(AngleConstraint boundary) {
         double dihedral;
         int atomListLength = boundary.getAtoms().length;

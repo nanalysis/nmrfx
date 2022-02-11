@@ -36,7 +36,6 @@ import java.nio.ShortBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.charset.Charset;
 import java.nio.file.*;
-import java.nio.file.attribute.BasicFileAttributes;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -1699,41 +1698,6 @@ class VarianData implements NMRData {
         }
 
     }
-
-    public static class PeekFiles extends SimpleFileVisitor<Path> {
-
-        @Override
-        public FileVisitResult visitFile(Path file, BasicFileAttributes attr) {
-            if (attr.isRegularFile() && file.toString().endsWith("fid")) {
-                System.out.format(" > peek %s\n", file);
-                try {
-                    NMRData varian = NMRDataUtil.getFID(file.toString());
-                    System.out.print("sequence=" + varian.getSequence() + " solvent=" + varian.getSolvent());
-                    System.out.println(" dim=" + varian.getNDim() + " nvectors=" + varian.getNVectors()
-                            + " npoints=" + varian.getNPoints() + " f1coef=" + Arrays.toString(varian.getCoefs(1)));
-                    System.out.println("  tdsize's: " + varian.getSize(0) + " " + varian.getSize(1)
-                            + " " + varian.getSize(2) + " " + varian.getSize(3));
-                    System.out.println("  tn's: " + varian.getTN(0) + " " + varian.getTN(1)
-                            + " " + varian.getTN(2) + " " + varian.getTN(3));
-                    System.out.println("  sfrq's: " + varian.getSF(0) + " " + varian.getSF(1)
-                            + " " + varian.getSF(2) + " " + varian.getSF(3));
-                    System.out.println("  sw's: " + varian.getSW(0) + " " + varian.getSW(1)
-                            + " " + varian.getSW(2) + " " + varian.getSW(3));
-                    System.out.println("  ref's: " + varian.getRef(0) + " " + varian.getRef(1)
-                            + " " + varian.getRef(2) + " " + varian.getRef(3));
-                    System.out.println("");
-                } catch (IOException ex) {
-
-                }
-            }
-            return FileVisitResult.CONTINUE;
-        }
-
-        @Override
-        public FileVisitResult visitFileFailed(Path file, IOException e) {
-            return FileVisitResult.CONTINUE;
-        }
-    } // end class PeekFiles
 
     public static void main(String args[]) {
 
