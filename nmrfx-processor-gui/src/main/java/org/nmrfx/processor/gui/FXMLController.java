@@ -86,6 +86,8 @@ import org.nmrfx.utilities.DictionarySort;
 import org.nmrfx.utils.GUIUtils;
 import org.python.core.PyObject;
 import org.python.util.PythonInterpreter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -96,10 +98,9 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class FXMLController implements FractionPaneChild, Initializable, PeakNavigable {
+    private static final Logger log = LoggerFactory.getLogger(FXMLController.class);
 
     @FXML
     private VBox topBar;
@@ -684,7 +685,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
                         }
                     }
                 } catch (IOException ex) {
-                    Logger.getLogger(FXMLController.class.getName()).log(Level.SEVERE, null, ex);
+                    log.error(ex.getMessage(), ex);
                 }
             }
         }
@@ -897,7 +898,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
                 }
                 pdfGC.saveFile();
             } catch (GraphicsIOException ex) {
-                Logger.getLogger(FXMLController.class.getName()).log(Level.SEVERE, null, ex);
+                log.error(ex.getMessage(), ex);
             }
         }
         stage.setResizable(true);

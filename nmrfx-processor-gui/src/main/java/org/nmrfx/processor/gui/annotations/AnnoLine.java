@@ -17,16 +17,16 @@
  */
 package org.nmrfx.processor.gui.annotations;
 
-import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.nmrfx.graphicsio.GraphicsContextInterface;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
  * @author brucejohnson
  */
 public class AnnoLine extends AnnoShape {
+    private static final Logger log = LoggerFactory.getLogger(AnnoLine.class);
 
     final double x1;
     final double y1;
@@ -56,7 +56,7 @@ public class AnnoLine extends AnnoShape {
             double yp2 = yPosType.transform(y2, bounds[1], world[1]);
             gC.strokeLine(xp1, yp1, xp2, yp2);
         } catch (Exception ex) {
-            Logger.getLogger(AnnoLine.class.getName()).log(Level.SEVERE, null, ex);
+            log.error(ex.getMessage(), ex);
         }
     }
 
