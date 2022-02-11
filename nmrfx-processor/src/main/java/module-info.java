@@ -28,4 +28,5 @@ module org.nmrfx.processor {
     requires jython.slim;
     requires com.nanalysis.jcamp;
     requires org.slf4j;
+    requires eventbus.java;
 }
