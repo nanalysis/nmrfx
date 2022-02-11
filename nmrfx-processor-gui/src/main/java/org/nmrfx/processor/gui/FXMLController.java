@@ -2113,14 +2113,14 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
             try {
                 PropertyUtils.setSimpleProperty(this, name, value);
             } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException ex) {
-                Logger.getLogger(DatasetAttributes.class.getName()).log(Level.SEVERE, null, ex);
+                log.error(ex.getMessage(), ex);
             }
         } else {
             Platform.runLater(() -> {
                 try {
                     PropertyUtils.setProperty(this, name, value);
                 } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException ex) {
-                    Logger.getLogger(DatasetAttributes.class.getName()).log(Level.SEVERE, null, ex);
+                    log.error(ex.getMessage(), ex);
                 }
             }
             );
@@ -2142,7 +2142,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
                     data.put(beanName, PropertyUtils.getSimpleProperty(this, beanName));
                 }
             } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException ex) {
-                Logger.getLogger(DatasetAttributes.class.getName()).log(Level.SEVERE, null, ex);
+                log.error(ex.getMessage(), ex);
             }
         }
         return data;

@@ -2945,8 +2945,7 @@ public class PolyChart implements PeakListener {
                     PeakListTools.peakFit(peakListAttr.getPeakList(), dataset, fitRows, delays, peaks, lsFit, syncDim, arrayedFitMode);
                 }
             } catch (IllegalArgumentException | IOException | PeakFitException ex) {
-                Logger.getLogger(PolyChart.class
-                        .getName()).log(Level.SEVERE, null, ex);
+                log.error(ex.getMessage(), ex);
             }
         });
     }
@@ -2958,8 +2957,7 @@ public class PolyChart implements PeakListener {
                 try {
                     PeakListTools.clusterPeakColumns(peakListAttr.getPeakList(), syncDim);
                 } catch (IllegalArgumentException ex) {
-                    Logger.getLogger(PolyChart.class
-                            .getName()).log(Level.SEVERE, null, ex);
+                    log.error(ex.getMessage(), ex);
                 }
             }
         });
@@ -2982,19 +2980,11 @@ public class PolyChart implements PeakListener {
                         PeakListTools.tweakPeaks(peakListAttr.getPeakList(), dataset, peaks, planes);
 
                     } catch (IllegalArgumentException ex) {
-                        Logger.getLogger(PolyChart.class
-                                .getName()).log(Level.SEVERE, null, ex);
+                        log.error(ex.getMessage(), ex);
                     }
                 }
             }
         });
-//        drawPeakLists(false);
-//        peakListAttributesList.forEach((peakListAttr) -> {
-//            List<Peak> peaks = peakListAttr.getSelectedPeaks();
-//            if (!peaks.isEmpty()) {
-//                drawSelectedPeaks(peakListAttr);
-//            }
-//        });
     }
 
     public void tweakPeakLists() {
@@ -3008,18 +2998,10 @@ public class PolyChart implements PeakListener {
                     PeakListTools.tweakPeaks(peakListAttr.getPeakList(), dataset, planes);
 
                 } catch (IllegalArgumentException ex) {
-                    Logger.getLogger(PolyChart.class
-                            .getName()).log(Level.SEVERE, null, ex);
+                    log.error(ex.getMessage(), ex);
                 }
             }
         });
-//        drawPeakLists(false);
-//        peakListAttributesList.forEach((peakListAttr) -> {
-//            List<Peak> peaks = peakListAttr.getSelectedPeaks();
-//            if (!peaks.isEmpty()) {
-//                drawSelectedPeaks(peakListAttr);
-//            }
-//        });
     }
 
     public void duplicatePeakList() {
@@ -3787,7 +3769,7 @@ public class PolyChart implements PeakListener {
                         sliceDataset.setLabel(0, dataset.getLabel(dataAttr.dim[iOrient]));
                         sliceDatasets.add(sliceDataset.getName());
                     } catch (IOException ex) {
-                        Logger.getLogger(PolyChart.class.getName()).log(Level.SEVERE, null, ex);
+                        log.error(ex.getMessage(), ex);
                     }
                     iSlice++;
                 }
