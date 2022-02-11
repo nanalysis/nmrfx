@@ -5,6 +5,10 @@
  */
 package org.nmrfx.datasets;
 
+import org.apache.commons.collections4.map.LRUMap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Collections;
@@ -12,17 +16,13 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
-import org.apache.commons.collections4.map.LRUMap;
-import org.nmrfx.chemistry.io.NMRNEFReader;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  *
  * @author brucejohnson
  */
 public class StorageCache {
-    private static final Logger log = LoggerFactory.getLogger(NMRNEFReader.class);
+    private static final Logger log = LoggerFactory.getLogger(StorageCache.class);
 
     Map<DatasetKey, ByteBuffer> buffers;
     ByteBuffer activeBuffer = null;

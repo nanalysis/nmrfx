@@ -1,7 +1,6 @@
 package org.nmrfx.datasets;
 
 import org.apache.commons.lang3.StringUtils;
-import org.nmrfx.chemistry.io.NMRNEFReader;
 import org.nmrfx.math.VecBase;
 import org.nmrfx.project.ProjectBase;
 import org.slf4j.Logger;
@@ -13,7 +12,7 @@ import java.nio.ByteOrder;
 import java.util.*;
 
 public class DatasetBase {
-    private static final Logger log = LoggerFactory.getLogger(NMRNEFReader.class);
+    private static final Logger log = LoggerFactory.getLogger(DatasetBase.class);
 
     public final static int NV_HEADER_SIZE = 2048;
     public final static int UCSF_HEADER_SIZE = 180;

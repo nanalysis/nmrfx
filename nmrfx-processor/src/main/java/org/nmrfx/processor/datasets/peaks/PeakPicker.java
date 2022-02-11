@@ -45,7 +45,7 @@ import java.util.stream.Collectors;
  * @author brucejohnson
  */
 public class PeakPicker {
-    private static final Logger log = LoggerFactory.getLogger(PeakListTools.class);
+    private static final Logger log = LoggerFactory.getLogger(PeakPicker.class);
 
     private final Dataset dataset;
     private final PeakPickParameters peakPickPar;
