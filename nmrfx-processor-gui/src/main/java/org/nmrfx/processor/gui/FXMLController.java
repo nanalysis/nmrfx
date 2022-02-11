@@ -70,6 +70,7 @@ import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakDim;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.processor.datasets.Dataset;
+import org.nmrfx.processor.datasets.DatasetType;
 import org.nmrfx.processor.datasets.peaks.PeakLinker;
 import org.nmrfx.processor.datasets.peaks.PeakListAlign;
 import org.nmrfx.processor.datasets.peaks.PeakNeighbors;
@@ -420,7 +421,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
         fileChooser.setInitialDirectory(getInitialDirectory());
         fileChooser.setTitle("Open NMR Dataset");
         fileChooser.getExtensionFilters().addAll(
-                new ExtensionFilter("NMR Dataset", "*.nv", "*.ucsf", "*.dx", "*.jdx", "1r", "2rr", "3rrr", "4rrrr", "data.dat"),
+                new ExtensionFilter("NMR Dataset", "*.nv", "*.ucsf", "*.dx", "*.jdx", "1r", "2rr", "3rrr", "4rrrr", RS2DData.DATA_FILE_NAME),
                 new ExtensionFilter("Any File", "*.*")
         );
         File selectedFile = fileChooser.showOpenDialog(null);
@@ -448,11 +449,11 @@ public class FXMLController implements  Initializable, PeakNavigable {
                     PreferencesController.saveRecentDatasets(selectedFile.toString());
                     RS2DData rs2dData = (RS2DData) nmrData;
                     String suggestedName = rs2dData.suggestName(new File(rs2dData.getFilePath()));
-                    String datasetName = GUIUtils.input("Dataset name", suggestedName);
-                    Dataset dataset = rs2dData.toDataset(datasetName);
+                    Dataset dataset = rs2dData.toDataset(suggestedName);
                     addDataset(dataset, append, false);
                 }
             } catch (IOException ex) {
+                GUIUtils.warn("Open Dataset", ex.getMessage());
             }
         }
         stage.setResizable(true);
@@ -505,6 +506,10 @@ public class FXMLController implements  Initializable, PeakNavigable {
     }
 
     public void openFile(String filePath, boolean clearOps, boolean appendFile) {
+        openFile(filePath, clearOps, appendFile, null);
+    }
+
+    public void openFile(String filePath, boolean clearOps, boolean appendFile, DatasetType datasetType) {
         boolean reload = false;
         try {
             File newFile = new File(filePath);
@@ -545,6 +550,9 @@ public class FXMLController implements  Initializable, PeakNavigable {
                     alert.showAndWait();
                     return;
                 } else {
+                    if (datasetType != null) {
+                        nmrData.setPreferredDatasetType(datasetType);
+                    }
                     addFID(nmrData, clearOps, reload);
                 }
             }
@@ -596,6 +604,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
         chartProcessor.setData(nmrData, clearOps);
         if (processorController != null) {
             processorController.viewingDataset(false);
+            processorController.updateFileButton();
             processorController.show();
         } else {
             System.out.println("Coudn't make controller");
