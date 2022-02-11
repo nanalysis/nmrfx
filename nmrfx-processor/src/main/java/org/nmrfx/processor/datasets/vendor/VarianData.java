@@ -17,6 +17,7 @@
  */
 package org.nmrfx.processor.datasets.vendor;
 
+import org.nmrfx.processor.datasets.DatasetType;
 import org.nmrfx.processor.datasets.parameters.FPMult;
 import org.nmrfx.processor.datasets.parameters.GaussianWt;
 import org.nmrfx.processor.datasets.parameters.LPParams;
@@ -94,6 +95,7 @@ class VarianData implements NMRData {
     int[] sizes = null;
     int[] maxSizes = null;
     double scale = 1.0e6;
+    private DatasetType preferredDatasetType = DatasetType.NMRFX;
     List<Double> arrayValues = new ArrayList<>();
 
     static final String PAR_LIST = "acqdim apptype array arraydim axis axisf procdim "
@@ -180,6 +182,16 @@ class VarianData implements NMRData {
     @Override
     public String getFilePath() {
         return fpath;
+    }
+
+    @Override
+    public DatasetType getPreferredDatasetType() {
+        return preferredDatasetType;
+    }
+
+    @Override
+    public void setPreferredDatasetType(DatasetType datasetType) {
+        this.preferredDatasetType = datasetType;
     }
 
     @Override

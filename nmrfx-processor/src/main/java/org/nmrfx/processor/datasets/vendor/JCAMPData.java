@@ -17,6 +17,7 @@
  */
 package org.nmrfx.processor.datasets.vendor;
 
+import org.nmrfx.processor.datasets.DatasetType;
 import org.nmrfx.processor.datasets.parameters.FPMult;
 import org.nmrfx.processor.datasets.parameters.GaussianWt;
 import org.nmrfx.processor.datasets.parameters.LPParams;
@@ -69,6 +70,8 @@ class JCAMPData implements NMRData {
     private final int tdsize[] = new int[5];  // TD,1 TD,2 etc.
     private final int maxSize[] = new int[5];  // TD,1 TD,2 etc.
     private double deltaPh0_2 = 0.0;
+    private DatasetType preferredDatasetType = DatasetType.NMRFX;
+
     // fixme dynamically determine size
     private final Double[] Ref = new Double[5];
     private final Double[] Sf = new Double[5];
@@ -165,6 +168,16 @@ class JCAMPData implements NMRData {
     @Override
     public String getFilePath() {
         return fpath;
+    }
+
+    @Override
+    public DatasetType getPreferredDatasetType() {
+        return preferredDatasetType;
+    }
+
+    @Override
+    public void setPreferredDatasetType(DatasetType datasetType) {
+        this.preferredDatasetType = datasetType;
     }
 
     @Override

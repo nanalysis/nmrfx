@@ -83,6 +83,10 @@
             <groupId>org.yaml</groupId>
             <artifactId>snakeyaml</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.greenrobot</groupId>
+            <artifactId>eventbus-java</artifactId>
+        </dependency>
     </dependencies>
     <build>
         <plugins>
