@@ -22,5 +22,5 @@ package org.nmrfx.jmx;
  * New types can be added to filter on messages more easily.
  */
 public enum NotificationType {
-    MESSAGE
+    MESSAGE, DATASET_SAVED
 }
