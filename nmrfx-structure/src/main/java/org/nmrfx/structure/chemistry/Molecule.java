@@ -17,53 +17,43 @@
  */
 package org.nmrfx.structure.chemistry;
 
-import org.nmrfx.structure.rdc.OrderSVD;
-import org.nmrfx.chemistry.CoordSet;
-import org.nmrfx.chemistry.Order;
-import org.nmrfx.chemistry.protein.Sheet;
-import org.nmrfx.chemistry.protein.ProteinHelix;
-import org.nmrfx.chemistry.*;
-import org.nmrfx.structure.chemistry.energy.Dihedral;
-import org.nmrfx.structure.chemistry.energy.EnergyCoords;
-import org.nmrfx.structure.chemistry.energy.EnergyLists;
-import org.nmrfx.structure.fastlinear.FastVector3D;
-import java.io.*;
-import java.lang.reflect.InvocationTargetException;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
-import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeSet;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.apache.commons.math3.linear.EigenDecomposition;
 import org.apache.commons.math3.linear.RealMatrix;
-import org.apache.commons.math3.linear.RealVector;
 import org.apache.commons.math3.linear.SingularValueDecomposition;
-import org.nmrfx.structure.project.StructureProject;
-import org.nmrfx.structure.chemistry.energy.AngleTreeGenerator;
-import org.nmrfx.chemistry.AtomEnergyProp;
+import org.nmrfx.chemistry.*;
 import org.nmrfx.chemistry.io.Sequence;
-import org.nmrfx.structure.chemistry.predict.Predictor;
-import org.nmrfx.structure.chemistry.predict.RNAAttributes;
+import org.nmrfx.chemistry.protein.ProteinHelix;
+import org.nmrfx.chemistry.protein.Sheet;
 import org.nmrfx.chemistry.search.MNode;
 import org.nmrfx.chemistry.search.MTree;
+import org.nmrfx.structure.chemistry.energy.AngleTreeGenerator;
+import org.nmrfx.structure.chemistry.energy.Dihedral;
+import org.nmrfx.structure.chemistry.energy.EnergyCoords;
+import org.nmrfx.structure.chemistry.energy.EnergyLists;
 import org.nmrfx.structure.chemistry.miner.NodeValidator;
 import org.nmrfx.structure.chemistry.miner.PathIterator;
+import org.nmrfx.structure.chemistry.predict.Predictor;
+import org.nmrfx.structure.chemistry.predict.RNAAttributes;
+import org.nmrfx.structure.fastlinear.FastVector3D;
+import org.nmrfx.structure.project.StructureProject;
 import org.nmrfx.structure.rdc.AlignmentCalc;
 import org.nmrfx.structure.rdc.AlignmentMatrix;
 import org.nmrfx.structure.rna.BasePair;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.BufferedWriter;
+import java.io.FileNotFoundException;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.*;
 
 public class Molecule extends MoleculeBase {
+    private static final Logger log = LoggerFactory.getLogger(Molecule.class);
 
     public final Map<String, List<SpatialSet>> sites = new HashMap<>();
     public static int selCycleCount = 0;
@@ -563,7 +553,7 @@ public class Molecule extends MoleculeBase {
             AtomEnergyProp.makeIrpMap();
         } catch (FileNotFoundException ex) {
         } catch (IOException ex) {
-            Logger.getLogger(Molecule.class.getName()).log(Level.SEVERE, null, ex);
+            log.error(ex.getMessage(), ex);
         }
         invalidateAtomArray();
         updateAtomArray();
@@ -2423,7 +2413,7 @@ public class Molecule extends MoleculeBase {
         try {
             AtomEnergyProp.makeIrpMap();
         } catch (IOException ex) {
-            Logger.getLogger(Molecule.class.getName()).log(Level.SEVERE, null, ex);
+            log.error(ex.getMessage(), ex);
         }
         List<Atom> atomList;
         if (treeAtoms == null) {

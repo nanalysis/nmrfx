@@ -17,28 +17,20 @@
  */
 package org.nmrfx.structure.chemistry.energy;
 
-import org.nmrfx.chemistry.constraints.AngleConstraint;
-import org.nmrfx.chemistry.*;
-import org.nmrfx.structure.chemistry.Molecule;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.PrintStream;
-import java.io.FileReader;
-import java.io.LineNumberReader;
-import java.io.BufferedReader;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.apache.commons.math3.optim.PointValuePair;
 import org.apache.commons.math3.optim.SimpleValueChecker;
+import org.nmrfx.chemistry.*;
+import org.nmrfx.chemistry.constraints.AngleConstraint;
 import org.nmrfx.chemistry.constraints.AngleConstraintSet;
+import org.nmrfx.structure.chemistry.Molecule;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.*;
+import java.util.*;
 
 public class Dihedral {
+    private static final Logger log = LoggerFactory.getLogger(Dihedral.class);
 
     final Molecule molecule;
     static Random rand = new Random();
@@ -499,7 +491,7 @@ public class Dihedral {
                 try {
                     addBoundary(angleConstraint);
                 } catch (InvalidMoleculeException ex) {
-                    Logger.getLogger(Dihedral.class.getName()).log(Level.SEVERE, null, ex);
+                    log.error(ex.getMessage(), ex);
                 }
             }
         }
