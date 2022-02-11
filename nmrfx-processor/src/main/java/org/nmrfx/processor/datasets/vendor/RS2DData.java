@@ -137,11 +137,11 @@ public class RS2DData implements NMRData {
                 false, ByteOrder.BIG_ENDIAN, 0);
         dataset.newHeader();
         for (int i = 0; i < nDim; i++) {
+            dataset.setComplex(i, i == 0);
             dataset.setSf(i, getSF(i));
             dataset.setSw(i, getSW(i));
             dataset.setRefValue(i, getRef(i));
-            dataset.setRefPt(i, dataset.getSizeReal(i));
-            dataset.setComplex(i, i == 0);
+            dataset.setRefPt(i, dataset.getSizeReal(i) / 2.0);
             dataset.setFreqDomain(i, true);
             String nucLabel = getTN(i);
             dataset.setNucleus(i, nucLabel);
@@ -714,7 +714,7 @@ public class RS2DData implements NMRData {
 
     @Override
     public double getRefPoint(int dim) {
-        return getSize(dim) / 2;
+        return getSize(dim) / 2.0;
     }
 
     @Override
