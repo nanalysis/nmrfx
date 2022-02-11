@@ -1,5 +1,7 @@
 package org.nmrfx.processor.datasets;
 
+import org.nmrfx.processor.datasets.vendor.RS2DData;
+
 import java.io.File;
 import java.util.Arrays;
 import java.util.List;
@@ -21,14 +23,12 @@ public enum DatasetType {
      * @param file the file to check
      * @return an Optional containing DatasetType if fileName is valid file or empty if not.
      */
-    public static Optional<DatasetType> typeFromName(File file) {
-        String name = file.getName();
-        for (var ext:values()) {
-            if (name.endsWith(ext.extension)) {
-                return Optional.of(ext);
-            }
+    public static Optional<DatasetType> typeFromFile(File file) {
+        if(file.isDirectory() && new File(file, RS2DData.DATA_FILE_NAME).isFile()) {
+            return Optional.of(DatasetType.SPINit);
         }
-        return Optional.empty();
+
+        return typeFromName(file.getName());
     }
 
     /**

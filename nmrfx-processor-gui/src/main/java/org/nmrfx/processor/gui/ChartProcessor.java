@@ -982,7 +982,7 @@ public class ChartProcessor {
                 if (file == null) {
                     return emptyResult;
                 }
-                Optional<DatasetType> fileTypeOpt = DatasetType.typeFromName(file);
+                Optional<DatasetType> fileTypeOpt = DatasetType.typeFromFile(file);
                 if (fileTypeOpt.isPresent()) {
                     DatasetType fileType = fileTypeOpt.get();
                     if (fileType != getDatasetType()) {
