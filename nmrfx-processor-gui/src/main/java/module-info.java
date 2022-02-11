@@ -98,4 +98,6 @@ open module org.nmrfx.processor.gui {
     requires javafx.media;
     requires logback.classic;
     requires logback.core;
+    requires org.apache.commons.collections4;
+    requires org.apache.commons.lang3;
 }

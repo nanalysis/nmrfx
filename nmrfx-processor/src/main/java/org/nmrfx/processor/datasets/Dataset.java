@@ -1797,7 +1797,7 @@ public double[] getPercentile(double p, int[][] pt, int[] dim) throws IOExceptio
      * @throws IOException if an I/O error occurs
      */
     public Vec readVector(int index, int iDim) throws IOException {
-        Vec vector = new Vec(getSizeTotal(iDim), getComplex(iDim));
+        Vec vector = new Vec(getSizeReal(iDim), getComplex(iDim));
         readVector(vector, index, iDim);
         return vector;
 
