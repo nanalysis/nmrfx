@@ -83,7 +83,7 @@ open module org.nmrfx.processor.gui {
     requires jsch;
     requires jzlib;
     requires JavaEWAH;
-    requires slf4j.api;
+    requires org.slf4j;
     requires org.bouncycastle.pg;
     requires org.bouncycastle.provider;
     requires org.bouncycastle.pkix;
