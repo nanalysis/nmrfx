@@ -27,4 +27,5 @@ module org.nmrfx.processor {
     requires commons.compiler;
     requires jython.slim;
     requires com.nanalysis.jcamp;
+    requires org.slf4j;
 }

@@ -22,27 +22,30 @@
  */
 package org.nmrfx.processor.datasets.peaks;
 
+import org.apache.commons.math3.exception.TooManyEvaluationsException;
+import org.apache.commons.math3.optim.PointValuePair;
 import org.nmrfx.peaks.*;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.math.Vec;
+import org.nmrfx.processor.optimization.Fitter;
 import org.nmrfx.processor.optimization.Lmder_f77;
 import org.nmrfx.processor.optimization.SineSignal;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import static java.util.Comparator.comparing;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import org.apache.commons.math3.exception.TooManyEvaluationsException;
-import org.apache.commons.math3.optim.PointValuePair;
-import org.nmrfx.processor.optimization.Fitter;
+
+import static java.util.Comparator.comparing;
 
 /**
  *
  * @author brucejohnson
  */
 public class PeakFitter {
+    private static final Logger log = LoggerFactory.getLogger(PeakFitter.class);
 
     int[][] splitCount;
     final Dataset theFile;
@@ -503,24 +506,17 @@ public class PeakFitter {
                 int nSteps = nInterpolationPoints * 10;
                 if (nSteps > 400) {
                     nSteps = 400;
-                }   //System.out.println(guesses.length + " " + nInterpolationPoints + " " + nSteps);
+                }
                 long startTime = System.currentTimeMillis();
                 try {
                     peakFit.optimizeCMAES(nSteps);
                 } catch (TooManyEvaluationsException tmE) {
                 } catch (Exception ex) {
-                    Logger.getLogger(PeakFitter.class.getName()).log(Level.SEVERE, null, ex);
+                    log.error(ex.getMessage(), ex);
                 }
                 long duration = System.currentTimeMillis() - startTime;
                 rms = peakFit.getBestValue();
                 updateBIC(rms, size, nDim);
-
-//                System.out.print(peakFit.getBestValue() + " " + BIC + " ");
-//                double[] point = peakFit.getBestPoint();
-//                for (double pValue : point) {
-//                    System.out.printf("%9.3f ", pValue);
-//                }
-//                System.out.println(duration);
                 break;
         }
 
