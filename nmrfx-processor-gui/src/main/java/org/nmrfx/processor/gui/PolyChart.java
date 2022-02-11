@@ -329,23 +329,6 @@ public class PolyChart extends Region implements PeakListener {
 
     }
 
-//    @Override
-//    public void resizeRelocate(double x, double y, double width, double height) {
-//        xPos = x;
-//        yPos = y;
-//        this.width = width;
-//        this.height = height;
-//        System.out.println("resize relocate " + x + " " +y + " " + width + " " + height);
-//    }
-
-//    public double getWidth() {
-//        return width;
-//    }
-//
-//    public double getHeight() {
-//        return height;
-//    }
-//
     private void initChart() {
         axes[0] = xAxis;
         axes[1] = yAxis;
