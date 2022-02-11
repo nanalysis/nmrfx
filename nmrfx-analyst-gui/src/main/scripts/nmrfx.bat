@@ -14,6 +14,7 @@ if "%OS%" == "Windows_NT" setlocal
 
 set nvjver=${project.version}
 set nvjpmain=org.nmrfx.analyst.gui.NMRAnalystApp
+set LOG_CONFIG=-Dlogback.configurationFile=config/logback.xml
 
 set dir=%~dp0
 
@@ -27,5 +28,5 @@ if exist %testjava% (
 )
 
 
-%javaexe%  -mx2048m -cp %cp% %JAVA_OPTS% %nvjpmain% %*
+%javaexe%  -mx2048m -cp %cp% %LOG_CONFIG% %JAVA_OPTS% %nvjpmain% %*
 

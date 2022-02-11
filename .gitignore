@@ -28,8 +28,8 @@ Thumbs.db
 *.ucsf
 
 # specific folders
+**/logs/
 */nvfxtest
 */sandbox/
 */installers/
-*/logs/
 */tmp/
