@@ -24,6 +24,7 @@ open module org.nmrfx.processor.gui {
     exports org.nmrfx.processor.gui.utils;
     exports org.nmrfx.processor.gui.project;
     exports org.nmrfx.processor.gui.annotations;
+    exports org.nmrfx.processor.gui.log;
     requires org.nmrfx.core;
     requires org.nmrfx.processor;
     requires org.nmrfx.utils;
@@ -95,4 +96,6 @@ open module org.nmrfx.processor.gui {
     requires javafx.web;
     requires javafx.mediaEmpty;
     requires javafx.media;
+    requires logback.classic;
+    requires logback.core;
 }

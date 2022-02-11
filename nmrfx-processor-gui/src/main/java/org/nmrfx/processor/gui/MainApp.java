@@ -39,6 +39,7 @@ import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
 import javafx.stage.Stage;
+import org.nmrfx.processor.gui.log.Log;
 import org.python.util.InteractiveInterpreter;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -151,6 +152,8 @@ public class MainApp extends Application {
 //    }
     @Override
     public void start(Stage stage) throws Exception {
+        Log.setupMemoryAppender();
+
         mainApp = this;
         FXMLController controller = FXMLController.create(stage);
         Platform.setImplicitExit(true);
