@@ -17,6 +17,7 @@
  */
 package org.nmrfx.processor.datasets.vendor;
 
+import org.apache.commons.math3.complex.Complex;
 import org.nmrfx.processor.datasets.DatasetType;
 import org.nmrfx.processor.datasets.parameters.FPMult;
 import org.nmrfx.processor.datasets.parameters.GaussianWt;
@@ -24,6 +25,8 @@ import org.nmrfx.processor.datasets.parameters.LPParams;
 import org.nmrfx.processor.datasets.parameters.SinebellWt;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.processing.SampleSchedule;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.EOFException;
 import java.io.File;
@@ -33,14 +36,7 @@ import java.nio.IntBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import org.apache.commons.math3.complex.Complex;
+import java.util.*;
 
 /**
  * JCAMPData implements NMRData methods for opening and reading parameters and
@@ -51,6 +47,7 @@ import org.apache.commons.math3.complex.Complex;
  * @see NMRDataUtil
  */
 class JCAMPData implements NMRData {
+    private static final Logger log = LoggerFactory.getLogger(JCAMPData.class);
 
     private int tbytes = 0;             // TD,1
     private int np;                   // TD,1
@@ -85,7 +82,6 @@ class JCAMPData implements NMRData {
     private static final HashMap<String, Double> PHASE_TABLE = null;
     private String[] acqOrder;
     private SampleSchedule sampleSchedule = null;
-    final static Logger LOGGER = Logger.getLogger("org.nmrfx.processor.datasets.Dataset");
     final static double SCALE = 1.0;
     boolean hasFID = false;
     boolean hasSpectrum = false;
@@ -111,7 +107,7 @@ class JCAMPData implements NMRData {
         try {
             fc.close();
         } catch (IOException e) {
-            LOGGER.log(Level.WARNING, e.getMessage());
+            log.warn(e.getMessage(), e);
         }
     }
 
@@ -526,7 +522,7 @@ class JCAMPData implements NMRData {
         try {
             BrukerPar.processBrukerParFile(parMap, path, 1, true);
         } catch (NMRParException ex) {
-            LOGGER.log(Level.WARNING, ex.getMessage());
+            log.warn(ex.getMessage(), ex);
         }
         // process acqu files if they exist
         int acqdim = 1;
@@ -724,12 +720,12 @@ class JCAMPData implements NMRData {
         try {
             fc = FileChannel.open(Paths.get(datapath), StandardOpenOption.READ);
         } catch (IOException ex) {
-            LOGGER.log(Level.WARNING, ex.getMessage());
+            log.warn(ex.getMessage(), ex);
             if (fc != null) {
                 try {
                     fc.close();
                 } catch (IOException e) {
-                    LOGGER.log(Level.WARNING, e.getMessage());
+                    log.warn(e.getMessage(), e);
                 }
             }
         }
@@ -879,21 +875,21 @@ class JCAMPData implements NMRData {
             }
             //System.out.println("readVecBlock read "+nread+" bytes");
         } catch (EOFException e) {
-            LOGGER.log(Level.WARNING, e.getMessage());
+            log.warn(e.getMessage(), e);
             if (fc != null) {
                 try {
                     fc.close();
                 } catch (IOException ex) {
-                    LOGGER.log(Level.WARNING, ex.getMessage());
+                    log.warn(ex.getMessage(), ex);
                 }
             }
         } catch (IOException e) {
-            LOGGER.log(Level.WARNING, e.getMessage());
+            log.warn(e.getMessage(), e);
             if (fc != null) {
                 try {
                     fc.close();
                 } catch (IOException ex) {
-                    LOGGER.log(Level.WARNING, ex.getMessage());
+                    log.warn(ex.getMessage(), ex);
                 }
             }
         }
@@ -907,22 +903,13 @@ class JCAMPData implements NMRData {
             int skips = fileIndex * tbytes + xCol * 4 * 2;
             ByteBuffer buf = ByteBuffer.wrap(dataBuf, vecIndex * 4 * 2, 4 * 2);
             nread = fc.read(buf, skips);
-        } catch (EOFException e) {
-            LOGGER.log(Level.WARNING, e.getMessage());
-            if (fc != null) {
-                try {
-                    fc.close();
-                } catch (IOException ex) {
-                    LOGGER.log(Level.WARNING, ex.getMessage());
-                }
-            }
         } catch (IOException e) {
-            LOGGER.log(Level.WARNING, e.getMessage());
+            log.warn(e.getMessage(), e);
             if (fc != null) {
                 try {
                     fc.close();
                 } catch (IOException ex) {
-                    LOGGER.log(Level.WARNING, ex.getMessage());
+                    log.warn(ex.getMessage(), ex);
                 }
             }
         }

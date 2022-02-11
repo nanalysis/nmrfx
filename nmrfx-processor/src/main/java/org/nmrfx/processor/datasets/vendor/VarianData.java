@@ -17,6 +17,7 @@
  */
 package org.nmrfx.processor.datasets.vendor;
 
+import org.apache.commons.math3.complex.Complex;
 import org.nmrfx.processor.datasets.DatasetType;
 import org.nmrfx.processor.datasets.parameters.FPMult;
 import org.nmrfx.processor.datasets.parameters.GaussianWt;
@@ -24,40 +25,24 @@ import org.nmrfx.processor.datasets.parameters.LPParams;
 import org.nmrfx.processor.datasets.parameters.SinebellWt;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.processing.SampleSchedule;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.BufferedWriter;
-import java.io.DataInputStream;
-import java.io.EOFException;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
+import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.nio.ShortBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.charset.Charset;
-import java.nio.file.FileVisitResult;
-import java.nio.file.Files;
-import java.nio.file.FileSystems;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.SimpleFileVisitor;
-import java.nio.file.StandardOpenOption;
+import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.util.HashMap;
-import java.util.ArrayList;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.time.LocalDateTime;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.ZoneOffset;
-import java.time.format.DateTimeParseException;
 import java.time.format.DateTimeFormatter;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import org.apache.commons.math3.complex.Complex;
+import java.time.format.DateTimeParseException;
+import java.util.*;
 
 /**
  * @author bfetler
@@ -65,11 +50,10 @@ import org.apache.commons.math3.complex.Complex;
  * access through NMRDataUtil
  */
 class VarianData implements NMRData {
-//20050804T233538
-
-    DateTimeFormatter vTimeFormatter = DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss");
-// Feb  4 2000
-    DateTimeFormatter vDateFormatter = DateTimeFormatter.ofPattern("MMM ppd yyyy");
+    private static final Logger log = LoggerFactory.getLogger(VarianData.class);
+    
+    DateTimeFormatter vTimeFormatter = DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss");//20050804T233538
+    DateTimeFormatter vDateFormatter = DateTimeFormatter.ofPattern("MMM ppd yyyy");// Feb  4 2000
     private final static int MAXDIM = 10;
 
     private final String fpath;
@@ -90,7 +74,6 @@ class VarianData implements NMRData {
     private final Double[] Sf = new Double[MAXDIM];
     private String text = null;
     private SampleSchedule sampleSchedule = null;
-    static final Logger LOGGER = Logger.getLogger("org.nmrfx.processor.datasets.Dataset");
     Integer nDimVal = null;
     int[] sizes = null;
     int[] maxSizes = null;
@@ -133,7 +116,7 @@ class VarianData implements NMRData {
         try {
             fc.close();
         } catch (IOException e) {
-            LOGGER.log(Level.WARNING, e.getMessage());
+            log.warn(e.getMessage(), e);
         }
     }
 
@@ -1103,12 +1086,12 @@ class VarianData implements NMRData {
             fc = FileChannel.open(Paths.get(datapath), StandardOpenOption.READ);
             readFileHeader();
         } catch (IOException ex) {
-            LOGGER.log(Level.WARNING, "{0}/n{1}", new String[]{fpath, ex.getMessage()});
+            log.warn(fpath, ex);
             if (fc != null) {
                 try {
                     fc.close();
                 } catch (IOException e) {
-                    LOGGER.log(Level.WARNING, e.getMessage());
+                    log.warn(e.getMessage(), e);
                 }
             }
         }
@@ -1163,21 +1146,21 @@ class VarianData implements NMRData {
                 throw new IOException("improper format for Varian header");
             }
         } catch (EOFException e) {
-            LOGGER.log(Level.WARNING, e.getMessage());
+            log.warn(e.getMessage(), e);
             if (fc != null) {
                 try {
                     fc.close();
                 } catch (IOException ex) {
-                    LOGGER.log(Level.WARNING, ex.getMessage());
+                    log.warn(ex.getMessage(), ex);
                 }
             }
         } catch (IOException e) {
-            LOGGER.log(Level.WARNING, e.getMessage());
+            log.warn(e.getMessage(), e);
             if (fc != null) {
                 try {
                     fc.close();
                 } catch (IOException ex) {
-                    LOGGER.log(Level.WARNING, ex.getMessage());
+                    log.warn(ex.getMessage(), ex);
                 }
             }
         }
@@ -1218,21 +1201,21 @@ class VarianData implements NMRData {
                 throw new ArrayIndexOutOfBoundsException("file index " + i + " out of bounds");
             }
         } catch (EOFException e) {
-            LOGGER.log(Level.WARNING, e.getMessage());
+            log.warn(e.getMessage(), e);
             if (fc != null) {
                 try {
                     fc.close();
                 } catch (IOException ex) {
-                    LOGGER.log(Level.WARNING, ex.getMessage());
+                    log.warn(ex.getMessage(), ex);
                 }
             }
         } catch (IOException e) {
-            LOGGER.log(Level.WARNING, e.getMessage());
+            log.warn(e.getMessage(), e);
             if (fc != null) {
                 try {
                     fc.close();
                 } catch (IOException ex) {
-                    LOGGER.log(Level.WARNING, ex.getMessage());
+                    log.warn(ex.getMessage(), ex);
                 }
             }
         }
@@ -1247,21 +1230,21 @@ class VarianData implements NMRData {
             ByteBuffer buf = ByteBuffer.wrap(dataBuf, vecIndex * ebytes * 2, ebytes * 2);
             nread = fc.read(buf, skips);
         } catch (EOFException e) {
-            LOGGER.log(Level.WARNING, e.getMessage());
+            log.warn(e.getMessage(), e);
             if (fc != null) {
                 try {
                     fc.close();
                 } catch (IOException ex) {
-                    LOGGER.log(Level.WARNING, ex.getMessage());
+                    log.warn(ex.getMessage(), ex);
                 }
             }
         } catch (IOException e) {
-            LOGGER.log(Level.WARNING, e.getMessage());
+            log.warn(e.getMessage(), e);
             if (fc != null) {
                 try {
                     fc.close();
                 } catch (IOException ex) {
-                    LOGGER.log(Level.WARNING, ex.getMessage());
+                    log.warn(ex.getMessage(), ex);
                 }
             }
         }
@@ -1366,21 +1349,21 @@ class VarianData implements NMRData {
             System.out.println("blockheader: scale=" + iscale + " status=" + stat
                     + " index=" + index + " mode=" + mode + " ct=" + ct);
         } catch (EOFException e) {
-            LOGGER.log(Level.WARNING, e.getMessage());
+            log.warn(e.getMessage(), e);
             if (fc != null) {
                 try {
                     fc.close();
                 } catch (IOException ex) {
-                    LOGGER.log(Level.WARNING, ex.getMessage());
+                    log.warn(ex.getMessage(), ex);
                 }
             }
         } catch (IOException e) {
-            LOGGER.log(Level.WARNING, e.getMessage());
+            log.warn(e.getMessage(), e);
             if (fc != null) {
                 try {
                     fc.close();
                 } catch (IOException ex) {
-                    LOGGER.log(Level.WARNING, ex.getMessage());
+                    log.warn(ex.getMessage(), ex);
                 }
             }
         }
@@ -1580,7 +1563,7 @@ class VarianData implements NMRData {
 //            bw.write(in.readInt() + " ");  // extra point, overflow
             }
         } catch (IOException e) {
-            LOGGER.log(Level.WARNING, e.getMessage());
+            log.warn(e.getMessage(), e);
         }
     }  // end fileoutraw
 
@@ -1891,7 +1874,7 @@ class VarianData implements NMRData {
                     + " npoints=" + vdata.getNPoints());
 
         } catch (IOException ex) {
-            LOGGER.log(Level.WARNING, ex.getMessage());
+            log.warn(ex.getMessage(), ex);
         }
 
         varian = new VarianData(adir + "Roesy_01.fid");

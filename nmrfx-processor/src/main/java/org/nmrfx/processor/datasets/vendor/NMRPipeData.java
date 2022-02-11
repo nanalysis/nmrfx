@@ -17,6 +17,9 @@
  */
 package org.nmrfx.processor.datasets.vendor;
 
+import org.apache.commons.collections4.map.LRUMap;
+import org.apache.commons.math3.complex.Complex;
+import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.DatasetType;
 import org.nmrfx.processor.datasets.parameters.FPMult;
 import org.nmrfx.processor.datasets.parameters.GaussianWt;
@@ -24,16 +27,14 @@ import org.nmrfx.processor.datasets.parameters.LPParams;
 import org.nmrfx.processor.datasets.parameters.SinebellWt;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.processing.SampleSchedule;
-import java.io.EOFException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.nio.FloatBuffer;
-import java.nio.IntBuffer;
-import java.nio.ShortBuffer;
+import java.nio.*;
 import java.nio.channels.FileChannel;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -42,15 +43,11 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import org.apache.commons.collections4.map.LRUMap;
-import org.apache.commons.math3.complex.Complex;
-import org.nmrfx.processor.datasets.Dataset;
 
 public class NMRPipeData implements NMRData {
+    private static final Logger log = LoggerFactory.getLogger(NMRPipeData.class);
 
     static private final int DIMSIZE = 4;
     static private final int MAXDIM = 10;
@@ -71,7 +68,6 @@ public class NMRPipeData implements NMRData {
     private SampleSchedule sampleSchedule = null;
     Map<Integer, FileChannel> fcMap;
 
-    static final Logger LOGGER = Logger.getLogger("org.nmrfx.processor.datasets.Dataset");
     boolean swapBits = true;
     /**
      * open Varian parameter and data files
@@ -228,14 +224,7 @@ public class NMRPipeData implements NMRData {
         try {
             fileChannel = FileChannel.open(path, StandardOpenOption.READ);
         } catch (IOException ex) {
-            LOGGER.log(Level.WARNING, "{0}/n{1}", new String[]{fpath, ex.getMessage()});
-            if (fileChannel != null) {
-                try {
-                    fileChannel.close();
-                } catch (IOException e) {
-                    LOGGER.log(Level.WARNING, e.getMessage());
-                }
-            }
+            log.warn(fpath, ex);
         }
         return fileChannel;
     }
@@ -245,12 +234,12 @@ public class NMRPipeData implements NMRData {
         try {
             fc = FileChannel.open(Paths.get(datapath), StandardOpenOption.READ);
         } catch (IOException ex) {
-            LOGGER.log(Level.WARNING, "{0}/n{1}", new String[]{fpath, ex.getMessage()});
+            log.warn(fpath, ex);
             if (fc != null) {
                 try {
                     fc.close();
                 } catch (IOException e) {
-                    LOGGER.log(Level.WARNING, e.getMessage());
+                    log.warn(e.getMessage(), e);
                 }
             }
         }
@@ -261,7 +250,7 @@ public class NMRPipeData implements NMRData {
         try {
             fc.close();
         } catch (IOException e) {
-            LOGGER.log(Level.WARNING, e.getMessage());
+            log.warn(e.getMessage(), e);
         }
     }
     @Override
@@ -708,22 +697,13 @@ public class NMRPipeData implements NMRData {
             if (nread < np) {
                 throw new ArrayIndexOutOfBoundsException("file index " + i + " / " + index + " out of bounds");
             }
-        } catch (EOFException e) {
-            LOGGER.log(Level.WARNING, e.getMessage());
-            if (iFC != null) {
-                try {
-                    fc.close();
-                } catch (IOException ex) {
-                    LOGGER.log(Level.WARNING, ex.getMessage());
-                }
-            }
         } catch (IOException e) {
-            LOGGER.log(Level.WARNING, e.getMessage());
+            log.warn(e.getMessage(), e);
             if (iFC != null) {
                 try {
                     fc.close();
                 } catch (IOException ex) {
-                    LOGGER.log(Level.WARNING, ex.getMessage());
+                    log.warn(ex.getMessage(), ex);
                 }
             }
         }
@@ -741,22 +721,13 @@ public class NMRPipeData implements NMRData {
             int nread = fc.read(buf, skips);
             buf = ByteBuffer.wrap(dataBuf, vecIndex * 4 * 2 + 4, 4);
             nread = fc.read(buf, skips + stride / 2);
-        } catch (EOFException e) {
-            LOGGER.log(Level.WARNING, e.getMessage());
-            if (fc != null) {
-                try {
-                    fc.close();
-                } catch (IOException ex) {
-                    LOGGER.log(Level.WARNING, ex.getMessage());
-                }
-            }
         } catch (IOException e) {
-            LOGGER.log(Level.WARNING, e.getMessage());
+            log.warn(e.getMessage(), e);
             if (fc != null) {
                 try {
                     fc.close();
                 } catch (IOException ex) {
-                    LOGGER.log(Level.WARNING, ex.getMessage());
+                    log.warn(ex.getMessage(), ex);
                 }
             }
         }

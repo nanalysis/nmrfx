@@ -17,20 +17,18 @@
  */
 package org.nmrfx.processor.datasets.vendor;
 
-//import static org.nmrfx.processor.datasets.vendor.NMRParException.logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * @author bfetler
  */
 public class NMRParException extends IOException {
-
-    static final Logger LOGGER = Logger.getLogger("org.nmrfx.processor.datasets.Dataset");
+    private static final Logger log = LoggerFactory.getLogger(NMRParException.class);
 
     NMRParException(String msg) {
-        LOGGER.log(Level.WARNING, msg); // need a better logger
+        log.warn(msg);
     }
-
 }

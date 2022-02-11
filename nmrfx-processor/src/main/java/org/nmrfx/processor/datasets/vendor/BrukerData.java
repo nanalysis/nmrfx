@@ -17,6 +17,10 @@
  */
 package org.nmrfx.processor.datasets.vendor;
 
+import org.apache.commons.math3.complex.Complex;
+import org.apache.commons.math3.util.Precision;
+import org.nmrfx.datasets.DatasetLayout;
+import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.DatasetType;
 import org.nmrfx.processor.datasets.parameters.FPMult;
 import org.nmrfx.processor.datasets.parameters.GaussianWt;
@@ -24,39 +28,19 @@ import org.nmrfx.processor.datasets.parameters.LPParams;
 import org.nmrfx.processor.datasets.parameters.SinebellWt;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.processing.SampleSchedule;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.BufferedWriter;
-import java.io.DataInputStream;
-import java.io.EOFException;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
+import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.nio.IntBuffer;
 import java.nio.DoubleBuffer;
+import java.nio.IntBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.charset.Charset;
-import java.nio.file.DirectoryIteratorException;
-import java.nio.file.DirectoryStream;
-import java.nio.file.Files;
-import java.nio.file.FileSystems;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.nio.file.*;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import org.apache.commons.math3.complex.Complex;
-import org.apache.commons.math3.util.Precision;
-import org.nmrfx.datasets.DatasetLayout;
-import org.nmrfx.processor.datasets.Dataset;
 
 /**
  * BrukerData implements NMRData methods for opening and reading parameters and
@@ -67,6 +51,7 @@ import org.nmrfx.processor.datasets.Dataset;
  * @see NMRDataUtil
  */
 public class BrukerData implements NMRData {
+    private static final Logger log = LoggerFactory.getLogger(BrukerData.class);
 
     private final static int MAXDIM = 10;
     private int tbytes = 0;             // TD,1
@@ -101,7 +86,6 @@ public class BrukerData implements NMRData {
     private static HashMap<String, Double> phaseTable = null;
     private String[] acqOrder;
     private SampleSchedule sampleSchedule = null;
-    final static Logger LOGGER = Logger.getLogger("com.onemoonsci.datachord.datasets.Dataset");
     private final double scale;
     boolean hasFID = false;
     boolean hasSpectrum = false;
@@ -249,7 +233,7 @@ public class BrukerData implements NMRData {
         try {
             fc.close();
         } catch (IOException e) {
-            LOGGER.log(Level.WARNING, e.getMessage());
+            log.warn(e.getMessage(), e);
         }
     }
 
@@ -308,9 +292,8 @@ public class BrukerData implements NMRData {
                             }
                         }
                     } catch (DirectoryIteratorException | IOException ex) {
-// I/O error encounted during the iteration, the cause is an IOException
-//                    throw ex.getCause();
-                        LOGGER.log(Level.WARNING, ex.getMessage());
+                        // I/O error encountered during the iteration, the cause is an IOException
+                        log.warn(ex.getMessage(), ex);
                     }
                 }
             }
@@ -835,7 +818,7 @@ public class BrukerData implements NMRData {
                     }
                 }
             } catch (DirectoryIteratorException | IOException ex) {
-                LOGGER.log(Level.WARNING, ex.getMessage());
+                log.warn(ex.getMessage(), ex);
             }
         }
         // process acqu files if they exist
@@ -871,7 +854,7 @@ public class BrukerData implements NMRData {
                     break;
                 }
             } catch (NMRParException ex) {
-                LOGGER.log(Level.WARNING, ex.getMessage());
+                log.warn(ex.getMessage(), ex);
             }
         }
         String[] listTypes = {"vd", "vc", "vp", "fq3"};
@@ -1313,12 +1296,12 @@ public class BrukerData implements NMRData {
         try {
             fc = FileChannel.open(Paths.get(datapath), StandardOpenOption.READ);
         } catch (IOException ex) {
-            LOGGER.log(Level.WARNING, ex.getMessage());
+            log.warn(ex.getMessage(), ex);
             if (fc != null) {
                 try {
                     fc.close();
                 } catch (IOException e) {
-                    LOGGER.log(Level.WARNING, e.getMessage());
+                    log.warn(ex.getMessage(), ex);
                 }
             }
         }
@@ -1487,21 +1470,21 @@ public class BrukerData implements NMRData {
             }
             //System.out.println("readVecBlock read "+nread+" bytes");
         } catch (EOFException e) {
-            LOGGER.log(Level.WARNING, e.getMessage());
+            log.warn(e.getMessage(), e);
             if (fc != null) {
                 try {
                     fc.close();
                 } catch (IOException ex) {
-                    LOGGER.log(Level.WARNING, ex.getMessage());
+                    log.warn(ex.getMessage(), ex);
                 }
             }
         } catch (IOException e) {
-            LOGGER.log(Level.WARNING, e.getMessage());
+            log.warn(e.getMessage(), e);
             if (fc != null) {
                 try {
                     fc.close();
                 } catch (IOException ex) {
-                    LOGGER.log(Level.WARNING, ex.getMessage());
+                    log.warn(ex.getMessage(), ex);
                 }
             }
         }
@@ -1517,21 +1500,21 @@ public class BrukerData implements NMRData {
             ByteBuffer buf = ByteBuffer.wrap(dataBuf, vecIndex * 4 * nPer, 4 * nPer);
             nread = fc.read(buf, skips);
         } catch (EOFException e) {
-            LOGGER.log(Level.WARNING, e.getMessage());
+            log.warn(e.getMessage(), e);
             if (fc != null) {
                 try {
                     fc.close();
                 } catch (IOException ex) {
-                    LOGGER.log(Level.WARNING, ex.getMessage());
+                    log.warn(ex.getMessage(), ex);
                 }
             }
         } catch (IOException e) {
-            LOGGER.log(Level.WARNING, e.getMessage());
+            log.warn(e.getMessage(), e);
             if (fc != null) {
                 try {
                     fc.close();
                 } catch (IOException ex) {
-                    LOGGER.log(Level.WARNING, ex.getMessage());
+                    log.warn(ex.getMessage(), ex);
                 }
             }
         }
@@ -1883,8 +1866,8 @@ public class BrukerData implements NMRData {
                 }
 //            bw.write(in.readInt() + " ");  // extra point, overflow
             }
-        } catch (IOException e) {
-            LOGGER.log(Level.WARNING, e.getMessage());
+        } catch (IOException ex) {
+            log.warn(ex.getMessage(), ex);
         }
     }  // end fileoutraw
 
@@ -1914,8 +1897,8 @@ public class BrukerData implements NMRData {
                     bw.flush();
                 }
             }
-        } catch (IOException e) {
-            LOGGER.log(Level.WARNING, e.getMessage());
+        } catch (IOException ex) {
+            log.warn(ex.getMessage(), ex);
 
         }
     } // end fileout2
@@ -2137,7 +2120,7 @@ public class BrukerData implements NMRData {
             System.out.println(" dim=" + bruker.getNDim() + " nvectors=" + bruker.getNVectors()
                     + " npoints=" + bruker.getNPoints());
         } catch (IOException ex) {
-            LOGGER.log(Level.WARNING, ex.getMessage());
+            log.warn(ex.getMessage(), ex);
         }
 
     }

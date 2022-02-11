@@ -17,6 +17,8 @@ import org.nmrfx.processor.datasets.parameters.LPParams;
 import org.nmrfx.processor.datasets.parameters.SinebellWt;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.processing.SampleSchedule;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -41,8 +43,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.*;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -51,13 +51,14 @@ import java.util.stream.Stream;
  * @author brucejohnson
  */
 public class RS2DData implements NMRData {
+    private static final Logger log = LoggerFactory.getLogger(RS2DData.class);
+
     public static final DatasetType DATASET_TYPE = DatasetType.SPINit;
     public static final String DATA_FILE_NAME = "data.dat";
     public static final String HEADER_FILE_NAME = "header.xml";
     public static final String SERIES_FILE_NAME = "Serie.xml";
     static final String PROC_DIR = "Proc";
     static final String BASE_FREQ_PAR = "BASE_FREQ_";
-    static final Logger LOGGER = Logger.getLogger(RS2DData.class.getCanonicalName());
 
     static final int MAXDIM = 4;
 
@@ -214,7 +215,7 @@ public class RS2DData implements NMRData {
                     .boxed()
                     .collect(Collectors.toList());
         } catch (IOException e) {
-            LOGGER.log(Level.WARNING, "Unable to list processed directories", e);
+            log.warn("Unable to list processed directories", e);
             return Collections.emptyList();
         }
     }
@@ -240,7 +241,7 @@ public class RS2DData implements NMRData {
                     .mapToInt(Integer::parseInt)
                     .max();
         } catch (IOException e) {
-            LOGGER.log(Level.WARNING, "Unable to list processed directories", e);
+            log.warn("Unable to list processed directories", e);
             return OptionalInt.empty();
         }
     }
@@ -493,7 +494,7 @@ public class RS2DData implements NMRData {
         try {
             fc.close();
         } catch (IOException e) {
-            LOGGER.log(Level.WARNING, e.getMessage());
+            log.warn(e.getMessage(), e);
         }
     }
 
@@ -1048,27 +1049,26 @@ public class RS2DData implements NMRData {
     private void readValue(int iDim, int stride, int fileIndex, int vecIndex, int xCol, byte[] dataBuf) {
         try {
             int nPer = isComplex(iDim) ? 2 : 1;
-            //int skips = fileIndex * tbytes + xCol * 4 * 2;
             int skips = fileIndex * stride + xCol * 4 * 2;
             ByteBuffer buf = ByteBuffer.wrap(dataBuf, vecIndex * 4 * nPer, 4 * nPer);
             int nread = fc.read(buf, skips);
             if (nread != 4 * nPer) {
-                LOGGER.log(Level.WARNING, "Could not read requested bytes");
+                log.warn("Could not read requested bytes");
                 if (fc != null) {
                     try {
                         fc.close();
                     } catch (IOException ex) {
-                        LOGGER.log(Level.WARNING, ex.getMessage());
+                        log.warn(ex.getMessage(), ex);
                     }
                 }
             }
         } catch (IOException e) {
-            LOGGER.log(Level.WARNING, e.getMessage());
+            log.warn(e.getMessage(), e);
             if (fc != null) {
                 try {
                     fc.close();
                 } catch (IOException ex) {
-                    LOGGER.log(Level.WARNING, ex.getMessage());
+                    log.warn(ex.getMessage(), ex);
                 }
             }
         }
@@ -1085,12 +1085,12 @@ public class RS2DData implements NMRData {
                 throw new ArrayIndexOutOfBoundsException("file index " + i + " out of bounds " + nread + " " + tbytes);
             }
         } catch (IOException e) {
-            LOGGER.log(Level.WARNING, e.getMessage());
+            log.warn(e.getMessage(), e);
             if (fc != null) {
                 try {
                     fc.close();
                 } catch (IOException ex) {
-                    LOGGER.log(Level.WARNING, ex.getMessage());
+                    log.warn(ex.getMessage(), ex);
                 }
             }
         }

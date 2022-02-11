@@ -17,18 +17,15 @@
  */
 package org.nmrfx.processor.datasets.vendor;
 
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.LineNumberReader;
-import java.io.StringReader;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.*;
 import java.util.*;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class VNMRPar {
+    private static final Logger log = LoggerFactory.getLogger(VNMRPar.class);
 
-    static final Logger LOGGER = Logger.getLogger("org.nmrfx.processor.datasets.Dataset");
     static Map<String, Map> parGroups = new HashMap<String, Map>();
     static long nParGroups = 0;
     public String name = null;
@@ -124,7 +121,7 @@ public class VNMRPar {
             }
             removeParGroup(handle);
         } catch (NMRParException ex) {
-            LOGGER.log(Level.WARNING, ex.getMessage());
+            log.warn(ex.getMessage(), ex);
         }
         return hmap;
     }
@@ -150,7 +147,7 @@ public class VNMRPar {
             }
             removeParGroup(handle);
         } catch (NMRParException ex) {
-            LOGGER.log(Level.WARNING, ex.getMessage());
+            log.warn(ex.getMessage(), ex);
         }
         return hmap;
     }
