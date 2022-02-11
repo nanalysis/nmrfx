@@ -603,6 +603,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         chartProcessor.setData(nmrData, clearOps);
         if (processorController != null) {
             processorController.viewingDataset(false);
+            processorController.updateFileButton();
             processorController.show();
         } else {
             System.out.println("Coudn't make controller");

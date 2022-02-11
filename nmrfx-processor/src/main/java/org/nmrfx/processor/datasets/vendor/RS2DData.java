@@ -137,11 +137,11 @@ public class RS2DData implements NMRData {
                 false, ByteOrder.BIG_ENDIAN, 0);
         dataset.newHeader();
         for (int i = 0; i < nDim; i++) {
+            dataset.setComplex(i, i == 0);
             dataset.setSf(i, getSF(i));
             dataset.setSw(i, getSW(i));
             dataset.setRefValue(i, getRef(i));
-            dataset.setRefPt(i, dataset.getSizeReal(i));
-            dataset.setComplex(i, i == 0);
+            dataset.setRefPt(i, dataset.getSizeReal(i) / 2.0);
             dataset.setFreqDomain(i, true);
             String nucLabel = getTN(i);
             dataset.setNucleus(i, nucLabel);
@@ -282,7 +282,7 @@ public class RS2DData implements NMRData {
             for (int i = 0; i < MAXDIM; i++) {
                 String nucleus = getPar("NUCLEUS_" + (i + 1));
                 if (nucleus.equals(obsNucleus)) {
-                    obsFreq = getParDouble(BASE_FREQ_PAR + (i + 1)) / 1.0e6;
+                    obsFreq = getSF(i);
                     baseSFName = BASE_FREQ_PAR + (i + 1);
                     break;
                 }
@@ -307,11 +307,10 @@ public class RS2DData implements NMRData {
                 if (nucleus.equals(obsNucleus)) {
                     Sf[i] = obsFreq;
                     Sw[i] = obsSW;  // fixme  this is kluge to fis some files that have wrong SPECTRAL_WIDTH_2D
-                    sfNames[i] = baseSFName;
+                    sfNames[i] = "";
                 } else {
-                    Double baseFreq = getParDouble(BASE_FREQ_PAR + (i + 1));
-                    Sf[i] = baseFreq / 1.0e6;
-                    sfNames[i] = BASE_FREQ_PAR + (i + 1);
+                    Sf[i] = getSF(i);
+                    sfNames[i] = "";
                 }
                 tdsize[i] = dimSize;
                 if (dimSize > 1) {
@@ -627,7 +626,7 @@ public class RS2DData implements NMRData {
         } else {
             Double dpar;
             if ((dpar = getParDouble(BASE_FREQ_PAR + (iDim + 1))) != null) {
-                sf = dpar / 1.0e6;
+                sf = (dpar + getOffset(iDim)) / 1.0e6;
                 Sf[iDim] = sf;
             }
         }
@@ -679,16 +678,26 @@ public class RS2DData implements NMRData {
         Sw[dim] = null;
     }
 
+    double getOffset(int iDim) {
+        return getParDouble("OFFSET_FREQ_" + (iDim + 1));
+    }
+
     @Override
     public double getRef(int iDim) {
         double ref = 1.0;
         if (Ref[iDim] != null) {
             ref = Ref[iDim];
         } else {
-            var values = getParDoubleList("SR");
-            for (int i = 0; i < values.size(); i++) {
-                Ref[i] = values.get(i);
+            double sw = getSW(iDim);
+            var srValues = getParDoubleList("SR");
+
+            for (int i = 0; i < srValues.size() && i < nDim; i++) {
+                double offset = getOffset(i);
+                double sf = getSF(i);
+                double sr = srValues.get(i);
+                Ref[i] =  (sr + offset) / (sf-offset/1.0e6);
             }
+            ref = Ref[iDim];
         }
         return ref;
     }
@@ -705,7 +714,7 @@ public class RS2DData implements NMRData {
 
     @Override
     public double getRefPoint(int dim) {
-        return 0;
+        return getSize(dim) / 2.0;
     }
 
     @Override
