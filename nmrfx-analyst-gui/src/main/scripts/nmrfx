@@ -9,6 +9,7 @@
 # JAVA_OPTS  - list of JVM options, e.g. "-Xmx256m -Dfoo=bar"
 #
 JAVA_OPTS="--add-opens=javafx.controls/com.sun.javafx.scene.control.inputmap=ALL-UNNAMED"
+LOG_CONFIG="-Dlogback.configurationFile=config/logback.xml"
 
 #            <option>--add-opens</option>
 #            <option>javafx.controls/com.sun.javafx.scene.control.behavior=ALL-UNNAMED</option>
@@ -83,4 +84,4 @@ else
 fi
 
 export CLASSPATH
-exec "$JAVA" -mx${HEAP_MEM}m -cp "$CLASSPATH" $JAVA_OPTS $nvjmain ${1+"$@"}
+exec "$JAVA" -mx${HEAP_MEM}m -cp "$CLASSPATH" $LOG_CONFIG $JAVA_OPTS $nvjmain ${1+"$@"}
