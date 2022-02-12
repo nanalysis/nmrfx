@@ -111,7 +111,7 @@ public class MouseBindings {
                 || mouseAction == MOUSE_ACTION.DRAG_VIEWX
                 || mouseAction == MOUSE_ACTION.DRAG_VIEWY;
         if (!isPopupTrigger(mouseEvent)) {
-            if (!draggingView && (mouseEvent.isMetaDown() || chart.getCursor().toString().equals("CROSSHAIR"))) {
+            if (!draggingView && (mouseEvent.isMetaDown() || chart.getCanvasCursor().toString().equals("CROSSHAIR"))) {
                 chart.handleCrossHair(mouseEvent, false);
             } else {
                 if (mouseEvent.isPrimaryButtonDown()) {
@@ -194,8 +194,8 @@ public class MouseBindings {
         int border = chart.hitBorder(x, y);
 
         if (!isPopupTrigger(mouseEvent)) {
-            if (!(altShift || (border != 0)) && (mouseEvent.isMetaDown() || chart.getCursor().toString().equals("CROSSHAIR"))) {
-                if (!chart.getCursor().toString().equals("CROSSHAIR")) {
+            if (!(altShift || (border != 0)) && (mouseEvent.isMetaDown() || chart.getCanvasCursor().toString().equals("CROSSHAIR"))) {
+                if (!chart.getCanvasCursor().toString().equals("CROSSHAIR")) {
                     chart.getCrossHairs().setCrossHairState(true);
                 }
                 chart.handleCrossHair(mouseEvent, true);
@@ -279,9 +279,9 @@ public class MouseBindings {
             boolean draggingView = mouseAction == MOUSE_ACTION.DRAG_VIEW
                     || mouseAction == MOUSE_ACTION.DRAG_VIEWX
                     || mouseAction == MOUSE_ACTION.DRAG_VIEWY;
-            if (!draggingView && (mouseEvent.isMetaDown() || chart.getCursor().toString().equals("CROSSHAIR"))) {
+            if (!draggingView && (mouseEvent.isMetaDown() || chart.getCanvasCursor().toString().equals("CROSSHAIR"))) {
                 chart.handleCrossHair(mouseEvent, false);
-                if (!chart.getCursor().toString().equals("CROSSHAIR")) {
+                if (!chart.getCanvasCursor().toString().equals("CROSSHAIR")) {
                     chart.getCrossHairs().setCrossHairState(false);
                 }
             } else {
