@@ -316,7 +316,7 @@ public class SpectrumStatusBar {
     public void setCursor(Cursor cursor) {
         cursorMenuButton.setGraphic(cursorMap.get(cursor));
         for (PolyChart chart : controller.charts) {
-            chart.setCursor(cursor);
+            chart.setCanvasCursor(cursor);
             if (cursor.toString().equals("CROSSHAIR")) {
                 chart.getCrossHairs().setCrossHairState(true);
             } else {
@@ -430,7 +430,7 @@ public class SpectrumStatusBar {
             }
         }
 
-        chart.setCursor(currentCursor);
+        chart.setCanvasCursor(currentCursor);
 
     }
 

@@ -35,5 +35,5 @@ module org.nmrfx.analyst.gui {
     requires org.apache.commons.lang3;
     requires jython.slim;
     requires nsmenufx;
-
+    requires org.slf4j;
 }

@@ -49,7 +49,7 @@ import org.nmrfx.peaks.SpectralDim;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.PolyChart;
-import org.nmrfx.processor.gui.controls.FractionCanvas;
+import org.nmrfx.processor.gui.controls.GridPaneCanvas;
 import org.nmrfx.processor.project.Project;
 import org.nmrfx.structure.chemistry.Molecule;
 
@@ -238,7 +238,7 @@ public class AtomBrowser {
             List<DrawItem> items = getDrawItems(peaks, atomSpec, true);
             controller.setBorderState(true);
             controller.setNCharts(items.size());
-            controller.arrange(FractionCanvas.ORIENTATION.HORIZONTAL);
+            controller.arrange(GridPaneCanvas.ORIENTATION.HORIZONTAL);
             String activeRange = rangeSelector.getValue();
             RangeItem rangeItem = rangeItems.get(activeRange);
             double rMin = rangeItem.min;

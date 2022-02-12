@@ -19,6 +19,7 @@ package org.nmrfx.processor.datasets.vendor;
 
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.datasets.DatasetBase;
+import org.nmrfx.processor.datasets.DatasetType;
 import org.nmrfx.processor.datasets.parameters.FPMult;
 import org.nmrfx.processor.datasets.parameters.GaussianWt;
 import org.nmrfx.processor.datasets.parameters.LPParams;
@@ -51,6 +52,7 @@ public class NMRViewData implements NMRData {
     private final HashMap<String, String> parMap = null;
     private String[] acqOrder;
     private SampleSchedule sampleSchedule = null;
+    private DatasetType preferredDatasetType = DatasetType.NMRFX;
 
     static final Logger logger = Logger.getLogger("org.nmrfx.processor.datasets.Dataset");
 
@@ -109,6 +111,16 @@ public class NMRViewData implements NMRData {
     @Override
     public String getFilePath() {
         return fpath;
+    }
+
+    @Override
+    public DatasetType getPreferredDatasetType() {
+        return preferredDatasetType;
+    }
+
+    @Override
+    public void setPreferredDatasetType(DatasetType datasetType) {
+        this.preferredDatasetType = datasetType;
     }
 
     @Override

@@ -23,23 +23,20 @@
  */
 package org.nmrfx.processor.gui;
 
-import org.nmrfx.utils.properties.MenuTextOperationItem;
-import org.nmrfx.utils.properties.ChoiceOperationItem;
-import org.nmrfx.utils.properties.IntOperationItem;
-import org.nmrfx.utils.properties.BooleanOperationItem;
-import org.nmrfx.utils.properties.EditableChoiceOperationItem;
-import org.nmrfx.utils.properties.TextOperationItem;
-import org.nmrfx.processor.datasets.vendor.NMRData;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.List;
-import java.util.ArrayList;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import org.controlsfx.control.PropertySheet;
 import org.apache.commons.collections4.iterators.PermutationIterator;
+import org.controlsfx.control.PropertySheet;
+import org.nmrfx.processor.datasets.DatasetType;
+import org.nmrfx.processor.datasets.vendor.NMRData;
+import org.nmrfx.utils.properties.*;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  *
@@ -112,9 +109,13 @@ public class RefManager {
                 break;
             case "dataset":
                 break;
-            case "extension":
-                String extension = updateItem.getValue().toString();
-                chartProcessor.setExtension(extension);
+            case "datatype":
+                String dataType = updateItem.getValue().toString();
+                if (DatasetType.valueOf(dataType) != chartProcessor.getDatasetType()) {
+                    processorController.unsetDatasetName();
+                }
+                chartProcessor.setDatasetType(DatasetType.valueOf(dataType));
+                processorController.updateFileButton();
                 break;
             case "acqOrder":
                 String acqOrder = updateItem.getValue().toString();
@@ -288,10 +289,8 @@ public class RefManager {
         ObservableList<PropertySheet.Item> newItems = FXCollections.observableArrayList();
         String dimName = "" + (dim + 1);
         if (dim == 0) {
-            ArrayList<String> extensionChoices = new ArrayList<>();
-            extensionChoices.add(".nv");
-            extensionChoices.add(".ucsf");
-            newItems.add(new ChoiceOperationItem(stringListener, chartProcessor.getExtension(), extensionChoices, dimName, "extension", "Filename extension (determines dataset type)"));
+            newItems.add(new ChoiceOperationItem(stringListener, chartProcessor.getDatasetType().toString(),
+                    DatasetType.names(), dimName, "datatype", "Dataset type"));
             if (nmrData != null) {
                 ArrayList<String> choices = new ArrayList<>();
                 if (nmrData.getNDim() > 1) {

@@ -17,6 +17,7 @@
  */
 package org.nmrfx.processor.datasets.vendor;
 
+import org.nmrfx.processor.datasets.DatasetType;
 import org.nmrfx.processor.datasets.parameters.FPMult;
 import org.nmrfx.processor.datasets.parameters.GaussianWt;
 import org.nmrfx.processor.datasets.parameters.LPParams;
@@ -79,6 +80,7 @@ public class BrukerData implements NMRData {
     private boolean negatePairs = false;
     private boolean fixDSP = true;
     private boolean fixByShift = false;
+    private DatasetType preferredDatasetType = DatasetType.NMRFX;
     private final boolean[] complexDim = new boolean[MAXDIM];
     private final double[] f1coef[] = new double[MAXDIM][];   // FnMODE,2 MC2,2
     private final String[] f1coefS = new String[MAXDIM];   // FnMODE,2 MC2,2
@@ -216,6 +218,16 @@ public class BrukerData implements NMRData {
         dataset.setScale(1.0e6 / Math.pow(2, ncProc));
         dataset.setDataType(1);
         return dataset;
+    }
+
+    @Override
+    public DatasetType getPreferredDatasetType() {
+        return preferredDatasetType;
+    }
+
+    @Override
+    public void setPreferredDatasetType(DatasetType datasetType) {
+        this.preferredDatasetType = datasetType;
     }
 
     public String suggestName(File file) {
