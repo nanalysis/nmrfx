@@ -1933,7 +1933,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
                     currentList = peakAttr.getPeakList();
                 }
                 if (winPatterns.containsKey(chart)) {
-                    drawPakTypeAnno(chart, spinSystem, iCol);
+                    drawPeakTypeAnnotations(chart, spinSystem, iCol);
                 }
                 if (currentList != null) {
                     drawAnno(chart, currentList, spinSystem);
@@ -1944,7 +1944,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         }
     }
 
-    void drawPakTypeAnno(PolyChart chart, SpinSystem spinSystem, int iCol) {
+    void drawPeakTypeAnnotations(PolyChart chart, SpinSystem spinSystem, int iCol) {
         DatasetAttributes dataAttr = chart.getDatasetAttributes().get(0);
         List<List<String>> atomPatterns = getAtomsFromPatterns(winPatterns.get(chart));
         for (PeakMatch peakMatch : spinSystem.peakMatches()) {
