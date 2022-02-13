@@ -1,27 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+
 <?import javafx.geometry.Insets?>
-<?import javafx.scene.control.CheckBox?>
-<?import javafx.scene.control.ColorPicker?>
-<?import javafx.scene.control.ComboBox?>
-<?import javafx.scene.control.Label?>
-<?import javafx.scene.control.TextField?>
-<?import javafx.scene.control.Slider?>
-<?import javafx.scene.control.Tab?>
-<?import javafx.scene.control.TabPane?>
-<?import javafx.scene.control.TableView?>
-<?import javafx.scene.control.ToolBar?>
-<?import javafx.scene.layout.AnchorPane?>
-<?import javafx.scene.layout.BorderPane?>
-<?import javafx.scene.layout.ColumnConstraints?>
-<?import javafx.scene.layout.GridPane?>
-<?import javafx.scene.layout.RowConstraints?>
-<?import javafx.scene.layout.VBox?>
-<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
 <?import org.controlsfx.control.RangeSlider?>
-<?import java.net.URL?>
-
-
 <BorderPane fx:id="attrBorderPane" prefHeight="300.0" prefWidth="550.0" styleClass="mainFxmlClass" xmlns="http://javafx.com/javafx/8.0.111" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.nmrfx.processor.gui.SpecAttrWindowController">
     <top>
         <ToolBar fx:id="toolBar" prefHeight="40.0" prefWidth="200.0" BorderPane.alignment="CENTER">
@@ -165,13 +148,13 @@
                                                         <ComboBox fx:id="labelFontSizeComboBox"
                                                                   GridPane.columnIndex="4" GridPane.rowIndex="1"  GridPane.columnSpan="1"/>
                                                         <Label text="Grid" GridPane.columnIndex="1" GridPane.rowIndex="2" />
-                                                        <CheckBox fx:id="gridCheckBox" mnemonicParsing="false" onAction="#sliceAction" text="" selected="true"
+                                                        <CheckBox fx:id="gridCheckBox" mnemonicParsing="false"  selected="true"
                                                                   GridPane.columnIndex="2" GridPane.rowIndex="2"/>
                                                         <Label text="Titles" GridPane.columnIndex="3" GridPane.rowIndex="2" />
-                                                        <CheckBox fx:id="titlesCheckBox" mnemonicParsing="false" onAction="#sliceAction" text="" selected="false"
+                                                        <CheckBox fx:id="titlesCheckBox" mnemonicParsing="false"  text="" selected="false"
                                                                   GridPane.columnIndex="4" GridPane.rowIndex="2"/>
                                                         <Label text="IntAxis" GridPane.columnIndex="5" GridPane.rowIndex="2" />
-                                                        <CheckBox fx:id="intensityAxisCheckBox" mnemonicParsing="false" onAction="#sliceAction" text="" selected="true"
+                                                        <CheckBox fx:id="intensityAxisCheckBox" mnemonicParsing="false"  text="" selected="false"
                                                                   GridPane.columnIndex="6" GridPane.rowIndex="2"/>
 
                                                     </children>
@@ -179,14 +162,18 @@
                                                 <GridPane BorderPane.alignment="CENTER"  GridPane.columnIndex="2" GridPane.rowIndex="2" GridPane.columnSpan="5" GridPane.rowSpan="4">
                                                     <children>
                                                         <Label text="Border Sizes" GridPane.columnIndex="0" GridPane.rowIndex="0"  GridPane.columnSpan="4"/>
-                                                        <ComboBox fx:id="leftBorderSizeComboBox" editable="false" onValueChange="#sliceAction" prefWidth="70.0"
-                                                                  GridPane.columnIndex="1" GridPane.rowIndex="2"  GridPane.columnSpan="1"/>
-                                                        <ComboBox fx:id="rightBorderSizeComboBox" editable="false" onValueChange="#sliceAction" prefWidth="70.0"
-                                                                  GridPane.columnIndex="3" GridPane.rowIndex="2"  GridPane.columnSpan="1"/>
-                                                        <ComboBox fx:id="topBorderSizeComboBox" editable="false" onValueChange="#sliceAction" prefWidth="70.0"
-                                                                  GridPane.columnIndex="2" GridPane.rowIndex="1"  GridPane.columnSpan="1"/>
-                                                        <ComboBox fx:id="bottomBorderSizeComboBox" editable="false" onValueChange="#sliceAction" prefWidth="70.0"
-                                                                  GridPane.columnIndex="2" GridPane.rowIndex="3"  GridPane.columnSpan="1"/>
+                                                        <ComboBox fx:id="leftBorderSizeComboBox" editable="false"
+                                                                  prefWidth="70.0"
+                                                                  GridPane.columnIndex="1" GridPane.rowIndex="2" GridPane.columnSpan="1"/>
+                                                        <ComboBox fx:id="rightBorderSizeComboBox" editable="false"
+                                                                  prefWidth="70.0"
+                                                                  GridPane.columnIndex="3" GridPane.rowIndex="2" GridPane.columnSpan="1"/>
+                                                        <ComboBox fx:id="topBorderSizeComboBox" editable="false"
+                                                                  prefWidth="70.0"
+                                                                  GridPane.columnIndex="2" GridPane.rowIndex="1" GridPane.columnSpan="1"/>
+                                                        <ComboBox fx:id="bottomBorderSizeComboBox" editable="false"
+                                                                  prefWidth="70.0"
+                                                                  GridPane.columnIndex="2" GridPane.rowIndex="3" GridPane.columnSpan="1"/>
                                                     </children>
                                                 </GridPane>
                                             </children>
@@ -230,8 +217,8 @@
                                         <Label text="Offset" GridPane.columnIndex="1" GridPane.rowIndex="0" GridPane.columnSpan="2"/>
                                         <Label text="Vertical" GridPane.columnIndex="0" GridPane.rowIndex="1" />
                                         <Label text="Horizontal" GridPane.columnIndex="0" GridPane.rowIndex="2" />
-                                        <Slider fx:id="xOffsetSlider" blockIncrement="0.1" max="1.0" onValueChange="#sliceAction" value="0.5" GridPane.columnIndex="1" GridPane.rowIndex="1"  GridPane.columnSpan="2" />
-                                        <Slider fx:id="yOffsetSlider" blockIncrement="0.1" max="1.0" onValueChange="#sliceAction" value="0.5" GridPane.columnIndex="1" GridPane.rowIndex="2"  GridPane.columnSpan="2"/>
+                                        <Slider fx:id="xOffsetSlider" blockIncrement="0.1" max="1.0" value="0.5" GridPane.columnIndex="1" GridPane.rowIndex="1" GridPane.columnSpan="2" />
+                                        <Slider fx:id="yOffsetSlider" blockIncrement="0.1" max="1.0" value="0.5" GridPane.columnIndex="1" GridPane.rowIndex="2" GridPane.columnSpan="2"/>
 
                                         <Label text="Slice"  GridPane.columnIndex="0" GridPane.rowIndex="4"/>
                                         <Label text="On"  GridPane.columnIndex="1" GridPane.rowIndex="4"/>
@@ -260,7 +247,8 @@
                                 <VBox prefHeight="200.0" prefWidth="100.0" BorderPane.alignment="CENTER">
                                     <children>
                                         <Label text="Scale" />
-                                        <Slider fx:id="scaleSlider" blockIncrement="1.0" min="1.0" minorTickCount="5" onValueChange="#sliceAction" orientation="VERTICAL" showTickLabels="true" showTickMarks="true" value="10.0" />
+                                        <Slider fx:id="scaleSlider" blockIncrement="1.0" min="1.0" minorTickCount="5"
+                                                orientation="VERTICAL" showTickLabels="true" showTickMarks="true" value="10.0" />
                                     </children>
                                     <padding>
                                         <Insets left="20.0" top="20.0" />

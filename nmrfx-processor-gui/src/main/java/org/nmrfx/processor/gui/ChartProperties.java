@@ -152,7 +152,7 @@ public class ChartProperties {
 
     public BooleanProperty intensityAxisProperty() {
         if (intensityAxis == null) {
-            intensityAxis = new SimpleBooleanProperty(polyChart, "onedAxis", true);
+            intensityAxis = new SimpleBooleanProperty(polyChart, "onedAxis", false);
         }
         return intensityAxis;
     }
