@@ -17,7 +17,6 @@ module org.nmrfx.core {
     requires commons.math3;
     requires org.apache.commons.lang3;
     requires org.apache.commons.collections4;
-    requires io.netty.all;
     requires java.logging;
     requires java.desktop;
     requires vecmath;
