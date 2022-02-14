@@ -22,6 +22,14 @@ import de.jangassen.dialogs.about.AboutStageBuilder;
 import javafx.application.Application;
 import javafx.application.HostServices;
 import javafx.application.Platform;
+import javafx.scene.control.Menu;
+import javafx.scene.control.MenuBar;
+import javafx.scene.control.MenuItem;
+import javafx.stage.Stage;
+import org.nmrfx.processor.datasets.Dataset;
+import org.nmrfx.processor.gui.controls.GridPaneCanvas;
+import org.nmrfx.processor.gui.log.Log;
+import org.python.util.InteractiveInterpreter;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
@@ -37,8 +45,6 @@ import org.nmrfx.chemistry.io.MoleculeIOException;
 import org.nmrfx.console.ConsoleController;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.io.PeakReader;
-import org.nmrfx.processor.datasets.Dataset;
-import org.nmrfx.processor.gui.controls.FractionCanvas;
 import org.nmrfx.processor.gui.project.GUIProject;
 import org.nmrfx.processor.utilities.WebConnect;
 import org.nmrfx.project.ProjectBase;
@@ -147,6 +153,8 @@ public class MainApp extends Application {
 //    }
     @Override
     public void start(Stage stage) throws Exception {
+        Log.setupMemoryAppender();
+
         mainApp = this;
         FXMLController controller = FXMLController.create(stage);
         Platform.setImplicitExit(true);
@@ -326,11 +334,11 @@ public class MainApp extends Application {
 
         Menu arrangeMenu = new Menu("Arrange");
         MenuItem horizItem = new MenuItem("Horizontal");
-        horizItem.setOnAction(e -> FXMLController.getActiveController().arrange(FractionCanvas.ORIENTATION.HORIZONTAL));
+        horizItem.setOnAction(e -> FXMLController.getActiveController().arrange(GridPaneCanvas.ORIENTATION.HORIZONTAL));
         MenuItem vertItem = new MenuItem("Vertical");
-        vertItem.setOnAction(e -> FXMLController.getActiveController().arrange(FractionCanvas.ORIENTATION.VERTICAL));
+        vertItem.setOnAction(e -> FXMLController.getActiveController().arrange(GridPaneCanvas.ORIENTATION.VERTICAL));
         MenuItem gridItem = new MenuItem("Grid");
-        gridItem.setOnAction(e -> FXMLController.getActiveController().arrange(FractionCanvas.ORIENTATION.GRID));
+        gridItem.setOnAction(e -> FXMLController.getActiveController().arrange(GridPaneCanvas.ORIENTATION.GRID));
         MenuItem overlayItem = new MenuItem("Overlay");
         overlayItem.setOnAction(e -> FXMLController.getActiveController().overlay());
         MenuItem minimizeItem = new MenuItem("Minimize Borders");

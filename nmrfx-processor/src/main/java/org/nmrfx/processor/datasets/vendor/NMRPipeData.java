@@ -17,6 +17,7 @@
  */
 package org.nmrfx.processor.datasets.vendor;
 
+import org.nmrfx.processor.datasets.DatasetType;
 import org.nmrfx.processor.datasets.parameters.FPMult;
 import org.nmrfx.processor.datasets.parameters.GaussianWt;
 import org.nmrfx.processor.datasets.parameters.LPParams;
@@ -65,6 +66,8 @@ public class NMRPipeData implements NMRData {
     private Double[] Sf = new Double[MAXDIM];
 
     Header fileHeader;
+    private DatasetType preferredDatasetType = DatasetType.NMRFX;
+
     private SampleSchedule sampleSchedule = null;
     Map<Integer, FileChannel> fcMap;
 
@@ -260,6 +263,15 @@ public class NMRPipeData implements NMRData {
         } catch (IOException e) {
             LOGGER.log(Level.WARNING, e.getMessage());
         }
+    }
+    @Override
+    public DatasetType getPreferredDatasetType() {
+        return preferredDatasetType;
+    }
+
+    @Override
+    public void setPreferredDatasetType(DatasetType datasetType) {
+        this.preferredDatasetType = datasetType;
     }
 
     @Override

@@ -47,6 +47,8 @@ import org.nmrfx.peaks.io.PeakReader;
 import org.nmrfx.plugin.api.EntryPoint;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.*;
+import org.nmrfx.processor.gui.controls.GridPaneCanvas;
+import org.nmrfx.processor.gui.log.Log;
 import org.nmrfx.processor.gui.project.GUIProject;
 import org.nmrfx.processor.gui.spectra.KeyBindings;
 import org.nmrfx.processor.gui.utils.FxPropertyChangeSupport;
@@ -94,6 +96,8 @@ public class AnalystApp extends MainApp {
 
     @Override
     public void start(Stage stage) throws Exception {
+        Log.setupMemoryAppender();
+
         if (isMac()) {
             System.setProperty("prism.lcdtext", "false");
         }

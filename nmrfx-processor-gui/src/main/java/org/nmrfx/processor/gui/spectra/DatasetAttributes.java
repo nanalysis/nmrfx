@@ -1045,8 +1045,10 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
                 localPtD[i][0] = theFile.getSizeReal(dim[i]) / 2.0;
                 localPtD[i][1] = theFile.getSizeReal(dim[i]) / 2.0;
             } else {
-                localPtD[i][0] = axModes[i].getIndexD(this, i, axes[i].getLowerBound());
-                localPtD[i][1] = axModes[i].getIndexD(this, i, axes[i].getUpperBound());
+                if (Objects.nonNull(axModes[i]) && Objects.nonNull(axes[i])) {
+                    localPtD[i][0] = axModes[i].getIndexD(this, i, axes[i].getLowerBound());
+                    localPtD[i][1] = axModes[i].getIndexD(this, i, axes[i].getUpperBound());
+                }
             }
             if (localPtD[i][0] > localPtD[i][1]) {
                 double holdD = localPtD[i][0];

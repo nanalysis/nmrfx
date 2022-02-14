@@ -9,7 +9,7 @@ import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.analyst.gui.MenuActions;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.PolyChart;
-import org.nmrfx.processor.gui.controls.FractionCanvas;
+import org.nmrfx.processor.gui.controls.GridPaneCanvas;
 import org.nmrfx.processor.gui.spectra.WindowIO;
 import org.nmrfx.project.ProjectBase;
 
@@ -39,11 +39,11 @@ public class SpectrumMenuActions extends MenuActions {
         MenuItem createGridItem = new MenuItem("Add Grid...");
         createGridItem.setOnAction(e -> FXMLController.getActiveController().addGrid());
         MenuItem horizItem = new MenuItem("Horizontal");
-        horizItem.setOnAction(e -> FXMLController.getActiveController().arrange(FractionCanvas.ORIENTATION.HORIZONTAL));
+        horizItem.setOnAction(e -> FXMLController.getActiveController().arrange(GridPaneCanvas.ORIENTATION.HORIZONTAL));
         MenuItem vertItem = new MenuItem("Vertical");
-        vertItem.setOnAction(e -> FXMLController.getActiveController().arrange(FractionCanvas.ORIENTATION.VERTICAL));
+        vertItem.setOnAction(e -> FXMLController.getActiveController().arrange(GridPaneCanvas.ORIENTATION.VERTICAL));
         MenuItem gridItem = new MenuItem("Grid");
-        gridItem.setOnAction(e -> FXMLController.getActiveController().arrange(FractionCanvas.ORIENTATION.GRID));
+        gridItem.setOnAction(e -> FXMLController.getActiveController().arrange(GridPaneCanvas.ORIENTATION.GRID));
         MenuItem overlayItem = new MenuItem("Overlay");
         overlayItem.setOnAction(e -> FXMLController.getActiveController().overlay());
         MenuItem minimizeItem = new MenuItem("Minimize Borders");
@@ -98,7 +98,7 @@ public class SpectrumMenuActions extends MenuActions {
     }
 
     private void newGraphics(ActionEvent event) {
-        FXMLController controller = FXMLController.create();
+        FXMLController.create();
     }
 
     public void showStripsBar() {

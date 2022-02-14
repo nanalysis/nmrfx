@@ -17,6 +17,7 @@
  */
 package org.nmrfx.processor.datasets.vendor;
 
+import org.nmrfx.processor.datasets.DatasetType;
 import org.nmrfx.processor.datasets.parameters.FPMult;
 import org.nmrfx.processor.datasets.parameters.GaussianWt;
 import org.nmrfx.processor.datasets.parameters.LPParams;
@@ -848,4 +849,9 @@ public interface NMRData {
         rData.setTime(getZonedDate().format(DateTimeFormatter.ISO_DATE_TIME));
         return rData;
     }
+
+    public DatasetType getPreferredDatasetType();
+
+    public void setPreferredDatasetType(DatasetType datasetType);
+
 }

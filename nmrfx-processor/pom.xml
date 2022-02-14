@@ -32,6 +32,14 @@
             <version>${revision}</version>
         </dependency>
         <dependency>
+            <groupId>com.nanalysis</groupId>
+            <artifactId>jcamp-parser</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+        </dependency>
+        <dependency>
             <groupId>com.github.jnr</groupId>
             <artifactId>jnr-posix</artifactId>
         </dependency>

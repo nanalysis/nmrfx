@@ -20,6 +20,24 @@
     <dependencyManagement>
         <dependencies>
             <dependency>
+                <groupId>com.nanalysis</groupId>
+                <artifactId>jcamp-parser</artifactId>
+                <version>1.0.1</version>
+                <!-- license: GPLv3 + Nanalysis internal license -->
+            </dependency>
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-api</artifactId>
+                <version>1.7.35</version>
+                <!-- license: MIT -->
+            </dependency>
+            <dependency>
+                <groupId>ch.qos.logback</groupId>
+                <artifactId>logback-classic</artifactId>
+                <version>1.2.6</version>
+                <!-- license: Eclipse Public License 1.0 / LGPLv2.1 -->
+            </dependency>
+            <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-math3</artifactId>
                 <version>3.6</version>
@@ -278,12 +296,26 @@
                 <groupId>org.biojava</groupId>
                 <artifactId>biojava-core</artifactId>
                 <version>6.0.3</version>
+                <exclusions>
+                    <!-- avoid log4j implementation of slf4j -->
+                    <exclusion>
+                        <groupId>org.apache.logging.log4j</groupId>
+                        <artifactId>log4j-slf4j-impl</artifactId>
+                    </exclusion>
+                </exclusions>
                 <!-- license: LGPL 2.1 -->
             </dependency>
             <dependency>
                 <groupId>org.biojava</groupId>
                 <artifactId>biojava-alignment</artifactId>
                 <version>6.0.2</version>
+                <exclusions>
+                    <!-- avoid log4j implementation of slf4j -->
+                    <exclusion>
+                        <groupId>org.apache.logging.log4j</groupId>
+                        <artifactId>log4j-slf4j-impl</artifactId>
+                    </exclusion>
+                </exclusions>
                 <!-- license: LGPL 2.1 -->
             </dependency>
             <dependency>
@@ -320,6 +352,13 @@
                 <groupId>org.eclipse.jgit</groupId>
                 <artifactId>org.eclipse.jgit</artifactId>
                 <version>5.6.1.202002131546-r</version>
+                <exclusions>
+                    <!-- nmrfx includes a more recent version of slf4j-api -->
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-api</artifactId>
+                    </exclusion>
+                </exclusions>
                 <!-- license: Eclipse Distribution License (similar to BSD) -->
             </dependency>
             <dependency>
@@ -327,6 +366,12 @@
                 <artifactId>nsmenufx</artifactId>
                 <version>3.0.2</version>
                 <!-- license: BSD (3 clause) -->
+            </dependency>
+            <dependency>
+                <groupId>org.greenrobot</groupId>
+                <artifactId>eventbus-java</artifactId>
+                <version>3.3.1</version>
+                <!-- license: Apache License, Version 2.0 -->
             </dependency>
         </dependencies>
     </dependencyManagement>
