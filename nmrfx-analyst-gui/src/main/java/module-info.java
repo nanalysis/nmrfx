@@ -37,5 +37,5 @@ module org.nmrfx.analyst.gui {
     requires nsmenufx;
     requires fontawesomefx;
     requires org.yaml.snakeyaml;
-
+    requires org.slf4j;
 }
