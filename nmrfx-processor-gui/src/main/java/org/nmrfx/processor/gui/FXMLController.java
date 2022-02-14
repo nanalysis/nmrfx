@@ -35,6 +35,7 @@ import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
+import javafx.geometry.Bounds;
 import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
@@ -75,9 +76,7 @@ import org.nmrfx.processor.datasets.peaks.PeakListAlign;
 import org.nmrfx.processor.datasets.peaks.PeakNeighbors;
 import org.nmrfx.processor.datasets.peaks.PeakNetworkMatch;
 import org.nmrfx.processor.datasets.vendor.*;
-import org.nmrfx.processor.gui.controls.FractionCanvas;
-import org.nmrfx.processor.gui.controls.FractionPaneChild;
-import org.nmrfx.processor.gui.controls.LayoutControlCanvas;
+import org.nmrfx.processor.gui.controls.GridPaneCanvas;
 import org.nmrfx.processor.gui.spectra.*;
 import org.nmrfx.processor.gui.tools.PathTool;
 import org.nmrfx.processor.gui.tools.SpectrumComparator;
@@ -99,7 +98,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 
-public class FXMLController implements FractionPaneChild, Initializable, PeakNavigable {
+public class FXMLController implements  Initializable, PeakNavigable {
     private static final Logger log = LoggerFactory.getLogger(FXMLController.class);
 
     @FXML
@@ -119,6 +118,8 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
 
     @FXML
     private BorderPane borderPane;
+    @FXML
+    private BorderPane mainBox;
     @FXML
     private StackPane processorPane;
     @FXML
@@ -167,7 +168,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
 
     CanvasBindings canvasBindings;
 
-    private FractionCanvas chartGroup;
+    private GridPaneCanvas chartGroup;
 
     PeakNavigator peakNavigator;
     SpectrumComparator spectrumComparator;
@@ -188,7 +189,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
 
     SimpleBooleanProperty processControllerVisible = new SimpleBooleanProperty(false);
 
-    public BooleanProperty minBordersProperty() {
+    private BooleanProperty minBordersProperty() {
         if (minBorders == null) {
             minBorders = new SimpleBooleanProperty(this, "minBorders", false);
         }
@@ -1325,21 +1326,23 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         charts.add(chart1);
         chart1.setController(this);
 
-//        PolyChart chart2 = new PolyChart();
-//        charts.add(chart2);
-//        chart2.setController(this);
-        chartGroup = new FractionCanvas(this, canvas, charts);
-        LayoutControlCanvas layoutControl = new LayoutControlCanvas(chartGroup);
-        chartGroup.setControlPane(layoutControl);
-        chartPane.getChildren().addAll(chartGroup, plotContent, layoutControl);
-        layoutControl.setVisible(false);
-        chartGroup.getChildren().addAll(canvas, peakCanvas, annoCanvas);
+        chartGroup = new GridPaneCanvas(this, canvas);
+        chartGroup.addCharts(1, charts);
+        chartGroup.setMouseTransparent(true);
+        chartPane.getChildren().addAll(canvas, chartGroup, peakCanvas, annoCanvas, plotContent);
         chartGroup.setManaged(true);
-        layoutControl.setManaged(true);
+        canvas.setManaged(false);
+        peakCanvas.setManaged(false);
+        annoCanvas.setManaged(false);
+        plotContent.setManaged(true);
+        mainBox.layoutBoundsProperty().addListener((ObservableValue<? extends Bounds> arg0, Bounds arg1, Bounds arg2) -> {
+            if (arg2.getWidth()  < 1.0 || arg2.getHeight() < 1.0) {
+                return;
+            }
+            chartGroup.requestLayout();
+        });
 
         controllers.add(this);
-//        l.layoutBoundsProperty().addListener(e -> boundsUpdated(l));
-//        l2.layoutBoundsProperty().addListener(e -> boundsUpdated(l2));
         statusBar.setMode(1);
         activeController.set(this);
         for (int iCross = 0; iCross < 2; iCross++) {
@@ -1358,6 +1361,15 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
                 setFileIndex();
             }
         };
+    }
+
+    public void resizeCanvases(double width, double height) {
+        canvas.setWidth(width);
+        canvas.setHeight(height);
+        peakCanvas.setWidth(width);
+        peakCanvas.setHeight(height);
+        annoCanvas.setWidth(width);
+        annoCanvas.setHeight(height);
     }
 
     public Phaser getPhaser() {
@@ -1572,11 +1584,6 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
             }
         }
         toolBar.getItems().addAll(buttons);
-        StackPane newWinRect = makeNewWinIcon();
-        toolBar.getItems().add(newWinRect);
-        newWinRect.setOnMousePressed(e -> chartGroup.mousePressed(e));
-        newWinRect.setOnMouseDragged(e -> chartGroup.mouseDrag(e));
-        newWinRect.setOnMouseReleased(e -> chartGroup.mouseDragRelease(e, this::addChart));
 
         statusBar = new SpectrumStatusBar(this);
         statusBar.buildBar(btoolBar);
@@ -1751,6 +1758,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
                 addChart();
             }
         }
+        chartGroup.addCharts(chartGroup.getRows(), charts);
     }
 
     public void removeChart() {
@@ -1761,7 +1769,8 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
 
     public void removeChart(PolyChart chart) {
         if (chart != null) {
-            chartGroup.removeChild(chart);
+            chartGroup.getChildren().remove(chart);
+            charts.remove(chart);
             if (chart == activeChart) {
                 if (charts.isEmpty()) {
                     activeChart = null;
@@ -1780,22 +1789,24 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
 
     public void addChart() {
         PolyChart chart = new PolyChart(this, plotContent, canvas, peakCanvas, annoCanvas);
-        chart.setDisable(true);
+        charts.add(chart);
+        chart.setChartDisable(true);
         // chart.setController(this);
         chartGroup.addChart(chart);
         activeChart = chart;
     }
 
     public Integer addChart(Integer pos) {
-        FractionCanvas.ORIENTATION orient;
+        GridPaneCanvas.ORIENTATION orient;
         if (pos < 2) {
-            orient = FractionCanvas.ORIENTATION.HORIZONTAL;
+            orient = GridPaneCanvas.ORIENTATION.HORIZONTAL;
         } else {
-            orient = FractionCanvas.ORIENTATION.VERTICAL;
+            orient = GridPaneCanvas.ORIENTATION.VERTICAL;
         }
         PolyChart chart = new PolyChart(this, plotContent, canvas, peakCanvas, annoCanvas);
+        charts.add(chart);
         chart.setController(this);
-        chartGroup.setOrientation(orient, false);
+       // chartGroup.setOrientation(orient, false);
         if ((pos % 2) == 0) {
             chartGroup.addChart(0, chart);
         } else {
@@ -1809,20 +1820,12 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
 
     public void setChartDisable(boolean state) {
         for (PolyChart chart : charts) {
-            chart.setDisable(state);
+            chart.setChartDisable(state);
         }
 
     }
 
-    public int arrangeGetRows() {
-        return chartGroup.getCurrentRows();
-    }
-
-    public int arrangeGetColumns() {
-        return chartGroup.getCurrentCols();
-    }
-
-    public void arrange(FractionCanvas.ORIENTATION orient) {
+    public void arrange(GridPaneCanvas.ORIENTATION orient) {
         setChartDisable(true);
         if (charts.size() == 1) {
             PolyChart chart = charts.get(0);
@@ -1840,10 +1843,11 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
                 for (int i = 0; i < charts.size(); i++) {
                     DatasetAttributes datasetAttr = current.get(i);
                     PolyChart iChart = charts.get(i);
+                    iChart.setDataset(datasetAttr.getDataset());
                     iChart.setDatasetAttr(datasetAttr);
                 }
                 chart.syncSceneMates();
-                chartGroup.layoutChildren();
+                setChartDisable(true);
                 for (int i = 0; i < charts.size(); i++) {
                     PolyChart iChart = charts.get(i);
                     iChart.xAxis.setLowerBound(xLower);
@@ -1851,7 +1855,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
                     iChart.yAxis.setLowerBound(yLower);
                     iChart.yAxis.setUpperBound(yUpper);
                     iChart.getCrossHairs().setCrossHairState(true);
-                    iChart.refresh();
+                    //iChart.refresh();
                 }
                 setChartDisable(false);
                 chartGroup.layoutChildren();
@@ -1883,12 +1887,10 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
 
     public void setBorderState(boolean state) {
         setMinBorders(state);
-        int nRows = chartGroup.getRows();
-        int nCols = chartGroup.getColumns();
+        chartGroup.updateConstraints();
         chartGroup.layoutChildren();
     }
 
-    @Override
     public double[][] prepareChildren(int nRows, int nCols) {
         int iChild = 0;
         double maxBorderX = 0.0;
@@ -1971,7 +1973,6 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         return hitChart;
     }
 
-    @Override
     public void redrawChildren() {
         // fixme
 //        chartGroup.getChildrenUnmodifiable().stream().map((node) -> (PolyChart) node).forEachOrdered((chart) -> {
@@ -2010,11 +2011,16 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         draw();
     }
 
+    public int arrangeGetRows() {
+        return chartGroup.getRows();
+    }
+
+    public int arrangeGetColumns() {
+        return chartGroup.getColumns();
+    }
+
     public void arrange(int nRows) {
         chartGroup.setRows(nRows);
-        int nCols = chartGroup.getColumns();
-        chartGroup.layoutChildren();
-        chartGroup.layoutChildren();
     }
 
     public void alignCenters() {

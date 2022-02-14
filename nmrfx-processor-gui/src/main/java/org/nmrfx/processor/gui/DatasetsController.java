@@ -69,7 +69,7 @@ import javafx.scene.control.ButtonType;
 import javafx.scene.control.Tooltip;
 import javafx.scene.shape.Polygon;
 import org.nmrfx.datasets.DatasetBase;
-import org.nmrfx.processor.gui.controls.FractionCanvas;
+import org.nmrfx.processor.gui.controls.GridPaneCanvas;
 import org.nmrfx.project.ProjectBase;
 
 /**
@@ -148,11 +148,11 @@ public class DatasetsController implements Initializable, PropertyChangeListener
         MenuItem overlayItem = new MenuItem("Overlay");
         overlayItem.setOnAction(e -> drawDataset(e));
         MenuItem gridItem = new MenuItem("Grid");
-        gridItem.setOnAction(e -> gridDataset(e, FractionCanvas.ORIENTATION.GRID));
+        gridItem.setOnAction(e -> gridDataset(e, GridPaneCanvas.ORIENTATION.GRID));
         MenuItem horizontalItem = new MenuItem("Horizontal");
-        horizontalItem.setOnAction(e -> gridDataset(e, FractionCanvas.ORIENTATION.HORIZONTAL));
+        horizontalItem.setOnAction(e -> gridDataset(e, GridPaneCanvas.ORIENTATION.HORIZONTAL));
         MenuItem verticalItem = new MenuItem("Vertical");
-        verticalItem.setOnAction(e -> gridDataset(e, FractionCanvas.ORIENTATION.VERTICAL));
+        verticalItem.setOnAction(e -> gridDataset(e, GridPaneCanvas.ORIENTATION.VERTICAL));
         ContextMenu drawMenu = new ContextMenu(overlayItem, horizontalItem, verticalItem, gridItem);
         drawButton.setContextMenu(drawMenu);
 
@@ -463,16 +463,14 @@ public class DatasetsController implements Initializable, PropertyChangeListener
         }
     }
 
-    void gridDataset(ActionEvent e, FractionCanvas.ORIENTATION orient) {
+    void gridDataset(ActionEvent e, GridPaneCanvas.ORIENTATION orient) {
         ObservableList<DatasetBase> datasets = tableView.getSelectionModel().getSelectedItems();
         FXMLController controller = FXMLController.getActiveController();
         PolyChart chart = controller.getActiveChart();
         if ((chart != null) && chart.getDataset() != null) {
             controller = FXMLController.create();
         }
-        for (int i = 0; i < (datasets.size() - 1); i++) {
-            controller.addChart(1);
-        }
+        controller.setNCharts(datasets.size());
         controller.arrange(orient);
         for (int i = 0; i < datasets.size(); i++) {
             DatasetBase dataset = datasets.get(i);
