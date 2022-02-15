@@ -19,6 +19,7 @@ package org.nmrfx.processor.datasets.vendor;
 
 import com.nanalysis.jcamp.model.JCampBlock;
 import com.nanalysis.jcamp.model.JCampDocument;
+import com.nanalysis.jcamp.model.JCampPage;
 import com.nanalysis.jcamp.model.JCampRecord;
 import com.nanalysis.jcamp.parser.JCampParser;
 import com.nanalysis.jcamp.util.JCampUtil;
@@ -150,20 +151,22 @@ class JCAMPData implements NMRData {
 
     @Override
     public String getSolvent() {
-        //TODO implement me
-        return null;
+        return block.optional(_SOLVENT_NAME, $SOLVENT)
+                .map(JCampRecord::getString)
+                .orElse("");
     }
 
     @Override
     public double getTempK() {
-        //TODO implement me
-        return 0;
+        return block.optional(TEMPERATURE, $TE)
+                .map(r -> r.getDouble() > 150 ? r.getDouble() : 273.15 + r.getDouble())
+                .orElse(298.0); //XXX default value was already a question in original JCAMP data
     }
 
     @Override
     public String getSequence() {
-        //TODO implement me
-        return null;
+        return block.optional(_PULSE_SEQUENCE, $PULPROG)
+                .map(JCampRecord::getString).orElse("");
     }
 
     @Override
@@ -171,11 +174,11 @@ class JCAMPData implements NMRData {
         //XXX some doubts about the expected unit: Hz or MHz?
         //XXX Base freq, or observed freq? should we try to add offset?
         //Previous implementation was using OBSERVE_FREQUENCY but this is not defined in 2D
-        if(dim == 0) {
+        if (dim == 0) {
             return block.optional($BF1, $BFREQ, $SF)
                     .map(r -> r.getDouble() * 1E6)
                     .orElseThrow(() -> new IllegalStateException("Unknown frequency, $BF1, $BFREQ and $SF undefined!"));
-        } else if(dim == 1) {
+        } else if (dim == 1) {
             return block.optional($BF2)
                     .map(r -> r.getDouble() * 1e6)
                     .orElseThrow(() -> new IllegalStateException("Unknown frequency, $BF2 undefined!"));
@@ -186,28 +189,33 @@ class JCAMPData implements NMRData {
 
     @Override
     public void setSF(int dim, double value) {
-        throw new UnsupportedOperationException("This looks like this shouldn't be called.");
+        //TODO implement me?
+        System.out.println("Called unimplemented method: setSF: " + dim + ", " + value);
     }
 
     @Override
     public void resetSF(int dim) {
-        //TODO implement me
+        //TODO implement me?
+        System.out.println("Called unimplemented method: resetSF: " + dim);
     }
 
     @Override
     public double getSW(int dim) {
-        //TODO implement me
-        return 0;
+        return block.optional($SW_H, dim)
+                .map(JCampRecord::getDouble)
+                .orElseThrow(() -> new IllegalStateException("Unknown spectral width, $SW_H undefined for dimension " + dim));
     }
 
     @Override
     public void setSW(int dim, double value) {
-        //TODO implement me
+        //TODO implement me?
+        System.out.println("Called unimplemented method: setSW: " + dim + ", " + value);
     }
 
     @Override
     public void resetSW(int dim) {
-        //TODO implement me
+        //TODO implement me?
+        System.out.println("Called unimplemented method: resetSW: " + dim);
     }
 
     @Override
@@ -218,12 +226,14 @@ class JCAMPData implements NMRData {
 
     @Override
     public void setRef(int dim, double ref) {
-        //TODO implement me
+        //TODO implement me?
+        System.out.println("Called unimplemented method: setRef: " + dim + ", " + ref);
     }
 
     @Override
     public void resetRef(int dim) {
-        //TODO implement me
+        //TODO implement me?
+        System.out.println("Called unimplemented method: resetRef: " + dim);
     }
 
     @Override
@@ -234,12 +244,12 @@ class JCAMPData implements NMRData {
 
     @Override
     public String getTN(int dim) {
-        if(dim == 0) {
+        if (dim == 0) {
             return block.optional(_OBSERVE_NUCLEUS, $NUC_1, $T2_NUCLEUS)
                     .map(JCampRecord::getString)
                     .map(JCampUtil::toNucleusName)
                     .orElse(NMRDataUtil.guessNucleusFromFreq(getSF(dim)).toString());
-        } else if(dim == 1) {
+        } else if (dim == 1) {
             return block.optional($NUC_2)
                     .map(JCampRecord::getString)
                     .map(JCampUtil::toNucleusName)
@@ -366,27 +376,61 @@ class JCAMPData implements NMRData {
 
     @Override
     public void readVector(int iVec, Vec dvec) {
-        //TODO implement me
+        List<JCampPage> realPages = block.getPagesForYSymbol("R");
+        List<JCampPage> imaginaryPages = block.getPagesForYSymbol("I");
+
+        //TODO group delay
+        //dvec.setGroupDelay(groupDelay);
+
+        // XXX 1D only for now - is 2D supposed to be here or in another readVector()?
+        double[] rValues = realPages.get(0).toArray();
+
+        int n = rValues.length;
+
+        if (imaginaryPages.isEmpty()) {
+            dvec.resize(n, false);
+            for (int i = 0; i < n; i++) {
+                dvec.set(i, rValues[i]);
+                dvec.setTDSize(n);
+            }
+        } else {
+            double[] iValues = imaginaryPages.get(0).toArray();
+            dvec.resize(n, true);
+            dvec.setTDSize(n);
+            for (int i = 0; i < n; i++) {
+                dvec.set(i, iValues[i], rValues[i]);
+            }
+        }
+
+        dvec.dwellTime = 1.0 / getSW(0);
+        dvec.centerFreq = getSF(0);
+
+        double delRef = (dvec.getSize() / 2d) * (1.0 / dvec.dwellTime) / dvec.centerFreq / dvec.getSize();
+        dvec.refValue = getRef(0) + delRef;
     }
 
     @Override
     public void readVector(int iVec, Complex[] cdata) {
-        //TODO implement me
+        //TODO implement me? needed?
+        throw new UnsupportedOperationException("Not yet implemented: readVector(int iVec, Complex[] cdata)");
     }
 
     @Override
     public void readVector(int iVec, double[] rdata, double[] idata) {
-        //TODO implement me
+        //TODO implement me? needed?
+        throw new UnsupportedOperationException("Not yet implemented: readVector(int iVec, double[] rdata, double[] idata)");
     }
 
     @Override
     public void readVector(int iVec, double[] data) {
-        //TODO implement me
+        //TODO implement me? needed?
+        throw new UnsupportedOperationException("Not yet implemented: readVector(int iVec, double[] data)");
     }
 
     @Override
     public void readVector(int iDim, int iVec, Vec dvec) {
-        //TODO implement me
+        //TODO implement me? needed?
+        throw new UnsupportedOperationException("Not yet implemented: readVector(int iDim, int iVec, Vec dvec)");
     }
 
     @Override
