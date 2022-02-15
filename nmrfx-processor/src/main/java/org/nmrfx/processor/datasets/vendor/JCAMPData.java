@@ -58,10 +58,6 @@ class JCAMPData implements NMRData {
         }
         this.block = document.blocks().findFirst()
                 .orElseThrow(() -> new IOException("Invalid JCamp document, doesn't contain any block."));
-
-        //realPages = block.getPagesForYSymbol("R");
-        //imaginaryPages = block.getPagesForYSymbol("I");
-
     }
 
     @Override
@@ -146,7 +142,8 @@ class JCAMPData implements NMRData {
 
     @Override
     public void setSize(int dim, int size) {
-        throw new UnsupportedOperationException("This looks like this shouldn't be called.");
+        //TODO implement me?
+        System.out.println("Called unimplemented method: setSize: " + dim + ", " + size);
     }
 
     @Override
@@ -220,7 +217,13 @@ class JCAMPData implements NMRData {
 
     @Override
     public double getRef(int dim) {
-        //TODO implement me
+        String xUnit = JCampUtil.normalize(block.get(UNITS).getStrings().get(0));
+        double firstX = block.get(FIRST).getDoubles()[0];
+        if(xUnit.equals("HZ")) {
+            return firstX / getSF(dim); //XXX original was always targetting Sf[0], not caring about dimension. Normal?
+        } else if(xUnit.equals("PPM")) {
+            return firstX;
+        }
         return 0;
     }
 
@@ -398,7 +401,7 @@ class JCAMPData implements NMRData {
             dvec.resize(n, true);
             dvec.setTDSize(n);
             for (int i = 0; i < n; i++) {
-                dvec.set(i, iValues[i], rValues[i]);
+                dvec.set(i, rValues[i], iValues[i]);
             }
         }
 
