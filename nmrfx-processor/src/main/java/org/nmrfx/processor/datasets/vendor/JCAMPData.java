@@ -17,6 +17,12 @@
  */
 package org.nmrfx.processor.datasets.vendor;
 
+import com.nanalysis.jcamp.model.JCampBlock;
+import com.nanalysis.jcamp.model.JCampDocument;
+import com.nanalysis.jcamp.model.JCampPage;
+import com.nanalysis.jcamp.model.Label;
+import com.nanalysis.jcamp.parser.ASDFParser;
+import com.nanalysis.jcamp.parser.JCampParser;
 import org.nmrfx.processor.datasets.DatasetType;
 import org.nmrfx.processor.datasets.parameters.FPMult;
 import org.nmrfx.processor.datasets.parameters.GaussianWt;
@@ -89,18 +95,35 @@ class JCAMPData implements NMRData {
     final static double SCALE = 1.0;
     boolean hasFID = false;
     boolean hasSpectrum = false;
-    ASDFParser rparser = null;
+    //ASDFParser rparser = null;
+    //ASDFParser iparser = null;
+
+
+    // jcamp-parser new parameters
+    JCampDocument document;
+    private final JCampBlock firstFid;
     ASDFParser iparser = null;
+    ASDFParser rparser = null;
+    List<JCampPage> realPages;
+    List<JCampPage> imaginaryPages;
+
 
     /**
      * Open Bruker parameter and data files.
      *
      * @param path full path to the fid directory or file
      */
-    public JCAMPData(String path) {
+    public JCAMPData(String path) throws IOException {
         if (path.endsWith(File.separator)) {
             path = path.substring(0, path.length() - 1);
         }
+
+        document = new JCampParser().parse(new File(path));
+
+        firstFid = document.getFirstFid(); //TODO error checks
+        realPages = firstFid.getPagesForYSymbol("R");
+        imaginaryPages = firstFid.getPagesForYSymbol("I");
+
         this.fpath = path;
         openParFile(path);
         openDataFile(path);
@@ -182,6 +205,8 @@ class JCAMPData implements NMRData {
 
     @Override
     public List<VendorPar> getPars() {
+        // TODO This needs to not use the parMap anymore
+        // I want to use the JCampBlock to get all the records, but there is not a getter that I can see
         List<VendorPar> vendorPars = new ArrayList<>();
         for (Map.Entry<String, String> par : parMap.entrySet()) {
             vendorPars.add(new VendorPar(par.getKey(), par.getValue()));
@@ -191,44 +216,34 @@ class JCAMPData implements NMRData {
 
     @Override
     public String getPar(String parname) {
-        if (parMap == null) {
-            return null;
-        } else {
-            return parMap.get(parname);
-        }
+        return firstFid.get(parname).getString();
     }
 
     @Override
     public Double getParDouble(String parname) {
-        if ((parMap == null) || (parMap.get(parname) == null)) {
-            return null;
-//            throw new NullPointerException();
-        } else {
-            return Double.parseDouble(parMap.get(parname));
-        }
+        return firstFid.get(parname).getDouble();
     }
 
     @Override
     public Integer getParInt(String parname) {
-        if ((parMap == null) || (parMap.get(parname) == null)) {
-            return null;
-        } else {
-            return Integer.parseInt(parMap.get(parname));
-        }
+        return firstFid.get(parname).getInt();
     }
 
     @Override
     public int getNVectors() {  // number of vectors
+        // TODO does this need to be changed?
         return nvectors;
     }
 
     @Override
     public int getNPoints() {  // points per vector
+        // TODO does this need to be changed?
         return np / 2;
     }
 
     @Override
     public int getNDim() {
+        // TODO does this need to be changed?
         return dim;
     }
 
@@ -452,7 +467,7 @@ class JCAMPData implements NMRData {
     public double getPH0(int iDim) {
         double ph0 = 0.0;
         Double dpar;
-        if ((dpar = getParDouble("PHC0," + (iDim + 1))) != null) {
+        if ((dpar = getParDouble("PHC0")) != null) {
             ph0 = -dpar;
             if (iDim == 0) {
                 ph0 += 90.0;
@@ -467,7 +482,7 @@ class JCAMPData implements NMRData {
     public double getPH1(int iDim) {
         double ph1 = 0.0;
         Double dpar;
-        if ((dpar = getParDouble("PHC1," + (iDim + 1))) != null) {
+        if ((dpar = getParDouble("PHC1")) != null) {
             ph1 = -dpar;
         }
         return ph1;
@@ -477,7 +492,7 @@ class JCAMPData implements NMRData {
     public int getLeftShift(int iDim) {
         int shift = 0;
         Integer ipar;
-        if ((ipar = getParInt("LS," + (iDim + 1))) != null) {
+        if ((ipar = getParInt("LS")) != null) {
             shift = -ipar;
         }
         return shift;
@@ -486,10 +501,10 @@ class JCAMPData implements NMRData {
     @Override
     public double getExpd(int iDim) {
         double expd = 0.0;
-        Integer wdw = getParInt("WDW," + (iDim + 1));
+        Integer wdw = getParInt("WDW");
         String spar;
         if (wdw != null && wdw == 1) {
-            if ((spar = getPar("LB," + (iDim + 1))) != null) {
+            if ((spar = getPar("LB")) != null) {
                 if (!spar.equals("n")) {
                     expd = Double.parseDouble(spar);
                 }
@@ -520,14 +535,7 @@ class JCAMPData implements NMRData {
 
     // open Bruker parameter file(s)
     private void openParFile(String parpath) {
-        parMap = new LinkedHashMap<>(200);
         // process proc files if they exist
-        String path = parpath;
-        try {
-            BrukerPar.processBrukerParFile(parMap, path, 1, true);
-        } catch (NMRParException ex) {
-            LOGGER.log(Level.WARNING, ex.getMessage());
-        }
         // process acqu files if they exist
         int acqdim = 1;
         this.dim = acqdim;
@@ -536,12 +544,7 @@ class JCAMPData implements NMRData {
     }
 
     private void setPars() {
-        String dataClass = "";
-        String spar;
         int iDim = 0;
-        if ((spar = getPar("DATACLASS," + (iDim + 1))) != null) {
-            dataClass = spar;
-        }
         double sw = 1000.0;
         double firstX = 0;
         double lastX = 0;
@@ -551,56 +554,47 @@ class JCAMPData implements NMRData {
         double rFactor;
         double iFactor;
         String units = "";
-        if (dataClass.equals("XYDATA")) {
-            Sf[0] = getParDouble(".OBSERVEFREQUENCY," + (iDim + 1));
+        if (firstFid.getDataClass().equals("XYDATA")) {
+            Sf[0] = getParDouble(".OBSERVEFREQUENCY");
             System.out.println("sf " + Sf[0] + " " + iDim);
-            Tn[0] = getPar(".OBSERVENUCLEUS," + (iDim + 1));
-            firstX = getParDouble("FIRSTX," + (iDim + 1));
+            Tn[0] = getPar(".OBSERVENUCLEUS");
+            firstX = getParDouble("FIRSTX");
             System.out.println("firstx " + firstX + " " + iDim);
-            lastX = getParDouble("LASTX," + (iDim + 1));
+            lastX = getParDouble("LASTX");
             System.out.println("lastx " + lastX + " " + iDim);
-            units = getPar("XUNITS," + (iDim + 1));
-            nPoints = getParInt("NPOINTS," + (iDim + 1));
+            units = getPar("XUNITS");
+            nPoints = getParInt("NPOINTS");
             tdsize[0] = nPoints;
             System.out.println("tdsize " + tdsize[0] + " " + iDim);
-            xFactor = getParDouble("XFACTOR," + (iDim + 1));
-            yFactor = getParDouble("YFACTOR," + (iDim + 1));
+            xFactor = getParDouble("XFACTOR");
+            yFactor = getParDouble("YFACTOR");
 
-            String xyData = getPar("XYDATA," + (iDim + 1));
+            String xyData = getPar("XYDATA");
             int firstLF = xyData.indexOf('\n');
             firstLF++;
             fromASDF(xyData.substring(firstLF), firstX, lastX, xFactor, yFactor, nPoints);
 
-        } else if (dataClass.equals("NTUPLES")) {
-            Sf[0] = getParDouble(".OBSERVEFREQUENCY," + (iDim + 1));
-            Tn[0] = getPar(".OBSERVENUCLEUS," + (iDim + 1));
-            String values = getPar("FIRST," + (iDim + 1));
-            String[] valueArray = values.split(",");
-            firstX = Double.parseDouble(valueArray[0].trim());
+        } else if (firstFid.getDataClass().equals("NTUPLES")) {
+            Sf[0] = getParDouble(".OBSERVEFREQUENCY");
+            Tn[0] = getPar(".OBSERVENUCLEUS");
+            firstX = getParDouble("FIRST");
+            lastX = getParDouble("LAST");
+            units = getPar("UNITS");
 
-            values = getPar("LAST," + (iDim + 1));
-            valueArray = values.split(",");
-            lastX = Double.parseDouble(valueArray[0].trim());
-
-            values = getPar("UNITS," + (iDim + 1));
-            valueArray = values.split(",");
-            units = valueArray[0].trim();
-
-            values = getPar("VARDIM," + (iDim + 1));
-            valueArray = values.split(",");
-            nPoints = Integer.parseInt(valueArray[0].trim());
+            nPoints = getParInt("VARDIM");
             tdsize[0] = nPoints;
 
-            values = getPar("FACTOR," + (iDim + 1));
-            valueArray = values.split(",");
+            String values = getPar("FACTOR");
+            String [] valueArray = values.split(",");
             xFactor = Double.parseDouble(valueArray[0]);
             rFactor = Double.parseDouble(valueArray[1]);
             iFactor = Double.parseDouble(valueArray[2]);
 
-            String xyDataR = getPar("DATATABLE1," + (iDim + 1));
+            // TODO Where are these data tables?
+            String xyDataR = getPar("DATATABLE1");
             int firstLFR = xyDataR.indexOf('\n');
             firstLFR++;
-            String xyDataI = getPar("DATATABLE2," + (iDim + 1));
+            String xyDataI = getPar("DATATABLE2");
             int firstLFI = xyDataI.indexOf('\n');
             firstLFI++;
 
@@ -673,49 +667,6 @@ class JCAMPData implements NMRData {
 
     }
 
-    private void setSwapBitsOff() {
-        swapBits = false;
-    }
-
-    private void setSwapBitsOn() {
-        swapBits = true;
-    }
-
-    private void setExchangeOn() {
-        exchangeXY = true;
-    }
-
-    private void setExchangeOff() {
-        exchangeXY = false;
-    }
-
-    private void setNegatePairsOn() {
-        negatePairs = true;
-    }
-
-    private void setNegatePairsOff() {
-        negatePairs = false;
-    }
-
-    private void setFixDSPOn() {
-        fixDSP = true;
-    }
-
-    private void setFixDSPOff() {
-        fixDSP = false;
-    }
-
-    private void setDSPShiftOn() {
-        fixByShift = true;
-    }
-
-    private void setDSPShiftOff() {
-        fixByShift = false;
-    }
-
-    private void setDspph() {
-    }
-
     // open Bruker file, read fid data
     private void openDataFile(String datapath) {
         if ((new File(datapath)).exists()) {
@@ -736,21 +687,25 @@ class JCAMPData implements NMRData {
     }
 
     public void fromASDF(String asdfString, double xFirst, double xLast, double xFactor, double yFactor, int nPoints) {
-        rparser = new ASDFParser(xFirst, xLast, xFactor, yFactor, nPoints);
-        rparser.fromASDF(asdfString);
+
+        rparser = new ASDFParser(nPoints);
+        // TODO this needs to be a list of strings/lines
+        rparser.parse(asdfString);
+
     }
 
     public void fromASDF(String rString, String iString, double xFirst, double xLast, double xFactor, double rFactor, double iFactor, int nPoints) {
-        rparser = new ASDFParser(xFirst, xLast, xFactor, rFactor, nPoints);
-        iparser = new ASDFParser(xFirst, xLast, xFactor, iFactor, nPoints);
-
-        rparser.fromASDF(rString);
-        iparser.fromASDF(iString);
+        rparser = new ASDFParser(nPoints);
+        iparser = new ASDFParser(nPoints);
+        // TODO this needs to be a list of strings/lines
+        rparser.parse(rString);
+        iparser.parse(iString);
     }
 
     @Override
     public void readVector(int iVec, Vec dvec) {
         dvec.setGroupDelay(groupDelay);
+        // TODO how can this be adjusted?
         ArrayList<Double> rValues = rparser.getYValues();
         int n = rValues.size();
 
