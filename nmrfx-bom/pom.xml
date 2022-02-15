@@ -22,7 +22,7 @@
             <dependency>
                 <groupId>com.nanalysis</groupId>
                 <artifactId>jcamp-parser</artifactId>
-                <version>1.0.1</version>
+                <version>1.0.2</version>
                 <!-- license: GPLv3 + Nanalysis internal license -->
             </dependency>
             <dependency>
