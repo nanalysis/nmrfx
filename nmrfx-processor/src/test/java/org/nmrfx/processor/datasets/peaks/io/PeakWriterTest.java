@@ -1,19 +1,21 @@
 package org.nmrfx.processor.datasets.peaks.io;
 
+import org.junit.Assert;
+import org.junit.Test;
+import org.nmrfx.peaks.InvalidPeakException;
+import org.nmrfx.peaks.PeakList;
+import org.nmrfx.peaks.io.PeakReader;
+import org.nmrfx.peaks.io.PeakWriter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import org.junit.Assert;
-import org.junit.Test;
-import org.nmrfx.peaks.PeakList;
-import org.nmrfx.peaks.InvalidPeakException;
-import org.nmrfx.peaks.io.PeakReader;
-import org.nmrfx.peaks.io.PeakWriter;
 
 public class PeakWriterTest {
+    private static final Logger log = LoggerFactory.getLogger(PeakWriterTest.class);
 
     String peakListName1 = "src/test/resources/test.xpk";
     String peakListName2 = "src/test/resources/test.xpk2";
@@ -27,7 +29,7 @@ public class PeakWriterTest {
             try {
                 peakList1 = peakReader.readPeakList(peakListName);
             } catch (IOException ex) {
-                Logger.getLogger(PeakWriterTest.class.getName()).log(Level.SEVERE, null, ex);
+                log.error(ex.getMessage(), ex);
             }
         }
         return peakList1;
@@ -75,18 +77,4 @@ public class PeakWriterTest {
             writer.close();
         }
     }
-
-//    @Test(expected = InvalidPeakException.class)
-//    public void testXPKWriterNullPeak() throws IOException, InvalidPeakException {
-//        PeakList peakList = getPeakList(peakListName1);
-//        Assert.assertNotNull(peakList);
-//        peakList.getPeak(0) = null;
-//        
-//        PeakWriter peakWriter = new PeakWriter();
-//        String writeFileName = "src/test/resources/testw.xpk";
-//        try (FileWriter writer = new FileWriter(writeFileName)) {
-//            peakWriter.writePeaksXPK(writer, peakList);
-//            writer.close();
-//        }
-//    }
 }

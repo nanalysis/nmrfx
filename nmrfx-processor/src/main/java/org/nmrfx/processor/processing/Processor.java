@@ -38,6 +38,8 @@ import org.nmrfx.processor.operations.Operation;
 import org.nmrfx.processor.processing.processes.IncompleteProcessException;
 import org.nmrfx.processor.processing.processes.ProcessOps;
 import org.nmrfx.utilities.ProgressUpdater;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -53,8 +55,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * The Processor contains all processes. It also contains the "current
@@ -64,6 +64,7 @@ import java.util.logging.Logger;
  * @author johnsonb
  */
 public class Processor {
+    private static final Logger log = LoggerFactory.getLogger(Processor.class);
 
     public static boolean showDebugInfo = false;
     private String fileName;
@@ -870,7 +871,7 @@ public class Processor {
         this.acqSizesToUse = useSizes;  // fixme
         if (nDim > datasetSizes.length) {
             if (useSizes == null) {
-                Logger.getLogger(Processor.class.getName()).log(Level.SEVERE, null, "specify useSizes if not using all dimensions");
+                log.error("specify useSizes if not using all dimensions");
                 return false;
             }
         }
@@ -881,7 +882,7 @@ public class Processor {
                 this.dataset = Dataset.createDataset(outputFile, outputFile, datasetSizes, false);
             }
         } catch (DatasetException ex) {
-            Logger.getLogger(Processor.class.getName()).log(Level.SEVERE, null, ex);
+            log.error(ex.getMessage(), ex);
             return false;
         }
         dataset.setScale(1.0);
@@ -1472,7 +1473,7 @@ public class Processor {
                         dataset.saveMemoryFile();
                     }
                 } catch (IOException | DatasetException ex) {
-                    Logger.getLogger(Processor.class.getName()).log(Level.SEVERE, null, ex);
+                    log.error(ex.getMessage(), ex);
                 }
             }
             dataset.close();

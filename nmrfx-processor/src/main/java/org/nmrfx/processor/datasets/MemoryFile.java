@@ -17,18 +17,20 @@
  */
 package org.nmrfx.processor.datasets;
 
+import org.apache.commons.math3.complex.Complex;
+import org.nmrfx.datasets.DatasetStorageInterface;
+import org.nmrfx.processor.math.Vec;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.Closeable;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import org.apache.commons.math3.complex.Complex;
-import org.nmrfx.datasets.DatasetStorageInterface;
-import org.nmrfx.processor.math.Vec;
 
 public class MemoryFile implements DatasetStorageInterface, Closeable {
+    private static final Logger log = LoggerFactory.getLogger(MemoryFile.class);
 
     private final int[] sizes;
     private final long[] strides;
@@ -68,7 +70,7 @@ public class MemoryFile implements DatasetStorageInterface, Closeable {
         try {
             zero();
         } catch (IOException ex) {
-            Logger.getLogger(MemoryFile.class.getName()).log(Level.SEVERE, null, ex);
+            log.error(ex.getMessage(), ex);
         }
     }
 

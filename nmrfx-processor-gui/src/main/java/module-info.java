@@ -55,7 +55,6 @@ open module org.nmrfx.processor.gui {
     requires org.yaml.snakeyaml;
     requires janino;
     requires commons.compiler;
-    requires io.netty.all;
     requires jython.slim;
     requires antlr;
     requires ST4;

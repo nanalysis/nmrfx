@@ -17,27 +17,23 @@
  */
 package org.nmrfx.processor.datasets;
 
+import org.nmrfx.datasets.MatrixType;
+import org.nmrfx.processor.processing.Processor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.FutureTask;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import org.nmrfx.datasets.MatrixType;
-import org.nmrfx.processor.processing.Processor;
 
 /**
  *
  * @author brucejohnson
  */
 public class MatrixTypeService {
+    private static final Logger log = LoggerFactory.getLogger(MatrixTypeService.class);
 
     /* Each LinkedList<MatrixType> will hold one set of arraylists for a process. The
      * outer List is synchronized but the inner List is not synchronized.
@@ -149,13 +145,10 @@ public class MatrixTypeService {
     private void writeItems(List<MatrixType> temp) {
         for (MatrixType vector : temp) {
             try {
-                //vector.printLocation();
                 processor.getDataset().writeMatrixType(vector);
                 nWritten.incrementAndGet();
-//                System.out.println("n written " + nWritten.get() + " of " + itemsToWrite);
             } catch (IOException ex) {
-                ex.printStackTrace();
-                Logger.getLogger(Processor.class.getName()).log(Level.SEVERE, null, ex);
+                log.error(ex.getMessage(), ex);
             }
         }
     }
@@ -167,7 +160,6 @@ public class MatrixTypeService {
         List<MatrixType> temp = null;
         while (true) {
             try {
-//                System.out.println(unprocessedItemQueue.size() + " " + processedItemQueue.size() + " " + nWritten.get() + " " +itemsToWrite + " " + this);
                 if (nRead.get() < itemsToRead) {
                     if ((unprocessedItemQueue.size() < processedQueueLimit.get()) && (processedItemQueue.size() < processedQueueLimit.get())) {
                         for (int i = 0; i < 4; i++) {
@@ -176,8 +168,6 @@ public class MatrixTypeService {
                             }
                         }
                     }
-                } else {
-//                    System.out.println("finished reading");
                 }
 
                 temp = processedItemQueue.poll(100, TimeUnit.MILLISECONDS);
@@ -190,7 +180,7 @@ public class MatrixTypeService {
                     }
                 }
             } catch (InterruptedException ex) {
-                Logger.getLogger(MatrixTypeService.class.getName()).log(Level.SEVERE, null, ex);
+                log.error(ex.getMessage(), ex);
                 return false;
             }
         }

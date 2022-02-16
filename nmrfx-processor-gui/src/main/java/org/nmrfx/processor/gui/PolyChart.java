@@ -18,52 +18,17 @@
 package org.nmrfx.processor.gui;
 
 import javafx.scene.layout.Region;
-import org.nmrfx.processor.gui.spectra.SpectrumMenu;
-import org.nmrfx.processor.gui.spectra.NMRAxis;
-import org.nmrfx.processor.gui.spectra.DrawSpectrum;
-import org.nmrfx.processor.datasets.Dataset;
-import org.nmrfx.processor.math.Vec;
-import org.nmrfx.processor.gui.spectra.DatasetAttributes;
-import org.nmrfx.processor.gui.spectra.DatasetAttributes.AXMODE;
-import org.nmrfx.processor.gui.spectra.DrawPeaks;
-import org.nmrfx.processor.gui.spectra.PeakListAttributes;
-import org.nmrfx.processor.gui.spectra.SliceAttributes;
-import org.nmrfx.processor.gui.spectra.SpectrumWriter;
-import org.nmrfx.processor.gui.controls.ConsoleUtil;
-import java.io.File;
-import java.util.ArrayList;
-import javafx.collections.ObservableList;
-import javafx.scene.shape.Path;
-import javafx.scene.shape.Line;
-import java.io.IOException;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.function.Consumer;
-import java.util.function.DoubleFunction;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javafx.application.Platform;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ChangeListener;
-import javafx.collections.FXCollections;
-import javafx.collections.ListChangeListener;
-import javafx.collections.MapChangeListener;
-import javafx.collections.ObservableSet;
-import javafx.collections.SetChangeListener;
+import javafx.collections.*;
 import javafx.geometry.Bounds;
 import javafx.geometry.Orientation;
 import javafx.geometry.VPos;
 import javafx.scene.Cursor;
-import javafx.scene.input.MouseEvent;
-import javafx.scene.paint.Color;
 import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.canvas.Canvas;
@@ -71,53 +36,50 @@ import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ChoiceDialog;
 import javafx.scene.input.DragEvent;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
-import javafx.scene.shape.LineTo;
-import javafx.scene.shape.MoveTo;
-import javafx.scene.shape.PathElement;
-import javafx.scene.shape.Rectangle;
-import javafx.scene.shape.StrokeLineCap;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.*;
 import javafx.scene.text.Font;
 import javafx.scene.text.TextAlignment;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.datasets.DatasetBase;
-import org.nmrfx.datasets.Nuclei;
 import org.nmrfx.datasets.DatasetRegion;
+import org.nmrfx.datasets.Nuclei;
 import org.nmrfx.datasets.RegionData;
-import org.nmrfx.processor.datasets.peaks.PeakFitException;
-import org.nmrfx.processor.datasets.peaks.PeakNeighbors;
-import static org.nmrfx.processor.gui.PolyChart.DISDIM.TwoD;
 import org.nmrfx.graphicsio.GraphicsContextInterface;
 import org.nmrfx.graphicsio.GraphicsContextProxy;
 import org.nmrfx.graphicsio.GraphicsIOException;
 import org.nmrfx.graphicsio.SVGGraphicsContext;
 import org.nmrfx.math.VecBase;
-import org.nmrfx.peaks.Multiplet;
-import org.nmrfx.peaks.Peak;
-import org.nmrfx.peaks.PeakEvent;
-import org.nmrfx.peaks.PeakList;
-import org.nmrfx.peaks.PeakListener;
+import org.nmrfx.peaks.*;
+import org.nmrfx.processor.datasets.Dataset;
+import org.nmrfx.processor.datasets.peaks.PeakFitException;
 import org.nmrfx.processor.datasets.peaks.PeakListTools;
 import org.nmrfx.processor.datasets.peaks.PeakListTools.ARRAYED_FIT_MODE;
-import org.nmrfx.processor.gui.spectra.ChartMenu;
-import org.nmrfx.processor.gui.spectra.ConnectPeakAttributes;
-import org.nmrfx.processor.gui.undo.ChartUndoLimits;
-import org.nmrfx.processor.gui.spectra.CrossHairs;
-import org.nmrfx.processor.gui.spectra.DragBindings;
-import org.nmrfx.processor.gui.spectra.IntegralHit;
-import org.nmrfx.processor.gui.spectra.GestureBindings;
-import org.nmrfx.processor.gui.spectra.IntegralMenu;
-import org.nmrfx.processor.gui.spectra.KeyBindings;
-import org.nmrfx.processor.gui.spectra.MouseBindings;
+import org.nmrfx.processor.datasets.peaks.PeakNeighbors;
+import org.nmrfx.processor.gui.controls.ConsoleUtil;
+import org.nmrfx.processor.gui.spectra.*;
+import org.nmrfx.processor.gui.spectra.DatasetAttributes.AXMODE;
 import org.nmrfx.processor.gui.spectra.MouseBindings.MOUSE_ACTION;
-import org.nmrfx.processor.gui.spectra.MultipletSelection;
-import org.nmrfx.processor.gui.spectra.PeakMenu;
-import org.nmrfx.processor.gui.spectra.RegionMenu;
+import org.nmrfx.processor.gui.undo.ChartUndoLimits;
 import org.nmrfx.processor.gui.undo.ChartUndoScale;
+import org.nmrfx.processor.math.Vec;
 import org.nmrfx.project.ProjectBase;
 import org.nmrfx.utils.GUIUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.*;
+import java.util.function.Consumer;
+import java.util.function.DoubleFunction;
+
+import static org.nmrfx.processor.gui.PolyChart.DISDIM.TwoD;
 
 public class PolyChart extends Region implements PeakListener {
+    private static final Logger log = LoggerFactory.getLogger(PolyChart.class);
 
     /**
      * @return the hasMiddleMouseButton
@@ -605,7 +567,7 @@ public class PolyChart extends Region implements PeakListener {
             try {
                 newRegion.measure(dataset);
             } catch (IOException ex) {
-                Logger.getLogger(PolyChart.class.getName()).log(Level.SEVERE, null, ex);
+                log.error(ex.getMessage(), ex);
             }
             chartProps.setRegions(false);
             chartProps.setIntegrals(true);
@@ -2985,8 +2947,7 @@ public class PolyChart extends Region implements PeakListener {
                     PeakListTools.peakFit(peakListAttr.getPeakList(), dataset, fitRows, delays, peaks, lsFit, syncDim, arrayedFitMode);
                 }
             } catch (IllegalArgumentException | IOException | PeakFitException ex) {
-                Logger.getLogger(PolyChart.class
-                        .getName()).log(Level.SEVERE, null, ex);
+                log.error(ex.getMessage(), ex);
             }
         });
     }
@@ -2998,8 +2959,7 @@ public class PolyChart extends Region implements PeakListener {
                 try {
                     PeakListTools.clusterPeakColumns(peakListAttr.getPeakList(), syncDim);
                 } catch (IllegalArgumentException ex) {
-                    Logger.getLogger(PolyChart.class
-                            .getName()).log(Level.SEVERE, null, ex);
+                    log.error(ex.getMessage(), ex);
                 }
             }
         });
@@ -3022,19 +2982,11 @@ public class PolyChart extends Region implements PeakListener {
                         PeakListTools.tweakPeaks(peakListAttr.getPeakList(), dataset, peaks, planes);
 
                     } catch (IllegalArgumentException ex) {
-                        Logger.getLogger(PolyChart.class
-                                .getName()).log(Level.SEVERE, null, ex);
+                        log.error(ex.getMessage(), ex);
                     }
                 }
             }
         });
-//        drawPeakLists(false);
-//        peakListAttributesList.forEach((peakListAttr) -> {
-//            List<Peak> peaks = peakListAttr.getSelectedPeaks();
-//            if (!peaks.isEmpty()) {
-//                drawSelectedPeaks(peakListAttr);
-//            }
-//        });
     }
 
     public void tweakPeakLists() {
@@ -3048,18 +3000,10 @@ public class PolyChart extends Region implements PeakListener {
                     PeakListTools.tweakPeaks(peakListAttr.getPeakList(), dataset, planes);
 
                 } catch (IllegalArgumentException ex) {
-                    Logger.getLogger(PolyChart.class
-                            .getName()).log(Level.SEVERE, null, ex);
+                    log.error(ex.getMessage(), ex);
                 }
             }
         });
-//        drawPeakLists(false);
-//        peakListAttributesList.forEach((peakListAttr) -> {
-//            List<Peak> peaks = peakListAttr.getSelectedPeaks();
-//            if (!peaks.isEmpty()) {
-//                drawSelectedPeaks(peakListAttr);
-//            }
-//        });
     }
 
     public void duplicatePeakList() {
@@ -3843,7 +3787,7 @@ public class PolyChart extends Region implements PeakListener {
                         sliceDataset.setLabel(0, dataset.getLabel(dataAttr.dim[iOrient]));
                         sliceDatasets.add(sliceDataset.getName());
                     } catch (IOException ex) {
-                        Logger.getLogger(PolyChart.class.getName()).log(Level.SEVERE, null, ex);
+                        log.error(ex.getMessage(), ex);
                     }
                     iSlice++;
                 }

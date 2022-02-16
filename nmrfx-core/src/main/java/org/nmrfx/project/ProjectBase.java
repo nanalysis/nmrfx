@@ -5,13 +5,11 @@
  */
 package org.nmrfx.project;
 
+import org.nmrfx.datasets.*;
 import org.nmrfx.peaks.InvalidPeakException;
 import org.nmrfx.peaks.PeakPaths;
 import org.nmrfx.peaks.io.PeakReader;
 import org.nmrfx.peaks.io.PeakWriter;
-import org.nmrfx.datasets.DatasetBase;
-import org.nmrfx.datasets.DatasetRegion;
-import org.nmrfx.datasets.DatasetParameterFile;
 import org.nmrfx.peaks.PeakList;
 
 import java.beans.PropertyChangeEvent;
@@ -25,19 +23,19 @@ import java.lang.reflect.InvocationTargetException;
 import java.nio.file.*;
 import java.util.*;
 import java.util.function.Predicate;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import org.nmrfx.chemistry.Compound;
-import org.nmrfx.datasets.DatasetFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
  * @author brucejohnson
  */
 public class ProjectBase {
+    private static final Logger log = LoggerFactory.getLogger(ProjectBase.class);
 
     static final public Pattern INDEX_PATTERN = Pattern.compile("^([0-9]+)_.*");
     static final public Pattern INDEX2_PATTERN = Pattern.compile("^.*_([0-9]+).*");
@@ -386,7 +384,7 @@ public class ProjectBase {
                     try {
                         Files.delete(path);
                     } catch (IOException ex) {
-                        Logger.getLogger(ProjectBase.class.getName()).log(Level.SEVERE, null, ex);
+                        log.error(ex.getMessage(), ex);
                     }
                 }
 
@@ -442,7 +440,7 @@ public class ProjectBase {
                             }
 
                         } catch (IOException ex) {
-                            Logger.getLogger(ProjectBase.class.getName()).log(Level.SEVERE, null, ex);
+                            log.error(ex.getMessage(), ex);
                         }
                     });
         }

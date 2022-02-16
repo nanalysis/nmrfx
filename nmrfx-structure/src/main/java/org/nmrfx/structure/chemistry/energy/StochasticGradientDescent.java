@@ -18,21 +18,20 @@
 
 package org.nmrfx.structure.chemistry.energy;
 
-//import org.apache.commons.math3.optimization.direct.CMAESOptimizer;
-import org.nmrfx.structure.chemistry.MissingCoordinatesException;
-import org.nmrfx.structure.chemistry.io.TrajectoryWriter;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.apache.commons.math3.optim.PointValuePair;
-//import org.apache.commons.math3.optimization.SimpleValueChecker;
 import org.apache.commons.math3.optim.SimpleValueChecker;
 import org.apache.commons.math3.random.RandomDataGenerator;
+import org.nmrfx.structure.chemistry.MissingCoordinatesException;
+import org.nmrfx.structure.chemistry.io.TrajectoryWriter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
  * @author johnsonb
  */
 public class StochasticGradientDescent extends GradientRefinement {
+    private static final Logger log = LoggerFactory.getLogger(GradientRefinement.class);
 
     public TrajectoryWriter trajectoryWriter = null;
     RandomDataGenerator randomData = new RandomDataGenerator();
@@ -53,7 +52,7 @@ public class StochasticGradientDescent extends GradientRefinement {
                     try {
                         trajectoryWriter.writeStructure();
                     } catch (MissingCoordinatesException ex) {
-                        Logger.getLogger(GradientRefinement.class.getName()).log(Level.SEVERE, null, ex);
+                        log.error(ex.getMessage(), ex);
                     }
                 }
             }

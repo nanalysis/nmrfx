@@ -5,30 +5,10 @@
  */
 package org.nmrfx.processor.gui.project;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.nio.file.DirectoryIteratorException;
-import java.nio.file.DirectoryStream;
-import java.nio.file.FileSystem;
-import java.nio.file.FileSystems;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.function.Predicate;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import javafx.collections.FXCollections;
 import javafx.collections.MapChangeListener;
 import javafx.collections.ObservableMap;
 import javafx.concurrent.Task;
-
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.Status;
 import org.eclipse.jgit.api.errors.GitAPIException;
@@ -37,16 +17,10 @@ import org.eclipse.jgit.revwalk.RevCommit;
 import org.nmrfx.chemistry.InvalidMoleculeException;
 import org.nmrfx.chemistry.MoleculeBase;
 import org.nmrfx.chemistry.MoleculeFactory;
-import org.nmrfx.chemistry.io.MoleculeIOException;
-import org.nmrfx.chemistry.io.NMRStarReader;
-import org.nmrfx.chemistry.io.NMRStarWriter;
-import org.nmrfx.chemistry.io.PDBFile;
-import org.nmrfx.chemistry.io.PPMFiles;
-import org.nmrfx.chemistry.io.SDFile;
-import org.nmrfx.chemistry.io.Sequence;
+import org.nmrfx.chemistry.io.*;
 import org.nmrfx.peaks.InvalidPeakException;
-import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.peaks.PeakList;
+import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.MainApp;
 import org.nmrfx.processor.gui.PreferencesController;
 import org.nmrfx.processor.gui.spectra.WindowIO;
@@ -54,12 +28,27 @@ import org.nmrfx.processor.gui.utils.FxPropertyChangeSupport;
 import org.nmrfx.processor.gui.utils.PeakListUpdater;
 import org.nmrfx.project.ProjectBase;
 import org.nmrfx.star.ParseException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.nio.file.*;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.function.Predicate;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  *
  * @author Bruce Johnson
  */
 public class GUIProject extends ProjectBase {
+    private static final Logger log = LoggerFactory.getLogger(GUIProject.class);
 
     static String[] SUB_DIR_TYPES = {"star", "datasets", "molecules", "peaks", "shifts", "refshifts", "windows"};
 
@@ -102,7 +91,7 @@ public class GUIProject extends ProjectBase {
             PreferencesController.saveRecentProjects(projectDir.toString());
             git = Git.init().setDirectory(projectDir.toFile()).call();
         } catch (GitAPIException ex) {
-            Logger.getLogger(GUIProject.class.getName()).log(Level.SEVERE, null, ex);
+            log.error(ex.getMessage(), ex);
         }
         if (git != null) {
             writeIgnore();
@@ -457,7 +446,7 @@ public class GUIProject extends ProjectBase {
                 didSomething = true;
             }
         } catch (GitAPIException ex) {
-            Logger.getLogger(GUIProject.class.getName()).log(Level.SEVERE, null, ex);
+            log.error(ex.getMessage(), ex);
         } finally {
             // fixme, should we do this after each commit, or leave git open
             git.close();
