@@ -271,8 +271,6 @@ public class AnalystApp extends MainApp {
 
         MenuItem loadPeakListMenuItem = new MenuItem("Load PeakLists");
         loadPeakListMenuItem.setOnAction(e -> loadPeakLists());
-        MenuItem portMenuItem = new MenuItem("New NMRFx Server...");
-        portMenuItem.setOnAction(e -> startServer(e));
         MenuItem datasetBrowserMenuItem = new MenuItem("Dataset Browser...");
         datasetBrowserMenuItem.setOnAction(e -> showDataBrowser());
 
@@ -318,7 +316,7 @@ public class AnalystApp extends MainApp {
 
         fileMenu.getItems().addAll(openMenuItem, openDatasetMenuItem, addMenuItem,
                 recentFIDMenuItem, recentDatasetMenuItem, datasetBrowserMenuItem, newMenuItem,
-                portMenuItem, new SeparatorMenuItem(), svgMenuItem, pdfMenuItem, pngMenuItem,
+                new SeparatorMenuItem(), svgMenuItem, pdfMenuItem, pngMenuItem,
                 loadPeakListMenuItem);
 
         Menu spectraMenu = new Menu("Spectra");
