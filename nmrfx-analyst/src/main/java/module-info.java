@@ -10,4 +10,5 @@ module org.nmrfx.analyst {
     requires java.logging;
     requires org.yaml.snakeyaml;
     requires org.apache.commons.text;
+    requires org.slf4j;
 }

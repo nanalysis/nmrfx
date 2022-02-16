@@ -18,13 +18,15 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.util.function.Consumer;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class Server implements Runnable {
+    private static final Logger log = LoggerFactory.getLogger(Server.class);
 
     private Consumer consumer;
     private int port;
@@ -61,7 +63,7 @@ public class Server implements Runnable {
             // shut down your server.
             f.channel().closeFuture().sync();
         } catch (InterruptedException ex) {
-            Logger.getLogger(Server.class.getName()).log(Level.SEVERE, null, ex);
+            log.error(ex.getMessage(), ex);
         } finally {
             workerGroup.shutdownGracefully();
             bossGroup.shutdownGracefully();
@@ -78,7 +80,6 @@ public class Server implements Runnable {
         ServerSocket s = new ServerSocket(0);
         int port = s.getLocalPort();
         s.close();
-//        System.out.println("random port = " + port);
         return port;
     }
 

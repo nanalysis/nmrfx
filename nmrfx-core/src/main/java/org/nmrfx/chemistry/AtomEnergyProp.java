@@ -29,13 +29,14 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.apache.commons.math3.util.FastMath;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class AtomEnergyProp {
+    private static final Logger log = LoggerFactory.getLogger(AtomEnergyProp.class);
 
     // regexp patterns for parsing Amber parameter files
     static final Pattern atomPattern = Pattern.compile("(^\\S\\S?)\\s+([-\\.0-9]+)\\s+([-\\.0-9]+)\\s*(.*)");
@@ -275,7 +276,7 @@ public class AtomEnergyProp {
         try {
             readPropFile();
         } catch (IOException ex) {
-            Logger.getLogger(AtomEnergyProp.class.getName()).log(Level.SEVERE, null, ex);
+            log.error(ex.getMessage(), ex);
         }
         return propMap.get(atomType);
     }
@@ -284,7 +285,7 @@ public class AtomEnergyProp {
         try {
             readPropFile();
         } catch (IOException ex) {
-            Logger.getLogger(AtomEnergyProp.class.getName()).log(Level.SEVERE, null, ex);
+            log.error(ex.getMessage(), ex);
         }
         return DEFAULT_MAP.get(aNum);
     }

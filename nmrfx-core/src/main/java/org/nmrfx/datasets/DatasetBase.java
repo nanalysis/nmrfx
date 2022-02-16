@@ -3,23 +3,17 @@ package org.nmrfx.datasets;
 import org.apache.commons.lang3.StringUtils;
 import org.nmrfx.math.VecBase;
 import org.nmrfx.project.ProjectBase;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteOrder;
 import java.util.*;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class DatasetBase {
+    private static final Logger log = LoggerFactory.getLogger(DatasetBase.class);
 
-    //    private static final Logger LOGGER = LogManager.getLogger();
-    //    static {
-    //        try {
-    //            logger.addHandler(new FileHandler("%t/nmrview%g.log"));
-    //        } catch (IOException ioE) {
-    //        }
-    //    }
     public final static int NV_HEADER_SIZE = 2048;
     public final static int UCSF_HEADER_SIZE = 180;
     public final static int LABEL_MAX_BYTES = 16;
@@ -2239,7 +2233,7 @@ public class DatasetBase {
         try {
             newRegion.measure(this);
         } catch (IOException ex) {
-            Logger.getLogger(DatasetBase.class.getName()).log(Level.SEVERE, null, ex);
+            log.error(ex.getMessage(), ex);
         }
         return newRegion;
     }

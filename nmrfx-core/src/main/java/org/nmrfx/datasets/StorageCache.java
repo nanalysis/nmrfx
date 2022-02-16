@@ -5,6 +5,10 @@
  */
 package org.nmrfx.datasets;
 
+import org.apache.commons.collections4.map.LRUMap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Collections;
@@ -12,15 +16,13 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import org.apache.commons.collections4.map.LRUMap;
 
 /**
  *
  * @author brucejohnson
  */
 public class StorageCache {
+    private static final Logger log = LoggerFactory.getLogger(StorageCache.class);
 
     Map<DatasetKey, ByteBuffer> buffers;
     ByteBuffer activeBuffer = null;
@@ -89,7 +91,7 @@ public class StorageCache {
                 try {
                     key.file.writeBlock(key.blockNum, entry.getValue());
                 } catch (IOException ex) {
-                    Logger.getLogger(StorageCache.class.getName()).log(Level.SEVERE, null, ex);
+                    log.error(ex.getMessage(), ex);
                 }
             }
             return true;  // actually delete entry
@@ -103,11 +105,6 @@ public class StorageCache {
 
     }
 
-    //                .removalListener((DatasetKey key, ByteBuffer buffer, RemovalCause cause)
-//                        -> {
-//                    System.out.println("remove " + key.blockNum);
-//                    saveValues(buffer, key);
-//                })
     public ByteBuffer getBuffer(DatasetKey key) throws IOException {
         return buffers.get(key);
     }

@@ -17,13 +17,6 @@
  */
 package org.nmrfx.graphicsio;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javafx.geometry.VPos;
 import javafx.scene.effect.BlendMode;
 import javafx.scene.effect.Effect;
@@ -46,12 +39,20 @@ import org.apache.pdfbox.pdmodel.font.PDFont;
 import org.apache.pdfbox.pdmodel.font.PDType0Font;
 import org.apache.pdfbox.pdmodel.font.PDType1Font;
 import org.apache.pdfbox.util.Matrix;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  *
  * @author brucejohnson
  */
 public class PDFGraphicsContext implements GraphicsContextInterface {
+    private static final Logger log = LoggerFactory.getLogger(PDFGraphicsContext.class);
 
     PDPageContentStream contentStream;
     PDDocument doc = null;
@@ -210,7 +211,7 @@ public class PDFGraphicsContext implements GraphicsContextInterface {
             contentStream.setFont(font, fontSize);
             contentStream.beginText();
         } catch (IOException ioE) {
-            Logger.getLogger(PDFGraphicsContext.class.getName()).log(Level.SEVERE, null, ioE);
+            log.error(ioE.getMessage(), ioE);
         }
     }
 
@@ -219,16 +220,15 @@ public class PDFGraphicsContext implements GraphicsContextInterface {
             contentStream.newLineAtOffset(startX, startY);
             contentStream.showText(message);
         } catch (IOException ioE) {
-            Logger.getLogger(PDFGraphicsContext.class.getName()).log(Level.SEVERE, null, ioE);
+            log.error(ioE.getMessage(), ioE);
         }
-
     }
 
     public void endText() throws GraphicsIOException {
         try {
             contentStream.endText();
         } catch (IOException ioE) {
-            Logger.getLogger(PDFGraphicsContext.class.getName()).log(Level.SEVERE, null, ioE);
+            log.error(ioE.getMessage(), ioE);
         }
     }
 
@@ -313,7 +313,7 @@ public class PDFGraphicsContext implements GraphicsContextInterface {
         try {
             contentStream.fill();
         } catch (IOException ex) {
-            Logger.getLogger(PDFGraphicsContext.class.getName()).log(Level.SEVERE, null, ex);
+            log.error(ex.getMessage(), ex);
         }
     }
 
@@ -336,7 +336,7 @@ public class PDFGraphicsContext implements GraphicsContextInterface {
             }
             contentStream.fill();
         } catch (IOException ex) {
-            Logger.getLogger(PDFGraphicsContext.class.getName()).log(Level.SEVERE, null, ex);
+            log.error(ex.getMessage(), ex);
         }
     }
 
@@ -350,7 +350,7 @@ public class PDFGraphicsContext implements GraphicsContextInterface {
             contentStream.lineTo(tX(x), tY(y));
             contentStream.fill();
         } catch (IOException ex) {
-            Logger.getLogger(PDFGraphicsContext.class.getName()).log(Level.SEVERE, null, ex);
+            log.error(ex.getMessage(), ex);
         }
     }
 
@@ -368,7 +368,7 @@ public class PDFGraphicsContext implements GraphicsContextInterface {
             showText(text, tX(x) - dX, tY(y) - dY);
             endText();
         } catch (GraphicsIOException ex) {
-            Logger.getLogger(PDFGraphicsContext.class.getName()).log(Level.SEVERE, null, ex);
+            log.error(ex.getMessage(), ex);
         }
     }
 
@@ -477,7 +477,7 @@ public class PDFGraphicsContext implements GraphicsContextInterface {
         try {
             contentStream.lineTo(tX(x1), tY(y1));
         } catch (IOException ex) {
-            Logger.getLogger(PDFGraphicsContext.class.getName()).log(Level.SEVERE, null, ex);
+            log.error(ex.getMessage(), ex);
         }
     }
 
@@ -486,7 +486,7 @@ public class PDFGraphicsContext implements GraphicsContextInterface {
         try {
             contentStream.moveTo(tX(x0), tY(y0));
         } catch (IOException ex) {
-            Logger.getLogger(PDFGraphicsContext.class.getName()).log(Level.SEVERE, null, ex);
+            log.error(ex.getMessage(), ex);
         }
     }
 
@@ -495,7 +495,7 @@ public class PDFGraphicsContext implements GraphicsContextInterface {
         try {
             contentStream.curveTo1((float) xc, (float) yc, (float) x1, (float) y1);
         } catch (IOException ex) {
-            Logger.getLogger(PDFGraphicsContext.class.getName()).log(Level.SEVERE, null, ex);
+            log.error(ex.getMessage(), ex);
         }
     }
 
@@ -508,7 +508,7 @@ public class PDFGraphicsContext implements GraphicsContextInterface {
             contentStream.lineTo(tX(x + w), tY(y));
             contentStream.lineTo(tX(x), tY(y));
         } catch (IOException ex) {
-            Logger.getLogger(PDFGraphicsContext.class.getName()).log(Level.SEVERE, null, ex);
+            log.error(ex.getMessage(), ex);
         }
     }
 
@@ -517,7 +517,7 @@ public class PDFGraphicsContext implements GraphicsContextInterface {
         try {
             contentStream.restoreGraphicsState();
         } catch (IOException ex) {
-            Logger.getLogger(PDFGraphicsContext.class.getName()).log(Level.SEVERE, null, ex);
+            log.error(ex.getMessage(), ex);
         }
     }
 
@@ -528,7 +528,7 @@ public class PDFGraphicsContext implements GraphicsContextInterface {
         try {
             contentStream.transform(rotMat);
         } catch (IOException ex) {
-            Logger.getLogger(PDFGraphicsContext.class.getName()).log(Level.SEVERE, null, ex);
+            log.error(ex.getMessage(), ex);
         }
     }
 
@@ -537,7 +537,7 @@ public class PDFGraphicsContext implements GraphicsContextInterface {
         try {
             contentStream.saveGraphicsState();
         } catch (IOException ex) {
-            Logger.getLogger(PDFGraphicsContext.class.getName()).log(Level.SEVERE, null, ex);
+            log.error(ex.getMessage(), ex);
         }
     }
 
@@ -547,7 +547,7 @@ public class PDFGraphicsContext implements GraphicsContextInterface {
         try {
             contentStream.transform(matrix);
         } catch (IOException ex) {
-            Logger.getLogger(PDFGraphicsContext.class.getName()).log(Level.SEVERE, null, ex);
+            log.error(ex.getMessage(), ex);
         }
     }
 
@@ -564,7 +564,7 @@ public class PDFGraphicsContext implements GraphicsContextInterface {
         try {
             contentStream.setNonStrokingColor(r, g, b);
         } catch (IOException ex) {
-            Logger.getLogger(PDFGraphicsContext.class.getName()).log(Level.SEVERE, null, ex);
+            log.error(ex.getMessage(), ex);
         }
     }
 
@@ -590,7 +590,7 @@ public class PDFGraphicsContext implements GraphicsContextInterface {
         try {
             contentStream.setFont(font, fontSize);
         } catch (IOException ex) {
-            Logger.getLogger(PDFGraphicsContext.class.getName()).log(Level.SEVERE, null, ex);
+            log.error(ex.getMessage(), ex);
         }
     }
 
@@ -652,7 +652,7 @@ public class PDFGraphicsContext implements GraphicsContextInterface {
         try {
             contentStream.setLineWidth((float) lw);
         } catch (IOException ex) {
-            Logger.getLogger(PDFGraphicsContext.class.getName()).log(Level.SEVERE, null, ex);
+            log.error(ex.getMessage(), ex);
         }
     }
 
@@ -670,7 +670,7 @@ public class PDFGraphicsContext implements GraphicsContextInterface {
         try {
             contentStream.setStrokingColor(r, g, b);
         } catch (IOException ex) {
-            Logger.getLogger(PDFGraphicsContext.class.getName()).log(Level.SEVERE, null, ex);
+            log.error(ex.getMessage(), ex);
         }
     }
 
@@ -695,7 +695,7 @@ public class PDFGraphicsContext implements GraphicsContextInterface {
         try {
             contentStream.transform(m);
         } catch (IOException ex) {
-            Logger.getLogger(PDFGraphicsContext.class.getName()).log(Level.SEVERE, null, ex);
+            log.error(ex.getMessage(), ex);
         }
     }
 
@@ -704,7 +704,7 @@ public class PDFGraphicsContext implements GraphicsContextInterface {
         try {
             contentStream.stroke();
         } catch (IOException ex) {
-            Logger.getLogger(PDFGraphicsContext.class.getName()).log(Level.SEVERE, null, ex);
+            log.error(ex.getMessage(), ex);
         }
     }
 
@@ -746,7 +746,7 @@ public class PDFGraphicsContext implements GraphicsContextInterface {
             }
             contentStream.stroke();
         } catch (IOException ex) {
-            Logger.getLogger(PDFGraphicsContext.class.getName()).log(Level.SEVERE, null, ex);
+            log.error(ex.getMessage(), ex);
         }
     }
 
@@ -772,7 +772,7 @@ public class PDFGraphicsContext implements GraphicsContextInterface {
             contentStream.lineTo(tX(x), tY(y));
             contentStream.stroke();
         } catch (IOException ex) {
-            Logger.getLogger(PDFGraphicsContext.class.getName()).log(Level.SEVERE, null, ex);
+            log.error(ex.getMessage(), ex);
         }
     }
 
@@ -788,7 +788,7 @@ public class PDFGraphicsContext implements GraphicsContextInterface {
             showText(text, tX(x), tY(y));
             endText();
         } catch (GraphicsIOException ex) {
-            Logger.getLogger(PDFGraphicsContext.class.getName()).log(Level.SEVERE, null, ex);
+            log.error(ex.getMessage(), ex);
         }
     }
 
@@ -800,7 +800,7 @@ public class PDFGraphicsContext implements GraphicsContextInterface {
             showText(text, tX(x), tY(y));
             endText();
         } catch (GraphicsIOException ex) {
-            Logger.getLogger(PDFGraphicsContext.class.getName()).log(Level.SEVERE, null, ex);
+            log.error(ex.getMessage(), ex);
         }
     }
 
@@ -822,7 +822,7 @@ public class PDFGraphicsContext implements GraphicsContextInterface {
         try {
             contentStream.transform(translate);
         } catch (IOException ex) {
-            Logger.getLogger(PDFGraphicsContext.class.getName()).log(Level.SEVERE, null, ex);
+            log.error(ex.getMessage(), ex);
         }
     }
 

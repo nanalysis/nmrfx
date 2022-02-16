@@ -68,15 +68,19 @@ import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.utils.GUIUtils;
 import org.python.util.InteractiveInterpreter;
 import org.python.util.PythonInterpreter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.*;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 
 public class AnalystApp extends MainApp {
+    private static final Logger log = LoggerFactory.getLogger(AnalystApp.class);
 
     private static String version = null;
     static String appName = "NMRFx Analyst";
@@ -912,9 +916,8 @@ public class AnalystApp extends MainApp {
             } catch (IOException | InvalidPeakException | InvalidMoleculeException ex) {
                 ExceptionDialog dialog = new ExceptionDialog(ex);
                 dialog.showAndWait();
-                return;
             } catch (org.nmrfx.star.ParseException ex) {
-                Logger.getLogger(AnalystApp.class.getName()).log(Level.SEVERE, null, ex);
+                log.error(ex.getMessage(), ex);
             }
         }
     }
@@ -971,7 +974,7 @@ public class AnalystApp extends MainApp {
                 ExceptionDialog dialog = new ExceptionDialog(ioE);
                 dialog.showAndWait();
             } catch (org.nmrfx.star.ParseException ex) {
-                Logger.getLogger(AnalystApp.class.getName()).log(Level.SEVERE, null, ex);
+                log.error(ex.getMessage(), ex);
             }
 
             if (atomController != null) {

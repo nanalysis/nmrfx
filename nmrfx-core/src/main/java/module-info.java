@@ -26,4 +26,5 @@ module org.nmrfx.core {
     requires jython.slim;
     requires jsch;
     requires com.google.gson;
+    requires org.slf4j;
 }

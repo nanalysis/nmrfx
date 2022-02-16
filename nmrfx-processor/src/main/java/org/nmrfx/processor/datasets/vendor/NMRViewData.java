@@ -17,8 +17,9 @@
  */
 package org.nmrfx.processor.datasets.vendor;
 
-import org.nmrfx.processor.datasets.Dataset;
+import org.apache.commons.math3.complex.Complex;
 import org.nmrfx.datasets.DatasetBase;
+import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.DatasetType;
 import org.nmrfx.processor.datasets.parameters.FPMult;
 import org.nmrfx.processor.datasets.parameters.GaussianWt;
@@ -26,17 +27,11 @@ import org.nmrfx.processor.datasets.parameters.LPParams;
 import org.nmrfx.processor.datasets.parameters.SinebellWt;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.processing.SampleSchedule;
+import org.nmrfx.processor.project.Project;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.logging.Logger;
-import org.apache.commons.math3.complex.Complex;
-import org.nmrfx.processor.project.Project;
+import java.util.*;
 
 /**
  * @author bfetler
@@ -53,8 +48,6 @@ public class NMRViewData implements NMRData {
     private String[] acqOrder;
     private SampleSchedule sampleSchedule = null;
     private DatasetType preferredDatasetType = DatasetType.NMRFX;
-
-    static final Logger logger = Logger.getLogger("org.nmrfx.processor.datasets.Dataset");
 
     /**
      * open NMRView parameter and data files

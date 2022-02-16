@@ -32,8 +32,6 @@ import java.util.List;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.ToolBar;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuButton;
 import javafx.scene.control.MenuItem;
@@ -43,12 +41,15 @@ import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes.AXMODE;
 import org.nmrfx.processor.gui.spectra.NMRAxis;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
  * @author johnsonb
  */
 public class MinerController {
+    private static final Logger log = LoggerFactory.getLogger(MinerController.class);
 
     ScannerTool scannerTool;
     List<Menu> menus = new ArrayList<>();
@@ -131,7 +132,7 @@ public class MinerController {
                 scannerTool.setItems("offset", valueList);
                 scannerTool.getScanTable().refresh();
             } catch (IOException ex) {
-                Logger.getLogger(MinerController.class.getName()).log(Level.SEVERE, null, ex);
+                log.error(ex.getMessage(), ex);
             }
         }
     }
@@ -168,7 +169,7 @@ public class MinerController {
                 scannerTool.setItems("offset", valueList);
                 scannerTool.getScanTable().refresh();
             } catch (IOException ex) {
-                Logger.getLogger(MinerController.class.getName()).log(Level.SEVERE, null, ex);
+                log.error(ex.getMessage(), ex);
             }
         }
     }
@@ -191,7 +192,7 @@ public class MinerController {
                 aligner.sortByCorr(dataset, -1, pt1, pt2);
                 polyChart.refresh();
             } catch (IOException ex) {
-                Logger.getLogger(MinerController.class.getName()).log(Level.SEVERE, null, ex);
+                log.error(ex.getMessage(), ex);
             }
         }
     }
@@ -234,7 +235,7 @@ public class MinerController {
                 scannerTool.getScanTable().refresh();
 
             } catch (IOException ex) {
-                Logger.getLogger(MinerController.class.getName()).log(Level.SEVERE, null, ex);
+                log.error(ex.getMessage(), ex);
             }
         }
 
@@ -272,7 +273,7 @@ public class MinerController {
                 scannerTool.getScanTable().refresh();
 
             } catch (IOException ex) {
-                Logger.getLogger(MinerController.class.getName()).log(Level.SEVERE, null, ex);
+                log.error(ex.getMessage(), ex);
             }
         }
     }
@@ -335,10 +336,8 @@ public class MinerController {
                 polyChart.refresh();
                 scannerTool.getScanTable().refresh();
             } catch (IOException ex) {
-                Logger.getLogger(MinerController.class.getName()).log(Level.SEVERE, null, ex);
+                log.error(ex.getMessage(), ex);
             }
         }
-
     }
-
 }

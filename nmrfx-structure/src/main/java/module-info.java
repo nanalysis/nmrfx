@@ -30,4 +30,5 @@ module org.nmrfx.structure {
     requires libsvm;
     requires deeplearning4j.nn;
     requires nd4j.api;
+    requires org.slf4j;
 }
