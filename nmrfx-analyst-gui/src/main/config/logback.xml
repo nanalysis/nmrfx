@@ -1,9 +1,30 @@
 <configuration>
+    <property name="log_dir" value="${user.dir}/logs/" />
+
+    <!-- Windows: %APPDATA%/NMRFX/logs/ -->
+    <if condition='isDefined("APPDATA")'>
+        <then>
+            <property name="log_dir" value="${APPDATA}/NMRFX/logs/" />
+        </then>
+    </if>
+    <!-- Mac: %HOME%/Library/Application Support/NMRFX/logs/ -->
+    <if condition='property("os.name").toLowerCase().contains("mac")'>
+        <then>
+            <property name="log_dir" value="${user.home}/Library/Application Support/NMRFX/logs/" />
+        </then>
+    </if>
+    <!-- Linux: %HOME%/.NMRFX/logs -->
+    <if condition='property("os.name").toLowerCase().contains("linux")'>
+        <then>
+            <property name="log_dir" value="${user.home}/.NMRFX/logs/" />
+        </then>
+    </if>
+
     <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>logs/nmrfx.log</file>
+        <file>${log_dir}/nmrfx.log</file>
 
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>logs/nmrfx.%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
+            <fileNamePattern>${log_dir}/nmrfx.%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
             <maxFileSize>10MB</maxFileSize>
             <totalSizeCap>1GB</totalSizeCap>
             <maxHistory>60</maxHistory>
