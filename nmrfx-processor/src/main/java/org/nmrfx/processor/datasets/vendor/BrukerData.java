@@ -105,7 +105,8 @@ public class BrukerData implements NMRData {
         }
         this.fpath = path;
         this.nusFile = nusFile;
-        openParFile(path);
+        File file = new File(path);
+        openParFile(file);
         openDataFile(path);
         if (dim < 2) {
             scale = 1.0e6;
@@ -127,7 +128,7 @@ public class BrukerData implements NMRData {
         File file = new File(path);
         this.fpath = path;
         this.nusFile = null;
-        openParFile(file.getParentFile().getParentFile().getParent());
+        openParFile(file.getParentFile().getParentFile().getParentFile());
         scale = 1.0;
     }
 
@@ -792,26 +793,42 @@ public class BrukerData implements NMRData {
     }
 
     // open Bruker parameter file(s)
-    private void openParFile(String parpath) throws IOException {
+    private void openParFile(File parDirFile) throws IOException {
         parMap = new LinkedHashMap<>(200);
-        // process proc files if they exist
-        String path = parpath + File.separator + "pdata";
-        if ((new File(path)).exists()) {
-            Path bdir = Paths.get(path);
+        Path pulseSequencePath = parDirFile.toPath().resolve("pulseprogram");
+        String aqSeq = null;
+        if (pulseSequencePath.toFile().exists()) {
+            var lines = scanPulseSequence(pulseSequencePath);
+            var optLine = lines.stream().
+                    map(line -> line.trim()).
+                    filter(line -> line.startsWith("aqseq")).findFirst();
+            if (optLine.isPresent()) {
+                String[] aqSeqParts = optLine.get().split(" ");
+                if (aqSeqParts.length == 2) {
+                    aqSeq = aqSeqParts[1];
+                }
+            }
+        }
+        int maxDim = aqSeq == null ? 2 : MAXDIM;
+
+            // process proc files if they exist
+        File pdataFile = parDirFile.toPath().resolve("pdata").toFile();
+        if (pdataFile.exists()) {
+            Path bdir = pdataFile.toPath();
             try (DirectoryStream<Path> stream = Files.newDirectoryStream(bdir, "[0-9]")) {
                 for (Path entry : stream) {
                     String s = entry.toString();
                     if (new File(s + File.separator + "procs").exists()) {
-                        for (int i = 0; i < MAXDIM; i++) {
-                            String procfile;
+                        for (int i = 0; i < maxDim; i++) {
+                            String procFileName;
                             if (i == 0) {
-                                procfile = "procs";
+                                procFileName = "procs";
                             } else {
-                                procfile = "proc" + (i + 1) + "s";
+                                procFileName = "proc" + (i + 1) + "s";
                             }
-                            path = s + File.separator + procfile;
-                            if ((new File(path)).exists()) {
-                                BrukerPar.processBrukerParFile(parMap, path, i + 1, false);
+                            File procFile = entry.resolve(procFileName).toFile();
+                            if (procFile.exists()) {
+                                BrukerPar.processBrukerParFile(parMap, procFile.toString(), i + 1, false);
                             }
                         }
                         break;
@@ -823,17 +840,18 @@ public class BrukerData implements NMRData {
         }
         // process acqu files if they exist
         int acqdim = 0;
-        for (int i = 0; i < MAXDIM; i++) {
+        for (int i = 0; i < maxDim; i++) {
             String acqfile;
             if (i == 0) {
                 acqfile = "acqus";
             } else {
                 acqfile = "acqu" + (i + 1) + "s";
             }
-            path = parpath + File.separator + acqfile;
+            File acquFile = parDirFile.toPath().resolve(acqfile).toFile();
+
             try {
-                if ((new File(path)).exists()) {
-                    BrukerPar.processBrukerParFile(parMap, path, i + 1, false);
+                if (acquFile.exists()) {
+                    BrukerPar.processBrukerParFile(parMap, acquFile.toString(), i + 1, false);
                     Integer iPar;
                     if ((iPar = getParInt("TD," + (i + 1))) != null) {
                         if (iPar > 1) {
@@ -859,21 +877,14 @@ public class BrukerData implements NMRData {
         }
         String[] listTypes = {"vd", "vc", "vp", "fq3"};
         for (String listType : listTypes) {
-            Path listPath = Paths.get(parpath, listType + "list");
+            Path listPath = parDirFile.toPath().resolve(listType + "list");
             if (Files.exists(listPath)) {
                 List<String> lines = Files.readAllLines(listPath);
                 BrukerPar.storeParameter(parMap, listType, lines, "\t");
             }
         }
         this.dim = acqdim;
-//        for (String name : parMap.keySet()) {
-//            System.out.println("  "+name+" : "+parMap.get(name));
-//        }
         setPars();
-//        System.out.println("parsize="+parMap.size()+" acqdim="+acqdim+" procdim="
-//                +procdim+" np="+getNPoints()+" nvectors="+
-//                getNVectors()+" tbytes="+tbytes+" tdsize="+tdsize[0]+" swapBits="+
-//                swapBits+" dspph="+dspph);
     }
 
     private void setPars() throws IOException {
@@ -1830,6 +1841,10 @@ public class BrukerData implements NMRData {
     @Override
     public void setSampleSchedule(SampleSchedule sampleSchedule) {
         this.sampleSchedule = sampleSchedule;
+    }
+
+    private List<String> scanPulseSequence(Path path) throws IOException {
+        return Files.readAllLines(path);
     }
 
     // write binary data into text file, using header info
