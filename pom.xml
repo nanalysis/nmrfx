@@ -4,11 +4,10 @@
 
     <groupId>org.nmrfx</groupId>
     <artifactId>nmrfx</artifactId>
-    <version>${revision}</version>
+    <version>11.2.3-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <properties>
-        <revision>11.2.3-SNAPSHOT</revision>
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

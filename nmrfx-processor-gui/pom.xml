@@ -29,12 +29,12 @@
         <dependency>
             <groupId>org.nmrfx</groupId>
             <artifactId>nmrfx-processor</artifactId>
-            <version>${revision}</version>
+            <version>11.2.3-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>org.nmrfx</groupId>
             <artifactId>nmrfx-utils</artifactId>
-            <version>${revision}</version>
+            <version>11.2.3-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>commons-beanutils</groupId>
