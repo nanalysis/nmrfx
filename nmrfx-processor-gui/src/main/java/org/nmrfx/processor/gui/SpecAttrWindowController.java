@@ -23,81 +23,40 @@
  */
 package org.nmrfx.processor.gui;
 
-import org.nmrfx.processor.datasets.Dataset;
-import org.nmrfx.processor.gui.spectra.NMRAxis;
-import org.nmrfx.processor.gui.spectra.DatasetAttributes;
-import org.nmrfx.processor.gui.spectra.PeakDisplayParameters;
-import org.nmrfx.processor.gui.spectra.PeakListAttributes;
 import de.jensd.fx.glyphs.GlyphsDude;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
-import java.io.IOException;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.ResourceBundle;
+import javafx.animation.PauseTransition;
 import javafx.beans.property.StringProperty;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
+import javafx.collections.FXCollections;
+import javafx.collections.ListChangeListener;
+import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.event.Event;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
+import javafx.scene.Node;
 import javafx.scene.Scene;
-import javafx.scene.control.Button;
-import javafx.scene.control.ColorPicker;
-import javafx.scene.control.ComboBox;
-import javafx.scene.control.MenuButton;
-import javafx.scene.control.MenuItem;
-import javafx.scene.control.TableCell;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableColumn.CellEditEvent;
-import javafx.scene.control.TableView;
-import javafx.scene.control.TextField;
-import javafx.scene.control.ToolBar;
+import javafx.scene.control.*;
 import javafx.scene.control.cell.CheckBoxTableCell;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.control.cell.TextFieldTableCell;
-import javafx.scene.input.MouseEvent;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.GridPane;
-import javafx.scene.layout.Pane;
-import javafx.scene.paint.Color;
-import javafx.stage.Stage;
-import javafx.stage.StageStyle;
-import javafx.util.converter.DoubleStringConverter;
-import java.text.DecimalFormat;
-import java.text.ParseException;
-import java.util.Collections;
-import java.util.List;
-import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
-import javafx.collections.FXCollections;
-import javafx.collections.ListChangeListener;
-import javafx.collections.ObservableList;
-import javafx.scene.Node;
-import javafx.scene.control.ButtonBase;
-import javafx.scene.control.CheckBox;
-import javafx.scene.control.ChoiceBox;
-import javafx.scene.control.ContentDisplay;
-import javafx.scene.control.ContextMenu;
-import javafx.scene.control.Label;
-import javafx.scene.control.ListCell;
-import javafx.scene.control.ListView;
-import javafx.scene.control.RadioButton;
-import javafx.scene.control.SelectionMode;
-import javafx.scene.control.Slider;
-import javafx.scene.control.Tab;
-import javafx.scene.control.TabPane;
-import javafx.scene.control.ToggleGroup;
 import javafx.scene.effect.InnerShadow;
 import javafx.scene.input.ClipboardContent;
-import javafx.scene.input.DragEvent;
 import javafx.scene.input.Dragboard;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.input.TransferMode;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Priority;
-import javafx.scene.layout.StackPane;
+import javafx.scene.layout.*;
+import javafx.scene.paint.Color;
 import javafx.scene.shape.Polygon;
+import javafx.stage.Stage;
+import javafx.stage.StageStyle;
 import javafx.util.Callback;
+import javafx.util.Duration;
+import javafx.util.converter.DoubleStringConverter;
 import javafx.util.converter.IntegerStringConverter;
 import org.controlsfx.control.ListSelectionView;
 import org.controlsfx.control.PopOver;
@@ -105,11 +64,27 @@ import org.controlsfx.control.RangeSlider;
 import org.controlsfx.control.SegmentedButton;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.peaks.PeakList;
+import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.PolyChart.DISDIM;
-import static org.nmrfx.processor.gui.PolyChart.DISDIM.OneDX;
-import static org.nmrfx.processor.gui.PolyChart.DISDIM.TwoD;
+import org.nmrfx.processor.gui.controls.ConsoleUtil;
+import org.nmrfx.processor.gui.spectra.DatasetAttributes;
+import org.nmrfx.processor.gui.spectra.NMRAxis;
+import org.nmrfx.processor.gui.spectra.PeakDisplayParameters;
+import org.nmrfx.processor.gui.spectra.PeakListAttributes;
 import org.nmrfx.processor.gui.utils.ColorSchemes;
 import org.nmrfx.utilities.DictionarySort;
+
+import java.io.IOException;
+import java.net.URL;
+import java.text.DecimalFormat;
+import java.text.ParseException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.ResourceBundle;
+
+import static org.nmrfx.processor.gui.PolyChart.DISDIM.OneDX;
+import static org.nmrfx.processor.gui.PolyChart.DISDIM.TwoD;
 
 /**
  *
@@ -134,9 +109,9 @@ public class SpecAttrWindowController implements Initializable {
     private BorderPane datasetPane;
     @FXML
     private TableView<DatasetAttributes> datasetTableView;
-    private HBox datasetTableParHBox = new HBox();
-    private Slider datasetTableParSlider = new Slider();
-    private ChoiceBox<String> datasetTableParChoice = new ChoiceBox<>();
+    private final HBox datasetTableParHBox = new HBox();
+    private final Slider datasetTableParSlider = new Slider();
+    private final ChoiceBox<String> datasetTableParChoice = new ChoiceBox<>();
     @FXML
     private TableView<PeakListAttributes> peakListTableView;
     @FXML
@@ -208,24 +183,26 @@ public class SpecAttrWindowController implements Initializable {
     private ColorPicker bgColorPicker;
 
     @FXML
-    private ComboBox<Double> ticFontSizeComboBox;
+    private ComboBox<Number> ticFontSizeComboBox;
     @FXML
-    private ComboBox<Double> labelFontSizeComboBox;
+    private ComboBox<Number> labelFontSizeComboBox;
     @FXML
     private CheckBox gridCheckBox;
     @FXML
-    private ComboBox<Integer> leftBorderSizeComboBox;
+    private CheckBox intensityAxisCheckBox;
     @FXML
-    private ComboBox<Integer> rightBorderSizeComboBox;
+    private ComboBox<Number> leftBorderSizeComboBox;
     @FXML
-    private ComboBox<Integer> topBorderSizeComboBox;
+    private ComboBox<Number> rightBorderSizeComboBox;
     @FXML
-    private ComboBox<Integer> bottomBorderSizeComboBox;
+    private ComboBox<Number> topBorderSizeComboBox;
+    @FXML
+    private ComboBox<Number> bottomBorderSizeComboBox;
     @FXML
     private CheckBox titlesCheckBox;
 
     SegmentedButton groupButton;
-    ChoiceBox<String> showOnlyCompatibleBox = new ChoiceBox();
+    ChoiceBox<String> showOnlyCompatibleBox = new ChoiceBox<>();
 
     private ComboBox[] dimCombos;
     Label[] axisLabels;
@@ -236,7 +213,6 @@ public class SpecAttrWindowController implements Initializable {
 
     ListChangeListener<String> peakTargetListener;
     ListChangeListener<String> datasetTargetListener;
-    Node columnMenuNode;
     boolean shiftState = false;
 
     ParSliderListener parSliderListener = new ParSliderListener();
@@ -254,14 +230,21 @@ public class SpecAttrWindowController implements Initializable {
                 }
                 String mode = datasetTableParChoice.getValue();
                 for (DatasetAttributes dataAttr : dataAttrs) {
-                    if (mode.equals("offset")) {
-                        dataAttr.setOffset(newValue.doubleValue());
-                    } else if (mode.equals("lvl")) {
-                        dataAttr.setLvl(newValue.doubleValue());
-                    } else if (mode.equals("clm")) {
-                        dataAttr.setClm(newValue.doubleValue());
-                    } else if (mode.equals("nlvl")) {
-                        dataAttr.setNlvls(newValue.intValue());
+                    switch (mode) {
+                        case "offset":
+                            dataAttr.setOffset(newValue.doubleValue());
+                            break;
+                        case "lvl":
+                            dataAttr.setLvl(newValue.doubleValue());
+                            break;
+                        case "clm":
+                            dataAttr.setClm(newValue.doubleValue());
+                            break;
+                        case "nlvl":
+                            dataAttr.setNlvls(newValue.intValue());
+                            break;
+                        default:
+                            return;
                     }
                 }
                 datasetTableView.refresh();
@@ -283,16 +266,6 @@ public class SpecAttrWindowController implements Initializable {
         createViewGrid();
         datasetView = new ListSelectionView<>();
         datasetTab.setContent(datasetView);
-        ChangeListener<Dataset> listener = new ChangeListener<Dataset>() {
-            @Override
-            public void changed(ObservableValue<? extends Dataset> observable, Dataset oldValue, Dataset newValue) {
-                System.out.println("datasets changed");
-                PolyChart chart = PolyChart.getActiveChart();
-                if (chart != null) {
-                    setChart(chart);
-                }
-            }
-        };
         peakView = new ListSelectionView<>();
         peakSelectTab.setContent(peakView);
         peakView.setSourceFooter(showOnlyCompatibleBox);
@@ -306,12 +279,8 @@ public class SpecAttrWindowController implements Initializable {
                 updatePeakView();
             }
         });
-        peakTargetListener = (ListChangeListener.Change<? extends String> c) -> {
-            updateChartPeakLists();
-        };
-        datasetTargetListener = (ListChangeListener.Change<? extends String> c) -> {
-            updateChartDatasets();
-        };
+        peakTargetListener = (ListChangeListener.Change<? extends String> c) -> updateChartPeakLists();
+        datasetTargetListener = (ListChangeListener.Change<? extends String> c) -> updateChartDatasets();
 
         datasetView.getTargetItems().addListener(datasetTargetListener);
         peakView.getTargetItems().addListener(peakTargetListener);
@@ -328,19 +297,45 @@ public class SpecAttrWindowController implements Initializable {
         bottomBorderSizeComboBox.getItems().addAll(0, 1, 2, 5, 10, 15, 20, 25, 30, 40, 50, 75, 100, 125, 150);
 
         bgColorPicker.disableProperty().bind(bgColorCheckBox.selectedProperty().not());
+        bgColorPicker.valueProperty().addListener(e -> updateBGColor());
+        bgColorCheckBox.selectedProperty().addListener(e -> updateBGColor());
         axisColorPicker.disableProperty().bind(axisColorCheckBox.selectedProperty().not());
+        axisColorPicker.valueProperty().addListener(e -> updateBGColor());
+        axisColorCheckBox.selectedProperty().addListener(e -> updateBGColor());
         cross0ColorPicker.disableProperty().bind(cross0ColorCheckBox.selectedProperty().not());
+        cross0ColorPicker.valueProperty().addListener(e -> updateBGColor());
+        cross0ColorCheckBox.selectedProperty().addListener(e -> updateBGColor());
         cross1ColorPicker.disableProperty().bind(cross1ColorCheckBox.selectedProperty().not());
+        cross1ColorPicker.valueProperty().addListener(e -> updateBGColor());
+        cross1ColorCheckBox.selectedProperty().addListener(e -> updateBGColor());
 
         integralPosSlider.setMin(0.0);
         integralPosSlider.setMax(1.0);
         integralPosSlider.setLowValue(0.8);
         integralPosSlider.setHighValue(0.95);
 
+        ticFontSizeComboBox.valueProperty().addListener(e -> refreshLater());
+        labelFontSizeComboBox.valueProperty().addListener(e -> refreshLater());
+        titlesCheckBox.selectedProperty().addListener(e -> refreshLater());
+        intensityAxisCheckBox.selectedProperty().addListener(e -> refreshLater());
+        leftBorderSizeComboBox.valueProperty().addListener(e -> refreshLater());
+        rightBorderSizeComboBox.valueProperty().addListener(e -> refreshLater());
+        topBorderSizeComboBox.valueProperty().addListener(e -> refreshLater());
+        bottomBorderSizeComboBox.valueProperty().addListener(e -> refreshLater());
         integralPosSlider.lowValueProperty().addListener(e -> updateIntegralState());
         integralPosSlider.highValueProperty().addListener(e -> updateIntegralState());
-        integralCheckBox.selectedProperty().addListener(e -> updateIntegralState());
-        regionCheckBox.selectedProperty().addListener(e -> updateIntegralState());
+        regionCheckBox.selectedProperty().addListener(e -> refreshLater());
+        integralCheckBox.selectedProperty().addListener(e -> refreshLater());
+        gridCheckBox.selectedProperty().addListener(e -> refreshLater());
+        offsetTrackingCheckBox.selectedProperty().addListener(e -> refreshLater());
+        useDatasetColorCheckBox.selectedProperty().addListener(e -> refreshLater());
+        slice1StateCheckBox.selectedProperty().addListener(e -> refreshLater());
+        slice2StateCheckBox.selectedProperty().addListener(e -> refreshLater());
+        xOffsetSlider.valueProperty().addListener(e -> refreshLater());
+        yOffsetSlider.valueProperty().addListener(e -> refreshLater());
+        scaleSlider.valueProperty().addListener(e -> refreshLater());
+        slice1ColorPicker.valueProperty().addListener(e -> refreshLater());
+        slice2ColorPicker.valueProperty().addListener(e -> refreshLater());
 
         aspectCheckBox.selectedProperty().addListener(e -> updateAspectRatio());
         aspectSlider.setMin(0.1);
@@ -349,10 +344,10 @@ public class SpecAttrWindowController implements Initializable {
         aspectSlider.setBlockIncrement(0.01);
         aspectSlider.setOnMousePressed(e -> shiftState = e.isShiftDown());
         aspectSlider.valueProperty().addListener(e -> updateAspectRatio());
-        datasetView.setCellFactory(new Callback<ListView<String>, ListCell<String>>() {
+        datasetView.setCellFactory(new Callback<>() {
             @Override
             public ListCell<String> call(ListView<String> p) {
-                DatasetListCell<String> olc = new DatasetListCell<String>(datasetView) {
+                return new DatasetListCell<>(datasetView) {
                     @Override
                     public void updateItem(String s, boolean empty) {
                         super.updateItem(s, empty);
@@ -364,7 +359,6 @@ public class SpecAttrWindowController implements Initializable {
                         }
                     }
                 };
-                return olc;
             }
 
         });
@@ -372,12 +366,10 @@ public class SpecAttrWindowController implements Initializable {
     Integer startIndex = null;
     boolean moveItemIsSelected = false;
     Node startNode = null;
-    Node endNode = null;
 
     class DatasetListCell<T> extends ListCell<T> implements ChangeListener<String> {
 
-        private DatasetListCell target;
-        private ListSelectionView<String> listView;
+        private final ListSelectionView<String> listView;
 
         @Override
         public void changed(ObservableValue<? extends String> observable, String oldValue, String newValue) {
@@ -385,77 +377,50 @@ public class SpecAttrWindowController implements Initializable {
 
         DatasetListCell(ListSelectionView<String> listView) {
             this.listView = listView;
-            this.setOnDragDetected(new EventHandler<MouseEvent>() {
-                @Override
-                public void handle(MouseEvent event) {
-                    startIndex = indexProperty().get();
-                    Dragboard db = startDragAndDrop(TransferMode.COPY);
+            this.setOnDragDetected(event -> {
+                startIndex = indexProperty().get();
+                Dragboard db = startDragAndDrop(TransferMode.COPY);
 
-                    /* Put a string on a dragboard */
-                    ClipboardContent content = new ClipboardContent();
-                    String sourcetext = getText();
-                    moveItemIsSelected = isSelectedDataset(sourcetext);
-                    content.putString(getText());
-                    db.setContent(content);
-                    startNode = getParent();
-                    event.consume();
-                }
+                /* Put a string on a dragboard */
+                ClipboardContent content = new ClipboardContent();
+                String sourcetext = getText();
+                moveItemIsSelected = isSelectedDataset(sourcetext);
+                content.putString(getText());
+                db.setContent(content);
+                startNode = getParent();
+                event.consume();
             });
-            this.setOnDragDone(new EventHandler<DragEvent>() {
-                @Override
-                public void handle(DragEvent event) {
-                    ObservableList<String> listItems = listView.getTargetItems();
-                    event.consume();
+            this.setOnDragDone(Event::consume);
+            this.setOnDragDropped(event -> {
+                Object target = event.getGestureTarget();
+                if (target instanceof DatasetListCell) {
+                    var targetCell = (DatasetListCell) target;
+                    String targetText = targetCell.getText();
+                    moveItem(targetText, getParent());
                 }
+                event.consume();
             });
-            this.setOnDragDropped(new EventHandler<DragEvent>() {
-                @Override
-                public void handle(DragEvent event) {
-                    Object target = event.getGestureTarget();
-                    if (target instanceof DatasetListCell) {
-                        DatasetListCell targetCell = (DatasetListCell) target;
-                        int index = targetCell.getIndex();
-                        String targetText = targetCell.getText();
-                        moveItem(index, targetText, getParent());
-                    }
-                    event.consume();
+            this.setOnDragEntered(Event::consume);
+            this.setOnDragExited(event -> {
+                Object target = event.getTarget();
+                if (target instanceof DatasetListCell) {
+                    DatasetListCell targetCell = (DatasetListCell) target;
+                    targetCell.setEffect(null);
                 }
+                event.consume();
             });
-            this.setOnDragEntered(new EventHandler<DragEvent>() {
-                @Override
-                public void handle(DragEvent event) {
-                    event.consume();
+            this.setOnDragOver(event -> {
+                event.acceptTransferModes(TransferMode.COPY_OR_MOVE);
+                Object target = event.getGestureTarget();
+                if (target instanceof DatasetListCell) {
+                    DatasetListCell targetCell = (DatasetListCell) target;
+                    InnerShadow is = new InnerShadow();
+                    is.setOffsetX(1.0);
+                    is.setColor(Color.web("#666666"));
+                    is.setOffsetY(1.0);
+                    targetCell.setEffect(is);
                 }
-            });
-            this.setOnDragExited(new EventHandler<DragEvent>() {
-                @Override
-                public void handle(DragEvent event) {
-                    //   System.out.println("exit " + event.toString());
-                    Object target = event.getTarget();
-                    if (target instanceof DatasetListCell) {
-                        DatasetListCell targetCell = (DatasetListCell) target;
-                        targetCell.setEffect(null);
-                    }
-                    event.consume();
-                }
-            });
-            this.setOnDragOver(new EventHandler<DragEvent>() {
-                @Override
-                public void handle(DragEvent event) {
-                    //  System.out.println("over " + event.toString());
-                    event.acceptTransferModes(TransferMode.COPY_OR_MOVE);
-                    Object target = event.getGestureTarget();
-                    if (target instanceof DatasetListCell) {
-                        DatasetListCell targetCell = (DatasetListCell) target;
-                        InnerShadow is = new InnerShadow();
-                        is.setOffsetX(1.0);
-                        is.setColor(Color.web("#666666"));
-                        is.setOffsetY(1.0);
-                        targetCell.setEffect(is);
-                    }
-                    event.consume();
-                }
-
+                event.consume();
             });
         }
 
@@ -469,7 +434,7 @@ public class SpecAttrWindowController implements Initializable {
 
         }
 
-        void moveItem(int targetIndex, String targetText, Node endNode) {
+        void moveItem(String targetText, Node endNode) {
             datasetView.getTargetItems().removeListener(datasetTargetListener);
             final boolean targetItemIsSelected;
             List<String> moveFromItems;
@@ -511,29 +476,12 @@ public class SpecAttrWindowController implements Initializable {
             refreshAction();
         }
 
-        void printEvent(DragEvent event) {
-//            System.out.println("acc obj " + event.getAcceptingObject());
-//            System.out.println("acc gsr " + event.getGestureSource());
-//            System.out.println("acc gtar " + event.getGestureTarget());
-//            System.out.println("acc tar " + event.getTarget());
-//            Object target = event.getGestureTarget();
-//            if (target instanceof DatasetListCell) {
-//                DatasetListCell targetCell = (DatasetListCell) target;
-//                System.out.println(targetCell.getIndex());
-//            }
-        }
     }
 
     void updateIntegralState() {
-        chart.chartProps.setRegions(regionCheckBox.isSelected());
-        chart.chartProps.setIntegrals(integralCheckBox.isSelected());
-        double lowValue = integralPosSlider.getLowValue();
-        double highValue = integralPosSlider.getHighValue();
-        chart.chartProps.setIntegralLowPos(lowValue);
-        chart.chartProps.setIntegralHighPos(highValue);
-        integralLowValue.setText(String.format("%.2f", lowValue));
-        integralHighValue.setText(String.format("%.2f", highValue));
-        chart.refresh();
+        integralLowValue.setText(String.format("%.2f", integralPosSlider.getLowValue()));
+        integralHighValue.setText(String.format("%.2f", integralPosSlider.getHighValue()));
+        refreshLater();
     }
 
     List<PolyChart> getCharts(boolean all) {
@@ -615,20 +563,6 @@ public class SpecAttrWindowController implements Initializable {
         }
     }
 
-    private void setDisDim() {
-//        switch (disDimCombo.getValue()) {
-//            case "1Dx":
-//                chart.disDim = 0;
-//                break;
-//            case "2D":
-//                chart.disDim = 2;
-//                break;
-//            default:
-//        }
-//        System.out.println("set dis dim " + disDimCombo.getValue() + " " + chart.disDim);
-
-    }
-
     private void createViewGrid() {
         disDimCombo.getItems().addAll(OneDX, TwoD);
         //disDimCombo.setValue(OneDX);
@@ -674,7 +608,7 @@ public class SpecAttrWindowController implements Initializable {
             axisLabels[iRow - 1] = axisLabel;
             limitFields[iRow - 1][1] = maxField.textProperty();
             if (iRow < 3) {
-                ComboBox comboBox = new ComboBox();
+                ComboBox<String> comboBox = new ComboBox<>();
                 viewGrid.add(comboBox, 6, iRow);
                 dimCombos[iRow - 1] = comboBox;
                 comboBox.getItems().addAll("1", "2", "3", "4");
@@ -695,12 +629,12 @@ public class SpecAttrWindowController implements Initializable {
                 .getResource("/fxml/SpecAttrScene.fxml"));
         Stage stage = new Stage(StageStyle.DECORATED);
         try {
-            Pane pane = (Pane) loader.load();
+            Pane pane = loader.load();
             Scene scene = new Scene(pane);
             stage.setScene(scene);
             scene.getStylesheets().add("/styles/Styles.css");
 
-            SpecAttrWindowController controller = loader.<SpecAttrWindowController>getController();
+            SpecAttrWindowController controller = loader.getController();
             controller.stage = stage;
             stage.setTitle("Spectrum Attributes");
             stage.setAlwaysOnTop(true);
@@ -719,8 +653,8 @@ public class SpecAttrWindowController implements Initializable {
                 .getResource("/fxml/SpecAttrScene.fxml"));
         SpecAttrWindowController controller = null;
         try {
-            Pane pane = (Pane) loader.load();
-            controller = loader.<SpecAttrWindowController>getController();
+            Pane pane = loader.load();
+            controller = loader.getController();
             controller.pane = pane;
         } catch (IOException ioE) {
             ioE.printStackTrace();
@@ -748,7 +682,7 @@ public class SpecAttrWindowController implements Initializable {
         } else if (sceneMode) {
             ObservableList<DatasetAttributes> datasetAttrList = FXCollections.observableArrayList();
             List<PolyChart> charts = chart.getSceneMates(true);
-            charts.stream().forEach(chart2
+            charts.forEach(chart2
                     -> datasetAttrList.addAll(chart2.getDatasetAttributes()));
             datasetTableView.setItems(datasetAttrList);
         } else {
@@ -763,7 +697,7 @@ public class SpecAttrWindowController implements Initializable {
         } else if (sceneMode) {
             ObservableList<PeakListAttributes> peakListAttrList = FXCollections.observableArrayList();
             List<PolyChart> charts = chart.getSceneMates(true);
-            charts.stream().forEach(chart2
+            charts.forEach(chart2
                     -> peakListAttrList.addAll(chart2.getPeakListAttributes()));
             peakListTableView.setItems(peakListAttrList);
         } else {
@@ -809,12 +743,9 @@ public class SpecAttrWindowController implements Initializable {
         ObservableList<String> datasetsSource = datasetView.getSourceItems();
         datasetsTarget.clear();
         datasetsSource.clear();
-        List<DatasetAttributes> dataAttrs = chart.getDatasetAttributes();
-        List<PeakListAttributes> peakAttrs = chart.getPeakListAttributes();
 
-        for (Object obj : chart.getDatasetAttributes()) {
-            DatasetAttributes dataAttr = (DatasetAttributes) obj;
-            datasetsTarget.add(dataAttr.getDataset().getName());
+        for (DatasetAttributes obj : chart.getDatasetAttributes()) {
+            datasetsTarget.add(obj.getDataset().getName());
         }
         DictionarySort<DatasetBase> sorter = new DictionarySort<>();
         Dataset.datasets().stream().sorted(sorter).forEach(d -> {
@@ -887,8 +818,6 @@ public class SpecAttrWindowController implements Initializable {
     }
 
     void initViewToolBar() {
-        String iconSize = "16px";
-        String fontSize = "7pt";
         Pane filler1 = new Pane();
         Pane filler2 = new Pane();
         HBox.setHgrow(filler1, Priority.ALWAYS);
@@ -898,7 +827,6 @@ public class SpecAttrWindowController implements Initializable {
         bButton = new Button("Save");
         buttons.add(bButton);
         bButton.setOnAction(e -> saveParameters());
-        ToggleGroup group = new ToggleGroup();
         RadioButton chartButton = new RadioButton("Chart");
         RadioButton sceneButton = new RadioButton("Scene");
         sceneButton.setOnAction(e -> updateDatasetTableView());
@@ -919,8 +847,6 @@ public class SpecAttrWindowController implements Initializable {
     }
 
     void initStyleToolBar() {
-        String iconSize = "16px";
-        String fontSize = "7pt";
         Pane filler1 = new Pane();
         Pane filler2 = new Pane();
         HBox.setHgrow(filler1, Priority.ALWAYS);
@@ -940,9 +866,6 @@ public class SpecAttrWindowController implements Initializable {
     void initParSlider() {
         datasetTableParChoice.getItems().addAll("lvl", "offset", "clm", "nlvl");
         datasetTableParChoice.setValue("lvl");
-//        Button button = new Button("Close ");
-//        button.getStyleClass().add("toolButton");
-//        button.setOnAction(e -> hideParSlider());
         Pane spacer1 = new Pane();
         spacer1.setMinWidth(15.0);
         Pane spacer2 = new Pane();
@@ -1019,11 +942,12 @@ public class SpecAttrWindowController implements Initializable {
         datasetTableView.setEditable(true);
         datasetTableView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
         TableColumn<DatasetAttributes, String> fileNameCol = new TableColumn<>("dataset");
-        fileNameCol.setCellValueFactory(new PropertyValueFactory("fileName"));
+        fileNameCol.setCellValueFactory(new PropertyValueFactory<>("fileName"));
         fileNameCol.setEditable(false);
 
         TableColumn<DatasetAttributes, String> levelCol = new TableColumn<>("lvl");
-        levelCol.setCellValueFactory(new PropertyValueFactory("lvl"));
+        levelCol.setSortable(false);
+        levelCol.setCellValueFactory(new PropertyValueFactory<>("lvl"));
         levelCol.setCellFactory(tc -> new TextFieldTableCell(dsConverter));
 
         ContextMenu levelMenu = new ContextMenu();
@@ -1033,7 +957,8 @@ public class SpecAttrWindowController implements Initializable {
         levelMenu.getItems().addAll(unifyLevelItem);
 
         TableColumn<DatasetAttributes, String> offsetCol = new TableColumn<>("offset");
-        offsetCol.setCellValueFactory(new PropertyValueFactory("offset"));
+        offsetCol.setSortable(false);
+        offsetCol.setCellValueFactory(new PropertyValueFactory<>("offset"));
         offsetCol.setCellFactory(tc -> new TextFieldTableCell(dsConverter));
 
         ContextMenu offsetMenu = new ContextMenu();
@@ -1046,7 +971,8 @@ public class SpecAttrWindowController implements Initializable {
         offsetCol.setPrefWidth(50);
 
         TableColumn<DatasetAttributes, String> nLevelsCol = new TableColumn<>("nLvl");
-        nLevelsCol.setCellValueFactory(new PropertyValueFactory("nlvls"));
+        nLevelsCol.setSortable(false);
+        nLevelsCol.setCellValueFactory(new PropertyValueFactory<>("nlvls"));
         nLevelsCol.setCellFactory(tc -> new TextFieldTableCell(isConverter));
         nLevelsCol.setPrefWidth(35);
 
@@ -1057,7 +983,8 @@ public class SpecAttrWindowController implements Initializable {
         nLvlMenu.getItems().addAll(unifyNLvlItem);
 
         TableColumn<DatasetAttributes, String> clmCol = new TableColumn<>("clm");
-        clmCol.setCellValueFactory(new PropertyValueFactory("clm"));
+        clmCol.setSortable(false);
+        clmCol.setCellValueFactory(new PropertyValueFactory<>("clm"));
         clmCol.setCellFactory(tc -> new TextFieldTableCell(dsConverter));
         clmCol.setPrefWidth(50);
 
@@ -1068,7 +995,8 @@ public class SpecAttrWindowController implements Initializable {
         clmlMenu.getItems().addAll(unifyCLMItem);
 
         TableColumn<DatasetAttributes, Boolean> posDrawOnCol = new TableColumn<>("on");
-        posDrawOnCol.setCellValueFactory(new PropertyValueFactory("pos"));
+        posDrawOnCol.setSortable(false);
+        posDrawOnCol.setCellValueFactory(new PropertyValueFactory<>("pos"));
         posDrawOnCol.setCellFactory(tc -> new CheckBoxTableCell<>());
         posDrawOnCol.setPrefWidth(25);
         posDrawOnCol.setMaxWidth(25);
@@ -1083,7 +1011,8 @@ public class SpecAttrWindowController implements Initializable {
         posOnMenu.getItems().addAll(allPosOnItem, allPosOffItem);
 
         TableColumn<DatasetAttributes, String> posLineWidthCol = new TableColumn<>("width");
-        posLineWidthCol.setCellValueFactory(new PropertyValueFactory("posWidth"));
+        posLineWidthCol.setSortable(false);
+        posLineWidthCol.setCellValueFactory(new PropertyValueFactory<>("posWidth"));
         posLineWidthCol.setCellFactory(tc -> new TextFieldTableCell(dsConverter));
         posLineWidthCol.setPrefWidth(50);
 
@@ -1094,41 +1023,32 @@ public class SpecAttrWindowController implements Initializable {
         posWidthMenu.getItems().addAll(unifyPosWidthItem);
 
         TableColumn<DatasetAttributes, Color> posColorCol = new TableColumn<>("color");
+        posColorCol.setSortable(false);
         posColorCol.setPrefWidth(50);
-        posColorCol.setCellValueFactory(new PropertyValueFactory("posColor"));
+        posColorCol.setCellValueFactory(new PropertyValueFactory<>("posColor"));
         posColorCol.setCellValueFactory(cellData -> cellData.getValue().posColorProperty());
-        posColorCol.setCellFactory(column -> {
-            return new TableCell<DatasetAttributes, Color>() {
-                @Override
-
-                protected void updateItem(Color item, boolean empty) {
-                    super.updateItem(item, empty);
-                    setText(null);
-                    if (empty || (item == null)) {
-                        setGraphic(null);
-                    } else {
-                        final ColorPicker cp = new ColorPicker();
-                        cp.setValue(item);
-                        setGraphic(cp);
-                        cp.setOnAction(new EventHandler<javafx.event.ActionEvent>() {
-                            public void
-                                    handle(javafx.event.ActionEvent t) {
-                                getTableView().edit(getTableRow().getIndex(), column);
-                                commitEdit(cp.getValue());
-                            }
-                        });
-                    }
-                }
-            };
-        });
-
-        posColorCol.setOnEditCommit(new EventHandler<CellEditEvent<DatasetAttributes, Color>>() {
+        posColorCol.setCellFactory(column -> new TableCell<>() {
             @Override
-            public void handle(CellEditEvent<DatasetAttributes, Color> t) {
-                ((DatasetAttributes) t.getTableView().getItems().get(t.getTablePosition().
-                        getRow())).setPosColor(t.getNewValue());
+
+            protected void updateItem(Color item, boolean empty) {
+                super.updateItem(item, empty);
+                setText(null);
+                if (empty || (item == null)) {
+                    setGraphic(null);
+                } else {
+                    final ColorPicker cp = new ColorPicker();
+                    cp.setValue(item);
+                    setGraphic(cp);
+                    cp.setOnAction(t -> {
+                        getTableView().edit(getTableRow().getIndex(), column);
+                        commitEdit(cp.getValue());
+                    });
+                }
             }
         });
+
+        posColorCol.setOnEditCommit(t -> t.getTableView().getItems().get(t.getTablePosition().
+                getRow()).setPosColor(t.getNewValue()));
         ContextMenu posColorMenu = new ContextMenu();
         MenuItem unifyPosColorItem = new MenuItem("unify");
         unifyPosColorItem.setOnAction(e -> unifyColor(true));
@@ -1140,7 +1060,8 @@ public class SpecAttrWindowController implements Initializable {
         posColorMenu.getItems().addAll(unifyPosColorItem, interpPosColor, schemaPosColor);
 
         TableColumn<DatasetAttributes, Boolean> negDrawOnCol = new TableColumn<>("on");
-        negDrawOnCol.setCellValueFactory(new PropertyValueFactory("neg"));
+        negDrawOnCol.setSortable(false);
+        negDrawOnCol.setCellValueFactory(new PropertyValueFactory<>("neg"));
         negDrawOnCol.setCellFactory(tc -> new CheckBoxTableCell<>());
         negDrawOnCol.setPrefWidth(25);
         negDrawOnCol.setMaxWidth(25);
@@ -1155,7 +1076,8 @@ public class SpecAttrWindowController implements Initializable {
         negOnMenu.getItems().addAll(allNegOnItem, allNegOffItem);
 
         TableColumn<DatasetAttributes, Double> negLineWidthCol = new TableColumn<>("width");
-        negLineWidthCol.setCellValueFactory(new PropertyValueFactory("negWidth"));
+        negLineWidthCol.setSortable(false);
+        negLineWidthCol.setCellValueFactory(new PropertyValueFactory<>("negWidth"));
         negLineWidthCol.setPrefWidth(50);
 
         ContextMenu negWidthMenu = new ContextMenu();
@@ -1165,39 +1087,30 @@ public class SpecAttrWindowController implements Initializable {
         negWidthMenu.getItems().addAll(unifyNegWidthItem);
 
         TableColumn<DatasetAttributes, Color> negColorCol = new TableColumn<>("color");
+        negColorCol.setSortable(false);
         negColorCol.setPrefWidth(50);
         negColorCol.setCellValueFactory(cellData -> cellData.getValue().negColorProperty());
-        negColorCol.setCellFactory(column -> {
-            return new TableCell<DatasetAttributes, Color>() {
-                @Override
-                protected void updateItem(Color item, boolean empty) {
-                    super.updateItem(item, empty);
-                    setText(null);
-                    if (empty || (item == null)) {
-                        setGraphic(null);
-                    } else {
-                        final ColorPicker cp = new ColorPicker();
-                        cp.setValue(item);
-                        setGraphic(cp);
-                        cp.setOnAction(new EventHandler<javafx.event.ActionEvent>() {
-                            public void
-                                    handle(javafx.event.ActionEvent t) {
-                                getTableView().edit(getTableRow().getIndex(), column);
-                                commitEdit(cp.getValue());
-                            }
-                        });
-                    }
-                }
-            };
-        });
-
-        negColorCol.setOnEditCommit(new EventHandler<CellEditEvent<DatasetAttributes, Color>>() {
+        negColorCol.setCellFactory(column -> new TableCell<>() {
             @Override
-            public void handle(CellEditEvent<DatasetAttributes, Color> t) {
-                ((DatasetAttributes) t.getTableView().getItems().get(t.getTablePosition().
-                        getRow())).setNegColor(t.getNewValue());
+            protected void updateItem(Color item, boolean empty) {
+                super.updateItem(item, empty);
+                setText(null);
+                if (empty || (item == null)) {
+                    setGraphic(null);
+                } else {
+                    final ColorPicker cp = new ColorPicker();
+                    cp.setValue(item);
+                    setGraphic(cp);
+                    cp.setOnAction(t -> {
+                        getTableView().edit(getTableRow().getIndex(), column);
+                        commitEdit(cp.getValue());
+                    });
+                }
             }
         });
+
+        negColorCol.setOnEditCommit(t -> t.getTableView().getItems().get(t.getTablePosition().
+                getRow()).setNegColor(t.getNewValue()));
         ContextMenu negColorMenu = new ContextMenu();
         MenuItem unifyNegColorItem = new MenuItem("unify");
         unifyNegColorItem.setOnAction(e -> unifyColor(false));
@@ -1210,7 +1123,9 @@ public class SpecAttrWindowController implements Initializable {
         negColorMenu.getItems().addAll(unifyNegColorItem, interpNegColorItem, schemaNegColor);
 
         TableColumn positiveColumn = new TableColumn("Positive");
+        positiveColumn.setSortable(false);
         TableColumn negativeColumn = new TableColumn("Negative");
+        negativeColumn.setSortable(false);
         positiveColumn.getColumns().setAll(posDrawOnCol, posColorCol, posLineWidthCol);
         negativeColumn.getColumns().setAll(negDrawOnCol, negColorCol, negLineWidthCol);
         datasetTableView.getColumns().setAll(fileNameCol, levelCol, offsetCol, nLevelsCol, clmCol, positiveColumn, negativeColumn);
@@ -1218,92 +1133,71 @@ public class SpecAttrWindowController implements Initializable {
     }
 
     void initPeakListTable() {
-        DoubleStringConverter dsConverter = new DoubleStringConverter();
         IntegerStringConverter isConverter = new IntegerStringConverter();
         peakListTableView.setEditable(true);
         peakListTableView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
 
         TableColumn<PeakListAttributes, Boolean> drawPeaksCol = new TableColumn<>("on");
-        drawPeaksCol.setCellValueFactory(new PropertyValueFactory("drawPeaks"));
+        drawPeaksCol.setCellValueFactory(new PropertyValueFactory<>("drawPeaks"));
         drawPeaksCol.setCellFactory(tc -> new CheckBoxTableCell<>());
         drawPeaksCol.setPrefWidth(25);
         drawPeaksCol.setMaxWidth(25);
         drawPeaksCol.setResizable(false);
 
         TableColumn<PeakListAttributes, String> peakListCol = new TableColumn<>("listname");
-        peakListCol.setCellValueFactory(new PropertyValueFactory("peakListName"));
+        peakListCol.setCellValueFactory(new PropertyValueFactory<>("peakListName"));
         peakListCol.setEditable(false);
 
         TableColumn<PeakListAttributes, Color> onColorCol = new TableColumn<>("oncolor");
         onColorCol.setPrefWidth(50);
-        onColorCol.setCellValueFactory(new PropertyValueFactory("onColor"));
+        onColorCol.setCellValueFactory(new PropertyValueFactory<>("onColor"));
         onColorCol.setCellValueFactory(cellData -> cellData.getValue().onColorProperty());
-        onColorCol.setCellFactory(column -> {
-            return new TableCell<PeakListAttributes, Color>() {
-                @Override
-
-                protected void updateItem(Color item, boolean empty) {
-                    super.updateItem(item, empty);
-                    setText(null);
-                    if (empty || (item == null)) {
-                        setGraphic(null);
-                    } else {
-                        final ColorPicker cp = new ColorPicker();
-                        cp.setValue(item);
-                        setGraphic(cp);
-                        cp.setOnAction(new EventHandler<javafx.event.ActionEvent>() {
-                            public void
-                                    handle(javafx.event.ActionEvent t) {
-                                getTableView().edit(getTableRow().getIndex(), column);
-                                commitEdit(cp.getValue());
-                            }
-                        });
-                    }
-                }
-            };
-        });
-        onColorCol.setOnEditCommit(new EventHandler<CellEditEvent<PeakListAttributes, Color>>() {
+        onColorCol.setCellFactory(column -> new TableCell<>() {
             @Override
-            public void handle(CellEditEvent<PeakListAttributes, Color> t) {
-                ((PeakListAttributes) t.getTableView().getItems().get(t.getTablePosition().
-                        getRow())).setOnColor(t.getNewValue());
+
+            protected void updateItem(Color item, boolean empty) {
+                super.updateItem(item, empty);
+                setText(null);
+                if (empty || (item == null)) {
+                    setGraphic(null);
+                } else {
+                    final ColorPicker cp = new ColorPicker();
+                    cp.setValue(item);
+                    setGraphic(cp);
+                    cp.setOnAction(t -> {
+                        getTableView().edit(getTableRow().getIndex(), column);
+                        commitEdit(cp.getValue());
+                    });
+                }
             }
         });
+        onColorCol.setOnEditCommit(t -> t.getTableView().getItems().get(t.getTablePosition().
+                getRow()).setOnColor(t.getNewValue()));
         TableColumn<PeakListAttributes, Color> offColorCol = new TableColumn<>("offcolor");
         offColorCol.setPrefWidth(50);
-        offColorCol.setCellValueFactory(new PropertyValueFactory("offColor"));
+        offColorCol.setCellValueFactory(new PropertyValueFactory<>("offColor"));
         offColorCol.setCellValueFactory(cellData -> cellData.getValue().offColorProperty());
-        offColorCol.setCellFactory(column -> {
-            return new TableCell<PeakListAttributes, Color>() {
-                @Override
-
-                protected void updateItem(Color item, boolean empty) {
-                    super.updateItem(item, empty);
-                    setText(null);
-                    if (empty || (item == null)) {
-                        setGraphic(null);
-                    } else {
-                        final ColorPicker cp = new ColorPicker();
-                        cp.setValue(item);
-                        setGraphic(cp);
-                        cp.setOnAction(new EventHandler<javafx.event.ActionEvent>() {
-                            public void
-                                    handle(javafx.event.ActionEvent t) {
-                                getTableView().edit(getTableRow().getIndex(), column);
-                                commitEdit(cp.getValue());
-                            }
-                        });
-                    }
-                }
-            };
-        });
-        offColorCol.setOnEditCommit(new EventHandler<CellEditEvent<PeakListAttributes, Color>>() {
+        offColorCol.setCellFactory(column -> new TableCell<PeakListAttributes, Color>() {
             @Override
-            public void handle(CellEditEvent<PeakListAttributes, Color> t) {
-                ((PeakListAttributes) t.getTableView().getItems().get(t.getTablePosition().
-                        getRow())).setOffColor(t.getNewValue());
+
+            protected void updateItem(Color item, boolean empty) {
+                super.updateItem(item, empty);
+                setText(null);
+                if (empty || (item == null)) {
+                    setGraphic(null);
+                } else {
+                    final ColorPicker cp = new ColorPicker();
+                    cp.setValue(item);
+                    setGraphic(cp);
+                    cp.setOnAction(t -> {
+                        getTableView().edit(getTableRow().getIndex(), column);
+                        commitEdit(cp.getValue());
+                    });
+                }
             }
         });
+        offColorCol.setOnEditCommit(t -> t.getTableView().getItems().get(t.getTablePosition().
+                getRow()).setOffColor(t.getNewValue()));
 
         TableColumn<PeakListAttributes, PeakDisplayParameters.ColorTypes> peakColorTypeCol = new TableColumn<>("ColorBy");
         peakColorTypeCol.setCellValueFactory(cellData -> cellData.getValue().colorTypeProperty());
@@ -1337,7 +1231,7 @@ public class SpecAttrWindowController implements Initializable {
         peakDisTypeCol.setCellFactory(tc -> {
             ComboBox<PeakDisplayParameters.DisplayTypes> combo = new ComboBox<>();
             combo.getItems().addAll(PeakDisplayParameters.DisplayTypes.values());
-            TableCell<PeakListAttributes, PeakDisplayParameters.DisplayTypes> cell = new TableCell<PeakListAttributes, PeakDisplayParameters.DisplayTypes>() {
+            TableCell<PeakListAttributes, PeakDisplayParameters.DisplayTypes> cell = new TableCell<>() {
                 @Override
                 protected void updateItem(PeakDisplayParameters.DisplayTypes reason, boolean empty) {
                     super.updateItem(reason, empty);
@@ -1384,7 +1278,7 @@ public class SpecAttrWindowController implements Initializable {
         peakLabelTypeCol.setMaxWidth(150);
 
         TableColumn<PeakListAttributes, String> nPlanesCol = new TableColumn<>("npl");
-        nPlanesCol.setCellValueFactory(new PropertyValueFactory("nplanes"));
+        nPlanesCol.setCellValueFactory(new PropertyValueFactory<>("nplanes"));
         nPlanesCol.setCellFactory(tc -> new TextFieldTableCell(isConverter));
         nPlanesCol.setPrefWidth(35);
         nPlanesCol.setMaxWidth(50);
@@ -1396,14 +1290,14 @@ public class SpecAttrWindowController implements Initializable {
         nPlanesMenu.getItems().addAll(unifyNPlanesMenu);
 
         TableColumn<PeakListAttributes, Boolean> drawLinksCol = new TableColumn<>("lnk");
-        drawLinksCol.setCellValueFactory(new PropertyValueFactory("drawLinks"));
+        drawLinksCol.setCellValueFactory(new PropertyValueFactory<>("drawLinks"));
         drawLinksCol.setCellFactory(tc -> new CheckBoxTableCell<>());
         drawLinksCol.setPrefWidth(35);
         drawLinksCol.setMaxWidth(50);
         drawLinksCol.setResizable(false);
 
         TableColumn<PeakListAttributes, Boolean> simPeaksCol = new TableColumn<>("sim");
-        simPeaksCol.setCellValueFactory(new PropertyValueFactory("simPeaks"));
+        simPeaksCol.setCellValueFactory(new PropertyValueFactory<>("simPeaks"));
         simPeaksCol.setCellFactory(tc -> new CheckBoxTableCell<>());
         simPeaksCol.setPrefWidth(35);
         simPeaksCol.setMaxWidth(50);
@@ -1418,15 +1312,7 @@ public class SpecAttrWindowController implements Initializable {
         MenuItem menuItem = (MenuItem) event.getSource();
     }
 
-//    @FXML
-//    private void scaleSliderAction(Event event) {
-//        Slider slider = (Slider) event.getSource();
-//        double sliderScale = slider.getValue();
-//        System.out.println("action " + sliderScale);
-//        chart.sliceAttributes.setScale(sliderScale);
-//        chart.refreshCrossHairs();
-//    }
-    @FXML
+@FXML
     private void sliceAction(Event event) {
         chart.sliceAttributes.setSlice1Color(slice1ColorPicker.getValue());
         chart.sliceAttributes.setSlice2Color(slice2ColorPicker.getValue());
@@ -1498,6 +1384,7 @@ public class SpecAttrWindowController implements Initializable {
             }
         }
         updateProps();
+        refreshLater();
     }
 
     @FXML
@@ -1523,15 +1410,13 @@ public class SpecAttrWindowController implements Initializable {
         } else {
             chart.chartProps.setCross1Color(null);
         }
-        chart.chartProps.setTicFontSize(ticFontSizeComboBox.getValue());
-        chart.chartProps.setLabelFontSize(labelFontSizeComboBox.getValue());
-        chart.chartProps.setLeftBorderSize(leftBorderSizeComboBox.getValue());
-        chart.chartProps.setRightBorderSize(rightBorderSizeComboBox.getValue());
-        chart.chartProps.setTopBorderSize(topBorderSizeComboBox.getValue());
-        chart.chartProps.setBottomBorderSize(bottomBorderSizeComboBox.getValue());
-        chart.chartProps.setGrid(gridCheckBox.isSelected());
-        chart.chartProps.setTitles(titlesCheckBox.isSelected());
+    }
 
+    // add delay so bindings between properties and controsl activate before refresh
+    private void refreshLater() {
+        PauseTransition wait = new PauseTransition(Duration.millis(50.0));
+        wait.setOnFinished(e -> ConsoleUtil.runOnFxThread(chart::refresh));
+        wait.play();
     }
 
     private void refreshAction() {
@@ -1553,7 +1438,7 @@ public class SpecAttrWindowController implements Initializable {
             chart.layoutPlotChildren();
             if (isSceneMode()) {
                 List<PolyChart> charts = chart.getSceneMates(false);
-                charts.stream().forEach(c -> c.layoutPlotChildren());
+                charts.forEach(PolyChart::layoutPlotChildren);
             }
         } catch (ParseException parseE) {
         }
@@ -1563,7 +1448,7 @@ public class SpecAttrWindowController implements Initializable {
         // fix me is this right
         int start = 0;
         if (!chart.getDatasetAttributes().isEmpty()) {
-            DatasetAttributes datasetAttr = (DatasetAttributes) chart.datasetAttributesList.get(0);
+            DatasetAttributes datasetAttr = chart.datasetAttributesList.get(0);
             for (int i = 0; i < chart.getNDim(); i++) {
                 if ((i < 2) && (dimCombos[i] != null)) {
                     dimCombos[i].getSelectionModel().select(datasetAttr.dim[i]);
@@ -1581,7 +1466,7 @@ public class SpecAttrWindowController implements Initializable {
     }
 
     private void dimAction(String rowName, Event e) {
-        DatasetAttributes datasetAttr = (DatasetAttributes) chart.datasetAttributesList.get(0);
+        DatasetAttributes datasetAttr = chart.datasetAttributesList.get(0);
         ComboBox cBox = (ComboBox) e.getSource();
         int iDim = cBox.getSelectionModel().getSelectedIndex();
         datasetAttr.setDim(rowName, iDim);
@@ -1598,27 +1483,16 @@ public class SpecAttrWindowController implements Initializable {
     }
 
     public void bindToChart(PolyChart polyChart) {
-        for (int i = 0; i < 2; i++) {
-            NMRAxis axis;
-            if (i == 0) {
-                axis = polyChart.xAxis;
-            } else {
-                axis = polyChart.yAxis;
-            }
-            //limitFields[i][0].unbind();
-//            limitFields[i][0].bind(axis.lowerBoundProperty().asString());
-            //limitFields[i][1].unbind();
-//            limitFields[i][1].bind(axis.upperBoundProperty().asString());
-        }
-        polyChart.sliceAttributes.offsetTrackingProperty().bindBidirectional(offsetTrackingCheckBox.selectedProperty());
-        polyChart.sliceAttributes.useDatasetColorProperty().bindBidirectional(useDatasetColorCheckBox.selectedProperty());
-        polyChart.sliceAttributes.slice1StateProperty().bindBidirectional(slice1StateCheckBox.selectedProperty());
-        polyChart.sliceAttributes.slice2StateProperty().bindBidirectional(slice2StateCheckBox.selectedProperty());
-        polyChart.sliceAttributes.offsetXValueProperty().bindBidirectional(xOffsetSlider.valueProperty());
-        polyChart.sliceAttributes.offsetYValueProperty().bindBidirectional(yOffsetSlider.valueProperty());
-        polyChart.sliceAttributes.scaleValueProperty().bindBidirectional(scaleSlider.valueProperty());
-        slice1ColorPicker.setValue(polyChart.sliceAttributes.slice1ColorProperty().get());
-        slice2ColorPicker.setValue(polyChart.sliceAttributes.slice2ColorProperty().get());
+        offsetTrackingCheckBox.selectedProperty().bindBidirectional(polyChart.sliceAttributes.offsetTrackingProperty());
+        useDatasetColorCheckBox.selectedProperty().bindBidirectional(polyChart.sliceAttributes.useDatasetColorProperty());
+        slice1StateCheckBox.selectedProperty().bindBidirectional(polyChart.sliceAttributes.slice1StateProperty());
+        slice2StateCheckBox.selectedProperty().bindBidirectional(polyChart.sliceAttributes.slice2StateProperty());
+        xOffsetSlider.valueProperty().bindBidirectional(polyChart.sliceAttributes.offsetXValueProperty());
+        yOffsetSlider.valueProperty().bindBidirectional(polyChart.sliceAttributes.offsetYValueProperty());
+        scaleSlider.valueProperty().bindBidirectional(polyChart.sliceAttributes.scaleValueProperty());
+        slice1ColorPicker.valueProperty().bindBidirectional(polyChart.sliceAttributes.slice1ColorProperty());
+        slice2ColorPicker.valueProperty().bindBidirectional(polyChart.sliceAttributes.slice2ColorProperty());
+
         if (chart.chartProps.getAxesColor() == null) {
             axisColorCheckBox.setSelected(false);
         } else {
@@ -1639,27 +1513,38 @@ public class SpecAttrWindowController implements Initializable {
         } else {
             cross1ColorPicker.setValue(polyChart.chartProps.cross1ColorProperty().get());
         }
-        ticFontSizeComboBox.setValue(polyChart.chartProps.getTicFontSize());
-        labelFontSizeComboBox.setValue(polyChart.chartProps.getLabelFontSize());
-        leftBorderSizeComboBox.setValue(polyChart.chartProps.getLeftBorderSize());
-        rightBorderSizeComboBox.setValue(polyChart.chartProps.getRightBorderSize());
-        topBorderSizeComboBox.setValue(polyChart.chartProps.getTopBorderSize());
-        bottomBorderSizeComboBox.setValue(polyChart.chartProps.getBottomBorderSize());
-        gridCheckBox.setSelected(polyChart.chartProps.getGrid());
-        integralPosSlider.setLowValue(polyChart.chartProps.getIntegralLowPos());
-        integralPosSlider.setHighValue(polyChart.chartProps.getIntegralHighPos());
-        integralCheckBox.setSelected(chart.chartProps.getIntegrals());
-        regionCheckBox.setSelected(chart.chartProps.getRegions());
-        titlesCheckBox.setSelected(polyChart.chartProps.getTitles());
+
+
+        intensityAxisCheckBox.selectedProperty().bindBidirectional(polyChart.chartProps.intensityAxisProperty());
+        ticFontSizeComboBox.valueProperty().bindBidirectional(polyChart.chartProps.ticFontSizeProperty());
+        labelFontSizeComboBox.valueProperty().bindBidirectional(polyChart.chartProps.labelFontSizeProperty());
+
+        leftBorderSizeComboBox.valueProperty().bindBidirectional(polyChart.chartProps.leftBorderSizeProperty());
+        rightBorderSizeComboBox.valueProperty().bindBidirectional(polyChart.chartProps.rightBorderSizeProperty());
+        topBorderSizeComboBox.valueProperty().bindBidirectional(polyChart.chartProps.topBorderSizeProperty());
+        bottomBorderSizeComboBox.valueProperty().bindBidirectional(polyChart.chartProps.bottomBorderSizeProperty());
+
+
+        gridCheckBox.selectedProperty().bindBidirectional(polyChart.chartProps.gridProperty());
+        regionCheckBox.selectedProperty().bindBidirectional(polyChart.chartProps.regionsProperty());
+        integralCheckBox.selectedProperty().bindBidirectional(polyChart.chartProps.integralsProperty());
+
+        integralPosSlider.lowValueProperty().bindBidirectional(polyChart.chartProps.integralLowPosProperty());
+        integralPosSlider.highValueProperty().bindBidirectional(polyChart.chartProps.integralHighPosProperty());
+
+        titlesCheckBox.selectedProperty().bindBidirectional(polyChart.chartProps.titlesProperty());
+
+        aspectSlider.valueProperty().bindBidirectional(polyChart.chartProps.aspectRatioProperty());
+        aspectCheckBox.selectedProperty().bindBidirectional((polyChart.chartProps.aspectProperty()));
+
         DISDIM curDisDim = polyChart.disDimProp.get();
         disDimCombo.setValue(curDisDim);
-        aspectSlider.setValue(polyChart.chartProps.getAspectRatio());
         // polyChart.disDimProp.bindBidirectional(disDimCombo.valueProperty());
     }
 
     void unifyWidth(boolean pos) {
         ObservableList<DatasetAttributes> items = datasetTableView.getItems();
-        items.stream().forEach((dataAttr) -> {
+        items.forEach(dataAttr -> {
             if (pos) {
                 dataAttr.setPosWidth(items.get(0).getPosWidth());
             } else {
@@ -1685,9 +1570,7 @@ public class SpecAttrWindowController implements Initializable {
             int index = datasetTableView.getSelectionModel().getSelectedIndex();
             index = index == -1 ? 0 : index;
             final double lvl = items.get(index).getLvl();
-            items.stream().forEach((dataAttr) -> {
-                dataAttr.setLvl(lvl);
-            });
+            items.forEach(dataAttr -> dataAttr.setLvl(lvl));
             datasetTableView.refresh();
         }
     }
@@ -1698,9 +1581,7 @@ public class SpecAttrWindowController implements Initializable {
             int index = datasetTableView.getSelectionModel().getSelectedIndex();
             index = index == -1 ? 0 : index;
             final double clm = items.get(index).getClm();
-            items.stream().forEach((dataAttr) -> {
-                dataAttr.setClm(clm);
-            });
+            items.forEach(dataAttr -> dataAttr.setClm(clm));
             datasetTableView.refresh();
         }
     }
@@ -1711,18 +1592,14 @@ public class SpecAttrWindowController implements Initializable {
             int index = datasetTableView.getSelectionModel().getSelectedIndex();
             index = index == -1 ? 0 : index;
             final int nlvls = items.get(index).getNlvls();
-            items.stream().forEach((dataAttr) -> {
-                dataAttr.setNlvls(nlvls);
-            });
+            items.forEach(dataAttr -> dataAttr.setNlvls(nlvls));
             datasetTableView.refresh();
         }
     }
 
     void unifyOffset() {
         ObservableList<DatasetAttributes> items = datasetTableView.getItems();
-        items.stream().forEach((dataAttr) -> {
-            dataAttr.setOffset(items.get(0).getOffset());
-        });
+        items.forEach(dataAttr -> dataAttr.setOffset(items.get(0).getOffset()));
         datasetTableView.refresh();
 
     }
@@ -1747,7 +1624,7 @@ public class SpecAttrWindowController implements Initializable {
 
     void setDrawStatus(boolean pos, final boolean state) {
         ObservableList<DatasetAttributes> items = datasetTableView.getItems();
-        items.stream().forEach((dataAttr) -> {
+        items.forEach(dataAttr -> {
             if (pos) {
                 dataAttr.setPos(state);
             } else {
@@ -1760,7 +1637,7 @@ public class SpecAttrWindowController implements Initializable {
 
     void unifyColor(boolean pos) {
         ObservableList<DatasetAttributes> items = datasetTableView.getItems();
-        items.stream().forEach((dataAttr) -> {
+        items.forEach(dataAttr -> {
             if (pos) {
                 dataAttr.setPosColor(items.get(0).getPosColor());
             } else {
@@ -1801,19 +1678,9 @@ public class SpecAttrWindowController implements Initializable {
             int index = peakListTableView.getSelectionModel().getSelectedIndex();
             index = index == -1 ? 0 : index;
             final int nlvls = items.get(index).getNplanes();
-            items.stream().forEach((peakAttr) -> {
-                peakAttr.setNplanes(nlvls);
-            });
+            items.forEach(peakAttr -> peakAttr.setNplanes(nlvls));
             peakListTableView.refresh();
         }
-    }
-
-    void attachDatasets() {
-
-    }
-
-    void removeDatasets() {
-
     }
 
     Color interpolateColor(Color color1, Color color2, double f) {
@@ -1826,8 +1693,7 @@ public class SpecAttrWindowController implements Initializable {
         double hue = (1.0 - f) * hue1 + f * hue2;
         double sat = (1.0 - f) * sat1 + f * sat2;
         double bright = (1.0 - f) * bright1 + f * bright2;
-        Color color = Color.hsb(hue, sat, bright);
-        return color;
+        return Color.hsb(hue, sat, bright);
 
     }
 
@@ -1871,13 +1737,13 @@ public class SpecAttrWindowController implements Initializable {
     void setPosColorsToSchema() {
         double x = stage.getX();
         double y = stage.getY() + stage.getHeight() + 10;
-        ColorSchemes.showSchemaChooser(s -> updatePosColorsWithSchema(s), x, y);
+        ColorSchemes.showSchemaChooser(this::updatePosColorsWithSchema, x, y);
     }
 
     void setNegColorsToSchema() {
         double x = stage.getX();
         double y = stage.getY() + stage.getHeight() + 10;
-        ColorSchemes.showSchemaChooser(s -> updateNegColorsWithSchema(s), x, y);
+        ColorSchemes.showSchemaChooser(this::updateNegColorsWithSchema, x, y);
     }
 
     public void updateNegColorsWithSchema(String colorName) {
@@ -1910,43 +1776,45 @@ public class SpecAttrWindowController implements Initializable {
 
     void saveParameters() {
         ObservableList<DatasetAttributes> items = datasetTableView.getItems();
-        items.stream().forEach((dataAttr) -> {
-            DatasetBase dataset = dataAttr.getDataset();
-            double lvl = dataAttr.getLvl();
-            double scale = dataset.getScale();
-            double tlvl = scale * lvl;
-            if (tlvl > 1.0e5) {
-                scale = 1.0e6;
-                lvl = Math.round(tlvl / scale * 1.0e3) / 1.0e3;
-            } else if (tlvl > 1.0e2) {
-                scale = 1.0e3;
-                lvl = Math.round(tlvl / scale * 1.0e3) / 1.0e3;
-            } else {
-                scale = 1.0;
-                lvl = tlvl;
-            }
-            dataset.setLvl(lvl);
-            dataset.setScale(scale);
-            dataset.setPosColor(dataAttr.getPosColor().toString());
-            dataset.setNegColor(dataAttr.getNegColor().toString());
-            boolean posOn = dataAttr.getPos();
-            boolean negOn = dataAttr.getNeg();
-            int posNeg = 0;
-            if (posOn) {
-                posNeg += 1;
-            }
-            if (negOn) {
-                posNeg += 2;
-            }
-            dataset.setPosneg(posNeg);
-            dataset.writeParFile();
-        });
+        items.forEach(this::saveParameters);
+    }
+
+    void saveParameters(DatasetAttributes dataAttr) {
+        DatasetBase dataset = dataAttr.getDataset();
+        double lvl = dataAttr.getLvl();
+        double scale = dataset.getScale();
+        double tlvl = scale * lvl;
+        if (tlvl > 1.0e5) {
+            scale = 1.0e6;
+            lvl = Math.round(tlvl / scale * 1.0e3) / 1.0e3;
+        } else if (tlvl > 1.0e2) {
+            scale = 1.0e3;
+            lvl = Math.round(tlvl / scale * 1.0e3) / 1.0e3;
+        } else {
+            scale = 1.0;
+            lvl = tlvl;
+        }
+        dataset.setLvl(lvl);
+        dataset.setScale(scale);
+        dataset.setPosColor(dataAttr.getPosColor().toString());
+        dataset.setNegColor(dataAttr.getNegColor().toString());
+        boolean posOn = dataAttr.getPos();
+        boolean negOn = dataAttr.getNeg();
+        int posNeg = 0;
+        if (posOn) {
+            posNeg += 1;
+        }
+        if (negOn) {
+            posNeg += 2;
+        }
+        dataset.setPosneg(posNeg);
+        dataset.writeParFile();
     }
 
     void autoScale() {
         if (isSceneMode()) {
             List<PolyChart> charts = chart.getSceneMates(true);
-            charts.stream().forEach(c -> {
+            charts.forEach(c -> {
                 c.autoScale();
                 c.refresh();
             });
@@ -1958,9 +1826,7 @@ public class SpecAttrWindowController implements Initializable {
             // fixme  kluge because scaling 1D chart multiple times keeps changing scale
             // not so bad for autoScale, but bad for adjustScale
             int limit = chart.is1D() ? 1 : 1000;
-            items.stream().limit(limit).forEach(dataAttr -> {
-                chart.autoScale(dataAttr);
-            });
+            items.stream().limit(limit).forEach(dataAttr -> chart.autoScale(dataAttr));
             chart.refresh();
         }
     }
@@ -1968,23 +1834,18 @@ public class SpecAttrWindowController implements Initializable {
     void adjustScale(double factor) {
         if (isSceneMode()) {
             List<PolyChart> charts = chart.getSceneMates(true);
-            charts.stream().forEach(c -> {
+            charts.forEach(c -> {
                 c.adjustScale(factor);
                 c.refresh();
             });
         } else {
-            if (chart.is1D()) {
-
-            }
             ObservableList<DatasetAttributes> items = datasetTableView.getSelectionModel().getSelectedItems();
             if (items.isEmpty()) {
                 items = datasetTableView.getItems();
             }
             // fixme  kluge because scaling 1D chart multiple times keeps changing scale
             int limit = chart.is1D() ? 1 : 1000;
-            items.stream().limit(limit).forEach(dataAttr -> {
-                chart.adjustScale(dataAttr, factor);
-            });
+            items.stream().limit(limit).forEach(dataAttr -> chart.adjustScale(dataAttr, factor));
             chart.refresh();
         }
     }
@@ -1992,10 +1853,9 @@ public class SpecAttrWindowController implements Initializable {
     public Node makeColumnIcon() {
         StackPane stackPane = new StackPane();
         Polygon polygon = new Polygon();
-        polygon.getPoints().addAll(new Double[]{
-            4.0, 9.0,
-            0.0, 0.0,
-            9.0, 0.0});
+        polygon.getPoints().addAll(4.0, 9.0,
+                0.0, 0.0,
+                9.0, 0.0);
         polygon.setFill(Color.GREEN);
         stackPane.getChildren().add(polygon);
         return stackPane;
