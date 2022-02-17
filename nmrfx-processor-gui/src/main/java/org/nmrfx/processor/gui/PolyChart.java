@@ -1947,7 +1947,7 @@ public class PolyChart extends Region implements PeakListener {
         yAxis.setTickFontSize(chartProps.getTicFontSize());
         yAxis.setLabelFontSize(chartProps.getLabelFontSize());
 
-        borders[0] = is1D() ? 8 : yAxis.getBorderSize();
+        borders[0] = is1D() && !chartProps.getIntensityAxis() ? 8 : yAxis.getBorderSize();
         borders[2] = xAxis.getBorderSize();
 
         borders[1] = borders[0] / 4;
@@ -2140,7 +2140,7 @@ public class PolyChart extends Region implements PeakListener {
             }
             gC.setLineWidth(xAxis.getLineWidth());
             xAxis.draw(gC);
-            if (!is1D()) {
+            if (!is1D() || chartProps.getIntensityAxis()) {
                 yAxis.draw(gC);
                 gC.strokeLine(xPos + leftBorder, yPos + topBorder, xPos + width - rightBorder, yPos + topBorder);
                 gC.strokeLine(xPos + width - rightBorder, yPos + topBorder, xPos + width - rightBorder, yPos + height - bottomBorder);
@@ -2230,7 +2230,7 @@ public class PolyChart extends Region implements PeakListener {
         }
 
         xAxis.draw(svgGC);
-        if (!is1D()) {
+        if (!is1D() || chartProps.getIntensityAxis()) {
             yAxis.draw(svgGC);
             svgGC.strokeLine(xPos + leftBorder, yPos + topBorder, xPos + width - rightBorder, yPos + topBorder);
             svgGC.strokeLine(xPos + width - rightBorder, yPos + topBorder, xPos + width - rightBorder, yPos + height - bottomBorder);
