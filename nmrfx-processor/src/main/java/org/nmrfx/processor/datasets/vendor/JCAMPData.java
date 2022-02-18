@@ -240,7 +240,8 @@ class JCAMPData implements NMRData {
 
     @Override
     public double getRefPoint(int dim) {
-        //Copied from RS2DData.java
+        //XXX RS2D and Varian data return size / 2.
+        // original JCAMP and Bruker data return 1
         return getSize(dim) / 2.0;
     }
 
@@ -271,9 +272,25 @@ class JCAMPData implements NMRData {
 
     @Override
     public String getFTType(int dim) {
-        return block.optional(DATA_TYPE)
-                .map(JCampRecord::getString)
-                .orElse("");
+        // known values: ft, rft (real), negate (hypercomplex)
+        //XXX original JCamp has "ft" hardcoded.
+        // Bruker is using AQ_Mode and FnMode, which is what I chose to copy here.
+        // Not whether it should be filled for FID as well.
+        
+        if(dim == 0) {
+            int aqMod = block.optional("$AQ_mod").map(JCampRecord::getInt).orElse(0);
+            if(aqMod == 2)
+                return "rft";
+        } else {
+            int fnMode = block.optional("$FnMODE").map(JCampRecord::getInt).orElse(1);
+            if (fnMode == 2 || fnMode == 3) {
+                return "rft";
+            } else if (fnMode == 0 || fnMode == 5) {
+                return "negate";
+            }
+        }
+
+        return "ft";
     }
 
     @Override
@@ -294,7 +311,6 @@ class JCAMPData implements NMRData {
     @Override
     public String getVendor() {
         //XXX some code expected "bruker" in lowercase
-        // should we just force it to be lower case?
         return block.optional(ORIGIN)
                 .map(JCampRecord::getString)
                 .orElse("JCamp");
@@ -360,7 +376,6 @@ class JCAMPData implements NMRData {
         //XXX check whether this is useful
         //RS2DData returns an array of empty strings
         //Original JCAMPData returned OBSERVEFREQUENCY,dim => doesn't work for 2D files
-        // I don't think this is useful, Bruce confirm?
         String[] names = new String[getNDim()];
         Arrays.fill(names, "");
         return names;
