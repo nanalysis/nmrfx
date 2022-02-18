@@ -25,10 +25,7 @@ import com.nanalysis.jcamp.parser.JCampParser;
 import com.nanalysis.jcamp.util.JCampUtil;
 import org.apache.commons.math3.complex.Complex;
 import org.nmrfx.processor.datasets.DatasetType;
-import org.nmrfx.processor.datasets.parameters.FPMult;
-import org.nmrfx.processor.datasets.parameters.GaussianWt;
-import org.nmrfx.processor.datasets.parameters.LPParams;
-import org.nmrfx.processor.datasets.parameters.SinebellWt;
+import org.nmrfx.processor.datasets.parameters.*;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.processing.SampleSchedule;
 
@@ -415,17 +412,47 @@ class JCAMPData implements NMRData {
 
     @Override
     public SinebellWt getSinebellWt(int dim) {
-        //TODO implement me
-        // *** what is the sinebellwt? Not sure how to change this as it's currently
-        //calling BrukerSinebellWt()
-        return null;
+        int power = 0;
+        int size = 0;
+        double sb = 0;
+        double sbs = 0;
+        double offset = 0;
+        double end = 0;
+
+        int wdw = block.optional("$WDW", dim).map(JCampRecord::getInt).orElse(0);
+        if(wdw == 3 || wdw == 4) {
+            String ssbString = block.optional("$SSB", dim).map(JCampRecord::getString).orElse("n");
+            if(!ssbString.equalsIgnoreCase("n")) {
+                power = (wdw == 4) ? 2 : 1;
+                sb = 1.0;
+                sbs = Double.parseDouble(ssbString);
+                offset = (sbs >= 2) ? 1 / sbs : 0;
+                end = 1;
+            }
+        }
+
+        return new DefaultSinebellWt(power, size, sb, sbs, offset, end);
     }
 
     @Override
     public GaussianWt getGaussianWt(int dim) {
-        //TODO implement me
-        // *** what is the gaussianwt?
-        return null;
+        double gf = 0;
+        double gfs = 0;
+        double lb = 0;
+
+        int wdw = block.optional("$WDW", dim).map(JCampRecord::getInt).orElse(0);
+        if(wdw == 2) {
+            String gbString = block.optional("$GB", dim).map(JCampRecord::getString).orElse("n");
+            if(!gbString.equalsIgnoreCase("n")) {
+                gf = Double.parseDouble(gbString);
+                String lbString = block.optional("$LB", dim).map(JCampRecord::getString).orElse("n");
+                if(!lbString.equalsIgnoreCase("n")) {
+                    lb = Double.parseDouble(lbString);
+                }
+            }
+        }
+
+        return new DefaultGaussianWt(gf, gfs, lb);
     }
 
     @Override
@@ -540,6 +567,7 @@ class JCAMPData implements NMRData {
 
     @Override
     public String[] getAcqOrder() {
+        //XXX I have no idea what this tries to do.
         if (acqOrder == null) {
             int idNDim = getNDim() - 1;
             acqOrder = new String[idNDim * 2];
@@ -554,6 +582,7 @@ class JCAMPData implements NMRData {
 
     @Override
     public void setAcqOrder(String[] newOrder) {
+        //XXX I have no idea what this tries to do.
         // Taken from RS2DData.java
         if (newOrder.length == 1) {
             String s = newOrder[0];
