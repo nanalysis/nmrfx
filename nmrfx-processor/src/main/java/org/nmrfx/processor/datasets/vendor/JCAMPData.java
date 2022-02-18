@@ -41,6 +41,8 @@ import static com.nanalysis.jcamp.model.Label.*;
 class JCAMPData implements NMRData {
     private static final List<String> MATCHING_EXTENSIONS = List.of(".jdx", ".dx");
 
+    //TODO check all string-based labels, and define the common ones in JCamp parser's Label class
+
     private final String path;
     private final JCampDocument document;
     private final JCampBlock block;
@@ -345,16 +347,28 @@ class JCAMPData implements NMRData {
 
     @Override
     public int getLeftShift(int dim) {
-        return block.optional("LS")
+        int leftShift = block.optional("LS", dim)
                 .map(JCampRecord::getInt)
                 .orElse(0);
+
+        // reversed betwen JCamp and NMRfx
+        return -leftShift;
     }
 
     @Override
     public double getExpd(int dim) {
-        return block.optional("$WDW")
-                .map(JCampRecord::getDouble)
-                .orElse(0.0);
+        int wdw = block.optional("$WDW", dim)
+                .map(JCampRecord::getInt)
+                .orElse(0);
+
+        if(wdw == 1) {
+            String lb = block.optional("$LB", dim).map(JCampRecord::getString).orElse("n");
+            if(!lb.equalsIgnoreCase("n")) {
+                return Double.parseDouble(lb);
+            }
+        }
+
+        return wdw;
     }
 
     @Override
@@ -374,13 +388,13 @@ class JCAMPData implements NMRData {
 
     @Override
     public FPMult getFPMult(int dim) {
-        // I think this is still needed to accommodate bruker params?
+        // not implemented, return default object
         return new FPMult();
     }
 
     @Override
     public LPParams getLPParams(int dim) {
-        // I think this is still needed to accommodate bruker params?
+        // not implemented, return default object
         return new LPParams();
     }
 
