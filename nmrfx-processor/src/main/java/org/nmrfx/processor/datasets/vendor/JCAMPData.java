@@ -17,7 +17,10 @@
  */
 package org.nmrfx.processor.datasets.vendor;
 
-import com.nanalysis.jcamp.model.*;
+import com.nanalysis.jcamp.model.JCampBlock;
+import com.nanalysis.jcamp.model.JCampDocument;
+import com.nanalysis.jcamp.model.JCampPage;
+import com.nanalysis.jcamp.model.JCampRecord;
 import com.nanalysis.jcamp.parser.JCampParser;
 import com.nanalysis.jcamp.util.JCampUtil;
 import org.apache.commons.math3.complex.Complex;
@@ -276,7 +279,7 @@ class JCAMPData implements NMRData {
         //XXX original JCamp has "ft" hardcoded.
         // Bruker is using AQ_Mode and FnMode, which is what I chose to copy here.
         // Not whether it should be filled for FID as well.
-        
+
         if(dim == 0) {
             int aqMod = block.optional("$AQ_mod").map(JCampRecord::getInt).orElse(0);
             if(aqMod == 2)
@@ -318,16 +321,26 @@ class JCAMPData implements NMRData {
 
     @Override
     public double getPH0(int dim) {
-        return block.optional($PHC0)
+        double ph0 = block.optional($PHC0, dim)
                 .map(JCampRecord::getDouble)
                 .orElse(0.0);
+
+        if (dim == 0) {
+            ph0 -= 90; //XXX from original JCAMPData, but I don't know why
+        }
+
+        // phase is reversed between JCamp and NMRfx
+        return -ph0;
     }
 
     @Override
     public double getPH1(int dim) {
-        return block.optional($PHC1)
+        double ph1 = block.optional($PHC1, dim)
                 .map(JCampRecord::getDouble)
                 .orElse(0.0);
+
+        // phase is reversed between JCamp and NMRfx
+        return -ph1;
     }
 
     @Override
