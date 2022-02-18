@@ -40,6 +40,8 @@ class JCAMPData implements NMRData {
 
     //TODO check all string-based labels, and define the common ones in JCamp parser's Label class
 
+    // XXX content seems to be inverted from right to left compared to spinit after FT, even if the FID is correct
+
     private final String path;
     private final JCampDocument document;
     private final JCampBlock block;
@@ -169,16 +171,15 @@ class JCAMPData implements NMRData {
 
     @Override
     public double getSF(int dim) {
-        //XXX some doubts about the expected unit: Hz or MHz?
         //XXX Base freq, or observed freq? should we try to add offset?
         //Previous implementation was using OBSERVE_FREQUENCY but this is not defined in 2D
         if (dim == 0) {
-            return block.optional($BF1, $BFREQ, $SF)
-                    .map(r -> r.getDouble() * 1E6)
-                    .orElseThrow(() -> new IllegalStateException("Unknown frequency, $BF1, $BFREQ and $SF undefined!"));
+            return block.optional(_OBSERVE_FREQUENCY, $BF1, $BFREQ, $SF)
+                    .map(JCampRecord::getDouble)
+                    .orElseThrow(() -> new IllegalStateException("Unknown frequency, .OBSERVE_FREQUENCY, $BF1, $BFREQ and $SF undefined!"));
         } else if (dim == 1) {
             return block.optional($BF2)
-                    .map(r -> r.getDouble() * 1e6)
+                    .map(JCampRecord::getDouble)
                     .orElseThrow(() -> new IllegalStateException("Unknown frequency, $BF2 undefined!"));
         } else {
             throw new UnsupportedOperationException("Unsupported dimension " + dim + " in JCamp");
@@ -474,6 +475,7 @@ class JCAMPData implements NMRData {
         //Original JCAMPData returned OBSERVEFREQUENCY,dim => doesn't work for 2D files
         String[] names = new String[getNDim()];
         Arrays.fill(names, "");
+        names[0] = block.optional(_OBSERVE_FREQUENCY, $BF1, $BFREQ, $SF).map(JCampRecord::getNormalizedLabel).orElse("");
         return names;
     }
 
@@ -483,6 +485,7 @@ class JCAMPData implements NMRData {
         // original JCAMPData returned an array of empty strings
         String[] names = new String[getNDim()];
         Arrays.fill(names, "");
+        names[0] = block.optional($SW_H).map(JCampRecord::getNormalizedLabel).orElse("");
         return names;
     }
 

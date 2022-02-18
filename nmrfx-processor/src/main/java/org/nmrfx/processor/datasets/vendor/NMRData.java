@@ -203,7 +203,7 @@ public interface NMRData {
      * Return the spectrometer frequency for the specified dimension
      *
      * @param dim data dimension index
-     * @return spectrometer frequency
+     * @return spectrometer frequency in MHz
      */
     public double getSF(int dim);
 
@@ -212,7 +212,7 @@ public interface NMRData {
      * overwrite a value loaded by analysis of parameter files.
      *
      * @param dim data dimension index
-     * @param value new value for spectrometer frequency
+     * @param value new value for spectrometer frequency in MHz
      */
     public void setSF(int dim, double value);
 
