@@ -269,10 +269,20 @@ class JCAMPData implements NMRData {
 
     @Override
     public boolean isComplex(int dim) {
-        //TODO implement me
-        // *** How do we identify if it is complex? The existing code creates an array of booleans
-        // but only seems to ever assign the first input
-        return false;
+        // For first dimension, check if the jcamp block contains imaginary pages
+        if(dim == 0) {
+            return !block.getPagesForYSymbol("I").isEmpty();
+        }
+
+        // For other dimensions, infer it from FnMODE
+        // TODO check if FnMODE is really defined on the second dimension
+        int fnMode = block.optional("$FnMODE", dim).map(JCampRecord::getInt).orElse(-1);
+        if(fnMode == 2 || fnMode == 3)
+            return false;
+        if(fnMode == 1)
+            return getValues(dim).isEmpty();
+
+        return true;
     }
 
     @Override
@@ -287,7 +297,8 @@ class JCAMPData implements NMRData {
             if(aqMod == 2)
                 return "rft";
         } else {
-            int fnMode = block.optional("$FnMODE").map(JCampRecord::getInt).orElse(1);
+            // TODO check if FnMODE is really defined on the second dimension
+            int fnMode = block.optional("$FnMODE", dim).map(JCampRecord::getInt).orElse(-1);
             if (fnMode == 2 || fnMode == 3) {
                 return "rft";
             } else if (fnMode == 0 || fnMode == 5) {
