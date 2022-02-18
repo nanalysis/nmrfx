@@ -17,10 +17,7 @@
  */
 package org.nmrfx.processor.datasets.vendor;
 
-import com.nanalysis.jcamp.model.JCampBlock;
-import com.nanalysis.jcamp.model.JCampDocument;
-import com.nanalysis.jcamp.model.JCampPage;
-import com.nanalysis.jcamp.model.JCampRecord;
+import com.nanalysis.jcamp.model.*;
 import com.nanalysis.jcamp.parser.JCampParser;
 import com.nanalysis.jcamp.util.JCampUtil;
 import org.apache.commons.math3.complex.Complex;
@@ -44,6 +41,7 @@ class JCAMPData implements NMRData {
     private final String path;
     private final JCampDocument document;
     private final JCampBlock block;
+    private String[] acqOrder;
 
     private DatasetType preferredDatasetType = DatasetType.NMRFX;
     private SampleSchedule sampleSchedule = null;
@@ -143,6 +141,7 @@ class JCAMPData implements NMRData {
     @Override
     public void setSize(int dim, int size) {
         //TODO implement me?
+        // Don't see how we would need this as we are accessing the size directly
         System.out.println("Called unimplemented method: setSize: " + dim + ", " + size);
     }
 
@@ -241,8 +240,8 @@ class JCAMPData implements NMRData {
 
     @Override
     public double getRefPoint(int dim) {
-        //TODO implement me
-        return 0;
+        //Copied from RS2DData.java
+        return getSize(dim) / 2.0;
     }
 
     @Override
@@ -265,30 +264,37 @@ class JCAMPData implements NMRData {
     @Override
     public boolean isComplex(int dim) {
         //TODO implement me
+        // *** How do we identify if it is complex? The existing code creates an array of booleans
+        // but only seems to ever assign the first input
         return false;
     }
 
     @Override
     public String getFTType(int dim) {
-        //TODO implement me
-        return null;
+        return block.optional(DATA_TYPE)
+                .map(JCampRecord::getString)
+                .orElse("");
     }
 
     @Override
     public double[] getCoefs(int dim) {
         //TODO implement me
+        //***What are the coefficients? Similar situation as the complex value
         return new double[0];
+
     }
 
     @Override
     public String getSymbolicCoefs(int dim) {
         //TODO implement me
+        //***What are the coefficients? Similar situation as the complex value
         return null;
     }
 
     @Override
     public String getVendor() {
         //XXX some code expected "bruker" in lowercase
+        // should we just force it to be lower case?
         return block.optional(ORIGIN)
                 .map(JCampRecord::getString)
                 .orElse("JCamp");
@@ -296,51 +302,57 @@ class JCAMPData implements NMRData {
 
     @Override
     public double getPH0(int dim) {
-        //TODO implement me
-        return 0;
+        return block.optional($PHC0)
+                .map(JCampRecord::getDouble)
+                .orElse(0.0);
     }
 
     @Override
     public double getPH1(int dim) {
-        //TODO implement me
-        return 0;
+        return block.optional($PHC1)
+                .map(JCampRecord::getDouble)
+                .orElse(0.0);
     }
 
     @Override
     public int getLeftShift(int dim) {
-        //TODO implement me
-        return 0;
+        return block.optional("LS")
+                .map(JCampRecord::getInt)
+                .orElse(0);
     }
 
     @Override
     public double getExpd(int dim) {
-        //TODO implement me
-
-        return 0;
+        return block.optional("$WDW")
+                .map(JCampRecord::getDouble)
+                .orElse(0.0);
     }
 
     @Override
     public SinebellWt getSinebellWt(int dim) {
         //TODO implement me
+        // *** what is the sinebellwt? Not sure how to change this as it's currently
+        //calling BrukerSinebellWt()
         return null;
     }
 
     @Override
     public GaussianWt getGaussianWt(int dim) {
         //TODO implement me
+        // *** what is the gaussianwt?
         return null;
     }
 
     @Override
     public FPMult getFPMult(int dim) {
-        //TODO implement me
-        return null;
+        // I think this is still needed to accommodate bruker params?
+        return new FPMult();
     }
 
     @Override
     public LPParams getLPParams(int dim) {
-        //TODO implement me
-        return null;
+        // I think this is still needed to accommodate bruker params?
+        return new LPParams();
     }
 
     @Override
@@ -348,6 +360,7 @@ class JCAMPData implements NMRData {
         //XXX check whether this is useful
         //RS2DData returns an array of empty strings
         //Original JCAMPData returned OBSERVEFREQUENCY,dim => doesn't work for 2D files
+        // I don't think this is useful, Bruce confirm?
         String[] names = new String[getNDim()];
         Arrays.fill(names, "");
         return names;
@@ -438,18 +451,86 @@ class JCAMPData implements NMRData {
 
     @Override
     public void resetAcqOrder() {
-        //TODO implement me
+        acqOrder = null;
     }
 
     @Override
     public String[] getAcqOrder() {
-        //TODO implement me
-        return new String[0];
+        if (acqOrder == null) {
+            int idNDim = getNDim() - 1;
+            acqOrder = new String[idNDim * 2];
+            // p1,d1,p2,d2
+            for (int i = 0; i < idNDim; i++) {
+                acqOrder[i * 2] = "p" + (i + 1);
+                acqOrder[i * 2 + 1] = "d" + (i + 1);
+            }
+        }
+        return acqOrder;
     }
 
     @Override
-    public void setAcqOrder(String[] acqOrder) {
-        //TODO implement me
+    public void setAcqOrder(String[] newOrder) {
+        // Taken from RS2DData.java
+        if (newOrder.length == 1) {
+            String s = newOrder[0];
+            final int len = s.length();
+            int nDim = getNDim();
+            int nIDim = nDim - 1;
+            if ((len == nDim) || (len == nIDim)) {
+                acqOrder = new String[nIDim * 2];
+                int j = 0;
+                if ((sampleSchedule != null) && !sampleSchedule.isDemo()) {
+                    for (int i = (len - 1); i >= 0; i--) {
+                        String dimStr = s.substring(i, i + 1);
+                        if (!dimStr.equals(nDim + "")) {
+                            acqOrder[j++] = "p" + dimStr;
+                        }
+                    }
+                    for (int i = (len - 1); i >= 0; i--) {
+                        String dimStr = s.substring(i, i + 1);
+                        if (!dimStr.equals(nDim + "")) {
+                            acqOrder[j++] = "d" + dimStr;
+                        }
+                    }
+                } else {
+                    for (int i = (len - 1); i >= 0; i--) {
+                        String dimStr = s.substring(i, i + 1);
+                        if (!dimStr.equals(nDim + "")) {
+                            acqOrder[j++] = "p" + dimStr;
+                            acqOrder[j++] = "d" + dimStr;
+                        }
+                    }
+                }
+            } else if (len > nDim) {
+                acqOrder = new String[(len - 1) * 2];
+                int j = 0;
+                if ((sampleSchedule != null) && !sampleSchedule.isDemo()) {
+                    for (int i = (len - 1); i >= 0; i--) {
+                        String dimStr = s.substring(i, i + 1);
+                        if (!dimStr.equals((nDim + 1) + "")) {
+                            acqOrder[j++] = "p" + dimStr;
+                        }
+                    }
+                    for (int i = (len - 1); i >= 0; i--) {
+                        String dimStr = s.substring(i, i + 1);
+                        if (!dimStr.equals((nDim + 1) + "")) {
+                            acqOrder[j++] = "d" + dimStr;
+                        }
+                    }
+                } else {
+                    for (int i = (len - 1); i >= 0; i--) {
+                        String dimStr = s.substring(i, i + 1);
+                        if (!dimStr.equals((nDim + 1) + "")) {
+                            acqOrder[j++] = "p" + dimStr;
+                            acqOrder[j++] = "d" + dimStr;
+                        }
+                    }
+                }
+            }
+        } else {
+            this.acqOrder = new String[newOrder.length];
+            System.arraycopy(newOrder, 0, this.acqOrder, 0, newOrder.length);
+        }
     }
 
     @Override
