@@ -311,17 +311,48 @@ class JCAMPData implements NMRData {
 
     @Override
     public double[] getCoefs(int dim) {
-        //TODO implement me
-        //***What are the coefficients? Similar situation as the complex value
-        return new double[0];
+        //XXX Was not implemented in original JCAMPData.
+        //Inspired from BrukerData instead.
+        if(dim == 0) {
+            return new double[0];
+        }
 
+        // TODO check if FnMODE is really defined on the second dimension
+        int fnMode = block.optional("$FnMODE", dim).map(JCampRecord::getInt).orElse(-1);
+        if (fnMode == -1 || fnMode == 1 || fnMode == 2 || fnMode == 3) {
+            return new double[0];
+        } else if (fnMode == 4) {
+            return new double[]{1, 0, 0, 0, 0, 0, 1, 0};
+        } else if (fnMode == 0 || fnMode == 5) {
+            return new double[]{1, 0, 0, 0, 0, 0, 1, 0};
+        } else if (fnMode == 6) {
+            return new double[]{1, 0, -1, 0, 0, 1, 0, 1};
+        }
+        return new double[]{1, 0, 0, 1};
     }
 
     @Override
     public String getSymbolicCoefs(int dim) {
-        //TODO implement me
-        //***What are the coefficients? Similar situation as the complex value
-        return null;
+        //XXX Was not implemented in original JCAMPData.
+        //Inspired from BrukerData instead.
+        if(dim == 0) {
+            return null;
+        }
+
+        // TODO check if FnMODE is really defined on the second dimension
+        int fnMode = block.optional("$FnMODE", dim).map(JCampRecord::getInt).orElse(-1);
+        if (fnMode == -1) {
+            return null;
+        } else if (fnMode == 2 || fnMode == 3) {
+            return "real";
+        } else if (fnMode == 4) {
+            return "hyper-r";
+        } else if (fnMode == 0 || fnMode == 5) {
+            return "hyper";
+        } else if (fnMode == 6) {
+            return "echo-antiecho-r";
+        }
+        return "sep";
     }
 
     @Override
