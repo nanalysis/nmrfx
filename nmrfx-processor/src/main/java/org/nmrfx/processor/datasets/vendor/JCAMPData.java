@@ -17,10 +17,7 @@
  */
 package org.nmrfx.processor.datasets.vendor;
 
-import com.nanalysis.jcamp.model.JCampBlock;
-import com.nanalysis.jcamp.model.JCampDocument;
-import com.nanalysis.jcamp.model.JCampPage;
-import com.nanalysis.jcamp.model.JCampRecord;
+import com.nanalysis.jcamp.model.*;
 import com.nanalysis.jcamp.parser.JCampParser;
 import com.nanalysis.jcamp.util.JCampUtil;
 import org.apache.commons.math3.complex.Complex;
@@ -182,7 +179,7 @@ class JCAMPData implements NMRData {
         //XXX Base freq, or observed freq? should we try to add offset?
         //Previous implementation was using OBSERVE_FREQUENCY but this is not defined in 2D
         if (dim == 0) {
-            return block.optional(_OBSERVE_FREQUENCY, $BF1, $BFREQ, $SF)
+            return block.optional(_OBSERVE_FREQUENCY, $SFO1, $BF1, $BFREQ, $SF)
                     .map(JCampRecord::getDouble)
                     .orElseThrow(() -> new IllegalStateException("Unknown frequency, .OBSERVE_FREQUENCY, $BF1, $BFREQ and $SF undefined!"));
         } else if (dim == 1) {
@@ -227,14 +224,9 @@ class JCAMPData implements NMRData {
 
     @Override
     public double getRef(int dim) {
-        String xUnit = JCampUtil.normalize(block.get(UNITS).getStrings().get(0));
-        double firstX = block.get(FIRST).getDoubles()[0];
-        if(xUnit.equals("HZ")) {
-            return firstX / getSF(dim); //XXX original was always targeting Sf[0], not caring about dimension. Normal?
-        } else if(xUnit.equals("PPM")) {
-            return firstX;
-        }
-        return 0;
+        Label offsetLabel = dim == 1 ? $O2 : $O1;
+        double offsetHz = block.optional(offsetLabel).map(JCampRecord::getDouble).orElse(0d);
+        return offsetHz / getSF(dim);
     }
 
     @Override
@@ -251,8 +243,6 @@ class JCAMPData implements NMRData {
 
     @Override
     public double getRefPoint(int dim) {
-        //XXX RS2D and Varian data return size / 2.
-        // original JCAMP and Bruker data return 1
         return getSize(dim) / 2.0;
     }
 
@@ -485,7 +475,7 @@ class JCAMPData implements NMRData {
         //Original JCAMPData returned OBSERVEFREQUENCY,dim => doesn't work for 2D files
         String[] names = new String[getNDim()];
         Arrays.fill(names, "");
-        names[0] = block.optional(_OBSERVE_FREQUENCY, $BF1, $BFREQ, $SF).map(JCampRecord::getNormalizedLabel).orElse("");
+        names[0] = block.optional(_OBSERVE_FREQUENCY, $SFO1, $BF1, $BFREQ, $SF).map(JCampRecord::getNormalizedLabel).orElse("");
         return names;
     }
 
