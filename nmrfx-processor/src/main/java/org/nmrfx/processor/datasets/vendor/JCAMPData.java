@@ -510,13 +510,14 @@ class JCAMPData implements NMRData {
         return names.toArray(new String[0]);
     }
 
+    private int getGroupDelay() {
+        return block.optional($GRPDLY).map(JCampRecord::getInt).orElse(0);
+    }
+
     @Override
     public void readVector(int iVec, Vec dvec) {
         List<JCampPage> realPages = block.getPagesForYSymbol("R");
         List<JCampPage> imaginaryPages = block.getPagesForYSymbol("I");
-
-        //TODO group delay
-        //dvec.setGroupDelay(groupDelay);
 
         // XXX 1D only for now - is 2D supposed to be here or in another readVector()?
         double[] rValues = realPages.get(0).toArray();
@@ -538,6 +539,8 @@ class JCAMPData implements NMRData {
                 dvec.set(i, iValues[i], rValues[i]);
             }
         }
+
+        dvec.setGroupDelay(getGroupDelay());
 
         dvec.dwellTime = 1.0 / getSW(0);
         dvec.centerFreq = getSF(0);
