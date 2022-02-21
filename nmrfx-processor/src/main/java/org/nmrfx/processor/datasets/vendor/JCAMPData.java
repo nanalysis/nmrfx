@@ -364,6 +364,8 @@ class JCAMPData implements NMRData {
     @Override
     public String getVendor() {
         //XXX some code expected "bruker" in lowercase
+        // RefManager.setupItems() to add getNDim() in a string builder
+        // RefManager.setupItems() to add a getFixDSP() option
         return block.optional(ORIGIN)
                 .map(JCampRecord::getString)
                 .orElse("JCamp");
@@ -675,6 +677,26 @@ class JCAMPData implements NMRData {
     @Override
     public void setPreferredDatasetType(DatasetType datasetType) {
         this.preferredDatasetType = datasetType;
+    }
+
+    @Override
+    public boolean getNegatePairs(int dim) {
+        return "negate".equals(getFTType(dim));
+    }
+
+    @Override
+    public boolean getNegateImag(int dim) {
+        return dim > 0;
+    }
+
+    @Override
+    public long getDate() {
+        return block.getDate().getTime() / 1000;
+    }
+
+    @Override
+    public boolean isFID() {
+        return block.getDataType().isFID();
     }
 
     @Override
