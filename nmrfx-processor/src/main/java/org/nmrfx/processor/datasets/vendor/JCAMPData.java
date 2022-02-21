@@ -47,9 +47,6 @@ class JCAMPData implements NMRData {
     public static final String $SSB = "$SSB";
     public static final String $GB = "$GB";
 
-
-    // XXX content seems to be inverted from right to left compared to spinit after FT, even if the FID is correct
-
     private final String path;
     private final JCampDocument document;
     private final JCampBlock block;
@@ -122,6 +119,7 @@ class JCAMPData implements NMRData {
         //XXX To confirm, looks like it is number of 1D rows in total
         // so 1 if 1D data, and number of 2D if 2D data.
         // no more than 2D data are supported in JCamp
+
         //XXX should we try to get it from page content instead?
         return block.optional($TD, 1)
                 .map(r -> r.getInt() / 2)
@@ -130,6 +128,8 @@ class JCAMPData implements NMRData {
 
     @Override
     public int getNPoints() {
+        // XXX original JCAMPData always returned 0 (np / 2, with np never initialized). Isn't it a bug?
+
         // XXX always /2, or only if complex data?
         // XXX should we try to get it from page content instead?
         return block.optional($TD, 0)
@@ -230,7 +230,7 @@ class JCAMPData implements NMRData {
         String xUnit = JCampUtil.normalize(block.get(UNITS).getStrings().get(0));
         double firstX = block.get(FIRST).getDoubles()[0];
         if(xUnit.equals("HZ")) {
-            return firstX / getSF(dim); //XXX original was always targetting Sf[0], not caring about dimension. Normal?
+            return firstX / getSF(dim); //XXX original was always targeting Sf[0], not caring about dimension. Normal?
         } else if(xUnit.equals("PPM")) {
             return firstX;
         }
@@ -538,7 +538,8 @@ class JCAMPData implements NMRData {
             dvec.resize(n, true);
             dvec.setTDSize(n);
             for (int i = 0; i < n; i++) {
-                dvec.set(i, rValues[i], iValues[i]);
+                //WARNING: real and imaginaries are inverted on purpose
+                dvec.set(i, iValues[i], rValues[i]);
             }
         }
 
