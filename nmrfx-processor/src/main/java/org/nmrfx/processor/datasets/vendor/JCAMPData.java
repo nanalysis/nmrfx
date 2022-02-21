@@ -35,15 +35,6 @@ import static com.nanalysis.jcamp.model.Label.*;
 class JCAMPData implements NMRData {
     private static final List<String> MATCHING_EXTENSIONS = List.of(".jdx", ".dx");
 
-    //TODO check all string-based labels, and define the common ones in JCamp parser's Label class
-    public static final String $FN_MODE = "$FnMODE";
-    public static final String $AQ_MOD = "$AQ_mod";
-    public static final String $WDW = "$WDW";
-    public static final String $LS = "$LS";
-    public static final String $LB = "$LB";
-    public static final String $SSB = "$SSB";
-    public static final String $GB = "$GB";
-
     private final String path;
     private final JCampDocument document;
     private final JCampBlock block;
