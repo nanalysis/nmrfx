@@ -32,6 +32,7 @@ import java.util.*;
 
 import static com.nanalysis.jcamp.model.Label.*;
 
+//TODO loading benchtop .jdx files doesn't work yet
 class JCAMPData implements NMRData {
     private static final List<String> MATCHING_EXTENSIONS = List.of(".jdx", ".dx");
 
@@ -43,6 +44,11 @@ class JCAMPData implements NMRData {
     private DatasetType preferredDatasetType = DatasetType.NMRFX;
     private SampleSchedule sampleSchedule = null;
 
+    // these values can be overridden from the outside, we need to cache them so that we can
+    // either read them from jcamp or take the user-defined value
+    private final Map<Integer, Double> sf = new HashMap<>();
+    private final Map<Integer, Double> sw = new HashMap<>();
+    private final Map<Integer, Double> ref = new HashMap<>();
 
     public JCAMPData(String path) throws IOException {
         this.path = path;
@@ -133,7 +139,8 @@ class JCAMPData implements NMRData {
     @Override
     public int getSize(int dim) {
         // XXX should we try to get it from page content instead?
-        return block.optional($TD, 0)
+        // Shouldn't the "/2" be only for complex data?
+        return block.optional($TD, dim)
                 .map(r -> r.getInt() / 2)
                 .orElse(0);
     }
@@ -167,6 +174,10 @@ class JCAMPData implements NMRData {
 
     @Override
     public double getSF(int dim) {
+        return sf.computeIfAbsent(dim, this::extractSF);
+    }
+
+    private double extractSF(int dim) {
         Label[] labels = getSFLabels(dim);
         return block.optional(labels)
                 .map(JCampRecord::getDouble)
@@ -175,14 +186,12 @@ class JCAMPData implements NMRData {
 
     @Override
     public void setSF(int dim, double value) {
-        //TODO implement me?
-        System.out.println("Called unimplemented method: setSF: " + dim + ", " + value);
+        sf.put(dim, value);
     }
 
     @Override
     public void resetSF(int dim) {
-        //TODO implement me?
-        System.out.println("Called unimplemented method: resetSF: " + dim);
+        sf.remove(dim);
     }
 
     @Override
@@ -209,6 +218,10 @@ class JCAMPData implements NMRData {
 
     @Override
     public double getSW(int dim) {
+        return sw.computeIfAbsent(dim, this::extractSW);
+    }
+
+    private double extractSW(int dim) {
         return block.optional($SW_H, dim)
                 .map(JCampRecord::getDouble)
                 .orElseThrow(() -> new IllegalStateException("Unknown spectral width, $SW_H undefined for dimension " + dim));
@@ -216,14 +229,12 @@ class JCAMPData implements NMRData {
 
     @Override
     public void setSW(int dim, double value) {
-        //TODO implement me?
-        System.out.println("Called unimplemented method: setSW: " + dim + ", " + value);
+        sw.put(dim, value);
     }
 
     @Override
     public void resetSW(int dim) {
-        //TODO implement me?
-        System.out.println("Called unimplemented method: resetSW: " + dim);
+       sw.remove(dim);
     }
 
     @Override
@@ -238,21 +249,23 @@ class JCAMPData implements NMRData {
 
     @Override
     public double getRef(int dim) {
+        return ref.computeIfAbsent(dim, this::extractRef);
+    }
+
+    private double extractRef(int dim) {
         Label offsetLabel = dim == 1 ? $O2 : $O1;
         double offsetHz = block.optional(offsetLabel).map(JCampRecord::getDouble).orElse(0d);
         return offsetHz / getSF(dim);
     }
 
     @Override
-    public void setRef(int dim, double ref) {
-        //TODO implement me?
-        System.out.println("Called unimplemented method: setRef: " + dim + ", " + ref);
+    public void setRef(int dim, double value) {
+        ref.put(dim, value);
     }
 
     @Override
     public void resetRef(int dim) {
-        //TODO implement me?
-        System.out.println("Called unimplemented method: resetRef: " + dim);
+       ref.remove(dim);
     }
 
     @Override
@@ -405,7 +418,7 @@ class JCAMPData implements NMRData {
                 .map(JCampRecord::getInt)
                 .orElse(0);
 
-        // reversed betwen JCamp and NMRfx
+        // reversed between JCamp and NMRfx
         return -leftShift;
     }
 
@@ -665,11 +678,13 @@ class JCAMPData implements NMRData {
 
     @Override
     public boolean getNegatePairs(int dim) {
+        //XXX doesn't seem to be called. Is this useful?
         return "negate".equals(getFTType(dim));
     }
 
     @Override
     public boolean getNegateImag(int dim) {
+        //XXX doesn't seem to be called. Is this useful?
         return dim > 0;
     }
 
