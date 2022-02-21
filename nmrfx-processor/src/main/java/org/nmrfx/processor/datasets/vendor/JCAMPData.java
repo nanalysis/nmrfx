@@ -39,6 +39,14 @@ class JCAMPData implements NMRData {
     private static final List<String> MATCHING_EXTENSIONS = List.of(".jdx", ".dx");
 
     //TODO check all string-based labels, and define the common ones in JCamp parser's Label class
+    public static final String $FN_MODE = "$FnMODE";
+    public static final String $AQ_MOD = "$AQ_mod";
+    public static final String $WDW = "$WDW";
+    public static final String $LS = "$LS";
+    public static final String $LB = "$LB";
+    public static final String $SSB = "$SSB";
+    public static final String $GB = "$GB";
+
 
     // XXX content seems to be inverted from right to left compared to spinit after FT, even if the FID is correct
 
@@ -274,7 +282,7 @@ class JCAMPData implements NMRData {
 
         // For other dimensions, infer it from FnMODE
         // TODO check if FnMODE is really defined on the second dimension
-        int fnMode = block.optional("$FnMODE", dim).map(JCampRecord::getInt).orElse(-1);
+        int fnMode = block.optional($FN_MODE, dim).map(JCampRecord::getInt).orElse(-1);
         if(fnMode == 2 || fnMode == 3)
             return false;
         if(fnMode == 1)
@@ -291,12 +299,12 @@ class JCAMPData implements NMRData {
         // Not whether it should be filled for FID as well.
 
         if(dim == 0) {
-            int aqMod = block.optional("$AQ_mod").map(JCampRecord::getInt).orElse(0);
+            int aqMod = block.optional($AQ_MOD).map(JCampRecord::getInt).orElse(0);
             if(aqMod == 2)
                 return "rft";
         } else {
             // TODO check if FnMODE is really defined on the second dimension
-            int fnMode = block.optional("$FnMODE", dim).map(JCampRecord::getInt).orElse(-1);
+            int fnMode = block.optional($FN_MODE, dim).map(JCampRecord::getInt).orElse(-1);
             if (fnMode == 2 || fnMode == 3) {
                 return "rft";
             } else if (fnMode == 0 || fnMode == 5) {
@@ -316,7 +324,7 @@ class JCAMPData implements NMRData {
         }
 
         // TODO check if FnMODE is really defined on the second dimension
-        int fnMode = block.optional("$FnMODE", dim).map(JCampRecord::getInt).orElse(-1);
+        int fnMode = block.optional($FN_MODE, dim).map(JCampRecord::getInt).orElse(-1);
         if (fnMode == -1 || fnMode == 1 || fnMode == 2 || fnMode == 3) {
             return new double[0];
         } else if (fnMode == 4) {
@@ -338,7 +346,7 @@ class JCAMPData implements NMRData {
         }
 
         // TODO check if FnMODE is really defined on the second dimension
-        int fnMode = block.optional("$FnMODE", dim).map(JCampRecord::getInt).orElse(-1);
+        int fnMode = block.optional($FN_MODE, dim).map(JCampRecord::getInt).orElse(-1);
         if (fnMode == -1) {
             return null;
         } else if (fnMode == 2 || fnMode == 3) {
@@ -387,7 +395,7 @@ class JCAMPData implements NMRData {
 
     @Override
     public int getLeftShift(int dim) {
-        int leftShift = block.optional("LS", dim)
+        int leftShift = block.optional($LS, dim)
                 .map(JCampRecord::getInt)
                 .orElse(0);
 
@@ -397,12 +405,12 @@ class JCAMPData implements NMRData {
 
     @Override
     public double getExpd(int dim) {
-        int wdw = block.optional("$WDW", dim)
+        int wdw = block.optional($WDW, dim)
                 .map(JCampRecord::getInt)
                 .orElse(0);
 
         if(wdw == 1) {
-            String lb = block.optional("$LB", dim).map(JCampRecord::getString).orElse("n");
+            String lb = block.optional($LB, dim).map(JCampRecord::getString).orElse("n");
             if(!lb.equalsIgnoreCase("n")) {
                 return Double.parseDouble(lb);
             }
@@ -420,9 +428,9 @@ class JCAMPData implements NMRData {
         double offset = 0;
         double end = 0;
 
-        int wdw = block.optional("$WDW", dim).map(JCampRecord::getInt).orElse(0);
+        int wdw = block.optional($WDW, dim).map(JCampRecord::getInt).orElse(0);
         if(wdw == 3 || wdw == 4) {
-            String ssbString = block.optional("$SSB", dim).map(JCampRecord::getString).orElse("n");
+            String ssbString = block.optional($SSB, dim).map(JCampRecord::getString).orElse("n");
             if(!ssbString.equalsIgnoreCase("n")) {
                 power = (wdw == 4) ? 2 : 1;
                 sb = 1.0;
@@ -441,12 +449,12 @@ class JCAMPData implements NMRData {
         double gfs = 0;
         double lb = 0;
 
-        int wdw = block.optional("$WDW", dim).map(JCampRecord::getInt).orElse(0);
+        int wdw = block.optional($WDW, dim).map(JCampRecord::getInt).orElse(0);
         if(wdw == 2) {
-            String gbString = block.optional("$GB", dim).map(JCampRecord::getString).orElse("n");
+            String gbString = block.optional($GB, dim).map(JCampRecord::getString).orElse("n");
             if(!gbString.equalsIgnoreCase("n")) {
                 gf = Double.parseDouble(gbString);
-                String lbString = block.optional("$LB", dim).map(JCampRecord::getString).orElse("n");
+                String lbString = block.optional($LB, dim).map(JCampRecord::getString).orElse("n");
                 if(!lbString.equalsIgnoreCase("n")) {
                     lb = Double.parseDouble(lbString);
                 }
