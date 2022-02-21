@@ -167,19 +167,10 @@ class JCAMPData implements NMRData {
 
     @Override
     public double getSF(int dim) {
-        //XXX Base freq, or observed freq? should we try to add offset?
-        //Previous implementation was using OBSERVE_FREQUENCY but this is not defined in 2D
-        if (dim == 0) {
-            return block.optional(_OBSERVE_FREQUENCY, $SFO1, $BF1, $BFREQ, $SF)
-                    .map(JCampRecord::getDouble)
-                    .orElseThrow(() -> new IllegalStateException("Unknown frequency, .OBSERVE_FREQUENCY, $BF1, $BFREQ and $SF undefined!"));
-        } else if (dim == 1) {
-            return block.optional($BF2)
-                    .map(JCampRecord::getDouble)
-                    .orElseThrow(() -> new IllegalStateException("Unknown frequency, $BF2 undefined!"));
-        } else {
-            throw new UnsupportedOperationException("Unsupported dimension " + dim + " in JCamp");
-        }
+        Label[] labels = getSFLabels(dim);
+        return block.optional(labels)
+                .map(JCampRecord::getDouble)
+                .orElseThrow(() -> new IllegalStateException("Unknown frequency, no defined tag: " + Arrays.deepToString(labels)));
     }
 
     @Override
@@ -192,6 +183,28 @@ class JCAMPData implements NMRData {
     public void resetSF(int dim) {
         //TODO implement me?
         System.out.println("Called unimplemented method: resetSF: " + dim);
+    }
+
+    @Override
+    public String[] getSFNames() {
+        String[] names = new String[getNDim()];
+        Arrays.fill(names, "");
+        for (int dim = 0; dim < getNDim(); dim++) {
+            names[dim] = block.optional(getSFLabels(dim)).map(JCampRecord::getNormalizedLabel).orElse("");
+        }
+        return names;
+    }
+
+    private Label[] getSFLabels(int dim) {
+        //XXX Base freq, or observed freq? should we try to add offset?
+        //Previous implementation was using OBSERVE_FREQUENCY but this is not defined in 2D
+        if (dim == 0) {
+            return new Label[]{_OBSERVE_FREQUENCY, $SFO1, $BF1, $BFREQ, $SF};
+        } else if (dim == 1) {
+            return new Label[]{$SFO2, $BF2};
+        } else {
+            throw new UnsupportedOperationException("Unsupported dimension " + dim + " in JCamp");
+        }
     }
 
     @Override
@@ -211,6 +224,16 @@ class JCAMPData implements NMRData {
     public void resetSW(int dim) {
         //TODO implement me?
         System.out.println("Called unimplemented method: resetSW: " + dim);
+    }
+
+    @Override
+    public String[] getSWNames() {
+        //XXX check whether this is useful
+        // original JCAMPData returned an array of empty strings
+        String[] names = new String[getNDim()];
+        Arrays.fill(names, "");
+        names[0] = block.optional($SW_H).map(JCampRecord::getNormalizedLabel).orElse("");
+        return names;
     }
 
     @Override
@@ -257,16 +280,16 @@ class JCAMPData implements NMRData {
     @Override
     public boolean isComplex(int dim) {
         // For first dimension, check if the jcamp block contains imaginary pages
-        if(dim == 0) {
+        if (dim == 0) {
             return !block.getPagesForYSymbol("I").isEmpty();
         }
 
         // For other dimensions, infer it from FnMODE
         // TODO check if FnMODE is really defined on the second dimension
         int fnMode = block.optional($FN_MODE, dim).map(JCampRecord::getInt).orElse(-1);
-        if(fnMode == 2 || fnMode == 3)
+        if (fnMode == 2 || fnMode == 3)
             return false;
-        if(fnMode == 1)
+        if (fnMode == 1)
             return getValues(dim).isEmpty();
 
         return true;
@@ -279,9 +302,9 @@ class JCAMPData implements NMRData {
         // Bruker is using AQ_Mode and FnMode, which is what I chose to copy here.
         // Not whether it should be filled for FID as well.
 
-        if(dim == 0) {
+        if (dim == 0) {
             int aqMod = block.optional($AQ_MOD).map(JCampRecord::getInt).orElse(0);
-            if(aqMod == 2)
+            if (aqMod == 2)
                 return "rft";
         } else {
             // TODO check if FnMODE is really defined on the second dimension
@@ -300,7 +323,7 @@ class JCAMPData implements NMRData {
     public double[] getCoefs(int dim) {
         //XXX Was not implemented in original JCAMPData.
         //Inspired from BrukerData instead.
-        if(dim == 0) {
+        if (dim == 0) {
             return new double[0];
         }
 
@@ -322,7 +345,7 @@ class JCAMPData implements NMRData {
     public String getSymbolicCoefs(int dim) {
         //XXX Was not implemented in original JCAMPData.
         //Inspired from BrukerData instead.
-        if(dim == 0) {
+        if (dim == 0) {
             return null;
         }
 
@@ -392,9 +415,9 @@ class JCAMPData implements NMRData {
                 .map(JCampRecord::getInt)
                 .orElse(0);
 
-        if(wdw == 1) {
+        if (wdw == 1) {
             String lb = block.optional($LB, dim).map(JCampRecord::getString).orElse("n");
-            if(!lb.equalsIgnoreCase("n")) {
+            if (!lb.equalsIgnoreCase("n")) {
                 return Double.parseDouble(lb);
             }
         }
@@ -412,9 +435,9 @@ class JCAMPData implements NMRData {
         double end = 0;
 
         int wdw = block.optional($WDW, dim).map(JCampRecord::getInt).orElse(0);
-        if(wdw == 3 || wdw == 4) {
+        if (wdw == 3 || wdw == 4) {
             String ssbString = block.optional($SSB, dim).map(JCampRecord::getString).orElse("n");
-            if(!ssbString.equalsIgnoreCase("n")) {
+            if (!ssbString.equalsIgnoreCase("n")) {
                 power = (wdw == 4) ? 2 : 1;
                 sb = 1.0;
                 sbs = Double.parseDouble(ssbString);
@@ -433,12 +456,12 @@ class JCAMPData implements NMRData {
         double lb = 0;
 
         int wdw = block.optional($WDW, dim).map(JCampRecord::getInt).orElse(0);
-        if(wdw == 2) {
+        if (wdw == 2) {
             String gbString = block.optional($GB, dim).map(JCampRecord::getString).orElse("n");
-            if(!gbString.equalsIgnoreCase("n")) {
+            if (!gbString.equalsIgnoreCase("n")) {
                 gf = Double.parseDouble(gbString);
                 String lbString = block.optional($LB, dim).map(JCampRecord::getString).orElse("n");
-                if(!lbString.equalsIgnoreCase("n")) {
+                if (!lbString.equalsIgnoreCase("n")) {
                     lb = Double.parseDouble(lbString);
                 }
             }
@@ -457,27 +480,6 @@ class JCAMPData implements NMRData {
     public LPParams getLPParams(int dim) {
         // not implemented, return default object
         return new LPParams();
-    }
-
-    @Override
-    public String[] getSFNames() {
-        //XXX check whether this is useful
-        //RS2DData returns an array of empty strings
-        //Original JCAMPData returned OBSERVEFREQUENCY,dim => doesn't work for 2D files
-        String[] names = new String[getNDim()];
-        Arrays.fill(names, "");
-        names[0] = block.optional(_OBSERVE_FREQUENCY, $SFO1, $BF1, $BFREQ, $SF).map(JCampRecord::getNormalizedLabel).orElse("");
-        return names;
-    }
-
-    @Override
-    public String[] getSWNames() {
-        //XXX check whether this is useful
-        // original JCAMPData returned an array of empty strings
-        String[] names = new String[getNDim()];
-        Arrays.fill(names, "");
-        names[0] = block.optional($SW_H).map(JCampRecord::getNormalizedLabel).orElse("");
-        return names;
     }
 
     @Override
