@@ -61,6 +61,20 @@ class JCAMPData implements NMRData {
                 .orElseThrow(() -> new IOException("Invalid JCamp document, doesn't contain any block."));
     }
 
+    private List<JCampPage> getRealPages() {
+        List<JCampPage> realPages = block.getPagesForYSymbol("R");
+        if (!realPages.isEmpty()) {
+            return realPages;
+        }
+
+        // Files using XYDATA or Bruker 2D may define "Y" instead of "R" and "I".
+        return block.getPagesForYSymbol("Y");
+    }
+
+    private List<JCampPage> getImaginaryPages() {
+        return block.getPagesForYSymbol("I");
+    }
+
     @Override
     public void close() {
         // Nothing to close
@@ -294,7 +308,7 @@ class JCAMPData implements NMRData {
     public boolean isComplex(int dim) {
         // For first dimension, check if the jcamp block contains imaginary pages
         if (dim == 0) {
-            return !block.getPagesForYSymbol("I").isEmpty();
+            return !getImaginaryPages().isEmpty();
         }
 
         // For other dimensions, infer it from FnMODE
@@ -516,8 +530,8 @@ class JCAMPData implements NMRData {
 
     @Override
     public void readVector(int iVec, Vec dvec) {
-        List<JCampPage> realPages = block.getPagesForYSymbol("R");
-        List<JCampPage> imaginaryPages = block.getPagesForYSymbol("I");
+        List<JCampPage> realPages = getRealPages();
+        List<JCampPage> imaginaryPages = getImaginaryPages();
 
         // XXX 1D only for now - is 2D supposed to be here or in another readVector()?
         double[] rValues = realPages.get(0).toArray();
