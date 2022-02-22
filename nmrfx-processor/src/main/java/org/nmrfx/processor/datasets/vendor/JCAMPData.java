@@ -36,6 +36,14 @@ import static com.nanalysis.jcamp.model.Label.*;
 class JCAMPData implements NMRData {
     private static final List<String> MATCHING_EXTENSIONS = List.of(".jdx", ".dx");
 
+    private enum FnMode {
+        UNDEFINED, QF, QSEQ, TPPI, STATES, STATES_TPPI, ECHO_ANTIECHO, QF_NO_FREQ
+    }
+
+    private enum Wdw {
+        NO, EM, GM, SINE, QSINE, TRAP, USER, SINC, QSINC, TRAF, TRAFS
+    }
+
     private final String path;
     private final JCampDocument document;
     private final JCampBlock block;
@@ -312,11 +320,10 @@ class JCAMPData implements NMRData {
         }
 
         // For other dimensions, infer it from FnMODE
-        // TODO check if FnMODE is really defined on the second dimension
-        int fnMode = block.optional($FN_MODE, dim).map(JCampRecord::getInt).orElse(-1);
-        if (fnMode == 2 || fnMode == 3)
+        FnMode fnMode = getFnMode(dim);
+        if (fnMode == FnMode.QSEQ || fnMode == FnMode.TPPI)
             return false;
-        if (fnMode == 1)
+        if (fnMode == FnMode.QF)
             return getValues(dim).isEmpty();
 
         return true;
@@ -326,7 +333,7 @@ class JCAMPData implements NMRData {
     public String getFTType(int dim) {
         // known values: ft, rft (real), negate (hypercomplex)
         //XXX original JCamp has "ft" hardcoded.
-        // Bruker is using AQ_Mode and FnMode, which is what I chose to copy here.
+        // Bruker is using AQ_Mod and FnMode, which is what I chose to copy here.
         // Not whether it should be filled for FID as well.
 
         if (dim == 0) {
@@ -334,11 +341,10 @@ class JCAMPData implements NMRData {
             if (aqMod == 2)
                 return "rft";
         } else {
-            // TODO check if FnMODE is really defined on the second dimension
-            int fnMode = block.optional($FN_MODE, dim).map(JCampRecord::getInt).orElse(-1);
-            if (fnMode == 2 || fnMode == 3) {
+            FnMode fnMode = getFnMode(dim);
+            if (fnMode == FnMode.QSEQ || fnMode == FnMode.TPPI) {
                 return "rft";
-            } else if (fnMode == 0 || fnMode == 5) {
+            } else if (fnMode == FnMode.UNDEFINED || fnMode == FnMode.STATES_TPPI) {
                 return "negate";
             }
         }
@@ -354,15 +360,14 @@ class JCAMPData implements NMRData {
             return new double[0];
         }
 
-        // TODO check if FnMODE is really defined on the second dimension
-        int fnMode = block.optional($FN_MODE, dim).map(JCampRecord::getInt).orElse(-1);
-        if (fnMode == -1 || fnMode == 1 || fnMode == 2 || fnMode == 3) {
+        FnMode fnMode = getFnMode(dim);
+        if (fnMode == null || fnMode == FnMode.QF || fnMode == FnMode.QSEQ || fnMode == FnMode.TPPI) {
             return new double[0];
-        } else if (fnMode == 4) {
+        } else if (fnMode == FnMode.STATES) {
             return new double[]{1, 0, 0, 0, 0, 0, 1, 0};
-        } else if (fnMode == 0 || fnMode == 5) {
+        } else if (fnMode == FnMode.UNDEFINED || fnMode == FnMode.STATES_TPPI) {
             return new double[]{1, 0, 0, 0, 0, 0, 1, 0};
-        } else if (fnMode == 6) {
+        } else if (fnMode == FnMode.ECHO_ANTIECHO) {
             return new double[]{1, 0, -1, 0, 0, 1, 0, 1};
         }
         return new double[]{1, 0, 0, 1};
@@ -376,17 +381,16 @@ class JCAMPData implements NMRData {
             return null;
         }
 
-        // TODO check if FnMODE is really defined on the second dimension
-        int fnMode = block.optional($FN_MODE, dim).map(JCampRecord::getInt).orElse(-1);
-        if (fnMode == -1) {
+        FnMode fnMode = getFnMode(dim);
+        if (fnMode == null) {
             return null;
-        } else if (fnMode == 2 || fnMode == 3) {
+        } else if (fnMode == FnMode.QSEQ || fnMode == FnMode.TPPI) {
             return "real";
-        } else if (fnMode == 4) {
+        } else if (fnMode == FnMode.STATES) {
             return "hyper-r";
-        } else if (fnMode == 0 || fnMode == 5) {
+        } else if (fnMode == FnMode.UNDEFINED || fnMode == FnMode.STATES_TPPI) {
             return "hyper";
-        } else if (fnMode == 6) {
+        } else if (fnMode == FnMode.ECHO_ANTIECHO) {
             return "echo-antiecho-r";
         }
         return "sep";
@@ -438,18 +442,15 @@ class JCAMPData implements NMRData {
 
     @Override
     public double getExpd(int dim) {
-        int wdw = block.optional($WDW, dim)
-                .map(JCampRecord::getInt)
-                .orElse(0);
-
-        if (wdw == 1) {
+        Wdw wdw = getWdw(dim);
+        if (wdw == Wdw.EM) {
             String lb = block.optional($LB, dim).map(JCampRecord::getString).orElse("n");
             if (!lb.equalsIgnoreCase("n")) {
                 return Double.parseDouble(lb);
             }
         }
 
-        return wdw;
+        return wdw.ordinal(); // XXX does it make sense to return the index of a combobox from topspin?
     }
 
     @Override
@@ -461,11 +462,11 @@ class JCAMPData implements NMRData {
         double offset = 0;
         double end = 0;
 
-        int wdw = block.optional($WDW, dim).map(JCampRecord::getInt).orElse(0);
-        if (wdw == 3 || wdw == 4) {
+        Wdw wdw = getWdw(dim);
+        if (wdw == Wdw.SINE || wdw == Wdw.QSINE) {
             String ssbString = block.optional($SSB, dim).map(JCampRecord::getString).orElse("n");
             if (!ssbString.equalsIgnoreCase("n")) {
-                power = (wdw == 4) ? 2 : 1;
+                power = (wdw == Wdw.QSINE) ? 2 : 1;
                 sb = 1.0;
                 sbs = Double.parseDouble(ssbString);
                 offset = (sbs >= 2) ? 1 / sbs : 0;
@@ -482,8 +483,8 @@ class JCAMPData implements NMRData {
         double gfs = 0;
         double lb = 0;
 
-        int wdw = block.optional($WDW, dim).map(JCampRecord::getInt).orElse(0);
-        if (wdw == 2) {
+        Wdw wdw = getWdw(dim);
+        if (wdw == Wdw.GM) {
             String gbString = block.optional($GB, dim).map(JCampRecord::getString).orElse("n");
             if (!gbString.equalsIgnoreCase("n")) {
                 gf = Double.parseDouble(gbString);
@@ -718,6 +719,22 @@ class JCAMPData implements NMRData {
     @Override
     public String toString() {
         return getFilePath();
+    }
+
+    private FnMode getFnMode(int dim) {
+        int value = block.optional($FN_MODE, dim).map(JCampRecord::getInt).orElse(-1);
+        if(value < 0 || value >= FnMode.values().length)
+            return null; // XXX should really be "no FnMode defined" be different from FnMode == "0/undefined"?
+
+        return FnMode.values()[value];
+    }
+
+    private Wdw getWdw(int dim) {
+        int value = block.optional($WDW, dim).map(JCampRecord::getInt).orElse(0);
+        if(value < 0 || value >= Wdw.values().length)
+            return Wdw.NO;
+
+        return Wdw.values()[value];
     }
 
     /**
