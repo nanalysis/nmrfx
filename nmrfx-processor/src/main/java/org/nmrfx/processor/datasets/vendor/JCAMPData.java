@@ -449,7 +449,7 @@ class JCAMPData implements NMRData {
             }
         }
 
-        return wdw.ordinal(); // XXX does it make sense to return the index of a combobox from topspin?
+        return 0;
     }
 
     @Override
