@@ -442,12 +442,21 @@ public class FXMLController implements  Initializable, PeakNavigable {
                     String datasetName = GUIUtils.input("Dataset name", suggestedName);
                     Dataset dataset = brukerData.toDataset(datasetName);
                     addDataset(dataset, append, false);
+                } else if (nmrData instanceof JCAMPData) {
+                    PreferencesController.saveRecentDatasets(selectedFile.toString());
+                    JCAMPData jcampData = (JCAMPData) nmrData;
+                    String suggestedName = new File(jcampData.getFilePath()).getName();
+                    String datasetName = GUIUtils.input("Dataset name", suggestedName);
+                    Dataset dataset = jcampData.toDataset(datasetName);
+                    addDataset(dataset, append, false);
                 } else if (nmrData instanceof RS2DData) {
                     PreferencesController.saveRecentDatasets(selectedFile.toString());
                     RS2DData rs2dData = (RS2DData) nmrData;
                     String suggestedName = rs2dData.suggestName(new File(rs2dData.getFilePath()));
                     Dataset dataset = rs2dData.toDataset(suggestedName);
                     addDataset(dataset, append, false);
+                } else {
+                    throw new IOException("Dataset type not implemented: " + nmrData.getClass().getSimpleName());
                 }
             } catch (IOException ex) {
                 GUIUtils.warn("Open Dataset", ex.getMessage());

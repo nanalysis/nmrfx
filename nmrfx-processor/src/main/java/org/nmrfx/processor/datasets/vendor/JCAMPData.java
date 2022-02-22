@@ -21,6 +21,8 @@ import com.nanalysis.jcamp.model.*;
 import com.nanalysis.jcamp.parser.JCampParser;
 import com.nanalysis.jcamp.util.JCampUtil;
 import org.apache.commons.math3.complex.Complex;
+import org.nmrfx.datasets.DatasetLayout;
+import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.DatasetType;
 import org.nmrfx.processor.datasets.parameters.*;
 import org.nmrfx.processor.math.Vec;
@@ -28,12 +30,14 @@ import org.nmrfx.processor.processing.SampleSchedule;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.ByteOrder;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 
 import static com.nanalysis.jcamp.model.Label.*;
 
-//TODO loading benchtop .jdx files doesn't work yet
-class JCAMPData implements NMRData {
+public class JCAMPData implements NMRData {
     private static final List<String> MATCHING_EXTENSIONS = List.of(".jdx", ".dx");
 
     private final String path;
@@ -720,26 +724,58 @@ class JCAMPData implements NMRData {
         return getFilePath();
     }
 
+    //XXX Heavily inspired from RS2DData.
+    // We should have a common way to transfer a NMRData to a Dataset instead of duplicating
+    //XXX This only seems to create the header, where is the data block copied? I couldn't find it for RS2DData either.
+    public Dataset toDataset(String datasetName) throws IOException {
+        Path path = Path.of(getFilePath());
+
+        int nDim = getNDim();
+        DatasetLayout layout = new DatasetLayout(nDim);
+        for (int i = 0; i < nDim; i++) {
+            if (i == 0) {
+                int factor = isComplex(i) ? 2 : 1;
+                layout.setSize(i, factor * getSize(i));
+                layout.setBlockSize(i, factor * getSize(i));
+            } else {
+                layout.setSize(i, getSize(i));
+                layout.setBlockSize(i, 1);
+            }
+        }
+        layout.dimDataset();
+        if (datasetName == null) {
+            datasetName = path.toFile().getName();
+        }
+
+        Dataset dataset = new Dataset(path.toString(), datasetName, layout,
+                false, ByteOrder.BIG_ENDIAN, 0);
+        dataset.newHeader();
+        for (int i = 0; i < nDim; i++) {
+            dataset.setComplex(i, isComplex(i));
+            dataset.setSf(i, getSF(i));
+            dataset.setSw(i, getSW(i));
+            dataset.setRefValue(i, getRef(i));
+            dataset.setRefPt(i, getRefPoint(i));
+            dataset.setFreqDomain(i, true);
+            dataset.setNucleus(i, getTN(i));
+            dataset.setLabel(i, getLabelNames()[i]);
+            dataset.syncPars(i);
+        }
+        if (nDim > 1) {
+            dataset.setAxisReversed(1, true);
+        }
+
+        return dataset;
+    }
+
     /**
-     * Check whether the path contains a JCamp FID file
+     * Check whether the path contains a JCamp file
      *
      * @param bpath the path to check
      * @return true if the path correspond to a JCamp FID file.
      */
-    public static boolean findFID(StringBuilder bpath) {
+    public static boolean isJCampFile(StringBuilder bpath) {
         String lower = bpath.toString().toLowerCase();
         return MATCHING_EXTENSIONS.stream().anyMatch(lower::endsWith);
-    }
-
-
-    /**
-     * Check whether the path contains a JCamp dataset file
-     *
-     * @param bpath the path to check
-     * @return true if the path correspond to a JCamp dataset file.
-     */
-    public static boolean findData(StringBuilder bpath) {
-        // FID and Dataset have the same extensions
-        return findFID(bpath);
     }
 }

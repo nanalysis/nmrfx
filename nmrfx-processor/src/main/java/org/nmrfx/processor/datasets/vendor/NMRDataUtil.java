@@ -17,28 +17,21 @@
  */
 package org.nmrfx.processor.datasets.vendor;
 
+import org.nmrfx.processor.math.Vec;
+import org.nmrfx.processor.operations.Expd;
+import org.nmrfx.utilities.RemoteDataset;
+
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.FileVisitResult;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.SimpleFileVisitor;
+import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
-import java.util.Base64;
+import java.util.*;
 import java.util.Base64.Encoder;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.nmrfx.processor.math.Vec;
-import org.nmrfx.processor.operations.Expd;
-import org.nmrfx.utilities.RemoteDataset;
 
 /**
  * Utility helper class for NMRData interface.
@@ -102,7 +95,7 @@ public final class NMRDataUtil {
                 return new BrukerData(bpath.toString(), nusFile);
             } else if (VarianData.findFID(bpath)) {
                 return new VarianData(bpath.toString());
-            } else if (JCAMPData.findFID(bpath)) {
+            } else if (JCAMPData.isJCampFile(bpath)) {
                 return new JCAMPData(bpath.toString());
             } else if (NMRPipeData.findFID(bpath)) {
                 return new NMRPipeData(bpath.toString(), nusFile);
@@ -133,22 +126,18 @@ public final class NMRDataUtil {
      */
     public static NMRData getNMRData(String fpath) throws IOException {
         StringBuilder bpath = new StringBuilder(fpath);
-        try {
-            if (NMRViewData.findFID(bpath)) {
-                return new NMRViewData(bpath.toString());
-            } else if (RS2DData.findFID(bpath)) {
-                return new RS2DData(bpath.toString(), null, true);
-            } else if (BrukerData.findData(bpath)) {
-                return new BrukerData(bpath.toString());
-            } else if (VarianData.findFID(bpath)) {
-                return new VarianData(bpath.toString());
-            } else if (JCAMPData.findData(bpath)) {
-                return new JCAMPData(bpath.toString());
-            } else {
-                throw new IOException("Dataset not found: " + fpath);
-            }
-        } catch (NullPointerException nullE) {
-            return null;
+        if (NMRViewData.findFID(bpath)) {
+            return new NMRViewData(bpath.toString());
+        } else if (RS2DData.findFID(bpath)) {
+            return new RS2DData(bpath.toString(), null, true);
+        } else if (BrukerData.findData(bpath)) {
+            return new BrukerData(bpath.toString());
+        } else if (VarianData.findFID(bpath)) {
+            return new VarianData(bpath.toString());
+        } else if (JCAMPData.isJCampFile(bpath)) {
+            return new JCAMPData(bpath.toString());
+        } else {
+            throw new IOException("Dataset not found: " + fpath);
         }
     } // end getFID
 
@@ -166,7 +155,7 @@ public final class NMRDataUtil {
             return bpath.toString();
         } else if (VarianData.findFID(bpath)) {
             return bpath.toString();
-        } else if (JCAMPData.findFID(bpath)) {
+        } else if (JCAMPData.isJCampFile(bpath)) {
             return bpath.toString();
         } else {
             return null;
