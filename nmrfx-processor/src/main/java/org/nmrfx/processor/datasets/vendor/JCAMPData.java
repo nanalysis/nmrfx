@@ -29,10 +29,10 @@ import org.nmrfx.processor.processing.SampleSchedule;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
+import java.util.stream.Stream;
 
 import static com.nanalysis.jcamp.model.Label.*;
 
-//TODO loading benchtop .jdx files doesn't work yet
 class JCAMPData implements NMRData {
     private static final List<String> MATCHING_EXTENSIONS = List.of(".jdx", ".dx");
 
@@ -47,10 +47,12 @@ class JCAMPData implements NMRData {
     private final String path;
     private final JCampDocument document;
     private final JCampBlock block;
-    private String[] acqOrder;
+    private final List<JCampPage> realPages;
+    private final List<JCampPage> imaginaryPages;
 
     private DatasetType preferredDatasetType = DatasetType.NMRFX;
     private SampleSchedule sampleSchedule = null;
+    private String[] acqOrder;
 
     // these values can be overridden from the outside, we need to cache them so that we can
     // either read them from jcamp or take the user-defined value
@@ -67,9 +69,11 @@ class JCAMPData implements NMRData {
         }
         this.block = document.blocks().findFirst()
                 .orElseThrow(() -> new IOException("Invalid JCamp document, doesn't contain any block."));
+        this.realPages = extractRealPages();
+        this.imaginaryPages = extractImaginaryPages();
     }
 
-    private List<JCampPage> getRealPages() {
+    private List<JCampPage> extractRealPages() {
         List<JCampPage> realPages = block.getPagesForYSymbol("R");
         if (!realPages.isEmpty()) {
             return realPages;
@@ -79,7 +83,7 @@ class JCAMPData implements NMRData {
         return block.getPagesForYSymbol("Y");
     }
 
-    private List<JCampPage> getImaginaryPages() {
+    private List<JCampPage> extractImaginaryPages() {
         return block.getPagesForYSymbol("I");
     }
 
@@ -200,10 +204,8 @@ class JCAMPData implements NMRData {
     }
 
     private double extractSF(int dim) {
-        Label[] labels = getSFLabels(dim);
-        return block.optional(labels)
-                .map(JCampRecord::getDouble)
-                .orElseThrow(() -> new IllegalStateException("Unknown frequency, no defined tag: " + Arrays.deepToString(labels)));
+        Label label = getSFLabel(dim).orElseThrow(()-> new IllegalStateException("Unknown frequency, unable to extract SF for dimension " + dim));
+        return block.get(label, dim).getDouble();
     }
 
     @Override
@@ -221,21 +223,17 @@ class JCAMPData implements NMRData {
         String[] names = new String[getNDim()];
         Arrays.fill(names, "");
         for (int dim = 0; dim < getNDim(); dim++) {
-            names[dim] = block.optional(getSFLabels(dim)).map(JCampRecord::getNormalizedLabel).orElse("");
+            names[dim] = getSFLabel(dim).map(Label::normalized).orElse("");
         }
         return names;
     }
 
-    private Label[] getSFLabels(int dim) {
+    private Optional<Label> getSFLabel(int dim) {
         //XXX Base freq, or observed freq? should we try to add offset?
         //Previous implementation was using OBSERVE_FREQUENCY but this is not defined in 2D
-        if (dim == 0) {
-            return new Label[]{_OBSERVE_FREQUENCY, $SFO1, $BF1, $BFREQ, $SF};
-        } else if (dim == 1) {
-            return new Label[]{$SFO2, $BF2};
-        } else {
-            throw new UnsupportedOperationException("Unsupported dimension " + dim + " in JCamp");
-        }
+        return Stream.of(_OBSERVE_FREQUENCY, $SFO1, $BF1, $BFREQ, $SF)
+                .filter(label -> block.optional(label, dim).isPresent())
+                .findFirst();
     }
 
     @Override
@@ -292,6 +290,7 @@ class JCAMPData implements NMRData {
 
     @Override
     public double getRefPoint(int dim) {
+        // reference defined by getRef() is for the center of spectra
         return getSize(dim) / 2.0;
     }
 
@@ -316,7 +315,7 @@ class JCAMPData implements NMRData {
     public boolean isComplex(int dim) {
         // For first dimension, check if the jcamp block contains imaginary pages
         if (dim == 0) {
-            return !getImaginaryPages().isEmpty();
+            return !imaginaryPages.isEmpty();
         }
 
         // For other dimensions, infer it from FnMODE
@@ -530,13 +529,8 @@ class JCAMPData implements NMRData {
     }
 
     @Override
-    public void readVector(int iVec, Vec dvec) {
-        List<JCampPage> realPages = getRealPages();
-        List<JCampPage> imaginaryPages = getImaginaryPages();
-
-        // XXX 1D only for now - is 2D supposed to be here or in another readVector()?
-        double[] rValues = realPages.get(0).toArray();
-
+    public void readVector(int index, Vec dvec) {
+        double[] rValues = realPages.get(index).toArray();
         int n = rValues.length;
 
         if (imaginaryPages.isEmpty()) {
@@ -546,7 +540,7 @@ class JCAMPData implements NMRData {
                 dvec.setTDSize(n);
             }
         } else {
-            double[] iValues = imaginaryPages.get(0).toArray();
+            double[] iValues = imaginaryPages.get(index).toArray();
             dvec.resize(n, true);
             dvec.setTDSize(n);
             for (int i = 0; i < n; i++) {
