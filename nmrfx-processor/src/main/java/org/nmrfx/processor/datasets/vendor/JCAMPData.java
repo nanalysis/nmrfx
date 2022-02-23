@@ -1,7 +1,6 @@
 /*
-/*
  * NMRFx Processor : A Program for Processing NMR Data
- * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
+ * Copyright (C) 2004-2022 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -36,6 +35,7 @@ import static com.nanalysis.jcamp.model.Label.*;
 
 class JCAMPData implements NMRData {
     private static final List<String> MATCHING_EXTENSIONS = List.of(".jdx", ".dx");
+    private static final double AMBIENT_TEMPERATURE = 298.0; // in K, around 25° C
 
     private enum FnMode {
         UNDEFINED, QF, QSEQ, TPPI, STATES, STATES_TPPI, ECHO_ANTIECHO, QF_NO_FREQ
@@ -185,7 +185,7 @@ class JCAMPData implements NMRData {
     public double getTempK() {
         return block.optional(TEMPERATURE, $TE)
                 .map(r -> r.getDouble() > 150 ? r.getDouble() : 273.15 + r.getDouble())
-                .orElse(298.0); //XXX default value was already a question in original JCAMP data
+                .orElse(AMBIENT_TEMPERATURE);
     }
 
     @Override
@@ -225,9 +225,7 @@ class JCAMPData implements NMRData {
     }
 
     private Optional<Label> getSFLabel(int dim) {
-        //XXX Base freq, or observed freq? should we try to add offset?
-        //Previous implementation was using OBSERVE_FREQUENCY but this is not defined in 2D
-        return Stream.of(_OBSERVE_FREQUENCY, $SFO1, $BF1, $BFREQ, $SF)
+        return Stream.of(_OBSERVE_FREQUENCY, $SFO1)
                 .filter(label -> block.optional(label, dim).isPresent())
                 .findFirst();
     }
@@ -255,8 +253,6 @@ class JCAMPData implements NMRData {
 
     @Override
     public String[] getSWNames() {
-        //XXX check whether this is useful
-        // original JCAMPData returned an array of empty strings
         String[] names = new String[getNDim()];
         Arrays.fill(names, "");
         names[0] = block.optional($SW_H).map(JCampRecord::getNormalizedLabel).orElse("");
@@ -309,7 +305,7 @@ class JCAMPData implements NMRData {
 
     @Override
     public boolean isComplex(int dim) {
-        // For first dimension, check if the jcamp block contains imaginary pages
+        // For first dimension, check if the JCamp block contains imaginary pages
         if (dim == 0) {
             return !imaginaryPages.isEmpty();
         }
@@ -326,10 +322,7 @@ class JCAMPData implements NMRData {
 
     @Override
     public String getFTType(int dim) {
-        // known values: ft, rft (real), negate (hypercomplex)
-        //XXX original JCamp has "ft" hardcoded.
-        // Bruker is using AQ_Mod and FnMode, which is what I chose to copy here.
-        // Not whether it should be filled for FID as well.
+        // known values: "ft", "rft" (real), "negate" (hypercomplex)
 
         if (dim == 0) {
             int aqMod = block.optional($AQ_MOD).map(JCampRecord::getInt).orElse(0);
@@ -349,8 +342,6 @@ class JCAMPData implements NMRData {
 
     @Override
     public double[] getCoefs(int dim) {
-        //XXX Was not implemented in original JCAMPData.
-        //Inspired from BrukerData instead.
         if (dim == 0) {
             return new double[0];
         }
@@ -370,8 +361,6 @@ class JCAMPData implements NMRData {
 
     @Override
     public String getSymbolicCoefs(int dim) {
-        //XXX Was not implemented in original JCAMPData.
-        //Inspired from BrukerData instead.
         if (dim == 0) {
             return null;
         }
@@ -686,14 +675,12 @@ class JCAMPData implements NMRData {
 
     @Override
     public boolean getNegatePairs(int dim) {
-        //XXX doesn't seem to be called. Is this useful?
         return "negate".equals(getFTType(dim));
     }
 
     @Override
     public boolean getNegateImag(int dim) {
-        //XXX doesn't seem to be called. Is this useful?
-        return dim > 0;
+        return dim > 0 && "sep".equals(getSymbolicCoefs(dim));
     }
 
     @Override
