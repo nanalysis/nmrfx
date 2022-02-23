@@ -1,4 +1,5 @@
 /*
+/*
  * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
@@ -55,10 +56,11 @@ class JCAMPData implements NMRData {
     private String[] acqOrder;
 
     // these values can be overridden from the outside, we need to cache them so that we can
-    // either read them from jcamp or take the user-defined value
+    // either read them from JCamp or take the user-defined value
     private final Map<Integer, Double> sf = new HashMap<>();
     private final Map<Integer, Double> sw = new HashMap<>();
     private final Map<Integer, Double> ref = new HashMap<>();
+    private final Map<Integer, Integer> size = new HashMap<>();
 
     public JCAMPData(String path) throws IOException {
         this.path = path;
@@ -136,25 +138,15 @@ class JCAMPData implements NMRData {
 
     @Override
     public int getNVectors() {
-        //XXX To confirm, looks like it is number of 1D rows in total
-        // so 1 if 1D data, and number of 2D if 2D data.
-        // no more than 2D data are supported in JCamp
-
-        //XXX should we try to get it from page content instead?
-        return block.optional($TD, 1)
-                .map(r -> r.getInt() / 2)
-                .orElse(1);
+        return realPages.size();
     }
 
     @Override
     public int getNPoints() {
-        // XXX original JCAMPData always returned 0 (np / 2, with np never initialized). Isn't it a bug?
+        if (realPages.isEmpty())
+            return 0;
 
-        // XXX always /2, or only if complex data?
-        // XXX should we try to get it from page content instead?
-        return block.optional($TD, 0)
-                .map(r -> r.getInt() / 2)
-                .orElse(0);
+        return realPages.get(0).toArray().length;
     }
 
     @Override
@@ -164,18 +156,22 @@ class JCAMPData implements NMRData {
 
     @Override
     public int getSize(int dim) {
-        // XXX should we try to get it from page content instead?
-        // Shouldn't the "/2" be only for complex data?
-        return block.optional($TD, dim)
-                .map(r -> r.getInt() / 2)
-                .orElse(0);
+        return size.computeIfAbsent(dim, this::extractSize);
+    }
+
+    private int extractSize(int dim) {
+        if (dim == 0) {
+            return getNPoints();
+        } else if (dim == 1) {
+            return getNVectors();
+        } else {
+            return 1;
+        }
     }
 
     @Override
-    public void setSize(int dim, int size) {
-        //TODO implement me?
-        // Don't see how we would need this as we are accessing the size directly
-        System.out.println("Called unimplemented method: setSize: " + dim + ", " + size);
+    public void setSize(int dim, int value) {
+        size.put(dim, value);
     }
 
     @Override
@@ -204,7 +200,7 @@ class JCAMPData implements NMRData {
     }
 
     private double extractSF(int dim) {
-        Label label = getSFLabel(dim).orElseThrow(()-> new IllegalStateException("Unknown frequency, unable to extract SF for dimension " + dim));
+        Label label = getSFLabel(dim).orElseThrow(() -> new IllegalStateException("Unknown frequency, unable to extract SF for dimension " + dim));
         return block.get(label, dim).getDouble();
     }
 
@@ -254,7 +250,7 @@ class JCAMPData implements NMRData {
 
     @Override
     public void resetSW(int dim) {
-       sw.remove(dim);
+        sw.remove(dim);
     }
 
     @Override
@@ -285,7 +281,7 @@ class JCAMPData implements NMRData {
 
     @Override
     public void resetRef(int dim) {
-       ref.remove(dim);
+        ref.remove(dim);
     }
 
     @Override
@@ -717,7 +713,7 @@ class JCAMPData implements NMRData {
 
     private FnMode getFnMode(int dim) {
         int value = block.optional($FN_MODE, dim).map(JCampRecord::getInt).orElse(-1);
-        if(value < 0 || value >= FnMode.values().length)
+        if (value < 0 || value >= FnMode.values().length)
             return null; // XXX should really be "no FnMode defined" be different from FnMode == "0/undefined"?
 
         return FnMode.values()[value];
@@ -725,7 +721,7 @@ class JCAMPData implements NMRData {
 
     private Wdw getWdw(int dim) {
         int value = block.optional($WDW, dim).map(JCampRecord::getInt).orElse(0);
-        if(value < 0 || value >= Wdw.values().length)
+        if (value < 0 || value >= Wdw.values().length)
             return Wdw.NO;
 
         return Wdw.values()[value];
