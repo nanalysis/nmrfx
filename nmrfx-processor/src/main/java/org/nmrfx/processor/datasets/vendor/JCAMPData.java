@@ -52,7 +52,7 @@ class JCAMPData implements NMRData {
     private final List<JCampPage> imaginaryPages;
 
     private DatasetType preferredDatasetType = DatasetType.NMRFX;
-    private SampleSchedule sampleSchedule = null;
+    private SampleSchedule sampleSchedule = null; // used for NUS acquisition - not supported by JCamp directly
     private String[] acqOrder;
 
     // these values can be overridden from the outside, we need to cache them so that we can
@@ -315,11 +315,12 @@ class JCAMPData implements NMRData {
 
         // For other dimensions, infer it from FnMODE
         FnMode fnMode = getFnMode(dim);
-        if (fnMode == FnMode.QSEQ || fnMode == FnMode.TPPI)
+        if (fnMode == null || fnMode == FnMode.QSEQ || fnMode == FnMode.TPPI)
             return false;
         if (fnMode == FnMode.QF)
             return getValues(dim).isEmpty();
 
+        //XXX logic taken from BrukerData but I have doubts: should UNDEFINED really be considered as complex?
         return true;
     }
 
