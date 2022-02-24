@@ -163,7 +163,10 @@ class JCAMPData implements NMRData {
         if (dim == 0) {
             return getNPoints();
         } else if (dim == 1) {
-            return getNVectors();
+            // size is expressed in number of complex pairs
+            // so if the dimension is complex, we should divide per two
+            int factor = isComplex(dim) ? 2 : 1;
+            return getNVectors() / factor;
         } else {
             return 1;
         }
