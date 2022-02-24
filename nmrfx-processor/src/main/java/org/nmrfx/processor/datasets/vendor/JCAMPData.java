@@ -568,9 +568,9 @@ class JCAMPData implements NMRData {
 
         if (imaginaryPages.isEmpty()) {
             dvec.resize(n, false);
+            dvec.setTDSize(n);
             for (int i = 0; i < n; i++) {
                 dvec.set(i, rValues[i]);
-                dvec.setTDSize(n);
             }
         } else {
             double[] iValues = imaginaryPages.get(index).toArray();
@@ -610,9 +610,53 @@ class JCAMPData implements NMRData {
     }
 
     @Override
-    public void readVector(int iDim, int iVec, Vec dvec) {
-        //TODO implement me? needed?
-        throw new UnsupportedOperationException("Not yet implemented: readVector(int iDim, int iVec, Vec dvec)");
+    public void readVector(int dim, int index, Vec dvec) {
+        if(dim == 0) {
+            readVector(index, dvec);
+        } else if(dim == 1) {
+            readIndirectVector(index, dvec);
+        }  else {
+            throw new UnsupportedOperationException("Unsupported dimension " + dim + " in JCamp");
+        }
+    }
+
+    public void readIndirectVector(int index, Vec dvec) {
+        //NOTE: To provoke this call, open a 2D FID, then select "D2" in the combobox near "Scripts"
+        //XXX implemented by iterating over all data - will be slow. We may need to cache pages as arrays.
+
+        // XXX RS2D + Bruker use groupdelay, but without checking for dimension. This is a bug if we pass dim != 1.
+        // Here we can't use it because we're using nb vectors as size, so if we skip some we will end up with out of bounds errors
+        int n = getSize(1);
+
+        if (!isComplex(1)) {
+            dvec.resize(n, false);
+            dvec.setTDSize(n);
+            for (int i = 0; i < n; i++) {
+                double rValue = realPages.get(i).toArray()[index];
+                dvec.set(i, rValue);
+            }
+        } else {
+            dvec.resize(n, true);
+            dvec.setTDSize(n);
+            // real and imaginary are interlaced
+            for (int i = 0; i < n*2; i+=2) {
+                double rValue = realPages.get(i).toArray()[index];
+                double iValue = realPages.get(i+1).toArray()[index];
+                dvec.set(i/2, rValue, iValue);
+            }
+        }
+
+        dvec.setGroupDelay(0);
+
+        dvec.dwellTime = 1.0 / getSW(1);
+        dvec.centerFreq = getSF(1);
+
+        double delRef = ((1.0 / dvec.dwellTime) / dvec.centerFreq) / 2.0;
+        dvec.refValue = getRef(1) + delRef;
+
+        // XXX why isn' this also done for direct vectors? this is commented out in BrukerData
+        dvec.setPh0(getPH0(1));
+        dvec.setPh1(getPH1(1));
     }
 
     @Override
