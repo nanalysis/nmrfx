@@ -91,7 +91,7 @@ class JCAMPData implements NMRData {
     private double[][] toMatrix(List<JCampPage> pages) {
         int height = pages.size();
         double[][] matrix = new double[height][];
-        for(int i=0;i<height;i++) {
+        for (int i = 0; i < height; i++) {
             matrix[i] = pages.get(i).toArray();
         }
         return matrix;
@@ -111,9 +111,9 @@ class JCAMPData implements NMRData {
         // parse dimension from record name for multi-dimensional records
         var items = name.split(":");
         int index = 0;
-        if(items.length == 2) {
+        if (items.length == 2) {
             name = items[0];
-            index = Integer.parseInt(items[1]) -1;
+            index = Integer.parseInt(items[1]) - 1;
         }
 
         // try block-level records first
@@ -151,8 +151,8 @@ class JCAMPData implements NMRData {
                 // when a record is present several times (for multidimensional records for example), provide a way to differentiate them
                 List<JCampRecord> records = block.list(key);
                 vendorPars.add(new VendorPar(key, records.get(0).getString()));
-                for(int i = 1; i< records.size(); i++) {
-                    vendorPars.add(new VendorPar(key + ":" + (i+1), records.get(i).getString()));
+                for (int i = 1; i < records.size(); i++) {
+                    vendorPars.add(new VendorPar(key + ":" + (i + 1), records.get(i).getString()));
                 }
             }
         }
@@ -347,9 +347,8 @@ class JCAMPData implements NMRData {
                     .map(JCampUtil::toNucleusName)
                     .orElse(NMRDataUtil.guessNucleusFromFreq(getSF(dim)).toString());
         } else if (dim == 1) {
-            // NUC_2 isn't always defined (for homo-nuclear 2D for example)
-            return block.optional($NUC_2) // XXX benchtop also defines $T1_NUCLEUS
-                    .or(() -> block.optional($NUC_1, dim))
+            return block.optional($NUC_2, $T1_NUCLEUS)
+                    .or(() -> block.optional($NUC_1, dim)) // NUC_2 isn't always defined (for homo-nuclear 2D for example)
                     .map(JCampRecord::getString)
                     .map(JCampUtil::toNucleusName)
                     .orElse(NMRDataUtil.guessNucleusFromFreq(getSF(dim)).toString());
@@ -372,7 +371,6 @@ class JCAMPData implements NMRData {
         if (fnMode == FnMode.QF)
             return getValues(dim).isEmpty();
 
-        //XXX logic taken from BrukerData but I have doubts: should UNDEFINED really be considered as complex?
         return true;
     }
 
@@ -453,7 +451,7 @@ class JCAMPData implements NMRData {
                 .orElse(0.0);
 
         if (dim == 0) {
-            ph0 -= 90; //XXX from original JCAMPData, but I don't know why
+            ph0 -= 90; // empirical
         }
 
         // phase is reversed between JCamp and NMRfx
@@ -601,55 +599,51 @@ class JCAMPData implements NMRData {
 
     @Override
     public void readVector(int iVec, Complex[] cdata) {
-        //TODO implement me? needed?
-        throw new UnsupportedOperationException("Not yet implemented: readVector(int iVec, Complex[] cdata)");
+        // should not be called, internal implementation detail
+        throw new UnsupportedOperationException("Not implemented: readVector(int iVec, Complex[] cdata)");
     }
 
     @Override
     public void readVector(int iVec, double[] rdata, double[] idata) {
-        //TODO implement me? needed?
-        throw new UnsupportedOperationException("Not yet implemented: readVector(int iVec, double[] rdata, double[] idata)");
+        // should not be called, internal implementation detail
+        throw new UnsupportedOperationException("Not implemented: readVector(int iVec, double[] rdata, double[] idata)");
     }
 
     @Override
     public void readVector(int iVec, double[] data) {
-        //TODO implement me? needed?
-        throw new UnsupportedOperationException("Not yet implemented: readVector(int iVec, double[] data)");
+        // should not be called, internal implementation detail
+        throw new UnsupportedOperationException("Not implemented: readVector(int iVec, double[] data)");
     }
 
     @Override
     public void readVector(int dim, int index, Vec dvec) {
-        if(dim == 0) {
+        if (dim == 0) {
             readVector(index, dvec);
-        } else if(dim == 1) {
+        } else if (dim == 1) {
             readIndirectVector(index, dvec);
-        }  else {
+        } else {
             throw new UnsupportedOperationException("Unsupported dimension " + dim + " in JCamp");
         }
     }
 
     public void readIndirectVector(int index, Vec dvec) {
-        //NOTE: To provoke this call, open a 2D FID, then select "D2" in the combobox near "Scripts"
-
-        // XXX RS2D + Bruker use groupdelay, but without checking for dimension. This is a bug if we pass dim != 1.
-        // Here we can't use it because we're using nb vectors as size, so if we skip some we will end up with out of bounds errors
         int n = getSize(1);
 
-        if (!isComplex(1)) {
+        if (isComplex(1)) {
+            dvec.resize(n, true);
+            dvec.setTDSize(n);
+            // real and imaginary are interlaced
+            for (int row = 0; row < n * 2; row += 2) {
+                double rValue = real[row][index];
+                double iValue = real[row + 1][index];
+                dvec.set(row / 2, rValue, iValue);
+            }
+        } else {
             dvec.resize(n, false);
             dvec.setTDSize(n);
             for (int row = 0; row < n; row++) {
                 double rValue = real[row][index];
                 dvec.set(row, rValue);
-            }
-        } else {
-            dvec.resize(n, true);
-            dvec.setTDSize(n*2);
-            // real and imaginary are interlaced
-            for (int row = 0; row < n*2; row+=2) {
-                double rValue = real[row][index];
-                double iValue = real[row+1][index];
-                dvec.set(row/2, rValue, iValue);
             }
         }
 
@@ -660,10 +654,6 @@ class JCAMPData implements NMRData {
 
         double delRef = ((1.0 / dvec.dwellTime) / dvec.centerFreq) / 2.0;
         dvec.refValue = getRef(1) + delRef;
-
-        // XXX why isn' this also done for direct vectors? this is commented out in BrukerData
-        dvec.setPh0(getPH0(1));
-        dvec.setPh1(getPH1(1));
     }
 
     @Override
@@ -734,7 +724,7 @@ class JCAMPData implements NMRData {
     private FnMode getFnMode(int dim) {
         int value = block.optional($FN_MODE, dim).map(JCampRecord::getInt).orElse(-1);
         if (value < 0 || value >= FnMode.values().length)
-            return null; // XXX should really be "no FnMode defined" be different from FnMode == "0/undefined"?
+            return null;
 
         return FnMode.values()[value];
     }
