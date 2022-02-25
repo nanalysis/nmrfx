@@ -684,7 +684,7 @@ class JCAMPData implements NMRData {
 
     @Override
     public boolean getNegateImag(int dim) {
-        return dim > 0 && "sep".equals(getSymbolicCoefs(dim));
+        return dim > 0 && !"sep".equals(getSymbolicCoefs(dim));
     }
 
     @Override
