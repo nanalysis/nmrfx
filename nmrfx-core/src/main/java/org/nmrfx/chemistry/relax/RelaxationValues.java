@@ -37,4 +37,28 @@ public interface RelaxationValues {
 
     ResonanceSource getResonanceSource();
 
+    public  static void appendValueError(StringBuilder stringBuilder, Double val, Double err, String format) {
+        stringBuilder.append("\t");
+        if (val != null) {
+            stringBuilder.append(String.format(format, val));
+        }
+        stringBuilder.append("\t");
+        if (err != null) {
+            stringBuilder.append(String.format(format, err));
+        }
+    }
+
+    public  static void appendValueError(StringBuilder stringBuilder, Double val, Double err, String format, String defaultValue) {
+        if (val != null) {
+            stringBuilder.append(String.format(format, val));
+        } else {
+            stringBuilder.append(defaultValue);
+        }
+        if (err != null) {
+            stringBuilder.append(String.format(format, err));
+        } else {
+            stringBuilder.append(defaultValue);
+        }
+    }
+
 }

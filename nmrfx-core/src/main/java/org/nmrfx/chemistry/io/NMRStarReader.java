@@ -1377,7 +1377,7 @@ public class NMRStarReader {
 
     public void processRelaxation(Saveframe saveframe, relaxTypes expType) throws ParseException {
         String catName = saveframe.getCategoryName();
-        String frameName = saveframe.getName();
+        String frameName = saveframe.getName().substring(5);
         for (String cat : saveframe.getCategories()) {
             System.out.println(cat);
         }
@@ -1521,7 +1521,7 @@ public class NMRStarReader {
 
     public void processOrder(Saveframe saveframe) throws ParseException {
         String catName = saveframe.getCategoryName();
-        String frameName = saveframe.getName();
+        String frameName = saveframe.getName().substring(5);
         for (String cat : saveframe.getCategories()) {
             System.out.println(cat);
         }
