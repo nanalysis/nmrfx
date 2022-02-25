@@ -339,7 +339,9 @@ class JCAMPData implements NMRData {
                     .map(JCampUtil::toNucleusName)
                     .orElse(NMRDataUtil.guessNucleusFromFreq(getSF(dim)).toString());
         } else if (dim == 1) {
+            // NUC_2 isn't always defined (for homo-nuclear 2D for example)
             return block.optional($NUC_2)
+                    .or(() -> block.optional($NUC_1, dim))
                     .map(JCampRecord::getString)
                     .map(JCampUtil::toNucleusName)
                     .orElse(NMRDataUtil.guessNucleusFromFreq(getSF(dim)).toString());
