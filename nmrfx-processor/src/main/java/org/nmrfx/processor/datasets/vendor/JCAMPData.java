@@ -99,19 +99,37 @@ class JCAMPData implements NMRData {
         return path;
     }
 
+    private JCampRecord getRecord(String name) {
+        // parse dimension from record name for multi-dimensional records
+        var items = name.split(":");
+        int index = 0;
+        if(items.length == 2) {
+            name = items[0];
+            index = Integer.parseInt(items[1]) -1;
+        }
+
+        // try block-level records first
+        try {
+            return block.get(name, index);
+        } catch (NoSuchElementException e) {
+            // then try document-level records if they were not defined by the block
+            return document.get(name, index);
+        }
+    }
+
     @Override
     public String getPar(String parname) {
-        return block.get(parname).getString();
+        return getRecord(parname).getString();
     }
 
     @Override
     public Double getParDouble(String parname) {
-        return block.get(parname).getDouble();
+        return getRecord(parname).getDouble();
     }
 
     @Override
     public Integer getParInt(String parname) {
-        return block.get(parname).getInt();
+        return getRecord(parname).getInt();
     }
 
     @Override
@@ -122,7 +140,12 @@ class JCAMPData implements NMRData {
         // get block-level records first
         for (String key : block.allRecordKeys()) {
             if (defined.add(key)) {
-                vendorPars.add(new VendorPar(key, block.get(key).getString()));
+                // when a record is present several times (for multidimensional records for example), provide a way to differentiate them
+                List<JCampRecord> records = block.list(key);
+                vendorPars.add(new VendorPar(key, records.get(0).getString()));
+                for(int i = 1; i< records.size(); i++) {
+                    vendorPars.add(new VendorPar(key + ":" + (i+1), records.get(i).getString()));
+                }
             }
         }
 
@@ -221,8 +244,13 @@ class JCAMPData implements NMRData {
     public String[] getSFNames() {
         String[] names = new String[getNDim()];
         Arrays.fill(names, "");
-        for (int dim = 0; dim < getNDim(); dim++) {
-            names[dim] = getSFLabel(dim).map(Label::normalized).orElse("");
+        for (int dim = 0; dim < names.length; dim++) {
+            // multi-dimensional records are suffixed by ":dim", starting at 1.
+            String suffix = dim > 0 ? ":" + (dim + 1) : "";
+            names[dim] = getSFLabel(dim)
+                    .map(Label::normalized)
+                    .map(name -> name + suffix)
+                    .orElse("");
         }
         return names;
     }
@@ -239,9 +267,8 @@ class JCAMPData implements NMRData {
     }
 
     private double extractSW(int dim) {
-        return block.optional($SW_H, dim)
-                .map(JCampRecord::getDouble)
-                .orElseThrow(() -> new IllegalStateException("Unknown spectral width, $SW_H undefined for dimension " + dim));
+        Label label = getSWLabel(dim).orElseThrow(() -> new IllegalStateException("Unknown spectral width, unable to extract SW for dimension " + dim));
+        return block.get(label, dim).getDouble();
     }
 
     @Override
@@ -258,8 +285,23 @@ class JCAMPData implements NMRData {
     public String[] getSWNames() {
         String[] names = new String[getNDim()];
         Arrays.fill(names, "");
-        names[0] = block.optional($SW_H).map(JCampRecord::getNormalizedLabel).orElse("");
+
+        for (int dim = 0; dim < names.length; dim++) {
+            // multi-dimensional records are suffixed by ":dim", starting at 1.
+            String suffix = dim > 0 ? ":" + (dim + 1) : "";
+            names[dim] = getSWLabel(dim)
+                    .map(Label::normalized)
+                    .map(name -> name + suffix)
+                    .orElse("");
+        }
+
         return names;
+    }
+
+    private Optional<Label> getSWLabel(int dim) {
+        return Stream.of($SW_H)
+                .filter(label -> block.optional(label, dim).isPresent())
+                .findFirst();
     }
 
     @Override
