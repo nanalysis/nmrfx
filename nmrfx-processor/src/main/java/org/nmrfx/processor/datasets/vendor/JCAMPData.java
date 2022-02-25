@@ -53,7 +53,6 @@ class JCAMPData implements NMRData {
 
     private DatasetType preferredDatasetType = DatasetType.NMRFX;
     private SampleSchedule sampleSchedule = null; // used for NUS acquisition - not supported by JCamp directly
-    private String[] acqOrder;
 
     // these values can be overridden from the outside, we need to cache them so that we can
     // either read them from JCamp or take the user-defined value
@@ -669,88 +668,22 @@ class JCAMPData implements NMRData {
 
     @Override
     public void resetAcqOrder() {
-        acqOrder = null;
+        // Not implemented: changing acq order isn't supported.
     }
 
     @Override
     public String[] getAcqOrder() {
-        //XXX I have no idea what this tries to do.
-        if (acqOrder == null) {
-            int idNDim = getNDim() - 1;
-            acqOrder = new String[idNDim * 2];
-            // p1,d1,p2,d2
-            for (int i = 0; i < idNDim; i++) {
-                acqOrder[i * 2] = "p" + (i + 1);
-                acqOrder[i * 2 + 1] = "d" + (i + 1);
-            }
+        if (getNDim() == 1) {
+            return new String[0];
+        } else {
+            return new String[]{"p1", "d1"};
         }
-        return acqOrder;
     }
 
     @Override
     public void setAcqOrder(String[] newOrder) {
-        //XXX I have no idea what this tries to do.
-        // Taken from RS2DData.java
-        if (newOrder.length == 1) {
-            String s = newOrder[0];
-            final int len = s.length();
-            int nDim = getNDim();
-            int nIDim = nDim - 1;
-            if ((len == nDim) || (len == nIDim)) {
-                acqOrder = new String[nIDim * 2];
-                int j = 0;
-                if ((sampleSchedule != null) && !sampleSchedule.isDemo()) {
-                    for (int i = (len - 1); i >= 0; i--) {
-                        String dimStr = s.substring(i, i + 1);
-                        if (!dimStr.equals(nDim + "")) {
-                            acqOrder[j++] = "p" + dimStr;
-                        }
-                    }
-                    for (int i = (len - 1); i >= 0; i--) {
-                        String dimStr = s.substring(i, i + 1);
-                        if (!dimStr.equals(nDim + "")) {
-                            acqOrder[j++] = "d" + dimStr;
-                        }
-                    }
-                } else {
-                    for (int i = (len - 1); i >= 0; i--) {
-                        String dimStr = s.substring(i, i + 1);
-                        if (!dimStr.equals(nDim + "")) {
-                            acqOrder[j++] = "p" + dimStr;
-                            acqOrder[j++] = "d" + dimStr;
-                        }
-                    }
-                }
-            } else if (len > nDim) {
-                acqOrder = new String[(len - 1) * 2];
-                int j = 0;
-                if ((sampleSchedule != null) && !sampleSchedule.isDemo()) {
-                    for (int i = (len - 1); i >= 0; i--) {
-                        String dimStr = s.substring(i, i + 1);
-                        if (!dimStr.equals((nDim + 1) + "")) {
-                            acqOrder[j++] = "p" + dimStr;
-                        }
-                    }
-                    for (int i = (len - 1); i >= 0; i--) {
-                        String dimStr = s.substring(i, i + 1);
-                        if (!dimStr.equals((nDim + 1) + "")) {
-                            acqOrder[j++] = "d" + dimStr;
-                        }
-                    }
-                } else {
-                    for (int i = (len - 1); i >= 0; i--) {
-                        String dimStr = s.substring(i, i + 1);
-                        if (!dimStr.equals((nDim + 1) + "")) {
-                            acqOrder[j++] = "p" + dimStr;
-                            acqOrder[j++] = "d" + dimStr;
-                        }
-                    }
-                }
-            }
-        } else {
-            this.acqOrder = new String[newOrder.length];
-            System.arraycopy(newOrder, 0, this.acqOrder, 0, newOrder.length);
-        }
+        // doesn't support changing the order.
+        // this is mostly useful for 3D, which isn't supported by JCamp
     }
 
     @Override
