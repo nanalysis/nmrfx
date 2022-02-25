@@ -48,8 +48,8 @@ class JCAMPData implements NMRData {
     private final String path;
     private final JCampDocument document;
     private final JCampBlock block;
-    private final List<JCampPage> realPages;
-    private final List<JCampPage> imaginaryPages;
+    private final double[][] real;
+    private final double[][] imaginary;
 
     private DatasetType preferredDatasetType = DatasetType.NMRFX;
     private SampleSchedule sampleSchedule = null; // used for NUS acquisition - not supported by JCamp directly
@@ -71,8 +71,8 @@ class JCAMPData implements NMRData {
         }
         this.block = document.blocks().findFirst()
                 .orElseThrow(() -> new IOException("Invalid JCamp document, doesn't contain any block."));
-        this.realPages = extractRealPages();
-        this.imaginaryPages = extractImaginaryPages();
+        this.real = toMatrix(extractRealPages());
+        this.imaginary = toMatrix(extractImaginaryPages());
     }
 
     private List<JCampPage> extractRealPages() {
@@ -87,6 +87,15 @@ class JCAMPData implements NMRData {
 
     private List<JCampPage> extractImaginaryPages() {
         return block.getPagesForYSymbol("I");
+    }
+
+    private double[][] toMatrix(List<JCampPage> pages) {
+        int height = pages.size();
+        double[][] matrix = new double[height][];
+        for(int i=0;i<height;i++) {
+            matrix[i] = pages.get(i).toArray();
+        }
+        return matrix;
     }
 
     @Override
@@ -161,15 +170,15 @@ class JCAMPData implements NMRData {
 
     @Override
     public int getNVectors() {
-        return realPages.size();
+        return real.length;
     }
 
     @Override
     public int getNPoints() {
-        if (realPages.isEmpty())
+        if (real.length == 0)
             return 0;
 
-        return realPages.get(0).toArray().length;
+        return real[0].length;
     }
 
     @Override
@@ -340,7 +349,7 @@ class JCAMPData implements NMRData {
                     .orElse(NMRDataUtil.guessNucleusFromFreq(getSF(dim)).toString());
         } else if (dim == 1) {
             // NUC_2 isn't always defined (for homo-nuclear 2D for example)
-            return block.optional($NUC_2)
+            return block.optional($NUC_2) // XXX benchtop also defines $T1_NUCLEUS
                     .or(() -> block.optional($NUC_1, dim))
                     .map(JCampRecord::getString)
                     .map(JCampUtil::toNucleusName)
@@ -354,7 +363,7 @@ class JCAMPData implements NMRData {
     public boolean isComplex(int dim) {
         // For first dimension, check if the JCamp block contains imaginary pages
         if (dim == 0) {
-            return !imaginaryPages.isEmpty();
+            return imaginary.length > 0;
         }
 
         // For other dimensions, infer it from FnMODE
@@ -563,17 +572,17 @@ class JCAMPData implements NMRData {
 
     @Override
     public void readVector(int index, Vec dvec) {
-        double[] rValues = realPages.get(index).toArray();
+        double[] rValues = real[index];
         int n = rValues.length;
 
-        if (imaginaryPages.isEmpty()) {
+        if (imaginary.length == 0) {
             dvec.resize(n, false);
             dvec.setTDSize(n);
             for (int i = 0; i < n; i++) {
                 dvec.set(i, rValues[i]);
             }
         } else {
-            double[] iValues = imaginaryPages.get(index).toArray();
+            double[] iValues = imaginary[index];
             dvec.resize(n, true);
             dvec.setTDSize(n);
             for (int i = 0; i < n; i++) {
@@ -622,7 +631,6 @@ class JCAMPData implements NMRData {
 
     public void readIndirectVector(int index, Vec dvec) {
         //NOTE: To provoke this call, open a 2D FID, then select "D2" in the combobox near "Scripts"
-        //XXX implemented by iterating over all data - will be slow. We may need to cache pages as arrays.
 
         // XXX RS2D + Bruker use groupdelay, but without checking for dimension. This is a bug if we pass dim != 1.
         // Here we can't use it because we're using nb vectors as size, so if we skip some we will end up with out of bounds errors
@@ -631,18 +639,18 @@ class JCAMPData implements NMRData {
         if (!isComplex(1)) {
             dvec.resize(n, false);
             dvec.setTDSize(n);
-            for (int i = 0; i < n; i++) {
-                double rValue = realPages.get(i).toArray()[index];
-                dvec.set(i, rValue);
+            for (int row = 0; row < n; row++) {
+                double rValue = real[row][index];
+                dvec.set(row, rValue);
             }
         } else {
             dvec.resize(n, true);
-            dvec.setTDSize(n);
+            dvec.setTDSize(n*2);
             // real and imaginary are interlaced
-            for (int i = 0; i < n*2; i+=2) {
-                double rValue = realPages.get(i).toArray()[index];
-                double iValue = realPages.get(i+1).toArray()[index];
-                dvec.set(i/2, rValue, iValue);
+            for (int row = 0; row < n*2; row+=2) {
+                double rValue = real[row][index];
+                double iValue = real[row+1][index];
+                dvec.set(row/2, rValue, iValue);
             }
         }
 
