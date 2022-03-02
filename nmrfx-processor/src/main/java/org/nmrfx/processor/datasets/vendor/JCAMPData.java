@@ -366,10 +366,12 @@ class JCAMPData implements NMRData {
 
         // For other dimensions, infer it from FnMODE
         FnMode fnMode = getFnMode(dim);
-        if (fnMode == null || fnMode == FnMode.QSEQ || fnMode == FnMode.TPPI)
+        if (fnMode == null || fnMode == FnMode.QSEQ || fnMode == FnMode.TPPI) {
             return false;
-        if (fnMode == FnMode.QF)
+        }
+        if (fnMode == FnMode.QF) {
             return getValues(dim).isEmpty();
+        }
 
         return true;
     }
@@ -422,6 +424,8 @@ class JCAMPData implements NMRData {
         FnMode fnMode = getFnMode(dim);
         if (fnMode == null) {
             return null;
+        } else if (fnMode == FnMode.QF) {
+            return "sep";
         } else if (fnMode == FnMode.QSEQ || fnMode == FnMode.TPPI) {
             return "real";
         } else if (fnMode == FnMode.STATES) {
@@ -722,11 +726,41 @@ class JCAMPData implements NMRData {
     }
 
     private FnMode getFnMode(int dim) {
-        int value = block.optional($FN_MODE, dim).map(JCampRecord::getInt).orElse(-1);
-        if (value < 0 || value >= FnMode.values().length)
-            return null;
+        FnMode fnMode = getAcquisitionScheme();
+        if (fnMode == null) {
+            int value = block.optional($FN_MODE, dim).map(JCampRecord::getInt).orElse(-1);
+            if (value >=0 || value <FnMode.values().length) {
+                fnMode = FnMode.values()[value];
+            }
+        }
+        return fnMode;
+    }
 
-        return FnMode.values()[value];
+    private FnMode getAcquisitionScheme() {
+        String scheme =  block.optional(_ACQUISITION_SCHEME)
+                .map(JCampRecord::getString).map(JCampUtil::normalize)
+                .orElse("");
+        FnMode fnMode;
+        switch (scheme) {
+            case "NOTPHASESENSITIVE":
+                fnMode = FnMode.QF;
+                break;
+            case "TPPI":
+                fnMode = FnMode.TPPI;
+                break;
+            case "STATES":
+                fnMode = FnMode.STATES;
+                break;
+            case "STATESTPPI":
+                fnMode = FnMode.STATES_TPPI;
+                break;
+            case "ECHOANTIECHO":
+                fnMode = FnMode.ECHO_ANTIECHO;
+                break;
+            default:
+                fnMode = null;
+        }
+        return fnMode;
     }
 
     private Wdw getWdw(int dim) {
