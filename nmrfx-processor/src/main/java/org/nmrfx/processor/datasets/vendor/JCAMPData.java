@@ -21,6 +21,7 @@ import com.nanalysis.jcamp.model.*;
 import com.nanalysis.jcamp.parser.JCampParser;
 import com.nanalysis.jcamp.util.JCampUtil;
 import org.apache.commons.math3.complex.Complex;
+import org.codehaus.commons.nullanalysis.Nullable;
 import org.nmrfx.processor.datasets.DatasetType;
 import org.nmrfx.processor.datasets.parameters.*;
 import org.nmrfx.processor.math.Vec;
@@ -33,14 +34,44 @@ import java.util.stream.Stream;
 
 import static com.nanalysis.jcamp.model.Label.*;
 
+/**
+ * A JCamp file that could contain a FID, a Spectra, or both.
+ * When the file contain both, the FID is used.
+ */
 class JCAMPData implements NMRData {
     private static final List<String> MATCHING_EXTENSIONS = List.of(".jdx", ".dx");
     private static final double AMBIENT_TEMPERATURE = 298.0; // in K, around 25° C
 
-    private enum FnMode {
-        UNDEFINED, QF, QSEQ, TPPI, STATES, STATES_TPPI, ECHO_ANTIECHO, QF_NO_FREQ
+    /**
+     * JCamp-defined acquisition scheme.
+     */
+    enum AcquisitionScheme {
+        UNDEFINED, NOT_PHASE_SENSITIVE, TPPI, STATES, STATES_TPPI, ECHO_ANTIECHO, QSEQ
     }
 
+    /**
+     * Bruker-specific acquisition scheme. Used only when the standard AcquisitionScheme isn't defined.
+     */
+    enum FnMode {
+        UNDEFINED(AcquisitionScheme.UNDEFINED),
+        QF(AcquisitionScheme.NOT_PHASE_SENSITIVE),
+        QSEQ(AcquisitionScheme.QSEQ),// Quadrature detection in sequential mode
+        TPPI(AcquisitionScheme.TPPI),
+        STATES(AcquisitionScheme.STATES),
+        STATES_TPPI(AcquisitionScheme.STATES_TPPI),
+        ECHO_ANTIECHO(AcquisitionScheme.ECHO_ANTIECHO),
+        QF_NO_FREQ(AcquisitionScheme.NOT_PHASE_SENSITIVE);
+
+        public final AcquisitionScheme acquisitionScheme;
+
+        FnMode(AcquisitionScheme scheme) {
+            this.acquisitionScheme = scheme;
+        }
+    }
+
+    /**
+     * Bruker-specific $WDW values. Used to select a specific apodization.
+     */
     private enum Wdw {
         NO, EM, GM, SINE, QSINE, TRAP, USER, SINC, QSINC, TRAF, TRAFS
     }
@@ -364,12 +395,12 @@ class JCAMPData implements NMRData {
             return imaginary.length > 0;
         }
 
-        // For other dimensions, infer it from FnMODE
-        FnMode fnMode = getFnMode(dim);
-        if (fnMode == null || fnMode == FnMode.QSEQ || fnMode == FnMode.TPPI) {
+        // For other dimensions, infer it from acquisition scheme
+        AcquisitionScheme scheme = getAcquisitionScheme();
+        if (scheme == null || scheme == AcquisitionScheme.QSEQ || scheme == AcquisitionScheme.TPPI) {
             return false;
         }
-        if (fnMode == FnMode.QF) {
+        if (scheme == AcquisitionScheme.NOT_PHASE_SENSITIVE) {
             return getValues(dim).isEmpty();
         }
 
@@ -385,15 +416,15 @@ class JCAMPData implements NMRData {
             if (aqMod == 2)
                 return "rft";
         } else {
-            FnMode fnMode = getFnMode(dim);
-            if (fnMode == FnMode.QSEQ || fnMode == FnMode.TPPI) {
+            AcquisitionScheme scheme = getAcquisitionScheme();
+            if (scheme == AcquisitionScheme.QSEQ || scheme == AcquisitionScheme.TPPI) {
                 return "rft";
-            } else if (fnMode == FnMode.UNDEFINED || fnMode == FnMode.STATES_TPPI) {
+            } else if (scheme == AcquisitionScheme.UNDEFINED || scheme == AcquisitionScheme.STATES_TPPI) {
                 return "negate";
             }
         }
 
-        return "ft";
+        return isComplex(dim) ? "ft" : "rft";
     }
 
     @Override
@@ -402,14 +433,14 @@ class JCAMPData implements NMRData {
             return new double[0];
         }
 
-        FnMode fnMode = getFnMode(dim);
-        if (fnMode == null || fnMode == FnMode.QF || fnMode == FnMode.QSEQ || fnMode == FnMode.TPPI) {
+        AcquisitionScheme scheme = getAcquisitionScheme();
+        if (scheme == null || scheme == AcquisitionScheme.NOT_PHASE_SENSITIVE || scheme == AcquisitionScheme.QSEQ || scheme == AcquisitionScheme.TPPI) {
             return new double[0];
-        } else if (fnMode == FnMode.STATES) {
+        } else if (scheme == AcquisitionScheme.STATES) {
             return new double[]{1, 0, 0, 0, 0, 0, 1, 0};
-        } else if (fnMode == FnMode.UNDEFINED || fnMode == FnMode.STATES_TPPI) {
+        } else if (scheme == AcquisitionScheme.UNDEFINED || scheme == AcquisitionScheme.STATES_TPPI) {
             return new double[]{1, 0, 0, 0, 0, 0, 1, 0};
-        } else if (fnMode == FnMode.ECHO_ANTIECHO) {
+        } else if (scheme == AcquisitionScheme.ECHO_ANTIECHO) {
             return new double[]{1, 0, -1, 0, 0, 1, 0, 1};
         }
         return new double[]{1, 0, 0, 1};
@@ -421,18 +452,18 @@ class JCAMPData implements NMRData {
             return null;
         }
 
-        FnMode fnMode = getFnMode(dim);
-        if (fnMode == null) {
+        AcquisitionScheme scheme = getAcquisitionScheme();
+        if (scheme == null) {
             return null;
-        } else if (fnMode == FnMode.QF) {
+        } else if (scheme == AcquisitionScheme.NOT_PHASE_SENSITIVE) {
             return "sep";
-        } else if (fnMode == FnMode.QSEQ || fnMode == FnMode.TPPI) {
+        } else if (scheme == AcquisitionScheme.QSEQ || scheme == AcquisitionScheme.TPPI) {
             return "real";
-        } else if (fnMode == FnMode.STATES) {
+        } else if (scheme == AcquisitionScheme.STATES) {
             return "hyper-r";
-        } else if (fnMode == FnMode.UNDEFINED || fnMode == FnMode.STATES_TPPI) {
+        } else if (scheme == AcquisitionScheme.UNDEFINED || scheme == AcquisitionScheme.STATES_TPPI) {
             return "hyper";
-        } else if (fnMode == FnMode.ECHO_ANTIECHO) {
+        } else if (scheme == AcquisitionScheme.ECHO_ANTIECHO) {
             return "echo-antiecho-r";
         }
         return "sep";
@@ -725,42 +756,32 @@ class JCAMPData implements NMRData {
         return getFilePath();
     }
 
-    private FnMode getFnMode(int dim) {
-        FnMode fnMode = getAcquisitionScheme();
-        if (fnMode == null) {
-            int value = block.optional($FN_MODE, dim).map(JCampRecord::getInt).orElse(-1);
-            if (value >=0 || value <FnMode.values().length) {
-                fnMode = FnMode.values()[value];
-            }
-        }
-        return fnMode;
-    }
-
-    private FnMode getAcquisitionScheme() {
-        String scheme =  block.optional(_ACQUISITION_SCHEME)
+    @Nullable
+    private AcquisitionScheme getAcquisitionScheme() {
+        String schemeName = block.optional(_ACQUISITION_SCHEME)
                 .map(JCampRecord::getString).map(JCampUtil::normalize)
                 .orElse("");
-        FnMode fnMode;
-        switch (scheme) {
-            case "NOTPHASESENSITIVE":
-                fnMode = FnMode.QF;
-                break;
-            case "TPPI":
-                fnMode = FnMode.TPPI;
-                break;
-            case "STATES":
-                fnMode = FnMode.STATES;
-                break;
-            case "STATESTPPI":
-                fnMode = FnMode.STATES_TPPI;
-                break;
-            case "ECHOANTIECHO":
-                fnMode = FnMode.ECHO_ANTIECHO;
-                break;
-            default:
-                fnMode = null;
+
+        return Arrays.stream(AcquisitionScheme.values())
+                .filter(value -> JCampUtil.normalize(value.name()).equals(schemeName))
+                .findFirst()
+                .orElseGet(this::getAcquisitionSchemeFromFnMode);
+    }
+
+    @Nullable
+    private AcquisitionScheme getAcquisitionSchemeFromFnMode() {
+        FnMode fnMode = getFnMode(1);
+        return fnMode != null ? fnMode.acquisitionScheme : null;
+    }
+
+    @Nullable
+    private FnMode getFnMode(int dim) {
+        int value = block.optional($FN_MODE, dim).map(JCampRecord::getInt).orElse(-1);
+        if (value < 0 || value >= FnMode.values().length) {
+            return null; // Warning: considering no record present differently that a record containing UNDEFINED
         }
-        return fnMode;
+
+        return FnMode.values()[value];
     }
 
     private Wdw getWdw(int dim) {
