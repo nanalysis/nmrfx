@@ -729,7 +729,17 @@ class JCAMPData implements NMRData {
 
     @Override
     public boolean getNegateImag(int dim) {
-        return dim > 0 && !"sep".equals(getSymbolicCoefs(dim));
+        if(dim == 0) {
+            return false;
+        }
+
+        if("sep".equals(getSymbolicCoefs(dim))) {
+            return false;
+        }
+
+        return block.optional($REVERSE, dim).map(JCampRecord::getString)
+                .map("yes"::equalsIgnoreCase)
+                .orElse(true);
     }
 
     @Override
