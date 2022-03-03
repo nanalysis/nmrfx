@@ -363,8 +363,7 @@ class JCAMPData implements NMRData {
     }
 
     private double extractRef(int dim) {
-        Label offsetLabel = dim == 1 ? $O2 : $O1;
-        double offsetHz = block.optional(offsetLabel).map(JCampRecord::getDouble).orElse(0d);
+        double offsetHz = block.optional($O1, dim).map(JCampRecord::getDouble).orElse(0d);
         return offsetHz / getSF(dim);
     }
 
