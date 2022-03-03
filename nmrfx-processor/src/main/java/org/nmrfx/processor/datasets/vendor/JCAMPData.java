@@ -46,7 +46,21 @@ class JCAMPData implements NMRData {
      * JCamp-defined acquisition scheme.
      */
     enum AcquisitionScheme {
-        UNDEFINED, NOT_PHASE_SENSITIVE, TPPI, STATES, STATES_TPPI, ECHO_ANTIECHO, QSEQ
+        UNDEFINED("hyper", new double[]{1, 0, 0, 0, 0, 0, 1, 0}),
+        NOT_PHASE_SENSITIVE("sep", new double[0]),
+        TPPI("real", new double[0]),
+        STATES("hyper-r", new double[]{1, 0, 0, 0, 0, 0, 1, 0}),
+        STATES_TPPI("hyper", new double[]{1, 0, 0, 0, 0, 0, 1, 0}),
+        ECHO_ANTIECHO("echo-antiecho-r", new double[]{1, 0, -1, 0, 0, 1, 0, 1}),
+        QSEQ("real", new double[0]);
+
+        public final String symbolicCoefs;
+        public final double[] coefs;
+
+        AcquisitionScheme(String symbolicCoefs, double[] coefs) {
+            this.symbolicCoefs = symbolicCoefs;
+            this.coefs = coefs;
+        }
     }
 
     /**
@@ -434,16 +448,7 @@ class JCAMPData implements NMRData {
         }
 
         AcquisitionScheme scheme = getAcquisitionScheme();
-        if (scheme == null || scheme == AcquisitionScheme.NOT_PHASE_SENSITIVE || scheme == AcquisitionScheme.QSEQ || scheme == AcquisitionScheme.TPPI) {
-            return new double[0];
-        } else if (scheme == AcquisitionScheme.STATES) {
-            return new double[]{1, 0, 0, 0, 0, 0, 1, 0};
-        } else if (scheme == AcquisitionScheme.UNDEFINED || scheme == AcquisitionScheme.STATES_TPPI) {
-            return new double[]{1, 0, 0, 0, 0, 0, 1, 0};
-        } else if (scheme == AcquisitionScheme.ECHO_ANTIECHO) {
-            return new double[]{1, 0, -1, 0, 0, 1, 0, 1};
-        }
-        return new double[]{1, 0, 0, 1};
+        return scheme == null ? new double[0] : scheme.coefs;
     }
 
     @Override
@@ -453,20 +458,7 @@ class JCAMPData implements NMRData {
         }
 
         AcquisitionScheme scheme = getAcquisitionScheme();
-        if (scheme == null) {
-            return null;
-        } else if (scheme == AcquisitionScheme.NOT_PHASE_SENSITIVE) {
-            return "sep";
-        } else if (scheme == AcquisitionScheme.QSEQ || scheme == AcquisitionScheme.TPPI) {
-            return "real";
-        } else if (scheme == AcquisitionScheme.STATES) {
-            return "hyper-r";
-        } else if (scheme == AcquisitionScheme.UNDEFINED || scheme == AcquisitionScheme.STATES_TPPI) {
-            return "hyper";
-        } else if (scheme == AcquisitionScheme.ECHO_ANTIECHO) {
-            return "echo-antiecho-r";
-        }
-        return "sep";
+        return scheme == null ? null : scheme.symbolicCoefs;
     }
 
     @Override
