@@ -17,33 +17,28 @@
  */
 package org.nmrfx.processor.gui.spectra;
 
-import org.nmrfx.processor.datasets.DataCoordTransformer;
-import org.nmrfx.processor.datasets.DataGenerator;
-import org.nmrfx.processor.math.Vec;
-import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.util.*;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javafx.application.Platform;
-import javafx.beans.property.BooleanProperty;
-import javafx.beans.property.DoubleProperty;
-import javafx.beans.property.IntegerProperty;
-import javafx.beans.property.SimpleBooleanProperty;
-import javafx.beans.property.SimpleDoubleProperty;
-import javafx.beans.property.SimpleIntegerProperty;
-import javafx.beans.property.SimpleStringProperty;
-import javafx.beans.property.StringProperty;
+import javafx.beans.property.*;
 import javafx.scene.paint.Color;
 import org.apache.commons.beanutils.PropertyUtils;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.datasets.DatasetRegion;
 import org.nmrfx.math.VecBase;
+import org.nmrfx.processor.datasets.DataCoordTransformer;
+import org.nmrfx.processor.datasets.DataGenerator;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.GUIScripter;
 import org.nmrfx.processor.gui.PolyChart.DISDIM;
+import org.nmrfx.processor.math.Vec;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.util.*;
 
 public class DatasetAttributes extends DataGenerator implements Cloneable {
+    private static final Logger log = LoggerFactory.getLogger(DatasetAttributes.class);
 
     private Dataset theFile;
     private final Map<String, Float> extremes = new HashMap<>();
@@ -1941,14 +1936,14 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
             try {
                 PropertyUtils.setSimpleProperty(this, name, value);
             } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException ex) {
-                Logger.getLogger(DatasetAttributes.class.getName()).log(Level.SEVERE, null, ex);
+                log.error(ex.getMessage(), ex);
             }
         } else {
             Platform.runLater(() -> {
                 try {
                     PropertyUtils.setProperty(this, name, value);
                 } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException ex) {
-                    Logger.getLogger(DatasetAttributes.class.getName()).log(Level.SEVERE, null, ex);
+                    log.error(ex.getMessage(), ex);
                 }
             }
             );
@@ -1956,19 +1951,6 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
     }
 
     public Map<String, Object> config() {
-
-//        BeanInfo info = null;
-//        try {
-//            info = Introspector.getBeanInfo(DatasetAttributes.class);
-//        } catch (IntrospectionException ex) {
-//            Logger.getLogger(DatasetAttributes.class.getName()).log(Level.SEVERE, null, ex);
-//        }
-//        if (info != null) {
-//            
-//            for (PropertyDescriptor pd : info.getPropertyDescriptors()) {
-//                System.out.println(pd.getName() + " : " + pd.getReadMethod() + " : " + pd.getWriteMethod());
-//            }
-//        }
         Map<String, Object> data = new HashMap<>();
         String[] beanNames = {"nlvls", "clm", "posColor", "negColor", "posWidth", "negWidth", "lvl", "pos", "neg"};
         for (String beanName : beanNames) {
@@ -1983,7 +1965,7 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
                     data.put(beanName, PropertyUtils.getSimpleProperty(this, beanName));
                 }
             } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException ex) {
-                Logger.getLogger(DatasetAttributes.class.getName()).log(Level.SEVERE, null, ex);
+                log.error(ex.getMessage(), ex);
             }
         }
         return data;

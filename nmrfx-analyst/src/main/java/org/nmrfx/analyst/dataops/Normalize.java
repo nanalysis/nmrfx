@@ -7,8 +7,6 @@ package org.nmrfx.analyst.dataops;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.apache.commons.math3.stat.descriptive.rank.Max;
 import org.apache.commons.math3.stat.descriptive.rank.Median;
 import org.apache.commons.math3.stat.descriptive.rank.Percentile;
@@ -16,12 +14,15 @@ import org.apache.commons.math3.stat.descriptive.summary.Sum;
 import org.apache.commons.math3.util.MathArrays;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.math.Vec;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
  * @author Bruce Johnson
  */
 public class Normalize {
+    private static final Logger log = LoggerFactory.getLogger(Normalize.class);
 
     public enum NORMALIZE {
         SUM() {
@@ -88,8 +89,7 @@ public class Normalize {
 
                 dataset.writeVector(movingVec);
             } catch (IOException ex) {
-                Logger.getLogger(Align.class.getName()).log(Level.SEVERE, null, ex);
-                System.out.println(ex.getMessage());
+                log.error(ex.getMessage(), ex);
             }
         });
         return scales;
@@ -121,13 +121,8 @@ public class Normalize {
                 movingVec.scale(scales.get(vi[1][0]));
                 dataset.writeVector(movingVec);
             } catch (IOException ex) {
-                Logger.getLogger(Align.class.getName()).log(Level.SEVERE, null, ex);
-                System.out.println(ex.getMessage());
+                log.error(ex.getMessage(), ex);
             }
         });
-    }
-
-    void normalize(Vec movingVec) {
-
     }
 }

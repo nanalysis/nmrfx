@@ -1,6 +1,6 @@
 /*
  * NMRFx Processor : A Program for Processing NMR Data 
- * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
+ * Copyright (C) 2004-2022 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,17 +16,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
- /*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package org.nmrfx.math.units;
 
-/**
- *
- * @author johnsonb
- */
+@SuppressWarnings("unused") // used by pyproc.py
 public class UnitFactory {
 
     /**
@@ -62,38 +54,48 @@ public class UnitFactory {
      * @return
      */
     public static Unit newUnit(String type, String value) {
-        if (type == "Fraction") {
-            return new Fraction(value);
-        } else if (type == "Frequency") {
-            return new Frequency(value);
-        } else if (type == "Index") {
-            return new Index(value);
-        } else if (type == "PPM" || type == "ppms" || type == "ppm" || type == "PPMS") {
-            return new PPM(value);
-        } else if (type == "Point" || type == "pts") {
-            return new Point(value);
-        } else if (type == "Time") {
-            return new Time(value);
-        } else {
-            return null;
+        switch (type) {
+            case "Fraction":
+                return new Fraction(value);
+            case "Frequency":
+                return new Frequency(value);
+            case "Index":
+                return new Index(value);
+            case "PPM":
+            case "ppms":
+            case "ppm":
+            case "PPMS":
+                return new PPM(value);
+            case "Point":
+            case "pts":
+                return new Point(value);
+            case "Time":
+                return new Time(value);
+            default:
+                return null;
         }
     }
 
     public static Unit newUnit(String type, Number value) {
-        if (type == "Fraction") {
-            return new Fraction((Double) value);
-        } else if (type == "Frequency") {
-            return new Frequency((Double) value);
-        } else if (type == "Index") {
-            return new Index((Integer) value);
-        } else if (type == "PPM" || type == "ppms" || type == "ppm" || type == "PPMS") {
-            return new PPM((Double) value);
-        } else if (type == "Point" || type == "pts") {
-            return new Point((Double) value);
-        } else if (type == "Time") {
-            return new Time((Double) value);
-        } else {
-            return null;
+        switch (type) {
+            case "Fraction":
+                return new Fraction((Double) value);
+            case "Frequency":
+                return new Frequency((Double) value);
+            case "Index":
+                return new Index((Integer) value);
+            case "PPM":
+            case "ppms":
+            case "ppm":
+            case "PPMS":
+                return new PPM((Double) value);
+            case "Point":
+            case "pts":
+                return new Point((Double) value);
+            case "Time":
+                return new Time((Double) value);
+            default:
+                return null;
         }
     }
 }

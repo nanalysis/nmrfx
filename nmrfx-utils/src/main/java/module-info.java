@@ -29,4 +29,5 @@ module org.nmrfx.utils {
     requires javafx.fxml;
     requires javafx.swing;
     requires jython.slim;
+    requires org.slf4j;
 }

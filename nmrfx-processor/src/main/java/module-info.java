@@ -19,7 +19,6 @@ module org.nmrfx.processor {
     requires smile.core;
     requires smile.interpolation;
     requires smile.math;
-    requires io.netty.all;
     requires java.logging;
     requires java.desktop;
     requires com.google.common;
@@ -27,5 +26,6 @@ module org.nmrfx.processor {
     requires commons.compiler;
     requires jython.slim;
     requires com.nanalysis.jcamp;
+    requires org.slf4j;
     requires eventbus.java;
 }

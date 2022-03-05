@@ -1,21 +1,5 @@
 package org.nmrfx.analyst.gui.molecule3D;
 
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-import java.io.IOException;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.ResourceBundle;
-import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javafx.application.Platform;
 import javafx.collections.MapChangeListener;
 import javafx.concurrent.Service;
@@ -29,22 +13,10 @@ import javafx.fxml.Initializable;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.SubScene;
-import javafx.scene.control.Alert;
-import javafx.scene.control.ButtonType;
-import javafx.scene.control.CheckMenuItem;
-import javafx.scene.control.ChoiceBox;
-import javafx.scene.control.MenuButton;
-import javafx.scene.control.MenuItem;
-import javafx.scene.control.TextField;
-import javafx.scene.control.TextInputDialog;
+import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseEvent;
-import javafx.scene.layout.Background;
-import javafx.scene.layout.BackgroundFill;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.CornerRadii;
-import javafx.scene.layout.Pane;
-import javafx.scene.layout.StackPane;
+import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.text.Font;
@@ -53,21 +25,16 @@ import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import org.controlsfx.control.StatusBar;
 import org.controlsfx.dialog.ExceptionDialog;
-import org.nmrfx.chemistry.Atom;
-import org.nmrfx.chemistry.Bond;
-import org.nmrfx.chemistry.Compound;
-import org.nmrfx.chemistry.InvalidMoleculeException;
-import org.nmrfx.chemistry.Polymer;
-import org.nmrfx.chemistry.SpatialSet;
 import org.nmrfx.peaks.events.FreezeListener;
+import org.nmrfx.analyst.gui.AtomController;
+import org.nmrfx.analyst.gui.molecule.MoleculeCanvas;
+import org.nmrfx.analyst.gui.molecule.SSViewer;
+import org.nmrfx.chemistry.*;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.processor.datasets.Dataset;
-import org.nmrfx.analyst.gui.AtomController;
-import org.nmrfx.analyst.gui.molecule.MoleculeCanvas;
 import org.nmrfx.processor.project.Project;
 import org.nmrfx.structure.chemistry.Molecule;
-import org.nmrfx.analyst.gui.molecule.SSViewer;
 import org.nmrfx.structure.chemistry.energy.AngleTreeGenerator;
 import org.nmrfx.structure.chemistry.energy.GradientRefinement;
 import org.nmrfx.structure.chemistry.energy.RotationalDynamics;
@@ -76,13 +43,15 @@ import org.nmrfx.structure.rna.RNALabels;
 import org.nmrfx.structure.rna.SSLayout;
 import org.nmrfx.utilities.ProgressUpdater;
 import org.python.util.PythonInterpreter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-/**
- * FXML Controller class
- *
- * @author Bruce Johnson
- */
+import java.io.IOException;
+import java.net.URL;
+import java.util.*;
+
 public class MolSceneController implements Initializable, MolSelectionListener, FreezeListener, ProgressUpdater {
+    private static final Logger log = LoggerFactory.getLogger(MolSceneController.class);
 
     private Stage stage;
     SSViewer ssViewer;
@@ -361,7 +330,7 @@ public class MolSceneController implements Initializable, MolSelectionListener, 
                     try {
                         toggleChar(dotBracket, dPos);
                     } catch (InvalidMoleculeException ex) {
-                        Logger.getLogger(MolSceneController.class.getName()).log(Level.SEVERE, null, ex);
+                        log.error(ex.getMessage(), ex);
                     }
                 });
                 dotBracketPane.getChildren().add(textItem);
@@ -397,7 +366,7 @@ public class MolSceneController implements Initializable, MolSelectionListener, 
                 }
             }
         } catch (InvalidMoleculeException ex) {
-            Logger.getLogger(MolSceneController.class.getName()).log(Level.SEVERE, null, ex);
+            log.error(ex.getMessage(), ex);
         }
 
     }
@@ -683,7 +652,7 @@ public class MolSceneController implements Initializable, MolSelectionListener, 
                     try {
                         molecule.selectAtoms(fields[1], append, false);
                     } catch (InvalidMoleculeException ex) {
-                        Logger.getLogger(MolSceneController.class.getName()).log(Level.SEVERE, null, ex);
+                        log.error(ex.getMessage(), ex);
                     }
                 } else if (fields[0].equals("bond") && (fields.length > 2)) {
                     molecule.selectBonds(fields[1], fields[2], append);
@@ -942,7 +911,7 @@ public class MolSceneController implements Initializable, MolSelectionListener, 
             drawTubes();
             molViewer.centerOnSelection();
         } catch (InvalidMoleculeException ex) {
-            Logger.getLogger(MolSceneController.class.getName()).log(Level.SEVERE, null, ex);
+            log.error(ex.getMessage(), ex);
         }
 
     }

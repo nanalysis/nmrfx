@@ -38,4 +38,5 @@ module org.nmrfx.analyst.gui {
     requires fontawesomefx;
     requires org.yaml.snakeyaml;
     requires org.slf4j;
+    requires commons.math3;
 }

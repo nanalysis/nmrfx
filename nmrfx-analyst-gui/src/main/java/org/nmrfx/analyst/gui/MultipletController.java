@@ -14,8 +14,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.ResourceBundle;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.ObservableSet;
@@ -59,6 +57,9 @@ import org.nmrfx.processor.gui.spectra.CrossHairs;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.processor.gui.spectra.MultipletSelection;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import static org.nmrfx.utils.GUIUtils.affirm;
 import static org.nmrfx.utils.GUIUtils.warn;
 
@@ -67,6 +68,7 @@ import static org.nmrfx.utils.GUIUtils.warn;
  * @author brucejohnson
  */
 public class MultipletController implements Initializable, SetChangeListener<MultipletSelection> {
+    private static final Logger log = LoggerFactory.getLogger(MultipletController.class);
 
     Stage stage = null;
     HBox navigatorToolBar;
@@ -382,7 +384,7 @@ merge.png				region_adjust.png
                 chart.chartProps.setIntegrals(true);
                 chart.updatePeakLists(peakListNames);
             } catch (IOException ex) {
-                Logger.getLogger(AnalystApp.class.getName()).log(Level.SEVERE, null, ex);
+                log.error(ex.getMessage(), ex);
             }
         }
     }

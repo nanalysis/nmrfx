@@ -17,19 +17,21 @@
  */
 package org.nmrfx.processor.operations;
 
-import java.io.IOException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.math.VecCombine;
 import org.nmrfx.processor.processing.ProcessingException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
 
 /**
  *
  * @author Bruce Johnson
  */
 public class Dept extends DatasetOperation {
+    private static final Logger log = LoggerFactory.getLogger(Dept.class);
 
     private static final double[][] COEFS = {
         {2.23, 0.23, 0, 0},
@@ -87,7 +89,7 @@ public class Dept extends DatasetOperation {
                 dataset.writeVector(outVecs[0], i, 0);
             }
         } catch (IOException ex) {
-            Logger.getLogger(Dept.class.getName()).log(Level.SEVERE, null, ex);
+            log.error(ex.getMessage(), ex);
         }
     }
 

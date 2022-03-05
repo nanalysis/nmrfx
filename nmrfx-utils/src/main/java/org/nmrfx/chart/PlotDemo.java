@@ -16,28 +16,25 @@
  */
 package org.nmrfx.chart;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.util.stream.Collectors;
 import javafx.application.Platform;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Button;
-import javafx.stage.Stage;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
+import javafx.stage.Stage;
 import org.nmrfx.graphicsio.GraphicsContextProxy;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * A chart that displays rectangular bars with heights indicating data values
@@ -45,6 +42,7 @@ import org.nmrfx.graphicsio.GraphicsContextProxy;
  * discontinuous or discrete data.
  */
 public class PlotDemo {
+    private static final Logger log = LoggerFactory.getLogger(PlotDemo.class);
 
     Stage stage;
     Canvas canvas;
@@ -108,7 +106,7 @@ public class PlotDemo {
             try {
                 iris = loadFile("src/test/data/iris.csv", "species");
             } catch (IOException ex) {
-                Logger.getLogger(PlotDemo.class.getName()).log(Level.SEVERE, null, ex);
+                log.error(ex.getMessage(), ex);
             }
         }
         return iris;

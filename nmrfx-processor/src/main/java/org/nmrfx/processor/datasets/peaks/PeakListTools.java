@@ -17,41 +17,42 @@
  */
 package org.nmrfx.processor.datasets.peaks;
 
-import org.nmrfx.peaks.*;
-import org.nmrfx.processor.datasets.Dataset;
-import org.nmrfx.processor.optimization.*;
-
-import java.io.*;
-
-import java.util.*;
-
 import org.apache.commons.math3.analysis.UnivariateFunction;
 import org.apache.commons.math3.exception.TooManyEvaluationsException;
-import org.apache.commons.math3.optimization.ConvergenceChecker;
-import org.apache.commons.math3.optimization.GoalType;
 import org.apache.commons.math3.optim.PointValuePair;
-import org.apache.commons.math3.optimization.SimplePointChecker;
+import org.apache.commons.math3.optimization.GoalType;
 import org.apache.commons.math3.optimization.univariate.BrentOptimizer;
 import org.apache.commons.math3.optimization.univariate.UnivariatePointValuePair;
 import org.apache.commons.math3.stat.StatUtils;
-import org.apache.commons.math3.util.FastMath;
-import static java.util.Comparator.comparing;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.util.stream.Collectors;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
+import org.apache.commons.math3.util.FastMath;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.datasets.RegionData;
-import static org.nmrfx.peaks.Peak.getMeasureFunction;
+import org.nmrfx.peaks.*;
+import org.nmrfx.processor.datasets.Dataset;
+import org.nmrfx.processor.optimization.BipartiteMatcher;
+import org.nmrfx.processor.optimization.LorentzGaussND;
+import org.nmrfx.processor.optimization.LorentzGaussNDWithCatalog;
+import org.nmrfx.processor.optimization.SineSignal;
+import org.nmrfx.processor.project.Project;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import smile.clustering.HierarchicalClustering;
 import smile.clustering.linkage.CompleteLinkage;
-import org.nmrfx.processor.project.Project;
+
+import java.io.IOException;
+import java.util.*;
+import java.util.stream.Collectors;
+
+import static java.util.Comparator.comparing;
+import static org.nmrfx.peaks.Peak.getMeasureFunction;
 
 /**
  *
  * @author brucejohnson
  */
 public class PeakListTools {
+    private static final Logger log = LoggerFactory.getLogger(PeakListTools.class);
 
     public static ResonanceFactory resFactory() {
         Project project = (Project) Project.getActive();
@@ -677,26 +678,6 @@ public class PeakListTools {
         return matchResult;
     }
 
-    class UnivariateRealPointValuePairChecker implements ConvergenceChecker {
-
-        ConvergenceChecker<PointValuePair> cCheck = new SimplePointChecker<>();
-
-        @Override
-        public boolean converged(final int iteration, final Object previous, final Object current) {
-            UnivariatePointValuePair pPair = (UnivariatePointValuePair) previous;
-            UnivariatePointValuePair cPair = (UnivariatePointValuePair) current;
-
-            double[] pPoint = new double[1];
-            double[] cPoint = new double[1];
-            pPoint[0] = pPair.getPoint();
-            cPoint[0] = cPair.getPoint();
-            PointValuePair rpPair = new PointValuePair(pPoint, pPair.getValue());
-            PointValuePair rcPair = new PointValuePair(cPoint, cPair.getValue());
-            boolean converged = cCheck.converged(iteration, rpPair, rcPair);
-            return converged;
-        }
-    }
-
     private static void optimizeMatch(PeakList peakList, final ArrayList<MatchItem> iMList, final double[] iOffsets, final ArrayList<MatchItem> jMList, final double[] jOffsets, final double[] tol, int minDim, double min, double max) {
         class MatchFunction implements UnivariateFunction {
 
@@ -1008,7 +989,7 @@ public class PeakListTools {
             try {
                 peak.quantifyPeak(dataset, pdim, f, mode);
             } catch (IOException ex) {
-                Logger.getLogger(PeakList.class.getName()).log(Level.SEVERE, null, ex);
+                log.error(ex.getMessage(), ex);
             }
         });
     }
@@ -1145,7 +1126,7 @@ public class PeakListTools {
             try {
                 peak.tweak(dataset, pdim, planes);
             } catch (IOException ex) {
-                Logger.getLogger(PeakList.class.getName()).log(Level.SEVERE, null, ex);
+                log.error(ex.getMessage(), ex);
             }
         });
 
@@ -1163,7 +1144,7 @@ public class PeakListTools {
             try {
                 peak.tweak(dataset, pdim, planes);
             } catch (IOException ex) {
-                Logger.getLogger(PeakList.class.getName()).log(Level.SEVERE, null, ex);
+                log.error(ex.getMessage(), ex);
             }
         });
 
@@ -1263,7 +1244,7 @@ public class PeakListTools {
 //                System.out.println("fit lpe " + lPeaks.size());
                 simPeakFit(peakList, theFile, rows, delays, lPeaks, fitPeaks, lsFit, constrainDim, arrayedFitMode);
             } catch (IllegalArgumentException | IOException | PeakFitException ex) {
-                Logger.getLogger(PeakList.class.getName()).log(Level.SEVERE, null, ex);
+                log.error(ex.getMessage(), ex);
             }
         }
         );

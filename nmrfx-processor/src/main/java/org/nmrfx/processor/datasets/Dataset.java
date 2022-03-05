@@ -17,33 +17,35 @@
  */
 package org.nmrfx.processor.datasets;
 
-import org.nmrfx.datasets.*;
-import org.nmrfx.processor.math.Matrix;
-import org.nmrfx.processor.math.MatrixND;
-import org.nmrfx.processor.math.Vec;
-import org.nmrfx.processor.processing.ProcessingException;
-import org.nmrfx.processor.operations.Util;
-import java.io.*;
-import java.nio.ByteOrder;
-import java.nio.file.Files;
-import java.util.*;
-import java.util.stream.Collectors;
-
 import org.apache.commons.math3.complex.Complex;
-import org.apache.commons.math3.linear.ArrayRealVector;
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
+import org.apache.commons.math3.linear.ArrayRealVector;
 import org.apache.commons.math3.linear.RealMatrix;
-import org.apache.commons.math3.util.MultidimensionalCounter;
 import org.apache.commons.math3.stat.descriptive.rank.PSquarePercentile;
+import org.apache.commons.math3.util.MultidimensionalCounter;
+import org.nmrfx.datasets.*;
 import org.nmrfx.math.VecBase;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.processor.datasets.vendor.BrukerData;
 import org.nmrfx.processor.datasets.vendor.NMRData;
 import org.nmrfx.processor.datasets.vendor.NMRDataUtil;
+import org.nmrfx.processor.math.Matrix;
+import org.nmrfx.processor.math.MatrixND;
+import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.operations.IDBaseline2;
+import org.nmrfx.processor.operations.Util;
 import org.nmrfx.processor.processing.LineShapeCatalog;
+import org.nmrfx.processor.processing.ProcessingException;
 import org.nmrfx.project.ProjectBase;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.RandomAccessFile;
+import java.nio.ByteOrder;
+import java.nio.file.Files;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Instances of this class represent NMR datasets. The class is typically used
@@ -456,31 +458,6 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
 
     private void addFile(String datasetName) {
         ProjectBase.getActive().addDataset(this, datasetName);
-        for (DatasetListener observer : observers) {
-            try {
-                observer.datasetAdded(this);
-            } catch (RuntimeException e) {
-            }
-        }
-
-    }
-
-    /**
-     * Add a listener to that will be notified when Datasets are opened.
-     *
-     * @param datasetListener the DatasetListener object
-     */
-    public static void addObserver(DatasetListener datasetListener) {
-        observers.add(datasetListener);
-    }
-
-    /**
-     * Remove a DatasetListener from list of listeners.
-     *
-     * @param datasetListener the DatasetListener object
-     */
-    public static void removeObserver(DatasetListener datasetListener) {
-        observers.remove(datasetListener);
     }
 
     /**
@@ -500,16 +477,6 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         } catch (IOException e) {
             //LOGGER.warn(e.getMessage());
         }
-
-        for (DatasetListener observer : observers) {
-            try {
-                observer.datasetRemoved(this);
-            } catch (RuntimeException e) {
-                System.err.println("error removingFile " + e.getMessage());
-                // FIXME log this!
-            }
-        }
-
     }
 
     /**
