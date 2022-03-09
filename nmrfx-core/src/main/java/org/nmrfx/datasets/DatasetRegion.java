@@ -4,11 +4,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.util.Comparator;
-import java.util.Iterator;
-import java.util.List;
-import java.util.SortedSet;
-import java.util.TreeSet;
+import java.util.*;
 
 // fixme add document "Note: this comparator imposes orderings that are inconsistent with equals."
 public class DatasetRegion implements Comparator, Comparable {
@@ -305,17 +301,6 @@ public class DatasetRegion implements Comparator, Comparable {
         return (compare(this, o2) == 0);
     }
 
-    public boolean overlapOnDim(double ppm, int iDim) {
-        boolean result = true;
-
-        if (ppm < getRegionStart(iDim)) {
-            result = false;
-        } else if (ppm > getRegionEnd(iDim)) {
-            result = false;
-        }
-        return result;
-    }
-
     public boolean overlapOnDim(Object o2, int iDim) {
         boolean result = true;
         DatasetRegion r2 = (DatasetRegion) o2;
@@ -337,25 +322,6 @@ public class DatasetRegion implements Comparator, Comparable {
                 break;
             }
         }
-        return result;
-    }
-
-    public boolean overlaps(SortedSet set) {
-        Iterator iter = set.iterator();
-        boolean result = false;
-
-        while (iter.hasNext()) {
-            DatasetRegion tRegion = (DatasetRegion) iter.next();
-
-            if (overlaps(tRegion)) {
-                result = true;
-
-                break;
-            } else if (tRegion.x[0] > x[1]) {
-                break;
-            }
-        }
-
         return result;
     }
 
@@ -447,15 +413,6 @@ public class DatasetRegion implements Comparator, Comparable {
             sum += value;
         }
         setIntegral(sum);
-    }
-
-    public static DatasetRegion findOverlap(TreeSet<DatasetRegion> regions, double ppm, int dim) {
-        for (DatasetRegion region : regions) {
-            if (region.overlapOnDim(ppm, dim)) {
-                return region;
-            }
-        }
-        return null;
     }
 
     public static DatasetRegion findClosest(TreeSet<DatasetRegion> regions, double ppm, int dim) {

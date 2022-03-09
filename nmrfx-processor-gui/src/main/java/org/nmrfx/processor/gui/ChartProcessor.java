@@ -732,6 +732,20 @@ public class ChartProcessor {
         writeScript(script);
     }
 
+    public String getScriptFileName() {
+        File file = new File(getNMRData().getFilePath());
+        String fileName = file.getName();
+        String scriptFileName;
+        if (!file.isDirectory() && (fileName.endsWith(".dx") || fileName.endsWith(".jdx"))) {
+            int lastDot = fileName.lastIndexOf(".");
+            String rootName = fileName.substring(0, lastDot);
+            scriptFileName = rootName + "_process.py";
+        } else {
+            scriptFileName = "process.py";
+        }
+        return scriptFileName;
+    }
+
     public File getScriptDir() {
         File directory = null;
         String locMode = PreferencesController.getLocation();
@@ -752,7 +766,7 @@ public class ChartProcessor {
     }
 
     public File getDefaultScriptFile() {
-        String scriptName = "process.py";
+        String scriptName = getScriptFileName();
         String locMode = PreferencesController.getLocation();
         File scriptFile;
         if (!locMode.startsWith("FID")) {

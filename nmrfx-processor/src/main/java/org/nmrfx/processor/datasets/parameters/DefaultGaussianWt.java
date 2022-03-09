@@ -1,6 +1,6 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures 
- * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
+ * NMRFx Processor : A Program for Processing NMR Data 
+ * Copyright (C) 2004-2022 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,18 +15,15 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.nmrfx.chemistry;
+package org.nmrfx.processor.datasets.parameters;
 
-import java.util.*;
-
-interface AtomIterator extends Iterator {
-
-    @Override
-    public boolean hasNext();
-
-    @Override
-    public Atom next();
-
-    @Override
-    public void remove();
+/**
+ * Gaussian weighting parameters
+ */
+public class DefaultGaussianWt extends GaussianWt {
+    public DefaultGaussianWt(double gf, double gfs, double lb) {
+        this.gf = gf;
+        this.gfs = gfs;
+        this.lb = lb;
+    }
 }

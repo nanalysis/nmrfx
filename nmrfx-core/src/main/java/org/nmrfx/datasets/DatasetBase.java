@@ -18,7 +18,6 @@ public class DatasetBase {
     public final static int UCSF_HEADER_SIZE = 180;
     public final static int LABEL_MAX_BYTES = 16;
     public final static int SOLVENT_MAX_BYTES = 24;
-    protected static List<DatasetListener> observers = new ArrayList<>();
     public DatasetLayout layout = null;
     /**
      *
@@ -69,7 +68,6 @@ public class DatasetBase {
     protected int rdims;
     protected Double noiseLevel = null;
     protected double[][] values;
-    String details = "";
     TreeSet<DatasetRegion> regions;
     protected DatasetStorageInterface dataFile = null;
     private boolean lvlSet = false;
@@ -81,7 +79,6 @@ public class DatasetBase {
     private String posColor = "black";
     private String negColor = "red";
     private boolean littleEndian = false;
-    private boolean gotByteOrder = false;
 
     public DatasetBase() {
 
@@ -109,43 +106,12 @@ public class DatasetBase {
     }
 
     /**
-     * Check if there is an open file with the specified name.
-     *
-     * @param name the name to check
-     * @return true if there is an open file with that name
-     */
-    public static boolean checkExistingName(final String name) {
-        return ProjectBase.getActive().isDatasetPresent(name);
-    }
-
-    /**
-     * Check if there is an open file with the specified file path
-     *
-     * @param fullName the full path name to check
-     * @return true if the file is open
-     * @throws IOException if an I/O error occurs
-     */
-    public static boolean checkExistingFile(final String fullName) throws IOException {
-        File file = new File(fullName);
-        return ProjectBase.getActive().isDatasetPresent(file);
-    }
-
-    /**
-     * Is data file in Big Endian mode
-     *
-     * @return true if Big Endian
-     */
-    public boolean isBigEndian() {
-        return littleEndian == false;
-    }
-
-    /**
      * Is data file in Little Endian mode
      *
      * @return true if Little Endian
      */
     public boolean isLittleEndian() {
-        return littleEndian == true;
+        return littleEndian;
     }
 
     /**
@@ -298,10 +264,6 @@ public class DatasetBase {
 
         //rdims = 0;
         //theFile.dataType = 0;
-    }
-
-    public DatasetStorageInterface getDataFile() {
-        return dataFile;
     }
 
     /**
@@ -486,33 +448,8 @@ public class DatasetBase {
         if (fileName == null) {
             return null;
         } else {
-            return (DatasetBase) ProjectBase.getActive().getDataset(fileName);
+            return ProjectBase.getActive().getDataset(fileName);
         }
-    }
-
-    /**
-     * Get a a name that can be used for the file that hasn't already been used
-     *
-     * @param fileName The root part of the name. An integer number will be
-     * appended so that the name is unique among open files.
-     * @return the new name
-     */
-    public static String getUniqueName(final String fileName) {
-        String newName;
-        int dot = fileName.lastIndexOf('.');
-        String ext = "";
-        String rootName = fileName;
-        List<String> datasetNames = ProjectBase.getActive().getDatasetNames();
-        if (dot != -1) {
-            ext = rootName.substring(dot);
-            rootName = rootName.substring(0, dot);
-        }
-        int index = 0;
-        do {
-            index++;
-            newName = rootName + "_" + index + ext;
-        } while (datasetNames.contains(newName));
-        return newName;
     }
 
     public static double foldPPM(double ppm, double[] foldLimits) {
@@ -544,25 +481,6 @@ public class DatasetBase {
      */
     synchronized public static Collection<DatasetBase> datasets() {
         return ProjectBase.getActive().getDatasets();
-    }
-
-    /**
-     * Return a Set containing all the property names used by open datasets
-     *
-     * @return TreeSet containing the property names
-     */
-    public static TreeSet getPropertyNames() {
-        TreeSet<String> nameSet = new TreeSet<>();
-        Collection<DatasetBase> datasets = ProjectBase.getActive().getDatasets();
-
-        for (DatasetBase dataset : datasets) {
-            Iterator iter = dataset.properties.keySet().iterator();
-            while (iter.hasNext()) {
-                String propName = (String) iter.next();
-                nameSet.add(propName);
-            }
-        }
-        return nameSet;
     }
 
     public static void setMinimumTitles() {
@@ -624,35 +542,6 @@ public class DatasetBase {
 
     protected void removeFile(String datasetName) {
         ProjectBase.getActive().removeDataset(datasetName);
-        for (DatasetListener observer : observers) {
-            try {
-                observer.datasetRemoved(this);
-            } catch (RuntimeException e) {
-            }
-        }
-
-    }
-
-    /**
-     * Change the name (and title) of this dataset
-     *
-     * @param newName the name to be used.
-     */
-    synchronized public void rename(String newName) {
-        boolean removed = ProjectBase.getActive().removeDataset(fileName);
-        if (removed) {
-            fileName = newName;
-            title = fileName;
-            ProjectBase.getActive().addDataset(this, newName);
-            for (DatasetListener observer : observers) {
-                try {
-                    observer.datasetRenamed(this);
-                } catch (RuntimeException e) {
-                    // FIXME log this!
-                    observers.remove(observer);
-                }
-            }
-        }
     }
 
     /**
@@ -800,20 +689,6 @@ public class DatasetBase {
     }
 
     /**
-     * Convert dataset position in PPM to position in Hz
-     *
-     * @param iDim dataset dimension index
-     * @param ppm position in PPM
-     * @return position in Hz
-     */
-    public double ppmToHz(int iDim, double ppm) {
-        double pt = ppmToDPoint(iDim, ppm);
-        double hz = pt / size(iDim) * getSw(iDim);
-
-        return (hz);
-    }
-
-    /**
      * Convert dataset position in points to position in Hz
      *
      * @param iDim dataset dimension index
@@ -821,9 +696,7 @@ public class DatasetBase {
      * @return position in Hz
      */
     public double pointToHz(int iDim, double pt) {
-        double hz = pt / size(iDim) * getSw(iDim);
-
-        return (hz);
+        return (pt / size(iDim) * getSw(iDim));
     }
 
     /**
@@ -840,16 +713,6 @@ public class DatasetBase {
         } else {
             return (getSizeReal(iDim));
         }
-    }
-
-    int fold(int iDim, int pt) {
-        while (pt < 0) {
-            pt += getSizeReal(iDim);
-        }
-        while (pt >= getSizeReal(iDim)) {
-            pt -= getSizeReal(iDim);
-        }
-        return pt;
     }
 
     double fold(int iDim, double pt) {
@@ -903,11 +766,6 @@ public class DatasetBase {
      */
     public File getFile() {
         return file;
-    }
-
-    public void readParFile() {
-        DatasetParameterFile parFile = new DatasetParameterFile(this, layout);
-        parFile.readFile();
     }
 
     public void writeParFile(String fileName) {
@@ -2021,36 +1879,6 @@ public class DatasetBase {
     }
 
     /**
-     * Get the default color to be used in displaying dataset.
-     *
-     * @param getPositive true if the color for positive values should be
-     * returned and false if the color for negative values should be returned
-     * @return the color
-     */
-    public String getColor(boolean getPositive) {
-        if (getPositive) {
-            return posColor;
-        } else {
-            return negColor;
-        }
-    }
-
-    /**
-     * Set the default color.
-     *
-     * @param setPositive If true set the color for positive values, if false
-     * set the value for negative values.
-     * @param newColor the new color
-     */
-    public void setColor(boolean setPositive, String newColor) {
-        if (setPositive) {
-            posColor = newColor;
-        } else {
-            negColor = newColor;
-        }
-    }
-
-    /**
      * Get the number of dimensions in this dataset.
      *
      * @return the number of dimensions
@@ -2108,22 +1936,6 @@ public class DatasetBase {
             }
         }
         return iDim;
-    }
-
-    public double[] getNValues(int nValues) {
-        double[] pValues = null;
-        boolean ok = false;
-        for (int iDim = 0; iDim < getNDim(); iDim++) {
-            pValues = getValues(iDim);
-            if ((pValues != null) && (pValues.length == nValues)) {
-                ok = true;
-                break;
-            }
-        }
-        if (!ok) {
-            pValues = null;
-        }
-        return pValues;
     }
 
     /**
@@ -2203,10 +2015,6 @@ public class DatasetBase {
         return value;
     }
 
-    public boolean hasLayout() {
-        return layout != null;
-    }
-
     synchronized public RegionData analyzeRegion(int[][] pt, int[] cpt, double[] width, int[] dim)
             throws IOException {
         return null;
@@ -2242,7 +2050,7 @@ public class DatasetBase {
      * Enum for possible file types consistent with structure available in the
      * Dataset format
      */
-    public static enum FFORMAT {
+    public enum FFORMAT {
 
         /**
          * Indicates dataset is in NMRView format
@@ -2251,6 +2059,6 @@ public class DatasetBase {
         /**
          * Indicates dataset is in UCSF format
          */
-        UCSF;
+        UCSF
     }
 }

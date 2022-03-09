@@ -20,6 +20,7 @@ package org.nmrfx.peaks;
 import org.nmrfx.star.STAR3;
 import org.nmrfx.utilities.ConvUtil;
 import org.nmrfx.utilities.Format;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -796,12 +797,6 @@ public class PeakDim {
         } else {
             return (multiplet.isCoupled());
         }
-    }
-
-    class FreqIntensities {
-
-        double[] freqs = null;
-        double[] intensities = null;
     }
 
     public int getSpectralDim() {

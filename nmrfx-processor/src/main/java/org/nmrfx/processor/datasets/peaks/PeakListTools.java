@@ -20,9 +20,7 @@ package org.nmrfx.processor.datasets.peaks;
 import org.apache.commons.math3.analysis.UnivariateFunction;
 import org.apache.commons.math3.exception.TooManyEvaluationsException;
 import org.apache.commons.math3.optim.PointValuePair;
-import org.apache.commons.math3.optimization.ConvergenceChecker;
 import org.apache.commons.math3.optimization.GoalType;
-import org.apache.commons.math3.optimization.SimplePointChecker;
 import org.apache.commons.math3.optimization.univariate.BrentOptimizer;
 import org.apache.commons.math3.optimization.univariate.UnivariatePointValuePair;
 import org.apache.commons.math3.stat.StatUtils;
@@ -678,26 +676,6 @@ public class PeakListTools {
         }
         MatchResult matchResult = new MatchResult(matching, nMatches, score);
         return matchResult;
-    }
-
-    class UnivariateRealPointValuePairChecker implements ConvergenceChecker {
-
-        ConvergenceChecker<PointValuePair> cCheck = new SimplePointChecker<>();
-
-        @Override
-        public boolean converged(final int iteration, final Object previous, final Object current) {
-            UnivariatePointValuePair pPair = (UnivariatePointValuePair) previous;
-            UnivariatePointValuePair cPair = (UnivariatePointValuePair) current;
-
-            double[] pPoint = new double[1];
-            double[] cPoint = new double[1];
-            pPoint[0] = pPair.getPoint();
-            cPoint[0] = cPair.getPoint();
-            PointValuePair rpPair = new PointValuePair(pPoint, pPair.getValue());
-            PointValuePair rcPair = new PointValuePair(cPoint, cPair.getValue());
-            boolean converged = cCheck.converged(iteration, rpPair, rcPair);
-            return converged;
-        }
     }
 
     private static void optimizeMatch(PeakList peakList, final ArrayList<MatchItem> iMList, final double[] iOffsets, final ArrayList<MatchItem> jMList, final double[] jOffsets, final double[] tol, int minDim, double min, double max) {

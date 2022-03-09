@@ -38,7 +38,6 @@ import javafx.fxml.Initializable;
 import javafx.geometry.Bounds;
 import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
-import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -51,9 +50,6 @@ import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
-import javafx.scene.text.Font;
-import javafx.scene.text.FontWeight;
-import javafx.scene.text.TextAlignment;
 import javafx.stage.FileChooser;
 import javafx.stage.FileChooser.ExtensionFilter;
 import javafx.stage.Stage;
@@ -1299,14 +1295,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
     }
 
     @Override
-    public void refreshPeakListView(PeakList peakList
-    ) {
-    }
-
-    class ChartLabel extends Label {
-
-        PolyChart chart;
-
+    public void refreshPeakListView(PeakList peakList) {
     }
 
     @Override
@@ -1378,22 +1367,6 @@ public class FXMLController implements  Initializable, PeakNavigable {
 
     public boolean getCrossHairState(int iCross, int jOrient) {
         return crossHairStates[iCross][jOrient];
-    }
-
-    public ChartLabel getLabel(PolyChart chart, String color, String id) {
-        ChartLabel label = new ChartLabel();
-        label.textProperty().set(id);
-        label.textAlignmentProperty().set(TextAlignment.CENTER);
-        label.alignmentProperty().set(Pos.CENTER);
-        label.setOpacity(1.0);
-        label.setTextFill(Color.WHITE);
-        label.setFont(Font.font("Arial", FontWeight.BOLD, 16d));
-        label.setStyle("-fx-background-color: " + color
-                + ";-fx-alignment:center;-fx-text-alignment:center;");
-        label.setManaged(false);
-        label.chart = chart;
-
-        return label;
     }
 
     public static FXMLController create() {

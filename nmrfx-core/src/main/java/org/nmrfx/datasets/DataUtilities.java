@@ -23,9 +23,6 @@ import java.io.RandomAccessFile;
 
 public class DataUtilities {
 
-    public void readBytes(byte[] dataBytes, long newPos, int length) {
-    }
-
     public static void readBytes(RandomAccessFile raFile, byte[] dataBytes, long newPos, int length) {
         try {
             raFile.seek(newPos);
