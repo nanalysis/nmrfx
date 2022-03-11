@@ -2007,8 +2007,12 @@ public class PolyChart extends Region implements PeakListener {
         }
     }
 
-    public void setChartDisable(boolean state) {
+    public void setChartDisabled(boolean state) {
         disabled = state;
+    }
+
+    public boolean isChartDisabled() {
+        return disabled;
     }
 
     public static Color chooseBlackWhite(Color color) {
