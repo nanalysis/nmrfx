@@ -1323,7 +1323,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
         canvas.setManaged(false);
         peakCanvas.setManaged(false);
         annoCanvas.setManaged(false);
-        plotContent.setManaged(true);
+        plotContent.setManaged(false);
         mainBox.layoutBoundsProperty().addListener((ObservableValue<? extends Bounds> arg0, Bounds arg1, Bounds arg2) -> {
             if (arg2.getWidth()  < 1.0 || arg2.getHeight() < 1.0) {
                 return;

@@ -26,6 +26,8 @@ import org.nmrfx.processor.datasets.DatasetType;
 import org.nmrfx.processor.datasets.parameters.*;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.processing.SampleSchedule;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -39,6 +41,8 @@ import static com.nanalysis.jcamp.model.Label.*;
  * When the file contain both, the FID is used.
  */
 class JCAMPData implements NMRData {
+    private static final Logger log = LoggerFactory.getLogger(JCAMPData.class);
+
     private static final List<String> MATCHING_EXTENSIONS = List.of(".jdx", ".dx");
     private static final double AMBIENT_TEMPERATURE = 298.0; // in K, around 25° C
 
@@ -108,6 +112,8 @@ class JCAMPData implements NMRData {
 
     public JCAMPData(String path) throws IOException {
         this.path = path;
+
+        log.info("Parsing JCAMP data: {}", path);
         this.document = new JCampParser().parse(new File(path));
 
         if (document.getBlockCount() == 0) {
@@ -231,7 +237,7 @@ class JCAMPData implements NMRData {
     }
 
     @Override
-    public int getSize(int dim) {
+    public synchronized int getSize(int dim) {
         return size.computeIfAbsent(dim, this::extractSize);
     }
 
@@ -274,7 +280,7 @@ class JCAMPData implements NMRData {
     }
 
     @Override
-    public double getSF(int dim) {
+    public synchronized double getSF(int dim) {
         return sf.computeIfAbsent(dim, this::extractSF);
     }
 
@@ -315,13 +321,27 @@ class JCAMPData implements NMRData {
     }
 
     @Override
-    public double getSW(int dim) {
+    public synchronized double getSW(int dim) {
         return sw.computeIfAbsent(dim, this::extractSW);
     }
 
     private double extractSW(int dim) {
-        Label label = getSWLabel(dim).orElseThrow(() -> new IllegalStateException("Unknown spectral width, unable to extract SW for dimension " + dim));
-        return block.get(label, dim).getDouble();
+        // try from specific SW record first
+        // if none is present, then try to guess from first/last timestamps
+
+        Optional<Label> label = getSWLabel(dim);
+        if(label.isPresent()) {
+            return block.get(label.get(), dim).getDouble();
+        } else if(dim == 0 && block.contains(FIRST) && block.contains(LAST)) {
+            log.debug("Trying to guess SW from FIRST and LAST records for dimension {}", dim);
+            double first = block.get(FIRST).getDoubles()[0];
+            double last = block.get(LAST).getDoubles()[0];
+            double time = Math.abs(last - first);
+            int nbPoints = real[0].length;
+            return nbPoints / time;
+        } else {
+            throw new IllegalStateException("Unknown spectral width, unable to extract SW for dimension " + dim);
+        }
     }
 
     @Override
@@ -358,7 +378,7 @@ class JCAMPData implements NMRData {
     }
 
     @Override
-    public double getRef(int dim) {
+    public synchronized double getRef(int dim) {
         return ref.computeIfAbsent(dim, this::extractRef);
     }
 
