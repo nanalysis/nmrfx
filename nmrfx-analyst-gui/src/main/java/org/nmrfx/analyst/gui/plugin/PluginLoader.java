@@ -53,6 +53,6 @@ public class PluginLoader {
     public void registerPluginsOnEntryPoint(EntryPoint entryPoint, Object object) {
         plugins.stream()
                 .filter(plugin -> plugin.getSupportedEntryPoints().contains(entryPoint))
-                .forEach(plugin -> plugin.registerOnEntryPoint(EntryPoint.MENU_PLUGINS, object));
+                .forEach(plugin -> plugin.registerOnEntryPoint(entryPoint, object));
     }
 }
