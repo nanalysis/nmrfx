@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# swank [ script  [ arg ... ] ]
+# nmrfxs [ script  [ arg ... ] ]
 # 
 # optional environment variables:
 #
@@ -8,21 +8,18 @@
 # CLASSPATH  - colon separated list of additional jar files & class directories
 # JAVA_OPTS  - list of JVM options, e.g. "-Xmx256m -Dfoo=bar"
 #
+JAVA_OPTS="--add-opens=javafx.controls/com.sun.javafx.scene.control.inputmap=ALL-UNNAMED"
+LOG_CONFIG="-Dlogback.configurationFile=config/logback.xml"
+
+if [ -n "$NMRFXP_MEMORY" ] ; then
+    HEAP_MEM=$NMRFXP_MEMORY
+else
+    HEAP_MEM="2048"
+fi
 
 nvjver=${project.version}
 nvjmain=org.python.util.jython
-iscygwin=false
-ismsys=false
-case "`uname`" in
-    CYGWIN*) iscygwin=true ;;
-    MINGW*) ismsys=true ;;
-esac
-
-if [ -n "$NMRFXSTR_MEMORY" ] ; then
-    HEAP_MEM=$NMRFXSTR_MEMORY
-else
-    HEAP_MEM="512"
-fi
+nmrfxlib="nmrfx-structure-$nvjver.jar"
 
 JAVA=java
 
@@ -40,45 +37,32 @@ while [ -h "$pgm" ]; do
 done
 
 dir=`dirname "$pgm"`
-CLASSPATH=${dir}"/lib/Manifest.jar"
-
+CLASSPATH="${dir}/lib/Manifest.jar:${dir}/plugins/*"
 jreDir=`ls -d ${dir}/*jre* 2>/dev/null`
 
 if [ -d "${dir}/../jre.bundle/Contents/Home/jre/bin" ] ; then
     JAVA="${dir}/../jre.bundle/Contents/Home/jre/bin/java"
-    CLASSPATH="$dir/lib/nmrfx-structure-$nvjver.jar:$CLASSPATH"
-elif [ -d "${jreDir}/Contents/Home/bin" ] ; then
-    JAVA="${jreDir}/Contents/Home/bin/java"
-    CLASSPATH="$dir/lib/nmrfx-structure-$nvjver.jar:$CLASSPATH"
+    CLASSPATH="$dir/lib/$nmrfxlib:$CLASSPATH"
 elif [ -d "${dir}/jre/bin" ] ; then
     JAVA="${dir}/jre/bin/java"
-    CLASSPATH="$dir/lib/nmrfx-structure-$nvjver.jar:$CLASSPATH"
+    CLASSPATH="$dir/lib/$nmrfxlib:$CLASSPATH"
+elif [ -f "${jreDir}/bin/java" ] ; then
+    JAVA="${jreDir}/bin/java"
+    CLASSPATH="$dir/lib/$nmrfxlib:$CLASSPATH"
 else
     if [ -n "$JAVA_HOME" ] ; then
-        if [ -x "$JAVA_HOME/jre/sh/java"  ] ; then
-            # AIX location
-            JAVA="$JAVA_HOME/jre/sh/java"
-        else
-            JAVA="$JAVA_HOME/bin/java"
-        fi
+        JAVA="$JAVA_HOME/bin/java"
     fi
-
-    if $ismsys ; then
-        nvjdir=`$dir/echopath "$dir"`
-        CLASSPATH="$nvjdir/nmrfx-structure-$nvjver.jar;$CLASSPATH"
-    elif $iscygwin ; then
-        CLASSPATH=`cygpath -pu "$CLASSPATH"`
-        CLASSPATH="$dir/nmrfx-structure-$nvjver.jar;$CLASSPATH"
-        CLASSPATH=`cygpath -pw "$CLASSPATH"`
-    else
-        CLASSPATH="$dir/nmrfx-structure-$nvjver.jar:$CLASSPATH"
-    fi
+    CLASSPATH="$dir/$nmrfxlib:$CLASSPATH"
 fi
+
 export CLASSPATH
+
 if [ "$#" -eq 0 ]; then
     #exec "$JAVA"  --add-opens java.base/sun.nio.ch=ALL-UNNAMED --add-opens java.base/java.io=ALL-UNNAMED -Djava.awt.headless=true -mx${HEAP_MEM}m -cp "$CLASSPATH" $JAVA_OPTS $nvjmain ${1+"$@"}
     exec "$JAVA"  -Djava.awt.headless=true -mx${HEAP_MEM}m -cp "$CLASSPATH" $JAVA_OPTS $nvjmain ${1+"$@"}
 else
     #exec "$JAVA"  --add-opens java.base/sun.nio.ch=ALL-UNNAMED --add-opens java.base/java.io=ALL-UNNAMED -Djava.awt.headless=true -mx${HEAP_MEM}m -cp "$CLASSPATH" $JAVA_OPTS $nvjmain -c "import dispatchnvfxs" ${1+"$@"}
     exec "$JAVA"  -Djava.awt.headless=true -mx${HEAP_MEM}m -cp "$CLASSPATH" $JAVA_OPTS $nvjmain -c "import dispatchnvfxs" ${1+"$@"}
+
 fi
