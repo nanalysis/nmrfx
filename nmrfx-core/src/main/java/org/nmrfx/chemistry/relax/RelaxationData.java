@@ -33,7 +33,9 @@ import java.util.*;
 public class RelaxationData implements RelaxationValues {
 
     public enum relaxTypes {
-        R1("R1"), R2("R2"), T1RHO("T1rho"), NOE("NOE"), S2("S2");
+        R1("R1"), R2("R2"), T1RHO("T1rho"),
+        NOE("NOE"), S2("S2"),
+        RQ("RQ"), RAP("RAP");
 
         private final String name;
 
