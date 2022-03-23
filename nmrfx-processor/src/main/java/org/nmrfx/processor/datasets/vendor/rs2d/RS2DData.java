@@ -35,19 +35,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
-import javax.xml.XMLConstants;
-import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
-import javax.xml.xpath.*;
-import java.io.*;
+import javax.xml.xpath.XPathExpressionException;
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
@@ -56,9 +52,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
-import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
 
 import static org.nmrfx.processor.datasets.vendor.rs2d.XmlUtil.*;
 
@@ -70,8 +67,8 @@ public class RS2DData implements NMRData {
     public static final String DATA_FILE_NAME = "data.dat";
     public static final String HEADER_FILE_NAME = "header.xml";
     public static final String SERIES_FILE_NAME = "Serie.xml";
+    public static final String PROC_DIR = "Proc";
 
-    private static final String PROC_DIR = "Proc";
     private static final String BASE_FREQ_PAR = "BASE_FREQ_";
     private static final int MAXDIM = 4;
 
@@ -214,53 +211,6 @@ public class RS2DData implements NMRData {
         return found;
     }
 
-    public static Optional<Path> getLastProcPath(Path datasetDir) {
-        return findLastProcId(datasetDir).stream()
-                .mapToObj(id -> datasetDir.resolve(PROC_DIR).resolve(String.valueOf(id)))
-                .findFirst();
-    }
-
-    public static List<Integer> listProcIds(Path datasetDir) {
-        try (Stream<Path> fileStream = Files.list(datasetDir.resolve(PROC_DIR))) {
-            return fileStream.filter(Files::isDirectory)
-                    .filter(Files::isDirectory)
-                    .map(path -> path.getFileName().toString())
-                    .filter(StringUtils::isNumeric)
-                    .mapToInt(Integer::parseInt)
-                    .sorted()
-                    .boxed()
-                    .collect(Collectors.toList());
-        } catch (IOException e) {
-            log.warn("Unable to list processed directories", e);
-            return Collections.emptyList();
-        }
-    }
-
-    public static int findNextProcId(Path datasetDir) {
-        OptionalInt max = findLastProcId(datasetDir);
-        return max.isPresent() ? max.getAsInt() + 1 : 0;
-    }
-
-    public static Path findNextProcPath(Path datasetDir) {
-        return datasetDir.resolve(PROC_DIR).resolve(String.valueOf(findNextProcId(datasetDir)));
-    }
-
-    /**
-     * Get the last process id for this dataset.
-     * Returns empty (not null) if no valid process dir was found.
-     */
-    public static OptionalInt findLastProcId(Path datasetDir) {
-        try (Stream<Path> fileStream = Files.list(datasetDir.resolve(PROC_DIR))) {
-            return fileStream.filter(Files::isDirectory)
-                    .map(path -> path.getFileName().toString())
-                    .filter(StringUtils::isNumeric)
-                    .mapToInt(Integer::parseInt)
-                    .max();
-        } catch (IOException e) {
-            log.warn("Unable to list processed directories", e);
-            return OptionalInt.empty();
-        }
-    }
 
     private static boolean findFIDFiles(String dirPath) {
         Path headerPath = Paths.get(dirPath, HEADER_FILE_NAME);

@@ -25,6 +25,7 @@ import org.nmrfx.processor.datasets.vendor.NMRData;
 import org.nmrfx.processor.datasets.vendor.NMRDataUtil;
 import org.nmrfx.processor.datasets.vendor.nmrview.NMRViewData;
 import org.nmrfx.processor.datasets.vendor.rs2d.RS2DData;
+import org.nmrfx.processor.datasets.vendor.rs2d.RS2DProcUtil;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.processing.MultiVecCounter;
 import org.nmrfx.processor.processing.Processor;
@@ -974,7 +975,7 @@ public class ChartProcessor {
             File file;
             if (getDatasetType()== DatasetType.SPINit) {
                 Path datasetDir = directory.toPath();
-                Path newProcPath = RS2DData.findNextProcPath(datasetDir);
+                Path newProcPath = RS2DProcUtil.findNextProcPath(datasetDir);
                 try {
                     Files.createDirectories(newProcPath);
                 } catch (IOException e) {

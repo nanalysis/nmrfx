@@ -3,6 +3,7 @@ package org.nmrfx.processor.datasets.vendor;
 import org.junit.Test;
 import org.nmrfx.processor.datasets.DatasetCompare;
 import org.nmrfx.processor.datasets.vendor.rs2d.RS2DData;
+import org.nmrfx.processor.datasets.vendor.rs2d.RS2DProcUtil;
 import org.nmrfx.processor.datasets.vendor.rs2d.XmlUtil;
 import org.w3c.dom.Document;
 
@@ -86,7 +87,7 @@ public class RS2DDataTest {
             return;
         }
 
-        var procNums = RS2DData.listProcIds(seriesDirectory);
+        var procNums = RS2DProcUtil.listProcIds(seriesDirectory);
         assertEquals(List.of(0), procNums);
     }
 
@@ -96,7 +97,7 @@ public class RS2DDataTest {
         if (testFilesMissing(seriesDirectory.toFile())) {
             return;
         }
-        int lastProcNum = RS2DData.findLastProcId(seriesDirectory).orElse(-1);
+        int lastProcNum = RS2DProcUtil.findLastProcId(seriesDirectory).orElse(-1);
         assertEquals(0, lastProcNum);
     }
 }
