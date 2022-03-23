@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package org.nmrfx.processor.datasets.vendor;
+package org.nmrfx.processor.datasets.vendor.rs2d;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.math3.complex.Complex;
@@ -15,6 +15,8 @@ import org.nmrfx.processor.datasets.parameters.FPMult;
 import org.nmrfx.processor.datasets.parameters.GaussianWt;
 import org.nmrfx.processor.datasets.parameters.LPParams;
 import org.nmrfx.processor.datasets.parameters.SinebellWt;
+import org.nmrfx.processor.datasets.vendor.NMRData;
+import org.nmrfx.processor.datasets.vendor.VendorPar;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.processing.SampleSchedule;
 import org.slf4j.Logger;
@@ -47,20 +49,20 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- *
- * @author brucejohnson
+ * RS2D data support.
  */
 public class RS2DData implements NMRData {
-    private static final Logger log = LoggerFactory.getLogger(RS2DData.class);
-
     public static final DatasetType DATASET_TYPE = DatasetType.SPINit;
     public static final String DATA_FILE_NAME = "data.dat";
     public static final String HEADER_FILE_NAME = "header.xml";
     public static final String SERIES_FILE_NAME = "Serie.xml";
-    static final String PROC_DIR = "Proc";
-    static final String BASE_FREQ_PAR = "BASE_FREQ_";
 
-    static final int MAXDIM = 4;
+    private static final String PROC_DIR = "Proc";
+    private static final String BASE_FREQ_PAR = "BASE_FREQ_";
+    private static final int MAXDIM = 4;
+
+    private static final Logger log = LoggerFactory.getLogger(RS2DData.class);
+
 
     private final String fpath;
     private FileChannel fc = null;
@@ -179,7 +181,7 @@ public class RS2DData implements NMRData {
      * @param bpath full path for FID data
      * @return if FID data was successfully found or not
      */
-    protected static boolean findFID(StringBuilder bpath) {
+    public static boolean findFID(StringBuilder bpath) {
         boolean found = false;
         if (findFIDFiles(bpath.toString())) {
             found = true;
@@ -660,7 +662,7 @@ public class RS2DData implements NMRData {
                     name = "SPECTRAL_WIDTH_2D";
                     break;
                 default:
-                    name = "SPECTRAL_WiDTH_" + (iDim + 1) + "D";
+                    name = "SPECTRAL_WIDTH_" + (iDim + 1) + "D";
             }
             if ((dpar = getParDouble(name)) != null) {
                 sw = dpar;
@@ -823,7 +825,7 @@ public class RS2DData implements NMRData {
                     name = "SPECTRAL_WIDTH_2D";
                     break;
                 default:
-                    name = "SPECTRAL_WiDTH_" + (iDim + 1) + "D";
+                    name = "SPECTRAL_WIDTH_" + (iDim + 1) + "D";
             }
             names[iDim] = name;
         }

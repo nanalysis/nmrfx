@@ -2,6 +2,7 @@ package org.nmrfx.processor.datasets.vendor;
 
 import org.junit.Test;
 import org.nmrfx.processor.datasets.DatasetCompare;
+import org.nmrfx.processor.datasets.vendor.rs2d.RS2DData;
 import org.w3c.dom.Document;
 
 import javax.xml.transform.TransformerException;
