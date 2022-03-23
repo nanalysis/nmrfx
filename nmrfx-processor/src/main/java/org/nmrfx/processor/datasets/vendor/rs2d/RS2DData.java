@@ -34,7 +34,6 @@ import org.nmrfx.processor.processing.SampleSchedule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
-import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -57,6 +56,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 
+import static org.nmrfx.processor.datasets.vendor.rs2d.RS2DParam.*;
 import static org.nmrfx.processor.datasets.vendor.rs2d.XmlUtil.*;
 
 /**
@@ -69,7 +69,6 @@ public class RS2DData implements NMRData {
     public static final String SERIES_FILE_NAME = "Serie.xml";
     public static final String PROC_DIR = "Proc";
 
-    private static final String BASE_FREQ_PAR = "BASE_FREQ_";
     private static final int MAXDIM = 4;
 
     private static final Logger log = LoggerFactory.getLogger(RS2DData.class);
@@ -233,23 +232,23 @@ public class RS2DData implements NMRData {
                 parMap.put(parName, parValues);
             }
             groupDelay = 0.0;
-            obsNucleus = getPar("OBSERVED_NUCLEUS");
+            obsNucleus = getPar(OBSERVED_NUCLEUS.name());
             Double obsFreq = null;
-            Double obsSW = getParDouble("SPECTRAL_WIDTH");
-            tempK = getParDouble("SAMPLE_TEMPERATURE");
+            Double obsSW = getParDouble(SPECTRAL_WIDTH.name());
+            tempK = getParDouble(SAMPLE_TEMPERATURE.name());
             String baseSFName = "";
             nDim = 0;
 
             for (int i = 0; i < MAXDIM; i++) {
-                String nucleus = getPar("NUCLEUS_" + (i + 1));
+                String nucleus = getPar(NUCLEUS_PARAMS.get(i).name());
                 if (nucleus.equals(obsNucleus)) {
                     obsFreq = getSF(i);
-                    baseSFName = BASE_FREQ_PAR + (i + 1);
+                    baseSFName = BASE_FREQ_PARAMS.get(i).name();
                     break;
                 }
             }
             if (processed) {
-                List<String> dataModes = parMap.get("DATA_REPRESENTATION");
+                List<String> dataModes = parMap.get(DATA_REPRESENTATION.name());
                 if (!dataModes.isEmpty()) {
                     for (int i = 0; i < MAXDIM; i++) {
                         setComplex(i, dataModes.get(i).equals("COMPLEX"));
@@ -260,11 +259,11 @@ public class RS2DData implements NMRData {
             for (int i = 0; i < MAXDIM; i++) {
                 int dimSize;
                 if (processed) {
-                    dimSize = getParInt("MATRIX_DIMENSION_" + (i + 1) + "D");
+                    dimSize = getParInt(DIMENSION_PARAMS.get(i).name());
                 } else {
-                    dimSize = getParInt("ACQUISITION_MATRIX_DIMENSION_" + (i + 1) + "D");
+                    dimSize = getParInt(ACQUISITION_DIMENSION_PARAMS.get(i).name());
                 }
-                String nucleus = getPar("NUCLEUS_" + (i + 1));
+                String nucleus = getPar(NUCLEUS_PARAMS.get(i).name());
                 if (nucleus.equals(obsNucleus)) {
                     Sf[i] = obsFreq;
                     Sw[i] = obsSW;  // fixme  this is kluge to fis some files that have wrong SPECTRAL_WIDTH_2D
@@ -327,7 +326,7 @@ public class RS2DData implements NMRData {
         exchangeXY = true;
         negatePairs = false;
         fttype[0] = "ft";
-        List<String> acqModes = parMap.get("ACQUISITION_MODE");
+        List<String> acqModes = parMap.get(ACQUISITION_MODE.name());
         if (!acqModes.isEmpty()) {
             if (acqModes.get(0).equals("REAL")) {
                 fttype[0] = "rft";
@@ -501,7 +500,7 @@ public class RS2DData implements NMRData {
 
     @Override
     public String getSolvent() {
-        return getPar("SOLVENT");
+        return getPar(SOLVENT.name());
     }
 
     @Override
@@ -511,7 +510,7 @@ public class RS2DData implements NMRData {
 
     @Override
     public String getSequence() {
-        return getPar("SEQUENCE_NAME");
+        return getPar(SEQUENCE_NAME.name());
     }
 
     @Override
@@ -521,7 +520,7 @@ public class RS2DData implements NMRData {
             sf = Sf[iDim];
         } else {
             Double dpar;
-            if ((dpar = getParDouble(BASE_FREQ_PAR + (iDim + 1))) != null) {
+            if ((dpar = getParDouble(BASE_FREQ_PARAMS.get(iDim).name())) != null) {
                 sf = (dpar + getOffset(iDim)) / 1.0e6;
                 Sf[iDim] = sf;
             }
@@ -546,17 +545,7 @@ public class RS2DData implements NMRData {
             sw = Sw[iDim];
         } else {
             Double dpar;
-            String name;
-            switch (iDim) {
-                case 0:
-                    name = "SPECTRAL_WIDTH";
-                    break;
-                case 1:
-                    name = "SPECTRAL_WIDTH_2D";
-                    break;
-                default:
-                    name = "SPECTRAL_WIDTH_" + (iDim + 1) + "D";
-            }
+            String name = SW_PARAMS.get(iDim).name();
             if ((dpar = getParDouble(name)) != null) {
                 sw = dpar;
             }
@@ -575,7 +564,7 @@ public class RS2DData implements NMRData {
     }
 
     double getOffset(int iDim) {
-        return getParDouble("OFFSET_FREQ_" + (iDim + 1));
+        return getParDouble(OFFSET_FREQ_PARAMS.get(iDim).name());
     }
 
     @Override
@@ -585,7 +574,7 @@ public class RS2DData implements NMRData {
             ref = Ref[iDim];
         } else {
             double sw = getSW(iDim);
-            var srValues = getParDoubleList("SR");
+            var srValues = getParDoubleList(SR.name());
 
             for (int i = 0; i < srValues.size() && i < nDim; i++) {
                 double offset = getOffset(i);
@@ -620,7 +609,7 @@ public class RS2DData implements NMRData {
             tn = obsNuc[iDim];
         } else {
             String dpar;
-            if ((dpar = getPar("NUCLEUS_" + (iDim + 1))) != null) {
+            if ((dpar = getPar(NUCLEUS_PARAMS.get(iDim).name())) != null) {
                 tn = dpar;
                 obsNuc[iDim] = tn;
             }
@@ -707,22 +696,7 @@ public class RS2DData implements NMRData {
 
     @Override
     public String[] getSWNames() {
-        String[] names = new String[nDim];
-        for (int iDim = 0; iDim < nDim; iDim++) {
-            String name;
-            switch (iDim) {
-                case 0:
-                    name = "SPECTRAL_WIDTH";
-                    break;
-                case 1:
-                    name = "SPECTRAL_WIDTH_2D";
-                    break;
-                default:
-                    name = "SPECTRAL_WIDTH_" + (iDim + 1) + "D";
-            }
-            names[iDim] = name;
-        }
-        return names;
+        return SW_PARAMS.stream().map(Enum::name).toArray(String[]::new);
     }
 
     @Override
@@ -1161,8 +1135,8 @@ public class RS2DData implements NMRData {
     }
 
     public void setHeaderMatrixDimensions(Dataset dataset) throws XPathExpressionException {
-        for (int iDim = 1; (iDim <= RS2DData.MAXDIM) && (iDim <= dataset.getNDim()); iDim++) {
-            setParam(headerDocument, "MATRIX_DIMENSION_" + iDim + "D", String.valueOf(dataset.getSizeReal(iDim - 1)));
+        for (int iDim = 0; (iDim < RS2DData.MAXDIM) && (iDim < dataset.getNDim()); iDim++) {
+            setParam(headerDocument, DIMENSION_PARAMS.get(iDim).name(), String.valueOf(dataset.getSizeReal(iDim)));
         }
     }
 
@@ -1173,8 +1147,8 @@ public class RS2DData implements NMRData {
             phase0Values.add(String.format("%.2f",dataset.getPh0(i)));
             phase1Values.add(String.format("%.2f",dataset.getPh1(i)));
         }
-        setParams(headerDocument, "PHASE_0", phase0Values);
-        setParams(headerDocument, "PHASE_1", phase1Values);
+        setParams(headerDocument, PHASE_0.name(), phase0Values);
+        setParams(headerDocument, PHASE_1.name(), phase1Values);
     }
 
     public boolean isValidDatasetPath(Path procNumPath) {
