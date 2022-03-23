@@ -1,7 +1,19 @@
 /*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+ * NMRFx: A Program for Processing NMR Data
+ * Copyright (C) 2004-2022 One Moon Scientific, Inc., Westfield, N.J., USA
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 package org.nmrfx.processor.datasets.vendor.rs2d;
 
@@ -47,6 +59,8 @@ import java.nio.file.StandardOpenOption;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static org.nmrfx.processor.datasets.vendor.rs2d.XmlUtil.*;
 
 /**
  * RS2D data support.
@@ -254,12 +268,6 @@ public class RS2DData implements NMRData {
         return headerPath.toFile().exists() && dataPath.toFile().exists();
     }
 
-    private Document readDocument(Path filePath) throws ParserConfigurationException, IOException, SAXException {
-        var factory = DocumentBuilderFactory.newInstance();
-        factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
-        return factory.newDocumentBuilder().parse(filePath.toFile());
-    }
-
     private void openParFile(String parpath, boolean processed) throws IOException {
         parMap = new LinkedHashMap<>(200);
         Path headerPath = Paths.get(parpath, HEADER_FILE_NAME);
@@ -333,79 +341,15 @@ public class RS2DData implements NMRData {
             throw new IOException(ex.getMessage());
         }
     }
+
     public Document getHeaderDocument() {
         return headerDocument;
     }
+
     public Document getSeriesDocument() {
         return seriesDocument;
     }
 
-    private List<String> getParams(Document xml) throws XPathExpressionException {
-        String expression = "/header/params/entry/key/text()";
-        XPath path = XPathFactory.newInstance().newXPath();
-        XPathExpression expr = path.compile(expression);
-        NodeList nodes = (NodeList) expr.evaluate(xml, XPathConstants.NODESET);
-        var nodeValues = new ArrayList<String>();
-        for (int i = 0; i < nodes.getLength(); i++) {
-            nodeValues.add(nodes.item(i).getNodeValue());
-        }
-        return nodeValues;
-    }
-
-    static List<Node> getParamNode(Document xml, String paramName) throws XPathExpressionException {
-        if (!paramName.contains("'")) {
-            paramName = "'" + paramName + "'";
-        } else if (!paramName.contains("\"")) {
-            paramName = "\"" + paramName + "\"";
-        } else {
-            paramName = "concat('" + paramName.replace("'", "',\"'\",'") + "')";
-        }
-        String expression = "/header/params/entry/key[text()=" + paramName + "]/../value/value";
-        XPath path = XPathFactory.newInstance().newXPath();
-        XPathEvaluationResult<?> result = path.evaluateExpression(expression, xml.getDocumentElement());
-        List<Node> nodeResult = new ArrayList<>();
-        switch (result.type()) {
-            case NODESET:
-                XPathNodes nodes = (XPathNodes) result.value();
-                for (Node node : nodes) {
-                    nodeResult.add(node);
-                }
-                break;
-            case NODE:
-                Node node = (Node) result.value();
-                nodeResult.add(node);
-        }
-        return nodeResult;
-    }
-
-    static List<String> getParamValue(Document xml, String paramName) throws XPathExpressionException {
-        if (!paramName.contains("'")) {
-            paramName = "'" + paramName + "'";
-        } else if (!paramName.contains("\"")) {
-            paramName = "\"" + paramName + "\"";
-        } else {
-            paramName = "concat('" + paramName.replace("'", "',\"'\",'") + "')";
-        }
-        String expression = "/header/params/entry/key[text()=" + paramName + "]/../value/value";
-        XPath path = XPathFactory.newInstance().newXPath();
-        XPathEvaluationResult<?> result = path.evaluateExpression(expression, xml.getDocumentElement());
-        var parList = new ArrayList<String>();
-        switch (result.type()) {
-            case NODESET:
-                XPathNodes nodes = (XPathNodes) result.value();
-                for (Node node : nodes) {
-                    parList.add(node.getTextContent());
-                }
-                break;
-            case NODE:
-                Node node = (Node) result.value();
-                parList.add(node.getTextContent());
-                break;
-            default:
-                System.out.println("default");
-        }
-        return parList;
-    }
 
     private void openDataFile(String datapath) {
         File file = new File(datapath);
@@ -534,7 +478,6 @@ public class RS2DData implements NMRData {
     public Double getParDouble(String parname) {
         if ((parMap == null) || (getPar(parname) == null)) {
             return null;
-//            throw new NullPointerException();
         } else {
             return Double.parseDouble(getPar(parname));
         }
@@ -1268,13 +1211,13 @@ public class RS2DData implements NMRData {
     }
 
     public void setParam(String paramName, String paramValue) throws XPathExpressionException {
-        var nodes = RS2DData.getParamNode(headerDocument, paramName);
+        var nodes = getParamNode(headerDocument, paramName);
         if (!nodes.isEmpty()) {
             nodes.get(0).setTextContent(paramValue);
         }
     }
     public void setParams(String paramName, List<String> paramValues) throws XPathExpressionException {
-        var nodes = RS2DData.getParamNode(headerDocument, paramName);
+        var nodes = getParamNode(headerDocument, paramName);
         if (!nodes.isEmpty()) {
             Node lastNode = nodes.get(0);
             for (int i = 0; i < paramValues.size(); i++) {
@@ -1343,18 +1286,5 @@ public class RS2DData implements NMRData {
         } catch (TransformerException e) {
             throw new IOException(e);
         }
-    }
-
-    public void writeDocument(Document document, File outFile) throws TransformerException, IOException {
-        DOMSource source = new DOMSource(document);
-        StreamResult result =  new StreamResult(new StringWriter());
-        TransformerFactory transformerFactory = TransformerFactory.newInstance();
-        transformerFactory.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "");
-        transformerFactory.setAttribute(XMLConstants.ACCESS_EXTERNAL_STYLESHEET, "");
-
-        Transformer transformer = transformerFactory.newTransformer();
-        transformer.transform(source, result);
-        String xmlString = result.getWriter().toString();
-        Files.writeString(outFile.toPath(),xmlString);
     }
 }

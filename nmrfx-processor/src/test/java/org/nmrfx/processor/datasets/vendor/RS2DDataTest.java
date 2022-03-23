@@ -3,6 +3,7 @@ package org.nmrfx.processor.datasets.vendor;
 import org.junit.Test;
 import org.nmrfx.processor.datasets.DatasetCompare;
 import org.nmrfx.processor.datasets.vendor.rs2d.RS2DData;
+import org.nmrfx.processor.datasets.vendor.rs2d.XmlUtil;
 import org.w3c.dom.Document;
 
 import javax.xml.transform.TransformerException;
@@ -75,7 +76,7 @@ public class RS2DDataTest {
         rs2DData.setParam("PHASE_0", "55.5");
         rs2DData.setParam("PHASE_1", "5.55");
         Document headerDocument = rs2DData.getHeaderDocument();
-        rs2DData.writeDocument(headerDocument, outHeader);
+        XmlUtil.writeDocument(headerDocument, outHeader);
     }
 
     @Test
