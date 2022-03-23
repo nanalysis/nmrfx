@@ -690,12 +690,12 @@ public class RS2DData implements NMRData {
 
     @Override
     public FPMult getFPMult(int iDim) {
-        return new FPMult(); // does not exist in Bruker params
+        return new FPMult();
     }
 
     @Override
     public LPParams getLPParams(int iDim) {
-        return new LPParams(); // does not exist in Bruker params
+        return new LPParams();
     }
 
     @Override
@@ -1160,34 +1160,12 @@ public class RS2DData implements NMRData {
         }
     }
 
-    public void setParam(String paramName, String paramValue) throws XPathExpressionException {
-        var nodes = getParamNode(headerDocument, paramName);
-        if (!nodes.isEmpty()) {
-            nodes.get(0).setTextContent(paramValue);
-        }
-    }
-    public void setParams(String paramName, List<String> paramValues) throws XPathExpressionException {
-        var nodes = getParamNode(headerDocument, paramName);
-        if (!nodes.isEmpty()) {
-            Node lastNode = nodes.get(0);
-            for (int i = 0; i < paramValues.size(); i++) {
-                if (i < nodes.size()) {
-                    nodes.get(i).setTextContent(paramValues.get(i));
-                    lastNode = nodes.get(i);
-                } else {
-                    Node node = nodes.get(0).cloneNode(true);
-                    node.setTextContent(paramValues.get(i));
-                    lastNode.getParentNode().appendChild(node);
-                    lastNode = node;
-                }
-            }
-        }
-    }
     public void setHeaderMatrixDimensions(Dataset dataset) throws XPathExpressionException {
         for (int iDim = 1; (iDim <= RS2DData.MAXDIM) && (iDim <= dataset.getNDim()); iDim++) {
-            setParam("MATRIX_DIMENSION_" + iDim + "D", String.valueOf(dataset.getSizeReal(iDim - 1)));
+            setParam(headerDocument, "MATRIX_DIMENSION_" + iDim + "D", String.valueOf(dataset.getSizeReal(iDim - 1)));
         }
     }
+
     public void setHeaderPhases(Dataset dataset) throws XPathExpressionException {
         List<String> phase0Values = new ArrayList<>();
         List<String> phase1Values = new ArrayList<>();
@@ -1195,8 +1173,8 @@ public class RS2DData implements NMRData {
             phase0Values.add(String.format("%.2f",dataset.getPh0(i)));
             phase1Values.add(String.format("%.2f",dataset.getPh1(i)));
         }
-        setParams("PHASE_0", phase0Values);
-        setParams("PHASE_1", phase1Values);
+        setParams(headerDocument, "PHASE_0", phase0Values);
+        setParams(headerDocument, "PHASE_1", phase1Values);
     }
 
     public boolean isValidDatasetPath(Path procNumPath) {

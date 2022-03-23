@@ -1,4 +1,4 @@
-package org.nmrfx.processor.datasets.vendor;
+package org.nmrfx.processor.datasets.vendor.rs2d;
 
 import org.junit.Test;
 import org.nmrfx.processor.datasets.DatasetCompare;
@@ -73,11 +73,11 @@ public class RS2DDataTest {
         }
         File outHeader = Path.of(tmpHome, "header_mod.xml").toFile();
         RS2DData rs2DData = new RS2DData(inFile.toString(), null, true);
-        rs2DData.setParam("MATRIX_DIMENSION_1D", "555");
-        rs2DData.setParam("PHASE_0", "55.5");
-        rs2DData.setParam("PHASE_1", "5.55");
-        Document headerDocument = rs2DData.getHeaderDocument();
-        XmlUtil.writeDocument(headerDocument, outHeader);
+        Document header = rs2DData.getHeaderDocument();
+        XmlUtil.setParam(header, "MATRIX_DIMENSION_1D", "555");
+        XmlUtil.setParam(header, "PHASE_0", "55.5");
+        XmlUtil.setParam(header, "PHASE_1", "5.55");
+        XmlUtil.writeDocument(header, outHeader);
     }
 
     @Test

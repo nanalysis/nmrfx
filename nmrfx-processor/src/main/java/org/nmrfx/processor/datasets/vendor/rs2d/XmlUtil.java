@@ -130,4 +130,29 @@ public class XmlUtil {
         return parList;
     }
 
+    protected static void setParam(Document header, String paramName, String paramValue) throws XPathExpressionException {
+        var nodes = getParamNode(header, paramName);
+        if (!nodes.isEmpty()) {
+            nodes.get(0).setTextContent(paramValue);
+        }
+    }
+
+    protected static void setParams(Document header, String paramName, List<String> paramValues) throws XPathExpressionException {
+        var nodes = getParamNode(header, paramName);
+        if (!nodes.isEmpty()) {
+            Node lastNode = nodes.get(0);
+            for (int i = 0; i < paramValues.size(); i++) {
+                if (i < nodes.size()) {
+                    nodes.get(i).setTextContent(paramValues.get(i));
+                    lastNode = nodes.get(i);
+                } else {
+                    Node node = nodes.get(0).cloneNode(true);
+                    node.setTextContent(paramValues.get(i));
+                    lastNode.getParentNode().appendChild(node);
+                    lastNode = node;
+                }
+            }
+        }
+    }
+
 }
