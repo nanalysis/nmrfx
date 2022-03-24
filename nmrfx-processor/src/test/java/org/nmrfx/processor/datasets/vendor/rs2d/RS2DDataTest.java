@@ -73,7 +73,7 @@ public class RS2DDataTest {
         }
         File outHeader = Path.of(tmpHome, "header_mod.xml").toFile();
         RS2DData rs2DData = new RS2DData(inFile.toString(), null, true);
-        Document header = rs2DData.getHeaderDocument();
+        Document header = rs2DData.getHeader().getDocument();
         XmlUtil.setParam(header, "MATRIX_DIMENSION_1D", "555");
         XmlUtil.setParam(header, "PHASE_0", "55.5");
         XmlUtil.setParam(header, "PHASE_1", "5.55");
