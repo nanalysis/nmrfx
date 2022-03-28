@@ -17,7 +17,6 @@
  */
 package org.nmrfx.processor.gui;
 
-import javafx.scene.layout.Region;
 import javafx.application.Platform;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ObjectProperty;
@@ -59,9 +58,9 @@ import org.nmrfx.processor.datasets.peaks.PeakListTools;
 import org.nmrfx.processor.datasets.peaks.PeakListTools.ARRAYED_FIT_MODE;
 import org.nmrfx.processor.datasets.peaks.PeakNeighbors;
 import org.nmrfx.processor.gui.controls.ConsoleUtil;
-import org.nmrfx.processor.gui.spectra.mousehandlers.MouseBindings;
 import org.nmrfx.processor.gui.spectra.*;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes.AXMODE;
+import org.nmrfx.processor.gui.spectra.mousehandlers.MouseBindings;
 import org.nmrfx.processor.gui.spectra.mousehandlers.MouseBindings.MOUSE_ACTION;
 import org.nmrfx.processor.gui.undo.ChartUndoLimits;
 import org.nmrfx.processor.gui.undo.ChartUndoScale;
@@ -76,16 +75,6 @@ import java.io.IOException;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.DoubleFunction;
-
-import static org.nmrfx.processor.gui.PolyChart.DISDIM.TwoD;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.*;
-import java.util.function.Consumer;
-import java.util.function.DoubleFunction;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import static org.nmrfx.processor.gui.PolyChart.DISDIM.TwoD;
 
