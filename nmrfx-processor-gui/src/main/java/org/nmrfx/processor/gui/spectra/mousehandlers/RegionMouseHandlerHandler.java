@@ -40,7 +40,6 @@ public class RegionMouseHandlerHandler extends MouseHandler {
 
     @Override
     public void mouseDragged(MouseEvent mouseEvent) {
-        System.out.println("drag region control");
         double x = mouseEvent.getX();
         double y = mouseEvent.getY();
         double[] dragStart = mouseBindings.getDragStart();

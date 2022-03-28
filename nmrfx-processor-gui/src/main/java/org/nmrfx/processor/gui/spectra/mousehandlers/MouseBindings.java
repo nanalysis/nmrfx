@@ -156,8 +156,8 @@ public class MouseBindings {
         }
 
         if (!isPopupTrigger(mouseEvent)) {
-            if (!(altShift || (border != 0)) && (mouseEvent.isMetaDown() || chart.getCursor().toString().equals("CROSSHAIR"))) {
-                if (!chart.getCursor().toString().equals("CROSSHAIR")) {
+            if (!(altShift || (border != 0)) && (mouseEvent.isMetaDown() || chart.getCanvasCursor().toString().equals("CROSSHAIR"))) {
+                if (!chart.getCanvasCursor().toString().equals("CROSSHAIR")) {
                     chart.getCrossHairs().setCrossHairState(true);
                 }
                 CrossHairMouseHandlerHandler.handler(this).ifPresent(this::setHandler);
@@ -208,7 +208,7 @@ public class MouseBindings {
                         chart.refresh();
                     }
                     if (handler instanceof BoxMouseHandlerHandler) {
-                        if (!selectedRegion && (clickCount == 2)) {
+                        if (!selectedRegion && chart.isSelectable() && (clickCount == 2)) {
                             handler = null;
                             chart.selectChart(true);
                             chart.refresh();

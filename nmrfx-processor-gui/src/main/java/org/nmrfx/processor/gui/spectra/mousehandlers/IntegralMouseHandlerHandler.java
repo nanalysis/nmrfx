@@ -47,7 +47,6 @@ public class IntegralMouseHandlerHandler extends MouseHandler {
 
     @Override
     public void mouseDragged(MouseEvent mouseEvent) {
-        System.out.println("drag int");
         updateIntegralPosition(mouseEvent);
     }
 

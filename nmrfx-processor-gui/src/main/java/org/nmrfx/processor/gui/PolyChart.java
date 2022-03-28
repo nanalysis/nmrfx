@@ -37,6 +37,7 @@ import javafx.scene.control.ChoiceDialog;
 import javafx.scene.input.DragEvent;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
+import javafx.scene.layout.Region;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.*;
 import javafx.scene.text.Font;
@@ -78,7 +79,7 @@ import java.util.function.DoubleFunction;
 
 import static org.nmrfx.processor.gui.PolyChart.DISDIM.TwoD;
 
-public class PolyChart implements PeakListener {
+public class PolyChart extends Region implements PeakListener {
     private static final Logger log = LoggerFactory.getLogger(PolyChart.class);
 
     /**
@@ -293,6 +294,10 @@ public class PolyChart implements PeakListener {
 
     }
 
+    public boolean isSelectable() {
+        return false;
+    }
+
     public void selectChart(boolean value) {
         chartSelected.set(value);
     }
@@ -301,31 +306,12 @@ public class PolyChart implements PeakListener {
         return chartSelected.get();
     }
 
-    public void resizeRelocate(double x, double y, double width, double height) {
-        xPos = x;
-        yPos = y;
-        this.width = width;
-        this.height = height;
-    }
-
-    public double getX() {
-        return xPos;
-    }
-
-    public double getY() {
-        return yPos;
-    }
-
-    public double getWidth() {
-        return width;
-    }
-
-    public double getHeight() {
-        return height;
-    }
-
     public double[][] getCorners() {
         double[][] corners = new double[4][2];
+        double xPos = getLayoutX();
+        double yPos = getLayoutY();
+        double width = getWidth();
+        double height = getHeight();
         corners[0] = new double[]{xPos, yPos};
         corners[1] = new double[]{xPos, yPos + height};
         corners[2] = new double[]{xPos + width, yPos};
@@ -2099,6 +2085,10 @@ public class PolyChart implements PeakListener {
     void highlightChart() {
         boolean multipleCharts = CHARTS.size() > 1;
         //if (multipleCharts && (activeChart.get() == this)) {
+        double xPos = getLayoutX();
+        double yPos = getLayoutY();
+        double width = getWidth();
+        double height = getHeight();
         highlightRect.setX(xPos + 1);
         highlightRect.setY(yPos + 1);
         highlightRect.setWidth(width - 2);
