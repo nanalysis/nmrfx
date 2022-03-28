@@ -17,24 +17,24 @@
  */
 package org.nmrfx.structure.chemistry.energy;
 
-import java.io.IOException;
 import org.nmrfx.chemistry.Atom;
 import org.nmrfx.chemistry.AtomEnergyProp;
+import org.nmrfx.chemistry.Point3;
 import org.nmrfx.structure.fastlinear.FastVector3D;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import org.nmrfx.chemistry.Point3;
-import org.nmrfx.chemistry.Residue;
-import org.nmrfx.structure.chemistry.Molecule;
 
 /**
  *
  * @author Bruce Johnson
  */
 public class EnergyCoords {
+    private static final Logger log = LoggerFactory.getLogger(EnergyCoords.class);
 
     static final double PI32 = Math.PI * Math.sqrt(Math.PI);
     public static final double RSCALE = Math.pow(2.0, -1.0 / 6.0);
@@ -287,7 +287,7 @@ public class EnergyCoords {
         try {
             AtomEnergyProp.readPropFile();
         } catch (IOException ex) {
-            Logger.getLogger(EnergyCoords.class.getName()).log(Level.SEVERE, null, ex);
+            log.error(ex.getMessage(), ex);
         }
         for (int i = 0; i < nAtoms; i++) {
             Atom atom1 = atoms[i];

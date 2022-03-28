@@ -32,8 +32,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.TreeSet;
 import java.util.function.Consumer;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javafx.beans.value.ChangeListener;
@@ -69,6 +67,8 @@ import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.controls.FileTableItem;
 import org.nmrfx.utils.GUIUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * ScannerTool class
@@ -76,6 +76,7 @@ import org.nmrfx.utils.GUIUtils;
  * @author Bruce Johnson
  */
 public class ScannerTool implements ControllerTool {
+    private static final Logger log = LoggerFactory.getLogger(ScannerTool.class);
 
     BorderPane borderPane;
 
@@ -365,7 +366,7 @@ public class ScannerTool implements ControllerTool {
         try {
             values = measure.measure(dataset);
         } catch (IOException ex) {
-            Logger.getLogger(ScannerTool.class.getName()).log(Level.SEVERE, null, ex);
+            log.error(ex.getMessage(), ex);
             return null;
         }
         return values;
@@ -445,7 +446,7 @@ public class ScannerTool implements ControllerTool {
         try {
             values = measure.measureBins(dataset, nBins);
         } catch (IOException ex) {
-            Logger.getLogger(ScannerTool.class.getName()).log(Level.SEVERE, null, ex);
+            log.error(ex.getMessage(), ex);
             return null;
         }
         return values;
@@ -497,7 +498,7 @@ public class ScannerTool implements ControllerTool {
                     List<Double> values = measureOpt.get().measure(dataset);
                     setItems(header, values);
                 } catch (IOException ex) {
-                    Logger.getLogger(ScannerTool.class.getName()).log(Level.SEVERE, null, ex);
+                    log.error(ex.getMessage(), ex);
                     return;
                 }
             }

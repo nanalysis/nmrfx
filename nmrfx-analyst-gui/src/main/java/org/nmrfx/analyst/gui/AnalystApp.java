@@ -54,7 +54,8 @@ import org.nmrfx.peaks.io.PeakReader;
 import org.nmrfx.plugin.api.EntryPoint;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.*;
-import org.nmrfx.processor.gui.controls.FractionCanvas;
+import org.nmrfx.processor.gui.controls.GridPaneCanvas;
+import org.nmrfx.processor.gui.log.Log;
 import org.nmrfx.processor.gui.project.GUIProject;
 import org.nmrfx.processor.gui.spectra.KeyBindings;
 import org.nmrfx.processor.gui.spectra.WindowIO;
@@ -67,15 +68,19 @@ import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.utils.GUIUtils;
 import org.python.util.InteractiveInterpreter;
 import org.python.util.PythonInterpreter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.*;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 
 public class AnalystApp extends MainApp {
+    private static final Logger log = LoggerFactory.getLogger(AnalystApp.class);
 
     private static String version = null;
     static String appName = "NMRFx Analyst";
@@ -115,6 +120,8 @@ public class AnalystApp extends MainApp {
 
     @Override
     public void start(Stage stage) throws Exception {
+        Log.setupMemoryAppender();
+
         if (isMac()) {
             System.setProperty("prism.lcdtext", "false");
         }
@@ -264,8 +271,6 @@ public class AnalystApp extends MainApp {
 
         MenuItem loadPeakListMenuItem = new MenuItem("Load PeakLists");
         loadPeakListMenuItem.setOnAction(e -> loadPeakLists());
-        MenuItem portMenuItem = new MenuItem("New NMRFx Server...");
-        portMenuItem.setOnAction(e -> startServer(e));
         MenuItem datasetBrowserMenuItem = new MenuItem("Dataset Browser...");
         datasetBrowserMenuItem.setOnAction(e -> showDataBrowser());
 
@@ -311,7 +316,7 @@ public class AnalystApp extends MainApp {
 
         fileMenu.getItems().addAll(openMenuItem, openDatasetMenuItem, addMenuItem,
                 recentFIDMenuItem, recentDatasetMenuItem, datasetBrowserMenuItem, newMenuItem,
-                portMenuItem, new SeparatorMenuItem(), svgMenuItem, pdfMenuItem, pngMenuItem,
+                new SeparatorMenuItem(), svgMenuItem, pdfMenuItem, pngMenuItem,
                 loadPeakListMenuItem);
 
         Menu spectraMenu = new Menu("Spectra");
@@ -325,11 +330,11 @@ public class AnalystApp extends MainApp {
         MenuItem createGridItem = new MenuItem("Add Grid...");
         createGridItem.setOnAction(e -> FXMLController.getActiveController().addGrid());
         MenuItem horizItem = new MenuItem("Horizontal");
-        horizItem.setOnAction(e -> FXMLController.getActiveController().arrange(FractionCanvas.ORIENTATION.HORIZONTAL));
+        horizItem.setOnAction(e -> FXMLController.getActiveController().arrange(GridPaneCanvas.ORIENTATION.HORIZONTAL));
         MenuItem vertItem = new MenuItem("Vertical");
-        vertItem.setOnAction(e -> FXMLController.getActiveController().arrange(FractionCanvas.ORIENTATION.VERTICAL));
+        vertItem.setOnAction(e -> FXMLController.getActiveController().arrange(GridPaneCanvas.ORIENTATION.VERTICAL));
         MenuItem gridItem = new MenuItem("Grid");
-        gridItem.setOnAction(e -> FXMLController.getActiveController().arrange(FractionCanvas.ORIENTATION.GRID));
+        gridItem.setOnAction(e -> FXMLController.getActiveController().arrange(GridPaneCanvas.ORIENTATION.GRID));
         MenuItem overlayItem = new MenuItem("Overlay");
         overlayItem.setOnAction(e -> FXMLController.getActiveController().overlay());
         MenuItem minimizeItem = new MenuItem("Minimize Borders");
@@ -561,6 +566,7 @@ public class AnalystApp extends MainApp {
         statusBar.addToToolMenu(scannerToolItem);
         scannerToolItem.setOnAction(e -> showScannerTool());
 
+        PluginLoader.getInstance().registerPluginsOnEntryPoint(EntryPoint.STATUS_BAR_TOOLS, statusBar);
     }
 
     static void showDocAction(ActionEvent event) {
@@ -909,9 +915,8 @@ public class AnalystApp extends MainApp {
             } catch (IOException | InvalidPeakException | InvalidMoleculeException ex) {
                 ExceptionDialog dialog = new ExceptionDialog(ex);
                 dialog.showAndWait();
-                return;
             } catch (org.nmrfx.star.ParseException ex) {
-                Logger.getLogger(AnalystApp.class.getName()).log(Level.SEVERE, null, ex);
+                log.error(ex.getMessage(), ex);
             }
         }
     }
@@ -968,7 +973,7 @@ public class AnalystApp extends MainApp {
                 ExceptionDialog dialog = new ExceptionDialog(ioE);
                 dialog.showAndWait();
             } catch (org.nmrfx.star.ParseException ex) {
-                Logger.getLogger(AnalystApp.class.getName()).log(Level.SEVERE, null, ex);
+                log.error(ex.getMessage(), ex);
             }
 
             if (atomController != null) {

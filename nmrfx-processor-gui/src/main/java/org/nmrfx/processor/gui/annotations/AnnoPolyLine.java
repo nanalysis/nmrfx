@@ -17,20 +17,18 @@
  */
 package org.nmrfx.processor.gui.annotations;
 
-import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import javafx.scene.canvas.Canvas;
-import javafx.scene.canvas.GraphicsContext;
 import org.nmrfx.graphicsio.GraphicsContextInterface;
-import org.nmrfx.graphicsio.GraphicsIOException;
-import org.nmrfx.processor.gui.CanvasAnnotation;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.List;
 
 /**
  *
  * @author brucejohnson
  */
 public class AnnoPolyLine extends AnnoShape {
+    private static final Logger log = LoggerFactory.getLogger(AnnoPolyLine.class);
 
     final double[] xPoints;
     final double[] yPoints;
@@ -75,7 +73,7 @@ public class AnnoPolyLine extends AnnoShape {
             }
             gC.strokePolyline(xCPoints, yCPoints, xCPoints.length);
         } catch (Exception ex) {
-            Logger.getLogger(AnnoPolyLine.class.getName()).log(Level.SEVERE, null, ex);
+            log.error(ex.getMessage(), ex);
         }
     }
 

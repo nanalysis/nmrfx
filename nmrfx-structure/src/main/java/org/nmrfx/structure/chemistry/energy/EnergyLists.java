@@ -17,33 +17,25 @@
  */
 package org.nmrfx.structure.chemistry.energy;
 
-import org.nmrfx.chemistry.constraints.AngleConstraint;
+import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import org.nmrfx.chemistry.*;
-import org.nmrfx.chemistry.MolFilter;
+import org.nmrfx.chemistry.constraints.AngleConstraint;
 import org.nmrfx.chemistry.constraints.AtomDistancePair;
 import org.nmrfx.chemistry.constraints.DistanceConstraint;
-import org.nmrfx.structure.chemistry.Molecule;
-import org.nmrfx.structure.fastlinear.FastVector;
-import org.nmrfx.structure.fastlinear.FastVector3D;
-import java.io.BufferedOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.PrintStream;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Iterator;
-import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import org.nmrfx.chemistry.constraints.DistanceConstraintSet;
+import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.structure.chemistry.energy.RNARotamer.RotamerScore;
 import org.nmrfx.structure.chemistry.predict.Predictor;
+import org.nmrfx.structure.fastlinear.FastVector;
+import org.nmrfx.structure.fastlinear.FastVector3D;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.*;
+import java.util.*;
 
 public class EnergyLists {
+    private static final Logger log = LoggerFactory.getLogger(EnergyLists.class);
 
     public List<AtomPair> atomList = new ArrayList<>();
     public List<AtomPair> atomList2 = new ArrayList<>();
@@ -382,7 +374,7 @@ public class EnergyLists {
             AtomEnergyProp.readPropFile();
             AtomEnergyProp.makeIrpMap();
         } catch (IOException ex) {
-            Logger.getLogger(EnergyLists.class.getName()).log(Level.SEVERE, null, ex);
+            log.error(ex.getMessage(), ex);
         }
         this.molecule = molecule;
         // initialize energy types for atoms
@@ -700,17 +692,6 @@ public class EnergyLists {
             e.printStackTrace();
         }
         writer.close();
-    }
-
-    class EnergyStat {
-
-        double vdw = 0.0;
-        int nVdw = 0;
-        double distance = 0.0;
-        int nDistance = 0;
-        double bond = 0.0;
-        int nBond = 0;
-        double total = 0.0;
     }
 
     public static double grabDihedral(AngleConstraint boundary) {

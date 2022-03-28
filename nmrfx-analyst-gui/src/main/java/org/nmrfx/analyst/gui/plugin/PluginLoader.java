@@ -2,6 +2,8 @@ package org.nmrfx.analyst.gui.plugin;
 
 import org.nmrfx.plugin.api.EntryPoint;
 import org.nmrfx.plugin.api.NMRFxPlugin;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
 import java.util.List;
@@ -12,6 +14,7 @@ import java.util.stream.Collectors;
  * Loads and manages plugins, using java's ServiceLoader (SPI) mechanism.
  */
 public class PluginLoader {
+    private static final Logger log = LoggerFactory.getLogger(PluginLoader.class);
     private static final PluginLoader instance = new PluginLoader();
 
     /**
@@ -30,7 +33,7 @@ public class PluginLoader {
                 .collect(Collectors.toList());
 
         String pluginNames = plugins.stream().map(NMRFxPlugin::getName).collect(Collectors.joining(", "));
-        System.out.println("Loaded plugins: " + pluginNames);
+        log.info("Loaded plugins: {}", pluginNames);
     }
 
     /**
@@ -50,6 +53,6 @@ public class PluginLoader {
     public void registerPluginsOnEntryPoint(EntryPoint entryPoint, Object object) {
         plugins.stream()
                 .filter(plugin -> plugin.getSupportedEntryPoints().contains(entryPoint))
-                .forEach(plugin -> plugin.registerOnEntryPoint(EntryPoint.MENU_PLUGINS, object));
+                .forEach(plugin -> plugin.registerOnEntryPoint(entryPoint, object));
     }
 }

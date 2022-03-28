@@ -114,6 +114,10 @@ public class SpectrumStatusBar {
         this.controller = controller;
     }
 
+    public FXMLController getController() {
+        return controller;
+    }
+
     public void buildBar(ToolBar btoolBar) {
         this.btoolBar = btoolBar;
         setupTools();
@@ -316,7 +320,7 @@ public class SpectrumStatusBar {
     public void setCursor(Cursor cursor) {
         cursorMenuButton.setGraphic(cursorMap.get(cursor));
         for (PolyChart chart : controller.charts) {
-            chart.setCursor(cursor);
+            chart.setCanvasCursor(cursor);
             if (cursor.toString().equals("CROSSHAIR")) {
                 chart.getCrossHairs().setCrossHairState(true);
             } else {
@@ -430,7 +434,7 @@ public class SpectrumStatusBar {
             }
         }
 
-        chart.setCursor(currentCursor);
+        chart.setCanvasCursor(currentCursor);
 
     }
 

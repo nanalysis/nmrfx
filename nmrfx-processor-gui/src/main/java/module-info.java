@@ -25,12 +25,10 @@ open module org.nmrfx.processor.gui {
     exports org.nmrfx.processor.gui.project;
     exports org.nmrfx.processor.gui.annotations;
     exports org.nmrfx.processor.gui.spectra.mousehandlers;
+    exports org.nmrfx.processor.gui.log;
     requires org.nmrfx.core;
     requires org.nmrfx.processor;
     requires org.nmrfx.utils;
-//    requires org.nmrfx.utils.properties;
-//    requires org.nmrfx.chart;
- //  requires org.nmrfx.graphicsio;
 
     requires jnr.posix;
     requires jnr.ffi;
@@ -55,7 +53,6 @@ open module org.nmrfx.processor.gui {
     requires org.yaml.snakeyaml;
     requires janino;
     requires commons.compiler;
-    requires io.netty.all;
     requires jython.slim;
     requires antlr;
     requires ST4;
@@ -84,7 +81,7 @@ open module org.nmrfx.processor.gui {
     requires jsch;
     requires jzlib;
     requires JavaEWAH;
-    requires slf4j.api;
+    requires org.slf4j;
     requires org.bouncycastle.pg;
     requires org.bouncycastle.provider;
     requires org.bouncycastle.pkix;
@@ -96,4 +93,8 @@ open module org.nmrfx.processor.gui {
     requires javafx.web;
     requires javafx.mediaEmpty;
     requires javafx.media;
+    requires logback.classic;
+    requires logback.core;
+    requires org.apache.commons.collections4;
+    requires org.apache.commons.lang3;
 }

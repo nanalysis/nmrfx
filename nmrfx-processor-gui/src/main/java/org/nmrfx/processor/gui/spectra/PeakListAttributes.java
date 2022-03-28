@@ -29,11 +29,11 @@ import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.controls.ConsoleUtil;
 import org.nmrfx.processor.gui.spectra.PeakDisplayParameters.ColorTypes;
 import org.nmrfx.processor.gui.spectra.PeakDisplayParameters.DisplayTypes;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import static org.nmrfx.processor.gui.spectra.DrawPeaks.minHitSize;
@@ -44,6 +44,7 @@ import static org.nmrfx.processor.gui.spectra.PeakDisplayParameters.LabelTypes.N
  * @author Bruce Johnson
  */
 public class PeakListAttributes implements PeakListener {
+    private static final Logger log = LoggerFactory.getLogger(PeakListAttributes.class);
 
     PeakList peakList;
     final DatasetAttributes dataAttr;
@@ -782,7 +783,7 @@ public class PeakListAttributes implements PeakListener {
                         break;
                 }
             } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException ex) {
-                Logger.getLogger(PeakListAttributes.class.getName()).log(Level.SEVERE, null, ex);
+                log.error(ex.getMessage(), ex);
             }
         });
 
@@ -808,7 +809,7 @@ public class PeakListAttributes implements PeakListener {
                     }
                 }
             } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException ex) {
-                Logger.getLogger(PeakListAttributes.class.getName()).log(Level.SEVERE, null, ex);
+                log.error(ex.getMessage(), ex);
             }
         }
         return data;

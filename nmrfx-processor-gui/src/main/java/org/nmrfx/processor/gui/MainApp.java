@@ -17,50 +17,44 @@
  */
 package org.nmrfx.processor.gui;
 
-import org.nmrfx.processor.datasets.Dataset;
 import de.jangassen.MenuToolkit;
 import de.jangassen.dialogs.about.AboutStageBuilder;
+import javafx.application.Application;
+import javafx.application.HostServices;
+import javafx.application.Platform;
+import org.nmrfx.processor.gui.controls.GridPaneCanvas;
+import javafx.event.ActionEvent;
+import javafx.fxml.FXML;
+import javafx.scene.control.*;
+import javafx.scene.control.Alert.AlertType;
+import javafx.scene.image.Image;
+import javafx.scene.text.Font;
+import javafx.stage.DirectoryChooser;
+import javafx.stage.FileChooser;
+import javafx.stage.Stage;
+import org.apache.commons.lang3.SystemUtils;
+import org.controlsfx.dialog.ExceptionDialog;
+import org.nmrfx.chemistry.io.MoleculeIOException;
+import org.nmrfx.console.ConsoleController;
+import org.nmrfx.peaks.PeakList;
+import org.nmrfx.peaks.io.PeakReader;
+import org.nmrfx.processor.datasets.Dataset;
+import org.nmrfx.processor.gui.log.Log;
+import org.nmrfx.processor.gui.project.GUIProject;
+import org.nmrfx.processor.utilities.WebConnect;
+import org.nmrfx.project.ProjectBase;
+import org.python.util.InteractiveInterpreter;
+
 import java.beans.PropertyChangeSupport;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.List;
-import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import javafx.application.Application;
-import javafx.application.Platform;
-import javafx.application.HostServices;
-import javafx.scene.control.Menu;
-import javafx.scene.control.MenuBar;
-import javafx.scene.control.MenuItem;
-import javafx.stage.Stage;
-import org.python.util.InteractiveInterpreter;
-import javafx.event.ActionEvent;
-import javafx.fxml.FXML;
-import javafx.scene.control.SeparatorMenuItem;
-import javafx.scene.image.Image;
-import org.apache.commons.lang3.SystemUtils;
-import org.controlsfx.dialog.ExceptionDialog;
-import javafx.scene.control.Alert;
-import javafx.scene.control.Alert.AlertType;
-import javafx.stage.DirectoryChooser;
-import javafx.stage.FileChooser;
-import org.nmrfx.peaks.io.PeakReader;
-import org.nmrfx.processor.gui.controls.FractionCanvas;
-import org.nmrfx.processor.gui.project.GUIProject;
-import org.nmrfx.server.Server;
-import static javafx.application.Application.launch;
-import javafx.scene.text.Font;
-import org.nmrfx.chemistry.io.MoleculeIOException;
-import org.nmrfx.peaks.PeakList;
-import org.nmrfx.processor.utilities.WebConnect;
-import org.nmrfx.project.ProjectBase;
-import org.nmrfx.console.ConsoleController;
 
 public class MainApp extends Application {
 
@@ -72,13 +66,9 @@ public class MainApp extends Application {
     private static String version = null;
     static String appName = "NMRFx Processor";
     public static InteractiveInterpreter interpreter = new InteractiveInterpreter();
-    MenuToolkit menuTk;
     private static MenuBar mainMenuBar = null;
-    Boolean isMac = null;
     protected static MainApp mainApp = null;
     static boolean isAnalyst = false;
-    Consumer<String> socketFunction = null;
-    static NMRFxServer server = null;
     static Font defaultFont;
 
     public static void closeAll() {
@@ -151,6 +141,8 @@ public class MainApp extends Application {
 //    }
     @Override
     public void start(Stage stage) throws Exception {
+        Log.setupMemoryAppender();
+
         mainApp = this;
         FXMLController controller = FXMLController.create(stage);
         Platform.setImplicitExit(true);
@@ -266,8 +258,6 @@ public class MainApp extends Application {
         addMenuItem.setOnAction(e -> FXMLController.getActiveController().addNoDrawAction(e));
         MenuItem newMenuItem = new MenuItem("New Window...");
         newMenuItem.setOnAction(e -> newGraphics(e));
-        MenuItem portMenuItem = new MenuItem("New NMRFx Server...");
-        portMenuItem.setOnAction(e -> startServer(e));
         Menu recentFIDMenuItem = new Menu("Recent FIDs");
         Menu recentDatasetMenuItem = new Menu("Recent Datasets");
         PreferencesController.setupRecentMenus(recentFIDMenuItem, recentDatasetMenuItem);
@@ -314,7 +304,7 @@ public class MainApp extends Application {
         projectMenu.getItems().addAll(projectOpenMenuItem, recentProjectMenuItem, projectSaveMenuItem, projectSaveAsMenuItem);
 
         fileMenu.getItems().addAll(openMenuItem, openDatasetMenuItem, addMenuItem,
-                recentFIDMenuItem, recentDatasetMenuItem, newMenuItem, portMenuItem, new SeparatorMenuItem(), pdfMenuItem, svgMenuItem, pngMenuItem, loadPeakListMenuItem);
+                recentFIDMenuItem, recentDatasetMenuItem, newMenuItem, new SeparatorMenuItem(), pdfMenuItem, svgMenuItem, pngMenuItem, loadPeakListMenuItem);
 
         Menu spectraMenu = new Menu("Spectra");
         MenuItem copyItem = new MenuItem("Copy Spectrum as SVG Text");
@@ -326,11 +316,11 @@ public class MainApp extends Application {
 
         Menu arrangeMenu = new Menu("Arrange");
         MenuItem horizItem = new MenuItem("Horizontal");
-        horizItem.setOnAction(e -> FXMLController.getActiveController().arrange(FractionCanvas.ORIENTATION.HORIZONTAL));
+        horizItem.setOnAction(e -> FXMLController.getActiveController().arrange(GridPaneCanvas.ORIENTATION.HORIZONTAL));
         MenuItem vertItem = new MenuItem("Vertical");
-        vertItem.setOnAction(e -> FXMLController.getActiveController().arrange(FractionCanvas.ORIENTATION.VERTICAL));
+        vertItem.setOnAction(e -> FXMLController.getActiveController().arrange(GridPaneCanvas.ORIENTATION.VERTICAL));
         MenuItem gridItem = new MenuItem("Grid");
-        gridItem.setOnAction(e -> FXMLController.getActiveController().arrange(FractionCanvas.ORIENTATION.GRID));
+        gridItem.setOnAction(e -> FXMLController.getActiveController().arrange(GridPaneCanvas.ORIENTATION.GRID));
         MenuItem overlayItem = new MenuItem("Overlay");
         overlayItem.setOnAction(e -> FXMLController.getActiveController().overlay());
         MenuItem minimizeItem = new MenuItem("Minimize Borders");
@@ -603,77 +593,6 @@ public class MainApp extends Application {
                 ExceptionDialog dialog = new ExceptionDialog(ex);
                 dialog.showAndWait();
             }
-        }
-    }
-
-//    @Override
-//    public void datasetAdded(Dataset dataset) {
-//        if (Platform.isFxApplicationThread()) {
-//            FXMLController.updateDatasetList();
-//        } else {
-//            Platform.runLater(() -> {
-//                FXMLController.updateDatasetList();
-//            }
-//            );
-//        }
-//    }
-//
-//    @Override
-//    public void datasetModified(Dataset dataset) {
-//    }
-//
-//    @Override
-//    public void datasetRemoved(Dataset dataset) {
-//        if (Platform.isFxApplicationThread()) {
-//            FXMLController.updateDatasetList();
-//        } else {
-//            Platform.runLater(() -> {
-//                FXMLController.updateDatasetList();
-//            }
-//            );
-//        }
-//    }
-//
-//    @Override
-//    public void datasetRenamed(Dataset dataset) {
-//        if (Platform.isFxApplicationThread()) {
-//            FXMLController.updateDatasetList();
-//        } else {
-//            Platform.runLater(() -> {
-//                FXMLController.updateDatasetList();
-//            }
-//            );
-//        }
-//    }
-    private void newServer(ActionEvent event) {
-        server = NMRFxServer.create();
-    }
-
-    public static void setServer(NMRFxServer Server) {
-        server = Server;
-    }
-
-    public void startServer(ActionEvent event) {
-        int port = NMRFxServer.makePortFile(8021, true);
-        startSocketListener(port);
-    }
-
-    public void startSocketListener(int port) {
-        socketFunction = s -> invokeListenerFunction(s);
-        Server.startServer(port, socketFunction);
-    }
-
-    void invokeListenerFunction(String s) {
-        System.out.println("invoke " + s);
-        String[] peakSplit = s.split("/");
-        int showInd = Arrays.asList(peakSplit).indexOf("showpeak");
-        int nameInd = peakSplit.length - 1 - showInd;
-        if (nameInd == 2) {
-            int numInd = nameInd - 1;
-            GUIScripter.showPeak(peakSplit[nameInd] + "." + peakSplit[numInd]);
-        } else if (nameInd == 1) {
-            int numInd = nameInd;
-            GUIScripter.showPeak(peakSplit[numInd]);
         }
     }
 }

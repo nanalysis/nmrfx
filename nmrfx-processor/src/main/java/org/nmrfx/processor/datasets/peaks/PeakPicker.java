@@ -23,27 +23,29 @@
  */
 package org.nmrfx.processor.datasets.peaks;
 
-import org.nmrfx.peaks.PeakList;
-import org.nmrfx.peaks.SpectralDim;
-import org.nmrfx.processor.datasets.Dataset;
-import org.nmrfx.processor.datasets.DimCounter;
-import java.io.IOException;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.util.stream.Collectors;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
 import org.nmrfx.datasets.Nuclei;
 import org.nmrfx.peaks.Peak;
+import org.nmrfx.peaks.PeakList;
+import org.nmrfx.peaks.SpectralDim;
+import org.nmrfx.processor.datasets.Dataset;
+import org.nmrfx.processor.datasets.DimCounter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  *
  * @author brucejohnson
  */
 public class PeakPicker {
+    private static final Logger log = LoggerFactory.getLogger(PeakPicker.class);
 
     private final Dataset dataset;
     private final PeakPickParameters peakPickPar;
@@ -478,7 +480,7 @@ public class PeakPicker {
                         peakList = peakPick();
                     }
                 } catch (PeakFitException ex) {
-                    Logger.getLogger(PeakPicker.class.getName()).log(Level.SEVERE, null, ex);
+                    log.error(ex.getMessage(), ex);
                 }
             }
         }

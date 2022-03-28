@@ -18,13 +18,18 @@
 package org.nmrfx.jmx.mbeans;
 
 import javafx.stage.Stage;
+import org.greenrobot.eventbus.EventBus;
+import org.greenrobot.eventbus.Subscribe;
 import org.nmrfx.jmx.NotificationType;
-import org.nmrfx.jmx.mbeans.AnalystMBean;
+import org.nmrfx.processor.datasets.DatasetType;
+import org.nmrfx.processor.events.DatasetSavedEvent;
+import org.nmrfx.processor.gui.ChartProcessor;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.controls.ConsoleUtil;
 
 import javax.management.Notification;
 import javax.management.NotificationBroadcasterSupport;
+import java.io.File;
 
 /**
  * The main entrypoint to control NMRFx Analyst Gui by JMX.
@@ -32,10 +37,16 @@ import javax.management.NotificationBroadcasterSupport;
 public class Analyst extends NotificationBroadcasterSupport implements AnalystMBean {
     private int notificationSequenceNumber = 0;
 
+    public Analyst() {
+        EventBus.getDefault().register(this);
+    }
+
     @Override
     public void open(String path) {
+        DatasetType preferredProcessedFormat = DatasetType.typeFromFile(new File(path)).orElse(DatasetType.NMRFX);
+
         ConsoleUtil.runOnFxThread(() -> {
-            FXMLController.getActiveController().openFile(path, false, true);
+            FXMLController.getActiveController().openFile(path, false, true, preferredProcessedFormat);
             sendNotification(NotificationType.MESSAGE, "File opened", path);
         });
     }
@@ -47,6 +58,22 @@ public class Analyst extends NotificationBroadcasterSupport implements AnalystMB
             stage.toFront();
             stage.requestFocus();
         });
+    }
+
+    @Override
+    public void generateAutoScript(boolean isPseudo2D) {
+        ConsoleUtil.runOnFxThread(() -> {
+            // getting the chart processor must be done in fx thread, because otherwise, a client calling
+            // open() then generateAutoScript() could try to access the chart processor before its creation.
+            ChartProcessor chartProcessor = FXMLController.getActiveController().getChartProcessor();
+            String script = chartProcessor.getGenScript(isPseudo2D);
+            FXMLController.getActiveController().getProcessorController(true).parseScript(script);
+        });
+    }
+
+    @Subscribe
+    public void onDatasetSavedEvent(DatasetSavedEvent event) {
+        sendNotification(NotificationType.DATASET_SAVED, event.getType().name(), event.getPath().toAbsolutePath().toString());
     }
 
     protected void sendNotification(NotificationType type, String message, Object userData) {
