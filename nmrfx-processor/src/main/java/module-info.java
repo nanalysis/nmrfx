@@ -11,6 +11,13 @@ module org.nmrfx.processor {
     exports org.nmrfx.processor.processing.processes;
     exports org.nmrfx.processor.optimization;
     exports org.nmrfx.processor.utilities;
+    exports org.nmrfx.processor.datasets.vendor.bruker;
+    exports org.nmrfx.processor.datasets.vendor.jcamp;
+    exports org.nmrfx.processor.datasets.vendor.jeol;
+    exports org.nmrfx.processor.datasets.vendor.rs2d;
+    exports org.nmrfx.processor.datasets.vendor.varian;
+    exports org.nmrfx.processor.datasets.vendor.nmrpipe;
+    exports org.nmrfx.processor.datasets.vendor.nmrview;
     requires commons.math3;
     requires org.apache.commons.lang3;
     requires org.apache.commons.collections4;

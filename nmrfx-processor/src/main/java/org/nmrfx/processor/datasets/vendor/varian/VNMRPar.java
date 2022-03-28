@@ -15,8 +15,9 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.nmrfx.processor.datasets.vendor;
+package org.nmrfx.processor.datasets.vendor.varian;
 
+import org.nmrfx.processor.datasets.vendor.NMRParException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
