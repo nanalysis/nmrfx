@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.nmrfx.processor.datasets.vendor;
+package org.nmrfx.processor.datasets.vendor.nmrpipe;
 
 import org.apache.commons.collections4.map.LRUMap;
 import org.apache.commons.math3.complex.Complex;
@@ -25,6 +25,8 @@ import org.nmrfx.processor.datasets.parameters.FPMult;
 import org.nmrfx.processor.datasets.parameters.GaussianWt;
 import org.nmrfx.processor.datasets.parameters.LPParams;
 import org.nmrfx.processor.datasets.parameters.SinebellWt;
+import org.nmrfx.processor.datasets.vendor.NMRData;
+import org.nmrfx.processor.datasets.vendor.VendorPar;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.processing.SampleSchedule;
 import org.slf4j.Logger;
