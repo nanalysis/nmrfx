@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -29,7 +29,6 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import org.apache.commons.lang3.SystemUtils;
-import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.analyst.gui.molecule.CanvasMolecule;
 import org.nmrfx.analyst.gui.molecule.MoleculeMenuActions;
 import org.nmrfx.analyst.gui.peaks.PeakAssignTool;
@@ -38,16 +37,12 @@ import org.nmrfx.analyst.gui.plugin.PluginLoader;
 import org.nmrfx.analyst.gui.spectra.SpectrumMenuActions;
 import org.nmrfx.analyst.gui.spectra.StripController;
 import org.nmrfx.analyst.gui.tools.*;
-import org.nmrfx.chemistry.io.*;
+import org.nmrfx.chemistry.io.PDBFile;
 import org.nmrfx.chemistry.utilities.NvUtil;
 import org.nmrfx.console.ConsoleController;
 import org.nmrfx.peaks.PeakLabeller;
-import org.nmrfx.peaks.PeakList;
-import org.nmrfx.peaks.io.PeakReader;
 import org.nmrfx.plugin.api.EntryPoint;
-import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.*;
-import org.nmrfx.processor.gui.controls.GridPaneCanvas;
 import org.nmrfx.processor.gui.log.Log;
 import org.nmrfx.processor.gui.project.GUIProject;
 import org.nmrfx.processor.gui.spectra.KeyBindings;
@@ -57,13 +52,11 @@ import org.nmrfx.processor.utilities.WebConnect;
 import org.nmrfx.project.ProjectBase;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.python.util.InteractiveInterpreter;
-import java.util.*;
-import org.python.util.PythonInterpreter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Path;
+
+import java.util.Calendar;
+import java.util.Optional;
 
 public class AnalystApp extends MainApp {
     private static final Logger log = LoggerFactory.getLogger(AnalystApp.class);
@@ -79,9 +72,7 @@ public class AnalystApp extends MainApp {
     private static SpectrumMenuActions spectrumMenuActions;
     private static ProjectMenuActions projectMenuActions;
     private static ViewMenuItems viewMenuActions;
-
-    MenuToolkit menuTk;
-    Boolean isMac = null;
+    private static boolean advancedMode = false;
 
     public void waitForCommit() {
         int nTries = 30;
@@ -153,6 +144,7 @@ public class AnalystApp extends MainApp {
     public static MenuBar getMenuBar() {
         return mainApp.makeMenuBar(appName);
     }
+
     public static MenuBar getMainMenuBar() {
         return mainMenuBar;
     }
@@ -180,7 +172,7 @@ public class AnalystApp extends MainApp {
         AboutStageBuilder aboutStageBuilder = AboutStageBuilder.start("About " + appName)
                 .withAppName(appName).withCloseOnFocusLoss().withText("Processing for NMR Data")
                 .withVersionString("Version " + getVersion()).withCopyright("Copyright \u00A9 " + Calendar
-                .getInstance().get(Calendar.YEAR));
+                        .getInstance().get(Calendar.YEAR));
         Image image = new Image(AnalystApp.class.getResourceAsStream("/images/Icon_NVFX_256.png"));
         aboutStageBuilder = aboutStageBuilder.withImage(image);
         return aboutStageBuilder.build();
@@ -309,7 +301,10 @@ public class AnalystApp extends MainApp {
         if (viewMenuActions != null) {
             viewMenuActions.activateAdvanced();
         }
+        addAdvancedtools();
+        advancedMode = true;
         startAdvancedItem.setDisable(true);
+
 
     }
 
@@ -344,6 +339,36 @@ public class AnalystApp extends MainApp {
         MenuItem regionsMenuItem = new MenuItem("Show Regions Tool");
         regionsMenuItem.disableProperty().bind(FXMLController.activeController.isNull());
         regionsMenuItem.setOnAction(e -> showRegionTool());
+        oneDMenu.getItems().addAll(multipletToolItem, regionsMenuItem);
+        statusBar.addToToolMenu(oneDMenu);
+        if (advancedMode) {
+            addAdvancedTools(statusBar);
+        }
+    }
+
+    private void addAdvancedtools() {
+        for (var controller: FXMLController.getControllers()) {
+            addAdvancedTools(controller.getStatusBar());
+        }
+    }
+
+    private void addAdvancedTools(SpectrumStatusBar statusBar) {
+        Menu peakToolMenu = new Menu("Peak Tools");
+        FXMLController controller = statusBar.getController();
+        MenuItem compareMenuItem = new MenuItem("Show Comparator");
+        statusBar.addToToolMenu("Spectrum Tools", compareMenuItem);
+        compareMenuItem.setOnAction(e -> controller.showSpectrumComparator());
+
+        MenuItem peakNavigatorMenuItem = new MenuItem("Show Peak Navigator");
+        peakNavigatorMenuItem.setOnAction(e -> controller.showPeakNavigator());
+        MenuItem pathToolMenuItem = new MenuItem("Show Path Tool");
+        pathToolMenuItem.setOnAction(e -> controller.showPathTool());
+
+        peakToolMenu.getItems().addAll(peakNavigatorMenuItem,
+                pathToolMenuItem);
+
+        statusBar.addToToolMenu(peakToolMenu);
+
 
         MenuItem spectrumLibraryMenuItem = new MenuItem("Show Spectrum Library");
         spectrumLibraryMenuItem.disableProperty().bind(FXMLController.activeController.isNull());
@@ -353,8 +378,9 @@ public class AnalystApp extends MainApp {
         spectrumFitLibraryMenuItem.disableProperty().bind(FXMLController.activeController.isNull());
         spectrumFitLibraryMenuItem.setOnAction(e -> showSpectrumFitter());
 
-        oneDMenu.getItems().addAll(multipletToolItem, regionsMenuItem,
-                spectrumLibraryMenuItem, spectrumFitLibraryMenuItem);
+        Menu libraryMenu = new Menu("Library");
+        libraryMenu.getItems().addAll(spectrumLibraryMenuItem, spectrumFitLibraryMenuItem);
+        statusBar.addToToolMenu(libraryMenu);
 
         Menu molMenu = new Menu("Molecule");
         MenuItem canvasMolMenuItem = new MenuItem("Show Molecule");
@@ -363,7 +389,6 @@ public class AnalystApp extends MainApp {
         delCanvasMolMenuItem.setOnAction(e -> removeMolecule());
         molMenu.getItems().addAll(canvasMolMenuItem, delCanvasMolMenuItem);
 
-        statusBar.addToToolMenu(oneDMenu);
         statusBar.addToToolMenu(molMenu);
 
         MenuItem peakAssignMenuItem = new MenuItem("Show Peak Assigner");
@@ -379,6 +404,7 @@ public class AnalystApp extends MainApp {
         scannerToolItem.setOnAction(e -> showScannerTool());
 
         PluginLoader.getInstance().registerPluginsOnEntryPoint(EntryPoint.STATUS_BAR_TOOLS, statusBar);
+
     }
 
     static void showDocAction(ActionEvent event) {
