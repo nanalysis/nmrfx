@@ -1199,7 +1199,7 @@ public class Processor {
                                 vectors.add(temp);
                             }
                         } catch (Exception e) {
-                            throw new ProcessingException(e.getMessage());
+                            throw new ProcessingException(e.getMessage(), e);
                         }
                         vecReadCount.incrementAndGet();
                     }
