@@ -204,7 +204,8 @@ public class MouseBindings {
                     Optional<DatasetRegion> currentRegion = chart.getActiveRegion();
                     if (currentRegion.isPresent() != previousRegion.isPresent()) {
                         chart.refresh();
-                    } else if (currentRegion.isPresent() && currentRegion.get() != previousRegion.get()) {
+                    } else if (currentRegion.isPresent() && previousRegion.isPresent() &&
+                            (currentRegion.get() != previousRegion.get())) {
                         chart.refresh();
                     }
                     if (handler instanceof BoxMouseHandlerHandler) {
