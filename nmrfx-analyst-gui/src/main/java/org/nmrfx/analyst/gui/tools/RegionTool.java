@@ -41,13 +41,13 @@ import org.nmrfx.processor.gui.spectra.MultipletSelection;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
 import org.nmrfx.processor.gui.utils.ToolBarUtils;
 import org.nmrfx.utils.GUIUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
 import java.util.function.Consumer;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import static org.nmrfx.utils.GUIUtils.affirm;
 import static org.nmrfx.utils.GUIUtils.warn;
@@ -57,6 +57,7 @@ import static org.nmrfx.utils.GUIUtils.warn;
  * @author brucejohnson
  */
 public class RegionTool implements ControllerTool {
+    private static final Logger log = LoggerFactory.getLogger(RegionTool.class);
 
     Stage stage = null;
     VBox vBox;
@@ -383,7 +384,7 @@ public class RegionTool implements ControllerTool {
                 chart.chartProps.setIntegrals(true);
                 chart.updatePeakLists(peakListNames);
             } catch (IOException ex) {
-                Logger.getLogger(AnalystApp.class.getName()).log(Level.SEVERE, null, ex);
+                log.error(ex.getMessage(), ex);
             }
         }
     }

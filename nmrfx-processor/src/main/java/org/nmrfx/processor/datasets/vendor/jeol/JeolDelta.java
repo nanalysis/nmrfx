@@ -15,9 +15,25 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.nmrfx.processor.datasets.vendor;
+package org.nmrfx.processor.datasets.vendor.jeol;
 
-import java.io.*;
+import org.apache.commons.math3.complex.Complex;
+import org.nmrfx.processor.datasets.DatasetType;
+import org.nmrfx.processor.datasets.parameters.FPMult;
+import org.nmrfx.processor.datasets.parameters.GaussianWt;
+import org.nmrfx.processor.datasets.parameters.LPParams;
+import org.nmrfx.processor.datasets.parameters.SinebellWt;
+import org.nmrfx.processor.datasets.vendor.NMRData;
+import org.nmrfx.processor.datasets.vendor.VendorPar;
+import org.nmrfx.processor.math.Vec;
+import org.nmrfx.processor.processing.SampleSchedule;
+import org.nmrfx.utilities.ByteConversion;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.DoubleBuffer;
@@ -25,22 +41,12 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import org.apache.commons.math3.complex.Complex;
-import org.nmrfx.processor.datasets.DatasetType;
-import org.nmrfx.processor.datasets.parameters.FPMult;
-import org.nmrfx.processor.datasets.parameters.GaussianWt;
-import org.nmrfx.processor.datasets.parameters.LPParams;
-import org.nmrfx.processor.datasets.parameters.SinebellWt;
-import org.nmrfx.processor.math.Vec;
-import org.nmrfx.processor.processing.SampleSchedule;
-import org.nmrfx.utilities.ByteConversion;
 
 /*
  * This class implements the "JeolDelta" command in Vendor.
  */
 public class JeolDelta implements NMRData {
+    private static final Logger log = LoggerFactory.getLogger(JeolDelta.class);
 
     private final JeolDeltaAxis[] axes;
     private final File file;
@@ -51,7 +57,6 @@ public class JeolDelta implements NMRData {
     private int subMatrixPointCount;
     private int sectionByteCount;
     private DatasetType preferredDatasetType = DatasetType.NMRFX;
-    static final Logger LOGGER = Logger.getLogger("org.nmrfx.processor.datasets.Dataset");
     private final int nPoints;                   // TD,1
     private final int nVectors;             // NS,1
     private final int nDim;                // from acqu[n]s files
@@ -754,21 +759,19 @@ public class JeolDelta implements NMRData {
      * @param bpath full path for FID data
      * @return if FID data was successfully found or not
      */
-    protected static boolean findFID(StringBuilder bpath) {
-        boolean found = bpath.toString().endsWith(".jdf");
-        return found;
-    } // findFID
+    public static boolean findFID(StringBuilder bpath) {
+        return bpath.toString().endsWith(".jdf");
+    }
 
     private static boolean findFIDFiles(String dpath) {
-        boolean found = dpath.endsWith(".jdf");
-        return found;
-    } // findFIDFiles
+        return dpath.endsWith(".jdf");
+    }
 
     public void close() {
         try {
             raFile.close();
         } catch (IOException e) {
-            LOGGER.log(Level.WARNING, e.getMessage());
+            log.warn(e.getMessage(), e);
         }
     }
 

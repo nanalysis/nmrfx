@@ -17,25 +17,28 @@
  */
 package org.nmrfx.processor.datasets.vendor;
 
+import org.apache.commons.math3.complex.Complex;
 import org.nmrfx.processor.datasets.DatasetType;
 import org.nmrfx.processor.datasets.parameters.FPMult;
 import org.nmrfx.processor.datasets.parameters.GaussianWt;
 import org.nmrfx.processor.datasets.parameters.LPParams;
 import org.nmrfx.processor.datasets.parameters.SinebellWt;
+import org.nmrfx.processor.datasets.vendor.bruker.BrukerData;
+import org.nmrfx.processor.datasets.vendor.varian.VarianData;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.processing.ProcessingException;
 import org.nmrfx.processor.processing.SampleSchedule;
+import org.nmrfx.utilities.RemoteDataset;
+
 import java.io.IOException;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.Map;
-import java.util.LinkedHashMap;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
-import org.apache.commons.math3.complex.Complex;
-import org.nmrfx.utilities.RemoteDataset;
+import java.util.Map;
 
 /**
  * The <i>NMRData</i> interface contains methods for retrieving data and
@@ -203,7 +206,7 @@ public interface NMRData {
      * Return the spectrometer frequency for the specified dimension
      *
      * @param dim data dimension index
-     * @return spectrometer frequency
+     * @return spectrometer frequency in MHz
      */
     public double getSF(int dim);
 
@@ -212,7 +215,7 @@ public interface NMRData {
      * overwrite a value loaded by analysis of parameter files.
      *
      * @param dim data dimension index
-     * @param value new value for spectrometer frequency
+     * @param value new value for spectrometer frequency in MHz
      */
     public void setSF(int dim, double value);
 
@@ -253,7 +256,7 @@ public interface NMRData {
      * Return the reference value for the specified dimension
      *
      * @param dim data dimension index
-     * @return reference value
+     * @return reference value in ppm
      */
     public double getRef(int dim);
 

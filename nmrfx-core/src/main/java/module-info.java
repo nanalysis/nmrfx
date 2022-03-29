@@ -13,12 +13,10 @@ module org.nmrfx.core {
     exports org.nmrfx.peaks.io;
     exports org.nmrfx.star;
     exports org.nmrfx.project;
-    exports org.nmrfx.server;
     exports org.nmrfx.utilities;
     requires commons.math3;
     requires org.apache.commons.lang3;
     requires org.apache.commons.collections4;
-    requires io.netty.all;
     requires java.logging;
     requires java.desktop;
     requires vecmath;
@@ -26,4 +24,5 @@ module org.nmrfx.core {
     requires jython.slim;
     requires jsch;
     requires com.google.gson;
+    requires org.slf4j;
 }

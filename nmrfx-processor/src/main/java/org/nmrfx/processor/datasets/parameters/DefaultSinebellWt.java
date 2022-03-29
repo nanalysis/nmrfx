@@ -1,6 +1,6 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures 
- * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
+ * NMRFx Processor : A Program for Processing NMR Data 
+ * Copyright (C) 2004-2022 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,19 +15,18 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.nmrfx.chemistry;
+package org.nmrfx.processor.datasets.parameters;
 
-public class Water extends Entity {
-
-    String name;
-
-    public Water(String name) {
-        this.name = name;
-    }
-
-    public void add() throws InvalidMoleculeException {
-        String aName = "O" + (atoms.size() + 1);
-        Atom atom = Atom.genAtomWithElement(aName, "O");
-        addAtom(null, atom);
+/**
+ * Sinebell weighting parameters
+ */
+public class DefaultSinebellWt extends SinebellWt {
+    public DefaultSinebellWt(int power, int size, double sb, double sbs, double offset, double end) {
+        this.power = power;
+        this.size = size;
+        this.sb = sb;
+        this.sbs = sbs;
+        this.offset = offset;
+        this.end = end;
     }
 }

@@ -1,16 +1,18 @@
 package org.nmrfx.processor.datasets.peaks.io;
 
-import java.io.IOException;
-import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.junit.Assert;
 import org.junit.Test;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.io.PeakReader;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.util.List;
 
 public class PeakListTest {
+    private static final Logger log = LoggerFactory.getLogger(PeakListTest.class);
 
     String peakListName1 = "src/test/resources/test.xpk";
     String peakListName2 = "src/test/resources/test.xpk2";
@@ -22,7 +24,7 @@ public class PeakListTest {
             try {
                 peakList1 = peakReader.readPeakList(peakListName);
             } catch (IOException ex) {
-                Logger.getLogger(PeakListTest.class.getName()).log(Level.SEVERE, null, ex);
+                log.error(ex.getMessage(), ex);
             }
         }
         return peakList1;

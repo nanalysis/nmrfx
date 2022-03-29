@@ -17,14 +17,6 @@
  */
 package org.nmrfx.processor.math.apache;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.PrintStream;
-import java.util.Random;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
 import org.apache.commons.math3.complex.Complex;
 import org.apache.commons.math3.complex.ComplexField;
 import org.apache.commons.math3.complex.ComplexUtils;
@@ -33,12 +25,21 @@ import org.apache.commons.math3.linear.ArrayFieldVector;
 import org.apache.commons.math3.linear.FieldMatrix;
 import org.apache.commons.math3.linear.MatrixUtils;
 import org.apache.commons.math3.util.FastMath;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.PrintStream;
+import java.util.Random;
 
 /**
  * ComplexSingularValueDecomposition implements the singular value decomposition of a Complex Matrix.
  *
  */
 public class ComplexSingularValueDecomposition {
+    private static final Logger log = LoggerFactory.getLogger(ComplexSingularValueDecomposition.class);
 
     /**
      * Limits the number of iterations in the SVD algorithm
@@ -792,8 +793,7 @@ public class ComplexSingularValueDecomposition {
             zps = new PrintStream(new FileOutputStream(file));
             System.setOut(ps);
         } catch (FileNotFoundException ex) {
-            Logger.getLogger(ComplexSingularValueDecomposition.class.getName())
-                    .log(Level.SEVERE, null, ex);
+            log.error(ex.getMessage(), ex);
             return;
         }
 

@@ -7,8 +7,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.ResourceBundle;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.event.ActionEvent;
@@ -54,6 +52,8 @@ import org.nmrfx.utils.properties.CheckComboOperationItem;
 import org.nmrfx.utils.properties.ChoiceOperationItem;
 import org.nmrfx.utils.properties.DoubleRangeOperationItem;
 import org.nmrfx.utils.properties.NvFxPropertyEditorFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * FXML Controller class
@@ -61,6 +61,7 @@ import org.nmrfx.utils.properties.NvFxPropertyEditorFactory;
  * @author brucejohnson
  */
 public class SeqDisplayController implements Initializable {
+    private static final Logger log = LoggerFactory.getLogger(SeqDisplayController.class);
 
     Color[] colors = {Color.BLUE, Color.RED, Color.BLACK, Color.GREEN, Color.CYAN, Color.MAGENTA, Color.YELLOW};
 
@@ -932,7 +933,7 @@ public class SeqDisplayController implements Initializable {
                 drawCanvas(pdfGC, CANVAS_MODE.DRAW);
                 pdfGC.saveFile();
             } catch (GraphicsIOException ex) {
-                Logger.getLogger(FXMLController.class.getName()).log(Level.SEVERE, null, ex);
+                log.error(ex.getMessage(), ex);
             }
         }
         stage.setResizable(true);

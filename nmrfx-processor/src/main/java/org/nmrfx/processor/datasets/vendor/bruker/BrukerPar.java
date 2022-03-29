@@ -15,13 +15,16 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.nmrfx.processor.datasets.vendor;
+package org.nmrfx.processor.datasets.vendor.bruker;
+
+import org.nmrfx.processor.datasets.vendor.NMRParException;
 
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.LineNumberReader;
-import java.util.*;
-import java.util.logging.Logger;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -30,9 +33,6 @@ import java.util.regex.Pattern;
  * @author brucejohnson
  */
 public class BrukerPar {
-
-    static final Logger LOGGER = Logger.getLogger("org.nmrfx.processor.datasets.Dataset");
-
     private BrukerPar() {
     }
 

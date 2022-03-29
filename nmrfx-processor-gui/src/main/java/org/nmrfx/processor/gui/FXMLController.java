@@ -38,7 +38,6 @@ import javafx.fxml.Initializable;
 import javafx.geometry.Bounds;
 import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
-import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -51,9 +50,6 @@ import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
-import javafx.scene.text.Font;
-import javafx.scene.text.FontWeight;
-import javafx.scene.text.TextAlignment;
 import javafx.stage.FileChooser;
 import javafx.stage.FileChooser.ExtensionFilter;
 import javafx.stage.Stage;
@@ -76,6 +72,9 @@ import org.nmrfx.processor.datasets.peaks.PeakListAlign;
 import org.nmrfx.processor.datasets.peaks.PeakNeighbors;
 import org.nmrfx.processor.datasets.peaks.PeakNetworkMatch;
 import org.nmrfx.processor.datasets.vendor.*;
+import org.nmrfx.processor.datasets.vendor.bruker.BrukerData;
+import org.nmrfx.processor.datasets.vendor.nmrview.NMRViewData;
+import org.nmrfx.processor.datasets.vendor.rs2d.RS2DData;
 import org.nmrfx.processor.gui.controls.GridPaneCanvas;
 import org.nmrfx.processor.gui.spectra.*;
 import org.nmrfx.processor.gui.tools.PathTool;
@@ -85,6 +84,8 @@ import org.nmrfx.utilities.DictionarySort;
 import org.nmrfx.utils.GUIUtils;
 import org.python.core.PyObject;
 import org.python.util.PythonInterpreter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -95,10 +96,9 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class FXMLController implements  Initializable, PeakNavigable {
+    private static final Logger log = LoggerFactory.getLogger(FXMLController.class);
 
     @FXML
     private VBox topBar;
@@ -685,7 +685,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
                         }
                     }
                 } catch (IOException ex) {
-                    Logger.getLogger(FXMLController.class.getName()).log(Level.SEVERE, null, ex);
+                    log.error(ex.getMessage(), ex);
                 }
             }
         }
@@ -898,7 +898,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
                 }
                 pdfGC.saveFile();
             } catch (GraphicsIOException ex) {
-                Logger.getLogger(FXMLController.class.getName()).log(Level.SEVERE, null, ex);
+                log.error(ex.getMessage(), ex);
             }
         }
         stage.setResizable(true);
@@ -1298,14 +1298,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
     }
 
     @Override
-    public void refreshPeakListView(PeakList peakList
-    ) {
-    }
-
-    class ChartLabel extends Label {
-
-        PolyChart chart;
-
+    public void refreshPeakListView(PeakList peakList) {
     }
 
     @Override
@@ -1333,7 +1326,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
         canvas.setManaged(false);
         peakCanvas.setManaged(false);
         annoCanvas.setManaged(false);
-        plotContent.setManaged(true);
+        plotContent.setManaged(false);
         mainBox.layoutBoundsProperty().addListener((ObservableValue<? extends Bounds> arg0, Bounds arg1, Bounds arg2) -> {
             if (arg2.getWidth()  < 1.0 || arg2.getHeight() < 1.0) {
                 return;
@@ -1377,22 +1370,6 @@ public class FXMLController implements  Initializable, PeakNavigable {
 
     public boolean getCrossHairState(int iCross, int jOrient) {
         return crossHairStates[iCross][jOrient];
-    }
-
-    public ChartLabel getLabel(PolyChart chart, String color, String id) {
-        ChartLabel label = new ChartLabel();
-        label.textProperty().set(id);
-        label.textAlignmentProperty().set(TextAlignment.CENTER);
-        label.alignmentProperty().set(Pos.CENTER);
-        label.setOpacity(1.0);
-        label.setTextFill(Color.WHITE);
-        label.setFont(Font.font("Arial", FontWeight.BOLD, 16d));
-        label.setStyle("-fx-background-color: " + color
-                + ";-fx-alignment:center;-fx-text-alignment:center;");
-        label.setManaged(false);
-        label.chart = chart;
-
-        return label;
     }
 
     public static FXMLController create() {
@@ -2118,14 +2095,14 @@ public class FXMLController implements  Initializable, PeakNavigable {
             try {
                 PropertyUtils.setSimpleProperty(this, name, value);
             } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException ex) {
-                Logger.getLogger(DatasetAttributes.class.getName()).log(Level.SEVERE, null, ex);
+                log.error(ex.getMessage(), ex);
             }
         } else {
             Platform.runLater(() -> {
                 try {
                     PropertyUtils.setProperty(this, name, value);
                 } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException ex) {
-                    Logger.getLogger(DatasetAttributes.class.getName()).log(Level.SEVERE, null, ex);
+                    log.error(ex.getMessage(), ex);
                 }
             }
             );
@@ -2147,7 +2124,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
                     data.put(beanName, PropertyUtils.getSimpleProperty(this, beanName));
                 }
             } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException ex) {
-                Logger.getLogger(DatasetAttributes.class.getName()).log(Level.SEVERE, null, ex);
+                log.error(ex.getMessage(), ex);
             }
         }
         return data;

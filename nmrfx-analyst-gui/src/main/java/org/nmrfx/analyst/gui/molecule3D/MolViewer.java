@@ -1,26 +1,14 @@
 package org.nmrfx.analyst.gui.molecule3D;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javafx.collections.ListChangeListener;
 import javafx.geometry.Point2D;
 import javafx.geometry.Point3D;
-import javafx.scene.Group;
-import javafx.scene.Node;
-import javafx.scene.PerspectiveCamera;
-import javafx.scene.PointLight;
-import javafx.scene.SceneAntialiasing;
-import javafx.scene.SubScene;
+import javafx.scene.*;
 import javafx.scene.control.Label;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseEvent;
-import javafx.scene.input.ZoomEvent;
 import javafx.scene.input.PickResult;
+import javafx.scene.input.ZoomEvent;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
@@ -39,12 +27,17 @@ import org.nmrfx.chemistry.Polymer;
 import org.nmrfx.structure.chemistry.MissingCoordinatesException;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.structure.rdc.AlignmentCalc;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.*;
 
 /**
  *
  * @author Dub
  */
 public class MolViewer extends Pane {
+    private static final Logger log = LoggerFactory.getLogger(MolViewer.class);
 
     private double mousePosX;
     private double mousePosY;
@@ -406,7 +399,7 @@ public class MolViewer extends Pane {
             center = molecule.getCenter(iStructure);
             center(-center[0], -center[1], -center[2]);
         } catch (MissingCoordinatesException ex) {
-            Logger.getLogger(MolViewer.class.getName()).log(Level.SEVERE, null, ex);
+            log.error(ex.getMessage(), ex);
         }
         subScene.getRoot().requestFocus();
 
@@ -425,7 +418,7 @@ public class MolViewer extends Pane {
                 updateView();
             }
         } catch (MissingCoordinatesException ex) {
-            Logger.getLogger(MolViewer.class.getName()).log(Level.SEVERE, null, ex);
+            log.error(ex.getMessage(), ex);
         }
     }
 

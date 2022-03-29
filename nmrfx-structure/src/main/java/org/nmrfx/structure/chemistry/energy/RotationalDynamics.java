@@ -17,7 +17,6 @@
  */
 package org.nmrfx.structure.chemistry.energy;
 
-import java.io.IOException;
 import org.nmrfx.chemistry.Atom;
 import org.nmrfx.chemistry.AtomEnergyProp;
 import org.nmrfx.chemistry.Util;
@@ -28,15 +27,14 @@ import org.nmrfx.structure.chemistry.io.TrajectoryWriter;
 import org.nmrfx.structure.fastlinear.FastMatrix;
 import org.nmrfx.structure.fastlinear.FastVector;
 import org.nmrfx.structure.fastlinear.FastVector3D;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.nmrfx.utilities.ProgressUpdater;
 import org.python.core.PyFloat;
 import org.python.core.PyFunction;
 import org.python.core.PyObject;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
 
 /**
  *

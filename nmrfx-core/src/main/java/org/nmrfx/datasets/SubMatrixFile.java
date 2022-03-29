@@ -20,6 +20,8 @@ package org.nmrfx.datasets;
 import org.apache.commons.math3.complex.Complex;
 import org.nmrfx.datasets.StorageCache.DatasetKey;
 import org.nmrfx.math.VecBase;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.Closeable;
 import java.io.File;
@@ -27,8 +29,6 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Create a memory-mapped interface to a Dataset file
@@ -36,6 +36,7 @@ import java.util.logging.Logger;
  * @author brucejohnson
  */
 public class SubMatrixFile implements DatasetStorageInterface, Closeable {
+    private static final Logger log = LoggerFactory.getLogger(SubMatrixFile.class);
 
     static StorageCache cache = new StorageCache();
     private RandomAccessFile raFile;
@@ -336,7 +337,7 @@ public class SubMatrixFile implements DatasetStorageInterface, Closeable {
                 }
             }
         } catch (IOException ex) {
-            Logger.getLogger(SubMatrixFile.class.getName()).log(Level.SEVERE, null, ex);
+            log.error(ex.getMessage(), ex);
         }
 
         return sum;
@@ -352,7 +353,7 @@ public class SubMatrixFile implements DatasetStorageInterface, Closeable {
                 }
             }
         } catch (IOException ex) {
-            Logger.getLogger(SubMatrixFile.class.getName()).log(Level.SEVERE, null, ex);
+            log.error(ex.getMessage(), ex);
         }
     }
 
@@ -361,7 +362,7 @@ public class SubMatrixFile implements DatasetStorageInterface, Closeable {
         try {
             cache.flush(this);
         } catch (IOException ex) {
-            Logger.getLogger(SubMatrixFile.class.getName()).log(Level.SEVERE, null, ex);
+            log.error(ex.getMessage(), ex);
         }
     }
 

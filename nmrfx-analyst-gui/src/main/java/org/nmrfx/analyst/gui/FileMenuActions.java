@@ -1,14 +1,10 @@
 package org.nmrfx.analyst.gui;
 
-import javafx.event.ActionEvent;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
-import javafx.scene.control.SeparatorMenuItem;
 import javafx.stage.Stage;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.PreferencesController;
-
-import static org.nmrfx.server.Server.startServer;
 
 public class FileMenuActions extends MenuActions {
     private  DatasetBrowserController browserController = null;
@@ -44,8 +40,6 @@ public class FileMenuActions extends MenuActions {
 
         graphicsMenu.getItems().addAll(svgMenuItem, pdfMenuItem, pngMenuItem);
 
-        //    MenuItem portMenuItem = new MenuItem("New NMRFx Server...");
-     //   portMenuItem.setOnAction(e -> startServer(e));
         MenuItem datasetBrowserMenuItem = new MenuItem("Dataset Browser...");
         datasetBrowserMenuItem.setOnAction(e -> showDataBrowser());
         MenuItem startAdvancedItem = new MenuItem("Start Advanced");

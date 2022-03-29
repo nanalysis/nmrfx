@@ -57,12 +57,16 @@ import org.nmrfx.processor.utilities.WebConnect;
 import org.nmrfx.project.ProjectBase;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.python.util.InteractiveInterpreter;
-
+import java.util.*;
+import org.python.util.PythonInterpreter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
-import java.util.*;
+import java.nio.file.Path;
 
 public class AnalystApp extends MainApp {
+    private static final Logger log = LoggerFactory.getLogger(AnalystApp.class);
 
     private static final String version = null;
     static String appName = "NMRFx Analyst";
@@ -374,6 +378,7 @@ public class AnalystApp extends MainApp {
         statusBar.addToToolMenu(scannerToolItem);
         scannerToolItem.setOnAction(e -> showScannerTool());
 
+        PluginLoader.getInstance().registerPluginsOnEntryPoint(EntryPoint.STATUS_BAR_TOOLS, statusBar);
     }
 
     static void showDocAction(ActionEvent event) {
