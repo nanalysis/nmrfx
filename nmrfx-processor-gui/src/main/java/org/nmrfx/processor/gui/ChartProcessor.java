@@ -23,8 +23,9 @@ import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.DatasetType;
 import org.nmrfx.processor.datasets.vendor.NMRData;
 import org.nmrfx.processor.datasets.vendor.NMRDataUtil;
-import org.nmrfx.processor.datasets.vendor.NMRViewData;
-import org.nmrfx.processor.datasets.vendor.RS2DData;
+import org.nmrfx.processor.datasets.vendor.nmrview.NMRViewData;
+import org.nmrfx.processor.datasets.vendor.rs2d.RS2DData;
+import org.nmrfx.processor.datasets.vendor.rs2d.RS2DProcUtil;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.processing.MultiVecCounter;
 import org.nmrfx.processor.processing.Processor;
@@ -42,12 +43,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 
-
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 /**
  * A ChartProcessor manages the processing of data assigned to a particular
  * PolyChart
@@ -980,7 +975,7 @@ public class ChartProcessor {
             File file;
             if (getDatasetType()== DatasetType.SPINit) {
                 Path datasetDir = directory.toPath();
-                Path newProcPath = RS2DData.findNextProcPath(datasetDir);
+                Path newProcPath = RS2DProcUtil.findNextProcPath(datasetDir);
                 try {
                     Files.createDirectories(newProcPath);
                 } catch (IOException e) {

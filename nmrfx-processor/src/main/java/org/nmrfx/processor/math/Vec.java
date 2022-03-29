@@ -2791,7 +2791,7 @@ public class Vec extends VecBase {
      * data points, otherwise they are in ppm and Hz.
      * @return this vector
      */
-    public Vec fillVec(List<Signal> signals, boolean signalInPoints) {
+    public Vec fillVec(List<? extends Signal> signals, boolean signalInPoints) {
         makeReal();
         zeros();
 

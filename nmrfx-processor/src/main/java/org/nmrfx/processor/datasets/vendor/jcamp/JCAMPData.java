@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.nmrfx.processor.datasets.vendor;
+package org.nmrfx.processor.datasets.vendor.jcamp;
 
 import com.nanalysis.jcamp.model.*;
 import com.nanalysis.jcamp.parser.JCampParser;
@@ -24,6 +24,9 @@ import org.apache.commons.math3.complex.Complex;
 import org.codehaus.commons.nullanalysis.Nullable;
 import org.nmrfx.processor.datasets.DatasetType;
 import org.nmrfx.processor.datasets.parameters.*;
+import org.nmrfx.processor.datasets.vendor.NMRData;
+import org.nmrfx.processor.datasets.vendor.NMRDataUtil;
+import org.nmrfx.processor.datasets.vendor.VendorPar;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.processing.SampleSchedule;
 import org.slf4j.Logger;
@@ -40,7 +43,7 @@ import static com.nanalysis.jcamp.model.Label.*;
  * A JCamp file that could contain a FID, a Spectra, or both.
  * When the file contain both, the FID is used.
  */
-class JCAMPData implements NMRData {
+public class JCAMPData implements NMRData {
     private static final Logger log = LoggerFactory.getLogger(JCAMPData.class);
 
     private static final List<String> MATCHING_EXTENSIONS = List.of(".jdx", ".dx");
