@@ -303,6 +303,9 @@ public class FXMLController implements  Initializable, PeakNavigable {
     }
 
     public void setActiveChart(PolyChart chart) {
+        if (activeChart != chart) {
+            deselectCharts();
+        }
         activeChart = chart;
         PolyChart.activeChart.set(chart);
         if (specAttrWindowController != null) {
@@ -315,6 +318,12 @@ public class FXMLController implements  Initializable, PeakNavigable {
 
     public PolyChart getActiveChart() {
         return activeChart;
+    }
+
+    public void deselectCharts() {
+        for (var chart:charts) {
+            chart.selectChart(false);
+        }
     }
 
     public Stage getStage() {
