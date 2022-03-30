@@ -15,7 +15,9 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.nmrfx.processor.datasets.vendor;
+package org.nmrfx.processor.datasets.vendor.bruker;
+
+import org.nmrfx.processor.datasets.vendor.NMRParException;
 
 import java.io.FileReader;
 import java.io.IOException;

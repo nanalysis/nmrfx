@@ -1,9 +1,21 @@
 /*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+ * NMRFx: A Program for Processing NMR Data
+ * Copyright (C) 2004-2022 One Moon Scientific, Inc., Westfield, N.J., USA
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.nmrfx.processor.datasets.vendor;
+package org.nmrfx.processor.datasets.vendor.rs2d;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.math3.complex.Complex;
@@ -15,25 +27,22 @@ import org.nmrfx.processor.datasets.parameters.FPMult;
 import org.nmrfx.processor.datasets.parameters.GaussianWt;
 import org.nmrfx.processor.datasets.parameters.LPParams;
 import org.nmrfx.processor.datasets.parameters.SinebellWt;
+import org.nmrfx.processor.datasets.vendor.NMRData;
+import org.nmrfx.processor.datasets.vendor.VendorPar;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.processing.SampleSchedule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
-import javax.xml.XMLConstants;
-import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
-import javax.xml.xpath.*;
-import java.io.*;
+import javax.xml.xpath.XPathExpressionException;
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
@@ -42,32 +51,34 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
+
+import static org.nmrfx.processor.datasets.vendor.rs2d.RS2DParam.*;
+import static org.nmrfx.processor.datasets.vendor.rs2d.XmlUtil.*;
 
 /**
- *
- * @author brucejohnson
+ * RS2D data support.
  */
 public class RS2DData implements NMRData {
-    private static final Logger log = LoggerFactory.getLogger(RS2DData.class);
-
     public static final DatasetType DATASET_TYPE = DatasetType.SPINit;
     public static final String DATA_FILE_NAME = "data.dat";
     public static final String HEADER_FILE_NAME = "header.xml";
     public static final String SERIES_FILE_NAME = "Serie.xml";
-    static final String PROC_DIR = "Proc";
-    static final String BASE_FREQ_PAR = "BASE_FREQ_";
+    public static final String PROC_DIR = "Proc";
 
-    static final int MAXDIM = 4;
+    private static final int MAXDIM = 4;
+
+    private static final Logger log = LoggerFactory.getLogger(RS2DData.class);
+
 
     private final String fpath;
     private FileChannel fc = null;
-    private Document headerDocument;
+    private RS2DHeader header;
     private Document seriesDocument;
 
-    private HashMap<String, List<String>> parMap = null;
     File nusFile;
 
     int nDim = 0;
@@ -179,7 +190,7 @@ public class RS2DData implements NMRData {
      * @param bpath full path for FID data
      * @return if FID data was successfully found or not
      */
-    protected static boolean findFID(StringBuilder bpath) {
+    public static boolean findFID(StringBuilder bpath) {
         boolean found = false;
         if (findFIDFiles(bpath.toString())) {
             found = true;
@@ -198,53 +209,6 @@ public class RS2DData implements NMRData {
         return found;
     }
 
-    public static Optional<Path> getLastProcPath(Path datasetDir) {
-        return findLastProcId(datasetDir).stream()
-                .mapToObj(id -> datasetDir.resolve(PROC_DIR).resolve(String.valueOf(id)))
-                .findFirst();
-    }
-
-    public static List<Integer> listProcIds(Path datasetDir) {
-        try (Stream<Path> fileStream = Files.list(datasetDir.resolve(PROC_DIR))) {
-            return fileStream.filter(Files::isDirectory)
-                    .filter(Files::isDirectory)
-                    .map(path -> path.getFileName().toString())
-                    .filter(StringUtils::isNumeric)
-                    .mapToInt(Integer::parseInt)
-                    .sorted()
-                    .boxed()
-                    .collect(Collectors.toList());
-        } catch (IOException e) {
-            log.warn("Unable to list processed directories", e);
-            return Collections.emptyList();
-        }
-    }
-
-    public static int findNextProcId(Path datasetDir) {
-        OptionalInt max = findLastProcId(datasetDir);
-        return max.isPresent() ? max.getAsInt() + 1 : 0;
-    }
-
-    public static Path findNextProcPath(Path datasetDir) {
-        return datasetDir.resolve(PROC_DIR).resolve(String.valueOf(findNextProcId(datasetDir)));
-    }
-
-    /**
-     * Get the last process id for this dataset.
-     * Returns empty (not null) if no valid process dir was found.
-     */
-    public static OptionalInt findLastProcId(Path datasetDir) {
-        try (Stream<Path> fileStream = Files.list(datasetDir.resolve(PROC_DIR))) {
-            return fileStream.filter(Files::isDirectory)
-                    .map(path -> path.getFileName().toString())
-                    .filter(StringUtils::isNumeric)
-                    .mapToInt(Integer::parseInt)
-                    .max();
-        } catch (IOException e) {
-            log.warn("Unable to list processed directories", e);
-            return OptionalInt.empty();
-        }
-    }
 
     private static boolean findFIDFiles(String dirPath) {
         Path headerPath = Paths.get(dirPath, HEADER_FILE_NAME);
@@ -252,44 +216,34 @@ public class RS2DData implements NMRData {
         return headerPath.toFile().exists() && dataPath.toFile().exists();
     }
 
-    private Document readDocument(Path filePath) throws ParserConfigurationException, IOException, SAXException {
-        var factory = DocumentBuilderFactory.newInstance();
-        factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
-        return factory.newDocumentBuilder().parse(filePath.toFile());
-    }
-
     private void openParFile(String parpath, boolean processed) throws IOException {
-        parMap = new LinkedHashMap<>(200);
+        log.info("Opening RS2D file: {}", parpath);
+
         Path headerPath = Paths.get(parpath, HEADER_FILE_NAME);
         Path seriesPath = Paths.get(parpath, SERIES_FILE_NAME);
         try {
-            headerDocument = readDocument(headerPath);
+            header = new RS2DHeader(headerPath);
             if (seriesPath.toFile().exists()) {
                 seriesDocument = readDocument(seriesPath);
             }
-            var parNames = getParams(headerDocument);
-            for (String parName : parNames) {
-                List<String> parValues = getParamValue(headerDocument, parName);
-                parMap.put(parName, parValues);
-            }
-            groupDelay = 0.0;
-            obsNucleus = getPar("OBSERVED_NUCLEUS");
+            groupDelay = readGroupDelay();
+            obsNucleus = header.getString(OBSERVED_NUCLEUS);
             Double obsFreq = null;
-            Double obsSW = getParDouble("SPECTRAL_WIDTH");
-            tempK = getParDouble("SAMPLE_TEMPERATURE");
+            Double obsSW = header.getDouble(SPECTRAL_WIDTH);
+            tempK = header.getDouble(SAMPLE_TEMPERATURE);
             String baseSFName = "";
             nDim = 0;
 
             for (int i = 0; i < MAXDIM; i++) {
-                String nucleus = getPar("NUCLEUS_" + (i + 1));
+                String nucleus = header.getString(NUCLEUS_PARAMS.get(i));
                 if (nucleus.equals(obsNucleus)) {
                     obsFreq = getSF(i);
-                    baseSFName = BASE_FREQ_PAR + (i + 1);
+                    baseSFName = BASE_FREQ_PARAMS.get(i).name();
                     break;
                 }
             }
             if (processed) {
-                List<String> dataModes = parMap.get("DATA_REPRESENTATION");
+                List<String> dataModes = header.getStrings(DATA_REPRESENTATION);
                 if (!dataModes.isEmpty()) {
                     for (int i = 0; i < MAXDIM; i++) {
                         setComplex(i, dataModes.get(i).equals("COMPLEX"));
@@ -300,11 +254,11 @@ public class RS2DData implements NMRData {
             for (int i = 0; i < MAXDIM; i++) {
                 int dimSize;
                 if (processed) {
-                    dimSize = getParInt("MATRIX_DIMENSION_" + (i + 1) + "D");
+                    dimSize = header.getInt(DIMENSION_PARAMS.get(i));
                 } else {
-                    dimSize = getParInt("ACQUISITION_MATRIX_DIMENSION_" + (i + 1) + "D");
+                    dimSize = header.getInt(ACQUISITION_DIMENSION_PARAMS.get(i));
                 }
-                String nucleus = getPar("NUCLEUS_" + (i + 1));
+                String nucleus = header.getString(NUCLEUS_PARAMS.get(i));
                 if (nucleus.equals(obsNucleus)) {
                     Sf[i] = obsFreq;
                     Sw[i] = obsSW;  // fixme  this is kluge to fis some files that have wrong SPECTRAL_WIDTH_2D
@@ -325,84 +279,19 @@ public class RS2DData implements NMRData {
                 }
             }
             if (!processed) {
-                setFTPars();
+                setFTParams();
             }
         } catch (ParserConfigurationException | SAXException | XPathExpressionException | NullPointerException ex) {
             throw new IOException(ex.getMessage());
         }
     }
-    public Document getHeaderDocument() {
-        return headerDocument;
+
+    public RS2DHeader getHeader() {
+        return header;
     }
+
     public Document getSeriesDocument() {
         return seriesDocument;
-    }
-
-    private List<String> getParams(Document xml) throws XPathExpressionException {
-        String expression = "/header/params/entry/key/text()";
-        XPath path = XPathFactory.newInstance().newXPath();
-        XPathExpression expr = path.compile(expression);
-        NodeList nodes = (NodeList) expr.evaluate(xml, XPathConstants.NODESET);
-        var nodeValues = new ArrayList<String>();
-        for (int i = 0; i < nodes.getLength(); i++) {
-            nodeValues.add(nodes.item(i).getNodeValue());
-        }
-        return nodeValues;
-    }
-
-    static List<Node> getParamNode(Document xml, String paramName) throws XPathExpressionException {
-        if (!paramName.contains("'")) {
-            paramName = "'" + paramName + "'";
-        } else if (!paramName.contains("\"")) {
-            paramName = "\"" + paramName + "\"";
-        } else {
-            paramName = "concat('" + paramName.replace("'", "',\"'\",'") + "')";
-        }
-        String expression = "/header/params/entry/key[text()=" + paramName + "]/../value/value";
-        XPath path = XPathFactory.newInstance().newXPath();
-        XPathEvaluationResult<?> result = path.evaluateExpression(expression, xml.getDocumentElement());
-        List<Node> nodeResult = new ArrayList<>();
-        switch (result.type()) {
-            case NODESET:
-                XPathNodes nodes = (XPathNodes) result.value();
-                for (Node node : nodes) {
-                    nodeResult.add(node);
-                }
-                break;
-            case NODE:
-                Node node = (Node) result.value();
-                nodeResult.add(node);
-        }
-        return nodeResult;
-    }
-
-    static List<String> getParamValue(Document xml, String paramName) throws XPathExpressionException {
-        if (!paramName.contains("'")) {
-            paramName = "'" + paramName + "'";
-        } else if (!paramName.contains("\"")) {
-            paramName = "\"" + paramName + "\"";
-        } else {
-            paramName = "concat('" + paramName.replace("'", "',\"'\",'") + "')";
-        }
-        String expression = "/header/params/entry/key[text()=" + paramName + "]/../value/value";
-        XPath path = XPathFactory.newInstance().newXPath();
-        XPathEvaluationResult<?> result = path.evaluateExpression(expression, xml.getDocumentElement());
-        var parList = new ArrayList<String>();
-        switch (result.type()) {
-            case NODESET:
-                XPathNodes nodes = (XPathNodes) result.value();
-                for (Node node : nodes) {
-                    parList.add(node.getTextContent());
-                }
-                break;
-            case NODE:
-                Node node = (Node) result.value();
-                parList.add(node.getTextContent());
-                break;
-            default:
-                System.out.println("default");
-        }
-        return parList;
     }
 
     private void openDataFile(String datapath) {
@@ -425,61 +314,57 @@ public class RS2DData implements NMRData {
         }
     }
 
-    private void setFTPars() {
-        // see bruker.tcl line 781-820
-        complexDim[0] = true;  // same as exchange really
+    private double readGroupDelay() {
+        Integer digitalFilterShift = header.getInt(DIGITAL_FILTER_SHIFT);
+        Boolean digitalFilterRemoved = header.getBoolean(DIGITAL_FILTER_REMOVED);
+        if(digitalFilterShift != null && !Boolean.TRUE.equals(digitalFilterRemoved)) {
+            log.info("Using group delay: {}", digitalFilterShift);
+            return digitalFilterShift.doubleValue();
+        }
+
+        return 0d;
+    }
+
+    private void setFTParams() {
+        List<PhaseMod> phaseMod;
+        List<String> phaseModParam = header.getStrings(PHASE_MOD);
+        List<String> acqModeParam = header.getStrings(ACQUISITION_MODE);
+        if (phaseModParam != null) {
+            phaseMod = phaseModParam.stream().map(PhaseMod::fromName).collect(Collectors.toList());
+            log.info("Setting FT params from PHASE_MOD: {}", phaseMod);
+        } else if (acqModeParam != null) {
+            phaseMod = acqModeParam.stream().map(PhaseMod::fromAcquisitionMode).collect(Collectors.toList());
+            phaseMod.set(0, PhaseMod.NONE);
+            log.info("Setting FT params from ACQUISITION_MODE: {}", phaseMod);
+        } else {
+            phaseMod = Collections.emptyList();
+            log.warn("No PHASE_MOD or ACQUISITION_MODE found, FT params will have default values.");
+        }
+
+        setFtParamsFromPhaseMod(phaseMod);
+    }
+
+    private void setFtParamsFromPhaseMod(List<PhaseMod> phaseMod) {
+        // first dimension is handled separately
+        complexDim[0] = true;
         exchangeXY = true;
         negatePairs = false;
         fttype[0] = "ft";
-        List<String> acqModes = parMap.get("ACQUISITION_MODE");
-        if (!acqModes.isEmpty()) {
-            if (acqModes.get(0).equals("REAL")) {
-                fttype[0] = "rft";
-                complexDim[0] = false;
-                exchangeXY = false;
-                negatePairs = true;
+
+        // other dimensions depends on the PHASE_MOD parameter
+        for (int i = 1; i < MAXDIM; i++) {
+            PhaseMod mode = i < phaseMod.size() ? phaseMod.get(i) : PhaseMod.NONE;
+            complexDim[i] = mode.isComplex();
+            fttype[i] = mode.getFtType();
+            f1coefS[i] = mode.getSymbolicCoefs();
+            f1coef[i] = mode.getCoefs();
+
+            if(mode == PhaseMod.TPPI || mode == PhaseMod.ECHO_ANTIECHO) {
+                negateImag[i] = true;
             }
-        }
-        for (int i = 1; i < nDim; i++) {
-            String fnmode = acqModes.size() > i ? acqModes.get(i) : "COMPLEX";
-            complexDim[i] = true;
-            fttype[i] = "ft";
-            switch (fnmode) {
-                case "REAL":
-                    complexDim[i] = false;
-                    fttype[i] = "rft";
-                    f1coefS[i] = "real";
-                    break;
-                case "TPPI":
-                    complexDim[i] = false;
-                    fttype[i] = "rft";
-                    f1coefS[i] = "real";
-                    negateImag[i] = true;
-                    break;
-                case "COMPLEX": // f1coef[i-1] = "1 0 0 0 0 0 1 0";
-                    f1coef[i] = new double[]{1, 0, 0, 0, 0, 0, 1, 0};
-                    complexDim[i] = true;
-                    fttype[i] = "negate";
-                    f1coefS[i] = "hyper";
-                    tdsize[i] = tdsize[i] / 2;
-                    break;
-                case "ECHO_ANTIECHO": // f1coef[i-1] = "1 0 -1 0 0 1 0 1";
-                    f1coef[i] = new double[]{1, 0, -1, 0, 0, -1, 0, -1};
-                    f1coefS[i] = "echo-antiecho";
-                    tdsize[i] = tdsize[i] / 2;
-                    break;
-                default:
-                    f1coef[i] = new double[]{1, 0, 0, 1};
-                    f1coefS[i] = "sep";
-                    //tdsize[i] = tdsize[i] * 2;
-                    tdsize[i] = tdsize[i] / 2;
-                    break;
-            }
-        }
-        for (int j = 0; j < tdsize.length; j++) {
-            if (tdsize[j] == 0) {
-                tdsize[j] = 1;
-                complexDim[j] = false;
+
+            if (mode.isComplex() && mode != PhaseMod.ECHO_ANTIECHO) {
+                tdsize[i] /= 2;
             }
         }
     }
@@ -503,75 +388,24 @@ public class RS2DData implements NMRData {
         return fpath;
     }
 
-    String getMultiPar(String parName) {
-        if (!parMap.containsKey(parName)) {
-            return null;
-        }
-        List<String> values = parMap.get(parName);
-        StringBuilder sBuilder = new StringBuilder();
-        if (!values.isEmpty()) {
-            sBuilder.append(values.get(0));
-        }
-        for (int i = 1; i < values.size(); i++) {
-            sBuilder.append(",").append(values.get(i));
-        }
-        return sBuilder.toString();
-
+    @Override
+    public String getPar(String name) {
+        return header.getString(name);
     }
 
     @Override
-    public String getPar(String parName) {
-        if (parMap == null) {
-            return null;
-        } else {
-            return getMultiPar(parName);
-        }
+    public Double getParDouble(String name) {
+        return header.getDouble(name);
     }
 
     @Override
-    public Double getParDouble(String parname) {
-        if ((parMap == null) || (getPar(parname) == null)) {
-            return null;
-//            throw new NullPointerException();
-        } else {
-            return Double.parseDouble(getPar(parname));
-        }
-    }
-
-    public List<Double> getParDoubleList(String parname) {
-        var values = new ArrayList<Double>();
-        if ((parMap == null) || !parMap.containsKey(parname)) {
-            return values;
-        } else {
-            var strValues = parMap.get(parname);
-            for (String strValue : strValues) {
-                try {
-                    values.add(Double.parseDouble(strValue));
-                } catch (NumberFormatException nfE) {
-                    values.add(null);
-                }
-            }
-        }
-        return values;
-    }
-
-    @Override
-    public Integer getParInt(String parname) {
-        if ((parMap == null) || (getPar(parname) == null)) {
-            return null;
-        } else {
-            return Integer.parseInt(getPar(parname));
-        }
+    public Integer getParInt(String name) {
+        return header.getInt(name);
     }
 
     @Override
     public List<VendorPar> getPars() {
-        List<VendorPar> vendorPars = new ArrayList<>();
-        for (String key : parMap.keySet()) {
-            String value = getMultiPar(key);
-            vendorPars.add(new VendorPar(key, value));
-        }
-        return vendorPars;
+        return header.toVendorPars();
     }
 
     @Override
@@ -606,7 +440,7 @@ public class RS2DData implements NMRData {
 
     @Override
     public String getSolvent() {
-        return getPar("SOLVENT");
+        return header.getString(SOLVENT);
     }
 
     @Override
@@ -616,7 +450,7 @@ public class RS2DData implements NMRData {
 
     @Override
     public String getSequence() {
-        return getPar("SEQUENCE_NAME");
+        return header.getString(SEQUENCE_NAME);
     }
 
     @Override
@@ -626,7 +460,7 @@ public class RS2DData implements NMRData {
             sf = Sf[iDim];
         } else {
             Double dpar;
-            if ((dpar = getParDouble(BASE_FREQ_PAR + (iDim + 1))) != null) {
+            if ((dpar = header.getDouble(BASE_FREQ_PARAMS.get(iDim))) != null) {
                 sf = (dpar + getOffset(iDim)) / 1.0e6;
                 Sf[iDim] = sf;
             }
@@ -651,18 +485,7 @@ public class RS2DData implements NMRData {
             sw = Sw[iDim];
         } else {
             Double dpar;
-            String name;
-            switch (iDim) {
-                case 0:
-                    name = "SPECTRAL_WIDTH";
-                    break;
-                case 1:
-                    name = "SPECTRAL_WIDTH_2D";
-                    break;
-                default:
-                    name = "SPECTRAL_WiDTH_" + (iDim + 1) + "D";
-            }
-            if ((dpar = getParDouble(name)) != null) {
+            if ((dpar = header.getDouble(SW_PARAMS.get(iDim))) != null) {
                 sw = dpar;
             }
         }
@@ -680,7 +503,7 @@ public class RS2DData implements NMRData {
     }
 
     double getOffset(int iDim) {
-        return getParDouble("OFFSET_FREQ_" + (iDim + 1));
+        return header.getDouble(OFFSET_FREQ_PARAMS.get(iDim));
     }
 
     @Override
@@ -690,13 +513,13 @@ public class RS2DData implements NMRData {
             ref = Ref[iDim];
         } else {
             double sw = getSW(iDim);
-            var srValues = getParDoubleList("SR");
+            var srValues = header.getDoubles(SR.name());
 
             for (int i = 0; i < srValues.size() && i < nDim; i++) {
                 double offset = getOffset(i);
                 double sf = getSF(i);
                 double sr = srValues.get(i);
-                Ref[i] =  (sr + offset) / (sf-offset/1.0e6);
+                Ref[i] = (sr + offset) / (sf - offset / 1.0e6);
             }
             ref = Ref[iDim];
         }
@@ -725,7 +548,7 @@ public class RS2DData implements NMRData {
             tn = obsNuc[iDim];
         } else {
             String dpar;
-            if ((dpar = getPar("NUCLEUS_" + (iDim + 1))) != null) {
+            if ((dpar = header.getString(NUCLEUS_PARAMS.get(iDim))) != null) {
                 tn = dpar;
                 obsNuc[iDim] = tn;
             }
@@ -746,6 +569,11 @@ public class RS2DData implements NMRData {
     @Override
     public boolean getNegateImag(int iDim) {
         return negateImag[iDim];
+    }
+
+    @Override
+    public boolean getNegatePairs(int dim) {
+        return "negate".equals(getFTType(dim));
     }
 
     @Override
@@ -795,12 +623,12 @@ public class RS2DData implements NMRData {
 
     @Override
     public FPMult getFPMult(int iDim) {
-        return new FPMult(); // does not exist in Bruker params
+        return new FPMult();
     }
 
     @Override
     public LPParams getLPParams(int iDim) {
-        return new LPParams(); // does not exist in Bruker params
+        return new LPParams();
     }
 
     @Override
@@ -812,22 +640,7 @@ public class RS2DData implements NMRData {
 
     @Override
     public String[] getSWNames() {
-        String[] names = new String[nDim];
-        for (int iDim = 0; iDim < nDim; iDim++) {
-            String name;
-            switch (iDim) {
-                case 0:
-                    name = "SPECTRAL_WIDTH";
-                    break;
-                case 1:
-                    name = "SPECTRAL_WIDTH_2D";
-                    break;
-                default:
-                    name = "SPECTRAL_WiDTH_" + (iDim + 1) + "D";
-            }
-            names[iDim] = name;
-        }
-        return names;
+        return SW_PARAMS.stream().map(Enum::name).toArray(String[]::new);
     }
 
     @Override
@@ -845,14 +658,12 @@ public class RS2DData implements NMRData {
 
     @Override
     public void readVector(int iVec, Vec dvec) {
-        dvec.setGroupDelay(0);
+        dvec.setGroupDelay(groupDelay);
         if (dvec.isComplex()) {
             if (dvec.useApache()) {
                 readVector(iVec, dvec.getCvec());
-                //fixDSP(dvec);
             } else {
                 readVector(iVec, dvec.rvec, dvec.ivec);
-                //fixDSP(dvec);
             }
         } else {
             readVector(iVec, dvec.rvec);
@@ -861,7 +672,6 @@ public class RS2DData implements NMRData {
         dvec.dwellTime = 1.0 / getSW(0);
         dvec.centerFreq = getSF(0);
 
-        //double delRef = (dvec.getSize() / 2 - 0) * (1.0 / dvec.dwellTime) / dvec.centerFreq / dvec.getSize();
         double delRef = ((1.0 / dvec.dwellTime) / dvec.centerFreq) / 2.0;
         dvec.refValue = getRef(0) + delRef;
     }
@@ -1243,7 +1053,7 @@ public class RS2DData implements NMRData {
             } else {
                 int[] sizes = new int[dataset.getNDim() - 1];
                 for (int i = 1; i < dataset.getNDim(); i++) {
-                    sizes[nDim - i -1] = dataset.getSizeReal(i);
+                    sizes[nDim - i - 1] = dataset.getSizeReal(i);
                 }
                 Vec vec = new Vec(dataset.getSizeReal(0), dataset.getComplex(0));
                 MultidimensionalCounter counter = new MultidimensionalCounter(sizes);
@@ -1256,7 +1066,7 @@ public class RS2DData implements NMRData {
                         pt[i] = counts[counts.length - i - 1];
                     }
                     if (!dataset.getAxisReversed(1)) {
-                        int lastRow = sizes[sizes.length-1] - 1;
+                        int lastRow = sizes[sizes.length - 1] - 1;
                         pt[0] = lastRow - pt[0];
                     }
                     writeRow(dataset, vec, pt, fOut);
@@ -1265,43 +1075,21 @@ public class RS2DData implements NMRData {
         }
     }
 
-    public void setParam(String paramName, String paramValue) throws XPathExpressionException {
-        var nodes = RS2DData.getParamNode(headerDocument, paramName);
-        if (!nodes.isEmpty()) {
-            nodes.get(0).setTextContent(paramValue);
-        }
-    }
-    public void setParams(String paramName, List<String> paramValues) throws XPathExpressionException {
-        var nodes = RS2DData.getParamNode(headerDocument, paramName);
-        if (!nodes.isEmpty()) {
-            Node lastNode = nodes.get(0);
-            for (int i = 0; i < paramValues.size(); i++) {
-                if (i < nodes.size()) {
-                    nodes.get(i).setTextContent(paramValues.get(i));
-                    lastNode = nodes.get(i);
-                } else {
-                    Node node = nodes.get(0).cloneNode(true);
-                    node.setTextContent(paramValues.get(i));
-                    lastNode.getParentNode().appendChild(node);
-                    lastNode = node;
-                }
-            }
-        }
-    }
     public void setHeaderMatrixDimensions(Dataset dataset) throws XPathExpressionException {
-        for (int iDim = 1; (iDim <= RS2DData.MAXDIM) && (iDim <= dataset.getNDim()); iDim++) {
-            setParam("MATRIX_DIMENSION_" + iDim + "D", String.valueOf(dataset.getSizeReal(iDim - 1)));
+        for (int iDim = 0; (iDim < RS2DData.MAXDIM) && (iDim < dataset.getNDim()); iDim++) {
+            header.writeParam(DIMENSION_PARAMS.get(iDim).name(), String.valueOf(dataset.getSizeReal(iDim)));
         }
     }
+
     public void setHeaderPhases(Dataset dataset) throws XPathExpressionException {
         List<String> phase0Values = new ArrayList<>();
         List<String> phase1Values = new ArrayList<>();
-        for (int i=0;i<dataset.getNDim();i++) {
-            phase0Values.add(String.format("%.2f",dataset.getPh0(i)));
-            phase1Values.add(String.format("%.2f",dataset.getPh1(i)));
+        for (int i = 0; i < dataset.getNDim(); i++) {
+            phase0Values.add(String.format("%.2f", dataset.getPh0(i)));
+            phase1Values.add(String.format("%.2f", dataset.getPh1(i)));
         }
-        setParams("PHASE_0", phase0Values);
-        setParams("PHASE_1", phase1Values);
+        header.writeParam(PHASE_0.name(), phase0Values);
+        header.writeParam(PHASE_0.name(), phase1Values);
     }
 
     public boolean isValidDatasetPath(Path procNumPath) {
@@ -1331,28 +1119,15 @@ public class RS2DData implements NMRData {
         File dataFile = procNumPath.resolve(DATA_FILE_NAME).toFile();
         File headerFile = procNumPath.resolve(HEADER_FILE_NAME).toFile();
         File seriesFile = procNumPath.resolve(SERIES_FILE_NAME).toFile();
-        saveToRS2DFile(dataset,dataFile.toString());
+        saveToRS2DFile(dataset, dataFile.toString());
 
         try {
-            writeDocument(headerDocument, headerFile);
+            header.writeTo(headerFile);
             if (seriesDocument != null) {
-                writeDocument(seriesDocument,seriesFile);
+                writeDocument(seriesDocument, seriesFile);
             }
         } catch (TransformerException e) {
             throw new IOException(e);
         }
-    }
-
-    public void writeDocument(Document document, File outFile) throws TransformerException, IOException {
-        DOMSource source = new DOMSource(document);
-        StreamResult result =  new StreamResult(new StringWriter());
-        TransformerFactory transformerFactory = TransformerFactory.newInstance();
-        transformerFactory.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "");
-        transformerFactory.setAttribute(XMLConstants.ACCESS_EXTERNAL_STYLESHEET, "");
-
-        Transformer transformer = transformerFactory.newTransformer();
-        transformer.transform(source, result);
-        String xmlString = result.getWriter().toString();
-        Files.writeString(outFile.toPath(),xmlString);
     }
 }
