@@ -63,6 +63,14 @@ public class RS2DHeader {
         return params.get(name);
     }
 
+    public Boolean getBoolean(RS2DParam param) {
+        return getBoolean(param.name());
+    }
+
+    public Boolean getBoolean(String name) {
+        return asBoolean(getString(name));
+    }
+
     public Double getDouble(RS2DParam param) {
         return getDouble(param.name());
     }
@@ -101,6 +109,13 @@ public class RS2DHeader {
 
     public void writeTo(File headerFile) throws IOException, TransformerException {
         writeDocument(document, headerFile);
+    }
+
+    private static Boolean asBoolean(String s) {
+        if(s == null)
+            return null;
+
+        return Boolean.valueOf(s);
     }
 
     private static Double asDouble(String s) {
