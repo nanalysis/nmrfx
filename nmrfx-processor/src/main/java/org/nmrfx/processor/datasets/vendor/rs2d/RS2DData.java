@@ -226,7 +226,7 @@ public class RS2DData implements NMRData {
             if (seriesPath.toFile().exists()) {
                 seriesDocument = readDocument(seriesPath);
             }
-            groupDelay = 0.0;
+            groupDelay = readGroupDelay();
             obsNucleus = header.getString(OBSERVED_NUCLEUS);
             Double obsFreq = null;
             Double obsSW = header.getDouble(SPECTRAL_WIDTH);
@@ -279,7 +279,7 @@ public class RS2DData implements NMRData {
                 }
             }
             if (!processed) {
-                setFTPars();
+                setFTParams();
             }
         } catch (ParserConfigurationException | SAXException | XPathExpressionException | NullPointerException ex) {
             throw new IOException(ex.getMessage());
@@ -314,7 +314,18 @@ public class RS2DData implements NMRData {
         }
     }
 
-    private void setFTPars() {
+    private double readGroupDelay() {
+        Integer digitalFilterShift = header.getInt(DIGITAL_FILTER_SHIFT);
+        Boolean digitalFilterRemoved = header.getBoolean(DIGITAL_FILTER_REMOVED);
+        if(digitalFilterShift != null && !Boolean.TRUE.equals(digitalFilterRemoved)) {
+            log.info("Using group delay: {}", digitalFilterShift);
+            return digitalFilterShift.doubleValue();
+        }
+
+        return 0d;
+    }
+
+    private void setFTParams() {
         List<PhaseMod> phaseMod;
         List<String> phaseModParam = header.getStrings(PHASE_MOD);
         List<String> acqModeParam = header.getStrings(ACQUISITION_MODE);
@@ -647,14 +658,12 @@ public class RS2DData implements NMRData {
 
     @Override
     public void readVector(int iVec, Vec dvec) {
-        dvec.setGroupDelay(0);
+        dvec.setGroupDelay(groupDelay);
         if (dvec.isComplex()) {
             if (dvec.useApache()) {
                 readVector(iVec, dvec.getCvec());
-                //fixDSP(dvec);
             } else {
                 readVector(iVec, dvec.rvec, dvec.ivec);
-                //fixDSP(dvec);
             }
         } else {
             readVector(iVec, dvec.rvec);
@@ -663,7 +672,6 @@ public class RS2DData implements NMRData {
         dvec.dwellTime = 1.0 / getSW(0);
         dvec.centerFreq = getSF(0);
 
-        //double delRef = (dvec.getSize() / 2 - 0) * (1.0 / dvec.dwellTime) / dvec.centerFreq / dvec.getSize();
         double delRef = ((1.0 / dvec.dwellTime) / dvec.centerFreq) / 2.0;
         dvec.refValue = getRef(0) + delRef;
     }
