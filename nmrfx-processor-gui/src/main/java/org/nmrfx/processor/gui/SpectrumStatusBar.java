@@ -114,6 +114,10 @@ public class SpectrumStatusBar {
         this.controller = controller;
     }
 
+    public FXMLController getController() {
+        return controller;
+    }
+
     public void buildBar(ToolBar btoolBar) {
         this.btoolBar = btoolBar;
         setupTools();

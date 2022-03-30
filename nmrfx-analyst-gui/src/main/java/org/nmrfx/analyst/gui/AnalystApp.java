@@ -573,6 +573,7 @@ public class AnalystApp extends MainApp {
         proteinMenu.getItems().add(runAboutToolItem);
         runAboutToolItem.setOnAction(e -> showRunAboutTool());
 
+        PluginLoader.getInstance().registerPluginsOnEntryPoint(EntryPoint.STATUS_BAR_TOOLS, statusBar);
     }
 
     static void showDocAction(ActionEvent event) {

@@ -36,6 +36,14 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import org.nmrfx.processor.datasets.vendor.bruker.BrukerData;
+import org.nmrfx.processor.datasets.vendor.jcamp.JCAMPData;
+import org.nmrfx.processor.datasets.vendor.jeol.JeolDelta;
+import org.nmrfx.processor.datasets.vendor.nmrpipe.NMRPipeData;
+import org.nmrfx.processor.datasets.vendor.nmrview.NMRViewData;
+import org.nmrfx.processor.datasets.vendor.rs2d.RS2DData;
+import org.nmrfx.processor.datasets.vendor.varian.VarianData;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.operations.Expd;
 import org.nmrfx.utilities.RemoteDataset;

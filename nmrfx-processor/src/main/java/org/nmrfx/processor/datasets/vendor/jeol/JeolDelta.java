@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.nmrfx.processor.datasets.vendor;
+package org.nmrfx.processor.datasets.vendor.jeol;
 
 import org.apache.commons.math3.complex.Complex;
 import org.nmrfx.processor.datasets.DatasetType;
@@ -23,6 +23,8 @@ import org.nmrfx.processor.datasets.parameters.FPMult;
 import org.nmrfx.processor.datasets.parameters.GaussianWt;
 import org.nmrfx.processor.datasets.parameters.LPParams;
 import org.nmrfx.processor.datasets.parameters.SinebellWt;
+import org.nmrfx.processor.datasets.vendor.NMRData;
+import org.nmrfx.processor.datasets.vendor.VendorPar;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.processing.SampleSchedule;
 import org.nmrfx.utilities.ByteConversion;
@@ -757,15 +759,13 @@ public class JeolDelta implements NMRData {
      * @param bpath full path for FID data
      * @return if FID data was successfully found or not
      */
-    protected static boolean findFID(StringBuilder bpath) {
-        boolean found = bpath.toString().endsWith(".jdf");
-        return found;
-    } // findFID
+    public static boolean findFID(StringBuilder bpath) {
+        return bpath.toString().endsWith(".jdf");
+    }
 
     private static boolean findFIDFiles(String dpath) {
-        boolean found = dpath.endsWith(".jdf");
-        return found;
-    } // findFIDFiles
+        return dpath.endsWith(".jdf");
+    }
 
     public void close() {
         try {

@@ -235,15 +235,15 @@ public class GridPaneCanvas extends GridPane {
             Integer rowSpan = getRowSpan(node);
             columnSpan = columnSpan == null ? 1 : columnSpan;
             rowSpan = rowSpan == null ? 1 : rowSpan;
-            nColumns = Math.max(nColumns, column + columnSpan + 1);
-            nRows = Math.max(nRows, row + rowSpan + 1);
-        }
+            nColumns = Math.max(nColumns, column + columnSpan);
+            nRows = Math.max(nRows, row + rowSpan );
+         }
         if ((nColumns > 0) && (nRows > 0)) {
             int nChartColumns = nColumns / 2;
             int nChartRows = nRows / 2;
             getRowConstraints().clear();
             getColumnConstraints().clear();
-            double[][] borderGrid = controller.prepareChildren(nRows, getColumns());
+            double[][] borderGrid = controller.prepareChildren(getRows(), getColumns());
             for (int i = 0; i < nChartColumns; i++) {
                 ColumnConstraints borderConstraint = new ColumnConstraints();
                 borderConstraint.setPrefWidth(borderGrid[0][i]);

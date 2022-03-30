@@ -25,10 +25,10 @@ import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.DatasetException;
 import org.nmrfx.processor.datasets.MatrixTypeService;
 import org.nmrfx.processor.datasets.ScanRegion;
-import org.nmrfx.processor.datasets.vendor.BrukerData;
+import org.nmrfx.processor.datasets.vendor.bruker.BrukerData;
 import org.nmrfx.processor.datasets.vendor.NMRData;
 import org.nmrfx.processor.datasets.vendor.NMRDataUtil;
-import org.nmrfx.processor.datasets.vendor.RS2DData;
+import org.nmrfx.processor.datasets.vendor.rs2d.RS2DData;
 import org.nmrfx.processor.events.DatasetSavedEvent;
 import org.nmrfx.processor.math.Matrix;
 import org.nmrfx.processor.math.MatrixND;
@@ -1199,7 +1199,7 @@ public class Processor {
                                 vectors.add(temp);
                             }
                         } catch (Exception e) {
-                            throw new ProcessingException(e.getMessage());
+                            throw new ProcessingException(e.getMessage(), e);
                         }
                         vecReadCount.incrementAndGet();
                     }

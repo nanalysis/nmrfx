@@ -17,7 +17,6 @@
  */
 package org.nmrfx.processor.gui;
 
-import javafx.scene.layout.Region;
 import javafx.application.Platform;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ObjectProperty;
@@ -38,6 +37,7 @@ import javafx.scene.control.ChoiceDialog;
 import javafx.scene.input.DragEvent;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
+import javafx.scene.layout.Region;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.*;
 import javafx.scene.text.Font;
@@ -63,7 +63,8 @@ import org.nmrfx.processor.datasets.peaks.PeakNeighbors;
 import org.nmrfx.processor.gui.controls.ConsoleUtil;
 import org.nmrfx.processor.gui.spectra.*;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes.AXMODE;
-import org.nmrfx.processor.gui.spectra.MouseBindings.MOUSE_ACTION;
+import org.nmrfx.processor.gui.spectra.mousehandlers.MouseBindings;
+import org.nmrfx.processor.gui.spectra.mousehandlers.MouseBindings.MOUSE_ACTION;
 import org.nmrfx.processor.gui.undo.ChartUndoLimits;
 import org.nmrfx.processor.gui.undo.ChartUndoScale;
 import org.nmrfx.processor.math.Vec;
@@ -134,6 +135,7 @@ public class PolyChart extends Region implements PeakListener {
     Path bcPath = new Path();
     Line[][] crossHairLines = new Line[2][2];
     Rectangle highlightRect = new Rectangle();
+    List<Rectangle> canvasHandles = List.of(new Rectangle(), new Rectangle(), new Rectangle(), new Rectangle());
     double[][] crossHairPositions = new double[2][2];
     boolean[][] crossHairStates = new boolean[2][2];
     int crossHairNumH = 0;
@@ -163,6 +165,7 @@ public class PolyChart extends Region implements PeakListener {
     public ChartProperties chartProps = new ChartProperties(this);
     FXMLController sliceController = null;
     SimpleObjectProperty<DatasetRegion> activeRegion = new SimpleObjectProperty<>(null);
+    SimpleBooleanProperty chartSelected = new SimpleBooleanProperty(false);
 
     int iVec = 0;
 //    Vec vec;
@@ -295,6 +298,31 @@ public class PolyChart extends Region implements PeakListener {
 
     }
 
+    public boolean isSelectable() {
+        return false;
+    }
+
+    public void selectChart(boolean value) {
+        chartSelected.set(value);
+    }
+
+    public boolean isSelected() {
+        return chartSelected.get();
+    }
+
+    public double[][] getCorners() {
+        double[][] corners = new double[4][2];
+        double xPos = getLayoutX();
+        double yPos = getLayoutY();
+        double width = getWidth();
+        double height = getHeight();
+        corners[0] = new double[]{xPos, yPos};
+        corners[1] = new double[]{xPos, yPos + height};
+        corners[2] = new double[]{xPos + width, yPos};
+        corners[3] = new double[]{xPos + width, yPos + height};
+        return corners;
+    }
+
     private void initChart() {
         axes[0] = xAxis;
         axes[1] = yAxis;
@@ -324,8 +352,12 @@ public class PolyChart extends Region implements PeakListener {
         highlightRect.setStroke(Color.BLUE);
         highlightRect.setStrokeWidth(1.0);
         highlightRect.setFill(null);
-        highlightRect.visibleProperty().bind(activeChart.isEqualTo(this).and(multipleCharts));
+        highlightRect.visibleProperty().bind(activeChart.isEqualTo(this).and(multipleCharts).or(chartSelected));
         plotContent.getChildren().add(highlightRect);
+        for (var canvasHanndle:canvasHandles) {
+            canvasHanndle.visibleProperty().bind(chartSelected);
+        }
+        plotContent.getChildren().addAll(canvasHandles);
         loadData();
         xAxis.lowerBoundProperty().addListener(new AxisChangeListener(this, 0, 0));
         xAxis.upperBoundProperty().addListener(new AxisChangeListener(this, 0, 1));
@@ -401,6 +433,10 @@ public class PolyChart extends Region implements PeakListener {
         }
         highlightRect.visibleProperty().unbind();
         plotContent.getChildren().remove(highlightRect);
+        for (var canvasHandle:canvasHandles) {
+            plotContent.getChildren().remove(canvasHandle);
+            plotContent.visibleProperty().unbind();
+        }
 
         CHARTS.remove(this);
         controller.removeChart(this);
@@ -2053,14 +2089,28 @@ public class PolyChart extends Region implements PeakListener {
     void highlightChart() {
         boolean multipleCharts = CHARTS.size() > 1;
         //if (multipleCharts && (activeChart.get() == this)) {
-        highlightRect.setX(getLayoutX() + 1);
-        highlightRect.setY(getLayoutY() + 1);
-        highlightRect.setWidth(getWidth() - 2);
-        highlightRect.setHeight(getHeight() - 2);
-//            highlightRect.setVisible(true);
-//        } else {
-//            highlightRect.setVisible(false);
-//        }
+        double xPos = getLayoutX();
+        double yPos = getLayoutY();
+        double width = getWidth();
+        double height = getHeight();
+        highlightRect.setX(xPos + 1);
+        highlightRect.setY(yPos + 1);
+        highlightRect.setWidth(width - 2);
+        highlightRect.setHeight(height - 2);
+        double[][] corners = getCorners();
+        double size = 10;
+        for (int i = 0; i < corners.length; i++) {
+            Rectangle rect = canvasHandles.get(i);
+            double[] corner = corners[i];
+            double dX = i < 2 ? 0 : -size;
+            double dY = i % 2 == 0 ? 0 : -size;
+            rect.setX(corner[0] + dX);
+            rect.setY(corner[1] + dY);
+            rect.setWidth(size);
+            rect.setHeight(size);
+            rect.setStroke(Color.BLUE);
+            rect.setFill(null);
+        }
     }
 
     public void useImmediateMode(boolean state) {
@@ -2544,7 +2594,8 @@ public class PolyChart extends Region implements PeakListener {
                             double x = xy[0][i];
                             double y = xy[1][i];
                             if ((Math.abs(pickX - x) < hitRange) && (Math.abs(pickY - y) < hitRange)) {
-                                hit = Optional.of(new IntegralHit(datasetAttr, region, 0));
+                                int handle = i < nPoints /2 ? -1 : -2;
+                                hit = Optional.of(new IntegralHit(datasetAttr, region, handle));
                                 break;
                             }
                         }
@@ -2603,15 +2654,16 @@ public class PolyChart extends Region implements PeakListener {
         activeRegion.addListener(listener);
     }
 
-    public boolean selectIntegral(double pickX, double pickY) {
+    public Optional<IntegralHit> selectIntegral(double pickX, double pickY) {
         for (DatasetAttributes datasetAttr : datasetAttributesList) {
             datasetAttr.setActiveRegion(null);
         }
         Optional<IntegralHit> hit = hitIntegral(pickX, pickY);
-        hit.ifPresent(iHit -> {
+        hit.ifPresentOrElse(iHit -> {
             iHit.getDatasetAttr().setActiveRegion(iHit);
-        });
-        return hit.isPresent();
+            activeRegion.set(iHit.getDatasetRegion());
+        }, () ->activeRegion.set(null));
+        return hit;
 
     }
 
@@ -2829,11 +2881,11 @@ public class PolyChart extends Region implements PeakListener {
         return multiplets;
     }
 
-    public void dragRegion(double[] dragStart, double x, double y, boolean widthMode) {
+    public void dragRegion(IntegralHit regionHit, double[] dragStart, double x, double y) {
         double[] dragPos = {x, y};
         for (DatasetAttributes datasetAttr : datasetAttributesList) {
             if (datasetAttr.getActiveRegion().isPresent()) {
-                datasetAttr.moveRegion(axes, dragPos);
+                datasetAttr.moveRegion(regionHit, axes, dragPos);
                 refresh();
             }
         }
@@ -3117,6 +3169,21 @@ public class PolyChart extends Region implements PeakListener {
             for (PeakListAttributes peakListAttr : peakListAttributesList) {
                 if (peakListAttr.getDrawPeaks()) {
                     hit = peakListAttr.hitPeak(drawPeaks, pickX, pickY);
+                    if (hit.isPresent()) {
+                        break;
+                    }
+                }
+            }
+        }
+        return hit;
+    }
+
+    public Optional<MultipletSelection> hitMultiplet(double pickX, double pickY) {
+        Optional<MultipletSelection> hit = Optional.empty();
+        if (peakStatus.get()) {
+            for (PeakListAttributes peakListAttr : peakListAttributesList) {
+                if (peakListAttr.getDrawPeaks()) {
+                    hit = peakListAttr.hitMultiplet(drawPeaks, pickX, pickY);
                     if (hit.isPresent()) {
                         break;
                     }

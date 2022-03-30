@@ -437,7 +437,7 @@ public class Axis {
             double gap1 = ticFontSize / 4;
             double gap2 = labelFontSize / 4;
             ticSize = ticFontSize * 0.75;
-            double border = 0.0;
+            double border = 2.0;
             if (tickMarksVisible) {
                 border += ticSize + gap1;
                 if (tickLabelsVisible) {
@@ -456,7 +456,7 @@ public class Axis {
             int nChar = tInfo.nDecimals;
             int nLeftDig = (int) Math.round(Math.log10(getUpperBound()));
             nChar += nLeftDig + 2;
-            double border = 0.0;
+            double border = 2.0;
             if (tickMarksVisible) {
                 border += ticSize + gap1;
                 if (tickLabelsVisible) {

@@ -445,6 +445,24 @@ public class PeakListAttributes implements PeakListener {
         return hit;
     }
 
+    public Optional<MultipletSelection> hitMultiplet(DrawPeaks drawPeaks, double pickX, double pickY) {
+        Optional<MultipletSelection> hit = Optional.empty();
+        if (peaksInRegion.isPresent()) {
+            int[] peakDim = getPeakDim();
+            xAxis = (NMRAxis) chart.getXAxis();
+            yAxis = (NMRAxis) chart.getYAxis();
+            if (peakList.nDim == 1) {
+                var pickResult = peaksInRegion.get().stream().filter(peak -> peak.getStatus() >= 0).
+                        map(peak -> peak.getPeakDim(0).getMultiplet())
+                        .map((multiplet) -> drawPeaks.pick1DMultiplet(this, peakDim, multiplet, pickX, pickY)).findFirst();
+                if (pickResult.isPresent()) {
+                    hit = pickResult.get();
+                }
+            }
+        }
+        return hit;
+    }
+
     public void selectPeak(DrawPeaks drawPeaks, double pickX, double pickY, boolean append) {
         Optional<Peak> hit = Optional.empty();
         if (peaksInRegion.isPresent()) {
