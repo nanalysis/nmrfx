@@ -42,4 +42,8 @@ public class IntegralHit {
     public DatasetRegion getDatasetRegion() {
         return region;
     }
+
+    public int getHandle() {
+        return handle;
+    }
 }

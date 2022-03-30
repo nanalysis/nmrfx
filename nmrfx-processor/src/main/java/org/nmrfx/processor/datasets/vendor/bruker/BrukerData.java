@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.nmrfx.processor.datasets.vendor;
+package org.nmrfx.processor.datasets.vendor.bruker;
 
 import org.apache.commons.math3.complex.Complex;
 import org.apache.commons.math3.util.Precision;
@@ -26,6 +26,10 @@ import org.nmrfx.processor.datasets.parameters.FPMult;
 import org.nmrfx.processor.datasets.parameters.GaussianWt;
 import org.nmrfx.processor.datasets.parameters.LPParams;
 import org.nmrfx.processor.datasets.parameters.SinebellWt;
+import org.nmrfx.processor.datasets.vendor.NMRData;
+import org.nmrfx.processor.datasets.vendor.NMRDataUtil;
+import org.nmrfx.processor.datasets.vendor.NMRParException;
+import org.nmrfx.processor.datasets.vendor.VendorPar;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.processing.SampleSchedule;
 import org.slf4j.Logger;
@@ -245,12 +249,11 @@ public class BrukerData implements NMRData {
      * @param bpath full path for data
      * @return if data was successfully found or not
      */
-    protected static boolean findData(StringBuilder bpath) {
+    public static boolean findData(StringBuilder bpath) {
         File file = new File(bpath.toString());
         String fileName = file.getName();
         return isProcessedFile(fileName);
-
-    } // findData
+    }
 
     /**
      * Finds FID data, given a path to search for vendor-specific files and
@@ -259,7 +262,7 @@ public class BrukerData implements NMRData {
      * @param bpath full path for FID data
      * @return if FID data was successfully found or not
      */
-    protected static boolean findFID(StringBuilder bpath) {
+    public static boolean findFID(StringBuilder bpath) {
         boolean found = false;
         if (findFIDFiles(bpath.toString())) {
             // case: select numeric subdirectory, e.g. 'HMQC/4'

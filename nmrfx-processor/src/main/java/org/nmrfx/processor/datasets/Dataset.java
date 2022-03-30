@@ -27,7 +27,7 @@ import org.nmrfx.datasets.*;
 import org.nmrfx.math.VecBase;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakList;
-import org.nmrfx.processor.datasets.vendor.BrukerData;
+import org.nmrfx.processor.datasets.vendor.bruker.BrukerData;
 import org.nmrfx.processor.datasets.vendor.NMRData;
 import org.nmrfx.processor.datasets.vendor.NMRDataUtil;
 import org.nmrfx.processor.math.Matrix;

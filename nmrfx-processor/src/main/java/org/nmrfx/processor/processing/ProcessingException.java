@@ -31,4 +31,8 @@ public class ProcessingException extends RuntimeException {
     public ProcessingException(String str) {
         super(str);
     }
+
+    public ProcessingException(String message, Throwable cause) {
+        super(message, cause);
+    }
 }

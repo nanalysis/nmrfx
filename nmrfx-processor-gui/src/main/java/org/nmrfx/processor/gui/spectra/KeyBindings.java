@@ -114,6 +114,11 @@ public class KeyBindings {
                     keyMonitor.complete();
                     keyEvent.consume();
                     break;
+                case ESCAPE:
+                    keyMonitor.complete();
+                    keyEvent.consume();
+                    chart.getController().deselectCharts();
+                    break;
                 case DELETE:
                     keyMonitor.complete();
                     keyEvent.consume();

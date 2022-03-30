@@ -1,7 +1,10 @@
-package org.nmrfx.processor.datasets.vendor;
+package org.nmrfx.processor.datasets.vendor.rs2d;
 
 import org.junit.Test;
 import org.nmrfx.processor.datasets.DatasetCompare;
+import org.nmrfx.processor.datasets.vendor.rs2d.RS2DData;
+import org.nmrfx.processor.datasets.vendor.rs2d.RS2DProcUtil;
+import org.nmrfx.processor.datasets.vendor.rs2d.XmlUtil;
 import org.w3c.dom.Document;
 
 import javax.xml.transform.TransformerException;
@@ -70,11 +73,11 @@ public class RS2DDataTest {
         }
         File outHeader = Path.of(tmpHome, "header_mod.xml").toFile();
         RS2DData rs2DData = new RS2DData(inFile.toString(), null, true);
-        rs2DData.setParam("MATRIX_DIMENSION_1D", "555");
-        rs2DData.setParam("PHASE_0", "55.5");
-        rs2DData.setParam("PHASE_1", "5.55");
-        Document headerDocument = rs2DData.getHeaderDocument();
-        rs2DData.writeDocument(headerDocument, outHeader);
+        Document header = rs2DData.getHeader().getDocument();
+        XmlUtil.setParam(header, "MATRIX_DIMENSION_1D", "555");
+        XmlUtil.setParam(header, "PHASE_0", "55.5");
+        XmlUtil.setParam(header, "PHASE_1", "5.55");
+        XmlUtil.writeDocument(header, outHeader);
     }
 
     @Test
@@ -84,7 +87,7 @@ public class RS2DDataTest {
             return;
         }
 
-        var procNums = RS2DData.listProcIds(seriesDirectory);
+        var procNums = RS2DProcUtil.listProcIds(seriesDirectory);
         assertEquals(List.of(0), procNums);
     }
 
@@ -94,7 +97,7 @@ public class RS2DDataTest {
         if (testFilesMissing(seriesDirectory.toFile())) {
             return;
         }
-        int lastProcNum = RS2DData.findLastProcId(seriesDirectory).orElse(-1);
+        int lastProcNum = RS2DProcUtil.findLastProcId(seriesDirectory).orElse(-1);
         assertEquals(0, lastProcNum);
     }
 }

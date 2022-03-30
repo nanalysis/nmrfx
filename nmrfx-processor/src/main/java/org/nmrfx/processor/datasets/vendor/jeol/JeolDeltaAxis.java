@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.nmrfx.processor.datasets.vendor;
+package org.nmrfx.processor.datasets.vendor.jeol;
 
 /*
  * This class implements the "JeolDelta" command in Vendor.
