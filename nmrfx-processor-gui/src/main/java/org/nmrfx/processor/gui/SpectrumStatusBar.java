@@ -23,6 +23,7 @@
  */
 package org.nmrfx.processor.gui;
 
+import javafx.scene.control.*;
 import org.nmrfx.utils.properties.CustomNumberTextField;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import de.jensd.fx.glyphs.GlyphsDude;
@@ -39,17 +40,6 @@ import javafx.fxml.FXML;
 import javafx.geometry.Insets;
 import javafx.scene.Cursor;
 import javafx.scene.Node;
-import javafx.scene.control.CheckBox;
-import javafx.scene.control.ContentDisplay;
-import javafx.scene.control.ListCell;
-import javafx.scene.control.ListView;
-import javafx.scene.control.Menu;
-import javafx.scene.control.MenuButton;
-import javafx.scene.control.MenuItem;
-import javafx.scene.control.Spinner;
-import javafx.scene.control.SpinnerValueFactory;
-import javafx.scene.control.TextField;
-import javafx.scene.control.ToolBar;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.ScrollEvent;
@@ -89,6 +79,11 @@ public class SpectrumStatusBar {
     CheckBox complexStatus = new CheckBox("Complex");
     CheckBox phaserStatus = new CheckBox("Phasing");
     MenuButton toolButton = new MenuButton("Tools");
+    List<Button> specialButtons = new ArrayList<>();
+    Button peakPickButton;
+
+
+
     TextField[] planePPMField = new TextField[maxSpinners];
     Spinner[] planeSpinner = new Spinner[maxSpinners];
     MenuButton[] dimMenus = new MenuButton[maxSpinners + 2];
@@ -119,7 +114,12 @@ public class SpectrumStatusBar {
     }
 
     public void buildBar(ToolBar btoolBar) {
+        String iconSize = "16px";
+        String fontSize = "7pt";
         this.btoolBar = btoolBar;
+        peakPickButton = GlyphsDude.createIconButton(FontAwesomeIcon.BULLSEYE, "Pick", iconSize, fontSize, ContentDisplay.LEFT);
+        peakPickButton.setOnAction(e -> PeakPicking.peakPickActive(controller, false, null));
+
         setupTools();
 
         for (int i = 0; i < 2; i++) {
@@ -270,6 +270,12 @@ public class SpectrumStatusBar {
                 };
             }
         };
+    }
+
+    public void addToolBarButtons(Button... buttons) {
+        for (var button:buttons) {
+            specialButtons.add(button);
+        }
     }
 
     public void addToToolMenu(MenuItem menuItem) {
@@ -555,9 +561,16 @@ public class SpectrumStatusBar {
         currentMode = mode;
         arrayMode = false;
         List<Node> nodes = new ArrayList<>();
+        nodes.add(cursorMenuButton);
         if (mode != 0) {
-            nodes.add(cursorMenuButton);
             nodes.add(toolButton);
+        }
+        if (mode == 1) {
+            for (var button:specialButtons) {
+                nodes.add(button);
+            }
+        } else if (mode > 1) {
+            nodes.add(peakPickButton);
         }
         HBox.setHgrow(filler1, Priority.ALWAYS);
         HBox.setHgrow(filler2, Priority.ALWAYS);

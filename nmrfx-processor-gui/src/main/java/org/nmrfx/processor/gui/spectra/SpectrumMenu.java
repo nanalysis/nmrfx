@@ -137,7 +137,7 @@ public class SpectrumMenu extends ChartMenu {
 
         MenuItem fitLSItem = new MenuItem("Lineshape pick/fit");
         fitLSItem.setOnAction((ActionEvent e) -> {
-            PeakPicking.peakPickActive(chart.getController(), true);
+            PeakPicking.peakPickActive(chart.getController(), true, null);
         });
         peakFitMenu.getItems().add(fitLSItem);
 

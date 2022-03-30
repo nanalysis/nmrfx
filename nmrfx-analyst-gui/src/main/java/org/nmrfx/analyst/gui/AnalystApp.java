@@ -19,6 +19,8 @@ package org.nmrfx.analyst.gui;
 
 import de.jangassen.MenuToolkit;
 import de.jangassen.dialogs.about.AboutStageBuilder;
+import de.jensd.fx.glyphs.GlyphsDude;
+import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -330,6 +332,7 @@ public class AnalystApp extends MainApp {
         return NvUtil.getVersion();
     }
 
+
     @Override
     public void addStatusBarTools(SpectrumStatusBar statusBar) {
         Menu oneDMenu = new Menu("Analysis (1D)");
@@ -341,6 +344,7 @@ public class AnalystApp extends MainApp {
         regionsMenuItem.setOnAction(e -> showRegionTool());
         oneDMenu.getItems().addAll(multipletToolItem, regionsMenuItem);
         statusBar.addToToolMenu(oneDMenu);
+        addStatusBarButtons(statusBar);
         if (advancedMode) {
             addAdvancedTools(statusBar);
         }
@@ -406,6 +410,23 @@ public class AnalystApp extends MainApp {
         PluginLoader.getInstance().registerPluginsOnEntryPoint(EntryPoint.STATUS_BAR_TOOLS, statusBar);
 
     }
+
+    private void addStatusBarButtons(SpectrumStatusBar statusBar) {
+        String iconSize = "16px";
+        String fontSize = "7pt";
+        var controller = statusBar.getController();
+        SimplePeakRegionTool simplePeakRegionTool = new SimplePeakRegionTool(controller, controller.getActiveChart());
+        Button regionButton = GlyphsDude.createIconButton(FontAwesomeIcon.SQUARE, "Regions", iconSize, fontSize, ContentDisplay.LEFT);
+        regionButton.setOnAction(e -> simplePeakRegionTool.findRegions());
+
+        Button peakButton = GlyphsDude.createIconButton(FontAwesomeIcon.BULLSEYE, "Pick", iconSize, fontSize, ContentDisplay.LEFT);
+        peakButton.setOnAction(e -> simplePeakRegionTool.peakPick());
+
+        Button wizardButton = GlyphsDude.createIconButton(FontAwesomeIcon.MAGIC, "Multiplets", iconSize, fontSize, ContentDisplay.LEFT);
+        wizardButton.setOnAction(e -> simplePeakRegionTool.analyzeMultiplets());
+        statusBar.addToolBarButtons(regionButton, peakButton, wizardButton);
+    }
+
 
     static void showDocAction(ActionEvent event) {
         hostServices.showDocument("http://docs.nmrfx.org");
