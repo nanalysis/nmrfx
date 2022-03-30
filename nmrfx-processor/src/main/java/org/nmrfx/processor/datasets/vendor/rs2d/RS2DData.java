@@ -52,7 +52,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.nmrfx.processor.datasets.vendor.rs2d.RS2DParam.*;
 import static org.nmrfx.processor.datasets.vendor.rs2d.XmlUtil.*;
@@ -215,6 +217,8 @@ public class RS2DData implements NMRData {
     }
 
     private void openParFile(String parpath, boolean processed) throws IOException {
+        log.info("Opening RS2D file: {}", parpath);
+
         Path headerPath = Paths.get(parpath, HEADER_FILE_NAME);
         Path seriesPath = Paths.get(parpath, SERIES_FILE_NAME);
         try {
@@ -311,60 +315,45 @@ public class RS2DData implements NMRData {
     }
 
     private void setFTPars() {
-        // see bruker.tcl line 781-820
-        complexDim[0] = true;  // same as exchange really
+        List<PhaseMod> phaseMod;
+        List<String> phaseModParam = header.getStrings(PHASE_MOD);
+        List<String> acqModeParam = header.getStrings(ACQUISITION_MODE);
+        if (phaseModParam != null) {
+            phaseMod = phaseModParam.stream().map(PhaseMod::fromName).collect(Collectors.toList());
+            log.info("Setting FT params from PHASE_MOD: {}", phaseMod);
+        } else if (acqModeParam != null) {
+            phaseMod = acqModeParam.stream().map(PhaseMod::fromAcquisitionMode).collect(Collectors.toList());
+            phaseMod.set(0, PhaseMod.NONE);
+            log.info("Setting FT params from ACQUISITION_MODE: {}", phaseMod);
+        } else {
+            phaseMod = Collections.emptyList();
+            log.warn("No PHASE_MOD or ACQUISITION_MODE found, FT params will have default values.");
+        }
+
+        setFtParamsFromPhaseMod(phaseMod);
+    }
+
+    private void setFtParamsFromPhaseMod(List<PhaseMod> phaseMod) {
+        // first dimension is handled separately
+        complexDim[0] = true;
         exchangeXY = true;
         negatePairs = false;
         fttype[0] = "ft";
-        List<String> acqModes = header.getStrings(ACQUISITION_MODE);
-        if (!acqModes.isEmpty()) {
-            if (acqModes.get(0).equals("REAL")) {
-                fttype[0] = "rft";
-                complexDim[0] = false;
-                exchangeXY = false;
-                negatePairs = true;
+
+        // other dimensions depends on the PHASE_MOD parameter
+        for (int i = 1; i < MAXDIM; i++) {
+            PhaseMod mode = i < phaseMod.size() ? phaseMod.get(i) : PhaseMod.NONE;
+            complexDim[i] = mode.isComplex();
+            fttype[i] = mode.getFtType();
+            f1coefS[i] = mode.getSymbolicCoefs();
+            f1coef[i] = mode.getCoefs();
+
+            if(mode == PhaseMod.TPPI || mode == PhaseMod.ECHO_ANTIECHO) {
+                negateImag[i] = true;
             }
-        }
-        for (int i = 1; i < nDim; i++) {
-            String fnmode = acqModes.size() > i ? acqModes.get(i) : "COMPLEX";
-            complexDim[i] = true;
-            fttype[i] = "ft";
-            switch (fnmode) {
-                case "REAL":
-                    complexDim[i] = false;
-                    fttype[i] = "rft";
-                    f1coefS[i] = "real";
-                    break;
-                case "TPPI":
-                    complexDim[i] = false;
-                    fttype[i] = "rft";
-                    f1coefS[i] = "real";
-                    negateImag[i] = true;
-                    break;
-                case "COMPLEX": // f1coef[i-1] = "1 0 0 0 0 0 1 0";
-                    f1coef[i] = new double[]{1, 0, 0, 0, 0, 0, 1, 0};
-                    complexDim[i] = true;
-                    fttype[i] = "negate";
-                    f1coefS[i] = "hyper";
-                    tdsize[i] = tdsize[i] / 2;
-                    break;
-                case "ECHO_ANTIECHO": // f1coef[i-1] = "1 0 -1 0 0 1 0 1";
-                    f1coef[i] = new double[]{1, 0, -1, 0, 0, -1, 0, -1};
-                    f1coefS[i] = "echo-antiecho";
-                    tdsize[i] = tdsize[i] / 2;
-                    break;
-                default:
-                    f1coef[i] = new double[]{1, 0, 0, 1};
-                    f1coefS[i] = "sep";
-                    //tdsize[i] = tdsize[i] * 2;
-                    tdsize[i] = tdsize[i] / 2;
-                    break;
-            }
-        }
-        for (int j = 0; j < tdsize.length; j++) {
-            if (tdsize[j] == 0) {
-                tdsize[j] = 1;
-                complexDim[j] = false;
+
+            if (mode.isComplex() && mode != PhaseMod.ECHO_ANTIECHO) {
+                tdsize[i] /= 2;
             }
         }
     }
@@ -519,7 +508,7 @@ public class RS2DData implements NMRData {
                 double offset = getOffset(i);
                 double sf = getSF(i);
                 double sr = srValues.get(i);
-                Ref[i] =  (sr + offset) / (sf-offset/1.0e6);
+                Ref[i] = (sr + offset) / (sf - offset / 1.0e6);
             }
             ref = Ref[iDim];
         }
@@ -569,6 +558,11 @@ public class RS2DData implements NMRData {
     @Override
     public boolean getNegateImag(int iDim) {
         return negateImag[iDim];
+    }
+
+    @Override
+    public boolean getNegatePairs(int dim) {
+        return "negate".equals(getFTType(dim));
     }
 
     @Override
@@ -1051,7 +1045,7 @@ public class RS2DData implements NMRData {
             } else {
                 int[] sizes = new int[dataset.getNDim() - 1];
                 for (int i = 1; i < dataset.getNDim(); i++) {
-                    sizes[nDim - i -1] = dataset.getSizeReal(i);
+                    sizes[nDim - i - 1] = dataset.getSizeReal(i);
                 }
                 Vec vec = new Vec(dataset.getSizeReal(0), dataset.getComplex(0));
                 MultidimensionalCounter counter = new MultidimensionalCounter(sizes);
@@ -1064,7 +1058,7 @@ public class RS2DData implements NMRData {
                         pt[i] = counts[counts.length - i - 1];
                     }
                     if (!dataset.getAxisReversed(1)) {
-                        int lastRow = sizes[sizes.length-1] - 1;
+                        int lastRow = sizes[sizes.length - 1] - 1;
                         pt[0] = lastRow - pt[0];
                     }
                     writeRow(dataset, vec, pt, fOut);
@@ -1082,9 +1076,9 @@ public class RS2DData implements NMRData {
     public void setHeaderPhases(Dataset dataset) throws XPathExpressionException {
         List<String> phase0Values = new ArrayList<>();
         List<String> phase1Values = new ArrayList<>();
-        for (int i=0;i<dataset.getNDim();i++) {
-            phase0Values.add(String.format("%.2f",dataset.getPh0(i)));
-            phase1Values.add(String.format("%.2f",dataset.getPh1(i)));
+        for (int i = 0; i < dataset.getNDim(); i++) {
+            phase0Values.add(String.format("%.2f", dataset.getPh0(i)));
+            phase1Values.add(String.format("%.2f", dataset.getPh1(i)));
         }
         header.writeParam(PHASE_0.name(), phase0Values);
         header.writeParam(PHASE_0.name(), phase1Values);
@@ -1117,12 +1111,12 @@ public class RS2DData implements NMRData {
         File dataFile = procNumPath.resolve(DATA_FILE_NAME).toFile();
         File headerFile = procNumPath.resolve(HEADER_FILE_NAME).toFile();
         File seriesFile = procNumPath.resolve(SERIES_FILE_NAME).toFile();
-        saveToRS2DFile(dataset,dataFile.toString());
+        saveToRS2DFile(dataset, dataFile.toString());
 
         try {
             header.writeTo(headerFile);
             if (seriesDocument != null) {
-                writeDocument(seriesDocument,seriesFile);
+                writeDocument(seriesDocument, seriesFile);
             }
         } catch (TransformerException e) {
             throw new IOException(e);
