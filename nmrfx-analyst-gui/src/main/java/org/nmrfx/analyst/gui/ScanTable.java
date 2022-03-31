@@ -105,7 +105,7 @@ public class ScanTable {
     int groupSize = 1;
     ListChangeListener filterItemListener = (ListChangeListener) (ListChangeListener.Change c) -> {
         getGroups();
-        selectionChanged();
+        selectionChanged(true);
     };
 
     static Color color0 = Color.web("#4d615d");
@@ -169,7 +169,7 @@ public class ScanTable {
         setDragHandlers(tableView);
         tableView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
         ListChangeListener selectionListener = (ListChangeListener) (ListChangeListener.Change c) -> {
-            selectionChanged();
+            selectionChanged(false);
         };
         tableView.getSelectionModel().getSelectedIndices().addListener(selectionListener);
         columnTypes.put("path", "S");
@@ -200,7 +200,7 @@ public class ScanTable {
         return name;
     }
 
-    final protected void selectionChanged() {
+    final protected void selectionChanged(boolean filteredList) {
         if (processingTable) {
             return;
         }
@@ -208,7 +208,6 @@ public class ScanTable {
         Map<Integer, Double> offsetMap = new HashMap<>();
         Set<Integer> groupSet = new HashSet<>();
         List<Integer> selected = tableView.getSelectionModel().getSelectedIndices();
-
         ProcessorController processorController = scannerTool.getFXMLController().getProcessorController(false);
         if ((processorController == null)
                 || processorController.isViewingDataset()
@@ -229,9 +228,14 @@ public class ScanTable {
             }
 
             List<Integer> rows = new ArrayList<>();
+            List<String> datasetNames = new ArrayList<>();
             for (Integer index : showRows) {
                 FileTableItem fileTableItem = (FileTableItem) tableView.getItems().get(index);
                 Integer row = fileTableItem.getRow();
+                String datasetColumnValue = fileTableItem.getDatasetName();
+                if (datasetColumnValue.isEmpty()) {
+                    continue;
+                }
                 File datasetFile = new File(scanDir, fileTableItem.getDatasetName());
                 String datasetName = datasetFile.getName();
 
@@ -244,11 +248,10 @@ public class ScanTable {
                     dataset = Dataset.getDataset(datasetName);
                     if (dataset == null) {
                         FXMLController.getActiveController().openDataset(datasetFile, false);
-                    } else {
-                        List<String> datasetNames = new ArrayList<>();
-                        datasetNames.add(datasetName);
-                        chart.updateDatasets(datasetNames);
                     }
+                }
+                if (!datasetNames.contains(datasetName)) {
+                    datasetNames.add(datasetName);
                 }
                 if (row != null) {
                     colorMap.put(row - 1, color);
@@ -256,8 +259,8 @@ public class ScanTable {
                     rows.add(row - 1); // rows index from 1
                 }
             }
-
-            if (!chart.getDatasetAttributes().isEmpty()) {
+            chart.updateDatasets(datasetNames);
+            if (chart.getDatasetAttributes().size() == 1) {
                 DatasetAttributes dataAttr = chart.getDatasetAttributes().get(0);
                 if (curLvl.isPresent()) {
                     dataAttr.setLvl(curLvl.get());
@@ -275,6 +278,14 @@ public class ScanTable {
                 int curMode = chart.getController().getStatusBar().getMode();
                 if (curMode != nDim) {
                     chart.getController().getStatusBar().setMode(nDim);
+                }
+            } else if (chart.getDatasetAttributes().size() == rows.size()) {
+                for (int i=0;i< chart.getDatasetAttributes().size();i++) {
+                    var dataAttr = chart.getDatasetAttributes().get(i);
+                    dataAttr.setPosColor(colorMap.get(i));
+                    if (curLvl.isPresent()) {
+                        dataAttr.setLvl(curLvl.get());
+                    }
                 }
             }
             chart.refresh();
@@ -518,7 +529,7 @@ public class ScanTable {
             File file = new File(filePath);
             NMRData nmrData = null;
             try {
-                nmrData = NMRDataUtil.getNMRData(filePath);
+                nmrData = NMRDataUtil.getFID(filePath);
             } catch (IOException ioE) {
 
             }
@@ -565,7 +576,6 @@ public class ScanTable {
             double value = 0;
             if ((values != null) && (iRow < values.length)) {
                 value = values[iRow];
-                System.out.println("value " + value);
             }
             long eTime = (long) (value * 1000);
             fileListItems.add(new FileTableItem(dataset.getName(), "", 1, eTime, iRow + 1, dataset.getName(), fieldMap));
@@ -696,7 +706,7 @@ public class ScanTable {
 
                             NMRData nmrData = null;
                             try {
-                                nmrData = NMRDataUtil.getNMRData(filePath.toString());
+                                nmrData = NMRDataUtil.getFID(filePath.toString());
                             } catch (IOException ioE) {
                                 return;
                             }
@@ -716,8 +726,8 @@ public class ScanTable {
                         if (eTime < firstDate) {
                             firstDate = eTime;
                         }
-
-                        fileListItems.add(new FileTableItem(fileName, sequence, nDim, eTime, row, datasetName, fieldMap));
+                       var item = new FileTableItem(fileName, sequence, nDim, eTime, row, datasetName, fieldMap);
+                        fileListItems.add(item);
                     }
 
                     iLine++;
@@ -1054,7 +1064,8 @@ public class ScanTable {
             rect.setFill(Color.GREEN);
         }
         getGroups();
-        selectionChanged();
+
+        selectionChanged(false);
         tableView.refresh();
     }
 
@@ -1081,7 +1092,7 @@ public class ScanTable {
         for (String groupName : groupNames) {
             Set<String> group = new TreeSet<>();
             for (FileTableItem item : tableView.getItems()) {
-                String value = item.getExtra(groupName);
+                String value = item.getExtraAsString(groupName);
                 group.add(value);
             }
             Map<String, Integer> map = new HashMap<>();
@@ -1110,7 +1121,7 @@ public class ScanTable {
             for (String groupName : groupNames) {
                 Map<String, Integer> map = groupMap.get(groupName);
                 if (!map.isEmpty()) {
-                    String value = item.getExtra(groupName);
+                    String value = item.getExtraAsString(groupName);
                     int index = map.get(value);
                     iValue += index * mul;
                     mul *= map.size();
