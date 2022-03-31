@@ -1,6 +1,6 @@
 package org.nmrfx.processor.datasets;
 
-import org.nmrfx.processor.datasets.vendor.RS2DData;
+import org.nmrfx.processor.datasets.vendor.rs2d.RS2DData;
 
 import java.io.File;
 import java.util.Arrays;

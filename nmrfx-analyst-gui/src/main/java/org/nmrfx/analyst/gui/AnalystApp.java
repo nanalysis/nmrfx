@@ -566,6 +566,7 @@ public class AnalystApp extends MainApp {
         statusBar.addToToolMenu(scannerToolItem);
         scannerToolItem.setOnAction(e -> showScannerTool());
 
+        PluginLoader.getInstance().registerPluginsOnEntryPoint(EntryPoint.STATUS_BAR_TOOLS, statusBar);
     }
 
     static void showDocAction(ActionEvent event) {

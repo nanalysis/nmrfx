@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.nmrfx.processor.datasets.vendor;
+package org.nmrfx.processor.datasets.vendor.varian;
 
 import org.apache.commons.math3.complex.Complex;
 import org.nmrfx.processor.datasets.DatasetType;
@@ -23,6 +23,9 @@ import org.nmrfx.processor.datasets.parameters.FPMult;
 import org.nmrfx.processor.datasets.parameters.GaussianWt;
 import org.nmrfx.processor.datasets.parameters.LPParams;
 import org.nmrfx.processor.datasets.parameters.SinebellWt;
+import org.nmrfx.processor.datasets.vendor.NMRData;
+import org.nmrfx.processor.datasets.vendor.NMRDataUtil;
+import org.nmrfx.processor.datasets.vendor.VendorPar;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.processing.SampleSchedule;
 import org.slf4j.Logger;
@@ -48,7 +51,7 @@ import java.util.*;
  *
  * access through NMRDataUtil
  */
-class VarianData implements NMRData {
+public class VarianData implements NMRData {
     private static final Logger log = LoggerFactory.getLogger(VarianData.class);
     
     DateTimeFormatter vTimeFormatter = DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss");//20050804T233538
@@ -119,7 +122,7 @@ class VarianData implements NMRData {
         }
     }
 
-    protected static boolean findFID(StringBuilder bpath) {
+    public static boolean findFID(StringBuilder bpath) {
         boolean found = false;
         if (findFIDFiles(bpath.toString())) {
             // case: select .fid directory

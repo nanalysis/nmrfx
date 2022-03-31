@@ -72,6 +72,9 @@ import org.nmrfx.processor.datasets.peaks.PeakListAlign;
 import org.nmrfx.processor.datasets.peaks.PeakNeighbors;
 import org.nmrfx.processor.datasets.peaks.PeakNetworkMatch;
 import org.nmrfx.processor.datasets.vendor.*;
+import org.nmrfx.processor.datasets.vendor.bruker.BrukerData;
+import org.nmrfx.processor.datasets.vendor.nmrview.NMRViewData;
+import org.nmrfx.processor.datasets.vendor.rs2d.RS2DData;
 import org.nmrfx.processor.gui.controls.GridPaneCanvas;
 import org.nmrfx.processor.gui.spectra.*;
 import org.nmrfx.processor.gui.tools.PathTool;
@@ -300,6 +303,9 @@ public class FXMLController implements  Initializable, PeakNavigable {
     }
 
     public void setActiveChart(PolyChart chart) {
+        if (activeChart != chart) {
+            deselectCharts();
+        }
         activeChart = chart;
         PolyChart.activeChart.set(chart);
         if (specAttrWindowController != null) {
@@ -312,6 +318,12 @@ public class FXMLController implements  Initializable, PeakNavigable {
 
     public PolyChart getActiveChart() {
         return activeChart;
+    }
+
+    public void deselectCharts() {
+        for (var chart:charts) {
+            chart.selectChart(false);
+        }
     }
 
     public Stage getStage() {

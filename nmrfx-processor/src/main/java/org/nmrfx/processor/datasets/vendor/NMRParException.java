@@ -28,7 +28,7 @@ import java.io.IOException;
 public class NMRParException extends IOException {
     private static final Logger log = LoggerFactory.getLogger(NMRParException.class);
 
-    NMRParException(String msg) {
+    public NMRParException(String msg) {
         log.warn(msg);
     }
 }
