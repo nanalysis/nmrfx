@@ -308,11 +308,8 @@ public class SpectrumStatusBar {
         compareMenuItem.setOnAction(e -> controller.showSpectrumComparator());
         MenuItem peakNavigatorMenuItem = new MenuItem("Show Peak Navigator");
         peakNavigatorMenuItem.setOnAction(e -> controller.showPeakNavigator());
-        MenuItem pathToolMenuItem = new MenuItem("Show Path Tool");
-        pathToolMenuItem.setOnAction(e -> controller.showPathTool());
 
-        peakToolMenu.getItems().addAll(peakNavigatorMenuItem,
-                pathToolMenuItem);
+        peakToolMenu.getItems().addAll(peakNavigatorMenuItem);
 
         addToToolMenu(peakToolMenu);
     }

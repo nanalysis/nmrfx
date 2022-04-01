@@ -563,6 +563,10 @@ public class AnalystApp extends MainApp {
         statusBar.addToToolMenu("Peak Tools", peakSliderMenuItem);
         peakSliderMenuItem.setOnAction(e -> showPeakSlider());
 
+        MenuItem peakPathMenuItem = new MenuItem("Show Path Tool");
+        statusBar.addToToolMenu("Peak Tools", peakPathMenuItem);
+        peakPathMenuItem.setOnAction(e -> showPeakPathTool());
+
         MenuItem scannerToolItem = new MenuItem("Show Scanner");
         statusBar.addToToolMenu(scannerToolItem);
         scannerToolItem.setOnAction(e -> showScannerTool());
@@ -1153,6 +1157,29 @@ public class AnalystApp extends MainApp {
         controller.getBottomBox().getChildren().remove(regionTool.getBox());
     }
 
+    public void showPeakPathTool() {
+        FXMLController controller = FXMLController.getActiveController();
+        if (!controller.containsTool(PathTool.class)) {
+            VBox vBox = new VBox();
+            controller.getBottomBox().getChildren().add(vBox);
+            PathTool pathTool = new PathTool(controller, this::removePeakPathTool);
+            pathTool.initialize(vBox);
+            controller.addTool(pathTool);
+        }
+    }
+
+    public PathTool getPeakPathTool() {
+        FXMLController controller = FXMLController.getActiveController();
+        PathTool pathTool = (PathTool) controller.getTool(PathTool.class);
+        return pathTool;
+    }
+
+    public void removePeakPathTool(PathTool pathTool) {
+        FXMLController controller = FXMLController.getActiveController();
+        controller.removeTool(PathTool.class);
+        controller.getBottomBox().getChildren().remove(pathTool.getBox());
+    }
+
     public void showScannerTool() {
         FXMLController controller = FXMLController.getActiveController();
         if (!controller.containsTool(ScannerTool.class)) {
@@ -1168,6 +1195,11 @@ public class AnalystApp extends MainApp {
         FXMLController controller = FXMLController.getActiveController();
         controller.removeTool(ScannerTool.class);
         controller.getBottomBox().getChildren().remove(scannerTool.getBox());
+    }
+
+    public ScannerTool getScannerTool() {
+        FXMLController controller = FXMLController.getActiveController();
+        return  (ScannerTool) controller.getTool(ScannerTool.class);
     }
 
 
