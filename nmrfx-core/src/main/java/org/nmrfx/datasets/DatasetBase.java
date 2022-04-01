@@ -2034,12 +2034,17 @@ public class DatasetBase {
             regions = new TreeSet<>();
             setRegions(regions);
         }
+        boolean firstRegion = regions.isEmpty();
 
         DatasetRegion newRegion = new DatasetRegion(min, max);
         newRegion.removeOverlapping(regions);
         regions.add(newRegion);
         try {
             newRegion.measure(this);
+            if (firstRegion) {
+                double integral = newRegion.getIntegral();
+                setNorm(integral * getScale());
+            }
         } catch (IOException ex) {
             log.error(ex.getMessage(), ex);
         }

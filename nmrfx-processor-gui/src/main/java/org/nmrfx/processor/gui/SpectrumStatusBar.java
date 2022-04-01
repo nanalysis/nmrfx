@@ -303,7 +303,6 @@ public class SpectrumStatusBar {
 
         specToolMenu.getItems().addAll(measureMenuItem, analyzerMenuItem);
         addToToolMenu(specToolMenu);
-
     }
 
     public void setCursor(Cursor cursor) {
@@ -517,8 +516,10 @@ public class SpectrumStatusBar {
 
     public void setPlaneRanges(int iDim, int max) {
         SpinnerValueFactory.IntegerSpinnerValueFactory planeFactory = (SpinnerValueFactory.IntegerSpinnerValueFactory) planeSpinner[iDim - 2].getValueFactory();
+        planeFactory.valueProperty().removeListener(planeListeners[iDim - 2]);
         planeFactory.setMin(0);
         planeFactory.setMax(max);
+        planeFactory.valueProperty().addListener(planeListeners[iDim - 2]);
     }
 
     public void set1DArray(int nDim, int nRows) {

@@ -36,7 +36,7 @@ import javafx.scene.layout.Priority;
 import javafx.scene.paint.Color;
 import org.apache.commons.math3.random.RandomDataGenerator;
 import org.nmrfx.chemistry.Atom;
-import org.nmrfx.peaks.FreezeListener;
+import org.nmrfx.peaks.events.FreezeListener;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakDim;
 import org.nmrfx.peaks.PeakList;

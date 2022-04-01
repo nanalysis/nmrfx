@@ -78,7 +78,8 @@
                                 <GridPane BorderPane.alignment="CENTER">
                                     <columnConstraints>
                                         <ColumnConstraints hgrow="SOMETIMES" maxWidth="90.0" minWidth="70.0" prefWidth="70.0" />
-                                        <ColumnConstraints hgrow="ALWAYS" maxWidth="460.0" minWidth="200" prefWidth="458.0" />
+                                        <ColumnConstraints hgrow="ALWAYS" maxWidth="310.0" minWidth="50" prefWidth="308.0" />
+                                        <ColumnConstraints hgrow="SOMETIMES" maxWidth="150.0" minWidth="125.0" prefWidth="125.0" />
                                     </columnConstraints>
                                     <rowConstraints>
                                         <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
@@ -88,8 +89,11 @@
                                     <children>
                                         <Label text="List Name" GridPane.columnIndex="0" />
                                         <TextField fx:id="peakListNameField" GridPane.columnIndex="1" />
+                                        <ChoiceBox fx:id="peakListTypeChoice"  GridPane.columnIndex="2" />
+
                                         <Label text="Dataset Name" GridPane.columnIndex="0" GridPane.rowIndex="1" />
                                         <ComboBox fx:id="datasetNameField" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+
                                         <Label text="Condition" GridPane.columnIndex="0" GridPane.rowIndex="2" />
                                         <ComboBox fx:id="conditionField" GridPane.columnIndex="1" GridPane.rowIndex="2" />
                                     </children>

@@ -29,6 +29,9 @@ public class PeakListAlign {
         }
         System.out.println(refList.getName());
         for (PeakList movingList : movingLists) {
+            if (movingList == refList) {
+                continue;
+            }
             System.out.println("act " + movingList.getName() + " " + movingList.size());
             movingList.unLinkPeaks();
             movingList.clearSearchDims();

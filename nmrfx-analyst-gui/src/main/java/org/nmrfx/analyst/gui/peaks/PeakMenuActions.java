@@ -119,7 +119,6 @@ public class PeakMenuActions extends MenuActions {
     }
 
     void showRunAbout() {
-        RunAboutGUI.create();
     }
 
     public void showAtomBrowser() {

@@ -169,7 +169,7 @@ public class RDCGUI {
 
     void updateRDCplotWithLines() {
         updateRDCplot();
-        if (!series0.getData().isEmpty()) {
+        if (!series0.isEmpty()) {
             activeChart.getData().add(series0);
             activeChart.getData().add(series1);
         }
@@ -192,18 +192,18 @@ public class RDCGUI {
                 yAxis.setAutoRanging(true);
                 activeChart.getData().clear();
                 //Prepare XYChart.Series objects by setting data
-                series0.getData().clear();
+                series0.clear();
                 if (aMat != null) {
                     List<RDC> rdcValues = new ArrayList<>();
                     rdcValues.addAll(localRDCSet.get());
                     for (RDC rdcValue : rdcValues) {
-                        series0.getData().add(new XYValue(rdcValue.getExpRDC(), rdcValue.getRDC()));
+                        series0.add(new XYValue(rdcValue.getExpRDC(), rdcValue.getRDC()));
                     }
                     series0.getData().sort(Comparator.comparing(XYValue::getXValue));
                     long lb = Math.round(series0.getData().get(0).getXValue());
                     long ub = Math.round(series0.getData().get(series0.getData().size() - 1).getXValue());
-                    series1.getData().add(new XYValue(lb, lb));
-                    series1.getData().add(new XYValue(ub, ub));
+                    series1.add(new XYValue(lb, lb));
+                    series1.add(new XYValue(ub, ub));
 
                 }
                 activeChart.autoScale(true);

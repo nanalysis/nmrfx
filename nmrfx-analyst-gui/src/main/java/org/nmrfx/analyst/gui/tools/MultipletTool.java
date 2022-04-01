@@ -56,9 +56,9 @@ import org.nmrfx.peaks.Coupling;
 import org.nmrfx.peaks.CouplingPattern;
 import org.nmrfx.peaks.Multiplet;
 import org.nmrfx.peaks.Peak;
-import org.nmrfx.peaks.PeakEvent;
+import org.nmrfx.peaks.events.PeakEvent;
 import org.nmrfx.peaks.PeakList;
-import org.nmrfx.peaks.PeakListener;
+import org.nmrfx.peaks.events.PeakListener;
 import org.nmrfx.peaks.Singlet;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.analyst.gui.annotations.AnnoJournalFormat;
@@ -1206,7 +1206,7 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
             if (peakList == null) {
                 removeJournalFormatOnChart();
             } else {
-                peakList.registerListener(this);
+                peakList.registerPeakChangeListener(this);
                 AnnoJournalFormat annoText = new AnnoJournalFormat(0.1, 20, 0.9, 100,
                         CanvasAnnotation.POSTYPE.FRACTION,
                         CanvasAnnotation.POSTYPE.PIXEL,
@@ -1224,7 +1224,7 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
         getAnalyzer();
         PeakList peakList = analyzer.getPeakList();
         if (peakList != null) {
-            peakList.removeListener(this);
+            peakList.removePeakChangeListener(this);
         }
 
         chart.chartProps.setTopBorderSize(7);

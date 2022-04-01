@@ -62,9 +62,9 @@ import javafx.util.converter.DefaultStringConverter;
 import org.nmrfx.peaks.Multiplet;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakDim;
-import org.nmrfx.peaks.PeakEvent;
+import org.nmrfx.peaks.events.PeakEvent;
 import org.nmrfx.peaks.PeakList;
-import org.nmrfx.peaks.PeakListener;
+import org.nmrfx.peaks.events.PeakListener;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.PeakMenuBar;
 import org.nmrfx.processor.gui.PeakMenuTarget;
@@ -132,7 +132,7 @@ public class PeakTableController implements PeakMenuTarget, PeakListener, Initia
         toolBar.getItems().add(peakListMenuButton);
         updatePeakListMenu();
         peakMenuBar = new PeakMenuBar(this);
-        peakMenuBar.initMenuBar(toolBar);
+        peakMenuBar.initMenuBar(toolBar, false);
         MapChangeListener<String, PeakList> mapChangeListener = (MapChangeListener.Change<? extends String, ? extends PeakList> change) -> {
             updatePeakListMenu();
         };
@@ -364,7 +364,7 @@ public class PeakTableController implements PeakMenuTarget, PeakListener, Initia
     @Override
     public void setPeakList(PeakList peakList) {
         if (this.peakList != null) {
-            peakList.removeListener(this);
+            peakList.removePeakChangeListener(this);
         }
         this.peakList = peakList;
         if (tableView == null) {
@@ -378,7 +378,7 @@ public class PeakTableController implements PeakMenuTarget, PeakListener, Initia
                 updateColumns(peakList.getNDim());
                 tableView.setItems(peaks);
                 stage.setTitle("Peaks: " + peakList.getName());
-                peakList.registerListener(this);
+                peakList.registerPeakChangeListener(this);
             }
         }
 

@@ -40,7 +40,8 @@ module org.nmrfx.analyst.gui {
     requires jython.slim;
     requires nsmenufx;
     requires fontawesomefx;
+    requires org.yaml.snakeyaml;
+    requires org.slf4j;
     requires commons.math3;
     requires jsch;
-    requires org.slf4j;
 }

@@ -18,6 +18,7 @@ import java.beans.PropertyChangeSupport;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.Writer;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.file.*;
@@ -27,6 +28,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import org.nmrfx.chemistry.Compound;
+import org.nmrfx.star.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,6 +43,7 @@ public class ProjectBase {
     static final public Pattern INDEX2_PATTERN = Pattern.compile("^.*_([0-9]+).*");
     static final public Predicate<String> INDEX_PREDICATE = INDEX_PATTERN.asPredicate();
     static final public Predicate<String> INDEX2_PREDICATE = INDEX2_PATTERN.asPredicate();
+    static final private Map<String, SaveframeProcessor> saveframeProcessors = new HashMap<>();
     final String name;
     public Path projectDir = null;
     public Map<String, PeakPaths> peakPaths;
@@ -62,6 +65,7 @@ public class ProjectBase {
     protected Map<String, DatasetBase> datasetMap = new HashMap<>();
     protected List<DatasetBase> datasets = new ArrayList<>();
     protected Map<String, PeakList> peakLists = new HashMap<>();
+    protected List<SaveframeWriter> extraSaveframes = new ArrayList<>();
     static ProjectBase activeProject = null;
     public static PropertyChangeSupport pcs = null;
 
@@ -158,6 +162,34 @@ public class ProjectBase {
     public List<DatasetBase> getDatasets() {
 //        System.out.println("get datasets " + datasets.toString());
         return datasets;
+    }
+
+    public void addSaveframe(SaveframeWriter saveframeWriter) {
+        extraSaveframes.add(saveframeWriter);
+    }
+
+    public static void addSaveframeProcessor(String category, SaveframeProcessor saveframeProcessor) {
+        saveframeProcessors.put(category, saveframeProcessor);
+    }
+
+    public void writeSaveframes(Writer chan) throws ParseException, IOException {
+        for (SaveframeWriter saveframeWriter :extraSaveframes) {
+            saveframeWriter.write(chan);
+        }
+    }
+
+    public static void processExtraSaveFrames(STAR3 star3) throws ParseException {
+        for (Saveframe saveframe: star3.getSaveFrames().values()) {
+            System.out.println("extra save frames " + saveframe.getName());
+            if (saveframeProcessors.containsKey(saveframe.getCategoryName())) {
+                try {
+                    System.out.println("process");
+                    saveframeProcessors.get(saveframe.getCategoryName()).process(saveframe);
+                } catch (IOException e) {
+                    throw new ParseException(e.getMessage());
+                }
+            }
+        }
     }
 
     public void addDataset(DatasetBase dataset, String datasetName) {

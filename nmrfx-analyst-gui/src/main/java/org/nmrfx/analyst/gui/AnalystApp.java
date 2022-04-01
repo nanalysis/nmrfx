@@ -31,10 +31,9 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import org.apache.commons.lang3.SystemUtils;
-import org.nmrfx.analyst.gui.molecule.CanvasMolecule;
-import org.nmrfx.analyst.gui.molecule.MoleculeMenuActions;
-import org.nmrfx.analyst.gui.peaks.PeakAssignTool;
-import org.nmrfx.analyst.gui.peaks.PeakMenuActions;
+import org.nmrfx.analyst.gui.molecule.*;
+import org.nmrfx.analyst.gui.molecule3D.MolSceneController;
+import org.nmrfx.analyst.gui.peaks.*;
 import org.nmrfx.analyst.gui.plugin.PluginLoader;
 import org.nmrfx.analyst.gui.spectra.SpectrumMenuActions;
 import org.nmrfx.analyst.gui.spectra.StripController;
@@ -48,11 +47,13 @@ import org.nmrfx.processor.gui.*;
 import org.nmrfx.processor.gui.log.Log;
 import org.nmrfx.processor.gui.project.GUIProject;
 import org.nmrfx.processor.gui.spectra.KeyBindings;
+import org.nmrfx.processor.gui.spectra.WindowIO;
 import org.nmrfx.processor.gui.utils.FxPropertyChangeSupport;
 import org.nmrfx.processor.project.Project;
 import org.nmrfx.processor.utilities.WebConnect;
 import org.nmrfx.project.ProjectBase;
 import org.nmrfx.structure.chemistry.Molecule;
+import org.nmrfx.structure.seqassign.RunAboutSaveFrameProcessor;
 import org.python.util.InteractiveInterpreter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -67,7 +68,6 @@ public class AnalystApp extends MainApp {
     static String appName = "NMRFx Analyst";
     private static MenuBar mainMenuBar = null;
     static AnalystApp analystApp = null;
-
     private static FileMenuActions fileMenuActions;
     private static MoleculeMenuActions molMenuActions;
     private static PeakMenuActions peakMenuActions;
@@ -75,6 +75,23 @@ public class AnalystApp extends MainApp {
     private static ProjectMenuActions projectMenuActions;
     private static ViewMenuItems viewMenuActions;
     private static boolean advancedMode = false;
+    private static MultipletController multipletController;
+    private static AtomController atomController;
+    private static LigandScannerController scannerController;
+    private static MolSceneController molController;
+    private static AtomBrowser atomBrowser;
+    private static RNAPeakGeneratorSceneController rnaPeakGenController;
+    private static PeakTableController peakTableController;
+    private static NOETableController noeTableController;
+    private static WindowIO windowIO = null;
+    private static SeqDisplayController seqDisplayController = null;
+    private static DatasetBrowserController browserController = null;
+    MenuToolkit menuTk;
+    Boolean isMac = null;
+    PeakAtomPicker peakAtomPicker = null;
+    CheckMenuItem assignOnPick;
+    RDCGUI rdcGUI = null;
+    RunAboutSaveFrameProcessor runAboutSaveFrameProcessor;
 
     public void waitForCommit() {
         int nTries = 30;
@@ -129,6 +146,8 @@ public class AnalystApp extends MainApp {
         KeyBindings.registerGlobalKeyAction("pa", this::assignPeak);
         Project.setPCS(new FxPropertyChangeSupport(this));
         PDBFile.setLocalResLibDir(AnalystPrefs.getLocalResidueDirectory());
+        runAboutSaveFrameProcessor = new RunAboutSaveFrameProcessor();
+        ProjectBase.addSaveframeProcessor("runabout", runAboutSaveFrameProcessor);
 
         PluginLoader.getInstance().registerPluginsOnEntryPoint(EntryPoint.STARTUP, null);
     }
@@ -366,7 +385,7 @@ public class AnalystApp extends MainApp {
         MenuItem peakNavigatorMenuItem = new MenuItem("Show Peak Navigator");
         peakNavigatorMenuItem.setOnAction(e -> controller.showPeakNavigator());
         MenuItem pathToolMenuItem = new MenuItem("Show Path Tool");
-        pathToolMenuItem.setOnAction(e -> controller.showPathTool());
+        pathToolMenuItem.setOnAction(e -> showPeakPathTool());
 
         peakToolMenu.getItems().addAll(peakNavigatorMenuItem,
                 pathToolMenuItem);
@@ -403,9 +422,19 @@ public class AnalystApp extends MainApp {
         statusBar.addToToolMenu("Peak Tools", peakSliderMenuItem);
         peakSliderMenuItem.setOnAction(e -> showPeakSlider());
 
+        MenuItem peakPathMenuItem = new MenuItem("Show Path Tool");
+        statusBar.addToToolMenu("Peak Tools", peakPathMenuItem);
+        peakPathMenuItem.setOnAction(e -> showPeakPathTool());
+
         MenuItem scannerToolItem = new MenuItem("Show Scanner");
         statusBar.addToToolMenu(scannerToolItem);
         scannerToolItem.setOnAction(e -> showScannerTool());
+
+        Menu proteinMenu = new Menu("Protein Tools");
+        MenuItem runAboutToolItem = new MenuItem("Show RunAbout");
+        statusBar.addToToolMenu(proteinMenu);
+        proteinMenu.getItems().add(runAboutToolItem);
+        runAboutToolItem.setOnAction(e -> showRunAboutTool());
 
         PluginLoader.getInstance().registerPluginsOnEntryPoint(EntryPoint.STATUS_BAR_TOOLS, statusBar);
 
@@ -620,6 +649,29 @@ public class AnalystApp extends MainApp {
         controller.getBottomBox().getChildren().remove(regionTool.getBox());
     }
 
+    public void showPeakPathTool() {
+        FXMLController controller = FXMLController.getActiveController();
+        if (!controller.containsTool(PathTool.class)) {
+            VBox vBox = new VBox();
+            controller.getBottomBox().getChildren().add(vBox);
+            PathTool pathTool = new PathTool(controller, this::removePeakPathTool);
+            pathTool.initialize(vBox);
+            controller.addTool(pathTool);
+        }
+    }
+
+    public PathTool getPeakPathTool() {
+        FXMLController controller = FXMLController.getActiveController();
+        PathTool pathTool = (PathTool) controller.getTool(PathTool.class);
+        return pathTool;
+    }
+
+    public void removePeakPathTool(PathTool pathTool) {
+        FXMLController controller = FXMLController.getActiveController();
+        controller.removeTool(PathTool.class);
+        controller.getBottomBox().getChildren().remove(pathTool.getBox());
+    }
+
     public void showScannerTool() {
         FXMLController controller = FXMLController.getActiveController();
         if (!controller.containsTool(ScannerTool.class)) {
@@ -635,6 +687,31 @@ public class AnalystApp extends MainApp {
         FXMLController controller = FXMLController.getActiveController();
         controller.removeTool(ScannerTool.class);
         controller.getBottomBox().getChildren().remove(scannerTool.getBox());
+    }
+
+    public ScannerTool getScannerTool() {
+        FXMLController controller = FXMLController.getActiveController();
+        return  (ScannerTool) controller.getTool(ScannerTool.class);
+    }
+
+
+    public void showRunAboutTool() {
+        System.out.println("show runabout");
+        FXMLController controller = FXMLController.getActiveController();
+        if (!controller.containsTool(RunAboutGUI.class)) {
+            TabPane tabPane = new TabPane();
+            controller.getBottomBox().getChildren().add(tabPane);
+            RunAboutGUI runaboutTool = new RunAboutGUI(controller, this::removeRunaboutTool);
+            System.out.println("init");
+            runaboutTool.initialize(tabPane);
+            controller.addTool(runaboutTool);
+        }
+    }
+
+    public void removeRunaboutTool(RunAboutGUI runaboutTool) {
+        FXMLController controller = FXMLController.getActiveController();
+        controller.removeTool(RunAboutGUI.class);
+        controller.getBottomBox().getChildren().remove(runaboutTool.getTabPane());
     }
 
     void addPrefs() {
@@ -660,5 +737,14 @@ public class AnalystApp extends MainApp {
         PolyChart chart = FXMLController.getActiveController().getActiveChart();
         chart.clearAnnoType(CanvasMolecule.class);
         chart.refresh();
+    }
+
+    static void showDataBrowser() {
+        if (browserController == null) {
+            browserController = DatasetBrowserController.create();
+        }
+        Stage browserStage = browserController.getStage();
+        browserStage.toFront();
+        browserStage.show();
     }
 }

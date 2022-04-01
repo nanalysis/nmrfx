@@ -259,19 +259,19 @@
             <dependency>
                 <groupId>org.bytedeco</groupId>
                 <artifactId>javacpp</artifactId>
-                <version>1.5.4</version>
+                <version>1.5.7</version>
                 <!-- license: Apache 2 / GPLv2 with ClassPath exception -->
             </dependency>
             <dependency>
                 <groupId>org.bytedeco</groupId>
                 <artifactId>openblas-platform</artifactId>
-                <version>0.3.10-1.5.4</version>
+                <version>0.3.20-1.5.8-SNAPSHOT</version>
                 <!-- license: Apache 2 / GPLv2 with ClassPath exception -->
             </dependency>
             <dependency>
                 <groupId>org.bytedeco</groupId>
                 <artifactId>arpack-ng-platform</artifactId>
-                <version>3.7.0-1.5.4</version>
+                <version>3.8.0-1.5.7</version>
                 <!-- license: Apache 2 / GPLv2 with ClassPath exception -->
             </dependency>
             <dependency>
