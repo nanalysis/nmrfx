@@ -126,7 +126,7 @@ public class XYCanvasBarChart extends XYCanvasChart {
             DataSeries series = getData().get(seriesIndex);
             BarMark barMark = new BarMark(series.fill, Color.BLACK, Orientation.VERTICAL);
             int iValue = 0;
-            for (XYValue value : series.values) {
+            for (XYValue value : series.getValues()) {
                 double x = xAxis.getDisplayPosition(value.getXValue());
                 double y = yAxis.getDisplayPosition(value.getYValue());
                 boolean drawError = false;
