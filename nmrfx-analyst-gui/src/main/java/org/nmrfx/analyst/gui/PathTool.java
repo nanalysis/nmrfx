@@ -1,4 +1,4 @@
-package org.nmrfx.processor.gui.tools;
+package org.nmrfx.analyst.gui;
 
 import de.jensd.fx.glyphs.GlyphsDude;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
@@ -37,7 +37,7 @@ import javafx.scene.paint.Color;
 import javafx.stage.FileChooser;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.chart.XYCanvasChart;
-import org.nmrfx.peaks.FreezeListener;
+import org.nmrfx.peaks.events.FreezeListener;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakDistance;
 import org.nmrfx.peaks.PeakList;
@@ -46,11 +46,7 @@ import org.nmrfx.peaks.PeakPaths;
 import org.nmrfx.peaks.PeakPaths.PATHMODE;
 import org.nmrfx.processor.datasets.peaks.PathFitter;
 import org.nmrfx.processor.datasets.peaks.PeakPathAnalyzer;
-import org.nmrfx.processor.gui.CanvasAnnotation;
-import org.nmrfx.processor.gui.FXMLController;
-import org.nmrfx.processor.gui.PeakNavigable;
-import org.nmrfx.processor.gui.PeakNavigator;
-import org.nmrfx.processor.gui.PolyChart;
+import org.nmrfx.processor.gui.*;
 import org.nmrfx.processor.gui.annotations.AnnoPolyLine;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.processor.gui.spectra.PeakDisplayParameters;
@@ -61,7 +57,7 @@ import org.nmrfx.processor.optimization.Fitter;
  *
  * @author Bruce Johnson
  */
-public class PathTool implements PeakNavigable {
+public class PathTool implements PeakNavigable, ControllerTool {
 
     static Color INACTIVE_COLOR = Color.web("#681A4A");
     static Color ACTIVE_COLOR = Color.web("#EE442F");
@@ -91,7 +87,7 @@ public class PathTool implements PeakNavigable {
 
     PathPlotTool plotTool;
 
-    public PathTool(FXMLController controller, Consumer closeAction) {
+    public PathTool(FXMLController controller, Consumer<PathTool> closeAction) {
         this.controller = controller;
         this.closeAction = closeAction;
         this.chart = controller.getActiveChart();
@@ -101,11 +97,20 @@ public class PathTool implements PeakNavigable {
         return vBox;
     }
 
-    public void close(Object o) {
+    private void close(Object o) {
         closeAction.accept(this);
     }
 
-    public void initPathTool(VBox vBox) {
+    @Override
+    public void close() {
+        closeAction.accept(this);
+    }
+
+    public VBox getBox() {
+        return vBox;
+    }
+
+    public void initialize(VBox vBox) {
         toolBar = new ToolBar();
         fitBar = new ToolBar();
         this.vBox = vBox;
@@ -351,7 +356,37 @@ public class PathTool implements PeakNavigable {
         drawPath();
     }
 
-    void loadPathData(PATHMODE pathMode) {
+    void loadPathDataFromScanTable(PATHMODE pathMode) {
+        ScannerTool scannerTool = (ScannerTool) AnalystApp.getAnalystApp().getScannerTool();
+        activePaths.clear();
+        ScanTable scanTable = scannerTool.getScanTable();
+        List<Double> x0List = new ArrayList<>();
+        List<Double> x1List = new ArrayList<>();
+        List<String> datasetNames = new ArrayList<>();
+        String x0ColumnName = pathMode == PATHMODE.PRESSURE ? "pressure" : "ligand";
+        String x1ColumnName = "target";
+        if (!scanTable.getHeaders().contains(x0ColumnName)) {
+            Alert alert = new Alert(Alert.AlertType.ERROR, "No column named " + x0ColumnName);
+            alert.showAndWait();
+            return;
+        }
+        scanTable.getItems().forEach(item -> {
+            File file = new File(item.getDatasetName());
+            datasetNames.add(file.getName());
+            item.getExtraAsDouble(x0ColumnName).ifPresent(value -> x0List.add(value));
+            if (scanTable.getHeaders().contains(x1ColumnName)) {
+                item.getExtraAsDouble(x1ColumnName).ifPresent(value -> x1List.add(value));
+            }
+        });
+        if (datasetNames.isEmpty() || (datasetNames.size() != x0List.size())) {
+            Alert alert = new Alert(Alert.AlertType.ERROR, "Error getting data from Scanner");
+            alert.showAndWait();
+            return;
+        }
+        peakPaths = PeakPaths.loadPathData(pathMode, datasetNames, x0List, x1List, scanTable.getScanDir().getName());
+    }
+
+    void loadPathDataFromFile(PATHMODE pathMode) {
         FileChooser fileChooser = new FileChooser();
         File file = fileChooser.showOpenDialog(null);
         if (file != null) {
@@ -372,6 +407,17 @@ public class PathTool implements PeakNavigable {
                 alert.showAndWait();
                 return;
             }
+        }
+    }
+    void loadPathData(PATHMODE pathMode) {
+        peakPaths = null;
+        ScannerTool scannerTool = (ScannerTool) AnalystApp.getAnalystApp().getScannerTool();
+        if (scannerTool != null) {
+            loadPathDataFromScanTable(pathMode);
+        } else {
+            loadPathDataFromFile(pathMode);
+        }
+        if (peakPaths != null) {
             setupChart(peakPaths.getDatasetNames());
             setupPlotTable();
             setActionMenuDisabled(false);

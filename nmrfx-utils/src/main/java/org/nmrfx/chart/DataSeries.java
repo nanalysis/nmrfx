@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2018 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -19,15 +19,16 @@ package org.nmrfx.chart;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.collections.transformation.FilteredList;
 import javafx.scene.paint.Color;
 
 /**
- *
  * @author brucejohnson
  */
 public class DataSeries {
 
-    ObservableList<XYValue> values = FXCollections.observableArrayList();
+    private final ObservableList<XYValue> values = FXCollections.observableArrayList();
+    private final FilteredList<XYValue> fValues = new FilteredList<>(values, p -> true);
 
     String name = "";
     Color fill = Color.BLACK;
@@ -39,16 +40,35 @@ public class DataSeries {
     boolean strokeSymbol = true;
     boolean drawLine = false;
     private double scale = 1.0;
+    private double minX = Double.MAX_VALUE;
+    private double maxX = Double.NEGATIVE_INFINITY;
+    private double minY = Double.MAX_VALUE;
+    private double maxY = Double.NEGATIVE_INFINITY;
+    private double limitXMin = Double.NEGATIVE_INFINITY;
+    private double limitXMax= Double.MAX_VALUE;
 
     public DataSeries() {
+        updatePredicate();
     }
 
     public ObservableList<XYValue> getValues() {
-        return values;
+        return fValues;
     }
 
     public ObservableList<XYValue> getData() {
         return values;
+    }
+
+    public void clear() {
+        values.clear();
+        minX = Double.MAX_VALUE;
+        maxX = Double.NEGATIVE_INFINITY;
+        minY = Double.MAX_VALUE;
+        maxY = Double.NEGATIVE_INFINITY;
+    }
+
+    public boolean isEmpty() {
+        return values.isEmpty();
     }
 
     public void drawLine(boolean state) {
@@ -81,6 +101,26 @@ public class DataSeries {
 
     public void add(XYValue value) {
         values.add(value);
+        minX = Math.min(minX, value.getXValue());
+        maxX = Math.max(maxX, value.getXValue());
+        minY = Math.min(minY, value.getMinYValue());
+        maxY = Math.max(maxY, value.getMaxYValue());
+    }
+
+    public double getMinX() {
+        return minX;
+    }
+
+    public double getMaxX() {
+        return maxX;
+    }
+
+    public double getMinY() {
+        return minY / scale;
+    }
+
+    public double getMaxY() {
+        return maxY / scale;
     }
 
     /**
@@ -95,6 +135,16 @@ public class DataSeries {
      */
     public void setScale(double scale) {
         this.scale = scale;
+    }
+
+    public void setLimits(double limitXMin, double limitXMax) {
+        this.limitXMin = limitXMin;
+        this.limitXMax = limitXMax;
+        updatePredicate();
+    }
+
+    public void updatePredicate() {
+        fValues.setPredicate(p -> p.getXValue() >= limitXMin && p.getXValue() <= limitXMax);
     }
 
 }

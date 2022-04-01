@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# nmrfxag [ script  [ arg ... ] ]
+# nmrfxa [ script  [ arg ... ] ]
 # 
 # optional environment variables:
 #
@@ -11,14 +11,6 @@
 JAVA_OPTS="--add-opens=javafx.controls/com.sun.javafx.scene.control.inputmap=ALL-UNNAMED"
 LOG_CONFIG="-Dlogback.configurationFile=config/logback.xml"
 
-#            <option>--add-opens</option>
-#            <option>javafx.controls/com.sun.javafx.scene.control.behavior=ALL-UNNAMED</option>
-#            <option>--add-opens</option>
-#            <option>javafx.controls/com.sun.javafx.scene.control.inputmap=ALL-UNNAMED</option>
-#            <option>--add-opens</option>
-#            <option>javafx.graphics/com.sun.javafx.scene.traversal=ALL-UNNAMED</option>
-
-
 if [ -n "$NMRFXP_MEMORY" ] ; then
     HEAP_MEM=$NMRFXP_MEMORY
 else
@@ -27,12 +19,7 @@ fi
 
 nvjver=${project.version}
 nvjmain=org.nmrfx.analyst.gui.NMRAnalystApp
-iscygwin=false
-ismsys=false
-case "`uname`" in
-    CYGWIN*) iscygwin=true ;;
-    MINGW*) ismsys=true ;;
-esac
+nmrfxlib="nmrfx-analyst-gui-$nvjver.jar"
 
 JAVA=java
 
@@ -50,37 +37,23 @@ while [ -h "$pgm" ]; do
 done
 
 dir=`dirname "$pgm"`
-CLASSPATH="${dir}/lib/*:${dir}/plugins/*"
-jreDir=`ls -d *jre* 2>/dev/null`
+CLASSPATH="${dir}/lib/Manifest.jar:${dir}/plugins/*"
+jreDir=`ls -d ${dir}/*jre* 2>/dev/null`
+
 if [ -d "${dir}/../jre.bundle/Contents/Home/jre/bin" ] ; then
     JAVA="${dir}/../jre.bundle/Contents/Home/jre/bin/java"
-    CLASSPATH="$dir/lib/nmrfx-analyst-gui-$nvjver.jar:$CLASSPATH"
+    CLASSPATH="$dir/lib/$nmrfxlib:$CLASSPATH"
 elif [ -d "${dir}/jre/bin" ] ; then
     JAVA="${dir}/jre/bin/java"
-    CLASSPATH="$dir/lib/nmrfx-analyst-gui-$nvjver.jar:$CLASSPATH"
+    CLASSPATH="$dir/lib/$nmrfxlib:$CLASSPATH"
 elif [ -f "${jreDir}/bin/java" ] ; then
     JAVA="${jreDir}/bin/java"
-    CLASSPATH="$dir/lib/nmrfx-analyst-gui-$nvjver.jar:$CLASSPATH"
+    CLASSPATH="$dir/lib/$nmrfxlib:$CLASSPATH"
 else
     if [ -n "$JAVA_HOME" ] ; then
-        if [ -x "$JAVA_HOME/jre/sh/java"  ] ; then
-            # AIX location
-            JAVA="$JAVA_HOME/jre/sh/java"
-        else
-            JAVA="$JAVA_HOME/bin/java"
-        fi
+        JAVA="$JAVA_HOME/bin/java"
     fi
-
-    if $ismsys ; then
-        nvjdir=`$dir/echopath "$dir"`
-        CLASSPATH="$nvjdir/nmrfx-analyst-gui-$nvjver.jar;$CLASSPATH"
-    elif $iscygwin ; then
-        CLASSPATH=`cygpath -pu "$CLASSPATH"`
-        CLASSPATH="$dir/nmrfx-analyst-gui-$nvjver.jar;$CLASSPATH"
-        CLASSPATH=`cygpath -pw "$CLASSPATH"`
-    else
-        CLASSPATH="$dir/nmrfx-analyst-gui-$nvjver.jar:$CLASSPATH"
-    fi
+    CLASSPATH="$dir/$nmrfxlib:$CLASSPATH"
 fi
 
 export CLASSPATH

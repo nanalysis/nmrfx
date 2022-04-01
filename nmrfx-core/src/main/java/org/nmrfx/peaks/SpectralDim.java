@@ -520,6 +520,7 @@ public class SpectralDim {
     public void setPattern(String pattern) {
         this.pattern = pattern;
         atomResPatterns = Optional.empty();
+        peakList.peakListUpdated(peakList);
     }
 
     public String getRelation() {
@@ -545,6 +546,7 @@ public class SpectralDim {
         }
         this.relation = relation;
         atomResPatterns = Optional.empty();
+        peakList.peakListUpdated(peakList);
     }
 
     public String getSpatialRelation() {

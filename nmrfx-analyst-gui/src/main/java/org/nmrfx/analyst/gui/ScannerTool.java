@@ -19,36 +19,9 @@ package org.nmrfx.analyst.gui;
 
 import de.jensd.fx.glyphs.GlyphsDude;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.TreeSet;
-import java.util.function.Consumer;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import javafx.beans.value.ChangeListener;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.scene.control.Alert;
-import javafx.scene.control.Button;
-import javafx.scene.control.ContentDisplay;
-import javafx.scene.control.Menu;
-import javafx.scene.control.MenuButton;
-import javafx.scene.control.MenuItem;
-import javafx.scene.control.RadioMenuItem;
-import javafx.scene.control.TableView;
-import javafx.scene.control.TextInputDialog;
-import javafx.scene.control.Toggle;
-import javafx.scene.control.ToggleGroup;
-import javafx.scene.control.ToolBar;
+import javafx.scene.control.*;
 import javafx.scene.layout.BorderPane;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
@@ -56,8 +29,8 @@ import org.apache.commons.math3.linear.ArrayRealVector;
 import org.apache.commons.math3.linear.RealVector;
 import org.nmrfx.analyst.gui.tools.TRACTGUI;
 import org.nmrfx.datasets.DatasetBase;
-import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.datasets.DatasetRegion;
+import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.Measure;
 import org.nmrfx.processor.datasets.Measure.MeasureTypes;
 import org.nmrfx.processor.datasets.Measure.OffsetTypes;
@@ -69,6 +42,16 @@ import org.nmrfx.processor.gui.controls.FileTableItem;
 import org.nmrfx.utils.GUIUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.util.*;
+import java.util.function.Consumer;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * ScannerTool class
@@ -91,8 +74,6 @@ public class ScannerTool implements ControllerTool {
     ToggleGroup measureTypeGroup = new ToggleGroup();
     ToggleGroup offsetTypeGroup = new ToggleGroup();
 
-    ChangeListener<String> scanDirListener;
-    ChangeListener<String> outputDirListener;
     static Consumer createControllerAction = null;
     TRACTGUI tractGUI = null;
     TablePlotGUI plotGUI = null;
@@ -237,12 +218,12 @@ public class ScannerTool implements ControllerTool {
 
     private void processScanDirAndCombine() {
         ChartProcessor chartProcessor = controller.getChartProcessor();
-        scanTable.processScanDir(stage, chartProcessor, true);
+        scanTable.processScanDir(chartProcessor, true);
     }
 
     private void processScanDir() {
         ChartProcessor chartProcessor = controller.getChartProcessor();
-        scanTable.processScanDir(stage, chartProcessor, false);
+        scanTable.processScanDir(chartProcessor, false);
     }
 
     private void scanDirAction() {

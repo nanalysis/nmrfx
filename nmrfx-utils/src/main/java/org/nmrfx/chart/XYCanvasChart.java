@@ -175,12 +175,12 @@ public class XYCanvasChart {
             double yMin = Double.MAX_VALUE;
             boolean ok = false;
             for (DataSeries dataSeries : data) {
-                if (!dataSeries.values.isEmpty()) {
+                if (!dataSeries.isEmpty()) {
                     ok = true;
-                    xMax = Math.max(xMax, dataSeries.values.stream().mapToDouble(XYValue::getXValue).max().getAsDouble());
-                    xMin = Math.min(xMin, dataSeries.values.stream().mapToDouble(XYValue::getXValue).min().getAsDouble());
-                    yMax = Math.max(yMax, dataSeries.values.stream().mapToDouble(XYValue::getMaxYValue).max().getAsDouble() / dataSeries.getScale());
-                    yMin = Math.min(yMin, dataSeries.values.stream().mapToDouble(XYValue::getMinYValue).min().getAsDouble() / dataSeries.getScale());
+                    xMin = dataSeries.getMinX();
+                    xMax = dataSeries.getMaxX();
+                    yMin = dataSeries.getMinY();
+                    yMax = dataSeries.getMaxY();
                 }
             }
 
@@ -328,7 +328,7 @@ public class XYCanvasChart {
                     radius = radius * minDimSize;
                 }
                 if (series.fillSymbol || series.strokeSymbol) {
-                    for (XYValue xyValue : series.values) {
+                    for (XYValue xyValue : series.getValues()) {
                         double x = xyValue.getXValue();
                         double y = xyValue.getYValue();
                         y /= series.getScale();
@@ -351,7 +351,7 @@ public class XYCanvasChart {
                     double lastXC = 0.0;
                     double lastYC = 0.0;
                     gC.setStroke(series.stroke);
-                    for (XYValue xyValue : series.values) {
+                    for (XYValue xyValue : series.getValues()) {
                         double x = xyValue.getXValue();
                         double y = xyValue.getYValue();
                         y /= series.getScale();
@@ -423,7 +423,7 @@ public class XYCanvasChart {
                 radius = radius * minDimSize;
             }
             int i = 0;
-            for (XYValue xyValue : series.values) {
+            for (XYValue xyValue : series.getValues()) {
                 double x = xyValue.getXValue();
                 double y = xyValue.getYValue();
                 double xC = xAxis.getDisplayPosition(x);
@@ -453,7 +453,7 @@ public class XYCanvasChart {
     public void addLines(double[] x, double[] y, boolean symbol, Color color) {
         DataSeries series = new DataSeries();
         for (int j = 0; j < x.length; j++) {
-            series.getData().add(new XYValue(x[j], y[j]));
+            series.add(new XYValue(x[j], y[j]));
         }
         series.drawLine(!symbol);
         series.drawSymbol(symbol);

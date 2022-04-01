@@ -10,6 +10,7 @@ import org.apache.commons.math3.exception.MaxCountExceededException;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.datasets.Nuclei;
 import org.nmrfx.math.Clusters;
+import org.nmrfx.peaks.events.*;
 import org.nmrfx.project.ProjectBase;
 import org.nmrfx.utilities.Util;
 
@@ -40,6 +41,7 @@ public class PeakList {
     protected String details = "";
     protected String sampleLabel = "";
     protected String sampleConditionLabel = "";
+    protected String experimentType = "";
     protected List<Peak> peaks;
     protected final Map<Integer, Peak> indexMap = new HashMap<>();
     boolean slideable = false;
@@ -48,9 +50,13 @@ public class PeakList {
     protected List<SearchDim> searchDims = new ArrayList<>();
     Optional<Measures> measures = Optional.empty();
     Map<String, String> properties = new HashMap<>();
-    List<PeakListener> listeners = new ArrayList<>();
+    List<PeakListener> peakChangeListeners = new ArrayList<>();
+    List<PeakListener> peakListChangeListeners = new ArrayList<>();
+    List<PeakListener> peakCountChangeListeners = new ArrayList<>();
     protected boolean changed = false;
-    public AtomicBoolean thisListUpdated = new AtomicBoolean(false);
+    public AtomicBoolean peakUpdated = new AtomicBoolean(false);
+    public AtomicBoolean peakListUpdated = new AtomicBoolean(false);
+    public AtomicBoolean peakCountUpdated = new AtomicBoolean(false);
     Updater updater = null;
 
     /**
@@ -478,27 +484,72 @@ public class PeakList {
     public List<SearchDim> getSearchDims() {
         return searchDims;
     }
-
     /**
      *
      * @param oldListener
      */
-    public void removeListener(PeakListener oldListener) {
-        listeners.remove(oldListener);
+    public void removePeakCountChangeListener(PeakListener oldListener) {
+        peakCountChangeListeners.remove(oldListener);
     }
 
     /**
      *
      * @param newListener
      */
-    public void registerListener(PeakListener newListener) {
-        if (!listeners.contains(newListener)) {
-            listeners.add(newListener);
+    public void registerPeakCountChangeListener(PeakListener newListener) {
+        if (!peakCountChangeListeners.contains(newListener)) {
+            peakCountChangeListeners.add(newListener);
         }
     }
 
-    public void notifyListeners() {
-        for (PeakListener listener : listeners) {
+    public void notifyPeakCountChangeListeners() {
+        for (PeakListener listener : peakCountChangeListeners) {
+            listener.peakListChanged(new PeakCountEvent(this, size()));
+        }
+    }
+    /**
+     *
+     * @param oldListener
+     */
+    public void removePeakListChangeListener(PeakListener oldListener) {
+        peakListChangeListeners.remove(oldListener);
+    }
+
+    /**
+     *
+     * @param newListener
+     */
+    public void registerPeakListChangeListener(PeakListener newListener) {
+        if (!peakListChangeListeners.contains(newListener)) {
+            peakListChangeListeners.add(newListener);
+        }
+    }
+
+    public void notifyPeakListChangeListeners() {
+        for (PeakListener listener : peakListChangeListeners) {
+            listener.peakListChanged(new PeakListEvent(this));
+        }
+    }
+    /**
+     *
+     * @param oldListener
+     */
+    public void removePeakChangeListener(PeakListener oldListener) {
+        peakChangeListeners.remove(oldListener);
+    }
+
+    /**
+     *
+     * @param newListener
+     */
+    public void registerPeakChangeListener(PeakListener newListener) {
+        if (!peakChangeListeners.contains(newListener)) {
+            peakChangeListeners.add(newListener);
+        }
+    }
+
+    public void notifyPeakChangeListeners() {
+        for (PeakListener listener : peakChangeListeners) {
             listener.peakListChanged(new PeakEvent(this));
         }
     }
@@ -621,7 +672,7 @@ public class PeakList {
      *
      * @return
      */
-    public static Iterator iterator() {
+    public static Iterator<PeakList> iterator() {
         return ProjectBase.getActive().getPeakLists().iterator();
     }
 
@@ -631,7 +682,7 @@ public class PeakList {
     public void peakListUpdated(Object object) {
         changed = true;
         if (updater != null) {
-            updater.update();
+            updater.update(object);
         }
     }
 
@@ -692,6 +743,10 @@ public class PeakList {
         return specDim;
     }
 
+    public List<SpectralDim> getSpectralDims() {
+        return Arrays.asList(spectralDims);
+    }
+
     /**
      *
      * @return
@@ -722,6 +777,22 @@ public class PeakList {
      */
     public void setDetails(String details) {
         this.details = details;
+    }
+
+    /**
+     *
+     * @return
+     */
+    public String getExperimentType() {
+        return experimentType;
+    }
+    /**
+     *
+     * @param type
+     */
+    public void setExperimentType(String type) {
+        this.experimentType = type;
+        peakListUpdated(this);
     }
 
     /**
@@ -781,7 +852,9 @@ public class PeakList {
      * @param newPeak
      */
     public void addPeakWithoutResonance(Peak newPeak) {
+        newPeak.setIndex(peaks.size());
         peaks.add(newPeak);
+        peakListUpdated(peaks);
         clearIndex();
     }
 
@@ -791,7 +864,9 @@ public class PeakList {
      */
     public Peak addPeak(Peak newPeak) {
         newPeak.initPeakDimContribs();
+        newPeak.setIndex(peaks.size());
         peaks.add(newPeak);
+        peakListUpdated(peaks);
         clearIndex();
         return newPeak;
     }
@@ -1794,6 +1869,7 @@ public class PeakList {
             idLast--;
         }
         peaks.remove(peak);
+        peakListUpdated(peaks);
         reIndex();
     }
 
@@ -1893,6 +1969,7 @@ public class PeakList {
                 PeakList.unLinkPeak(peaks.get(i));
                 (peaks.get(i)).markDeleted();
                 peaks.remove(i);
+                peakListUpdated(peaks);
                 nRemoved++;
             }
         }
@@ -1939,6 +2016,10 @@ public class PeakList {
         } else {
             chan.write(".\n");
         }
+        chan.write("_Spectral_peak_list.Experiment_type              ");
+        String expType = getExperimentType().isBlank() ? "." : getExperimentType();
+        chan.write(expType + "\n");
+
         chan.write("_Spectral_peak_list.Slidable                      ");
         String slidable = isSlideable() ? "yes" : "no";
         chan.write(slidable + "\n");
@@ -2004,6 +2085,17 @@ public class PeakList {
     public DescriptiveStatistics widthDStats(int iDim) {
         DescriptiveStatistics stats = new DescriptiveStatistics();
         peaks.stream().filter((p) -> p.getStatus() >= 0).mapToDouble((p) -> p.peakDims[iDim].getLineWidthHz()).forEach((v) -> stats.addValue(v));
+        return stats;
+    }
+
+    /**
+     *
+     * @param iDim
+     * @return
+     */
+    public DescriptiveStatistics widthDStatsPPM(int iDim) {
+        DescriptiveStatistics stats = new DescriptiveStatistics();
+        peaks.stream().filter((p) -> p.getStatus() >= 0).mapToDouble((p) -> p.peakDims[iDim].getLineWidth()).forEach((v) -> stats.addValue(v));
         return stats;
     }
 

@@ -18,6 +18,8 @@
 package org.nmrfx.peaks;
 
 import org.nmrfx.datasets.DatasetBase;
+import org.nmrfx.peaks.events.PeakEvent;
+import org.nmrfx.peaks.events.PeakListener;
 import org.nmrfx.project.ProjectBase;
 
 import java.io.File;
@@ -120,7 +122,7 @@ public class PeakPaths implements PeakListener {
         this.peakLists = new ArrayList<>();
         this.datasetNames = new ArrayList<>();
         for (PeakList peakList : peakLists) {
-            peakList.registerListener(this);
+            peakList.registerPeakChangeListener(this);
             this.peakLists.add(peakList);
             this.datasetNames.add(peakList.getDatasetName());
         }
@@ -153,12 +155,11 @@ public class PeakPaths implements PeakListener {
     }
 
     public static PeakPaths loadPathData(PATHMODE pathMode, File file) throws IOException, IllegalArgumentException {
-        List<String> datasetNames = new ArrayList<>();
-        List<PeakList> peakLists = new ArrayList<>();
         PeakPaths peakPath = null;
         if (file != null) {
             List<Double> x0List = new ArrayList<>();
             List<Double> x1List = new ArrayList<>();
+            List<String> datasetNames = new ArrayList<>();
             String sepChar = " +";
             List<String> lines = Files.readAllLines(file.toPath());
             if (lines.size() > 0) {
@@ -177,45 +178,55 @@ public class PeakPaths implements PeakListener {
                     }
                 }
             }
-            double[] x0 = new double[x0List.size()];
-            double[] x1 = new double[x0List.size()];
-            System.out.println("do data");
-            for (int i = 0; i < datasetNames.size(); i++) {
-                String datasetName = datasetNames.get(i);
-                DatasetBase dataset = DatasetBase.getDataset(datasetName);
-                if (dataset == null) {
-                    throw new IllegalArgumentException("\"Dataset \"" + datasetName + "\" doesn't exist\"");
-                }
-                String peakListName = "";
-                PeakList peakList = PeakList.getPeakListForDataset(datasetName);
-                if (peakList == null) {
-                    peakListName = PeakList.getNameForDataset(datasetName);
-                    peakList = PeakList.get(peakListName);
-                } else {
-                    peakListName = peakList.getName();
-                }
-                if (peakList == null) {
-                    throw new IllegalArgumentException("\"PeakList \"" + peakList + "\" doesn't exist\"");
-                }
-                peakLists.add(peakList);
-                x0[i] = x0List.get(i);
-                if (!x1List.isEmpty()) {
-                    x1[i] = x1List.get(i);
-                } else {
-                    x1[i] = 100.0;
-                }
-            }
-            double[] weights = {1.0, 5.0};  // fixme  need to figure out from nuclei
-            System.out.println("do data1");
             String peakPathName = file.getName();
-            if (peakPathName.contains(".")) {
-                peakPathName = peakPathName.substring(0, peakPathName.indexOf("."));
-            }
-            peakPath = new PeakPaths(peakPathName, peakLists, x0, x1, weights, pathMode);
-            peakPath.store();
-            peakPath.initPaths();
-            peakPath.datasetNames = datasetNames;
+            peakPath = loadPathData(pathMode, datasetNames, x0List, x1List, peakPathName);
         }
+        return peakPath;
+    }
+
+    public static PeakPaths loadPathData(PATHMODE pathMode, List<String> datasetNames,
+                                         List<Double> x0List, List<Double> x1List, String peakPathName) {
+        double[] x0 = new double[x0List.size()];
+        double[] x1 = new double[x0List.size()];
+        System.out.println("do data");
+        PeakPaths peakPath = null;
+        List<PeakList> peakLists = new ArrayList<>();
+
+        for (int i = 0; i < datasetNames.size(); i++) {
+            String datasetName = datasetNames.get(i);
+            DatasetBase dataset = DatasetBase.getDataset(datasetName);
+            if (dataset == null) {
+                throw new IllegalArgumentException("\"Dataset \"" + datasetName + "\" doesn't exist\"");
+            }
+            String peakListName = "";
+            PeakList peakList = PeakList.getPeakListForDataset(datasetName);
+            if (peakList == null) {
+                peakListName = PeakList.getNameForDataset(datasetName);
+                peakList = PeakList.get(peakListName);
+            } else {
+                peakListName = peakList.getName();
+            }
+            if (peakList == null) {
+                throw new IllegalArgumentException("\"PeakList \"" + peakList + "\" doesn't exist\"");
+            }
+            peakLists.add(peakList);
+            x0[i] = x0List.get(i);
+            if (!x1List.isEmpty()) {
+                x1[i] = x1List.get(i);
+            } else {
+                x1[i] = 100.0;
+            }
+        }
+        double[] weights = {1.0, 5.0};  // fixme  need to figure out from nuclei
+        System.out.println("do data1");
+        if (peakPathName.contains(".")) {
+            peakPathName = peakPathName.substring(0, peakPathName.indexOf("."));
+        }
+        peakPath = new PeakPaths(peakPathName, peakLists, x0, x1, weights, pathMode);
+        peakPath.store();
+        peakPath.initPaths();
+        peakPath.datasetNames = datasetNames;
+
         return peakPath;
     }
 

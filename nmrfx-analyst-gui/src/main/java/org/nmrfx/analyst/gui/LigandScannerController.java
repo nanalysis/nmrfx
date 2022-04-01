@@ -375,12 +375,12 @@ public class LigandScannerController implements Initializable {
             DataSeries series = new DataSeries();
             activeChart.getData().clear();
             //Prepare XYChart.Series objects by setting data
-            series.getData().clear();
+            series.clear();
             double[] xValues = getTableValues(xElem);
             double[] yValues = getTableValues(yElem);
             if ((xValues != null) && (yValues != null)) {
                 for (int i = 0; i < xValues.length; i++) {
-                    series.getData().add(new XYValue(xValues[i], yValues[i]));
+                    series.add(new XYValue(xValues[i], yValues[i]));
                 }
             }
             System.out.println("plot");

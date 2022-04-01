@@ -77,7 +77,6 @@ import org.nmrfx.processor.datasets.vendor.nmrview.NMRViewData;
 import org.nmrfx.processor.datasets.vendor.rs2d.RS2DData;
 import org.nmrfx.processor.gui.controls.GridPaneCanvas;
 import org.nmrfx.processor.gui.spectra.*;
-import org.nmrfx.processor.gui.tools.PathTool;
 import org.nmrfx.processor.gui.tools.SpectrumComparator;
 import org.nmrfx.processor.gui.undo.UndoManager;
 import org.nmrfx.utilities.DictionarySort;
@@ -171,7 +170,6 @@ public class FXMLController implements  Initializable, PeakNavigable {
 
     PeakNavigator peakNavigator;
     SpectrumComparator spectrumComparator;
-    PathTool pathTool;
     ListView datasetListView = new ListView();
 
     public final SimpleObjectProperty<List<Peak>> selPeaks = new SimpleObjectProperty<>();
@@ -1653,22 +1651,6 @@ public class FXMLController implements  Initializable, PeakNavigable {
         return peak;
     }
 
-    public void showPathTool() {
-        if (pathTool == null) {
-            VBox vBox = new VBox();
-            bottomBox.getChildren().add(vBox);
-            pathTool = new PathTool(this, this::removePathTool);
-            pathTool.initPathTool(vBox);
-        }
-    }
-
-    public void removePathTool(Object o) {
-        if (pathTool != null) {
-            bottomBox.getChildren().remove(pathTool.getToolBar());
-            pathTool = null;
-        }
-    }
-
     public void showSpectrumComparator() {
         if (spectrumComparator == null) {
             VBox vBox = new VBox();
@@ -1775,7 +1757,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
     public void addChart() {
         PolyChart chart = new PolyChart(this, plotContent, canvas, peakCanvas, annoCanvas);
         charts.add(chart);
-        chart.setChartDisable(true);
+        chart.setChartDisabled(true);
         // chart.setController(this);
         chartGroup.addChart(chart);
         activeChart = chart;
@@ -1805,7 +1787,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
 
     public void setChartDisable(boolean state) {
         for (PolyChart chart : charts) {
-            chart.setChartDisable(state);
+            chart.setChartDisabled(state);
         }
 
     }
