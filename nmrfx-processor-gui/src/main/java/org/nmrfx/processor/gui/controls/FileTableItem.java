@@ -211,6 +211,21 @@ public class FileTableItem {
         }
     }
 
+    public Optional<Double> getExtraAsDouble(String name) {
+        Double value;
+        switch (getType(name).orElse("")) {
+            case "I":
+                value = getIntegerExtra(name).doubleValue();
+                break;
+            case "D":
+                value = getDoubleExtra(name);
+                break;
+            default:
+                value = null ;
+        }
+        return Optional.ofNullable(value);
+    }
+
     public Object getObjectExtra(String eName) {
         Object extra = objectExtras.get(eName);
         return extra;

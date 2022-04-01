@@ -77,7 +77,6 @@ import org.nmrfx.processor.datasets.vendor.nmrview.NMRViewData;
 import org.nmrfx.processor.datasets.vendor.rs2d.RS2DData;
 import org.nmrfx.processor.gui.controls.GridPaneCanvas;
 import org.nmrfx.processor.gui.spectra.*;
-import org.nmrfx.processor.gui.tools.PathTool;
 import org.nmrfx.processor.gui.tools.SpectrumComparator;
 import org.nmrfx.processor.gui.undo.UndoManager;
 import org.nmrfx.utilities.DictionarySort;
@@ -171,7 +170,6 @@ public class FXMLController implements  Initializable, PeakNavigable {
 
     PeakNavigator peakNavigator;
     SpectrumComparator spectrumComparator;
-    PathTool pathTool;
     ListView datasetListView = new ListView();
 
     public final SimpleObjectProperty<List<Peak>> selPeaks = new SimpleObjectProperty<>();
@@ -1651,22 +1649,6 @@ public class FXMLController implements  Initializable, PeakNavigable {
             peak = peakNavigator.getPeak();
         }
         return peak;
-    }
-
-    public void showPathTool() {
-        if (pathTool == null) {
-            VBox vBox = new VBox();
-            bottomBox.getChildren().add(vBox);
-            pathTool = new PathTool(this, this::removePathTool);
-            pathTool.initPathTool(vBox);
-        }
-    }
-
-    public void removePathTool(Object o) {
-        if (pathTool != null) {
-            bottomBox.getChildren().remove(pathTool.getToolBar());
-            pathTool = null;
-        }
     }
 
     public void showSpectrumComparator() {
