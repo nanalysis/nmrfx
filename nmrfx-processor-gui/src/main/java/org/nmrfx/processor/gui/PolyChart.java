@@ -52,6 +52,8 @@ import org.nmrfx.graphicsio.GraphicsContextProxy;
 import org.nmrfx.graphicsio.GraphicsIOException;
 import org.nmrfx.graphicsio.SVGGraphicsContext;
 import org.nmrfx.math.VecBase;
+import org.nmrfx.peaks.events.PeakEvent;
+import org.nmrfx.peaks.events.PeakListener;
 import org.nmrfx.peaks.*;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.peaks.PeakFitException;
@@ -118,6 +120,7 @@ public class PolyChart extends Region implements PeakListener {
     public static final ObservableList<PolyChart> CHARTS = FXCollections.observableArrayList();
     static final SimpleObjectProperty<PolyChart> activeChart = new SimpleObjectProperty<>(null);
     static final SimpleBooleanProperty multipleCharts = new SimpleBooleanProperty(false);
+    static Consumer<PeakDeleteEvent> manualPeakDeleteAction = null;
 
     static {
         CHARTS.addListener((ListChangeListener) (e -> multipleCharts.set(CHARTS.size() > 1)));
@@ -188,6 +191,7 @@ public class PolyChart extends Region implements PeakListener {
     private final List<ConnectPeakAttributes> peakPaths = new ArrayList<>();
     Consumer<DatasetRegion> newRegionConsumer = null;
     static boolean listenToPeaks = true;
+
 
     @Override
     public void peakListChanged(final PeakEvent peakEvent) {
@@ -2794,7 +2798,7 @@ public class PolyChart extends Region implements PeakListener {
                 }
                 PeakListAttributes peakListAttr = new PeakListAttributes(this, matchData, peakList);
                 peakListAttributesList.add(peakListAttr);
-                peakList.registerListener(this);
+                peakList.registerPeakChangeListener(this);
                 newPeakListAttr = peakListAttr;
 
             }
@@ -2816,7 +2820,7 @@ public class PolyChart extends Region implements PeakListener {
                 }
             }
             if (!found) {
-                peakAttr.getPeakList().removeListener(this);
+                peakAttr.getPeakList().removePeakChangeListener(this);
             }
             removeSome = !found;
         }
@@ -2841,13 +2845,18 @@ public class PolyChart extends Region implements PeakListener {
     }
 
     public void deleteSelectedPeaks() {
+        List<Peak> deletedPeaks = new ArrayList<>();
         for (PeakListAttributes peakListAttr : peakListAttributesList) {
             Set<Peak> peaks = peakListAttr.getSelectedPeaks();
             for (Peak peak : peaks) {
                 peak.setStatus(-1);
+                deletedPeaks.add(peak);
             }
         }
-
+        if (!deletedPeaks.isEmpty() && (manualPeakDeleteAction != null)) {
+            PeakDeleteEvent peakDeleteEvent = new PeakDeleteEvent(deletedPeaks, this);
+            manualPeakDeleteAction.accept(peakDeleteEvent);
+        }
     }
 
     public List<Peak> getSelectedPeaks() {
@@ -3118,7 +3127,7 @@ public class PolyChart extends Region implements PeakListener {
                 while (peakListIterator.hasNext()) {
                     PeakListAttributes peakListAttr = peakListIterator.next();
                     if (peakListAttr.getPeakList().peaks() == null) {
-                        peakListAttr.getPeakList().removeListener(this);
+                        peakListAttr.getPeakList().removePeakChangeListener(this);
                         peakListIterator.remove();
                     }
                 }
@@ -4277,4 +4286,9 @@ public class PolyChart extends Region implements PeakListener {
     public Map<String, Object> config() {
         return chartProps.config();
     }
+
+    public static void registerPeakDeleteAction(Consumer<PeakDeleteEvent> func) {
+        manualPeakDeleteAction = func;
+    }
+
 }

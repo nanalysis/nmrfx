@@ -1,17 +1,16 @@
 package org.nmrfx.structure.seqassign;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 import org.nmrfx.chemistry.Atom;
 import org.nmrfx.chemistry.PPMv;
 import org.nmrfx.chemistry.Residue;
 import org.nmrfx.chemistry.io.AtomParser;
+import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.structure.chemistry.predict.BMRBStats;
 import smile.stat.distribution.ChiSquareDistribution;
 import smile.stat.distribution.MultivariateGaussianDistribution;
+
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  *
@@ -50,6 +49,40 @@ public class FragmentScoring {
 
     }
 
+    static void initMolAaDistMap() {
+        BMRBStats.loadAllIfEmpty();
+        Molecule molecule = Molecule.getActive();
+        var names = molecule.getPolymers().stream().
+                flatMap(poly -> poly.getResidues().
+                        stream()).map(Residue::getName).
+                collect(Collectors.toList());
+        for (String aaName : names) {
+            double[] means;
+            double[] vars;
+            if (aaName.equalsIgnoreCase("gly")) {
+                means = new double[1];
+                vars = new double[1];
+            } else {
+                means = new double[2];
+                vars = new double[2];
+            }
+            String[] aNames = {"CA", "CB"};
+            for (String aName : aNames) {
+                Optional<PPMv> ppmVOpt = BMRBStats.getValue(aaName, aName);
+                ppmVOpt.ifPresent(ppmV -> {
+                    int i = aName.equals("CA") ? 0 : 1;
+                    means[i] = ppmV.getValue();
+                    vars[i] = ppmV.getError() * ppmV.getError();
+                    if (aaName.equalsIgnoreCase("CYS") && aName.equalsIgnoreCase("CB")) {
+                        means[i] = 29.0;
+                        vars[i] = 3.0;
+                    }
+                });
+            }
+            MultivariateGaussianDistribution dist = new MultivariateGaussianDistribution(means, vars);
+            aaDistMap.put(aaName, dist);
+        }
+    }
     static void initAADistMap() {
         BMRBStats.loadAllIfEmpty();
         for (String aaName : AtomParser.getAANames()) {
@@ -79,20 +112,33 @@ public class FragmentScoring {
 
     public static List<AAScore> scoreAA(double[] ppms) {
         if (aaDistMap.isEmpty()) {
-            initAADistMap();
+            initMolAaDistMap();
         }
         List<AAScore> scores = new ArrayList<>();
         for (Map.Entry<String, MultivariateGaussianDistribution> entry : aaDistMap.entrySet()) {
             double p;
+            boolean ok = true;
             if (entry.getKey().equalsIgnoreCase("gly")) {
                 double[] ppmGly = new double[1];
                 ppmGly[0] = ppms[0];
-                p = entry.getValue().p(ppmGly);
+                if (Double.isNaN(ppms[0])) {
+                    ok = false;
+                    p = 0.0;
+                } else {
+                    p = entry.getValue().p(ppmGly);
+                }
             } else {
-                p = entry.getValue().p(ppms);
+                if (Double.isNaN(ppms[0]) || Double.isNaN(ppms[1])) {
+                    ok = false;
+                    p = 0.0;
+                } else {
+                    p = entry.getValue().p(ppms);
+                }
             }
-            AAScore score = new AAScore(entry.getKey(), p);
-            scores.add(score);
+            if (ok) {
+                AAScore score = new AAScore(entry.getKey(), p);
+                scores.add(score);
+            }
         }
         double sum = 0.0;
         for (AAScore aaScore : scores) {
@@ -116,26 +162,29 @@ public class FragmentScoring {
             if (!(resName.equalsIgnoreCase("gly")
                     && atomName.equalsIgnoreCase("cb"))) {
                 Atom atom = residue.getAtom(atomName);
-                StandardPPM stdShift = null;
-                PPMv ppmV = atom.spatialSet.getRefPPM();
-                if ((ppmV != null) && ppmV.isValid()) {
-                    stdShift = new StandardPPM(ppmV.getValue(), ppmV.getError());
-
-                }
-                if (stdShift != null) {
-                    //result = Math.abs(stdShift.avg-ppm)/stdShift.sdev;
-                    double normDev = (stdShift.getAvg() - ppm) / (stdShift.getSdev() * sdevMul);
-                    result = new Double(normDev * normDev);
+                if (atom != null) {
+                    StandardPPM stdShift = null;
+                    PPMv ppmV = atom.spatialSet.getPPM(0);
+                    if ((ppmV != null) && ppmV.isValid()) {
+                        stdShift = new StandardPPM(ppmV.getValue(), 0.05);
+                    } else {
+                        PPMv refPPMV = atom.spatialSet.getRefPPM();
+                        if ((refPPMV != null) && refPPMV.isValid()) {
+                            stdShift = new StandardPPM(refPPMV.getValue(), refPPMV.getError());
+                        }
+                    }
+                    if (stdShift != null) {
+                        //result = Math.abs(stdShift.avg-ppm)/stdShift.sdev;
+                        double normDev = (stdShift.getAvg() - ppm) / (stdShift.getSdev() * sdevMul);
+                        result = normDev * normDev;
+                    }
                 }
             }
         }
-
         return result;
     }
 
     public static PPMScore scoreAtomPPM(final double pOK, final double sdevMul, final Residue residue, final List<AtomShiftValue> atomShiftValues) {
-        //Standard stdVals = (Standard) scoreMap.get(atomName);
-        //System.out.println("scoreAtomPPM "+resName);
         PPMScore matchScore = new PPMScore(atomShiftValues);
 
         double resScore = 0.0;
@@ -143,16 +192,20 @@ public class FragmentScoring {
         for (AtomShiftValue atomShiftValue : atomShiftValues) {
             Double score = scoreAtomPPM(residue, atomShiftValue.getAName(), atomShiftValue.getPPM(), sdevMul);
             if (score != null) {
-                resScore += score.doubleValue();
+                resScore += score;
                 nValues++;
             }
         }
-
-        ChiSquareDistribution chiSquare = new ChiSquareDistribution(nValues);
-        double pValue = chiSquare.p(resScore);
-
-        if (pValue < pOK) {
+        double pValue;
+        if (nValues < 1) {
             matchScore.ok = false;
+            pValue = 0.0;
+        } else {
+            ChiSquareDistribution chiSquare = new ChiSquareDistribution(nValues);
+            pValue = 1.0 - chiSquare.cdf(resScore);
+            if (Double.isNaN(pValue) || (pValue < pOK)) {
+                matchScore.ok = false;
+            }
         }
 
         matchScore.totalScore = pValue;

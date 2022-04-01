@@ -28,6 +28,7 @@ import org.nmrfx.chemistry.*;
 import org.nmrfx.chemistry.constraints.*;
 import org.nmrfx.chemistry.Residue.RES_POSITION;
 import org.nmrfx.chemistry.AtomResonance;
+import org.nmrfx.project.ProjectBase;
 import org.nmrfx.star.Loop;
 import org.nmrfx.star.ParseException;
 import org.nmrfx.star.STAR3;
@@ -713,6 +714,7 @@ public class NMRStarReader {
         String datasetName = saveframe.getLabelValue("_Spectral_peak_list", "Experiment_name");
         String nDimString = saveframe.getValue("_Spectral_peak_list", "Number_of_spectral_dimensions");
         String dataFormat = saveframe.getOptionalValue("_Spectral_peak_list", "Text_data_format");
+        String expType = saveframe.getOptionalValue("_Spectral_peak_list", "Experiment_type");
         String details = saveframe.getOptionalValue("_Spectral_peak_list", "Details");
         String slidable = saveframe.getOptionalValue("_Spectral_peak_list", "Slidable");
         String scaleStr = saveframe.getOptionalValue("_Spectral_peak_list", "Scale");
@@ -741,6 +743,7 @@ public class NMRStarReader {
         peakList.setSampleConditionLabel(sampleConditionLabel);
         peakList.setDatasetName(datasetName);
         peakList.setDetails(details);
+        peakList.setExperimentType(expType);
         peakList.setSlideable(slidable.equals("yes"));
         if (scaleStr.length() > 0) {
             peakList.setScale(NvUtil.toDouble(scaleStr));
@@ -1887,6 +1890,9 @@ public class NMRStarReader {
                 System.err.println("clean resonances");
             }
             resFactory.clean();
+
+            ProjectBase.processExtraSaveFrames(star3);
+
             if (DEBUG) {
                 System.err.println("process done");
             }

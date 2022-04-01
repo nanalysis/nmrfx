@@ -29,6 +29,7 @@ import org.nmrfx.chemistry.AtomResonance;
 import static org.nmrfx.chemistry.AtomResonance.resonanceLoopStrings;
 import org.nmrfx.chemistry.MoleculeBase;
 import org.nmrfx.chemistry.MoleculeFactory;
+import org.nmrfx.peaks.events.FreezeListener;
 
 /**
  *

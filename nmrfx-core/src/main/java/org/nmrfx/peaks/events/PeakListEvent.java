@@ -15,15 +15,30 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.nmrfx.peaks;
 
+ /*
+ * PeakEvent.java
+ *
+ * Created on December 13, 2006, 11:39 AM
+ *
+ * To change this template, choose Tools | Template Manager
+ * and open the template in the editor.
+ */
+package org.nmrfx.peaks.events;
+
+import java.util.EventObject;
 
 /**
  *
- * @author Bruce Johnson
+ * @author brucejohnson
  */
-public interface FreezeListener {
+public class PeakListEvent extends PeakEvent {
 
-    public void freezeHappened(Peak peak, boolean state);
-
+    /**
+     * Creates a new instance of PeakListEvent
+     * @param object event object
+     */
+    public PeakListEvent(Object object) {
+        super(object);
+    }
 }

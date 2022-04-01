@@ -37,7 +37,7 @@ import javafx.scene.paint.Color;
 import javafx.stage.FileChooser;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.chart.XYCanvasChart;
-import org.nmrfx.peaks.FreezeListener;
+import org.nmrfx.peaks.events.FreezeListener;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakDistance;
 import org.nmrfx.peaks.PeakList;

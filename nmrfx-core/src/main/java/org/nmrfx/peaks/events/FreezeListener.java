@@ -15,24 +15,17 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+package org.nmrfx.peaks.events;
 
- /*
- * PeakListener.java
- *
- * Created on December 13, 2006, 11:47 AM
- *
- * To change this template, choose Tools | Template Manager
- * and open the template in the editor.
- */
-package org.nmrfx.peaks;
 
-import java.util.EventListener;
+import org.nmrfx.peaks.Peak;
 
 /**
  *
- * @author brucejohnson
+ * @author Bruce Johnson
  */
-public interface PeakListener extends EventListener {
+public interface FreezeListener {
 
-    public void peakListChanged(PeakEvent peakEvent);
+    public void freezeHappened(Peak peak, boolean state);
+
 }
