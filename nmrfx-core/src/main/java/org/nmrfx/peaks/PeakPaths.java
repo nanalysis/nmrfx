@@ -18,6 +18,8 @@
 package org.nmrfx.peaks;
 
 import org.nmrfx.datasets.DatasetBase;
+import org.nmrfx.peaks.events.PeakEvent;
+import org.nmrfx.peaks.events.PeakListener;
 import org.nmrfx.project.ProjectBase;
 
 import java.io.File;
@@ -120,7 +122,7 @@ public class PeakPaths implements PeakListener {
         this.peakLists = new ArrayList<>();
         this.datasetNames = new ArrayList<>();
         for (PeakList peakList : peakLists) {
-            peakList.registerListener(this);
+            peakList.registerPeakChangeListener(this);
             this.peakLists.add(peakList);
             this.datasetNames.add(peakList.getDatasetName());
         }

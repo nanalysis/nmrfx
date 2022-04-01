@@ -28,6 +28,7 @@ import javax.vecmath.Point2d;
 import java.util.*;
 import java.util.stream.Collectors;
 import org.nmrfx.chemistry.relax.RelaxationData.relaxTypes;
+import org.nmrfx.chemistry.relax.SpectralDensity;
 
 public class Atom implements IAtom, Comparable<Atom> {
 
@@ -113,6 +114,7 @@ public class Atom implements IAtom, Comparable<Atom> {
     public Atom daughterAtom = null;
     private Map<String, RelaxationData> relaxData = new HashMap<>();
     private Map<String, OrderPar> orderPars = new HashMap<>();
+    private Map<String, SpectralDensity> spectralDensities = new HashMap<>();
 
     public Atom(String name) {
         this.name = name;
@@ -365,6 +367,17 @@ public class Atom implements IAtom, Comparable<Atom> {
             }
         }
         bonds = newBonds;
+    }
+    public void addSpectralDensity(String name, SpectralDensity data) {
+        spectralDensities.put(name, data);
+    }
+
+    public Map<String, SpectralDensity> getSpectralDensity() {
+        return spectralDensities;
+    }
+
+    public SpectralDensity getSpectralDensity(String ID) {
+        return spectralDensities.get(ID);
     }
 
     public void addOrderPar(String name, OrderPar data) {

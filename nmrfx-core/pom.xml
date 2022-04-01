@@ -80,6 +80,10 @@
             <artifactId>nd4j-native-platform</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.yaml</groupId>
+            <artifactId>snakeyaml</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.greenrobot</groupId>
             <artifactId>eventbus-java</artifactId>
         </dependency>

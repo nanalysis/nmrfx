@@ -967,6 +967,10 @@ public class Peak implements Comparable, PeakOrMulti {
         return status < 0;
     }
 
+    public void delete() {
+        status = -1;
+    }
+
     @Override
     public int getStatus() {
         return status;

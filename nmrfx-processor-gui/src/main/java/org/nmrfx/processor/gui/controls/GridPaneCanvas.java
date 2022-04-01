@@ -267,7 +267,7 @@ public class GridPaneCanvas extends GridPane {
     private void disableCharts(boolean state) {
         for (var node : getChildren()) {
             if (node instanceof PolyChart) {
-                ((PolyChart) node).setChartDisable(state);
+                ((PolyChart) node).setChartDisabled(state);
             }
         }
     }
@@ -275,7 +275,7 @@ public class GridPaneCanvas extends GridPane {
 
     private void disableCharts(List<PolyChart> nodes, boolean state) {
         for (var chart : nodes) {
-            chart.setChartDisable(state);
+            chart.setChartDisabled(state);
         }
     }
 

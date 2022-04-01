@@ -17,12 +17,14 @@
  */
 package org.nmrfx.chemistry.relax;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import org.nmrfx.chemistry.Atom;
+import org.nmrfx.chemistry.MoleculeBase;
+import org.nmrfx.chemistry.MoleculeFactory;
+
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.*;
 
 /**
  *
@@ -31,7 +33,9 @@ import org.nmrfx.chemistry.Atom;
 public class RelaxationData implements RelaxationValues {
 
     public enum relaxTypes {
-        R1("R1"), R2("R2"), T1RHO("T1rho"), NOE("NOE"), S2("S2");
+        R1("R1"), R2("R2"), T1RHO("T1rho"),
+        NOE("NOE"), S2("S2"),
+        RQ("RQ"), RAP("RAP");
 
         private final String name;
 
@@ -167,6 +171,64 @@ public class RelaxationData implements RelaxationValues {
 
     public Map<String, String> getExtras() {
         return extras;
+    }
+
+    public static  Map<Long, R1R2NOE>  assembleAtomData(Atom atom) {
+        var relaxData = atom.getRelaxationData();
+        Map<Long, R1R2NOE> dataMap = new HashMap<>();
+        Set<Long> fields = new HashSet<>();
+        for (var entry : relaxData.entrySet()) {
+            RelaxationData data = entry.getValue();
+            fields.add(Math.round(data.getField()));
+        }
+        for (var field : fields) {
+            Double r1 = null, r1Error = null, r2 = null, r2Error = null, noe = null, noeError = null;
+            Double dField = null;
+            for (var entry : relaxData.entrySet()) {
+                RelaxationData data = entry.getValue();
+                if (Math.round(data.getField()) == field) {
+                    switch (data.getExpType()) {
+                        case R1:
+                            r1 = data.getValue();
+                            dField  = data.getField();
+                            r1Error = data.getError();
+                            break;
+                        case R2:
+                            r2 = data.getValue();
+                            r2Error = data.getError();
+                            break;
+                        case NOE:
+                            noe = data.getValue();
+                            noeError = data.getError();
+                            break;
+                    }
+                }
+            }
+            R1R2NOE r1R2NOE = new R1R2NOE(r1, r1Error, r2, r2Error, noe, noeError, dField);
+            dataMap.put(field, r1R2NOE);
+        }
+        return dataMap;
+    }
+
+    public static void writeToFile(File file) throws IOException {
+        MoleculeBase moleculeBase = MoleculeFactory.getActive();
+        List<Atom> atoms = moleculeBase.getAtomArray();
+        try (FileWriter fileWriter = new FileWriter(file)) {
+            fileWriter.write("Chain\tResidue\tAtom\tfield\tR1\tR1_err\tR2\tR2_err\tNOE\tNOE_err\n");
+            for (Atom atom : atoms) {
+                var dataMap = assembleAtomData(atom);
+                if (!dataMap.isEmpty()) {
+                    for (var r1R1NOE : dataMap.values()) {
+                        String polymer = atom.getTopEntity().getName();
+                        polymer = polymer == null ? "A" : polymer;
+                        String resNum = String.valueOf(atom.getResidueNumber());
+                        fileWriter.write(polymer + "\t" + resNum+"\t" + atom.getName() + "\t");
+                        fileWriter.write(r1R1NOE.toString());
+                        fileWriter.write("\n");
+                    }
+                }
+            }
+        }
     }
 
     public static Map<String, List<RelaxationData>> getRelaxationData(List<Atom> atoms) {

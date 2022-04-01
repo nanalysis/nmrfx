@@ -363,7 +363,8 @@ public class RS2DData implements NMRData {
                 negateImag[i] = true;
             }
 
-            if (mode.isComplex() && mode != PhaseMod.ECHO_ANTIECHO) {
+            if (mode.isComplex()) {
+                // size is expressed as number of complex pairs
                 tdsize[i] /= 2;
             }
         }

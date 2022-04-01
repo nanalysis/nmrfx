@@ -178,7 +178,7 @@ public class TRACTGUI {
 
     void updateMCplotWithLines() {
         updateMCplot();
-        if (!series0.getData().isEmpty()) {
+        if (!series0.isEmpty()) {
             activeChart.getData().add(series0);
             activeChart.getData().add(series1);
         }
@@ -204,12 +204,12 @@ public class TRACTGUI {
                 DataSeries series = new DataSeries();
                 activeChart.getData().clear();
                 //Prepare XYChart.Series objects by setting data
-                series.getData().clear();
+                series.clear();
                 List<FileTableItem> items = scanTable.getItems();
                 for (FileTableItem item : items) {
                     double x = getXValue(item, xElem);
                     double y = item.getDoubleExtra(yElem);
-                    series.getData().add(new XYValue(x, y));
+                    series.add(new XYValue(x, y));
                 }
                 System.out.println("plot");
                 activeChart.getData().add(series);
@@ -287,11 +287,11 @@ public class TRACTGUI {
 
             double[][] curve0 = tractFit.getSimValues(0.0, maxX, 200, false);
             double[][] curve1 = tractFit.getSimValues(0.0, maxX, 200, true);
-            series0.getData().clear();
-            series1.getData().clear();
+            series0.clear();
+            series1.clear();
             for (int j = 0; j < curve0[0].length; j++) {
-                series0.getData().add(new XYValue(curve0[0][j], curve0[1][j]));
-                series1.getData().add(new XYValue(curve1[0][j], curve1[1][j]));
+                series0.add(new XYValue(curve0[0][j], curve0[1][j]));
+                series1.add(new XYValue(curve1[0][j], curve1[1][j]));
             }
             series0.drawLine(true);
             series1.drawLine(true);
@@ -340,7 +340,7 @@ public class TRACTGUI {
                 List<DataSeries> data = activeChart.getData();
                 if (!data.isEmpty()) {
                     DataSeries series = data.get(0);
-                    List<XYValue> values = series.getValues();
+                    List<XYValue> values = series.getData();
                     int n = values.size() / 2;
                     writer.write("#Data " + n + " \n");
 
@@ -354,8 +354,8 @@ public class TRACTGUI {
                 if (data.size() == 3) {
                     DataSeries series0 = data.get(1);
                     DataSeries series1 = data.get(2);
-                    List<XYValue> values0 = series0.getValues();
-                    List<XYValue> values1 = series1.getValues();
+                    List<XYValue> values0 = series0.getData();
+                    List<XYValue> values1 = series1.getData();
                     int n = values0.size();
                     writer.write("#Simulated " + n + " \n");
                     for (int i = 0; i < n; i++) {
