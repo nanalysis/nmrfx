@@ -50,7 +50,7 @@ while [ -h "$pgm" ]; do
 done
 
 dir=`dirname "$pgm"`
-CLASSPATH="${dir}/lib/Manifest.jar:${dir}/plugins/*"
+CLASSPATH="${dir}/lib/*:${dir}/plugins/*"
 jreDir=`ls -d *jre* 2>/dev/null`
 if [ -d "${dir}/../jre.bundle/Contents/Home/jre/bin" ] ; then
     JAVA="${dir}/../jre.bundle/Contents/Home/jre/bin/java"
