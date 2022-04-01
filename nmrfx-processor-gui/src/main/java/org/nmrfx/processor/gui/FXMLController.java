@@ -1775,7 +1775,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
     public void addChart() {
         PolyChart chart = new PolyChart(this, plotContent, canvas, peakCanvas, annoCanvas);
         charts.add(chart);
-        chart.setChartDisable(true);
+        chart.setChartDisabled(true);
         // chart.setController(this);
         chartGroup.addChart(chart);
         activeChart = chart;
@@ -1805,7 +1805,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
 
     public void setChartDisable(boolean state) {
         for (PolyChart chart : charts) {
-            chart.setChartDisable(state);
+            chart.setChartDisabled(state);
         }
 
     }

@@ -17,6 +17,18 @@
  */
 package org.nmrfx.chemistry.relax;
 
+import org.nmrfx.chemistry.Atom;
+import org.nmrfx.chemistry.MoleculeBase;
+import org.nmrfx.chemistry.MoleculeFactory;
+
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 /**
  *
  * @author brucejohnson
@@ -84,10 +96,10 @@ public class OrderPar implements RelaxationValues {
     }
 
     public OrderPar(ResonanceSource resSource, Double value, Double error, Double TauE,
-            Double TauEerr, Double TauF, Double TauFerr, Double TauS,
-            Double TauSerr, Double Rex, Double Rexerr, Double Sf2,
-            Double Sf2err, Double Ss2, Double Ss2err,
-            Double sumSqErr, Integer nValues, Integer nPars, String model) {
+                    Double TauEerr, Double TauF, Double TauFerr, Double TauS,
+                    Double TauSerr, Double Rex, Double Rexerr, Double Sf2,
+                    Double Sf2err, Double Ss2, Double Ss2err,
+                    Double sumSqErr, Integer nValues, Integer nPars, String model) {
         this.resSource = resSource;
         this.value = value;
         this.error = error;
@@ -217,6 +229,7 @@ public class OrderPar implements RelaxationValues {
                         }
                     } else {
                         newPar.value = newPar.Sf2;
+                        newPar.error = newPar.Sf2err;
                     }
                 }
                 break;
@@ -233,6 +246,7 @@ public class OrderPar implements RelaxationValues {
                         }
                     } else {
                         newPar.value = newPar.Ss2;
+                        newPar.error = newPar.Ss2err;
                     }
                 }
                 break;
@@ -333,18 +347,75 @@ public class OrderPar implements RelaxationValues {
         }
     }
 
+    public static Map<String, List<OrderPar>> getOrderParameters(List<Atom> atoms) {
+        var orderParData = new HashMap<String, List<OrderPar>>();
+        atoms.forEach((atom) -> {
+            for (var orderPars : atom.getOrderPars().entrySet()) {
+                String relaxKey = orderPars.getKey();
+                OrderPar orderPar = orderPars.getValue();
+                List<OrderPar> orderParList = orderParData.get(relaxKey);
+                if (!orderParData.containsKey(relaxKey)) {
+                    orderParList = new ArrayList<>();
+                    orderParData.put(relaxKey, orderParList);
+                }
+                orderParList.add(orderPar);
+            }
+        });
+        return orderParData;
+    }
+
+    public static void writeToFile(File file) throws IOException {
+        MoleculeBase moleculeBase = MoleculeFactory.getActive();
+        var orderParData = OrderPar.getOrderParameters(moleculeBase.getAtomArray());
+        for (var orderParList:orderParData.values()) {
+            writeToFile(file, orderParList);
+        }
+    }
+
+    public static void writeToFile(File file, List<OrderPar> orderPars) throws IOException {
+        try (FileWriter fileWriter = new FileWriter(file)) {
+            fileWriter.write("Chain\tResidue\tAtom\tS2\tS2_err\tTauE\tTauE_err\tSf2\tSf2_err\tSs2\tSs2_err\tTauF\tTauF_err\tTauS\tTauS_err\tRex\tRex_err\tmodel\tmodelNum\n");
+            for (var orderPar:orderPars) {
+                fileWriter.write(orderPar.toString());
+                fileWriter.write("\n");
+            }
+        }
+    }
+
     @Override
     public String toString() {
         StringBuilder sBuilder = new StringBuilder();
-        sBuilder.append(value).append(" ");
-        sBuilder.append(TauE).append(" ");
-        sBuilder.append(TauF).append(" ");
-        sBuilder.append(TauS).append(" ");
-        sBuilder.append(Rex).append(" ");
-        sBuilder.append(Sf2).append(" ");
-        sBuilder.append(Ss2).append(" ");
-        sBuilder.append(model).append(" ");
-        sBuilder.append(modelNum);
+        Atom atom = resSource.getAtom();
+        String polymer = atom.getTopEntity().getName();
+        polymer = (polymer == null) || ("null".equals(polymer)) ? "A" : polymer;
+        String resNum = String.valueOf(atom.getResidueNumber());
+        sBuilder.append(polymer).append("\t").append(resNum).append("\t").append(atom.getName());
+        RelaxationValues.appendValueError(sBuilder, value, error,"%.2f");
+        RelaxationValues.appendValueError(sBuilder, TauE, TauEerr,"%.2f");
+        RelaxationValues.appendValueError(sBuilder, Sf2, Sf2err,"%.2f");
+        RelaxationValues.appendValueError(sBuilder, Ss2, Ss2err,"%.2f");
+        RelaxationValues.appendValueError(sBuilder, TauF, TauFerr,"%.4f");
+        RelaxationValues.appendValueError(sBuilder, TauS, TauSerr,"%.4f");
+        RelaxationValues.appendValueError(sBuilder, Rex, Rexerr,"%.2f");
+        sBuilder.append("\t").append(model).append("\t").append(modelNum);
         return sBuilder.toString();
+    }
+
+    public void valuesToStarString(StringBuilder sBuilder) {
+        String defaultValue = "      . ";
+        RelaxationValues.appendValueError(sBuilder, value, error,"%8.3f", defaultValue);
+        RelaxationValues.appendValueError(sBuilder, TauE, TauEerr,"%8.3f", defaultValue);
+        RelaxationValues.appendValueError(sBuilder, TauF, TauFerr,"%8.3f", defaultValue);
+        RelaxationValues.appendValueError(sBuilder, TauS, TauSerr,"%8.3f", defaultValue);
+        RelaxationValues.appendValueError(sBuilder, Rex, Rexerr,"%8.3f", defaultValue);
+        if (sumSqErr != null) {
+            sBuilder.append(String.format("%8.3f", sumSqErr));
+        } else {
+            sBuilder.append(defaultValue);
+        }
+        sBuilder.append(String.format("%8s",model));
+        RelaxationValues.appendValueError(sBuilder, Sf2, Sf2err,"%8.3f", defaultValue);
+        RelaxationValues.appendValueError(sBuilder, Ss2, Ss2err,"%8.3f", defaultValue);
+        sBuilder.append(" . . . .  "); //sh2 sh2_er sn2 sn2_err
     }
 }
