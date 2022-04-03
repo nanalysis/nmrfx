@@ -78,7 +78,6 @@ open module org.nmrfx.processor.gui {
     requires flowless;
     requires wellbehavedfx;
     requires org.eclipse.jgit;
-    requires jsch;
     requires jzlib;
     requires JavaEWAH;
     requires org.slf4j;

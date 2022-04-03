@@ -41,6 +41,7 @@ import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import org.controlsfx.dialog.ExceptionDialog;
+import org.nmrfx.analyst.gui.tools.ScanTable;
 import org.nmrfx.chart.Axis;
 import org.nmrfx.chart.BoxPlotData;
 import org.nmrfx.chart.DataSeries;

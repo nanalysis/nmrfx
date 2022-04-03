@@ -22,7 +22,6 @@ import de.jangassen.dialogs.about.AboutStageBuilder;
 import javafx.application.Application;
 import javafx.application.HostServices;
 import javafx.application.Platform;
-import org.nmrfx.processor.gui.controls.GridPaneCanvas;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
@@ -39,6 +38,7 @@ import org.nmrfx.console.ConsoleController;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.io.PeakReader;
 import org.nmrfx.processor.datasets.Dataset;
+import org.nmrfx.processor.gui.controls.GridPaneCanvas;
 import org.nmrfx.processor.gui.log.Log;
 import org.nmrfx.processor.gui.project.GUIProject;
 import org.nmrfx.processor.utilities.WebConnect;
@@ -172,6 +172,10 @@ public class MainApp extends Application {
 
     public static MenuBar getMenuBar() {
         return mainApp.makeMenuBar(appName);
+    }
+
+    public static MenuBar getMainMenuBar() {
+        return mainMenuBar;
     }
 
     public void addStatusBarTools(SpectrumStatusBar statusBar) {

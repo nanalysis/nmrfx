@@ -41,6 +41,7 @@ import javafx.scene.layout.Priority;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
+import org.nmrfx.analyst.gui.tools.MinerController;
 import org.nmrfx.analyst.peaks.Analyzer;
 import org.nmrfx.analyst.peaks.Multiplets;
 import org.nmrfx.peaks.ComplexCoupling;

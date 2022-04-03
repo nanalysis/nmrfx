@@ -1,4 +1,4 @@
-package org.nmrfx.analyst.gui;
+package org.nmrfx.analyst.gui.tools;
 
 /*
  * @author Bruce Johnson
@@ -27,6 +27,7 @@ import org.controlsfx.control.textfield.TextFields;
 import org.nmrfx.analyst.compounds.CompoundMatcher;
 import org.nmrfx.analyst.dataops.SimData;
 import org.nmrfx.analyst.dataops.SimDataVecPars;
+import org.nmrfx.analyst.gui.AnalystPrefs;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.ControllerTool;
 import org.nmrfx.processor.gui.FXMLController;
@@ -71,7 +72,7 @@ public class SimMolController implements ControllerTool {
         closeAction.accept(this);
     }
 
-    void initialize(ToolBar toolBar) {
+    public void initialize(ToolBar toolBar) {
         this.browserToolBar = toolBar;
         toolBar.setPrefWidth(900.0);
 

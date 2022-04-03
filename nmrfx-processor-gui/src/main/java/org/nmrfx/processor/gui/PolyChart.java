@@ -4050,6 +4050,9 @@ public class PolyChart extends Region implements PeakListener {
 
         @Override
         public Object apply(double value) {
+            if (crossHairs.getCrossHairState(crossHairNum, orientation)) {
+
+            }
             crossHairPositions[crossHairNum][orientation] = value;
             crossHairs.refreshCrossHairs();
 

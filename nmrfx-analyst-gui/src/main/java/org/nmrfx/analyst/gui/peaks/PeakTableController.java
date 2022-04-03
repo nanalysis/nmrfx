@@ -21,7 +21,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package org.nmrfx.analyst.gui;
+package org.nmrfx.analyst.gui.peaks;
 
 import java.io.IOException;
 import java.net.URL;
@@ -119,7 +119,6 @@ public class PeakTableController implements PeakMenuTarget, PeakListener, Initia
             stage.setTitle("Peaks");
             stage.show();
         } catch (IOException ioE) {
-            ioE.printStackTrace();
             System.out.println(ioE.getMessage());
         }
 

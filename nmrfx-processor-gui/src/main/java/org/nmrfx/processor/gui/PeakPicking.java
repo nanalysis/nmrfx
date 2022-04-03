@@ -34,11 +34,14 @@ public class PeakPicking {
         singlePickAction = func;
     }
 
-    public static void peakPickActive(FXMLController fxmlController, boolean refineLS) {
+    public static void peakPickActive(FXMLController fxmlController, double level) {
+        peakPickActive(fxmlController, false, level);
+    }
+    public static void peakPickActive(FXMLController fxmlController, boolean refineLS, Double level) {
         PolyChart chart = fxmlController.getActiveChart();
         ObservableList<DatasetAttributes> dataList = chart.getDatasetAttributes();
         dataList.stream().forEach((DatasetAttributes dataAttr) -> {
-            peakPickActive(chart, dataAttr, chart.getCrossHairs().hasCrosshairRegion(), refineLS, false, null);
+            peakPickActive(chart, dataAttr, chart.getCrossHairs().hasCrosshairRegion(), refineLS, level, false, null);
         });
         chart.refresh();
     }
@@ -58,7 +61,8 @@ public class PeakPicking {
         return listName;
     }
 
-    public static PeakList peakPickActive(PolyChart chart, DatasetAttributes dataAttr, boolean useCrossHairs, boolean refineLS, boolean saveFile, String listName) {
+    public static PeakList peakPickActive(PolyChart chart, DatasetAttributes dataAttr, boolean useCrossHairs, boolean refineLS,
+                                          Double level, boolean saveFile, String listName) {
         DatasetBase datasetBase = dataAttr.getDataset();
         Dataset dataset = (Dataset) datasetBase;
         int nDim = dataset.getNDim();
@@ -66,9 +70,15 @@ public class PeakPicking {
         if (listName == null) {
             listName = getListName(chart, dataAttr);
         }
-        double level = dataAttr.getLvl();
-        if (nDim == 1) {
-            level = chart.crossHairPositions[0][PolyChart.HORIZONTAL];
+        if (level == null) {
+            level = dataAttr.getLvl();
+            if (nDim == 1) {
+                if (chart.crossHairStates[0][PolyChart.HORIZONTAL]) {
+                    level = chart.crossHairPositions[0][PolyChart.HORIZONTAL];
+                } else {
+                    level /= 10.0;
+                }
+            }
         }
         PeakPickParameters peakPickPar = (new PeakPickParameters(dataset, listName)).level(level).mode("appendregion");
         peakPickPar.pos(dataAttr.getPos()).neg(dataAttr.getNeg());

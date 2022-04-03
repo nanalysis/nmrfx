@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.nmrfx.analyst.gui;
+package org.nmrfx.analyst.gui.spectra;
 
 import de.jensd.fx.glyphs.GlyphsDude;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
@@ -114,7 +114,7 @@ public class StripController implements ControllerTool {
         closeAction.accept(this);
     }
 
-    void initialize(VBox vBox) {
+    public void initialize(VBox vBox) {
         this.vBox = vBox;
         this.toolBar = new ToolBar();
         this.setupToolBar = new ToolBar();
@@ -476,8 +476,8 @@ public class StripController implements ControllerTool {
         posSlider.valueProperty().removeListener(limitListener);
         nSlider.valueProperty().removeListener(limitListener);
         cells.clear();
-        posSlider.setMin(0);
-        posSlider.setMax(peaks.size() - 1);
+        posSlider.setMin(0.0);
+        posSlider.setMax(peaks.size() - 1.0);
         posSlider.setValue(0);
         nSlider.setMin(1);
         nSlider.setMax(30);

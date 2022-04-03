@@ -21,7 +21,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package org.nmrfx.analyst.gui;
+package org.nmrfx.analyst.gui.tools;
 
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import java.io.IOException;

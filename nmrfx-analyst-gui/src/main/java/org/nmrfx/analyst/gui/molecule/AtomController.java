@@ -21,7 +21,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package org.nmrfx.analyst.gui;
+package org.nmrfx.analyst.gui.molecule;
 
 import javafx.application.Platform;
 import javafx.beans.property.SimpleDoubleProperty;

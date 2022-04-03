@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package org.nmrfx.analyst.gui;
+package org.nmrfx.analyst.gui.peaks;
 
 import de.jensd.fx.glyphs.GlyphsDude;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
@@ -97,7 +97,7 @@ public class AtomBrowser {
         closeAction.accept(this);
     }
 
-    void initSlider(ToolBar toolBar) {
+    public void initSlider(ToolBar toolBar) {
         this.browserToolBar = toolBar;
         toolBar.setPrefWidth(900.0);
 

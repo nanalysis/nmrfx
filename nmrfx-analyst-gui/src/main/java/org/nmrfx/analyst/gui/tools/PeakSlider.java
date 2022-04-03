@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package org.nmrfx.analyst.gui;
+package org.nmrfx.analyst.gui.tools;
 
 import de.jensd.fx.glyphs.GlyphsDude;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
@@ -34,6 +34,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
 import javafx.scene.paint.Color;
+import org.apache.commons.math3.random.RandomDataGenerator;
 import org.nmrfx.chemistry.Atom;
 import org.nmrfx.peaks.events.FreezeListener;
 import org.nmrfx.peaks.Peak;
@@ -77,7 +78,7 @@ public class PeakSlider implements ControllerTool {
     List<Peak> selPeaks;
     List<FreezeListener> listeners = new ArrayList<>();
     PeakClusterMatcher[] matchers = new PeakClusterMatcher[2];
-    Random rand = new Random();
+    RandomDataGenerator rand = new RandomDataGenerator();
 
     public PeakSlider(FXMLController controller, Consumer<PeakSlider> closeAction) {
         this.controller = controller;
@@ -94,7 +95,7 @@ public class PeakSlider implements ControllerTool {
         closeAction.accept(this);
     }
 
-    void initSlider(ToolBar toolBar) {
+    public void initSlider(ToolBar toolBar) {
         this.sliderToolBar = toolBar;
 
         String iconSize = "16px";
@@ -400,7 +401,7 @@ public class PeakSlider implements ControllerTool {
                 if (randomize) {
                     Double errPPM = atom.getSDevRefPPM();
                     if (errPPM != null) {
-                        refPPM += rand.nextGaussian() * errPPM * 0.5;
+                        refPPM += rand.nextGaussian(0, errPPM * 0.5);
                     }
                 }
                 shiftMap.put(atom, refPPM);
@@ -780,7 +781,7 @@ public class PeakSlider implements ControllerTool {
                         double peakShift = p.getPeakDim(dim).getChemShift();
                         double shiftDiff = Math.abs(peakShift - matchPeakShift);
                         System.out.println(String.format("\t\tIn dimension '%d', shift difference b/t experimental peak '%s' compared to peak '%s' is '%f'.", matchDim, matchingPeak, p, shiftDiff));
-                        if (shiftDiff != 0.0 && shiftDiff < tolerance) {
+                        if ((shiftDiff > 0.0) && (shiftDiff < tolerance)) {
                             peaksWithinTol.add(p);
                         }
                     });

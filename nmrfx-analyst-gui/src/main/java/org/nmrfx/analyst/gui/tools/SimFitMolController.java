@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package org.nmrfx.analyst.gui;
+package org.nmrfx.analyst.gui.tools;
 
 import de.jensd.fx.glyphs.GlyphsDude;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
@@ -35,6 +35,7 @@ import org.nmrfx.analyst.compounds.CompoundMatch;
 import org.nmrfx.analyst.compounds.FitResult;
 import org.nmrfx.analyst.dataops.SimData;
 import org.nmrfx.analyst.dataops.SimDataVecPars;
+import org.nmrfx.analyst.gui.AnalystPrefs;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.PolyChart;
@@ -68,7 +69,7 @@ public class SimFitMolController extends SimMolController {
         return vBox;
     }
 
-    void initialize(VBox vBox, ToolBar toolBar, ToolBar fitBar) {
+    public void initialize(VBox vBox, ToolBar toolBar, ToolBar fitBar) {
         this.vBox = vBox;
         this.browserToolBar = toolBar;
         toolBar.setPrefWidth(900.0);

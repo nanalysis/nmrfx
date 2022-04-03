@@ -18,6 +18,10 @@
 
 module org.nmrfx.analyst.gui {
     exports org.nmrfx.analyst.gui;
+    exports org.nmrfx.analyst.gui.peaks;
+    exports org.nmrfx.analyst.gui.spectra;
+    exports org.nmrfx.analyst.gui.molecule;
+    exports org.nmrfx.analyst.gui.tools;
     uses org.nmrfx.plugin.api.NMRFxPlugin;
     requires org.nmrfx.core;
     requires org.nmrfx.processor.gui;
@@ -39,4 +43,5 @@ module org.nmrfx.analyst.gui {
     requires org.yaml.snakeyaml;
     requires org.slf4j;
     requires commons.math3;
+    requires jsch;
 }

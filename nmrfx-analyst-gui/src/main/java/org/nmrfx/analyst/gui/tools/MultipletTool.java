@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package org.nmrfx.analyst.gui;
+package org.nmrfx.analyst.gui.tools;
 
 import de.jensd.fx.glyphs.GlyphsDude;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
@@ -44,6 +44,7 @@ import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
 import org.controlsfx.dialog.ExceptionDialog;
+import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.analyst.peaks.Analyzer;
 import org.nmrfx.analyst.peaks.JournalFormat;
 import org.nmrfx.analyst.peaks.JournalFormatPeaks;
@@ -625,7 +626,7 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
             Multiplet multiplet = activeMultiplet.get();
             multipletIdField.setText(String.valueOf(multiplet.getIDNum()));
             if (resetView) {
-                refreshPeakView(multiplet);
+                refreshPeakView(multiplet, false);
             }
             String mult = multiplet.getMultiplicity();
             Coupling coup = multiplet.getCoupling();
@@ -1041,8 +1042,7 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
         }
     }
 
-    public void refreshPeakView(Multiplet multiplet) {
-        boolean resize = false;
+    public void refreshPeakView(Multiplet multiplet, boolean resize) {
         if (multiplet != null) {
             double bounds = multiplet.getBoundsValue();
             double center = multiplet.getCenter();
@@ -1121,11 +1121,10 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
 
             }
             if (!allreadyPresent) {
-                for (MultipletSelection mSel : mSet) {
+                mSet.stream().findFirst().ifPresent(mSel -> {
                     activeMultiplet = Optional.of(mSel.getMultiplet());
-                    updateMultipletField(false);
-                    break;
-                }
+                    updateMultipletField();
+                });
             }
         }
     }

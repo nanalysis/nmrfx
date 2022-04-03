@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package org.nmrfx.analyst.gui;
+package org.nmrfx.analyst.gui.molecule;
 
 import java.io.IOException;
 import java.net.URL;
@@ -35,6 +35,7 @@ import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
+import org.nmrfx.analyst.gui.tools.MinerController;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.structure.rna.RNALabels;
@@ -48,7 +49,7 @@ public class RNAPeakGeneratorSceneController implements Initializable {
 
     String baseAAtoms = "28";
 
-    Pattern quickPat0 = Pattern.compile("^([AGCU][nrH1-9']+)+$");
+    Pattern quickPat0 = Pattern.compile("^([AGCU][nrH1-9']+)++$");
     Pattern quickPat1 = Pattern.compile("([AGCU][nrH1-9']+)");
     Pattern quickPat2 = Pattern.compile("(n|r|H|[1-5]'|[2-8])");
     Pattern quickPatA = Pattern.compile("([1-5]'|[28])");
@@ -276,7 +277,7 @@ public class RNAPeakGeneratorSceneController implements Initializable {
                                 ok = false;
                                 break;
                         }
-                        if (!basePat.matcher(atomType).matches()) {
+                        if ((basePat == null) || !basePat.matcher(atomType).matches()) {
                             ok = false;
                         }
                     }
@@ -659,7 +660,6 @@ public class RNAPeakGeneratorSceneController implements Initializable {
             stage.setTitle("RNA Label Schemes");
             stage.show();
         } catch (IOException ioE) {
-            ioE.printStackTrace();
             System.out.println(ioE.getMessage());
         }
 

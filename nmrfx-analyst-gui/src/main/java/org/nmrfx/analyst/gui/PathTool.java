@@ -2,12 +2,6 @@ package org.nmrfx.analyst.gui;
 
 import de.jensd.fx.glyphs.GlyphsDude;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.function.Consumer;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
@@ -15,34 +9,16 @@ import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.event.Event;
 import javafx.geometry.Insets;
-import javafx.scene.control.Alert;
-import javafx.scene.control.Button;
-import javafx.scene.control.ButtonType;
-import javafx.scene.control.ContentDisplay;
-import javafx.scene.control.Label;
-import javafx.scene.control.Menu;
-import javafx.scene.control.MenuButton;
-import javafx.scene.control.MenuItem;
-import javafx.scene.control.TextField;
-import javafx.scene.control.ToolBar;
+import javafx.scene.control.*;
 import javafx.scene.input.MouseEvent;
-import javafx.scene.layout.Background;
-import javafx.scene.layout.BackgroundFill;
-import javafx.scene.layout.CornerRadii;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Pane;
-import javafx.scene.layout.Priority;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.stage.FileChooser;
 import org.controlsfx.dialog.ExceptionDialog;
+import org.nmrfx.analyst.gui.tools.ScanTable;
+import org.nmrfx.analyst.gui.tools.ScannerTool;
 import org.nmrfx.chart.XYCanvasChart;
-import org.nmrfx.peaks.events.FreezeListener;
-import org.nmrfx.peaks.Peak;
-import org.nmrfx.peaks.PeakDistance;
-import org.nmrfx.peaks.PeakList;
-import org.nmrfx.peaks.PeakPath;
-import org.nmrfx.peaks.PeakPaths;
+import org.nmrfx.peaks.*;
 import org.nmrfx.peaks.PeakPaths.PATHMODE;
 import org.nmrfx.processor.datasets.peaks.PathFitter;
 import org.nmrfx.processor.datasets.peaks.PeakPathAnalyzer;
@@ -52,6 +28,13 @@ import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.processor.gui.spectra.PeakDisplayParameters;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
 import org.nmrfx.processor.optimization.Fitter;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.function.Consumer;
 
 /**
  *
@@ -70,11 +53,6 @@ public class PathTool implements PeakNavigable, ControllerTool {
     Consumer closeAction;
     MenuButton actionMenu;
     Menu selectMenu;
-    Button drawButton;
-    Button findButton;
-    Button tweakFreezeButton;
-    List<Peak> selPeaks;
-    List<FreezeListener> listeners = new ArrayList<>();
     PeakNavigator peakNavigator;
     TextField radiusField;
     TextField tolField;
@@ -91,10 +69,6 @@ public class PathTool implements PeakNavigable, ControllerTool {
         this.controller = controller;
         this.closeAction = closeAction;
         this.chart = controller.getActiveChart();
-    }
-
-    public VBox getToolBar() {
-        return vBox;
     }
 
     private void close(Object o) {
@@ -118,6 +92,7 @@ public class PathTool implements PeakNavigable, ControllerTool {
         peakNavigator = PeakNavigator.create(this).onClose(this::close).initialize(toolBar);
         peakNavigator.setPeakList();
         controller.addScaleBox(peakNavigator, toolBar);
+
 
         String iconSize = "16px";
         String fontSize = "7pt";

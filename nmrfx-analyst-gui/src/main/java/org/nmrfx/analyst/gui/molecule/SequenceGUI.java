@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.nmrfx.analyst.gui;
+package org.nmrfx.analyst.gui.molecule;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,6 +28,7 @@ import javafx.scene.control.TextField;
 import javafx.scene.control.ToolBar;
 import javafx.scene.layout.BorderPane;
 import javafx.stage.Stage;
+import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.chemistry.io.AtomParser;
 import org.nmrfx.chemistry.io.MoleculeIOException;
 import org.nmrfx.chemistry.io.Sequence;
@@ -58,8 +59,10 @@ public class SequenceGUI {
             SequenceGUI seqGui = new SequenceGUI(analystApp);
             seqGui.create();
         }
-        stage.show();
-        stage.toFront();
+        if (stage != null) {
+            stage.show();
+            stage.toFront();
+        }
     }
 
     void create() {
@@ -68,7 +71,7 @@ public class SequenceGUI {
         stage.setTitle("Sequence GUI");
         textArea.setPrefHeight(200);
         ToolBar toolBar = new ToolBar();
-        polymerType = new ChoiceBox();
+        polymerType = new ChoiceBox<>();
         polymerType.getItems().addAll("Protein", "RNA", "DNA");
         Button openButton = new Button("Add Entity");
         openButton.setOnAction(e -> addEntity());

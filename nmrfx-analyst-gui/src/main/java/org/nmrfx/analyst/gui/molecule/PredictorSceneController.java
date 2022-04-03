@@ -1,4 +1,4 @@
-package org.nmrfx.analyst.gui;
+package org.nmrfx.analyst.gui.molecule;
 
 import java.io.IOException;
 import java.net.URL;
@@ -16,6 +16,7 @@ import javafx.scene.layout.BorderPane;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import org.controlsfx.dialog.ExceptionDialog;
+import org.nmrfx.analyst.gui.tools.MinerController;
 import org.nmrfx.chemistry.Entity;
 import org.nmrfx.chemistry.InvalidMoleculeException;
 import org.nmrfx.chemistry.Polymer;
@@ -79,7 +80,6 @@ public class PredictorSceneController implements Initializable {
             stage.toFront();
 
         } catch (IOException ioE) {
-            ioE.printStackTrace();
             System.out.println(ioE.getMessage());
         }
         return controller;
