@@ -143,12 +143,13 @@ public class PeakNavigator implements PeakListener {
             // button.getStyleClass().add("toolButton");
         }
         if (closeAction != null) {
-            navigatorToolBar.getItems().add(closeButton);
+            toolBar.getItems().add(closeButton);
         }
+
         if (parentNavigator == null) {
             if (peakListMenuButton == null) {
                 this.peakListMenuButton = new MenuButton("List");
-                navigatorToolBar.getItems().add(peakListMenuButton);
+                toolBar.getItems().add(this.peakListMenuButton);
             } else {
                 this.peakListMenuButton = peakListMenuButton;
             }
