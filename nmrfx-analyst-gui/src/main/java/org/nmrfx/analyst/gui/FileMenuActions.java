@@ -42,16 +42,19 @@ public class FileMenuActions extends MenuActions {
 
         MenuItem datasetBrowserMenuItem = new MenuItem("Dataset Browser...");
         datasetBrowserMenuItem.setOnAction(e -> showDataBrowser());
-        MenuItem startAdvancedItem = new MenuItem("Start Advanced");
-        startAdvancedItem.setOnAction(e -> app.advanced(startAdvancedItem));
 
 
         menu.getItems().addAll(openMenuItem, openDatasetMenuItem,
                 recentFIDMenuItem, recentDatasetMenuItem, datasetBrowserMenuItem,
                 graphicsMenu);
-        menu.getItems().add(startAdvancedItem);
-
     }
+
+    public void addAdvancedMenuItem() {
+            MenuItem startAdvancedItem = new MenuItem("Start Advanced");
+            startAdvancedItem.setOnAction(e -> app.advanced(startAdvancedItem));
+            menu.getItems().add(startAdvancedItem);
+    }
+
     @Override
     protected void advanced() {
         MenuItem addMenuItem = new MenuItem("Open Dataset (No Display) ...");

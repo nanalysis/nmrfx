@@ -74,7 +74,8 @@ public class AnalystApp extends MainApp {
     private static SpectrumMenuActions spectrumMenuActions;
     private static ProjectMenuActions projectMenuActions;
     private static ViewMenuItems viewMenuActions;
-    private static boolean advancedMode = false;
+    private static boolean startInAdvanced = true;
+    private static boolean advancedIsActive = false;
     private static MultipletController multipletController;
     private static AtomController atomController;
     private static LigandScannerController scannerController;
@@ -114,6 +115,10 @@ public class AnalystApp extends MainApp {
 
         if (isMac()) {
             System.setProperty("prism.lcdtext", "false");
+        }
+        String nmrfxAdvanced = System.getProperty("NMRFX_LEVEL");
+        if ("BASIC".equalsIgnoreCase(nmrfxAdvanced)) {
+            startInAdvanced = false;
         }
         MainApp.setAnalyst();
         mainApp = this;
@@ -236,6 +241,9 @@ public class AnalystApp extends MainApp {
         Menu fileMenu = new Menu("File");
         fileMenuActions = new FileMenuActions(this, fileMenu);
         fileMenuActions.basic();
+        if (!startInAdvanced && !advancedIsActive) {
+            fileMenuActions.addAdvancedMenuItem();
+        }
 
         Menu projectMenu = new Menu("Projects");
         projectMenuActions = new ProjectMenuActions(this, projectMenu);
@@ -296,6 +304,9 @@ public class AnalystApp extends MainApp {
             menuBar.getMenus().addAll(fileMenu, projectMenu, spectraMenu, molMenu, viewMenu, peakMenu, pluginsMenu, helpMenu);
             helpMenu.getItems().add(0, aboutItem);
         }
+        if (startInAdvanced || advancedIsActive) {
+            advanced(null);
+        }
         return menuBar;
     }
 
@@ -323,8 +334,10 @@ public class AnalystApp extends MainApp {
             viewMenuActions.activateAdvanced();
         }
         addAdvancedtools();
-        advancedMode = true;
-        startAdvancedItem.setDisable(true);
+        advancedIsActive = true;
+        if (startAdvancedItem != null) {
+            startAdvancedItem.setDisable(true);
+        }
 
 
     }
@@ -364,7 +377,7 @@ public class AnalystApp extends MainApp {
         oneDMenu.getItems().addAll(multipletToolItem, regionsMenuItem);
         statusBar.addToToolMenu(oneDMenu);
         addStatusBarButtons(statusBar);
-        if (advancedMode) {
+        if (advancedIsActive) {
             addAdvancedTools(statusBar);
         }
     }
@@ -376,19 +389,27 @@ public class AnalystApp extends MainApp {
     }
 
     private void addAdvancedTools(SpectrumStatusBar statusBar) {
-        Menu peakToolMenu = new Menu("Peak Tools");
         FXMLController controller = statusBar.getController();
+
         MenuItem compareMenuItem = new MenuItem("Show Comparator");
-        statusBar.addToToolMenu("Spectrum Tools", compareMenuItem);
         compareMenuItem.setOnAction(e -> controller.showSpectrumComparator());
+
+        statusBar.addToToolMenu("Spectrum Tools", compareMenuItem);
 
         MenuItem peakNavigatorMenuItem = new MenuItem("Show Peak Navigator");
         peakNavigatorMenuItem.setOnAction(e -> controller.showPeakNavigator());
+
         MenuItem pathToolMenuItem = new MenuItem("Show Path Tool");
         pathToolMenuItem.setOnAction(e -> showPeakPathTool());
 
-        peakToolMenu.getItems().addAll(peakNavigatorMenuItem,
-                pathToolMenuItem);
+        MenuItem peakAssignMenuItem = new MenuItem("Show Peak Assigner");
+        peakAssignMenuItem.setOnAction(e -> showPeakAssignTool());
+
+        MenuItem peakSliderMenuItem = new MenuItem("Show Peak Slider");
+        peakSliderMenuItem.setOnAction(e -> showPeakSlider());
+
+        Menu peakToolMenu = new Menu("Peak Tools");
+        peakToolMenu.getItems().addAll(peakNavigatorMenuItem, pathToolMenuItem, peakSliderMenuItem, peakAssignMenuItem);
 
         statusBar.addToToolMenu(peakToolMenu);
 
@@ -414,25 +435,15 @@ public class AnalystApp extends MainApp {
 
         statusBar.addToToolMenu(molMenu);
 
-        MenuItem peakAssignMenuItem = new MenuItem("Show Peak Assigner");
-        statusBar.addToToolMenu("Peak Tools", peakAssignMenuItem);
-        peakAssignMenuItem.setOnAction(e -> showPeakAssignTool());
-
-        MenuItem peakSliderMenuItem = new MenuItem("Show Peak Slider");
-        statusBar.addToToolMenu("Peak Tools", peakSliderMenuItem);
-        peakSliderMenuItem.setOnAction(e -> showPeakSlider());
-
-        MenuItem peakPathMenuItem = new MenuItem("Show Path Tool");
-        statusBar.addToToolMenu("Peak Tools", peakPathMenuItem);
-        peakPathMenuItem.setOnAction(e -> showPeakPathTool());
 
         MenuItem scannerToolItem = new MenuItem("Show Scanner");
         statusBar.addToToolMenu(scannerToolItem);
         scannerToolItem.setOnAction(e -> showScannerTool());
 
         Menu proteinMenu = new Menu("Protein Tools");
-        MenuItem runAboutToolItem = new MenuItem("Show RunAbout");
         statusBar.addToToolMenu(proteinMenu);
+
+        MenuItem runAboutToolItem = new MenuItem("Show RunAbout");
         proteinMenu.getItems().add(runAboutToolItem);
         runAboutToolItem.setOnAction(e -> showRunAboutTool());
 
