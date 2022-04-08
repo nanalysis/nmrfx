@@ -955,6 +955,9 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
         if (iDim != 0) {
             int jDim = dimC[0];
             int offset = theFile.ppmToPoint(jDim, ppmx);
+            if (theFile.getComplex(jDim)) {
+                offset *= 2;
+            }
             //int offset = (int) Math.round(ppmx);
             ptC[0][0] = offset;
             ptC[0][1] = offset;
@@ -967,7 +970,13 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
             ptC[3][1] = theFile.getSizeReal(dim[3]) - 1;
         }
         rearrangeDim(dimC, ptC);
-        specVec.resize(ptC[0][1] - ptC[0][0] + 1, theFile.getComplex_r(dimC[0]));
+        int size = ptC[0][1] - ptC[0][0] + 1;
+        if ((iDim  == 0) && theFile.getComplex(0)) {
+            ptC[0][0] *= 2;
+            ptC[0][1] *= 2;
+        }
+
+        specVec.resize(size, theFile.getComplex_r(dimC[0]));
         //System.out.println("get slice " + ptC[0][0] + " " + ptC[0][1] + " " + specVec.getSize());
         theFile.readVectorFromDatasetFile(ptC, dimC, specVec);
         return true;

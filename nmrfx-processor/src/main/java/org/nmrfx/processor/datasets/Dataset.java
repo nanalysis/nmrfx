@@ -1371,7 +1371,13 @@ public double[] getPercentile(double p, int[][] pt, int[] dim) throws IOExceptio
         //   It is important to check the valid size, not full dataset size or we'll
         //     incorrectly adjust sweep width
         if (getComplex_r(dim[0])) {
-            int dSize = getComplex_r(dim[0]) ? getVSize_r(dim[0]) / 2 : getVSize_r(dim[0]);
+            int vSize = getVSize_r(dim[0]);
+            int dSize;
+            if (vSize != 0) {
+                dSize = getComplex_r(dim[0]) ? vSize / 2 : vSize;
+            } else {
+                dSize = getSizeReal(dim[0]);
+            }
             if (rwVector.getSize() != dSize) {
                 rwVector.dwellTime *= (double) dSize / rwVector.getSize();
             }
@@ -1395,7 +1401,11 @@ public double[] getPercentile(double p, int[][] pt, int[] dim) throws IOExceptio
 
         int[] point = new int[nDim];
         for (int i = 1; i < nDim; i++) {
-            point[dim[i]] = pt[i][0];
+            if (getAxisReversed(dim[i])) {
+                point[dim[i]] = getSizeReal(dim[i]) - 1 - pt[i][0];
+            } else{
+                point[dim[i]] = pt[i][0];
+            }
         }
         if (vecMat != null) {
             int j = 0;
@@ -1412,7 +1422,11 @@ public double[] getPercentile(double p, int[][] pt, int[] dim) throws IOExceptio
             double dReal = 0.0;
             int j = 0;
             for (int i = pt[0][0]; i <= pt[0][1]; i++) {
-                point[dim[0]] = i;
+                if (axisReversed[dim[0]]) {
+                    point[dim[0]] = getSizeTotal(dim[0]) - 1 - i;
+                } else {
+                    point[dim[0]] = i;
+                }
                 if (rwVector.isComplex()) {
                     if ((i % 2) != 0) {
                         double dImaginary = readPointRaw(point);
