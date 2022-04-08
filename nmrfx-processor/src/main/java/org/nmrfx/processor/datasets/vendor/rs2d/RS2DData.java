@@ -1066,10 +1066,8 @@ public class RS2DData implements NMRData {
                     for (int i = 0; i < counts.length; i++) {
                         pt[i] = counts[counts.length - i - 1];
                     }
-                    if (!dataset.getAxisReversed(1)) {
-                        int lastRow = sizes[sizes.length - 1] - 1;
-                        pt[0] = lastRow - pt[0];
-                    }
+                    int lastRow = sizes[sizes.length - 1] - 1;
+                    pt[0] = lastRow - pt[0];
                     writeRow(dataset, vec, pt, fOut);
                 }
             }
