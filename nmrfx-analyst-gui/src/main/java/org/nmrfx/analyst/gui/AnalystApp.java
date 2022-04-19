@@ -59,6 +59,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Calendar;
+import java.util.Locale;
 import java.util.Optional;
 
 public class AnalystApp extends MainApp {
@@ -112,6 +113,9 @@ public class AnalystApp extends MainApp {
     @Override
     public void start(Stage stage) throws Exception {
         Log.setupMemoryAppender();
+
+        //necessary to avoid "," as a decimal separator in output files or python scripts
+        Locale.setDefault(Locale.Category.FORMAT, Locale.US);
 
         if (isMac()) {
             System.setProperty("prism.lcdtext", "false");
