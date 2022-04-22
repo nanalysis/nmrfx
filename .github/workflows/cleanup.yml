@@ -1,5 +1,7 @@
 name: Cleanup
 
+# XXX Dumb change to be able to create a pull request
+
 # Controls when the action will run. Triggers the workflow on branch deletion, for any branch
 on:
   delete
