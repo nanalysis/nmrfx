@@ -12,6 +12,7 @@ from org.nmrfx.math.units import PPM
 from org.nmrfx.math.units import Point
 from org.nmrfx.math.units import Time
 from org.nmrfx.processor.operations import Add
+from org.nmrfx.processor.operations import BasicApodization
 from org.nmrfx.processor.operations import Asmooth
 from org.nmrfx.processor.operations import AutoPhase
 from org.nmrfx.processor.operations import AutoPhaseDataset
@@ -2179,6 +2180,56 @@ def GMB(gb=0.0, lb=0.0, fPoint=1.0, inverse=False, disabled=False, vector=None, 
         process.addOperation(op)
     return op
     
+def APODIZATION(lbOn=True,lb=0.5, gmOn=False, gm=1.0, sbOn=False, sbSqOn=False, sbOffset=0.5, fPoint=1.0, apodSize=0, inverse=False, disabled=False, vector=None, process=None):
+    '''Lorentz-to-Gauss.
+    Parameters
+    ---------
+    lbOn : bool
+        Use exponential line broadening.
+    lb : real
+        amin : -2.0
+        min : -2.0
+        max : 5.0
+        amax : 100.0
+        Line broadening factor.
+    gmOn : bool
+        Use gaussian line broadening.
+    gm : double
+        amin : 0.0
+        min : 0.0
+        max : 20.0
+        g2: Gaussian broadening
+    sbOn : bool
+        Use sine-bell multiplication.
+    sbSqOn : bool
+        Use sine-bell squared multiplication.
+    sbOffset : real
+        amin : 0.0
+        min : 0.0
+        max : 0.5
+        amax : 0.5
+        Offset of sine window.
+    fPoint : double
+        amin : 0.0
+        min : 0.0
+        max : 1.0
+        amax : 5.0
+        fpoint: First point multiplier
+    apodSize : int
+        min : 0
+        max : size
+        Size of apodization window.  Default 0f 0 uses entire FID.
+'''
+    if disabled:
+        return None
+    process = process or getCurrentProcess()
+    op = BasicApodization(lbOn, lb, gmOn, gm, sbOn, sbSqOn, sbOffset, fPoint, apodSize, inverse)
+    if (vector != None):
+        op.eval(vector)
+    else:
+        process.addOperation(op)
+    return op
+
 
 def HFT(disabled=False, vector=None, process=None):
     '''Hilbert Transform
