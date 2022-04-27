@@ -102,8 +102,6 @@ public class FXMLController implements  Initializable, PeakNavigable {
     @FXML
     private VBox topBar;
     @FXML
-    private ToolBar toolBar;
-    @FXML
     private ToolBar btoolBar;
     @FXML
     private VBox bottomBox;
@@ -1312,16 +1310,15 @@ public class FXMLController implements  Initializable, PeakNavigable {
     public void initialize(URL url, ResourceBundle rb) {
         rightBox.getChildren().remove(phaserBox);
         borderPane.setLeft(null);
-        if (!MainApp.isMac()) {
-            MenuBar menuBar = MainApp.getMenuBar();
-            topBar.getChildren().add(0, menuBar);
-        }
+
+        topBar.getChildren().add(MainApp.getRibbon());
         plotContent.setMouseTransparent(true);
         PolyChart chart1 = new PolyChart(this, plotContent, canvas, peakCanvas, annoCanvas);
         activeChart = chart1;
         canvasBindings = new CanvasBindings(this, canvas);
         canvasBindings.setHandlers();
-        initToolBar(toolBar);
+        //TODO NMR-5099 remove toolbar, use ribbon
+        initToolBar();
         charts.add(chart1);
         chart1.setController(this);
 
@@ -1441,7 +1438,9 @@ public class FXMLController implements  Initializable, PeakNavigable {
         return stackPane;
     }
 
-    void initToolBar(ToolBar toolBar) {
+    //TODO NMR-5099 remove once replaced.
+    //we need to keep it for now because it creates some buttons that are accessed from the outside
+    void initToolBar() {
         String iconSize = "16px";
         String fontSize = "7pt";
         ArrayList<Node> buttons = new ArrayList<>();
@@ -1563,7 +1562,6 @@ public class FXMLController implements  Initializable, PeakNavigable {
                 node.getStyleClass().add("toolButton");
             }
         }
-        toolBar.getItems().addAll(buttons);
 
         statusBar = new SpectrumStatusBar(this);
         statusBar.buildBar(btoolBar);

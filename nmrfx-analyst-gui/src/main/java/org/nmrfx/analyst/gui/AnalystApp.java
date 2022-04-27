@@ -17,6 +17,7 @@
  */
 package org.nmrfx.analyst.gui;
 
+import com.pixelduke.control.Ribbon;
 import de.jangassen.MenuToolkit;
 import de.jangassen.dialogs.about.AboutStageBuilder;
 import de.jensd.fx.glyphs.GlyphsDude;
@@ -31,6 +32,7 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import org.apache.commons.lang3.SystemUtils;
+import org.nmrfx.analyst.gui.ribbon.RibbonBuilder;
 import org.nmrfx.analyst.gui.molecule.CanvasMolecule;
 import org.nmrfx.analyst.gui.molecule.MoleculeMenuActions;
 import org.nmrfx.analyst.gui.peaks.PeakAssignTool;
@@ -177,8 +179,15 @@ public class AnalystApp extends MainApp {
         return aboutStageBuilder.build();
     }
 
+
+    public Ribbon makeRibbon(String appName) {
+        // TODO NMR-5099 create ribbon for analyst gui, see how to handle actions
+        return new RibbonBuilder().create();
+    }
+
     @Override
     public MenuBar makeMenuBar(String appName) {
+        // TODO NMR-5099 convert to ribbon
         MenuToolkit tk = null;
         if (isMac()) {
             tk = MenuToolkit.toolkit();

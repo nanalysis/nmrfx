@@ -17,6 +17,7 @@
  */
 package org.nmrfx.processor.gui;
 
+import com.pixelduke.control.Ribbon;
 import de.jangassen.MenuToolkit;
 import de.jangassen.dialogs.about.AboutStageBuilder;
 import javafx.application.Application;
@@ -175,6 +176,10 @@ public class MainApp extends Application {
         return mainApp.makeMenuBar(appName);
     }
 
+    public static Ribbon getRibbon() {
+        return mainApp.makeRibbon(appName);
+    }
+
     public static MenuBar getMainMenuBar() {
         return mainMenuBar;
     }
@@ -216,6 +221,11 @@ public class MainApp extends Application {
         Image image = new Image(MainApp.class.getResourceAsStream("/images/Icon_NVFX_256.png"));
         aboutStageBuilder = aboutStageBuilder.withImage(image);
         return aboutStageBuilder.build();
+    }
+
+    public Ribbon makeRibbon(String appName) {
+        // TODO NMR-5099 create ribbon for processor gui?
+        return new Ribbon();
     }
 
     public MenuBar makeMenuBar(String appName) {
