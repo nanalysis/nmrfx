@@ -44,4 +44,5 @@ module org.nmrfx.analyst.gui {
     requires org.slf4j;
     requires commons.math3;
     requires jsch;
+    requires fxribbon;
 }

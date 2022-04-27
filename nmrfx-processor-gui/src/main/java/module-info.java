@@ -92,6 +92,7 @@ open module org.nmrfx.processor.gui {
     requires javafx.web;
     requires javafx.mediaEmpty;
     requires javafx.media;
+    requires fxribbon;
     requires logback.classic;
     requires logback.core;
     requires org.apache.commons.collections4;
