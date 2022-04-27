@@ -31,12 +31,12 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import org.apache.commons.lang3.SystemUtils;
-import org.nmrfx.analyst.gui.molecule.*;
-import org.nmrfx.analyst.gui.molecule3D.MolSceneController;
-import org.nmrfx.analyst.gui.peaks.*;
+import org.nmrfx.analyst.gui.molecule.CanvasMolecule;
+import org.nmrfx.analyst.gui.molecule.MoleculeMenuActions;
+import org.nmrfx.analyst.gui.peaks.PeakAssignTool;
+import org.nmrfx.analyst.gui.peaks.PeakMenuActions;
 import org.nmrfx.analyst.gui.plugin.PluginLoader;
 import org.nmrfx.analyst.gui.spectra.SpectrumMenuActions;
-import org.nmrfx.analyst.gui.spectra.StripController;
 import org.nmrfx.analyst.gui.tools.*;
 import org.nmrfx.chemistry.io.PDBFile;
 import org.nmrfx.chemistry.utilities.NvUtil;
@@ -47,27 +47,23 @@ import org.nmrfx.processor.gui.*;
 import org.nmrfx.processor.gui.log.Log;
 import org.nmrfx.processor.gui.project.GUIProject;
 import org.nmrfx.processor.gui.spectra.KeyBindings;
-import org.nmrfx.processor.gui.spectra.WindowIO;
 import org.nmrfx.processor.gui.utils.FxPropertyChangeSupport;
 import org.nmrfx.processor.project.Project;
 import org.nmrfx.processor.utilities.WebConnect;
 import org.nmrfx.project.ProjectBase;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.structure.seqassign.RunAboutSaveFrameProcessor;
-import org.python.util.InteractiveInterpreter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Calendar;
 import java.util.Locale;
-import java.util.Optional;
 
 public class AnalystApp extends MainApp {
     private static final Logger log = LoggerFactory.getLogger(AnalystApp.class);
 
     private static final String version = null;
     static String appName = "NMRFx Analyst";
-    private static MenuBar mainMenuBar = null;
     static AnalystApp analystApp = null;
     private static FileMenuActions fileMenuActions;
     private static MoleculeMenuActions molMenuActions;
@@ -77,22 +73,6 @@ public class AnalystApp extends MainApp {
     private static ViewMenuItems viewMenuActions;
     private static boolean startInAdvanced = true;
     private static boolean advancedIsActive = false;
-    private static MultipletController multipletController;
-    private static AtomController atomController;
-    private static LigandScannerController scannerController;
-    private static MolSceneController molController;
-    private static AtomBrowser atomBrowser;
-    private static RNAPeakGeneratorSceneController rnaPeakGenController;
-    private static PeakTableController peakTableController;
-    private static NOETableController noeTableController;
-    private static WindowIO windowIO = null;
-    private static SeqDisplayController seqDisplayController = null;
-    private static DatasetBrowserController browserController = null;
-    MenuToolkit menuTk;
-    Boolean isMac = null;
-    PeakAtomPicker peakAtomPicker = null;
-    CheckMenuItem assignOnPick;
-    RDCGUI rdcGUI = null;
     RunAboutSaveFrameProcessor runAboutSaveFrameProcessor;
 
     public void waitForCommit() {
@@ -132,9 +112,6 @@ public class AnalystApp extends MainApp {
         hostServices = getHostServices();
         stage.setTitle(appName + " " + getVersion());
 
-        if (mainMenuBar == null) {
-            mainMenuBar = makeMenuBar(appName);
-        }
 //        ScannerController.addCreateAction(e -> updateScannerGUI(e));
         Parameters parameters = getParameters();
         System.out.println(parameters.getRaw());
@@ -175,20 +152,12 @@ public class AnalystApp extends MainApp {
         return mainApp.makeMenuBar(appName);
     }
 
-    public static MenuBar getMainMenuBar() {
-        return mainMenuBar;
-    }
-
     public static AnalystApp getAnalystApp() {
         return analystApp;
     }
 
     public static String getAppName() {
         return appName;
-    }
-
-    public static PreferencesController getPreferencesController() {
-        return preferencesController;
     }
 
     public void quit() {
@@ -312,10 +281,6 @@ public class AnalystApp extends MainApp {
             advanced(null);
         }
         return menuBar;
-    }
-
-    private Optional<Menu> getMenu(MenuBar menuBar, String menuName) {
-        return menuBar.getMenus().stream().filter(m -> m.getText().equals(menuName)).findFirst();
     }
 
     public void advanced(MenuItem startAdvancedItem) {
@@ -519,18 +484,6 @@ public class AnalystApp extends MainApp {
         }
     }
 
-    public static InteractiveInterpreter getInterpreter() {
-        return interpreter;
-    }
-
-    public static void writeOutput(String string) {
-        if (getConsoleController() == null) {
-            System.out.println(string);
-        } else {
-            getConsoleController().write(string);
-        }
-    }
-
     public static ProjectBase getActive() {
         return GUIProject.getActive();
     }
@@ -580,12 +533,6 @@ public class AnalystApp extends MainApp {
         controller.getBottomBox().getChildren().remove(simMolController.getBox());
     }
 
-
-    public StripController getStripsTool() {
-        FXMLController controller = FXMLController.getActiveController();
-        return (StripController) controller.getTool(StripController.class);
-    }
-
     public void showMultipletTool() {
         FXMLController controller = FXMLController.getActiveController();
         if (!controller.containsTool(MultipletTool.class)) {
@@ -631,11 +578,6 @@ public class AnalystApp extends MainApp {
         controller.getBottomBox().getChildren().remove(peakSlider.getToolBar());
     }
 
-    public MultipletTool getMultipletTool() {
-        FXMLController controller = FXMLController.getActiveController();
-        return (MultipletTool) controller.getTool(MultipletTool.class);
-    }
-
     public void removeMultipletToolBar(MultipletTool multipletTool) {
         FXMLController controller = FXMLController.getActiveController();
         controller.removeTool(MultipletTool.class);
@@ -653,11 +595,6 @@ public class AnalystApp extends MainApp {
         }
     }
 
-    public RegionTool getRegionTool() {
-        FXMLController controller = FXMLController.getActiveController();
-        return (RegionTool) controller.getTool(RegionTool.class);
-    }
-
     public void removeRegionTool(RegionTool regionTool) {
         FXMLController controller = FXMLController.getActiveController();
         controller.removeTool(RegionTool.class);
@@ -673,12 +610,6 @@ public class AnalystApp extends MainApp {
             pathTool.initialize(vBox);
             controller.addTool(pathTool);
         }
-    }
-
-    public PathTool getPeakPathTool() {
-        FXMLController controller = FXMLController.getActiveController();
-        PathTool pathTool = (PathTool) controller.getTool(PathTool.class);
-        return pathTool;
     }
 
     public void removePeakPathTool(PathTool pathTool) {
@@ -754,12 +685,4 @@ public class AnalystApp extends MainApp {
         chart.refresh();
     }
 
-    static void showDataBrowser() {
-        if (browserController == null) {
-            browserController = DatasetBrowserController.create();
-        }
-        Stage browserStage = browserController.getStage();
-        browserStage.toFront();
-        browserStage.show();
-    }
 }
