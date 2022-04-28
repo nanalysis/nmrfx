@@ -66,6 +66,8 @@ public class ConsoleController extends OutputStream implements Initializable {
     int historyInd = 0;
     KeyCode prevKey = null;
     ScheduledFuture futureUpdate = null;
+
+    //XXX why exit when closing the console? Wouldn't it be better to hide the stage instead?
     EventHandler<WindowEvent> close = event -> {
         if (affirm("Are you sure you want to exit?")) {
             Platform.exit();
@@ -241,6 +243,10 @@ public class ConsoleController extends OutputStream implements Initializable {
     public void show() {
         stage.show();
         stage.toFront();
+    }
+
+    public boolean isShowing() {
+        return stage.isShowing();
     }
 
     private void filterControl(KeyEvent keyEvent) {

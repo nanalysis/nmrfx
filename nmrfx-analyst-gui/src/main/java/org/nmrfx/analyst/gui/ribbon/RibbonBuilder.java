@@ -53,6 +53,7 @@ public class RibbonBuilder  {
         RibbonTab home = new RibbonTab("HOME");
         home.getRibbonGroups().add(createHomeOpenGroup());
         home.getRibbonGroups().add(createHomeExportGroup());
+        home.getRibbonGroups().add(createHomeViewGroup());
         home.getRibbonGroups().add(createHomePreferencesGroup());
 
         //TODO handle easy/advanced mode. Missing advanced options
@@ -97,6 +98,16 @@ public class RibbonBuilder  {
         png.disableProperty().bind(FXMLController.activeController.isNull());
 
         return createGroup("Export", column(pdf, svg, png));
+    }
+
+    private RibbonGroup createHomeViewGroup() {
+        Button datasets = createSmallButton("Datasets...", null, app::showDatasetsTable);
+        Button attributes = createSmallButton("Attributes...", null, e -> FXMLController.getActiveController().showSpecAttrAction(e));
+        Button processor = createSmallButton("Processor", null, e -> actions.toggleProcessorVisibility());
+        Button console = createSmallButton("Console...", null, e -> actions.toggleConsoleVisibility());
+        Column left = column(datasets, attributes);
+        Column right = column(processor, console);
+        return createGroup("View", left, right);
     }
 
     private RibbonGroup createHomePreferencesGroup() {

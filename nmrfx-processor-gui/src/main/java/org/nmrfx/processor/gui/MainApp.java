@@ -500,7 +500,7 @@ public class MainApp extends Application {
     }
 
     @FXML
-    void showDatasetsTable(ActionEvent event) {
+    public void showDatasetsTable(ActionEvent event) {
         if (datasetController == null) {
             datasetController = DatasetsController.create();
         }

@@ -179,9 +179,7 @@ public class AnalystApp extends MainApp {
         return aboutStageBuilder.build();
     }
 
-
     public Ribbon makeRibbon(String appName) {
-        // TODO NMR-5099 create ribbon for analyst gui, see how to handle actions
         return new RibbonBuilder(this).create();
     }
 
