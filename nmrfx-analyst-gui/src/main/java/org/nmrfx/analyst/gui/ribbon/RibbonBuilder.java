@@ -3,7 +3,6 @@ package org.nmrfx.analyst.gui.ribbon;
 import com.pixelduke.control.Ribbon;
 import com.pixelduke.control.ribbon.Column;
 import com.pixelduke.control.ribbon.RibbonGroup;
-import com.pixelduke.control.ribbon.RibbonItem;
 import com.pixelduke.control.ribbon.RibbonTab;
 import de.jensd.fx.glyphs.GlyphIcons;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
@@ -44,7 +43,6 @@ public class RibbonBuilder  {
         Ribbon ribbon = new Ribbon();
         ribbon.getTabs().add(createHomeTab());
         ribbon.getTabs().add(createChartTab());
-        ribbon.getTabs().add(createDemoTab());
 
         return ribbon;
     }
@@ -156,44 +154,6 @@ public class RibbonBuilder  {
         return createGroup("Scale", auto, higher, lower);
     }
 
-    //-- demo
-
-    private RibbonTab createDemoTab() {
-        RibbonTab demo = new RibbonTab("DEMO");
-        demo.getRibbonGroups().add(createDemoGroup("Test"));
-        demo.getRibbonGroups().add(createDemoMenuGroup());
-        return demo;
-    }
-
-    private RibbonGroup createDemoGroup(String title) {
-        RibbonGroup ribbonGroup = new RibbonGroup();
-        ribbonGroup.setTitle(title);
-
-        Image image = new Image(RibbonBuilder.class.getResource("/images/bc.png").toExternalForm());
-        ImageView imageView = new ImageView(image);
-        Button iconButton = new Button("Bold", imageView);
-        iconButton.setContentDisplay(ContentDisplay.TOP);
-        ribbonGroup.getNodes().add(iconButton);
-
-        image = new Image(RibbonBuilder.class.getResource("/images/extract.png").toExternalForm());
-        imageView = new ImageView(image);
-        iconButton = new Button("Italic", imageView);
-        iconButton.setContentDisplay(ContentDisplay.TOP);
-        ribbonGroup.getNodes().add(iconButton);
-
-
-        RibbonItem item = new RibbonItem();
-        item.setLabel("Filter: ");
-        image = new Image(RibbonBuilder.class.getResource("/images/merge.png").toExternalForm());
-        imageView = new ImageView(image);
-        item.setGraphic(imageView);
-        item.setItem(new TextField());
-        ribbonGroup.getNodes().add(item);
-
-
-        return ribbonGroup;
-    }
-
     //-- utility functions
 
     private RibbonGroup createGroup(String title, Node... nodes) {
@@ -248,13 +208,5 @@ public class RibbonBuilder  {
         Arrays.stream(nodes).forEach(node -> node.setMaxWidth(Double.MAX_VALUE));
         column.getChildren().addAll(nodes);
         return column;
-    }
-
-    private RibbonGroup createDemoMenuGroup() {
-        RibbonGroup ribbonGroup = new RibbonGroup();
-        MenuButton number = new MenuButton("Number");
-        number.getItems().addAll(new MenuItem("test1"), new MenuItem("test2"), new MenuItem("test3"), new MenuItem("test4"));
-        ribbonGroup.getNodes().add(number);
-        return ribbonGroup;
     }
 }
