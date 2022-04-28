@@ -5,13 +5,17 @@ import com.pixelduke.control.ribbon.Column;
 import com.pixelduke.control.ribbon.RibbonGroup;
 import com.pixelduke.control.ribbon.RibbonItem;
 import com.pixelduke.control.ribbon.RibbonTab;
+import de.jensd.fx.glyphs.GlyphIcons;
+import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Region;
+import javafx.scene.text.Text;
 import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.PreferencesController;
@@ -35,19 +39,17 @@ public class RibbonBuilder  {
     }
 
     public Ribbon create() {
+        //TODO find a way to go to CHART when a data is opened, and back to HOME when everything is closed
+
         Ribbon ribbon = new Ribbon();
         ribbon.getTabs().add(createHomeTab());
+        ribbon.getTabs().add(createChartTab());
         ribbon.getTabs().add(createDemoTab());
 
         return ribbon;
     }
 
-    private RibbonTab createDemoTab() {
-        RibbonTab demo = new RibbonTab("DEMO");
-        demo.getRibbonGroups().add(createDemoGroup("Test"));
-        demo.getRibbonGroups().add(createDemoMenuGroup());
-        return demo;
-    }
+    //-- home
 
     private RibbonTab createHomeTab() {
         RibbonTab home = new RibbonTab("HOME");
@@ -115,54 +117,52 @@ public class RibbonBuilder  {
         return createGroup("Settings", preferences);
     }
 
-    private RibbonGroup createGroup(String title, Node... nodes) {
-        RibbonGroup group = new RibbonGroup();
-        group.setTitle(title);
-        group.getNodes().addAll(nodes);
-        return group;
+    //-- chart tab
+
+    private RibbonTab createChartTab() {
+        RibbonTab chart = new RibbonTab("CHART");
+        chart.getRibbonGroups().add(createChartZoomGroup());
+        chart.getRibbonGroups().add(createChartScaleGroup());
+        //TODO replace toolbar actions
+        //Refresh
+        //Halt
+        //Undo/Redo
+
+        return chart;
     }
 
-    private Button createSmallButton(String title, String resource, EventHandler<ActionEvent> onAction) {
-        Button button = createButton(title, resource, onAction);
-        button.setContentDisplay(ContentDisplay.LEFT);
-        return button;
+    private RibbonGroup createChartZoomGroup() {
+        Button full = createButton( "Full", FontAwesomeIcon.EXPAND, e -> FXMLController.getActiveController().doFull(e));
+        Button expand = createButton("Expand", FontAwesomeIcon.SEARCH, e -> FXMLController.getActiveController().doExpand(e));
+
+        Button zoomIn = createButton("In", FontAwesomeIcon.SEARCH_MINUS, e -> FXMLController.getActiveController().doZoom(e, 1.2));
+        zoomIn.setOnScroll(actions::zoomOnScroll);
+
+        Button zoomOut =createButton("Out", FontAwesomeIcon.SEARCH_PLUS, e -> FXMLController.getActiveController().doZoom(e, 0.8));
+        zoomOut.setOnScroll(actions::zoomOnScroll);
+
+        return createGroup("Zoom",
+                column(full, zoomIn),
+                column(expand, zoomOut));
     }
 
-    private Button createButton(String title, String resource, EventHandler<ActionEvent> onAction) {
-        Button button = Optional.ofNullable(resource)
-                .map(getClass()::getResource)
-                .map(URL::toExternalForm)
-                .map(Image::new)
-                .map(ImageView::new)
-                .map(imageView -> new Button(title, imageView))
-                .orElseGet(() -> new Button(title));
+    private RibbonGroup createChartScaleGroup() {
+        Button auto = createButton( "Auto", FontAwesomeIcon.ARROWS_V, e -> FXMLController.getActiveController().doScale(e, 0.0));
+        Button higher = createButton( "Higher", FontAwesomeIcon.ARROW_UP, e -> FXMLController.getActiveController().doScale(e, 0.8));
+        higher.setOnScroll(actions::scaleOnScroll);
+        Button lower = createButton( "Lower", FontAwesomeIcon.ARROW_DOWN, e -> FXMLController.getActiveController().doScale(e, 1.2));
+        lower.setOnScroll(actions::scaleOnScroll);
 
-        button.setContentDisplay(ContentDisplay.TOP);
-        button.setStyle("-fx-font-weight: normal;");
-        button.setOnAction(onAction);
-
-        return button;
+        return createGroup("Scale", auto, higher, lower);
     }
 
-    private MenuItem createMenuItem(String title, EventHandler<ActionEvent> onAction) {
-        MenuItem exportPdf = new MenuItem(title);
-        exportPdf.setOnAction(onAction);
-        return exportPdf;
-    }
+    //-- demo
 
-    private Column column(Region... nodes) {
-        Column column = new Column();
-        Arrays.stream(nodes).forEach(node -> node.setMaxWidth(Double.MAX_VALUE));
-        column.getChildren().addAll(nodes);
-        return column;
-    }
-
-    private RibbonGroup createDemoMenuGroup() {
-        RibbonGroup ribbonGroup = new RibbonGroup();
-        MenuButton number = new MenuButton("Number");
-        number.getItems().addAll(new MenuItem("test1"), new MenuItem("test2"), new MenuItem("test3"), new MenuItem("test4"));
-        ribbonGroup.getNodes().add(number);
-        return ribbonGroup;
+    private RibbonTab createDemoTab() {
+        RibbonTab demo = new RibbonTab("DEMO");
+        demo.getRibbonGroups().add(createDemoGroup("Test"));
+        demo.getRibbonGroups().add(createDemoMenuGroup());
+        return demo;
     }
 
     private RibbonGroup createDemoGroup(String title) {
@@ -191,6 +191,70 @@ public class RibbonBuilder  {
         ribbonGroup.getNodes().add(item);
 
 
+        return ribbonGroup;
+    }
+
+    //-- utility functions
+
+    private RibbonGroup createGroup(String title, Node... nodes) {
+        RibbonGroup group = new RibbonGroup();
+        group.setTitle(title);
+        group.getNodes().addAll(nodes);
+        return group;
+    }
+
+    private Button createSmallButton(String title, String resource, EventHandler<ActionEvent> onAction) {
+        Button button = createButton(title, resource, onAction);
+        button.setContentDisplay(ContentDisplay.LEFT);
+        return button;
+    }
+
+
+    public Button createButton(String title, GlyphIcons icon, EventHandler<MouseEvent> onClick) {
+        Text text = new Text(icon.characterToString());
+        text.getStyleClass().add("glyph-icon");
+        text.setStyle(String.format("-fx-font-family: %s; -fx-font-size: %s;", icon.getFontFamily(), "16px"));
+
+        Button button = new Button(title, text);
+        button.setContentDisplay(ContentDisplay.TOP);
+        button.setStyle("-fx-font-weight: normal;");
+        button.setOnMouseClicked(onClick);
+        return button;
+    }
+
+    private Button createButton(String title, String resource, EventHandler<ActionEvent> onAction) {
+        Button button = Optional.ofNullable(resource)
+                .map(getClass()::getResource)
+                .map(URL::toExternalForm)
+                .map(Image::new)
+                .map(ImageView::new)
+                .map(imageView -> new Button(title, imageView))
+                .orElseGet(() -> new Button(title));
+
+        button.setContentDisplay(ContentDisplay.TOP);
+        button.setStyle("-fx-font-weight: normal;");
+        button.setOnAction(onAction);
+        return button;
+    }
+
+    private MenuItem createMenuItem(String title, EventHandler<ActionEvent> onAction) {
+        MenuItem exportPdf = new MenuItem(title);
+        exportPdf.setOnAction(onAction);
+        return exportPdf;
+    }
+
+    private Column column(Region... nodes) {
+        Column column = new Column();
+        Arrays.stream(nodes).forEach(node -> node.setMaxWidth(Double.MAX_VALUE));
+        column.getChildren().addAll(nodes);
+        return column;
+    }
+
+    private RibbonGroup createDemoMenuGroup() {
+        RibbonGroup ribbonGroup = new RibbonGroup();
+        MenuButton number = new MenuButton("Number");
+        number.getItems().addAll(new MenuItem("test1"), new MenuItem("test2"), new MenuItem("test3"), new MenuItem("test4"));
+        ribbonGroup.getNodes().add(number);
         return ribbonGroup;
     }
 }

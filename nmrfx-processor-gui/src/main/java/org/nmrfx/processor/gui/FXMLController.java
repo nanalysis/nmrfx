@@ -1569,7 +1569,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
 
     }
 
-    List<PolyChart> getCharts(boolean all) {
+    public List<PolyChart> getCharts(boolean all) {
         if (all) {
             return charts;
         } else {

@@ -1,10 +1,14 @@
 package org.nmrfx.analyst.gui.ribbon;
 
+import javafx.scene.input.ScrollEvent;
 import javafx.stage.Stage;
 import org.nmrfx.analyst.gui.DatasetBrowserController;
 import org.nmrfx.console.ConsoleController;
 import org.nmrfx.processor.gui.FXMLController;
+import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.ProcessorController;
+
+import java.util.List;
 
 /**
  * Actions used by the ribbon that are not already accessible from elsewhere.
@@ -42,5 +46,19 @@ public class RibbonActions {
         } else {
             controller.show();
         }
+    }
+
+    public void zoomOnScroll(ScrollEvent event) {
+        double y = event.getDeltaY();
+        double factor = y < 0 ? 1.1 : 0.9;
+        FXMLController.getActiveController().getActiveChart().zoom(factor);
+    }
+
+    public void scaleOnScroll(ScrollEvent event) {
+        double y = event.getDeltaY();
+        double factor = y < 0 ? 0.9 : 1.1;
+
+        List<PolyChart> charts = FXMLController.getActiveController().getCharts(event.isShiftDown());
+        charts.forEach(applyChart -> applyChart.adjustScale(factor));
     }
 }
