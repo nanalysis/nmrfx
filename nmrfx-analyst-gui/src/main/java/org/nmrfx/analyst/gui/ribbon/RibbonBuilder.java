@@ -3,6 +3,7 @@ package org.nmrfx.analyst.gui.ribbon;
 import com.pixelduke.control.Ribbon;
 import com.pixelduke.control.ribbon.Column;
 import com.pixelduke.control.ribbon.RibbonGroup;
+import com.pixelduke.control.ribbon.RibbonItem;
 import com.pixelduke.control.ribbon.RibbonTab;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
@@ -10,8 +11,14 @@ import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.layout.Region;
+import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.PreferencesController;
+
+import java.net.URL;
+import java.util.Arrays;
+import java.util.Optional;
 
 /**
  * Ribbon structure:
@@ -20,7 +27,12 @@ import org.nmrfx.processor.gui.PreferencesController;
  * - RibbonGroup inside a tab, each group is a block of icons or other widgets
  */
 public class RibbonBuilder  {
-    private RibbonActions actions = new RibbonActions();
+    private final AnalystApp app;
+    private final RibbonActions actions = new RibbonActions();
+
+    public RibbonBuilder(AnalystApp app) {
+        this.app = app;
+    }
 
     public Ribbon create() {
         Ribbon ribbon = new Ribbon();
@@ -33,7 +45,6 @@ public class RibbonBuilder  {
     private RibbonTab createDemoTab() {
         RibbonTab demo = new RibbonTab("DEMO");
         demo.getRibbonGroups().add(createDemoGroup("Test"));
-        demo.getRibbonGroups().add(createDemoGroup("Two"));
         demo.getRibbonGroups().add(createDemoMenuGroup());
         return demo;
     }
@@ -42,6 +53,7 @@ public class RibbonBuilder  {
         RibbonTab home = new RibbonTab("HOME");
         home.getRibbonGroups().add(createHomeOpenGroup());
         home.getRibbonGroups().add(createHomeExportGroup());
+        home.getRibbonGroups().add(createHomePreferencesGroup());
 
         //TODO handle easy/advanced mode. Missing advanced options
         /*
@@ -69,24 +81,27 @@ public class RibbonBuilder  {
         openDataset.setOnAction(e -> FXMLController.getActiveController().openDatasetAction(e));
         openDataset.getItems().setAll(recentDatasets.getItems());
 
-        Button browser = new Button("Browser...");
-        browser.setOnAction(e -> actions.showDataBrowser());
+        Button browser = createSmallButton("Browser...", "16x16/data-browser.png", e -> actions.showDataBrowser());
 
-        Column column = new Column();
-        column.getChildren().addAll(openFid, openDataset, browser);
-
-        return createGroup("Open", column);
+        return createGroup("Open", column(openFid, openDataset, browser));
     }
 
     private RibbonGroup createHomeExportGroup() {
-        MenuButton export = new MenuButton("Export");
-        export.disableProperty().bind(FXMLController.activeController.isNull());
-        export.getItems().addAll(
-                createMenuItem("Export PDF...", e -> FXMLController.getActiveController().exportPDFAction(e)),
-                createMenuItem("Export SVG...", e -> FXMLController.getActiveController().exportSVGAction(e)),
-                createMenuItem("Export PNG...", e -> FXMLController.getActiveController().exportPNG(e)));
+        Button pdf = createSmallButton("PDF", "16x16/export-pdf.png", e -> FXMLController.getActiveController().exportPDFAction(e));
+        pdf.disableProperty().bind(FXMLController.activeController.isNull());
 
-        return createGroup("Export", export);
+        Button svg = createSmallButton("SVG", "16x16/export-svg.png", e -> FXMLController.getActiveController().exportSVGAction(e));
+        svg.disableProperty().bind(FXMLController.activeController.isNull());
+
+        Button png = createSmallButton("PNG", "16x16/export-png.png", e -> FXMLController.getActiveController().exportPNG(e));
+        png.disableProperty().bind(FXMLController.activeController.isNull());
+
+        return createGroup("Export", column(pdf, svg, png));
+    }
+
+    private RibbonGroup createHomePreferencesGroup() {
+        Button preferences = createButton("Preferences...", "48x48/settings.png", app::showPreferences);
+        return createGroup("Settings", preferences);
     }
 
     private RibbonGroup createGroup(String title, Node... nodes) {
@@ -96,10 +111,39 @@ public class RibbonBuilder  {
         return group;
     }
 
+    private Button createSmallButton(String title, String resource, EventHandler<ActionEvent> onAction) {
+        Button button = createButton(title, resource, onAction);
+        button.setContentDisplay(ContentDisplay.LEFT);
+        return button;
+    }
+
+    private Button createButton(String title, String resource, EventHandler<ActionEvent> onAction) {
+        Button button = Optional.ofNullable(resource)
+                .map(getClass()::getResource)
+                .map(URL::toExternalForm)
+                .map(Image::new)
+                .map(ImageView::new)
+                .map(imageView -> new Button(title, imageView))
+                .orElseGet(() -> new Button(title));
+
+        button.setContentDisplay(ContentDisplay.TOP);
+        button.setStyle("-fx-font-weight: normal;");
+        button.setOnAction(onAction);
+
+        return button;
+    }
+
     private MenuItem createMenuItem(String title, EventHandler<ActionEvent> onAction) {
         MenuItem exportPdf = new MenuItem(title);
         exportPdf.setOnAction(onAction);
         return exportPdf;
+    }
+
+    private Column column(Region... nodes) {
+        Column column = new Column();
+        Arrays.stream(nodes).forEach(node -> node.setMaxWidth(Double.MAX_VALUE));
+        column.getChildren().addAll(nodes);
+        return column;
     }
 
     private RibbonGroup createDemoMenuGroup() {
@@ -126,12 +170,16 @@ public class RibbonBuilder  {
         iconButton.setContentDisplay(ContentDisplay.TOP);
         ribbonGroup.getNodes().add(iconButton);
 
+
+        RibbonItem item = new RibbonItem();
+        item.setLabel("Filter: ");
         image = new Image(RibbonBuilder.class.getResource("/images/merge.png").toExternalForm());
         imageView = new ImageView(image);
-        iconButton = new Button("Underline", imageView);
-        iconButton.setContentDisplay(ContentDisplay.TOP);
-        iconButton.setMinSize(Button.USE_PREF_SIZE, Button.USE_PREF_SIZE);
-        ribbonGroup.getNodes().add(iconButton);
+        item.setGraphic(imageView);
+        item.setItem(new TextField());
+        ribbonGroup.getNodes().add(item);
+
+
         return ribbonGroup;
     }
 }

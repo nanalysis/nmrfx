@@ -182,7 +182,7 @@ public class AnalystApp extends MainApp {
 
     public Ribbon makeRibbon(String appName) {
         // TODO NMR-5099 create ribbon for analyst gui, see how to handle actions
-        return new RibbonBuilder().create();
+        return new RibbonBuilder(this).create();
     }
 
     @Override
@@ -481,7 +481,7 @@ public class AnalystApp extends MainApp {
     }
 
     @FXML
-    private void showPreferences(ActionEvent event) {
+    public void showPreferences(ActionEvent event) {
         if (preferencesController == null) {
             preferencesController = PreferencesController.create(stages.get(0));
             addPrefs();
