@@ -6,6 +6,8 @@ import com.pixelduke.control.ribbon.RibbonGroup;
 import com.pixelduke.control.ribbon.RibbonTab;
 import de.jensd.fx.glyphs.GlyphIcons;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
+import javafx.css.StyleOrigin;
+import javafx.css.StyleableProperty;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.scene.Node;
@@ -14,6 +16,7 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Region;
+import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
 import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.processor.gui.FXMLController;
@@ -41,10 +44,34 @@ public class RibbonBuilder  {
         //TODO find a way to go to CHART when a data is opened, and back to HOME when everything is closed
 
         Ribbon ribbon = new Ribbon();
+        setupToggleButton(ribbon);
+
         ribbon.getTabs().add(createHomeTab());
         ribbon.getTabs().add(createChartTab());
 
         return ribbon;
+    }
+
+    private void setupToggleButton(Ribbon ribbon) {
+        Node iconHide = glyphIconToNode(FontAwesomeIcon.ANGLE_DOUBLE_UP);
+        Node iconShow = glyphIconToNode(FontAwesomeIcon.ANGLE_DOUBLE_DOWN);
+        Button toggle = new Button("", iconHide);
+
+        // Ribbon structure: {outer-container:VBox {QuickAccessBar, TabPane}}
+        // find the TabPane and toggle its visible flag, adjust button icon accordingly
+        toggle.setOnAction(e -> ribbon.getChildrenUnmodifiable().stream()
+                .filter(node -> node instanceof VBox)
+                .flatMap(node -> ((VBox) node).getChildrenUnmodifiable().stream())
+                .filter(node -> node instanceof TabPane)
+                .findFirst()
+                .ifPresent(tabs -> {
+                    tabs.setVisible(!tabs.isVisible());
+                    tabs.setManaged(tabs.isVisible());
+                    toggle.setGraphic(tabs.isVisible() ? iconHide : iconShow);
+                }));
+
+        //TODO find a way to show this button at the same level as group names instead of the quick access bar
+        ribbon.getQuickAccessBar().getRightButtons().add(toggle);
     }
 
     //-- home
@@ -171,15 +198,18 @@ public class RibbonBuilder  {
 
 
     public Button createButton(String title, GlyphIcons icon, EventHandler<MouseEvent> onClick) {
-        Text text = new Text(icon.characterToString());
-        text.getStyleClass().add("glyph-icon");
-        text.setStyle(String.format("-fx-font-family: %s; -fx-font-size: %s;", icon.getFontFamily(), "16px"));
-
-        Button button = new Button(title, text);
+        Button button = new Button(title, glyphIconToNode(icon));
         button.setContentDisplay(ContentDisplay.TOP);
         button.setStyle("-fx-font-weight: normal;");
         button.setOnMouseClicked(onClick);
         return button;
+    }
+
+    private Node glyphIconToNode(GlyphIcons icon) {
+        Text text = new Text(icon.characterToString());
+        text.getStyleClass().add("glyph-icon");
+        text.setStyle(String.format("-fx-font-family: %s; -fx-font-size: %s;", icon.getFontFamily(), "16px"));
+        return text;
     }
 
     private Button createButton(String title, String resource, EventHandler<ActionEvent> onAction) {
