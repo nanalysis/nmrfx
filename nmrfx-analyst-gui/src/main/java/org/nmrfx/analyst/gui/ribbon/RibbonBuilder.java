@@ -6,6 +6,7 @@ import com.pixelduke.control.ribbon.RibbonGroup;
 import com.pixelduke.control.ribbon.RibbonTab;
 import de.jensd.fx.glyphs.GlyphIcons;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
+import javafx.animation.TranslateTransition;
 import javafx.css.StyleOrigin;
 import javafx.css.StyleableProperty;
 import javafx.event.ActionEvent;
@@ -18,6 +19,7 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
+import javafx.util.Duration;
 import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.PreferencesController;
@@ -57,17 +59,34 @@ public class RibbonBuilder  {
         Node iconShow = glyphIconToNode(FontAwesomeIcon.ANGLE_DOUBLE_DOWN);
         Button toggle = new Button("", iconHide);
 
+
         // Ribbon structure: {outer-container:VBox {QuickAccessBar, TabPane}}
         // find the TabPane and toggle its visible flag, adjust button icon accordingly
         toggle.setOnAction(e -> ribbon.getChildrenUnmodifiable().stream()
                 .filter(node -> node instanceof VBox)
                 .flatMap(node -> ((VBox) node).getChildrenUnmodifiable().stream())
                 .filter(node -> node instanceof TabPane)
+                .map(node -> (TabPane)node)
                 .findFirst()
                 .ifPresent(tabs -> {
-                    tabs.setVisible(!tabs.isVisible());
-                    tabs.setManaged(tabs.isVisible());
-                    toggle.setGraphic(tabs.isVisible() ? iconHide : iconShow);
+                    var transition = new TranslateTransition(Duration.millis(250), tabs);
+                    int direction = tabs.isVisible() ? -1 : 1;
+                    transition.setByY(tabs.getHeight() * direction);
+                    if(tabs.isVisible()) {
+                        // fully hide after transition
+                        transition.setOnFinished(event -> {
+                            tabs.setVisible(false);
+                            tabs.setManaged(false);
+                            toggle.setGraphic(iconShow);
+                        });
+                    } else {
+                        // show before transition, otherwise nothing will appear
+                        tabs.setVisible(true);
+                        tabs.setManaged(true);
+                        toggle.setGraphic(iconHide);
+                    }
+
+                    transition.play();
                 }));
 
         //TODO find a way to show this button at the same level as group names instead of the quick access bar
