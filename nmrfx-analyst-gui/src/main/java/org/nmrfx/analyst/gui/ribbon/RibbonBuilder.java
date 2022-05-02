@@ -22,6 +22,7 @@ import org.nmrfx.processor.gui.controls.GridPaneCanvas;
 import org.nmrfx.ribbon.NmrFxRibbon;
 
 import java.net.URL;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Optional;
 
@@ -56,6 +57,7 @@ public class RibbonBuilder {
     private RibbonTab createHomeTab() {
         RibbonTab home = new RibbonTab("HOME");
         home.getRibbonGroups().add(createHomeOpenGroup());
+        home.getRibbonGroups().add(createHomeProjectGroup());
         home.getRibbonGroups().add(createHomeExportGroup()); //XXX looks strange to have exports here
         home.getRibbonGroups().add(createHomeViewGroup());
         home.getRibbonGroups().add(createHomeWindowGroup());
@@ -91,6 +93,28 @@ public class RibbonBuilder {
         Button browser = createSmallButton("Browser...", "16x16/data-browser.png", e -> actions.showDataBrowser());
 
         return createGroup("Open", column(openFid, openDataset, browser));
+    }
+
+
+    private RibbonGroup createHomeProjectGroup() {
+        SplitMenuButton openProject = new SplitMenuButton();
+        openProject.setText("Open...");
+        openProject.setOnAction(e -> actions.loadProject());
+
+        PreferencesController.getRecentProjects().stream()
+                .map(this::createRecentProjectMenuItem)
+                .forEach(openProject.getItems()::add);
+
+        return createGroup("Project", openProject);
+    }
+
+    private MenuItem createRecentProjectMenuItem(Path path) {
+        int count = path.getNameCount();
+        int first = count - 3;
+        first = Math.max(first, 0);
+
+        String name = path.subpath(first, count).toString();
+        return createMenuItem(name, e -> actions.loadProjectFromPath(path));
     }
 
     private RibbonGroup createHomeExportGroup() {

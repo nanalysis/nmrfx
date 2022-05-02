@@ -1,20 +1,26 @@
 package org.nmrfx.analyst.gui.ribbon;
 
+import javafx.event.ActionEvent;
 import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.VBox;
+import javafx.stage.DirectoryChooser;
 import javafx.stage.Stage;
+import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.analyst.gui.DatasetBrowserController;
 import org.nmrfx.analyst.gui.spectra.StripController;
+import org.nmrfx.chemistry.io.MoleculeIOException;
 import org.nmrfx.console.ConsoleController;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.ProcessorController;
+import org.nmrfx.processor.gui.project.GUIProject;
 import org.nmrfx.processor.gui.spectra.WindowIO;
 import org.nmrfx.project.ProjectBase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
@@ -128,5 +134,27 @@ public class RibbonActions {
 
     public void showAboutDialog() {
         AnalystApp.createAboutStage().show();
+    }
+
+    public void loadProject() {
+        DirectoryChooser chooser = new DirectoryChooser();
+        chooser.setTitle("Project Chooser");
+        File directoryFile = chooser.showDialog(null);
+        if (directoryFile != null) {
+            loadProjectFromPath(directoryFile.toPath());
+        }
+    }
+
+    public void loadProjectFromPath(Path path) {
+        if (path != null) {
+            String projectName = path.getFileName().toString();
+            GUIProject project = new GUIProject(projectName);
+            try {
+                project.loadGUIProject(path);
+            } catch (IOException | MoleculeIOException | IllegalStateException ex) {
+                ExceptionDialog dialog = new ExceptionDialog(ex);
+                dialog.showAndWait();
+            }
+        }
     }
 }
