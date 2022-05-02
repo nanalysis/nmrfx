@@ -1,14 +1,11 @@
 package org.nmrfx.analyst.gui.ribbon;
 
-import com.pixelduke.control.Ribbon;
 import com.pixelduke.control.ribbon.Column;
 import com.pixelduke.control.ribbon.RibbonGroup;
 import com.pixelduke.control.ribbon.RibbonTab;
 import de.jensd.fx.glyphs.GlyphIcons;
+import de.jensd.fx.glyphs.GlyphsDude;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
-import javafx.animation.TranslateTransition;
-import javafx.css.StyleOrigin;
-import javafx.css.StyleableProperty;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.scene.Node;
@@ -17,12 +14,12 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Region;
-import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
-import javafx.util.Duration;
 import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.processor.gui.FXMLController;
+import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.PreferencesController;
+import org.nmrfx.processor.gui.controls.GridPaneCanvas;
 import org.nmrfx.ribbon.NmrFxRibbon;
 
 import java.net.URL;
@@ -35,7 +32,7 @@ import java.util.Optional;
  * - RibbonTab to set top level menus. Each tab can contain several groups
  * - RibbonGroup inside a tab, each group is a block of icons or other widgets
  */
-public class RibbonBuilder  {
+public class RibbonBuilder {
     private final AnalystApp app;
     private final RibbonActions actions = new RibbonActions();
 
@@ -60,8 +57,9 @@ public class RibbonBuilder  {
     private RibbonTab createHomeTab() {
         RibbonTab home = new RibbonTab("HOME");
         home.getRibbonGroups().add(createHomeOpenGroup());
-        home.getRibbonGroups().add(createHomeExportGroup());
+        home.getRibbonGroups().add(createHomeExportGroup()); //XXX looks strange to have exports here
         home.getRibbonGroups().add(createHomeViewGroup());
+        home.getRibbonGroups().add(createHomeWindowGroup());
         home.getRibbonGroups().add(createHomePreferencesGroup());
 
         //TODO handle easy/advanced mode. Missing advanced options
@@ -118,6 +116,11 @@ public class RibbonBuilder  {
         return createGroup("View", left, right);
     }
 
+    private RibbonGroup createHomeWindowGroup() {
+        Button newWindow = createButton("New", "32x32/new_window.png", e -> actions.createNewWindow());
+        return createGroup("Window", newWindow);
+    }
+
     private RibbonGroup createHomePreferencesGroup() {
         Button preferences = createButton("Preferences...", "32x32/interface_preferences.png", app::showPreferences);
         return createGroup("Settings", preferences);
@@ -138,13 +141,13 @@ public class RibbonBuilder  {
     }
 
     private RibbonGroup createChartZoomGroup() {
-        Button full = createButton( "Full", FontAwesomeIcon.EXPAND, e -> FXMLController.getActiveController().doFull(e));
+        Button full = createButton("Full", FontAwesomeIcon.EXPAND, e -> FXMLController.getActiveController().doFull(e));
         Button expand = createButton("Expand", FontAwesomeIcon.SEARCH, e -> FXMLController.getActiveController().doExpand(e));
 
         Button zoomIn = createButton("In", FontAwesomeIcon.SEARCH_MINUS, e -> FXMLController.getActiveController().doZoom(e, 1.2));
         zoomIn.setOnScroll(actions::zoomOnScroll);
 
-        Button zoomOut =createButton("Out", FontAwesomeIcon.SEARCH_PLUS, e -> FXMLController.getActiveController().doZoom(e, 0.8));
+        Button zoomOut = createButton("Out", FontAwesomeIcon.SEARCH_PLUS, e -> FXMLController.getActiveController().doZoom(e, 0.8));
         zoomOut.setOnScroll(actions::zoomOnScroll);
 
         return createGroup("Zoom",
@@ -153,10 +156,10 @@ public class RibbonBuilder  {
     }
 
     private RibbonGroup createChartScaleGroup() {
-        Button auto = createButton( "Auto", FontAwesomeIcon.ARROWS_V, e -> FXMLController.getActiveController().doScale(e, 0.0));
-        Button higher = createButton( "Higher", FontAwesomeIcon.ARROW_UP, e -> FXMLController.getActiveController().doScale(e, 0.8));
+        Button auto = createButton("Auto", FontAwesomeIcon.ARROWS_V, e -> FXMLController.getActiveController().doScale(e, 0.0));
+        Button higher = createButton("Higher", FontAwesomeIcon.ARROW_UP, e -> FXMLController.getActiveController().doScale(e, 0.8));
         higher.setOnScroll(actions::scaleOnScroll);
-        Button lower = createButton( "Lower", FontAwesomeIcon.ARROW_DOWN, e -> FXMLController.getActiveController().doScale(e, 1.2));
+        Button lower = createButton("Lower", FontAwesomeIcon.ARROW_DOWN, e -> FXMLController.getActiveController().doScale(e, 1.2));
         lower.setOnScroll(actions::scaleOnScroll);
 
         return createGroup("Scale", auto, higher, lower);
@@ -168,14 +171,56 @@ public class RibbonBuilder  {
         RibbonTab spectra = new RibbonTab("SPECTRA");
         //TODO looks like this could be part of CHART / VIEW tab
 
-        spectra.getRibbonGroups().add(createSpectraWindowGroup());
+        spectra.getRibbonGroups().add(createSpectraGridGroup());
+        spectra.getRibbonGroups().add(createSpectraLayoutGroup());
+        spectra.getRibbonGroups().add(createSpectraFavoriteGroup());
+        spectra.getRibbonGroups().add(createSpectraMiscGroup());
 
         return spectra;
     }
 
-    private RibbonGroup createSpectraWindowGroup() {
-        Button newWindow = createButton("New Window", "32x32/new_window.png", e -> actions.createNewWindow());
-        return createGroup("Window", newWindow);
+    private RibbonGroup createSpectraGridGroup() {
+        Button define = createSmallButton("Define...", "16x16/grid.png", e -> FXMLController.getActiveController().addGrid());
+        Button delete = createSmallButton("Delete selected", "16x16/application_delete.png", e -> FXMLController.getActiveController().getActiveChart().removeSelected());
+        Button overlay = createSmallButton("Overlay", null, e -> FXMLController.getActiveController().overlay());
+        return createGroup("Grid", column(define, delete, overlay));
+    }
+
+    private RibbonGroup createSpectraLayoutGroup() {
+        Button horizontal = createSmallButton("Horizontal", "16x16/layout_horizontal.png", e -> FXMLController.getActiveController().arrange(GridPaneCanvas.ORIENTATION.HORIZONTAL));
+        Button vertical = createSmallButton("Vertical", "16x16/layout_vertical.png", e -> FXMLController.getActiveController().arrange(GridPaneCanvas.ORIENTATION.VERTICAL));
+        Button grid = createSmallButton("Grid", "16x16/layout_grid.png", e -> FXMLController.getActiveController().arrange(GridPaneCanvas.ORIENTATION.GRID));
+
+        //XXX this should be a toggle button instead
+        Button minimizeBorders = createSmallButton("Minimize Borders", null, e -> FXMLController.getActiveController().setBorderState(true));
+        Button normalBorders = createSmallButton("Normal Borders", null, e -> FXMLController.getActiveController().setBorderState(false));
+
+        return createGroup("Grid Layout",
+                column(horizontal, vertical, grid),
+                column(minimizeBorders, normalBorders));
+    }
+
+    private RibbonGroup createSpectraFavoriteGroup() {
+        // XXX saving only works when a project is opened/saved. Shouldn't this be in a different tab then?
+        Button save = createButton("Save", FontAwesomeIcon.HEART, e -> actions.saveAsFavorite());
+        Button select = createSmallButton("Select...", null, e -> actions.showFavorites());
+        return createGroup("Favorites", column(save, select));
+    }
+
+    private RibbonGroup createSpectraMiscGroup() {
+        //XXX any way to unsync them later on?
+        Button syncAxes = createSmallButton("Sync Axes", null, e -> PolyChart.getActiveChart().syncSceneMates());
+
+        //XXX why isn't this in export?
+        Button copyAsSvg = createSmallButton("Copy as SVG", null, e -> FXMLController.getActiveController().copySVGAction(e));
+
+        //XXX not sure what these do
+        Button showStrips = createSmallButton("Show Strips", null, e -> actions.showStripsBar());
+        Button alignSpectra = createSmallButton("Align Spectra", null, e -> FXMLController.getActiveController().alignCenters());
+
+        return createGroup("Misc.",
+                column(syncAxes, copyAsSvg),
+                column(showStrips, alignSpectra));
     }
 
     //-- utility functions
@@ -190,9 +235,9 @@ public class RibbonBuilder  {
     private Button createSmallButton(String title, String resource, EventHandler<ActionEvent> onAction) {
         Button button = createButton(title, resource, onAction);
         button.setContentDisplay(ContentDisplay.LEFT);
+        button.setStyle(button.getStyle() + " -fx-alignment: center-left;");
         return button;
     }
-
 
     public Button createButton(String title, GlyphIcons icon, EventHandler<MouseEvent> onClick) {
         Button button = new Button(title, glyphIconToNode(icon));
