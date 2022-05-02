@@ -17,7 +17,6 @@
  */
 package org.nmrfx.analyst.gui;
 
-import com.pixelduke.control.Ribbon;
 import de.jangassen.MenuToolkit;
 import de.jangassen.dialogs.about.AboutStageBuilder;
 import de.jensd.fx.glyphs.GlyphsDude;
@@ -66,7 +65,7 @@ public class AnalystApp extends MainApp {
     private static final Logger log = LoggerFactory.getLogger(AnalystApp.class);
 
     private static final String version = null;
-    static String appName = "NMRFx Analyst";
+    public static String appName = "NMRFx Analyst";
     static AnalystApp analystApp = null;
     private static FileMenuActions fileMenuActions;
     private static MoleculeMenuActions molMenuActions;
@@ -170,7 +169,7 @@ public class AnalystApp extends MainApp {
         System.exit(0);
     }
 
-    Stage makeAbout(String appName) {
+    public static Stage createAboutStage() {
         AboutStageBuilder aboutStageBuilder = AboutStageBuilder.start("About " + appName)
                 .withAppName(appName).withCloseOnFocusLoss().withText("Processing for NMR Data")
                 .withVersionString("Version " + getVersion()).withCopyright("Copyright \u00A9 " + Calendar
@@ -198,7 +197,7 @@ public class AnalystApp extends MainApp {
         Menu appMenu = new Menu(appName); // Name for appMenu can't be set at
         // Runtime
         MenuItem aboutItem;
-        Stage aboutStage = makeAbout(appName);
+        Stage aboutStage = createAboutStage();
         if (tk != null) {
             aboutItem = tk.createAboutMenuItem(appName, aboutStage);
         } else {
@@ -445,19 +444,23 @@ public class AnalystApp extends MainApp {
     }
 
 
-    static void showDocAction(ActionEvent event) {
+    public static void showDocAction(ActionEvent event) {
         hostServices.showDocument("http://docs.nmrfx.org");
     }
 
-    static void showWebSiteAction(ActionEvent event) {
+    public static void showWebSiteAction(ActionEvent event) {
         hostServices.showDocument("http://nmrfx.org");
     }
 
-    static void showMailingListAction(ActionEvent event) {
+    public static void showMailingListAction(ActionEvent event) {
         hostServices.showDocument("https://groups.google.com/forum/#!forum/nmrfx-processor");
     }
 
-    static void showOpenSourceAction(ActionEvent event) {
+    public static void showPublicationAction(ActionEvent event) {
+        hostServices.showDocument("http://link.springer.com/article/10.1007/s10858-016-0049-6");
+    }
+
+    public static void showOpenSourceAction(ActionEvent event) {
         hostServices.showDocument("https://nmrfx.org/downloads/oss/dependencies.html");
     }
 

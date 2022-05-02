@@ -3,6 +3,7 @@ package org.nmrfx.analyst.gui.ribbon;
 import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
+import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.analyst.gui.DatasetBrowserController;
 import org.nmrfx.analyst.gui.spectra.StripController;
 import org.nmrfx.console.ConsoleController;
@@ -123,5 +124,9 @@ public class RibbonActions {
         FXMLController controller = FXMLController.getActiveController();
         controller.removeTool(StripController.class);
         controller.getBottomBox().getChildren().remove(stripsController.getBox());
+    }
+
+    public void showAboutDialog() {
+        AnalystApp.createAboutStage().show();
     }
 }

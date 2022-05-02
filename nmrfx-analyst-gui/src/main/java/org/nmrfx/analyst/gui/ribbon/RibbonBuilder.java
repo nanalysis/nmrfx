@@ -4,7 +4,6 @@ import com.pixelduke.control.ribbon.Column;
 import com.pixelduke.control.ribbon.RibbonGroup;
 import com.pixelduke.control.ribbon.RibbonTab;
 import de.jensd.fx.glyphs.GlyphIcons;
-import de.jensd.fx.glyphs.GlyphsDude;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
@@ -61,6 +60,7 @@ public class RibbonBuilder {
         home.getRibbonGroups().add(createHomeViewGroup());
         home.getRibbonGroups().add(createHomeWindowGroup());
         home.getRibbonGroups().add(createHomePreferencesGroup());
+        home.getRibbonGroups().add(createHomeHelpGroup());
 
         //TODO handle easy/advanced mode. Missing advanced options
         /*
@@ -124,6 +124,21 @@ public class RibbonBuilder {
     private RibbonGroup createHomePreferencesGroup() {
         Button preferences = createButton("Preferences...", "32x32/interface_preferences.png", app::showPreferences);
         return createGroup("Settings", preferences);
+    }
+
+    private RibbonGroup createHomeHelpGroup() {
+        Button about = createButton("About...", "32x32/help.png", e -> actions.showAboutDialog());
+        MenuButton more = new MenuButton("More...");
+        more.getItems().addAll(
+                createMenuItem("NMRFx Web Site...", AnalystApp::showWebSiteAction),
+                createMenuItem("Online Documentation...", AnalystApp::showDocAction),
+                createMenuItem("Mailing List Site...", AnalystApp::showMailingListAction),
+                createMenuItem("NMRFx Publication...", AnalystApp::showPublicationAction),
+                createMenuItem("Open Source Libraries...", AnalystApp::showOpenSourceAction),
+                createMenuItem("Check version...", e -> AnalystApp.getAnalystApp().showVersionAction(e))
+        );
+
+        return createGroup("Help", column(about, more));
     }
 
     //-- chart tab
