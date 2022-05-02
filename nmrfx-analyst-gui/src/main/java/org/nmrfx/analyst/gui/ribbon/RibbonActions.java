@@ -4,19 +4,27 @@ import javafx.event.ActionEvent;
 import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.VBox;
 import javafx.stage.DirectoryChooser;
+import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.analyst.gui.DatasetBrowserController;
 import org.nmrfx.analyst.gui.spectra.StripController;
+import org.nmrfx.chemistry.InvalidMoleculeException;
 import org.nmrfx.chemistry.io.MoleculeIOException;
+import org.nmrfx.chemistry.io.NMRStarReader;
+import org.nmrfx.chemistry.io.NMRStarWriter;
 import org.nmrfx.console.ConsoleController;
+import org.nmrfx.peaks.InvalidPeakException;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.ProcessorController;
 import org.nmrfx.processor.gui.project.GUIProject;
 import org.nmrfx.processor.gui.spectra.WindowIO;
 import org.nmrfx.project.ProjectBase;
+import org.nmrfx.star.ParseException;
+import org.nmrfx.utils.GUIUtils;
+import org.python.util.PythonInterpreter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,6 +32,8 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Map;
+import java.util.logging.Level;
 
 /**
  * Actions used by the ribbon that are not already accessible from elsewhere.
@@ -154,6 +164,91 @@ public class RibbonActions {
             } catch (IOException | MoleculeIOException | IllegalStateException ex) {
                 ExceptionDialog dialog = new ExceptionDialog(ex);
                 dialog.showAndWait();
+            }
+        }
+    }
+
+    public void saveProjectAs() {
+        FileChooser chooser = new FileChooser();
+        chooser.setTitle("Project Creator");
+        File directoryFile = chooser.showSaveDialog(null);
+        if (directoryFile != null) {
+            GUIProject activeProject = (GUIProject) AnalystApp.getActive();
+            if (activeProject != null) {
+                GUIProject newProject = GUIProject.replace(AnalystApp.getAppName(), activeProject);
+
+                try {
+                    newProject.createProject(directoryFile.toPath());
+                    newProject.saveProject();
+                } catch (IOException ex) {
+                    ExceptionDialog dialog = new ExceptionDialog(ex);
+                    dialog.showAndWait();
+                }
+            }
+        }
+    }
+
+    public void saveProject() {
+        GUIProject project = (GUIProject) AnalystApp.getActive();
+        if (project.hasDirectory()) {
+            try {
+                project.saveProject();
+            } catch (IOException ex) {
+                ExceptionDialog dialog = new ExceptionDialog(ex);
+                dialog.showAndWait();
+            }
+        }
+    }
+
+    public void closeProject() {
+        if (GUIUtils.affirm("Close all project information")) {
+            ((GUIProject) AnalystApp.getActive()).close();
+        }
+    }
+
+    public void readSTAR() {
+        FileChooser chooser = new FileChooser();
+        chooser.setTitle("Read STAR3 File");
+        File starFile = chooser.showOpenDialog(null);
+        if (starFile != null) {
+            try {
+                NMRStarReader.read(starFile);
+            } catch (ParseException ex) {
+                ExceptionDialog dialog = new ExceptionDialog(ex);
+                dialog.showAndWait();
+            }
+        }
+    }
+
+    public void writeSTAR() {
+        FileChooser chooser = new FileChooser();
+        chooser.setTitle("Write STAR3 File");
+        File starFile = chooser.showSaveDialog(null);
+        if (starFile != null) {
+            try {
+                NMRStarWriter.writeAll(starFile);
+            } catch (IOException | InvalidPeakException | InvalidMoleculeException ex) {
+                ExceptionDialog dialog = new ExceptionDialog(ex);
+                dialog.showAndWait();
+            } catch (org.nmrfx.star.ParseException ex) {
+                java.util.logging.Logger.getLogger(AnalystApp.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+    }
+
+    public void readSparkyProject() {
+        FileChooser chooser = new FileChooser();
+        chooser.setTitle("Read Sparky Project");
+        File sparkyFile = chooser.showOpenDialog(null);
+        Map<String, Object> pMap = null;
+        if (sparkyFile != null) {
+            try (PythonInterpreter interpreter = new PythonInterpreter()) {
+                interpreter.exec("import sparky");
+                String rdString;
+                interpreter.set("pMap", pMap);
+                interpreter.exec("sparky.pMap=pMap");
+                rdString = String.format("sparky.loadProjectFile('%s')", sparkyFile);
+                interpreter.exec(rdString);
             }
         }
     }

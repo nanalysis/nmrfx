@@ -45,6 +45,7 @@ public class RibbonBuilder {
 
         NmrFxRibbon ribbon = new NmrFxRibbon();
         ribbon.getTabs().add(createHomeTab());
+        ribbon.getTabs().add(createProjectTab());
         ribbon.getTabs().add(createChartTab());
         ribbon.getTabs().add(createSpectraTab());
 
@@ -57,7 +58,6 @@ public class RibbonBuilder {
     private RibbonTab createHomeTab() {
         RibbonTab home = new RibbonTab("HOME");
         home.getRibbonGroups().add(createHomeOpenGroup());
-        home.getRibbonGroups().add(createHomeProjectGroup());
         home.getRibbonGroups().add(createHomeExportGroup()); //XXX looks strange to have exports here
         home.getRibbonGroups().add(createHomeViewGroup());
         home.getRibbonGroups().add(createHomeWindowGroup());
@@ -93,28 +93,6 @@ public class RibbonBuilder {
         Button browser = createSmallButton("Browser...", "16x16/data-browser.png", e -> actions.showDataBrowser());
 
         return createGroup("Open", column(openFid, openDataset, browser));
-    }
-
-
-    private RibbonGroup createHomeProjectGroup() {
-        SplitMenuButton openProject = new SplitMenuButton();
-        openProject.setText("Open...");
-        openProject.setOnAction(e -> actions.loadProject());
-
-        PreferencesController.getRecentProjects().stream()
-                .map(this::createRecentProjectMenuItem)
-                .forEach(openProject.getItems()::add);
-
-        return createGroup("Project", openProject);
-    }
-
-    private MenuItem createRecentProjectMenuItem(Path path) {
-        int count = path.getNameCount();
-        int first = count - 3;
-        first = Math.max(first, 0);
-
-        String name = path.subpath(first, count).toString();
-        return createMenuItem(name, e -> actions.loadProjectFromPath(path));
     }
 
     private RibbonGroup createHomeExportGroup() {
@@ -163,6 +141,53 @@ public class RibbonBuilder {
         );
 
         return createGroup("Help", column(about, more));
+    }
+
+    //-- project tab
+
+    private RibbonTab createProjectTab() {
+        RibbonTab project = new RibbonTab("PROJECT");
+        project.getRibbonGroups().add(createProjectProjectGroup());
+        project.getRibbonGroups().add(createProjectStar3Group());
+        project.getRibbonGroups().add(createProjectSparkyGroup());
+
+        return project;
+    }
+
+    private RibbonGroup createProjectProjectGroup() {
+        SplitMenuButton openProject = new SplitMenuButton();
+        openProject.setText("Open...");
+        openProject.setOnAction(e -> actions.loadProject());
+        PreferencesController.getRecentProjects().stream()
+                .map(this::createRecentProjectMenuItem)
+                .forEach(openProject.getItems()::add);
+
+        Button save = createSmallButton("Save", "16x16/file_save.png", e -> actions.saveProject());
+        Button saveAs = createSmallButton("Save As...", "16x16/file_save_as.png", e -> actions.saveProjectAs());
+        Button close = createSmallButton("Close", "16x16/close.png", e -> actions.closeProject());
+
+        return createGroup("Project", column(openProject),
+                column(save, saveAs, close));
+    }
+
+    private MenuItem createRecentProjectMenuItem(Path path) {
+        int count = path.getNameCount();
+        int first = count - 3;
+        first = Math.max(first, 0);
+
+        String name = path.subpath(first, count).toString();
+        return createMenuItem(name, e -> actions.loadProjectFromPath(path));
+    }
+
+    private RibbonGroup createProjectStar3Group() {
+        Button open = createSmallButton("Open...", "16x16/folder.png", e -> actions.readSTAR());
+        Button save = createSmallButton("Save...", "16x16/file_save.png", e -> actions.writeSTAR());
+        return createGroup("STAR3", column(open, save));
+    }
+
+    private RibbonGroup createProjectSparkyGroup() {
+        Button open = createSmallButton("Open...", "16x16/folder.png", e -> actions.readSparkyProject());
+        return createGroup("Sparky", open);
     }
 
     //-- chart tab
