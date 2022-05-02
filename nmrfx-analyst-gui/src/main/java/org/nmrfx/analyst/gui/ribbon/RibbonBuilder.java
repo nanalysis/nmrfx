@@ -5,6 +5,7 @@ import com.pixelduke.control.ribbon.RibbonGroup;
 import com.pixelduke.control.ribbon.RibbonTab;
 import de.jensd.fx.glyphs.GlyphIcons;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
+import javafx.beans.value.ObservableValue;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.scene.Node;
@@ -15,6 +16,7 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Region;
 import javafx.scene.text.Text;
 import org.nmrfx.analyst.gui.AnalystApp;
+import org.nmrfx.analyst.gui.peaks.PeakMenuActions;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.PreferencesController;
@@ -35,19 +37,23 @@ import java.util.Optional;
 public class RibbonBuilder {
     private final AnalystApp app;
     private final RibbonActions actions = new RibbonActions();
+    private final PeakMenuActions peakActions;
 
     public RibbonBuilder(AnalystApp app) {
         this.app = app;
+        peakActions = new PeakMenuActions(app, new Menu());
     }
 
     public NmrFxRibbon create() {
         //TODO find a way to go to CHART when a data is opened, and back to HOME when everything is closed
+        //TODO some items should be disabled on certain conditions (ex: when no chart present)
 
         NmrFxRibbon ribbon = new NmrFxRibbon();
         ribbon.getTabs().add(createHomeTab());
         ribbon.getTabs().add(createProjectTab());
         ribbon.getTabs().add(createChartTab());
         ribbon.getTabs().add(createSpectraTab());
+        ribbon.getTabs().add(createPeaksTab());
 
         return ribbon;
     }
@@ -285,6 +291,50 @@ public class RibbonBuilder {
         return createGroup("Misc.",
                 column(syncAxes, copyAsSvg),
                 column(showStrips, alignSpectra));
+    }
+
+    //-- peaks tab
+
+    private RibbonTab createPeaksTab() {
+        RibbonTab spectra = new RibbonTab("PEAKS");
+        //TODO remove dependency to PeakMenuAction, in particular to the checkbox it contains
+
+        //XXX this could move to HOME or CHART?
+        spectra.getRibbonGroups().add(createPeaksToolsGroup());
+
+        spectra.getRibbonGroups().add(createPeaksAssignGroup());
+        spectra.getRibbonGroups().add(createPeaksMiscGroup());
+
+        return spectra;
+    }
+
+    private RibbonGroup createPeaksToolsGroup() {
+        Button showPeakTool = createSmallButton("Peak Tool", null, e -> FXMLController.getActiveController().showPeakAttrAction(e));
+        Button showPeakTable = createSmallButton("Peak Table", null, e -> peakActions.showPeakTable());
+
+        return createGroup("Tools", column(showPeakTool, showPeakTable));
+    }
+
+    private RibbonGroup createPeaksAssignGroup() {
+        CheckBox assignOnPick = new CheckBox("Assign on Pick");
+        assignOnPick.selectedProperty().addListener((observable, oldValue, newValue) -> peakActions.checkAssignOnPick(newValue));
+
+        Button atomBrowser = createSmallButton("Atom Browser", null, e -> peakActions.showAtomBrowser());
+        atomBrowser.disableProperty().bind(FXMLController.activeController.isNull());
+
+        //XXX this is a no-op
+        //Button runAboutMenuItem = createSmallButton("Show RunAboutX", null, e -> peakActions.showRunAbout());
+
+        return createGroup("Assign", column(assignOnPick, atomBrowser));
+    }
+
+    private RibbonGroup createPeaksMiscGroup() {
+        Button linkPeakDimsMenuItem = createSmallButton("Link by Labels", null, e -> FXMLController.getActiveController().linkPeakDims());
+        Button ligandScannerMenuItem = createSmallButton("Show Ligand Scanner", null, e -> peakActions.showLigandScanner());
+        ligandScannerMenuItem.disableProperty().bind(FXMLController.activeController.isNull());
+
+        Button noeTableMenuItem = createSmallButton("Show NOE Table", null, e -> peakActions.showNOETable());
+        return createGroup("Misc.", column(linkPeakDimsMenuItem, ligandScannerMenuItem, noeTableMenuItem));
     }
 
     //-- utility functions

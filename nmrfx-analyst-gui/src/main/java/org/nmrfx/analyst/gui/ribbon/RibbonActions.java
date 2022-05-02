@@ -1,6 +1,5 @@
 package org.nmrfx.analyst.gui.ribbon;
 
-import javafx.event.ActionEvent;
 import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.VBox;
 import javafx.stage.DirectoryChooser;
@@ -9,6 +8,7 @@ import javafx.stage.Stage;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.analyst.gui.DatasetBrowserController;
+import org.nmrfx.analyst.gui.peaks.PeakTableController;
 import org.nmrfx.analyst.gui.spectra.StripController;
 import org.nmrfx.chemistry.InvalidMoleculeException;
 import org.nmrfx.chemistry.io.MoleculeIOException;
@@ -21,6 +21,7 @@ import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.ProcessorController;
 import org.nmrfx.processor.gui.project.GUIProject;
 import org.nmrfx.processor.gui.spectra.WindowIO;
+import org.nmrfx.processor.project.Project;
 import org.nmrfx.project.ProjectBase;
 import org.nmrfx.star.ParseException;
 import org.nmrfx.utils.GUIUtils;
@@ -41,9 +42,9 @@ import java.util.logging.Level;
 public class RibbonActions {
     private static final Logger log = LoggerFactory.getLogger(RibbonActions.class);
 
-    private static WindowIO windowIO = null;
+    private static WindowIO windowIO;
 
-    private DatasetBrowserController browserController = null;
+    private DatasetBrowserController browserController;
 
     public void showDataBrowser() {
         if (browserController == null) {
