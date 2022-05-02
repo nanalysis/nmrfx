@@ -157,7 +157,7 @@ public class RibbonBuilder  {
     }
 
     private RibbonGroup createHomePreferencesGroup() {
-        Button preferences = createButton("Preferences...", "48x48/settings.png", app::showPreferences);
+        Button preferences = createButton("Preferences...", "32x32/interface_preferences.png", app::showPreferences);
         return createGroup("Settings", preferences);
     }
 
