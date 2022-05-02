@@ -79,6 +79,7 @@ import org.nmrfx.processor.gui.controls.GridPaneCanvas;
 import org.nmrfx.processor.gui.spectra.*;
 import org.nmrfx.processor.gui.tools.SpectrumComparator;
 import org.nmrfx.processor.gui.undo.UndoManager;
+import org.nmrfx.ribbon.NmrFxRibbon;
 import org.nmrfx.utilities.DictionarySort;
 import org.nmrfx.utils.GUIUtils;
 import org.python.core.PyObject;
@@ -126,6 +127,8 @@ public class FXMLController implements  Initializable, PeakNavigable {
     private Slider vecNum1;
     @FXML
     private GridPane rightBox;
+    private NmrFxRibbon ribbon;
+
     private TextField[] rowTextBoxes = new TextField[0];
     private TextField fileIndexTextBox = new TextField();
     ToggleGroup rowToggleGroup = new ToggleGroup();
@@ -820,6 +823,10 @@ public class FXMLController implements  Initializable, PeakNavigable {
         return cancelButton;
     }
 
+    public NmrFxRibbon getRibbon() {
+        return ribbon;
+    }
+
     @FXML
     private void handleVecNum(Event event) {
         Slider slider = (Slider) event.getSource();
@@ -1311,7 +1318,8 @@ public class FXMLController implements  Initializable, PeakNavigable {
         rightBox.getChildren().remove(phaserBox);
         borderPane.setLeft(null);
 
-        topBar.getChildren().add(MainApp.getRibbon());
+        ribbon = MainApp.createRibbon();
+        topBar.getChildren().add(ribbon);
         plotContent.setMouseTransparent(true);
         PolyChart chart1 = new PolyChart(this, plotContent, canvas, peakCanvas, annoCanvas);
         activeChart = chart1;

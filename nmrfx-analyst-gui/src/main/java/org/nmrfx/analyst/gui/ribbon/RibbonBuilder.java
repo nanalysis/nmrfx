@@ -23,6 +23,7 @@ import javafx.util.Duration;
 import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.PreferencesController;
+import org.nmrfx.ribbon.NmrFxRibbon;
 
 import java.net.URL;
 import java.util.Arrays;
@@ -42,56 +43,17 @@ public class RibbonBuilder  {
         this.app = app;
     }
 
-    public Ribbon create() {
+    public NmrFxRibbon create() {
         //TODO find a way to go to CHART when a data is opened, and back to HOME when everything is closed
 
-        Ribbon ribbon = new Ribbon();
-        setupToggleButton(ribbon);
-
+        NmrFxRibbon ribbon = new NmrFxRibbon();
         ribbon.getTabs().add(createHomeTab());
         ribbon.getTabs().add(createChartTab());
+        ribbon.getTabs().add(createSpectraTab());
 
         return ribbon;
     }
 
-    private void setupToggleButton(Ribbon ribbon) {
-        Node iconHide = glyphIconToNode(FontAwesomeIcon.ANGLE_DOUBLE_UP);
-        Node iconShow = glyphIconToNode(FontAwesomeIcon.ANGLE_DOUBLE_DOWN);
-        Button toggle = new Button("", iconHide);
-
-
-        // Ribbon structure: {outer-container:VBox {QuickAccessBar, TabPane}}
-        // find the TabPane and toggle its visible flag, adjust button icon accordingly
-        toggle.setOnAction(e -> ribbon.getChildrenUnmodifiable().stream()
-                .filter(node -> node instanceof VBox)
-                .flatMap(node -> ((VBox) node).getChildrenUnmodifiable().stream())
-                .filter(node -> node instanceof TabPane)
-                .map(node -> (TabPane)node)
-                .findFirst()
-                .ifPresent(tabs -> {
-                    var transition = new TranslateTransition(Duration.millis(250), tabs);
-                    int direction = tabs.isVisible() ? -1 : 1;
-                    transition.setByY(tabs.getHeight() * direction);
-                    if(tabs.isVisible()) {
-                        // fully hide after transition
-                        transition.setOnFinished(event -> {
-                            tabs.setVisible(false);
-                            tabs.setManaged(false);
-                            toggle.setGraphic(iconShow);
-                        });
-                    } else {
-                        // show before transition, otherwise nothing will appear
-                        tabs.setVisible(true);
-                        tabs.setManaged(true);
-                        toggle.setGraphic(iconHide);
-                    }
-
-                    transition.play();
-                }));
-
-        //TODO find a way to show this button at the same level as group names instead of the quick access bar
-        ribbon.getQuickAccessBar().getRightButtons().add(toggle);
-    }
 
     //-- home
 
@@ -198,6 +160,22 @@ public class RibbonBuilder  {
         lower.setOnScroll(actions::scaleOnScroll);
 
         return createGroup("Scale", auto, higher, lower);
+    }
+
+    //-- spectra tab
+
+    private RibbonTab createSpectraTab() {
+        RibbonTab spectra = new RibbonTab("SPECTRA");
+        //TODO looks like this could be part of CHART / VIEW tab
+
+        spectra.getRibbonGroups().add(createSpectraWindowGroup());
+
+        return spectra;
+    }
+
+    private RibbonGroup createSpectraWindowGroup() {
+        Button newWindow = createButton("New Window", "32x32/new_window.png", e -> actions.createNewWindow());
+        return createGroup("Window", newWindow);
     }
 
     //-- utility functions

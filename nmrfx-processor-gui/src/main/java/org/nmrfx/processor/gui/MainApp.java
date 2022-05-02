@@ -44,6 +44,7 @@ import org.nmrfx.processor.gui.log.Log;
 import org.nmrfx.processor.gui.project.GUIProject;
 import org.nmrfx.processor.utilities.WebConnect;
 import org.nmrfx.project.ProjectBase;
+import org.nmrfx.ribbon.NmrFxRibbon;
 import org.python.util.InteractiveInterpreter;
 
 import java.beans.PropertyChangeSupport;
@@ -176,7 +177,7 @@ public class MainApp extends Application {
         return mainApp.makeMenuBar(appName);
     }
 
-    public static Ribbon getRibbon() {
+    public static NmrFxRibbon createRibbon() {
         return mainApp.makeRibbon(appName);
     }
 
@@ -223,9 +224,9 @@ public class MainApp extends Application {
         return aboutStageBuilder.build();
     }
 
-    public Ribbon makeRibbon(String appName) {
+    public NmrFxRibbon makeRibbon(String appName) {
         // TODO NMR-5099 create ribbon for processor gui?
-        return new Ribbon();
+        return new NmrFxRibbon();
     }
 
     public MenuBar makeMenuBar(String appName) {

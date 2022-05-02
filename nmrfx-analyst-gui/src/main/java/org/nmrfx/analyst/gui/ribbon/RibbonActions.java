@@ -61,4 +61,9 @@ public class RibbonActions {
         List<PolyChart> charts = FXMLController.getActiveController().getCharts(event.isShiftDown());
         charts.forEach(applyChart -> applyChart.adjustScale(factor));
     }
+
+    public void createNewWindow() {
+        FXMLController controller = FXMLController.create();
+        controller.getRibbon().hideTabs();
+    }
 }

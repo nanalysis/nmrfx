@@ -53,6 +53,7 @@ import org.nmrfx.processor.gui.utils.FxPropertyChangeSupport;
 import org.nmrfx.processor.project.Project;
 import org.nmrfx.processor.utilities.WebConnect;
 import org.nmrfx.project.ProjectBase;
+import org.nmrfx.ribbon.NmrFxRibbon;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.structure.seqassign.RunAboutSaveFrameProcessor;
 import org.slf4j.Logger;
@@ -179,7 +180,7 @@ public class AnalystApp extends MainApp {
         return aboutStageBuilder.build();
     }
 
-    public Ribbon makeRibbon(String appName) {
+    public NmrFxRibbon makeRibbon(String appName) {
         return new RibbonBuilder(this).create();
     }
 
