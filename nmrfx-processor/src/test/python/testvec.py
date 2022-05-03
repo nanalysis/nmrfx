@@ -384,7 +384,7 @@ class TestVec(VecTestCase):
         #FIXME test vector.pt on resize of real / complex Vecs
         import warnings
         import org.nmrfx.math.IllegalVecState as IllegalVecState
-        warnings.warn("testResize doesn't test vector.pt on resize")
+        #warnings.warn("testResize doesn't test vector.pt on resize")
 
         v1 = Vec(1, False)
         self.assertEqual(v1.getSize(), 1) #size should be 1
@@ -453,4 +453,6 @@ class TestVec(VecTestCase):
             self.assertEqual(value.imag, float(index+1))
 
 if __name__ == '__main__':
-    unittest.main()
+    testProgram = unittest.main(exit=False)
+    result = testProgram.result
+

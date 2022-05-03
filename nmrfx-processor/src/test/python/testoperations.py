@@ -975,5 +975,10 @@ class TestOperations(unittest.TestCase):
         self.assert_(size == size3)
 
 
+#if __name__ == '__main__':
+#    unittest.main()
+
 if __name__ == '__main__':
-    unittest.main()
+    testProgram = unittest.main(exit=False)
+    result = testProgram.result
+

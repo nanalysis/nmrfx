@@ -19,4 +19,6 @@ class TestPyproc(unittest.TestCase):
         import pyproc
 
 if __name__ == '__main__':
-    unittest.main()
+    testProgram = unittest.main(exit=False)
+    result = testProgram.result
+
