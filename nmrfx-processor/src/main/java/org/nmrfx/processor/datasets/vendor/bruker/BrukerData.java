@@ -851,8 +851,7 @@ public class BrukerData implements NMRData {
             try {
                 if (acquFile.exists()) {
                     BrukerPar.processBrukerParFile(parMap, acquFile.toString(), i + 1, false);
-                    Integer iPar;
-                    if ((iPar = getParInt("TD," + (i + 1))) != null) {
+                    if (getParInt("TD," + (i + 1)) != null) {
                         acqdim++;
                     }
                 } else {
