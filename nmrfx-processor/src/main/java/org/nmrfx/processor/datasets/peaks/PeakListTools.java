@@ -1497,13 +1497,8 @@ public class PeakListTools {
             }
             firstPeak = false;
         }
-        if ((delays != null) && (delays.length > 0)) {
-            GuessValue gValue = new GuessValue(0.0, -0.5 * globalMax, 0.5 * globalMax, false);
-            guessList.add(0, gValue);
-        } else {
-            GuessValue gValue = new GuessValue(0.0, -0.5 * globalMax, 0.5 * globalMax, false);
-            guessList.add(0, gValue);
-        }
+        GuessValue gValue = new GuessValue(0.0, -0.5 * globalMax, 0.5 * globalMax, false);
+        guessList.add(0, gValue);
         // get a list of positions that are near the centers of each of the peaks
         ArrayList<int[]> posArray = theFile.getFilteredPositions(p2, cpt, width, pdim, multiplier);
         if (posArray.isEmpty()) {
@@ -1526,7 +1521,7 @@ public class PeakListTools {
         // adjust guesses for positions so they are relative to initial point
         // position in each dimension
         for (CenterRef centerRef : centerList) {
-            GuessValue gValue = guessList.get(centerRef.index);
+            gValue = guessList.get(centerRef.index);
             int offset = p2[centerRef.dim][0];
             gValue = new GuessValue(gValue.value - offset, gValue.lower - offset, gValue.upper - offset, gValue.floating);
             guessList.set(centerRef.index, gValue);
@@ -1551,11 +1546,11 @@ public class PeakListTools {
         double[] upper = new double[guess.length];
         boolean[] floating = new boolean[guess.length];
         i = 0;
-        for (GuessValue gValue : guessList) {
-            guess[i] = gValue.value;
-            lower[i] = gValue.lower;
-            upper[i] = gValue.upper;
-            floating[i] = gValue.floating;
+        for (GuessValue gVal : guessList) {
+            guess[i] = gVal.value;
+            lower[i] = gVal.lower;
+            upper[i] = gVal.upper;
+            floating[i] = gVal.floating;
             i++;
         }
         int nRates = nPlanes;

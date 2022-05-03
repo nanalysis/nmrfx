@@ -402,12 +402,7 @@ public class SampleSchedule {
         }
         if (k < nSamples) {
             int[] oSizes;
-            if (demo) {
-                oSizes = tmult.getOutSizes();
-            } else {
-//                oSizes = outMult.getOutSizes();
-                oSizes = tmult.getOutSizes();
-            }
+            oSizes = tmult.getOutSizes();
 
             int sampGroup = v_samples[k][nDim - 2];  // read from sample schedule
             for (int i = nDim - 2; i > 0; i--) {  // works for nDim=2 or 3; nDim>3 untested

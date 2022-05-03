@@ -753,13 +753,7 @@ public class PropertyManager {
                             ArrayList defaultList = (ArrayList) parMap.get("default");
                             //ListOperationItemTypeSelector typeSelector = new ListOperationItemTypeSelector(stringListener, (String) listTypes.get(0), listTypes, op, "listType", parDesc);
                             ListOperationItemTypeSelector typeSelector = null;
-
-                            if (listTypes == null || listTypes.isEmpty()) { // just a default list, so treat them as real values.
-                                lstItem = new ListOperationItem(listListener, defaultList, listTypes, op, name, parDesc, typeSelector);
-                            } else {
-                                lstItem = new ListOperationItem(listListener, defaultList, listTypes, op, name, parDesc, typeSelector);
-                            }
-
+                            lstItem = new ListOperationItem(listListener, defaultList, listTypes, op, name, parDesc, typeSelector);
                             propItems.add(lstItem);
                             //propItems.add(typeSelector);
                             //propItems.add(listItemTypeSelector(listType));
