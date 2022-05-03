@@ -963,7 +963,7 @@ public class PeakListTools {
         int nDataDim = datasets.get(0).getNDim();
         int nDim = peakList.getNDim();
         if (nDim == nDataDim) {
-            quantifyPeaks(peakList, datasets, f, mode, 1);  // fixme will this work
+            quantifyPeaks(peakList, datasets, f, mode, 1);
         } else if (nDim == (nDataDim - 1)) {
             int scanDim = 2;
             int nPlanes = datasets.get(0).getSizeTotal(scanDim);
@@ -1056,10 +1056,13 @@ public class PeakListTools {
     private static void measurePlanes(int nPlanes, Peak peak, Dataset dataset,
             java.util.function.Function<RegionData, Double> f,
             String mode, double[][] values, int iValue) {
-        int[] planes = new int[1];
+        int extraPlanes = dataset.getNDim() - peak.getNDim();
+        int[] planes = new int[extraPlanes];
         int[] pdim = peak.getPeakList().getDimsForDataset(dataset, true);
         for (int i = 0; i < nPlanes; i++) {
-            planes[0] = i;
+            if (planes.length > 0) {
+                planes[0] = i;
+            }
             try {
                 double[] value = peak.measurePeak(dataset, pdim, planes, f, mode);
                 values[0][iValue] = value[0];
@@ -1092,6 +1095,7 @@ public class PeakListTools {
     public static void setMeasureX(PeakList peakList, List<Dataset> datasets, int nValues) {
         double[] allValues = new double[nValues * datasets.size()];
         int j = 0;
+        int k = 0;
         for (Dataset dataset : datasets) {
             double[] pValues = null;
             for (int iDim = 0; iDim < dataset.getNDim(); iDim++) {
@@ -1103,7 +1107,7 @@ public class PeakListTools {
             if (pValues == null) {
                 pValues = new double[nValues];
                 for (int i = 0; i < pValues.length; i++) {
-                    pValues[i] = i;
+                    pValues[i] = k++;
                 }
             }
             for (int i = 0; i < pValues.length; i++) {
