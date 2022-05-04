@@ -52,11 +52,6 @@ public class PeakNeighbors {
 
     int nCells;
 
-//    private static final int[][] offsets = {{0, 0, 0}, {1, 0, 0}, {1, 1, 0}, {0, 1, 0}, {-1, 1, 0}, {0, 0, 1},
-//    {1, 0, 1}, {1, 1, 1}, {0, 1, 1}, {-1, 1, 1}, {-1, 0, 1},
-//    {-1, -1, 1}, {0, -1, 1}, {1, -1, 1}
-//    };
-    private static final int[][] OFFSETS2D = {{0, 0}, {-1, 0}, {-1, -1}, {0, -1}, {1, -1}};
     private static final int[][] OFFSETS2D_FULL = {{-1, -1}, {0, -1}, {1, -1}, {-1, 0}, {0, 0}, {1, 0}, {-1, 1}, {0, 1}, {1, 1}};
 
     public PeakNeighbors(PeakList peakList, int nCells, String[] dimNames) {
