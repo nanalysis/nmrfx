@@ -379,54 +379,6 @@ public class SampleSchedule {
         return nusIndex;
     }
 
-    /**
-     * Get next group of Vecs for processing. Input and output locations depend
-     * on demo mode. If demo, tmult contains correct input and output, but
-     * location depends on sample schedule (v_samples). If not demo, two
-     * MultiVecCounters are needed: tmult for input and outMult for output.
-     *
-     * @param vecGroup location in MultiVecCounter
-     * @param tmult input MultiVecCounter
-     * @return vecIndex contains input and output arrays
-     * @see MultiVecCounter
-     * @see VecIndex
-     */
-    public VecIndex getNextGroup(final int vecGroup, MultiVecCounter tmult) {
-        int groupSize = tmult.getGroupSize();
-        int[] inVecs = new int[groupSize];
-        int k = vecGroup;
-        VecIndex vecIndex = tmult.getNextGroup(vecGroup);
-        for (int i = 0; i < groupSize; i++) {
-            // inVecs[i] = vecIndex.inVecs[i];  // store inVecs, non-demo
-            inVecs[i] = vecGroup * groupSize + i;
-        }
-        if (k < nSamples) {
-            int[] oSizes;
-            oSizes = tmult.getOutSizes();
-
-            int sampGroup = v_samples[k][nDim - 2];  // read from sample schedule
-            for (int i = nDim - 2; i > 0; i--) {  // works for nDim=2 or 3; nDim>3 untested
-                sampGroup = oSizes[nDim - i - 1] * sampGroup + v_samples[k][i - 1];
-            }
-//            System.out.print(vecGroup + " " + sampGroup + " ");
-//            for (int i = 0; i < v_samples[k].length; i++) {
-//                System.out.print(v_samples[k][i] + " " + oSizes[i] + " ");
-//            }
-//            System.out.println("");
-//            tmult.findOutGroup(v_samples[k]);
-            if (demo) {
-                vecIndex = tmult.getNextGroup(sampGroup);  // get outVecs for demo
-            } else {
-                vecIndex = outMult.getNextGroup(sampGroup);  // get outVecs
-                for (int i = 0; i < groupSize; i++) {
-                    // seems incorrect for nDim == 3
-                    vecIndex.inVecs[i] = inVecs[i];         // copy inVecs
-                }
-            }
-        }
-        return vecIndex;
-    }
-
     public synchronized boolean reloadFile(String path, int vecSize) {
         boolean recreate = false;
         if (!fpath.equals(path) || vecSize != nPoints) {
