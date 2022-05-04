@@ -1399,16 +1399,6 @@ public class PeakListTools {
             }
 
             peak.getPeakRegion(theFile, pdim, p1, cpt[iPeak], width[iPeak]);
-//            System.out.println("fit " + peak);
-//            for (int i = 0; i < p2.length; i++) {
-//                System.out.println(i + " p1 " + p1[i][0] + " " + p1[i][1]);
-//                System.out.println(i + " p2 " + p2[i][0] + " " + p2[i][1]);
-//            }
-//            for (int i = 0; i < width.length; i++) {
-//                for (int j = 0; j < width[i].length; j++) {
-//                    System.out.println(i + " " + j + " wid " + width[i][j] + " cpt " + cpt[i][j]);
-//                }
-//            }
 
             double intensity = (double) peak.getIntensity();
             GuessValue gValue;
@@ -1479,7 +1469,6 @@ public class PeakListTools {
                     gValue = new GuessValue(cpt[iPeak][dDim], cpt[iPeak][dDim] - width[iPeak][dDim] / 2, cpt[iPeak][dDim] + width[iPeak][dDim] / 2, fitThis);
                 }
                 guessList.add(gValue);
-//System.out.println(iDim + " " + p1[iDim][0] + " " +  p1[iDim][1]);
 
                 // update p2 based on region of peak so it encompasses all peaks
                 if (firstPeak) {
@@ -1497,8 +1486,7 @@ public class PeakListTools {
             }
             firstPeak = false;
         }
-        GuessValue gValue = new GuessValue(0.0, -0.5 * globalMax, 0.5 * globalMax, false);
-        guessList.add(0, gValue);
+        guessList.add(0, new GuessValue(0.0, -0.5 * globalMax, 0.5 * globalMax, false));
         // get a list of positions that are near the centers of each of the peaks
         ArrayList<int[]> posArray = theFile.getFilteredPositions(p2, cpt, width, pdim, multiplier);
         if (posArray.isEmpty()) {
@@ -1521,10 +1509,9 @@ public class PeakListTools {
         // adjust guesses for positions so they are relative to initial point
         // position in each dimension
         for (CenterRef centerRef : centerList) {
-            gValue = guessList.get(centerRef.index);
+            GuessValue gValueAdj = guessList.get(centerRef.index);
             int offset = p2[centerRef.dim][0];
-            gValue = new GuessValue(gValue.value - offset, gValue.lower - offset, gValue.upper - offset, gValue.floating);
-            guessList.set(centerRef.index, gValue);
+            guessList.set(centerRef.index, new GuessValue(gValueAdj.value - offset, gValueAdj.lower - offset, gValueAdj.upper - offset, gValueAdj.floating));
         }
         int[][] positions = new int[posArray.size()][nPeakDim];
         int i = 0;
