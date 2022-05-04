@@ -748,17 +748,11 @@ public class PropertyManager {
 
                             break;
                         case "list":
-                            ArrayList listTypes = (ArrayList) parMap.get("listTypes");
                             ListOperationItem lstItem;
                             ArrayList defaultList = (ArrayList) parMap.get("default");
-                            //ListOperationItemTypeSelector typeSelector = new ListOperationItemTypeSelector(stringListener, (String) listTypes.get(0), listTypes, op, "listType", parDesc);
                             ListOperationItemTypeSelector typeSelector = null;
-                            lstItem = new ListOperationItem(listListener, defaultList, listTypes, op, name, parDesc, typeSelector);
+                            lstItem = new ListOperationItem(listListener, defaultList, op, name, parDesc, typeSelector);
                             propItems.add(lstItem);
-                            //propItems.add(typeSelector);
-                            //propItems.add(listItemTypeSelector(listType));
-
-//                            ListOperationItem lstItem = new ListOperationItem(listListener, defaultList, listType, op, name, parDesc)
                             break;
                         default:
                             break;
@@ -779,13 +773,11 @@ public class PropertyManager {
 
                     }
                 }
-                // propItems.add(new DoubleRangeOperationItem(doubleListener, 1.0, 0.5, 1.0, "SB", "c", "First point multiplier"));
 
             }
             propItems.add(new BooleanOperationItem(boolListener, false, op, "disabled", "Disable this operation"));
         }
 
-        //propItems.add(new DoubleRangeOperationItem(doubleListener, 1.0, 0.5, 1.0, "SB", "c", "First point multiplier"));
     }
 
 }

@@ -42,20 +42,16 @@ public class ListOperationItem extends OperationItem implements ObservableObject
      */
     ChoiceOperationItem typeSelector;
 
-    ArrayList<String> listTypes;
-
     /**
      *
      * @param listener
      * @param defaultValue optional default value for the List.
-     * @param listTypes The types of objects that will be contained in the list.
-     * The List can only support one type of item at a time.
      * @param category
      * @param name
      * @param description
      * @param typeSelector
      */
-    public ListOperationItem(ChangeListener listener, ArrayList defaultValue, ArrayList<String> listTypes, String category, String name, String description, ChoiceOperationItem typeSelector) {
+    public ListOperationItem(ChangeListener listener, ArrayList defaultValue, String category, String name, String description, ChoiceOperationItem typeSelector) {
         super(category, name, description);
         if (defaultValue != null) {
             this.defaultValue = defaultValue;
@@ -64,9 +60,6 @@ public class ListOperationItem extends OperationItem implements ObservableObject
         }
         this.value = this.defaultValue;
         this.listener = listener;
-        if (!(listTypes == null || listTypes.isEmpty())) {
-            this.listTypes = listTypes;
-        }
         this.typeSelector = typeSelector;
     }
 
@@ -100,8 +93,7 @@ public class ListOperationItem extends OperationItem implements ObservableObject
     }
 
     /**
-     * Value is set by giving a String of comma separated values. Based on the
-     * listTypes, we will parse the String
+     * Value is set by giving a String of comma separated values.
      *
      * @param o
      */
@@ -154,7 +146,6 @@ public class ListOperationItem extends OperationItem implements ObservableObject
 
     private String listToString(ArrayList list) {
         StringBuilder str = new StringBuilder("");
-        //String type = typeSelector.get();
         list.forEach((o) -> {
             if (o instanceof Number) {
                 str.append(((Number) o).toString()).append(",");
