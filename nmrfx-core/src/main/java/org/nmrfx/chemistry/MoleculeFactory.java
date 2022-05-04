@@ -29,7 +29,7 @@ public class MoleculeFactory {
 
     static Constructor constructor = null;
     static MoleculeBase activeMol = null;
-    public static final Map<String, MoleculeBase> molecules = new HashMap<>();
+    private static  Map<String, MoleculeBase> molecules = new HashMap<>();
 
     public static MoleculeBase getActive() {
         return activeMol;
@@ -51,11 +51,16 @@ public class MoleculeFactory {
         return molecules.values();
     }
 
+    public static void setMoleculeMap(Map<String, MoleculeBase> newMap) {
+        molecules = newMap;
+    }
+
     public static void removeMolecule(String name) {
         molecules.remove(name);
     }
 
     public static void clearAllMolecules() {
+        activeMol = null;
         molecules.clear();
     }
 

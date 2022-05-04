@@ -22,6 +22,9 @@ import de.jangassen.dialogs.about.AboutStageBuilder;
 import de.jensd.fx.glyphs.GlyphsDude;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import javafx.application.Platform;
+import javafx.collections.FXCollections;
+import javafx.collections.MapChangeListener;
+import javafx.collections.ObservableMap;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
@@ -38,6 +41,8 @@ import org.nmrfx.analyst.gui.plugin.PluginLoader;
 import org.nmrfx.analyst.gui.spectra.SpectrumMenuActions;
 import org.nmrfx.analyst.gui.spectra.StripController;
 import org.nmrfx.analyst.gui.tools.*;
+import org.nmrfx.chemistry.MoleculeBase;
+import org.nmrfx.chemistry.MoleculeFactory;
 import org.nmrfx.chemistry.io.PDBFile;
 import org.nmrfx.chemistry.utilities.NvUtil;
 import org.nmrfx.console.ConsoleController;
@@ -88,6 +93,7 @@ public class AnalystApp extends MainApp {
     private static WindowIO windowIO = null;
     private static SeqDisplayController seqDisplayController = null;
     private static DatasetBrowserController browserController = null;
+    private static ObservableMap<String, MoleculeBase> moleculeMap;
     MenuToolkit menuTk;
     Boolean isMac = null;
     PeakAtomPicker peakAtomPicker = null;
@@ -159,6 +165,12 @@ public class AnalystApp extends MainApp {
         ProjectBase.addSaveframeProcessor("runabout", runAboutSaveFrameProcessor);
 
         PluginLoader.getInstance().registerPluginsOnEntryPoint(EntryPoint.STARTUP, null);
+        moleculeMap = FXCollections.observableHashMap();
+        MoleculeFactory.setMoleculeMap(moleculeMap);
+    }
+
+    public static void addMoleculeListener(MapChangeListener<String, MoleculeBase> listener) {
+        moleculeMap.addListener(listener);
     }
 
     void pickedPeakAction(Object peakObject) {
