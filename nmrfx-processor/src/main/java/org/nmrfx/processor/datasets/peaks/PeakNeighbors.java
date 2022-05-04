@@ -184,46 +184,6 @@ public class PeakNeighbors {
         }
     }
 
-    public void findNeighbors() {
-        List<Peak> listPeaks = peakLists[0].peaks();
-        int nCellsTotal = cellCounts[0].length;
-        int[] offsets1 = new int[OFFSETS2D.length];
-        int nDim = dimNames.length;
-        for (int i = 0; i < offsets1.length; i++) {
-            int delta = 0;
-            for (int j = 0; j < nDim; j++) {
-                delta += OFFSETS2D[i][j] * strides[j];
-            }
-            offsets1[i] = delta;
-        }
-        for (int iCell = 0; iCell < nCellsTotal; iCell++) {
-            int iStart = cellStarts[0][iCell];
-            int iEnd = iStart + cellCounts[0][iCell];
-            for (int offset : offsets1) {
-                int jCell = iCell + offset;
-                if ((jCell < 0) || (jCell >= nCellsTotal)) {
-                    continue;
-                }
-                int jStart = cellStarts[1][jCell];
-                int jEnd = jStart + cellCounts[1][jCell];
-                for (int i = iStart; i < iEnd; i++) {
-                    int ip = peakIndex[0][i];
-                    for (int j = jStart; j < jEnd; j++) {
-                        int jp = peakIndex[1][j];
-                        if ((iCell == jCell) && (ip >= jp)) {
-                            continue;
-                        }
-                        Peak peak1 = listPeaks.get(ip);
-                        Peak peak2 = listPeaks.get(jp);
-                        if ((peak1.getStatus() >= 0) && (peak1.getStatus() >= 0)) {
-                            double distance = peak1.distance(peak2, cellSizes);
-                        }
-                    }
-                }
-            }
-        }
-    }
-
     public double measureDistance() {
         return measureDistance(null);
     }
@@ -266,7 +226,7 @@ public class PeakNeighbors {
                         continue;
                     }
                     Peak peak2 = listPeaksB.get(jp);
-                    if ((peak1.getStatus() >= 0) && (peak1.getStatus() >= 0)) {
+                    if ((peak1.getStatus() >= 0) && (peak2.getStatus() >= 0)) {
                         double sumSq = 0.0;
                         for (int k = 0; k < dims[0].length; k++) {
                             double dx = (peak1.getPeakDim(dims[0][k]).getChemShift()
@@ -322,7 +282,7 @@ public class PeakNeighbors {
                         continue;
                     }
                     Peak peak2 = listPeaks.get(jp);
-                    if ((peak1.getStatus() >= 0) && (peak1.getStatus() >= 0)) {
+                    if ((peak1.getStatus() >= 0) && (peak2.getStatus() >= 0)) {
                         neighbors.add(peak2);
                     }
                 }
