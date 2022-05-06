@@ -24,6 +24,8 @@
 package org.nmrfx.utils.properties;
 
 import java.util.ArrayList;
+import java.util.List;
+
 import javafx.beans.InvalidationListener;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableObjectValue;
@@ -35,7 +37,7 @@ import javafx.beans.value.ObservableObjectValue;
 public class ListOperationItem extends OperationItem implements ObservableObjectValue<String> {
 
     ArrayList value;
-    ArrayList defaultValue;
+    ArrayList<String> defaultValue;
     ChangeListener<? super String> listener;
     /**
      * This enables us to see the type of Unit that we interpret the List as.
@@ -51,10 +53,10 @@ public class ListOperationItem extends OperationItem implements ObservableObject
      * @param description
      * @param typeSelector
      */
-    public ListOperationItem(ChangeListener listener, ArrayList defaultValue, String category, String name, String description, ChoiceOperationItem typeSelector) {
+    public ListOperationItem(ChangeListener<? super String> listener, List<String> defaultValue, String category, String name, String description, ChoiceOperationItem typeSelector) {
         super(category, name, description);
         if (defaultValue != null) {
-            this.defaultValue = defaultValue;
+            this.defaultValue = (ArrayList<String>) defaultValue;
         } else {
             this.defaultValue = new ArrayList<>();
         }
