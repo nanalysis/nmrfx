@@ -17,6 +17,7 @@
  */
 package org.nmrfx.processor.gui;
 
+import com.pixelduke.control.Ribbon;
 import de.jangassen.MenuToolkit;
 import de.jangassen.dialogs.about.AboutStageBuilder;
 import javafx.application.Application;
@@ -43,6 +44,7 @@ import org.nmrfx.processor.gui.log.Log;
 import org.nmrfx.processor.gui.project.GUIProject;
 import org.nmrfx.processor.utilities.WebConnect;
 import org.nmrfx.project.ProjectBase;
+import org.nmrfx.ribbon.NmrFxRibbon;
 import org.python.util.InteractiveInterpreter;
 
 import java.beans.PropertyChangeSupport;
@@ -175,6 +177,10 @@ public class MainApp extends Application {
         return mainApp.makeMenuBar(appName);
     }
 
+    public static NmrFxRibbon createRibbon() {
+        return mainApp.makeRibbon(appName);
+    }
+
     public static MenuBar getMainMenuBar() {
         return mainMenuBar;
     }
@@ -216,6 +222,11 @@ public class MainApp extends Application {
         Image image = new Image(MainApp.class.getResourceAsStream("/images/Icon_NVFX_256.png"));
         aboutStageBuilder = aboutStageBuilder.withImage(image);
         return aboutStageBuilder.build();
+    }
+
+    public NmrFxRibbon makeRibbon(String appName) {
+        // TODO NMR-5099 create ribbon for processor gui?
+        return new NmrFxRibbon();
     }
 
     public MenuBar makeMenuBar(String appName) {
@@ -490,7 +501,7 @@ public class MainApp extends Application {
     }
 
     @FXML
-    void showDatasetsTable(ActionEvent event) {
+    public void showDatasetsTable(ActionEvent event) {
         if (datasetController == null) {
             datasetController = DatasetsController.create();
         }

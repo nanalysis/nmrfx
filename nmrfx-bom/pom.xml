@@ -115,6 +115,13 @@
                 <version>11.1.0</version>
                 <!-- license: BSD (3 clause) -->
             </dependency>
+            <!-- https://mvnrepository.com/artifact/com.pixelduke/fxribbon -->
+            <dependency>
+                <groupId>com.pixelduke</groupId>
+                <artifactId>fxribbon</artifactId>
+                <version>1.2.2</version>
+                <!-- license: BSD -->
+            </dependency>
             <dependency>
                 <groupId>de.jensd</groupId>
                 <artifactId>fontawesomefx</artifactId>

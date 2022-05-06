@@ -74,7 +74,15 @@ public class PeakMenuActions extends MenuActions {
 
     }
 
-    private void showPeakTable() {
+    public void checkAssignOnPick(boolean checked) {
+        if(assignOnPick == null) {
+            assignOnPick = new CheckMenuItem("Assign on Pick");
+        }
+
+        assignOnPick.setSelected(checked);
+    }
+
+    public void showPeakTable() {
         if (peakTableController == null) {
             peakTableController = PeakTableController.create();
             List<String> names = Project.getActive().getPeakListNames();
@@ -91,7 +99,7 @@ public class PeakMenuActions extends MenuActions {
     }
 
     @FXML
-    private void showLigandScanner() {
+    public void showLigandScanner() {
         if (scannerController == null) {
             scannerController = LigandScannerController.create();
         }
@@ -103,7 +111,7 @@ public class PeakMenuActions extends MenuActions {
         }
     }
 
-    private void showNOETable() {
+    public void showNOETable() {
         if (noeTableController == null) {
             noeTableController = NOETableController.create();
             if (noeTableController == null) {
@@ -118,7 +126,7 @@ public class PeakMenuActions extends MenuActions {
         noeTableController.updateNoeSetMenu();
     }
 
-    void showRunAbout() {
+    public void showRunAbout() {
     }
 
     public void showAtomBrowser() {

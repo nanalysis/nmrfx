@@ -79,6 +79,7 @@ import org.nmrfx.processor.gui.controls.GridPaneCanvas;
 import org.nmrfx.processor.gui.spectra.*;
 import org.nmrfx.processor.gui.tools.SpectrumComparator;
 import org.nmrfx.processor.gui.undo.UndoManager;
+import org.nmrfx.ribbon.NmrFxRibbon;
 import org.nmrfx.utilities.DictionarySort;
 import org.nmrfx.utils.GUIUtils;
 import org.python.core.PyObject;
@@ -101,8 +102,6 @@ public class FXMLController implements  Initializable, PeakNavigable {
 
     @FXML
     private VBox topBar;
-    @FXML
-    private ToolBar toolBar;
     @FXML
     private ToolBar btoolBar;
     @FXML
@@ -128,6 +127,8 @@ public class FXMLController implements  Initializable, PeakNavigable {
     private Slider vecNum1;
     @FXML
     private GridPane rightBox;
+    private NmrFxRibbon ribbon;
+
     private TextField[] rowTextBoxes = new TextField[0];
     private TextField fileIndexTextBox = new TextField();
     ToggleGroup rowToggleGroup = new ToggleGroup();
@@ -822,6 +823,10 @@ public class FXMLController implements  Initializable, PeakNavigable {
         return cancelButton;
     }
 
+    public NmrFxRibbon getRibbon() {
+        return ribbon;
+    }
+
     @FXML
     private void handleVecNum(Event event) {
         Slider slider = (Slider) event.getSource();
@@ -1312,16 +1317,16 @@ public class FXMLController implements  Initializable, PeakNavigable {
     public void initialize(URL url, ResourceBundle rb) {
         rightBox.getChildren().remove(phaserBox);
         borderPane.setLeft(null);
-        if (!MainApp.isMac()) {
-            MenuBar menuBar = MainApp.getMenuBar();
-            topBar.getChildren().add(0, menuBar);
-        }
+
+        ribbon = MainApp.createRibbon();
+        topBar.getChildren().add(ribbon);
         plotContent.setMouseTransparent(true);
         PolyChart chart1 = new PolyChart(this, plotContent, canvas, peakCanvas, annoCanvas);
         activeChart = chart1;
         canvasBindings = new CanvasBindings(this, canvas);
         canvasBindings.setHandlers();
-        initToolBar(toolBar);
+        //TODO NMR-5099 remove toolbar, use ribbon
+        initToolBar();
         charts.add(chart1);
         chart1.setController(this);
 
@@ -1441,7 +1446,9 @@ public class FXMLController implements  Initializable, PeakNavigable {
         return stackPane;
     }
 
-    void initToolBar(ToolBar toolBar) {
+    //TODO NMR-5099 remove once replaced.
+    //we need to keep it for now because it creates some buttons that are accessed from the outside
+    void initToolBar() {
         String iconSize = "16px";
         String fontSize = "7pt";
         ArrayList<Node> buttons = new ArrayList<>();
@@ -1563,7 +1570,6 @@ public class FXMLController implements  Initializable, PeakNavigable {
                 node.getStyleClass().add("toolButton");
             }
         }
-        toolBar.getItems().addAll(buttons);
 
         statusBar = new SpectrumStatusBar(this);
         statusBar.buildBar(btoolBar);
@@ -1571,7 +1577,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
 
     }
 
-    List<PolyChart> getCharts(boolean all) {
+    public List<PolyChart> getCharts(boolean all) {
         if (all) {
             return charts;
         } else {

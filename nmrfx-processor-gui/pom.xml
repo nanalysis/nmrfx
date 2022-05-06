@@ -65,6 +65,10 @@
             <artifactId>nsmenufx</artifactId>
         </dependency>
         <dependency>
+            <groupId>com.pixelduke</groupId>
+            <artifactId>fxribbon</artifactId>
+        </dependency>
+        <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <scope>test</scope>

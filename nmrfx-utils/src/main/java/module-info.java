@@ -10,6 +10,7 @@ module org.nmrfx.utils {
     exports org.nmrfx.chart;
     exports org.nmrfx.console;
     exports org.nmrfx.graphicsio;
+    exports org.nmrfx.ribbon;
 
     requires java.logging;
     requires java.desktop;
@@ -30,4 +31,5 @@ module org.nmrfx.utils {
     requires javafx.swing;
     requires jython.slim;
     requires org.slf4j;
+    requires fxribbon;
 }

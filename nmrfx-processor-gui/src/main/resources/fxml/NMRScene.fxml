@@ -17,10 +17,12 @@
             <top>
                 <VBox fx:id="topBar" GridPane.hgrow="ALWAYS">
                     <children>
+                <!--
                         <ToolBar fx:id="toolBar" prefWidth="200.0" BorderPane.alignment="CENTER">
                             <items>
                             </items>
                         </ToolBar>
+                -->
                     </children>
                 </VBox>
             </top>

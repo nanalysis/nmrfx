@@ -35,6 +35,10 @@
             <artifactId>controlsfx</artifactId>
         </dependency>
         <dependency>
+            <groupId>com.pixelduke</groupId>
+            <artifactId>fxribbon</artifactId>
+        </dependency>
+        <dependency>
             <groupId>de.jensd</groupId>
             <artifactId>fontawesomefx</artifactId>
         </dependency>

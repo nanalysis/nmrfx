@@ -906,7 +906,7 @@ public class PolyChart extends Region implements PeakListener {
         }
     }
 
-    protected void adjustScale(double factor) {
+    public void adjustScale(double factor) {
         ChartUndoScale undo = new ChartUndoScale(this);
         datasetAttributesList.stream().forEach(dataAttr -> {
             adjustScale(dataAttr, factor);
