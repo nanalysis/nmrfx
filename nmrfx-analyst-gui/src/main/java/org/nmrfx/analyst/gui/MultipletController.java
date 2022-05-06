@@ -482,7 +482,7 @@ merge.png				region_adjust.png
             Multiplet multiplet = activeMultiplet.get();
             multipletIdField.setText(String.valueOf(multiplet.getIDNum()));
             if (resetView) {
-                refreshPeakView(multiplet);
+                refreshPeakView(multiplet, false, 2.5);
             }
             String mult = multiplet.getMultiplicity();
             Coupling coup = multiplet.getCoupling();
@@ -661,7 +661,7 @@ merge.png				region_adjust.png
         if (!attrs.isEmpty()) {
             peakListOpt = Optional.of(attrs.get(0).getPeakList());
         } else {
-        getAnalyzer();
+            getAnalyzer();
             PeakList peakList = analyzer.getPeakList();
             if (peakList != null) {
                 List<String> peakListNames = new ArrayList<>();
@@ -888,12 +888,16 @@ merge.png				region_adjust.png
         }
     }
 
-    public void refreshPeakView(Multiplet multiplet) {
-        boolean resize = false;
+    /**
+     *
+     * @param multiplet
+     * @param resize If false, stepping through multiplets will not change plot region size
+     * @param widthScale Value to increase the width of the view around the multiplet
+     */
+    public void refreshPeakView(Multiplet multiplet, boolean resize, double widthScale) {
         if (multiplet != null) {
             double bounds = multiplet.getBoundsValue();
             double center = multiplet.getCenter();
-            double widthScale = 2.5;
             if ((chart != null) && !chart.getDatasetAttributes().isEmpty()) {
                 DatasetAttributes dataAttr = (DatasetAttributes) chart.getDatasetAttributes().get(0);
                 Double[] ppms = {center};

@@ -1031,14 +1031,13 @@ public class DrawSpectrum {
         nPoints = drawVectoreCore(vec, dataOffset, drawReal, ph0, ph1, xy, bcPath, xFunction, yFunction, offsetVec, vecStartPoint, vecEndPoint, size, dValue, phase1Delta, indexAxisDelta, integralMode);
     }
 
-    public static int drawVector(VecBase vec, NMRAxisIO xAxis, NMRAxisIO yAxis, AXMODE axMode, double[][] xy) {
+    public static int drawVector(VecBase vec, NMRAxisIO xAxis, NMRAxisIO yAxis, AXMODE axMode, double[][] xy, boolean offsetVec) {
         int dataOffset = 0;
         NMRAxisIO indexAxis = xAxis;
 
         int vecStartPoint;
         int vecEndPoint;
         double indexAxisDelta;
-        boolean offsetVec = true;
         if (offsetVec) {
             vecStartPoint = axMode.getIndex(vec, indexAxis.getLowerBound());
             vecEndPoint = axMode.getIndex(vec, indexAxis.getUpperBound());
@@ -1051,7 +1050,6 @@ public class DrawSpectrum {
         }
         double dValue = indexAxis.getLowerBound();
 
-        //System.out.printf("%d %.5f %.5f %d %d %.4f %.4f\n", 0, indexAxis.getLowerBound(), indexAxis.getUpperBound(), vecStartPoint, vecEndPoint, dValue, indexAxisDelta);
         if (vecStartPoint > vecEndPoint) {
             int hold = vecStartPoint;
             vecStartPoint = vecEndPoint;
@@ -1067,8 +1065,7 @@ public class DrawSpectrum {
         double phase1Delta = ph1 / (size - 1);
         Path bcPath = null;
 
-        int nPoints = drawVectoreCore(vec, dataOffset, drawReal, ph0, ph1, xy, bcPath, xFunction, yFunction, offsetVec, vecStartPoint, vecEndPoint, size, dValue, phase1Delta, indexAxisDelta, false);
-        return nPoints;
+        return drawVectoreCore(vec, dataOffset, drawReal, ph0, ph1, xy, bcPath, xFunction, yFunction, offsetVec, vecStartPoint, vecEndPoint, size, dValue, phase1Delta, indexAxisDelta, false);
     }
 
     private static int drawVectoreCore(VecBase vec, int dataOffset, boolean drawReal,

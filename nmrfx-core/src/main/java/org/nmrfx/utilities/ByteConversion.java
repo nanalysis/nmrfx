@@ -15,7 +15,6 @@ import java.nio.ByteOrder;
 public class ByteConversion {
 
     public static Number[] convert(byte[] buffer, String sMode, int start, int n) {
-        boolean littleEndian = true;
         ByteBuffer byteBuffer = ByteBuffer.wrap(buffer);
         Number[] numbers = new Number[n];
         int offset = start;
@@ -23,11 +22,7 @@ public class ByteConversion {
             if (sMode.equals("b")) {
                 numbers[i] = byteBuffer.get(offset);
             } else {
-                if (littleEndian) {
-                    byteBuffer.order(ByteOrder.BIG_ENDIAN);
-                } else {
-                    byteBuffer.order(ByteOrder.LITTLE_ENDIAN);
-                }
+                byteBuffer.order(ByteOrder.BIG_ENDIAN);
                 switch (sMode) {
                     case "i":
                         int intVal = byteBuffer.getInt(offset);

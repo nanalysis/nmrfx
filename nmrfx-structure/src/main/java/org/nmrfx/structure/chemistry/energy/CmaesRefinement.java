@@ -86,11 +86,9 @@ public class CmaesRefinement extends Refinement implements MultivariateFunction 
         energy = energy();
         putDihedrals();
         molecule.genCoords(false, null);
-        //printAngleTest();
         //putDihedrals();
         dihedrals.energyList.makeAtomListFast();
         energy = energy();
-        //printAngleTest();
 
         long time = System.currentTimeMillis();
         long deltaTime = time - startTime;
@@ -134,7 +132,6 @@ public class CmaesRefinement extends Refinement implements MultivariateFunction 
         if (nStat > 0) {
             System.out.println("finished " + optimizer.getIterations() + " " + sigmaHistory.get(nStat - 1));
         }
-        //printAngleTest();
         return result.getValue();
     }
 
@@ -192,7 +189,6 @@ public class CmaesRefinement extends Refinement implements MultivariateFunction 
         if (nStat > 0) {
             System.out.println("finished " + optimizer.getIterations() + " " + sigmaHistory.get(nStat - 1));
         }
-        //printAngleTest();
         return result.getValue();
     }
 

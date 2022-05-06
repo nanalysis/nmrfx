@@ -691,8 +691,7 @@ public class SpecAttrWindowController implements Initializable {
         }
     }
 
-    public void updatePeakListTableView() {
-        boolean sceneMode = false;
+    public void updatePeakListTableView(boolean sceneMode) {
         if (peakListTableView == null) {
             System.out.println("null table");
         } else if (sceneMode) {
@@ -770,7 +769,7 @@ public class SpecAttrWindowController implements Initializable {
             chart = fxmlController.getActiveChart();
             chart.setChartDisabled(true);
             updateDatasetTableView();
-            updatePeakListTableView();
+            updatePeakListTableView(false);
             clearDimActions();
             bindToChart(chart);
             setLimits();

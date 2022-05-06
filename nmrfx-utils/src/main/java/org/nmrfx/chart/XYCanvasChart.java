@@ -199,12 +199,12 @@ public class XYCanvasChart {
             if (minMax != null) {
                 bounds = new double[4];
                 if (force || xAxis.isAutoRanging()) {
-                    double[] axBounds = xAxis.autoRange(minMax[0], minMax[1]);
+                    double[] axBounds = xAxis.autoRange(minMax[0], minMax[1], true);
                     bounds[0] = axBounds[0];
                     bounds[1] = axBounds[1];
                 }
                 if (force || yAxis.isAutoRanging()) {
-                    double[] axBounds = yAxis.autoRange(minMax[2], minMax[3]);
+                    double[] axBounds = yAxis.autoRange(minMax[2], minMax[3], true);
                     bounds[2] = axBounds[0];
                     bounds[3] = axBounds[1];
                 }
