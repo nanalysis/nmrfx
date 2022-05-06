@@ -77,7 +77,6 @@ public class AnalystApp extends MainApp {
     private static ViewMenuItems viewMenuActions;
     private static boolean startInAdvanced = true;
     private static boolean advancedIsActive = false;
-    private static MultipletController multipletController;
     private static AtomController atomController;
     private static LigandScannerController scannerController;
     private static MolSceneController molController;
