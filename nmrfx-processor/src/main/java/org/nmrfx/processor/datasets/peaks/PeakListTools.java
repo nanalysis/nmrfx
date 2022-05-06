@@ -1056,7 +1056,7 @@ public class PeakListTools {
     private static void measurePlanes(int nPlanes, Peak peak, Dataset dataset,
             java.util.function.Function<RegionData, Double> f,
             String mode, double[][] values, int iValue) {
-        int extraPlanes = dataset.getNDim() - peak.getNDim();
+        int extraPlanes = Math.max(0, dataset.getNDim() - peak.getNDim());
         int[] planes = new int[extraPlanes];
         int[] pdim = peak.getPeakList().getDimsForDataset(dataset, true);
         for (int i = 0; i < nPlanes; i++) {
