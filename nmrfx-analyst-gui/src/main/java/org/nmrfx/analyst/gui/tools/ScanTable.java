@@ -43,7 +43,6 @@ import org.controlsfx.control.PopOver;
 import org.controlsfx.control.table.ColumnFilter;
 import org.controlsfx.control.table.TableFilter;
 import org.controlsfx.dialog.ExceptionDialog;
-import org.nmrfx.analyst.gui.tools.ScannerTool;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.DatasetException;
@@ -226,8 +225,11 @@ public class ScanTable {
                 DatasetAttributes dataAttr = chart.getDatasetAttributes().get(0);
                 curLvl.ifPresent(dataAttr::setLvl);
                 int nDim = dataAttr.nDim;
-                if (nDim > 1) {
+                chart.full(nDim - 1);
+                if ((nDim - dataAttr.getDataset().getNFreqDims()) == 1){
                     chart.setDrawlist(rows);
+                } else{
+                    chart.clearDrawlist();
                 }
                 dataAttr.setMapColors(colorMap);
                 if (groupSet.size() > 1) {

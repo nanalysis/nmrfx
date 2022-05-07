@@ -97,7 +97,12 @@ public class PeakPicking {
             } else {
                 int p1 = chart.axModes[iDim].getIndex(dataAttr, iDim, chart.axes[iDim].getLowerBound());
                 int p2 = chart.axModes[iDim].getIndex(dataAttr, iDim, chart.axes[iDim].getUpperBound());
-                peakPickPar.limit(jDim, p1, p2);
+                if (dataAttr.drawList.isEmpty()) {
+                    peakPickPar.limit(jDim, p1, p2);
+                } else {
+                    int firstPlane = dataAttr.drawList.get(0);
+                    peakPickPar.limit(jDim, firstPlane, firstPlane);
+                }
             }
         }
         PeakPicker picker = new PeakPicker(peakPickPar);
