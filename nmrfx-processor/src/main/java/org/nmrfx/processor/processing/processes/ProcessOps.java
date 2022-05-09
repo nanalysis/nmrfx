@@ -212,7 +212,6 @@ public class ProcessOps implements Callable<Object> {
         Processor processor = Processor.getProcessor();
 
         vectors = new ArrayList<>();
-        boolean error = false;
         // fixme  should we have don't write flag so write op doesn't get added
         if (!hasOperation(WriteVector.class)) {
             if (isUndo) {
@@ -221,7 +220,7 @@ public class ProcessOps implements Callable<Object> {
                 operations.add(new WriteVector(true));
             }
         }
-        while (!error) {
+        while (true) {
             if (processor.getProcessorError()) {
                 return this;
             }
@@ -242,19 +241,10 @@ public class ProcessOps implements Callable<Object> {
 
             for (Operation op : operations) {
                 if (processor.getProcessorError()) {
-                    error = true;
                     return this;
                 }
                 try {
                     op.eval(vectors);
-                } catch (OperationException oe) {
-                    if (!processor.setProcessorError()) {
-                        processor.setProcessorErrorMessage(oe.getMessage());
-                        oe.printStackTrace();
-                        throw new ProcessingException(oe.getMessage());
-                    } else {
-                        return this;
-                    }
                 } catch (Exception e) {
                     if (!processor.setProcessorError()) {
                         processor.setProcessorErrorMessage(e.getMessage());
@@ -264,10 +254,6 @@ public class ProcessOps implements Callable<Object> {
                         return this;
                     }
                 }
-            }
-
-            if (error) {
-                break;
             }
 
             vectorsProcessed += vectors.size();
@@ -287,12 +273,11 @@ public class ProcessOps implements Callable<Object> {
     public Object callMatrix() {
         Processor processor = Processor.getProcessor();
 
-        boolean error = false;
         MatrixType matrix = null;
         // fixme  should we have don't write flag so write op doesn't get added
         operations.add(new WriteMatrix());
 
-        while (!error) {
+        while (true) {
             if (processor.getProcessorError()) {
                 return this;
             }
@@ -313,21 +298,10 @@ public class ProcessOps implements Callable<Object> {
 
             for (Operation op : operations) {
                 if (processor.getProcessorError()) {
-                    error = true;
                     return this;
                 }
                 try {
-                    if (matrix != null) {
-                        ((MatrixOperation) op).evalMatrix(matrix);
-                    }
-                } catch (OperationException oe) {
-                    if (!processor.setProcessorError()) {
-                        processor.setProcessorErrorMessage(oe.getMessage());
-                        oe.printStackTrace();
-                        throw new ProcessingException(oe.getMessage());
-                    } else {
-                        return this;
-                    }
+                    ((MatrixOperation) op).evalMatrix(matrix);
                 } catch (Exception e) {
                     if (!processor.setProcessorError()) {
                         processor.setProcessorErrorMessage(e.getMessage());
@@ -339,13 +313,8 @@ public class ProcessOps implements Callable<Object> {
                 }
             }
 
-            if (error) {
-                break;
-            }
+            vectorsProcessed++;
 
-            if (matrix != null) {
-                vectorsProcessed++;
-            }
         }
 
         completionMessage = "Process " + name + " has processed " + vectorsProcessed + " matrices.";

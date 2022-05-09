@@ -1328,6 +1328,10 @@ public class ChartProcessor {
         Processor.getProcessor().clearProcessorError();
         ProcessOps process = getProcess();
         process.clearOps();
+        if (processorController == null) {
+            System.out.println("null proc");
+            return;
+        }
         if (processorController.isViewingDataset()) {
             return;
         }
@@ -1341,10 +1345,6 @@ public class ChartProcessor {
                 interpreter.exec("fidInfo = makeFIDInfo()");
             }
             if ((nmrData instanceof NMRViewData) && !nmrData.isFID()) {
-                return;
-            }
-            if (processorController == null) {
-                System.out.println("null proc");
                 return;
             }
             if (processorController.refManager == null) {
@@ -1386,7 +1386,6 @@ public class ChartProcessor {
                 process.addVec(loadVec);
                 j++;
             }
-            //pE.printStackTrace();
             return;
         }
         if (doProcess) {

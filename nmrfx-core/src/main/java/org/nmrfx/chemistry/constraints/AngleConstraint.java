@@ -335,13 +335,7 @@ public class AngleConstraint implements Constraint {
 //      _Torsion_angle_constraint.Angle_upper_bound_val
         result.append(String.format("%.0f", Math.toDegrees(getUpper())));
         result.append(sep);
-
-        String ssID = null;
-        if (ssID == null) {
-            result.append(".");
-        } else {
-            result.append(ssID);
-        }
+        result.append(".");  // ssID
         result.append(sep);
         result.append("1");
         return result.toString();

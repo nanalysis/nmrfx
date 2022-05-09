@@ -154,12 +154,9 @@ public class ZoomSlider extends GridPane {
             max = amax;
             min = max - 2 * newDeltaHalf;
         }
-        if (min < amin) {
-            min = amin;
-        }
-        if (max > amax) {
-            max = amax;
-        }
+        min = Math.max(min, amin);
+        max = Math.min(max, amax);
+
         double[] newRange = {min, max};
         return newRange;
     }

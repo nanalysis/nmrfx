@@ -8,6 +8,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class PeakReaderTest {
     private static final Logger log = LoggerFactory.getLogger(PeakReaderTest.class);
@@ -138,4 +140,14 @@ public class PeakReaderTest {
         Assert.assertNotNull(peakList);
         Assert.assertEquals(inten, (double) peakList.getPeak(0).getIntensity(), 1.0e-5);
     }
+
+    @Test
+    public void testParseXPKLineEncapsulatedQuotes() {
+        // This test is to check that the encapsulated quotes are parsed correctly
+        String doubleQuoteString = "0 {h5} {h5'} {h5''} 1.234 ++ {0.0} {} 0\n";
+        List<String> expectedDoubleQuote = new ArrayList<>(List.of("0", "h5", "h5'", "h5''", "1.234", "++", "0.0", "", "0"));
+        List<String> actualDoubleQuote = PeakReader.parseXPKLine(doubleQuoteString);
+        Assert.assertEquals(expectedDoubleQuote, actualDoubleQuote);
+    }
+
 }
