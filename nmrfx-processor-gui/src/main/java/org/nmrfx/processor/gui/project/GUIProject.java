@@ -123,9 +123,15 @@ public class GUIProject extends ProjectBase {
         clearAllPeakLists();
         clearAllDatasets();
         MainApp.closeAll();
-
     }
 
+    public static boolean checkProjectActive() {
+        ProjectBase project = ProjectBase.getActive();
+        boolean hasMolecules = !MoleculeFactory.getMolecules().isEmpty();
+        boolean hasDatasets =  project != null && !project.getDatasets().isEmpty();
+        boolean hasPeakLists = project != null && !project.getPeakLists().isEmpty();
+        return hasMolecules || hasDatasets || hasPeakLists;
+    }
     public void clearAllMolecules() {
         MoleculeFactory.clearAllMolecules();
     }

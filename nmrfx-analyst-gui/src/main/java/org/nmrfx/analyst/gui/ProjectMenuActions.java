@@ -78,6 +78,11 @@ public class ProjectMenuActions extends MenuActions {
     }
 
     private void loadProject(ActionEvent event) {
+        if (GUIProject.checkProjectActive()) {
+            GUIUtils.warn("Open Project", "Project content already present.  Close existing first");
+            return;
+        }
+
         DirectoryChooser chooser = new DirectoryChooser();
         chooser.setTitle("Project Chooser");
         File directoryFile = chooser.showDialog(null);
@@ -88,6 +93,10 @@ public class ProjectMenuActions extends MenuActions {
 
     private void loadProjectFromPath(Path path) {
         if (path != null) {
+            if (GUIProject.checkProjectActive()) {
+                GUIUtils.warn("Open Project", "Project content already present.  Close existing first");
+                return;
+            }
             String projectName = path.getFileName().toString();
             GUIProject project = new GUIProject(projectName);
             try {
