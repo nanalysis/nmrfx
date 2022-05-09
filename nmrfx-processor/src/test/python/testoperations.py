@@ -976,4 +976,6 @@ class TestOperations(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    unittest.main()
+    testProgram = unittest.main(exit=False)
+    result = testProgram.result
+

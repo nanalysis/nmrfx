@@ -178,24 +178,6 @@
                             </arguments>
                         </configuration>
                     </execution>
-                    <execution>
-                        <configuration>
-                            <workingDirectory>src/test/python/</workingDirectory>
-                            <executable>java</executable>
-                            <classpathScope>test</classpathScope>
-                            <arguments>
-                                <argument>-classpath</argument>
-                                <classpath/>
-                                <argument>org.python.util.jython</argument>
-                                <argument>runtests.py</argument>
-                            </arguments>
-                        </configuration>
-                        <id>python-test</id>
-                        <phase>test</phase>
-                        <goals>
-                            <goal>exec</goal>
-                        </goals>
-                    </execution>
                 </executions>
             </plugin>
             <plugin>
