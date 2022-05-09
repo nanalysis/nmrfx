@@ -27,6 +27,7 @@ import javafx.application.Platform;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
+import javafx.collections.MapChangeListener;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -46,17 +47,15 @@ import javafx.util.StringConverter;
 import javafx.util.converter.DoubleStringConverter;
 import javafx.util.converter.FloatStringConverter;
 import org.controlsfx.dialog.ExceptionDialog;
-import org.nmrfx.chemistry.Atom;
-import org.nmrfx.chemistry.InvalidMoleculeException;
-import org.nmrfx.chemistry.MolFilter;
-import org.nmrfx.chemistry.PPMv;
+import org.nmrfx.analyst.gui.AnalystApp;
+import org.nmrfx.chemistry.*;
 import org.nmrfx.chemistry.io.MoleculeIOException;
 import org.nmrfx.chemistry.io.NMRStarReader;
 import org.nmrfx.chemistry.io.PDBFile;
 import org.nmrfx.chemistry.io.PPMFiles;
-import org.nmrfx.peaks.events.FreezeListener;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakList;
+import org.nmrfx.peaks.events.FreezeListener;
 import org.nmrfx.star.ParseException;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.structure.chemistry.predict.BMRBStats;
@@ -158,12 +157,20 @@ public class AtomController implements Initializable, FreezeListener {
             controller.stage = stage;
             stage.setTitle("Atom Attributes");
             stage.show();
+            AnalystApp.addMoleculeListener(controller::moleculeMapChanged);
         } catch (IOException ioE) {
             System.out.println(ioE.getMessage());
         }
 
         return controller;
 
+    }
+
+    private void moleculeMapChanged(MapChangeListener.Change<? extends String,? extends MoleculeBase> change) {
+        if (MoleculeFactory.getMolecules().isEmpty()) {
+            setFilterString("");
+            refreshAtomTable();
+        }
     }
 
     private void clearInsepctor() {
