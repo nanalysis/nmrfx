@@ -27,6 +27,7 @@ public class ListOperationItemTest {
         };
 
     }
+    
     @Test
     public void testConstructorWithNullDefault() {
         ListOperationItem lstItem = new ListOperationItem(listListener, null, "COADD", "coef", "List of coefficients to scale each vector by.", typeSelector);

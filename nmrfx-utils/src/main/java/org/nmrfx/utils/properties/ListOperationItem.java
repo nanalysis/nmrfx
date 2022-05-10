@@ -98,7 +98,6 @@ public class ListOperationItem extends OperationItem implements ObservableObject
      */
     @Override
     public void setValue(Object o) {
-        List<?> oldValue = new ArrayList<>(value);
         List<?> newValue;
         if (o instanceof String) {
             ArrayList<Double> numberValues = new ArrayList<>();
@@ -132,7 +131,7 @@ public class ListOperationItem extends OperationItem implements ObservableObject
         } else {
             return;
         }
-
+        List<?> oldValue = new ArrayList<>(value);
         value = newValue;
         if (!value.equals(oldValue) && (listener != null)) {
             listener.changed(this, listToString(oldValue), listToString(value));
