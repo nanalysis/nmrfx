@@ -274,7 +274,15 @@ public class NMRStarWriter {
         }
     }
 
-    static void writeEntityHeaderSTAR3(Writer chan, Entity entity, int entityID) throws IOException {
+    /**
+     * Writes the header information for the entity.
+     * @param chan The Writer object to use to write the header.
+     * @param entity The entity for the header information.
+     * @param entityID The id of the entity.
+     * @param nonStandard If true, write yes and if false write no after the "Nstd_monomer" entry.
+     * @throws IOException
+     */
+    static void writeEntityHeaderSTAR3(Writer chan, Entity entity, int entityID,  boolean nonStandard) throws IOException {
         String label = entity.label;
         chan.write("save_" + label + "\n");
         chan.write("_Entity.Sf_category                 ");
@@ -303,7 +311,6 @@ public class NMRStarWriter {
             String oneLetterCode = polymer.getOneLetterCode();
             chan.write("\n;\n");
             int codeLen = oneLetterCode.length();
-            boolean nonStandard = false;
             int j = 0;
             while (j < codeLen) {
                 int endIndex = j + 40;
@@ -507,7 +514,7 @@ public class NMRStarWriter {
         while (entityIterator.hasNext()) {
             Entity entity = entityIterator.next();
             if (entity instanceof Polymer) {
-                writeEntityHeaderSTAR3(chan, entity, entityID);
+                writeEntityHeaderSTAR3(chan, entity, entityID, false);
                 writeEntityCommonNamesSTAR3(chan, entity, entityID);
                 Polymer polymer = (Polymer) entity;
                 writeEntitySeqSTAR3(chan, polymer, entityID);
