@@ -25,6 +25,7 @@ package org.nmrfx.utils.properties;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import javafx.beans.InvalidationListener;
 import javafx.beans.value.ChangeListener;
@@ -36,8 +37,8 @@ import javafx.beans.value.ObservableObjectValue;
  */
 public class ListOperationItem extends OperationItem implements ObservableObjectValue<String> {
 
-    ArrayList value;
-    ArrayList<?> defaultValue;
+    List<?> value;
+    List<?> defaultValue;
     ChangeListener<? super String> listener;
     /**
      * This enables us to see the type of Unit that we interpret the List as.
@@ -55,23 +56,18 @@ public class ListOperationItem extends OperationItem implements ObservableObject
      */
     public ListOperationItem(ChangeListener<? super String> listener, List<?> defaultValue, String category, String name, String description, ChoiceOperationItem typeSelector) {
         super(category, name, description);
-        if (defaultValue != null) {
-            this.defaultValue = (ArrayList<?>) defaultValue;
-        } else {
-            this.defaultValue = new ArrayList<>();
-        }
+        this.defaultValue = Objects.requireNonNullElseGet(defaultValue, ArrayList::new);
         this.value = this.defaultValue;
         this.listener = listener;
         this.typeSelector = typeSelector;
     }
 
+    /**
+     * Returns values as a string created by the java List implementation of toString()
+     */
     @Override
     public String getValue() {
         return value.toString();
-    }
-
-    public ArrayList getValueList() {
-        return value;
     }
 
     @Override
@@ -95,16 +91,17 @@ public class ListOperationItem extends OperationItem implements ObservableObject
     }
 
     /**
-     * Value is set by giving a String of comma separated values.
-     *
+     * Value is set by giving a String of comma separated values or an ArrayList object.
+     * Any other object types will not change value. The listener is only updated if the
+     * new values from o are different from the old values.
      * @param o
      */
     @Override
     public void setValue(Object o) {
-        ArrayList oldValue = new ArrayList(value);
-        ArrayList newValue;
+        List<?> oldValue = new ArrayList<>(value);
+        List<?> newValue;
         if (o instanceof String) {
-            newValue = new ArrayList();
+            ArrayList<Double> numberValues = new ArrayList<>();
             String lst = (String) o;
 
             lst = lst.replace("[", "").replace("]", "");
@@ -114,23 +111,24 @@ public class ListOperationItem extends OperationItem implements ObservableObject
                 for (String sValue : lst.split(",")) {
                     switch (sValue) {
                         case "":
-                            newValue.add(0.0);
+                            numberValues.add(0.0);
                             break;
                         case "-":
-                            newValue.add(-0.0);
+                            numberValues.add(-0.0);
                             break;
                         default:
                             try {
-                                newValue.add(Double.parseDouble(sValue));
+                                numberValues.add(Double.parseDouble(sValue));
                             } catch (NumberFormatException nfE) {
-                                newValue.add(0.0);
+                                numberValues.add(0.0);
                             }
                             break;
                     }
                 }
             }
+            newValue = numberValues;
         } else if (o instanceof ArrayList) {
-            newValue = new ArrayList((ArrayList) o);
+            newValue = new ArrayList<>((ArrayList<?>) o);
         } else {
             return;
         }
@@ -141,16 +139,22 @@ public class ListOperationItem extends OperationItem implements ObservableObject
         }
     }
 
+    /**
+     * Returns the string representation of all Number values in the format ".,.,." without any extra white
+     * space, if values contain non Numbers, those elements are not returned.
+     * Note this method differs from getValue which will return the java List implementation of toString()
+     */
     @Override
     public String get() {
         return listToString(value);
     }
 
-    private String listToString(ArrayList list) {
+    private String listToString(List<?> list) {
+
         StringBuilder str = new StringBuilder("");
-        list.forEach((o) -> {
+        list.forEach(o -> {
             if (o instanceof Number) {
-                str.append(((Number) o).toString()).append(",");
+                str.append(o).append(",");
             } else {
                 System.out.println("non Number in List");
             }
@@ -189,17 +193,18 @@ public class ListOperationItem extends OperationItem implements ObservableObject
     @Override
     public void setToDefault() {
         value = defaultValue;
-//        listener.changed(this, complexToString(old), complexToString(value));
     }
 
+    /**
+     * Returns the string representation of all Number values in the format "[.,.,.]" without any extra white
+     * space, if values contain non Numbers, those elements are not returned.
+     * Example: if values = [1.0, 2.0, 3.0] -> "[1.0,2.0,3.0]"
+     *          if values = ["one", "two", "three"] -> "[]"
+     * @return The string representation of values
+     */
     @Override
     public String getStringRep() {
         return "[" + listToString(value) + "]";
     }
-//    
-//    @Override
-//    public Optional<Class <? extends PropertyEditor>> getPropertyEditorClass() {
-//        return ListPropertyEditor.class;
-//    }
 
 }

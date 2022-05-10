@@ -339,37 +339,6 @@ public class PropertyManager {
 
     }
 
-    void addRegionRangeOld(double min, double max, double f1, double f2) {
-        System.out.println("add region range " + f1 + " " + f2);
-        List<PropertySheet.Item> items = propertySheet.getItems();
-        for (PropertySheet.Item item : items) {
-            if ((item != null) && item.getCategory().equals("REGIONS") && item.getName().equals("regions")) {
-                System.out.println("really add region range " + f1 + " " + f2);
-                ListOperationItem listOpItem = (ListOperationItem) item;
-                ArrayList newValue = new ArrayList(listOpItem.getValueList());
-                f1 = Math.round(f1 * 1.0e5) / 1.0e5;
-                f2 = Math.round(f2 * 1.0e5) / 1.0e5;
-                newValue.add(new Double(f1));
-                newValue.add(new Double(f2));
-                ((OperationItem) item).setValue(newValue);
-                //setPropSheet("REGIONS");
-                break;
-            } else if ((item != null) && item.getCategory().equals("EXTRACT") && item.getName().equals("start")) {
-                //int imin = (((int) min) / 32) * 32;
-                int imin = (int) (min + 0.5);
-                //System.out.println("really add start" + imin);
-                ((OperationItem) item).setValue(imin);
-            } else if ((item != null) && item.getCategory().equals("EXTRACT") && item.getName().equals("end")) {
-                //int imax = ((((int) max) / 32) + 1) * 32;
-                int imax = (int) (max + 0.5);
-                //System.out.println("really add end" + imax);
-                ((OperationItem) item).setValue(imax);
-            } else if ((item != null) && item.getCategory().equals("EXTRACT") && item.getName().equals("mode")) {
-                ((OperationItem) item).setValue("region");
-            }
-        }
-    }
-
     void addExtractRegion(double min, double max, double f1, double f2) {
         int imin = (int) (min + 0.5);
         int imax = (int) (max + 0.5);
