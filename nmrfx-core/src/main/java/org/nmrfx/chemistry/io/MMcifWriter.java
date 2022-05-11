@@ -127,69 +127,6 @@ public class MMcifWriter {
         chan.write("#\n");
     }
 
-//    static void writeChemComp(FileWriter chan) throws IOException, InvalidMoleculeException {
-//        chan.write("loop_\n");
-//        for (String loopString : CHEM_COMP_LOOP_STRINGS) {
-//            chan.write(loopString + "\n");
-//        }
-//
-//        Molecule molecule = Molecule.getActive();
-//        if (molecule == null) {
-//            throw new InvalidMoleculeException("No active mol");
-//        }
-//
-//        if (weightMap.isEmpty()) {
-//            makeWeightMap();
-//        }
-//        
-//        Set<Residue> resSet = new HashSet<>();
-//        List<String> resNames = new ArrayList<>();
-//        for (Polymer polymer : molecule.getPolymers()) {
-//            List<Residue> resList = polymer.getResidues();
-//            for (Residue res : resList) {
-//                if (!resSet.contains(res) && !resNames.contains(res.name)) {
-//                    resSet.add(res);
-//                    resNames.add(res.name);
-//                }
-//            }
-//        }
-//        
-//        List<Residue> sortResSet = new ArrayList<>(resSet);
-//        Collections.sort(sortResSet, (r1, r2) -> r1.name.compareTo(r2.name));
-//        for (Residue res : sortResSet) {
-//            String fullResName = "";
-//            String[] resNameSplit = res.label.split(",");
-//            if (resNameSplit.length > 1) {
-//                fullResName = resNameSplit[1];
-//            } else {
-//                String mainDir = getMainDirectory();
-//                String prfFile = String.join(File.separator, mainDir, "src", "main", "resources", "reslib_iu", res.name.toLowerCase() + ".prf");
-//                BufferedReader reader = new BufferedReader(new FileReader(prfFile));
-//                while (true) {
-//                    String line = reader.readLine();
-//                    if (line == null) {
-//                        break;
-//                    }
-//                    String lineS = line.trim();
-//                    String match = "LNAME";
-//                    if (lineS.startsWith(match)) {
-//                        fullResName = lineS.substring(match.length()).trim();
-//                        if (res.name.equals("ASP")) {
-//                            fullResName = "Aspartic Acid";
-//                        } else if (res.name.equals("GLU")) {
-//                            fullResName = "Glutamic Acid";
-//                        }
-//                        break;
-//                    }
-//                }
-//            }
-//            String result = res.toMMCifChemCompString(weightMap, fullResName.toUpperCase());
-//            if (result != null) {
-//                chan.write(result + "\n");
-//            }
-//        }
-//        chan.write("#\n");
-//    }
     static void writeStructAsym(MoleculeBase molecule, FileWriter chan) throws IOException, InvalidMoleculeException {
         chan.write("loop_\n");
         for (String loopString : STRUCT_ASYM_LOOP_STRINGS) {
@@ -203,7 +140,6 @@ public class MMcifWriter {
                 String polymerName = ((Polymer) entity).getName();
                 char chainID = polymerName.charAt(0);
                 int entityID = ((Polymer) entity).getIDNum();
-//                System.out.println("writer " + chainID + " " + entityID);
                 String blankPDBflag = "N"; //fixme get from file
                 String pdbxMod = "N";
                 List<Residue> resList = ((Polymer) entity).getResidues();
@@ -443,7 +379,6 @@ public class MMcifWriter {
         MoleculeBase molecule = MoleculeFactory.getActive();
         if (molecule != null) {
             writeMolSys(molecule, chan, false);
-//            writeChemComp(chan);
             writeStructAsym(molecule, chan);
             writeStructConf(molecule, chan);
             writeSheetRange(molecule, chan);
