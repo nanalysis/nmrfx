@@ -161,11 +161,7 @@ public class RefInfo {
                     }
                     break;
                 case "acqarray":
-                    if (getDefault) {
-                        value = "0";
-                    } else {
-                        value = "0";
-                    }
+                    value = "0";
                     break;
                 case "sf":
                     value = nmrData.getSFNames()[dim];

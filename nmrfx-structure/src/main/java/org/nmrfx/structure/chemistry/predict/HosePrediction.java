@@ -609,18 +609,11 @@ public class HosePrediction {
                         deltaSums[i] += (ppm - predPPM) * (ppm - predPPM);
                         System.out.printf("%s\t%8.2f\t%8.2f\t%8.2f\t%d\t%d\t%s\t%s\t%s\n", statNames[i], ppm, predPPM, Math.abs(ppm - predPPM), iShell, stat.nValues, hoseString[0], smile, molNum);
                     }
-                    if ((stat == null) || (stat.nValues < 4)) {
-                        if (stat == null) {
-                            //System.err.println(lineReader.getLineNumber() + " " + statNames[i] + " " + hoseString[0] + " null " + iShell + " " +  ppm);
-                        } else {
-                            //System.err.println(lineReader.getLineNumber() + " " + statNames[i] + " " + hoseString[0] + " insufficient " + stat.nValues + " " +  iShell + " " + ppm);
-                        }
-                    } else {
+                    if ((stat != null && stat.nValues >= 4)) {
                         double p0 = stat.dStat.getPercentile(1.);
                         double p1 = stat.dStat.getPercentile(99.);
                         double extraValue = extra[i] * (maxShells - iShell);
                         if ((ppm < (p0 - extraValue)) || (ppm > (p1 + extraValue))) {
-                            //System.err.println(lineReader.getLineNumber() + " " + statNames[i] + " " + hoseString[0] + " " + (p0-extraValue) + " " + ppm + " " + (p1+extraValue) + " " + stat.nValues + " " + iShell);
                             nViols[i]++;
                         }
                     }
