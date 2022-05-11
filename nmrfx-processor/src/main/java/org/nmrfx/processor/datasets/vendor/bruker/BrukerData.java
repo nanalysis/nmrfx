@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -1835,42 +1835,39 @@ public class BrukerData implements NMRData {
 
     // write binary data into text file, using header info
     public void fileoutraw() {
-        try {
-            try (BufferedWriter bw = Files.newBufferedWriter(Paths.get("/tmp/bwraw.txt"), Charset.forName("US-ASCII"),
-                    StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.CREATE, StandardOpenOption.WRITE)) {
-                String dpath = fpath;
-                if ((new File(dpath + File.separator + "ser")).exists()) {
-                    dpath += File.separator + "ser";
-                } else if ((new File(dpath + File.separator + "fid")).exists()) {
-                    dpath += File.separator + "fid";
-                }
-                DataInputStream in = new DataInputStream(new FileInputStream(dpath));
-                bw.write("rawfile header");
-                bw.newLine();
-                int px;
-                int nvectors = getNVectors();
-                for (int i = 0; i < nvectors; i++) {
-                    bw.write("block " + i + " ");
-                    for (int j = 0; j < np * 2; j++) {  // data
-                        if (j % 512 == 0) {
-                            bw.write("\n  block " + i + ":" + (j / 512) + " : ");
-                        }
-                        px = in.readInt();
-                        if (swapBits) {
-                            px = Integer.reverseBytes(px);
-                        }
-                        bw.write(px + " ");
+        String dpath = fpath;
+        if ((new File(dpath + File.separator + "ser")).exists()) {
+            dpath += File.separator + "ser";
+        } else if ((new File(dpath + File.separator + "fid")).exists()) {
+            dpath += File.separator + "fid";
+        }
+        try (BufferedWriter bw = Files.newBufferedWriter(Paths.get("/tmp/bwraw.txt"), Charset.forName("US-ASCII"),
+                StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.CREATE, StandardOpenOption.WRITE);
+             DataInputStream in = new DataInputStream(new FileInputStream(dpath));) {
+            bw.write("rawfile header");
+            bw.newLine();
+            int px;
+            int nvectors = getNVectors();
+            for (int i = 0; i < nvectors; i++) {
+                bw.write("block " + i + " ");
+                for (int j = 0; j < np * 2; j++) {  // data
+                    if (j % 512 == 0) {
+                        bw.write("\n  block " + i + ":" + (j / 512) + " : ");
                     }
-                    bw.write(": endblock " + i);
-                    bw.newLine();
-                    bw.flush();
+                    px = in.readInt();
+                    if (swapBits) {
+                        px = Integer.reverseBytes(px);
+                    }
+                    bw.write(px + " ");
                 }
-//            bw.write(in.readInt() + " ");  // extra point, overflow
+                bw.write(": endblock " + i);
+                bw.newLine();
+                bw.flush();
             }
         } catch (IOException ex) {
             log.warn(ex.getMessage(), ex);
         }
-    }  // end fileoutraw
+    }
 
     // output file after dspPhase etc.
     private void fileout2() {
@@ -1970,8 +1967,6 @@ public class BrukerData implements NMRData {
             }
             System.out.println(" : " + cdata[bruker.getNPoints() / 2 - 1]);
             System.out.println(" : " + cdata[bruker.getNPoints() - 1]);
-            //        bruker.fileoutraw();
-            //        ((BrukerData)bruker).fileout2();
 
             Vec vc = new Vec(bruker.getNPoints(), true);
             bruker.readVector(0, vc);

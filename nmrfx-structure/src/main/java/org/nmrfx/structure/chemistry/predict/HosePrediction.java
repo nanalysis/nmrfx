@@ -539,9 +539,8 @@ public class HosePrediction {
         int[] nValues = new int[2];
         int[] nNulls = new int[2];
         int[] nViols = new int[2];
-        try {
-            FileReader reader = new FileReader(validate);
-            LineNumberReader lineReader = new LineNumberReader(reader);
+        try (FileReader reader = new FileReader(validate);
+             LineNumberReader lineReader = new LineNumberReader(reader);){
             while (true) {
                 cPPMs.clear();
                 hPPMs.clear();
@@ -567,7 +566,6 @@ public class HosePrediction {
                         hPPMs.add(Double.parseDouble(ppmValues[i + 1]));
                     }
                 }
-//System.out.println(cPPMs.size() + " " + hPPMs.size() + " " + hoseString[0]);
                 String[] statNames = {"13C", "1H"};
                 double[] extra = {2.0, 0.4};
                 for (int i = 0; i < 2; i++) {
@@ -604,7 +602,6 @@ public class HosePrediction {
                         nNulls[i]++;
                     } else {
                         nValues[i]++;
-                        //double predPPM = stat.dStat.getPercentile(50.0);
                         double predPPM = stat.wmean;
                         deltaSums[i] += (ppm - predPPM) * (ppm - predPPM);
                         System.out.printf("%s\t%8.2f\t%8.2f\t%8.2f\t%d\t%d\t%s\t%s\t%s\n", statNames[i], ppm, predPPM, Math.abs(ppm - predPPM), iShell, stat.nValues, hoseString[0], smile, molNum);
@@ -619,7 +616,6 @@ public class HosePrediction {
                     }
                 }
             }
-            reader.close();
         } catch (IOException ioE) {
         }
         for (int i = 0; i < 2; i++) {
@@ -694,12 +690,8 @@ public class HosePrediction {
     }
 
     public void openData(String fileName, boolean resourceMode) {
-        try {
-            InputStream iStream;
+        try (InputStream iStream = resourceMode ? ClassLoader.getSystemResourceAsStream(fileName) : new FileInputStream(fileName)){
             if (resourceMode) {
-//                System.out.println("open " + fileName);
-                iStream = ClassLoader.getSystemResourceAsStream(fileName);
-//                System.out.println("got " + iStream);
                 ByteArrayOutputStream byteBuffer = new ByteArrayOutputStream();
                 int nRead;
                 byte[] data = new byte[16384];
@@ -709,12 +701,10 @@ public class HosePrediction {
                 byteBuffer.flush();
                 buffer = byteBuffer.toByteArray();
             } else {
-                iStream = new FileInputStream(fileName);
                 int size = iStream.available();
                 buffer = new byte[size];
                 iStream.read(buffer);
             }
-            iStream.close();
         } catch (IOException ioE) {
             System.out.println("error " + ioE.getMessage());
         }

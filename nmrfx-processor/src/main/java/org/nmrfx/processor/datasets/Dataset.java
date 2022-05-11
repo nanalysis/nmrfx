@@ -220,15 +220,12 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         refUnits[0] = 3;
         rmsd = new double[1][1];
         values = new double[1][];
-        //System.err.println("Opened file " + fileName + " with " + this.nDim + " dimensions");
         addFile(fileName);
     }
 
     private Dataset(String fullName, String title,
             int[] dimSizes, boolean closeDataset) throws DatasetException {
-        //LOGGER.info("Make dataset {}", fullName);
-        try {
-            RandomAccessFile raFile = new RandomAccessFile(fullName, "rw");
+        try (RandomAccessFile raFile = new RandomAccessFile(fullName, "rw")) {
             file = new File(fullName);
 
             canonicalName = file.getCanonicalPath();
@@ -283,7 +280,6 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
             DatasetParameterFile parFile = new DatasetParameterFile(this, layout);
             parFile.remove();
         } catch (IOException ioe) {
-            //LOGGER.error(ioe.getMessage());
             throw new DatasetException("Can't create dataset " + ioe.getMessage());
         }
     }
@@ -638,7 +634,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         return rData;
     }
 
-public double[] getPercentile(double p, int[][] pt, int[] dim) throws IOException {
+    public double[] getPercentile(double p, int[][] pt, int[] dim) throws IOException {
         PSquarePercentile pSquarePos = new PSquarePercentile(p);
         PSquarePercentile pSquareNeg = new PSquarePercentile(p);
 
@@ -1041,7 +1037,7 @@ public double[] getPercentile(double p, int[][] pt, int[] dim) throws IOExceptio
      * @throws java.io.IOException if an I/O error ocurrs
      */
     synchronized public float readMatrix(int[][] pt,
-            int[] dim, float[][] matrix) throws IOException {
+                                         int[] dim, float[][] matrix) throws IOException {
         float maxValue = Float.NEGATIVE_INFINITY;
         float minValue = Float.MAX_VALUE;
         int[] point = new int[nDim];
@@ -1093,7 +1089,7 @@ public double[] getPercentile(double p, int[][] pt, int[] dim) throws IOExceptio
      * @throws java.io.IOException if an I/O error ocurrs
      */
     synchronized public double readMatrix(int[][] pt,
-            int[] dim, double[][] matrix) throws IOException {
+                                          int[] dim, double[][] matrix) throws IOException {
         double maxValue = Double.NEGATIVE_INFINITY;
         double minValue = Double.MAX_VALUE;
         int[] point = new int[nDim];
@@ -1132,7 +1128,7 @@ public double[] getPercentile(double p, int[][] pt, int[] dim) throws IOExceptio
      * @throws java.io.IOException if an I/O error occurs
      */
     synchronized public double readMatrixND(int[][] pt,
-            int[] dim, MatrixND matrix) throws IOException {
+                                            int[] dim, MatrixND matrix) throws IOException {
         double maxValue = Double.NEGATIVE_INFINITY;
         double minValue = Double.MAX_VALUE;
         int[] point = new int[nDim];
@@ -1266,35 +1262,35 @@ public double[] getPercentile(double p, int[][] pt, int[] dim) throws IOExceptio
     }
 
     static String[] exptListLoopString = {
-        "_Experiment.ID",
-        "_Experiment.Name",
-        "_Experiment.Raw_data_flag",
-        "_Experiment.NMR_spec_expt_ID",
-        "_Experiment.NMR_spec_expt_label",
-        "_Experiment.Sample_ID",
-        "_Experiment.Sample_label",
-        "_Experiment.Sample_state",
-        "_Experiment.Sample_volume",
-        "_Experiment.Sample_volume_units",
-        "_Experiment.Sample_condition_list_ID",
-        "_Experiment.Sample_condition_list_label",
-        "_Experiment.Sample_spinning_rate",
-        "_Experiment.Sample_angle",
-        "_Experiment.NMR_tube_type",
-        "_Experiment.NMR_spectrometer_ID",
-        "_Experiment.NMR_spectrometer_label",
-        "_Experiment.NMR_spectrometer_probe_ID",
-        "_Experiment.NMR_spectrometer_probe_label",
-        "_Experiment.NMR_spectral_processing_ID",
-        "_Experiment.NMR_spectral_processing_label",
-        "_Experiment.Experiment_list_ID",};
+            "_Experiment.ID",
+            "_Experiment.Name",
+            "_Experiment.Raw_data_flag",
+            "_Experiment.NMR_spec_expt_ID",
+            "_Experiment.NMR_spec_expt_label",
+            "_Experiment.Sample_ID",
+            "_Experiment.Sample_label",
+            "_Experiment.Sample_state",
+            "_Experiment.Sample_volume",
+            "_Experiment.Sample_volume_units",
+            "_Experiment.Sample_condition_list_ID",
+            "_Experiment.Sample_condition_list_label",
+            "_Experiment.Sample_spinning_rate",
+            "_Experiment.Sample_angle",
+            "_Experiment.NMR_tube_type",
+            "_Experiment.NMR_spectrometer_ID",
+            "_Experiment.NMR_spectrometer_label",
+            "_Experiment.NMR_spectrometer_probe_ID",
+            "_Experiment.NMR_spectrometer_probe_label",
+            "_Experiment.NMR_spectral_processing_ID",
+            "_Experiment.NMR_spectral_processing_label",
+            "_Experiment.Experiment_list_ID",};
     static String[] exptFileLoopString = {
-        "_Experiment_file.ID",
-        "_Experiment_file.Name",
-        "_Experiment_file.Type",
-        "_Experiment_file.Directory_path",
-        "_Experiment_file.Details",
-        "_Experiment_file.Experiment_list_ID",};
+            "_Experiment_file.ID",
+            "_Experiment_file.Name",
+            "_Experiment_file.Type",
+            "_Experiment_file.Directory_path",
+            "_Experiment_file.Details",
+            "_Experiment_file.Experiment_list_ID",};
 
     /**
      * Test of speed of accessing data in file

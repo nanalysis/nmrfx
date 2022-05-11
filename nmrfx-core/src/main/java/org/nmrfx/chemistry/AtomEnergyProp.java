@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures 
+ * NMRFx Structure : A Program for Calculating Structures
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -95,7 +95,6 @@ public class AtomEnergyProp {
 
     public static void readPropFile(String fileName) throws FileNotFoundException, IOException {
         String string;
-        LineNumberReader lineReader;
         FILE_LOADED = true;
         BufferedReader bf;
         if (fileName.startsWith("reslib_iu")) {
@@ -106,35 +105,35 @@ public class AtomEnergyProp {
             bf = new BufferedReader(new FileReader(fileName));
         }
 
-        lineReader = new LineNumberReader(bf);
         List<String> headerS = Arrays.asList();
         //AtomType        HardRadius      RMin    E       Mass    HBondType
+        try (LineNumberReader lineReader = new LineNumberReader(bf)) {
+            while (true) {
+                string = lineReader.readLine();
+                if (string != null) {
+                    List<String> stringS = Arrays.asList(string.split("\\s+"));
+                    if (string.startsWith("AtomType")) {
+                        headerS = stringS;
+                    } else {
+                        String aType = stringS.get(headerS.indexOf("AtomType"));
+                        double r = Double.parseDouble(stringS.get(headerS.indexOf("RMin")));
+                        int aNum = Integer.parseInt(stringS.get(headerS.indexOf("AtomicNumber")));
+                        double rh = Double.parseDouble(stringS.get(headerS.indexOf("HardRadius")));
+                        double e = Double.parseDouble(stringS.get(headerS.indexOf("E")));
+                        double m = Double.parseDouble(stringS.get(headerS.indexOf("Mass")));
+                        int hType = (int) Double.parseDouble(stringS.get(headerS.indexOf("HBondType")));
 
-        while (true) {
-            string = lineReader.readLine();
-            if (string != null) {
-                List<String> stringS = Arrays.asList(string.split("\\s+"));
-                if (string.startsWith("AtomType")) {
-                    headerS = stringS;
+                        e = -e;
+                        r = r * 2.0;
+                        double a = 1.0;
+                        double b = 1.0;
+                        double c = 0.0;
+                        AtomEnergyProp prop = new AtomEnergyProp(aType, aNum, a, b, r, rh, e, c, m, hType);
+                        AtomEnergyProp.add(aType, prop);
+                    }
                 } else {
-                    String aType = stringS.get(headerS.indexOf("AtomType"));
-                    double r = Double.parseDouble(stringS.get(headerS.indexOf("RMin")));
-                    int aNum = Integer.parseInt(stringS.get(headerS.indexOf("AtomicNumber")));
-                    double rh = Double.parseDouble(stringS.get(headerS.indexOf("HardRadius")));
-                    double e = Double.parseDouble(stringS.get(headerS.indexOf("E")));
-                    double m = Double.parseDouble(stringS.get(headerS.indexOf("Mass")));
-                    int hType = (int) Double.parseDouble(stringS.get(headerS.indexOf("HBondType")));
-
-                    e = -e;
-                    r = r * 2.0;
-                    double a = 1.0;
-                    double b = 1.0;
-                    double c = 0.0;
-                    AtomEnergyProp prop = new AtomEnergyProp(aType, aNum, a, b, r, rh, e, c, m, hType);
-                    AtomEnergyProp.add(aType, prop);
+                    break;
                 }
-            } else {
-                break;
             }
         }
         DEFAULT_MAP.put(1, get("H"));
@@ -173,7 +172,6 @@ public class AtomEnergyProp {
     }
 
     public static void makeIrpMap(String fileName) throws FileNotFoundException, IOException {
-        LineNumberReader lineReader;
         PARM_FILE_LOADED = true;
         BufferedReader bf;
         if (fileName.startsWith("reslib_iu")) {
@@ -184,43 +182,43 @@ public class AtomEnergyProp {
             bf = new BufferedReader(new FileReader(fileName));
         }
 
-        lineReader = new LineNumberReader(bf);
         torsionMap.clear();
         List<List<double[]>> torsionMasterList = new ArrayList<>();
         List<double[]> torsionList;
         int nVals = 1;
         String lastKey = "";
-        while (true) {
-            String line = lineReader.readLine();
-            if (line != null) {
-                line = line.trim();
-                Matcher matcher = dihPattern.matcher(line);
-                if (matcher.matches()) {
-                    String key = getAtomKey(matcher, 4);
-                    int divider = Integer.parseInt(matcher.group(5));
-                    double barrier = Double.parseDouble(matcher.group(6));
-                    double phase = Double.parseDouble(matcher.group(7)) * Math.PI / 180.0;
-                    phase = Util.reduceAngle(phase);
-                    double periodicity = Math.abs(Double.parseDouble(matcher.group(8)));
+        try (LineNumberReader lineReader = new LineNumberReader(bf)) {
+            while (true) {
+                String line = lineReader.readLine();
+                if (line != null) {
+                    line = line.trim();
+                    Matcher matcher = dihPattern.matcher(line);
+                    if (matcher.matches()) {
+                        String key = getAtomKey(matcher, 4);
+                        double barrier = Double.parseDouble(matcher.group(6));
+                        double phase = Double.parseDouble(matcher.group(7)) * Math.PI / 180.0;
+                        phase = Util.reduceAngle(phase);
+                        double periodicity = Math.abs(Double.parseDouble(matcher.group(8)));
 
-                    if (!torsionMap.containsKey(key)) {
-                        torsionList = new ArrayList<>();
-                        torsionMasterList.add(torsionList);
-                        torsionMap.put(key, torsionMasterList.size() - 1);
-                    } else {
-                        int index = torsionMap.get(key);
-                        torsionList = torsionMasterList.get(index);
-                        if (!key.equals(lastKey)) {
-                            torsionList.clear();
+                        if (!torsionMap.containsKey(key)) {
+                            torsionList = new ArrayList<>();
+                            torsionMasterList.add(torsionList);
+                            torsionMap.put(key, torsionMasterList.size() - 1);
+                        } else {
+                            int index = torsionMap.get(key);
+                            torsionList = torsionMasterList.get(index);
+                            if (!key.equals(lastKey)) {
+                                torsionList.clear();
+                            }
                         }
+                        lastKey = key;
+                        double[] vals = {barrier, periodicity, phase};
+                        nVals = vals.length;
+                        torsionList.add(vals);
                     }
-                    lastKey = key;
-                    double[] vals = {barrier, periodicity, phase};
-                    nVals = vals.length;
-                    torsionList.add(vals);
+                } else {
+                    break;
                 }
-            } else {
-                break;
             }
         }
 
@@ -350,7 +348,7 @@ public class AtomEnergyProp {
      * substitution for hydrogen
      */
     public static EnergyPair getInteraction(final Atom atom1, final Atom atom2, double hardSphere,
-            boolean usehardSphere, double shrinkValue, double shrinkHValue) {
+                                            boolean usehardSphere, double shrinkValue, double shrinkHValue) {
 
         AtomEnergyProp iProp = (AtomEnergyProp) atom1.atomEnergyProp;
         AtomEnergyProp jProp = (AtomEnergyProp) atom2.atomEnergyProp;

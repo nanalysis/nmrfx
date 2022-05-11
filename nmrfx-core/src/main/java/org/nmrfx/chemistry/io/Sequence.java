@@ -408,7 +408,7 @@ public class Sequence {
 
     public ArrayList<String[]> loadResidue(final String fileName, boolean throwTclException) throws MoleculeIOException {
         BufferedReader bf;
-        ArrayList<String[]> fieldArray = new ArrayList<String[]>();
+        ArrayList<String[]> fieldArray = new ArrayList<>();
         bf = getLocalResidueReader(fileName);
         if (bf == null) {
             try {
@@ -431,9 +431,9 @@ public class Sequence {
             }
         }
         if (bf != null) {
-            try {
-                while (bf.ready()) {
-                    String line = bf.readLine();
+            try (BufferedReader bufferedReader = bf) {
+                while (bufferedReader.ready()) {
+                    String line = bufferedReader.readLine();
                     if (line == null) {
                         break;
                     }
@@ -533,30 +533,23 @@ public class Sequence {
 
     public MoleculeBase read(String fileName, String polymerName) throws MoleculeIOException {
         ArrayList<String> inputStrings = new ArrayList<>();
-        LineNumberReader lineReader = null;
-        try {
-            BufferedReader bf = new BufferedReader(new FileReader(fileName));
-            lineReader = new LineNumberReader(bf);
-        } catch (FileNotFoundException ioe) {
+        try (BufferedReader bf = new BufferedReader(new FileReader(fileName));
+             LineNumberReader lineReader = new LineNumberReader(bf);) {
+            String inputString = null;
+            while (true) {
+                inputString = lineReader.readLine();
+                if (inputString != null) {
+                    inputStrings.add(inputString);
+                } else {
+                    break;
+                }
+            }
+        }  catch (FileNotFoundException ioe) {
             throw new MoleculeIOException(ioe.getMessage());
+        } catch (IOException ioE) {
         }
 
         File file = new File(fileName);
-        while (true) {
-            String inputString = null;
-            try {
-                inputString = lineReader.readLine();
-                if (inputString == null) {
-                    lineReader.close();
-                }
-            } catch (IOException ioE) {
-            }
-            if (inputString != null) {
-                inputStrings.add(inputString);
-            } else {
-                break;
-            }
-        }
         String parentDir = file.getParent();
         read(polymerName, inputStrings, parentDir);
         return molecule;

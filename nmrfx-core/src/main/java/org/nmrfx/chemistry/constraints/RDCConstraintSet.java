@@ -233,36 +233,39 @@ public class RDCConstraintSet implements ConstraintSet, Iterable {
 
     public void readInputFile(File file) throws IOException {
         constraints.clear();
-        BufferedReader bf = new BufferedReader(new FileReader(file));
-        LineNumberReader lineReader = new LineNumberReader(bf);
-        while (true) {
-            String line = lineReader.readLine();
-            if (line == null) {
-                break;
-            }
-            String sline = line.trim();
-            String[] sfields = sline.split("\t");
-            if (sfields.length == 4) {
-                Atom atom1 = MoleculeBase.getAtomByName(sfields[0]);
-                Atom atom2 = MoleculeBase.getAtomByName(sfields[1]);
-                double value = Double.parseDouble(sfields[2]);
-                double err = Double.parseDouble(sfields[3]);
-                RDCConstraint rdc = new RDCConstraint(this, atom1, atom2, value, err);
-                constraints.add(rdc);
-            } else if (sfields.length == 6) {
-                Atom atom1 = MoleculeBase.getAtomByName(sfields[0] + "." + sfields[1]);
-                Atom atom2 = MoleculeBase.getAtomByName(sfields[2] + "." + sfields[3]);
-                double value = Double.parseDouble(sfields[4]);
-                double err = Double.parseDouble(sfields[5]);
-                RDCConstraint rdc = new RDCConstraint(this, atom1, atom2, value, err);
-                constraints.add(rdc);
-            } else if (sfields.length == 8) {
-                Atom atom1 = MoleculeBase.getAtomByName(sfields[0] + "." + sfields[2]);
-                Atom atom2 = MoleculeBase.getAtomByName(sfields[3] + "." + sfields[5]);
-                double value = Double.parseDouble(sfields[6]);
-                double err = Double.parseDouble(sfields[7]);
-                RDCConstraint rdc = new RDCConstraint(this, atom1, atom2, value, err);
-                constraints.add(rdc);
+
+
+        try (BufferedReader bf = new BufferedReader(new FileReader(file));
+             LineNumberReader lineReader = new LineNumberReader(bf);) {
+            while (true) {
+                String line = lineReader.readLine();
+                if (line == null) {
+                    break;
+                }
+                String sline = line.trim();
+                String[] sfields = sline.split("\t");
+                if (sfields.length == 4) {
+                    Atom atom1 = MoleculeBase.getAtomByName(sfields[0]);
+                    Atom atom2 = MoleculeBase.getAtomByName(sfields[1]);
+                    double value = Double.parseDouble(sfields[2]);
+                    double err = Double.parseDouble(sfields[3]);
+                    RDCConstraint rdc = new RDCConstraint(this, atom1, atom2, value, err);
+                    constraints.add(rdc);
+                } else if (sfields.length == 6) {
+                    Atom atom1 = MoleculeBase.getAtomByName(sfields[0] + "." + sfields[1]);
+                    Atom atom2 = MoleculeBase.getAtomByName(sfields[2] + "." + sfields[3]);
+                    double value = Double.parseDouble(sfields[4]);
+                    double err = Double.parseDouble(sfields[5]);
+                    RDCConstraint rdc = new RDCConstraint(this, atom1, atom2, value, err);
+                    constraints.add(rdc);
+                } else if (sfields.length == 8) {
+                    Atom atom1 = MoleculeBase.getAtomByName(sfields[0] + "." + sfields[2]);
+                    Atom atom2 = MoleculeBase.getAtomByName(sfields[3] + "." + sfields[5]);
+                    double value = Double.parseDouble(sfields[6]);
+                    double err = Double.parseDouble(sfields[7]);
+                    RDCConstraint rdc = new RDCConstraint(this, atom1, atom2, value, err);
+                    constraints.add(rdc);
+                }
             }
         }
     }

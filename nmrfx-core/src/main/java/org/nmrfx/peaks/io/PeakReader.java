@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -622,15 +622,15 @@ public class PeakReader {
         String fileTail = path.getFileName().toString();
         fileTail = fileTail.substring(0, fileTail.lastIndexOf('.'));
         String listName = fileTail;
-        PythonInterpreter interpreter = new PythonInterpreter();
-        interpreter.exec("import sparky");
-        String rdString;
-        interpreter.set("pMap", pMap);
-        interpreter.exec("sparky.pMap=pMap");
-        rdString = String.format("sparky.loadSaveFile('%s','%s')", fileName, listName);
-        interpreter.exec(rdString);
-        PeakList peakList = PeakList.get(listName);
-        return peakList;
+        try (PythonInterpreter interpreter = new PythonInterpreter()) {
+            interpreter.exec("import sparky");
+            String rdString;
+            interpreter.set("pMap", pMap);
+            interpreter.exec("sparky.pMap=pMap");
+            rdString = String.format("sparky.loadSaveFile('%s','%s')", fileName, listName);
+            interpreter.exec(rdString);
+        }
+        return PeakList.get(listName);
     }
 
     public static PeakList readSparkyAssignmentFile(String fileName) throws IOException {

@@ -23,6 +23,8 @@ import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
+
 import org.nmrfx.project.ProjectBase;
 import org.nmrfx.star.ParseException;
 import org.nmrfx.peaks.InvalidPeakException;
@@ -251,50 +253,54 @@ public class StructureProject extends ProjectBase {
         Pattern pattern = Pattern.compile("(.+)\\.(seq|pdb|mol|sdf)");
         Predicate<String> predicate = pattern.asPredicate();
         if (Files.isDirectory(directory)) {
-            Files.list(directory).sequential().filter(path -> predicate.test(path.getFileName().toString())).
-                    sorted(new FileComparator()).
-                    forEach(path -> {
-                        String pathName = path.toString();
-                        String fileName = path.getFileName().toString();
-                        Matcher matcher = pattern.matcher(fileName);
-                        String baseName = matcher.group(1);
-                        System.out.println("read mol: " + pathName);
+            try (Stream<Path> files = Files.list(directory)) {
+                files.sequential().filter(path -> predicate.test(path.getFileName().toString())).
+                        sorted(new FileComparator()).
+                        forEach(path -> {
+                            String pathName = path.toString();
+                            String fileName = path.getFileName().toString();
+                            Matcher matcher = pattern.matcher(fileName);
+                            String baseName = matcher.group(1);
+                            System.out.println("read mol: " + pathName);
 
-                        try {
-                            if (fileName.endsWith(".seq")) {
-                                Sequence sequence = new Sequence();
-                                sequence.read(pathName);
-                            } else if (fileName.endsWith(".pdb")) {
-                                if (mol.entities.isEmpty()) {
-                                    pdbReader.readSequence(pathName, false, 0);
-                                } else {
-                                    PDBFile.readResidue(pathName, null, mol, baseName);
+                            try {
+                                if (fileName.endsWith(".seq")) {
+                                    Sequence sequence = new Sequence();
+                                    sequence.read(pathName);
+                                } else if (fileName.endsWith(".pdb")) {
+                                    if (mol.entities.isEmpty()) {
+                                        pdbReader.readSequence(pathName, false, 0);
+                                    } else {
+                                        PDBFile.readResidue(pathName, null, mol, baseName);
+                                    }
+                                } else if (fileName.endsWith(".sdf")) {
+                                    SDFile.read(pathName, null, mol, baseName);
+                                } else if (fileName.endsWith(".mol")) {
+                                    SDFile.read(pathName, null, mol, baseName);
                                 }
-                            } else if (fileName.endsWith(".sdf")) {
-                                SDFile.read(pathName, null, mol, baseName);
-                            } else if (fileName.endsWith(".mol")) {
-                                SDFile.read(pathName, null, mol, baseName);
+                            } catch (MoleculeIOException molE) {
                             }
-                        } catch (MoleculeIOException molE) {
-                        }
 
-                    });
+                        });
+            }
         }
     }
 
-    void loadShiftFiles(Path directory, boolean refMode) throws MoleculeIOException, IOException {
+    void loadShiftFiles(Path directory, boolean refMode) throws IOException {
         Molecule mol = activeMol();
         Pattern pattern = Pattern.compile("(.+)\\.(txt|ppm)");
         Predicate<String> predicate = pattern.asPredicate();
         if (Files.isDirectory(directory)) {
-            Files.list(directory).sequential().filter(path -> predicate.test(path.getFileName().toString())).
-                    sorted(new FileComparator()).
-                    forEach(path -> {
-                        String fileName = path.getFileName().toString();
-                        Optional<Integer> fileNum = getIndex(fileName);
-                        int ppmSet = fileNum.isPresent() ? fileNum.get() : 0;
-                        PPMFiles.readPPM(mol, path, ppmSet, refMode);
-                    });
+            try (Stream<Path> files = Files.list(directory)) {
+                files.sequential().filter(path -> predicate.test(path.getFileName().toString())).
+                        sorted(new FileComparator()).
+                        forEach(path -> {
+                            String fileName = path.getFileName().toString();
+                            Optional<Integer> fileNum = getIndex(fileName);
+                            int ppmSet = fileNum.isPresent() ? fileNum.get() : 0;
+                            PPMFiles.readPPM(mol, path, ppmSet, refMode);
+                        });
+            }
         }
     }
 

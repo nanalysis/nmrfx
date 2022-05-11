@@ -336,11 +336,8 @@ public class EnergyConstraintPairs extends EnergyDistancePairs {
         DecimalFormat doubFormatter = new DecimalFormat("#.0");
         ArrayList<String[]> groupLineElements = new ArrayList<>();
         String prevGroup = "";
-        String prevIAtom = "";
-        String prevJAtom = "";
         Atom[] atoms = eCoords.atoms;
-        try {
-            FileWriter writerFile = new FileWriter(fileName);
+        try (FileWriter writerFile = new FileWriter(fileName)) {
             for (int i = 0; i < nPairs; i++) {
                 String iIndex = Integer.toString(i);
                 String iGroup = Integer.toString(iGroups[i]);
@@ -381,10 +378,7 @@ public class EnergyConstraintPairs extends EnergyDistancePairs {
                 }
 
                 prevGroup = iGroup;
-                prevIAtom = iAtomName;
-                prevJAtom = jAtomName;
             }
-            writerFile.close();
         } catch (IOException e) {
             System.err.println("Error dumping NMRFxS restraints. Exception : " + e);
         }

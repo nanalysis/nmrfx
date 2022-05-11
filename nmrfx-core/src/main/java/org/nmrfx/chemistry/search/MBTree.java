@@ -23,34 +23,23 @@ import java.io.*;
 public class MBTree {
 
     static public void readBTree(String fileName) {
-        LineNumberReader lineReader;
         String string = null;
-
-        try {
-            BufferedReader bf = new BufferedReader(new FileReader(fileName));
-            lineReader = new LineNumberReader(bf);
-        } catch (IOException ioe) {
-            System.out.println("Cannot open the file " + fileName);
-            System.out.println(ioe.getMessage());
-
-            return;
-        }
-
-        try {
+        try (BufferedReader bf = new BufferedReader(new FileReader(fileName));
+             LineNumberReader lineReader = new LineNumberReader(bf);) {
             while (true) {
                 string = lineReader.readLine();
 
                 if (string == null) {
                     return;
                 }
-
                 System.out.println(string);
             }
+        } catch (FileNotFoundException fnf) {
+            System.out.println("Cannot open the file " + fileName);
+            System.out.println(fnf.getMessage());
         } catch (IOException ioe) {
             System.out.println("Cannot read the file " + fileName);
             System.out.println(ioe.getMessage());
-
-            return;
         }
     }
 }

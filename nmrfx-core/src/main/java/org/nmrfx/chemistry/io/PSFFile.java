@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures 
+ * NMRFx Structure : A Program for Calculating Structures
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -35,15 +35,6 @@ public class PSFFile {
             throws MoleculeIOException {
         int i;
         String string;
-        LineNumberReader lineReader;
-        System.out.println("open " + fileName);
-        try {
-            BufferedReader bf = new BufferedReader(new FileReader(fileName));
-            lineReader = new LineNumberReader(bf);
-        } catch (IOException ioe) {
-            throw new MoleculeIOException(ioe.getMessage());
-        }
-
         String lastRes = "";
 
         File file = new File(fileName);
@@ -68,126 +59,104 @@ public class PSFFile {
         int structureNumber = 0;
 
         Residue residue = null;
-        ArrayList<Atom> atoms = new ArrayList<Atom>();
+        ArrayList<Atom> atoms = new ArrayList<>();
         int natoms = 0;
         int nbonds = 0;
-
-        while (true) {
-            try {
+        try (BufferedReader bf = new BufferedReader(new FileReader(fileName));
+             LineNumberReader lineReader = new LineNumberReader(bf);) {
+            while (true) {
                 string = lineReader.readLine();
                 if (string == null) {
-                    lineReader.close();
                     System.out.println("read null");
                     return;
                 }
-            } catch (IOException ioe) {
-                System.err.println(ioe.getMessage());
 
-                return;
+                int index = string.indexOf("!NATOM");
+                if (index != -1) {
+                    natoms = Integer.parseInt(string.substring(0, index).trim());
+                    break;
+                }
             }
-
-            int index = string.indexOf("!NATOM");
-            if (index != -1) {
-                natoms = Integer.parseInt(string.substring(0, index).trim());
-                break;
-            }
-        }
-        //natoms = 0;
-        for (i = 0; i < natoms; i++) {
-            try {
+            for (i = 0; i < natoms; i++) {
                 string = lineReader.readLine();
                 if (string == null) {
-                    lineReader.close();
                     return;
                 }
-            } catch (IOException ioe) {
-                System.err.println(ioe.getMessage());
 
-                return;
-            }
-
-            PSFAtomParser atomParse = new PSFAtomParser(string);
-            if (!lastRes.equals(atomParse.resNum)) {
-                lastRes = atomParse.resNum;
-                residue = polymer.getResidue(atomParse.resNum);
-                if (residue == null) {
-                    residue = new Residue(atomParse.resNum, atomParse.resName);
-                    polymer.addResidue(residue);
-                    residue.molecule = molecule;
+                PSFAtomParser atomParse = new PSFAtomParser(string);
+                if (!lastRes.equals(atomParse.resNum)) {
+                    lastRes = atomParse.resNum;
+                    residue = polymer.getResidue(atomParse.resNum);
+                    if (residue == null) {
+                        residue = new Residue(atomParse.resNum, atomParse.resName);
+                        polymer.addResidue(residue);
+                        residue.molecule = molecule;
+                    }
+                    residue.label = atomParse.resName;
                 }
-                residue.label = atomParse.resName;
+
+                Atom atom = new Atom(atomParse);
+
+                atom.entity = residue;
+
+                atom.setPointValidity(structureNumber, true);
+                Point3 pt = new Point3(0.0, 0.0, 0.0);
+                atom.setPoint(structureNumber, pt);
+                atom.setOccupancy(1.0f);
+                atom.setBFactor(1.0f);
+
+                residue.addAtom(atom);
+                atoms.add(atom);
             }
-
-            Atom atom = new Atom(atomParse);
-
-            atom.entity = residue;
-
-            atom.setPointValidity(structureNumber, true);
-            Point3 pt = atom.getPoint(structureNumber);
-            pt = new Point3(0.0, 0.0, 0.0);
-            atom.setPoint(structureNumber, pt);
-            atom.setOccupancy(1.0f);
-            atom.setBFactor(1.0f);
-
-            residue.addAtom(atom);
-            atoms.add(atom);
-        }
-        while (true) {
-            try {
+            while (true) {
                 string = lineReader.readLine();
                 if (string == null) {
-                    lineReader.close();
                     return;
                 }
-            } catch (IOException ioe) {
-                System.err.println(ioe.getMessage());
 
-                return;
+                int index = string.indexOf("!NBOND");
+                if (index != -1) {
+                    nbonds = Integer.parseInt(string.substring(0, index).trim());
+                    break;
+                }
             }
-            int index = string.indexOf("!NBOND");
-            if (index != -1) {
-                nbonds = Integer.parseInt(string.substring(0, index).trim());
-                break;
-            }
-        }
 
-        i = 0;
-        while (i < nbonds) {
-            try {
+            i = 0;
+            while (i < nbonds) {
                 string = lineReader.readLine();
                 if (string == null) {
-                    lineReader.close();
                     return;
                 }
-            } catch (IOException ioe) {
-                System.err.println(ioe.getMessage());
-                return;
-            }
-            string = string.trim();
-            String[] atomPairs = string.split("\\s+");
-            for (int j = 0; j < atomPairs.length; j += 2) {
-                int ii = Integer.parseInt(atomPairs[j]);
-                int jj = Integer.parseInt(atomPairs[j + 1]);
-                Atom atom1 = atoms.get(ii - 1);
-                Atom atom2 = atoms.get(jj - 1);
-                Order order = Order.SINGLE;
-                boolean recordBondInPolymer = false;
-                if (atom1.entity != atom2.entity) {
-                    recordBondInPolymer = true;
-                }
-                if (atom1.getName().startsWith("H")) {
-                    Atom.addBond(atom2, atom1, order, recordBondInPolymer);
-                } else {
-                    Atom.addBond(atom1, atom2, order, recordBondInPolymer);
+                string = string.trim();
+                String[] atomPairs = string.split("\\s+");
+                for (int j = 0; j < atomPairs.length; j += 2) {
+                    int ii = Integer.parseInt(atomPairs[j]);
+                    int jj = Integer.parseInt(atomPairs[j + 1]);
+                    Atom atom1 = atoms.get(ii - 1);
+                    Atom atom2 = atoms.get(jj - 1);
+                    Order order = Order.SINGLE;
+                    boolean recordBondInPolymer = false;
+                    if (atom1.entity != atom2.entity) {
+                        recordBondInPolymer = true;
+                    }
+                    if (atom1.getName().startsWith("H")) {
+                        Atom.addBond(atom2, atom1, order, recordBondInPolymer);
+                    } else {
+                        Atom.addBond(atom1, atom2, order, recordBondInPolymer);
+                    }
+
+                    i++;
                 }
 
-                i++;
             }
-
+        } catch (FileNotFoundException ioe) {
+            throw new MoleculeIOException(ioe.getMessage());
+        } catch (IOException ioe) {
+            System.err.println(ioe.getMessage());
+            return;
         }
-
         molecule.updateAtomArray();
-        molecule.structures.add(Integer.valueOf(structureNumber));
+        molecule.structures.add(structureNumber);
         molecule.resetActiveStructures();
 
     }

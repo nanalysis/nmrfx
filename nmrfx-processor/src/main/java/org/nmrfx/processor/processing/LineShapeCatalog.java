@@ -168,18 +168,19 @@ public class LineShapeCatalog {
         LineShapeCatalog simVecProcessor = null;
         if ((saveFileName != null) && (saveFileName.length() > 0)) {
             File saveFile = new File(saveFileName);
-            BufferedReader reader = Files.newBufferedReader(saveFile.toPath());
-            simVecProcessor = new LineShapeCatalog(nDim);
-            String line = reader.readLine();
-            String[] fields = line.split("\t");
-            simVecProcessor.nFrac = Integer.parseInt(fields[1]);
+            try (BufferedReader reader = Files.newBufferedReader(saveFile.toPath())) {
+                simVecProcessor = new LineShapeCatalog(nDim);
+                String line = reader.readLine();
+                String[] fields = line.split("\t");
+                simVecProcessor.nFrac = Integer.parseInt(fields[1]);
 
-            for (int iDim = 0; iDim < nDim; iDim++) {
-                line = reader.readLine();
-                fields = line.split("\t");
-                int size = Integer.parseInt(fields[3]);
-                simVecProcessor.loadSimFids(reader, iDim, nDim, size);
-                simVecProcessor.normalize(iDim);
+                for (int iDim = 0; iDim < nDim; iDim++) {
+                    line = reader.readLine();
+                    fields = line.split("\t");
+                    int size = Integer.parseInt(fields[3]);
+                    simVecProcessor.loadSimFids(reader, iDim, nDim, size);
+                    simVecProcessor.normalize(iDim);
+                }
             }
         }
         return simVecProcessor;
@@ -333,7 +334,7 @@ public class LineShapeCatalog {
         if (iUpper == 0) {
             dIndex = 0.0;
         } else if (iUpper == n) {
-            dIndex = n - 1.0 - 0.00001; // make a little smaller so floor 
+            dIndex = n - 1.0 - 0.00001; // make a little smaller so floor
             // gets previous index
         } else {
             double frac = (lw - lws[iUpper - 1]) / (lws[iUpper] - lws[iUpper - 1]);

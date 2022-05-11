@@ -75,18 +75,18 @@ public class MMcifWriter {
     static void makeWeightMap() throws IOException {
         String mainDir = getMainDirectory();
         String paramFile = String.join(File.separator, mainDir, "src", "main", "resources", "reslib_iu", "params.txt");
-        BufferedReader reader = new BufferedReader(new FileReader(paramFile));
-
-        while (true) {
-            String line = reader.readLine();
-            if (line == null) {
-                break;
-            }
-            String[] lineS = line.trim().split("\\s+");
-            if (!lineS[0].startsWith("AtomType")) {
-                String aName = lineS[0];
-                Double weight = Double.parseDouble(lineS[5]);
-                weightMap.put(aName, weight);
+        try (BufferedReader reader = new BufferedReader(new FileReader(paramFile))) {
+            while (true) {
+                String line = reader.readLine();
+                if (line == null) {
+                    break;
+                }
+                String[] lineS = line.trim().split("\\s+");
+                if (!lineS[0].startsWith("AtomType")) {
+                    String aName = lineS[0];
+                    Double weight = Double.parseDouble(lineS[5]);
+                    weightMap.put(aName, weight);
+                }
             }
         }
     }
