@@ -65,12 +65,10 @@ import org.slf4j.LoggerFactory;
 public class NMRStarReader {
     private static final Logger log = LoggerFactory.getLogger(NMRStarReader.class);
 
-    static String[] polymerEntityStrings = {"_Entity.Sf_category", "_Entity.Sf_framecode", "_Entity.Entry_ID", "_Entity.ID", "_Entity.Name", "_Entity.Type", "_Entity.Polymer_type", "_Entity.Polymer_strand_ID", "_Entity.Polymer_seq_one_letter_code_can", "_Entity.Polymer_seq_one_letter_code"};
-
     final STAR3 star3;
     final File starFile;
 
-    Map entities = new HashMap();
+    Map<String, Entity> entities = new HashMap<>();
     boolean hasResonances = false;
     List<PeakDim> peakDimsWithoutResonance = new ArrayList<>();
     MoleculeBase molecule = null;
@@ -91,7 +89,7 @@ public class NMRStarReader {
         try {
             fileReader = new FileReader(starFile);
         } catch (FileNotFoundException ex) {
-            throw new ParseException("Could not find file " + starFile.toString());
+            throw new ParseException("Could not find file " + starFile);
         }
         BufferedReader bfR = new BufferedReader(fileReader);
 
@@ -135,8 +133,8 @@ public class NMRStarReader {
         List<String> idColumn = loop.getColumnAsList("Atom_ID");
         List<String> typeColumn = loop.getColumnAsList("Type_symbol");
         for (int i = 0; i < idColumn.size(); i++) {
-            String aName = (String) idColumn.get(i);
-            String aType = (String) typeColumn.get(i);
+            String aName = idColumn.get(i);
+            String aType = typeColumn.get(i);
             Atom atom = Atom.genAtomWithElement(aName, aType);
             compound.addAtom(atom);
         }
@@ -147,9 +145,9 @@ public class NMRStarReader {
             List<String> id2Column = loop.getColumnAsList("Atom_ID_2");
             List<String> orderColumn = loop.getColumnAsList("Value_order");
             for (int i = 0; i < id1Column.size(); i++) {
-                String aName1 = (String) id1Column.get(i);
-                String aName2 = (String) id2Column.get(i);
-                String orderString = (String) orderColumn.get(i);
+                String aName1 = id1Column.get(i);
+                String aName2 = id2Column.get(i);
+                String orderString = orderColumn.get(i);
                 Atom atom1 = compound.getAtom(aName1);
                 Atom atom2 = compound.getAtom(aName2);
                 Order order;
@@ -165,16 +163,14 @@ public class NMRStarReader {
                 int stereo = 0;
                 Atom.addBond(atom1, atom2, order, stereo, false);
             }
-            compound.getAtoms().stream().filter((atom) -> (atom.bonds == null)).forEachOrdered((_item) -> {
-                System.out.println("no bonds");
-            });
+            compound.getAtoms().stream().filter((atom) -> (atom.bonds == null)).forEachOrdered((_item) -> System.out.println("no bonds"));
         }
     }
 
     static void addComponents(Saveframe saveframe, List<String> idColumn, List<String> authSeqIDColumn, List<String> compIDColumn, List<String> entityIDColumn, Compound compound) throws ParseException {
         for (int i = 0; i < compIDColumn.size(); i++) {
-            String resName = (String) compIDColumn.get(i);
-            String seqNumber = (String) authSeqIDColumn.get(i);
+            String resName = compIDColumn.get(i);
+            String seqNumber = authSeqIDColumn.get(i);
             if ((seqNumber == null) || seqNumber.isBlank()) {
                 seqNumber = resName;
             }
@@ -192,9 +188,6 @@ public class NMRStarReader {
             }
         }
 
-    }
-
-    public static void processLoop(STAR3 star3, List tagList) {
     }
 
     static void finishSaveFrameProcessing(final NMRStarReader nmrStar, Saveframe saveframe, Compound compound, String mapID) throws ParseException {
@@ -240,7 +233,6 @@ public class NMRStarReader {
         }
         loop = saveframe.getLoop("_Entity_chem_comp_deleted_atom");
         if (loop != null) {
-            List<String> idColumn = loop.getColumnAsList("ID");
             List<String> compIndexIDColumn = loop.getColumnAsList("Comp_index_ID");
             List<String> compIDColumn = loop.getColumnAsList("Comp_ID");
             List<String> atomIDColumn = loop.getColumnAsList("Atom_ID");
@@ -265,12 +257,12 @@ public class NMRStarReader {
         polymer.setNomenclature(frameNomenclature.toUpperCase());
         Sequence sequence = new Sequence();
         for (int i = 0; i < compIDColumn.size(); i++) {
-            String resName = (String) compIDColumn.get(i);
-            String iEntity = (String) entityIDColumn.get(i);
-            String iRes = (String) idColumn.get(i);
+            String resName = compIDColumn.get(i);
+            String iEntity = entityIDColumn.get(i);
+            String iRes = idColumn.get(i);
             String mapID = polymer.assemblyID + "." + iEntity + "." + iRes;
             if (authSeqIDColumn != null) {
-                String iResTemp = (String) authSeqIDColumn.get(i);
+                String iResTemp = authSeqIDColumn.get(i);
                 if (!iResTemp.equals(".")) {
                     iRes = iResTemp;
                 }
@@ -318,10 +310,10 @@ public class NMRStarReader {
     }
 
     public void buildChemShifts(int fromSet, final int toSet) throws ParseException {
-        Iterator iter = star3.getSaveFrames().values().iterator();
+        Iterator<Saveframe> iter = star3.getSaveFrames().values().iterator();
         int iSet = 0;
         while (iter.hasNext()) {
-            Saveframe saveframe = (Saveframe) iter.next();
+            Saveframe saveframe = iter.next();
             if (saveframe.getCategoryName().equals("assigned_chemical_shifts")) {
                 log.debug("process chem shifts " + saveframe.getName());
                 if (fromSet < 0) {
@@ -444,7 +436,7 @@ public class NMRStarReader {
         // get entity saveframe
         String saveFrameName = "save_" + entitySaveFrameLabel;
         log.debug("process entity " + saveFrameName);
-        Saveframe saveframe = (Saveframe) star3.getSaveFrames().get(saveFrameName);
+        Saveframe saveframe = star3.getSaveFrames().get(saveFrameName);
         if (saveframe != null) {
 
             String type = saveframe.getValue("_Entity", "Type");
@@ -454,10 +446,7 @@ public class NMRStarReader {
                 nomenclature = "IUPAC";
             }
             String cappedString = saveframe.getValue("_Entity", "Capped", "");
-            boolean capped = true;
-            if (cappedString.equalsIgnoreCase("no")) {
-                capped = false;
-            }
+            boolean capped = !cappedString.equalsIgnoreCase("no");
             if (type != null && type.equals("polymer")) {
                 Entity entity = molecule.getEntity(entityAssemblyName);
                 if (entity == null) {
@@ -611,17 +600,17 @@ public class NMRStarReader {
     }
 
     public Entity getEntity(String entityAssemblyIDString, String entityIDString) {
-        return (Entity) entities.get(entityAssemblyIDString + "." + entityIDString);
+        return entities.get(entityAssemblyIDString + "." + entityIDString);
     }
 
     public SpatialSetGroup getSpatialSet(List<String> entityAssemblyIDColumn, List<String> entityIDColumn, List<String> compIdxIDColumn, List<String> atomColumn, List<String> resonanceColumn, int i) throws ParseException {
         SpatialSetGroup spg = null;
-        String iEntity = (String) entityIDColumn.get(i);
-        String entityAssemblyID = (String) entityAssemblyIDColumn.get(i);
+        String iEntity = entityIDColumn.get(i);
+        String entityAssemblyID = entityAssemblyIDColumn.get(i);
         var compoundMap = MoleculeBase.compoundMap();
         if (!iEntity.equals("?")) {
-            String iRes = (String) compIdxIDColumn.get(i);
-            String atomName = (String) atomColumn.get(i);
+            String iRes = compIdxIDColumn.get(i);
+            String atomName = atomColumn.get(i);
             Atom atom;
             if (entityAssemblyID.equals(".")) {
                 entityAssemblyID = "1";
@@ -797,7 +786,7 @@ public class NMRStarReader {
             List<String> cornerColumn = loop.getColumnAsListIfExists("Label_corner");
 
             for (int i = 0, n = idColumn.size(); i < n; i++) {
-                int idNum = Integer.parseInt((String) idColumn.get(i));
+                int idNum = Integer.parseInt(idColumn.get(i));
                 Peak peak = new Peak(peakList, nDim);
                 peak.setIdNum(idNum);
                 String value;
@@ -901,8 +890,8 @@ public class NMRStarReader {
                 List<String> peakIdColumn = loop.getColumnAsList("Peak_ID");
                 List<String> sdimColumn = loop.getColumnAsList("Spectral_dim_ID");
                 String[] peakCharStrings = Peak.getSTAR3CharStrings();
-                for (int j = 0; j < peakCharStrings.length; j++) {
-                    String tag = peakCharStrings[j].substring(peakCharStrings[j].indexOf(".") + 1);
+                for (String peakCharString : peakCharStrings) {
+                    String tag = peakCharString.substring(peakCharString.indexOf(".") + 1);
                     if (tag.equals("Sf_ID") || tag.equals("Entry_ID") || tag.equals("Spectral_peak_list_ID")) {
                         continue;
                     }
@@ -912,9 +901,9 @@ public class NMRStarReader {
                     List<String> column = loop.getColumnAsListIfExists(tag);
                     if (column != null) {
                         for (int i = 0, n = column.size(); i < n; i++) {
-                            int idNum = Integer.parseInt((String) peakIdColumn.get(i));
-                            int sDim = Integer.parseInt((String) sdimColumn.get(i)) - 1;
-                            String value = (String) column.get(i);
+                            int idNum = Integer.parseInt(peakIdColumn.get(i));
+                            int sDim = Integer.parseInt(sdimColumn.get(i)) - 1;
+                            String value = column.get(i);
                             if (!value.equals(".") && !value.equals("?")) {
                                 Peak peak = peakList.getPeakByID(idNum);
                                 PeakDim peakDim = peak.getPeakDim(sDim);
@@ -941,7 +930,7 @@ public class NMRStarReader {
                             //throw new TclException("Invalid peak id value at row \""+i+"\"");
                             continue;
                         }
-                        int sDim = 0;
+                        int sDim;
                         long resonanceID = -1;
                         if ((value = NvUtil.getColumnValue(spectralDimColumn, i)) != null) {
                             sDim = NvUtil.toInt(value) - 1;
@@ -1100,19 +1089,19 @@ public class NMRStarReader {
             List<Integer> ambigColumn = loop.getColumnAsIntegerList("Ambiguity_code", -1);
             ResonanceFactory resFactory = PeakList.resFactory();
             for (int i = 0; i < entityAssemblyIDColumn.size(); i++) {
-                String iEntity = (String) entityIDColumn.get(i);
-                String entityAssemblyID = (String) entityAssemblyIDColumn.get(i);
+                String iEntity = entityIDColumn.get(i);
+                String entityAssemblyID = entityAssemblyIDColumn.get(i);
                 if (iEntity.equals("?")) {
                     continue;
                 }
-                String iRes = (String) compIdxIDColumn.get(i);
-                String atomName = (String) atomColumn.get(i);
-                String atomType = (String) typeColumn.get(i);
-                String value = (String) valColumn.get(i);
-                String valueErr = (String) valErrColumn.get(i);
+                String iRes = compIdxIDColumn.get(i);
+                String atomName = atomColumn.get(i);
+                String atomType = typeColumn.get(i);
+                String value = valColumn.get(i);
+                String valueErr = valErrColumn.get(i);
                 String resIDStr = ".";
                 if (resColumn != null) {
-                    resIDStr = (String) resColumn.get(i);
+                    resIDStr = resColumn.get(i);
                 }
                 if (entityAssemblyID.equals(".")) {
                     entityAssemblyID = "1";
@@ -1164,10 +1153,6 @@ public class NMRStarReader {
                         if (resonance == null) {
                             throw new ParseException("atom elem resonance " + resIDStr + ": invalid resonance");
                         }
-//                    ResonanceSet resonanceSet = resonance.getResonanceSet();
-//                    if (resonanceSet == null) {
-//                        resonanceSet = new ResonanceSet(resonance);
-//                    }
                         atom.setResonance(resonance);
                         resonance.setAtom(atom);
                     }
@@ -1196,20 +1181,20 @@ public class NMRStarReader {
         MoleculeBase molecule = null;
         int lastStructure = -1;
         for (int i = 0; i < entityAssemblyIDColumn.size(); i++) {
-            String iEntity = (String) entityIDColumn.get(i);
-            String entityAssemblyID = (String) entityAssemblyIDColumn.get(i);
+            String iEntity = entityIDColumn.get(i);
+            String entityAssemblyID = entityAssemblyIDColumn.get(i);
             if (iEntity.equals("?")) {
                 continue;
             }
-            String iRes = (String) compIdxIDColumn.get(i);
-            String atomName = (String) atomColumn.get(i);
-            String xStr = (String) xColumn.get(i);
-            String yStr = (String) yColumn.get(i);
-            String zStr = (String) zColumn.get(i);
-            String modelStr = (String) modelColumn.get(i);
+            String iRes = compIdxIDColumn.get(i);
+            String atomName = atomColumn.get(i);
+            String xStr = xColumn.get(i);
+            String yStr = yColumn.get(i);
+            String zStr = zColumn.get(i);
+            String modelStr = modelColumn.get(i);
             String resIDStr = ".";
             if (resColumn != null) {
-                resIDStr = (String) resColumn.get(i);
+                resIDStr = resColumn.get(i);
             }
             if (entityAssemblyID.equals(".")) {
                 entityAssemblyID = "1";
@@ -1284,20 +1269,20 @@ public class NMRStarReader {
         List<String> errColumn = loop.getColumnAsList("Val_err");
 
         for (int i = 0; i < entityAssemblyIDColumn.size(); i++) {
-            String iEntity = (String) entityIDColumn.get(i);
-            String entityAssemblyID = (String) entityAssemblyIDColumn.get(i);
+            String iEntity = entityIDColumn.get(i);
+            String entityAssemblyID = entityAssemblyIDColumn.get(i);
             if (iEntity.equals("?")) {
                 continue;
             }
-            String iRes = (String) compIdxIDColumn.get(i);
-            String atomName = (String) atomColumn.get(i);
-            String iEntity2 = (String) entityID2Column.get(i);
-            String entityAssemblyID2 = (String) entityAssemblyID2Column.get(i);
+            String iRes = compIdxIDColumn.get(i);
+            String atomName = atomColumn.get(i);
+            String iEntity2 = entityID2Column.get(i);
+            String entityAssemblyID2 = entityAssemblyID2Column.get(i);
             if (iEntity2.equals("?")) {
                 continue;
             }
-            String iRes2 = (String) compIdxID2Column.get(i);
-            String atomName2 = (String) atom2Column.get(i);
+            String iRes2 = compIdxID2Column.get(i);
+            String atomName2 = atom2Column.get(i);
             Double value = 0.0;
             Double error = 0.0;
             if (!valColumn.get(i).equals(".")) {
@@ -1394,17 +1379,17 @@ public class NMRStarReader {
         double temperature = 25.0;
 
         for (int i = 0; i < entityAssemblyIDColumn.size(); i++) {
-            String iEntity = (String) entityIDColumn.get(i);
-            String entityAssemblyID = (String) entityAssemblyIDColumn.get(i);
+            String iEntity = entityIDColumn.get(i);
+            String entityAssemblyID = entityAssemblyIDColumn.get(i);
             if (iEntity.equals("?")) {
                 continue;
             }
-            String iRes = (String) compIdxIDColumn.get(i);
-            String atomName = (String) atomColumn.get(i);
+            String iRes = compIdxIDColumn.get(i);
+            String atomName = atomColumn.get(i);
             Double value = null;
             Double error = null;
-            Double RexValue = 0.0;
-            Double RexError = 0.0;
+            double RexValue = 0.0;
+            double RexError = 0.0;
             if (!valColumn.get(i).equals(".")) {
                 value = Double.parseDouble(valColumn.get(i));
             }
@@ -1461,16 +1446,16 @@ public class NMRStarReader {
                            List<String> atomColumn, int i
     ) {
         Optional<Atom> result = Optional.empty();
-        String iEntity = (String) entityIDColumn.get(i);
-        String entityAssemblyID = (String) entityAssemblyIDColumn.get(i);
+        String iEntity = entityIDColumn.get(i);
+        String entityAssemblyID = entityAssemblyIDColumn.get(i);
         if (entityAssemblyID.equals(".")) {
             entityAssemblyID = "1";
         }
         if (iEntity.equals("?")) {
             return result;
         }
-        String iRes = (String) compIdxIDColumn.get(i);
-        String atomName = (String) atomColumn.get(i);
+        String iRes = compIdxIDColumn.get(i);
+        String atomName = atomColumn.get(i);
 
         var compoundMap = MoleculeBase.compoundMap();
         String mapID = entityAssemblyID + "." + iEntity + "." + iRes;
@@ -1585,9 +1570,9 @@ public class NMRStarReader {
                         atomColumns[iAtom], resonanceColumns[iAtom], i).
                         getFirstSet().atom;
             }
-            String upperValue = (String) upperColumn.get(i);
-            String lowerValue = (String) lowerColumn.get(i);
-            String name = (String) angleNameColumn.get(i);
+            String upperValue = upperColumn.get(i);
+            String lowerValue = lowerColumn.get(i);
+            String name = angleNameColumn.get(i);
             double upper = Double.parseDouble(upperValue);
             double lower = 1.8;
             if (!lowerValue.equals(".")) {
@@ -1680,16 +1665,16 @@ public class NMRStarReader {
             boolean okAtoms = true;
             for (int iAtom = 0; iAtom < 2; iAtom++) {
                 spSets[iAtom] = null;
-                String iEntity = (String) entityIDColumns[iAtom].get(i);
-                String entityAssemblyID = (String) entityAssemblyIDColumns[iAtom].get(i);
+                String iEntity = entityIDColumns[iAtom].get(i);
+                String entityAssemblyID = entityAssemblyIDColumns[iAtom].get(i);
                 if (iEntity.equals("?")) {
                     continue;
                 }
-                String iRes = (String) compIdxIDColumns[iAtom].get(i);
-                String atomName = (String) atomColumns[iAtom].get(i);
+                String iRes = compIdxIDColumns[iAtom].get(i);
+                String atomName = atomColumns[iAtom].get(i);
                 resIDStr[iAtom] = ".";
                 if (resonanceColumns[iAtom] != null) {
-                    resIDStr[iAtom] = (String) resonanceColumns[iAtom].get(i);
+                    resIDStr[iAtom] = resonanceColumns[iAtom].get(i);
                 }
                 if (entityAssemblyID.equals(".")) {
                     entityAssemblyID = "1";
@@ -1720,11 +1705,11 @@ public class NMRStarReader {
                     throw new ParseException("invalid spatial set in distance constraints saveframe \"" + mapID + "." + atomName + "\"");
                 }
             }
-            String upperValue = (String) upperColumn.get(i);
-            String lowerValue = (String) lowerColumn.get(i);
-            String peakListIDStr = (String) peakListIDColumn.get(i);
-            String peakID = (String) peakIDColumn.get(i);
-            String constraintID = (String) constraintIDColumn.get(i);
+            String upperValue = upperColumn.get(i);
+            String lowerValue = lowerColumn.get(i);
+            String peakListIDStr = peakListIDColumn.get(i);
+            String peakID = peakIDColumn.get(i);
+            String constraintID = constraintIDColumn.get(i);
             if (!peakListIDStr.equals(lastPeakListIDStr)) {
                 if (peakListIDStr.equals(".")) {
                     if (peakList == null) {
