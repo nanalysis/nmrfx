@@ -356,26 +356,13 @@ public class EnergyConstraintPairs extends EnergyDistancePairs {
 
                 String iAtomName = iAtom.getFullName();
                 String jAtomName = jAtom.getFullName();
-                char wild = 'n';
-                //if (!newGroup) {
-                //    wild = ijWild(prevIAtom, prevJAtom, iAtomName, jAtomName);
-                //}
+
                 // If there is a new write out the values, if not, make empty
                 String lower = newGroup ? doubFormatter.format(rDis[i]) : "";
                 String upper = newGroup ? doubFormatter.format(rUp[i]) : "";
                 String[] lineElements = {iIndex, iGroup, iAtomName, jAtomName, lower, upper};
 
-                // If we find a wild, no need to add another line, can just use star
-                // for wild in the line that wouldve preceded the new element
-                if (wild == 'n') {
-                    groupLineElements.add(lineElements);
-                } else {
-                    int editIndex = wild == 'i' ? 2 : 3;
-                    lineElements = groupLineElements.get(groupLineElements.size() - 1);
-                    String atomName = lineElements[editIndex];
-                    atomName = atomName.substring(0, atomName.length() - 1) + "*";
-                    lineElements[editIndex] = atomName;
-                }
+                groupLineElements.add(lineElements);
 
                 prevGroup = iGroup;
             }
