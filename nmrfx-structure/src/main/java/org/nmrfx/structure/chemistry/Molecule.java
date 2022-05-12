@@ -2211,37 +2211,7 @@ public class Molecule extends MoleculeBase {
         }
         return lcmbMap;
     }
-
-    public void calcDistanceInputMatrix(final int iStruct, double distLim, String filename) {
-        List atomSources = RNAAttributes.getAtomSources();
-        ArrayList<double[]> inputs = new ArrayList<>();
-        ArrayList<String> targetNames = new ArrayList<>();
-
-        for (Atom targetAtom : atoms) {
-            String prefix = targetAtom.getEntity().getName();
-            double[] distRow = calcDistanceInputMatrixRow(iStruct, distLim, targetAtom);
-            inputs.add(distRow);
-            targetNames.add(prefix + ";" + targetAtom.getFullName());
-        }
-        try (BufferedWriter bw = new BufferedWriter(new FileWriter(filename))) {
-            bw.write("#" + "\t" + "\t" + "\t");
-            for (Object atomSource : atomSources) {
-                bw.write(atomSource + "\t");
-            }
-            bw.newLine();
-            for (int i = 0; i < inputs.size(); i++) {
-                bw.write(targetNames.get(i) + "\t");
-                for (int j = 0; j < inputs.get(i).length; j++) {
-                    bw.write(inputs.get(i)[j] + "\t");
-                }
-                bw.newLine();
-            }
-            bw.flush();
-        } catch (IOException e) {
-
-        }
-    }
-
+    
     public double[] calcDistanceInputMatrixRow(final int iStruct, double distLim, Atom targetAtom) {
         return calcDistanceInputMatrixRow(iStruct, distLim, targetAtom, 1.0);
 
