@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures 
+ * NMRFx Structure : A Program for Calculating Structures
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -21,6 +21,7 @@ import org.nmrfx.chemistry.relax.OrderPar;
 import org.nmrfx.chemistry.relax.RelaxationRex;
 import org.nmrfx.chemistry.relax.RelaxationData;
 import org.nmrfx.chemistry.Order;
+
 import java.io.BufferedReader;
 
 import org.nmrfx.datasets.DatasetBase;
@@ -33,12 +34,14 @@ import org.nmrfx.star.Loop;
 import org.nmrfx.star.ParseException;
 import org.nmrfx.star.STAR3;
 import org.nmrfx.star.Saveframe;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.FileSystems;
 import java.util.*;
+
 import org.nmrfx.peaks.AbsMultipletComponent;
 import org.nmrfx.peaks.ComplexCoupling;
 import org.nmrfx.peaks.CouplingPattern;
@@ -53,12 +56,14 @@ import org.nmrfx.utilities.NvUtil;
 import org.nmrfx.peaks.io.PeakPathReader;
 import org.nmrfx.chemistry.relax.RelaxationData.relaxTypes;
 import org.nmrfx.chemistry.relax.ResonanceSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- *
  * @author brucejohnson
  */
 public class NMRStarReader {
+    private static final Logger log = LoggerFactory.getLogger(NMRStarReader.class);
 
     static String[] polymerEntityStrings = {"_Entity.Sf_category", "_Entity.Sf_framecode", "_Entity.Entry_ID", "_Entity.ID", "_Entity.Name", "_Entity.Type", "_Entity.Polymer_type", "_Entity.Polymer_strand_ID", "_Entity.Polymer_seq_one_letter_code_can", "_Entity.Polymer_seq_one_letter_code"};
 
@@ -68,7 +73,6 @@ public class NMRStarReader {
     Map entities = new HashMap();
     boolean hasResonances = false;
     List<PeakDim> peakDimsWithoutResonance = new ArrayList<>();
-    public static boolean DEBUG = false;
     MoleculeBase molecule = null;
 
     public NMRStarReader(final File starFile, final STAR3 star3) {
@@ -211,16 +215,13 @@ public class NMRStarReader {
     public void finishSaveFrameProcessing(final Polymer polymer, final Saveframe saveframe, final String nomenclature, final boolean capped) throws ParseException {
         String lstrandID = saveframe.getOptionalValue("_Entity", "Polymer_strand_ID");
         if (lstrandID != null) {
-            if (DEBUG) {
-                System.out.println("set strand " + lstrandID);
-            }
+            log.debug("set strand " + lstrandID);
             polymer.setStrandID(lstrandID);
         }
         String type = saveframe.getOptionalValue("_Entity", "Polymer_type");
         if (type != null) {
-            if (DEBUG) {
-                System.out.println("set polytype " + type);
-            }
+            log.debug("set polytype " + type);
+
             polymer.setPolymerType(type);
         }
         Loop loop = saveframe.getLoop("_Entity_comp_index");
@@ -322,9 +323,7 @@ public class NMRStarReader {
         while (iter.hasNext()) {
             Saveframe saveframe = (Saveframe) iter.next();
             if (saveframe.getCategoryName().equals("assigned_chemical_shifts")) {
-                if (DEBUG) {
-                    System.err.println("process chem shifts " + saveframe.getName());
-                }
+                log.debug("process chem shifts " + saveframe.getName());
                 if (fromSet < 0) {
                     processChemicalShifts(saveframe, iSet);
                 } else if (fromSet == iSet) {
@@ -339,9 +338,8 @@ public class NMRStarReader {
     public void buildConformers() throws ParseException {
         for (Saveframe saveframe : star3.getSaveFrames().values()) {
             if (saveframe.getCategoryName().equals("conformer_family_coord_set")) {
-                if (DEBUG) {
-                    System.err.println("process conformers " + saveframe.getName());
-                }
+                log.debug("process conformers " + saveframe.getName());
+
                 processConformer(saveframe);
             }
         }
@@ -350,9 +348,8 @@ public class NMRStarReader {
     public void buildNOE() throws ParseException {
         for (Saveframe saveframe : star3.getSaveFrames().values()) {
             if (saveframe.getCategoryName().equals("heteronucl_NOEs")) {
-                if (DEBUG) {
-                    System.err.println("process NOEs " + saveframe.getName());
-                }
+                log.debug("process NOEs " + saveframe.getName());
+
                 processNOE(saveframe);
             }
         }
@@ -367,9 +364,8 @@ public class NMRStarReader {
         }
         for (Saveframe saveframe : star3.getSaveFrames().values()) {
             if (saveframe.getCategoryName().equals("heteronucl_" + expName + "_relaxation")) {
-                if (DEBUG) {
-                    System.err.println("process " + expName + " relaxation " + saveframe.getName());
-                }
+                log.debug("process " + expName + " relaxation " + saveframe.getName());
+
                 processRelaxation(saveframe, expType);
             }
         }
@@ -378,9 +374,8 @@ public class NMRStarReader {
     public void buildOrder() throws ParseException {
         for (Saveframe saveframe : star3.getSaveFrames().values()) {
             if (saveframe.getCategoryName().equals("order_parameters")) {
-                if (DEBUG) {
-                    System.err.println("process order pars " + saveframe.getName());
-                }
+                log.debug("process order pars " + saveframe.getName());
+
                 processOrder(saveframe);
             }
         }
@@ -395,9 +390,8 @@ public class NMRStarReader {
             datasetName = file.getAbsolutePath();
         }
         try {
-            if (DEBUG) {
-                System.err.println("open " + file.getAbsolutePath());
-            }
+            log.debug("open " + file.getAbsolutePath());
+
             if (!file.exists()) {
                 file = FileSystems.getDefault().getPath(starFile.getParentFile().getParent(), "datasets", file.getName()).toFile();
             }
@@ -410,9 +404,7 @@ public class NMRStarReader {
     public void buildDihedralConstraints() throws ParseException {
         for (Saveframe saveframe : star3.getSaveFrames().values()) {
             if (saveframe.getCategoryName().equals("torsion_angle_constraints")) {
-                if (DEBUG) {
-                    System.err.println("process torsion angle constraints " + saveframe.getName());
-                }
+                log.debug("process torsion angle constraints " + saveframe.getName());
                 processDihedralConstraints(saveframe);
             }
         }
@@ -421,9 +413,7 @@ public class NMRStarReader {
     public void buildRDCConstraints() throws ParseException {
         for (Saveframe saveframe : star3.getSaveFrames().values()) {
             if (saveframe.getCategoryName().equals("RDCs")) {
-                if (DEBUG) {
-                    System.err.println("process RDC constraints " + saveframe.getName());
-                }
+                log.debug("process RDC constraints " + saveframe.getName());
                 processRDCConstraints(saveframe);
             }
         }
@@ -453,9 +443,7 @@ public class NMRStarReader {
         //int entityAssemblyID = Integer.parseInt(entityAssemblyIDString);
         // get entity saveframe
         String saveFrameName = "save_" + entitySaveFrameLabel;
-        if (DEBUG) {
-            System.err.println("process entity " + saveFrameName);
-        }
+        log.debug("process entity " + saveFrameName);
         Saveframe saveframe = (Saveframe) star3.getSaveFrames().get(saveFrameName);
         if (saveframe != null) {
 
@@ -504,9 +492,7 @@ public class NMRStarReader {
     public void buildExperiments() throws ParseException {
         for (Saveframe saveframe : star3.getSaveFrames().values()) {
             if (saveframe.getCategoryName().equals("experiment_list")) {
-                if (DEBUG) {
-                    System.err.println("process experiments " + saveframe.getName());
-                }
+                log.debug("process experiments " + saveframe.getName());
                 int nExperiments;
                 try {
                     nExperiments = saveframe.loopCount("_Experiment_file");
@@ -535,9 +521,7 @@ public class NMRStarReader {
     public void buildGenDistConstraints() throws ParseException {
         for (Saveframe saveframe : star3.getSaveFrames().values()) {
             if (saveframe.getCategoryName().equals("general_distance_constraints")) {
-                if (DEBUG) {
-                    System.err.println("process general distance constraints " + saveframe.getName());
-                }
+                log.debug("process general distance constraints " + saveframe.getName());
                 processGenDistConstraints(saveframe);
             }
         }
@@ -545,22 +529,16 @@ public class NMRStarReader {
 
     public void buildMolecule() throws ParseException {
         for (Saveframe saveframe : star3.getSaveFrames().values()) {
-            if (DEBUG) {
-                System.err.println(saveframe.getCategoryName());
-            }
+            log.debug(saveframe.getCategoryName());
             if (saveframe.getCategoryName().equals("assembly")) {
-                if (DEBUG) {
-                    System.err.println("process molecule >>" + saveframe.getName() + "<<");
-                }
+                log.debug("process molecule >>" + saveframe.getName() + "<<");
                 String molName = saveframe.getValue("_Assembly", "Name");
                 if (molName.equals("?")) {
                     molName = "noname";
                 }
                 molecule = MoleculeFactory.newMolecule(molName);
                 int nEntities = saveframe.loopCount("_Entity_assembly");
-                if (DEBUG) {
-                    System.err.println("mol name " + molName + " nEntities " + nEntities);
-                }
+                log.debug("mol name " + molName + " nEntities " + nEntities);
                 for (int i = 0; i < nEntities; i++) {
                     Map map = saveframe.getLoopRowMap("_Entity_assembly", i);
                     buildEntity(molecule, map, i);
@@ -586,9 +564,7 @@ public class NMRStarReader {
         peakDimsWithoutResonance.clear();
         for (Saveframe saveframe : star3.getSaveFrames().values()) {
             if (saveframe.getCategoryName().equals("spectral_peak_list")) {
-                if (DEBUG) {
-                    System.err.println("process peaklists " + saveframe.getName());
-                }
+                log.debug("process peaklists " + saveframe.getName());
                 processSTAR3PeakList(saveframe);
             }
         }
@@ -606,9 +582,7 @@ public class NMRStarReader {
     public void buildPeakPaths() throws ParseException {
         for (Saveframe saveframe : star3.getSaveFrames().values()) {
             if (saveframe.getCategoryName().equals("nmrfx_peak_path")) {
-                if (DEBUG) {
-                    System.err.println("process nmrfx_peak_path " + saveframe.getName());
-                }
+                log.debug("process nmrfx_peak_path " + saveframe.getName());
                 PeakPathReader peakPathReader = new PeakPathReader();
                 peakPathReader.processPeakPaths(saveframe);
             }
@@ -620,9 +594,7 @@ public class NMRStarReader {
         for (Saveframe saveframe : star3.getSaveFrames().values()) {
             if (saveframe.getCategoryName().equals("resonance_linker")) {
                 hasResonances = true;
-                if (DEBUG) {
-                    System.err.println("process resonances " + saveframe.getName());
-                }
+                log.debug("process resonances " + saveframe.getName());
                 AtomResonance.processSTAR3ResonanceList(this, saveframe, compoundMap);
             }
         }
@@ -632,9 +604,7 @@ public class NMRStarReader {
         for (Saveframe saveframe : star3.getSaveFrames().values()) {
             if (saveframe.getCategoryName().startsWith("nmrview_")) {
                 String toolName = saveframe.getCategoryName().substring(8);
-                if (DEBUG) {
-                    System.err.println("process tool " + saveframe.getName());
-                }
+                log.debug("process tool " + saveframe.getName());
                 // interp.eval("::star3::setupTool " + toolName);
             }
         }
@@ -679,7 +649,7 @@ public class NMRStarReader {
         return spg;
     }
 
-//    private void addResonance(long resID, PeakDim peakDim) {
+    //    private void addResonance(long resID, PeakDim peakDim) {
 //        List<PeakDim> peakDims = resMap.get(resID);
 //        if (peakDims == null) {
 //            peakDims = new ArrayList<>();
@@ -1484,11 +1454,11 @@ public class NMRStarReader {
     }
 
     Optional<Atom> getAtom(MoleculeBase mol,
-            Saveframe saveframe,
-            List<String> entityAssemblyIDColumn,
-            List<String> entityIDColumn,
-            List<String> compIdxIDColumn,
-            List<String> atomColumn, int i
+                           Saveframe saveframe,
+                           List<String> entityAssemblyIDColumn,
+                           List<String> entityIDColumn,
+                           List<String> compIdxIDColumn,
+                           List<String> atomColumn, int i
     ) {
         Optional<Atom> result = Optional.empty();
         String iEntity = (String) entityIDColumn.get(i);
@@ -1817,81 +1787,48 @@ public class NMRStarReader {
         if ((argv.length != 0) && (argv.length != 3)) {
             throw new IllegalArgumentException("?shifts fromSet toSet?");
         }
-        if (DEBUG) {
-            System.out.println("nSave " + star3.getSaveFrameNames());
-        }
+        log.debug("nSave " + star3.getSaveFrameNames());
         ResonanceFactory resFactory = PeakList.resFactory();
         if (argv.length == 0) {
             hasResonances = false;
             var compoundMap = MoleculeBase.compoundMap();
             compoundMap.clear();
             buildExperiments();
-            if (DEBUG) {
-                System.err.println("process molecule");
-            }
+            log.debug("process molecule");
             buildMolecule();
-            if (DEBUG) {
-                System.err.println("process peak lists");
-            }
+            log.debug("process peak lists");
             buildPeakLists();
-            if (DEBUG) {
-                System.err.println("process resonance lists");
-            }
+            log.debug("process resonance lists");
             buildResonanceLists();
-            if (DEBUG) {
-                System.err.println("process chem shifts");
-            }
+            log.debug("process chem shifts");
             buildChemShifts(-1, 0);
-            if (DEBUG) {
-                System.err.println("process conformers");
-            }
+            log.debug("process conformers");
             buildConformers();
-            if (DEBUG) {
-                System.err.println("process dist constraints");
-            }
+            log.debug("process dist constraints");
             buildGenDistConstraints();
-            if (DEBUG) {
-                System.err.println("process angle constraints");
-            }
+            log.debug("process angle constraints");
             buildDihedralConstraints();
-            if (DEBUG) {
-                System.err.println("process rdc constraints");
-            }
+            log.debug("process rdc constraints");
             buildRDCConstraints();
-            if (DEBUG) {
-                System.err.println("process NOE");
-            }
+            log.debug("process NOE");
             buildNOE();
-            for (var relaxType: relaxTypes.values()) {
+            for (var relaxType : relaxTypes.values()) {
                 if ((relaxType != relaxTypes.NOE) && (relaxType != relaxTypes.S2)) {
-                    if (DEBUG) {
-                        System.err.println("process " + relaxType);
-                    }
+                    log.debug("process " + relaxType);
                     buildRelaxation(relaxType);
                 }
             }
-            if (DEBUG) {
-                System.err.println("process Order");
-            }
+            log.debug("process Order");
             buildOrder();
-            if (DEBUG) {
-                System.err.println("process runabout");
-            }
+            log.debug("process runabout");
             buildRunAbout();
-            if (DEBUG) {
-                System.err.println("process paths");
-            }
+            log.debug("process paths");
             buildPeakPaths();
-            if (DEBUG) {
-                System.err.println("clean resonances");
-            }
+            log.debug("clean resonances");
             resFactory.clean();
 
             ProjectBase.processExtraSaveFrames(star3);
-
-            if (DEBUG) {
-                System.err.println("process done");
-            }
+            log.debug("process done");
         } else if ("shifts".startsWith(argv[2])) {
             int fromSet = Integer.parseInt(argv[3]);
             int toSet = Integer.parseInt(argv[4]);
