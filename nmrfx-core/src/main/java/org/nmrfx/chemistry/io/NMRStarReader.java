@@ -1862,18 +1862,14 @@ public class NMRStarReader {
                 System.err.println("process NOE");
             }
             buildNOE();
-            if (DEBUG) {
-                System.err.println("process T1");
+            for (var relaxType: relaxTypes.values()) {
+                if ((relaxType != relaxTypes.NOE) && (relaxType != relaxTypes.S2)) {
+                    if (DEBUG) {
+                        System.err.println("process " + relaxType);
+                    }
+                    buildRelaxation(relaxType);
+                }
             }
-            buildRelaxation(relaxTypes.R1);
-            if (DEBUG) {
-                System.err.println("process T1rho");
-            }
-            buildRelaxation(relaxTypes.T1RHO);
-            if (DEBUG) {
-                System.err.println("process T2");
-            }
-            buildRelaxation(relaxTypes.R2);
             if (DEBUG) {
                 System.err.println("process Order");
             }
