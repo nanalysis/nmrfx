@@ -225,7 +225,9 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
 
     private Dataset(String fullName, String title,
             int[] dimSizes, boolean closeDataset) throws DatasetException {
-        try (RandomAccessFile raFile = new RandomAccessFile(fullName, "rw")) {
+        try {
+            // Cannot close this here as it is used to create other objects and is used in places outside this try
+            RandomAccessFile raFile = new RandomAccessFile(fullName, "rw");
             file = new File(fullName);
 
             canonicalName = file.getCanonicalPath();
