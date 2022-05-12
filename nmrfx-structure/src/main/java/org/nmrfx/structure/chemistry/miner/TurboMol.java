@@ -118,8 +118,8 @@ public class TurboMol {
         StringBuffer sBuf = new StringBuffer();
         String s = null;
 
-        try (BufferedReader bufReader = fileName.equals("-") ? new BufferedReader(new InputStreamReader(System.in)) : new BufferedReader(new FileReader(fileName))){
-            while ((s = bufReader.readLine()) != null) {
+        try (BufferedReader bfReader = fileName.equals("-") ? new BufferedReader(new InputStreamReader(System.in)) : new BufferedReader(new FileReader(fileName))){
+            while ((s = bfReader.readLine()) != null) {
                 sBuf.append(s);
                 sBuf.append('\n');
             }
