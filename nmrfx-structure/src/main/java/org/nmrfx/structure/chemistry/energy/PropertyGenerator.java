@@ -442,12 +442,10 @@ public class PropertyGenerator {
     }
 
     public void init(Molecule molecule, int iStructure) throws InvalidMoleculeException, IOException {
-        //NvShell nvShell = new NvShell(interp);
         if (properties == null) {
             properties = loadPropertyFile();
         }
         HashMap<String, TreeMap<Integer, LinkedHashMap<String, String>>> data = new HashMap<String, TreeMap<Integer, LinkedHashMap<String, String>>>();
-        // offsetTable = loadCorrTable("corrtable.txt");
         this.molecule = molecule;
         contactMap = molecule.calcContactSum(iStructure, true);
         hBondMap = new HashMap<>();
@@ -466,7 +464,6 @@ public class PropertyGenerator {
             eShiftMap.putAll(eShiftMapForAtom);
         }
     }
-//Molecule molecule = Molecule.get(Molecule.defaultMol);
 
     public void clearMap() {
         valueMap.clear();
@@ -869,33 +866,6 @@ public class PropertyGenerator {
             }
         }
         return map;
-    }
-
-    private static HashMap<String, Double> loadCorrTable(String fn) throws IOException {
-        HashMap<String, Double> offsetTable = new HashMap<String, Double>();
-        try (BufferedReader b = new BufferedReader(new FileReader(fn))) {
-            String line = b.readLine();
-            String[] fields = line.split("\t");
-            // the first column is assumed to be the amino acid single letter so we ignore its header
-            while ((line = b.readLine()) != null) {
-                String[] values = line.split("\t");
-                String aaName = values[1];
-                for (int i = 2; i < values.length; ++i) {
-                    String key = fields[i];
-                    int barPos = key.indexOf("_");
-                    if (values[i].trim().length() != 0) {
-                        if (barPos == -1) {
-                            offsetTable.put(aaName + "_" + key, Double.parseDouble(values[i].trim()));
-                        } else {
-                            String offsetChar = key.substring(barPos + 1);
-                            String atomName = key.substring(0, barPos);
-                            offsetTable.put(aaName + "_" + atomName + "_" + offsetChar, Double.parseDouble(values[i].trim()));
-                        }
-                    }
-                }
-            }
-        }
-        return offsetTable;
     }
 
     public double getProperty(String property, Residue residue) throws IllegalStateException {
