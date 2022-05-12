@@ -63,32 +63,11 @@ public class MMcifWriter {
     private static final String[] DISTANCE_LOOP_STRINGS = {"_pdbx_validate_close_contact.id", "_pdbx_validate_close_contact.PDB_model_num", "_pdbx_validate_close_contact.auth_atom_id_1", "_pdbx_validate_close_contact.auth_asym_id_1", "_pdbx_validate_close_contact.auth_comp_id_1", "_pdbx_validate_close_contact.auth_seq_id_1", "_pdbx_validate_close_contact.PDB_ins_code_1", "_pdbx_validate_close_contact.label_alt_id_1", "_pdbx_validate_close_contact.auth_atom_id_2", "_pdbx_validate_close_contact.auth_asym_id_2", "_pdbx_validate_close_contact.auth_comp_id_2", "_pdbx_validate_close_contact.auth_seq_id_2", "_pdbx_validate_close_contact.PDB_ins_code_2", "_pdbx_validate_close_contact.label_alt_id_2", "_pdbx_validate_close_contact.dist"};
     private static final String[] TORSION_LOOP_STRINGS = {"_pdbx_validate_torsion.id", "_pdbx_validate_torsion.PDB_model_num", "_pdbx_validate_torsion.auth_comp_id", "_pdbx_validate_torsion.auth_asym_id", "_pdbx_validate_torsion.auth_seq_id", "_pdbx_validate_torsion.PDB_ins_code", "_pdbx_validate_torsion.label_alt_id", "_pdbx_validate_torsion.phi", "_pdbx_validate_torsion.psi"};
 
-    private static Map<String, Double> weightMap = new HashMap<>();
-
     static String getMainDirectory() {
         String[] classPathSplit = MMcifWriter.class.getResource("MMcifWriter.class").toString().split(":");
         String classPath = classPathSplit[classPathSplit.length - 1];
         int mainIdx = classPath.indexOf("nmrfxstructure");
         return classPath.substring(0, mainIdx + "nmrfxstructure".length());
-    }
-
-    static void makeWeightMap() throws IOException {
-        String mainDir = getMainDirectory();
-        String paramFile = String.join(File.separator, mainDir, "src", "main", "resources", "reslib_iu", "params.txt");
-        try (BufferedReader reader = new BufferedReader(new FileReader(paramFile))) {
-            while (true) {
-                String line = reader.readLine();
-                if (line == null) {
-                    break;
-                }
-                String[] lineS = line.trim().split("\\s+");
-                if (!lineS[0].startsWith("AtomType")) {
-                    String aName = lineS[0];
-                    Double weight = Double.parseDouble(lineS[5]);
-                    weightMap.put(aName, weight);
-                }
-            }
-        }
     }
 
     static void writeMolSys(MoleculeBase molecule, FileWriter chan, boolean pdb) throws IOException, InvalidMoleculeException {
