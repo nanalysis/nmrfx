@@ -61,12 +61,12 @@ public class SimplePeakRegionTool implements ControllerTool {
 
     public void clearAnalysis(boolean prompt) {
         if (!prompt || affirm("Clear Analysis")) {
-            PeakList peakList = analyzer.getPeakList();
-            if (peakList != null) {
-                PeakList.remove(peakList.getName());
-            }
             Analyzer analyzer = getAnalyzer();
             if (analyzer != null) {
+                PeakList peakList = analyzer.getPeakList();
+                if (peakList != null) {
+                    PeakList.remove(peakList.getName());
+                }
                 analyzer.clearRegions();
             }
             chart.chartProps.setRegions(false);
