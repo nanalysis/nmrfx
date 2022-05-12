@@ -471,14 +471,22 @@ public class AnalystApp extends MainApp {
         String fontSize = "7pt";
         var controller = statusBar.getController();
         SimplePeakRegionTool simplePeakRegionTool = new SimplePeakRegionTool(controller, controller.getActiveChart());
-        Button regionButton = GlyphsDude.createIconButton(FontAwesomeIcon.SQUARE, "Regions", iconSize, fontSize, ContentDisplay.LEFT);
+
+        var regionButton = new SplitMenuButton();
+        regionButton.setText("Integrate");
+        MenuItem clearRegionsItem = new MenuItem("Clear");
+        clearRegionsItem.setOnAction(e -> simplePeakRegionTool.clearAnalysis(true));
+        regionButton.getItems().add(clearRegionsItem);
         regionButton.setOnAction(e -> simplePeakRegionTool.findRegions());
 
-        Button peakButton = GlyphsDude.createIconButton(FontAwesomeIcon.BULLSEYE, "Pick", iconSize, fontSize, ContentDisplay.LEFT);
+        var peakButton = new SplitMenuButton();
+        peakButton.setText("Pick");
         peakButton.setOnAction(e -> simplePeakRegionTool.peakPick());
 
-        Button wizardButton = GlyphsDude.createIconButton(FontAwesomeIcon.MAGIC, "Multiplets", iconSize, fontSize, ContentDisplay.LEFT);
+        var wizardButton = new SplitMenuButton();
+        wizardButton.setText("Multiplets");
         wizardButton.setOnAction(e -> simplePeakRegionTool.analyzeMultiplets());
+
         statusBar.addToolBarButtons(regionButton, peakButton, wizardButton);
     }
 
