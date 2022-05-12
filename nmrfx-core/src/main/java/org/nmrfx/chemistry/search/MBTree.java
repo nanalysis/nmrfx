@@ -25,7 +25,7 @@ public class MBTree {
     static public void readBTree(String fileName) {
         String string = null;
         try (BufferedReader bf = new BufferedReader(new FileReader(fileName));
-             LineNumberReader lineReader = new LineNumberReader(bf);) {
+             LineNumberReader lineReader = new LineNumberReader(bf)) {
             while (true) {
                 string = lineReader.readLine();
 

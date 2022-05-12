@@ -110,7 +110,7 @@ public class SVMPredict {
         if (modelStream != null) {
             try (BufferedReader input = new BufferedReader(new FileReader("filein.txt"));
                  BufferedReader modelReader = new BufferedReader(new InputStreamReader(modelStream));
-                 DataOutputStream output = new DataOutputStream(new BufferedOutputStream(new FileOutputStream("fileout.txt")));) {
+                 DataOutputStream output = new DataOutputStream(new BufferedOutputStream(new FileOutputStream("fileout.txt")))) {
                 svm_model model = svm.svm_load_model(modelReader);
                 predict(input, output, model);
             } catch (IOException e) {

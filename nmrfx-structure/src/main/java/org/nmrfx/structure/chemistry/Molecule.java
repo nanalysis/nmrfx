@@ -2736,8 +2736,8 @@ public class Molecule extends MoleculeBase {
     }
 
     public static void getCouplings(final Entity entity, final ArrayList<JCoupling> jCouplings,
-                                    final ArrayList<JCoupling> tocsyLinks, final ArrayList<JCoupling> hmbcLinks,
-                                    int nShells, int minShells, int tocsyShells, int hmbcShells) {
+            final ArrayList<JCoupling> tocsyLinks, final ArrayList<JCoupling> hmbcLinks,
+            int nShells, int minShells, int tocsyShells, int hmbcShells) {
         MoleculeBase molecule = entity.molecule;
         molecule.getAtomTypes();
 
@@ -3301,7 +3301,7 @@ public class Molecule extends MoleculeBase {
     }
 
     public void createLinker(Atom atom1, Atom atom2, int numLinks,
-                             double linkLen, double valAngle, double dihAngle) {
+            double linkLen, double valAngle, double dihAngle) {
         /**
          * createLinker is a method to create a link between atoms in two
          * separate entities
@@ -3345,7 +3345,7 @@ public class Molecule extends MoleculeBase {
     }
 
     public List<Atom> createLinker(Atom atom1, Atom atom2,
-                                   double[] linkLen, double[] valAngle, String[] aNames, double dihAngle) {
+            double[] linkLen, double[] valAngle, String[] aNames, double dihAngle) {
         /**
          * createLinker is a method to create a link between atoms in two
          * separate entities

@@ -1529,7 +1529,7 @@ public class VarianData implements NMRData {
     public void fileoutraw() {
         try (BufferedWriter bw = Files.newBufferedWriter(Paths.get("/tmp/bwraw.txt"), Charset.forName("US-ASCII"),
                 StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.CREATE, StandardOpenOption.WRITE);
-             DataInputStream in = new DataInputStream(new FileInputStream(fpath));) {
+             DataInputStream in = new DataInputStream(new FileInputStream(fpath))) {
             bw.write("rawfile header");
             bw.newLine();
             for (int k = 0; k < 8; k++) // file header

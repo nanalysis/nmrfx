@@ -540,7 +540,7 @@ public class HosePrediction {
         int[] nNulls = new int[2];
         int[] nViols = new int[2];
         try (FileReader reader = new FileReader(validate);
-             LineNumberReader lineReader = new LineNumberReader(reader);){
+             LineNumberReader lineReader = new LineNumberReader(reader)){
             while (true) {
                 cPPMs.clear();
                 hPPMs.clear();

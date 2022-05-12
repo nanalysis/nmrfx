@@ -348,7 +348,7 @@ public class AtomEnergyProp {
      * substitution for hydrogen
      */
     public static EnergyPair getInteraction(final Atom atom1, final Atom atom2, double hardSphere,
-                                            boolean usehardSphere, double shrinkValue, double shrinkHValue) {
+            boolean usehardSphere, double shrinkValue, double shrinkHValue) {
 
         AtomEnergyProp iProp = (AtomEnergyProp) atom1.atomEnergyProp;
         AtomEnergyProp jProp = (AtomEnergyProp) atom2.atomEnergyProp;

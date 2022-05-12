@@ -1843,7 +1843,7 @@ public class BrukerData implements NMRData {
         }
         try (BufferedWriter bw = Files.newBufferedWriter(Paths.get("/tmp/bwraw.txt"), Charset.forName("US-ASCII"),
                 StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.CREATE, StandardOpenOption.WRITE);
-             DataInputStream in = new DataInputStream(new FileInputStream(dpath));) {
+             DataInputStream in = new DataInputStream(new FileInputStream(dpath))) {
             bw.write("rawfile header");
             bw.newLine();
             int px;

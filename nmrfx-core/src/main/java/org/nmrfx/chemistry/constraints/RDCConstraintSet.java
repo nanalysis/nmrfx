@@ -236,7 +236,7 @@ public class RDCConstraintSet implements ConstraintSet, Iterable {
 
 
         try (BufferedReader bf = new BufferedReader(new FileReader(file));
-             LineNumberReader lineReader = new LineNumberReader(bf);) {
+             LineNumberReader lineReader = new LineNumberReader(bf)) {
             while (true) {
                 String line = lineReader.readLine();
                 if (line == null) {

@@ -63,7 +63,7 @@ public class PSFFile {
         int natoms = 0;
         int nbonds = 0;
         try (BufferedReader bf = new BufferedReader(new FileReader(fileName));
-             LineNumberReader lineReader = new LineNumberReader(bf);) {
+             LineNumberReader lineReader = new LineNumberReader(bf)) {
             while (true) {
                 string = lineReader.readLine();
                 if (string == null) {

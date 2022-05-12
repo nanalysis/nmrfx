@@ -116,7 +116,7 @@ public class PDBFile {
 
         try (
                 BufferedReader bf = new BufferedReader(new FileReader(fileName));
-                LineNumberReader lineReader = new LineNumberReader(bf);
+                LineNumberReader lineReader = new LineNumberReader(bf)
         ){
             while (true) {
                 string = lineReader.readLine();
@@ -250,7 +250,7 @@ public class PDBFile {
         residueList.add("-molecule " + molName);
         try (
                 BufferedReader bf = new BufferedReader(new FileReader(fileName));
-                LineNumberReader lineReader = new LineNumberReader(bf);
+                LineNumberReader lineReader = new LineNumberReader(bf)
         ){
             while (true) {
                 string = lineReader.readLine();
@@ -329,7 +329,7 @@ public class PDBFile {
         HashMap<String, Vector3d> atomMap = new HashMap<>();
         try (
                 BufferedReader bf = new BufferedReader(new FileReader(fileName));
-                LineNumberReader lineReader = new LineNumberReader(bf);
+                LineNumberReader lineReader = new LineNumberReader(bf)
         ){
             while (true) {
                 String string = lineReader.readLine();
@@ -439,7 +439,7 @@ public class PDBFile {
         boolean coordsGen = false;
         TreeSet<Integer> selSet = new TreeSet<>();
         try (BufferedReader bf = new BufferedReader(new FileReader(fileName));
-             LineNumberReader lineReader = new LineNumberReader(bf);) {
+             LineNumberReader lineReader = new LineNumberReader(bf)) {
             boolean swap = (molecule.checkType() == 2) && (type == 1);
             boolean readJustOne = true;
 
@@ -956,7 +956,7 @@ public class PDBFile {
         boolean calcBonds = true;
 
         try (Reader reader = fileContent == null ? new BufferedReader(new FileReader(fileName)): new StringReader(fileContent);
-             LineNumberReader lineReader = new LineNumberReader(reader);) {
+             LineNumberReader lineReader = new LineNumberReader(reader)) {
             while (true) {
                 string = lineReader.readLine();
 

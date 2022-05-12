@@ -534,7 +534,7 @@ public class Sequence {
     public MoleculeBase read(String fileName, String polymerName) throws MoleculeIOException {
         ArrayList<String> inputStrings = new ArrayList<>();
         try (BufferedReader bf = new BufferedReader(new FileReader(fileName));
-             LineNumberReader lineReader = new LineNumberReader(bf);) {
+             LineNumberReader lineReader = new LineNumberReader(bf)) {
             String inputString = null;
             while (true) {
                 inputString = lineReader.readLine();
