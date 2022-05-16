@@ -79,7 +79,7 @@ public class SpectrumStatusBar {
     CheckBox complexStatus = new CheckBox("Complex");
     CheckBox phaserStatus = new CheckBox("Phasing");
     MenuButton toolButton = new MenuButton("Tools");
-    List<Button> specialButtons = new ArrayList<>();
+    List<ButtonBase> specialButtons = new ArrayList<>();
     Button peakPickButton;
 
 
@@ -272,7 +272,7 @@ public class SpectrumStatusBar {
         };
     }
 
-    public void addToolBarButtons(Button... buttons) {
+    public void addToolBarButtons(ButtonBase... buttons) {
         for (var button:buttons) {
             specialButtons.add(button);
         }
