@@ -18,10 +18,14 @@
 package org.nmrfx.processor.gui.spectra.mousehandlers;
 
 import javafx.event.Event;
+import javafx.geometry.Bounds;
+import javafx.geometry.Point2D;
+import javafx.scene.Cursor;
 import javafx.scene.input.MouseEvent;
 import org.nmrfx.datasets.DatasetRegion;
 import org.nmrfx.processor.gui.MainApp;
 import org.nmrfx.processor.gui.PolyChart;
+import org.nmrfx.processor.gui.spectra.MultipletSelection;
 
 import java.util.Optional;
 
@@ -49,6 +53,7 @@ public class MouseBindings {
     PolyChart chart;
     MouseHandler handler;
     MouseEvent mouseEvent;
+    Cursor previousCursor = null;
     double[] dragStart = new double[2];
     boolean moved = false;
     boolean mouseDown = false;
@@ -126,10 +131,45 @@ public class MouseBindings {
     public void mouseMoved(MouseEvent mouseEvent) {
         mouseX = mouseEvent.getX();
         mouseY = mouseEvent.getY();
+        Optional<MultipletSelection> hit = PeakMouseHandlerHandler.handlerOverMultiplet(this);
+        if (hit.isPresent()) {
+            if (handler == null) {
+                handler = new PeakMouseHandlerHandler(this);
+            }
+            MultipletSelection multipletSelection = hit.get();
+            Bounds bounds = multipletSelection.getBounds();
+
+            setHandCursor(multipletSelection, bounds.getCenterX(), bounds.getMinY());
+        } else {
+            handler = null;
+            unsetHandCursor();
+        }
+
         if (handler != null) {
             handler.mouseMoved(mouseEvent);
         }
     }
+
+    private void setHandCursor(MultipletSelection multipletSelection, double x, double y) {
+        Cursor currentCursor = chart.getCanvas().getCursor();
+        if (currentCursor != Cursor.HAND) {
+            previousCursor = currentCursor;
+            chart.setCanvasCursor(Cursor.HAND);
+            Point2D screenLoc = chart.getCanvas().localToScreen(x, y);
+            MainApp.getMainApp().showPopover(chart, screenLoc, multipletSelection.getMultiplet());
+        }
+    }
+
+    private void unsetHandCursor() {
+        Cursor currentCursor = chart.getCanvas().getCursor();
+        if (currentCursor == Cursor.HAND) {
+            if (previousCursor != null) {
+                chart.setCanvasCursor(previousCursor);
+                chart.getCanvas().setCursor(previousCursor);
+            }
+        }
+    }
+
 
     private void setHandler(MouseHandler handler) {
         this.handler = handler;

@@ -24,6 +24,7 @@ import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.geometry.Point2D;
 import javafx.scene.control.*;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.image.Image;
@@ -31,6 +32,7 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import org.apache.commons.lang3.SystemUtils;
+import org.controlsfx.control.PopOver;
 import org.nmrfx.analyst.gui.molecule.*;
 import org.nmrfx.analyst.gui.molecule3D.MolSceneController;
 import org.nmrfx.analyst.gui.peaks.*;
@@ -41,6 +43,7 @@ import org.nmrfx.analyst.gui.tools.*;
 import org.nmrfx.chemistry.io.PDBFile;
 import org.nmrfx.chemistry.utilities.NvUtil;
 import org.nmrfx.console.ConsoleController;
+import org.nmrfx.peaks.Multiplet;
 import org.nmrfx.peaks.PeakLabeller;
 import org.nmrfx.plugin.api.EntryPoint;
 import org.nmrfx.processor.gui.*;
@@ -48,6 +51,7 @@ import org.nmrfx.processor.gui.log.Log;
 import org.nmrfx.processor.gui.project.GUIProject;
 import org.nmrfx.processor.gui.spectra.KeyBindings;
 import org.nmrfx.processor.gui.spectra.WindowIO;
+import org.nmrfx.processor.gui.spectra.mousehandlers.MouseBindings;
 import org.nmrfx.processor.gui.utils.FxPropertyChangeSupport;
 import org.nmrfx.processor.project.Project;
 import org.nmrfx.processor.utilities.WebConnect;
@@ -88,6 +92,9 @@ public class AnalystApp extends MainApp {
     private static WindowIO windowIO = null;
     private static SeqDisplayController seqDisplayController = null;
     private static DatasetBrowserController browserController = null;
+    private static MultipletTool multipletPopOverTool = null;
+    static PopOver popOver = new PopOver();
+
     MenuToolkit menuTk;
     Boolean isMac = null;
     PeakAtomPicker peakAtomPicker = null;
@@ -471,6 +478,9 @@ public class AnalystApp extends MainApp {
         statusBar.addToolBarButtons(regionButton, peakButton, wizardButton);
     }
 
+    public static void addMultipletPopOver(FXMLController controller) {
+    }
+
 
     static void showDocAction(ActionEvent event) {
         hostServices.showDocument("http://docs.nmrfx.org");
@@ -762,4 +772,18 @@ public class AnalystApp extends MainApp {
         browserStage.toFront();
         browserStage.show();
     }
+
+    public void showPopover(PolyChart chart, Point2D screenLoc, Multiplet multiplet) {
+        if (multipletPopOverTool == null) {
+            multipletPopOverTool = new MultipletTool(chart.getController(),null);
+            VBox vBox = new VBox();
+            multipletPopOverTool.initializePopover(vBox);
+            popOver.setContentNode(vBox);
+        }
+        multipletPopOverTool.setActiveMultiplet(multiplet);
+        popOver.setCloseButtonEnabled(true);
+        popOver.setArrowLocation(PopOver.ArrowLocation.BOTTOM_CENTER);
+        popOver.show(chart.getCanvas(), screenLoc.getX(), screenLoc.getY() - 10);
+    }
+
 }

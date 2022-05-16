@@ -1,7 +1,9 @@
 package org.nmrfx.analyst.gui.tools;
 
 import javafx.scene.control.Alert;
+import javafx.scene.layout.VBox;
 import org.controlsfx.dialog.ExceptionDialog;
+import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.analyst.peaks.Analyzer;
 import org.nmrfx.datasets.DatasetRegion;
 import org.nmrfx.peaks.PeakList;
@@ -10,6 +12,7 @@ import org.nmrfx.processor.gui.ControllerTool;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.PeakPicking;
 import org.nmrfx.processor.gui.PolyChart;
+import org.nmrfx.processor.gui.spectra.mousehandlers.MouseBindings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

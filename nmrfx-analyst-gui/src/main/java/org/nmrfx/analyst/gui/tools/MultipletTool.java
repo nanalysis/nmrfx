@@ -132,43 +132,28 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
         closeAction.accept(this);
     }
 
+    public void initializePopover(VBox vBox) {
+        this.vBox = vBox;
+        ToolBar topBar = new ToolBar();
+        initIntegralType(topBar);
+        initCouplingFields(Orientation.VERTICAL, 3);
+        ToolBar buttonBar = new ToolBar();
+        initBasicButtons(buttonBar);
+
+        vBox.getChildren().addAll(topBar, gridPane, buttonBar);
+        chart = controller.getActiveChart();
+        chart.addMultipletListener(this);
+        getAnalyzer();
+        chart.setRegionConsumer(e -> regionAdded(e));
+        patternListener = (ObservableValue<? extends String> observable, String oldValue, String newValue) -> {
+            couplingChanged();
+        };
+        addPatternListener();
+    }
+
     public void initialize(VBox vBox) {
         this.vBox = vBox;
-        String[] patterns = {"d", "t", "q", "p", "h", "dd", "ddd", "dddd"};
-        int nCouplings = 5;
         double width1 = 30;
-        double width2 = 80;
-        double width3 = 60;
-        patternChoices = new ChoiceBox[nCouplings];
-        couplingFields = new TextField[nCouplings];
-        slopeFields = new TextField[nCouplings];
-        for (int iRow = 0; iRow < nCouplings; iRow++) {
-            patternChoices[iRow] = new ChoiceBox<>();
-            patternChoices[iRow].setPrefWidth(width2);
-            if (iRow == 0) {
-                patternChoices[iRow].getItems().add("");
-                patternChoices[iRow].getItems().add("m");
-                patternChoices[iRow].getItems().add("s");
-            } else {
-                patternChoices[iRow].getItems().add("");
-            }
-            patternChoices[iRow].getItems().addAll(patterns);
-            patternChoices[iRow].setValue(patternChoices[iRow].getItems().get(0));
-            couplingFields[iRow] = new TextField();
-            slopeFields[iRow] = new TextField();
-            couplingFields[iRow].setPrefWidth(width3);
-            final int couplingIndex = iRow;
-            couplingFields[iRow].setOnKeyReleased(e -> {
-                System.out.println(e.getCode());
-                if (e.getCode() == KeyCode.ENTER) {
-                    couplingValueTyped(couplingIndex);
-                }
-            });
-            slopeFields[iRow].setPrefWidth(width3);
-            gridPane.add(patternChoices[iRow], iRow * 3 + 0, 0);
-            gridPane.add(couplingFields[iRow], iRow * 3 + 1, 0);
-            gridPane.add(slopeFields[iRow], iRow * 3 + 2, 0);
-        }
         String iconSize = "12px";
         String fontSize = "7pt";
         ToolBar toolBar1 = new ToolBar();
@@ -181,6 +166,7 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
         ToolBarUtils.addFiller(toolBar1, 10, 20);
         initIntegralType(toolBar1);
         ToolBarUtils.addFiller(toolBar1, 25, 50);
+        initCouplingFields(Orientation.HORIZONTAL, 5);
 
         journalCheckBox = new CheckBox("Text");
         journalCheckBox.setOnAction(e -> toggleJournalFormatDisplay());
@@ -212,6 +198,50 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
         initMultiplet();
         chart.setRegionConsumer(e -> regionAdded(e));
 
+    }
+    private void updateCouplingGrid(int nCouplings) {
+        if (nCouplings +1 != patternChoices.length) {
+            initCouplingFields(Orientation.VERTICAL, nCouplings + 1);
+        }
+    }
+    private void initCouplingFields(Orientation orientation, int nCouplings) {
+        String[] patterns = {"d", "t", "q", "p", "h", "dd", "ddd", "dddd"};
+        double width2 = 80;
+        double width3 = 60;
+        gridPane.getChildren().clear();
+        patternChoices = new ChoiceBox[nCouplings];
+        couplingFields = new TextField[nCouplings];
+        slopeFields = new TextField[nCouplings];
+        for (int iCoupling = 0; iCoupling < nCouplings; iCoupling++) {
+            patternChoices[iCoupling] = new ChoiceBox<>();
+            patternChoices[iCoupling].setPrefWidth(width2);
+            if (iCoupling == 0) {
+                patternChoices[iCoupling].getItems().add("");
+                patternChoices[iCoupling].getItems().add("m");
+                patternChoices[iCoupling].getItems().add("s");
+            } else {
+                patternChoices[iCoupling].getItems().add("");
+            }
+            patternChoices[iCoupling].getItems().addAll(patterns);
+            patternChoices[iCoupling].setValue(patternChoices[iCoupling].getItems().get(0));
+            couplingFields[iCoupling] = new TextField();
+            slopeFields[iCoupling] = new TextField();
+            couplingFields[iCoupling].setPrefWidth(width3);
+            final int couplingIndex = iCoupling;
+            couplingFields[iCoupling].setOnKeyReleased(e -> {
+                System.out.println(e.getCode());
+                if (e.getCode() == KeyCode.ENTER) {
+                    couplingValueTyped(couplingIndex);
+                }
+            });
+            slopeFields[iCoupling].setPrefWidth(width3);
+            int iRow = orientation == Orientation.HORIZONTAL ? 0 : iCoupling;
+            int iColumn = orientation == Orientation.HORIZONTAL ? iCoupling * 3 : 0;
+
+            gridPane.add(patternChoices[iCoupling], iColumn + 0, iRow);
+            gridPane.add(couplingFields[iCoupling], iColumn  + 1, iRow);
+            gridPane.add(slopeFields[iCoupling], iColumn + 2, iRow);
+        }
     }
 
     public void regionAdded(DatasetRegion region) {
@@ -313,6 +343,36 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
         Image imageIcon = new Image("/images/" + name + ".png", true);
         ImageView imageView = new ImageView(imageIcon);
         return imageView;
+    }
+
+    void initBasicButtons(ToolBar toolBar) {
+        Button button;
+        Font font = new Font(7);
+        List<Button> peakButtons = new ArrayList<>();
+
+        button = new Button("AutoAdd", getIcon("peak_auto"));
+        button.setOnAction(e -> addAuto());
+        peakButtons.add(button);
+
+        button = new Button("Delete", getIcon("editdelete"));
+        button.setOnAction(e -> removeWeakPeak());
+        peakButtons.add(button);
+
+        Button doubletButton = new Button("Doublets", getIcon("tree"));
+        doubletButton.setOnAction(e -> toDoublets());
+        peakButtons.add(doubletButton);
+
+        button = new Button("Fit", getIcon("reload"));
+        button.setOnAction(e -> fitSelected());
+        peakButtons.add(button);
+
+        for (Button button1 : peakButtons) {
+            button1.setContentDisplay(ContentDisplay.TOP);
+            button1.setFont(font);
+            button1.getStyleClass().add("toolButton");
+            toolBar.getItems().add(button1);
+        }
+
     }
 
     void initTools(ToolBar toolBar) {
@@ -624,11 +684,12 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
         getAnalyzer();
         if (activeMultiplet.isPresent()) {
             Multiplet multiplet = activeMultiplet.get();
-            multipletIdField.setText(String.valueOf(multiplet.getIDNum()));
-            if (resetView) {
-                refreshPeakView(multiplet, false);
+            if (multipletIdField != null) {
+                multipletIdField.setText(String.valueOf(multiplet.getIDNum()));
+                if (resetView) {
+                    refreshPeakView(multiplet, false);
+                }
             }
-            String mult = multiplet.getMultiplicity();
             Coupling coup = multiplet.getCoupling();
             updateCouplingChoices(coup);
             String peakType = Peak.typeToString(multiplet.getOrigin().getType());
@@ -636,13 +697,10 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
             double scale = multiplet.getOrigin().getPeakList().scale;
             double value = multiplet.getVolume() / scale;
             integralField.setText(String.format("%.2f", value));
-//            if (multiplet.isGenericMultiplet()) {
-//                splitButton.setDisable(true);
-//            } else {
-//                splitButton.setDisable(false);
-//            }
         } else {
-            multipletIdField.setText("");
+            if (multipletIdField != null) {
+                multipletIdField.setText("");
+            }
         }
     }
 
@@ -663,6 +721,7 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
 
     void addPatternListener() {
         for (ChoiceBox<String> cBox : patternChoices) {
+            cBox.valueProperty().removeListener(patternListener);
             cBox.valueProperty().addListener(patternListener);
         }
     }
@@ -679,23 +738,34 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
     void updateCouplingChoices(Coupling coup) {
         clearPatternListener();
         String[] couplingNames = {"", "s", "d", "t", "q", "p", "h"};
-        clearCouplingChoices();
         if (coup instanceof ComplexCoupling) {
+            updateCouplingGrid(1);
+            clearCouplingChoices();
             patternChoices[0].setValue("m");
         } else if (coup instanceof CouplingPattern) {
             CouplingPattern couplingPattern = (CouplingPattern) coup;
             double[] values = couplingPattern.getValues();
             double[] slopes = couplingPattern.getSin2Thetas();
             int[] nCoup = couplingPattern.getNValues();
-            for (int i = 0; i < values.length; i++) {
+            int nCouplings = Math.min(values.length, patternChoices.length);
+            updateCouplingGrid(nCouplings);
+            clearCouplingChoices();
+            for (int i = 0; i < nCouplings; i++) {
                 couplingFields[i].setText(String.format("%.2f", values[i]));
                 slopeFields[i].setText(String.format("%.2f", slopes[i]));
                 patternChoices[i].setValue(couplingNames[nCoup[i]]);
             }
         } else if (coup instanceof Singlet) {
+            updateCouplingGrid(1);
+            clearCouplingChoices();
             patternChoices[0].setValue("s");
         }
         addPatternListener();
+    }
+
+    public void setActiveMultiplet(Multiplet multiplet) {
+        activeMultiplet = Optional.of(multiplet);
+        updateMultipletField(false);
     }
 
     int getCurrentIndex() {
@@ -1007,7 +1077,9 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
             List<AbsMultipletComponent> comps = multiplet.getAbsComponentList();
 
             for (MultipletSelection mSel : mSet) {
-                comps1.add(comps.get(mSel.getLine()));
+                if (mSel.isLine()) {
+                    comps1.add(comps.get(mSel.getLine()));
+                }
             }
             for (AbsMultipletComponent comp : comps) {
                 if (!comps1.contains(comp)) {

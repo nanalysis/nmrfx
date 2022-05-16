@@ -39,6 +39,13 @@ public class PeakMouseHandlerHandler extends MouseHandler {
         return Optional.ofNullable(handler);
     }
 
+    public static Optional<MultipletSelection> handlerOverMultiplet(MouseBindings mouseBindings) {
+        PolyChart chart = mouseBindings.getChart();
+
+        Optional<MultipletSelection> hit = chart.hitMultiplet(mouseBindings.getMouseX(), mouseBindings.getMouseY());
+        return hit;
+    }
+
     public static Optional<PeakMouseHandlerHandler> handlePeaks(MouseBindings mouseBindings) {
         PolyChart chart = mouseBindings.getChart();
         boolean selectedPeaks = chart.selectPeaks(mouseBindings.getMouseX(), mouseBindings.getMouseY(), false);

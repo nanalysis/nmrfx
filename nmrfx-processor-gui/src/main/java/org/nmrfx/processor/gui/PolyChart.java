@@ -3491,10 +3491,12 @@ public class PolyChart extends Region implements PeakListener {
                 });
                 multiplets.stream().forEach((multipletSel) -> {
                     Multiplet multiplet = multipletSel.getMultiplet();
-                    int line = multipletSel.getLine();
-                    try {
-                        drawPeaks.drawMultiplet(peakListAttr, gC, multiplet, dim, offsets, true, line);
-                    } catch (GraphicsIOException ex) {
+                    if (multipletSel.isLine()) {
+                        int line = multipletSel.getLine();
+                        try {
+                            drawPeaks.drawMultiplet(peakListAttr, gC, multiplet, dim, offsets, true, line);
+                        } catch (GraphicsIOException ex) {
+                        }
                     }
                 });
             }
