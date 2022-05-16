@@ -44,4 +44,6 @@ class TestStructGen(unittest.TestCase):
         self.assertAlmostEqual(0.0, err[1], 2)
 
 if __name__ == '__main__':
-    unittest.main()
+    testProgram = unittest.main(exit=False)
+    result = testProgram.result
+

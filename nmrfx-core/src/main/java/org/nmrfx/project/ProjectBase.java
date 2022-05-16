@@ -282,7 +282,6 @@ public class ProjectBase {
     }
 
     public void clearAllDatasets() {
-        System.out.println("clear all dataet");
         List<DatasetBase> removeDatasets = new ArrayList<>();
         removeDatasets.addAll(datasets);
         for (DatasetBase datasetBase : removeDatasets) {

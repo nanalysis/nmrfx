@@ -22,6 +22,9 @@ import de.jangassen.dialogs.about.AboutStageBuilder;
 import de.jensd.fx.glyphs.GlyphsDude;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import javafx.application.Platform;
+import javafx.collections.FXCollections;
+import javafx.collections.MapChangeListener;
+import javafx.collections.ObservableMap;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.geometry.Point2D;
@@ -40,6 +43,8 @@ import org.nmrfx.analyst.gui.plugin.PluginLoader;
 import org.nmrfx.analyst.gui.spectra.SpectrumMenuActions;
 import org.nmrfx.analyst.gui.spectra.StripController;
 import org.nmrfx.analyst.gui.tools.*;
+import org.nmrfx.chemistry.MoleculeBase;
+import org.nmrfx.chemistry.MoleculeFactory;
 import org.nmrfx.chemistry.io.PDBFile;
 import org.nmrfx.chemistry.utilities.NvUtil;
 import org.nmrfx.console.ConsoleController;
@@ -81,7 +86,6 @@ public class AnalystApp extends MainApp {
     private static ViewMenuItems viewMenuActions;
     private static boolean startInAdvanced = true;
     private static boolean advancedIsActive = false;
-    private static MultipletController multipletController;
     private static AtomController atomController;
     private static LigandScannerController scannerController;
     private static MolSceneController molController;
@@ -94,7 +98,7 @@ public class AnalystApp extends MainApp {
     private static DatasetBrowserController browserController = null;
     private static MultipletTool multipletPopOverTool = null;
     static PopOver popOver = new PopOver();
-
+    private static ObservableMap<String, MoleculeBase> moleculeMap;
     MenuToolkit menuTk;
     Boolean isMac = null;
     PeakAtomPicker peakAtomPicker = null;
@@ -166,6 +170,12 @@ public class AnalystApp extends MainApp {
         ProjectBase.addSaveframeProcessor("runabout", runAboutSaveFrameProcessor);
 
         PluginLoader.getInstance().registerPluginsOnEntryPoint(EntryPoint.STARTUP, null);
+        moleculeMap = FXCollections.observableHashMap();
+        MoleculeFactory.setMoleculeMap(moleculeMap);
+    }
+
+    public static void addMoleculeListener(MapChangeListener<String, MoleculeBase> listener) {
+        moleculeMap.addListener(listener);
     }
 
     void pickedPeakAction(Object peakObject) {

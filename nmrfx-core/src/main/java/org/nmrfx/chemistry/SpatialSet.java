@@ -624,8 +624,8 @@ public class SpatialSet {
         //auth chain id 
         Object authChainID = atom.entity.getPropertyObject("authChainCode");
         //auth atom name
-        Object authAName = null;
-        
+        Object authAName = atom.getProperty("authAtomName");
+
         if (atom.entity instanceof Residue) {
             if (atom.getResidueName().equals("MSE")) {
                 group = "HETATM";

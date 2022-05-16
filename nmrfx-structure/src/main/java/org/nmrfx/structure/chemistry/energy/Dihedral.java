@@ -693,17 +693,7 @@ public class Dihedral {
                     atom = angleAtoms.get(i - 2 * nPseudoAngles).daughterAtom;
                 }
                 String atomName = atom.getFullName();
-//                AngleBoundary angleBoundary = angleBoundaries.get(atomName);
-//                /* adds angleBoundary values to boundaries array */
-//                if (angleBoundary != null) {
-//                    if (angleBoundary.angleProp != null) {
-//                        for (int j = 0; j < angleBoundary.angleProp.height.length; j++) {
-//                            if (angleBoundary.angleProp.height[j] == 1) {
-//                                angleValues[i] = angleBoundary.angleProp.target[j];
-//                            }
-//                        }
-//                    }
-//                }
+
                 if (usePseudo == true && incrementByTwo == true) {
                     angleValues[i++] = Util.reduceAngle(initPseudoAngle);
                     angleValues[i++] = initPuckerAmplitude;
@@ -715,33 +705,6 @@ public class Dihedral {
         }
         putDihedrals();
         molecule.genCoords(false, null);
-    }
-
-    public void printAngleTest() {
-        List<Atom> pseudoAngleAtoms = molecule.getPseudoAngleAtoms();
-        List<Atom> angleAtoms = molecule.getAngleAtoms();
-
-        System.out.println("Pseudo Angles + Boundaries");
-        System.out.println("Pseudo Angle Atom Size: " + pseudoAngleAtoms.size());
-        if (pseudoAngleAtoms == null) {
-            System.out.println("pseudoAngleAtoms is Null");
-        }
-        for (int i = 0; i < pseudoAngleAtoms.size() / 3; i++) {
-            Atom atom = pseudoAngleAtoms.get(i / 2 * 3);
-
-            if (atom == null) {
-                System.out.println("Atom is Null");
-            }
-            if (boundaries == null) {
-                System.out.println("Boundaries is Null");
-            }
-            System.out.println(atom.getFullName() + ", Lower Boundary: " + boundaries[0][i * 2] + ", Upper Boundary: " + boundaries[1][i * 2] + ", currentValue " + angleValues[i * 2]);
-            System.out.println(atom.getFullName() + ", Lower Boundary: " + boundaries[0][i * 2 + 1] + ", Upper Boundary: " + boundaries[1][i * 2 + 1] + ", currentValue " + angleValues[i * 2 + 1]);
-        }
-        for (int i = 0; i < angleAtoms.size(); i++) {
-            Atom atom = angleAtoms.get(i).daughterAtom;
-            System.out.println(atom.getFullName() + ", Lower Boundary: " + boundaries[0][i + 2 * pseudoAngleAtoms.size() / 3] + ", Upper Boundary: " + boundaries[1][i + 2 * pseudoAngleAtoms.size() / 3] + ", currentValue " + angleValues[i + 2 * pseudoAngleAtoms.size() / 3]);
-        }
     }
 
     public RotationalDynamics getRotationalDyamics() throws InvalidMoleculeException {

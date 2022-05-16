@@ -112,11 +112,7 @@ public class BrukerData implements NMRData {
         File file = new File(path);
         openParFile(file);
         openDataFile(path);
-        if (dim < 2) {
-            scale = 1.0e6;
-        } else {
-            scale = 1.0e6;
-        }
+        scale = 1.0e6;
     }
 
     /**
@@ -855,21 +851,8 @@ public class BrukerData implements NMRData {
             try {
                 if (acquFile.exists()) {
                     BrukerPar.processBrukerParFile(parMap, acquFile.toString(), i + 1, false);
-                    Integer iPar;
-                    if ((iPar = getParInt("TD," + (i + 1))) != null) {
-                        if (iPar > 1) {
-                            acqdim++;
-                        } else {
-                            if ((iPar = getParInt("NusTD," + (i + 1))) != null) {
-                                if (iPar > 1) {
-                                    acqdim++;
-                                } else {
-                                    acqdim++;
-                                }
-                            } else {
-                                acqdim++;
-                            }
-                        }
+                    if (getParInt("TD," + (i + 1)) != null) {
+                        acqdim++;
                     }
                 } else {
                     break;

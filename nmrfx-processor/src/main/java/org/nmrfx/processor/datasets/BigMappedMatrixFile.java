@@ -154,27 +154,13 @@ public class BigMappedMatrixFile implements DatasetStorageInterface, Closeable {
 
     @Override
     public long bytePosition(int... offsets) {
-        long position;
-        boolean subMatrix = true;
-        if (subMatrix) {
-            long blockNum = 0;
-            long offsetInBlock = 0;
-            for (int iDim = 0; iDim < offsets.length; iDim++) {
-                blockNum += ((offsets[iDim] / layout.blockSize[iDim]) * layout.offsetBlocks[iDim]);
-                offsetInBlock += ((offsets[iDim] % layout.blockSize[iDim]) * layout.offsetPoints[iDim]);
-//                System.out.println(iDim + " " + offsets[iDim] + " " + blockNum + " " + offsetInBlock + " " + layout.offsetPoints[iDim] + " " + layout.offsetBlocks[iDim]);
-            }
-            position = blockNum * (layout.blockPoints * BYTES + layout.blockHeaderSize) + offsetInBlock * BYTES;
-//            System.out.println(position + " " + layout.blockPoints);
-            return position;
-        } else {
-            position = offsets[0];
-            for (int iDim = 1; iDim < offsets.length; iDim++) {
-                position += offsets[iDim] * strides[iDim];
-            }
-            position *= BYTES;
+        long blockNum = 0;
+        long offsetInBlock = 0;
+        for (int iDim = 0; iDim < offsets.length; iDim++) {
+            blockNum += ((offsets[iDim] / layout.blockSize[iDim]) * layout.offsetBlocks[iDim]);
+            offsetInBlock += ((offsets[iDim] % layout.blockSize[iDim]) * layout.offsetPoints[iDim]);
         }
-        return position;
+        return  blockNum * (layout.blockPoints * BYTES + layout.blockHeaderSize) + offsetInBlock * BYTES;
     }
 
     @Override

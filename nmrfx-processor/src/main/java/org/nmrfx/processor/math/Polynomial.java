@@ -645,14 +645,10 @@ public class Polynomial {
             ar[i] = poly[n - i - 1].getReal();
             ai[i] = poly[n - i - 1].getImaginary();
         }
-        //System.out.println("  specc: init n="+n);
-        //printCVec("specc init", ar, ai);
-
         // calculate
         us = ar[0];
         vs = ai[0];  // us, vs, d never change
         d = Math.abs(us) + Math.abs(vs);
-        //System.out.println("  specc: us="+us+" vs="+vs+" d="+d);
         int maxIterations = n * 200;
         n = n - 1;  // start loop at ar[n-1] ai[n-1]
         int nIterations = 0;
@@ -664,7 +660,6 @@ public class Polynomial {
                 fm = Math.abs(ar[n]) + Math.abs(ai[n]);
                 fc = fm;
                 if (fm == 0.0) {
-                    //System.out.print(" "+n+" + "+kk+";");
                     n = n - 1;
                     continue;  // go to red
                 }
@@ -714,7 +709,6 @@ public class Polynomial {
             v = vs;
             ar[n] = xc;
             ai[n] = yc;
-            //System.out.print(" "+n+" * "+kk+";");
             // each n repeats about 120 times in while loop
             n = n - 1;
             for (j = 1; j <= n; j++) {  // partial sum, complex multiply
@@ -726,57 +720,10 @@ public class Polynomial {
             }
             // go to red
         } // end while(n > 0)
-//        System.out.println(nIterations);
-
-        //printCVec("specc final", ar, ai);
-        //System.out.println("  specc: final n="+n+" root_length="+root.length);
-        //System.out.println("nIter " + nIterations + " n " + n);
         // set results into root
         for (i = 0; i < root.length; i++) {
             root[i] = new Complex(ar[i + 1], ai[i + 1]);
         }
-    }
-
-    private static void printCVec(String name, double[] ar, double[] ai) {
-        double avg = 0.0;
-        double sig = 0.0;
-        double max = 0.0;
-        double min = Double.MAX_VALUE;
-        Complex[] cValues = new Complex[ar.length];
-        if (0 == 0) {
-            return;
-        }
-
-        System.out.print("  Polynomial: pcvec " + name + " len=" + cValues.length + " ");
-        for (int jj = 0; jj < cValues.length; jj++) {
-            cValues[jj] = new Complex(ar[jj], ai[jj]);
-            double abs = cValues[jj].abs();
-            avg += abs;
-            if (abs > max) {
-                max = abs;
-            }
-            if (abs < min) {
-                min = abs;
-            }
-        }
-        avg /= cValues.length;
-        for (Complex cValue : cValues) {
-            double abs = cValue.abs();
-            sig += (avg - abs) * (avg - abs);
-        }
-        sig = Math.sqrt(sig / cValues.length);
-        System.out.print(cValues[0] + " ");
-        if (cValues.length > 4) {
-            System.out.print(cValues[cValues.length / 2 - 2] + " ");
-        }
-        System.out.print(cValues[cValues.length / 2 - 1] + " ");
-        System.out.print(cValues[cValues.length / 2] + " ");
-        if (cValues.length > 4) {
-            System.out.print(cValues[cValues.length / 2 + 1] + " ");
-        }
-        System.out.print(cValues[cValues.length - 1] + " ");
-        System.out.print(": abs avg=" + avg + " sigma=" + sig + " max=" + max + " min=" + min);
-        System.out.println();
     }
 
     public Complex[] makeCoeffs() {
