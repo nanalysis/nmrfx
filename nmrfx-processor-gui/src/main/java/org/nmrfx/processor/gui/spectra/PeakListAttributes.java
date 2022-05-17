@@ -445,10 +445,15 @@ public class PeakListAttributes implements PeakListener {
         return hit;
     }
     public Optional<MultipletSelection> hitMultiplet(DrawPeaks drawPeaks, double pickX, double pickY) {
-        return drawPeaks.hitMultipletLabel(pickX, pickY);
+        Optional<MultipletSelection> hit =  drawPeaks.hitMultipletLabel(pickX, pickY);
+        if (hit.isPresent()) {
+            return hit;
+        } else {
+            return hitMultipletLine(drawPeaks, pickX, pickY);
+        }
     }
 
-    public Optional<MultipletSelection> hitMultipletOld(DrawPeaks drawPeaks, double pickX, double pickY) {
+    public Optional<MultipletSelection> hitMultipletLine(DrawPeaks drawPeaks, double pickX, double pickY) {
         Optional<MultipletSelection> hit = Optional.empty();
         if (peaksInRegion.isPresent()) {
             int[] peakDim = getPeakDim();

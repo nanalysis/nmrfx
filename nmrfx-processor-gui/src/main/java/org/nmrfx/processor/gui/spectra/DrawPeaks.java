@@ -942,19 +942,6 @@ public class DrawPeaks {
             }
 
         }
-        if (result.isEmpty()) {
-            String label;
-            if (multipletLabelType == PeakDisplayParameters.MULTIPLET_LABEL_NUMBER) {
-                label = String.valueOf(multiplet.getIDNum());
-            } else {
-                label = getMultipletLabel(multiplet);
-            }
-            if (hitMultipletLabel(g2, label, xM, yM, max, hitX, hitY)) {
-                MultipletSelection mSel = new MultipletSelection(multiplet, null);
-                result = Optional.of(mSel);
-            }
-        }
-
         return result;
     }
 
