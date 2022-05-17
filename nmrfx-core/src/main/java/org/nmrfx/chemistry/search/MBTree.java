@@ -26,9 +26,7 @@ public class MBTree {
 
     static public void readBTree(String fileName) {
         try (Stream<String> lines = Files.lines(new File(fileName).toPath())) {
-            lines.forEach(line -> {
-                System.out.println(line);
-            });
+            lines.forEach(System.out::println);
         } catch (FileNotFoundException fnf) {
             System.out.println("Cannot open the file " + fileName);
             System.out.println(fnf.getMessage());

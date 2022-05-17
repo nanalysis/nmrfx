@@ -21,6 +21,7 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
@@ -519,7 +520,7 @@ public class SampleSchedule {
      * @see #fpath
      */
     private void writeFile() {
-        try (BufferedWriter bw = Files.newBufferedWriter(Paths.get(fpath), Charset.forName("US-ASCII"),
+        try (BufferedWriter bw = Files.newBufferedWriter(Paths.get(fpath), StandardCharsets.US_ASCII,
                 StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.CREATE, StandardOpenOption.WRITE)) {
             System.out.println("writing new sample schedule: " + fpath);
             for (int j = 0; j < nSamples; j++) {
