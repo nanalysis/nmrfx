@@ -19,8 +19,6 @@ package org.nmrfx.analyst.gui;
 
 import de.jangassen.MenuToolkit;
 import de.jangassen.dialogs.about.AboutStageBuilder;
-import de.jensd.fx.glyphs.GlyphsDude;
-import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.MapChangeListener;
@@ -56,7 +54,6 @@ import org.nmrfx.processor.gui.log.Log;
 import org.nmrfx.processor.gui.project.GUIProject;
 import org.nmrfx.processor.gui.spectra.KeyBindings;
 import org.nmrfx.processor.gui.spectra.WindowIO;
-import org.nmrfx.processor.gui.spectra.mousehandlers.MouseBindings;
 import org.nmrfx.processor.gui.utils.FxPropertyChangeSupport;
 import org.nmrfx.processor.project.Project;
 import org.nmrfx.processor.utilities.WebConnect;
@@ -781,11 +778,13 @@ public class AnalystApp extends MainApp {
             VBox vBox = new VBox();
             multipletPopOverTool.initializePopover(vBox);
             popOver.setContentNode(vBox);
+            popOver.setCloseButtonEnabled(true);
+            popOver.setArrowLocation(PopOver.ArrowLocation.BOTTOM_CENTER);
         }
         multipletPopOverTool.setActiveMultiplet(multiplet);
-        popOver.setCloseButtonEnabled(true);
-        popOver.setArrowLocation(PopOver.ArrowLocation.BOTTOM_CENTER);
-        popOver.show(chart.getCanvas(), screenLoc.getX(), screenLoc.getY() - 10);
+        if (!popOver.isShowing() || (popOver.isShowing() && !popOver.isDetached())) {
+            popOver.show(chart.getCanvas(), screenLoc.getX(), screenLoc.getY() - 10);
+        }
     }
 
 }
