@@ -1,13 +1,19 @@
 package org.nmrfx.analyst.gui.tools;
 
 import javafx.scene.control.Alert;
+import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.SplitMenuButton;
+import javafx.scene.input.Clipboard;
+import javafx.scene.input.ClipboardContent;
+import javafx.scene.input.DataFormat;
 import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.analyst.peaks.Analyzer;
+import org.nmrfx.analyst.peaks.JournalFormat;
+import org.nmrfx.analyst.peaks.JournalFormatPeaks;
 import org.nmrfx.datasets.DatasetRegion;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.processor.datasets.Dataset;
@@ -69,12 +75,18 @@ public class SimplePeakRegionTool implements ControllerTool {
         regionButton.setOnAction(e -> findRegions());
 
         var peakButton = new SplitMenuButton();
-        peakButton.setText("Pick");
+        peakButton.setText("PeakPick");
         peakButton.setOnAction(e -> peakPick());
 
         var wizardButton = new SplitMenuButton();
         wizardButton.setText("Analyze");
         wizardButton.setOnAction(e -> analyzeMultiplets());
+
+        MenuItem copyJournalFormatMenuItem = new MenuItem("Copy Report");
+
+        copyJournalFormatMenuItem.setOnAction(e -> journalFormatToClipboard());
+        wizardButton.getItems().addAll(copyJournalFormatMenuItem);
+
 
         statusBar.addToolBarButtons(regionButton, peakButton, wizardButton);
     }
@@ -262,6 +274,23 @@ public class SimplePeakRegionTool implements ControllerTool {
             } catch (IOException ex) {
                 log.error(ex.getMessage(), ex);
             }
+        }
+    }
+
+    public void journalFormatToClipboard() {
+        JournalFormat format = JournalFormatPeaks.getFormat("JMedCh");
+        getAnalyzer();
+        if (analyzer != null) {
+            PeakList peakList = analyzer.getPeakList();
+            String journalText = format.genOutput(peakList);
+            String plainText = JournalFormatPeaks.formatToPlain(journalText);
+            String rtfText = JournalFormatPeaks.formatToRTF(journalText);
+
+            Clipboard clipBoard = Clipboard.getSystemClipboard();
+            ClipboardContent content = new ClipboardContent();
+            content.put(DataFormat.PLAIN_TEXT, plainText);
+            content.put(DataFormat.RTF, rtfText);
+            clipBoard.setContent(content);
         }
     }
 
