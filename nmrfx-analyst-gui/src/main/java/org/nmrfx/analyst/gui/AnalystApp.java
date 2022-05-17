@@ -477,23 +477,7 @@ public class AnalystApp extends MainApp {
         String fontSize = "7pt";
         var controller = statusBar.getController();
         SimplePeakRegionTool simplePeakRegionTool = new SimplePeakRegionTool(controller, controller.getActiveChart());
-
-        var regionButton = new SplitMenuButton();
-        regionButton.setText("Integrate");
-        MenuItem clearRegionsItem = new MenuItem("Clear");
-        clearRegionsItem.setOnAction(e -> simplePeakRegionTool.clearAnalysis(true));
-        regionButton.getItems().add(clearRegionsItem);
-        regionButton.setOnAction(e -> simplePeakRegionTool.findRegions());
-
-        var peakButton = new SplitMenuButton();
-        peakButton.setText("Pick");
-        peakButton.setOnAction(e -> simplePeakRegionTool.peakPick());
-
-        var wizardButton = new SplitMenuButton();
-        wizardButton.setText("Multiplets");
-        wizardButton.setOnAction(e -> simplePeakRegionTool.analyzeMultiplets());
-
-        statusBar.addToolBarButtons(regionButton, peakButton, wizardButton);
+        simplePeakRegionTool.addButtons(statusBar);
     }
 
     public static void addMultipletPopOver(FXMLController controller) {
