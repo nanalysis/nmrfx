@@ -90,17 +90,8 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
     Stage stage = null;
     VBox vBox;
     TextField multipletIdField;
-    HBox menuBar = new HBox();
-    HBox toolBar = new HBox();
-    HBox regionToolBar = new HBox();
-    HBox peakToolBar = new HBox();
-    HBox multipletToolBar = new HBox();
-    HBox fittingToolBar = new HBox();
-    HBox integralToolBar = new HBox();
     HBox typeToolBar = new HBox();
     GridPane gridPane = new GridPane();
-    Button splitButton;
-    Button splitRegionButton;
     ChoiceBox<String> peakTypeChoice;
     ChoiceBox<String>[] patternChoices;
     TextField integralField;
@@ -143,7 +134,7 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
         chart = controller.getActiveChart();
         chart.addMultipletListener(this);
         getAnalyzer();
-        chart.setRegionConsumer(e -> regionAdded(e));
+        chart.setRegionConsumer(this::regionAdded);
         patternListener = (ObservableValue<? extends String> observable, String oldValue, String newValue) -> {
             couplingChanged();
         };
