@@ -129,8 +129,11 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
         initCouplingFields(Orientation.VERTICAL, 3);
         ToolBar buttonBar = new ToolBar();
         initBasicButtons(buttonBar);
+        HBox hbox = new HBox();
+        hbox.setMinHeight(10);
+        HBox.setHgrow(hbox,Priority.ALWAYS);
 
-        vBox.getChildren().addAll(topBar, gridPane, buttonBar);
+        vBox.getChildren().addAll(hbox, topBar, gridPane, buttonBar);
         chart = controller.getActiveChart();
         chart.addMultipletListener(this);
         getAnalyzer();
@@ -742,7 +745,7 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
             double[] values = couplingPattern.getValues();
             double[] slopes = couplingPattern.getSin2Thetas();
             int[] nCoup = couplingPattern.getNValues();
-            int nCouplings = Math.min(values.length, patternChoices.length);
+            int nCouplings = values.length;
             updateCouplingGrid(nCouplings);
             clearCouplingChoices();
             for (int i = 0; i < nCouplings; i++) {
