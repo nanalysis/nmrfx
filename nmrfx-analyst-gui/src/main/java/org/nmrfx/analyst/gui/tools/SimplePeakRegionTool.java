@@ -1,9 +1,6 @@
 package org.nmrfx.analyst.gui.tools;
 
-import javafx.scene.control.Alert;
-import javafx.scene.control.Menu;
-import javafx.scene.control.MenuItem;
-import javafx.scene.control.SplitMenuButton;
+import javafx.scene.control.*;
 import javafx.scene.input.Clipboard;
 import javafx.scene.input.ClipboardContent;
 import javafx.scene.input.DataFormat;
@@ -11,13 +8,17 @@ import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.analyst.gui.AnalystApp;
+import org.nmrfx.analyst.gui.annotations.AnnoJournalFormat;
 import org.nmrfx.analyst.peaks.Analyzer;
 import org.nmrfx.analyst.peaks.JournalFormat;
 import org.nmrfx.analyst.peaks.JournalFormatPeaks;
 import org.nmrfx.datasets.DatasetRegion;
 import org.nmrfx.peaks.PeakList;
+import org.nmrfx.peaks.events.PeakEvent;
+import org.nmrfx.peaks.events.PeakListener;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.*;
+import org.nmrfx.processor.gui.controls.ConsoleUtil;
 import org.nmrfx.processor.gui.spectra.CrossHairs;
 import org.nmrfx.processor.gui.spectra.mousehandlers.MouseBindings;
 import org.nmrfx.utils.GUIUtils;
@@ -34,11 +35,13 @@ import java.util.TreeSet;
 import static org.nmrfx.utils.GUIUtils.affirm;
 import static org.nmrfx.utils.GUIUtils.warn;
 
-public class SimplePeakRegionTool implements ControllerTool {
+public class SimplePeakRegionTool implements ControllerTool, PeakListener {
     private static final Logger log = LoggerFactory.getLogger(SimplePeakRegionTool.class);
     Analyzer analyzer;
     FXMLController controller;
     PolyChart chart;
+    CheckMenuItem journalCheckBox;
+
 
     public SimplePeakRegionTool(FXMLController controller, PolyChart chart) {
         this.controller = controller;
@@ -82,10 +85,12 @@ public class SimplePeakRegionTool implements ControllerTool {
         wizardButton.setText("Analyze");
         wizardButton.setOnAction(e -> analyzeMultiplets());
 
+        journalCheckBox = new CheckMenuItem("Show Report");
         MenuItem copyJournalFormatMenuItem = new MenuItem("Copy Report");
+        journalCheckBox.setOnAction(e -> toggleJournalFormatDisplay());
 
         copyJournalFormatMenuItem.setOnAction(e -> journalFormatToClipboard());
-        wizardButton.getItems().addAll(copyJournalFormatMenuItem);
+        wizardButton.getItems().addAll(journalCheckBox, copyJournalFormatMenuItem);
 
 
         statusBar.addToolBarButtons(regionButton, peakButton, wizardButton);
@@ -294,5 +299,53 @@ public class SimplePeakRegionTool implements ControllerTool {
         }
     }
 
+    public void toggleJournalFormatDisplay() {
+        if (journalCheckBox.isSelected()) {
+            showJournalFormatOnChart();
+        } else {
+            removeJournalFormatOnChart();
+        }
+    }
 
+    public void showJournalFormatOnChart() {
+        getAnalyzer();
+        if (analyzer != null) {
+            PeakList peakList = analyzer.getPeakList();
+            if (peakList == null) {
+                removeJournalFormatOnChart();
+            } else {
+                peakList.registerPeakChangeListener(this);
+                AnnoJournalFormat annoText = new AnnoJournalFormat(0.1, 20, 0.9, 100,
+                        CanvasAnnotation.POSTYPE.FRACTION,
+                        CanvasAnnotation.POSTYPE.PIXEL,
+                        peakList.getName());
+                chart.chartProps.setTopBorderSize(50);
+
+                chart.clearAnnoType(AnnoJournalFormat.class);
+                chart.addAnnotation(annoText);
+                chart.refresh();
+            }
+        }
+    }
+
+    public void removeJournalFormatOnChart() {
+        getAnalyzer();
+        PeakList peakList = analyzer.getPeakList();
+        if (peakList != null) {
+            peakList.removePeakChangeListener(this);
+        }
+
+        chart.chartProps.setTopBorderSize(7);
+        chart.clearAnnoType(AnnoJournalFormat.class);
+        chart.refresh();
+    }
+
+    @Override
+    public void peakListChanged(PeakEvent peakEvent) {
+        ConsoleUtil.runOnFxThread(() -> {
+            if (journalCheckBox.isSelected()) {
+                showJournalFormatOnChart();
+            }
+        });
+    }
 }

@@ -84,7 +84,7 @@ import static org.nmrfx.utils.GUIUtils.warn;
  *
  * @author brucejohnson
  */
-public class MultipletTool implements SetChangeListener<MultipletSelection>, ControllerTool, PeakListener {
+public class MultipletTool implements SetChangeListener<MultipletSelection>, ControllerTool {
     private static final Logger log = LoggerFactory.getLogger(MultipletTool.class);
 
     Stage stage = null;
@@ -105,7 +105,6 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
     boolean ignoreCouplingChanges = false;
     ChangeListener<String> patternListener;
     Analyzer analyzer = null;
-    CheckBox journalCheckBox;
     CheckBox molButton;
     CanvasMolecule cMol = null;
 
@@ -161,15 +160,11 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
         ToolBarUtils.addFiller(toolBar1, 25, 50);
         initCouplingFields(Orientation.HORIZONTAL, 5);
 
-        journalCheckBox = new CheckBox("Text");
-        journalCheckBox.setOnAction(e -> toggleJournalFormatDisplay());
-        journalCheckBox.getStyleClass().add("toolButton");
-
         molButton = new CheckBox("Molecule");
         molButton.getStyleClass().add("toolButton");
         molButton.setOnAction(e -> toggleMoleculeDisplay());
 
-        toolBar1.getItems().addAll(journalCheckBox, molButton);
+        toolBar1.getItems().addAll(molButton);
 
         ToolBarUtils.addFiller(toolBar1, 10, 500);
 
@@ -1287,55 +1282,5 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
         PolyChart chart = FXMLController.getActiveController().getActiveChart();
         chart.clearAnnoType(CanvasMolecule.class);
         chart.refresh();
-    }
-
-    public void toggleJournalFormatDisplay() {
-        if (journalCheckBox.isSelected()) {
-            showJournalFormatOnChart();
-        } else {
-            removeJournalFormatOnChart();
-        }
-    }
-
-    public void showJournalFormatOnChart() {
-        getAnalyzer();
-        if (analyzer != null) {
-            PeakList peakList = analyzer.getPeakList();
-            if (peakList == null) {
-                removeJournalFormatOnChart();
-            } else {
-                peakList.registerPeakChangeListener(this);
-                AnnoJournalFormat annoText = new AnnoJournalFormat(0.1, 20, 0.9, 100,
-                        CanvasAnnotation.POSTYPE.FRACTION,
-                        CanvasAnnotation.POSTYPE.PIXEL,
-                        peakList.getName());
-                chart.chartProps.setTopBorderSize(50);
-
-                chart.clearAnnoType(AnnoJournalFormat.class);
-                chart.addAnnotation(annoText);
-                chart.refresh();
-            }
-        }
-    }
-
-    public void removeJournalFormatOnChart() {
-        getAnalyzer();
-        PeakList peakList = analyzer.getPeakList();
-        if (peakList != null) {
-            peakList.removePeakChangeListener(this);
-        }
-
-        chart.chartProps.setTopBorderSize(7);
-        chart.clearAnnoType(AnnoJournalFormat.class);
-        chart.refresh();
-    }
-
-    @Override
-    public void peakListChanged(PeakEvent peakEvent) {
-        ConsoleUtil.runOnFxThread(() -> {
-            if (journalCheckBox.isSelected()) {
-                showJournalFormatOnChart();
-            }
-        });
     }
 }
