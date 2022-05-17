@@ -262,6 +262,33 @@ public class Multiplets {
         // updateAfterMultipletConversion(multiplet);
     }
 
+    public static Optional<Double> findMultipletMidpoint(Multiplet multiplet) {
+        List<AbsMultipletComponent> comps = multiplet.getAbsComponentList();
+        Double offset = null;
+        if (comps.size() > 1) {
+            double sumVolume = 0.0;
+            for (var comp : comps) {
+                sumVolume += comp.getVolume();
+            }
+            double halfVolume = 0.0;
+            double minDelta = Double.MAX_VALUE;
+            int iMin = 0;
+            for (int i = 0; i < comps.size(); i++) {
+                var comp = comps.get(i);
+                halfVolume += comp.getVolume();
+                double delta = Math.abs(halfVolume - (sumVolume / 2.0));
+                if (delta < minDelta) {
+                    iMin = i;
+                    minDelta = delta;
+                }
+            }
+            if (iMin < comps.size() -1 ) {
+                offset = (comps.get(iMin).getOffset() + comps.get(iMin + 1).getOffset()) / 2.0;
+            }
+        }
+        return Optional.ofNullable(offset);
+    }
+
 //    public static void addOuterCoupling(int addNumber, String mSpec) {
 //        Multiplet multiplet = getMultiplet(mSpec);
 //        addOuterCoupling(addNumber, multiplet);

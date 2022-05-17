@@ -89,7 +89,6 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
 
     Stage stage = null;
     VBox vBox;
-    HBox navigatorToolBar = new HBox();
     TextField multipletIdField;
     HBox menuBar = new HBox();
     HBox toolBar = new HBox();
@@ -357,6 +356,11 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
         button = new Button("Delete", getIcon("editdelete"));
         button.setOnAction(e -> removeWeakPeak());
         peakButtons.add(button);
+
+        button = new Button("Split", getIcon("region_split"));
+        button.setOnAction(e -> split());
+        peakButtons.add(button);
+
 
         Button doubletButton = new Button("Doublets", getIcon("tree"));
         doubletButton.setOnAction(e -> toDoublets());
@@ -899,6 +903,15 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
         refresh();
     }
 
+    public void split() {
+        CrossHairs crossHairs = chart.getCrossHairs();
+        if (crossHairs.hasCrosshairState("v0")) {
+            splitRegion();
+        } else {
+            splitMultiplet();
+        }
+    }
+
     public void splitRegion() {
         double ppm = chart.getVerticalCrosshairPositions()[0];
         getAnalyzer();
@@ -913,6 +926,25 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
         } catch (IOException ex) {
         }
         chart.refresh();
+    }
+
+    public void splitMultiplet() {
+        getAnalyzer();
+        if (analyzer != null) {
+            Multiplets.findMultipletMidpoint(activeMultiplet.get()).ifPresent(ppmCenter -> {
+                try {
+                    List<Multiplet> multiplets = analyzer.splitRegion(ppmCenter);
+                    if (!multiplets.isEmpty()) {
+                        activeMultiplet = Optional.of(multiplets.get(0));
+                    } else {
+                        activeMultiplet = Optional.empty();
+                    }
+                    updateMultipletField(false);
+                    chart.refresh();
+                } catch (IOException ex) {
+                }
+            });
+        }
     }
 
     public void adjustRegion() {
