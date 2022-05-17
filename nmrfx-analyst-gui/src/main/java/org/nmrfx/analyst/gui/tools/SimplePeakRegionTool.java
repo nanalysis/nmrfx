@@ -1,27 +1,32 @@
 package org.nmrfx.analyst.gui.tools;
 
 import javafx.scene.control.Alert;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.SplitMenuButton;
 import javafx.scene.layout.VBox;
+import javafx.stage.FileChooser;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.analyst.peaks.Analyzer;
 import org.nmrfx.datasets.DatasetRegion;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.processor.datasets.Dataset;
-import org.nmrfx.processor.gui.ControllerTool;
-import org.nmrfx.processor.gui.FXMLController;
-import org.nmrfx.processor.gui.PeakPicking;
-import org.nmrfx.processor.gui.PolyChart;
+import org.nmrfx.processor.gui.*;
+import org.nmrfx.processor.gui.spectra.CrossHairs;
 import org.nmrfx.processor.gui.spectra.mousehandlers.MouseBindings;
+import org.nmrfx.utils.GUIUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.TreeSet;
 
 import static org.nmrfx.utils.GUIUtils.affirm;
+import static org.nmrfx.utils.GUIUtils.warn;
 
 public class SimplePeakRegionTool implements ControllerTool {
     private static final Logger log = LoggerFactory.getLogger(SimplePeakRegionTool.class);
@@ -37,6 +42,41 @@ public class SimplePeakRegionTool implements ControllerTool {
     @Override
     public void close() {
 
+    }
+
+    public void addButtons(SpectrumStatusBar statusBar) {
+
+        var regionButton = new SplitMenuButton();
+        regionButton.setText("Integrate");
+
+        MenuItem clearRegionsItem = new MenuItem("Clear");
+        clearRegionsItem.setOnAction(e -> clearAnalysis(true));
+
+        MenuItem thresholdMenuItem = new MenuItem("Set Threshold");
+        thresholdMenuItem.setOnAction(e -> setThreshold());
+
+        MenuItem clearThresholdMenuItem = new MenuItem("Clear Threshold");
+        clearThresholdMenuItem.setOnAction(e -> clearThreshold());
+
+        MenuItem saveRegionsMenuItem = new MenuItem("Save Regions");
+        saveRegionsMenuItem.setOnAction(e -> saveRegions());
+
+        MenuItem loadRegionsMenuItem = new MenuItem("Load Regions");
+        loadRegionsMenuItem.setOnAction(e -> loadRegions());
+
+        regionButton.getItems().addAll(clearRegionsItem, saveRegionsMenuItem, loadRegionsMenuItem,
+                thresholdMenuItem, clearThresholdMenuItem);
+        regionButton.setOnAction(e -> findRegions());
+
+        var peakButton = new SplitMenuButton();
+        peakButton.setText("Pick");
+        peakButton.setOnAction(e -> peakPick());
+
+        var wizardButton = new SplitMenuButton();
+        wizardButton.setText("Analyze");
+        wizardButton.setOnAction(e -> analyzeMultiplets());
+
+        statusBar.addToolBarButtons(regionButton, peakButton, wizardButton);
     }
 
     PolyChart getChart() {
@@ -116,8 +156,69 @@ public class SimplePeakRegionTool implements ControllerTool {
             chart.setActiveRegion(null);
             chart.refresh();
         }
-
     }
+
+    private void setThreshold() {
+        Analyzer analyzer = getAnalyzer();
+        if (analyzer != null) {
+            CrossHairs crossHairs = chart.getCrossHairs();
+            if (!crossHairs.hasCrosshairState("h0")) {
+                warn("Threshold", "Must have horizontal crosshair");
+                return;
+            }
+            Double[] pos = crossHairs.getCrossHairPositions(0);
+            System.out.println(pos[0] + " " + pos[1]);
+            analyzer.setThreshold(pos[1]);
+        }
+    }
+
+    private void clearThreshold() {
+        if (analyzer != null) {
+            analyzer.clearThreshold();
+        }
+    }
+
+
+    private void saveRegions() {
+        Analyzer analyzer = getAnalyzer();
+        if (analyzer != null) {
+            TreeSet<DatasetRegion> regions = analyzer.getDataset().getRegions();
+            if (regions.isEmpty()) {
+                GUIUtils.warn("Regions Save", "No regions to save");
+                return;
+            }
+            FileChooser chooser = new FileChooser();
+            chooser.setTitle("Save Regions File");
+            File regionFile = chooser.showSaveDialog(null);
+            if (regionFile != null) {
+                try {
+                    analyzer.saveRegions(regionFile);
+                } catch (IOException ioE) {
+                    GUIUtils.warn("Error writing regions file", ioE.getMessage());
+                }
+            }
+        }
+    }
+
+    private void loadRegions() {
+        Analyzer analyzer = getAnalyzer();
+        if (analyzer != null) {
+            FileChooser chooser = new FileChooser();
+            chooser.setTitle("Read Regions File");
+            File regionFile = chooser.showOpenDialog(null);
+            if (regionFile != null) {
+                try {
+                    analyzer.loadRegions(regionFile);
+                    getChart().chartProps.setIntegrals(true);
+                    getChart().chartProps.setRegions(true);
+                    getChart().refresh();
+                } catch (IOException ioE) {
+                    GUIUtils.warn("Error reading regions file", ioE.getMessage());
+                }
+            }
+        }
+    }
+
     public void peakPick() {
         Analyzer analyzer = getAnalyzer();
         if (analyzer != null) {

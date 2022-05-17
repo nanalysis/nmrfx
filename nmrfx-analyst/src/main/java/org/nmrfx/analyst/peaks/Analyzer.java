@@ -7,14 +7,19 @@ import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.datasets.Nuclei;
 import org.nmrfx.datasets.DatasetRegion;
 import org.nmrfx.peaks.io.PeakWriter;
+
 import static org.nmrfx.analyst.peaks.Multiplets.locatePeaks;
+
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.math.VecBase.IndexValue;
+
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+
 import static java.util.Comparator.comparing;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -22,6 +27,7 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
+
 import org.apache.commons.math3.linear.RealMatrix;
 import org.nmrfx.peaks.AbsMultipletComponent;
 import org.nmrfx.peaks.InvalidPeakException;
@@ -38,7 +44,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- *
  * @author Bruce Johnson
  */
 public class Analyzer {
@@ -185,7 +190,7 @@ public class Analyzer {
         try {
             peakList = picker.peakPick();
             removePeaksFromNonRegions();
-        } catch (IOException|IllegalArgumentException ex) {
+        } catch (IOException | IllegalArgumentException ex) {
             log.error(ex.getMessage(), ex);
         }
         return peakList;
@@ -804,7 +809,7 @@ public class Analyzer {
     public void setPositionRestraint(Double restraint) {
         this.positionRestraint = restraint;
     }
-    
+
     public void fitRegions() throws Exception {
         for (DatasetRegion region : getRegions()) {
             fitRegion(region);
@@ -1223,6 +1228,12 @@ public class Analyzer {
             TreeSet<DatasetRegion> regions = DatasetRegion.loadRegions(regionFile);
             dataset.setRegions(regions);
         }
+    }
 
+    public void saveRegions(File regionFile) throws IOException {
+        TreeSet<DatasetRegion> regions = dataset.getRegions();
+        if (!regions.isEmpty()) {
+            DatasetRegion.saveRegions(regionFile, dataset.getRegions());
+        }
     }
 }
