@@ -1,11 +1,7 @@
 package org.nmrfx.structure.chemistry.predict;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.FileInputStream;
-import java.io.FileReader;
-import java.io.InputStream;
-import java.io.LineNumberReader;
+import java.io.*;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Collections;
@@ -13,6 +9,8 @@ import java.util.Objects;
 import java.util.TreeSet;
 import java.nio.charset.Charset;
 import java.util.List;
+import java.util.stream.Stream;
+
 import org.apache.commons.collections4.bag.HashBag;
 
 public class HosePrediction {
@@ -539,16 +537,11 @@ public class HosePrediction {
         int[] nValues = new int[2];
         int[] nNulls = new int[2];
         int[] nViols = new int[2];
-        try (FileReader reader = new FileReader(validate);
-             LineNumberReader lineReader = new LineNumberReader(reader)){
-            while (true) {
+        try (Stream<String> lines = Files.lines(new File(validate).toPath())){
+             lines.forEach(line -> {
                 cPPMs.clear();
                 hPPMs.clear();
-                String string = lineReader.readLine();
-                if (string == null) {
-                    break;
-                }
-                String[] values = string.split("\t");
+                String[] values = line.split("\t");
                 String[] ppmValues = values[5].split(" ");
                 String[] hoseString = values[4].split(" ");
                 ArrayList<Integer> upDownList = compressStereo(hoseString[1]);
@@ -615,7 +608,7 @@ public class HosePrediction {
                         }
                     }
                 }
-            }
+            });
         } catch (IOException ioE) {
         }
         for (int i = 0; i < 2; i++) {

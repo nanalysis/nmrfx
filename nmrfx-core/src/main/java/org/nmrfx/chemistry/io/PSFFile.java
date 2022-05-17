@@ -18,8 +18,6 @@
 
 package org.nmrfx.chemistry.io;
 
-import org.nmrfx.chemistry.io.PSFAtomParser;
-import org.nmrfx.chemistry.io.MoleculeIOException;
 import org.nmrfx.chemistry.*;
 
 import java.io.*;
@@ -33,7 +31,6 @@ public class PSFFile {
 
     public static void read(String fileName)
             throws MoleculeIOException {
-        int i;
         String string;
         String lastRes = "";
 
@@ -62,27 +59,17 @@ public class PSFFile {
         ArrayList<Atom> atoms = new ArrayList<>();
         int natoms = 0;
         int nbonds = 0;
-        try (BufferedReader bf = new BufferedReader(new FileReader(fileName));
-             LineNumberReader lineReader = new LineNumberReader(bf)) {
-            while (true) {
-                string = lineReader.readLine();
-                if (string == null) {
-                    System.out.println("read null");
-                    return;
-                }
-
+        int i;
+        try (BufferedReader bufReader = new BufferedReader(new FileReader(fileName))) {
+            while ((string = bufReader.readLine()) != null) {
                 int index = string.indexOf("!NATOM");
                 if (index != -1) {
                     natoms = Integer.parseInt(string.substring(0, index).trim());
                     break;
                 }
             }
-            for (i = 0; i < natoms; i++) {
-                string = lineReader.readLine();
-                if (string == null) {
-                    return;
-                }
-
+            i = 0;
+            while (i < natoms && (string = bufReader.readLine()) != null){
                 PSFAtomParser atomParse = new PSFAtomParser(string);
                 if (!lastRes.equals(atomParse.resNum)) {
                     lastRes = atomParse.resNum;
@@ -107,13 +94,9 @@ public class PSFFile {
 
                 residue.addAtom(atom);
                 atoms.add(atom);
+                i++;
             }
-            while (true) {
-                string = lineReader.readLine();
-                if (string == null) {
-                    return;
-                }
-
+            while ((string = bufReader.readLine()) != null) {
                 int index = string.indexOf("!NBOND");
                 if (index != -1) {
                     nbonds = Integer.parseInt(string.substring(0, index).trim());
@@ -122,11 +105,7 @@ public class PSFFile {
             }
 
             i = 0;
-            while (i < nbonds) {
-                string = lineReader.readLine();
-                if (string == null) {
-                    return;
-                }
+            while (i < nbonds && (string = bufReader.readLine()) != null) {
                 string = string.trim();
                 String[] atomPairs = string.split("\\s+");
                 for (int j = 0; j < atomPairs.length; j += 2) {
@@ -135,19 +114,14 @@ public class PSFFile {
                     Atom atom1 = atoms.get(ii - 1);
                     Atom atom2 = atoms.get(jj - 1);
                     Order order = Order.SINGLE;
-                    boolean recordBondInPolymer = false;
-                    if (atom1.entity != atom2.entity) {
-                        recordBondInPolymer = true;
-                    }
+                    boolean recordBondInPolymer = atom1.entity != atom2.entity;
                     if (atom1.getName().startsWith("H")) {
                         Atom.addBond(atom2, atom1, order, recordBondInPolymer);
                     } else {
                         Atom.addBond(atom1, atom2, order, recordBondInPolymer);
                     }
-
                     i++;
                 }
-
             }
         } catch (FileNotFoundException ioe) {
             throw new MoleculeIOException(ioe.getMessage());

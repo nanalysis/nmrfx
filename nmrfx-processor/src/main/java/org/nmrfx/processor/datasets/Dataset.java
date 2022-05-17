@@ -2058,7 +2058,6 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
 
             newDataset.writeHeader(false);
             newDataset.writeParFile();
-            newDataset.close();
         } finally {
             if (newDataset != null) {
                 newDataset.close();

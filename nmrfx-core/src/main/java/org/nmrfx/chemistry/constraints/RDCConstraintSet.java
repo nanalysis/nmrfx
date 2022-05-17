@@ -17,16 +17,15 @@
  */
 package org.nmrfx.chemistry.constraints;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
-import java.io.LineNumberReader;
 
 import org.nmrfx.chemistry.MoleculeBase;
 import org.nmrfx.chemistry.Point3;
 
+import java.nio.file.Files;
 import java.util.*;
+import java.util.stream.Stream;
 
 import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
 import org.nmrfx.chemistry.Atom;
@@ -233,15 +232,8 @@ public class RDCConstraintSet implements ConstraintSet, Iterable {
 
     public void readInputFile(File file) throws IOException {
         constraints.clear();
-
-
-        try (BufferedReader bf = new BufferedReader(new FileReader(file));
-             LineNumberReader lineReader = new LineNumberReader(bf)) {
-            while (true) {
-                String line = lineReader.readLine();
-                if (line == null) {
-                    break;
-                }
+        try (Stream<String> lines = Files.lines(file.toPath())) {
+            lines.forEach(line -> {
                 String sline = line.trim();
                 String[] sfields = sline.split("\t");
                 if (sfields.length == 4) {
@@ -266,7 +258,7 @@ public class RDCConstraintSet implements ConstraintSet, Iterable {
                     RDCConstraint rdc = new RDCConstraint(this, atom1, atom2, value, err);
                     constraints.add(rdc);
                 }
-            }
+            });
         }
     }
 }
