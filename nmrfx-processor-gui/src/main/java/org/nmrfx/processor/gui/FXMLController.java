@@ -1384,7 +1384,6 @@ public class FXMLController implements  Initializable, PeakNavigable {
     public static FXMLController create() {
         return create(null);
     }
-    public static int what = 0;
     public static FXMLController create(Stage stage) {
         FXMLLoader loader = new FXMLLoader(FXMLController.class.getResource("/fxml/NMRScene.fxml"));
         FXMLController controller = null;
@@ -1401,9 +1400,6 @@ public class FXMLController implements  Initializable, PeakNavigable {
             controller = loader.<FXMLController>getController();
             controller.stage = stage;
             //controllers.add(controller);
-            if (what++ == 2) {
-                throw new IOException("WHATEVER");
-            }
             FXMLController myController = controller;
             stage.focusedProperty().addListener(e -> myController.setActiveController(e));
             controller.setActiveController();
