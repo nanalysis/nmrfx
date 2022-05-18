@@ -1384,6 +1384,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
     public static FXMLController create() {
         return create(null);
     }
+    
     public static FXMLController create(Stage stage) {
         FXMLLoader loader = new FXMLLoader(FXMLController.class.getResource("/fxml/NMRScene.fxml"));
         FXMLController controller = null;
