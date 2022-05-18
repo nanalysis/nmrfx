@@ -200,12 +200,12 @@ public class RotationalDynamics {
                 max = absDelta;
             }
             sumSq += delAngle * delAngle;
-            //System.out.println(deltaSum);
             if (daughter == null) {
-                System.out.println("daughter atom is null " + diAtom.getShortName());
+                throw new NullPointerException("daughter atom is null " + diAtom.getShortName());
+            } else {
+                daughter.dihedralAngle += delAngle;
+                daughter.dihedralAngle = (float) Util.reduceAngle(daughter.dihedralAngle);
             }
-            daughter.dihedralAngle += delAngle;
-            daughter.dihedralAngle = (float) Util.reduceAngle(daughter.dihedralAngle);
         }
         sumDeltaSq += Math.sqrt(sumSq / branches.size());
         sumMaxDelta += max;

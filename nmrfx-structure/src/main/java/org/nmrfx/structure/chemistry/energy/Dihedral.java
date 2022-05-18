@@ -429,41 +429,24 @@ public class Dihedral {
             Atom atom = angleAtoms.get(iAtom).daughterAtom;
             // temporarily set everything to use sigma, till we make sure counting is correct
             if (atom == null) {
-                System.out.println("daughter null " + angleAtoms.get(iAtom).daughterAtom.getFullName());
-            }
-            if (atom.parent == null) {
-                System.out.println("parent null " + angleAtoms.get(iAtom).daughterAtom.getFullName());
-            }
-            if (atom.parent.getName().equals("P") || atom.parent.getName().equals("O5'") || atom.parent.getName().equals("C5'") || atom.parent.getName().equals("C4'") || atom.parent.getName().equals("O3'")) {
-                inputSigma[aStart++] = sigma / backBoneScale;
-                if (sinCosMode) {
-                    inputSigma[aStart++] = sigma / backBoneScale;
-                }
-            } else if (atom.parent.getName().equals("CA") || atom.parent.getName().equals("C")) {
-                inputSigma[aStart++] = sigma / backBoneScale;
-                if (sinCosMode) {
-                    inputSigma[aStart++] = sigma / backBoneScale;
-                }
+                throw new NullPointerException("daughter null " + angleAtoms.get(iAtom).daughterAtom.getFullName());
+            } else if (atom.parent == null) {
+                throw new NullPointerException("parent null " + angleAtoms.get(iAtom).daughterAtom.getFullName());
             } else {
-                inputSigma[aStart++] = sigma;
+                String parentName = atom.parent.getName();
+                double inputSigmaAtIndex;
+                if (Arrays.asList("P", "O5'", "C5'", "C4'", "O3'", "CA", "C").contains(parentName)) {
+                    inputSigmaAtIndex = sigma / backBoneScale;
+                } else {
+                    inputSigmaAtIndex = sigma;
+                }
+                inputSigma[aStart++] = inputSigmaAtIndex;
                 if (sinCosMode) {
-                    inputSigma[aStart++] = sigma;
+                    inputSigma[aStart++] = inputSigmaAtIndex;
                 }
             }
         }
 
-        /* works
-        for (int i = 0; i < normBoundaries[0].length; i++) {
-            Atom atom = angleAtoms.get(i / stepSize);
-            if (atom.parent.getName().equals("P") || atom.parent.getName().equals("O5'") || atom.parent.getName().equals("C5'") || atom.parent.getName().equals("C4'") || atom.parent.getName().equals("O3'")) {
-                inputSigma[i] = sigma/backBoneScale;
-            } else if (atom.parent.getName().equals("CA") || atom.parent.getName().equals("C")) {
-                inputSigma[i] = sigma/backBoneScale;
-            } else {
-                inputSigma[i] = sigma;
-            }
-        }
-         */
         for (int i = 0; i < boundaries[0].length; i++) {
             if (centerBoundaries) {
                 double angle = Util.reduceAngle(angleValues[i]);
@@ -477,9 +460,6 @@ public class Dihedral {
             ranBoundaries[1][i] = Math.PI;
         }
         setupAngleRestraints();
-        //for (int j=0;j<angleValues.length;j++) {
-        //System.out.printf("j %3d bou %9.3f bou %9.3f sig %9.3f ang %9.3f nrm %9.3f nrm %9.3f\n",j,toDeg*boundaries[0][j],toDeg*boundaries[1][j],inputSigma[j],toDeg*angleValues[j],normBoundaries[0][j],normBoundaries[1][j]);
-        //}
     }
 
     public void setupAngleRestraints() {

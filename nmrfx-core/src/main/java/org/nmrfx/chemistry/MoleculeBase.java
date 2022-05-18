@@ -1084,17 +1084,17 @@ public class MoleculeBase implements Serializable, ITree {
                         lastAtom = atom;
                     }
                 }
-                out.print(lastAtom.spatialSet.toTERString(i + 1) + "\n");
-
-                bondList.forEach((bAtom) -> {
+                if (lastAtom != null) {
+                    out.print(lastAtom.spatialSet.toTERString(i + 1) + "\n");
+                }
+                bondList.forEach(bAtom -> {
                     List<Atom> bondedAtoms = bAtom.getConnected();
-                    if (bondedAtoms.size() > 0) {
+                    if (!bondedAtoms.isEmpty()) {
                         outString.setLength(0);
                         outString.append("CONECT");
                         outString.append(String.format("%5d", bAtom.iAtom + 1));
                         iAtoms.clear();
-                        for (Object aObj : bondedAtoms) {
-                            Atom bAtom2 = (Atom) aObj;
+                        for (Atom bAtom2 : bondedAtoms) {
                             if (bAtom2.getElementName() != null) {
                                 iAtoms.add(bAtom2.iAtom);
                             }

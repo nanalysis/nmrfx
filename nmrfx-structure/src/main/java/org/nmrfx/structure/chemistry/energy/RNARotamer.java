@@ -30,8 +30,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.nmrfx.structure.chemistry.Molecule;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class RNARotamer {
+
+    private static final Logger log = LoggerFactory.getLogger(RNARotamer.class);
 
     public static String SUITE_FORMAT = " %6.1f %5.1f";
     private static Atom[][] Atom;
@@ -430,7 +434,11 @@ public class RNARotamer {
     public static void validate() {
         for (RNARotamer rotamer : ROTAMERS.values()) {
             RotamerScore rScore = getBest(rotamer.angles);
-            System.out.println(rotamer.fraction + " " + rotamer.name + " " + rScore.toString());
+            if (rScore != null) {
+                System.out.println(rotamer.fraction + " " + rotamer.name + " " + rScore.toString());
+            } else {
+                System.out.println("Unable to get best rotamer score.");
+            }
         }
     }
 
@@ -772,6 +780,10 @@ public class RNARotamer {
      * refinement
      */
     public static void setDihedrals(Residue residue, String suiteName, double sdev, boolean doFreeze) {
+        if (residue == null) {
+            log.warn("Residue is null. Unable to set Dihedrals.");
+            return;
+        }
         RNARotamer rotamer = ROTAMERS.get(suiteName);
         int j = 0;
         sdev = Math.toRadians(sdev);

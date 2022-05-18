@@ -827,18 +827,15 @@ public class SSLayout implements MultivariateFunction {
                             new InitialGuess(lguess));
                 } catch (Exception e) {
                     e.printStackTrace();
+                    throw e;
                 }
                 System.err.println(limit + " " + optimizer.getIterations() + " " + result.getValue());
-                //dumpAngles(result.getPoint());
                 System.arraycopy(result.getPoint(), 0, guess, 0, result.getPoint().length);
                 value = result.getValue();
             }
         }
-        if (result != null) {
-            //dumpCoordinates(result.getPoint());
-        } else {
+        if (result == null) {
             result = new PointValuePair(guess, value);
-            //dumpCoordinates(guess);
         }
         return result;
     }

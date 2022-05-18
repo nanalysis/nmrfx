@@ -579,19 +579,19 @@ public class SpinSystems {
 
             for (int i = 0; i < systems.size(); i++) {
                 SpinSystem system = thisSystems.get(i);
-                SpinSystem previousSystem = previousSystems.get(i);
                 SpinSystem nextSystem = nextSystems.get(i);
                 SeqFragment fragment = fragmentMap.get(fragmentIDColumn.get(i));
                 if (fragment != null) {
                     system.fragment = Optional.of(fragment);
-                }
-                if (nextSystem != null) {
-                    // find match that is to next, confirm and add to a fragment
-                    for (SpinSystemMatch match : system.getMatchToNext()) {
-                        if ((match.getSpinSystemA() == system) && (match.getSpinSystemB() == nextSystem)) {
-                            fragment.getSpinSystemMatches().add(match);
-                            system.confirmS = Optional.of(match);
-                            nextSystem.confirmP = Optional.of(match);
+
+                    if (nextSystem != null) {
+                        // find match that is to next, confirm and add to a fragment
+                        for (SpinSystemMatch match : system.getMatchToNext()) {
+                            if ((match.getSpinSystemA() == system) && (match.getSpinSystemB() == nextSystem)) {
+                                fragment.getSpinSystemMatches().add(match);
+                                system.confirmS = Optional.of(match);
+                                nextSystem.confirmP = Optional.of(match);
+                            }
                         }
                     }
                 }

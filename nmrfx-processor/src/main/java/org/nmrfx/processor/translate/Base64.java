@@ -217,7 +217,6 @@ public class Base64 {
     public static String encodeObject(java.io.Serializable serializableObject) {
         return encodeObject(serializableObject, true);
     }
-    // end encodeObject
 
     /**
      * Serializes an object and returns the Base64-encoded version of that serialized object. If the object cannot be
@@ -229,44 +228,18 @@ public class Base64 {
      * @since 1.4
      */
     public static String encodeObject(java.io.Serializable serializableObject,
-            boolean breakLines) {
-        java.io.ByteArrayOutputStream baos = null;
-        java.io.OutputStream b64os = null;
-        java.io.ObjectOutputStream oos = null;
-
-        try {
-            baos = new java.io.ByteArrayOutputStream();
-            b64os = new Base64.OutputStream(baos, Base64.ENCODE, breakLines);
-            oos = new java.io.ObjectOutputStream(b64os);
+                                      boolean breakLines) {
+        try (java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
+             java.io.OutputStream b64os = new Base64.OutputStream(baos, Base64.ENCODE, breakLines);
+             java.io.ObjectOutputStream oos = new java.io.ObjectOutputStream(b64os)) {
 
             oos.writeObject(serializableObject);
-        } // end try
-        catch (java.io.IOException e) {
+            return baos.toString();
+        } catch(java.io.IOException e) {
             e.printStackTrace();
-
             return null;
-        } // end catch
-        finally {
-            try {
-                oos.close();
-            } catch (Exception e) {
-            }
-
-            try {
-                b64os.close();
-            } catch (Exception e) {
-            }
-
-            try {
-                baos.close();
-            } catch (Exception e) {
-            }
         }
-        // end finally
-
-        return new String(baos.toByteArray());
     }
-    // end encode
 
     /**
      * Encodes a byte array into Base64 notation. Equivalen to calling
@@ -514,39 +487,15 @@ public class Base64 {
     public static Object decodeToObject(String encodedObject) {
         byte[] objBytes = decode(encodedObject);
 
-        java.io.ByteArrayInputStream bais = null;
-        java.io.ObjectInputStream ois = null;
-
-        try {
-            bais = new java.io.ByteArrayInputStream(objBytes);
-            ois = new java.io.ObjectInputStream(bais);
-
+        try (java.io.ByteArrayInputStream bais = new java.io.ByteArrayInputStream(objBytes);
+             java.io.ObjectInputStream ois = new java.io.ObjectInputStream(bais)){
             return ois.readObject();
-        } // end try
-        catch (java.io.IOException e) {
-            e.printStackTrace();
-
-            return null;
-        } // end catch
-        catch (java.lang.ClassNotFoundException e) {
-            e.printStackTrace();
-
-            return null;
-        } // end catch
-        finally {
-            try {
-                bais.close();
-            } catch (Exception e) {
-            }
-
-            try {
-                ois.close();
-            } catch (Exception e) {
-            }
         }
-        // end finally
+        catch (IOException | ClassNotFoundException e) {
+            e.printStackTrace();
+            return null;
+        }
     }
-    // end decodeObject
 
     /**
      * Decodes Base64 content in byte array format and returns the decoded byte array.

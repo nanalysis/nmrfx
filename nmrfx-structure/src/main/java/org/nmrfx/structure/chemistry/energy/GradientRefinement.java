@@ -132,7 +132,8 @@ public class GradientRefinement extends Refinement {
                     GoalType.MINIMIZE,
                     new InitialGuess(dihedrals.angleValues));
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error(e.getMessage(), e);
+            throw e;
         }
         System.arraycopy(result.getPoint(), 0, dihedrals.angleValues, 0, dihedrals.angleValues.length);
         putDihedrals();

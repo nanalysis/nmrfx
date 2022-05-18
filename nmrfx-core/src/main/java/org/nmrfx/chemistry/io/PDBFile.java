@@ -218,6 +218,10 @@ public class PDBFile {
                         molecule.addEntity(compound, coordSetName);
                     }
 
+                    if (compound == null) {
+                        throw new MoleculeIOException("didn't form compound");
+                    }
+
                     Atom atom = new Atom(atomParse);
                     atom.setEnergyProp();
                     atom.setPointValidity(structureNumber, true);
@@ -1041,7 +1045,7 @@ public class PDBFile {
             } catch (IOException ioe) {
                 System.err.println(ioe.getMessage());
                 molecule.getAtomTypes();
-                if (calcBonds) {
+                if (calcBonds && compound != null) {
                     compound.calcAllBonds();
                 }
                 return compound;
@@ -1049,7 +1053,7 @@ public class PDBFile {
 
             if (string == null) {
                 molecule.getAtomTypes();
-                if (calcBonds) {
+                if (calcBonds && compound != null) {
                     System.out.println("calculating bonds");
                     compound.calcAllBonds();
                 }
@@ -1091,7 +1095,7 @@ public class PDBFile {
                         Bond bond = new Bond(bondedAtom, bondeeAtom);
                         if (residue != null) {
                             residue.addBond(bond);
-                        } else {
+                        } else if (compound != null) {
                             compound.addBond(bond);
                         }
                         bondedAtom.addBond(bond);

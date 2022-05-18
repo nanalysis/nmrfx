@@ -971,7 +971,7 @@ public class NMRStarReader {
                             //throw new TclException("Invalid peak id value at row \""+i+"\"");
                             continue;
                         }
-                        int sDim = 0;
+                        int sDim;
                         long resonanceID = -1;
                         if ((value = NvUtil.getColumnValue(spectralDimColumn, i)) != null) {
                             sDim = NvUtil.toInt(value) - 1;

@@ -1010,12 +1010,10 @@ public class ProcessorController implements Initializable, ProgressUpdater {
                 System.out.println("menu action ");
             }
         };
-        List<MenuItem> subMenuItems = null;
-        Menu menu = null;
 
-        menu = new Menu("Common Op Lists");
+        Menu menu = new Menu("Common Op Lists");
         menuItems.add(menu);
-        subMenuItems = new ArrayList<>();
+        List<MenuItem> subMenuItems = new ArrayList<>();
         for (String op : basicOps) {
             MenuItem menuItem = new MenuItem(op);
             menuItem.addEventHandler(ActionEvent.ACTION, event -> opSequenceMenuAction(event));
@@ -1023,10 +1021,10 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         }
         menu.getItems().addAll(subMenuItems);
 
-        subMenuItems = null;
+        subMenuItems = new ArrayList<>();
         for (String op : OperationInfo.opOrders) {
             if (op.startsWith("Cascade-")) {
-                if (subMenuItems != null) {
+                if (!subMenuItems.isEmpty()) {
                     menu.getItems().addAll(subMenuItems);
                 }
                 menu = new Menu(op.substring(8));
@@ -1038,7 +1036,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
                 subMenuItems.add(menuItem);
             }
         }
-        if (menu != null) {
+        if (!subMenuItems.isEmpty()) {
             menu.getItems().addAll(subMenuItems);
         }
         opMenuButton.getItems().addAll(menuItems);
