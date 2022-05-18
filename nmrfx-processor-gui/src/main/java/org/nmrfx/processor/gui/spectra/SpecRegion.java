@@ -160,6 +160,13 @@ public class SpecRegion implements Comparator, Comparable {
         return compare(this, o2);
     }
 
+    @Override
+    public int hashCode() {
+        int hash = 7;
+        hash = 31 * hash + (x == null ? 0 : Double.hashCode(x[0]));
+        return hash;
+    }
+
     public boolean equals(Object o2) {
         if (!(o2 instanceof SpecRegion)) {
             return false;
