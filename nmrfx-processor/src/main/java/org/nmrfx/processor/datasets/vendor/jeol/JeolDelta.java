@@ -776,13 +776,9 @@ public class JeolDelta implements NMRData {
     }
 
     void parseHeader(byte[] bytes) {
-        for (JeolPars jPars : JeolPars.values()) {
-            Number[] values = jPars.convertNumber(bytes);
-        }
         int parStart = JeolPars.Param_Start.getInteger(bytes);
         int parLength = JeolPars.Param_Length.getInteger(bytes);
         loadParams(parStart, parLength);
-        // dumpPars();
     }
 
     String getString(ByteBuffer byteBuffer, int valueStart, int nChars) {

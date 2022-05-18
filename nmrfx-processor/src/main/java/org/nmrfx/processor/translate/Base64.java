@@ -235,7 +235,7 @@ public class Base64 {
 
             oos.writeObject(serializableObject);
             return baos.toString();
-        } catch(java.io.IOException e) {
+        } catch(IOException e) {
             e.printStackTrace();
             return null;
         }
