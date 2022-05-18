@@ -845,32 +845,6 @@ public class SSLayout implements MultivariateFunction {
         getFullCoordinates(result.getPoint());
     }
 
-    public void dumpCoordinates(double[] pars) {
-        getFullCoordinates(pars);
-    }
-
-    public void dumpCoordinates() {
-        double sumX = 0.0;
-        double sumY = 0.0;
-        for (int i = 0; i < nNuc; i++) {
-            sumX += values[i * 2];
-            sumY += values[i * 2 + 1];
-        }
-        double centerX = sumX / nNuc;
-        double centerY = sumY / nNuc;
-        for (int i = 0; i < nNuc; i++) {
-//            values[i*2] -= centerX;
-            //           values[i*2+1] -= centerY;
-            System.out.printf("%.3f\t%.3f\n", values[i * 2], values[i * 2 + 1]);
-        }
-    }
-
-    public void dumpCoordinatesNew() {
-        for (int i = 0; i < nNuc; i++) {
-            System.out.printf("%3d %.3f\t%.3f\n", i, coords[0][i], coords[1][i]);
-        }
-    }
-
     public void interpVienna(String vienna) {
         String leftBrackets = "({[";
         String rightBrackets = ")}]";
@@ -890,7 +864,6 @@ public class SSLayout implements MultivariateFunction {
                         levels[rightIndex]--;
                         int start = levelMap[levels[rightIndex]][rightIndex];                        
                         int end = i;
-                        //System.err.println(start + " <> " + end);
                         addPair(start, end);
 
                     }
@@ -921,7 +894,6 @@ public class SSLayout implements MultivariateFunction {
                         levels[rightIndex]--;
                         int start = levelMap[levels[rightIndex]][rightIndex];                        
                         int end = i;
-                        //System.err.println(start + " <> " + end);
                         addPair(start, end);
                         res.get(start).pairedTo = res.get(end);
                         res.get(end).pairedTo = res.get(start);
@@ -953,21 +925,8 @@ public class SSLayout implements MultivariateFunction {
         SSLayout ssLayout = new SSLayout(vienna.length());
         ssLayout.interpVienna(vienna);
         ssLayout.dumpPairs();
-        /*
-         ssLayout.addPair(1,20);
-         ssLayout.addPair(2,19);
-         ssLayout.addPair(3,18);
-         ssLayout.addPair(4,17);
-         ssLayout.addPair(5,16);
-         ssLayout.addPair(6,15);
-         ssLayout.addPair(7,14);
-         ssLayout.addPair(8,13);
-         */
         ssLayout.fillPairs();
         System.out.println("nf " + ssLayout.nFree);
-//        ssLayout.refineCMAES(30000,0.01,0.5,1.0,100);
-        //PointValuePair result = ssLayout.refineCMAES(1000, 1.0, 0.5, 1.0, 0);
-        //ssLayout.dumpCoordinates(result.getPoint());
-        //ssLayout.dumpCoordinates();
+
     }
 }
