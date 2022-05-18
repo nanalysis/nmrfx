@@ -421,27 +421,7 @@ public class RNARotamer {
     public static void add(String name, int n, double... angles) {
         ROTAMERS.put(name, new RNARotamer(name, n, angles));
     }
-
-    public static void validateDetail() {
-        for (RNARotamer rotamer : ROTAMERS.values()) {
-            ArrayList<RotamerScore> hits = getHits(rotamer.angles);
-            for (RotamerScore rScore : hits) {
-                System.out.println(rotamer.fraction + " " + rotamer.name + " " + rScore.toString());
-            }
-        }
-    }
-
-    public static void validate() {
-        for (RNARotamer rotamer : ROTAMERS.values()) {
-            RotamerScore rScore = getBest(rotamer.angles);
-            if (rScore != null) {
-                System.out.println(rotamer.fraction + " " + rotamer.name + " " + rScore.toString());
-            } else {
-                System.out.println("Unable to get best rotamer score.");
-            }
-        }
-    }
-
+    
     public static RotamerScore[] getNBest(Polymer polymer, int residueNum, int n) {
         return getNBest(polymer, residueNum, n, null);
     }
