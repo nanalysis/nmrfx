@@ -142,6 +142,10 @@ public class SpecRegion implements Comparator, Comparable {
                 result = -1;
             } else if (r2 == null) {
                 result = 1;
+            } else if (r1.x == null) {
+                result = -1;
+            } else if (r2.x == null) {
+                result = 1;
             } else if (r1.x[0] < r2.x[0]) {
                 result = -1;
             } else if (r2.x[0] < r1.x[0]) {
@@ -157,6 +161,9 @@ public class SpecRegion implements Comparator, Comparable {
     }
 
     public boolean equals(Object o2) {
+        if (!(o2 instanceof SpecRegion)) {
+            return false;
+        }
         return (compare(this, o2) == 0);
     }
 
