@@ -808,7 +808,6 @@ public class DrawPeaks {
     void draw1DMultiplet(PeakListAttributes peakAttr, GraphicsContextInterface g2, int[] dim, Multiplet multiplet,
                          int colorMode, boolean selected, int iLine) throws GraphicsIOException {
         if (!multiplet.isValid()) {
-            System.out.println("invalid mult");
             return;
         }
         Peak peak = (Peak) multiplet.getOrigin();
@@ -862,7 +861,6 @@ public class DrawPeaks {
                 } catch (Exception e) {
                 }
             }
-//            chart.myDrawLine(g2, xM, (yM + dY * (1.0 + max + 1.2)), xM, (yM + dY * (1.0 + max + 0.5)));
         }
     }
 
@@ -906,7 +904,6 @@ public class DrawPeaks {
     Optional<MultipletSelection> pick1DMultiplet(PeakListAttributes peakAttr, int[] dim, Multiplet multiplet, double hitX, double hitY) {
         Optional<MultipletSelection> result = Optional.empty();
         if (!multiplet.isValid()) {
-            System.out.println("invalid mult");
             return result;
         }
         Peak peak = multiplet.getOrigin();
@@ -967,54 +964,6 @@ public class DrawPeaks {
         return rect.contains(hitX, hitY);
     }
 
-    boolean hitMultipletLabel(GraphicsContextInterface g2, String label, double xC, double y, double max, double hitX, double hitY) {
-        double x1 = xAxis.getDisplayPosition(xC);
-        double y1 = yAxis.getDisplayPosition(y);
-        if (max < 0.0) {
-            y1 -= deltaY;
-        } else {
-            y1 -= (1 + max) * 2 * deltaY;
-
-        }
-        double yText = y1 - deltaY;
-        g2.setTextAlign(TextAlignment.CENTER);
-        Bounds bounds = measureText(label, g2.getFont(), 0, x1, yText );
-        bounds = new BoundingBox(bounds.getMinX(), bounds.getMinY() - bounds.getHeight(), bounds.getWidth(), bounds.getHeight());
-        int nTries = 10;
-        boolean noOverlap = true;
-        if (!lastTextBoxes.isEmpty()) {
-            noOverlap = false;
-            int nBoxes = lastTextBoxes.size();
-            for (int i = 0; i < nTries; i++) {
-                boolean ok = true;
-                for (int iBox = nBoxes - 1; iBox >= 0; iBox--) {
-                    Bounds lastTextBox = lastTextBoxes.get(iBox).getBounds();
-                    if (bounds.getMinX() > lastTextBox.getMaxX()) {
-                        break;
-                    }
-
-                    bounds = measureText(label, g2.getFont(), 0, x1, yText);
-                    bounds = new BoundingBox(bounds.getMinX(), bounds.getMinY() - bounds.getHeight(), bounds.getWidth(), bounds.getHeight());
-                    if (lastTextBox.intersects(bounds)) {
-                        ok = false;
-                    }
-                }
-                if (!ok) {
-                    yText -= (1.5 * deltaY);
-                } else {
-                    noOverlap = true;
-                    break;
-                }
-
-            }
-        }
-        if (bounds.contains(hitX, hitY)) {
-            g2.strokeRect(bounds.getMinX(), bounds.getMinY(), bounds.getWidth(), bounds.getHeight());
-            g2.strokeLine(hitX-5, hitY, hitX+5, hitY);
-        }
-        return bounds.contains(hitX, hitY);
-    }
-
     void renderMultipletLabel(GraphicsContextInterface g2, Multiplet multiplet, String label, Color color, double xC, double y, double max) throws GraphicsIOException {
         double x1 = xAxis.getDisplayPosition(xC);
         double y1 = yAxis.getDisplayPosition(y);
@@ -1056,17 +1005,18 @@ public class DrawPeaks {
 
             }
         }
-        g2.strokeRect(bounds.getMinX(), bounds.getMinY(), bounds.getWidth(), bounds.getHeight());
         if (noOverlap) {
             lastTextBoxes.add(new PeakBox(bounds, multiplet.getPeakDim().getPeak()));
             g2.setTextBaseline(VPos.BOTTOM);
             String[] segments = label.split("\n");
-            double lineIncr = g2.getFont().getSize();
-            double lineOffset = lineIncr * (segments.length - 1);
-            for (String segment : segments) {
-                g2.fillText(segment, x1, yText - lineOffset);
-                g2.setStroke(color);
-                lineOffset -= lineIncr;
+            if (segments.length > 0) {
+                double lineIncr = bounds.getHeight() / segments.length;
+                double lineOffset = lineIncr * (segments.length - 1);
+                for (String segment : segments) {
+                    g2.fillText(segment, x1, yText - lineOffset);
+                    g2.setStroke(color);
+                    lineOffset -= lineIncr;
+                }
             }
             g2.strokeLine(x1, y1, x1, yText);
         }
@@ -1252,7 +1202,6 @@ public class DrawPeaks {
             return;
         }
         if (dim.length != 2) {
-            System.out.println("Dim size is not valid inside 'DrawPeaks.drawPeakConnection(..)'");
             return;
         }
         /**
@@ -1448,21 +1397,10 @@ public class DrawPeaks {
         text.setFont(font);
         text.setTextAlignment(TextAlignment.CENTER);
         text.setTextOrigin(VPos.TOP);
-        // GUIUtils.getTextWidth(s, font);
-        Bounds textBounds = text.getBoundsInLocal();
-        Bounds useBounds;
-        if (false) {
-            Rectangle stencil = new Rectangle(
-                    textBounds.getMinX(), textBounds.getMinY(), textBounds.getWidth(), textBounds.getHeight()
-            );
-            Shape intersection = Shape.intersect(text, stencil);
-            useBounds = intersection.getBoundsInLocal();
-        } else {
-            useBounds = textBounds;
-        }
+        Bounds useBounds = text.getBoundsInLocal();
 
         double xOffset = useBounds.getWidth() / 2.0;
-        double yOffset = textBounds.getHeight() - 3;
+        double yOffset = useBounds.getHeight() - 3;
         Bounds ab;
         if (angle != 0.0) {
             Affine aT = new Affine();
@@ -1476,7 +1414,7 @@ public class DrawPeaks {
             ab = new BoundingBox(x + useBounds.getMinX() - xOffset,
                     y + useBounds.getMinY() - useBounds.getHeight() + yOffset,
                     useBounds.getWidth(),
-                    useBounds.getHeight() * 1.2);
+                    useBounds.getHeight());
         }
 
         return ab;
