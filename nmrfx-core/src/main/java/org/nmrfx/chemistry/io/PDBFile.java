@@ -959,19 +959,10 @@ public class PDBFile {
         Map<String, Atom> atomMap = new HashMap<>();
         boolean calcBonds = true;
 
-        try (Reader reader = fileContent == null ? new BufferedReader(new FileReader(fileName)): new StringReader(fileContent);
-             LineNumberReader lineReader = new LineNumberReader(reader)) {
-            while (true) {
-                string = lineReader.readLine();
+        try (Reader reader = fileContent == null ? new FileReader(fileName): new StringReader(fileContent);
+             BufferedReader bufReader = new BufferedReader(reader)) {
+            while ((string = bufReader.readLine()) != null) {
 
-                if (string == null) {
-                    molecule.getAtomTypes();
-                    if (calcBonds && compound != null) {
-                        System.out.println("calculating bonds");
-                        compound.calcAllBonds();
-                    }
-                    return compound;
-                }
                 if (string.startsWith("ATOM  ") || string.startsWith("HETATM")) {
                     PDBAtomParser atomParse = new PDBAtomParser(string);
                     if (compound == null) {
@@ -1027,5 +1018,13 @@ public class PDBFile {
             }
             return compound;
         }
+
+        molecule.getAtomTypes();
+        if (calcBonds && compound != null) {
+            System.out.println("calculating bonds");
+            compound.calcAllBonds();
+        }
+        return compound;
+
     }
 }
