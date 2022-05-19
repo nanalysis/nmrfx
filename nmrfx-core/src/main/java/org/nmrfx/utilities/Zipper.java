@@ -44,17 +44,15 @@ public class Zipper extends SimpleFileVisitor<Path> {
     }
 
     private void writeEntry(String filePath) {
-        try {
-            ZipEntry ze = new ZipEntry(filePath.substring(startingDir.getAbsolutePath().length() + 1, filePath.length()));
+        try (FileInputStream fis = new FileInputStream(filePath)) {
+            ZipEntry ze = new ZipEntry(filePath.substring(startingDir.getAbsolutePath().length() + 1));
             zos.putNextEntry(ze);
             //read the file and write to ZipOutputStream
-            FileInputStream fis = new FileInputStream(filePath);
             int len;
             while ((len = fis.read(buffer)) > 0) {
                 zos.write(buffer, 0, len);
             }
             zos.closeEntry();
-            fis.close();
         } catch (IOException ioE) {
         }
     }
@@ -102,7 +100,7 @@ public class Zipper extends SimpleFileVisitor<Path> {
     // If there is some error accessing
     // the file, let the user know.
     // If you don't override this method
-    // and an error occurs, an IOException 
+    // and an error occurs, an IOException
     // is thrown.
     @Override
     public FileVisitResult visitFileFailed(Path file,

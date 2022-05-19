@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2018 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -28,6 +28,8 @@ import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import javafx.application.Platform;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
@@ -150,16 +152,18 @@ public class WindowIO implements FileWatchListener {
         Predicate<String> predicate = pattern.asPredicate();
         List<String> files = null;
         if (Files.isDirectory(directory)) {
-            files = Files.list(directory).sequential().
-                    map(path -> path.getFileName().toString()).
-                    filter(fileName -> predicate.test(fileName)).
-                    sorted().
-                    map(fileName -> {
-                        Matcher matcher = pattern.matcher(fileName);
-                        System.out.println("match " + fileName + " " + matcher.matches());
-                        return matcher.group(1);
-                    }).
-                    collect(Collectors.toList());
+            try (Stream<Path> filePaths = Files.list(directory)) {
+                files = filePaths.sequential().
+                        map(path -> path.getFileName().toString()).
+                        filter(fileName -> predicate.test(fileName)).
+                        sorted().
+                        map(fileName -> {
+                            Matcher matcher = pattern.matcher(fileName);
+                            System.out.println("match " + fileName + " " + matcher.matches());
+                            return matcher.group(1);
+                        }).
+                        collect(Collectors.toList());
+            }
         }
         return files;
     }
@@ -216,18 +220,20 @@ public class WindowIO implements FileWatchListener {
         final PythonInterpreter interp = MainApp.getInterpreter();
         interp.exec("import nwyaml\\n");
         if (Files.isDirectory(directory)) {
-            Files.list(directory).sequential().filter(path
-                    -> predicate.test(path.getFileName().toString()) || predicate2.test(path.getFileName().toString())).
-                    sorted(new ProjectBase.FileComparator()).
-                    forEach(path -> {
-                        String fileName = path.getFileName().toString();
-                        Optional<Integer> fileNum = ProjectBase.getIndex(fileName);
-                        if (fileNum.isPresent()) {
-                            interp.set("yamlFileName", path.toString());
-                            interp.set("yamlFileNum", fileNum.get());
-                            interp.exec("nwyaml.loadYamlWin(yamlFileName, yamlFileNum)");
-                        }
-                    });
+            try (Stream<Path> files = Files.list(directory)) {
+                files.sequential().filter(path
+                                -> predicate.test(path.getFileName().toString()) || predicate2.test(path.getFileName().toString())).
+                        sorted(new ProjectBase.FileComparator()).
+                        forEach(path -> {
+                            String fileName = path.getFileName().toString();
+                            Optional<Integer> fileNum = ProjectBase.getIndex(fileName);
+                            if (fileNum.isPresent()) {
+                                interp.set("yamlFileName", path.toString());
+                                interp.set("yamlFileNum", fileNum.get());
+                                interp.exec("nwyaml.loadYamlWin(yamlFileName, yamlFileNum)");
+                            }
+                        });
+            }
         }
     }
 
@@ -237,9 +243,9 @@ public class WindowIO implements FileWatchListener {
         Predicate<String> predicate2 = STAGE_PATTERN2.asPredicate();
 
         if (Files.isDirectory(directory)) {
-            try {
-                Files.list(directory).sequential().filter(path
-                        -> predicate.test(path.getFileName().toString()) || predicate2.test(path.getFileName().toString())).
+            try (Stream<Path> files = Files.list(directory)){
+                files.sequential().filter(path
+                                -> predicate.test(path.getFileName().toString()) || predicate2.test(path.getFileName().toString())).
                         forEach(path -> {
                             try {
                                 Files.deleteIfExists(path);

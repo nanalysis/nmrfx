@@ -270,8 +270,9 @@ public class Predictor {
         Molecule molecule = (Molecule) MoleculeFactory.getActive();
         if (molecule != null) {
             if (!molecule.getDotBracket().equals("")) {
-                PythonInterpreter interp = new PythonInterpreter();
-                interp.exec("import rnapred\nrnapred.predictFromSequence(ppmSet=" + ppmSet + ")");
+                try (PythonInterpreter interp = new PythonInterpreter()) {
+                    interp.exec("import rnapred\nrnapred.predictFromSequence(ppmSet=" + ppmSet + ")");
+                }
             }
         }
     }

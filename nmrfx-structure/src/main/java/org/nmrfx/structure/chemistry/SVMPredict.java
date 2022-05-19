@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures 
+ * NMRFx Structure : A Program for Calculating Structures
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -107,16 +107,15 @@ public class SVMPredict {
 
     public static void main(String argv[]) throws IOException {
         InputStream modelStream = ClassLoader.getSystemResourceAsStream("svr_in_AH8.txt.trim.model");
-        try {
-            BufferedReader input = new BufferedReader(new FileReader("filein.txt"));
-            BufferedReader modelReader = new BufferedReader(new InputStreamReader(modelStream));
-            DataOutputStream output = new DataOutputStream(new BufferedOutputStream(new FileOutputStream("fileout.txt")));
-            svm_model model = svm.svm_load_model(modelReader);
-            predict(input, output, model);
-            input.close();
-            output.close();
-        } catch (IOException e) {
-            System.out.println(e.getMessage());
+        if (modelStream != null) {
+            try (BufferedReader input = new BufferedReader(new FileReader("filein.txt"));
+                 BufferedReader modelReader = new BufferedReader(new InputStreamReader(modelStream));
+                 DataOutputStream output = new DataOutputStream(new BufferedOutputStream(new FileOutputStream("fileout.txt")))) {
+                svm_model model = svm.svm_load_model(modelReader);
+                predict(input, output, model);
+            } catch (IOException e) {
+                System.out.println(e.getMessage());
+            }
         }
     }
 }
