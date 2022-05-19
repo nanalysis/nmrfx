@@ -2896,8 +2896,15 @@ public class PolyChart extends Region implements PeakListener {
     }
 
     public void dragAnno(double[] dragStart, double x, double y, CanvasAnnotation anno) {
+        double xPos = getLayoutX();
+        double yPos = getLayoutY();
+        double width = getWidth();
+        double height = getHeight();
+        double[][] bounds = {{xPos + leftBorder, xPos + width - rightBorder}, {yPos + topBorder, yPos + height - bottomBorder}};
+        double[][] world = {{axes[0].getUpperBound(), axes[0].getLowerBound()},
+                {axes[1].getLowerBound(), axes[1].getUpperBound()}};
         double[] dragPos = {x, y};
-        anno.move(dragStart, dragPos);
+        anno.move(bounds, world, dragStart, dragPos);
         drawPeakLists(false);
     }
 
