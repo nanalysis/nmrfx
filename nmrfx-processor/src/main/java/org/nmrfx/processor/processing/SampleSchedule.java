@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -21,6 +21,7 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
@@ -519,18 +520,14 @@ public class SampleSchedule {
      * @see #fpath
      */
     private void writeFile() {
-        try {
-            BufferedWriter bw = Files.newBufferedWriter(Paths.get(fpath), Charset.forName("US-ASCII"),
-                    StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.CREATE, StandardOpenOption.WRITE);
+        try (BufferedWriter bw = Files.newBufferedWriter(Paths.get(fpath), StandardCharsets.US_ASCII,
+                StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.CREATE, StandardOpenOption.WRITE)) {
             System.out.println("writing new sample schedule: " + fpath);
-//            bw.write("sizes "+z_total);
-//            bw.newLine();
             for (int j = 0; j < nSamples; j++) {
                 bw.write(v_samples[j][0] + " ");
                 bw.newLine();
             }
             bw.flush();
-            bw.close();
         } catch (IOException e) {
             e.printStackTrace();
         }

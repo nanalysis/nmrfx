@@ -859,12 +859,13 @@ public class MolSceneController implements Initializable, MolSelectionListener, 
                     return new Task() {
                         protected Object call() {
                             script = getScript();
-                            PythonInterpreter processInterp = new PythonInterpreter();
-                            updateStatus("Start calculating");
-                            updateTitle("Start calculating");
-                            processInterp.exec("import os\nfrom refine import *\nfrom molio import readYamlString\nimport osfiles");
-                            processInterp.set("yamlString", genYaml());
-                            processInterp.exec(script);
+                            try (PythonInterpreter processInterp = new PythonInterpreter()) {
+                                updateStatus("Start calculating");
+                                updateTitle("Start calculating");
+                                processInterp.exec("import os\nfrom refine import *\nfrom molio import readYamlString\nimport osfiles");
+                                processInterp.set("yamlString", genYaml());
+                                processInterp.exec(script);
+                            }
                             return 0;
                         }
                     };

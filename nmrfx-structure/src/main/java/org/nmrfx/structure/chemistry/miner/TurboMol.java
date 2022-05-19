@@ -114,26 +114,17 @@ public class TurboMol {
     }
 
     public void setInputFromFile(String fileName) {
-        BufferedReader bufReader = null;
-
-        if (fileName.equals("-")) {
-            bufReader = new BufferedReader(new InputStreamReader(System.in));
-        } else {
-            try {
-                bufReader = new BufferedReader(new FileReader(fileName));
-            } catch (FileNotFoundException fnfE) {
-                return;
-            }
-        }
 
         StringBuffer sBuf = new StringBuffer();
         String s = null;
 
-        try {
-            while ((s = bufReader.readLine()) != null) {
+        try (BufferedReader bfReader = fileName.equals("-") ? new BufferedReader(new InputStreamReader(System.in)) : new BufferedReader(new FileReader(fileName))){
+            while ((s = bfReader.readLine()) != null) {
                 sBuf.append(s);
                 sBuf.append('\n');
             }
+        } catch (FileNotFoundException fnfE) {
+            return;
         } catch (IOException ioE) {
         }
 

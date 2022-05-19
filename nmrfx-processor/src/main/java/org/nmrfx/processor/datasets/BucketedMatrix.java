@@ -103,7 +103,7 @@ public class BucketedMatrix {
         try (BufferedWriter writer = Files.newBufferedWriter(
                 FileSystems.getDefault().getPath(fileName),
                 Charset.forName("US-ASCII"),
-                StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE);) {
+                StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE)) {
 
             int nRows = matrix.length;
             int nCols = matrix[0].length;

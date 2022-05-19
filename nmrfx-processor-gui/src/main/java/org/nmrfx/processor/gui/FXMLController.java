@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -1186,11 +1186,12 @@ public class FXMLController implements  Initializable, PeakNavigable {
 
     public static String getHTMLDocs() {
         if (docString == null) {
-            PythonInterpreter interpreter = new PythonInterpreter();
-            interpreter.exec("from pyproc import *");
-            interpreter.exec("from pydocs import *");
-            PyObject pyDocObject = interpreter.eval("genAllDocs()");
-            docString = (String) pyDocObject.__tojava__(String.class);
+            try (PythonInterpreter interpreter = new PythonInterpreter()) {
+                interpreter.exec("from pyproc import *");
+                interpreter.exec("from pydocs import *");
+                PyObject pyDocObject = interpreter.eval("genAllDocs()");
+                docString = (String) pyDocObject.__tojava__(String.class);
+            }
         }
         return docString;
     }

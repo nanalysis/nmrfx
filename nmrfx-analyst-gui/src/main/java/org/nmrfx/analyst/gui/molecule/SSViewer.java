@@ -946,8 +946,7 @@ public class SSViewer extends Pane {
         sequence = null;
         basePairs = null;
         File file = new File(fileName);
-        try {
-            Scanner in = new Scanner(file);
+        try (Scanner in = new Scanner(file)){
             while (in.hasNextLine()) {
                 String line = in.nextLine();
                 String[] fields = line.split("\t");

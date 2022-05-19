@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -22,14 +22,14 @@
  */
 package org.nmrfx.processor.optimization;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStreamReader;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Scanner;
-import java.util.StringTokenizer;
+import java.util.stream.Stream;
+
 import org.apache.commons.math3.special.Erf;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 
@@ -292,11 +292,8 @@ public class PeakMatcher {
     }
 
     public void processPPMFile(String fileName) {
-        File file = new File(fileName);
-        try {
-            Scanner in = new Scanner(file);
-            while (in.hasNextLine()) {
-                String line = in.nextLine();
+        try (Stream<String> lines = Files.lines(new File(fileName).toPath())) {
+            lines.forEach(line -> {
                 String[] fields = line.split(" ");
                 String atom = fields[0];
                 double value = Double.parseDouble(fields[1]);
@@ -305,10 +302,9 @@ public class PeakMatcher {
                 int index = atomPPMList.size();
                 atomPPMList.add(ppmTol);
                 atomMap.put(atom, index);
-            }
+            });
         } catch (IOException ioE) {
             System.out.println(ioE.getMessage());
-            return;
         }
     }
 
@@ -350,16 +346,13 @@ public class PeakMatcher {
     }
 
     public void processFile(String fileName) {
-        File file = new File(fileName);
-        try {
-            Scanner in = new Scanner(file);
+        try (Scanner in = new Scanner(new File(fileName))) {
             while (in.hasNextLine()) {
                 String line = in.nextLine();
                 processLine(line);
             }
         } catch (IOException ioE) {
             System.out.println(ioE.getMessage());
-            return;
         }
     }
 

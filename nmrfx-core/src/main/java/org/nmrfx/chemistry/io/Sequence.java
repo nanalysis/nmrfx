@@ -21,6 +21,7 @@ import org.nmrfx.chemistry.Order;
 import org.nmrfx.chemistry.*;
 import org.nmrfx.chemistry.Residue.RES_POSITION;
 import java.io.*;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -30,10 +31,9 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
+
 import org.nmrfx.chemistry.AtomEnergyProp;
-//import org.nmrfx.structure.chemistry.energy.AngleTreeGenerator;
-//import org.nmrfx.structure.chemistry.miner.NodeValidator;
-//import org.nmrfx.structure.chemistry.miner.PathIterator;
 
 /**
  *
@@ -408,7 +408,7 @@ public class Sequence {
 
     public ArrayList<String[]> loadResidue(final String fileName, boolean throwTclException) throws MoleculeIOException {
         BufferedReader bf;
-        ArrayList<String[]> fieldArray = new ArrayList<String[]>();
+        ArrayList<String[]> fieldArray = new ArrayList<>();
         bf = getLocalResidueReader(fileName);
         if (bf == null) {
             try {
@@ -431,12 +431,9 @@ public class Sequence {
             }
         }
         if (bf != null) {
-            try {
-                while (bf.ready()) {
-                    String line = bf.readLine();
-                    if (line == null) {
-                        break;
-                    }
+            try (BufferedReader bufferedReader = bf) {
+                String line;
+                while ((line = bufferedReader.readLine()) != null) {
                     line = line.trim();
                     String[] fields = line.split("\\s+");
                     fieldArray.add(fields);
@@ -533,30 +530,14 @@ public class Sequence {
 
     public MoleculeBase read(String fileName, String polymerName) throws MoleculeIOException {
         ArrayList<String> inputStrings = new ArrayList<>();
-        LineNumberReader lineReader = null;
-        try {
-            BufferedReader bf = new BufferedReader(new FileReader(fileName));
-            lineReader = new LineNumberReader(bf);
-        } catch (FileNotFoundException ioe) {
+        File file = new File(fileName);
+        try (Stream<String> lines = Files.lines(file.toPath())) {
+            lines.forEach(inputStrings::add);
+        }  catch (FileNotFoundException ioe) {
             throw new MoleculeIOException(ioe.getMessage());
+        } catch (IOException ioE) {
         }
 
-        File file = new File(fileName);
-        while (true) {
-            String inputString = null;
-            try {
-                inputString = lineReader.readLine();
-                if (inputString == null) {
-                    lineReader.close();
-                }
-            } catch (IOException ioE) {
-            }
-            if (inputString != null) {
-                inputStrings.add(inputString);
-            } else {
-                break;
-            }
-        }
         String parentDir = file.getParent();
         read(polymerName, inputStrings, parentDir);
         return molecule;
@@ -569,7 +550,6 @@ public class Sequence {
 
     public MoleculeBase read(String polymerName, List<String> inputStrings, String parentDir, String molName)
             throws MoleculeIOException {
-        LineNumberReader lineReader = null;
         Polymer polymer = null;
         Residue residue = null;
         boolean setPolymerType = false;

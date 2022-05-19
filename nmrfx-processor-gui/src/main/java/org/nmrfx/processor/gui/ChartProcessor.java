@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -42,6 +42,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.stream.Stream;
 
 /**
  * A ChartProcessor manages the processing of data assigned to a particular
@@ -296,7 +297,7 @@ public class ChartProcessor {
                 // if format like 321 don't do the rest, otherwise format should be like p1,d2,...
                 if (acqOrderArray.length == 1) {
                     // fixme, this done just so test at end passes
-                    // length of array depends on varian versus Bruker 
+                    // length of array depends on varian versus Bruker
                     nDimChars = nmrData.getNDim() - 1;
                     break;
                 }
@@ -785,16 +786,15 @@ public class ChartProcessor {
         File file = getDefaultScriptFile();
         StringBuilder resultBuilder = new StringBuilder();
         if (file.exists()) {
-            try {
-                Files.lines(file.toPath()).forEach(line -> {
+            try (Stream<String> lines = Files.lines(file.toPath())){
+                lines.forEach(line -> {
                     if (line.trim().startsWith("CREATE")) {
                         int firstParen = line.indexOf("(");
                         int lastParen = line.lastIndexOf(")");
                         String filePath = line.substring(firstParen + 2, lastParen - 1);
-                        File datasetFile = new File(filePath);
-                        String datasetName = datasetFile.getName();
+                        File datasetFileFromScript = new File(filePath);
+                        String datasetName = datasetFileFromScript.getName();
                         resultBuilder.append(datasetName);
-                        return;
                     }
                 });
             } catch (IOException ex) {
