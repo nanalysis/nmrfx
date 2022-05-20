@@ -2025,15 +2025,14 @@ public class DatasetBase {
     }
 
     public TreeSet<DatasetRegion> getRegions() {
+        if (regions == null) {
+            regions = new TreeSet<>();
+        }
         return regions;
     }
 
     public DatasetRegion addRegion(double min, double max) {
         TreeSet<DatasetRegion> regions = getRegions();
-        if (regions == null) {
-            regions = new TreeSet<>();
-            setRegions(regions);
-        }
         boolean firstRegion = regions.isEmpty();
 
         DatasetRegion newRegion = new DatasetRegion(min, max);
