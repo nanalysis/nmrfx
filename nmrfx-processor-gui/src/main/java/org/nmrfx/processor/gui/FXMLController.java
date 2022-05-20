@@ -1403,7 +1403,6 @@ public class FXMLController implements  Initializable, PeakNavigable {
             FXMLController myController = controller;
             stage.focusedProperty().addListener(e -> myController.setActiveController(e));
             controller.setActiveController();
-            stage.setTitle("NMRFx Processor");
             MainApp.registerStage(stage, controller);
             stage.show();
         } catch (IOException ioE) {
