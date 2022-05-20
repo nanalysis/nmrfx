@@ -348,13 +348,13 @@ public class AnalystApp extends MainApp {
         if (viewMenuActions != null) {
             viewMenuActions.activateAdvanced();
         }
-        addAdvancedtools();
-        advancedIsActive = true;
+        if (!advancedIsActive) {
+            addAdvancedTools();
+            advancedIsActive = true;
+        }
         if (startAdvancedItem != null) {
             startAdvancedItem.setDisable(true);
         }
-
-
     }
 
     public void readMolecule(String type) {
@@ -397,7 +397,7 @@ public class AnalystApp extends MainApp {
         }
     }
 
-    private void addAdvancedtools() {
+    private void addAdvancedTools() {
         for (var controller: FXMLController.getControllers()) {
             addAdvancedTools(controller.getStatusBar());
         }
