@@ -811,11 +811,18 @@ public class ChartProcessor {
 
     }
 
-    public void loadDefaultScriptIfPresent() {
+    /**
+     * Loads the default script if present.
+     * @return True if default script is loaded, false if it is not loaded.
+     */
+    public boolean loadDefaultScriptIfPresent() {
+        boolean scriptLoaded = false;
         File scriptFile = getDefaultScriptFile();
         if (scriptFile.exists() && scriptFile.canRead()) {
             processorController.openScript(scriptFile);
+            scriptLoaded = true;
         }
+        return scriptLoaded;
     }
 
     String buildScript() {

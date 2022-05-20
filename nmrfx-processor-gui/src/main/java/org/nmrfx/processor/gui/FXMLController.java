@@ -622,11 +622,27 @@ public class FXMLController implements  Initializable, PeakNavigable {
         if (!reload) {
             getActiveChart().full();
             getActiveChart().autoScale();
-            chartProcessor.loadDefaultScriptIfPresent();
+            generateScriptAndParse(nmrData);
         }
         getActiveChart().layoutPlotChildren();
         statusBar.setMode(0);
 
+    }
+
+    /**
+     * Check for existing default processing script and parse if present, otherwise generate
+     * and parse a processing script for FID data for 1D and 2D data.
+     * @param nmrData The NMRData set that will be processed.
+     */
+    private void generateScriptAndParse(NMRData nmrData) {
+        int nDim = nmrData.getNDim();
+        if (isFIDActive() && chartProcessor != null && !chartProcessor.loadDefaultScriptIfPresent() && (nDim == 1 || nDim == 2)) {
+            // TODO NMR-5184 update here if there is better way to determine if pseudo2D
+            // This is an estimate of whether the 2D data is pseudo2D, some pseudo2Ds may still be processed as 2Ds
+            boolean isPseudo2D = nmrData.getNVectors() < 100 && nDim == 2;
+            String script = chartProcessor.getGenScript(isPseudo2D);
+            processorController.parseScript(script);
+        }
     }
 
     public void addDataset(DatasetBase dataset, boolean appendFile, boolean reload) {
