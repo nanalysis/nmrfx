@@ -1159,13 +1159,19 @@ public class Multiplets {
     public static void linkPeaksInRegions(PeakList peakList, Set<DatasetRegion> regions) {
         regions.stream().forEach(region -> {
             List<PeakDim> peakDims = findPeaksInRegion(peakList, region);
-            Multiplet.groupPeakDims(peakDims);
+            if (!peakDims.isEmpty()) {
+                Multiplet.groupPeakDims(peakDims);
+            }
         });
     }
 
     public static Multiplet linkPeaksInRegion(PeakList peakList, DatasetRegion region) {
         List<PeakDim> peakDims = findPeaksInRegion(peakList, region);
-        return Multiplet.groupPeakDims(peakDims);
+        if (!peakDims.isEmpty()) {
+            Multiplet multiplet = Multiplet.groupPeakDims(peakDims);
+            return multiplet;
+        }
+        return null;
     }
 
     public static List<PeakDim> findPeaksInRegion(PeakList peakList, DatasetRegion region) {

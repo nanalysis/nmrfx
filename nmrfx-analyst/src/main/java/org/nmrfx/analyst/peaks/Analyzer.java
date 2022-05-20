@@ -775,7 +775,7 @@ public class Analyzer {
             setVolumesFromIntegrals();
             Multiplets.unlinkPeaksInRegion(peakList, region);
             Multiplet multiplet = Multiplets.linkPeaksInRegion(peakList, region);
-            result = Optional.of(multiplet);
+            result = Optional.ofNullable(multiplet);
             peakFitting.fitLinkedPeak(multiplet.getOrigin(), true);
             renumber();
             Multiplets.analyzeMultiplet(multiplet.getOrigin());
