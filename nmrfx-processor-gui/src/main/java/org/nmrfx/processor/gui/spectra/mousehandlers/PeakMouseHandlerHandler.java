@@ -46,9 +46,9 @@ public class PeakMouseHandlerHandler extends MouseHandler {
         return hit;
     }
 
-    public static Optional<PeakMouseHandlerHandler> handlePeaks(MouseBindings mouseBindings) {
+    public static Optional<PeakMouseHandlerHandler> handlePeaks(MouseBindings mouseBindings, boolean append) {
         PolyChart chart = mouseBindings.getChart();
-        boolean selectedPeaks = chart.selectPeaks(mouseBindings.getMouseX(), mouseBindings.getMouseY(), false);
+        boolean selectedPeaks = chart.selectPeaks(mouseBindings.getMouseX(), mouseBindings.getMouseY(), append);
         PeakMouseHandlerHandler handler = null;
         if (selectedPeaks) {
             handler = new PeakMouseHandlerHandler(mouseBindings);
