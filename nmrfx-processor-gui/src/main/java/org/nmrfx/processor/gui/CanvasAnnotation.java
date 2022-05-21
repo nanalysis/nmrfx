@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -22,7 +22,6 @@ import org.nmrfx.graphicsio.GraphicsContextInterface;
 import org.nmrfx.processor.gui.spectra.ChartMenu;
 
 /**
- *
  * @author Bruce Johnson
  */
 public interface CanvasAnnotation {
@@ -34,12 +33,22 @@ public interface CanvasAnnotation {
                 return v + b[0];
             }
 
+            @Override
+            public double itransform(double v, double[] b, double[] w) {
+                return v - b[0];
+            }
+
         },
         FRACTION {
             @Override
             public double transform(double v, double[] b, double[] w) {
                 return v * (b[1] - b[0]) + b[0];
 
+            }
+
+            @Override
+            public double itransform(double v, double[] b, double[] w) {
+                return (v - b[0]) / (b[1] - b[0]);
             }
 
         },
@@ -49,11 +58,24 @@ public interface CanvasAnnotation {
                 double f = (v - w[0]) / (w[1] - w[0]);
                 return f * (b[1] - b[0]) + b[0];
             }
+
+            @Override
+            public double itransform(double v, double[] b, double[] w) {
+                double f = (v - b[0]) / (b[1] - b[0]);
+                return f * (w[1] - w[0]) + w[0];
+            }
         };
 
         public abstract double transform(double v, double[] bounds, double[] world);
 
-    };
+        public abstract double itransform(double v, double[] bounds, double[] world);
+
+        public double move(double v, double dp, double[] b, double[] w) {
+            double vp = transform(v, b, w);
+            return itransform(vp + dp, b, w);
+        }
+
+    }
 
     public void draw(GraphicsContextInterface gC, double[][] bounds, double[][] world);
 
@@ -66,6 +88,9 @@ public interface CanvasAnnotation {
     }
 
     public default void move(double[] start, double[] pos) {
+    }
+
+    public default void move(double[][] bounds, double[][] world, double[] start, double[] pos) {
     }
 
     public default ChartMenu getMenu() {

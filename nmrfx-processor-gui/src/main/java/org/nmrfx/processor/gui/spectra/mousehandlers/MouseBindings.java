@@ -25,6 +25,7 @@ import javafx.scene.Cursor;
 import javafx.scene.input.MouseEvent;
 import javafx.util.Duration;
 import org.nmrfx.datasets.DatasetRegion;
+import org.nmrfx.processor.gui.CanvasAnnotation;
 import org.nmrfx.processor.gui.MainApp;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.spectra.MultipletSelection;
@@ -65,7 +66,7 @@ public class MouseBindings {
     double mousePressX;
     double mousePressY;
     AtomicBoolean waitingForPopover = new AtomicBoolean(false);
-    PauseTransition pause  = null;
+    PauseTransition pause = null;
     MultipletSelection currentSelection;
     double curX;
     double curY;
@@ -149,7 +150,7 @@ public class MouseBindings {
             pause = new PauseTransition(Duration.millis(500));
             pause.setOnFinished(
                     e -> {
-                       showPopOver();
+                        showPopOver();
                     });
         }
         pause.playFromStart();
@@ -159,26 +160,39 @@ public class MouseBindings {
         mouseX = mouseEvent.getX();
         mouseY = mouseEvent.getY();
         Optional<MultipletSelection> hit = PeakMouseHandlerHandler.handlerOverMultiplet(this);
-        if (hit.isPresent() && !hit.get().isLine()) {
+        if (hit.isPresent()) {
             if (handler == null) {
                 handler = new PeakMouseHandlerHandler(this);
             }
-            MultipletSelection multipletSelection = hit.get();
-            Bounds bounds = multipletSelection.getBounds();
-            if (bounds != null) {
-                if (!waitingForPopover.get()) {
-                    waitingForPopover.set(true);
-                    showAfterDelay();
+            if (!hit.get().isLine()) {
+                MultipletSelection multipletSelection = hit.get();
+                Bounds bounds = multipletSelection.getBounds();
+                if (bounds != null) {
+                    if (!waitingForPopover.get()) {
+                        curX = bounds.getCenterX();
+                        curY = bounds.getMinY();
+                        currentSelection = multipletSelection;
+                        waitingForPopover.set(true);
+                        showAfterDelay();
+                    }
                 }
-                setHandCursor(multipletSelection, bounds.getCenterX(), bounds.getMinY());
             }
+            setHandCursor();
         } else {
-            handler = null;
-            waitingForPopover.set(false);
-            if (pause != null) {
-                pause.stop();
+            Optional<CanvasAnnotation> anno = chart.hitAnnotation(mouseX, mouseY);
+            if (anno.isPresent()) {
+                if (handler == null) {
+                    handler = new AnnotationMouseHandlerHandler(this, anno.get());
+                }
+                setHandCursor();
+            } else {
+                handler = null;
+                waitingForPopover.set(false);
+                if (pause != null) {
+                    pause.stop();
+                }
+                unsetHandCursor();
             }
-            unsetHandCursor();
         }
 
         if (handler != null) {
@@ -186,14 +200,11 @@ public class MouseBindings {
         }
     }
 
-    private void setHandCursor(MultipletSelection multipletSelection, double x, double y) {
+    private void setHandCursor() {
         Cursor currentCursor = chart.getCanvas().getCursor();
         if (currentCursor != Cursor.HAND) {
             previousCursor = currentCursor;
             chart.setCanvasCursor(Cursor.HAND);
-            curX = x;
-            curY = y;
-            currentSelection = multipletSelection;
         }
     }
 
@@ -263,7 +274,7 @@ public class MouseBindings {
                     if (handler == null) {
                         if (hadRegion) {
                             RegionMouseHandlerHandler.handler(this).ifPresent(this::setHandler);
-                         }
+                        }
                         if (handler == null) {
                             IntegralMouseHandlerHandler.handler(this).ifPresent(this::setHandler);
                         }
