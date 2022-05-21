@@ -262,13 +262,13 @@ public class MouseBindings {
                     if (handler == null) {
                         PeakMouseHandlerHandler.handler(this).ifPresent(this::setHandler);
                         if (handler != null) {
-                            PeakMouseHandlerHandler.handlePeaks(this).ifPresent(this::setHandler);
+                            PeakMouseHandlerHandler.handlePeaks(this, mouseEvent.isShiftDown()).ifPresent(this::setHandler);
                         }
                     }
                     if (handler == null) {
                         PeakMouseHandlerHandler.handlerHitMultiplet(this).ifPresent(this::setHandler);
                         if (handler != null) {
-                            PeakMouseHandlerHandler.handlePeaks(this).ifPresent(this::setHandler);
+                            PeakMouseHandlerHandler.handlePeaks(this, mouseEvent.isShiftDown()).ifPresent(this::setHandler);
                         }
                     }
                     if (handler == null) {

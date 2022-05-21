@@ -775,9 +775,7 @@ public class AnalystApp extends MainApp {
     public void showPopover(PolyChart chart, Point2D screenLoc, Multiplet multiplet) {
         if (multipletPopOverTool == null) {
             multipletPopOverTool = new MultipletTool(chart.getController(),null);
-            VBox vBox = new VBox();
-            multipletPopOverTool.initializePopover(vBox);
-            popOver.setContentNode(vBox);
+            multipletPopOverTool.initializePopover(popOver);
             popOver.setCloseButtonEnabled(true);
             popOver.setArrowLocation(PopOver.ArrowLocation.BOTTOM_CENTER);
         }

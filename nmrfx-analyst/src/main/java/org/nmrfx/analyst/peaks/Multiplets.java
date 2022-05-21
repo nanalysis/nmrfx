@@ -1011,8 +1011,23 @@ public class Multiplets {
             min = Math.min(min, tPPM);
 
         }
-        double[] result = {min, max};
-        return result;
+        return new double[]{min, max};
+    }
+
+    public static double[] getBoundsOfMultiplet(Multiplet multiplet, double trimRatio) {
+        List<AbsMultipletComponent> absComps = multiplet.getAbsComponentList();
+        double min = Double.MAX_VALUE;
+        double max = Double.NEGATIVE_INFINITY;
+
+        for (AbsMultipletComponent absComp : absComps) {
+            double ppm = absComp.getOffset();
+            double width = Math.abs(absComp.getLineWidth());
+            double tppm = ppm + trimRatio * width;
+            max = Math.max(tppm, max);
+            tppm = ppm - trimRatio * width;
+            min = Math.min(tppm, min);
+        }
+        return new double[]{min, max};
     }
 
     public static void removeSplittingInMultiplet(Multiplet multiplet, String couplingSymbol) {

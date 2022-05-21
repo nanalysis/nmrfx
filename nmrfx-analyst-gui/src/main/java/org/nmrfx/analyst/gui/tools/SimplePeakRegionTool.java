@@ -9,6 +9,7 @@ import javafx.stage.FileChooser;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.analyst.gui.annotations.AnnoJournalFormat;
+import org.nmrfx.analyst.gui.molecule.CanvasMolecule;
 import org.nmrfx.analyst.peaks.Analyzer;
 import org.nmrfx.analyst.peaks.JournalFormat;
 import org.nmrfx.analyst.peaks.JournalFormatPeaks;
@@ -21,6 +22,7 @@ import org.nmrfx.processor.gui.*;
 import org.nmrfx.processor.gui.controls.ConsoleUtil;
 import org.nmrfx.processor.gui.spectra.CrossHairs;
 import org.nmrfx.processor.gui.spectra.mousehandlers.MouseBindings;
+import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.utils.GUIUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,6 +43,7 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
     FXMLController controller;
     PolyChart chart;
     CheckMenuItem journalCheckBox;
+    CanvasMolecule cMol = null;
 
 
     public SimplePeakRegionTool(FXMLController controller, PolyChart chart) {
@@ -92,8 +95,11 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
         copyJournalFormatMenuItem.setOnAction(e -> journalFormatToClipboard());
         wizardButton.getItems().addAll(journalCheckBox, copyJournalFormatMenuItem);
 
+        var moleculeButton = new SplitMenuButton();
+        moleculeButton.setText("Molecule");
+        moleculeButton.setOnAction(e -> addMolecule());
 
-        statusBar.addToolBarButtons(regionButton, peakButton, wizardButton);
+        statusBar.addToolBarButtons(regionButton, peakButton, wizardButton, moleculeButton);
     }
 
     PolyChart getChart() {
@@ -348,4 +354,36 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
             }
         });
     }
+
+    void addMolecule() {
+        removeMolecule();
+        Molecule activeMol = Molecule.getActive();
+        if (activeMol == null) {
+            ((AnalystApp) AnalystApp.getMainApp()).readMolecule("mol");
+            activeMol = Molecule.getActive();
+        }
+        if (activeMol != null) {
+            if (cMol == null) {
+                cMol = new CanvasMolecule(FXMLController.getActiveController().getActiveChart());
+                cMol.setPosition(0.1, 0.1, 0.3, 0.3, "FRACTION", "FRACTION");
+            }
+
+            cMol.setMolName(activeMol.getName());
+            activeMol.label = Molecule.LABEL_NONHC;
+            activeMol.clearSelected();
+
+            PolyChart chart = FXMLController.getActiveController().getActiveChart();
+            chart.clearAnnoType(CanvasMolecule.class);
+            chart.addAnnotation(cMol);
+            chart.refresh();
+        }
+    }
+
+    void removeMolecule() {
+        PolyChart chart = FXMLController.getActiveController().getActiveChart();
+        chart.clearAnnoType(CanvasMolecule.class);
+        chart.refresh();
+    }
+
+
 }

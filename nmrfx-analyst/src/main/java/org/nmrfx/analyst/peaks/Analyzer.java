@@ -2,7 +2,6 @@ package org.nmrfx.analyst.peaks;
 
 import java.io.File;
 
-import org.nmrfx.analyst.dataops.Normalize;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.datasets.Nuclei;
 import org.nmrfx.datasets.DatasetRegion;
@@ -52,7 +51,7 @@ public class Analyzer {
     Dataset dataset;
     PeakList peakList;
 
-    double trimRatio = 2.0;
+    private double trimRatio = 2.0;
     boolean scaleToLargest = true;
     int nWin = 32;
     double maxRatio = 20.0;
@@ -422,9 +421,9 @@ public class Analyzer {
                     for (AbsMultipletComponent absComp : absComps) {
                         double ppm = absComp.getOffset();
                         double width = Math.abs(absComp.getLineWidth());
-                        double tppm = ppm + trimRatio * width;
+                        double tppm = ppm + getTrimRatio() * width;
                         max = Math.max(tppm, max);
-                        tppm = ppm - trimRatio * width;
+                        tppm = ppm - getTrimRatio() * width;
                         min = Math.min(tppm, min);
                     }
                 }
@@ -1235,5 +1234,13 @@ public class Analyzer {
         if (!regions.isEmpty()) {
             DatasetRegion.saveRegions(regionFile, dataset.getRegions());
         }
+    }
+
+    public double getTrimRatio() {
+        return trimRatio;
+    }
+
+    public void setTrimRatio(double trimRatio) {
+        this.trimRatio = trimRatio;
     }
 }
