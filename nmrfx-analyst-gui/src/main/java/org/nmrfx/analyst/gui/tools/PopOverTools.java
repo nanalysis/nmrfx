@@ -13,6 +13,13 @@ public class PopOverTools {
 
     private static MultipletTool multipletPopOverTool = null;
     private static JournalTool journalTool = null;
+
+    public void hide() {
+        if (popOver.isShowing() && !popOver.isDetached()) {
+            popOver.hide();
+        }
+    }
+
     public void showPopover(PolyChart chart, Bounds objectBounds, Multiplet multiplet) {
         if (multipletPopOverTool == null) {
             multipletPopOverTool = new MultipletTool(chart.getController(),null);

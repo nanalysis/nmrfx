@@ -605,6 +605,10 @@ public class MainApp extends Application {
         }
     }
 
+    public void hidePopover() {
+
+    }
+
     public void showPopover(PolyChart chart, Bounds objectBounds, Multiplet multiplet) {
 
     }
