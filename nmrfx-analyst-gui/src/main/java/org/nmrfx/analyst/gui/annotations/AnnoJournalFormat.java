@@ -24,6 +24,11 @@ public class AnnoJournalFormat extends AnnoText {
         this.peakListName = peakListName;
     }
 
+    public void setJournalName(String journalName) {
+        this.journalName = journalName;
+        updateText();
+    }
+
     void updateText() {
         text = "";
         if (peakListName != null) {

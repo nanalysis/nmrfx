@@ -20,7 +20,6 @@ package org.nmrfx.processor.gui.spectra.mousehandlers;
 import javafx.animation.PauseTransition;
 import javafx.event.Event;
 import javafx.geometry.Bounds;
-import javafx.geometry.Point2D;
 import javafx.scene.Cursor;
 import javafx.scene.input.MouseEvent;
 import javafx.util.Duration;
@@ -28,6 +27,7 @@ import org.nmrfx.datasets.DatasetRegion;
 import org.nmrfx.processor.gui.CanvasAnnotation;
 import org.nmrfx.processor.gui.MainApp;
 import org.nmrfx.processor.gui.PolyChart;
+import org.nmrfx.processor.gui.annotations.AnnoText;
 import org.nmrfx.processor.gui.spectra.MultipletSelection;
 
 import java.util.Optional;
@@ -67,10 +67,8 @@ public class MouseBindings {
     double mousePressY;
     AtomicBoolean waitingForPopover = new AtomicBoolean(false);
     PauseTransition pause = null;
-    MultipletSelection currentSelection;
-    double curX;
-    double curY;
-
+    Object currentSelection;
+    Bounds currentBounds;
 
     public MouseBindings(PolyChart chart) {
         this.chart = chart;
@@ -139,9 +137,15 @@ public class MouseBindings {
     }
 
     private void showPopOver() {
+        System.out.println("show " + waitingForPopover.get() + " " + currentSelection);
         if (waitingForPopover.get()) {
-            Point2D screenLoc = chart.getCanvas().localToScreen(curX, curY);
-            MainApp.getMainApp().showPopover(chart, screenLoc, currentSelection.getMultiplet());
+            Bounds objectBounds = chart.getCanvas().localToScreen(currentBounds);
+            if (currentSelection instanceof MultipletSelection) {
+                MultipletSelection multipletSelection  = (MultipletSelection) currentSelection;
+                MainApp.getMainApp().showPopover(chart, objectBounds, multipletSelection.getMultiplet());
+            } else if (currentSelection instanceof AnnoText) {
+                MainApp.getMainApp().showPopover(chart, objectBounds, (AnnoText) currentSelection);
+            }
         }
     }
 
@@ -149,9 +153,7 @@ public class MouseBindings {
         if (pause == null) {
             pause = new PauseTransition(Duration.millis(500));
             pause.setOnFinished(
-                    e -> {
-                        showPopOver();
-                    });
+                    e -> showPopOver());
         }
         pause.playFromStart();
     }
@@ -169,8 +171,7 @@ public class MouseBindings {
                 Bounds bounds = multipletSelection.getBounds();
                 if (bounds != null) {
                     if (!waitingForPopover.get()) {
-                        curX = bounds.getCenterX();
-                        curY = bounds.getMinY();
+                        currentBounds = bounds;
                         currentSelection = multipletSelection;
                         waitingForPopover.set(true);
                         showAfterDelay();
@@ -179,10 +180,21 @@ public class MouseBindings {
             }
             setHandCursor();
         } else {
-            Optional<CanvasAnnotation> anno = chart.hitAnnotation(mouseX, mouseY);
-            if (anno.isPresent()) {
+            Optional<CanvasAnnotation> annoOpt = chart.hitAnnotation(mouseX, mouseY);
+            if (annoOpt.isPresent()) {
+                var annotation = annoOpt.get();
                 if (handler == null) {
-                    handler = new AnnotationMouseHandlerHandler(this, anno.get());
+                    handler = new AnnotationMouseHandlerHandler(this, annotation);
+                }
+                if (!waitingForPopover.get()) {
+                    if (annotation instanceof AnnoText) {
+                        var annoText = (AnnoText) annotation;
+                        currentBounds = annoText.getBounds();
+                        waitingForPopover.set(true);
+                        currentSelection = annotation;
+
+                    }
+                    showAfterDelay();
                 }
                 setHandCursor();
             } else {
