@@ -114,32 +114,38 @@ public class AnnoText implements CanvasAnnotation {
             gC.setFont(font);
             gC.setTextAlign(TextAlignment.LEFT);
             gC.setTextBaseline(VPos.BASELINE);
-            double width = GUIUtils.getTextWidth(text, font);
 
             double xp1 = xPosType.transform(x1, bounds[0], world[0]);
             double yp1 = yPosType.transform(y1, bounds[1], world[1]);
             double xp2 = xPosType.transform(x2, bounds[0], world[0]);
             double regionWidth = xp2 - xp1;
-            if (width > regionWidth) {
-                double charWidth = width / text.length();
-                int start = 0;
-                int end;
-                double yOffset = 0.0;
-                do {
-                    end = start + (int) (regionWidth / charWidth);
-                    if (end > text.length()) {
-                        end = text.length();
-                    }
-                    String subStr = text.substring(start, end);
-                    gC.fillText(subStr, xp1, yp1 + yOffset);
-                    start = end;
-                    yOffset += font.getSize() + 3;
-                } while (start < text.length());
-                bounds2D = new BoundingBox(xp1, yp1 - font.getSize(), regionWidth, yOffset);
-            } else {
-                bounds2D = new BoundingBox(xp1, yp1 - font.getSize(), width, font.getSize());
-                gC.fillText(text, xp1, yp1);
+            String[] segments = text.split("\n");
+            double topY = yp1-font.getSize();
+            double y = yp1;
+            for (String segment:segments) {
+                double width = GUIUtils.getTextWidth(segment, font);
+                if (width > regionWidth) {
+                    double charWidth = width / segment.length();
+                    int start = 0;
+                    int end;
+                    double yOffset = 0.0;
+                    do {
+                        end = start + (int) (regionWidth / charWidth);
+                        if (end > segment.length()) {
+                            end = segment.length();
+                        }
+                        String subStr = segment.substring(start, end);
+                        gC.fillText(subStr, xp1, y);
+                        y += font.getSize() + 3;
+                        start = end;
+                        yOffset += font.getSize() + 3;
+                    } while (start < segment.length());
+                } else {
+                    gC.fillText(segment, xp1, y);
+                    y += font.getSize() +3;
+                }
             }
+            bounds2D = new BoundingBox(xp1, topY, regionWidth, y - topY);
         } catch (Exception ignored) {
         }
     }
