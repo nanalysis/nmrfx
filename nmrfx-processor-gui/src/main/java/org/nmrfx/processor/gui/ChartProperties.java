@@ -58,6 +58,7 @@ public class ChartProperties {
     private DoubleProperty aspectRatio;
     private BooleanProperty aspect;
     private BooleanProperty titles;
+    private BooleanProperty parameters;
 
     public ChartProperties(PolyChart chart) {
         this.polyChart = chart;
@@ -85,6 +86,7 @@ public class ChartProperties {
         destProps.setIntegralHighPos(getIntegralHighPos());
         destProps.setIntegrals(getIntegrals());
         destProps.setTitles(getTitles());
+        destProps.setParameters(getParameters());
     }
 
     public int getLeftBorderSize() {
@@ -341,6 +343,21 @@ public class ChartProperties {
         return titlesProperty().get();
     }
 
+    public BooleanProperty parametersProperty() {
+        if (parameters == null) {
+            parameters = new SimpleBooleanProperty(polyChart, "parameters", false);
+        }
+        return parameters;
+    }
+
+    public void setParameters(boolean value) {
+        parametersProperty().set(value);
+    }
+
+    public boolean getParameters() {
+        return parametersProperty().get();
+    }
+
     public double getAspectRatio() {
         return aspectRatioProperty().get();
     }
@@ -396,7 +413,7 @@ public class ChartProperties {
             "axesColor", "cross0Color", "cross1Color", "grid", "intensityAxis",
             "leftBorderSize", "rightBorderSize",
             "topBorderSize", "bottomBorderSize", "regions", "integrals",
-            "integralLowPos", "integralHighPos", "titles", "aspect", "aspectRatio"};
+            "integralLowPos", "integralHighPos", "titles", "parameters", "aspect", "aspectRatio"};
         for (String beanName : beanNames) {
             try {
                 if (beanName.contains("Color")) {

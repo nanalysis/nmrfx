@@ -153,9 +153,12 @@
                                                         <Label text="Titles" GridPane.columnIndex="3" GridPane.rowIndex="2" />
                                                         <CheckBox fx:id="titlesCheckBox" mnemonicParsing="false"  text="" selected="false"
                                                                   GridPane.columnIndex="4" GridPane.rowIndex="2"/>
-                                                        <Label text="IntAxis" GridPane.columnIndex="5" GridPane.rowIndex="2" />
-                                                        <CheckBox fx:id="intensityAxisCheckBox" mnemonicParsing="false"  text="" selected="false"
+                                                        <Label text="Parameters" GridPane.columnIndex="5" GridPane.rowIndex="2" />
+                                                        <CheckBox fx:id="parametersCheckBox" mnemonicParsing="false"  text="" selected="false"
                                                                   GridPane.columnIndex="6" GridPane.rowIndex="2"/>
+                                                        <Label text="IntAxis" GridPane.columnIndex="7" GridPane.rowIndex="2" />
+                                                        <CheckBox fx:id="intensityAxisCheckBox" mnemonicParsing="false"  text="" selected="false"
+                                                                  GridPane.columnIndex="8" GridPane.rowIndex="2"/>
 
                                                     </children>
                                                 </GridPane>
