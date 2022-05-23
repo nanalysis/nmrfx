@@ -778,12 +778,8 @@ public class AnalystApp extends MainApp {
         popoverTool.hide();
     }
 
-    public void showPopover(PolyChart chart, Bounds objectBounds, Multiplet multiplet) {
-        popoverTool.showPopover(chart, objectBounds, multiplet);
-    }
-
-    public void showPopover(PolyChart chart, Bounds objectBounds, AnnoText annoText) {
-        popoverTool.showPopover(chart, objectBounds, annoText);
+    public void showPopover(PolyChart chart, Bounds objectBounds, Object hitObject) {
+        popoverTool.showPopover(chart, objectBounds, hitObject);
     }
 
 }

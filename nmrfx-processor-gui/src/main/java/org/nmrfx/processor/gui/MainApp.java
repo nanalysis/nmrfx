@@ -609,10 +609,7 @@ public class MainApp extends Application {
 
     }
 
-    public void showPopover(PolyChart chart, Bounds objectBounds, Multiplet multiplet) {
-
-    }
-    public void showPopover(PolyChart chart, Bounds objectBounds, AnnoText annoText) {
+    public void showPopover(PolyChart chart, Bounds objectBounds, Object hitObject) {
 
     }
 }

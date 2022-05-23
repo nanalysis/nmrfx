@@ -24,6 +24,7 @@ import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.collections.*;
+import javafx.geometry.BoundingBox;
 import javafx.geometry.Bounds;
 import javafx.geometry.Orientation;
 import javafx.geometry.VPos;
@@ -2599,7 +2600,8 @@ public class PolyChart extends Region implements PeakListener {
                             double y = xy[1][i];
                             if ((Math.abs(pickX - x) < hitRange) && (Math.abs(pickY - y) < hitRange)) {
                                 int handle = i < nPoints /2 ? -1 : -2;
-                                hit = Optional.of(new IntegralHit(datasetAttr, region, handle));
+                                Bounds bounds = new BoundingBox(xy[0][0], xy[1][nPoints-1],xy[0][nPoints-1]-xy[0][0],xy[1][0]-xy[1][nPoints-1]);
+                                hit = Optional.of(new IntegralHit(datasetAttr, region, handle, bounds));
                                 break;
                             }
                         }

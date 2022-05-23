@@ -28,6 +28,7 @@ import org.nmrfx.processor.gui.CanvasAnnotation;
 import org.nmrfx.processor.gui.MainApp;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.annotations.AnnoText;
+import org.nmrfx.processor.gui.spectra.IntegralHit;
 import org.nmrfx.processor.gui.spectra.MultipletSelection;
 
 import java.util.Optional;
@@ -137,15 +138,9 @@ public class MouseBindings {
     }
 
     private void showPopOver() {
-        System.out.println("show " + waitingForPopover.get() + " " + currentSelection);
         if (waitingForPopover.get()) {
             Bounds objectBounds = chart.getCanvas().localToScreen(currentBounds);
-            if (currentSelection instanceof MultipletSelection) {
-                MultipletSelection multipletSelection  = (MultipletSelection) currentSelection;
-                MainApp.getMainApp().showPopover(chart, objectBounds, multipletSelection.getMultiplet());
-            } else if (currentSelection instanceof AnnoText) {
-                MainApp.getMainApp().showPopover(chart, objectBounds, (AnnoText) currentSelection);
-            }
+            MainApp.getMainApp().showPopover(chart, objectBounds, currentSelection);
         }
     }
 
@@ -196,18 +191,33 @@ public class MouseBindings {
                         currentBounds = annoText.getBounds();
                         waitingForPopover.set(true);
                         currentSelection = annotation;
-
+                        showAfterDelay();
                     }
-                    showAfterDelay();
                 }
                 setHandCursor();
             } else {
-                handler = null;
-                waitingForPopover.set(false);
-                if (pause != null) {
-                    pause.stop();
+                Optional<IntegralHit> hitIntegral = IntegralMouseHandlerHandler.handlerOverIntegral(this);
+                if (hitIntegral.isPresent() && (hitIntegral.get().getBounds() != null)) {
+                    IntegralHit integralHit = hitIntegral.get();
+                    if (handler == null) {
+                        handler = new IntegralMouseHandlerHandler(this, integralHit);
+                    }
+                    if (!waitingForPopover.get()) {
+                        currentBounds = integralHit.getBounds();
+                        currentSelection = integralHit;
+                        waitingForPopover.set(true);
+                        showAfterDelay();
+                    }
+                    setHandCursor();
+
+                } else {
+                    handler = null;
+                    waitingForPopover.set(false);
+                    if (pause != null) {
+                        pause.stop();
+                    }
+                    unsetHandCursor();
                 }
-                unsetHandCursor();
             }
         }
 
@@ -249,6 +259,7 @@ public class MouseBindings {
         moved = false;
         int clickCount = mouseEvent.getClickCount();
         handler = null;
+        waitingForPopover.set(false);
         hidePopOver();
 
         boolean altShift = mouseEvent.isShiftDown() && (mouseEvent.isAltDown() || mouseEvent.isControlDown());

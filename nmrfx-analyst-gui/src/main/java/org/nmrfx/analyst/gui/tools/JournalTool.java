@@ -1,6 +1,5 @@
 package org.nmrfx.analyst.gui.tools;
 
-import javafx.fxml.FXML;
 import javafx.scene.control.ComboBox;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -28,7 +27,7 @@ public class JournalTool {
         hBox.setMinHeight(10);
         HBox.setHgrow(hBox, Priority.ALWAYS);
 
-        ComboBox<String> comboBox = new ComboBox();
+        ComboBox<String> comboBox = new ComboBox<>();
         for (var format : JournalFormatPeaks.getFormatNames()) {
             comboBox.getItems().add(format);
         }
