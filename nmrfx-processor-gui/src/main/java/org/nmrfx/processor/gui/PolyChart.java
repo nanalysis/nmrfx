@@ -69,6 +69,7 @@ import org.nmrfx.processor.gui.spectra.mousehandlers.MouseBindings.MOUSE_ACTION;
 import org.nmrfx.processor.gui.undo.ChartUndoLimits;
 import org.nmrfx.processor.gui.undo.ChartUndoScale;
 import org.nmrfx.processor.math.Vec;
+import org.nmrfx.processor.project.ProjectText;
 import org.nmrfx.project.ProjectBase;
 import org.nmrfx.utils.GUIUtils;
 import org.slf4j.Logger;
@@ -2390,6 +2391,9 @@ public class PolyChart extends Region implements PeakListener {
 
             }
         }
+        if (chartProps.getParameters()) {
+            drawParameters(gC);
+        }
         for (DatasetAttributes datasetAttributes : datasetAttributesList) {
             if (datasetAttributes.projection() != -1) {
                 drawProjection(gC, datasetAttributes.projection(), (Dataset) datasetAttributes.getDataset());
@@ -2433,7 +2437,7 @@ public class PolyChart extends Region implements PeakListener {
     }
 
     void drawTitle(GraphicsContextInterface gC, DatasetAttributes datasetAttributes,
-            int index, int nTitles) {
+                   int index, int nTitles) {
         gC.setFill(datasetAttributes.getPosColor());
         double fontSize = chartProps.getTicFontSize();
         gC.setFont(Font.font(fontSize));
@@ -2449,18 +2453,32 @@ public class PolyChart extends Region implements PeakListener {
             gC.setTextBaseline(VPos.BOTTOM);
             textY = yPos + topBorder - 2;
         }
-
-//        double offset = drawSpectrum.getOffset(datasetAttributes);
-//        if ((maxTextOffset >= 0) && (offset <= maxTextOffset)) {
-//            offset = maxTextOffset + fontSize + 3;
-//        }
-//        if (offset > maxTextOffset) {
-//            maxTextOffset = offset;
-//        }
-//        double zeroPos = axes[1].getDisplayPosition(0.0) - offset;
         gC.setTextAlign(TextAlignment.LEFT);
         gC.fillText(datasetAttributes.getDataset().getTitle(),
                 xPos + leftBorder + 10, textY);
+    }
+
+    void drawParameters(GraphicsContextInterface gC) {
+        Dataset dataset = (Dataset) getDataset();
+        if (dataset != null) {
+            String text = ProjectText.genText(dataset);
+            gC.setFill(Color.BLACK);
+            double fontSize = chartProps.getTicFontSize();
+            gC.setFont(Font.font(fontSize));
+            double textY;
+            double xPos = getLayoutX();
+            double yPos = getLayoutY();
+            gC.setTextBaseline(VPos.TOP);
+            textY = yPos + topBorder + fontSize * 2;
+            gC.setTextAlign(TextAlignment.LEFT);
+            double textWidth = GUIUtils.getTextWidth(text,gC.getFont());
+            if (textWidth < (leftBorder-yAxis.getWidth()-10)) {
+                xPos += 10;
+            } else {
+                xPos += leftBorder + 10;
+            }
+            gC.fillText(text, xPos, textY);
+        }
     }
 
     public int hitBorder(double x, double y) {

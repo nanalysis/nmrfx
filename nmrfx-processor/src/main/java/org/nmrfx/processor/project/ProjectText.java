@@ -7,7 +7,6 @@ public class ProjectText {
     public static String genText(Dataset dataset) {
         StringBuilder sBuilder = new StringBuilder();
         sBuilder.append(dataset.getName()).append("\n");
-        sBuilder.append(String.format("%15s %10.1f\n", "Temperature (K)", dataset.getTempK()));
         sBuilder.append(String.format("%15s %10s\n", "Solvent", dataset.getSolvent()));
         for (int i = 0; i < dataset.getNDim(); i++) {
             sBuilder.append(String.format("F%d Parameters\n", (i + 1)));
