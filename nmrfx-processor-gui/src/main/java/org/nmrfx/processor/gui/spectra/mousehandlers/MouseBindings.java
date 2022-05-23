@@ -161,6 +161,20 @@ public class MouseBindings {
         mouseX = mouseEvent.getX();
         mouseY = mouseEvent.getY();
         Optional<MultipletSelection> hit = PeakMouseHandlerHandler.handlerOverMultiplet(this);
+        int border = chart.hitBorder(mouseX, mouseY);
+        if (border == 1) {
+            setCursor(Cursor.V_RESIZE);
+            return;
+        } else if (border == 2) {
+            setCursor(Cursor.H_RESIZE);
+            return;
+        } else {
+            Cursor currentCursor = chart.getCanvas().getCursor();
+            if (currentCursor == Cursor.H_RESIZE || currentCursor == Cursor.V_RESIZE) {
+                chart.setCanvasCursor(Cursor.DEFAULT);
+            }
+        }
+
         if (hit.isPresent()) {
             if (handler == null) {
                 handler = new PeakMouseHandlerHandler(this);
@@ -177,7 +191,7 @@ public class MouseBindings {
                     }
                 }
             }
-            setHandCursor();
+            setCursor(Cursor.HAND);
         } else {
             Optional<CanvasAnnotation> annoOpt = chart.hitAnnotation(mouseX, mouseY);
             if (annoOpt.isPresent()) {
@@ -194,7 +208,7 @@ public class MouseBindings {
                         showAfterDelay();
                     }
                 }
-                setHandCursor();
+                setCursor(Cursor.HAND);
             } else {
                 Optional<IntegralHit> hitIntegral = IntegralMouseHandlerHandler.handlerOverIntegral(this);
                 if (hitIntegral.isPresent() && (hitIntegral.get().getBounds() != null)) {
@@ -208,7 +222,7 @@ public class MouseBindings {
                         waitingForPopover.set(true);
                         showAfterDelay();
                     }
-                    setHandCursor();
+                    setCursor(Cursor.HAND);
 
                 } else {
                     handler = null;
@@ -216,7 +230,7 @@ public class MouseBindings {
                     if (pause != null) {
                         pause.stop();
                     }
-                    unsetHandCursor();
+                    unsetCursor();
                 }
             }
         }
@@ -226,21 +240,19 @@ public class MouseBindings {
         }
     }
 
-    private void setHandCursor() {
+    private void setCursor(Cursor cursor) {
         Cursor currentCursor = chart.getCanvas().getCursor();
-        if (currentCursor != Cursor.HAND) {
+        if (currentCursor != cursor) {
             previousCursor = currentCursor;
-            chart.setCanvasCursor(Cursor.HAND);
+            chart.setCanvasCursor(cursor);
         }
     }
 
-    private void unsetHandCursor() {
+    private void unsetCursor() {
         Cursor currentCursor = chart.getCanvas().getCursor();
-        if (currentCursor == Cursor.HAND) {
-            if (previousCursor != null) {
-                chart.setCanvasCursor(previousCursor);
-                chart.getCanvas().setCursor(previousCursor);
-            }
+        if ((previousCursor != null) && (currentCursor != previousCursor)) {
+            chart.setCanvasCursor(previousCursor);
+            chart.getCanvas().setCursor(previousCursor);
         }
     }
 
