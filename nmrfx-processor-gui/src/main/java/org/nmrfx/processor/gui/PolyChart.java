@@ -2463,13 +2463,20 @@ public class PolyChart extends Region implements PeakListener {
             String text = ProjectText.genText(dataset);
             gC.setFill(Color.BLACK);
             double fontSize = chartProps.getTicFontSize();
+            gC.setFont(Font.font(fontSize));
             double textY;
             double xPos = getLayoutX();
             double yPos = getLayoutY();
             gC.setTextBaseline(VPos.TOP);
             textY = yPos + topBorder + fontSize * 2;
             gC.setTextAlign(TextAlignment.LEFT);
-            gC.fillText(text, xPos + leftBorder + 10, textY);
+            double textWidth = GUIUtils.getTextWidth(text,gC.getFont());
+            if (textWidth < (leftBorder-yAxis.getWidth()-10)) {
+                xPos += 10;
+            } else {
+                xPos += leftBorder + 10;
+            }
+            gC.fillText(text, xPos, textY);
         }
     }
 
