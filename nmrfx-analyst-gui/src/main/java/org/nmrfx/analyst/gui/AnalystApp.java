@@ -25,6 +25,7 @@ import javafx.collections.MapChangeListener;
 import javafx.collections.ObservableMap;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.geometry.Bounds;
 import javafx.geometry.Point2D;
 import javafx.scene.control.*;
 import javafx.scene.control.Alert.AlertType;
@@ -34,6 +35,7 @@ import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import org.apache.commons.lang3.SystemUtils;
 import org.controlsfx.control.PopOver;
+import org.nmrfx.analyst.gui.annotations.AnnoJournalFormat;
 import org.nmrfx.analyst.gui.molecule.*;
 import org.nmrfx.analyst.gui.molecule3D.MolSceneController;
 import org.nmrfx.analyst.gui.peaks.*;
@@ -50,6 +52,7 @@ import org.nmrfx.peaks.Multiplet;
 import org.nmrfx.peaks.PeakLabeller;
 import org.nmrfx.plugin.api.EntryPoint;
 import org.nmrfx.processor.gui.*;
+import org.nmrfx.processor.gui.annotations.AnnoText;
 import org.nmrfx.processor.gui.log.Log;
 import org.nmrfx.processor.gui.project.GUIProject;
 import org.nmrfx.processor.gui.spectra.KeyBindings;
@@ -93,8 +96,7 @@ public class AnalystApp extends MainApp {
     private static WindowIO windowIO = null;
     private static SeqDisplayController seqDisplayController = null;
     private static DatasetBrowserController browserController = null;
-    private static MultipletTool multipletPopOverTool = null;
-    static PopOver popOver = new PopOver();
+    private static PopOverTools popoverTool = new PopOverTools();
     private static ObservableMap<String, MoleculeBase> moleculeMap;
     MenuToolkit menuTk;
     Boolean isMac = null;
@@ -772,17 +774,12 @@ public class AnalystApp extends MainApp {
         browserStage.show();
     }
 
-    public void showPopover(PolyChart chart, Point2D screenLoc, Multiplet multiplet) {
-        if (multipletPopOverTool == null) {
-            multipletPopOverTool = new MultipletTool(chart.getController(),null);
-            multipletPopOverTool.initializePopover(popOver);
-            popOver.setCloseButtonEnabled(true);
-            popOver.setArrowLocation(PopOver.ArrowLocation.BOTTOM_CENTER);
-        }
-        multipletPopOverTool.setActiveMultiplet(multiplet);
-        if (!popOver.isShowing() || (popOver.isShowing() && !popOver.isDetached())) {
-            popOver.show(chart.getCanvas(), screenLoc.getX(), screenLoc.getY() - 10);
-        }
+    public void hidePopover() {
+        popoverTool.hide();
+    }
+
+    public void showPopover(PolyChart chart, Bounds objectBounds, Object hitObject) {
+        popoverTool.showPopover(chart, objectBounds, hitObject);
     }
 
 }

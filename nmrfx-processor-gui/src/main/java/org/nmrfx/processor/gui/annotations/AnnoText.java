@@ -93,6 +93,10 @@ public class AnnoText implements CanvasAnnotation {
         return hit;
     }
 
+    public Bounds getBounds() {
+        return bounds2D;
+    }
+
     @Override
     public void move(double[][] bounds, double[][] world, double[] start, double[] pos) {
         double dx = pos[0] - start[0];

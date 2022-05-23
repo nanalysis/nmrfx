@@ -24,6 +24,7 @@ import javafx.application.HostServices;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.geometry.Bounds;
 import javafx.geometry.Point2D;
 import javafx.scene.control.*;
 import javafx.scene.control.Alert.AlertType;
@@ -40,6 +41,7 @@ import org.nmrfx.peaks.Multiplet;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.io.PeakReader;
 import org.nmrfx.processor.datasets.Dataset;
+import org.nmrfx.processor.gui.annotations.AnnoText;
 import org.nmrfx.processor.gui.controls.GridPaneCanvas;
 import org.nmrfx.processor.gui.log.Log;
 import org.nmrfx.processor.gui.project.GUIProject;
@@ -603,7 +605,11 @@ public class MainApp extends Application {
         }
     }
 
-    public void showPopover(PolyChart chart, Point2D screenLoc, Multiplet multiplet) {
+    public void hidePopover() {
+
+    }
+
+    public void showPopover(PolyChart chart, Bounds objectBounds, Object hitObject) {
 
     }
 }
