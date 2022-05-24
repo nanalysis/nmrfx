@@ -484,6 +484,7 @@ public class Predictor {
                         if (fields.length > 0) {
                             if (fields[0].equals("rmax")) {
                                 setRMax(Double.parseDouble(fields[1]));
+                                // For this line fields[2] is unused but its value is the atom type, e.g. H, C
                                 setIntraScale(Double.parseDouble(fields[3]));
                             } else if (fields[0].equals("coef")) {
                                 state = "coef";

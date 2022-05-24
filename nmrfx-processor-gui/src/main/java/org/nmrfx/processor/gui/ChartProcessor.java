@@ -684,10 +684,8 @@ public class ChartProcessor {
             if (mapOpLists.get(vecDimName) != null) {
                 oldList.addAll(mapOpLists.get(vecDimName));
             }
-        } else {
-            if (mapOpLists.containsKey(dimName)) {
-                oldList.addAll(mapOpLists.get(dimName));
-            }
+        } else if (mapOpLists.containsKey(dimName)) {
+            oldList.addAll(mapOpLists.get(dimName));
         }
         getCombineMode();
         if (!processorController.isViewingDataset()) {

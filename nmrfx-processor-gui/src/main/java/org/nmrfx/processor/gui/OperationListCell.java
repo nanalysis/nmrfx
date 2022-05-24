@@ -160,7 +160,7 @@ public class OperationListCell<T> extends ListCell<T> implements ChangeListener<
 
                 /* the drag and drop gesture ended */
  /* if the data was successfully moved, clear it */
-                if (event != null && (target != null && target.getIndex() >= 0) ) {
+                if (event != null && target != null && target.getIndex() >= 0) {
                     if (event.getTransferMode() == TransferMode.COPY) {
                         int sourceIndex = Math.max(0, source.getIndex());
                         int targetIndex = Math.min(target.getIndex(), listItems.size() - 1);

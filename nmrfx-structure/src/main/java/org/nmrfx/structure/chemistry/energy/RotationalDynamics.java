@@ -36,6 +36,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+import static java.util.Objects.requireNonNull;
+
 /**
  *
  * @author brucejohnson
@@ -195,17 +197,14 @@ public class RotationalDynamics {
             delAngle = v * timestep + (4.0 * a1 - a0) * timestep * timestep / 6.0;
             Atom diAtom = branch.atom;
             Atom daughter = diAtom.daughterAtom;
+            requireNonNull(daughter, "daughter atom is null " + diAtom.getShortName());
             double absDelta = Math.abs(delAngle);
             if (absDelta > max) {
                 max = absDelta;
             }
             sumSq += delAngle * delAngle;
-            if (daughter == null) {
-                throw new NullPointerException("daughter atom is null " + diAtom.getShortName());
-            } else {
-                daughter.dihedralAngle += delAngle;
-                daughter.dihedralAngle = (float) Util.reduceAngle(daughter.dihedralAngle);
-            }
+            daughter.dihedralAngle += delAngle;
+            daughter.dihedralAngle = (float) Util.reduceAngle(daughter.dihedralAngle);
         }
         sumDeltaSq += Math.sqrt(sumSq / branches.size());
         sumMaxDelta += max;

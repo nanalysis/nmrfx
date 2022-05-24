@@ -818,26 +818,19 @@ public class SSLayout implements MultivariateFunction {
                         DEFAULT_RANDOMGENERATOR, true,
                         new SimpleValueChecker(100 * Precision.EPSILON, 100 * Precision.SAFE_MIN));
 
-                try {
-                    result = optimizer.optimize(
-                            new CMAESOptimizer.PopulationSize(lambda),
-                            new CMAESOptimizer.Sigma(lSigma), new MaxEval(2000000),
-                            new ObjectiveFunction(this), GoalType.MINIMIZE,
-                            new SimpleBounds(lboundaries[0], lboundaries[1]),
-                            new InitialGuess(lguess));
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    throw e;
-                }
+                result = optimizer.optimize(
+                        new CMAESOptimizer.PopulationSize(lambda),
+                        new CMAESOptimizer.Sigma(lSigma), new MaxEval(2000000),
+                        new ObjectiveFunction(this), GoalType.MINIMIZE,
+                        new SimpleBounds(lboundaries[0], lboundaries[1]),
+                        new InitialGuess(lguess));
                 System.err.println(limit + " " + optimizer.getIterations() + " " + result.getValue());
                 System.arraycopy(result.getPoint(), 0, guess, 0, result.getPoint().length);
                 value = result.getValue();
             }
         }
-        if (result == null) {
-            result = new PointValuePair(guess, value);
-        }
-        return result;
+
+        return result != null ? result : new PointValuePair(guess, value);
     }
 
     public void calcLayout(int nSteps) {

@@ -373,23 +373,25 @@ public class Polymer extends Entity {
     public List<String> getCyclicConstraints() {
 
         List<String> constraints = new ArrayList<>();
-        if ((getLastResidue() != null) && (getFirstResidue() != null)) {
-            for (int i = 0; i < cyclicClosers.length; i += 3) {
-                Atom atom1 = getLastResidue().getAtom(cyclicClosers[i]);
-                Atom atom2 = getFirstResidue().getAtom(cyclicClosers[i + 1]);
-                if (atom1 == null) {
-                    System.out.println("no atom1 " + cyclicClosers[i]);
-                    atom1 = getLastResidue().getAtom("H1");
-                }
-                if (atom2 == null) {
-                    System.out.println("no atom2 " + cyclicClosers[i + 1]);
-                    atom2 = getFirstResidue().getAtom("H1");
-                }
-                if (atom1 != null && atom2 != null) {
-                    String distance = cyclicClosers[i + 2];
-                    String constraint = atom2.getFullName() + " " + atom1.getFullName() + " " + distance;
-                    constraints.add(constraint);
-                }
+
+        if (getLastResidue() != null && getFirstResidue() != null) {
+            return constraints;
+        }
+        for (int i = 0; i < cyclicClosers.length; i += 3) {
+            Atom atom1 = getLastResidue().getAtom(cyclicClosers[i]);
+            Atom atom2 = getFirstResidue().getAtom(cyclicClosers[i + 1]);
+            if (atom1 == null) {
+                System.out.println("no atom1 " + cyclicClosers[i]);
+                atom1 = getLastResidue().getAtom("H1");
+            }
+            if (atom2 == null) {
+                System.out.println("no atom2 " + cyclicClosers[i + 1]);
+                atom2 = getFirstResidue().getAtom("H1");
+            }
+            if (atom1 != null && atom2 != null) {
+                String distance = cyclicClosers[i + 2];
+                String constraint = atom2.getFullName() + " " + atom1.getFullName() + " " + distance;
+                constraints.add(constraint);
             }
         }
         return constraints;

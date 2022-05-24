@@ -761,8 +761,7 @@ public class RNARotamer {
      */
     public static void setDihedrals(Residue residue, String suiteName, double sdev, boolean doFreeze) {
         if (residue == null) {
-            log.warn("Residue is null. Unable to set Dihedrals.");
-            return;
+            throw new IllegalArgumentException("Residue is null. Unable to set Dihedrals.");
         }
         RNARotamer rotamer = ROTAMERS.get(suiteName);
         int j = 0;

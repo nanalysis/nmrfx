@@ -1025,9 +1025,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         subMenuItems = new ArrayList<>();
         for (String op : OperationInfo.opOrders) {
             if (op.startsWith("Cascade-")) {
-                if (!subMenuItems.isEmpty()) {
-                    menu.getItems().addAll(subMenuItems);
-                }
+                menu.getItems().addAll(subMenuItems);
                 menu = new Menu(op.substring(8));
                 subMenuItems = new ArrayList<>();
                 menuItems.add(menu);
@@ -1037,9 +1035,8 @@ public class ProcessorController implements Initializable, ProgressUpdater {
                 subMenuItems.add(menuItem);
             }
         }
-        if (!subMenuItems.isEmpty()) {
-            menu.getItems().addAll(subMenuItems);
-        }
+        menu.getItems().addAll(subMenuItems);
+
         opMenuButton.getItems().addAll(menuItems);
         popOver.setContentNode(new Text("hello"));
 

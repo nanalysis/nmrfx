@@ -124,17 +124,12 @@ public class GradientRefinement extends Refinement {
                 log.error(ex.getMessage(), ex);
             }
         }
-        try {
-            result = optimizer.optimize(
-                    new ObjectiveFunctionGradient(dihGradient),
-                    new ObjectiveFunction(dihEnergy),
-                    new MaxEval(nSteps * 1000),
-                    GoalType.MINIMIZE,
-                    new InitialGuess(dihedrals.angleValues));
-        } catch (Exception e) {
-            log.error(e.getMessage(), e);
-            throw e;
-        }
+        result = optimizer.optimize(
+                new ObjectiveFunctionGradient(dihGradient),
+                new ObjectiveFunction(dihEnergy),
+                new MaxEval(nSteps * 1000),
+                GoalType.MINIMIZE,
+                new InitialGuess(dihedrals.angleValues));
         System.arraycopy(result.getPoint(), 0, dihedrals.angleValues, 0, dihedrals.angleValues.length);
         putDihedrals();
         molecule.genCoords(false, null);

@@ -17,7 +17,11 @@
  */
 package org.nmrfx.processor.translate;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 
 /**
  * Encodes and decodes to and from Base64 notation.
@@ -229,9 +233,8 @@ public class Base64 {
      */
     public static String encodeObject(java.io.Serializable serializableObject,
                                       boolean breakLines) {
-        try (java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
-             java.io.OutputStream b64os = new Base64.OutputStream(baos, Base64.ENCODE, breakLines);
-             java.io.ObjectOutputStream oos = new java.io.ObjectOutputStream(b64os)) {
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
+             ObjectOutputStream oos = new ObjectOutputStream(new OutputStream(baos, Base64.ENCODE, breakLines))) {
 
             oos.writeObject(serializableObject);
             return baos.toString();
@@ -487,8 +490,7 @@ public class Base64 {
     public static Object decodeToObject(String encodedObject) {
         byte[] objBytes = decode(encodedObject);
 
-        try (java.io.ByteArrayInputStream bais = new java.io.ByteArrayInputStream(objBytes);
-             java.io.ObjectInputStream ois = new java.io.ObjectInputStream(bais)){
+        try (ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(objBytes))){
             return ois.readObject();
         }
         catch (IOException | ClassNotFoundException e) {
@@ -925,11 +927,13 @@ public class Base64 {
          *
          * @since 1.3
          */
+        @Override
         public void close() throws java.io.IOException {
             super.close();
 
-            //this.flush();
-            out.close();
+            if (out != null) {
+                out.close();
+            }
 
             buffer = null;
             out = null;

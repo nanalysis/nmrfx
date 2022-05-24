@@ -19,6 +19,7 @@ package org.nmrfx.processor.gui.spectra;
 
 import java.util.Comparator;
 import java.util.Iterator;
+import java.util.Objects;
 import java.util.SortedSet;
 
 // fixme add document "Note: this comparator imposes orderings that are inconsistent with equals."
@@ -138,13 +139,9 @@ public class SpecRegion implements Comparator, Comparable {
         SpecRegion r1 = (SpecRegion) o1;
         SpecRegion r2 = (SpecRegion) o2;
         if ((r1 != null) || (r2 != null)) {
-            if (r1 == null) {
+            if (r1 == null || r1.x == null) {
                 result = -1;
-            } else if (r2 == null) {
-                result = 1;
-            } else if (r1.x == null) {
-                result = -1;
-            } else if (r2.x == null) {
+            } else if (r2 == null || r2.x == null) {
                 result = 1;
             } else if (r1.x[0] < r2.x[0]) {
                 result = -1;
@@ -162,9 +159,7 @@ public class SpecRegion implements Comparator, Comparable {
 
     @Override
     public int hashCode() {
-        int hash = 7;
-        hash = 31 * hash + (x == null ? 0 : Double.hashCode(x[0]));
-        return hash;
+        return x == null ? Objects.hashCode(x) : Double.hashCode(x[0]);
     }
 
     public boolean equals(Object o2) {

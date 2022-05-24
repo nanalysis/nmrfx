@@ -425,17 +425,18 @@ public class Dihedral {
             inputSigma[i] = sigma;
         }
         int aStart = nPseudoAngles * 2 * stepSize;
+        List<String> parentNamesToScale = Arrays.asList("P", "O5'", "C5'", "C4'", "O3'", "CA", "C");
         for (int iAtom = 0; iAtom < angleAtoms.size(); iAtom++) {
             Atom atom = angleAtoms.get(iAtom).daughterAtom;
             // temporarily set everything to use sigma, till we make sure counting is correct
             if (atom == null) {
-                throw new NullPointerException("daughter null " + angleAtoms.get(iAtom).daughterAtom.getFullName());
+                throw new IllegalStateException("daughter null " + angleAtoms.get(iAtom).daughterAtom.getFullName());
             } else if (atom.parent == null) {
-                throw new NullPointerException("parent null " + angleAtoms.get(iAtom).daughterAtom.getFullName());
+                throw new IllegalStateException("parent null " + angleAtoms.get(iAtom).daughterAtom.getFullName());
             } else {
                 String parentName = atom.parent.getName();
                 double inputSigmaAtIndex;
-                if (Arrays.asList("P", "O5'", "C5'", "C4'", "O3'", "CA", "C").contains(parentName)) {
+                if (parentNamesToScale.contains(parentName)) {
                     inputSigmaAtIndex = sigma / backBoneScale;
                 } else {
                     inputSigmaAtIndex = sigma;

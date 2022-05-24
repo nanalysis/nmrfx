@@ -610,18 +610,13 @@ public class CompoundFitter implements MultivariateFunction {
             inputSigma[i] = Math.abs(starting[1][i] - starting[2][i]) * 0.4;
         }
 
-        try {
-            result = optimizer.optimize(
-                    new CMAESOptimizer.PopulationSize(lambda),
-                    new CMAESOptimizer.Sigma(inputSigma),
-                    new MaxEval(2000000),
-                    new ObjectiveFunction(this), GoalType.MINIMIZE,
-                    new SimpleBounds(starting[1], starting[2]),
-                    new InitialGuess(starting[0]));
-        } catch (DimensionMismatchException | NotPositiveException | NotStrictlyPositiveException | TooManyEvaluationsException e) {
-            e.printStackTrace();
-            throw e;
-        }
+        result = optimizer.optimize(
+                new CMAESOptimizer.PopulationSize(lambda),
+                new CMAESOptimizer.Sigma(inputSigma),
+                new MaxEval(2000000),
+                new ObjectiveFunction(this), GoalType.MINIMIZE,
+                new SimpleBounds(starting[1], starting[2]),
+                new InitialGuess(starting[0]));
         return result.getPoint();
     }
 
@@ -678,18 +673,13 @@ public class CompoundFitter implements MultivariateFunction {
             System.out.println(i + " " + lower[i] + " " + start[i] + " " + upper[i]);
         }
 
-        try {
-            result = optimizer.optimize(
-                    new CMAESOptimizer.PopulationSize(lambda),
-                    new CMAESOptimizer.Sigma(inputSigma),
-                    new MaxEval(2000000),
-                    new ObjectiveFunction(this), GoalType.MINIMIZE,
-                    new SimpleBounds(lower, upper),
-                    new InitialGuess(start));
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw e;
-        }
+        result = optimizer.optimize(
+                new CMAESOptimizer.PopulationSize(lambda),
+                new CMAESOptimizer.Sigma(inputSigma),
+                new MaxEval(2000000),
+                new ObjectiveFunction(this), GoalType.MINIMIZE,
+                new SimpleBounds(lower, upper),
+                new InitialGuess(start));
         System.out.println(optimizer.getEvaluations() + " " + result.getValue());
         double[] scales = result.getPoint();
         for (int i = 0; i < scales.length; i++) {

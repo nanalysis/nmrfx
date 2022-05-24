@@ -1212,11 +1212,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
     public static FXMLController getActiveController() {
         if (activeController.get() == null) {
             FXMLController controller = FXMLController.create();
-            if (controller != null) {
-                controller.setActiveController();
-            } else {
-                log.error("Failed to create controller");
-            }
+            controller.setActiveController();
         }
         return activeController.get();
     }
@@ -1409,8 +1405,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
             MainApp.registerStage(stage, controller);
             stage.show();
         } catch (IOException ioE) {
-            ioE.printStackTrace();
-            System.out.println(ioE.getMessage());
+            throw new IllegalStateException("Unable to create controller", ioE);
         }
         return controller;
     }

@@ -277,13 +277,9 @@ public class DatasetRegion implements Comparator, Comparable {
         DatasetRegion r1 = (DatasetRegion) o1;
         DatasetRegion r2 = (DatasetRegion) o2;
         if ((r1 != null) || (r2 != null)) {
-            if (r1 == null) {
+            if (r1 == null || r1.x == null) {
                 result = -1;
-            } else if (r2 == null) {
-                result = 1;
-            } else if (r1.x == null) {
-                result = -1;
-            } else if (r2.x == null) {
+            } else if (r2 == null || r2.x == null) {
                 result = 1;
             } else if (r1.x[0] < r2.x[0]) {
                 result = -1;
@@ -302,9 +298,7 @@ public class DatasetRegion implements Comparator, Comparable {
 
     @Override
     public int hashCode() {
-        int hash = 7;
-        hash = 31 * hash + (x == null ? 0 : Double.hashCode(x[0]));
-        return hash;
+        return x == null ? Objects.hashCode(x) : Double.hashCode(x[0]);
     }
 
     @Override
