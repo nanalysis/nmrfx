@@ -196,8 +196,7 @@ public class RotationalDynamics {
             double a1 = branch.rotAccel.getEntry(2);
             delAngle = v * timestep + (4.0 * a1 - a0) * timestep * timestep / 6.0;
             Atom diAtom = branch.atom;
-            Atom daughter = diAtom.daughterAtom;
-            requireNonNull(daughter, "daughter atom is null " + diAtom.getShortName());
+            Atom daughter = requireNonNull(diAtom.daughterAtom, "daughter atom is null " + diAtom.getShortName());
             double absDelta = Math.abs(delAngle);
             if (absDelta > max) {
                 max = absDelta;
