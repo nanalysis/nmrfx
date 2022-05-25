@@ -387,15 +387,6 @@ public class AnalystApp extends MainApp {
 
     @Override
     public void addStatusBarTools(SpectrumStatusBar statusBar) {
-        Menu oneDMenu = new Menu("Analysis (1D)");
-        MenuItem multipletToolItem = new MenuItem("Show Multiplet Tool");
-        multipletToolItem.setOnAction(e -> showMultipletTool());
-
-        MenuItem regionsMenuItem = new MenuItem("Show Regions Tool");
-        regionsMenuItem.disableProperty().bind(FXMLController.activeController.isNull());
-        regionsMenuItem.setOnAction(e -> showRegionTool());
-        oneDMenu.getItems().addAll(multipletToolItem, regionsMenuItem);
-        statusBar.addToToolMenu(oneDMenu);
         addStatusBarButtons(statusBar);
         if (advancedIsActive) {
             addAdvancedTools(statusBar);
@@ -445,15 +436,6 @@ public class AnalystApp extends MainApp {
         Menu libraryMenu = new Menu("Library");
         libraryMenu.getItems().addAll(spectrumLibraryMenuItem, spectrumFitLibraryMenuItem);
         statusBar.addToToolMenu(libraryMenu);
-
-        Menu molMenu = new Menu("Molecule");
-        MenuItem canvasMolMenuItem = new MenuItem("Show Molecule");
-        canvasMolMenuItem.setOnAction(e -> addMolecule());
-        MenuItem delCanvasMolMenuItem = new MenuItem("Remove Molecule");
-        delCanvasMolMenuItem.setOnAction(e -> removeMolecule());
-        molMenu.getItems().addAll(canvasMolMenuItem, delCanvasMolMenuItem);
-
-        statusBar.addToToolMenu(molMenu);
 
 
         MenuItem scannerToolItem = new MenuItem("Show Scanner");
