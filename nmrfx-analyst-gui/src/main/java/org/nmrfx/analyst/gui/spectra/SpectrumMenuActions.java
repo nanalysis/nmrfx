@@ -5,6 +5,7 @@ import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
+import javafx.stage.StageStyle;
 import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.analyst.gui.MenuActions;
 import org.nmrfx.processor.gui.FXMLController;
@@ -98,7 +99,9 @@ public class SpectrumMenuActions extends MenuActions {
     }
 
     private void newGraphics(ActionEvent event) {
-        FXMLController.create();
+        Stage stage = new Stage(StageStyle.DECORATED);
+        stage.setTitle(AnalystApp.getAppName() + " " + AnalystApp.getVersion());
+        FXMLController.create(stage);
     }
 
     public void showStripsBar() {
