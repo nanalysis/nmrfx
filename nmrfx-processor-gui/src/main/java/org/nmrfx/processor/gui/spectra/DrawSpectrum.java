@@ -64,6 +64,8 @@ import org.nmrfx.graphicsio.GraphicsIOException;
 import org.nmrfx.datasets.DatasetRegion;
 import org.nmrfx.math.VecBase;
 import org.nmrfx.processor.gui.PolyChart.DISDIM;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -71,6 +73,7 @@ import org.nmrfx.processor.gui.PolyChart.DISDIM;
  */
 public class DrawSpectrum {
 
+    private static final Logger log = LoggerFactory.getLogger(DrawSpectrum.class);
     final static ExecutorService MAKE_CONTOUR_SERVICE = Executors.newFixedThreadPool(30);
     final static ExecutorService DRAW_CONTOUR_SERVICE = Executors.newFixedThreadPool(100);
 
@@ -279,8 +282,7 @@ public class DrawSpectrum {
                                     }
                                 }
                             } catch (IOException e) {
-                                System.out.println("error " + e.getMessage());
-                                e.printStackTrace();
+                                log.warn(e.getMessage(), e);
                             }
                             return 0;
                         }
@@ -392,8 +394,7 @@ public class DrawSpectrum {
                             try {
                                 drawAllContours(this);
                             } catch (Exception e) {
-                                e.printStackTrace();
-
+                                log.warn(e.getMessage(), e);
                             }
                             return 0;
                         }
@@ -459,7 +460,7 @@ public class DrawSpectrum {
                         try {
                             drawContourObject(drawObject);
                         } catch (ExecutionException ex) {
-                            ex.printStackTrace();
+                            log.warn(ex.getMessage(), ex);
                         }
                     } catch (InterruptedException ex) {
                         interrupted = true;
@@ -968,7 +969,7 @@ public class DrawSpectrum {
                 return result;
             }
         } catch (IOException ioE) {
-            ioE.printStackTrace();
+            log.warn(ioE.getMessage(), ioE);
             return result;
         }
         Double integralValue = specVec.getReal(specVec.getSize() - 1);

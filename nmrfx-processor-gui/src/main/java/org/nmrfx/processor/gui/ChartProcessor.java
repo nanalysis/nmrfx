@@ -24,7 +24,6 @@ import org.nmrfx.processor.datasets.DatasetType;
 import org.nmrfx.processor.datasets.vendor.NMRData;
 import org.nmrfx.processor.datasets.vendor.NMRDataUtil;
 import org.nmrfx.processor.datasets.vendor.nmrview.NMRViewData;
-import org.nmrfx.processor.datasets.vendor.rs2d.RS2DData;
 import org.nmrfx.processor.datasets.vendor.rs2d.RS2DProcUtil;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.processing.MultiVecCounter;
@@ -36,6 +35,8 @@ import org.nmrfx.utils.GUIUtils;
 import org.python.core.PyException;
 import org.python.core.PyObject;
 import org.python.util.InteractiveInterpreter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -51,6 +52,9 @@ import java.util.stream.Stream;
  * @author brucejohnson
  */
 public class ChartProcessor {
+
+    private static final Logger log = LoggerFactory.getLogger(ChartProcessor.class);
+
     public static final DatasetType DEFAULT_DATASET_TYPE = DatasetType.NMRFX;
 
     private SimpleObjectProperty nmrDataObj;
@@ -542,7 +546,7 @@ public class ChartProcessor {
                 ProcessOps process = getProcess();
                 process.exec();
             } catch (IncompleteProcessException ipe) {
-                ipe.printStackTrace();
+                log.warn(ipe.getMessage(), ipe);
             }
 
             chart.layoutPlotChildren();
@@ -1295,7 +1299,7 @@ public class ChartProcessor {
                 ProcessOps process = getProcess();
                 process.exec();
             } catch (IncompleteProcessException ipe) {
-                ipe.printStackTrace();
+                log.warn(ipe.getMessage(), ipe);
             }
             int[] sizes = new int[1];
             sizes[0] = 1;
@@ -1375,7 +1379,7 @@ public class ChartProcessor {
                 } else {
                     processorController.setProcessingStatus(pyE.getCause().getMessage(), false, pE);
                 }
-                pyE.printStackTrace();
+                log.warn(pyE.getMessage(), pyE);
             } else {
                 processorController.setProcessingStatus("error " + pE.getMessage(), false, pE);
             }
@@ -1406,7 +1410,7 @@ public class ChartProcessor {
                     OperationListCell.failedOperation(e.index);
                     System.out.println("error message: " + e.getMessage());
                     processorController.setProcessingStatus(e.op + " " + e.index + ": " + e.getMessage(), false, e);
-                    e.printStackTrace();
+                    log.warn(e.getMessage(), e);
                     int j = 0;
                     for (Vec saveVec : saveVectors) {
                         Vec loadVec = vectors.get(j);

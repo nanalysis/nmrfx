@@ -45,6 +45,8 @@ import org.controlsfx.property.editor.AbstractPropertyEditor;
 import org.controlsfx.property.editor.DefaultPropertyEditorFactory;
 import org.controlsfx.property.editor.Editors;
 import org.controlsfx.property.editor.PropertyEditor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -52,6 +54,7 @@ import org.controlsfx.property.editor.PropertyEditor;
  */
 public class NvFxPropertyEditorFactory extends DefaultPropertyEditorFactory {
 
+    private static final Logger log = LoggerFactory.getLogger(NvFxPropertyEditorFactory.class);
     public NvFxPropertyEditorFactory() {
         super();
     }
@@ -223,7 +226,7 @@ public class NvFxPropertyEditorFactory extends DefaultPropertyEditorFactory {
                 try {
                     return sourceClass.getConstructor(String.class).newInstance(getEditor().getText());
                 } catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException | SecurityException e) {
-                    e.printStackTrace();
+                    log.warn(e.getMessage(), e);
                     return null;
                 }
             }

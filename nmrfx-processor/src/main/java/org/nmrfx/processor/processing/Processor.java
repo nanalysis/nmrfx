@@ -401,8 +401,7 @@ public class Processor {
             try {
                 dataset = new Dataset(fileName, fileName, writeable, true);
             } catch (IOException ex) {
-                System.err.println("could not create dataset");
-                ex.printStackTrace();
+                log.warn("Could not create dataset. {}", ex.getMessage(), ex);
                 return false;
             }
             mapToFID = new int[dataset.getNDim()];
@@ -1023,8 +1022,7 @@ public class Processor {
                 matrix = new Matrix(nPlanes, nRows, writePt);
                 dataset.readMatrix(pt, dim, matrix.getMatrix());
             } catch (IOException ex) {
-                ex.printStackTrace();
-//                Logger.getLogger(Processor.class.getName()).log(Level.SEVERE, null, ex);
+                log.warn(ex.getMessage(), ex);
             }
         }
         return matrix;
@@ -1065,8 +1063,7 @@ public class Processor {
 //                printDimPt("getMatrix", dim, matrix.getPt());  // for debug
                 dataset.readMatrixND(pt, dim, matrix);
             } catch (IOException ex) {
-                ex.printStackTrace();
-//                Logger.getLogger(Processor.class.getName()).log(Level.SEVERE, null, ex);
+                log.warn(ex.getMessage(), ex);
             }
         }
         return matrix;
@@ -1535,7 +1532,7 @@ public class Processor {
                 try {
                     future.get();
                 } catch (InterruptedException | ExecutionException ex) {
-                    ex.printStackTrace();
+                    log.warn(ex.getMessage(), ex);
                     throw new ProcessingException(ex.getMessage());
                 }
             }

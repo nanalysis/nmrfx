@@ -59,6 +59,8 @@ import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
 import org.nmrfx.utils.GUIUtils;
 import org.python.util.PythonInterpreter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.URL;
@@ -71,6 +73,8 @@ import java.util.stream.Collectors;
  * @author johnsonb
  */
 public class PeakAttrController implements Initializable, PeakNavigable, PeakMenuTarget {
+
+    private static final Logger log = LoggerFactory.getLogger(PeakAttrController.class);
 
     static final DecimalFormat formatter = new DecimalFormat();
     static PeakListTypes peakListTypes = null;
@@ -319,8 +323,7 @@ public class PeakAttrController implements Initializable, PeakNavigable, PeakMen
             stage.setTitle("Peak Attributes");
             stage.show();
         } catch (IOException ioE) {
-            ioE.printStackTrace();
-            System.out.println(ioE.getMessage());
+            log.warn(ioE.getMessage(), ioE);
         }
 
         return controller;

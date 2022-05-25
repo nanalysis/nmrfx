@@ -759,9 +759,7 @@ public class PeakFitter {
             updateBIC(rms, size, nPars);
 //            System.out.println("rms " + rms + " " + BIC);
         } catch (Exception ex) {
-
-            System.out.println(ex.getMessage());
-            ex.printStackTrace();
+            log.warn(ex.getMessage(), ex);
             return 0.0;
         }
         for (int iPeak = 0; iPeak < nPeaks; iPeak++) {

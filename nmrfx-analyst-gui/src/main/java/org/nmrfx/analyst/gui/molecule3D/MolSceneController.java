@@ -185,8 +185,7 @@ public class MolSceneController implements Initializable, MolSelectionListener, 
             stage.setTitle("Molecular Viewer");
             stage.show();
         } catch (IOException ioE) {
-            ioE.printStackTrace();
-            System.out.println(ioE.getMessage());
+            log.warn(ioE.getMessage(), ioE);
         }
 
         return controller;

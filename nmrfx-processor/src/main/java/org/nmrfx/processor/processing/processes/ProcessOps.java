@@ -17,7 +17,6 @@
  */
 package org.nmrfx.processor.processing.processes;
 
-//import org.nmrfx.processor.math.Matrix;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.datasets.MatrixType;
 import org.nmrfx.processor.math.Vec;
@@ -36,6 +35,8 @@ import java.util.concurrent.Callable;
 import org.nmrfx.processor.operations.Apodization;
 import org.nmrfx.processor.operations.Ft;
 import org.nmrfx.processor.operations.Zf;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * The ProcessOps class will contain a list of all Operations which will be
@@ -46,6 +47,8 @@ import org.nmrfx.processor.operations.Zf;
  * @author johnsonb
  */
 public class ProcessOps implements Callable<Object> {
+
+    private static final Logger log = LoggerFactory.getLogger(ProcessOps.class);
 
     private ArrayList<Operation> operations = null;
     private List<Vec> vectors = null;
@@ -229,7 +232,7 @@ public class ProcessOps implements Callable<Object> {
             } catch (Exception e) {
                 if (!processor.setProcessorError()) {
                     processor.setProcessorErrorMessage(e.getMessage());
-                    e.printStackTrace();
+                    log.warn(e.getMessage(), e);
                     throw new ProcessingException(e.getMessage());
                 } else {
                     return this;
@@ -248,7 +251,7 @@ public class ProcessOps implements Callable<Object> {
                 } catch (Exception e) {
                     if (!processor.setProcessorError()) {
                         processor.setProcessorErrorMessage(e.getMessage());
-                        e.printStackTrace();
+                        log.warn(e.getMessage(), e);
                         throw new ProcessingException(e.getMessage());
                     } else {
                         return this;
@@ -286,7 +289,7 @@ public class ProcessOps implements Callable<Object> {
             } catch (Exception e) {
                 if (!processor.setProcessorError()) {
                     processor.setProcessorErrorMessage(e.getMessage());
-                    e.printStackTrace();
+                    log.warn(e.getMessage(), e);
                     throw new ProcessingException(e.getMessage());
                 } else {
                     return this;
@@ -305,7 +308,7 @@ public class ProcessOps implements Callable<Object> {
                 } catch (Exception e) {
                     if (!processor.setProcessorError()) {
                         processor.setProcessorErrorMessage(e.getMessage());
-                        e.printStackTrace();
+                        log.warn(e.getMessage(), e);
                         throw new ProcessingException(e.getMessage());
                     } else {
                         return this;
@@ -339,7 +342,7 @@ public class ProcessOps implements Callable<Object> {
         } catch (Exception e) {
             if (!processor.setProcessorError()) {
                 processor.setProcessorErrorMessage(e.getMessage());
-                e.printStackTrace();
+                log.warn(e.getMessage(), e);
                 throw new ProcessingException(e.getMessage());
             } else {
                 return this;
@@ -361,7 +364,7 @@ public class ProcessOps implements Callable<Object> {
             } catch (OperationException oe) {
                 if (!processor.setProcessorError()) {
                     processor.setProcessorErrorMessage(oe.getMessage());
-                    oe.printStackTrace();
+                    log.warn(oe.getMessage(), oe);
                     throw new ProcessingException(oe.getMessage());
                 } else {
                     return this;
@@ -369,7 +372,7 @@ public class ProcessOps implements Callable<Object> {
             } catch (Exception e) {
                 if (!processor.setProcessorError()) {
                     processor.setProcessorErrorMessage(e.getMessage());
-                    e.printStackTrace();
+                    log.warn(e.getMessage(), e);
                     throw new ProcessingException(e.getMessage());
                 } else {
                     return this;
@@ -401,18 +404,8 @@ public class ProcessOps implements Callable<Object> {
         for (Operation op : operations) {
             try {
                 op.eval(vectors);
-            } catch (ProcessingException pe) {
-//                pe.printStackTrace();
+            } catch (Exception pe) {
                 throw new IncompleteProcessException(pe.getMessage(), op.getName(), operations.indexOf(op), pe.getStackTrace());
-            } catch (OperationException oe) {
-//                oe.printStackTrace();
-                throw new IncompleteProcessException(oe.getMessage(), op.getName(), operations.indexOf(op), oe.getStackTrace());
-            } catch (VecException ve) {
-//                ve.printStackTrace();
-                throw new IncompleteProcessException(ve.getMessage(), op.getName(), operations.indexOf(op), ve.getStackTrace());
-            } catch (Exception e) {
-//                e.printStackTrace();
-                throw new IncompleteProcessException(e.getMessage(), op.getName(), operations.indexOf(op), e.getStackTrace());
             }
         }
         vectors.clear();

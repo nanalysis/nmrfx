@@ -41,15 +41,18 @@ import org.apache.commons.math3.stat.correlation.SpearmansCorrelation;
 import org.apache.commons.math3.util.FastMath;
 import org.nmrfx.math.Interpolator;
 import org.nmrfx.processor.math.AmplitudeFitResult;
-import org.nmrfx.math.Interpolator;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.math.VecUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
  * @author brucejohnson
  */
 public class CompoundFitter implements MultivariateFunction {
+
+    private static final Logger log = LoggerFactory.getLogger(CompoundFitter.class);
 
     public static int MAX_SHIFT = 15;
 
@@ -608,17 +611,13 @@ public class CompoundFitter implements MultivariateFunction {
             inputSigma[i] = Math.abs(starting[1][i] - starting[2][i]) * 0.4;
         }
 
-        try {
-            result = optimizer.optimize(
-                    new CMAESOptimizer.PopulationSize(lambda),
-                    new CMAESOptimizer.Sigma(inputSigma),
-                    new MaxEval(2000000),
-                    new ObjectiveFunction(this), GoalType.MINIMIZE,
-                    new SimpleBounds(starting[1], starting[2]),
-                    new InitialGuess(starting[0]));
-        } catch (DimensionMismatchException | NotPositiveException | NotStrictlyPositiveException | TooManyEvaluationsException e) {
-            e.printStackTrace();
-        }
+        result = optimizer.optimize(
+                new CMAESOptimizer.PopulationSize(lambda),
+                new CMAESOptimizer.Sigma(inputSigma),
+                new MaxEval(2000000),
+                new ObjectiveFunction(this), GoalType.MINIMIZE,
+                new SimpleBounds(starting[1], starting[2]),
+                new InitialGuess(starting[0]));
         return result.getPoint();
     }
 
@@ -675,17 +674,14 @@ public class CompoundFitter implements MultivariateFunction {
             System.out.println(i + " " + lower[i] + " " + start[i] + " " + upper[i]);
         }
 
-        try {
-            result = optimizer.optimize(
-                    new CMAESOptimizer.PopulationSize(lambda),
-                    new CMAESOptimizer.Sigma(inputSigma),
-                    new MaxEval(2000000),
-                    new ObjectiveFunction(this), GoalType.MINIMIZE,
-                    new SimpleBounds(lower, upper),
-                    new InitialGuess(start));
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        result = optimizer.optimize(
+                new CMAESOptimizer.PopulationSize(lambda),
+                new CMAESOptimizer.Sigma(inputSigma),
+                new MaxEval(2000000),
+                new ObjectiveFunction(this), GoalType.MINIMIZE,
+                new SimpleBounds(lower, upper),
+                new InitialGuess(start));
+
         System.out.println(optimizer.getEvaluations() + " " + result.getValue());
         double[] scales = result.getPoint();
         for (int i = 0; i < scales.length; i++) {
@@ -881,7 +877,7 @@ public class CompoundFitter implements MultivariateFunction {
                 }
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            log.warn(e.getMessage(), e);
         }
     }
 

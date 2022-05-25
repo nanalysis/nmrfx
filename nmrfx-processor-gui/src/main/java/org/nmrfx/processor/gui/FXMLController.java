@@ -1407,8 +1407,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
             MainApp.registerStage(stage, controller);
             stage.show();
         } catch (IOException ioE) {
-            ioE.printStackTrace();
-            System.out.println(ioE.getMessage());
+            log.warn(ioE.getMessage(), ioE);
         }
         return controller;
     }

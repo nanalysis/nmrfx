@@ -73,6 +73,8 @@ import org.nmrfx.processor.gui.spectra.PeakDisplayParameters;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
 import org.nmrfx.processor.gui.utils.ColorSchemes;
 import org.nmrfx.utilities.DictionarySort;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.URL;
@@ -91,6 +93,8 @@ import static org.nmrfx.processor.gui.PolyChart.DISDIM.TwoD;
  * @author johnsonb
  */
 public class SpecAttrWindowController implements Initializable {
+
+    private static final Logger log = LoggerFactory.getLogger(SpecAttrWindowController.class);
 
     static final DecimalFormat formatter = new DecimalFormat();
 
@@ -643,8 +647,7 @@ public class SpecAttrWindowController implements Initializable {
             stage.show();
             return controller;
         } catch (IOException ioE) {
-            ioE.printStackTrace();
-            System.out.println(ioE.getMessage());
+            log.warn(ioE.getMessage(), ioE);
             return null;
         }
     }
@@ -658,8 +661,7 @@ public class SpecAttrWindowController implements Initializable {
             controller = loader.getController();
             controller.pane = pane;
         } catch (IOException ioE) {
-            ioE.printStackTrace();
-            System.out.println(ioE.getMessage());
+            log.warn(ioE.getMessage(), ioE);
         }
 
         return controller;

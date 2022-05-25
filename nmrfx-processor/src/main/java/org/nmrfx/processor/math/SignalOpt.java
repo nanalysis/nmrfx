@@ -37,8 +37,12 @@ import org.apache.commons.math3.exception.DimensionMismatchException;
 import org.apache.commons.math3.exception.NotPositiveException;
 import org.apache.commons.math3.exception.NotStrictlyPositiveException;
 import org.apache.commons.math3.exception.TooManyEvaluationsException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class SignalOpt implements MultivariateFunction {
+
+    private static final Logger log = LoggerFactory.getLogger(SignalOpt.class);
 
     private final Complex[] values;
     private final Complex[] testVec;
@@ -312,17 +316,12 @@ public class SignalOpt implements MultivariateFunction {
 
         normalize(parameters, normValues);
 
-        PointValuePair result = null;
-        try {
-            result = optimizer.optimize(
-                    new CMAESOptimizer.PopulationSize(lambda),
-                    new CMAESOptimizer.Sigma(inputSigma), new MaxEval(2000000),
-                    new ObjectiveFunction(this), GoalType.MINIMIZE,
-                    new SimpleBounds(normBoundaries[0], normBoundaries[1]),
-                    new InitialGuess(normValues));
-        } catch (DimensionMismatchException | NotPositiveException | NotStrictlyPositiveException | TooManyEvaluationsException e) {
-            e.printStackTrace();
-        }
+        PointValuePair result = optimizer.optimize(
+                new CMAESOptimizer.PopulationSize(lambda),
+                new CMAESOptimizer.Sigma(inputSigma), new MaxEval(2000000),
+                new ObjectiveFunction(this), GoalType.MINIMIZE,
+                new SimpleBounds(normBoundaries[0], normBoundaries[1]),
+                new InitialGuess(normValues));
 
         System.out.println(optimizer.getIterations() + " " + result.getValue());
         return result;

@@ -31,11 +31,13 @@ import org.apache.commons.math3.optim.MaxEval;
 import org.apache.commons.math3.optim.PointValuePair;
 import org.apache.commons.math3.analysis.MultivariateFunction;
 import org.apache.commons.math3.geometry.euclidean.twod.Vector2D;
-import org.apache.commons.math3.geometry.euclidean.twod.Line;
 import org.nmrfx.structure.chemistry.OverlappingLines;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class SSLayoutXY implements MultivariateFunction {
 
+    private static final Logger log = LoggerFactory.getLogger(SSLayoutXY.class);
     private final int[][] interactions;
     private final int[] basePairs;
     private final int[] basePairs2;
@@ -238,7 +240,7 @@ public class SSLayoutXY implements MultivariateFunction {
                 }
             }
         } catch (ArrayIndexOutOfBoundsException aiE) {
-            aiE.printStackTrace();
+            log.warn(aiE.getMessage(), aiE);
             return;
         }
 
@@ -527,7 +529,7 @@ public class SSLayoutXY implements MultivariateFunction {
                     new SimpleBounds(boundaries[0], boundaries[1]),
                     new InitialGuess(guess));
         } catch (Exception e) {
-            e.printStackTrace();
+            log.warn(e.getMessage(), e);
         }
         System.out.println("done " + result);
         if (result != null) {
@@ -606,7 +608,7 @@ public class SSLayoutXY implements MultivariateFunction {
                     }
                 }
             } catch (ArrayIndexOutOfBoundsException aiE) {
-                aiE.printStackTrace();
+                log.warn(aiE.getMessage(), aiE);
                 return;
             }
         }

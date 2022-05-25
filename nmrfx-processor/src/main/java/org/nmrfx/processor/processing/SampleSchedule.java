@@ -28,9 +28,10 @@ import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.regex.Pattern;
-//import org.apache.commons.math3.random.RandomDataGenerator;
 import org.apache.commons.math3.random.Well19937c;
 import org.apache.commons.math3.util.MultidimensionalCounter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * A SampleSchedule specifies the sequence of increments or array elements used
@@ -55,6 +56,8 @@ import org.apache.commons.math3.util.MultidimensionalCounter;
  * @author bfetler
  */
 public class SampleSchedule {
+
+    private static final Logger log = LoggerFactory.getLogger(SampleSchedule.class);
 
     /**
      * Half of <i>PI</i> math constant.
@@ -529,7 +532,7 @@ public class SampleSchedule {
             }
             bw.flush();
         } catch (IOException e) {
-            e.printStackTrace();
+            log.warn(e.getMessage(), e);
         }
     }
 

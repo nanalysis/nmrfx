@@ -24,6 +24,9 @@ import org.nmrfx.processor.math.Vec;
 import static org.nmrfx.processor.operations.IstMatrix.genSrcTargetMap;
 import org.nmrfx.processor.processing.ProcessingException;
 import org.nmrfx.processor.processing.SampleSchedule;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
 import java.util.List;
 
@@ -32,6 +35,8 @@ import java.util.List;
  * @author Bruce Johnson
  */
 public class GRINSOp extends MatrixOperation {
+
+    private static final Logger log = LoggerFactory.getLogger(GRINSOp.class);
 
     /**
      * Noise level of dataset
@@ -118,7 +123,7 @@ public class GRINSOp extends MatrixOperation {
                 vector.set(i, real, imag);
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            log.warn(e.getMessage(), e);
             throw new ProcessingException(e.getLocalizedMessage());
         }
         //PyObject obj = interpreter.get("a");

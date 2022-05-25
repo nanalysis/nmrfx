@@ -109,19 +109,13 @@ public class CmaesRefinement extends Refinement implements MultivariateFunction 
             dihedrals.inputSigma[i] *= ranfact;
         }
 
-        PointValuePair result = null;
-
-        try {
-            result = optimizer.optimize(
-                    new CMAESOptimizer.PopulationSize(lambda),
-                    new CMAESOptimizer.Sigma(dihedrals.inputSigma),
-                    new MaxEval(2000000),
-                    new ObjectiveFunction(this), GoalType.MINIMIZE,
-                    new SimpleBounds(dihedrals.normBoundaries[0], dihedrals.normBoundaries[1]),
-                    new InitialGuess(dihedrals.normValues));
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        PointValuePair result = optimizer.optimize(
+                new CMAESOptimizer.PopulationSize(lambda),
+                new CMAESOptimizer.Sigma(dihedrals.inputSigma),
+                new MaxEval(2000000),
+                new ObjectiveFunction(this), GoalType.MINIMIZE,
+                new SimpleBounds(dihedrals.normBoundaries[0], dihedrals.normBoundaries[1]),
+                new InitialGuess(dihedrals.normValues));
 
         System.arraycopy(dihedrals.bestValues, 0, dihedrals.angleValues, 0, dihedrals.angleValues.length);
         putDihedrals();
@@ -169,17 +163,13 @@ public class CmaesRefinement extends Refinement implements MultivariateFunction 
 
         PointValuePair result = null;
 
-        try {
-            result = optimizer.optimize(
-                    new CMAESOptimizer.PopulationSize(lambda),
-                    new CMAESOptimizer.Sigma(sigmaValues),
-                    new MaxEval(2000000),
-                    new ObjectiveFunction(this), GoalType.MINIMIZE,
-                    new SimpleBounds(normBoundaries[0], normBoundaries[1]),
-                    new InitialGuess(normBoundaries[2]));
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        result = optimizer.optimize(
+                new CMAESOptimizer.PopulationSize(lambda),
+                new CMAESOptimizer.Sigma(sigmaValues),
+                new MaxEval(2000000),
+                new ObjectiveFunction(this), GoalType.MINIMIZE,
+                new SimpleBounds(normBoundaries[0], normBoundaries[1]),
+                new InitialGuess(normBoundaries[2]));
         updateWithLinkedValues(linkedValues[3]);
 
         molecule.genCoords(false, null);

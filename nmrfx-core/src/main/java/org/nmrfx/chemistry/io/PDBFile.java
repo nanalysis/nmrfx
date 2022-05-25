@@ -18,6 +18,8 @@
 package org.nmrfx.chemistry.io;
 
 import org.nmrfx.chemistry.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.vecmath.Vector3d;
 import java.io.*;
@@ -29,6 +31,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class PDBFile {
+
+    private static final Logger log = LoggerFactory.getLogger(PDBFile.class);
 
     static public boolean allowSequenceDiff = true;
     static private boolean iupacMode = true;
@@ -221,9 +225,7 @@ public class PDBFile {
         } catch (FileNotFoundException fnf) {
             throw new MoleculeIOException(fnf.getMessage());
         } catch (Exception e) {
-            System.err.println(e.getMessage());
-            e.printStackTrace();
-
+            log.warn(e.getMessage(), e);
             return molecule;
         }
     }
@@ -370,8 +372,7 @@ public class PDBFile {
             throw new MoleculeIOException(ioe.getMessage());
         }
         catch (Exception exc) {
-            System.err.println(exc.getMessage());
-            exc.printStackTrace();
+            log.warn(exc.getMessage(),exc);
             return -1;
         }
         return 0;
@@ -630,12 +631,9 @@ public class PDBFile {
             throw new MoleculeIOException(ioe.getMessage());
         }
         catch (MoleculeIOException psE) {
-            System.out.println("err " + psE.getMessage());
             throw psE;
         } catch (Exception exc) {
-            System.err.println(exc.getMessage());
-            exc.printStackTrace();
-
+            log.warn(exc.getMessage(), exc);
             return;
         }
         if (genCoords && !coordsGen) {
@@ -924,9 +922,7 @@ public class PDBFile {
             bf.close();
             return true;
         } catch (IOException e) {
-            System.err.println("Error reading \"" + fileName + "\"");
-            System.err.println(e.getMessage());
-            e.printStackTrace();
+            log.warn("Error reading \"{}\" : {}", fileName, e.getMessage(), e);
             return false;
         }
     }

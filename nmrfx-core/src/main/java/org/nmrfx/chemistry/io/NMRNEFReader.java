@@ -206,7 +206,7 @@ public class NMRNEFReader {
                             System.out.println("read residue " + chainCode + " " + seqCode + " from " + cifFile);
                             MMcifReader.readChemComp(cifFile, molecule, chainCode, seqCode);
                         } catch (Exception ex) {
-                            ex.printStackTrace();
+                            log.warn(ex.getMessage(), ex);
                         }
                     }
                 } catch (MoleculeIOException ex) {

@@ -68,12 +68,16 @@ import org.nmrfx.processor.gui.controls.ConsoleUtil;
 import org.nmrfx.utilities.RemoteDatasetAccess;
 import org.nmrfx.utilities.UnZipper;
 import org.nmrfx.utils.GUIUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
  * @author brucejohnson
  */
 public class DatasetBrowserController implements Initializable {
+
+    private static final Logger log = LoggerFactory.getLogger(DatasetBrowserController.class);
 
     private Stage stage;
     @FXML
@@ -155,8 +159,7 @@ public class DatasetBrowserController implements Initializable {
             stage.setTitle("Dataset Browser");
             stage.show();
         } catch (IOException ioE) {
-            ioE.printStackTrace();
-            System.out.println(ioE.getMessage());
+            log.warn(ioE.getMessage(), ioE);
         }
 
         return controller;

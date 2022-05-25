@@ -7,9 +7,12 @@ import java.text.DecimalFormat;
 
 import org.nmrfx.chemistry.*;
 import org.nmrfx.structure.chemistry.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class PropertyGenerator {
 
+    private static final Logger log = LoggerFactory.getLogger(PropertyGenerator.class);
     private static HashMap<String, HashMap<String, Double>> properties = null;
     private static HashMap<String, double[]> residueFactors = null;
     private static HashMap<String, Double> offsetTable;
@@ -549,7 +552,7 @@ public class PropertyGenerator {
                 valueMap.put("C1", 1.0);
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            log.warn(e.getMessage(), e);
             return false;
         }
         return true;
@@ -564,7 +567,7 @@ public class PropertyGenerator {
             valueMap.put("ARO" + suffix, getProperty("AROMATIC", residue));
             valueMap.put("DIS" + suffix, getProperty("DISULFIDE", residue));
         } catch (Exception e) {
-            e.printStackTrace();
+            log.warn(e.getMessage(), e);
             return false;
         }
         return true;
@@ -668,7 +671,7 @@ public class PropertyGenerator {
             }
             valueMap.put("methyl", methyl);
         } catch (Exception e) {
-            e.printStackTrace();
+            log.warn(e.getMessage(), e);
             return false;
         }
         return true;
@@ -767,7 +770,7 @@ public class PropertyGenerator {
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            log.warn(e.getMessage(), e);
         }
     }
 
@@ -935,7 +938,7 @@ public class PropertyGenerator {
             System.out.println("Attribute file not found.");
             System.exit(-1);
         } catch (Exception e) {
-            e.printStackTrace();
+            log.warn(e.getMessage(), e);
         }
         return null;
     }

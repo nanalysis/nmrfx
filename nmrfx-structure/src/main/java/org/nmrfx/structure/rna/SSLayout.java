@@ -25,9 +25,12 @@ import org.nmrfx.chemistry.Polymer;
 import org.nmrfx.chemistry.Residue;
 import org.nmrfx.chemistry.InvalidMoleculeException;
 import org.nmrfx.structure.chemistry.Molecule;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class SSLayout implements MultivariateFunction {
 
+    private static final Logger log = LoggerFactory.getLogger(SSLayout.class);
     private final int[][] interactions;
     private final int[] basePairs;
     private final int[] basePairs2;
@@ -289,8 +292,7 @@ public class SSLayout implements MultivariateFunction {
                 }
             }
         } catch (ArrayIndexOutOfBoundsException aiE) {
-            aiE.printStackTrace();
-            return;
+            log.warn(aiE.getMessage(), aiE);
         }
     }
 
@@ -383,8 +385,7 @@ public class SSLayout implements MultivariateFunction {
             }
 
         } catch (ArrayIndexOutOfBoundsException aiE) {
-            aiE.printStackTrace();
-            return;
+            log.warn(aiE.getMessage(), aiE);
         }
     }
 
@@ -818,16 +819,12 @@ public class SSLayout implements MultivariateFunction {
                         DEFAULT_RANDOMGENERATOR, true,
                         new SimpleValueChecker(100 * Precision.EPSILON, 100 * Precision.SAFE_MIN));
 
-                try {
-                    result = optimizer.optimize(
-                            new CMAESOptimizer.PopulationSize(lambda),
-                            new CMAESOptimizer.Sigma(lSigma), new MaxEval(2000000),
-                            new ObjectiveFunction(this), GoalType.MINIMIZE,
-                            new SimpleBounds(lboundaries[0], lboundaries[1]),
-                            new InitialGuess(lguess));
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
+                result = optimizer.optimize(
+                        new CMAESOptimizer.PopulationSize(lambda),
+                        new CMAESOptimizer.Sigma(lSigma), new MaxEval(2000000),
+                        new ObjectiveFunction(this), GoalType.MINIMIZE,
+                        new SimpleBounds(lboundaries[0], lboundaries[1]),
+                        new InitialGuess(lguess));
                 System.err.println(limit + " " + optimizer.getIterations() + " " + result.getValue());
                 //dumpAngles(result.getPoint());
                 System.arraycopy(result.getPoint(), 0, guess, 0, result.getPoint().length);
@@ -899,7 +896,7 @@ public class SSLayout implements MultivariateFunction {
                     }
                 }
             } catch (ArrayIndexOutOfBoundsException aiE) {
-                aiE.printStackTrace();
+                log.warn(aiE.getMessage(), aiE);
                 return;
             }
         } 
@@ -932,7 +929,7 @@ public class SSLayout implements MultivariateFunction {
                     }
                 }
             } catch (ArrayIndexOutOfBoundsException aiE) {
-                aiE.printStackTrace();
+                log.warn(aiE.getMessage(), aiE);
                 break;
             }
         }

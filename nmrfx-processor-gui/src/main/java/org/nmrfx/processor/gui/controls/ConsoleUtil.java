@@ -29,27 +29,23 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import javafx.application.Platform;
-import javafx.event.EventHandler;
 import javafx.scene.input.Clipboard;
 import javafx.scene.input.ClipboardContent;
-import javafx.scene.input.KeyCode;
-import static javafx.scene.input.KeyCode.ENTER;
-import static javafx.scene.input.KeyCode.S;
-import javafx.scene.input.KeyCombination;
-import static javafx.scene.input.KeyCombination.CONTROL_DOWN;
 import javafx.scene.input.KeyEvent;
 import org.fxmisc.richtext.CodeArea;
 import org.fxmisc.richtext.model.Paragraph;
-import static org.fxmisc.wellbehaved.event.EventPattern.keyPressed;
-import static org.fxmisc.wellbehaved.event.EventPattern.keyTyped;
 import org.python.util.InteractiveConsole;
 import org.python.util.InteractiveInterpreter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
  * @author brucejohnson
  */
 public class ConsoleUtil {
+
+    private static final Logger log = LoggerFactory.getLogger(ConsoleUtil.class);
 
     static Clipboard clipBoard = Clipboard.getSystemClipboard();
 
@@ -185,9 +181,7 @@ public class ConsoleUtil {
             try {
                 boolean more = interpreter.runsource(command);
             } catch (Exception e) {
-                System.out.println("err " + e.getMessage());
-                e.printStackTrace();
-                // outputArea.appendText(e.getMessage());
+                log.warn(e.getMessage(), e);
             }
         }
         prompt();
