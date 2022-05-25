@@ -98,6 +98,9 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
         var moleculeButton = new SplitMenuButton();
         moleculeButton.setText("Molecule");
         moleculeButton.setOnAction(e -> addMolecule());
+        MenuItem delCanvasMolMenuItem = new MenuItem("Remove Molecule");
+        delCanvasMolMenuItem.setOnAction(e -> removeMolecule());
+        moleculeButton.getItems().add(delCanvasMolMenuItem);
 
         statusBar.addToolBarButtons(regionButton, peakButton, wizardButton, moleculeButton);
     }
