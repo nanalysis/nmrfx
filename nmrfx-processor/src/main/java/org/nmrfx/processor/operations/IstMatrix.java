@@ -23,8 +23,6 @@ import org.nmrfx.datasets.MatrixType;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.processing.ProcessingException;
 import org.nmrfx.processor.processing.SampleSchedule;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.ArrayList;
@@ -34,8 +32,6 @@ import java.util.ArrayList;
  * @author bfetler
  */
 public class IstMatrix extends MatrixOperation {
-
-    private static final Logger log = LoggerFactory.getLogger(IstMatrix.class);
 
     /**
      * Cutoff threshold as a fraction of maximum height : e.g. 0.98.
@@ -122,7 +118,6 @@ public class IstMatrix extends MatrixOperation {
                 vector.set(i, real, imag);
             }
         } catch (Exception e) {
-            log.warn(e.getMessage(), e);
             throw new ProcessingException(e.getLocalizedMessage());
         }
         //PyObject obj = interpreter.get("a");

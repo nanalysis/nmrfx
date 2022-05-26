@@ -33,17 +33,9 @@ import org.apache.commons.math3.optim.MaxEval;
 import org.apache.commons.math3.util.FastMath;
 import org.apache.commons.math3.optim.PointValuePair;
 import org.apache.commons.math3.analysis.MultivariateFunction;
-import org.apache.commons.math3.exception.DimensionMismatchException;
-import org.apache.commons.math3.exception.NotPositiveException;
-import org.apache.commons.math3.exception.NotStrictlyPositiveException;
-import org.apache.commons.math3.exception.TooManyEvaluationsException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
 
 public class SignalOpt implements MultivariateFunction {
-
-    private static final Logger log = LoggerFactory.getLogger(SignalOpt.class);
-
     private final Complex[] values;
     private final Complex[] testVec;
     private final int vecSize;

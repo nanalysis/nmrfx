@@ -29,8 +29,6 @@ import org.nmrfx.processor.math.NESTAMath;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.processing.ProcessingException;
 import org.nmrfx.processor.processing.SampleSchedule;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -40,8 +38,6 @@ import java.util.ArrayList;
  * @author Bruce Johnson
  */
 public class NESTANMR extends MatrixOperation {
-
-    private static final Logger log = LoggerFactory.getLogger(NESTANMR.class);
 
     /**
      * Number of outer iterations (continuations) to iterate over : e.g. 10.
@@ -160,7 +156,6 @@ public class NESTANMR extends MatrixOperation {
             NESTAMath nesta = new NESTAMath(matrixND, zeroList, outerIterations, innerIterations, tolFinal, muFinal, phase, zeroAtStart, threshold, logFile);
             nesta.doNESTA();
         } catch (Exception e) {
-            log.warn(e.getMessage(), e);
             throw new ProcessingException(e.getLocalizedMessage());
 
         }

@@ -1532,7 +1532,6 @@ public class Processor {
                 try {
                     future.get();
                 } catch (InterruptedException | ExecutionException ex) {
-                    log.warn(ex.getMessage(), ex);
                     throw new ProcessingException(ex.getMessage());
                 }
             }
