@@ -335,7 +335,7 @@ public class RegionTool implements ControllerTool {
                         refresh();
                     });
                 } catch (NumberFormatException nfE) {
-
+                    log.warn("Unable to parse integral.", nfE);
                 }
 
             }
@@ -614,7 +614,7 @@ public class RegionTool implements ControllerTool {
             }
 
         } catch (NumberFormatException nfe) {
-
+            log.warn("Unable to parse text", nfe);
         }
 
     }

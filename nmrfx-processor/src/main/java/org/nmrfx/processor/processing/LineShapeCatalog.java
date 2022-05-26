@@ -19,13 +19,15 @@ import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.processor.datasets.vendor.NMRData;
 import org.nmrfx.processor.math.Vec;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
  * @author brucejohnson
  */
 public class LineShapeCatalog {
-
+    private static final Logger log = LoggerFactory.getLogger(LineShapeCatalog.class);
     int[] dimSizes;
     double[] sw;
     double[][] lineWidths;
@@ -237,6 +239,7 @@ public class LineShapeCatalog {
                 }
                 printWriter.close();
             } catch (FileNotFoundException ex) {
+                log.warn("Unable to save sim FIDs", ex);
             }
         }
     }

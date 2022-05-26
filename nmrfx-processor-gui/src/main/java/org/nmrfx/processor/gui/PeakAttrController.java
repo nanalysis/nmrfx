@@ -246,6 +246,7 @@ public class PeakAttrController implements Initializable, PeakNavigable, PeakMen
                 peakListTypes = PeakPatternReader.loadYaml();
             }
         } catch (IOException e) {
+            log.warn(e.getMessage(), e);
         }
         if (peakListTypes != null) {
             for (PeakListType peakListType : peakListTypes.getTypes()) {
@@ -681,7 +682,7 @@ public class PeakAttrController implements Initializable, PeakNavigable, PeakMen
                         float value = Float.parseFloat(intensityField.getText().trim());
                         currentPeak.setIntensity(value);
                     } catch (NumberFormatException nfE) {
-
+                        log.warn("Unable to parse intensity field.", nfE);
                     }
 
                 }
@@ -694,7 +695,7 @@ public class PeakAttrController implements Initializable, PeakNavigable, PeakMen
                         float value = Float.parseFloat(volumeField.getText().trim());
                         currentPeak.setVolume1(value);
                     } catch (NumberFormatException nfE) {
-
+                        log.warn("Unable to parse volume field.", nfE);
                     }
 
                 }
@@ -1037,7 +1038,7 @@ public class PeakAttrController implements Initializable, PeakNavigable, PeakMen
                     try {
                         sfH = Double.parseDouble(peakListParFields[0][1].getText());
                     } catch (NumberFormatException nfE) {
-
+                        log.warn("Unable to parse sfH.", nfE);
                     }
                     updateOptions();
                 }

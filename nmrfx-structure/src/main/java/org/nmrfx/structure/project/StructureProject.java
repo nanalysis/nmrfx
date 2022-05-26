@@ -38,6 +38,8 @@ import org.nmrfx.chemistry.io.PDBFile;
 import org.nmrfx.chemistry.io.PPMFiles;
 import org.nmrfx.chemistry.io.SDFile;
 import org.nmrfx.chemistry.io.Sequence;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -45,6 +47,7 @@ import org.nmrfx.chemistry.io.Sequence;
  */
 public class StructureProject extends ProjectBase {
 
+    private static final Logger log = LoggerFactory.getLogger(StructureProject.class);
     public final Map<String, Molecule> molecules = new HashMap<>();
     public Molecule activeMol;
     static StructureProject activeProject = null;
@@ -200,6 +203,7 @@ public class StructureProject extends ProjectBase {
 
                 }
             } catch (DirectoryIteratorException | IOException ex) {
+                log.warn(ex.getMessage(), ex);
             }
         }
         if (sstructPath != null) {
@@ -279,6 +283,7 @@ public class StructureProject extends ProjectBase {
                                     SDFile.read(pathName, null, mol, baseName);
                                 }
                             } catch (MoleculeIOException molE) {
+                                log.warn(molE.getMessage(), molE);
                             }
 
                         });

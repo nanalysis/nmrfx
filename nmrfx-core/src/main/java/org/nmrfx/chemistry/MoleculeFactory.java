@@ -69,6 +69,7 @@ public class MoleculeFactory {
                 try {
                     constructor = molClass.getDeclaredConstructor(parameterType);
                 } catch (NoSuchMethodException e) {
+                    log.warn(e.getMessage(), e);
                 }
             }
         }
@@ -77,6 +78,7 @@ public class MoleculeFactory {
             try {
                 moleculeBase = (MoleculeBase) constructor.newInstance(molName);
             } catch (IllegalAccessException | InstantiationException | InvocationTargetException e) {
+                log.warn(e.getMessage(), e);
             }
         }
         if (moleculeBase != null) {

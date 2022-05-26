@@ -1,5 +1,8 @@
 package org.nmrfx.utilities;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.io.FileNotFoundException;
 import java.io.File;
@@ -14,6 +17,7 @@ import java.util.zip.*;
 
 public class Zipper extends SimpleFileVisitor<Path> {
 
+    private static final Logger log = LoggerFactory.getLogger(Zipper.class);
     // Print information about
     // each type of file.
     final byte[] buffer;
@@ -40,6 +44,7 @@ public class Zipper extends SimpleFileVisitor<Path> {
         try {
             zos.close();
         } catch (IOException ioE) {
+            log.warn(ioE.getMessage());
         }
     }
 
@@ -54,6 +59,7 @@ public class Zipper extends SimpleFileVisitor<Path> {
             }
             zos.closeEntry();
         } catch (IOException ioE) {
+            log.warn(ioE.getMessage());
         }
     }
 
@@ -92,6 +98,7 @@ public class Zipper extends SimpleFileVisitor<Path> {
                 zos.putNextEntry(ze);
                 zos.closeEntry();
             } catch (IOException ioE) {
+                log.warn(ioE.getMessage(), ioE);
             }
         }
         return FileVisitResult.CONTINUE;

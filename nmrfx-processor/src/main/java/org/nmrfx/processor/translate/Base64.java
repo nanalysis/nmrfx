@@ -17,6 +17,9 @@
  */
 package org.nmrfx.processor.translate;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 
 /**
@@ -46,6 +49,7 @@ import java.io.IOException;
  */
 public class Base64 {
 
+    private static final Logger log = LoggerFactory.getLogger(Base64.class);
     /**
      * Specify encoding (value is <tt>true</tt>).
      */
@@ -241,28 +245,10 @@ public class Base64 {
 
             oos.writeObject(serializableObject);
         } // end try
-        catch (java.io.IOException e) {
-            e.printStackTrace();
-
+        catch (IOException e) {
+            log.warn(e.getMessage(), e);
             return null;
         } // end catch
-        finally {
-            try {
-                oos.close();
-            } catch (Exception e) {
-            }
-
-            try {
-                b64os.close();
-            } catch (Exception e) {
-            }
-
-            try {
-                baos.close();
-            } catch (Exception e) {
-            }
-        }
-        // end finally
 
         return new String(baos.toByteArray());
     }
@@ -523,26 +509,9 @@ public class Base64 {
 
             return ois.readObject();
         } // end try
-        catch (java.io.IOException e) {
-            e.printStackTrace();
-
+        catch (IOException | ClassNotFoundException e) {
+            log.warn(e.getMessage(), e);
             return null;
-        } // end catch
-        catch (java.lang.ClassNotFoundException e) {
-            e.printStackTrace();
-
-            return null;
-        } // end catch
-        finally {
-            try {
-                bais.close();
-            } catch (Exception e) {
-            }
-
-            try {
-                ois.close();
-            } catch (Exception e) {
-            }
         }
         // end finally
     }

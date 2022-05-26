@@ -39,6 +39,8 @@ import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.operations.AutoPhase;
 import org.nmrfx.processor.operations.IDBaseline2;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -46,6 +48,7 @@ import org.nmrfx.processor.operations.IDBaseline2;
  */
 public class Phaser {
 
+    private static final Logger log = LoggerFactory.getLogger(Phaser.class);
     String delImagString = "False";
     FXMLController controller;
     Slider[] sliders = new Slider[2];
@@ -427,6 +430,7 @@ public class Phaser {
                             delImagString = "False";
                         }
                     } catch (NumberFormatException nfE) {
+                        log.warn("Unable to parse phase.", nfE);
                     }
                 }
             }

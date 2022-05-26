@@ -26,6 +26,8 @@ import org.apache.commons.math3.complex.Complex;
 import org.apache.commons.math3.complex.ComplexUtils;
 import org.apache.commons.math3.util.FastMath;
 import org.apache.commons.math3.util.MultidimensionalCounter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -33,6 +35,7 @@ import org.apache.commons.math3.util.MultidimensionalCounter;
  */
 public class GRINS {
 
+    private static final Logger log = LoggerFactory.getLogger(GRINS.class);
     final MatrixND matrix;
     final double noise;
     final boolean preserve;
@@ -307,6 +310,7 @@ public class GRINS {
             try {
                 fileWriter.write(outLine);
             } catch (IOException ex) {
+                log.warn(ex.getMessage(), ex);
             }
         }
 

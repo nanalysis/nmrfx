@@ -2023,6 +2023,7 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
                     try {
                         r.measure(theFile);
                     } catch (IOException ioE) {
+                        log.warn("Error encountered moving region.", ioE);
                     }
                     break;
                 case 2:

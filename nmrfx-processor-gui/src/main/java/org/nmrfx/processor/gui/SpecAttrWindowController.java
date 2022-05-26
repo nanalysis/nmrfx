@@ -1447,6 +1447,7 @@ public class SpecAttrWindowController implements Initializable {
                 charts.forEach(PolyChart::layoutPlotChildren);
             }
         } catch (ParseException parseE) {
+            log.warn(parseE.getMessage(), parseE);
         }
     }
 

@@ -65,6 +65,7 @@ public class GradientRefinement extends Refinement {
                             try {
                                 trajectoryWriter.writeStructure();
                             } catch (MissingCoordinatesException ex) {
+                                log.warn(ex.getMessage(), ex);
                             }
                         }
                         if (progressUpdater != null) {

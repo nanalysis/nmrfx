@@ -53,6 +53,8 @@ import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.processor.gui.spectra.KeyBindings;
 import org.nmrfx.processor.optimization.BipartiteMatcher;
 import org.nmrfx.processor.project.Project;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -60,6 +62,7 @@ import org.nmrfx.processor.project.Project;
  */
 public class PeakSlider implements ControllerTool {
 
+    private static final Logger log = LoggerFactory.getLogger(PeakSlider.class);
     ToolBar sliderToolBar;
     FXMLController controller;
     Consumer closeAction;
@@ -365,7 +368,7 @@ public class PeakSlider implements ControllerTool {
                 peak.setFrozen(true, useAllConditions);
                 PeakList.notifyFreezeListeners(peak, true);
             } catch (IOException ioE) {
-
+                log.warn(ioE.getMessage(), ioE);
             }
         }
     }

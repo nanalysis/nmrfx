@@ -53,6 +53,8 @@ import javafx.scene.text.TextAlignment;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.math.VecBase;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -60,6 +62,7 @@ import org.nmrfx.processor.gui.spectra.DatasetAttributes;
  */
 public class SpectrumMeasureBar {
 
+    private static final Logger log = LoggerFactory.getLogger(SpectrumMeasureBar.class);
     static final DecimalFormat formatter = new DecimalFormat();
 
     static {
@@ -433,7 +436,7 @@ public class SpectrumMeasureBar {
                 sdevField.setText(String.format("%.6f", sdevMin));
                 sDev = sdevMin;
             } catch (IOException ioE) {
-
+                log.warn(ioE.getMessage(), ioE);
             }
         }
         return sDev;

@@ -13,11 +13,15 @@ import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.controls.GridPaneCanvas;
 import org.nmrfx.processor.gui.spectra.WindowIO;
 import org.nmrfx.project.ProjectBase;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.file.Path;
 
 public class SpectrumMenuActions extends MenuActions {
+
+    private static final Logger log = LoggerFactory.getLogger(SpectrumMenuActions.class);
     private static WindowIO windowIO = null;
 
     public SpectrumMenuActions(AnalystApp app, Menu menu) {
@@ -95,6 +99,7 @@ public class SpectrumMenuActions extends MenuActions {
                 }
             }
         } catch (IOException ex) {
+            log.warn(ex.getMessage(), ex);
         }
     }
 

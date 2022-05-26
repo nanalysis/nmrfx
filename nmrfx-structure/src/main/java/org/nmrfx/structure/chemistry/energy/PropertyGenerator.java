@@ -804,12 +804,11 @@ public class PropertyGenerator {
                     resName = molecule.findAtom(polyName + ":" + Integer.toString(kRes) + ".N").getEntity().name;
                     offsetValue = getOffset(aName, resName, -offset);
                 } catch (Exception e) {
+                    log.warn(e.getMessage(), e);
                 }
-                //System.out.print(resName + " " + offsetValue + " ");
                 corr += offsetValue;
             }
         }
-        //System.out.println(corr);
         return corr;
     }
 

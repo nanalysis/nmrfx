@@ -205,6 +205,7 @@ public class DrawSpectrum {
         try {
             finished = drawNow(g2I);
         } catch (IOException ex) {
+            log.warn(ex.getMessage(), ex);
         }
         lastPlotTime = 0;
 
@@ -566,7 +567,7 @@ public class DrawSpectrum {
             gC.clip();
             gC.beginPath();
         } catch (Exception ex) {
-
+            log.warn(ex.getMessage(), ex);
         }
 
     }

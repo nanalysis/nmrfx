@@ -152,6 +152,7 @@ public class MolSceneController implements Initializable, MolSelectionListener, 
                     selectAction(selectField.getText());
                     selectField.clear();
                 } catch (InvalidMoleculeException ex) {
+                    log.warn(ex.getMessage(), ex);
                 }
             }
         });

@@ -337,6 +337,7 @@ public final class NMRDataUtil {
                 }
             }
         } catch (IOException ex) {
+            log.warn(ex.getMessage(), ex);
         }
         return lastFile;
     }
@@ -359,6 +360,7 @@ public final class NMRDataUtil {
                 datasetName = processed.get(0).getFileName().toString();
             }
         } catch (IOException ex) {
+            log.warn(ex.getMessage(), ex);
         }
         return datasetName;
 
@@ -382,6 +384,7 @@ public final class NMRDataUtil {
                         items.add(rData);
                     }
                 } catch (IOException ex) {
+                    log.warn(ex.getMessage(), ex);
                 }
             }
             if (savePath != null) {

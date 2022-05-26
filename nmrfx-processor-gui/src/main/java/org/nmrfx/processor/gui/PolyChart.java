@@ -2234,7 +2234,7 @@ public class PolyChart extends Region implements PeakListener {
             highlightChart();
 
         } catch (GraphicsIOException ioE) {
-
+            log.warn(ioE.getMessage(), ioE);
         }
     }
 
@@ -2386,7 +2386,7 @@ public class PolyChart extends Region implements PeakListener {
                 }
 
             } catch (GraphicsIOException gIO) {
-
+                log.warn(gIO.getMessage(), gIO);
             }
         }
         for (DatasetAttributes datasetAttributes : datasetAttributesList) {
@@ -2553,6 +2553,7 @@ public class PolyChart extends Region implements PeakListener {
             try {
                 drawSpectrum.drawActiveRegion(gC, datasetAttr, r.getDatasetRegion());
             } catch (GraphicsIOException ex) {
+                log.warn(ex.getMessage(), ex);
             }
         });
     }
@@ -3153,7 +3154,7 @@ public class PolyChart extends Region implements PeakListener {
 
 //                peakGC.restore();
             } catch (Exception ioE) {
-
+                log.warn(ioE.getMessage(), ioE);
             }
         }
     }
@@ -3378,6 +3379,7 @@ public class PolyChart extends Region implements PeakListener {
                         try {
                             drawPeaks.drawLinkLines(peakListAttr, gC, peak, dim, false);
                         } catch (GraphicsIOException ex) {
+                            log.warn(ex.getMessage(), ex);
                         }
                     });
                 }
@@ -3391,6 +3393,7 @@ public class PolyChart extends Region implements PeakListener {
                         } catch (GraphicsIOException ex) {
                             System.out.println("draw peak exception " + ex.getMessage());
                         } catch (Exception ex2) {
+                            log.warn(ex2.getMessage(), ex2);
                         }
                     });
 
@@ -3419,6 +3422,7 @@ public class PolyChart extends Region implements PeakListener {
                 }
 
             } catch (GraphicsIOException gioE) {
+                log.warn(gioE.getMessage(), gioE);
             } finally {
                 gC.restore();
             }
@@ -3480,12 +3484,14 @@ public class PolyChart extends Region implements PeakListener {
                     try {
                         drawPeaks.drawPeak(peakListAttr, gC, peak, dim, offsets, true);
                     } catch (GraphicsIOException ex) {
+                        log.warn(ex.getMessage(), ex);
                     }
                     int nPeakDim = peak.peakList.nDim;
                     if (peak.getPeakList().isSlideable() && (nPeakDim > 1)) {
                         try {
                             drawPeaks.drawLinkLines(peakListAttr, gC, peak, dim, true);
                         } catch (GraphicsIOException ex) {
+                            log.warn(ex.getMessage(), ex);
                         }
                     }
                 });
@@ -3495,6 +3501,7 @@ public class PolyChart extends Region implements PeakListener {
                     try {
                         drawPeaks.drawMultiplet(peakListAttr, gC, multiplet, dim, offsets, true, line);
                     } catch (GraphicsIOException ex) {
+                        log.warn(ex.getMessage(), ex);
                     }
                 });
             }
@@ -3568,6 +3575,7 @@ public class PolyChart extends Region implements PeakListener {
                     gC.restore();
                 }
             } catch (Exception gioE) {
+                log.warn(gioE.getMessage(), gioE);
             } finally {
                 gC.restore();
             }
@@ -3802,6 +3810,7 @@ public class PolyChart extends Region implements PeakListener {
                 updateDatasets(datasetNames);
                 refresh();
             } catch (IOException ex) {
+                log.warn(ex.getMessage(), ex);
             }
         }
 
@@ -4259,7 +4268,7 @@ public class PolyChart extends Region implements PeakListener {
         try {
             rData = dataset.analyzeRegion(pt, cpt, regionWidth, dim);
         } catch (IOException ioE) {
-
+            log.warn(ioE.getMessage(), ioE);
         }
         return rData;
     }

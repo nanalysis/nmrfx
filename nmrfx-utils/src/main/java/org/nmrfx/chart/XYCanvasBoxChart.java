@@ -28,6 +28,8 @@ import javafx.scene.paint.Color;
 import org.nmrfx.graphicsio.GraphicsContextInterface;
 import org.nmrfx.graphicsio.GraphicsContextProxy;
 import org.nmrfx.graphicsio.GraphicsIOException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -35,6 +37,7 @@ import org.nmrfx.graphicsio.GraphicsIOException;
  */
 public class XYCanvasBoxChart extends XYCanvasChart {
 
+    private static final Logger log = LoggerFactory.getLogger(XYCanvasBoxChart.class);
     Orientation orientation = Orientation.VERTICAL;
 
     public static XYCanvasBoxChart buildChart(Canvas canvas) {
@@ -102,6 +105,7 @@ public class XYCanvasBoxChart extends XYCanvasChart {
             gC.rect(xPos + leftBorder, yPos + topBorder, xAxis.getWidth(), yAxis.getHeight());
 
         } catch (GraphicsIOException ioE) {
+            log.warn(ioE.getMessage(), ioE);
         }
         gC.clip();
         gC.beginPath();

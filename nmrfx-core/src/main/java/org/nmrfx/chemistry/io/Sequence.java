@@ -34,6 +34,8 @@ import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import org.nmrfx.chemistry.AtomEnergyProp;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -41,6 +43,7 @@ import org.nmrfx.chemistry.AtomEnergyProp;
  */
 public class Sequence {
 
+    private static final Logger log = LoggerFactory.getLogger(Sequence.class);
     private Atom connectAtom = null;
     private Bond connectBond = null;
     private Atom connectBranch = null;
@@ -439,6 +442,7 @@ public class Sequence {
                     fieldArray.add(fields);
                 }
             } catch (IOException ioe) {
+                log.warn(ioe.getMessage(), ioe);
             }
         }
         return fieldArray;
@@ -536,6 +540,7 @@ public class Sequence {
         }  catch (FileNotFoundException ioe) {
             throw new MoleculeIOException(ioe.getMessage());
         } catch (IOException ioE) {
+            log.warn(ioE.getMessage(), ioE);
         }
 
         String parentDir = file.getParent();
@@ -751,6 +756,7 @@ public class Sequence {
                     iRes = String.valueOf(nRes);
                 }
             } catch (NumberFormatException nfE) {
+                log.warn(nfE.getMessage(), nfE);
             }
         }
         for (Polymer cpolymer : polymers) {

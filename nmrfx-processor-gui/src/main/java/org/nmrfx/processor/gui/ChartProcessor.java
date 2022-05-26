@@ -1124,6 +1124,7 @@ public class ChartProcessor {
                         }
                         mapToDataset[dimNum] = -1;
                     } catch (NumberFormatException nFE) {
+                        log.warn("Unable to parse dimension number.", nFE);
                     }
                     if (!processorController.refManager.getSkip(parDim)) {
                         if (dimMode.equals("D") && (dimNum != -1)) {

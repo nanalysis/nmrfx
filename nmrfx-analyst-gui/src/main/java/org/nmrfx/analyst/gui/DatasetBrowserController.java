@@ -330,6 +330,7 @@ public class DatasetBrowserController implements Initializable {
                 RemoteDataset.loadListFromFile(jsonPath.toFile());
                 items.addAll(RemoteDataset.getDatasets());
             } catch (IOException ex) {
+                log.warn(ex.getMessage(), ex);
             }
         }
         tableView.setItems(items);
@@ -404,6 +405,7 @@ public class DatasetBrowserController implements Initializable {
                 RemoteDataset.loadListFromFile(localFile);
                 items.addAll(RemoteDataset.getDatasets());
             } catch (IOException ex) {
+                log.warn(ex.getMessage(), ex);
             }
             scanDirectory(RemoteDataset.getDatasets());
         }

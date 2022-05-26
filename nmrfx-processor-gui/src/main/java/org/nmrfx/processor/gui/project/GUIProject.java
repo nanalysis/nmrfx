@@ -259,6 +259,7 @@ public class GUIProject extends ProjectBase {
 
                 }
             } catch (DirectoryIteratorException | IOException ex) {
+                log.warn(ex.getMessage(), ex);
             }
         }
         if (sstructPath != null) {
@@ -338,6 +339,7 @@ public class GUIProject extends ProjectBase {
                                     SDFile.read(pathName, null, mol, baseName);
                                 }
                             } catch (MoleculeIOException molE) {
+                                log.warn(molE.getMessage(), molE);
                             }
 
                         });

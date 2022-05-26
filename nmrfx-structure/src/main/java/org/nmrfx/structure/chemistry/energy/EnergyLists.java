@@ -262,6 +262,7 @@ public class EnergyLists {
                 predictor.predictRNAWithDistances(polymer, 0, 0, true);
                 // predictor.predictRNAWithRingCurrent(polymer, 0, 0);
             } catch (InvalidMoleculeException imE) {
+                log.warn(imE.getMessage(), imE);
             }
         }
     }
@@ -506,7 +507,7 @@ public class EnergyLists {
                 out = new PrintStream(fileName);
             }
         } catch (IOException ioE) {
-
+            log.warn(ioE.getMessage(), ioE);
         }
 
         OutputStream outStream = new BufferedOutputStream(out);

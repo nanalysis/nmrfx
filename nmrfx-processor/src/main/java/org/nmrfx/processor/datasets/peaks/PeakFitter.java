@@ -511,6 +511,7 @@ public class PeakFitter {
                 try {
                     peakFit.optimizeCMAES(nSteps);
                 } catch (TooManyEvaluationsException tmE) {
+                    log.warn(tmE.getMessage(), tmE);
                 } catch (Exception ex) {
                     log.error(ex.getMessage(), ex);
                 }

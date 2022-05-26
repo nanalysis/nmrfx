@@ -813,7 +813,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
                     runTime.exec(cmd);
                 }
             } catch (IOException ioE) {
-
+                log.warn(ioE.getMessage(), ioE);
             }
         }
     }
@@ -1127,12 +1127,12 @@ public class FXMLController implements  Initializable, PeakNavigable {
                             end = Integer.parseInt(value);
                         }
                     } catch (NumberFormatException nfE) {
+                        log.warn("Unable to parse region.", nfE);
                     }
                 }
             }
         }
-        int[] region = {start, end};
-        return region;
+        return new int[]{start, end};
     }
 
     protected ArrayList<Double> getBaselineRegions(String vecDimName) {

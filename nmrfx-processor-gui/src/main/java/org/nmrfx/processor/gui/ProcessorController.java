@@ -1093,7 +1093,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
                     refManager.setupItems(vecDim - 1);
 
                 } catch (NumberFormatException nfE) {
-
+                    log.warn("Unable to parse vector dimension.", nfE);
                 }
             }
         };

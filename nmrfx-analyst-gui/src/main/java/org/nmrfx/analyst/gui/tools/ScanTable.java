@@ -57,6 +57,8 @@ import org.nmrfx.processor.gui.controls.FileTableItem;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.utils.GUIUtils;
 import org.python.util.PythonInterpreter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.nio.charset.Charset;
@@ -71,6 +73,8 @@ import java.util.*;
  * @author Bruce Johnson
  */
 public class ScanTable {
+
+    private static final Logger log = LoggerFactory.getLogger(ScanTable.class);
 
     ScannerTool scannerTool;
     TableView<FileTableItem> tableView;
@@ -330,6 +334,7 @@ public class ScanTable {
             fileListItems.clear();
             loadScanFiles(nmrFiles);
         } catch (Exception e) {
+            log.warn(e.getMessage(), e);
         } finally {
             processingTable = false;
         }
@@ -477,6 +482,7 @@ public class ScanTable {
             try {
                 nmrData = NMRDataUtil.getFID(filePath);
             } catch (IOException ioE) {
+                log.warn(ioE.getMessage(), ioE);
 
             }
             if (nmrData != null) {
@@ -679,7 +685,7 @@ public class ScanTable {
                     iLine++;
                 }
             } catch (IOException ioE) {
-
+                log.warn(ioE.getMessage(), ioE);
             }
             for (int i = 0; i < headers.length; i++) {
                 if (!notInteger[i]) {
@@ -719,6 +725,7 @@ public class ScanTable {
             scannerTool.miner.setDisable(!combineFileMode);
 
         } catch (NumberFormatException e) {
+            log.warn(e.getMessage(), e);
         } finally {
             processingTable = false;
         }
@@ -770,6 +777,7 @@ public class ScanTable {
                 writer.write(s, 0, s.length());
             }
         } catch (IOException x) {
+            log.warn(x.getMessage(), x);
         }
     }
 
@@ -790,6 +798,7 @@ public class ScanTable {
                                 maxColumn = columnNum;
                             }
                         } catch (NumberFormatException nfE) {
+                            log.warn("Unable to parse column number.", nfE);
                         }
                     }
                 }

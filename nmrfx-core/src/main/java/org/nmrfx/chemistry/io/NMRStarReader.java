@@ -536,6 +536,7 @@ public class NMRStarReader {
                 try {
                     molecule.genCoords(false);
                 } catch (IllegalArgumentException iAE) {
+                    log.warn(iAE.getMessage(), iAE);
                 }
                 List<String> tags = saveframe.getTags("_Assembly");
                 for (String tag : tags) {

@@ -443,6 +443,7 @@ public class ProjectBase {
                     }
                 }
             } catch (IOException | InvalidPeakException ioE) {
+                log.warn(ioE.getMessage(), ioE);
             }
         });
     }
