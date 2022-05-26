@@ -20,6 +20,7 @@ import java.nio.file.spi.FileTypeDetector;
  */
 public class PeakFileDetector extends FileTypeDetector {
     private static final Logger log = LoggerFactory.getLogger(PeakFileDetector.class);
+
     @Override
     public String probeContentType(Path path) throws IOException {
         String fileName = path.getFileName().toString();
