@@ -9,12 +9,7 @@ import static org.junit.Assert.*;
 public class PeakPatternReaderTest {
 
     @Test
-    public void loadYamlWithClass() {
-        var peakPatReader = new PeakPatternReader();
-        try {
-            peakPatReader.loadYaml();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+    public void loadYamlWithClass() throws IOException{
+        PeakPatternReader.loadYaml();
     }
 }
