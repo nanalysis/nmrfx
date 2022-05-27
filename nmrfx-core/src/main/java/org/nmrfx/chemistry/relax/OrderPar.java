@@ -403,19 +403,19 @@ public class OrderPar implements RelaxationValues {
 
     public void valuesToStarString(StringBuilder sBuilder) {
         String defaultValue = "      . ";
-        RelaxationValues.appendValueError(sBuilder, value, error,"%8.3f", defaultValue);
-        RelaxationValues.appendValueError(sBuilder, TauE, TauEerr,"%8.3f", defaultValue);
-        RelaxationValues.appendValueError(sBuilder, TauF, TauFerr,"%8.3f", defaultValue);
-        RelaxationValues.appendValueError(sBuilder, TauS, TauSerr,"%8.3f", defaultValue);
-        RelaxationValues.appendValueError(sBuilder, Rex, Rexerr,"%8.3f", defaultValue);
+        RelaxationValues.appendValueError(sBuilder, value, error," %8.3f", defaultValue);
+        RelaxationValues.appendValueError(sBuilder, TauE, TauEerr," %8.3f", defaultValue);
+        RelaxationValues.appendValueError(sBuilder, TauF, TauFerr," %8.3f", defaultValue);
+        RelaxationValues.appendValueError(sBuilder, TauS, TauSerr," %8.3f", defaultValue);
+        RelaxationValues.appendValueError(sBuilder, Rex, Rexerr," %8.3f", defaultValue);
         if (sumSqErr != null) {
-            sBuilder.append(String.format("%8.3f", sumSqErr));
+            sBuilder.append(String.format(" %8.3f", sumSqErr));
         } else {
             sBuilder.append(defaultValue);
         }
-        sBuilder.append(String.format("%8s",model));
-        RelaxationValues.appendValueError(sBuilder, Sf2, Sf2err,"%8.3f", defaultValue);
-        RelaxationValues.appendValueError(sBuilder, Ss2, Ss2err,"%8.3f", defaultValue);
+        sBuilder.append(String.format(" %8s",model));
+        RelaxationValues.appendValueError(sBuilder, Sf2, Sf2err," %8.3f", defaultValue);
+        RelaxationValues.appendValueError(sBuilder, Ss2, Ss2err," %8.3f", defaultValue);
         sBuilder.append(" . . . .  "); //sh2 sh2_er sn2 sn2_err
     }
 }
