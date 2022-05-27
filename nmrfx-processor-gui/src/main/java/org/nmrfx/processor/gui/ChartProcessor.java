@@ -24,7 +24,6 @@ import org.nmrfx.processor.datasets.DatasetType;
 import org.nmrfx.processor.datasets.vendor.NMRData;
 import org.nmrfx.processor.datasets.vendor.NMRDataUtil;
 import org.nmrfx.processor.datasets.vendor.nmrview.NMRViewData;
-import org.nmrfx.processor.datasets.vendor.rs2d.RS2DData;
 import org.nmrfx.processor.datasets.vendor.rs2d.RS2DProcUtil;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.processing.MultiVecCounter;
@@ -36,6 +35,8 @@ import org.nmrfx.utils.GUIUtils;
 import org.python.core.PyException;
 import org.python.core.PyObject;
 import org.python.util.InteractiveInterpreter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -51,6 +52,9 @@ import java.util.stream.Stream;
  * @author brucejohnson
  */
 public class ChartProcessor {
+
+    private static final Logger log = LoggerFactory.getLogger(ChartProcessor.class);
+
     public static final DatasetType DEFAULT_DATASET_TYPE = DatasetType.NMRFX;
 
     private SimpleObjectProperty nmrDataObj;
@@ -803,11 +807,19 @@ public class ChartProcessor {
 
     }
 
-    public void loadDefaultScriptIfPresent() {
+    /**
+     * Loads the default script if present.
+     * @return True if default script is loaded, false if it is not loaded.
+     */
+    public boolean loadDefaultScriptIfPresent() {
+        boolean scriptLoaded = false;
         File scriptFile = getDefaultScriptFile();
         if (scriptFile.exists() && scriptFile.canRead()) {
             processorController.openScript(scriptFile);
+            scriptLoaded = true;
+            log.info("Default script loaded: {}", scriptFile.getName());
         }
+        return scriptLoaded;
     }
 
     String buildScript() {
