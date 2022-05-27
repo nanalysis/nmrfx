@@ -29,6 +29,8 @@ import org.slf4j.LoggerFactory;
 import java.io.*;
 import java.util.*;
 
+import static java.util.Objects.requireNonNull;
+
 public class Dihedral {
     private static final Logger log = LoggerFactory.getLogger(Dihedral.class);
 
@@ -429,22 +431,18 @@ public class Dihedral {
         for (int iAtom = 0; iAtom < angleAtoms.size(); iAtom++) {
             Atom atom = angleAtoms.get(iAtom).daughterAtom;
             // temporarily set everything to use sigma, till we make sure counting is correct
-            if (atom == null) {
-                throw new IllegalStateException("daughter null " + angleAtoms.get(iAtom).daughterAtom.getFullName());
-            } else if (atom.parent == null) {
-                throw new IllegalStateException("parent null " + angleAtoms.get(iAtom).daughterAtom.getFullName());
+            requireNonNull(atom, "Encountered null daughter atom while setting boundaries.");
+            requireNonNull(atom.parent, "Encountered null parent atom while setting boundaries. " + atom.getFullName());
+            String parentName = atom.parent.getName();
+            double inputSigmaAtIndex;
+            if (parentNamesToScale.contains(parentName)) {
+                inputSigmaAtIndex = sigma / backBoneScale;
             } else {
-                String parentName = atom.parent.getName();
-                double inputSigmaAtIndex;
-                if (parentNamesToScale.contains(parentName)) {
-                    inputSigmaAtIndex = sigma / backBoneScale;
-                } else {
-                    inputSigmaAtIndex = sigma;
-                }
+                inputSigmaAtIndex = sigma;
+            }
+            inputSigma[aStart++] = inputSigmaAtIndex;
+            if (sinCosMode) {
                 inputSigma[aStart++] = inputSigmaAtIndex;
-                if (sinCosMode) {
-                    inputSigma[aStart++] = inputSigmaAtIndex;
-                }
             }
         }
 

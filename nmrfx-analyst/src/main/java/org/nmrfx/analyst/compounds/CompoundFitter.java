@@ -41,6 +41,9 @@ import org.nmrfx.processor.math.VecUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static java.util.Objects.requireNonNull;
+
+
 /**
  *
  * @author brucejohnson
@@ -1034,15 +1037,10 @@ public class CompoundFitter implements MultivariateFunction {
                 int startShift = (int) cR.shifts[iRegion];
                 int minShift = cR.minShifts[iRegion];
                 int maxShift = cR.maxShifts[iRegion];
-                FitResult fitResult = optimizeRegion(region, minShift, startShift, maxShift);
-                // if fitResult is null don't add it to best shifts
-                if (fitResult != null) {
-                    bestShifts.add(fitResult);
-                    cR.cMatch.setShift(cR.regions[iRegion], fitResult.getShift());
-                    cR.shifts[iRegion] = fitResult.getShift();
-                } else {
-                    log.warn("Unable to find a best fit while optimizing alignment.");
-                }
+                FitResult fitResult = requireNonNull(optimizeRegion(region, minShift, startShift, maxShift), "Unable to find a best fit while optimizing alignment.");
+                bestShifts.add(fitResult);
+                cR.cMatch.setShift(cR.regions[iRegion], fitResult.getShift());
+                cR.shifts[iRegion] = fitResult.getShift();
             }
         }
         return bestShifts;
