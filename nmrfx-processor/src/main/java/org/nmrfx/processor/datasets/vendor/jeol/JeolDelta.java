@@ -582,6 +582,8 @@ public class JeolDelta implements NMRData {
         }
 
         Number[] convertNumber(byte[] values) {
+            // Note: method was incomplete for conversion of other datatypes and no data available at the time to check
+            // functionality so incomplete code was removed in commit 832d627beb1f505f12cbaef5210c6d75c7cf8ef0
             return ByteConversion.convert(values, type, start, n);
         }
 
