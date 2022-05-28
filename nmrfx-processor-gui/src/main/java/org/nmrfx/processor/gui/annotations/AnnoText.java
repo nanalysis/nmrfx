@@ -60,6 +60,14 @@ public class AnnoText implements CanvasAnnotation {
         this.text = text;
     }
 
+    public void setText(String text) {
+        this.text = text;
+    }
+
+    public String getText() {
+        return text;
+    }
+
     public Font getFont() {
         return font;
     }
@@ -83,7 +91,7 @@ public class AnnoText implements CanvasAnnotation {
     }
 
     public boolean hit(double x, double y) {
-        boolean hit = bounds2D.contains(x, y);
+        boolean hit = (bounds2D != null) && bounds2D.contains(x, y);
         if (hit) {
             startX1 = x1;
             startX2 = x2;
@@ -147,6 +155,8 @@ public class AnnoText implements CanvasAnnotation {
             }
             bounds2D = new BoundingBox(xp1, topY, regionWidth, y - topY);
         } catch (Exception ignored) {
+            ignored.printStackTrace();
+            System.out.println(ignored.getMessage());
         }
     }
 
