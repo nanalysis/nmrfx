@@ -635,28 +635,6 @@ public class AnalystApp extends MainApp {
         controller.getBottomBox().getChildren().remove(multipletTool.getBox());
     }
 
-    public void showRegionTool() {
-        FXMLController controller = FXMLController.getActiveController();
-        if (!controller.containsTool(RegionTool.class)) {
-            VBox vBox = new VBox();
-            controller.getBottomBox().getChildren().add(vBox);
-            RegionTool regionTool = new RegionTool(controller, this::removeRegionTool);
-            regionTool.initialize(vBox);
-            controller.addTool(regionTool);
-        }
-    }
-
-    public RegionTool getRegionTool() {
-        FXMLController controller = FXMLController.getActiveController();
-        return (RegionTool) controller.getTool(RegionTool.class);
-    }
-
-    public void removeRegionTool(RegionTool regionTool) {
-        FXMLController controller = FXMLController.getActiveController();
-        controller.removeTool(RegionTool.class);
-        controller.getBottomBox().getChildren().remove(regionTool.getBox());
-    }
-
     public void showPeakPathTool() {
         FXMLController controller = FXMLController.getActiveController();
         if (!controller.containsTool(PathTool.class)) {

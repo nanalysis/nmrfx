@@ -63,6 +63,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
     LineShapeCatalog simVecs = null;
     Map<String, double[]> buffers = new HashMap<>();
     Dataset[] projections = null;
+    private Object analyzerObject = null;
 
     public int length() {
         int length = 1;
@@ -2419,5 +2420,13 @@ public double[] getPercentile(double p, int[][] pt, int[] dim) throws IOExceptio
         Dataset projDataset = new Dataset(projVec);
         projDataset.setLabel(0, getLabel(iDim));
         projections[iDim] = projDataset;
+    }
+
+    public Object getAnalyzerObject() {
+        return analyzerObject;
+    }
+
+    public void setAnalyzerObject(Object analyzerObject) {
+        this.analyzerObject = analyzerObject;
     }
 }

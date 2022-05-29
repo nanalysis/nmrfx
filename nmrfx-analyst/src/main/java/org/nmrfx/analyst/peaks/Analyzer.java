@@ -77,6 +77,18 @@ public class Analyzer {
         Solvents.loadYaml();
     }
 
+    public static Analyzer getAnalyzer(Dataset dataset) {
+        Object analyzerObject = dataset.getAnalyzerObject();
+        Analyzer analyzer;
+        if (analyzerObject == null) {
+            analyzer = new Analyzer(dataset);
+            dataset.setAnalyzerObject(analyzer);
+        } else {
+            analyzer = (Analyzer) analyzerObject;
+        }
+        return analyzer;
+    }
+
     public Dataset getDataset() {
         return dataset;
     }
@@ -745,23 +757,25 @@ public class Analyzer {
             regions.add(newRegion1);
             regions.add(newRegion2);
             integrate();
-            List<Peak> peaks = locatePeaks(peakList, limits, dim);
-            for (Peak peak : peaks) {
-                peak.setFlag(4, false);
-            }
-            if (!peaks.isEmpty()) {
-                Multiplet multiplet = peaks.get(0).getPeakDim(0).getMultiplet();
-                Optional<Multiplet> splitResult = multiplet.split(ppm);
-                setVolumesFromIntegrals();
-                PeakFitting peakFitting = new PeakFitting(dataset);
-                peakFitting.fitLinkedPeak(multiplet.getOrigin(), true);
-                peakFitting.jfitLinkedPeak(multiplet.getOrigin(), "all");
-                if (splitResult.isPresent()) {
-                    Multiplet newMultiplet = splitResult.get();
-                    peakFitting.fitLinkedPeak(newMultiplet.getOrigin(), true);
-                    peakFitting.jfitLinkedPeak(newMultiplet.getOrigin(), "all");
+            if (peakList != null) {
+                List<Peak> peaks = locatePeaks(peakList, limits, dim);
+                for (Peak peak : peaks) {
+                    peak.setFlag(4, false);
                 }
-                renumber();
+                if (!peaks.isEmpty()) {
+                    Multiplet multiplet = peaks.get(0).getPeakDim(0).getMultiplet();
+                    Optional<Multiplet> splitResult = multiplet.split(ppm);
+                    setVolumesFromIntegrals();
+                    PeakFitting peakFitting = new PeakFitting(dataset);
+                    peakFitting.fitLinkedPeak(multiplet.getOrigin(), true);
+                    peakFitting.jfitLinkedPeak(multiplet.getOrigin(), "all");
+                    if (splitResult.isPresent()) {
+                        Multiplet newMultiplet = splitResult.get();
+                        peakFitting.fitLinkedPeak(newMultiplet.getOrigin(), true);
+                        peakFitting.jfitLinkedPeak(newMultiplet.getOrigin(), "all");
+                    }
+                    renumber();
+                }
             }
         }
         return result;
