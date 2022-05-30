@@ -209,6 +209,10 @@ public class PDBFile {
                         molecule.addEntity(compound, coordSetName);
                     }
 
+                    if (compound == null) {
+                        throw new MoleculeIOException("didn't form compound");
+                    }
+
                     Atom atom = new Atom(atomParse);
                     atom.setEnergyProp();
                     atom.setPointValidity(structureNumber, true);
@@ -951,19 +955,10 @@ public class PDBFile {
         Map<String, Atom> atomMap = new HashMap<>();
         boolean calcBonds = true;
 
-        try (Reader reader = fileContent == null ? new BufferedReader(new FileReader(fileName)): new StringReader(fileContent);
-             LineNumberReader lineReader = new LineNumberReader(reader)) {
-            while (true) {
-                string = lineReader.readLine();
+        try (Reader reader = fileContent == null ? new FileReader(fileName): new StringReader(fileContent);
+             BufferedReader bufReader = new BufferedReader(reader)) {
+            while ((string = bufReader.readLine()) != null) {
 
-                if (string == null) {
-                    molecule.getAtomTypes();
-                    if (calcBonds) {
-                        System.out.println("calculating bonds");
-                        compound.calcAllBonds();
-                    }
-                    return compound;
-                }
                 if (string.startsWith("ATOM  ") || string.startsWith("HETATM")) {
                     PDBAtomParser atomParse = new PDBAtomParser(string);
                     if (compound == null) {
@@ -999,7 +994,7 @@ public class PDBFile {
                             Bond bond = new Bond(bondedAtom, bondeeAtom);
                             if (residue != null) {
                                 residue.addBond(bond);
-                            } else {
+                            } else if (compound != null) {
                                 compound.addBond(bond);
                             }
                             bondedAtom.addBond(bond);
@@ -1014,10 +1009,18 @@ public class PDBFile {
         catch (IOException ioe) {
             System.err.println(ioe.getMessage());
             molecule.getAtomTypes();
-            if (calcBonds) {
+            if (calcBonds && compound != null) {
                 compound.calcAllBonds();
             }
             return compound;
         }
+
+        molecule.getAtomTypes();
+        if (calcBonds && compound != null) {
+            System.out.println("calculating bonds");
+            compound.calcAllBonds();
+        }
+        return compound;
+
     }
 }

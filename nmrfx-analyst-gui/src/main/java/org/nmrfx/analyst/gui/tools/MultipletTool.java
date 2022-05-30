@@ -1040,7 +1040,7 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
 
     public void mergePeaks() {
         List<Peak> peaks = chart.getSelectedPeaks();
-        if (peaks.size() > 0) {
+        if (!peaks.isEmpty()) {
             activeMultiplet = Multiplets.mergePeaks(peaks);
             refresh();
         }

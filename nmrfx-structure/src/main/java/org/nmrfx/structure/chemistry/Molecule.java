@@ -803,38 +803,6 @@ public class Molecule extends MoleculeBase {
         }
     }
 
-    public void getAngles(final double[] dihedralAngles) {
-        Atom a1 = null;
-        Atom a2 = null;
-        Atom a4 = null;
-        int nAngles = 0;
-        updateAtomArray();
-
-        for (Atom a3 : atoms) {
-            for (int iBond = 0; iBond < a3.bonds.size(); iBond++) {
-                Bond bond = a3.bonds.get(iBond);
-                if (bond.begin == a3) {
-                    a4 = bond.end;
-                } else {
-                    a4 = bond.begin;
-                }
-                if (a4 == null) {
-                    continue;
-                }
-                if (a4 == a3.parent) {
-                    continue;
-                }
-                if (a4.parent != a3) {
-                    continue;
-                }
-                if (dihedralAngles == null) {
-                    dihedralAngles[nAngles] = a4.dihedralAngle;
-                }
-                nAngles++;
-            }
-        }
-    }
-
     public ArrayList<Atom> getAttachedHydrogens(Atom atom) {
         ArrayList<Atom> hydrogens = new ArrayList<Atom>();
         for (int iBond = 0; iBond < atom.bonds.size(); iBond++) {
