@@ -30,8 +30,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.nmrfx.structure.chemistry.Molecule;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class RNARotamer {
+
+    private static final Logger log = LoggerFactory.getLogger(RNARotamer.class);
 
     public static String SUITE_FORMAT = " %6.1f %5.1f";
     private static Atom[][] Atom;
@@ -417,23 +421,7 @@ public class RNARotamer {
     public static void add(String name, int n, double... angles) {
         ROTAMERS.put(name, new RNARotamer(name, n, angles));
     }
-
-    public static void validateDetail() {
-        for (RNARotamer rotamer : ROTAMERS.values()) {
-            ArrayList<RotamerScore> hits = getHits(rotamer.angles);
-            for (RotamerScore rScore : hits) {
-                System.out.println(rotamer.fraction + " " + rotamer.name + " " + rScore.toString());
-            }
-        }
-    }
-
-    public static void validate() {
-        for (RNARotamer rotamer : ROTAMERS.values()) {
-            RotamerScore rScore = getBest(rotamer.angles);
-            System.out.println(rotamer.fraction + " " + rotamer.name + " " + rScore.toString());
-        }
-    }
-
+    
     public static RotamerScore[] getNBest(Polymer polymer, int residueNum, int n) {
         return getNBest(polymer, residueNum, n, null);
     }
@@ -772,6 +760,9 @@ public class RNARotamer {
      * refinement
      */
     public static void setDihedrals(Residue residue, String suiteName, double sdev, boolean doFreeze) {
+        if (residue == null) {
+            throw new IllegalArgumentException("Residue is null. Unable to set Dihedrals.");
+        }
         RNARotamer rotamer = ROTAMERS.get(suiteName);
         int j = 0;
         sdev = Math.toRadians(sdev);

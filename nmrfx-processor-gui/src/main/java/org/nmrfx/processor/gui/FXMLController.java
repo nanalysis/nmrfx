@@ -604,30 +604,28 @@ public class FXMLController implements  Initializable, PeakNavigable {
 
     void addFID(NMRData nmrData, boolean clearOps, boolean reload) {
         isFID = true;
-        if (chartProcessor == null) {
-            if (processorController == null) {
-                processorController = ProcessorController.create(this, processorPane, getActiveChart());
-            }
+        if (chartProcessor == null && processorController == null) {
+            // The create method also creates and sets the chartProcessor variable
+            processorController = ProcessorController.create(this, processorPane, getActiveChart());
         }
-        chartProcessor.setData(nmrData, clearOps);
         if (processorController != null) {
+            chartProcessor.setData(nmrData, clearOps);
             processorController.viewingDataset(false);
             processorController.updateFileButton();
             processorController.show();
+            processorController.clearOperationList();
+            chartProcessor.clearAllOperations();
+            processorController.parseScript("");
+            if (!reload) {
+                getActiveChart().full();
+                getActiveChart().autoScale();
+                generateScriptAndParse(nmrData);
+            }
+            getActiveChart().layoutPlotChildren();
+            statusBar.setMode(0);
         } else {
-            System.out.println("Coudn't make controller");
+            log.warn("Unable to add FID because controller can not be created.");
         }
-        processorController.clearOperationList();
-        chartProcessor.clearAllOperations();
-        processorController.parseScript("");
-        if (!reload) {
-            getActiveChart().full();
-            getActiveChart().autoScale();
-            generateScriptAndParse(nmrData);
-        }
-        getActiveChart().layoutPlotChildren();
-        statusBar.setMode(0);
-
     }
 
     /**
@@ -1406,7 +1404,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
     public static FXMLController create() {
         return create(null);
     }
-
+    
     public static FXMLController create(Stage stage) {
         FXMLLoader loader = new FXMLLoader(FXMLController.class.getResource("/fxml/NMRScene.fxml"));
         FXMLController controller = null;
@@ -1429,8 +1427,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
             MainApp.registerStage(stage, controller);
             stage.show();
         } catch (IOException ioE) {
-            ioE.printStackTrace();
-            System.out.println(ioE.getMessage());
+            throw new IllegalStateException("Unable to create controller", ioE);
         }
         return controller;
     }

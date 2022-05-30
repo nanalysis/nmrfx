@@ -580,7 +580,7 @@ public class ChartProcessor {
         if (mapOpLists != null) {
             for (Map.Entry<String, List<String>> entry : mapOpLists.entrySet()) {
                 List<String> newList = new ArrayList<>();
-                if (entry != null) {
+                if (entry.getValue() != null) {
                     newList.addAll(entry.getValue());
                 }
                 copyOfMapOpLists.put(entry.getKey(), newList);
@@ -672,8 +672,6 @@ public class ChartProcessor {
     public void setVecDim(String dimName) {
         int value;
         boolean isDim;
-        //dimName = dimName.substring(1);
-        //System.out.println("set vdim " + vecDimName + " " + dimName + " " + processorController.isViewingDataset());
         try {
             value = Integer.parseInt(dimName.substring(1));
             value--;
@@ -690,14 +688,8 @@ public class ChartProcessor {
             if (mapOpLists.get(vecDimName) != null) {
                 oldList.addAll(mapOpLists.get(vecDimName));
             }
-            //execScriptList(false);
-        } else {
-            if (mapOpLists == null) {
-
-            }
-            if (mapOpLists.containsKey(dimName)) {
-                oldList.addAll(mapOpLists.get(dimName));
-            }
+        } else if (mapOpLists.containsKey(dimName)) {
+            oldList.addAll(mapOpLists.get(dimName));
         }
         getCombineMode();
         if (!processorController.isViewingDataset()) {

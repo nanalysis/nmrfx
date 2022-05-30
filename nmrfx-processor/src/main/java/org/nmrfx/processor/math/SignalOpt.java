@@ -33,10 +33,6 @@ import org.apache.commons.math3.optim.MaxEval;
 import org.apache.commons.math3.util.FastMath;
 import org.apache.commons.math3.optim.PointValuePair;
 import org.apache.commons.math3.analysis.MultivariateFunction;
-import org.apache.commons.math3.exception.DimensionMismatchException;
-import org.apache.commons.math3.exception.NotPositiveException;
-import org.apache.commons.math3.exception.NotStrictlyPositiveException;
-import org.apache.commons.math3.exception.TooManyEvaluationsException;
 
 public class SignalOpt implements MultivariateFunction {
 
@@ -312,17 +308,12 @@ public class SignalOpt implements MultivariateFunction {
 
         normalize(parameters, normValues);
 
-        PointValuePair result = null;
-        try {
-            result = optimizer.optimize(
-                    new CMAESOptimizer.PopulationSize(lambda),
-                    new CMAESOptimizer.Sigma(inputSigma), new MaxEval(2000000),
-                    new ObjectiveFunction(this), GoalType.MINIMIZE,
-                    new SimpleBounds(normBoundaries[0], normBoundaries[1]),
-                    new InitialGuess(normValues));
-        } catch (DimensionMismatchException | NotPositiveException | NotStrictlyPositiveException | TooManyEvaluationsException e) {
-            e.printStackTrace();
-        }
+        PointValuePair result = optimizer.optimize(
+                new CMAESOptimizer.PopulationSize(lambda),
+                new CMAESOptimizer.Sigma(inputSigma), new MaxEval(2000000),
+                new ObjectiveFunction(this), GoalType.MINIMIZE,
+                new SimpleBounds(normBoundaries[0], normBoundaries[1]),
+                new InitialGuess(normValues));
 
         System.out.println(optimizer.getIterations() + " " + result.getValue());
         return result;

@@ -299,7 +299,7 @@ public class PeakNavigator implements PeakListener {
                 PeakDim peakDimY = null;
                 if (!peakAttrs.isEmpty()) {
                     PeakListAttributes peakAttr = peakAttrs.get(0);
-                    int pdims[] = peakAttr.getPeakDim();
+                    int[] pdims = peakAttr.getPeakDim();
                     peakDimX = peak.getPeakDim(pdims[0]);
                     if (peak.getPeakDims().length > 1) {
                         peakDimY = peak.getPeakDim(pdims[1]);
@@ -311,17 +311,18 @@ public class PeakNavigator implements PeakListener {
                         peakDimY = peak.getPeakDim(dataAttr.getLabel(1));
                     }
                 }
-                atomXLabel.setText(peakDimX.getLabel());
+                if (peakDimX != null) {
+                    atomXLabel.setText(peakDimX.getLabel());
+                }
                 if (peakDimY != null) {
                     atomYLabel.setText(peakDimY.getLabel());
                 }
                 intensityLabel.setText(String.format("%.2f", peak.getIntensity()));
             } else {
-                if (showAtoms) {
-                    atomXLabel.setText("");
-                    atomYLabel.setText("");
-                    intensityLabel.setText("");
-                }
+                atomXLabel.setText("");
+                atomYLabel.setText("");
+                intensityLabel.setText("");
+
             }
         }
     }

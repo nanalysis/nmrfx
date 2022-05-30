@@ -207,16 +207,17 @@ public class Saveframe {
         return result;
     }
 
-    public String getOptionalLabelValue(String tagCategory, String tag) throws ParseException {
+    public String getOptionalLabelValue(String tagCategory, String tag) {
         Category category = getCategory(tagCategory);
-        String value = (String) category.get(tag);
+        String value = category.get(tag);
         String result = "";
         if (value != null) {
             result = value;
+            if (value.startsWith("$")) {
+                result = value.substring(1);
+            }
         }
-        if (value.startsWith("$")) {
-            result = value.substring(1);
-        }
+
         return result;
     }
 
