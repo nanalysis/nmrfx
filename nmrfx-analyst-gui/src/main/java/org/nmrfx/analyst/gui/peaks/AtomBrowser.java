@@ -52,6 +52,8 @@ import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.controls.GridPaneCanvas;
 import org.nmrfx.processor.project.Project;
 import org.nmrfx.structure.chemistry.Molecule;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -59,6 +61,7 @@ import org.nmrfx.structure.chemistry.Molecule;
  */
 public class AtomBrowser {
 
+    private static final Logger log = LoggerFactory.getLogger(AtomBrowser.class);
     ToolBar browserToolBar;
     FXMLController controller;
     Consumer closeAction;
@@ -300,7 +303,7 @@ public class AtomBrowser {
             rangeItem.min = min;
             rangeItem.max = max;
         } catch (NumberFormatException nfE) {
-
+            log.warn("Unable to update range value.", nfE);
         }
         updateRange();
     }
@@ -315,12 +318,8 @@ public class AtomBrowser {
             maxField.setText(String.format("%.1f", max));
 
             controller.getCharts().stream().forEach(chart -> {
-                try {
-                    chart.getAxis(rangeDim).setLowerBound(min);
-                    chart.getAxis(rangeDim).setUpperBound(max);
-                } catch (NumberFormatException nfE) {
-
-                }
+                chart.getAxis(rangeDim).setLowerBound(min);
+                chart.getAxis(rangeDim).setUpperBound(max);
             });
         }
     }
@@ -343,7 +342,7 @@ public class AtomBrowser {
                 chart.getAxis(rangeDim).setLowerBound(min);
                 chart.getAxis(rangeDim).setUpperBound(max);
             } catch (NumberFormatException nfE) {
-
+                log.warn("Unable to update range value.", nfE);
             }
         });
     }

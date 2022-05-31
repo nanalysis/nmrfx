@@ -65,6 +65,7 @@ public class GradientRefinement extends Refinement {
                             try {
                                 trajectoryWriter.writeStructure();
                             } catch (MissingCoordinatesException ex) {
+                                log.warn(ex.getMessage(), ex);
                             }
                         }
                         if (progressUpdater != null) {
@@ -108,7 +109,6 @@ public class GradientRefinement extends Refinement {
 
         prepareAngles(false);
         dihedrals.setBoundaries(0.1, false);
-        PointValuePair result = null;
         getDihedrals();
 
         dihedrals.energyList.makeAtomListFast();
@@ -124,7 +124,7 @@ public class GradientRefinement extends Refinement {
                 log.error(ex.getMessage(), ex);
             }
         }
-        result = optimizer.optimize(
+        PointValuePair result = optimizer.optimize(
                 new ObjectiveFunctionGradient(dihGradient),
                 new ObjectiveFunction(dihEnergy),
                 new MaxEval(nSteps * 1000),
@@ -160,7 +160,7 @@ public class GradientRefinement extends Refinement {
         try {
             value = BFGS.minimize(dihEnergyGradient, 5, values, tolerance * 1.0e-3, nSteps * 100);
         } catch (Exception e) {
-            e.printStackTrace();
+            log.warn(e.getMessage(), e);
         }
         System.out.println("end " + value);
         System.arraycopy(values, 0, dihedrals.angleValues, 0, dihedrals.angleValues.length);

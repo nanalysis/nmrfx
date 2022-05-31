@@ -12,9 +12,12 @@ import java.util.List;
 import java.util.stream.Stream;
 
 import org.apache.commons.collections4.bag.HashBag;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class HosePrediction {
 
+    private static final Logger log = LoggerFactory.getLogger(HosePrediction.class);
     static Charset charset = Charset.forName("US-ASCII");
     int nShellGroups = 3;
     byte[] buffer = null;
@@ -610,6 +613,7 @@ public class HosePrediction {
                 }
             });
         } catch (IOException ioE) {
+            log.warn(ioE.getMessage(), ioE);
         }
         for (int i = 0; i < 2; i++) {
             System.err.println(nValues[i] + " " + deltaSums[i] + " " + Math.sqrt(deltaSums[i] / nValues[i]) + " " + nViols[i] + " " + nNulls[i]);

@@ -7,9 +7,12 @@ import org.nmrfx.chemistry.MoleculeBase;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.chemistry.io.MoleculeIOException;
 import org.nmrfx.chemistry.io.SDFile;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class TurboMol {
 
+    private static final Logger log = LoggerFactory.getLogger(TurboMol.class);
     String inputData = null;
     String inFileName = null;
     String outValue = null;
@@ -126,6 +129,7 @@ public class TurboMol {
         } catch (FileNotFoundException fnfE) {
             return;
         } catch (IOException ioE) {
+            log.warn(ioE.getMessage(), ioE);
         }
 
         inputData = sBuf.toString();

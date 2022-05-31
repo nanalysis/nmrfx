@@ -51,9 +51,12 @@ import org.nmrfx.star.ParseException;
 import org.nmrfx.chemistry.constraints.RDCConstraint;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.python.util.PythonInterpreter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class OrderSVD {
 
+    private static final Logger log = LoggerFactory.getLogger(OrderSVD.class);
     static double mu0 = 4.0e-7 * Math.PI;
     static double hbar = 1.054e-34;
     static double preFactor = -(mu0 * hbar) / (4 * (Math.PI * Math.PI));
@@ -248,8 +251,7 @@ public class OrderSVD {
                 }
             }
         } catch (IOException ioe) {
-            System.err.println(ioe.getMessage());
-            ioe.printStackTrace();
+            log.warn(ioe.getMessage(), ioe);
         }
 
         List info = new ArrayList<>();

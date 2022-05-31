@@ -19,8 +19,11 @@ import java.util.Map;
 import java.util.Map.Entry;
 import org.junit.Assert;
 import org.junit.Test;
+import org.nmrfx.chemistry.InvalidMoleculeException;
 import org.nmrfx.chemistry.io.NMRNEFReader;
 import org.nmrfx.chemistry.io.NMRNEFWriter;
+import org.nmrfx.peaks.InvalidPeakException;
+import org.nmrfx.star.ParseException;
 
 /**
  *
@@ -49,7 +52,7 @@ public class NEFFileTest {
     List<List<Object>> written = new ArrayList<>();
 
     @Test
-    public void testFile2KO1() throws IOException {
+    public void testFile2KO1() throws IOException, InvalidMoleculeException, ParseException, InvalidPeakException {
         loadData("2ko1");
         testAll();
     }
@@ -59,64 +62,64 @@ public class NEFFileTest {
 //        testAll();
 //    }
     @Test
-    public void testFile2KZN() throws IOException {
+    public void testFile2KZN() throws IOException, InvalidMoleculeException, ParseException, InvalidPeakException {
         loadData("2kzn");
         testAll();
     }
     @Test
-    public void testFile2KKO() throws IOException {
+    public void testFile2KKO() throws IOException, InvalidMoleculeException, ParseException, InvalidPeakException {
         loadData("2kko");
         testAll();
     }
     @Test
-    public void testFile2JUW() throws IOException {
+    public void testFile2JUW() throws IOException, InvalidMoleculeException, ParseException, InvalidPeakException {
         loadData("2juw");
         testAll();
     }
 
     @Test
-    public void testFile2JR2() throws IOException {
+    public void testFile2JR2() throws IOException, InvalidMoleculeException, ParseException, InvalidPeakException {
         loadData("2jr2");
         testAll();
     }
 
     @Test
-    public void testFile1PQX() throws IOException {
+    public void testFile1PQX() throws IOException, InvalidMoleculeException, ParseException, InvalidPeakException {
         loadData("1pqx");
         testAll();
     }
     
     @Test
-    public void testFile1PQX2() throws IOException {
+    public void testFile1PQX2() throws IOException, InvalidMoleculeException, ParseException, InvalidPeakException {
         loadData("1pqx_2");
         testAll();
     }
 
     @Test
-    public void testFile2K2E() throws IOException {
+    public void testFile2K2E() throws IOException, InvalidMoleculeException, ParseException, InvalidPeakException {
         loadData("2k2e");
         testAll();
     }
 
     @Test
-    public void testFile2KPU() throws IOException {
+    public void testFile2KPU() throws IOException, InvalidMoleculeException, ParseException, InvalidPeakException {
         loadData("2kpu");
         testAll();
     }
 
     @Test
-    public void testFile2KW5() throws IOException {
+    public void testFile2KW5() throws IOException, InvalidMoleculeException, ParseException, InvalidPeakException {
         loadData("2kw5");
         testAll();
     }
 
     @Test
-    public void testFile2LOY() throws IOException {
+    public void testFile2LOY() throws IOException, InvalidMoleculeException, ParseException, InvalidPeakException {
         loadData("2loy");
         testAll();
     }
     @Test
-    public void testFile2LUZ() throws IOException {
+    public void testFile2LUZ() throws IOException, InvalidMoleculeException, ParseException, InvalidPeakException {
         loadData("2luz");
         testAll();
     }
@@ -128,7 +131,7 @@ public class NEFFileTest {
 //    }
 
     @Test
-    public void testFile2KCU() throws IOException {
+    public void testFile2KCU() throws IOException, InvalidMoleculeException, ParseException, InvalidPeakException {
         loadData("2kcu");
         testAll();
     }
@@ -139,7 +142,7 @@ public class NEFFileTest {
 //        testAll();
 //    }
     
-    private List<List<Object>> convertFileLines(String filePath) throws FileNotFoundException, IOException {
+    private List<List<Object>> convertFileLines(String filePath) throws IOException {
         List<List<Object>> convertedLines = new ArrayList<>();
         BufferedReader reader = new BufferedReader(new FileReader(filePath));
         while (true) {
@@ -302,7 +305,7 @@ public class NEFFileTest {
         return dihedralMap;
     }
 
-    public void loadData(String nefFileName) throws IOException {
+    public void loadData(String nefFileName) throws IOException, ParseException, InvalidMoleculeException, InvalidPeakException {
         String fileName = String.join(File.separator, "src", "test", "data", "neffiles", nefFileName + ".nef");
         String outPath = "tmp";
         File tmpDir = new File(outPath);
@@ -310,70 +313,61 @@ public class NEFFileTest {
             Files.createDirectory(tmpDir.toPath());
         }
         String outFile = String.join(File.separator, outPath, nefFileName + "_nef_outTest.txt");
-        try {
-            if (orig.isEmpty()) {
-                NMRNEFReader.read(fileName);
-                NMRNEFWriter.writeAll(outFile);
-                orig = convertFileLines(fileName);
-                written = convertFileLines(outFile);
-            }
-        } catch (Exception ex) {
-            ex.printStackTrace();
+        if (orig.isEmpty()) {
+            NMRNEFReader.read(fileName);
+            NMRNEFWriter.writeAll(outFile);
+            orig = convertFileLines(fileName);
+            written = convertFileLines(outFile);
         }
     }
 
-    public boolean compareMaps(String mode, Map<String, List<Object>> origMap, Map<String, List<Object>> writtenMap) throws IOException {
-        try {
-            boolean ok = true;
-            for (Entry<String, List<Object>> entry : origMap.entrySet()) {
-                String key = entry.getKey();
-                if (!writtenMap.containsKey(key)) {
-                    System.out.println(mode + " key " + key + " not in written");
-                    ok = false;
-                } else {
-                    List<Object> origValues = entry.getValue();
-                    List<Object> writtenValues = writtenMap.get(key);
-                    List<List<Object>> allValues = new ArrayList<>();
-                    allValues.add(origValues);
-                    allValues.add(writtenValues);
-                    if (mode.equals("dihedral")) {
-                        for (int v=0; v<origValues.size(); v++) {
-                            if ((v == 1 || v == 3 || v == 4) && 
-                                    !origValues.get(v).equals(writtenValues.get(v))) {
-                                for (int l=0; l<allValues.size(); l++) {
-                                    List<Object> valList = allValues.get(l);
-                                    double val = (double) valList.get(v);
-                                    if (val >= 180.0 && val < 360.0) {
-                                        valList.set(v, val - 180.0);
-                                    } else if (val >= -360.0 && val < -180.0) {
-                                        valList.set(v, val + 360.0);
-                                    } else if (val >= -180.0 && val < 0.0) {
-                                        valList.set(v, val + 180.0);
-                                    }
+    public boolean compareMaps(String mode, Map<String, List<Object>> origMap, Map<String, List<Object>> writtenMap) {
+        boolean ok = true;
+        for (Entry<String, List<Object>> entry : origMap.entrySet()) {
+            String key = entry.getKey();
+            if (!writtenMap.containsKey(key)) {
+                System.out.println(mode + " key " + key + " not in written");
+                ok = false;
+            } else {
+                List<Object> origValues = entry.getValue();
+                List<Object> writtenValues = writtenMap.get(key);
+                List<List<Object>> allValues = new ArrayList<>();
+                allValues.add(origValues);
+                allValues.add(writtenValues);
+                if (mode.equals("dihedral")) {
+                    for (int v=0; v<origValues.size(); v++) {
+                        if ((v == 1 || v == 3 || v == 4) &&
+                                !origValues.get(v).equals(writtenValues.get(v))) {
+                            for (int l=0; l<allValues.size(); l++) {
+                                List<Object> valList = allValues.get(l);
+                                double val = (double) valList.get(v);
+                                if (val >= 180.0 && val < 360.0) {
+                                    valList.set(v, val - 180.0);
+                                } else if (val >= -360.0 && val < -180.0) {
+                                    valList.set(v, val + 360.0);
+                                } else if (val >= -180.0 && val < 0.0) {
+                                    valList.set(v, val + 180.0);
                                 }
                             }
                         }
                     }
-                    for (int i = 0; i < origValues.size(); i++) {
-                        if (!origValues.get(i).equals(writtenValues.get(i))) {
-                            System.out.println(mode + " " + key + " " + origValues.toString() + " " + writtenValues.toString());
-                            ok = false;
-                        }
+                }
+                for (int i = 0; i < origValues.size(); i++) {
+                    if (!origValues.get(i).equals(writtenValues.get(i))) {
+                        System.out.println(mode + " " + key + " " + origValues.toString() + " " + writtenValues.toString());
+                        ok = false;
                     }
                 }
             }
-            for (Entry<String, List<Object>> entry : writtenMap.entrySet()) {
-                String key = entry.getKey();
-                if (!origMap.containsKey(key)) {
-                    System.out.println(mode + " key " + key + " not in orig");
-                    ok = false;
-                }
-            }
-            return ok;
-        } catch (Exception ex) {
-            return false;
         }
-
+        for (Entry<String, List<Object>> entry : writtenMap.entrySet()) {
+            String key = entry.getKey();
+            if (!origMap.containsKey(key)) {
+                System.out.println(mode + " key " + key + " not in orig");
+                ok = false;
+            }
+        }
+        return ok;
     }
 
     public void testAll() throws IOException {
@@ -384,47 +378,31 @@ public class NEFFileTest {
     }
 
     public void testSeqBlock() throws IOException {
-        try {
-            Map<String, List<Object>> origSeq = buildSequenceMap(orig);
-            Map<String, List<Object>> writtenSeq = buildSequenceMap(written);
-            boolean ok = compareMaps("seq", origSeq, writtenSeq);
-            Assert.assertTrue(ok);
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
+        Map<String, List<Object>> origSeq = buildSequenceMap(orig);
+        Map<String, List<Object>> writtenSeq = buildSequenceMap(written);
+        boolean ok = compareMaps("seq", origSeq, writtenSeq);
+        Assert.assertTrue(ok);
     }
 
     public void testChemShiftBlock() throws IOException {
-        try {
-            Map<String, List<Object>> origShift = buildChemShiftMap(orig);
-            Map<String, List<Object>> writtenShift = buildChemShiftMap(written);
-            boolean ok = compareMaps("shifts", origShift, writtenShift);
-            Assert.assertTrue(ok);
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
+        Map<String, List<Object>> origShift = buildChemShiftMap(orig);
+        Map<String, List<Object>> writtenShift = buildChemShiftMap(written);
+        boolean ok = compareMaps("shifts", origShift, writtenShift);
+        Assert.assertTrue(ok);
     }
 
     public void testDistanceBlock() throws IOException {
-        try {
-            Map<String, List<Object>> origDist = buildDistanceMap(orig);
-            Map<String, List<Object>> writtenDist = buildDistanceMap(written);
-            boolean ok = compareMaps("distance", origDist, writtenDist);
-            Assert.assertTrue(ok);
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
+        Map<String, List<Object>> origDist = buildDistanceMap(orig);
+        Map<String, List<Object>> writtenDist = buildDistanceMap(written);
+        boolean ok = compareMaps("distance", origDist, writtenDist);
+        Assert.assertTrue(ok);
     }
 
     public void testDihedralBlock() throws IOException {
-        try {
-            Map<String, List<Object>> origDihedral = buildDihedralMap(orig);
-            Map<String, List<Object>> writtenDihedral = buildDihedralMap(written);
-            boolean ok = compareMaps("dihedral", origDihedral, writtenDihedral);
-            Assert.assertTrue(ok);
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
+        Map<String, List<Object>> origDihedral = buildDihedralMap(orig);
+        Map<String, List<Object>> writtenDihedral = buildDihedralMap(written);
+        boolean ok = compareMaps("dihedral", origDihedral, writtenDihedral);
+        Assert.assertTrue(ok);
     }
 
 }

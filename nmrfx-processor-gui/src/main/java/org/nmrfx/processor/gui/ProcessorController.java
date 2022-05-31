@@ -65,6 +65,8 @@ import org.nmrfx.processor.processing.Processor;
 import org.nmrfx.utilities.ProgressUpdater;
 import org.nmrfx.utils.GUIUtils;
 import org.python.util.PythonInterpreter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -74,6 +76,8 @@ import java.nio.file.Paths;
 import java.util.*;
 
 public class ProcessorController implements Initializable, ProgressUpdater {
+
+    private static final Logger log = LoggerFactory.getLogger(ProcessorController.class);
 
     Pane processorPane;
     Pane pane;
@@ -174,8 +178,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
             stage.setWidth(width + pane.getMinWidth());
             return controller;
         } catch (IOException ioE) {
-            ioE.printStackTrace();
-            System.out.println(ioE.getMessage());
+            log.warn(ioE.getMessage(), ioE);
             return null;
         }
     }
@@ -481,7 +484,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
                 try {
                     operationList.remove(index);
                 } catch (Exception ex) {
-                    ex.printStackTrace();
+                    log.warn(ex.getMessage(), ex);
                 } finally {
                     propertyManager.addScriptListener();
                     operationList.addListener(opListListener);
@@ -1085,7 +1088,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
                     refManager.setupItems(vecDim - 1);
 
                 } catch (NumberFormatException nfE) {
-
+                    log.warn("Unable to parse vector dimension.", nfE);
                 }
             }
         };

@@ -550,6 +550,7 @@ public class Molecule extends MoleculeBase {
             AtomEnergyProp.readPropFile();
             AtomEnergyProp.makeIrpMap();
         } catch (FileNotFoundException ex) {
+            log.warn(ex.getMessage(), ex);
         } catch (IOException ex) {
             log.error(ex.getMessage(), ex);
         }
@@ -1672,6 +1673,7 @@ public class Molecule extends MoleculeBase {
         try {
             c = getCenter(0);
         } catch (MissingCoordinatesException ex) {
+            log.warn(ex.getMessage(), ex);
         }
         List<double[]> molecCoords = new ArrayList<>();
         for (Atom atom : atoms) {

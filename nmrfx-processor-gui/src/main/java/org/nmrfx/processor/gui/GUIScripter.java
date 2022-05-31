@@ -21,12 +21,16 @@ import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.processor.gui.spectra.KeyBindings;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
 import org.python.util.InteractiveInterpreter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
  * @author Bruce Johnson
  */
 public class GUIScripter {
+
+    private static final Logger log = LoggerFactory.getLogger(GUIScripter.class);
 
     final PolyChart useChart;
     static FXMLController controller = FXMLController.getActiveController();
@@ -79,7 +83,7 @@ public class GUIScripter {
                     ConsoleUtil.runOnFxThread(future);
                     future.get();
                 } catch (InterruptedException | ExecutionException iE) {
-
+                    log.warn(iE.getMessage(), iE);
                 }
             }
             chart = getActiveController().getActiveChart();

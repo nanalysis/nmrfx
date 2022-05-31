@@ -734,7 +734,7 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
             dAttr = (DatasetAttributes) o;
             copyTo(dAttr);
         } catch (CloneNotSupportedException e) {
-            e.printStackTrace(System.err);
+            log.warn(e.getMessage(), e);
         }
 
         return dAttr;
@@ -2023,6 +2023,7 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
                     try {
                         r.measure(theFile);
                     } catch (IOException ioE) {
+                        log.warn("Error encountered moving region.", ioE);
                     }
                     break;
                 case 2:

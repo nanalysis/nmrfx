@@ -152,6 +152,7 @@ public class MolSceneController implements Initializable, MolSelectionListener, 
                     selectAction(selectField.getText());
                     selectField.clear();
                 } catch (InvalidMoleculeException ex) {
+                    log.warn(ex.getMessage(), ex);
                 }
             }
         });
@@ -185,8 +186,7 @@ public class MolSceneController implements Initializable, MolSelectionListener, 
             stage.setTitle("Molecular Viewer");
             stage.show();
         } catch (IOException ioE) {
-            ioE.printStackTrace();
-            System.out.println(ioE.getMessage());
+            log.warn(ioE.getMessage(), ioE);
         }
 
         return controller;

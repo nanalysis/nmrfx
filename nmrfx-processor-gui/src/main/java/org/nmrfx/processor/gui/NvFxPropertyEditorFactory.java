@@ -69,12 +69,16 @@ import org.nmrfx.utils.properties.ListOperationItem;
 import org.nmrfx.utils.properties.MenuTextOperationItem;
 import org.nmrfx.utils.properties.TextOperationItem;
 import org.nmrfx.utils.properties.TextWaitingOperationItem;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
  * @author brucejohnson
  */
 public class NvFxPropertyEditorFactory extends DefaultPropertyEditorFactory {
+
+    private static final Logger log = LoggerFactory.getLogger(NvFxPropertyEditorFactory.class);
 
     ProcessorController processorController = null;
 
@@ -311,7 +315,7 @@ public class NvFxPropertyEditorFactory extends DefaultPropertyEditorFactory {
                 try {
                     return sourceClass.getConstructor(String.class).newInstance(getEditor().getText());
                 } catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException | SecurityException e) {
-                    e.printStackTrace();
+                    log.warn(e.getMessage(), e);
                     return null;
                 }
             }

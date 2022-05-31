@@ -1878,14 +1878,5 @@ public class VarianData implements NMRData {
         SinebellWt sb = varian.getSinebellWt(1);
         System.out.print("  sinebell: exists=" + sb.exists() + " power=" + sb.power() + " sb=" + sb.sb() + " sbs=" + sb.sbs());
         System.out.println(" size=" + sb.size() + " offset=" + sb.offset() + " end=" + sb.end());
-
-//        Path autodir = Paths.get(adir);
-//        try {
-//            System.out.println("");
-//            System.out.println(">>>> starting PeekFiles with autodir "+autodir);
-//            Files.walkFileTree(autodir, new PeekFiles());
-//        } catch (IOException ex) {
-//            ex.printStackTrace();
-//        }
     }
 }

@@ -48,6 +48,8 @@ import org.nmrfx.utilities.FileWatchListener;
 import org.nmrfx.utilities.NMRFxFileWatcher;
 import org.python.util.PythonInterpreter;
 import org.nmrfx.utils.GUIUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -55,6 +57,7 @@ import org.nmrfx.utils.GUIUtils;
  */
 public class WindowIO implements FileWatchListener {
 
+    private static final Logger log = LoggerFactory.getLogger(WindowIO.class);
     final private static Pattern STAGE_PATTERN1 = Pattern.compile("([0-9]+_stage)\\.(yaml)");
     final private static Pattern STAGE_PATTERN2 = Pattern.compile("(stage_[0-9]+)\\.(yaml)");
 
@@ -123,7 +126,7 @@ public class WindowIO implements FileWatchListener {
                 List<String> names = findFavorites(path);
                 listView.getItems().addAll(names);
             } catch (IOException ex) {
-
+                log.warn(ex.getMessage(), ex);
             }
         }
     }
@@ -250,9 +253,11 @@ public class WindowIO implements FileWatchListener {
                             try {
                                 Files.deleteIfExists(path);
                             } catch (IOException ex) {
+                                log.warn(ex.getMessage(), ex);
                             }
                         });
             } catch (IOException ex) {
+                log.warn(ex.getMessage(),ex);
             }
         }
     }

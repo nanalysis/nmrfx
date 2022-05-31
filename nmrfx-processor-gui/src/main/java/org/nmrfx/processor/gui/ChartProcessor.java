@@ -546,7 +546,7 @@ public class ChartProcessor {
                 ProcessOps process = getProcess();
                 process.exec();
             } catch (IncompleteProcessException ipe) {
-                ipe.printStackTrace();
+                log.warn(ipe.getMessage(), ipe);
             }
 
             chart.layoutPlotChildren();
@@ -1124,6 +1124,7 @@ public class ChartProcessor {
                         }
                         mapToDataset[dimNum] = -1;
                     } catch (NumberFormatException nFE) {
+                        log.warn("Unable to parse dimension number.", nFE);
                     }
                     if (!processorController.refManager.getSkip(parDim)) {
                         if (dimMode.equals("D") && (dimNum != -1)) {
@@ -1299,7 +1300,7 @@ public class ChartProcessor {
                 ProcessOps process = getProcess();
                 process.exec();
             } catch (IncompleteProcessException ipe) {
-                ipe.printStackTrace();
+                log.warn(ipe.getMessage(), ipe);
             }
             int[] sizes = new int[1];
             sizes[0] = 1;
@@ -1379,7 +1380,7 @@ public class ChartProcessor {
                 } else {
                     processorController.setProcessingStatus(pyE.getCause().getMessage(), false, pE);
                 }
-                pyE.printStackTrace();
+                log.warn(pyE.getMessage(), pyE);
             } else {
                 processorController.setProcessingStatus("error " + pE.getMessage(), false, pE);
             }
@@ -1410,7 +1411,7 @@ public class ChartProcessor {
                     OperationListCell.failedOperation(e.index);
                     System.out.println("error message: " + e.getMessage());
                     processorController.setProcessingStatus(e.op + " " + e.index + ": " + e.getMessage(), false, e);
-                    e.printStackTrace();
+                    log.warn(e.getMessage(), e);
                     int j = 0;
                     for (Vec saveVec : saveVectors) {
                         Vec loadVec = vectors.get(j);

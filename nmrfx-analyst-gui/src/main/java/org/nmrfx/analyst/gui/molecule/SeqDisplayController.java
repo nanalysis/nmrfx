@@ -649,6 +649,7 @@ public class SeqDisplayController implements Initializable {
                 }
 
             } catch (IOException ex) {
+                log.warn(ex.getMessage(), ex);
             }
         }
     }
@@ -700,6 +701,7 @@ public class SeqDisplayController implements Initializable {
                 try {
                     pred2ndStr.load();
                 } catch (IOException ex) {
+                    log.warn(ex.getMessage(), ex);
                 }
             }
             if (currentMol != mol) {
@@ -708,6 +710,7 @@ public class SeqDisplayController implements Initializable {
                     pred2ndStr.predict(mol);
                     currentMol = mol;
                 } catch (IOException ex) {
+                    log.warn(ex.getMessage(), ex);
                 }
             }
         }

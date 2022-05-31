@@ -679,6 +679,7 @@ public class CompoundFitter implements MultivariateFunction {
                 new ObjectiveFunction(this), GoalType.MINIMIZE,
                 new SimpleBounds(lower, upper),
                 new InitialGuess(start));
+
         System.out.println(optimizer.getEvaluations() + " " + result.getValue());
         double[] scales = result.getPoint();
         for (int i = 0; i < scales.length; i++) {
@@ -874,7 +875,7 @@ public class CompoundFitter implements MultivariateFunction {
                 }
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            log.warn(e.getMessage(), e);
         }
     }
 

@@ -1,5 +1,8 @@
 package org.nmrfx.datasets;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -9,6 +12,7 @@ import java.util.*;
 // fixme add document "Note: this comparator imposes orderings that are inconsistent with equals."
 public class DatasetRegion implements Comparator, Comparable {
 
+    private static final Logger log = LoggerFactory.getLogger(DatasetRegion.class);
     private final double[] x;
     private final double[] startIntensity;
     private final double[] endIntensity;
@@ -83,6 +87,7 @@ public class DatasetRegion implements Comparator, Comparable {
                 }
 
             } catch (IOException ioE) {
+                log.warn(ioE.getMessage(), ioE);
             }
         } else {
             if (file.canWrite()) {

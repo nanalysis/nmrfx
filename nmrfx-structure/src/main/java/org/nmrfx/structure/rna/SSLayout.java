@@ -25,9 +25,12 @@ import org.nmrfx.chemistry.Polymer;
 import org.nmrfx.chemistry.Residue;
 import org.nmrfx.chemistry.InvalidMoleculeException;
 import org.nmrfx.structure.chemistry.Molecule;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class SSLayout implements MultivariateFunction {
 
+    private static final Logger log = LoggerFactory.getLogger(SSLayout.class);
     private final int[][] interactions;
     private final int[] basePairs;
     private final int[] basePairs2;
@@ -289,8 +292,7 @@ public class SSLayout implements MultivariateFunction {
                 }
             }
         } catch (ArrayIndexOutOfBoundsException aiE) {
-            aiE.printStackTrace();
-            return;
+            log.warn(aiE.getMessage(), aiE);
         }
     }
 
@@ -383,8 +385,7 @@ public class SSLayout implements MultivariateFunction {
             }
 
         } catch (ArrayIndexOutOfBoundsException aiE) {
-            aiE.printStackTrace();
-            return;
+            log.warn(aiE.getMessage(), aiE);
         }
     }
 
@@ -862,7 +863,7 @@ public class SSLayout implements MultivariateFunction {
                     }
                 }
             } catch (ArrayIndexOutOfBoundsException aiE) {
-                aiE.printStackTrace();
+                log.warn(aiE.getMessage(), aiE);
                 return;
             }
         } 
@@ -894,7 +895,7 @@ public class SSLayout implements MultivariateFunction {
                     }
                 }
             } catch (ArrayIndexOutOfBoundsException aiE) {
-                aiE.printStackTrace();
+                log.warn(aiE.getMessage(), aiE);
                 break;
             }
         }

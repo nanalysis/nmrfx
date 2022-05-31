@@ -18,6 +18,8 @@ import javafx.scene.paint.Color;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -25,6 +27,7 @@ import org.nmrfx.processor.gui.spectra.DatasetAttributes;
  */
 public class SpectrumComparator {
 
+    private static final Logger log = LoggerFactory.getLogger(SpectrumComparator.class);
     VBox vBox;
     FXMLController controller;
     PolyChart chart;
@@ -183,7 +186,7 @@ public class SpectrumComparator {
         try {
             active = Integer.parseInt(datasetFields[iSet].getText().trim());
         } catch (NumberFormatException nfE) {
-
+            log.warn("Unable to parse active dataset.", nfE);
         }
         return active;
     }

@@ -34,8 +34,8 @@ import org.apache.commons.math3.util.FastMath;
 import org.apache.commons.math3.optim.PointValuePair;
 import org.apache.commons.math3.analysis.MultivariateFunction;
 
-public class SignalOpt implements MultivariateFunction {
 
+public class SignalOpt implements MultivariateFunction {
     private final Complex[] values;
     private final Complex[] testVec;
     private final int vecSize;

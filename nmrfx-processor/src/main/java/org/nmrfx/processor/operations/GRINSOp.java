@@ -24,6 +24,7 @@ import org.nmrfx.processor.math.Vec;
 import static org.nmrfx.processor.operations.IstMatrix.genSrcTargetMap;
 import org.nmrfx.processor.processing.ProcessingException;
 import org.nmrfx.processor.processing.SampleSchedule;
+
 import java.io.File;
 import java.util.List;
 
@@ -118,7 +119,6 @@ public class GRINSOp extends MatrixOperation {
                 vector.set(i, real, imag);
             }
         } catch (Exception e) {
-            e.printStackTrace();
             throw new ProcessingException(e.getLocalizedMessage());
         }
         //PyObject obj = interpreter.get("a");

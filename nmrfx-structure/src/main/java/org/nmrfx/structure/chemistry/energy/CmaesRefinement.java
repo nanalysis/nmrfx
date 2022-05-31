@@ -109,9 +109,7 @@ public class CmaesRefinement extends Refinement implements MultivariateFunction 
             dihedrals.inputSigma[i] *= ranfact;
         }
 
-        PointValuePair result;
-
-        result = optimizer.optimize(
+        PointValuePair result = optimizer.optimize(
                 new CMAESOptimizer.PopulationSize(lambda),
                 new CMAESOptimizer.Sigma(dihedrals.inputSigma),
                 new MaxEval(2000000),
@@ -162,9 +160,7 @@ public class CmaesRefinement extends Refinement implements MultivariateFunction 
                 DEFAULT_RANDOMGENERATOR, true,
                 new Checker(100 * Precision.EPSILON, 100 * Precision.SAFE_MIN, nSteps));
 
-        PointValuePair result;
-
-        result = optimizer.optimize(
+        PointValuePair result = optimizer.optimize(
                 new CMAESOptimizer.PopulationSize(lambda),
                 new CMAESOptimizer.Sigma(sigmaValues),
                 new MaxEval(2000000),

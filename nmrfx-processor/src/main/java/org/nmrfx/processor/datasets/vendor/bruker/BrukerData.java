@@ -695,6 +695,7 @@ public class BrukerData implements NMRData {
             try {
                 seconds = Long.parseLong(s);
             } catch (NumberFormatException e) {
+                log.warn("Unable to parse date.", e);
             }
         } else {
             System.out.println("no date");

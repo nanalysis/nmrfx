@@ -28,8 +28,12 @@ import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.structure.chemistry.predict.RNAAttributes;
 import org.nmrfx.structure.chemistry.predict.RNAStats;
 import org.nmrfx.structure.rna.SSLayout;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class SSViewer extends Pane {
+
+    private static final Logger log = LoggerFactory.getLogger(SSViewer.class);
 
     class AtomCoord {
 
@@ -109,7 +113,7 @@ public class SSViewer extends Pane {
         try {
             layoutStructure(drawingGroup);
         } catch (Exception e) {
-            e.printStackTrace();
+            log.warn(e.getMessage(), e);
         }
     }
 

@@ -10,13 +10,7 @@ import static org.junit.Assert.*;
 public class RunAboutYamlReaderTest {
 
     @Test
-    public void loadYaml() {
-        var runAboutYamlReader = new RunAboutYamlReader();
-        try {
-            runAboutYamlReader.loadYaml();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
+    public void loadYaml() throws IOException {
+        RunAboutYamlReader.loadYaml();
     }
 }

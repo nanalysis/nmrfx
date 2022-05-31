@@ -706,6 +706,7 @@ public class PeakListTools {
 
             iOffsets[minDim] += optValue.getPoint();
         } catch (Exception e) {
+            log.warn(e.getMessage(), e);
         }
     }
 // fixme removed bpmatchpeaks

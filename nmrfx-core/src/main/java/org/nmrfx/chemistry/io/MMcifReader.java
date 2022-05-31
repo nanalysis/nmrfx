@@ -28,9 +28,12 @@ import org.nmrfx.star.ParseException;
 import org.nmrfx.star.Saveframe;
 import org.nmrfx.chemistry.protein.ProteinHelix;
 import org.nmrfx.chemistry.protein.Sheet;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class MMcifReader {
 
+    private static final Logger log = LoggerFactory.getLogger(MMcifReader.class);
     static boolean DEBUG = false;
 
     final MMCIF mmcif;
@@ -635,7 +638,7 @@ public class MMcifReader {
                 try {
                     atom.addCoords(xCoord, yCoord, zCoord, occupancy, bFactor);
                 } catch (InvalidMoleculeException imE) {
-
+                    log.warn(imE.getMessage(), imE);
                 }
             }
         }
@@ -714,10 +717,9 @@ public class MMcifReader {
                 }
 
                 try {
-//                    System.out.println(atom);
                     atom.addCoords(xCoord, yCoord, zCoord, occupancy, bFactor);
                 } catch (InvalidMoleculeException imE) {
-
+                    log.warn(imE.getMessage(), imE);
                 }
             }
         }

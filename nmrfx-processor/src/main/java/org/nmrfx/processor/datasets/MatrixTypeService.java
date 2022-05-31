@@ -75,7 +75,7 @@ public class MatrixTypeService {
         try {
             executor.awaitTermination(4, TimeUnit.SECONDS);
         } catch (InterruptedException ex) {
-            ex.printStackTrace();
+            log.warn(ex.getMessage(), ex);
         }
     }
 
@@ -92,14 +92,14 @@ public class MatrixTypeService {
         try {
             return futureTask.get(timeOut, TimeUnit.MILLISECONDS);
         } catch (InterruptedException ex) {
-            ex.printStackTrace();
+            log.warn(ex.getMessage(), ex);
             return false;
         } catch (ExecutionException ex) {
-            ex.printStackTrace();
+            log.warn(ex.getMessage(), ex);
             return false;
         } catch (TimeoutException ex) {
-            System.out.println("time out " + nWritten.get() + " " + itemsToWrite + " " + nRead.get() + " " + itemsToRead);
-            ex.printStackTrace();
+            log.warn("time out {} {} {} {}", nWritten.get(), itemsToWrite, nRead.get(), itemsToRead);
+            log.warn(ex.getMessage(), ex);
             return false;
         }
     }
@@ -137,7 +137,7 @@ public class MatrixTypeService {
             }
             return vecs;
         } catch (InterruptedException ex) {
-            ex.printStackTrace();
+            log.warn(ex.getMessage(), ex);
             return new ArrayList<>();
         }
     }

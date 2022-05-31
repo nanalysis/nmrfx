@@ -18,6 +18,9 @@
 package org.nmrfx.chemistry.io;
 
 import org.nmrfx.chemistry.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -29,6 +32,8 @@ import java.util.regex.Pattern;
  * @author brucejohnson
  */
 public class SDFile {
+
+    private static final Logger log = LoggerFactory.getLogger(SDFile.class);
 
     static final int MOLECULE = 0;
     static final int ATOM = 1;
@@ -180,6 +185,7 @@ public class SDFile {
             try {
                 massDiff = Integer.parseInt(massDiffString);
             } catch (NumberFormatException nfE) {
+                log.warn("Unable to parse massDiff", nfE);
             }
             if (massDiff != 0) {
                 System.err.println("unused massDiff");
@@ -234,6 +240,7 @@ public class SDFile {
                     }
                 }
             } catch (NumberFormatException nfE) {
+                log.warn("Unable to parse charge value.", nfE);
             }
             /*
                  * String stereoString = string.substring(39, 42).trim(); int
