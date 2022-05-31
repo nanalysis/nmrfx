@@ -1349,6 +1349,15 @@ public class MoleculeBase implements Serializable, ITree {
         return polymer;
     }
 
+    public List<Entity> getCompoundsAndResidues() {
+        var entities = new ArrayList<Entity>();
+        for (var polymer: getPolymers()) {
+            entities.addAll(polymer.getResidues());
+        }
+        entities.addAll(getLigands());
+        return entities;
+    }
+
     public String getName() {
         return name;
     }
