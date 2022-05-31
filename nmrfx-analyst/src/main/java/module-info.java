@@ -11,4 +11,5 @@ module org.nmrfx.analyst {
     requires org.yaml.snakeyaml;
     requires org.apache.commons.text;
     requires org.slf4j;
+    requires org.nmrfx.structure;
 }
