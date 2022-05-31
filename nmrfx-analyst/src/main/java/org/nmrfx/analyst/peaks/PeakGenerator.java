@@ -31,7 +31,8 @@ public class PeakGenerator {
         return peakList;
     }
 
-    public static void generate1DProton(PeakList peaklist) {
+    public static void generate1DProton(PeakList peakList) {
+        peakList.setSampleConditionLabel("sim");
         Molecule molecule = (Molecule) MoleculeFactory.getActive();
         var couplingList = new CouplingList();
         var entities = molecule.getCompoundsAndResidues();
@@ -50,7 +51,7 @@ public class PeakGenerator {
             for (var atom : entity.getAtoms()) {
                 if (atom.getAtomicNumber() == 1) {
                     if (!atom.isMethyl() || (atom.isFirstInMethyl())) {
-                        var peak = peaklist.getNewPeak();
+                        var peak = peakList.getNewPeak();
                         float intensity = atom.isMethyl() ? 3.0f : 1.0f;
                         peak.setIntensity(intensity);
                         var peakDim = peak.getPeakDim(0);
@@ -60,7 +61,6 @@ public class PeakGenerator {
                             peakDim.setLineWidthHz(1.5f);
                             peakDim.setBoundsHz(3.0f);
                             var jCouplings = couplingMap.get(atom);
-                            //    CouplingPattern(final Multiplet multiplet, final double[] values, final int[] n, final double intensity, final double[] sin2thetas) {
                             if ((jCouplings != null)) {
                                 int nCouplings = jCouplings.size();
                                 List<Double> values = new ArrayList<>();
