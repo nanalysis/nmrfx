@@ -42,48 +42,50 @@ public class PeakGenerator {
             for (var jCoupling : jCouplings) {
                 int nAtoms = jCoupling.getNAtoms();
                 Atom atom = jCoupling.getAtom(0);
-                List<JCoupling> atomCouplings = couplingMap.get(atom);
-                if (atomCouplings == null) {
-                    atomCouplings = new ArrayList<>();
-                    couplingMap.put(atom, atomCouplings);
-                }
+                List<JCoupling> atomCouplings = couplingMap.computeIfAbsent(atom, k -> new ArrayList<>());
                 atomCouplings.add(jCoupling);
             }
         }
         for (var entity : entities) {
             for (var atom : entity.getAtoms()) {
                 if (atom.getAtomicNumber() == 1) {
-                    var peak = peaklist.getNewPeak();
-                    var peakDim = peak.getPeakDim(0);
-                    peakDim.setLabel(atom.getShortName());
-                    if (atom.getRefPPM() != null) {
-                        peakDim.setChemShiftValue(atom.getRefPPM().floatValue());
-                        var jCouplings = couplingMap.get(atom);
-                        //    CouplingPattern(final Multiplet multiplet, final double[] values, final int[] n, final double intensity, final double[] sin2thetas) {
-                        if ((jCouplings != null)) {
-                            int nCouplings = jCouplings.size();
-                            List<Double> values = new ArrayList<>();
-                            List<Double> sin2thetas = new ArrayList<>();
-                            List<String> types = new ArrayList<>();
+                    if (!atom.isMethyl() || (atom.isFirstInMethyl())) {
+                        var peak = peaklist.getNewPeak();
+                        float intensity = atom.isMethyl() ? 3.0f : 1.0f;
+                        peak.setIntensity(intensity);
+                        var peakDim = peak.getPeakDim(0);
+                        peakDim.setLabel(atom.getShortName());
+                        if (atom.getRefPPM() != null) {
+                            peakDim.setChemShiftValue(atom.getRefPPM().floatValue());
+                            peakDim.setLineWidthHz(1.5f);
+                            peakDim.setBoundsHz(3.0f);
+                            var jCouplings = couplingMap.get(atom);
+                            //    CouplingPattern(final Multiplet multiplet, final double[] values, final int[] n, final double intensity, final double[] sin2thetas) {
+                            if ((jCouplings != null)) {
+                                int nCouplings = jCouplings.size();
+                                List<Double> values = new ArrayList<>();
+                                List<Double> sin2thetas = new ArrayList<>();
+                                List<String> types = new ArrayList<>();
 
-                            var multiplet = peakDim.getMultiplet();
-                            int i = 0;
-                            for (var jCoupling : couplingMap.get(atom)) {
-                                int nAtoms = jCoupling.getNAtoms();
-                                double value;
-                                if (nAtoms == 3) {
-                                    value = 12.0;
-                                } else {
-                                    value = 5.0;
+                                var multiplet = peakDim.getMultiplet();
+                                int i = 0;
+                                for (var jCoupling : couplingMap.get(atom)) {
+                                    int nAtoms = jCoupling.getNAtoms();
+                                    double value;
+                                    if (nAtoms == 3) {
+                                        value = 12.0;
+                                    } else {
+                                        value = 5.0;
+                                    }
+                                    values.add(value);
+                                    types.add("d");
+                                    sin2thetas.add(0.0);
+                                    i++;
                                 }
-                                values.add(value);
-                                types.add("d");
-                                sin2thetas.add(0.0);
-                                i++;
-                            }
-                            var couplingPattern = new CouplingPattern(multiplet, values, types, sin2thetas, 1.0);
-                            multiplet.setCoupling(couplingPattern);
+                                var couplingPattern = new CouplingPattern(multiplet, values, types, sin2thetas, 1.0);
+                                multiplet.setCoupling(couplingPattern);
 
+                            }
                         }
                     }
                 }
