@@ -1,10 +1,11 @@
-package org.nmrfx.analyst.peaks;
+package org.nmrfx.structure.tools;
 
 import org.nmrfx.chemistry.Atom;
 import org.nmrfx.chemistry.MoleculeFactory;
+import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.peaks.CouplingPattern;
+import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakList;
-import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.structure.chemistry.CouplingList;
 import org.nmrfx.structure.chemistry.JCoupling;
 import org.nmrfx.structure.chemistry.Molecule;
@@ -16,18 +17,68 @@ import java.util.Map;
 
 public class PeakGenerator {
 
-    public static void generate1DProton(Dataset dataset, String listName) {
-        PeakList peakList = makePeakList(dataset, listName);
+
+    Peak addPeak(PeakList peakList, double[] ppms, double[] eppms, double[] widths, double[] bounds, double intensity, String[] names) {
+        var peak = peakList.getNewPeak();
+        for (int i = 0; i < ppms.length; i++) {
+            var peakDim = peak.getPeakDim(i);
+            peakDim.setChemShiftValue((float) ppms[i]);
+            peakDim.setChemShiftErrorValue((float) eppms[i]);
+            peakDim.setLabel(names[i]);
+            peakDim.setLineWidthValue((float) widths[i]);
+            peakDim.setBoundsValue((float) bounds[i]);
+        }
+        peak.setIntensity((float) intensity);
+        peak.setVolume1((float) intensity);
+        return peak;
+    }
+
+
+    public static void generate1DProton(String listName, DatasetBase dataset) {
+        PeakList peakList = makePeakList(listName, dataset, 0);
         generate1DProton(peakList);
     }
 
-    public static PeakList makePeakList(Dataset dataset, String listName) {
-        PeakList peakList = new PeakList(listName, dataset.getNDim());
+    String getListName(DatasetBase dataset, String listName, String tail) {
+        if ((listName == null) || listName.isBlank()) {
+            String datasetName = dataset.getName();
+            if (datasetName.indexOf(".") != -1) {
+                datasetName = datasetName.substring(0, datasetName.indexOf("."));
+            }
+            listName = datasetName + tail;
+        }
+        return listName;
+    }
+
+    public static PeakList makePeakList(String listName, DatasetBase dataset, int nDim) {
+        if (nDim == 0) {
+            nDim = dataset.getNDim();
+        }
+        PeakList peakList = new PeakList(listName, nDim);
         for (int i = 0; i < peakList.getNDim(); i++) {
             peakList.getSpectralDim(i).setSw(dataset.getSw(i));
             peakList.getSpectralDim(i).setSf(dataset.getSf(i));
             peakList.getSpectralDim(i).setDimName(dataset.getLabel(i));
         }
+        peakList.setDatasetName(dataset.getName());
+        return peakList;
+    }
+
+    public static PeakList makePeakList(String listName, String[] labels, double[] sfs, double[] sws) {
+        int nDim = labels.length;
+        if (sfs.length != nDim) {
+            throw new IllegalArgumentException("number of labels and spectrometer frequencies is not equal");
+        }
+        if (sws.length != nDim) {
+            throw new IllegalArgumentException("number of labels and sweep widths is not equal");
+        }
+        PeakList peakList = new PeakList(listName, nDim);
+        for (int i = 0; i < peakList.getNDim(); i++) {
+            peakList.getSpectralDim(i).setSw(sws[i]);
+            peakList.getSpectralDim(i).setSf(sfs[i]);
+            peakList.getSpectralDim(i).setDimName(labels[i]);
+        }
+        peakList.setDatasetName("peaks");
         return peakList;
     }
 
@@ -41,7 +92,6 @@ public class PeakGenerator {
             couplingList.generateCouplings(entity, 3, 2, 2, 2);
             var jCouplings = couplingList.getJCouplings();
             for (var jCoupling : jCouplings) {
-                int nAtoms = jCoupling.getNAtoms();
                 Atom atom = jCoupling.getAtom(0);
                 List<JCoupling> atomCouplings = couplingMap.computeIfAbsent(atom, k -> new ArrayList<>());
                 atomCouplings.add(jCoupling);
@@ -62,13 +112,11 @@ public class PeakGenerator {
                             peakDim.setBoundsHz(3.0f);
                             var jCouplings = couplingMap.get(atom);
                             if ((jCouplings != null)) {
-                                int nCouplings = jCouplings.size();
                                 List<Double> values = new ArrayList<>();
                                 List<Double> sin2thetas = new ArrayList<>();
                                 List<String> types = new ArrayList<>();
 
                                 var multiplet = peakDim.getMultiplet();
-                                int i = 0;
                                 for (var jCoupling : couplingMap.get(atom)) {
                                     int nAtoms = jCoupling.getNAtoms();
                                     double value;
@@ -80,7 +128,6 @@ public class PeakGenerator {
                                     values.add(value);
                                     types.add("d");
                                     sin2thetas.add(0.0);
-                                    i++;
                                 }
                                 var couplingPattern = new CouplingPattern(multiplet, values, types, sin2thetas, 1.0);
                                 multiplet.setCoupling(couplingPattern);
