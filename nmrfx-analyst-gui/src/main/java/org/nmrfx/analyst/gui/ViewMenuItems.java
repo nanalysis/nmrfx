@@ -2,7 +2,6 @@ package org.nmrfx.analyst.gui;
 
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
-import javafx.fxml.FXML;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
 import org.nmrfx.processor.gui.DatasetsController;
@@ -27,10 +26,13 @@ public class ViewMenuItems extends MenuActions {
         MenuItem consoleMenuItem = new MenuItem("Show Console");
         consoleMenuItem.setOnAction(e -> showConsole());
 
+        MenuItem logConsoleMenuItem = new MenuItem("Show Log Console");
+        logConsoleMenuItem.setOnAction(e -> showLogConsole());
+
         MenuItem attrMenuItem = new MenuItem("Show Attributes");
         attrMenuItem.setOnAction(e -> FXMLController.getActiveController().showSpecAttrAction(e));
 
-        menu.getItems().addAll(consoleMenuItem, dataMenuItem, attrMenuItem, procMenuItem);
+        menu.getItems().addAll(consoleMenuItem, logConsoleMenuItem, dataMenuItem, attrMenuItem, procMenuItem);
     }
 
     @Override
@@ -39,6 +41,10 @@ public class ViewMenuItems extends MenuActions {
     }
     private void showConsole() {
         AnalystApp.getConsoleController().show();
+    }
+
+    private void showLogConsole() {
+        AnalystApp.getLogConsoleController().show();
     }
 
     void showDatasetsTable(ActionEvent event) {
