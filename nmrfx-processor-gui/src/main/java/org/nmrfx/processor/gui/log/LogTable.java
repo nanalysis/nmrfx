@@ -91,7 +91,7 @@ public class LogTable extends TableView<LogRecord> {
      */
     public void addLogRecord(LogRecord logRecord, int recordsLength) {
         int sizeDifference = unfilteredRecords.size() - recordsLength;
-        while (sizeDifference >= 0 && unfilteredRecords.size() > 0) {
+        while (sizeDifference >= 0 && !unfilteredRecords.isEmpty()) {
             unfilteredRecords.remove(0);
             sizeDifference = unfilteredRecords.size() - recordsLength;
         }

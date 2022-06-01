@@ -6,6 +6,7 @@ import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
 import org.nmrfx.processor.gui.DatasetsController;
 import org.nmrfx.processor.gui.FXMLController;
+import org.nmrfx.processor.gui.MainApp;
 import org.nmrfx.processor.gui.project.GUIProject;
 import org.nmrfx.processor.project.Project;
 
@@ -44,7 +45,7 @@ public class ViewMenuItems extends MenuActions {
     }
 
     private void showLogConsole() {
-        AnalystApp.getLogConsoleController().show();
+        MainApp.getLogConsoleController().show();
     }
 
     void showDatasetsTable(ActionEvent event) {

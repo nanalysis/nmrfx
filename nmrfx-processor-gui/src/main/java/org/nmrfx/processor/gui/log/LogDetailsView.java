@@ -28,7 +28,7 @@ public class LogDetailsView extends GridPane {
     private final TextArea message = new TextArea();
     private final Button copyButton = GlyphsDude.createIconButton(FontAwesomeIcon.COPY);
     private String level;
-    private final int spacing = 5;
+    private static final int SPACING = 5;
 
     public LogDetailsView() {
         super();
@@ -46,9 +46,9 @@ public class LogDetailsView extends GridPane {
         add(location, 1, 2, 1, 1);
         add(message, 1, 3, 1, 3);
         // Set Formatting
-        setVgap(spacing);
-        setHgap(spacing);
-        setPadding(new Insets(spacing, spacing, spacing, spacing));
+        setVgap(SPACING);
+        setHgap(SPACING);
+        setPadding(new Insets(SPACING, SPACING, SPACING, SPACING));
         setHalignment(copyButton, HPos.RIGHT);
         ColumnConstraints noConstraints = new ColumnConstraints();
         ColumnConstraints stretchColumn = new ColumnConstraints();

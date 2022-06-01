@@ -27,7 +27,7 @@ public class LogConsoleController implements Initializable {
 
     private static final String ANY_LEVEL = "-- LEVEL --";
     private static final String ANY_SECTION = "-- SECTION --";
-    private static final String consoleTitle = "Log Console";
+    private static final String CONSOLE_TITLE = "Log Console";
     private LogListener logListener = null;
     private Stage stage;
 
@@ -58,7 +58,7 @@ public class LogConsoleController implements Initializable {
             logConsoleController = loader.getController();
             logConsoleController.stage = stage;
             logConsoleController.logListener = logConsoleController::logPublished;
-            stage.setTitle(consoleTitle);
+            stage.setTitle(CONSOLE_TITLE);
             // Only listen for new log messages if the log console is showing
             stage.showingProperty().addListener((observable, oldValue, newValue) -> {
                 if (logConsoleController != null){
@@ -72,7 +72,7 @@ public class LogConsoleController implements Initializable {
             });
 
         } catch (IOException e) {
-            throw new RuntimeException("Unable to create the Log Console!", e);
+            throw new IllegalStateException("Unable to create the Log Console controller.", e);
         }
         return logConsoleController;
     }
