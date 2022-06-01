@@ -23,11 +23,12 @@ import java.util.stream.Stream;
  */
 public class LogConsoleController implements Initializable {
 
-    private static LogConsoleController logConsoleController;
+    private static LogConsoleController logConsoleController = null;
 
     private static final String ANY_LEVEL = "-- LEVEL --";
     private static final String ANY_SECTION = "-- SECTION --";
     private static final String consoleTitle = "Log Console";
+    private LogListener logListener = null;
     private Stage stage;
 
     /* Choices for filtering by log level*/
@@ -56,7 +57,19 @@ public class LogConsoleController implements Initializable {
             stage.setScene(scene);
             logConsoleController = loader.getController();
             logConsoleController.stage = stage;
+            logConsoleController.logListener = logConsoleController::logPublished;
             stage.setTitle(consoleTitle);
+            // Only listen for new log messages if the log console is showing
+            stage.showingProperty().addListener((observable, oldValue, newValue) -> {
+                if (logConsoleController != null){
+                    if (Boolean.TRUE.equals(newValue)) {
+                        logConsoleController.addLogRecords();
+                        Log.addLogListener(logConsoleController.logListener);
+                    } else {
+                        Log.removeLogListener(logConsoleController.logListener);
+                    }
+                }
+            });
 
         } catch (IOException e) {
             throw new RuntimeException("Unable to create the Log Console!", e);
@@ -79,9 +92,9 @@ public class LogConsoleController implements Initializable {
         logLevelChoice.getItems().add(ANY_LEVEL);
         logLevelChoice.setValue(ANY_LEVEL);
         Arrays.stream(LogLevel.values())
-            .filter(level -> level != LogLevel.OFF && level != LogLevel.ALL)
-            .map(LogLevel::toString)
-            .forEach(logLevelChoice.getItems()::add);
+                .filter(level -> level != LogLevel.OFF && level != LogLevel.ALL)
+                .map(LogLevel::toString)
+                .forEach(logLevelChoice.getItems()::add);
         logLevelChoice.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> filterChanged());
 
         sectionChoice.getItems().add(ANY_SECTION);
@@ -95,9 +108,6 @@ public class LogConsoleController implements Initializable {
         table.getSelectionModel().selectedItemProperty().addListener((o, oldRow, newRow) -> logDetails.setDetails(newRow));
 
         filterTextField.textProperty().addListener((observable, oldValue, newValue) -> filterChanged());
-        // Set all logs currently in memory and then add a log listener for new logs
-        table.setLogRecords(Log.getRecordsFromMemory());
-        Log.addLogListener(this::logPublished);
     }
 
     /**
@@ -173,13 +183,20 @@ public class LogConsoleController implements Initializable {
     }
 
     /**
+     * Sets all records in LogTable
+     */
+    private void addLogRecords() {
+        table.setLogRecords(Log.getRecordsFromMemory());
+    }
+
+    /**
      * Clear current records from memory and resets all the records in the LogTable.
      * Note: This method is called from the fxml file.
      */
     @FXML
     private void clearButtonClicked() {
         Log.clearRecordsFromMemory();
-        table.setLogRecords(Log.getRecordsFromMemory());
+        addLogRecords();
     }
 
     /**
