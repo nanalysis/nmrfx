@@ -42,8 +42,10 @@ public class LogConsoleController implements Initializable {
     @FXML
     private MasterDetailPane logDisplayMasterDetail;
 
-    private final LogTable table = new LogTable();
-    private final LogDetailsView logDetails = new LogDetailsView();
+    private LogTable table;
+    private LogDetailsView logDetails;
+
+    protected LogConsoleController() {}
 
     /**
      * Creates a new LogConsoleController and sets the static LogConsoleController.
@@ -51,6 +53,7 @@ public class LogConsoleController implements Initializable {
      */
     public static LogConsoleController create() {
         FXMLLoader loader = new FXMLLoader(LogConsoleController.class.getResource("/fxml/LogConsoleScene.fxml"));
+        loader.setControllerFactory(controller -> new LogConsoleController());
         Stage stage = new Stage(StageStyle.DECORATED);
         try {
             Scene scene = new Scene(loader.load());
@@ -89,6 +92,8 @@ public class LogConsoleController implements Initializable {
      */
     @Override
     public void initialize(URL location, ResourceBundle resources) {
+        table = new LogTable();
+        logDetails = new LogDetailsView();
         logLevelChoice.getItems().add(ANY_LEVEL);
         logLevelChoice.setValue(ANY_LEVEL);
         Arrays.stream(LogLevel.values())
@@ -123,29 +128,29 @@ public class LogConsoleController implements Initializable {
      * Updates the filter in the LogTable.
      */
     private void filterChanged() {
-        table.setFilter(buildFilter());
+        int levelValue = getSelectedLevelIntValue();
+        LogSection section = getSelectedSectionValue();
+        String filterText = filterTextField.getText();
+        table.setFilter(buildFilter(levelValue, section, filterText));
     }
 
     /**
-     * Creates a filter for LogRecords from the values of the logLevelChoice, sectionChoice and filterTextField inputs.
+     * Creates a filter for LogRecords from an integer logLevel value, LogSection and a search string inputs.
      * @return Predicate to be used to filter LogRecords.
      */
-    private Predicate<LogRecord> buildFilter() {
-        int levelValue = getSelectedLevelIntValue();
-        LogSection section = getSelectedSectionValue();
-        String filterText = filterTextField.getText().trim().toLowerCase();
-
+    protected Predicate<LogRecord> buildFilter(int levelValue, LogSection section, String filterText) {
         return logRecord -> {
+            String textFormatted = filterText.trim().toLowerCase();
             if (logRecord.getLevel().getLogbackLevel().toInteger() < levelValue)
                 return false;
 
             if (section != null && section != LogSection.fromLoggerNameString(logRecord.getLoggerName()))
                 return false;
 
-            return filterText.isEmpty()
-                    || logRecord.getLoggerName().toLowerCase().contains(filterText)
-                    || logRecord.getSourceMethodName().toLowerCase().contains(filterText)
-                    || (logRecord.getMessage() != null && logRecord.getMessage().toLowerCase().contains(filterText));
+            return textFormatted.isEmpty()
+                    || logRecord.getLoggerName().toLowerCase().contains(textFormatted)
+                    || logRecord.getSourceMethodName().toLowerCase().contains(textFormatted)
+                    || (logRecord.getMessage() != null && logRecord.getMessage().toLowerCase().contains(textFormatted));
         };
     }
 

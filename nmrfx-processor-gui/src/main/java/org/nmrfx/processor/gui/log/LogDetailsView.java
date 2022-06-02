@@ -23,12 +23,12 @@ import java.awt.datatransfer.StringSelection;
  */
 public class LogDetailsView extends GridPane {
 
+    private static final int SPACING = 5;
     private final TextField datetime = new TextField();
     private final TextField location = new TextField();
     private final TextArea message = new TextArea();
     private final Button copyButton = GlyphsDude.createIconButton(FontAwesomeIcon.COPY);
     private String level;
-    private static final int SPACING = 5;
 
     public LogDetailsView() {
         super();
