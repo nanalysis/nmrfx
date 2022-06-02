@@ -43,7 +43,6 @@ public class LogConsoleController implements Initializable {
     private MasterDetailPane logDisplayMasterDetail;
 
     private LogTable table;
-    private LogDetailsView logDetails;
 
     protected LogConsoleController() {}
 
@@ -93,7 +92,7 @@ public class LogConsoleController implements Initializable {
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         table = new LogTable();
-        logDetails = new LogDetailsView();
+        LogDetailsView logDetails = new LogDetailsView();
         logLevelChoice.getItems().add(ANY_LEVEL);
         logLevelChoice.setValue(ANY_LEVEL);
         Arrays.stream(LogLevel.values())
@@ -140,13 +139,13 @@ public class LogConsoleController implements Initializable {
      */
     protected Predicate<LogRecord> buildFilter(int levelValue, LogSection section, String filterText) {
         return logRecord -> {
-            String textFormatted = filterText.trim().toLowerCase();
             if (logRecord.getLevel().getLogbackLevel().toInteger() < levelValue)
                 return false;
 
             if (section != null && section != LogSection.fromLoggerNameString(logRecord.getLoggerName()))
                 return false;
 
+            String textFormatted = filterText.trim().toLowerCase();
             return textFormatted.isEmpty()
                     || logRecord.getLoggerName().toLowerCase().contains(textFormatted)
                     || logRecord.getSourceMethodName().toLowerCase().contains(textFormatted)
