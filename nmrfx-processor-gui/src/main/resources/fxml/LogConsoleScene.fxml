@@ -27,7 +27,7 @@
                   <Insets left="5.0" right="5.0" top="7.5" />
                </HBox.margin>
             </TextField>
-            <Button mnemonicParsing="false" text="...">
+            <Button fx:id="changeLogLevelButton" mnemonicParsing="false" onAction="#changeLogLevelButtonClicked" text="...">
                <HBox.margin>
                   <Insets left="5.0" right="5.0" top="7.5" />
                </HBox.margin>

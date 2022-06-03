@@ -5,7 +5,11 @@ import org.slf4j.ILoggerFactory;
 import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.SortedMap;
+import java.util.TreeMap;
 
 import static org.slf4j.Logger.ROOT_LOGGER_NAME;
 
@@ -14,6 +18,8 @@ import static org.slf4j.Logger.ROOT_LOGGER_NAME;
  */
 public class Log {
     public static MemoryAppender memoryAppender;
+
+    private static final Map<String, LogLevel> updatedLoggers = new HashMap<>();
 
     /**
      * Specify where to find the log configuration file.
@@ -96,6 +102,15 @@ public class Log {
         if (factory instanceof LoggerContext) {
             LoggerContext context = (LoggerContext) factory;
             context.getLogger(packageName).setLevel(level.getLogbackLevel());
+            updatedLoggers.put(packageName, level);
         }
+    }
+
+    /**
+     * Gets a copy of the updateLoggers.
+     * @return A SortedMap of logger name to LogLevel pairings.
+     */
+    public static SortedMap<String, LogLevel> getModifiedLogLevels() {
+        return new TreeMap<>(updatedLoggers);
     }
 }

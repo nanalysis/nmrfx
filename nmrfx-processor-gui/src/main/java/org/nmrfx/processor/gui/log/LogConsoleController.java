@@ -204,6 +204,15 @@ public class LogConsoleController implements Initializable {
     }
 
     /**
+     * Creates and shows a new ChangeLogLevelController and will then wait until it
+     * is closed before proceeding.
+     */
+    @FXML
+    private void changeLogLevelButtonClicked() {
+        ChangeLogLevelController.create(stage).showAndWait();
+    }
+
+    /**
      * If the static LogConsoleController has not been set, creates and sets a new
      * LogConsoleController before returning.
      * @return The static LogConsoleController object.
