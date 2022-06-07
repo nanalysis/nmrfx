@@ -1,111 +1,20 @@
 package org.nmrfx.processor.gui.log;
 
 import ch.qos.logback.classic.Level;
-import ch.qos.logback.classic.spi.ILoggingEvent;
-import ch.qos.logback.classic.spi.IThrowableProxy;
-import ch.qos.logback.classic.spi.LoggerContextVO;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
-import junit.framework.TestCase;
 import org.junit.Before;
 import org.junit.Test;
-import org.slf4j.Marker;
 
 import java.util.ArrayList;
-import java.util.Map;
 import java.util.function.Predicate;
 
-public class LogConsoleControllerTest extends TestCase {
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
-    private static class LoggingEventTest implements ILoggingEvent {
-        private final String message;
-        private final Level logLevel;
-        private final String loggerName;
-        private final String methodName;
-
-        public LoggingEventTest (String message, Level logLevel, String loggerName, String methodName) {
-            this.message = message;
-            this.logLevel = logLevel;
-            this.loggerName = loggerName;
-            this.methodName = methodName;
-        }
-        @Override
-        public String getThreadName() {
-            return null;
-        }
-
-        @Override
-        public Level getLevel() {
-            return logLevel;
-        }
-
-        @Override
-        public String getMessage() {
-            return message;
-        }
-
-        @Override
-        public Object[] getArgumentArray() {
-            return new Object[0];
-        }
-
-        @Override
-        public String getFormattedMessage() {
-            return message;
-        }
-
-        @Override
-        public String getLoggerName() {
-            return loggerName;
-        }
-
-        @Override
-        public LoggerContextVO getLoggerContextVO() {
-            return null;
-        }
-
-        @Override
-        public IThrowableProxy getThrowableProxy() {
-            return null;
-        }
-
-        @Override
-        public StackTraceElement[] getCallerData() {
-            StackTraceElement ste = new StackTraceElement("TestClass", methodName, "TestClass.java", 123);
-            return new StackTraceElement[] {ste};
-        }
-
-        @Override
-        public boolean hasCallerData() {
-            return true;
-        }
-
-        @Override
-        public Marker getMarker() {
-            return null;
-        }
-
-        @Override
-        public Map<String, String> getMDCPropertyMap() {
-            return null;
-        }
-
-        @Override
-        public Map<String, String> getMdc() {
-            return null;
-        }
-
-        @Override
-        public long getTimeStamp() {
-            return System.currentTimeMillis();
-        }
-
-        @Override
-        public void prepareForDeferredProcessing() {
-
-        }
-    }
+public class LogConsoleControllerTest {
 
     private LogConsoleController logConsoleController;
     private LogRecord record1;
@@ -116,9 +25,21 @@ public class LogConsoleControllerTest extends TestCase {
     @Before
     public void setUp() {
         logConsoleController = new LogConsoleController();
-        record1 = new LogRecord(new LoggingEventTest("Test message 1", Level.ERROR, "org.nmrfx.analyst.gui.plugin.PluginLoader", "doSomething"));
-        record2 = new LogRecord(new LoggingEventTest("Test message 2", Level.WARN, "org.nmrfx.analyst.AnalystApp", "doAnotherThing"));
-        record3 = new LogRecord(new LoggingEventTest("Test message 3", Level.INFO, "org.nmrfx.processor.gui.LogConsoleController", "doDifferentThing"));
+        record1 = mock(LogRecord.class);
+        when(record1.getLoggerName()).thenReturn("org.nmrfx.analyst.gui.plugin.PluginLoader");
+        when(record1.getSourceMethodName()).thenReturn("doSomething");
+        when(record1.getLevel()).thenReturn(LogLevel.ERROR);
+        when(record1.getMessage()).thenReturn("Test message 1");
+        record2 = mock(LogRecord.class);
+        when(record2.getLoggerName()).thenReturn("org.nmrfx.analyst.AnalystApp");
+        when(record2.getSourceMethodName()).thenReturn("doAnotherThing");
+        when(record2.getLevel()).thenReturn(LogLevel.WARNING);
+        when(record2.getMessage()).thenReturn("Test message 2");
+        record3 = mock(LogRecord.class);
+        when(record3.getLoggerName()).thenReturn("org.nmrfx.processor.gui.LogConsoleController");
+        when(record3.getSourceMethodName()).thenReturn("doDifferentThing");
+        when(record3.getLevel()).thenReturn(LogLevel.INFO);
+        when(record3.getMessage()).thenReturn("Test message 3");
         recordsList = FXCollections.observableList(new ArrayList<>());
         recordsList.add(record1);
         recordsList.add(record2);

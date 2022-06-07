@@ -28,13 +28,12 @@ public class LogTable extends TableView<LogRecord> {
     private final FilteredList<LogRecord> filteredRecords;
 
     public LogTable() {
-        super();
         unfilteredRecords = FXCollections.observableList(new ArrayList<>());
         filteredRecords = new FilteredList<>(unfilteredRecords);
 
         TableColumn<LogRecord, LogLevel> logLevelCol = new TableColumn<>();
         logLevelCol.setCellValueFactory(new PropertyValueFactory<>("level"));
-        logLevelCol.setCellFactory(column -> new LogLevelCellFactory());
+        logLevelCol.setCellFactory(column -> new LogLevelCellFormatter());
         logLevelCol.setMinWidth(20);
         logLevelCol.setMaxWidth(20);
         getColumns().add(logLevelCol);

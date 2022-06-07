@@ -28,10 +28,9 @@ public class LogDetailsView extends GridPane {
     private final TextField location = new TextField();
     private final TextArea message = new TextArea();
     private final Button copyButton = GlyphsDude.createIconButton(FontAwesomeIcon.COPY);
-    private String level;
+    private LogRecord logRecord;
 
     public LogDetailsView() {
-        super();
         // Set controls options
         datetime.setEditable(false);
         location.setEditable(false);
@@ -56,7 +55,14 @@ public class LogDetailsView extends GridPane {
         stretchColumn.setHgrow(Priority.ALWAYS);
         getColumnConstraints().addAll(noConstraints, stretchColumn);
 
-        setDetails(null);
+        clearDetails();
+    }
+
+    private void clearDetails() {
+        this.logRecord  = null;
+        datetime.setText("");
+        location.setText("");
+        message.setText("");
     }
 
     /**
@@ -65,12 +71,9 @@ public class LogDetailsView extends GridPane {
      */
     public void setDetails(LogRecord logRecord) {
         if (logRecord == null) {
-            level  = null;
-            datetime.setText("");
-            location.setText("");
-            message.setText("");
+            clearDetails();
         } else {
-            level = logRecord.getLevel().toString();
+            this.logRecord = logRecord;
             datetime.setText(logRecord.getTime().toString());
             location.setText(logRecord.getLoggerName() + "#" + logRecord.getSourceMethodName());
             message.setText(logRecord.getMessage());
@@ -83,8 +86,11 @@ public class LogDetailsView extends GridPane {
      * @param actionEvent
      */
     private void toClipboardClicked(ActionEvent actionEvent) {
-        String content = "[" + level + ":" + datetime.getText() + "] " + location.getText() + "\n" + message.getText()
-                + "\n\nSoftware version: " + NvUtil.getVersion();
+        String content = "";
+        if (logRecord != null) {
+            content += "[" + logRecord.getLevel().toString() + ":" + datetime.getText() + "] " + location.getText() + "\n" + message.getText()
+                    + "\n\nSoftware version: " + NvUtil.getVersion();
+        }
         Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(content), null);
     }
 
