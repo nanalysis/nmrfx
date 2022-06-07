@@ -212,7 +212,7 @@ public class MMcifReader {
                         extension += "_prot";
                     }
                     if (!sequence.addResidue(reslibDir + "/" + Sequence.getAliased(resName.toLowerCase()) + extension + ".prf", residue, resPos, "", false)) {
-                        log.warn("Can't find residue \"{}\" in residue libraries or STAR file", resName + extension);
+                        log.warn("Can't find residue \"{}{}\" in residue libraries or STAR file", resName, extension);
                     }
                 } catch (MoleculeIOException psE) {
                     throw new ParseException(psE.getMessage());
@@ -463,7 +463,7 @@ public class MMcifReader {
         MoleculeBase molecule = null;
         for (Saveframe saveframe : mmcif.getSaveFrames().values()) {
             log.debug(saveframe.getCategoryName());
-            log.debug("process molecule >>{{}<<", saveframe.getName());
+            log.debug("process molecule >>{}<<", saveframe.getName());
             String molName = "noname";
             molecule = MoleculeFactory.newMolecule(molName);
             buildEntities(saveframe);

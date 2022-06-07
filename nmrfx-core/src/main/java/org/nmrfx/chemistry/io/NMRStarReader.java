@@ -389,7 +389,7 @@ public class NMRStarReader {
             }
             DatasetBase dataset = new DatasetBase(file.getAbsolutePath(), datasetName, false, false);
         } catch (IOException | IllegalArgumentException tclE) {
-            log.warn(tclE.getMessage());
+            log.warn(tclE.getMessage(), tclE);
         }
     }
 

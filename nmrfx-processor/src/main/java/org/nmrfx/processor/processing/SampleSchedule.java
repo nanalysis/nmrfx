@@ -510,7 +510,7 @@ public class SampleSchedule {
                     scheduleStr.append(",");
                 }
             }
-            scheduleStr.append("%n  ").append(nSamples).append(" points out of ").append(nPoints).append(" total");
+            scheduleStr.append(System.lineSeparator()).append(nSamples).append(" points out of ").append(nPoints).append(" total");
             log.debug(scheduleStr.toString());
         }
     }

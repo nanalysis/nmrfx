@@ -289,6 +289,7 @@ public class SSLayoutXY implements MultivariateFunction {
                     angleStr.append(String.format("%3d bou %.1f %.1f par %.1f sig %.1f tar %.1f%n", i, boundaries[0][i] * 180.0 / Math.PI, boundaries[1][i] * 180.0 / Math.PI, pars[i] * 180.0 / Math.PI, (inputSigma[i] * 180.0 / Math.PI), (angleTargets[i] * 180.0 / Math.PI)));
                 }
             }
+            log.debug(angleStr.toString());
         }
     }
 
