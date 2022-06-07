@@ -18,10 +18,14 @@
 package org.nmrfx.processor.datasets.peaks;
 
 import org.nmrfx.processor.datasets.Dataset;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.*;
 
 public class PeakPickParameters {
 
+    private static final Logger log = LoggerFactory.getLogger(PeakPickParameters.class);
     public Dataset theFile;
     public String listName;
     public String mode = "new";
@@ -213,11 +217,10 @@ public class PeakPickParameters {
                 cpt[i] = (pt[i][0] + pt[i][1]) / 2.0;
             }
 
-            System.err.println(i + " " + dim[i] + " " + pt[i][0] + " "
-                    + pt[i][1] + " " + cpt[i]);
+            log.info("{} {} {} {} {}", i, dim[i], pt[i][0], pt[i][1], cpt[i]);
         }
 
-        System.err.println("posneg " + posNeg + " fixed " + fixedPick + " nPeakDim " + nPeakDim);
+        log.info("posneg {} fixed {} nPeakDim {}", posNeg, fixedPick, nPeakDim);
     }
 
     private class DimSizes implements Comparable {

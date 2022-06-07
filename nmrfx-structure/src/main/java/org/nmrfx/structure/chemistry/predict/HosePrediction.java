@@ -84,9 +84,6 @@ public class HosePrediction {
             this.ppmH = null;
             this.ppmC = null;
             upDownList = new ArrayList<>();
-//             for (String shell:shells) {
-            //                System.out.println("shell " + shell);
-            //           }
         }
 
         HOSEPPM(String code, ArrayList<Integer> upDownList) {
@@ -95,9 +92,6 @@ public class HosePrediction {
             this.ppmH = null;
             this.ppmC = null;
             this.upDownList = upDownList;
-//             for (String shell:shells) {
-            //                System.out.println("shell " + shell);
-            //           }
         }
 
         HOSEPPM(String code, String[] shells, Double ppmC, Double ppmH, ArrayList<Integer> upDownList) {
@@ -186,7 +180,6 @@ public class HosePrediction {
         public int shellEquals(HOSEPPM hosePPM) {
             int nEqual = 0;
             for (int i = 0; i < shells.length; i++) {
-                //System.out.println(shells[i] + " " + hosePPM.shells[i]);
                 if (!shells[i].equals(hosePPM.shells[i])) {
                     break;
                 }
@@ -323,33 +316,31 @@ public class HosePrediction {
                 if (cPPMs.size() > 1) {
                     HOSEStat cStat = new HOSEStat(cPPMs);
                     if (cStat.range > 30.0) {
-                        System.out.println(cPPMs);
-                        System.out.println("C " + cStat.range + " " + hosePPM.code);
+                        log.info("{}", cPPMs);
+                        log.info("C {} {}", cStat.range, hosePPM.code);
                     }
                 }
                 if (hPPMs.size() > 1) {
                     HOSEStat hStat = new HOSEStat(hPPMs);
                     if (hStat.range > 1.0) {
-                        System.out.println(hPPMs);
-                        System.out.println("H " + hStat.range + " " + hosePPM.code);
+                        log.info("{}", hPPMs);
+                        log.info("H {} {}", hStat.range, hosePPM.code);
                     }
                 }
                 nMatched++;
             }
             i += nMatch;
         }
-        System.out.println(nMatched);
+        log.info("{}", nMatched);
         return 0;
     }
 
     public int find(String s) {
         int pos = Collections.binarySearch(hoseList, s, (Comparator) new HOSEComparator());
         int hosePos = -1;
-        //System.out.println("find at " + pos);
 
         if (pos >= 0) {
             hosePos = hoseList.get(pos);
-            //System.out.println(getHose(hosePos));
         } else {
             pos = -(pos + 1);
             if ((pos > 0) && (pos < hoseList.size())) {
@@ -455,7 +446,6 @@ public class HosePrediction {
             pResult = predict(hosePPM, iShell);
             if (pResult != null) {
                 HOSEStat stat = pResult.getStat(elemType);
-//System.out.println(stat.nValues);
                 if ((stat != null) && (stat.nValues >= 1)) {
                     break;
                 }
@@ -470,13 +460,11 @@ public class HosePrediction {
         ArrayList<Double> cDistances = new ArrayList<>();
         ArrayList<Double> hDistances = new ArrayList<>();
         int pos = find(hosePPM);
-//System.out.println("pred pos " + pos + " with shell " + nShells);
         HashBag hoseBag = hosePPM.getShellBag(nShells + 1);
         int searchPos = pos;
         while ((searchPos >= 0)) {
             HOSEPPM testHOSE = getHose(searchPos);
             int nEqual = testHOSE.shellEquals(hosePPM);
-//System.out.println("AnEqual " + searchPos + " " +  nEqual + " " + testHOSE.ppmC);
             if (nEqual < nShells) {
                 break;
             }
@@ -502,7 +490,6 @@ public class HosePrediction {
         while ((searchPos >= 0) && (searchPos < hoseList.size())) {
             HOSEPPM testHOSE = getHose(searchPos);
             int nEqual = testHOSE.shellEquals(hosePPM);
-//System.out.println("BnEqual " + searchPos + " " +  nEqual + " " + testHOSE.ppmC);
             if (nEqual < nShells) {
                 break;
             }
@@ -600,7 +587,10 @@ public class HosePrediction {
                         nValues[i]++;
                         double predPPM = stat.wmean;
                         deltaSums[i] += (ppm - predPPM) * (ppm - predPPM);
-                        System.out.printf("%s\t%8.2f\t%8.2f\t%8.2f\t%d\t%d\t%s\t%s\t%s\n", statNames[i], ppm, predPPM, Math.abs(ppm - predPPM), iShell, stat.nValues, hoseString[0], smile, molNum);
+                        if (log.isInfoEnabled()) {
+                            String logMsg = String.format("%s\t%8.2f\t%8.2f\t%8.2f\t%d\t%d\t%s\t%s\t%s", statNames[i], ppm, predPPM, Math.abs(ppm - predPPM), iShell, stat.nValues, hoseString[0], smile, molNum);
+                            log.info(logMsg);
+                        }
                     }
                     if ((stat != null && stat.nValues >= 4)) {
                         double p0 = stat.dStat.getPercentile(1.);
@@ -616,7 +606,7 @@ public class HosePrediction {
             log.warn(ioE.getMessage(), ioE);
         }
         for (int i = 0; i < 2; i++) {
-            System.err.println(nValues[i] + " " + deltaSums[i] + " " + Math.sqrt(deltaSums[i] / nValues[i]) + " " + nViols[i] + " " + nNulls[i]);
+            log.warn("{} {} {} {} {}", nValues[i], deltaSums[i], Math.sqrt(deltaSums[i] / nValues[i]), nViols[i], nNulls[i]);
         }
     }
 
@@ -703,31 +693,21 @@ public class HosePrediction {
                 iStream.read(buffer);
             }
         } catch (IOException ioE) {
-            System.out.println("error " + ioE.getMessage());
+            log.warn(ioE.getMessage(), ioE);
         }
     }
 
     public static HosePrediction getPredictor() {
-//        System.out.println("getP");
         HosePrediction hosePredictor = new HosePrediction();
-//        System.out.println("gotP");
         hosePredictor.openData("data/hosecodes.txt", true);
-//        System.out.println("gotD");
-//        System.out.println("gotI");
         hosePredictor.genIndex();
-//        System.out.println("gend");
         return hosePredictor;
     }
 
     public static HosePrediction getPredictorN() {
-//        System.out.println("getPN");
         HosePrediction hosePredictor = new HosePrediction();
-//        System.out.println("gotPN");
         hosePredictor.openData("data/hosecodesN.txt", true);
-//        System.out.println("gotDN");
-//        System.out.println("gotIN");
         hosePredictor.genIndex();
-//        System.out.println("gendN");
         return hosePredictor;
     }
 
@@ -746,10 +726,14 @@ public class HosePrediction {
     }
 
     public void dump() {
-        int i = 0;
-        for (Integer j : hoseList) {
-            System.out.println(i + " " + j + " " + codeStarts.get(j) + " " + getHose(j));
-            i++;
+        if (log.isDebugEnabled()) {
+            StringBuilder hoseStr = new StringBuilder();
+            int i = 0;
+            for (Integer j : hoseList) {
+                hoseStr.append(i).append(" ").append(j).append(" ").append(codeStarts.get(j)).append(" ").append(getHose(j));
+                i++;
+            }
+            log.debug(hoseStr.toString());
         }
     }
 

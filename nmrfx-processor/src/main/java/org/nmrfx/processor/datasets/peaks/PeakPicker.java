@@ -35,6 +35,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.text.DecimalFormat;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -153,10 +154,8 @@ public class PeakPicker {
                     try {
                         testValue = sign * dataset.readPoint(checkPoint, dim);
                     } catch (IOException | IllegalArgumentException e) {
-                        System.err.println(dim[0] + " " + dim[1] + " "
-                                + dim[2]);
-                        System.err.println(checkPoint[0] + " " + checkPoint[1]
-                                + " " + checkPoint[2] + e.getMessage());
+                        log.error("{} {} {}", dim[0], dim[1], dim[2]);
+                        log.error("{} {} {} {}", checkPoint[0], checkPoint[1], checkPoint[2], e.getMessage(), e);
                         System.exit(1);
                     }
 
@@ -293,12 +292,9 @@ public class PeakPicker {
                     try {
                         testValue = sign * readPoint(checkPoint, dim);
                     } catch (IOException e) {
-                        System.err.println(i + " " + delta + " " + fold[i]
-                                + " " + dim[i] + " " + checkPoint[i]);
-                        System.err.println(checkPoint[0] + " " + checkPoint[1]
-                                + " " + checkPoint[2] + e.getMessage());
-                        System.err.println(pt[0] + " " + pt[1] + " " + pt[2]
-                                + e.getMessage());
+                        log.warn("{} {} {} {} {}", i, delta, fold[i], dim[i], checkPoint[i]);
+                        log.warn("{} {} {} {}", checkPoint[0], checkPoint[1], checkPoint[2], e.getMessage(), e);
+                        log.warn("{} {} {}", pt[0], pt[1], pt[2]);
                     }
 
                     if (testValue < minValue) {
@@ -494,7 +490,7 @@ public class PeakPicker {
             boolean aboveThreshold = dataset.getLSCatalog().
                     addToDatasetInterpolated(dataset, peak, 1.0, peakPickPar.level);
             if (!aboveThreshold) {
-                System.out.println("purge " + peak.getName());
+                log.info("purge {}", peak.getName());
                 peak.setStatus(-1);
             }
         }
@@ -537,7 +533,10 @@ public class PeakPicker {
                 double mean = stats.getMean();
                 double stdDev = stats.getStandardDeviation();
                 double tol = mean - 3.0 * stdDev;
-                System.out.printf("purge %7.3f %7.3f %7.3f\n", mean, stdDev, tol);
+                if(log.isInfoEnabled()) {
+                    DecimalFormat decimalFormatter = new DecimalFormat("#######.###");
+                    log.info("purge {} {} {}", decimalFormatter.format(mean), decimalFormatter.format(stdDev), decimalFormatter.format(tol));
+                }
                 for (Peak peak : peaks) {
                     if (peak.getPeakDim(iDim).getLineWidthHz() < tol) {
                         peak.setStatus(-1);

@@ -32,6 +32,7 @@ import org.apache.commons.math3.optim.PointValuePair;
 import org.apache.commons.math3.analysis.MultivariateFunction;
 import org.apache.commons.math3.geometry.euclidean.twod.Vector2D;
 import org.nmrfx.structure.chemistry.OverlappingLines;
+import org.python.antlr.ast.Str;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -115,16 +116,18 @@ public class SSLayoutXY implements MultivariateFunction {
     }
 
     public void dumpPairs() {
-        for (int i = 0; i < basePairs.length; i++) {
-            int aFix = 1;
-            int dFix = 1;
-            if (i > 1) {
-                aFix = angleFixed[i - 2] ? 1 : 0;
-                dFix = disFixed[i - 2] ? 1 : 0;
+        if (log.isDebugEnabled()) {
+            StringBuilder pairStr = new StringBuilder();
+            for (int i = 0; i < basePairs.length; i++) {
+                int aFix = 1;
+                int dFix = 1;
+                if (i > 1) {
+                    aFix = angleFixed[i - 2] ? 1 : 0;
+                    dFix = disFixed[i - 2] ? 1 : 0;
+                }
+                pairStr.append(String.format("nucxy %4d %4d %7.3f %7.3f %d %d %c%n", i, basePairs[i], values[i * 2], values[i * 2 + 1], aFix, dFix, vienna.charAt(i)));
             }
-            System.out.printf("nucxy %4d %4d %7.3f %7.3f %d %d %c\n",
-                    i, basePairs[i], values[i * 2], values[i * 2 + 1], aFix, dFix, vienna.charAt(i));
-
+            log.debug(pairStr.toString());
         }
     }
 
@@ -144,16 +147,12 @@ public class SSLayoutXY implements MultivariateFunction {
                     }
                 }
             }
-            //for (int i=0;i<nNuc;i++) {
-            //System.out.printf("%d %d %d\n",i,basePairs[i],basePairs2[i]);
-            //}
             for (int i = 0; i < (nNuc - 1); i++) {
                 int pos = 0;
                 int loopSize = 0;
                 int gapSize = 0;
                 int bulgeSize = 0;
                 int loopStart = -1;
-                //System.out.println(i + " " + basePairs[i]);
                 if (basePairs[i] == -1) {
                     // not in base pair so search backwards for last basepair which will be start of a loop
                     for (int j = i - 1; j >= 0; j--) {
@@ -163,7 +162,6 @@ public class SSLayoutXY implements MultivariateFunction {
                             break;
                         }
                     }
-                    //System.out.println(loopStart);
                     // now search forward for another basepair
                     for (int j = i + 1; j < nNuc; j++) {
                         if ((basePairs[j] != -1) && (loopStart != -1)) {
@@ -172,7 +170,6 @@ public class SSLayoutXY implements MultivariateFunction {
                                 loopSize = j - loopStart - 1;
                             } else if (basePairs[loopStart] == (basePairs[j] + 1)) {  // check for a bulge
                                 bulgeSize = j - loopStart - 1;
-                                //System.out.println("bulge "+bulgeSize + " " + pos + " " + i);
                                 if (bulgeSize == 2) {
                                     baseBondLength[i - 1] = targetSeqDistance * 0.75;
                                     if (i > 1) {
@@ -193,7 +190,6 @@ public class SSLayoutXY implements MultivariateFunction {
                         }
                     }
                 }
-                //System.err.println("loop " + i + " " + loopSize + " " + gapSize);
                 // if we have a stemloop we can calculate exactly the angles needed for loop
                 if (loopSize != 0) {
                     double interiorAngle = Math.PI * loopSize / (loopSize + 2);
@@ -207,19 +203,16 @@ public class SSLayoutXY implements MultivariateFunction {
                         double endTarget = -(Math.PI - interiorAngle);
                         angleTargets[i - 1] = endTarget;
                         angleFixed[i - 1] = true;
-                        //System.err.println((i-1)+" " + pos + " " + loopSize + " " + (angleTargets[i-1]*180.0/Math.PI));
                         endTarget = (interiorAngle - Math.PI / 2.0);
                         if (i < angleTargets.length) {
                             angleTargets[i] = endTarget;
                             angleFixed[i] = true;
                         }
-                        //System.err.println((i)+" " + pos + " " + loopSize + " " + (angleTargets[i-1]*180.0/Math.PI));
                     }
                     if (i > 1) {
                         angleTargets[i - 2] = target;
                         angleFixed[i - 2] = true;
                     }
-                    //System.err.println((i-2)+" " + pos + " " + loopSize + " " + (angleTargets[i-2]*180.0/Math.PI));
                 } else if (gapSize > 4) {
                     boolean free = false;
                     if ((pos % 3) == 0) {
@@ -236,7 +229,7 @@ public class SSLayoutXY implements MultivariateFunction {
                         angleRelations[i - 2] = 1;
                     }
                     disFixed[i] = false;
-                    System.err.println("gap " + pos + " " + free);
+                    log.info("gap {} {}", pos, free);
                 }
             }
         } catch (ArrayIndexOutOfBoundsException aiE) {
@@ -251,15 +244,19 @@ public class SSLayoutXY implements MultivariateFunction {
     }
 
     public void dumpFixed() {
-        for (int i = 0; i < nNuc; i++) {
-            System.out.print(i + " " + vienna.charAt(i) + " " + basePairs[i]);
-            if (i > 1) {
-                System.out.print(" fix " + disFixed[i - 2]);
-                if ((i - 2) < angleFixed.length) {
-                    System.out.print(" " + angleFixed[i - 2]);
+        if (log.isDebugEnabled()) {
+            StringBuilder strBuilder = new StringBuilder();
+            for (int i = 0; i < nNuc; i++) {
+               strBuilder.append(i).append(" ").append(vienna.charAt(i)).append(" ").append(basePairs[i]);
+                if (i > 1) {
+                    strBuilder.append(" fix ").append(disFixed[i - 2]);
+                    if ((i - 2) < angleFixed.length) {
+                        strBuilder.append(" ").append(angleFixed[i - 2]);
+                    }
                 }
+                strBuilder.append(System.lineSeparator());
             }
-            System.out.println("");
+            log.debug(strBuilder.toString());
         }
     }
 
@@ -283,11 +280,14 @@ public class SSLayoutXY implements MultivariateFunction {
     }
 
     public void dumpAngles(double[] pars) {
-        System.out.println("dump " + pars.length + " " + boundaries[0].length);
-        for (int i = 0; i < pars.length; i++) {
-            if (useSinCos) {
-            } else {
-                System.err.printf("%3d bou %.1f %.1f par %.1f sig %.1f tar %.1f\n", i, boundaries[0][i] * 180.0 / Math.PI, boundaries[1][i] * 180.0 / Math.PI, pars[i] * 180.0 / Math.PI, (inputSigma[i] * 180.0 / Math.PI), (angleTargets[i] * 180.0 / Math.PI));
+        if (log.isDebugEnabled()) {
+            log.debug("dump {} {}", pars.length, boundaries[0].length);
+            StringBuilder angleStr = new StringBuilder();
+            for (int i = 0; i < pars.length; i++) {
+                if (useSinCos) {
+                } else {
+                    angleStr.append(String.format("%3d bou %.1f %.1f par %.1f sig %.1f tar %.1f%n", i, boundaries[0][i] * 180.0 / Math.PI, boundaries[1][i] * 180.0 / Math.PI, pars[i] * 180.0 / Math.PI, (inputSigma[i] * 180.0 / Math.PI), (angleTargets[i] * 180.0 / Math.PI)));
+                }
             }
         }
     }
@@ -371,7 +371,7 @@ public class SSLayoutXY implements MultivariateFunction {
                         double distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
                         double delta = Math.abs(distance - targetPairDistance);
                         if (report) {
-                            System.out.println(i + " " + j + " " + delta);
+                            log.info("{} {} {}", i, j, delta);
                         }
                         sumPairError += delta * delta;
                     }
@@ -422,7 +422,7 @@ public class SSLayoutXY implements MultivariateFunction {
                         if (interactions[i][j] == 0) {
                             if (distance < targetNBDistance) {
                                 if (report) {
-                                    System.out.println("dis " + i + " " + j + " " + distance);
+                                    log.info("dis {} {} {}", i, j, distance);
                                 }
                                 double delta = Math.abs(distance - targetNBDistance);
                                 sumNBError += delta * delta;
@@ -479,7 +479,7 @@ public class SSLayoutXY implements MultivariateFunction {
             Vector2D vec32 = new Vector2D(deltaX32, deltaY32);
             double angle = Vector2D.angle(vec12, vec32);
             if (report) {
-                System.out.println("ang " + angle * 180.0 / Math.PI);
+                log.info("ang {}", angle * 180.0 / Math.PI);
             }
             double cosAngle = Math.cos(angle);
             double minCos = 0.1;
@@ -492,14 +492,14 @@ public class SSLayoutXY implements MultivariateFunction {
 //        for (int i = 0; i < pars.length; i++) {
 //            if (angleTargets[i] > -999.0) {
 //                double delta = Math.abs(angleTargets[i] - pars[i]);
-//                //System.err.printf("%3d %.1f %.1f %.1f\n",i,angleTargets[i]*180.0/Math.PI,pars[i]*180.0/Math.PI,(delta*180.0/Math.PI));
 //                sumAngle += delta * delta;
 //            }
 //        }
         //double value = sumPairError * 1.0 + sumNBError + sumAngle * 0.3 + nIntersections * 100.0 + sumDis * 1.0;
         double value = sumPairAbsError * 50.0 + sumNBError + sumAngle * 0.3 + nIntersections * 100.0 + sumDis * 1.0;
         //double value = sumPairError+sumNBError + sumAngle + nIntersections*1.0;
-        System.err.printf(" lim %3d nNuc %3d nFree %3d pairs %7.3f nb %7.3f ang %7.3f nint %2d ndis %7.3f tot %7.3f\n", limit, nNuc, nFreeAnglesTot, sumPairError, sumNBError, sumAngle, nIntersections, sumDis, value);
+        String logMsg = String.format("lim %3d nNuc %3d nFree %3d pairs %7.3f nb %7.3f ang %7.3f nint %2d ndis %7.3f tot %7.3f",  limit, nNuc, nFreeAnglesTot, sumPairError, sumNBError, sumAngle, nIntersections, sumDis, value);
+        log.info(logMsg);
         return value;
     }
 
@@ -510,7 +510,7 @@ public class SSLayoutXY implements MultivariateFunction {
             guess[i] = i+1;
         }
         double value = value(guess);
-        System.err.println("start value " + value + " free angles " + nFreeAngles + " free dis " + nFreeDis);
+        log.info("start value {} free angles {} freedis {}", value, nFreeAngles, nFreeDis);
         //dumpAngles(guess);
         limit = nNuc;
         PointValuePair result = null;
@@ -531,10 +531,10 @@ public class SSLayoutXY implements MultivariateFunction {
         } catch (Exception e) {
             log.warn(e.getMessage(), e);
         }
-        System.out.println("done " + result);
+        log.info("done {}", result);
         if (result != null) {
             limit = nNuc;
-            System.out.println("do value");
+            log.info("do value");
             value(result.getPoint(), true);
 //            dumpCoordinates(result.getPoint());
 //            dumpPars(result.getPoint());
@@ -551,11 +551,15 @@ public class SSLayoutXY implements MultivariateFunction {
     }
 
     public void dumpPars(double[] pars) {
-        for (int i = 0; i < nAnglePars; i++) {
-            System.out.printf("angle %2d %7.3f\n", i, pars[i] * 180.0 / Math.PI);
-        }
-        for (int i = nAnglePars; i < pars.length; i++) {
-            System.out.printf("dist  %2d %7.3f\n", i, pars[i]);
+        if (log.isDebugEnabled()) {
+           StringBuilder parsString = new StringBuilder();
+            for (int i = 0; i < nAnglePars; i++) {
+                parsString.append(String.format("angle %2d %7.3f%n", i, pars[i] * 180.0 / Math.PI));
+            }
+            for (int i = nAnglePars; i < pars.length; i++) {
+                parsString.append(String.format("dist  %2d %7.3f%n", i, pars[i]));
+            }
+            log.debug(parsString.toString());
         }
     }
 
@@ -565,18 +569,23 @@ public class SSLayoutXY implements MultivariateFunction {
     }
 
     public void dumpCoordinates() {
-        double sumX = 0.0;
-        double sumY = 0.0;
-        for (int i = 0; i < nNuc; i++) {
-            sumX += values[i * 2];
-            sumY += values[i * 2 + 1];
-        }
-        double centerX = sumX / nNuc;
-        double centerY = sumY / nNuc;
-        for (int i = 0; i < nNuc; i++) {
+        if (log.isDebugEnabled()) {
+            double sumX = 0.0;
+            double sumY = 0.0;
+            for (int i = 0; i < nNuc; i++) {
+                sumX += values[i * 2];
+                sumY += values[i * 2 + 1];
+            }
+            double centerX = sumX / nNuc;
+            double centerY = sumY / nNuc;
+            StringBuilder coordStr = new StringBuilder();
+            for (int i = 0; i < nNuc; i++) {
 //            values[i*2] -= centerX;
-            //           values[i*2+1] -= centerY;
-            System.out.printf("%.3f\t%.3f\n", values[i * 2], values[i * 2 + 1]);
+                //           values[i*2+1] -= centerY;
+
+                coordStr.append(String.format("%.3f\t%.3f%n", values[i * 2], values[i * 2 + 1]));
+            }
+            log.debug(coordStr.toString());
         }
     }
 
@@ -593,17 +602,13 @@ public class SSLayoutXY implements MultivariateFunction {
                 if (!dot) {
                     int leftIndex = leftBrackets.indexOf(curChar);
                     int rightIndex = rightBrackets.indexOf(curChar);
-                    //System.out.println(i + " " + curChar + "  left " + leftIndex + " right " + rightIndex);
                     if (leftIndex != -1) {
-                        //System.out.println(levels[leftIndex]);
                         levelMap[levels[leftIndex]][leftIndex] = i;
                         levels[leftIndex]++;
                     } else if (rightIndex != -1) {
-                        //System.out.println(levels[rightIndex]);
                         levels[rightIndex]--;
                         int start = levelMap[levels[rightIndex]][rightIndex];
                         int end = i;
-                        //System.err.println(start + " <> " + end);
                         addPair(start, end);
                     }
                 }

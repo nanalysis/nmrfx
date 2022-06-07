@@ -8,8 +8,12 @@ import java.util.*;
 import org.nmrfx.chemistry.constraints.MolecularConstraints;
 import org.nmrfx.chemistry.io.Sequence;
 import org.nmrfx.project.ProjectBase;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class MoleculeBase implements Serializable, ITree {
+
+    private static final Logger log = LoggerFactory.getLogger(MoleculeBase.class);
 
     public static final List<String> conditions = new ArrayList<>();
     public static final int ENERGY = 0;
@@ -112,7 +116,7 @@ public class MoleculeBase implements Serializable, ITree {
                                         Residue residue = (Residue) compound;
                                         Atom[] pseudoAtoms = residue.getPseudo(atomName.toUpperCase());
                                         if (pseudoAtoms == null) {
-                                            System.out.println(residue.getName() + " " + atomName);
+                                            log.error("{} {}", residue.getName(), atomName);
                                             System.exit(1);
                                         }
                                         for (Atom atom2 : pseudoAtoms) {
@@ -148,7 +152,7 @@ public class MoleculeBase implements Serializable, ITree {
                                         validAtom = true;
                                     } else {
                                         validAtom = false;
-                                        System.err.println("null spatialset while matching atom " + atomName + " in coordset  " + coordSet.getName());
+                                        log.warn("null spatialset while matching atom {} in coordset {}", atomName, coordSet.getName());
                                     }
                                     if (!checkAll) {
                                         break;
@@ -242,7 +246,7 @@ public class MoleculeBase implements Serializable, ITree {
                                         Residue residue = (Residue) compound;
                                         Atom[] pseudoAtoms = residue.getPseudo(atomName.toUpperCase());
                                         if (pseudoAtoms == null) {
-                                            System.out.println(residue.getName() + " " + atomName);
+                                            log.error("{} {}", residue.getName(), atomName);
                                             System.exit(1);
                                         }
                                         for (Atom atom2 : pseudoAtoms) {
@@ -276,7 +280,7 @@ public class MoleculeBase implements Serializable, ITree {
                                         validAtom = true;
                                     } else {
                                         validAtom = false;
-                                        System.err.println("null spatialset while matching atom " + atomName + " in coordset  " + coordSet.getName());
+                                        log.warn("null spatialset while matching atom {} in coordset {}", atomName, coordSet.getName());
                                     }
                                     if (!checkAll) {
                                         break;
@@ -477,7 +481,6 @@ public class MoleculeBase implements Serializable, ITree {
             equivAtoms.clear();
 
             TreeGroup jGroup = (TreeGroup) treeGroups.get(j);
-//            System.out.println(eAtomList.get(j).getName() + " " + jGroup.toString());
 
             for (int k = 0; k < treeGroups.size(); k++) {
                 if (j == k) {
@@ -506,13 +509,11 @@ public class MoleculeBase implements Serializable, ITree {
                 if (ok) {
                     Atom jAtom = jGroup.pathNodes.get(0).getAtom();
                     Atom kAtom = kGroup.pathNodes.get(0).getAtom();
-//                    System.out.println(jAtom.getName() + " eq " + kAtom.getName());
                     int shell = -1;
 
                     for (int jj = 0; jj < kGroup.pathNodes.size(); jj++) {
                         MNode nodeTest = kGroup.pathNodes.get(jj);
                         Atom atomTest = nodeTest.getAtom();
-//                        System.out.println(jj + " " + kGroup.shells.get(jj) + " " + (atomTest == null ? "" : atomTest.getName()));
 
                         if (atomTest != null && atomTest.getName().equals(jAtom.getName())) {
                             shell = kGroup.shells.get(jj);
@@ -521,7 +522,6 @@ public class MoleculeBase implements Serializable, ITree {
                     }
 
                     String groupName = shell + "_" + jAtom.getName();
-//                    System.out.println(groupName);
                     String jUniq = shell + "_" + jAtom.getName();
                     String kUniq = shell + "_" + kAtom.getName();
 
@@ -546,7 +546,6 @@ public class MoleculeBase implements Serializable, ITree {
                         groupHash.put(groupName, atomEquiv);
                     }
 
-//                    System.out.println("addatom " + groupName + " " + kAtom.getName());
                     atomEquiv.getAtoms().add(kAtom);
                 }
             }
@@ -558,7 +557,6 @@ public class MoleculeBase implements Serializable, ITree {
             String key = entry.getKey();
             AtomEquivalency atomEquiv = entry.getValue();
             Atom eAtom = atomEquiv.getAtoms().get(0);
-//            System.out.println("add eq " + key + " " + eAtom.getName() + " " + atomEquiv.getAtoms().size());
 
             if (eAtom.equivAtoms == null) {
                 eAtom.equivAtoms = new ArrayList(2);
@@ -685,8 +683,7 @@ public class MoleculeBase implements Serializable, ITree {
                                         validAtom = true;
                                     } else {
                                         validAtom = false;
-                                        System.err
-                                                .println("null spatialset while matching atom " + atomName + " in coordset  " + coordSet.getName());
+                                        log.warn("null spatialset while matching atom {} in coordset {}", atomName, coordSet.getName());
                                     }
 
                                     if (!checkAll) {
@@ -784,7 +781,7 @@ public class MoleculeBase implements Serializable, ITree {
             SpatialSet spSet = atom.spatialSet;
             atom.iAtom = i;
             String result = spSet.toPDBString(i + 1, 0);
-            System.out.println(result);
+            log.info(result);
             i++;
         }
     }
@@ -1170,10 +1167,8 @@ public class MoleculeBase implements Serializable, ITree {
                     bond.end.nPiBonds += 1;
                 }
 
-                //System.err.println (atom.name+" "+bond.begin.name + " " + bond.end.name);
             }
 
-            //System.err.println (atom.name+" "+atom.nPiBonds);
         });
 
     }
