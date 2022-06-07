@@ -417,7 +417,7 @@ public class PeakMatcher {
         int[] matching = matcher.getMatching();
 
         log.info("Maximum-weight matching:");
-        StringBuilder matchingLogMsg = new StringBuilder(String.format("%s\t%4s\t%4s\t%4s\t%s\t%10s\t%s\n", "type", "iAtm", "iPk", "prob", "atoms", "peak", "pkppms"));
+        StringBuilder matchingLogMsg = new StringBuilder(String.format("%s\t%4s\t%4s\t%4s\t%s\t%10s\t%s%n", "type", "iAtm", "iPk", "prob", "atoms", "peak", "pkppms"));
         for (int iAtom = 0; iAtom < nTotal; iAtom++) {
             int jPeak = matching[iAtom];
             String name = "arti";

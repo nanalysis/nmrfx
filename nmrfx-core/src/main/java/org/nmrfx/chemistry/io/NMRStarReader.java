@@ -474,7 +474,7 @@ public class NMRStarReader {
                 }
             }
         } else {
-           log.warn("Saveframe \"" + saveFrameName + "\" doesn't exist");
+           log.warn("Saveframe \"{}\" doesn't exist", saveFrameName);
         }
     }
 

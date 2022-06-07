@@ -45,6 +45,8 @@ public class MMcifReader {
     Map<String, Character> chainCodeMap = new HashMap<>();
     Map<Integer, MMCIFEntity> entityMap = new HashMap<>();
 
+    private static final String INVALID_ATOM_WARN_MSG_TEMPLATE = "invalid atom in chem comp atom saveframe \"{}.{}\"";
+
     public MMcifReader(final File cifFile, final MMCIF star3) {
         this.mmcif = star3;
         this.cifFile = cifFile;
@@ -676,7 +678,7 @@ public class MMcifReader {
                 }
 
                 if (atom == null) {
-                    log.warn("invalid atom in chem comp atom saveframe \"{}.{}\"", mapID, atomName);
+                    log.warn(INVALID_ATOM_WARN_MSG_TEMPLATE, mapID, atomName);
                 }
 
                 SpatialSet spSet = atom.getSpatialSet();
@@ -729,10 +731,10 @@ public class MMcifReader {
                 Atom refAtom = MoleculeBase.getAtomByName(fullAtom2);
 
                 if (parent == null) {
-                    log.warn("invalid atom in chem comp atom saveframe \"{}.{}\"", mapID, atom1Name);
+                    log.warn(INVALID_ATOM_WARN_MSG_TEMPLATE, mapID, atom1Name);
                 }
                 if (refAtom == null) {
-                    log.warn("invalid atom in chem comp atom saveframe \"{}.{}\"", mapID, atom2Name);
+                    log.warn(INVALID_ATOM_WARN_MSG_TEMPLATE, mapID, atom2Name);
                 }
 
                 if (parent != null && refAtom != null) {

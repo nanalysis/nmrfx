@@ -42,6 +42,7 @@ public class MoleculeBase implements Serializable, ITree {
     public static final int LABEL_HPPM = 17;
     public static final int LABEL_PPM = 18;
     public static final int LABEL_NONHC = 19;
+    private static final String ATOM_MATCH_WARN_MSG_TEMPLATE = "null spatialset while matching atom {} in coordset {}";
 
     public static ArrayList<Atom> getMatchedAtoms(MolFilter molFilter, MoleculeBase molecule) {
         ArrayList<Atom> selected = new ArrayList<>(32);
@@ -152,7 +153,7 @@ public class MoleculeBase implements Serializable, ITree {
                                         validAtom = true;
                                     } else {
                                         validAtom = false;
-                                        log.warn("null spatialset while matching atom {} in coordset {}", atomName, coordSet.getName());
+                                        log.warn(ATOM_MATCH_WARN_MSG_TEMPLATE, atomName, coordSet.getName());
                                     }
                                     if (!checkAll) {
                                         break;
@@ -280,7 +281,7 @@ public class MoleculeBase implements Serializable, ITree {
                                         validAtom = true;
                                     } else {
                                         validAtom = false;
-                                        log.warn("null spatialset while matching atom {} in coordset {}", atomName, coordSet.getName());
+                                        log.warn(ATOM_MATCH_WARN_MSG_TEMPLATE, atomName, coordSet.getName());
                                     }
                                     if (!checkAll) {
                                         break;
@@ -683,7 +684,7 @@ public class MoleculeBase implements Serializable, ITree {
                                         validAtom = true;
                                     } else {
                                         validAtom = false;
-                                        log.warn("null spatialset while matching atom {} in coordset {}", atomName, coordSet.getName());
+                                        log.warn(ATOM_MATCH_WARN_MSG_TEMPLATE, atomName, coordSet.getName());
                                     }
 
                                     if (!checkAll) {

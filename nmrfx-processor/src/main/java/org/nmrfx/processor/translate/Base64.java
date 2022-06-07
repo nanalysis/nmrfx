@@ -441,11 +441,9 @@ public class Base64 {
 
                 return 3;
             } catch (Exception e) {
-                log.warn("{}:{}", source[srcOffset], DECODABET[source[srcOffset]]);
-                log.warn("{}:{}", source[srcOffset + 1], DECODABET[source[srcOffset + 1]]);
-                log.warn("{}:{}", source[srcOffset + 2], DECODABET[source[srcOffset + 2]]);
-                log.warn("{}:{}", source[srcOffset + 3], DECODABET[source[srcOffset + 3]]);
-
+                log.warn("{}:{}, {}:{}, {}:{}, {}:{}", source[srcOffset], DECODABET[source[srcOffset]],
+                        source[srcOffset + 1], DECODABET[source[srcOffset + 1]], source[srcOffset + 2],
+                        DECODABET[source[srcOffset + 2]], source[srcOffset + 3], DECODABET[source[srcOffset + 3]]);
                 return -1;
             }
             //e nd catch

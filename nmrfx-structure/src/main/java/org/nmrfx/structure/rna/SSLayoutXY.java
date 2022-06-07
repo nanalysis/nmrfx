@@ -32,7 +32,6 @@ import org.apache.commons.math3.optim.PointValuePair;
 import org.apache.commons.math3.analysis.MultivariateFunction;
 import org.apache.commons.math3.geometry.euclidean.twod.Vector2D;
 import org.nmrfx.structure.chemistry.OverlappingLines;
-import org.python.antlr.ast.Str;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
