@@ -108,7 +108,6 @@ public class SSViewer extends Pane {
     }
 
     public void drawSS() {
-        //System.out.println("refresh " + scene.getWidth() + " " + scene.getHeight());
         drawingGroup.getChildren().clear();
         try {
             layoutStructure(drawingGroup);
@@ -214,7 +213,6 @@ public class SSViewer extends Pane {
 //        stack.setAlignment(Pos.CENTER);     // Right-justify nodes in stack
 //        stack.setTranslateX(x - width / 2 + 1);
 //        stack.setTranslateY(y - width / 2 + 1);
-//        System.out.println("label " + text + " " + fontSize);
 //        atomMap.put(iRes + "", new AtomCoord(x, y));
 //        return stack;
     }
@@ -590,7 +588,6 @@ public class SSViewer extends Pane {
                 deltaX = deltaX * len2 / len1;
                 deltaY = deltaY * len2 / len1;
             }
-////            System.out.printf("%3d %1d %8.2f %8.2f %8.2f\n",iRes,mode, len1,deltaX,deltaY);
             if (ok) {
                 if ((mode != 0) && ((lastX != 0.0) || (lastY != 0.0))) {
                     double d1 = (deltaX - lastX) * (deltaX - lastX) + (deltaY - lastY) * (deltaY - lastY);

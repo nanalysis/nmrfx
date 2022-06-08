@@ -67,7 +67,6 @@ public class HydrogenBond {
                         if (distance < toleranceRNA) {
                             double angle = getRNAAngle(hydrogen, acceptor, structureNum);
                             if (angle > 1.85) {
-//                                System.out.println(angle + "  " +distance + "  " + hydrogen.atom.getResidueName()+ hydrogen.atom.getResidueNumber()+ " " +hydrogen.atom.getName() + "   " +  acceptor.atom.getResidueName()+acceptor.atom.getResidueNumber()+ " " +acceptor.atom.getName());
                                 valid = true;
 
                             }

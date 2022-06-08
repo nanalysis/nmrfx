@@ -723,7 +723,6 @@ public class DrawPeaks {
 //    protected boolean pick1DMultiplet(GraphicsContextInterface g2, int[] dim, Multiplet multiplet, int x,
 //            int y) {
 //        if (!multiplet.isValid()) {
-//            System.out.println("invalid mult");
 //            return false;
 //        }
 //        String label = getMultipletLabel(multiplet);

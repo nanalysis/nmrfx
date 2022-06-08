@@ -98,7 +98,6 @@ public class RefManager {
         } else {
             refMap.put(nameWithDim, value);
         }
-        //System.out.println(nameWithDim + " value is " + value + " was " + updateItem.getValue().toString());
         boolean refresh = true;
         switch (propName) {
             case "fixdsp":

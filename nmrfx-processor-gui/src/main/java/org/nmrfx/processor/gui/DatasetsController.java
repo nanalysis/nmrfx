@@ -524,7 +524,6 @@ public class DatasetsController implements Initializable, PropertyChangeListener
             switch (column) {
                 case "Value":
                     value.setValue(newValue);
-//                    System.out.println("value changed to " + newValue);
                     saveValueTable();
                     break;
             }

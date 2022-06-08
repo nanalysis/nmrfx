@@ -1526,7 +1526,6 @@ public class PolyChart extends Region implements PeakListener {
             size = dataset.getSizeReal(datasetAttributes.dim[vecDim]);
         }
         int[] currentRegion = controller.getExtractRegion(vecDimName, size);
-        //System.out.printf("%.3f %.3f %d %d %d\n", min, max, size, currentRegion[0], currentRegion[1]);
         if (min > max) {
             double hold = min;
             min = max;
@@ -1544,7 +1543,6 @@ public class PolyChart extends Region implements PeakListener {
          */
         double f1 = min / (size - 1);
         double f2 = max / (size - 1);
-        //System.out.printf("%.3f %.3f %d %d %d %.3f %.3f\n", min, max, size, currentRegion[0], currentRegion[1], f1, f2);
         double mul = Math.pow(10.0, Math.ceil(Math.log10(size)));
         f1 = Math.round(f1 * mul) / mul;
         f2 = Math.round(f2 * mul) / mul;
@@ -1756,7 +1754,6 @@ public class PolyChart extends Region implements PeakListener {
                 datasetAttributes.dim[i] = i;
             }
 
-            //System.out.println("set dataset " + dataset.getName() + " " + dataset.getNDim() + " " + dataset.getFreqDomain(0));
             updateAxisType();
             datasetFileProp.set(dataset.getFile());
             datasetAttributes.drawList.clear();
@@ -3727,7 +3724,6 @@ public class PolyChart extends Region implements PeakListener {
                 }
             }
         }
-        //System.out.printf("pivot %.3f map %d dDim %d size %d pos %.3f frac %.3f\n",pivot, mapDim,datasetDim,size,position,phaseFraction);
     }
 
     public double getPivotFraction() {

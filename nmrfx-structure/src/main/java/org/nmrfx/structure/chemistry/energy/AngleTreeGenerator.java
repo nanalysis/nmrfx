@@ -417,9 +417,6 @@ public class AngleTreeGenerator {
                         twoRing = true;
                     }
                 }
-//                System.out.println("rotatable " + rotatable + " " + a3.getEntity().getName() + " " + a3.getShortName() + " " + a3.getFlag(Atom.RING) + " " + a3.getFlag(Atom.AROMATIC) + " "
-//                        + a2.getShortName() + " " + a2.getFlag(Atom.RING) + " "
-//                        + a2.getFlag(Atom.AROMATIC) + " " + mode + " " + twoRing);
 
                 int currIRP = a3.irpIndex;
                 if (currIRP == 0) {
@@ -441,11 +438,9 @@ public class AngleTreeGenerator {
             }
         }
         ringClosures = new HashMap<>();
-        //        System.out.println("add clo " + closureBonds.size());
         for (Bond bond : closureBonds) {
             bond.begin.addBond(bond);
             bond.end.addBond(bond);
-            //            System.out.println("close bond " + bond.toString());
             addRingClosureSet(ringClosures, bond.begin, bond.end);
         }
         if (itree instanceof Molecule) {

@@ -184,11 +184,9 @@ public class CmaesRefinement extends Refinement implements MultivariateFunction 
         int i = 0;
         for (List<Atom> atomArray : linkedAtoms) {
             if (i < linkedAtoms.length - 1) {
-                //System.out.println("do links");
                 double sumCos = 0.0;
                 double sumSin = 0.0;
                 for (Atom atom : atomArray) {
-                    //System.out.printf("%6.1f ", Math.toDegrees(atom.dihedralAngle));
                     sumCos += Math.cos(atom.dihedralAngle);
                     sumSin += Math.sin(atom.dihedralAngle);
 

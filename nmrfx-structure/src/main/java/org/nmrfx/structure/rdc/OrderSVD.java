@@ -132,7 +132,6 @@ public class OrderSVD {
         }
 
         AR = new Array2DRowRealMatrix(A);
-//        System.out.println("A = " + AR.toString());
         // perform SVD on the matrix A
         SingularValueDecomposition svd = new SingularValueDecomposition(AR);
         // construct the b vector, which contains the normalized dipolar couplings 

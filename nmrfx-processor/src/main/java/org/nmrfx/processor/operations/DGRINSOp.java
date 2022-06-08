@@ -115,7 +115,6 @@ public class DGRINSOp extends DatasetOperation {
                 pt[i][1] = dataset.getVSize(dim[i]) - 1;
                 // fixme should we use vsize this.pt[i][1] = dataset.getVSize_r(dim[i]) - 1;
             }
-//            System.out.println(i + " vsize " + dataset.getVSize(dim[i]) +  " vsize_r " + dataset.getVSize_r(dim[i]) + " size " + dataset.getSize(dim[i]));
         }
         return pt;
     }
