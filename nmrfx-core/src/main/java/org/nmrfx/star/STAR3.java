@@ -17,10 +17,14 @@
  */
 package org.nmrfx.star;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.*;
 
 public class STAR3 extends STAR3Base {
 
+    private static final Logger log = LoggerFactory.getLogger(STAR3.class);
     public STAR3(String name) {
         super(name);
     }
@@ -64,14 +68,14 @@ public class STAR3 extends STAR3Base {
             } else if (token.startsWith("data_")) {
                 processSaveFrame(token);
             } else {
-                System.out.println(token);
+                log.info(token);
             }
         }
     }
 
     public static void main(String[] argv) {
         if (argv.length != 1) {
-            System.err.println("usage: fileName");
+            log.warn("usage: fileName");
         } else {
             STAR3 star3 = new STAR3(argv[0]);
             while (true) {
@@ -79,7 +83,7 @@ public class STAR3 extends STAR3Base {
                 if (token == null) {
                     break;
                 } else {
-                    System.err.println(token);
+                    log.warn(token);
                 }
             }
         }

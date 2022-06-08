@@ -145,9 +145,7 @@ public class ScanRegion {
             iVec[i] = iPoint[i][0];
             blockNum += (iBlock[i] * offsetBlocks[dim[i]]);
         }
-        //for (int i = 0; i < nDim; i++) {
-        //System.err.println(iPoint[i][0]+" "+iPoint[i][1]+" "+blockSize[dim[i]]+" "+pt[i][0]+" "+pt[i][1]+" "+iPointStart[i]+" "+iBlock[i]);
-        //}
+
     }
 
     void getBlockVectorIndexes() {
@@ -205,7 +203,6 @@ public class ScanRegion {
             if (!nextBlock()) {
                 scanVector.clear();
                 scanIn = 0;
-                //System.out.println("empty");
                 return new int[0][0];
             }
         }

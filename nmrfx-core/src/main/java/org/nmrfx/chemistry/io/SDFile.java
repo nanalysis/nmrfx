@@ -155,7 +155,7 @@ public class SDFile {
             nProps = Integer.parseInt(valueString);
         }
         if ((nProds != 0) || (nReacs != 0) || (nInters != 0)) {
-            System.err.println("unused nProd, nReacs, or nInters");
+            log.warn("unused nProd, nReacs, or nInters");
         }
     }
 
@@ -188,7 +188,7 @@ public class SDFile {
                 log.warn("Unable to parse massDiff", nfE);
             }
             if (massDiff != 0) {
-                System.err.println("unused massDiff");
+                log.warn("unused massDiff");
             }
 
             String chargeString = string.substring(36, 39).trim();
@@ -280,7 +280,6 @@ public class SDFile {
                         break;
                 }
 
-                //System.err.println (iBond + " " + jBond + " " + atomList.size ());
                 if (atomList != null) {
                     if ((iBond < atomList.size()) && (jBond < atomList.size())) {
                         Atom atom1 = (Atom) atomList.get(iBond);
@@ -288,8 +287,7 @@ public class SDFile {
 
                         Atom.addBond(atom1, atom2, Order.getOrder(order), stereo, false);
                     } else {
-                        System.err.println("error in adding bond to molecule "
-                                + molName);
+                        log.warn("error in adding bond to molecule {}", molName);
                     }
                 }
             } catch (NumberFormatException nFE) {
@@ -321,7 +319,7 @@ public class SDFile {
                 String atomSpec = string.substring(3, 6).trim();
                 Integer index = Integer.parseInt(atomSpec);
                 if (index < 1) {
-                    System.out.println("no index at " + string);
+                    log.warn("no index at {}", string);
                 } else if (string.length() > 7) {
                     atomList.get(index - 1).setProperty("V", string.substring(7));
                 }
