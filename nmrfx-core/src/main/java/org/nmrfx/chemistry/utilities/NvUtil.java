@@ -19,6 +19,8 @@ package org.nmrfx.chemistry.utilities;
 
 import java.util.List;
 
+import static java.util.Objects.requireNonNullElse;
+
 public class NvUtil {
 
     static String VERSION = null;
@@ -145,7 +147,7 @@ public class NvUtil {
 
     public static String getVersion() {
         if (VERSION == null) {
-            VERSION = NvUtil.class.getPackage().getImplementationVersion();
+            VERSION = requireNonNullElse(NvUtil.class.getPackage().getImplementationVersion(), "development");
         }
         return VERSION;
     }

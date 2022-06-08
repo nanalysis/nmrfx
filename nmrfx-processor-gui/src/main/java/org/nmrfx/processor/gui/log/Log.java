@@ -79,6 +79,12 @@ public class Log {
         return Collections.unmodifiableList(memoryAppender.getRecords());
     }
 
+    public static void clearRecordsFromMemory() {
+        if (memoryAppender != null) {
+            memoryAppender.clearRecords();
+        }
+    }
+
     /**
      * Change a log level dynamically.
      *
