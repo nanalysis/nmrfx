@@ -202,9 +202,7 @@ public class MTree {
                     }
 
                 } else {
-                    if ((nNode.parent == cNode) || (cNode.parent == nNode)) {
-
-                    } else {
+                    if ((nNode.parent != cNode) && (cNode.parent != nNode)) {
                         List<Ring> nAtomRings = (List) nNode.getAtom().getProperty("rings");
                         List<Ring> cAtomRings = (List) cNode.getAtom().getProperty("rings");
                         if (nAtomRings != null && cAtomRings != null) {

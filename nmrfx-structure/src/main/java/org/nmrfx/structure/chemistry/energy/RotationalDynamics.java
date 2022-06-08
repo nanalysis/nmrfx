@@ -81,7 +81,6 @@ public class RotationalDynamics {
     double[][] accStore;
     double[] velStoreAng;
     DynState dynState = null;
-    static boolean REPORTBAD = false;
 
     public RotationalDynamics(Dihedral dihedrals, Random rand) {
         this.dihedrals = dihedrals;
@@ -448,9 +447,6 @@ public class RotationalDynamics {
             }
             branch.phiMatF.transOperate(alphaPreF, branch.alphaVecF);
             double accelF = branch.epskF / branch.dkF - branch.gkVecF.dotProduct(branch.alphaVecF);
-
-            if (REPORTBAD && (Math.abs(accelF) > 1.0)) {
-            }
             branch.rotAccel.setEntry(2, accelF);
             branch.eVecF.multiply(accelF, tempVecF);
             tempVecF.add(branch.aVecF, tempVecF);

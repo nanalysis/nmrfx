@@ -511,8 +511,9 @@ public class PathIterator implements Iterator {
                 int mode = nodeValidator.getMode(currentPattern);
                 if (mode == 0) {
                     nodeValidator.assignProps(nextPath, currentPattern);
-                } else if (mode == 1) {
-                } else if (mode == 2) {
+                }
+                // Note: mode == 1 was only used to print the type (which was commented out) so it has been removed
+                else if (mode == 2) {
                     ArrayList params = nodeValidator.getParams(nextPath, currentPattern);
                     int atomIndex = (Integer) params.get(0);
                     for (int i = 1; i < params.size(); i += 2) {
