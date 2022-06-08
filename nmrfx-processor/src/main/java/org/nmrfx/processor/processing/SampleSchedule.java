@@ -259,12 +259,15 @@ public class SampleSchedule {
     }
 
     public void dumpSchedule() {
-        for (int i = 0; i < v_samples.length; i++) {
-            System.out.print(i);
-            for (int j = 0; j < v_samples[i].length; j++) {
-                System.out.print(" " + v_samples[i][j]);
+        if (log.isDebugEnabled()) {
+            StringBuilder scheduleString = new StringBuilder();
+            for (int i = 0; i < v_samples.length; i++) {
+                scheduleString.append(i);
+                for (int j = 0; j < v_samples[i].length; j++) {
+                    scheduleString.append(" ").append(v_samples[i][j]);
+                }
+                log.debug(scheduleString.toString());
             }
-            System.out.println("");
         }
     }
 
@@ -294,7 +297,7 @@ public class SampleSchedule {
      */
     public void setDims(int[] dims) {
         if (dims.length < nDim - 1) {
-            System.out.println("too few dimensions in SAMPLE_SCHEDULE dims, ignore values");
+            log.info("too few dimensions in SAMPLE_SCHEDULE dims, ignore values");
         } else {
             // ignore values if too many, just use the ones available
             for (int i = 0; i < nDim - 1; i++) {
@@ -355,13 +358,11 @@ public class SampleSchedule {
     public VecIndex convertToNUSGroup(VecIndex fullIndex, int groupNum) {
         int groupSize = fullIndex.inVecs.length;
         int[] inVecs = fullIndex.inVecs;
-        // System.out.print("next index " + sampleIndices.length + " gs " + groupSize + " gNum " + groupNum + " ");
         boolean ok = true;
         if (offsetMul == 0) {
             offsetMul = groupSize;
         }
         for (int i = 0; i < groupSize; i++) {
-            // System.out.print(i + " inv " + inVecs[i]+" ");
             int j = inVecs[i];
             int phOff = j % groupSize;
             j /= groupSize;
@@ -372,10 +373,8 @@ public class SampleSchedule {
             } else if (!demo) {
                 inVecs[i] = offsetMul * index + phOff;
             }
-            // System.out.print(inVecs[i]+" ");
         }
 
-        // System.out.println(ok);
         VecIndex nusIndex = null;
         if (ok) {
             nusIndex = fullIndex;
@@ -438,7 +437,6 @@ public class SampleSchedule {
         do {
             i = 0;
             n = 0;
-//            System.out.print("iter "+count+":");
             while (i < nPoints) {
                 if (n < nSamples) {
                     v_samples[n][0] = i;  // no need to assign if bigger than array
@@ -447,12 +445,10 @@ public class SampleSchedule {
                 arg = adj * Math.sin(HALF_PI * (double) (i + 0.5) / (double) (nPoints + 1.0));
                 k = poisson(arg);
 //                k = (int) rData.nextPoisson(arg);  // alternate to poisson()
-//                System.out.print(" "+k);
                 // ex: adj init = 6, sin between 0 and 1
                 i += k;
                 n++;
             }
-//            System.out.println(": n="+n+" adj="+adj);
             if (n > nSamples) {
                 adj *= 1.02;
             } // too many points
@@ -464,7 +460,7 @@ public class SampleSchedule {
 
         if (count >= MAX_TRY) {  // avoid infinite loop
             nSamples = n;
-            System.err.println("sample schedule created with " + n + " samples, max tries reached");
+            log.warn("sample schedule created with {} samples, max tries reached", n);
         }
     }
 
@@ -501,20 +497,22 @@ public class SampleSchedule {
     }
 
     /**
-     * Display SampleSchedule in <i>stdout</i>.
+     * Display SampleSchedule in log messages.
      */
     public void display() {
-        System.out.print("sample schedule:");
-        for (int j = 0; j < nSamples; j++) {
-            for (int k : v_samples[j]) {
-                System.out.print(" " + k);
+        if (log.isDebugEnabled()) {
+            StringBuilder scheduleStr = new StringBuilder("sample schedule:");
+            for (int j = 0; j < nSamples; j++) {
+                for (int k : v_samples[j]) {
+                    scheduleStr.append(" ").append(k);
+                }
+                if (j < nSamples - 1) {
+                    scheduleStr.append(",");
+                }
             }
-            if (j < nSamples - 1) {
-                System.out.print(",");
-            }
+            scheduleStr.append(System.lineSeparator()).append(nSamples).append(" points out of ").append(nPoints).append(" total");
+            log.debug(scheduleStr.toString());
         }
-        System.out.println();
-        System.out.println("  " + nSamples + " points out of " + nPoints + " total");
     }
 
     /**
@@ -525,7 +523,7 @@ public class SampleSchedule {
     private void writeFile() {
         try (BufferedWriter bw = Files.newBufferedWriter(Paths.get(fpath), StandardCharsets.US_ASCII,
                 StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.CREATE, StandardOpenOption.WRITE)) {
-            System.out.println("writing new sample schedule: " + fpath);
+            log.info("writing new sample schedule: {}", fpath);
             for (int j = 0; j < nSamples; j++) {
                 bw.write(v_samples[j][0] + " ");
                 bw.newLine();
@@ -604,9 +602,8 @@ public class SampleSchedule {
                 calcDims();
                 calcSampleHash();
                 calcSampleIndices();
-                System.out.println("sample schedule read " + nSamples + " points from " + fpath);
+                log.info("sample schedule read {} points from {}", nSamples, fpath);
             }
-            br.close();
         } catch (IOException e) {
             throw new ProcessingException("error reading " + fpath);
         }

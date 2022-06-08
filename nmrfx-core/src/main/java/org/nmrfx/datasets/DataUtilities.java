@@ -17,19 +17,23 @@
  */
 package org.nmrfx.datasets;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
 public class DataUtilities {
 
+    private static final Logger log = LoggerFactory.getLogger(DataUtilities.class);
+
     public static void readBytes(RandomAccessFile raFile, byte[] dataBytes, long newPos, int length) {
         try {
             raFile.seek(newPos);
             raFile.read(dataBytes, 0, length);
         } catch (IOException e) {
-            System.err.println("Unable to read from dataset.");
-            System.err.println(e.getMessage());
+            log.warn("Unable to read from dataset. {}", e.getMessage(), e);
         }
     }
 
@@ -42,9 +46,7 @@ public class DataUtilities {
 
             //store current pointers
         } catch (IOException e) {
-            System.err.println("Unable to write record to file.");
-            System.err.println(e.getMessage());
-
+            log.warn("Unable to write record to file. {}", e.getMessage(), e);
             return false;
         }
 

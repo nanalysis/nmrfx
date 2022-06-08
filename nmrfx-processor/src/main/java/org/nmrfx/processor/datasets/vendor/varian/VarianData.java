@@ -896,7 +896,6 @@ public class VarianData implements NMRData {
         if (isComplex(iDim)) {
             nPer = 2;
         }
-        //System.out.println(size + " " + nPer + " " + ebytes);
         int nPoints = size * nPer;
         byte[] dataBuf = new byte[nPoints * ebytes * 2];
         if (isFloat) {
@@ -972,7 +971,7 @@ public class VarianData implements NMRData {
         }
         File scheduleFile = new File(schedulePath);
         if (scheduleFile.exists()) {
-            System.out.println("exists");
+            log.info("exists");
             try {
                 readSampleSchedule(scheduleFile.getPath(), false);
                 gotSchedule = true;
@@ -981,12 +980,12 @@ public class VarianData implements NMRData {
             }
         }
         if (gotSchedule) {
-            System.out.println("success");
+            log.info("success");
             int[] dims = sampleSchedule.getDims();
             for (int i = 0; i < dims.length; i++) {
                 sizes[i + 1] = dims[i];
                 maxSizes[i + 1] = dims[i];
-                System.out.println("sched size " + i + " " + sizes[i + 1]);
+                log.info("sched size {} {}", i, sizes[i + 1]);
             }
         }
         return gotSchedule;
@@ -1043,7 +1042,7 @@ public class VarianData implements NMRData {
             try {
                 localDateTime = LocalDateTime.parse(timeRun, vTimeFormatter);
             } catch (DateTimeParseException dtpE) {
-                System.err.println("parse time " + timeRun + " " + dtpE.getMessage());
+                log.warn("parse time {} {}", timeRun, dtpE.getMessage(), dtpE);
             }
         } else {
             String date = getPar("date");
@@ -1052,7 +1051,7 @@ public class VarianData implements NMRData {
                     LocalDate localDate = LocalDate.parse(date, vDateFormatter);
                     localDateTime = localDate.atStartOfDay();
                 } catch (DateTimeParseException dtpE) {
-                    System.err.println("parse date " + date + " " + dtpE.getMessage());
+                    log.warn("parse date {} {}", date, dtpE.getMessage(), dtpE);
                 }
             }
         }
@@ -1074,9 +1073,6 @@ public class VarianData implements NMRData {
         if ((new File(parpath)).exists()) {
             parMap = VNMRPar.getParMap(parpath);
         }
-//        for (String name : parMap.keySet()) {
-//            System.out.println("  "+name+" : "+parMap.get(name));
-//        }
     }
 
     // open Varian data file, read header
@@ -1141,7 +1137,7 @@ public class VarianData implements NMRData {
             }
             checkPars(np, nblocks);
             if (ntraces > 1) {
-                System.out.println(">> number of traces " + ntraces + " more than one");
+                log.info(">> number of traces {} more than one", ntraces);
                 np *= ntraces; // should read ntraces * nblocks into nvectors
             }
             if (badHeaderFormat()) {
@@ -1172,11 +1168,11 @@ public class VarianData implements NMRData {
         Integer ipar;
         ipar = getParInt("np");
         if (ipar != null && ipar != cKnp) {
-            System.out.println(">> np in header and procpar differ");
+            log.info(">> np in header and procpar differ");
         }
         ipar = getParInt("arraydim");
         if (ipar != null && ipar != cKblocks) {
-            System.out.println(">> arraydim in header " + cKblocks + " and procpar differ " + ipar);
+            log.info(">> arraydim in header {} and procpar differ {}", cKblocks, ipar);
         }
     }
 
@@ -1184,7 +1180,7 @@ public class VarianData implements NMRData {
         if ((nblocks < 1) || (ntraces < 1) || (np < 1) || (nbheaders < 1)
                 || (ebytes != 2 && ebytes != 4) || (status < 1) || ((status & 0x1) != 1)
                 || (tbytes != np * ebytes)) {
-            System.out.println("nblocks " + nblocks + " ntraces  " + ntraces + " np " + np + " n " + nbheaders + " ebytes " + ebytes + " status " + status + " tbytes " + tbytes);
+            log.info("nblocks {} ntraces {} np {} n {} ebytes {} status {} tbytes {}", nblocks, ntraces, np, nbheaders, ebytes, status, tbytes);
             return true;
         } else {
             return false;
@@ -1331,6 +1327,7 @@ public class VarianData implements NMRData {
             byte[] hbytes = new byte[4 * size];
             int nread = fc.read(ByteBuffer.wrap(hbytes), skips);
             IntBuffer ibuf = ByteBuffer.wrap(hbytes).asIntBuffer();
+            StringBuilder cStrBuilder = new StringBuilder();
             for (int i = 0; i < size && nread > 27; i++) {  // read block header
                 int c = ibuf.get();
                 switch (i) {
@@ -1346,10 +1343,12 @@ public class VarianData implements NMRData {
                         ct = c;  // number of completed transients
                         break;
                 }
-                System.out.print(c + " ");
+                cStrBuilder.append(c).append(" ");
             }
-            System.out.println("blockheader: scale=" + iscale + " status=" + stat
-                    + " index=" + index + " mode=" + mode + " ct=" + ct);
+            if (log.isInfoEnabled()) {
+                log.info(cStrBuilder.toString());
+            }
+            log.info("blockheader: scale={} status={} index={} mode={} ct={}", iscale, stat, index, mode, ct);
         } catch (EOFException e) {
             log.warn(e.getMessage(), e);
             if (fc != null) {

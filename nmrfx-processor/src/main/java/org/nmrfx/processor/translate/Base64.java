@@ -441,15 +441,9 @@ public class Base64 {
 
                 return 3;
             } catch (Exception e) {
-                System.out.println("" + source[srcOffset] + ": "
-                        + (DECODABET[source[srcOffset]]));
-                System.out.println("" + source[srcOffset + 1] + ": "
-                        + (DECODABET[source[srcOffset + 1]]));
-                System.out.println("" + source[srcOffset + 2] + ": "
-                        + (DECODABET[source[srcOffset + 2]]));
-                System.out.println("" + source[srcOffset + 3] + ": "
-                        + (DECODABET[source[srcOffset + 3]]));
-
+                log.warn("{}:{}, {}:{}, {}:{}, {}:{}", source[srcOffset], DECODABET[source[srcOffset]],
+                        source[srcOffset + 1], DECODABET[source[srcOffset + 1]], source[srcOffset + 2],
+                        DECODABET[source[srcOffset + 2]], source[srcOffset + 3], DECODABET[source[srcOffset + 3]]);
                 return -1;
             }
             //e nd catch
@@ -546,8 +540,7 @@ public class Base64 {
                 // end if: equals sign or better
             } // end if: white space, equals sign or better
             else {
-                System.err.println("Bad Base64 input character at " + i + ": "
-                        + source[i] + "(decimal)");
+                log.warn("Bad Base64 input character at {}:{} (decimal)", i, source[i]);
 
                 return null;
             }

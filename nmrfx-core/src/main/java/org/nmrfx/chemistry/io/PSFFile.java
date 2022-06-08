@@ -19,6 +19,8 @@
 package org.nmrfx.chemistry.io;
 
 import org.nmrfx.chemistry.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -28,6 +30,8 @@ import java.util.ArrayList;
  * @author brucejohnson
  */
 public class PSFFile {
+
+    private static final Logger log = LoggerFactory.getLogger(PSFFile.class);
 
     public static void read(String fileName)
             throws MoleculeIOException {
@@ -126,7 +130,7 @@ public class PSFFile {
         } catch (FileNotFoundException ioe) {
             throw new MoleculeIOException(ioe.getMessage());
         } catch (IOException ioe) {
-            System.err.println(ioe.getMessage());
+            log.warn(ioe.getMessage(), ioe);
             return;
         }
         molecule.updateAtomArray();
