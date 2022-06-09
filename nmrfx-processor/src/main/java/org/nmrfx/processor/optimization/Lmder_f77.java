@@ -407,7 +407,6 @@ public class Lmder_f77 {
                 }
             }
 
-            //System.out.println("Initial rmsd: " + rmsd1 + "Final rmsd: " + rmsd2+" Polish rmsd: "+rmsd3+"nfev "+nfev+" "+info[1]);
             na[ic] = n;
             ma[ic] = m;
             nf[ic] = nfev;
@@ -415,13 +414,11 @@ public class Lmder_f77 {
 
             fnm[ic] = fnorm2;
 
-            //System.out.print("\n Initial L2 norm of the residuals: " + fnorm1 +
-            //"\n Final L2 norm of the residuals: " + fnorm2 +
-            //"\n Number of function evaluations: " + nf[ic] +
-            //"\n Number of Jacobian evaluations: " + nj[ic] +
-            //"\n Info value: " + info[1] +
-            //"\n Final approximate solution: \n\n");
-            //tol /= Math.pow(1.0e4,1.0/ntries);
+            // Note: variable meanings are Initial L2 norm of the residuals: fnorm1
+            // Final L2 norm of the residuals: fnorm2
+            // Number of function evaluations: nf[ic]
+            // Number of Jacobian evaluations: nj[ic]
+            // tol /= Math.pow(1.0e4,1.0/ntries);
             // if ((ntries-k) <2) {
             //   tol = finalTol;
             //}

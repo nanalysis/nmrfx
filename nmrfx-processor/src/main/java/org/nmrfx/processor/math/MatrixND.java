@@ -1068,7 +1068,6 @@ public class MatrixND implements MatrixType {
                             double testValue = sign * data[index];
 //                            if ((ptValue < testValue) || (testValue < noiseThreshold)) {
                             if ((ptValue < testValue)) {
-//                                System.out.println(jDim + " < " + i + " " +index + " " + ptValue + " " + testValue + " " + noiseThreshold);
                                 ok = false;
                                 break;
                             }
@@ -1085,7 +1084,6 @@ public class MatrixND implements MatrixType {
                             double testValue = sign * data[index];
 //                            if ((ptValue < testValue) || (testValue < noiseThreshold)) {
                             if (ptValue < testValue) {
-//                                System.out.println(jDim + " > " + i + " " +index + " " + ptValue + " " + testValue + " " + noiseThreshold);
                                 ok = false;
                                 break;
                             }
@@ -1108,7 +1106,6 @@ public class MatrixND implements MatrixType {
                 }
             }
         }
-//        System.out.println("max value " + maxValue + " th " + threshold + " gt " + globalThreshold + " nt " + noiseThreshold + " " + peaks.size() + " " + nPossible);
         return peaks;
     }
 }

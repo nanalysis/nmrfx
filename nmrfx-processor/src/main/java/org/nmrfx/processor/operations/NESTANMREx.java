@@ -105,7 +105,6 @@ public class NESTANMREx extends MatrixOperation {
         baseCmds.add("-d"); // directory for NEST
         baseCmds.add(nestDir.getName());
         pb.directory(nestDir.getParentFile());
-        //System.out.println("working dir  " + nestDir);
     }
 
     /**
@@ -151,7 +150,6 @@ public class NESTANMREx extends MatrixOperation {
         baseCmds.add("-d"); // directory for NEST
         baseCmds.add(nestDir.getName());
         pb.directory(nestDir.getParentFile());
-        //System.out.println("working dir  " + nestDir);
     }
 
     @Override

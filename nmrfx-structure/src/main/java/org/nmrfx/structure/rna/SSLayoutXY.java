@@ -329,9 +329,6 @@ public class SSLayoutXY implements MultivariateFunction {
 //            if ((disi1 < leni) && (disi2 < leni) && (disj1 < lenj) && (disj2 < lenj)) {
 //                intersects = true;
 //            }
-//        if (report) {
-//             System.out.printf("%3d %3d %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %b\n",i,j,disi1,disi2,leni, disj1,disj2,lenj,intersects);
-//        }
 //        }
 //        return intersects;
     }

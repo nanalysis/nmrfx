@@ -145,7 +145,6 @@ public class ScanRegion {
             iVec[i] = iPoint[i][0];
             blockNum += (iBlock[i] * offsetBlocks[dim[i]]);
         }
-
     }
 
     void getBlockVectorIndexes() {

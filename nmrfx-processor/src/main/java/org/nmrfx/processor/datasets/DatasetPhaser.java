@@ -163,21 +163,18 @@ public class DatasetPhaser {
             if (regionMax[i] != null) {
                 dataset.readVectorFromDatasetFile(regionMax[i].pt, dim, phaseVec);
                 testBase.addVector(phaseVec, false, phaseRatio, threshMode);
-//                System.out.println(i + " " + regionMax[i].toString() + " " + testBase.getRegionCount());
             }
 
         }
     }
 
     public double[] getPhase(double ph1Limit) {
-//        System.out.println(testBase.dumpEnds());
         double[] result = testBase.autoPhase(ph1Limit);
         System.out.printf("phases are %7.1f %7.1f\n", result[0], result[1]);
         return result;
     }
 
     public double getPhaseZero() {
-//        System.out.println(testBase.dumpEnds());
         double[] result = testBase.autoPhaseZero();
         System.out.printf("phase is %7.1f\n", result[0]);
         return result[0];

@@ -91,7 +91,6 @@ public class Coordinates3DFTest {
             if (calcDihedral[i] >= Math.PI) {
                 calcDihedral[i] = calcDihedral[i] - 2.0 * Math.PI;
             }
-//            System.out.println(Math.toDegrees(dihedrals[i]) + " " + Math.toDegrees(calcDihedral[i]));
             double delta = Math.abs(dihedrals[i] - calcDihedral[i]);
             if (delta > Math.PI) {
                 delta = 2.0 * Math.PI - delta;
@@ -128,7 +127,6 @@ public class Coordinates3DFTest {
             if (calcDihedral[i] >= Math.PI) {
                 calcDihedral[i] = calcDihedral[i] - 2.0 * Math.PI;
             }
-//            System.out.println(Math.toDegrees(dihedrals[i]) + " " + Math.toDegrees(calcDihedral[i]));
             double delta = Math.abs(dihedrals[i] - calcDihedral[i]);
             if (delta > Math.PI) {
                 delta = 2.0 * Math.PI - delta;

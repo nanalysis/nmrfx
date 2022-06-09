@@ -648,7 +648,6 @@ public class Multiplets {
         double sf = peakDim.getSpectralDimObj().getSf();
         for (int i = 0; i < nComps; i++) {
             AbsMultipletComponent comp = comps.get(i);
-//            System.out.printf("off %10.3f vol %10.3f int %10.3f\n", comp.getOffset(), comp.getVolume(), comp.getIntensity());
         }
         if (checkMultiplet(comps)) {
             System.out.println("check");
@@ -742,7 +741,6 @@ public class Multiplets {
             System.out.println("singlet");
             return new CouplingData(ppmCenter, 1);
         }
-//        System.out.println("c " + ppmList.size() + " " + ppmList.toString());
 
         double tol = 0.5 / sf;
         double lastCoupling = 0.0;
@@ -870,7 +868,6 @@ public class Multiplets {
             pattern += "d";
             int nPeaksExpected = getMultiplicityCount(pattern);
             int nPeaksExpectedNext = getMultiplicityCount(pattern + "d");
-//            System.out.println(pattern + " " + nPeaksExpected + " " + nPeaksExpectedNext + " " + nPeaks);
             if (nPeaks == nPeaksExpected) {
                 jCoup = iCoup + 1;
                 break;

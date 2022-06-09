@@ -49,8 +49,6 @@ public class Minimizer {
 
     public String initpt(double[] guess) {
         a = new double[lmdifFunc.getN() + 1];
-//System.out.println(a.length);
-
         if (a.length != (guess.length + 1)) {
             System.out.println("number of guesses not equal to number of pars");
             lmdifFunc.initpt(a);
@@ -69,8 +67,6 @@ public class Minimizer {
 
     public String initpt0(double[] guess, int[] map) {
         a = new double[lmdifFunc.getN() + 1];
-//System.out.println(a.length);
-
         for (int i = 1; i < a.length; i++) {
             a[i] = guess[map[i] - 1];
         }

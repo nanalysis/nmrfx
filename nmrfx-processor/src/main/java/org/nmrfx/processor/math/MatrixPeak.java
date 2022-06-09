@@ -93,7 +93,6 @@ public class MatrixPeak implements Comparator<MatrixPeak> {
             }
             centers[i] = pts[i][1] + xOff;
 
-//            System.out.printf("%12.3f %12.3f %12.3f %7.4f %7.4f %7.4f %7.4f\n", v0, v1, v2, yOff, xOff, xOff1, widths[i]);
             if (i > 0) {
                 sumHeights += yOff;
             }
@@ -101,7 +100,6 @@ public class MatrixPeak implements Comparator<MatrixPeak> {
         }
         // take average from each dimension
         height = sumHeights / (nDim - 1);
-//        System.out.printf("%12.3f\n", height);
     }
 
     boolean overlap(MatrixPeak peak) {

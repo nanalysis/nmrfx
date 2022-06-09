@@ -1326,7 +1326,6 @@ public class BrukerData implements NMRData {
         //double delRef = (dvec.getSize() / 2 - 0) * (1.0 / dvec.dwellTime) / dvec.centerFreq / dvec.getSize();
         double delRef = ((1.0 / dvec.dwellTime) / dvec.centerFreq) / 2.0;
         dvec.refValue = getRef(0) + delRef;
-        //System.out.println("zeroref " + dvec.refValue);
         //dvec.setPh0(getPH0(1));
         //dvec.setPh1(getPH1(1));
     }
@@ -1466,7 +1465,6 @@ public class BrukerData implements NMRData {
             {
                 throw new ArrayIndexOutOfBoundsException("file index " + i + " out of bounds " + nread + " " + tbytes);
             }
-            //System.out.println("readVecBlock read "+nread+" bytes");
         } catch (EOFException e) {
             log.warn(e.getMessage(), e);
             if (fc != null) {
@@ -1988,7 +1986,6 @@ public class BrukerData implements NMRData {
                 System.out.print(" " + cdata[pt + i]);
             }
             System.out.println(" : " + cdata[bruker.getNPoints() - 1]);
-            //        System.out.print("last tdsize "+bruker.tdsize+" :");
             pt = vc.getSize() - 20;
             for (int i = 0; i < 20; i++) {
                 System.out.print(" " + cdata[pt + i]);

@@ -485,9 +485,6 @@ public class RNAPeakGeneratorSceneController implements Initializable {
                         }
                     }
                 }
-//                System.out.println(baseChars[iBase] + " " + iType + " " + allH + " " + allC + " " + allN);
-//                System.out.println(hNames);
-//                System.out.println(xNames);
                 String sym = typeChars[iType];
                 String xatomChar = atomChars[iType];
                 if (allH) {

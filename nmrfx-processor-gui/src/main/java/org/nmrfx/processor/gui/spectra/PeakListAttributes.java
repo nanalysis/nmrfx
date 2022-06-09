@@ -649,7 +649,6 @@ public class PeakListAttributes implements PeakListener {
         ctr[1] = foldShift(1, ctr[1]);
         Rectangle box = getBox(ctr, bou);
         boolean result = box.contains(x, y);
-//        System.out.println(box.toString() + " " + x + " " + y + " " + result);
 
         if (!result) {
             int growWidth = 0;
