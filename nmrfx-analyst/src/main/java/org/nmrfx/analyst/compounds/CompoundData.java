@@ -201,8 +201,6 @@ public class CompoundData {
         }
         double[] iData = region.getInterpolated(frac);
         int end = region.getEnd();
-      //  System.out.println("add region " + iRegion + " " + region.toString() + " " + iShift + " " + frac);
-
         for (int i = region.getStart(), j = 0; i <= end; i++) {
             int k = i + iShift;
             vec.add(k, iData[j++] * scale);

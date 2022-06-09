@@ -675,9 +675,7 @@ public class PeakDim {
      double sf = myPeak.peakList.getSpectralDim(getSpectralDim()).getSf();
 
      int nExtra = fiValues.freqs.length - fo.length;
-     // System.out.println(fiValues.freqs.length+" "+fo.length);
      if (nExtra < 0) {
-     //  System.out.println("adjust couplings, nExtra negative");
 
      return;
      } else if (nExtra > 0) {
@@ -699,10 +697,6 @@ public class PeakDim {
      sign = 1;
      }
 
-
-     // System.out.println("adjust Couplings "+iPos+" "+iCoupling+" "+sign+" "+delta);
- 
- 
      * 
      */
     public int getThread() {

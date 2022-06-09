@@ -86,10 +86,6 @@ public class EnergyBaseStacking extends EnergyDistancePairs {
             double cosB = Math.cos(angleB);
             double planarityScale = 0.5 * (cosA * cosA + cosB * cosB);
             Atom[] atoms = eCoords.atoms;
-//            System.out.println("angle " + i + " " + atoms[iAtom].getFullName()
-//                    + " " + atoms[jAtom].getFullName()
-//                    + " " + Math.toDegrees(angleA)
-//                    + " " + Math.toDegrees(angleB) + " " + planarityScale);
             double r2 = iV.disSq(jV);
             disSq[i] = r2;
             derivs[i] = 0.0;
@@ -117,7 +113,6 @@ public class EnergyBaseStacking extends EnergyDistancePairs {
                 }
             }
         }
-//        System.out.println("repel " + nPairs + " " + sum);
 
         return sum;
     }
@@ -150,7 +145,6 @@ public class EnergyBaseStacking extends EnergyDistancePairs {
         String result = "";
         ViolationStats stat = null;
         double energy = getEnergy(i, r2, weights[i] * weight);
-        // System.out.println("stack " + energy + " " + dif + " " + r2 + " " + Math.sqrt(r2) + " " + (weights[i] * weight));
         if (Math.abs(dif) > 0.1) {
             stat = new ViolationStats(3, atoms[iAtom].getFullName(), atoms[jAtom].getFullName(), r, 0.0, 6.0, energy, eCoords);
         }

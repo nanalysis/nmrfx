@@ -510,7 +510,6 @@ public class AtomMath {
 //            }
             double delta2 = delta * delta;
             double energy = forceWeight.getDihedral() * (1.0 - 0.5 * delta2 / halfRange2) * delta2;
-            //System.out.printf("%.3f %.3f %.3f %.3f %.3f %.3f %.3f\n",lower,dihedral,upper,delta, halfRange,(delta/halfRange),energy);
             //double energy = forceWeight.getDihedral()*delta2;
             double deriv = 0.0;
             if (calcDeriv) {

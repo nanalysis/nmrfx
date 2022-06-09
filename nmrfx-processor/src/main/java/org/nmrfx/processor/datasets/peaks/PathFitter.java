@@ -131,7 +131,6 @@ public class PathFitter {
             Formula f = Formula.lhs("y");
 //            OLS ols = new OLS(x, y);
             LinearModel model = OLS.fit(f, dataframe);
-//            System.out.println("ols " + ols.RSS());
 //            double[][] ppars = ols.ttest();
             double[][] ppars = model.ttest();
             bestPars[iDim * 3] = ppars[0][0];
@@ -228,7 +227,6 @@ public class PathFitter {
             if (peakDist != null) {
                 if (pathMode == PATHMODE.TITRATION) {
                     double[] row = {iVars[0][i], iVars[1][i], peakDist.getDistance(), errValue};
-//                System.out.printf("%2d %.3f %.3f %.3f %.3f\n", i, row[0], row[1], row[2], row[3]);
                     values.add(row);
                 } else {
                     double[] row = {iVars[0][i], peakDist.getDelta(0), peakDist.getDelta(1), errValue};
@@ -282,7 +280,6 @@ public class PathFitter {
                 if (peakDist != null) {
                     if (pathMode == PATHMODE.TITRATION) {
                         double[] row = {iVars[0][i], iVars[1][i], peakDist.getDistance(), errValue};
-//                System.out.printf("%2d %.3f %.3f %.3f %.3f\n", i, row[0], row[1], row[2], row[3]);
                         values.add(row);
                     } else {
                         double[] row = {iVars[0][i], peakDist.getDelta(0), peakDist.getDelta(1), errValue};
@@ -356,9 +353,6 @@ public class PathFitter {
             lower[iG + 1 + iPath] = guess[iG + 1 + iPath] / 2.0;
             upper[iG + 1 + iPath] = guess[iG + 1 + iPath] * 2.0;
         }
-//        for (int k = 0; k < guess.length; k++) {
-//            System.out.printf("%.3f %.3f %.3f\n", lower[k], guess[k], upper[k]);
-//        }
 
         PointValuePair result = fitter.fit(guess, lower, upper, 10.0);
         bestPars = result.getPoint();

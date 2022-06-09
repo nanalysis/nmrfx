@@ -119,7 +119,6 @@ public class BcMed extends Operation {
             last = size - (winSize / 2) + 1;
             newLoc = winSize;
         }
-        //System.out.println(nExtreme + " " + winSize + " " + dalExtreme.size() + " " + first + " " + last + " " + newLoc);
 
         i = 0;
         iiFirst = 0;

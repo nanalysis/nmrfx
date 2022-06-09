@@ -67,12 +67,10 @@ public class PeakReader {
         for (Long resID : resMap.keySet()) {
             List<PeakDim> peakDims = resMap.get(resID);
             PeakDim firstPeakDim = peakDims.get(0);
-//            System.out.println(resID + " " + firstPeakDim.getName() + " " + peakDims.size());
             if (peakDims.size() > 1) {
 
                 for (PeakDim peakDim : peakDims) {
                     if (peakDim != firstPeakDim) {
-//                        System.out.println(peakDim.getName());
                         PeakList.linkPeakDims(firstPeakDim, peakDim);
                     }
 

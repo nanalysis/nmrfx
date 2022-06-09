@@ -73,9 +73,7 @@ public class Combine extends Operation {
             } else {
                 outVectors = vectors;
             }
-//System.out.println("num in " + numInputVec + " " + numOutputVec + " " + keepImag + " " + vectors.size() + " outvec len " + outVec.length);
             for (int i = 0; i < vectors.size() / numInputVec; ++i) {
-                //System.out.println("sublist combine " + i*numInputVec + " " + ((i+1)*numInputVec-1));
                 combine(vectors.subList(i * numInputVec, (i + 1) * numInputVec));
                 for (int j = 0; j < numOutputVec; ++j) {
                     Vec newVec = outVectors.get(j + i * numOutputVec);

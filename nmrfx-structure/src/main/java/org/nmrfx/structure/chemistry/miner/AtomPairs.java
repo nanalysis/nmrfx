@@ -65,7 +65,6 @@ public class AtomPairs {
             }
         }
 
-        //System.out.println(pairMap.size()+" "+globalPairMap.size());
     }
 
     void add(String aPair) {
