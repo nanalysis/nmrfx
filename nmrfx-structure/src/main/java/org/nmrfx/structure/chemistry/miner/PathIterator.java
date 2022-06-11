@@ -575,7 +575,13 @@ public class PathIterator implements Iterator {
         if (arIndex != -1) {
             boolean[][] props = nodeValidator.getProperties();
             for (int i = 0; i < props.length; i++) {
-                atoms[i].setFlag(flag, props[i][arIndex]);
+                if (flag == Atom.AROMATIC) {
+                    if (!atoms[i].getFlag(flag)) {
+                        atoms[i].setFlag(flag, props[i][arIndex]);
+                    }
+                } else {
+                    atoms[i].setFlag(flag, props[i][arIndex]);
+                }
             }
         }
     }
