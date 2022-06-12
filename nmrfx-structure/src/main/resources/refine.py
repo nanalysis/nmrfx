@@ -770,6 +770,11 @@ class refine:
                 atom1 = self.molecule.getAtomByName(atomName1)
                 atom2 = self.molecule.getAtomByName(atomName2)
                 self.floatBond(atom1, atom2)
+            elif phase == 'float' and bondMode == 'constrain':
+                atomName1, atomName2 = bondInfo['atoms']
+                atom1 = self.molecule.getAtomByName(atomName1)
+                atom2 = self.molecule.getAtomByName(atomName2)
+                self.constrainDistance(atom1, atom2)
             elif phase == 'break' and (bondMode == 'break' or bondMode == 'float'):
                 atomName1, atomName2 = bondInfo['atoms']
                 atom1 = self.molecule.getAtomByName(atomName1)
@@ -779,6 +784,10 @@ class refine:
     def floatBond(self, atom1, atom2):
         ringClosures = self.molecule.getRingClosures()
         AngleTreeGenerator.addRingClosureSet(ringClosures, atom1, atom2)
+
+    def constrainDistance(self, atom1, atom2):
+        ringClosures = self.molecule.getRingClosures()
+        AngleTreeGenerator.addConstrainDistance(ringClosures, atom1, atom2)
                 
     def breakBond(self, atom1, atom2):
         atom1.removeBondTo(atom2)
@@ -1041,6 +1050,8 @@ class refine:
         visitedEntities = []
         if treeDict:
             entryAtomName = treeDict['start'] if 'start' in treeDict else None
+            entryAtom = self.molecule.getAtomByName(entryAtomName)
+            startEntity = entryAtom.getEntity()
         elif not treeDict or not entryAtomName:
             startEntity = self.molecule.getEntities()[0]
             entryAtom = self.getEntityTreeStartAtom(startEntity)
@@ -1255,6 +1266,8 @@ class refine:
                 if linkerList:
                     linkerList = [linkerList]
             treeDict = self.setEntityEntryDict(linkerList, treeDict)
+            if 'bonds' in data:
+                self.processBonds(data['bonds'], 'break')
             self.measureTree()
         else:
             if nEntities > 1:
@@ -1508,6 +1521,8 @@ class refine:
                 compound = molio.readPDBX(file, not 'ptype' in molDict)
             elif type == 'sdf' or type == 'mol':
                 compound = molio.readSDF(file)
+            elif type == 'mol2':
+                compound = molio.readMol2(file)
             else:
                 if 'chain' in molDict:
                     pName = molDict['chain']
@@ -2487,12 +2502,19 @@ class refine:
                                  treeDict['end'] if 'end' in treeDict else None)
                                  if treeDict else (None, None))
 
+        print 'tree',start,end
         if start:
-            startAtom = start
+            if isinstance(start,Atom):
+                startAtom = start
+            else:
+                startAtom = self.molecule.getAtomByName(start)
         else:
             startAtom = None
         if end:
-            endAtom = end
+            if isinstance(end,Atom):
+                endAtom = end
+            else:
+                endAtom = self.molecule.getAtomByName(end)
         else:
             endAtom = None
         #MoleculeBase.makeAtomList()
@@ -2501,7 +2523,8 @@ class refine:
         mol.invalidateAtomArray()
         mol.invalidateAtomTree()
         atree = AngleTreeGenerator()
-        atree.genTree(mol,startAtom, endAtom)
+        aTreeVals = atree.genTree(mol,startAtom, endAtom)
+        atree.dumpAtomTree(aTreeVals)
         mol.setupRotGroups()
         mol.genCoords()
 
