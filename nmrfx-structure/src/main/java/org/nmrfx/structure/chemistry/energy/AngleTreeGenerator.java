@@ -62,7 +62,7 @@ public class AngleTreeGenerator {
 
         AngleTreeGenerator aTreeGen = new AngleTreeGenerator();
         List<List<Atom>> atomTree = aTreeGen.genTree(entity, startAtom, null);
-        aTreeGen.measureAtomTree(entity, atomTree);
+        aTreeGen.measureAtomTree(entity, atomTree, true, false);
         molecule.setRingClosures(aTreeGen.getRingClosures());
     }
 
@@ -110,6 +110,9 @@ public class AngleTreeGenerator {
         List<Atom> atoms = itree.getAtomArray();
         for (Atom atom : atoms) {
             atom.parent = null;
+        }
+        for (Bond bond : itree.getBondList()) {
+            bond.setRingClosure(false);
         }
 
         if (startAtom == null) {
@@ -286,11 +289,15 @@ public class AngleTreeGenerator {
         return atomTree;
     }
 
+    public List<Bond> getClosureBonds() {
+        return closureBonds;
+    }
+
     public Map<Atom, Map<Atom, Double>> getRingClosures() {
         return ringClosures;
     }
 
-    public void measureAtomTree(ITree itree, List<List<Atom>> atomTree) {
+    public void measureAtomTree(ITree itree, List<List<Atom>> atomTree, boolean changeBonds, boolean freezeRings) {
         // get Atom array --> getAtomList() difference?
         for (Atom atom : itree.getAtomArray()) {
             atom.parent = null;
@@ -391,11 +398,15 @@ public class AngleTreeGenerator {
                     rotatable = false;
                     mode = 8;
                 } else if (a3.getFlag(Atom.RING) && a2.getFlag(Atom.RING)) {
-                    rotatable = false;
-                    mode = 9;
-                    if ((a3.parent == a2) && (a3.daughterAtom != null)) {
-                        rotatable = true;
-                        mode = 10;
+                    if (freezeRings) {
+                        rotatable = false;
+                    } else {
+                        rotatable = false;
+                        mode = 9;
+                        if ((a3.parent == a2) && (a3.daughterAtom != null)) {
+                            rotatable = true;
+                            mode = 10;
+                        }
                     }
                 } else if (a2.getFlag(Atom.AROMATIC) && (a3.getAtomicNumber() == 7)) { // flatten nh2 on bases
                     rotatable = false;
@@ -429,31 +440,32 @@ public class AngleTreeGenerator {
             }
         }
         );
-        for (Atom atom
-                : itree.getAtomArray()) {
-            atom.bonds.clear();
-        }
-
-        for (Atom atom
-                : bondMap.keySet()) {
-            for (Bond bond : bondMap.get(atom)) {
-                atom.addBond(bond);
+        if (changeBonds) {
+            for (Atom atom
+                    : itree.getAtomArray()) {
+                atom.bonds.clear();
             }
-        }
-        ringClosures = new HashMap<>();
-        //        System.out.println("add clo " + closureBonds.size());
-        for (Bond bond : closureBonds) {
-            bond.begin.addBond(bond);
-            bond.end.addBond(bond);
-            //            System.out.println("close bond " + bond.toString());
-            addRingClosureSet(ringClosures, bond.begin, bond.end);
-        }
-        if (itree instanceof Molecule) {
-            mol = (Molecule) itree;
-            mol.updateAtomArray();
-            mol.resetGenCoords();
-            mol.setupRotGroups();
-            mol.genCoords();
+
+            for (Atom atom
+                    : bondMap.keySet()) {
+                for (Bond bond : bondMap.get(atom)) {
+                    atom.addBond(bond);
+                }
+            }
+
+            ringClosures = new HashMap<>();
+            for (Bond bond : closureBonds) {
+                bond.begin.addBond(bond);
+                bond.end.addBond(bond);
+                addRingClosureSet(ringClosures, bond.begin, bond.end);
+            }
+            if (itree instanceof Molecule) {
+                mol = (Molecule) itree;
+                mol.updateAtomArray();
+                mol.resetGenCoords();
+                mol.setupRotGroups();
+                mol.genCoords();
+            }
         }
     }
 //   List<Atom> atomPathList = new ArrayList<>();
@@ -480,7 +492,16 @@ public class AngleTreeGenerator {
             for (Atom atom : branch) {
                 System.out.printf("%8s", atom == null ? "____" : atom.getShortName());
             }
-            System.out.println(" " + branch.get(2).rotUnit + " " + branch.get(2).rotActive);
+            for (int i=branch.size();i<8;i++) {
+                System.out.printf("%8s", "");
+            }
+            Atom branchAtom = branch.get(2);
+            System.out.printf(" %3d %6b %3d ", branchAtom.rotUnit, branchAtom.rotActive, branchAtom.irpIndex);
+            for (int i = 3;i<branch.size();i++) {
+                branchAtom = branch.get(i);
+                System.out.printf("%6s %8.2f %8.2f %8.2f",branchAtom.getName(), Math.toDegrees(branchAtom.valanceAngle), branchAtom.bondLength, Math.toDegrees(branchAtom.dihedralAngle));
+            }
+            System.out.println();
         }
 
     }
@@ -508,14 +529,16 @@ public class AngleTreeGenerator {
 
     public static void addRingClosure(Map<Atom, Map<Atom, Double>> ringClosures,
             Atom a1, Atom a2) {
-        double distance = Atom.calcDistance(a1.getPoint(), a2.getPoint());
-        Atom atomKey = a1.getIndex() < a2.getIndex() ? a1 : a2;
-        Atom nestedKey = a1 == atomKey ? a2 : a1;
+        if (a1.getPoint() != null && a2.getPoint() != null) {
+            double distance = Atom.calcDistance(a1.getPoint(), a2.getPoint());
+            Atom atomKey = a1.getIndex() < a2.getIndex() ? a1 : a2;
+            Atom nestedKey = a1 == atomKey ? a2 : a1;
 
-        Map<Atom, Double> ringClosure;
-        ringClosure = ringClosures.containsKey(atomKey) ? ringClosures.get(atomKey) : new HashMap<>();
-        ringClosure.put(nestedKey, distance);
-        ringClosures.put(atomKey, ringClosure);
+            Map<Atom, Double> ringClosure;
+            ringClosure = ringClosures.containsKey(atomKey) ? ringClosures.get(atomKey) : new HashMap<>();
+            ringClosure.put(nestedKey, distance);
+            ringClosures.put(atomKey, ringClosure);
+        }
     }
 
     private static void addRingClosurePairs(Map<Atom, Map<Atom, Double>> ringClosures,
@@ -528,6 +551,12 @@ public class AngleTreeGenerator {
             }
         }
     }
+
+    public static void addConstrainDistance(Map<Atom, Map<Atom, Double>> ringClosures, Atom begin, Atom end) {
+        addRingClosure(ringClosures, begin, end);
+    }
+
+
 
     public List<Atom> getPathList() {
         return atomPathList;
