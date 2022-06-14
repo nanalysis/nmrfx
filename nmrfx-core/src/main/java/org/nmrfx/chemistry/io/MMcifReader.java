@@ -28,9 +28,12 @@ import org.nmrfx.star.ParseException;
 import org.nmrfx.star.Saveframe;
 import org.nmrfx.chemistry.protein.ProteinHelix;
 import org.nmrfx.chemistry.protein.Sheet;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class MMcifReader {
 
+    private static final Logger log = LoggerFactory.getLogger(MMcifReader.class);
     static boolean DEBUG = false;
 
     final MMCIF mmcif;
@@ -635,7 +638,7 @@ public class MMcifReader {
                 try {
                     atom.addCoords(xCoord, yCoord, zCoord, occupancy, bFactor);
                 } catch (InvalidMoleculeException imE) {
-
+                    log.warn(imE.getMessage(), imE);
                 }
             }
         }
@@ -714,10 +717,9 @@ public class MMcifReader {
                 }
 
                 try {
-//                    System.out.println(atom);
                     atom.addCoords(xCoord, yCoord, zCoord, occupancy, bFactor);
                 } catch (InvalidMoleculeException imE) {
-
+                    log.warn(imE.getMessage(), imE);
                 }
             }
         }
@@ -726,7 +728,6 @@ public class MMcifReader {
     void processChemCompBond(Saveframe saveframe, int ppmSet, MoleculeBase molecule, String chainCode, String sequenceCode) throws ParseException {
         Loop loop = saveframe.getLoop("_chem_comp_bond");
         if (loop != null) {
-//            List<String> groupPDBColumn = loop.getColumnAsList("group_PDB");
             var compoundMap = MoleculeBase.compoundMap();
             List<String> idColumn = loop.getColumnAsList("comp_id");
             List<String> atom1IDColumn = loop.getColumnAsList("atom_id_1");
@@ -736,41 +737,33 @@ public class MMcifReader {
             List<String> stereoConfigColumn = loop.getColumnAsList("pdbx_stereo_config");
 
             for (int i = 0; i < atom1IDColumn.size(); i++) {
-//                String groupPDB = (String) groupPDBColumn.get(i);
                 String idCode = (String) idColumn.get(i);
                 String atom1Name = (String) atom1IDColumn.get(i);
                 String atom2Name = (String) atom2IDColumn.get(i);
                 String bondOrder = (String) bondOrderColumn.get(i);
                 String aromaticFlag = (String) aromaticFlagColumn.get(i);
                 String stereoConfig = (String) stereoConfigColumn.get(i);
-//                System.out.println(sequenceCode + " " + atomName + " " + value);
 
                 String mapID = chainCode + "." + sequenceCode;
                 Compound compound = compoundMap.get(mapID);
                 if (compound == null) {
-                    //throw new ParseException("invalid compound in assignments saveframe \""+mapID+"\"");
                     System.err.println("invalid compound in chem comp bond saveframe \"" + mapID + "\"");
                     continue;
                 }
                 String fullAtom1 = chainCode + ":" + sequenceCode + "." + atom1Name;
                 String fullAtom2 = chainCode + ":" + sequenceCode + "." + atom2Name;
-                //  System.out.println(fullAtom);
 
                 Atom parent = MoleculeBase.getAtomByName(fullAtom1);
                 Atom refAtom = MoleculeBase.getAtomByName(fullAtom2);
 
-//                System.out.println(fullAtom + " " + atoms);
-                //  System.out.println(atoms.toString());
                 if (parent == null) {
                     System.out.println("invalid atom in chem comp atom saveframe \"" + mapID + "." + atom1Name + "\"");
-//                    throw new ParseException("invalid atom in assignments saveframe \"" + mapID + "." + atomName + "\"");
                 }
                 if (refAtom == null) {
                     System.out.println("invalid atom in chem comp atom saveframe \"" + mapID + "." + atom2Name + "\"");
-//                    throw new ParseException("invalid atom in assignments saveframe \"" + mapID + "." + atomName + "\"");
                 }
 
-                if (parent != null) {
+                if (parent != null && refAtom != null) {
                     Order order = Order.SINGLE;
                     switch (bondOrder) {
                         case "SING":
@@ -793,7 +786,6 @@ public class MMcifReader {
                     refAtom.addBond(bond);
                     Bond bond2 = new Bond(parent, refAtom, order);
                     parent.addBond(bond2);
-//                    compound.addBond(bond);
                     compound.addBond(bond2);
                     molecule.updateBondArray();
                 }

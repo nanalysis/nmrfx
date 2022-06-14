@@ -22,15 +22,15 @@
  */
 package org.nmrfx.processor.operations;
 
+import org.apache.commons.math3.complex.Complex;
+import org.apache.commons.math3.linear.FieldMatrix;
 import org.nmrfx.processor.math.LinearPrediction;
 import org.nmrfx.processor.math.Polynomial;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.math.VecUtil;
 import org.nmrfx.processor.processing.ProcessingException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import org.apache.commons.math3.complex.Complex;
-import org.apache.commons.math3.linear.FieldMatrix;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Linear Prediction
@@ -38,6 +38,7 @@ import org.apache.commons.math3.linear.FieldMatrix;
  * @author johnsonb
  */
 public class ExtendNew extends Operation {
+    private static final Logger log = LoggerFactory.getLogger(ExtendNew.class);
 
     private final int fitStart;
     private final int fitEnd;
@@ -78,12 +79,8 @@ public class ExtendNew extends Operation {
     public Operation eval(Vec vector) throws ProcessingException {
         try {
             svdPredLP(vector, fitStart, fitEnd, ncoef, threshold, predictStart, predictEnd, calculateBackward, calculateForward);
-        } catch (OperationException ex) {
-            ex.printStackTrace();
-            Logger.getLogger(ExtendNew.class.getName()).log(Level.SEVERE, null, ex);
         } catch (Exception ex) {
-            ex.printStackTrace();
-            Logger.getLogger(ExtendNew.class.getName()).log(Level.SEVERE, null, ex);
+            log.error(ex.getMessage(), ex);
         }
 
         return this;

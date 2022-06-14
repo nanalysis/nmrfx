@@ -28,9 +28,9 @@ import javafx.scene.layout.Priority;
 import javafx.scene.paint.Color;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakDim;
-import org.nmrfx.peaks.PeakEvent;
+import org.nmrfx.peaks.events.PeakEvent;
 import org.nmrfx.peaks.PeakList;
-import org.nmrfx.peaks.PeakListener;
+import org.nmrfx.peaks.events.PeakListener;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
 import org.nmrfx.project.ProjectBase;
@@ -99,11 +99,15 @@ public class PeakNavigator implements PeakListener {
     }
 
     public PeakNavigator initialize(ToolBar toolBar) {
-        initPeakNavigator(toolBar, null);
+        initPeakNavigator(toolBar, null, null);
+        return this;
+    }
+    public PeakNavigator initialize(ToolBar toolBar, MenuButton peakListMenuButton) {
+        initPeakNavigator(toolBar, null, peakListMenuButton);
         return this;
     }
 
-    void initPeakNavigator(ToolBar toolBar, PeakNavigator parentNavigator) {
+    void initPeakNavigator(ToolBar toolBar, PeakNavigator parentNavigator, MenuButton peakListMenuButton) {
         this.navigatorToolBar = toolBar;
         peakIdField = new TextField();
         peakIdField.setMinWidth(75);
@@ -139,11 +143,16 @@ public class PeakNavigator implements PeakListener {
             // button.getStyleClass().add("toolButton");
         }
         if (closeAction != null) {
-            navigatorToolBar.getItems().add(closeButton);
+            toolBar.getItems().add(closeButton);
         }
+
         if (parentNavigator == null) {
-            peakListMenuButton = new MenuButton("List");
-            navigatorToolBar.getItems().add(peakListMenuButton);
+            if (peakListMenuButton == null) {
+                this.peakListMenuButton = new MenuButton("List");
+                toolBar.getItems().add(this.peakListMenuButton);
+            } else {
+                this.peakListMenuButton = peakListMenuButton;
+            }
             updatePeakListMenu();
         } else {
             parentNavigator.peakIdField.textProperty().bindBidirectional(peakIdField.textProperty());
@@ -237,7 +246,7 @@ public class PeakNavigator implements PeakListener {
 
     public void removePeakList() {
         if (peakList != null) {
-            peakList.removeListener(this);
+            peakList.removePeakChangeListener(this);
         }
         peakList = null;
         currentPeak = null;
@@ -253,7 +262,7 @@ public class PeakNavigator implements PeakListener {
         if (peakList != null) {
             currentPeak = peakList.getPeak(0);
             setPeakIdField();
-            peakList.registerListener(this);
+            peakList.registerPeakChangeListener(this);
         } else {
         }
         peakNavigable.refreshPeakView(currentPeak);
@@ -271,7 +280,7 @@ public class PeakNavigator implements PeakListener {
         if (peak != null) {
             if (peakList != peak.getPeakList()) {
                 peakList = peak.getPeakList();
-                peakList.registerListener(this);
+                peakList.registerPeakChangeListener(this);
                 peakNavigable.refreshPeakListView(peakList);
             }
             updateDeleteStatus();
@@ -290,7 +299,7 @@ public class PeakNavigator implements PeakListener {
                 PeakDim peakDimY = null;
                 if (!peakAttrs.isEmpty()) {
                     PeakListAttributes peakAttr = peakAttrs.get(0);
-                    int pdims[] = peakAttr.getPeakDim();
+                    int[] pdims = peakAttr.getPeakDim();
                     peakDimX = peak.getPeakDim(pdims[0]);
                     if (peak.getPeakDims().length > 1) {
                         peakDimY = peak.getPeakDim(pdims[1]);
@@ -302,17 +311,18 @@ public class PeakNavigator implements PeakListener {
                         peakDimY = peak.getPeakDim(dataAttr.getLabel(1));
                     }
                 }
-                atomXLabel.setText(peakDimX.getLabel());
+                if (peakDimX != null) {
+                    atomXLabel.setText(peakDimX.getLabel());
+                }
                 if (peakDimY != null) {
                     atomYLabel.setText(peakDimY.getLabel());
                 }
                 intensityLabel.setText(String.format("%.2f", peak.getIntensity()));
             } else {
-                if (showAtoms) {
-                    atomXLabel.setText("");
-                    atomYLabel.setText("");
-                    intensityLabel.setText("");
-                }
+                atomXLabel.setText("");
+                atomYLabel.setText("");
+                intensityLabel.setText("");
+
             }
         }
     }

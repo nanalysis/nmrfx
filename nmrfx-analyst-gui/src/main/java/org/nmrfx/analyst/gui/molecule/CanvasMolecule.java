@@ -6,9 +6,6 @@
 package org.nmrfx.analyst.gui.molecule;
 
 
-import java.util.*;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javafx.geometry.Point2D;
 import javafx.geometry.Point3D;
 import javafx.geometry.Rectangle2D;
@@ -25,8 +22,14 @@ import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.spectra.ChartMenu;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.structure.chemistry.MoleculePrimitives;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class CanvasMolecule implements CanvasAnnotation {
+    private static final Logger log = LoggerFactory.getLogger(CanvasMolecule.class);
 
     PolyChart chart = null;
     ChartMenu menu = null;
@@ -358,6 +361,7 @@ public class CanvasMolecule implements CanvasAnnotation {
                 try {
                     molecule.selectAtoms(aName);
                 } catch (InvalidMoleculeException ex) {
+                    log.warn(ex.getMessage(), ex);
                 }
 
                 return true;
@@ -649,7 +653,7 @@ public class CanvasMolecule implements CanvasAnnotation {
                             default: // fixme should throw Exception
                         }
                     } catch (Exception ex) {
-                        Logger.getLogger(CanvasMolecule.class.getName()).log(Level.SEVERE, null, ex);
+                        log.error(ex.getMessage(), ex);
                     }
 
                 }
@@ -698,7 +702,7 @@ public class CanvasMolecule implements CanvasAnnotation {
                     gC.setTextBaseline(VPos.CENTER);
                     gC.strokeText(label, x, y);
                 } catch (Exception ex) {
-                    Logger.getLogger(CanvasMolecule.class.getName()).log(Level.SEVERE, null, ex);
+                    log.error(ex.getMessage(), ex);
                 }
             }
         }
@@ -744,7 +748,7 @@ public class CanvasMolecule implements CanvasAnnotation {
 
                         break;
                     } catch (Exception ex) {
-                        Logger.getLogger(CanvasMolecule.class.getName()).log(Level.SEVERE, null, ex);
+                        log.error(ex.getMessage(), ex);
                     }
                 }
             }
@@ -836,7 +840,7 @@ public class CanvasMolecule implements CanvasAnnotation {
                 gC.setStroke(color2);
                 gC.strokeLine(xm, ym, x2, y2);
             } catch (Exception ex) {
-                Logger.getLogger(CanvasMolecule.class.getName()).log(Level.SEVERE, null, ex);
+                log.error(ex.getMessage(), ex);
             }
         }
     }

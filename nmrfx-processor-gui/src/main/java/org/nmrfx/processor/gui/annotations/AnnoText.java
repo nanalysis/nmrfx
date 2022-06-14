@@ -24,12 +24,16 @@ import javafx.scene.text.TextAlignment;
 import org.nmrfx.graphicsio.GraphicsContextInterface;
 import org.nmrfx.processor.gui.CanvasAnnotation;
 import org.nmrfx.utils.GUIUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
  * @author brucejohnson
  */
 public class AnnoText implements CanvasAnnotation {
+
+    private static final Logger log = LoggerFactory.getLogger(AnnoText.class);
 
     final double x1;
     final double y1;
@@ -111,6 +115,7 @@ public class AnnoText implements CanvasAnnotation {
                 gC.fillText(text, xp1, yp1);
             }
         } catch (Exception ex) {
+            log.warn(ex.getMessage(), ex);
         }
     }
 

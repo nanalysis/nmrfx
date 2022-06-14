@@ -5,38 +5,30 @@
  */
 package org.nmrfx.structure.chemistry.predict;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import org.nmrfx.chemistry.Atom;
-import org.nmrfx.chemistry.Entity;
+import org.nmrfx.chemistry.*;
 import org.nmrfx.structure.chemistry.HoseCodeGenerator;
-import org.nmrfx.chemistry.InvalidMoleculeException;
-import org.nmrfx.chemistry.MoleculeFactory;
 import org.nmrfx.structure.chemistry.Molecule;
-import org.nmrfx.chemistry.PPMv;
-import org.nmrfx.chemistry.Polymer;
-import org.nmrfx.chemistry.Residue;
 import org.nmrfx.structure.chemistry.energy.EnergyCoords;
 import org.nmrfx.structure.chemistry.energy.RingCurrentShift;
 import org.nmrfx.structure.chemistry.miner.NodeEvaluatorFactory;
 import org.nmrfx.structure.chemistry.miner.NodeValidatorInterface;
 import org.nmrfx.structure.chemistry.miner.PathIterator;
 import org.python.util.PythonInterpreter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.*;
 
 /**
  *
  * @author Bruce Johnson
  */
 public class Predictor {
+    private static final Logger log = LoggerFactory.getLogger(Predictor.class);
 
     ProteinPredictor proteinPredictor = null;
 
@@ -182,7 +174,7 @@ public class Predictor {
             readFile("data/rna_pred_dist_H_6.0.txt");
             readFile("data/rna_pred_dist_C_6.0.txt");
         } catch (IOException ex) {
-            Logger.getLogger(Predictor.class.getName()).log(Level.SEVERE, null, ex);
+            log.error(ex.getMessage(), ex);
         }
     }
 
@@ -278,8 +270,9 @@ public class Predictor {
         Molecule molecule = (Molecule) MoleculeFactory.getActive();
         if (molecule != null) {
             if (!molecule.getDotBracket().equals("")) {
-                PythonInterpreter interp = new PythonInterpreter();
-                interp.exec("import rnapred\nrnapred.predictFromSequence(ppmSet=" + ppmSet + ")");
+                try (PythonInterpreter interp = new PythonInterpreter()) {
+                    interp.exec("import rnapred\nrnapred.predictFromSequence(ppmSet=" + ppmSet + ")");
+                }
             }
         }
     }
@@ -477,7 +470,6 @@ public class Predictor {
         } else {
             InputStreamReader reader = new InputStreamReader(istream);
             BufferedReader breader = new BufferedReader(reader);
-            String aType = "";
             String state = "";
             int nCoef = 0;
             String[] coefAtoms = null;
@@ -492,7 +484,8 @@ public class Predictor {
                         if (fields.length > 0) {
                             if (fields[0].equals("rmax")) {
                                 setRMax(Double.parseDouble(fields[1]));
-                                aType = fields[2];
+                                // For this line fields[2] is unused but its value is the atom type, e.g. H, C
+                                // it was previously used to help set the typeIndex
                                 setIntraScale(Double.parseDouble(fields[3]));
                             } else if (fields[0].equals("coef")) {
                                 state = "coef";

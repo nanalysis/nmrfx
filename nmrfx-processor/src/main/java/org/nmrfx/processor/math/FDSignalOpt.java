@@ -54,7 +54,7 @@ public class FDSignalOpt implements MultivariateFunction {
     private double[] weights;
     private final int[] parMap;
 
-    public FDSignalOpt(double[] testVec, int vecSize, ArrayList<Signal> signals, boolean constrainWidth, int leftEdge, int rightEdge) {
+    public FDSignalOpt(double[] testVec, int vecSize, ArrayList<? extends Signal> signals, boolean constrainWidth, int leftEdge, int rightEdge) {
         this.testVec = testVec;
         this.values = new double[vecSize];
         this.vecSize = vecSize;

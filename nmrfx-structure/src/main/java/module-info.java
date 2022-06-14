@@ -17,7 +17,6 @@ module org.nmrfx.structure {
     requires smile.core;
     requires smile.interpolation;
     requires smile.math;
-    requires io.netty.all;
     requires java.logging;
     requires java.desktop;
     requires com.google.common;
@@ -30,4 +29,5 @@ module org.nmrfx.structure {
     requires libsvm;
     requires deeplearning4j.nn;
     requires nd4j.api;
+    requires org.slf4j;
 }

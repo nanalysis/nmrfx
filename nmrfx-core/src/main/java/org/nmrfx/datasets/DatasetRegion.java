@@ -1,18 +1,18 @@
 package org.nmrfx.datasets;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.util.Comparator;
-import java.util.Iterator;
-import java.util.List;
-import java.util.SortedSet;
-import java.util.TreeSet;
+import java.util.*;
 
 // fixme add document "Note: this comparator imposes orderings that are inconsistent with equals."
 public class DatasetRegion implements Comparator, Comparable {
 
+    private static final Logger log = LoggerFactory.getLogger(DatasetRegion.class);
     private final double[] x;
     private final double[] startIntensity;
     private final double[] endIntensity;
@@ -87,6 +87,7 @@ public class DatasetRegion implements Comparator, Comparable {
                 }
 
             } catch (IOException ioE) {
+                log.warn(ioE.getMessage(), ioE);
             }
         } else {
             if (file.canWrite()) {
@@ -281,9 +282,9 @@ public class DatasetRegion implements Comparator, Comparable {
         DatasetRegion r1 = (DatasetRegion) o1;
         DatasetRegion r2 = (DatasetRegion) o2;
         if ((r1 != null) || (r2 != null)) {
-            if (r1 == null) {
+            if (r1 == null || r1.x == null) {
                 result = -1;
-            } else if (r2 == null) {
+            } else if (r2 == null || r2.x == null) {
                 result = 1;
             } else if (r1.x[0] < r2.x[0]) {
                 result = -1;
@@ -301,19 +302,16 @@ public class DatasetRegion implements Comparator, Comparable {
     }
 
     @Override
-    public boolean equals(Object o2) {
-        return (compare(this, o2) == 0);
+    public int hashCode() {
+        return x == null ? Objects.hashCode(x) : Double.hashCode(x[0]);
     }
 
-    public boolean overlapOnDim(double ppm, int iDim) {
-        boolean result = true;
-
-        if (ppm < getRegionStart(iDim)) {
-            result = false;
-        } else if (ppm > getRegionEnd(iDim)) {
-            result = false;
+    @Override
+    public boolean equals(Object o2) {
+        if (!(o2 instanceof DatasetRegion)) {
+            return false;
         }
-        return result;
+        return (compare(this, o2) == 0);
     }
 
     public boolean overlapOnDim(Object o2, int iDim) {
@@ -337,25 +335,6 @@ public class DatasetRegion implements Comparator, Comparable {
                 break;
             }
         }
-        return result;
-    }
-
-    public boolean overlaps(SortedSet set) {
-        Iterator iter = set.iterator();
-        boolean result = false;
-
-        while (iter.hasNext()) {
-            DatasetRegion tRegion = (DatasetRegion) iter.next();
-
-            if (overlaps(tRegion)) {
-                result = true;
-
-                break;
-            } else if (tRegion.x[0] > x[1]) {
-                break;
-            }
-        }
-
         return result;
     }
 
@@ -447,15 +426,6 @@ public class DatasetRegion implements Comparator, Comparable {
             sum += value;
         }
         setIntegral(sum);
-    }
-
-    public static DatasetRegion findOverlap(TreeSet<DatasetRegion> regions, double ppm, int dim) {
-        for (DatasetRegion region : regions) {
-            if (region.overlapOnDim(ppm, dim)) {
-                return region;
-            }
-        }
-        return null;
     }
 
     public static DatasetRegion findClosest(TreeSet<DatasetRegion> regions, double ppm, int dim) {

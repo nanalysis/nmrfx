@@ -20,6 +20,8 @@ package org.nmrfx.processor.gui.controls;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleLongProperty;
@@ -178,6 +180,50 @@ public class FileTableItem {
 
     public void setObjectExtra(String name, Object value) {
         objectExtras.put(name, value);
+    }
+
+    public Optional<String> getType(String name) {
+        if (intExtras.containsKey(name)) {
+            return Optional.of("I");
+        } else if (doubleExtras.containsKey(name)) {
+            return Optional.of("D");
+        } else if (extras.containsKey(name)) {
+            return Optional.of("S");
+        } else if (objectExtras.containsKey(name)) {
+            return Optional.of("O");
+        } else {
+            return Optional.empty();
+        }
+    }
+
+    public String getExtraAsString(String name) {
+        switch (getType(name).orElse("")) {
+            case "I":
+                return getIntegerExtra(name).toString();
+            case "D":
+                return getDoubleExtra(name).toString();
+            case "S":
+                return extras.get(name);
+            case "O":
+                return String.valueOf(objectExtras.get(name));
+            default:
+                return "";
+        }
+    }
+
+    public Optional<Double> getExtraAsDouble(String name) {
+        Double value;
+        switch (getType(name).orElse("")) {
+            case "I":
+                value = getIntegerExtra(name).doubleValue();
+                break;
+            case "D":
+                value = getDoubleExtra(name);
+                break;
+            default:
+                value = null ;
+        }
+        return Optional.ofNullable(value);
     }
 
     public Object getObjectExtra(String eName) {

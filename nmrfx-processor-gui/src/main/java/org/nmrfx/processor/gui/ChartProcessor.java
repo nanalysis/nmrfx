@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,43 +17,34 @@
  */
 package org.nmrfx.processor.gui;
 
+import javafx.beans.property.SimpleObjectProperty;
+import javafx.stage.FileChooser;
 import org.nmrfx.processor.datasets.Dataset;
-import org.nmrfx.datasets.DatasetParameterFile;
+import org.nmrfx.processor.datasets.DatasetType;
 import org.nmrfx.processor.datasets.vendor.NMRData;
 import org.nmrfx.processor.datasets.vendor.NMRDataUtil;
-import org.nmrfx.processor.datasets.vendor.NMRViewData;
+import org.nmrfx.processor.datasets.vendor.nmrview.NMRViewData;
+import org.nmrfx.processor.datasets.vendor.rs2d.RS2DProcUtil;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.processing.MultiVecCounter;
+import org.nmrfx.processor.processing.Processor;
 import org.nmrfx.processor.processing.VecIndex;
 import org.nmrfx.processor.processing.processes.IncompleteProcessException;
-import org.nmrfx.processor.processing.Processor;
+import org.nmrfx.processor.processing.processes.ProcessOps;
+import org.nmrfx.utils.GUIUtils;
+import org.python.core.PyException;
+import org.python.core.PyObject;
+import org.python.util.InteractiveInterpreter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.TreeMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import org.python.core.PyException;
-import org.python.core.PyObject;
-import org.python.util.InteractiveInterpreter;
-import javafx.beans.property.SimpleObjectProperty;
-import javafx.stage.FileChooser;
-import org.nmrfx.processor.processing.processes.ProcessOps;
-import org.nmrfx.utils.GUIUtils;
+import java.util.*;
+import java.util.stream.Stream;
 
-
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 /**
  * A ChartProcessor manages the processing of data assigned to a particular
  * PolyChart
@@ -61,6 +52,10 @@ import org.nmrfx.utils.GUIUtils;
  * @author brucejohnson
  */
 public class ChartProcessor {
+
+    private static final Logger log = LoggerFactory.getLogger(ChartProcessor.class);
+
+    public static final DatasetType DEFAULT_DATASET_TYPE = DatasetType.NMRFX;
 
     private SimpleObjectProperty nmrDataObj;
 
@@ -99,7 +94,7 @@ public class ChartProcessor {
      * The name of the datasetFile that will be created when whole data file is
      * processed.
      */
-    private String extension = ".nv";
+    private DatasetType datasetType = DEFAULT_DATASET_TYPE;
 
     /**
      * List of commands to be executed at beginning of script.
@@ -306,7 +301,7 @@ public class ChartProcessor {
                 // if format like 321 don't do the rest, otherwise format should be like p1,d2,...
                 if (acqOrderArray.length == 1) {
                     // fixme, this done just so test at end passes
-                    // length of array depends on varian versus Bruker 
+                    // length of array depends on varian versus Bruker
                     nDimChars = nmrData.getNDim() - 1;
                     break;
                 }
@@ -551,7 +546,7 @@ public class ChartProcessor {
                 ProcessOps process = getProcess();
                 process.exec();
             } catch (IncompleteProcessException ipe) {
-                ipe.printStackTrace();
+                log.warn(ipe.getMessage(), ipe);
             }
 
             chart.layoutPlotChildren();
@@ -585,7 +580,7 @@ public class ChartProcessor {
         if (mapOpLists != null) {
             for (Map.Entry<String, List<String>> entry : mapOpLists.entrySet()) {
                 List<String> newList = new ArrayList<>();
-                if (entry != null) {
+                if (entry.getValue() != null) {
                     newList.addAll(entry.getValue());
                 }
                 copyOfMapOpLists.put(entry.getKey(), newList);
@@ -677,8 +672,6 @@ public class ChartProcessor {
     public void setVecDim(String dimName) {
         int value;
         boolean isDim;
-        //dimName = dimName.substring(1);
-        //System.out.println("set vdim " + vecDimName + " " + dimName + " " + processorController.isViewingDataset());
         try {
             value = Integer.parseInt(dimName.substring(1));
             value--;
@@ -695,14 +688,8 @@ public class ChartProcessor {
             if (mapOpLists.get(vecDimName) != null) {
                 oldList.addAll(mapOpLists.get(vecDimName));
             }
-            //execScriptList(false);
-        } else {
-            if (mapOpLists == null) {
-
-            }
-            if (mapOpLists.containsKey(dimName)) {
-                oldList.addAll(mapOpLists.get(dimName));
-            }
+        } else if (mapOpLists.containsKey(dimName)) {
+            oldList.addAll(mapOpLists.get(dimName));
         }
         getCombineMode();
         if (!processorController.isViewingDataset()) {
@@ -724,17 +711,31 @@ public class ChartProcessor {
         return vecDim;
     }
 
-    public void setExtension(String value) {
-        extension = value;
+    public void setDatasetType(DatasetType value) {
+        datasetType = value;
     }
 
-    public String getExtension() {
-        return extension;
+    public DatasetType getDatasetType() {
+        return datasetType;
     }
 
     public void writeScript() throws IOException {
         String script = buildScript();
         writeScript(script);
+    }
+
+    public String getScriptFileName() {
+        File file = new File(getNMRData().getFilePath());
+        String fileName = file.getName();
+        String scriptFileName;
+        if (!file.isDirectory() && (fileName.endsWith(".dx") || fileName.endsWith(".jdx"))) {
+            int lastDot = fileName.lastIndexOf(".");
+            String rootName = fileName.substring(0, lastDot);
+            scriptFileName = rootName + "_process.py";
+        } else {
+            scriptFileName = "process.py";
+        }
+        return scriptFileName;
     }
 
     public File getScriptDir() {
@@ -757,7 +758,7 @@ public class ChartProcessor {
     }
 
     public File getDefaultScriptFile() {
-        String scriptName = "process.py";
+        String scriptName = getScriptFileName();
         String locMode = PreferencesController.getLocation();
         File scriptFile;
         if (!locMode.startsWith("FID")) {
@@ -787,16 +788,15 @@ public class ChartProcessor {
         File file = getDefaultScriptFile();
         StringBuilder resultBuilder = new StringBuilder();
         if (file.exists()) {
-            try {
-                Files.lines(file.toPath()).forEach(line -> {
+            try (Stream<String> lines = Files.lines(file.toPath())){
+                lines.forEach(line -> {
                     if (line.trim().startsWith("CREATE")) {
                         int firstParen = line.indexOf("(");
                         int lastParen = line.lastIndexOf(")");
                         String filePath = line.substring(firstParen + 2, lastParen - 1);
-                        File datasetFile = new File(filePath);
-                        String datasetName = datasetFile.getName();
+                        File datasetFileFromScript = new File(filePath);
+                        String datasetName = datasetFileFromScript.getName();
                         resultBuilder.append(datasetName);
-                        return;
                     }
                 });
             } catch (IOException ex) {
@@ -807,11 +807,19 @@ public class ChartProcessor {
 
     }
 
-    public void loadDefaultScriptIfPresent() {
+    /**
+     * Loads the default script if present.
+     * @return True if default script is loaded, false if it is not loaded.
+     */
+    public boolean loadDefaultScriptIfPresent() {
+        boolean scriptLoaded = false;
         File scriptFile = getDefaultScriptFile();
         if (scriptFile.exists() && scriptFile.canRead()) {
             processorController.openScript(scriptFile);
+            scriptLoaded = true;
+            log.info("Default script loaded: {}", scriptFile.getName());
         }
+        return scriptLoaded;
     }
 
     String buildScript() {
@@ -955,51 +963,70 @@ public class ChartProcessor {
         return !script.contains("_DATASET_");
     }
 
+    String removeDatasetName(String script) {
+        return script.replaceFirst("CREATE\\([^\\)]++\\)", "CREATE(_DATASET_)");
+    }
+
     Optional<String> fixDatasetName(String script) {
-        Optional<String> result = Optional.empty();
+        final Optional<String> emptyResult = Optional.empty();
+        final Optional<String> result;
 
         if (!scriptHasDataset(script)) {
             String datasetName = suggestDatasetName();
             String filePath = getNMRData().getFilePath();
             File nmrFile = new File(filePath);
             File directory = nmrFile.isDirectory() ? nmrFile : nmrFile.getParentFile();
-            FileChooser fileChooser = new FileChooser();
-            fileChooser.setInitialDirectory(directory);
-            fileChooser.setInitialFileName(datasetName);
-            File file = fileChooser.showSaveDialog(null);
-            if (file != null) {
-                if (file.exists() && !file.canWrite()) {
-                    GUIUtils.warn("Dataset creation", "Dataset exists and can't be overwritten");
-                    return result;
+            File file;
+            if (getDatasetType()== DatasetType.SPINit) {
+                Path datasetDir = directory.toPath();
+                Path newProcPath = RS2DProcUtil.findNextProcPath(datasetDir);
+                try {
+                    Files.createDirectories(newProcPath);
+                } catch (IOException e) {
+                    GUIUtils.warn("Dataset creation", "Unable to create new dataset directory");
+                    return emptyResult;
                 }
-                if (!file.exists()) {
-                    File parentFile = file.getParentFile();
-                    if (!parentFile.canWrite()) {
-                        GUIUtils.warn("Dataset creation", "Can't create dataset in this directory");
-                        return result;
+                file = newProcPath.toFile();
+            } else {
+                FileChooser fileChooser = new FileChooser();
+                fileChooser.setInitialDirectory(directory);
+                fileChooser.setInitialFileName(datasetName);
+                file = fileChooser.showSaveDialog(null);
+                if (file == null) {
+                    return emptyResult;
+                }
+                Optional<DatasetType> fileTypeOpt = DatasetType.typeFromFile(file);
+                if (fileTypeOpt.isPresent()) {
+                    DatasetType fileType = fileTypeOpt.get();
+                    if (fileType != getDatasetType()) {
+                        GUIUtils.warn("Dataset creation", "File extension not consistent with dataset type");
+                        return emptyResult;
                     }
                 }
-
-                String fileString = file.getAbsoluteFile().toString();
-                if (!fileString.endsWith(".nv") && !fileString.endsWith(".ucsf")) {
-                    fileString += getExtension();
-                }
-                datasetFile = new File(fileString);
-                datasetFileTemp = new File(fileString + ".tmp");
-                fileString = fileString.replace("\\", "/");
-                script = script.replace("_DATASET_", "'" + fileString + "'");
-                result = Optional.of(script);
             }
+
+            file = getDatasetType().addExtension(file);
+            if (file.exists() && !file.canWrite()) {
+                GUIUtils.warn("Dataset creation", "Dataset exists and can't be overwritten");
+                return emptyResult;
+            }
+            if (!file.exists()) {
+                File parentFile = file.getParentFile();
+                if (!parentFile.canWrite()) {
+                    GUIUtils.warn("Dataset creation", "Can't create dataset in this directory");
+                    return emptyResult;
+                }
+            }
+            datasetFile = file;
+            String fileString = file.getAbsoluteFile().toString();
+            datasetFileTemp = new File(fileString + ".tmp");
+            fileString = fileString.replace("\\", "/");
+            script = script.replace("_DATASET_", "'" + fileString + "'");
+            result = Optional.of(script);
         } else {
             result = Optional.of(script);
         }
         return result;
-    }
-
-    private void setDatasetFile(String datasetName) {
-        File scriptDir = getScriptDir();
-        datasetFile = scriptDir.toPath().resolve(datasetName + extension).toFile();
-        datasetFileTemp = scriptDir.toPath().resolve(datasetName + extension + ".tmp").toFile();
     }
 
     private String suggestDatasetName() {
@@ -1025,26 +1052,6 @@ public class ChartProcessor {
             datasetName = datasetName.substring(0, lastDot);
         }
         return datasetName;
-    }
-
-    public void renameDataset() throws IOException {
-        fxmlController.closeFile(datasetFileTemp);
-        fxmlController.closeFile(datasetFile);
-
-        Path target = datasetFile.toPath();
-        Path source = datasetFileTemp.toPath();
-        Path parTarget = Paths.get(DatasetParameterFile.getParameterFileName(datasetFile.toString()));
-        Path parSource = Paths.get(DatasetParameterFile.getParameterFileName(datasetFileTemp.toString()));
-        try {
-            Files.move(source, target, StandardCopyOption.REPLACE_EXISTING);
-            if (Files.exists(parSource)) {
-                Files.move(parSource, parTarget, StandardCopyOption.REPLACE_EXISTING);
-            }
-        } catch (IOException ioE) {
-            MainApp.writeOutput(ioE.getMessage() + "\n");
-            throw ioE;
-        } finally {
-        }
     }
 
     public int mapToDataset(int iDim) {
@@ -1117,6 +1124,7 @@ public class ChartProcessor {
                         }
                         mapToDataset[dimNum] = -1;
                     } catch (NumberFormatException nFE) {
+                        log.warn("Unable to parse dimension number.", nFE);
                     }
                     if (!processorController.refManager.getSkip(parDim)) {
                         if (dimMode.equals("D") && (dimNum != -1)) {
@@ -1227,6 +1235,8 @@ public class ChartProcessor {
 
     public void setData(NMRData data, boolean clearOps) {
         setNMRData(data);
+        setDatasetType(data.getPreferredDatasetType());
+
         datasetFile = null;
         datasetFileTemp = null;
         Map<String, Boolean> flags = new HashMap<>();
@@ -1242,10 +1252,7 @@ public class ChartProcessor {
         Map<String, List<String>> listOfScripts = getScriptList();
         List<String> saveHeaderList = new ArrayList<>();
         saveHeaderList.addAll(headerList);
-        //System.out.println("saved");
-        for (Map.Entry<String, List<String>> entry : listOfScripts.entrySet()) {
-            //System.out.println(entry.toString());
-        }
+
         // when setting data reset vecdim back to 0 as it could have been set to
         // a value higher than the number of dimensions
         vecDim = 0;
@@ -1293,7 +1300,7 @@ public class ChartProcessor {
                 ProcessOps process = getProcess();
                 process.exec();
             } catch (IncompleteProcessException ipe) {
-                ipe.printStackTrace();
+                log.warn(ipe.getMessage(), ipe);
             }
             int[] sizes = new int[1];
             sizes[0] = 1;
@@ -1326,6 +1333,10 @@ public class ChartProcessor {
         Processor.getProcessor().clearProcessorError();
         ProcessOps process = getProcess();
         process.clearOps();
+        if (processorController == null) {
+            System.out.println("null proc");
+            return;
+        }
         if (processorController.isViewingDataset()) {
             return;
         }
@@ -1339,10 +1350,6 @@ public class ChartProcessor {
                 interpreter.exec("fidInfo = makeFIDInfo()");
             }
             if ((nmrData instanceof NMRViewData) && !nmrData.isFID()) {
-                return;
-            }
-            if (processorController == null) {
-                System.out.println("null proc");
                 return;
             }
             if (processorController.refManager == null) {
@@ -1373,7 +1380,7 @@ public class ChartProcessor {
                 } else {
                     processorController.setProcessingStatus(pyE.getCause().getMessage(), false, pE);
                 }
-                pyE.printStackTrace();
+                log.warn(pyE.getMessage(), pyE);
             } else {
                 processorController.setProcessingStatus("error " + pE.getMessage(), false, pE);
             }
@@ -1384,7 +1391,6 @@ public class ChartProcessor {
                 process.addVec(loadVec);
                 j++;
             }
-            //pE.printStackTrace();
             return;
         }
         if (doProcess) {
@@ -1405,7 +1411,7 @@ public class ChartProcessor {
                     OperationListCell.failedOperation(e.index);
                     System.out.println("error message: " + e.getMessage());
                     processorController.setProcessingStatus(e.op + " " + e.index + ": " + e.getMessage(), false, e);
-                    e.printStackTrace();
+                    log.warn(e.getMessage(), e);
                     int j = 0;
                     for (Vec saveVec : saveVectors) {
                         Vec loadVec = vectors.get(j);

@@ -5,19 +5,20 @@
  */
 package org.nmrfx.processor.datasets.peaks;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.function.BiFunction;
 import org.apache.commons.math3.optim.PointValuePair;
+import org.nmrfx.peaks.PeakDistance;
+import org.nmrfx.peaks.PeakPath;
 import org.nmrfx.peaks.PeakPaths;
 import org.nmrfx.peaks.PeakPaths.PATHMODE;
-import org.nmrfx.peaks.PeakPath;
-import org.nmrfx.peaks.PeakDistance;
 import org.nmrfx.processor.optimization.Fitter;
 import smile.data.DataFrame;
 import smile.data.formula.Formula;
-import smile.regression.OLS;
 import smile.regression.LinearModel;
+import smile.regression.OLS;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.BiFunction;
 
 /**
  *
@@ -97,55 +98,6 @@ public class PathFitter {
             for (int i = 0; i < n; i++) {
                 double x = first + delta * i;
                 double y = yCalc(a, b, c, x, p);
-                result[0][i] = x;
-                result[1][i] = y;
-            }
-            return result;
-        }
-
-    }
-
-    class PressureFunction implements BiFunction<double[], double[][], Double> {
-
-        double yCalc(double b, double c, double x) {
-            double yCalc = b * x + c * x * x;
-            return yCalc;
-
-        }
-
-        @Override
-        public Double apply(double[] pars, double[][] values) {
-            double sum = 0.0;
-            int n = values[0].length;
-            for (int i = 0; i < n; i++) {
-                int j = i % nDims;
-                double b = pars[2 * j];
-                double c = pars[2 * j + 1];
-                double x = values[0][i];
-                double y = values[1][i];
-                double yCalc = yCalc(b, c, x);
-
-                double delta = yCalc - y;
-                sum += delta * delta;
-
-            }
-            double value = Math.sqrt(sum / n);
-            return value;
-        }
-
-        public double[] getGuess(double[] x, double[] y) {
-            double[] guess = new double[nDims * 2];
-            return guess;
-        }
-
-        public double[][] getSimValues(double[] pars, double first, double last, int n, double p) {
-            double b = pars[0];
-            double c = pars[1];
-            double[][] result = new double[2][n];
-            double delta = (last - first) / (n - 1);
-            for (int i = 0; i < n; i++) {
-                double x = first + delta * i;
-                double y = yCalc(b, c, x);
                 result[0][i] = x;
                 result[1][i] = y;
             }

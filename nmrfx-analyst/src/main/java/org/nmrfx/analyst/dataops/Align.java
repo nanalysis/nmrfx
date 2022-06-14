@@ -9,8 +9,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import org.apache.commons.math3.linear.RealMatrix;
@@ -19,12 +17,15 @@ import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.operations.CShift;
 import org.nmrfx.processor.math.PositionValue;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
  * @author Bruce Johnson
  */
 public class Align {
+    private static final Logger log = LoggerFactory.getLogger(Align.class);
 
     public void alignByMax(final Dataset dataset, final int refPt, final int pt1, final int pt2) throws IOException {
         iteratorToFiniteStream(dataset.vectors(0)).forEach(v -> {
@@ -32,8 +33,7 @@ public class Align {
             try {
                 dataset.writeVector(v);
             } catch (IOException | IllegalArgumentException ex) {
-                Logger.getLogger(Align.class.getName()).log(Level.SEVERE, null, ex);
-                System.out.println("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
+                log.error("Unexpected error", ex);
                 System.exit(1);
             }
         });
@@ -101,9 +101,7 @@ public class Align {
                 cShift.eval(vec);
                 dataset.writeVecToDatasetFile(vi, dim, vec);
             } catch (IOException ex) {
-                Logger.getLogger(Align.class
-                        .getName()).log(Level.SEVERE, null, ex);
-                System.out.println(ex.getMessage());
+                log.error(ex.getMessage(), ex);
             }
         });
 
@@ -141,9 +139,7 @@ public class Align {
                 deltas[vi[1][0]] = delta;
 
             } catch (IOException ex) {
-                Logger.getLogger(Align.class
-                        .getName()).log(Level.SEVERE, null, ex);
-                System.out.println(ex.getMessage());
+                log.error(ex.getMessage(), ex);
             }
         });
         return deltas;
@@ -184,9 +180,7 @@ public class Align {
                 dataset.writeVector(movingVec);
                 deltas[vi[1][0]] = delta;
             } catch (IOException ex) {
-                Logger.getLogger(Align.class
-                        .getName()).log(Level.SEVERE, null, ex);
-                System.out.println(ex.getMessage());
+                log.error(ex.getMessage(), ex);
             }
         });
         return deltas;
@@ -206,7 +200,7 @@ public class Align {
                 }
             }
         } catch (ArrayIndexOutOfBoundsException aiE) {
-            aiE.printStackTrace();
+            log.warn(aiE.getMessage(), aiE);
         }
         int delta = -iMax;
         CShift cShift = new CShift(delta, false);
@@ -341,7 +335,7 @@ public class Align {
                 dataset.readVector(movingVec);
                 avgVec.add(movingVec);
             } catch (IOException ex) {
-                Logger.getLogger(Align.class.getName()).log(Level.SEVERE, null, ex);
+                log.error(ex.getMessage(), ex);
             }
 
         });
@@ -405,9 +399,7 @@ public class Align {
                 dataset.writeVector(resultVec);
                 deltas[vi[1][0]] = 0.0;
             } catch (IOException ex) {
-                Logger.getLogger(Align.class
-                        .getName()).log(Level.SEVERE, null, ex);
-                System.out.println(ex.getMessage());
+                log.error(ex.getMessage(), ex);
             }
         });
         return deltas;

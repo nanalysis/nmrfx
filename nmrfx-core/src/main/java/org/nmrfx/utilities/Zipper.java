@@ -1,5 +1,8 @@
 package org.nmrfx.utilities;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.io.FileNotFoundException;
 import java.io.File;
@@ -14,6 +17,7 @@ import java.util.zip.*;
 
 public class Zipper extends SimpleFileVisitor<Path> {
 
+    private static final Logger log = LoggerFactory.getLogger(Zipper.class);
     // Print information about
     // each type of file.
     final byte[] buffer;
@@ -40,22 +44,22 @@ public class Zipper extends SimpleFileVisitor<Path> {
         try {
             zos.close();
         } catch (IOException ioE) {
+            log.warn(ioE.getMessage());
         }
     }
 
     private void writeEntry(String filePath) {
-        try {
-            ZipEntry ze = new ZipEntry(filePath.substring(startingDir.getAbsolutePath().length() + 1, filePath.length()));
+        try (FileInputStream fis = new FileInputStream(filePath)) {
+            ZipEntry ze = new ZipEntry(filePath.substring(startingDir.getAbsolutePath().length() + 1));
             zos.putNextEntry(ze);
             //read the file and write to ZipOutputStream
-            FileInputStream fis = new FileInputStream(filePath);
             int len;
             while ((len = fis.read(buffer)) > 0) {
                 zos.write(buffer, 0, len);
             }
             zos.closeEntry();
-            fis.close();
         } catch (IOException ioE) {
+            log.warn(ioE.getMessage());
         }
     }
 
@@ -94,6 +98,7 @@ public class Zipper extends SimpleFileVisitor<Path> {
                 zos.putNextEntry(ze);
                 zos.closeEntry();
             } catch (IOException ioE) {
+                log.warn(ioE.getMessage(), ioE);
             }
         }
         return FileVisitResult.CONTINUE;
@@ -102,7 +107,7 @@ public class Zipper extends SimpleFileVisitor<Path> {
     // If there is some error accessing
     // the file, let the user know.
     // If you don't override this method
-    // and an error occurs, an IOException 
+    // and an error occurs, an IOException
     // is thrown.
     @Override
     public FileVisitResult visitFileFailed(Path file,

@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -21,15 +21,17 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.regex.Pattern;
-//import org.apache.commons.math3.random.RandomDataGenerator;
 import org.apache.commons.math3.random.Well19937c;
 import org.apache.commons.math3.util.MultidimensionalCounter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * A SampleSchedule specifies the sequence of increments or array elements used
@@ -54,6 +56,8 @@ import org.apache.commons.math3.util.MultidimensionalCounter;
  * @author bfetler
  */
 public class SampleSchedule {
+
+    private static final Logger log = LoggerFactory.getLogger(SampleSchedule.class);
 
     /**
      * Half of <i>PI</i> math constant.
@@ -379,59 +383,6 @@ public class SampleSchedule {
         return nusIndex;
     }
 
-    /**
-     * Get next group of Vecs for processing. Input and output locations depend
-     * on demo mode. If demo, tmult contains correct input and output, but
-     * location depends on sample schedule (v_samples). If not demo, two
-     * MultiVecCounters are needed: tmult for input and outMult for output.
-     *
-     * @param vecGroup location in MultiVecCounter
-     * @param tmult input MultiVecCounter
-     * @return vecIndex contains input and output arrays
-     * @see MultiVecCounter
-     * @see VecIndex
-     */
-    public VecIndex getNextGroup(final int vecGroup, MultiVecCounter tmult) {
-        int groupSize = tmult.getGroupSize();
-        int[] inVecs = new int[groupSize];
-        int k = vecGroup;
-        VecIndex vecIndex = tmult.getNextGroup(vecGroup);
-        for (int i = 0; i < groupSize; i++) {
-            // inVecs[i] = vecIndex.inVecs[i];  // store inVecs, non-demo
-            inVecs[i] = vecGroup * groupSize + i;
-        }
-        if (k < nSamples) {
-            int[] oSizes;
-            if (demo) {
-                oSizes = tmult.getOutSizes();
-            } else {
-//                oSizes = outMult.getOutSizes();
-                oSizes = tmult.getOutSizes();
-            }
-
-            int sampGroup = v_samples[k][nDim - 2];  // read from sample schedule
-            for (int i = nDim - 2; i > 0; i--) {  // works for nDim=2 or 3; nDim>3 untested
-                sampGroup = oSizes[nDim - i - 1] * sampGroup + v_samples[k][i - 1];
-            }
-//            System.out.print(vecGroup + " " + sampGroup + " ");
-//            for (int i = 0; i < v_samples[k].length; i++) {
-//                System.out.print(v_samples[k][i] + " " + oSizes[i] + " ");
-//            }
-//            System.out.println("");
-//            tmult.findOutGroup(v_samples[k]);
-            if (demo) {
-                vecIndex = tmult.getNextGroup(sampGroup);  // get outVecs for demo
-            } else {
-                vecIndex = outMult.getNextGroup(sampGroup);  // get outVecs
-                for (int i = 0; i < groupSize; i++) {
-                    // seems incorrect for nDim == 3
-                    vecIndex.inVecs[i] = inVecs[i];         // copy inVecs
-                }
-            }
-        }
-        return vecIndex;
-    }
-
     public synchronized boolean reloadFile(String path, int vecSize) {
         boolean recreate = false;
         if (!fpath.equals(path) || vecSize != nPoints) {
@@ -572,20 +523,16 @@ public class SampleSchedule {
      * @see #fpath
      */
     private void writeFile() {
-        try {
-            BufferedWriter bw = Files.newBufferedWriter(Paths.get(fpath), Charset.forName("US-ASCII"),
-                    StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.CREATE, StandardOpenOption.WRITE);
+        try (BufferedWriter bw = Files.newBufferedWriter(Paths.get(fpath), StandardCharsets.US_ASCII,
+                StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.CREATE, StandardOpenOption.WRITE)) {
             System.out.println("writing new sample schedule: " + fpath);
-//            bw.write("sizes "+z_total);
-//            bw.newLine();
             for (int j = 0; j < nSamples; j++) {
                 bw.write(v_samples[j][0] + " ");
                 bw.newLine();
             }
             bw.flush();
-            bw.close();
         } catch (IOException e) {
-            e.printStackTrace();
+            log.warn(e.getMessage(), e);
         }
     }
 

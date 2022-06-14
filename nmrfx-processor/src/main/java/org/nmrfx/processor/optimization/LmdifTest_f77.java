@@ -22,7 +22,6 @@ import org.apache.commons.math3.linear.RealVector;
 
 public class LmdifTest_f77 {
     // epsmch is the machine precision
-
     static final double epsmch = 2.22044604926e-16;
     int evaluationCount = 0;
     double[] xv = null;
@@ -57,22 +56,6 @@ public class LmdifTest_f77 {
         } else {
             lmdifFunc = lmdifFuncs[funcNum];
         }
-
-        /*
-         try {
-         lmdifFunc = (Lmdif_fcn)  Class.forName("optimization.LmdifTest_f77.fexpc_f77").newInstance();
-         }
-         catch (java.lang.ClassNotFoundException cnfE) {
-         System.out.println(cnfE.toString());
-         }
-         catch (java.lang.InstantiationException iE) {
-         System.out.println(iE.toString());
-         iE.printStackTrace();
-         }
-         catch (java.lang.IllegalAccessException iaE) {
-         System.out.println(iaE.toString());
-         }
-         */
     }
 
     public String[] getEquations() {
@@ -1300,122 +1283,4 @@ public class LmdifTest_f77 {
         }
     }
 
-    class flineshapeW_f77 implements Lmdif_fcn {
-
-        int xy_nsig = 1;
-        int xy_ndim = 1;
-        int nPar = (xy_nsig * (xy_ndim + 1)) + 1;
-        String[] auxNames = new String[0];
-        int[] iJCal = new int[xy_ndim];
-        int[] iNPar = new int[xy_ndim];
-        double[] ys = new double[xy_ndim];
-        double[] xs = new double[xy_ndim];
-
-        public int getEvaluationCount() {
-            return evaluationCount;
-        }
-
-        public void clearEvaluationCount() {
-            evaluationCount = 0;
-        }
-
-        public String getEquation() {
-            return "Lineshape";
-        }
-
-        public int getN() {
-            return nPar;
-        }
-
-        public String[] getAuxNames() {
-            return auxNames;
-        }
-
-        public void setN(int newN) {
-            nPar = newN;
-            xy_nsig = (nPar - 1) / (xy_ndim + 1);
-        }
-
-        public final void initpt(double[] a) {
-            a[1] = 1.3;
-            a[2] = 1.0;
-            a[3] = 0.5;
-        }
-
-        public double[] guess() {
-            getStatsForGuess();
-            a[1] = yMax;
-            a[2] = xMid / 0.693 / 2.0;
-            a[2] = (5.0 * xMid) / 0.693;
-
-            return a;
-        }
-
-        public void fcn(int m, int n, double[] a, double[] fvec, int[] iflag) {
-            for (int i = 1; i <= m; i++) {
-                double t = xv[i - 1];
-                double yval = calculate(a, t);
-                fvec[i] = yval - yv[i - 1];
-            }
-        }
-
-        public double calculate(double[] a, double x) {
-            double y = 0;
-            xs[0] = x;
-
-            int kk = 1;
-            iNPar[0] = 1;
-
-            for (int k = 0; k < xy_nsig; k++) {
-                int start = kk + 1;
-
-                for (int iDim = 0; iDim < xy_ndim; iDim++) {
-                    ys[iDim] = gShape(a, start, xs[iDim], iJCal[iDim]);
-                }
-
-                double ypeak = a[start];
-
-                for (int iDim = 0; iDim < xy_ndim; iDim++) {
-                    ypeak = ypeak * ys[iDim];
-                }
-
-                y += ypeak;
-
-                for (int iDim = 0; iDim < xy_ndim; iDim++) {
-                    kk += iNPar[iDim];
-                }
-
-                kk++;
-            }
-
-            return y;
-        }
-
-        public double gShape(double[] a, int start, double x, int jcal) {
-            double y = 0.0;
-            double b = a[1] / 1.66;
-            double freq = a[start + 1];
-
-            if (jcal == 1) {
-                double arg1 = (x - freq + (a[start + 2] / 2.0)) / b;
-                double arg2 = (x - freq - (a[start + 2] / 2.0)) / b;
-                y = Math.exp(-arg1 * arg1) + Math.exp(-arg2 * arg2);
-            } else if (jcal == -1) {
-                double arg1 = (x - freq + (a[start + 2] / 2.0)) / b;
-                double arg2 = (x - freq - (a[start + 2] / 2.0)) / b;
-                y = Math.exp(-arg1 * arg1) - Math.exp(-arg2 * arg2);
-            } else if (jcal == 2) {
-                double arg1 = (x - freq + (a[start + 2] / 2.0)) / b;
-                double arg2 = (x - freq) / b;
-                double arg3 = (x - freq - (a[start + 2] / 2.0)) / b;
-                y = (Math.exp(-arg1 * arg1) / 2.0) + Math.exp(-arg2 * arg2)
-                        + (Math.exp(-arg3 * arg3) / 2.0);
-            } else {
-                double arg1 = (x - freq) / b;
-                y = Math.exp(-arg1 * arg1);
-            }
-
-            return y;
-        }
-    }
 }

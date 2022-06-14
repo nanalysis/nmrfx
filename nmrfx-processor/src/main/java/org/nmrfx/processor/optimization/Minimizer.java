@@ -17,7 +17,12 @@
  */
 package org.nmrfx.processor.optimization;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class Minimizer {
+    private static final Logger log = LoggerFactory.getLogger(Minimizer.class);
+
     // epsmch is the machine precision
     //static final double epsmch = 2.22044604926e-16;
 
@@ -170,7 +175,7 @@ public class Minimizer {
                 factor *= 10.0;
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            log.warn(e.getMessage(), e);
         }
     }
 }

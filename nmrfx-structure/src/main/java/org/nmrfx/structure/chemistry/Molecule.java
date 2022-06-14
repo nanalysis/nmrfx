@@ -17,53 +17,41 @@
  */
 package org.nmrfx.structure.chemistry;
 
-import org.nmrfx.structure.rdc.OrderSVD;
-import org.nmrfx.chemistry.CoordSet;
-import org.nmrfx.chemistry.Order;
-import org.nmrfx.chemistry.protein.Sheet;
-import org.nmrfx.chemistry.protein.ProteinHelix;
-import org.nmrfx.chemistry.*;
-import org.nmrfx.structure.chemistry.energy.Dihedral;
-import org.nmrfx.structure.chemistry.energy.EnergyCoords;
-import org.nmrfx.structure.chemistry.energy.EnergyLists;
-import org.nmrfx.structure.fastlinear.FastVector3D;
-import java.io.*;
-import java.lang.reflect.InvocationTargetException;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
-import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeSet;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.apache.commons.math3.linear.EigenDecomposition;
 import org.apache.commons.math3.linear.RealMatrix;
-import org.apache.commons.math3.linear.RealVector;
 import org.apache.commons.math3.linear.SingularValueDecomposition;
-import org.nmrfx.structure.project.StructureProject;
-import org.nmrfx.structure.chemistry.energy.AngleTreeGenerator;
-import org.nmrfx.chemistry.AtomEnergyProp;
+import org.nmrfx.chemistry.*;
 import org.nmrfx.chemistry.io.Sequence;
-import org.nmrfx.structure.chemistry.predict.Predictor;
-import org.nmrfx.structure.chemistry.predict.RNAAttributes;
+import org.nmrfx.chemistry.protein.ProteinHelix;
+import org.nmrfx.chemistry.protein.Sheet;
 import org.nmrfx.chemistry.search.MNode;
 import org.nmrfx.chemistry.search.MTree;
+import org.nmrfx.structure.chemistry.energy.AngleTreeGenerator;
+import org.nmrfx.structure.chemistry.energy.Dihedral;
+import org.nmrfx.structure.chemistry.energy.EnergyCoords;
+import org.nmrfx.structure.chemistry.energy.EnergyLists;
 import org.nmrfx.structure.chemistry.miner.NodeValidator;
 import org.nmrfx.structure.chemistry.miner.PathIterator;
+import org.nmrfx.structure.chemistry.predict.Predictor;
+import org.nmrfx.structure.chemistry.predict.RNAAttributes;
+import org.nmrfx.structure.fastlinear.FastVector3D;
+import org.nmrfx.structure.project.StructureProject;
 import org.nmrfx.structure.rdc.AlignmentCalc;
 import org.nmrfx.structure.rdc.AlignmentMatrix;
 import org.nmrfx.structure.rna.BasePair;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.*;
 
 public class Molecule extends MoleculeBase {
+    private static final Logger log = LoggerFactory.getLogger(Molecule.class);
 
     public final Map<String, List<SpatialSet>> sites = new HashMap<>();
     public static int selCycleCount = 0;
@@ -562,8 +550,9 @@ public class Molecule extends MoleculeBase {
             AtomEnergyProp.readPropFile();
             AtomEnergyProp.makeIrpMap();
         } catch (FileNotFoundException ex) {
+            log.warn(ex.getMessage(), ex);
         } catch (IOException ex) {
-            Logger.getLogger(Molecule.class.getName()).log(Level.SEVERE, null, ex);
+            log.error(ex.getMessage(), ex);
         }
         invalidateAtomArray();
         updateAtomArray();
@@ -810,38 +799,6 @@ public class Molecule extends MoleculeBase {
                     atom.setPoint(newPt);
                 }
 
-            }
-        }
-    }
-
-    public void getAngles(final double[] dihedralAngles) {
-        Atom a1 = null;
-        Atom a2 = null;
-        Atom a4 = null;
-        int nAngles = 0;
-        updateAtomArray();
-
-        for (Atom a3 : atoms) {
-            for (int iBond = 0; iBond < a3.bonds.size(); iBond++) {
-                Bond bond = a3.bonds.get(iBond);
-                if (bond.begin == a3) {
-                    a4 = bond.end;
-                } else {
-                    a4 = bond.begin;
-                }
-                if (a4 == null) {
-                    continue;
-                }
-                if (a4 == a3.parent) {
-                    continue;
-                }
-                if (a4.parent != a3) {
-                    continue;
-                }
-                if (dihedralAngles == null) {
-                    dihedralAngles[nAngles] = a4.dihedralAngle;
-                }
-                nAngles++;
             }
         }
     }
@@ -1716,6 +1673,7 @@ public class Molecule extends MoleculeBase {
         try {
             c = getCenter(0);
         } catch (MissingCoordinatesException ex) {
+            log.warn(ex.getMessage(), ex);
         }
         List<double[]> molecCoords = new ArrayList<>();
         for (Atom atom : atoms) {
@@ -2221,39 +2179,7 @@ public class Molecule extends MoleculeBase {
         }
         return lcmbMap;
     }
-
-    public void calcDistanceInputMatrix(final int iStruct, double distLim, String filename) {
-        List atomSources = RNAAttributes.getAtomSources();
-        ArrayList<double[]> inputs = new ArrayList<>();
-        ArrayList<String> targetNames = new ArrayList<>();
-
-        for (Atom targetAtom : atoms) {
-            String prefix = targetAtom.getEntity().getName();
-            double[] distRow = calcDistanceInputMatrixRow(iStruct, distLim, targetAtom);
-            inputs.add(distRow);
-            targetNames.add(prefix + ";" + targetAtom.getFullName());
-        }
-        try {
-            BufferedWriter bw = new BufferedWriter(new FileWriter(filename));
-
-            bw.write("#" + "\t" + "\t" + "\t");
-            for (int i = 0; i < atomSources.size(); i++) {
-                bw.write(atomSources.get(i) + "\t");
-            }
-            bw.newLine();
-            for (int i = 0; i < inputs.size(); i++) {
-                bw.write(targetNames.get(i) + "\t");
-                for (int j = 0; j < inputs.get(i).length; j++) {
-                    bw.write(inputs.get(i)[j] + "\t");
-                }
-                bw.newLine();
-            }
-            bw.flush();
-        } catch (IOException e) {
-
-        }
-    }
-
+    
     public double[] calcDistanceInputMatrixRow(final int iStruct, double distLim, Atom targetAtom) {
         return calcDistanceInputMatrixRow(iStruct, distLim, targetAtom, 1.0);
 
@@ -2423,7 +2349,7 @@ public class Molecule extends MoleculeBase {
         try {
             AtomEnergyProp.makeIrpMap();
         } catch (IOException ex) {
-            Logger.getLogger(Molecule.class.getName()).log(Level.SEVERE, null, ex);
+            log.error(ex.getMessage(), ex);
         }
         List<Atom> atomList;
         if (treeAtoms == null) {

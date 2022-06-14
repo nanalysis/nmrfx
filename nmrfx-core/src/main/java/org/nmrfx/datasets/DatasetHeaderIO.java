@@ -5,20 +5,14 @@
  */
 package org.nmrfx.datasets;
 
-import org.nmrfx.datasets.DatasetBase;
-import org.nmrfx.datasets.DatasetLayout;
-import org.nmrfx.datasets.Nuclei;
-
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import static org.nmrfx.datasets.DatasetBase.LABEL_MAX_BYTES;
-import static org.nmrfx.datasets.DatasetBase.NV_HEADER_SIZE;
-import static org.nmrfx.datasets.DatasetBase.SOLVENT_MAX_BYTES;
-import static org.nmrfx.datasets.DatasetBase.UCSF_HEADER_SIZE;
+
+import static org.nmrfx.datasets.DatasetBase.*;
 
 /**
  *
@@ -500,169 +494,4 @@ public class DatasetHeaderIO {
             System.err.println(e.getMessage());
         }
     }
-
-    /**
-     * Get the header parameters as a string of text.
-     *
-     * @return the header as a string
-     */
-    synchronized public String getHeader(DatasetBase d, DatasetLayout lay) {
-        StringBuilder sBuilder = new StringBuilder();
-        String sepChar = " ";
-        sBuilder.append(d.isLittleEndian());
-        sBuilder.append(sepChar);
-
-        byte[] labelBytes = new byte[LABEL_MAX_BYTES];
-        int magic = 0x3418abcd;
-        sBuilder.append("magic");
-        sBuilder.append(sepChar);
-        sBuilder.append(magic);
-        sBuilder.append(sepChar);
-        sBuilder.append("skip");
-        sBuilder.append(sepChar);
-        sBuilder.append(0);
-        sBuilder.append(sepChar);
-        sBuilder.append("skip");
-        sBuilder.append(sepChar);
-        sBuilder.append(0);
-        sBuilder.append(sepChar);
-        sBuilder.append("fileHeaderSize");
-        sBuilder.append(sepChar);
-        sBuilder.append(lay.getFileHeaderSize());
-        sBuilder.append(sepChar);
-        sBuilder.append("blockHeaderSize");
-        sBuilder.append(sepChar);
-        sBuilder.append(lay.getBlockHeaderSize());
-        sBuilder.append(sepChar);
-        sBuilder.append("blockElements");
-        sBuilder.append(sepChar);
-        sBuilder.append(lay.getBlockElements() / 4);
-        sBuilder.append(sepChar);
-        sBuilder.append("nDim");
-        sBuilder.append(sepChar);
-        sBuilder.append(d.getNDim());
-        sBuilder.append("\n");
-
-        int nDim = d.getNDim();
-        for (int i = 0; i < nDim; i++) {
-            sBuilder.append("dim");
-            sBuilder.append(sepChar);
-            sBuilder.append(i);
-            sBuilder.append(sepChar);
-            sBuilder.append("offset");
-            sBuilder.append(sepChar);
-            sBuilder.append(1024 + i * 128);
-            sBuilder.append(sepChar);
-            sBuilder.append("size");
-            sBuilder.append(sepChar);
-            sBuilder.append(lay.getSize(i));
-            sBuilder.append(sepChar);
-            sBuilder.append("blocksize");
-            sBuilder.append(sepChar);
-            sBuilder.append(lay.getBlockSize(i));
-            sBuilder.append(sepChar);
-
-            sBuilder.append("offpoints");
-            sBuilder.append(sepChar);
-            sBuilder.append(lay.getOffsetPoints(i));
-            sBuilder.append(sepChar);
-
-            sBuilder.append("offblocks");
-            sBuilder.append(sepChar);
-            sBuilder.append(lay.getOffsetBlocks(i));
-            sBuilder.append(sepChar);
-
-            sBuilder.append("nBlocks");
-            sBuilder.append(sepChar);
-            sBuilder.append(lay.getNBlocks(i));
-            sBuilder.append(sepChar);
-            sBuilder.append("skip");
-            sBuilder.append(sepChar);
-            sBuilder.append(0);
-            sBuilder.append(sepChar);
-            sBuilder.append("skip");
-            sBuilder.append(sepChar);
-            sBuilder.append(0);
-            sBuilder.append(sepChar);
-            sBuilder.append("skip");
-            sBuilder.append(sepChar);
-            sBuilder.append(0);
-            sBuilder.append(sepChar);
-            sBuilder.append("sf");
-            sBuilder.append(sepChar);
-            sBuilder.append((float) d.getSf(i));
-            sBuilder.append(sepChar);
-            sBuilder.append("sw");
-            sBuilder.append(sepChar);
-            sBuilder.append((float) d.getSw(i));
-            sBuilder.append(sepChar);
-            sBuilder.append("refpt");
-            sBuilder.append(sepChar);
-            sBuilder.append((float) d.getRefPt(i));
-            sBuilder.append(sepChar);
-            sBuilder.append("refval");
-            sBuilder.append(sepChar);
-            sBuilder.append((float) d.getRefValue(i));
-            sBuilder.append(sepChar);
-            sBuilder.append("refunits");
-            sBuilder.append(sepChar);
-            sBuilder.append(d.getRefUnits(i));
-            sBuilder.append(sepChar);
-            sBuilder.append("foldup");
-            sBuilder.append(sepChar);
-            sBuilder.append((float) d.getFoldUp(i));
-            sBuilder.append(sepChar);
-            sBuilder.append("folddown");
-            sBuilder.append(sepChar);
-            sBuilder.append((float) d.getFoldDown(i));
-            sBuilder.append(sepChar);
-            sBuilder.append("label");
-            sBuilder.append(sepChar);
-
-            String labelString = d.getLabel(i);
-            int nBytes = labelString.length();
-            for (int j = 0; j < LABEL_MAX_BYTES; j++) {
-                if (j < nBytes) {
-                    labelBytes[j] = (byte) labelString.charAt(j);
-                } else {
-                    labelBytes[j] = 0;
-                }
-            }
-
-            sBuilder.append(labelBytes);
-            sBuilder.append(sepChar);
-            sBuilder.append("complex");
-            sBuilder.append(sepChar);
-
-            if (d.getComplex(i)) {
-                sBuilder.append(1);
-            } else {
-                sBuilder.append(0);
-            }
-            sBuilder.append(sepChar);
-            sBuilder.append("freqdomain");
-            sBuilder.append(sepChar);
-
-            if (d.getFreqDomain(i)) {
-                sBuilder.append(1);
-            } else {
-                sBuilder.append(0);
-            }
-            sBuilder.append(sepChar);
-            sBuilder.append("ph0");
-            sBuilder.append(sepChar);
-            sBuilder.append((float) d.getPh0(i));
-            sBuilder.append(sepChar);
-            sBuilder.append("ph1");
-            sBuilder.append(sepChar);
-            sBuilder.append((float) d.getPh1(i));
-            sBuilder.append(sepChar);
-            sBuilder.append("vsize");
-            sBuilder.append(sepChar);
-            sBuilder.append(d.getVSize(i));
-            sBuilder.append("\n");
-        }
-        return sBuilder.toString();
-    }
-
 }

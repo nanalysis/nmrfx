@@ -17,21 +17,19 @@
  */
 package org.nmrfx.structure.chemistry.energy;
 
-//import org.apache.commons.math3.optimization.direct.CMAESOptimizer;
-import org.nmrfx.structure.chemistry.MissingCoordinatesException;
-import org.nmrfx.structure.chemistry.io.TrajectoryWriter;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import org.apache.commons.math3.optim.InitialGuess;
+import org.apache.commons.math3.optim.MaxEval;
 import org.apache.commons.math3.optim.PointValuePair;
-//import org.apache.commons.math3.optimization.SimpleValueChecker;
 import org.apache.commons.math3.optim.SimpleValueChecker;
 import org.apache.commons.math3.optim.nonlinear.scalar.GoalType;
-import org.apache.commons.math3.optim.InitialGuess;
 import org.apache.commons.math3.optim.nonlinear.scalar.ObjectiveFunction;
-import org.apache.commons.math3.optim.MaxEval;
 import org.apache.commons.math3.optim.nonlinear.scalar.ObjectiveFunctionGradient;
 import org.nmrfx.chemistry.Atom;
+import org.nmrfx.structure.chemistry.MissingCoordinatesException;
+import org.nmrfx.structure.chemistry.io.TrajectoryWriter;
 import org.nmrfx.utilities.ProgressUpdater;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import smile.math.BFGS;
 
 /**
@@ -39,6 +37,7 @@ import smile.math.BFGS;
  * @author johnsonb
  */
 public class GradientRefinement extends Refinement {
+    private static final Logger log = LoggerFactory.getLogger(GradientRefinement.class);
 
     public static boolean NLCG = true;
     private boolean useNumericDerivatives = false;
@@ -66,6 +65,7 @@ public class GradientRefinement extends Refinement {
                             try {
                                 trajectoryWriter.writeStructure();
                             } catch (MissingCoordinatesException ex) {
+                                log.warn(ex.getMessage(), ex);
                             }
                         }
                         if (progressUpdater != null) {
@@ -109,7 +109,6 @@ public class GradientRefinement extends Refinement {
 
         prepareAngles(false);
         dihedrals.setBoundaries(0.1, false);
-        PointValuePair result = null;
         getDihedrals();
 
         dihedrals.energyList.makeAtomListFast();
@@ -122,19 +121,15 @@ public class GradientRefinement extends Refinement {
             try {
                 trajectoryWriter.writeStructure();
             } catch (MissingCoordinatesException ex) {
-                Logger.getLogger(GradientRefinement.class.getName()).log(Level.SEVERE, null, ex);
+                log.error(ex.getMessage(), ex);
             }
         }
-        try {
-            result = optimizer.optimize(
-                    new ObjectiveFunctionGradient(dihGradient),
-                    new ObjectiveFunction(dihEnergy),
-                    new MaxEval(nSteps * 1000),
-                    GoalType.MINIMIZE,
-                    new InitialGuess(dihedrals.angleValues));
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        PointValuePair result = optimizer.optimize(
+                new ObjectiveFunctionGradient(dihGradient),
+                new ObjectiveFunction(dihEnergy),
+                new MaxEval(nSteps * 1000),
+                GoalType.MINIMIZE,
+                new InitialGuess(dihedrals.angleValues));
         System.arraycopy(result.getPoint(), 0, dihedrals.angleValues, 0, dihedrals.angleValues.length);
         putDihedrals();
         molecule.genCoords(false, null);
@@ -155,7 +150,7 @@ public class GradientRefinement extends Refinement {
             try {
                 trajectoryWriter.writeStructure();
             } catch (MissingCoordinatesException ex) {
-                Logger.getLogger(GradientRefinement.class.getName()).log(Level.SEVERE, null, ex);
+                log.error(ex.getMessage(), ex);
             }
         }
         double[] values = new double[dihedrals.angleValues.length];
@@ -165,7 +160,7 @@ public class GradientRefinement extends Refinement {
         try {
             value = BFGS.minimize(dihEnergyGradient, 5, values, tolerance * 1.0e-3, nSteps * 100);
         } catch (Exception e) {
-            e.printStackTrace();
+            log.warn(e.getMessage(), e);
         }
         System.out.println("end " + value);
         System.arraycopy(values, 0, dihedrals.angleValues, 0, dihedrals.angleValues.length);

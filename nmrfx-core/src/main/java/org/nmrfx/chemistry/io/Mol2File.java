@@ -18,6 +18,9 @@
 package org.nmrfx.chemistry.io;
 
 import org.nmrfx.chemistry.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -28,6 +31,7 @@ import java.util.regex.Pattern;
  * @author brucejohnson
  */
 public class Mol2File {
+    private static final Logger log = LoggerFactory.getLogger(Mol2File.class);
 
     static final int MOLECULE = 0;
     static final int ATOM = 1;
@@ -178,6 +182,7 @@ public class Mol2File {
                     atom.setCharge(charge);
 
                 } catch (NumberFormatException nfE) {
+                    log.warn("Unable to parse atom charge.", nfE);
                 }
             }
             /*

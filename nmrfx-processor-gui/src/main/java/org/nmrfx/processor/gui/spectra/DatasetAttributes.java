@@ -17,33 +17,28 @@
  */
 package org.nmrfx.processor.gui.spectra;
 
-import org.nmrfx.processor.datasets.DataCoordTransformer;
-import org.nmrfx.processor.datasets.DataGenerator;
-import org.nmrfx.processor.math.Vec;
-import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.util.*;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javafx.application.Platform;
-import javafx.beans.property.BooleanProperty;
-import javafx.beans.property.DoubleProperty;
-import javafx.beans.property.IntegerProperty;
-import javafx.beans.property.SimpleBooleanProperty;
-import javafx.beans.property.SimpleDoubleProperty;
-import javafx.beans.property.SimpleIntegerProperty;
-import javafx.beans.property.SimpleStringProperty;
-import javafx.beans.property.StringProperty;
+import javafx.beans.property.*;
 import javafx.scene.paint.Color;
 import org.apache.commons.beanutils.PropertyUtils;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.datasets.DatasetRegion;
 import org.nmrfx.math.VecBase;
+import org.nmrfx.processor.datasets.DataCoordTransformer;
+import org.nmrfx.processor.datasets.DataGenerator;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.GUIScripter;
 import org.nmrfx.processor.gui.PolyChart.DISDIM;
+import org.nmrfx.processor.math.Vec;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.util.*;
 
 public class DatasetAttributes extends DataGenerator implements Cloneable {
+    private static final Logger log = LoggerFactory.getLogger(DatasetAttributes.class);
 
     private Dataset theFile;
     private final Map<String, Float> extremes = new HashMap<>();
@@ -739,7 +734,7 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
             dAttr = (DatasetAttributes) o;
             copyTo(dAttr);
         } catch (CloneNotSupportedException e) {
-            e.printStackTrace(System.err);
+            log.warn(e.getMessage(), e);
         }
 
         return dAttr;
@@ -960,6 +955,9 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
         if (iDim != 0) {
             int jDim = dimC[0];
             int offset = theFile.ppmToPoint(jDim, ppmx);
+            if (theFile.getComplex(jDim)) {
+                offset *= 2;
+            }
             //int offset = (int) Math.round(ppmx);
             ptC[0][0] = offset;
             ptC[0][1] = offset;
@@ -972,7 +970,13 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
             ptC[3][1] = theFile.getSizeReal(dim[3]) - 1;
         }
         rearrangeDim(dimC, ptC);
-        specVec.resize(ptC[0][1] - ptC[0][0] + 1, theFile.getComplex_r(dimC[0]));
+        int size = ptC[0][1] - ptC[0][0] + 1;
+        if ((iDim  == 0) && theFile.getComplex(0)) {
+            ptC[0][0] *= 2;
+            ptC[0][1] *= 2;
+        }
+
+        specVec.resize(size, theFile.getComplex_r(dimC[0]));
         //System.out.println("get slice " + ptC[0][0] + " " + ptC[0][1] + " " + specVec.getSize());
         theFile.readVectorFromDatasetFile(ptC, dimC, specVec);
         return true;
@@ -1039,14 +1043,16 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
                     localPtD[i][1] = axModes[i].getIndexD(this, i, axes[1].getUpperBound());
                 } else {
                     localPtD[i][0] = 0;
-                    localPtD[i][0] = theFile.getSizeReal(dim[i]) - 1.0;
+                    localPtD[i][1] = theFile.getSizeReal(dim[i]) - 1.0;
                 }
             } else if (axModes.length <= i) {
                 localPtD[i][0] = theFile.getSizeReal(dim[i]) / 2.0;
                 localPtD[i][1] = theFile.getSizeReal(dim[i]) / 2.0;
             } else {
-                localPtD[i][0] = axModes[i].getIndexD(this, i, axes[i].getLowerBound());
-                localPtD[i][1] = axModes[i].getIndexD(this, i, axes[i].getUpperBound());
+                if (Objects.nonNull(axModes[i]) && Objects.nonNull(axes[i])) {
+                    localPtD[i][0] = axModes[i].getIndexD(this, i, axes[i].getLowerBound());
+                    localPtD[i][1] = axModes[i].getIndexD(this, i, axes[i].getUpperBound());
+                }
             }
             if (localPtD[i][0] > localPtD[i][1]) {
                 double holdD = localPtD[i][0];
@@ -1498,9 +1504,9 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
         return dim.clone();
     }
 
-    public void setDims(int[] dims) {
-        for (int i = 0; i < dims.length; i++) {
-            setDim(i, dims[i]);
+    public void setDims(int[] newDims) {
+        for (int i = 0; i < newDims.length; i++) {
+            setDim(newDims[i],i);
         }
     }
 
@@ -1939,14 +1945,14 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
             try {
                 PropertyUtils.setSimpleProperty(this, name, value);
             } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException ex) {
-                Logger.getLogger(DatasetAttributes.class.getName()).log(Level.SEVERE, null, ex);
+                log.error(ex.getMessage(), ex);
             }
         } else {
             Platform.runLater(() -> {
                 try {
                     PropertyUtils.setProperty(this, name, value);
                 } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException ex) {
-                    Logger.getLogger(DatasetAttributes.class.getName()).log(Level.SEVERE, null, ex);
+                    log.error(ex.getMessage(), ex);
                 }
             }
             );
@@ -1954,19 +1960,6 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
     }
 
     public Map<String, Object> config() {
-
-//        BeanInfo info = null;
-//        try {
-//            info = Introspector.getBeanInfo(DatasetAttributes.class);
-//        } catch (IntrospectionException ex) {
-//            Logger.getLogger(DatasetAttributes.class.getName()).log(Level.SEVERE, null, ex);
-//        }
-//        if (info != null) {
-//            
-//            for (PropertyDescriptor pd : info.getPropertyDescriptors()) {
-//                System.out.println(pd.getName() + " : " + pd.getReadMethod() + " : " + pd.getWriteMethod());
-//            }
-//        }
         Map<String, Object> data = new HashMap<>();
         String[] beanNames = {"nlvls", "clm", "posColor", "negColor", "posWidth", "negWidth", "lvl", "pos", "neg"};
         for (String beanName : beanNames) {
@@ -1981,7 +1974,7 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
                     data.put(beanName, PropertyUtils.getSimpleProperty(this, beanName));
                 }
             } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException ex) {
-                Logger.getLogger(DatasetAttributes.class.getName()).log(Level.SEVERE, null, ex);
+                log.error(ex.getMessage(), ex);
             }
         }
         return data;
@@ -2016,10 +2009,9 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
         return offsets;
     }
 
-    public void moveRegion(NMRAxis[] axes, double[] newValue) {
-        getActiveRegion().ifPresent(iHit -> {
-            DatasetRegion r = iHit.getDatasetRegion();
+    public void moveRegion(IntegralHit iHit, NMRAxis[] axes, double[] newValue) {
             int handle = iHit.handle;
+            DatasetRegion r = iHit.getDatasetRegion();
             double newX = axes[0].getValueForDisplay(newValue[0]).doubleValue();
             double newY = axes[1].getValueForDisplay(newValue[1]).doubleValue();
             switch (handle) {
@@ -2031,6 +2023,7 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
                     try {
                         r.measure(theFile);
                     } catch (IOException ioE) {
+                        log.warn("Error encountered moving region.", ioE);
                     }
                     break;
                 case 2:
@@ -2045,8 +2038,6 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
                 default:
                     break;
             }
-
-        });
     }
 
     public int[] getMatchDim(DatasetAttributes dataAttr2, boolean looseMode) {

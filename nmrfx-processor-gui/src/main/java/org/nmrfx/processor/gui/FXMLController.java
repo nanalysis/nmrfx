@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,42 +17,15 @@
  */
 package org.nmrfx.processor.gui;
 
-import org.nmrfx.processor.datasets.Dataset;
-import org.nmrfx.processor.datasets.peaks.PeakNetworkMatch;
-import org.nmrfx.processor.datasets.vendor.NMRData;
-import org.nmrfx.processor.datasets.vendor.NMRDataUtil;
-import org.nmrfx.processor.datasets.vendor.NMRViewData;
-import org.nmrfx.processor.gui.controls.FractionPaneChild;
-import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import de.jensd.fx.glyphs.GlyphsDude;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.OptionalInt;
-import java.util.ResourceBundle;
-import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javafx.application.Platform;
-import javafx.beans.value.ChangeListener;
 import javafx.beans.Observable;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ReadOnlyIntegerProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleObjectProperty;
+import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -62,50 +35,21 @@ import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
+import javafx.geometry.Bounds;
 import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
-import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
-import javafx.scene.control.Alert;
-import javafx.scene.control.Button;
-import javafx.scene.control.ButtonBase;
-import javafx.scene.control.ChoiceBox;
-import javafx.scene.control.Label;
-import javafx.scene.control.ContentDisplay;
-import javafx.scene.control.ListCell;
-import javafx.scene.control.ListView;
-import javafx.scene.control.MenuBar;
-import javafx.scene.control.RadioButton;
-import javafx.scene.control.SelectionMode;
-import javafx.scene.control.Separator;
-import javafx.scene.control.Slider;
-import javafx.scene.control.TextField;
-import javafx.scene.control.ToggleGroup;
-import javafx.scene.control.ToolBar;
+import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.input.Clipboard;
-import javafx.scene.input.ClipboardContent;
-import javafx.scene.input.DataFormat;
-import javafx.scene.input.Dragboard;
-import javafx.scene.input.MouseEvent;
-import javafx.scene.input.ScrollEvent;
-import javafx.scene.input.TransferMode;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.GridPane;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Pane;
-import javafx.scene.layout.StackPane;
-import javafx.scene.layout.VBox;
+import javafx.scene.input.*;
+import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
-import javafx.scene.text.Font;
-import javafx.scene.text.FontWeight;
-import javafx.scene.text.TextAlignment;
 import javafx.stage.FileChooser;
 import javafx.stage.FileChooser.ExtensionFilter;
 import javafx.stage.Stage;
@@ -115,32 +59,46 @@ import org.apache.commons.beanutils.PropertyUtils;
 import org.controlsfx.control.PopOver;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.datasets.DatasetBase;
-import org.nmrfx.peaks.Peak;
-import org.nmrfx.processor.datasets.peaks.PeakLinker;
-import org.nmrfx.processor.datasets.peaks.PeakNeighbors;
-import org.nmrfx.processor.gui.controls.FractionCanvas;
-import org.nmrfx.processor.gui.controls.LayoutControlCanvas;
 import org.nmrfx.graphicsio.GraphicsIOException;
 import org.nmrfx.graphicsio.PDFGraphicsContext;
 import org.nmrfx.graphicsio.SVGGraphicsContext;
+import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakDim;
 import org.nmrfx.peaks.PeakList;
+import org.nmrfx.processor.datasets.Dataset;
+import org.nmrfx.processor.datasets.DatasetType;
+import org.nmrfx.processor.datasets.peaks.PeakLinker;
 import org.nmrfx.processor.datasets.peaks.PeakListAlign;
-import org.nmrfx.processor.datasets.vendor.BrukerData;
-import org.nmrfx.processor.datasets.vendor.RS2DData;
-import org.nmrfx.processor.gui.spectra.CanvasBindings;
-import org.nmrfx.processor.gui.spectra.ColorProperty;
-import org.nmrfx.processor.gui.spectra.CrossHairs;
-import org.nmrfx.processor.gui.spectra.WindowIO;
-import org.nmrfx.processor.gui.tools.PathTool;
+import org.nmrfx.processor.datasets.peaks.PeakNeighbors;
+import org.nmrfx.processor.datasets.peaks.PeakNetworkMatch;
+import org.nmrfx.processor.datasets.vendor.*;
+import org.nmrfx.processor.datasets.vendor.bruker.BrukerData;
+import org.nmrfx.processor.datasets.vendor.nmrview.NMRViewData;
+import org.nmrfx.processor.datasets.vendor.rs2d.RS2DData;
+import org.nmrfx.processor.gui.controls.GridPaneCanvas;
+import org.nmrfx.processor.gui.spectra.*;
 import org.nmrfx.processor.gui.tools.SpectrumComparator;
 import org.nmrfx.processor.gui.undo.UndoManager;
 import org.nmrfx.utilities.DictionarySort;
 import org.nmrfx.utils.GUIUtils;
 import org.python.core.PyObject;
 import org.python.util.PythonInterpreter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-public class FXMLController implements FractionPaneChild, Initializable, PeakNavigable {
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.*;
+
+public class FXMLController implements  Initializable, PeakNavigable {
+    private static final Logger log = LoggerFactory.getLogger(FXMLController.class);
+    private static final int PSEUDO_2D_SIZE_THRESHOLD = 100;
 
     @FXML
     private VBox topBar;
@@ -159,6 +117,8 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
 
     @FXML
     private BorderPane borderPane;
+    @FXML
+    private BorderPane mainBox;
     @FXML
     private StackPane processorPane;
     @FXML
@@ -207,11 +167,10 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
 
     CanvasBindings canvasBindings;
 
-    private FractionCanvas chartGroup;
+    private GridPaneCanvas chartGroup;
 
     PeakNavigator peakNavigator;
     SpectrumComparator spectrumComparator;
-    PathTool pathTool;
     ListView datasetListView = new ListView();
 
     public final SimpleObjectProperty<List<Peak>> selPeaks = new SimpleObjectProperty<>();
@@ -228,7 +187,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
 
     SimpleBooleanProperty processControllerVisible = new SimpleBooleanProperty(false);
 
-    public BooleanProperty minBordersProperty() {
+    private BooleanProperty minBordersProperty() {
         if (minBorders == null) {
             minBorders = new SimpleBooleanProperty(this, "minBorders", false);
         }
@@ -343,6 +302,9 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
     }
 
     public void setActiveChart(PolyChart chart) {
+        if (activeChart != chart) {
+            deselectCharts();
+        }
         activeChart = chart;
         PolyChart.activeChart.set(chart);
         if (specAttrWindowController != null) {
@@ -355,6 +317,12 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
 
     public PolyChart getActiveChart() {
         return activeChart;
+    }
+
+    public void deselectCharts() {
+        for (var chart:charts) {
+            chart.selectChart(false);
+        }
     }
 
     public Stage getStage() {
@@ -461,7 +429,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         fileChooser.setInitialDirectory(getInitialDirectory());
         fileChooser.setTitle("Open NMR Dataset");
         fileChooser.getExtensionFilters().addAll(
-                new ExtensionFilter("NMR Dataset", "*.nv", "*.ucsf", "*.dx", "*.jdx", "1r", "2rr", "3rrr", "4rrrr", "data.dat"),
+                new ExtensionFilter("NMR Dataset", "*.nv", "*.ucsf", "*.dx", "*.jdx", "1r", "2rr", "3rrr", "4rrrr", RS2DData.DATA_FILE_NAME),
                 new ExtensionFilter("Any File", "*.*")
         );
         File selectedFile = fileChooser.showOpenDialog(null);
@@ -489,11 +457,11 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
                     PreferencesController.saveRecentDatasets(selectedFile.toString());
                     RS2DData rs2dData = (RS2DData) nmrData;
                     String suggestedName = rs2dData.suggestName(new File(rs2dData.getFilePath()));
-                    String datasetName = GUIUtils.input("Dataset name", suggestedName);
-                    Dataset dataset = rs2dData.toDataset(datasetName);
+                    Dataset dataset = rs2dData.toDataset(suggestedName);
                     addDataset(dataset, append, false);
                 }
             } catch (IOException ex) {
+                GUIUtils.warn("Open Dataset", ex.getMessage());
             }
         }
         stage.setResizable(true);
@@ -546,6 +514,10 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
     }
 
     public void openFile(String filePath, boolean clearOps, boolean appendFile) {
+        openFile(filePath, clearOps, appendFile, null);
+    }
+
+    public void openFile(String filePath, boolean clearOps, boolean appendFile, DatasetType datasetType) {
         boolean reload = false;
         try {
             File newFile = new File(filePath);
@@ -586,6 +558,9 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
                     alert.showAndWait();
                     return;
                 } else {
+                    if (datasetType != null) {
+                        nmrData.setPreferredDatasetType(datasetType);
+                    }
                     addFID(nmrData, clearOps, reload);
                 }
             }
@@ -629,29 +604,50 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
 
     void addFID(NMRData nmrData, boolean clearOps, boolean reload) {
         isFID = true;
-        if (chartProcessor == null) {
-            if (processorController == null) {
-                processorController = ProcessorController.create(this, processorPane, getActiveChart());
+        if (chartProcessor == null && processorController == null) {
+            // The create method also creates and sets the chartProcessor variable
+            processorController = ProcessorController.create(this, processorPane, getActiveChart());
+        }
+        if (processorController != null) {
+            chartProcessor.setData(nmrData, clearOps);
+            processorController.viewingDataset(false);
+            processorController.updateFileButton();
+            processorController.show();
+            processorController.clearOperationList();
+            chartProcessor.clearAllOperations();
+            processorController.parseScript("");
+            if (!reload) {
+                getActiveChart().full();
+                getActiveChart().autoScale();
+                generateScriptAndParse(nmrData);
+            }
+            getActiveChart().layoutPlotChildren();
+            statusBar.setMode(0);
+        } else {
+            log.warn("Unable to add FID because controller can not be created.");
+        }
+    }
+
+    /**
+     * Check for existing default processing script and parse if present, otherwise generate
+     * and parse a processing script for FID data for 1D and 2D data.
+     * @param nmrData The NMRData set that will be processed.
+     */
+    private void generateScriptAndParse(NMRData nmrData) {
+        int nDim = nmrData.getNDim();
+        if (isFIDActive() && chartProcessor != null && !chartProcessor.loadDefaultScriptIfPresent()) {
+            if (nDim == 1 || nDim == 2) {
+                // TODO NMR-5184 update here if there is better way to determine if pseudo2D
+                // This is an estimate of whether the 2D data is pseudo2D, some pseudo2Ds may still be processed as 2Ds
+                boolean isPseudo2D = nmrData.getNVectors() < PSEUDO_2D_SIZE_THRESHOLD && nDim == 2;
+                String script = chartProcessor.getGenScript(isPseudo2D);
+                processorController.parseScript(script);
+                log.info("Autogenerated processing script.");
+            }
+            else if (nDim > 2) {
+                log.info("Script was not autogenerated because number of dimensions is greater than 2.");
             }
         }
-        chartProcessor.setData(nmrData, clearOps);
-        if (processorController != null) {
-            processorController.viewingDataset(false);
-            processorController.show();
-        } else {
-            System.out.println("Coudn't make controller");
-        }
-        processorController.clearOperationList();
-        chartProcessor.clearAllOperations();
-        processorController.parseScript("");
-        if (!reload) {
-            getActiveChart().full();
-            getActiveChart().autoScale();
-            chartProcessor.loadDefaultScriptIfPresent();
-        }
-        getActiveChart().layoutPlotChildren();
-        statusBar.setMode(0);
-
     }
 
     public void addDataset(DatasetBase dataset, boolean appendFile, boolean reload) {
@@ -717,7 +713,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
                         }
                     }
                 } catch (IOException ex) {
-                    Logger.getLogger(FXMLController.class.getName()).log(Level.SEVERE, null, ex);
+                    log.error(ex.getMessage(), ex);
                 }
             }
         }
@@ -838,7 +834,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
                     runTime.exec(cmd);
                 }
             } catch (IOException ioE) {
-
+                log.warn(ioE.getMessage(), ioE);
             }
         }
     }
@@ -930,7 +926,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
                 }
                 pdfGC.saveFile();
             } catch (GraphicsIOException ex) {
-                Logger.getLogger(FXMLController.class.getName()).log(Level.SEVERE, null, ex);
+                log.error(ex.getMessage(), ex);
             }
         }
         stage.setResizable(true);
@@ -1152,12 +1148,12 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
                             end = Integer.parseInt(value);
                         }
                     } catch (NumberFormatException nfE) {
+                        log.warn("Unable to parse region.", nfE);
                     }
                 }
             }
         }
-        int[] region = {start, end};
-        return region;
+        return new int[]{start, end};
     }
 
     protected ArrayList<Double> getBaselineRegions(String vecDimName) {
@@ -1213,11 +1209,12 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
 
     public static String getHTMLDocs() {
         if (docString == null) {
-            PythonInterpreter interpreter = new PythonInterpreter();
-            interpreter.exec("from pyproc import *");
-            interpreter.exec("from pydocs import *");
-            PyObject pyDocObject = interpreter.eval("genAllDocs()");
-            docString = (String) pyDocObject.__tojava__(String.class);
+            try (PythonInterpreter interpreter = new PythonInterpreter()) {
+                interpreter.exec("from pyproc import *");
+                interpreter.exec("from pydocs import *");
+                PyObject pyDocObject = interpreter.eval("genAllDocs()");
+                docString = (String) pyDocObject.__tojava__(String.class);
+            }
         }
         return docString;
     }
@@ -1330,14 +1327,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
     }
 
     @Override
-    public void refreshPeakListView(PeakList peakList
-    ) {
-    }
-
-    class ChartLabel extends Label {
-
-        PolyChart chart;
-
+    public void refreshPeakListView(PeakList peakList) {
     }
 
     @Override
@@ -1357,21 +1347,23 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         charts.add(chart1);
         chart1.setController(this);
 
-//        PolyChart chart2 = new PolyChart();
-//        charts.add(chart2);
-//        chart2.setController(this);
-        chartGroup = new FractionCanvas(this, canvas, charts);
-        LayoutControlCanvas layoutControl = new LayoutControlCanvas(chartGroup);
-        chartGroup.setControlPane(layoutControl);
-        chartPane.getChildren().addAll(chartGroup, plotContent, layoutControl);
-        layoutControl.setVisible(false);
-        chartGroup.getChildren().addAll(canvas, peakCanvas, annoCanvas);
+        chartGroup = new GridPaneCanvas(this, canvas);
+        chartGroup.addCharts(1, charts);
+        chartGroup.setMouseTransparent(true);
+        chartPane.getChildren().addAll(canvas, chartGroup, peakCanvas, annoCanvas, plotContent);
         chartGroup.setManaged(true);
-        layoutControl.setManaged(true);
+        canvas.setManaged(false);
+        peakCanvas.setManaged(false);
+        annoCanvas.setManaged(false);
+        plotContent.setManaged(false);
+        mainBox.layoutBoundsProperty().addListener((ObservableValue<? extends Bounds> arg0, Bounds arg1, Bounds arg2) -> {
+            if (arg2.getWidth()  < 1.0 || arg2.getHeight() < 1.0) {
+                return;
+            }
+            chartGroup.requestLayout();
+        });
 
         controllers.add(this);
-//        l.layoutBoundsProperty().addListener(e -> boundsUpdated(l));
-//        l2.layoutBoundsProperty().addListener(e -> boundsUpdated(l2));
         statusBar.setMode(1);
         activeController.set(this);
         for (int iCross = 0; iCross < 2; iCross++) {
@@ -1392,6 +1384,15 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         };
     }
 
+    public void resizeCanvases(double width, double height) {
+        canvas.setWidth(width);
+        canvas.setHeight(height);
+        peakCanvas.setWidth(width);
+        peakCanvas.setHeight(height);
+        annoCanvas.setWidth(width);
+        annoCanvas.setHeight(height);
+    }
+
     public Phaser getPhaser() {
         return phaser;
     }
@@ -1400,26 +1401,10 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         return crossHairStates[iCross][jOrient];
     }
 
-    public ChartLabel getLabel(PolyChart chart, String color, String id) {
-        ChartLabel label = new ChartLabel();
-        label.textProperty().set(id);
-        label.textAlignmentProperty().set(TextAlignment.CENTER);
-        label.alignmentProperty().set(Pos.CENTER);
-        label.setOpacity(1.0);
-        label.setTextFill(Color.WHITE);
-        label.setFont(Font.font("Arial", FontWeight.BOLD, 16d));
-        label.setStyle("-fx-background-color: " + color
-                + ";-fx-alignment:center;-fx-text-alignment:center;");
-        label.setManaged(false);
-        label.chart = chart;
-
-        return label;
-    }
-
     public static FXMLController create() {
         return create(null);
     }
-
+    
     public static FXMLController create(Stage stage) {
         FXMLLoader loader = new FXMLLoader(FXMLController.class.getResource("/fxml/NMRScene.fxml"));
         FXMLController controller = null;
@@ -1439,12 +1424,10 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
             FXMLController myController = controller;
             stage.focusedProperty().addListener(e -> myController.setActiveController(e));
             controller.setActiveController();
-            stage.setTitle("NMRFx Processor");
             MainApp.registerStage(stage, controller);
             stage.show();
         } catch (IOException ioE) {
-            ioE.printStackTrace();
-            System.out.println(ioE.getMessage());
+            throw new IllegalStateException("Unable to create controller", ioE);
         }
         return controller;
     }
@@ -1589,9 +1572,6 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         buttons.add(bButton);
         buttons.add(new Separator(Orientation.VERTICAL));
 
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.BULLSEYE, "Pick", iconSize, fontSize, ContentDisplay.TOP);
-        bButton.setOnAction(e -> PeakPicking.peakPickActive(this, false));
-        buttons.add(bButton);
 
         buttons.add(new Separator(Orientation.VERTICAL));
 
@@ -1604,11 +1584,6 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
             }
         }
         toolBar.getItems().addAll(buttons);
-        StackPane newWinRect = makeNewWinIcon();
-        toolBar.getItems().add(newWinRect);
-        newWinRect.setOnMousePressed(e -> chartGroup.mousePressed(e));
-        newWinRect.setOnMouseDragged(e -> chartGroup.mouseDrag(e));
-        newWinRect.setOnMouseReleased(e -> chartGroup.mouseDragRelease(e, this::addChart));
 
         statusBar = new SpectrumStatusBar(this);
         statusBar.buildBar(btoolBar);
@@ -1693,22 +1668,6 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         return peak;
     }
 
-    public void showPathTool() {
-        if (pathTool == null) {
-            VBox vBox = new VBox();
-            bottomBox.getChildren().add(vBox);
-            pathTool = new PathTool(this, this::removePathTool);
-            pathTool.initPathTool(vBox);
-        }
-    }
-
-    public void removePathTool(Object o) {
-        if (pathTool != null) {
-            bottomBox.getChildren().remove(pathTool.getToolBar());
-            pathTool = null;
-        }
-    }
-
     public void showSpectrumComparator() {
         if (spectrumComparator == null) {
             VBox vBox = new VBox();
@@ -1783,6 +1742,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
                 addChart();
             }
         }
+        chartGroup.addCharts(chartGroup.getRows(), charts);
     }
 
     public void removeChart() {
@@ -1793,7 +1753,8 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
 
     public void removeChart(PolyChart chart) {
         if (chart != null) {
-            chartGroup.removeChild(chart);
+            chartGroup.getChildren().remove(chart);
+            charts.remove(chart);
             if (chart == activeChart) {
                 if (charts.isEmpty()) {
                     activeChart = null;
@@ -1812,22 +1773,24 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
 
     public void addChart() {
         PolyChart chart = new PolyChart(this, plotContent, canvas, peakCanvas, annoCanvas);
-        chart.setDisable(true);
+        charts.add(chart);
+        chart.setChartDisabled(true);
         // chart.setController(this);
         chartGroup.addChart(chart);
         activeChart = chart;
     }
 
     public Integer addChart(Integer pos) {
-        FractionCanvas.ORIENTATION orient;
+        GridPaneCanvas.ORIENTATION orient;
         if (pos < 2) {
-            orient = FractionCanvas.ORIENTATION.HORIZONTAL;
+            orient = GridPaneCanvas.ORIENTATION.HORIZONTAL;
         } else {
-            orient = FractionCanvas.ORIENTATION.VERTICAL;
+            orient = GridPaneCanvas.ORIENTATION.VERTICAL;
         }
         PolyChart chart = new PolyChart(this, plotContent, canvas, peakCanvas, annoCanvas);
+        charts.add(chart);
         chart.setController(this);
-        chartGroup.setOrientation(orient, false);
+       // chartGroup.setOrientation(orient, false);
         if ((pos % 2) == 0) {
             chartGroup.addChart(0, chart);
         } else {
@@ -1841,20 +1804,12 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
 
     public void setChartDisable(boolean state) {
         for (PolyChart chart : charts) {
-            chart.setDisable(state);
+            chart.setChartDisabled(state);
         }
 
     }
 
-    public int arrangeGetRows() {
-        return chartGroup.getCurrentRows();
-    }
-
-    public int arrangeGetColumns() {
-        return chartGroup.getCurrentCols();
-    }
-
-    public void arrange(FractionCanvas.ORIENTATION orient) {
+    public void arrange(GridPaneCanvas.ORIENTATION orient) {
         setChartDisable(true);
         if (charts.size() == 1) {
             PolyChart chart = charts.get(0);
@@ -1872,10 +1827,11 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
                 for (int i = 0; i < charts.size(); i++) {
                     DatasetAttributes datasetAttr = current.get(i);
                     PolyChart iChart = charts.get(i);
+                    iChart.setDataset(datasetAttr.getDataset());
                     iChart.setDatasetAttr(datasetAttr);
                 }
                 chart.syncSceneMates();
-                chartGroup.layoutChildren();
+                setChartDisable(true);
                 for (int i = 0; i < charts.size(); i++) {
                     PolyChart iChart = charts.get(i);
                     iChart.xAxis.setLowerBound(xLower);
@@ -1883,7 +1839,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
                     iChart.yAxis.setLowerBound(yLower);
                     iChart.yAxis.setUpperBound(yUpper);
                     iChart.getCrossHairs().setCrossHairState(true);
-                    iChart.refresh();
+                    //iChart.refresh();
                 }
                 setChartDisable(false);
                 chartGroup.layoutChildren();
@@ -1915,12 +1871,10 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
 
     public void setBorderState(boolean state) {
         setMinBorders(state);
-        int nRows = chartGroup.getRows();
-        int nCols = chartGroup.getColumns();
+        chartGroup.updateConstraints();
         chartGroup.layoutChildren();
     }
 
-    @Override
     public double[][] prepareChildren(int nRows, int nCols) {
         int iChild = 0;
         double maxBorderX = 0.0;
@@ -2003,7 +1957,6 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         return hitChart;
     }
 
-    @Override
     public void redrawChildren() {
         // fixme
 //        chartGroup.getChildrenUnmodifiable().stream().map((node) -> (PolyChart) node).forEachOrdered((chart) -> {
@@ -2042,11 +1995,16 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         draw();
     }
 
+    public int arrangeGetRows() {
+        return chartGroup.getRows();
+    }
+
+    public int arrangeGetColumns() {
+        return chartGroup.getColumns();
+    }
+
     public void arrange(int nRows) {
         chartGroup.setRows(nRows);
-        int nCols = chartGroup.getColumns();
-        chartGroup.layoutChildren();
-        chartGroup.layoutChildren();
     }
 
     public void alignCenters() {
@@ -2072,7 +2030,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
     public void alignCentersWithTempLists() {
         DatasetAttributes activeAttr = (DatasetAttributes) activeChart.datasetAttributesList.get(0);
         // any peak lists created just for alignmnent should be deleted
-        PeakList refList = PeakPicking.peakPickActive(activeChart, activeAttr, false, false, false, "refList");
+        PeakList refList = PeakPicking.peakPickActive(activeChart, activeAttr, false, false, null, false, "refList");
         if (refList == null) {
             return;
         }
@@ -2093,7 +2051,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
             ObservableList<DatasetAttributes> dataAttrList = chart.getDatasetAttributes();
             for (DatasetAttributes dataAttr : dataAttrList) {
                 if (dataAttr != activeAttr) {
-                    PeakList movingList = PeakPicking.peakPickActive(chart, dataAttr, false, false, false, "movingList");
+                    PeakList movingList = PeakPicking.peakPickActive(chart, dataAttr, false, false, null, false, "movingList");
                     movingList.unLinkPeaks();
                     movingList.clearSearchDims();
                     movingList.addSearchDim(dimName1, 0.05);
@@ -2145,14 +2103,14 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
             try {
                 PropertyUtils.setSimpleProperty(this, name, value);
             } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException ex) {
-                Logger.getLogger(DatasetAttributes.class.getName()).log(Level.SEVERE, null, ex);
+                log.error(ex.getMessage(), ex);
             }
         } else {
             Platform.runLater(() -> {
                 try {
                     PropertyUtils.setProperty(this, name, value);
                 } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException ex) {
-                    Logger.getLogger(DatasetAttributes.class.getName()).log(Level.SEVERE, null, ex);
+                    log.error(ex.getMessage(), ex);
                 }
             }
             );
@@ -2174,7 +2132,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
                     data.put(beanName, PropertyUtils.getSimpleProperty(this, beanName));
                 }
             } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException ex) {
-                Logger.getLogger(DatasetAttributes.class.getName()).log(Level.SEVERE, null, ex);
+                log.error(ex.getMessage(), ex);
             }
         }
         return data;

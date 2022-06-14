@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,28 +17,23 @@
  */
 package org.nmrfx.processor.math.apache;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.PrintStream;
-import java.util.Random;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
 import org.apache.commons.math3.complex.Complex;
 import org.apache.commons.math3.complex.ComplexField;
 import org.apache.commons.math3.complex.ComplexUtils;
 import org.apache.commons.math3.linear.Array2DRowFieldMatrix;
 import org.apache.commons.math3.linear.ArrayFieldVector;
-import org.apache.commons.math3.linear.FieldMatrix;
 import org.apache.commons.math3.linear.MatrixUtils;
 import org.apache.commons.math3.util.FastMath;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 
 /**
  * ComplexSingularValueDecomposition implements the singular value decomposition of a Complex Matrix.
  *
  */
 public class ComplexSingularValueDecomposition {
+    private static final Logger log = LoggerFactory.getLogger(ComplexSingularValueDecomposition.class);
 
     /**
      * Limits the number of iterations in the SVD algorithm
@@ -782,147 +777,4 @@ public class ComplexSingularValueDecomposition {
         }
     }
 
-    public static void main(String[] Args) {
-        File file = new File("/home/michael/csvd.txt");
-        PrintStream ps;
-        File filez = new File("/home/michael/zsvd.txt");
-        PrintStream zps;
-        try {
-            ps = new PrintStream(new FileOutputStream(file));
-            zps = new PrintStream(new FileOutputStream(file));
-            System.setOut(ps);
-        } catch (FileNotFoundException ex) {
-            Logger.getLogger(ComplexSingularValueDecomposition.class.getName())
-                    .log(Level.SEVERE, null, ex);
-            return;
-        }
-
-        Array2DRowFieldMatrix<Complex> mat;
-        int SIZE = 125;
-        int SEED = 0;
-
-        Random rand = new Random(SEED);
-
-        ComplexSingularValueDecomposition csvd;
-        int runTimes = 1;
-        long[] times = new long[runTimes];
-        try {
-            long start;
-            long stop;
-
-            for (int i = 0; i < runTimes; ++i) {
-
-                mat = new Array2DRowFieldMatrix<>(
-                        ComplexField.getInstance(), SIZE, SIZE);
-
-                for (int j = 0; j < mat.getRowDimension(); ++j) {
-                    for (int k = 0; k < mat.getColumnDimension(); ++k) {
-                        mat.setEntry(
-                                j,
-                                k,
-                                new Complex(rand.nextDouble(), rand
-                                        .nextDouble()));
-                        zps.println(mat.getEntry(j, k) + " " + j + " " + k);
-                    }
-                    System.out.println();
-                }
-
-//				System.out.println("cmd mat");
-//				for (int j = 0; j < mat.getRowDimension(); ++j)  {
-//					for (int k = 0; k < mat.getColumnDimension(); ++k) {
-//							System.out.println(mat.getEntry(j, k) + " " + j + " " + k); }
-//					System.out.println(); }
-                start = System.currentTimeMillis();
-                csvd = new ComplexSingularValueDecomposition(mat);
-                stop = System.currentTimeMillis();
-                times[i] = stop - start;
-
-//				System.out.println("cmd U");
-//				for (int j = 0; j < csvd.U.getColumnDimension(); ++j) {
-//					for (int k = 0; k < csvd.U.getRowDimension(); ++k) {
-//						System.out.println(csvd.U.getEntry(j, k) + ", " + j + ", 	"
-//								+ k);
-//					}
-//					System.out.println();
-//				}
-//				System.out.println("cmd V");
-//				for (int j = 0; j < csvd.V.getRowDimension(); ++j) {
-//					for (int k = 0; k < csvd.V.getColumnDimension(); ++k) {
-//						System.out.println(csvd.V.getEntry(j, k) + ", " + j + ", "
-//								+ k);
-//					}
-//					System.out.println();
-//				}
-//				System.out.println("cmd S");
-//				for (int j = 0; j < csvd.S.getRowDimension(); ++j) {
-//					System.out.println(csvd.S.getEntry(j, j) + ", " + j);
-//				}
-//				System.out.println("");
-                System.out.println("cmd product");
-                FieldMatrix<Complex> p = csvd.U.multiply(csvd.S);
-                p = p.multiply(csvd.V);
-                //dumpMatrix(p.getData());
-                for (int j = 0; j < p.getColumnDimension(); ++j) {
-                    for (int k = 0; k < p.getRowDimension(); ++k) {
-                        System.out.println(p.getEntry(j, k) + ", " + j + ", " + k);
-                    }
-                    System.out.println();
-                }
-            }
-            int sum = 0;
-            int countedTimes = 0;
-            for (int i = 0; i < runTimes; ++i) {
-                sum += times[i];
-                countedTimes++;
-                // System.out.println(times[i]);
-            }
-            System.out.println("Runtime: " + sum);
-            System.out.println("Runtime average: " + (float) sum / (float) countedTimes);
-
-            // A line with cmd as the first 3 chars is not processed numerically
-            // if U*S*V = mat, then checking USV individually is trivial. For
-            // certain matrices
-            // this may not be the case, but as long as we know they're not zero
-            // matrices or
-            // identity matrices, the probability that their product will be
-            // equal is probably negligible.
-//			System.out.println("cmd U");
-//			for (int i = 0; i < csvd.U.getColumnDimension(); ++i) {
-//				for (int j = 0; j < csvd.U.getRowDimension(); ++j) {
-//					System.out.println(csvd.U.getEntry(i, j) + ", " + i + ", 	"
-//							+ j);
-//				}
-//				System.out.println();
-//			}
-//			System.out.println("cmd V");
-//			for (int i = 0; i < csvd.V.getColumnDimension(); ++i) {
-//				for (int j = 0; j < csvd.V.getRowDimension(); ++j) {
-//					System.out.println(csvd.V.getEntry(i, j) + ", " + i + ", "
-//							+ j);
-//				}
-//				System.out.println();
-//			}
-//			System.out.println("cmd S");
-//			for (int i = 0; i < csvd.S.getRowDimension(); ++i) {
-//				System.out.println(csvd.S.getEntry(i, i) + ", " + i);
-//			}
-//			System.out.println("");
-//
-//			System.out.println("cmd product");
-//			FieldMatrix<Complex> p = csvd.U.multiply(csvd.S);
-//			p = p.multiply(csvd.V);
-//			for (int i = 0; i < p.getColumnDimension(); ++i) {
-//				for (int j = 0; j < p.getRowDimension(); ++j) {
-//					System.out.println(p.getEntry(i, j) + ", " + i + ", " + j);
-//				}
-//				System.out.println();
-//			}
-            ps.close();
-            zps.close();
-            System.setOut(System.out);
-        } catch (Exception e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-    }
 }

@@ -45,7 +45,7 @@ public class AngleProp {
     public static AngleProp delta = new AngleProp("delta", new double[]{80.986642655, 148.02528646},
             new double[]{2.65075237294, 4.19156080606},
             new double[]{1, 175.122237292 / 1102.78457069});
-    public static AngleProp zeta = new AngleProp("zeta", new double[]{-70.0}, new double[]{6.7109}, new double[]{957 / 957});
+    public static AngleProp zeta = new AngleProp("zeta", new double[]{-70.0}, new double[]{6.7109}, new double[]{1.0});
 
     double[] sigma = null;
     double[] target = null;

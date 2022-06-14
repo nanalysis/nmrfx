@@ -9,7 +9,6 @@ import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import org.nmrfx.math.VecBase;
 
 /**
  *
@@ -26,31 +25,6 @@ public class DatasetFactory {
             dataset = (DatasetBase) constructor.newInstance(fullName, name, writable, useCacheFile);
         } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException | SecurityException ex) {
             dataset = new DatasetBase(fullName, name, writable, useCacheFile);
-        }
-        return dataset;
-    }
-
-    public static DatasetBase newDataset(String fullName, String title,
-            int[] dimSizes, boolean closeDataset) {
-        DatasetBase dataset = null;
-        try {
-            Class c = Class.forName("org.nmrfx.processor.datasets.Dataset");
-            Class[] parameterTypes = {String.class, String.class, int[].class, boolean.class};
-            Constructor constructor = c.getDeclaredConstructor(parameterTypes);
-            dataset = (DatasetBase) constructor.newInstance(fullName, title, dimSizes, closeDataset);
-        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException | SecurityException ex) {
-        }
-        return dataset;
-    }
-
-    public static DatasetBase newDataset(VecBase vec) {
-        DatasetBase dataset = null;
-        try {
-            Class c = Class.forName("org.nmrfx.processor.datasets.Dataset");
-            Class[] parameterTypes = {VecBase.class};
-            Constructor constructor = c.getDeclaredConstructor(parameterTypes);
-            dataset = (DatasetBase) constructor.newInstance(vec);
-        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException | SecurityException ex) {
         }
         return dataset;
     }

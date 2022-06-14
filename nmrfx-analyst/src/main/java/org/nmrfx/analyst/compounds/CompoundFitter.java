@@ -13,10 +13,6 @@ import java.util.Collection;
 import java.util.List;
 import org.apache.commons.math3.analysis.MultivariateFunction;
 import org.apache.commons.math3.analysis.UnivariateFunction;
-import org.apache.commons.math3.exception.DimensionMismatchException;
-import org.apache.commons.math3.exception.NotPositiveException;
-import org.apache.commons.math3.exception.NotStrictlyPositiveException;
-import org.apache.commons.math3.exception.TooManyEvaluationsException;
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.apache.commons.math3.linear.ArrayRealVector;
 import org.apache.commons.math3.linear.DecompositionSolver;
@@ -37,19 +33,25 @@ import org.apache.commons.math3.optim.univariate.SearchInterval;
 import org.apache.commons.math3.optim.univariate.UnivariatePointValuePair;
 import org.apache.commons.math3.random.MersenneTwister;
 import org.apache.commons.math3.random.RandomGenerator;
-import org.apache.commons.math3.stat.StatUtils;
 import org.apache.commons.math3.stat.correlation.SpearmansCorrelation;
 import org.apache.commons.math3.util.FastMath;
 import org.nmrfx.math.Interpolator;
 import org.nmrfx.processor.math.AmplitudeFitResult;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.math.VecUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import static java.util.Objects.requireNonNull;
+
 
 /**
  *
  * @author brucejohnson
  */
 public class CompoundFitter implements MultivariateFunction {
+
+    private static final Logger log = LoggerFactory.getLogger(CompoundFitter.class);
 
     public static int MAX_SHIFT = 15;
 
@@ -605,17 +607,13 @@ public class CompoundFitter implements MultivariateFunction {
             inputSigma[i] = Math.abs(starting[1][i] - starting[2][i]) * 0.4;
         }
 
-        try {
-            result = optimizer.optimize(
-                    new CMAESOptimizer.PopulationSize(lambda),
-                    new CMAESOptimizer.Sigma(inputSigma),
-                    new MaxEval(2000000),
-                    new ObjectiveFunction(this), GoalType.MINIMIZE,
-                    new SimpleBounds(starting[1], starting[2]),
-                    new InitialGuess(starting[0]));
-        } catch (DimensionMismatchException | NotPositiveException | NotStrictlyPositiveException | TooManyEvaluationsException e) {
-            e.printStackTrace();
-        }
+        result = optimizer.optimize(
+                new CMAESOptimizer.PopulationSize(lambda),
+                new CMAESOptimizer.Sigma(inputSigma),
+                new MaxEval(2000000),
+                new ObjectiveFunction(this), GoalType.MINIMIZE,
+                new SimpleBounds(starting[1], starting[2]),
+                new InitialGuess(starting[0]));
         return result.getPoint();
     }
 
@@ -672,17 +670,14 @@ public class CompoundFitter implements MultivariateFunction {
             System.out.println(i + " " + lower[i] + " " + start[i] + " " + upper[i]);
         }
 
-        try {
-            result = optimizer.optimize(
-                    new CMAESOptimizer.PopulationSize(lambda),
-                    new CMAESOptimizer.Sigma(inputSigma),
-                    new MaxEval(2000000),
-                    new ObjectiveFunction(this), GoalType.MINIMIZE,
-                    new SimpleBounds(lower, upper),
-                    new InitialGuess(start));
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        result = optimizer.optimize(
+                new CMAESOptimizer.PopulationSize(lambda),
+                new CMAESOptimizer.Sigma(inputSigma),
+                new MaxEval(2000000),
+                new ObjectiveFunction(this), GoalType.MINIMIZE,
+                new SimpleBounds(lower, upper),
+                new InitialGuess(start));
+
         System.out.println(optimizer.getEvaluations() + " " + result.getValue());
         double[] scales = result.getPoint();
         for (int i = 0; i < scales.length; i++) {
@@ -878,7 +873,7 @@ public class CompoundFitter implements MultivariateFunction {
                 }
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            log.warn(e.getMessage(), e);
         }
     }
 
@@ -1041,7 +1036,7 @@ public class CompoundFitter implements MultivariateFunction {
                 int startShift = (int) cR.shifts[iRegion];
                 int minShift = cR.minShifts[iRegion];
                 int maxShift = cR.maxShifts[iRegion];
-                FitResult fitResult = optimizeRegion(region, minShift, startShift, maxShift);
+                FitResult fitResult = requireNonNull(optimizeRegion(region, minShift, startShift, maxShift), "Unable to find a best fit while optimizing alignment.");
                 bestShifts.add(fitResult);
                 cR.cMatch.setShift(cR.regions[iRegion], fitResult.getShift());
                 cR.shifts[iRegion] = fitResult.getShift();
@@ -1052,7 +1047,6 @@ public class CompoundFitter implements MultivariateFunction {
 
     private FitResult optimizeRegion(Region region, int minShift, int startShift, int maxShift) {
         double[] values = region.getInterpolated(0);
-        double max1 = StatUtils.max(values);
         int nValues = values.length;
         double ppm1 = region.getPPM1();
         double ppm2 = region.getPPM2();
@@ -1062,26 +1056,21 @@ public class CompoundFitter implements MultivariateFunction {
         if (nValues != vecRegionSize) {
             values = Interpolator.getInterpolated(values, vecRegionSize);
         }
-        double max2 = StatUtils.max(values);
 
         int start = region.getStart();
         double minDev = Double.MAX_VALUE;
         FitResult bestFit = null;
-        double max4 = StatUtils.max(vData);
         for (int shift = minShift; shift <= maxShift; shift++) {
             int aShift = shift + startShift;
             double[] x = new double[vecRegionSize];
 
-            ppm1 = region.pointToPPM(start + aShift);
-            ppm2 = region.pointToPPM(start + aShift + nValues - 1);
+            ppm1 = region.pointToPPM((double) start + aShift);
+            ppm2 = region.pointToPPM(start + aShift + nValues - 1.0);
             int vecStart = vecPPMToIntPoint((ppm1 + ppm2) / 2) - vecRegionSize / 2;
             System.arraycopy(vData, vecStart, x, 0, vecRegionSize);
-            double max3 = StatUtils.max(x);
 
-//System.out.println(vData.length + " x len " + x.length + " start " + start + " shift " + shift + " s+s " + (start+shift) + " vs " + vecStart + " n " + vecRegionSize + " " + nValues + " max " + max3);
             FitResult fitResult = scaleByAbsDev(x, values, true);
             double avgAbsDev = fitResult.getDev();
-//System.out.println(avgAbsDev);
             if (avgAbsDev < minDev) {
                 minDev = avgAbsDev;
                 minShift = aShift;

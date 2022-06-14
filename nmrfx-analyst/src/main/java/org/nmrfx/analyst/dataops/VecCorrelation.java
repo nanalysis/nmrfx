@@ -6,12 +6,17 @@ import org.apache.commons.math3.transform.FastFourierTransformer;
 import org.apache.commons.math3.transform.TransformType;
 import org.nmrfx.processor.math.PositionValue;
 import org.nmrfx.processor.math.Vec;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
  * @author brucejohnson
  */
 public class VecCorrelation {
+
+    private static final Logger log = LoggerFactory.getLogger(VecCorrelation.class);
+
 
     /**
      * ****************************************************************************
@@ -603,8 +608,7 @@ public class VecCorrelation {
 //            System.out.println("shift " + shift + " n " + n + " clen " + corr_rs_power.length + " " + maxShift);
             pValue = new PositionValue(shift, max_corr);
         } catch (Exception e) {
-            System.out.println("Exception " + e.toString());
-            e.printStackTrace();
+            log.error(e.getMessage(), e);
             System.exit(-1);
         }
         return pValue;

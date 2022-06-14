@@ -9,7 +9,7 @@
 <BorderPane xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1"
             prefHeight="350.0" prefWidth="600" styleClass="mainFxmlClass"
             fx:id="attrBorderPane"
-            fx:controller="org.nmrfx.analyst.gui.PeakTableController">
+            fx:controller="org.nmrfx.analyst.gui.peaks.PeakTableController">
     <top>
         <ToolBar fx:id="toolBar" prefHeight="40.0" prefWidth="600"
                  BorderPane.alignment="CENTER">

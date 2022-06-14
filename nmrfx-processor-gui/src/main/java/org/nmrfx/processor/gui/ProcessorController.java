@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -19,21 +19,6 @@ package org.nmrfx.processor.gui;
 
 import de.jensd.fx.glyphs.GlyphsDude;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
-import org.nmrfx.processor.gui.controls.ConsoleUtil;
-import org.nmrfx.processor.gui.controls.ProcessingCodeAreaUtil;
-import org.nmrfx.processor.processing.Processor;
-import java.io.File;
-import java.io.IOException;
-import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Map;
-import java.util.TreeMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.ResourceBundle;
 import javafx.application.Platform;
 import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.value.ChangeListener;
@@ -52,30 +37,12 @@ import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.geometry.Point2D;
 import javafx.scene.Node;
-import javafx.scene.control.Button;
-import javafx.scene.control.ListView;
-import javafx.scene.control.MenuButton;
-import javafx.scene.control.Menu;
-import javafx.scene.control.MenuItem;
-import javafx.scene.control.ChoiceBox;
-import javafx.scene.control.CheckBox;
-import javafx.scene.control.ContentDisplay;
-import javafx.scene.control.Label;
-import javafx.scene.control.ListCell;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableView;
-import javafx.scene.control.TextField;
-import javafx.scene.control.TitledPane;
-import javafx.scene.control.ToolBar;
+import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.GridPane;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Pane;
-import javafx.scene.layout.StackPane;
+import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.text.Text;
@@ -87,15 +54,30 @@ import org.controlsfx.control.PopOver;
 import org.controlsfx.control.PropertySheet;
 import org.controlsfx.control.StatusBar;
 import org.controlsfx.dialog.ExceptionDialog;
-import org.python.util.PythonInterpreter;
 import org.fxmisc.richtext.CodeArea;
 import org.nmrfx.processor.datasets.Dataset;
+import org.nmrfx.processor.datasets.DatasetType;
 import org.nmrfx.processor.datasets.vendor.NMRData;
 import org.nmrfx.processor.datasets.vendor.VendorPar;
+import org.nmrfx.processor.gui.controls.ConsoleUtil;
+import org.nmrfx.processor.gui.controls.ProcessingCodeAreaUtil;
+import org.nmrfx.processor.processing.Processor;
 import org.nmrfx.utilities.ProgressUpdater;
 import org.nmrfx.utils.GUIUtils;
+import org.python.util.PythonInterpreter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.File;
+import java.io.IOException;
+import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.*;
 
 public class ProcessorController implements Initializable, ProgressUpdater {
+
+    private static final Logger log = LoggerFactory.getLogger(ProcessorController.class);
 
     Pane processorPane;
     Pane pane;
@@ -196,8 +178,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
             stage.setWidth(width + pane.getMinWidth());
             return controller;
         } catch (IOException ioE) {
-            ioE.printStackTrace();
-            System.out.println(ioE.getMessage());
+            log.warn(ioE.getMessage(), ioE);
             return null;
         }
     }
@@ -205,6 +186,8 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     private BorderPane mainBox;
     @FXML
     private ChoiceBox viewMode;
+    @FXML
+    private Button datasetFileButton;
     @FXML
     private Button processDatasetButton;
     @FXML
@@ -295,6 +278,14 @@ public class ProcessorController implements Initializable, ProgressUpdater {
             Platform.runLater(() -> {
                 setProcessingStatus(s, true);
             });
+        }
+    }
+
+    void updateFileButton() {
+        if (chartProcessor.getDatasetType() == DatasetType.SPINit) {
+            datasetFileButton.setText("Next ProcNum");
+        } else {
+            datasetFileButton.setText("File...");
         }
     }
 
@@ -493,7 +484,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
                 try {
                     operationList.remove(index);
                 } catch (Exception ex) {
-                    ex.printStackTrace();
+                    log.warn(ex.getMessage(), ex);
                 } finally {
                     propertyManager.addScriptListener();
                     operationList.addListener(opListListener);
@@ -615,6 +606,20 @@ public class ProcessorController implements Initializable, ProgressUpdater {
             textArea.replaceText(scriptOpt.get());
         }
         return true;
+    }
+
+    void unsetDatasetName() {
+        String script = textArea.getText();
+        if (chartProcessor.scriptHasDataset(script)) {
+            script = chartProcessor.removeDatasetName(script);
+            textArea.replaceText(script);
+        }
+    }
+
+    @FXML
+    private void datasetFileAction(ActionEvent event) {
+        unsetDatasetName();
+        fixDatasetName();
     }
 
     @FXML
@@ -922,12 +927,13 @@ public class ProcessorController implements Initializable, ProgressUpdater {
                     return new Task() {
                         protected Object call() {
                             script = textArea.getText();
-                            PythonInterpreter processInterp = new PythonInterpreter();
-                            updateStatus("Start processing");
-                            updateTitle("Start Processing");
-                            processInterp.exec("from pyproc import *");
-                            processInterp.exec("useProcessor(inNMRFx=True)");
-                            processInterp.exec(script);
+                            try (PythonInterpreter processInterp = new PythonInterpreter()) {
+                                updateStatus("Start processing");
+                                updateTitle("Start Processing");
+                                processInterp.exec("from pyproc import *");
+                                processInterp.exec("useProcessor(inNMRFx=True)");
+                                processInterp.exec(script);
+                            }
                             return 0;
                         }
                     };
@@ -1008,12 +1014,10 @@ public class ProcessorController implements Initializable, ProgressUpdater {
                 System.out.println("menu action ");
             }
         };
-        List<MenuItem> subMenuItems = null;
-        Menu menu = null;
 
-        menu = new Menu("Common Op Lists");
+        Menu menu = new Menu("Common Op Lists");
         menuItems.add(menu);
-        subMenuItems = new ArrayList<>();
+        List<MenuItem> subMenuItems = new ArrayList<>();
         for (String op : basicOps) {
             MenuItem menuItem = new MenuItem(op);
             menuItem.addEventHandler(ActionEvent.ACTION, event -> opSequenceMenuAction(event));
@@ -1021,12 +1025,10 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         }
         menu.getItems().addAll(subMenuItems);
 
-        subMenuItems = null;
+        subMenuItems = new ArrayList<>();
         for (String op : OperationInfo.opOrders) {
             if (op.startsWith("Cascade-")) {
-                if (subMenuItems != null) {
-                    menu.getItems().addAll(subMenuItems);
-                }
+                menu.getItems().addAll(subMenuItems);
                 menu = new Menu(op.substring(8));
                 subMenuItems = new ArrayList<>();
                 menuItems.add(menu);
@@ -1036,9 +1038,8 @@ public class ProcessorController implements Initializable, ProgressUpdater {
                 subMenuItems.add(menuItem);
             }
         }
-        if (menu != null) {
-            menu.getItems().addAll(subMenuItems);
-        }
+        menu.getItems().addAll(subMenuItems);
+
         opMenuButton.getItems().addAll(menuItems);
         popOver.setContentNode(new Text("hello"));
 
@@ -1087,7 +1088,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
                     refManager.setupItems(vecDim - 1);
 
                 } catch (NumberFormatException nfE) {
-
+                    log.warn("Unable to parse vector dimension.", nfE);
                 }
             }
         };

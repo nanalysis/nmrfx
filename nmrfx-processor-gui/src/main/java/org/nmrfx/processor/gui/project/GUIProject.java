@@ -5,30 +5,10 @@
  */
 package org.nmrfx.processor.gui.project;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.nio.file.DirectoryIteratorException;
-import java.nio.file.DirectoryStream;
-import java.nio.file.FileSystem;
-import java.nio.file.FileSystems;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.function.Predicate;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import javafx.collections.FXCollections;
 import javafx.collections.MapChangeListener;
 import javafx.collections.ObservableMap;
 import javafx.concurrent.Task;
-
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.Status;
 import org.eclipse.jgit.api.errors.GitAPIException;
@@ -37,16 +17,10 @@ import org.eclipse.jgit.revwalk.RevCommit;
 import org.nmrfx.chemistry.InvalidMoleculeException;
 import org.nmrfx.chemistry.MoleculeBase;
 import org.nmrfx.chemistry.MoleculeFactory;
-import org.nmrfx.chemistry.io.MoleculeIOException;
-import org.nmrfx.chemistry.io.NMRStarReader;
-import org.nmrfx.chemistry.io.NMRStarWriter;
-import org.nmrfx.chemistry.io.PDBFile;
-import org.nmrfx.chemistry.io.PPMFiles;
-import org.nmrfx.chemistry.io.SDFile;
-import org.nmrfx.chemistry.io.Sequence;
+import org.nmrfx.chemistry.io.*;
 import org.nmrfx.peaks.InvalidPeakException;
-import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.peaks.PeakList;
+import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.MainApp;
 import org.nmrfx.processor.gui.PreferencesController;
 import org.nmrfx.processor.gui.spectra.WindowIO;
@@ -54,12 +28,28 @@ import org.nmrfx.processor.gui.utils.FxPropertyChangeSupport;
 import org.nmrfx.processor.gui.utils.PeakListUpdater;
 import org.nmrfx.project.ProjectBase;
 import org.nmrfx.star.ParseException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.nio.file.*;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.function.Predicate;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 /**
  *
  * @author Bruce Johnson
  */
 public class GUIProject extends ProjectBase {
+    private static final Logger log = LoggerFactory.getLogger(GUIProject.class);
 
     static String[] SUB_DIR_TYPES = {"star", "datasets", "molecules", "peaks", "shifts", "refshifts", "windows"};
 
@@ -102,7 +92,7 @@ public class GUIProject extends ProjectBase {
             PreferencesController.saveRecentProjects(projectDir.toString());
             git = Git.init().setDirectory(projectDir.toFile()).call();
         } catch (GitAPIException ex) {
-            Logger.getLogger(GUIProject.class.getName()).log(Level.SEVERE, null, ex);
+            log.error(ex.getMessage(), ex);
         }
         if (git != null) {
             writeIgnore();
@@ -134,9 +124,15 @@ public class GUIProject extends ProjectBase {
         clearAllPeakLists();
         clearAllDatasets();
         MainApp.closeAll();
-
     }
 
+    public static boolean checkProjectActive() {
+        ProjectBase project = ProjectBase.getActive();
+        boolean hasMolecules = !MoleculeFactory.getMolecules().isEmpty();
+        boolean hasDatasets =  project != null && !project.getDatasets().isEmpty();
+        boolean hasPeakLists = project != null && !project.getPeakLists().isEmpty();
+        return hasMolecules || hasDatasets || hasPeakLists;
+    }
     public void clearAllMolecules() {
         MoleculeFactory.clearAllMolecules();
     }
@@ -263,6 +259,7 @@ public class GUIProject extends ProjectBase {
 
                 }
             } catch (DirectoryIteratorException | IOException ex) {
+                log.warn(ex.getMessage(), ex);
             }
         }
         if (sstructPath != null) {
@@ -316,34 +313,37 @@ public class GUIProject extends ProjectBase {
         Pattern pattern = Pattern.compile("(.+)\\.(seq|pdb|mol|sdf)");
         Predicate<String> predicate = pattern.asPredicate();
         if (Files.isDirectory(directory)) {
-            Files.list(directory).sequential().filter(path -> predicate.test(path.getFileName().toString())).
-                    sorted(new FileComparator()).
-                    forEach(path -> {
-                        String pathName = path.toString();
-                        String fileName = path.getFileName().toString();
-                        Matcher matcher = pattern.matcher(fileName);
-                        String baseName = matcher.group(1);
-                        System.out.println("read mol: " + pathName);
+            try (Stream<Path> files = Files.list(directory)) {
+                files.sequential().filter(path -> predicate.test(path.getFileName().toString())).
+                        sorted(new FileComparator()).
+                        forEach(path -> {
+                            String pathName = path.toString();
+                            String fileName = path.getFileName().toString();
+                            Matcher matcher = pattern.matcher(fileName);
+                            String baseName = matcher.group(1);
+                            System.out.println("read mol: " + pathName);
 
-                        try {
-                            if (fileName.endsWith(".seq")) {
-                                Sequence sequence = new Sequence();
-                                sequence.read(pathName);
-                            } else if (fileName.endsWith(".pdb")) {
-                                if (mol.entities.isEmpty()) {
-                                    pdbReader.readSequence(pathName, false, 0);
-                                } else {
-                                    PDBFile.readResidue(pathName, null, mol, baseName);
+                            try {
+                                if (fileName.endsWith(".seq")) {
+                                    Sequence sequence = new Sequence();
+                                    sequence.read(pathName);
+                                } else if (fileName.endsWith(".pdb")) {
+                                    if (mol.entities.isEmpty()) {
+                                        pdbReader.readSequence(pathName, false, 0);
+                                    } else {
+                                        PDBFile.readResidue(pathName, null, mol, baseName);
+                                    }
+                                } else if (fileName.endsWith(".sdf")) {
+                                    SDFile.read(pathName, null, mol, baseName);
+                                } else if (fileName.endsWith(".mol")) {
+                                    SDFile.read(pathName, null, mol, baseName);
                                 }
-                            } else if (fileName.endsWith(".sdf")) {
-                                SDFile.read(pathName, null, mol, baseName);
-                            } else if (fileName.endsWith(".mol")) {
-                                SDFile.read(pathName, null, mol, baseName);
+                            } catch (MoleculeIOException molE) {
+                                log.warn(molE.getMessage(), molE);
                             }
-                        } catch (MoleculeIOException molE) {
-                        }
 
-                    });
+                        });
+            }
         }
     }
 
@@ -352,14 +352,16 @@ public class GUIProject extends ProjectBase {
         Pattern pattern = Pattern.compile("(.+)\\.(txt|ppm)");
         Predicate<String> predicate = pattern.asPredicate();
         if (Files.isDirectory(directory)) {
-            Files.list(directory).sequential().filter(path -> predicate.test(path.getFileName().toString())).
-                    sorted(new FileComparator()).
-                    forEach(path -> {
-                        String fileName = path.getFileName().toString();
-                        Optional<Integer> fileNum = getIndex(fileName);
-                        int ppmSet = fileNum.isPresent() ? fileNum.get() : 0;
-                        PPMFiles.readPPM(mol, path, ppmSet, refMode);
-                    });
+            try (Stream<Path> files = Files.list(directory)) {
+                files.sequential().filter(path -> predicate.test(path.getFileName().toString())).
+                        sorted(new FileComparator()).
+                        forEach(path -> {
+                            String fileName = path.getFileName().toString();
+                            Optional<Integer> fileNum = getIndex(fileName);
+                            int ppmSet = fileNum.isPresent() ? fileNum.get() : 0;
+                            PPMFiles.readPPM(mol, path, ppmSet, refMode);
+                        });
+            }
         }
     }
 
@@ -457,7 +459,7 @@ public class GUIProject extends ProjectBase {
                 didSomething = true;
             }
         } catch (GitAPIException ex) {
-            Logger.getLogger(GUIProject.class.getName()).log(Level.SEVERE, null, ex);
+            log.error(ex.getMessage(), ex);
         } finally {
             // fixme, should we do this after each commit, or leave git open
             git.close();

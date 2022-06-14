@@ -17,40 +17,44 @@
  */
 package org.nmrfx.processor.processing;
 
-import java.io.File;
-
+import org.greenrobot.eventbus.EventBus;
 import org.nmrfx.datasets.DatasetBase;
+import org.nmrfx.datasets.MatrixType;
 import org.nmrfx.math.VecBase;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.DatasetException;
-import org.nmrfx.processor.processing.processes.ProcessOps;
+import org.nmrfx.processor.datasets.MatrixTypeService;
 import org.nmrfx.processor.datasets.ScanRegion;
+import org.nmrfx.processor.datasets.vendor.bruker.BrukerData;
 import org.nmrfx.processor.datasets.vendor.NMRData;
 import org.nmrfx.processor.datasets.vendor.NMRDataUtil;
-import org.nmrfx.processor.datasets.vendor.BrukerData;
+import org.nmrfx.processor.datasets.vendor.rs2d.RS2DData;
+import org.nmrfx.processor.events.DatasetSavedEvent;
 import org.nmrfx.processor.math.Matrix;
 import org.nmrfx.processor.math.MatrixND;
-import org.nmrfx.datasets.MatrixType;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.operations.Invertible;
 import org.nmrfx.processor.operations.Operation;
 import org.nmrfx.processor.processing.processes.IncompleteProcessException;
+import org.nmrfx.processor.processing.processes.ProcessOps;
+import org.nmrfx.utilities.ProgressUpdater;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.Map;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import org.nmrfx.processor.datasets.MatrixTypeService;
-import org.nmrfx.utilities.ProgressUpdater;
 
 /**
  * The Processor contains all processes. It also contains the "current
@@ -60,6 +64,7 @@ import org.nmrfx.utilities.ProgressUpdater;
  * @author johnsonb
  */
 public class Processor {
+    private static final Logger log = LoggerFactory.getLogger(Processor.class);
 
     public static boolean showDebugInfo = false;
     private String fileName;
@@ -385,8 +390,7 @@ public class Processor {
             try {
                 dataset = new Dataset(fileName, fileName, writeable, true);
             } catch (IOException ex) {
-                System.err.println("could not create dataset");
-                ex.printStackTrace();
+                log.warn("Could not create dataset. {}", ex.getMessage(), ex);
                 return false;
             }
             mapToFID = new int[dataset.getNDim()];
@@ -861,7 +865,6 @@ public class Processor {
         }
         int nDimToUse = 0;
         for (var sz : useSizes) {
-            System.out.println("usz " + sz);
             nDimToUse += sz > 1 ? 1 : 0;
         }
         this.acqSizesToUse = useSizes;  // fixme
@@ -872,7 +875,7 @@ public class Processor {
                 //  this.dataset = Dataset.createDataset(outputFile, outputFile, datasetSizes, false);
             }
         } catch (DatasetException ex) {
-            Logger.getLogger(Processor.class.getName()).log(Level.SEVERE, null, ex);
+            log.error(ex.getMessage(), ex);
             return false;
         }
         dataset.setScale(1.0);
@@ -1013,8 +1016,7 @@ public class Processor {
                 matrix = new Matrix(nPlanes, nRows, writePt);
                 dataset.readMatrix(pt, dim, matrix.getMatrix());
             } catch (IOException ex) {
-                ex.printStackTrace();
-//                Logger.getLogger(Processor.class.getName()).log(Level.SEVERE, null, ex);
+                log.warn(ex.getMessage(), ex);
             }
         }
         return matrix;
@@ -1055,8 +1057,7 @@ public class Processor {
 //                printDimPt("getMatrix", dim, matrix.getPt());  // for debug
                 dataset.readMatrixND(pt, dim, matrix);
             } catch (IOException ex) {
-                ex.printStackTrace();
-//                Logger.getLogger(Processor.class.getName()).log(Level.SEVERE, null, ex);
+                log.warn(ex.getMessage(), ex);
             }
         }
         return matrix;
@@ -1189,7 +1190,7 @@ public class Processor {
                                 vectors.add(temp);
                             }
                         } catch (Exception e) {
-                            throw new ProcessingException(e.getMessage());
+                            throw new ProcessingException(e.getMessage(), e);
                         }
                         vecReadCount.incrementAndGet();
                     }
@@ -1455,11 +1456,15 @@ public class Processor {
         if (dataset != null) {
             if (dataset.isMemoryFile()) {
                 try {
-                    dataset.saveMemoryFile();
-                } catch (IOException ex) {
-                    Logger.getLogger(Processor.class.getName()).log(Level.SEVERE, null, ex);
-                } catch (DatasetException ex) {
-                    Logger.getLogger(Processor.class.getName()).log(Level.SEVERE, null, ex);
+                    if (dataset.getFileName().endsWith(RS2DData.DATA_FILE_NAME) && (getNMRData() instanceof RS2DData)) {
+                        RS2DData rs2DData = (RS2DData) getNMRData();
+                        Path procNumPath = rs2DData.saveDataset(dataset);
+                        EventBus.getDefault().post(new DatasetSavedEvent(RS2DData.DATASET_TYPE, procNumPath));
+                    } else {
+                        dataset.saveMemoryFile();
+                    }
+                } catch (IOException | DatasetException ex) {
+                    log.error(ex.getMessage(), ex);
                 }
             }
             dataset.close();
@@ -1523,7 +1528,6 @@ public class Processor {
                 try {
                     future.get();
                 } catch (InterruptedException | ExecutionException ex) {
-                    ex.printStackTrace();
                     throw new ProcessingException(ex.getMessage());
                 }
             }
@@ -1562,7 +1566,8 @@ public class Processor {
             p.getOperations().clear();
             isRunning = false;
             if (getProcessorError()) {
-                closeDataset();
+                dataset.close();
+                dataset = null;
                 throw new ProcessingException(errorMessage.get());
             }
         }

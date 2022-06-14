@@ -27,8 +27,6 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.FileSystems;
 import java.util.*;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.nmrfx.peaks.PeakDim;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.ResonanceFactory;
@@ -39,12 +37,15 @@ import org.nmrfx.star.Saveframe;
 import org.nmrfx.chemistry.MolFilter;
 import org.nmrfx.chemistry.constraints.AngleConstraintSet;
 import org.nmrfx.chemistry.constraints.DistanceConstraintSet;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
  * @author brucejohnson, Martha
  */
 public class NMRNEFReader {
+    private static final Logger log = LoggerFactory.getLogger(NMRNEFReader.class);
 
     final STAR3 nef;
     final File nefFile;
@@ -78,7 +79,6 @@ public class NMRNEFReader {
      * Read a NEF formatted file.
      *
      * @param nefFile File. NEF file to read.
-     * @param nefDir String. Directory of NEF file.
      * @throws ParseException
      */
     public static void read(File nefFile) throws ParseException {
@@ -206,11 +206,11 @@ public class NMRNEFReader {
                             System.out.println("read residue " + chainCode + " " + seqCode + " from " + cifFile);
                             MMcifReader.readChemComp(cifFile, molecule, chainCode, seqCode);
                         } catch (Exception ex) {
-                            ex.printStackTrace();
+                            log.warn(ex.getMessage(), ex);
                         }
                     }
                 } catch (MoleculeIOException ex) {
-                    Logger.getLogger(NMRNEFReader.class.getName()).log(Level.SEVERE, null, ex);
+                    log.error(ex.getMessage(), ex);
                 }
             } else if (compound != null) {
                 String cifFileName = FileSystems.getDefault().getPath(nefDir.toString(), resName + ".cif").toString();
@@ -483,7 +483,7 @@ public class NMRNEFReader {
             try {
                 angleSet.addAngleConstraint(atoms, lower, upper, scale, weight, target, targetErr, name);
             } catch (InvalidMoleculeException imE) {
-
+                log.warn(imE.getMessage(), imE);
             }
 
         }

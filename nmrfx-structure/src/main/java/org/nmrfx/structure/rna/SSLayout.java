@@ -25,9 +25,12 @@ import org.nmrfx.chemistry.Polymer;
 import org.nmrfx.chemistry.Residue;
 import org.nmrfx.chemistry.InvalidMoleculeException;
 import org.nmrfx.structure.chemistry.Molecule;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class SSLayout implements MultivariateFunction {
 
+    private static final Logger log = LoggerFactory.getLogger(SSLayout.class);
     private final int[][] interactions;
     private final int[] basePairs;
     private final int[] basePairs2;
@@ -289,8 +292,7 @@ public class SSLayout implements MultivariateFunction {
                 }
             }
         } catch (ArrayIndexOutOfBoundsException aiE) {
-            aiE.printStackTrace();
-            return;
+            log.warn(aiE.getMessage(), aiE);
         }
     }
 
@@ -383,8 +385,7 @@ public class SSLayout implements MultivariateFunction {
             }
 
         } catch (ArrayIndexOutOfBoundsException aiE) {
-            aiE.printStackTrace();
-            return;
+            log.warn(aiE.getMessage(), aiE);
         }
     }
 
@@ -818,60 +819,24 @@ public class SSLayout implements MultivariateFunction {
                         DEFAULT_RANDOMGENERATOR, true,
                         new SimpleValueChecker(100 * Precision.EPSILON, 100 * Precision.SAFE_MIN));
 
-                try {
-                    result = optimizer.optimize(
-                            new CMAESOptimizer.PopulationSize(lambda),
-                            new CMAESOptimizer.Sigma(lSigma), new MaxEval(2000000),
-                            new ObjectiveFunction(this), GoalType.MINIMIZE,
-                            new SimpleBounds(lboundaries[0], lboundaries[1]),
-                            new InitialGuess(lguess));
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
+                result = optimizer.optimize(
+                        new CMAESOptimizer.PopulationSize(lambda),
+                        new CMAESOptimizer.Sigma(lSigma), new MaxEval(2000000),
+                        new ObjectiveFunction(this), GoalType.MINIMIZE,
+                        new SimpleBounds(lboundaries[0], lboundaries[1]),
+                        new InitialGuess(lguess));
                 System.err.println(limit + " " + optimizer.getIterations() + " " + result.getValue());
-                //dumpAngles(result.getPoint());
                 System.arraycopy(result.getPoint(), 0, guess, 0, result.getPoint().length);
                 value = result.getValue();
             }
         }
-        if (result != null) {
-            //dumpCoordinates(result.getPoint());
-        } else {
-            result = new PointValuePair(guess, value);
-            //dumpCoordinates(guess);
-        }
-        return result;
+
+        return result != null ? result : new PointValuePair(guess, value);
     }
 
     public void calcLayout(int nSteps) {
         PointValuePair result = refineCMAES(nSteps, 0.0, 0.5, 1.0, 0);
         getFullCoordinates(result.getPoint());
-    }
-
-    public void dumpCoordinates(double[] pars) {
-        getFullCoordinates(pars);
-    }
-
-    public void dumpCoordinates() {
-        double sumX = 0.0;
-        double sumY = 0.0;
-        for (int i = 0; i < nNuc; i++) {
-            sumX += values[i * 2];
-            sumY += values[i * 2 + 1];
-        }
-        double centerX = sumX / nNuc;
-        double centerY = sumY / nNuc;
-        for (int i = 0; i < nNuc; i++) {
-//            values[i*2] -= centerX;
-            //           values[i*2+1] -= centerY;
-            System.out.printf("%.3f\t%.3f\n", values[i * 2], values[i * 2 + 1]);
-        }
-    }
-
-    public void dumpCoordinatesNew() {
-        for (int i = 0; i < nNuc; i++) {
-            System.out.printf("%3d %.3f\t%.3f\n", i, coords[0][i], coords[1][i]);
-        }
     }
 
     public void interpVienna(String vienna) {
@@ -893,13 +858,12 @@ public class SSLayout implements MultivariateFunction {
                         levels[rightIndex]--;
                         int start = levelMap[levels[rightIndex]][rightIndex];                        
                         int end = i;
-                        //System.err.println(start + " <> " + end);
                         addPair(start, end);
 
                     }
                 }
             } catch (ArrayIndexOutOfBoundsException aiE) {
-                aiE.printStackTrace();
+                log.warn(aiE.getMessage(), aiE);
                 return;
             }
         } 
@@ -924,7 +888,6 @@ public class SSLayout implements MultivariateFunction {
                         levels[rightIndex]--;
                         int start = levelMap[levels[rightIndex]][rightIndex];                        
                         int end = i;
-                        //System.err.println(start + " <> " + end);
                         addPair(start, end);
                         res.get(start).pairedTo = res.get(end);
                         res.get(end).pairedTo = res.get(start);
@@ -932,7 +895,7 @@ public class SSLayout implements MultivariateFunction {
                     }
                 }
             } catch (ArrayIndexOutOfBoundsException aiE) {
-                aiE.printStackTrace();
+                log.warn(aiE.getMessage(), aiE);
                 break;
             }
         }
@@ -956,21 +919,8 @@ public class SSLayout implements MultivariateFunction {
         SSLayout ssLayout = new SSLayout(vienna.length());
         ssLayout.interpVienna(vienna);
         ssLayout.dumpPairs();
-        /*
-         ssLayout.addPair(1,20);
-         ssLayout.addPair(2,19);
-         ssLayout.addPair(3,18);
-         ssLayout.addPair(4,17);
-         ssLayout.addPair(5,16);
-         ssLayout.addPair(6,15);
-         ssLayout.addPair(7,14);
-         ssLayout.addPair(8,13);
-         */
         ssLayout.fillPairs();
         System.out.println("nf " + ssLayout.nFree);
-//        ssLayout.refineCMAES(30000,0.01,0.5,1.0,100);
-        //PointValuePair result = ssLayout.refineCMAES(1000, 1.0, 0.5, 1.0, 0);
-        //ssLayout.dumpCoordinates(result.getPoint());
-        //ssLayout.dumpCoordinates();
+
     }
 }

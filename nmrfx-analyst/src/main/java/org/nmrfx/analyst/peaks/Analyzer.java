@@ -1,6 +1,8 @@
 package org.nmrfx.analyst.peaks;
 
 import java.io.File;
+
+import org.nmrfx.analyst.dataops.Normalize;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.datasets.Nuclei;
 import org.nmrfx.datasets.DatasetRegion;
@@ -20,8 +22,6 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.nmrfx.peaks.AbsMultipletComponent;
 import org.nmrfx.peaks.InvalidPeakException;
@@ -34,12 +34,15 @@ import org.nmrfx.processor.datasets.peaks.PeakPickParameters;
 import org.nmrfx.processor.datasets.peaks.PeakPicker;
 import org.nmrfx.processor.operations.IDBaseline2;
 import org.nmrfx.processor.operations.Util;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
  * @author Bruce Johnson
  */
 public class Analyzer {
+    private static final Logger log = LoggerFactory.getLogger(Analyzer.class);
 
     Dataset dataset;
     PeakList peakList;
@@ -129,8 +132,7 @@ public class Analyzer {
         try {
             dataset.readVectorFromDatasetFile(pt, dim, vec);
         } catch (IOException ex) {
-            System.out.println("failed to get dataset vector");
-            Logger.getLogger(Analyzer.class.getName()).log(Level.SEVERE, null, ex);
+            log.error("Failed to get dataset vector", ex);
             return;
         }
         int sdevWin = Math.max(16, vec.getSize() / 64);
@@ -183,10 +185,8 @@ public class Analyzer {
         try {
             peakList = picker.peakPick();
             removePeaksFromNonRegions();
-        } catch (IOException ex) {
-            Logger.getLogger(Analyzer.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (IllegalArgumentException ex) {
-            Logger.getLogger(Analyzer.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (IOException|IllegalArgumentException ex) {
+            log.error(ex.getMessage(), ex);
         }
         return peakList;
     }
@@ -233,6 +233,7 @@ public class Analyzer {
         try {
             peakList = picker.peakPick();
         } catch (IOException | IllegalArgumentException ex) {
+            log.warn("Unable to peak pick.", ex);
         }
     }
 
@@ -290,7 +291,7 @@ public class Analyzer {
             try {
                 peakList = picker.peakPick();
             } catch (IOException | IllegalArgumentException ex) {
-                Logger.getLogger(Analyzer.class.getName()).log(Level.SEVERE, null, ex);
+                log.error(ex.getMessage(), ex);
             }
         }
         renumber();
@@ -529,8 +530,7 @@ public class Analyzer {
             vec.bcWhit(lambda, order, false);
             dataset.writeVecToDatasetFile(pt, dim, vec);
         } catch (IOException ex) {
-            Logger.getLogger(Analyzer.class.getName()).log(Level.SEVERE, null, ex);
-            return;
+            log.error(ex.getMessage(), ex);
         }
     }
 
@@ -677,7 +677,7 @@ public class Analyzer {
         try {
             dataset.readVectorFromDatasetFile(pt, dim, vec);
         } catch (IOException ex) {
-            Logger.getLogger(Analyzer.class.getName()).log(Level.SEVERE, null, ex);
+            log.error(ex.getMessage(), ex);
             return;
         }
         double sw = dataset.getSw(0);

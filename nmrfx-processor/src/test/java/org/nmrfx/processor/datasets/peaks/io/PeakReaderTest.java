@@ -1,14 +1,18 @@
 package org.nmrfx.processor.datasets.peaks.io;
 
-import java.io.IOException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.junit.Assert;
 import org.junit.Test;
-import org.nmrfx.peaks.io.PeakReader;
 import org.nmrfx.peaks.PeakList;
+import org.nmrfx.peaks.io.PeakReader;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class PeakReaderTest {
+    private static final Logger log = LoggerFactory.getLogger(PeakReaderTest.class);
 
     String peakListName = "src/test/resources/test.xpk";
     PeakList peakList1 = null;
@@ -19,7 +23,7 @@ public class PeakReaderTest {
             try {
                 peakList1 = peakReader.readPeakList(peakListName);
             } catch (IOException ex) {
-                Logger.getLogger(PeakReaderTest.class.getName()).log(Level.SEVERE, null, ex);
+                log.error(ex.getMessage(), ex);
             }
         }
         return peakList1;
@@ -136,4 +140,14 @@ public class PeakReaderTest {
         Assert.assertNotNull(peakList);
         Assert.assertEquals(inten, (double) peakList.getPeak(0).getIntensity(), 1.0e-5);
     }
+
+    @Test
+    public void testParseXPKLineEncapsulatedQuotes() {
+        // This test is to check that the encapsulated quotes are parsed correctly
+        String doubleQuoteString = "0 {h5} {h5'} {h5''} 1.234 ++ {0.0} {} 0\n";
+        List<String> expectedDoubleQuote = new ArrayList<>(List.of("0", "h5", "h5'", "h5''", "1.234", "++", "0.0", "", "0"));
+        List<String> actualDoubleQuote = PeakReader.parseXPKLine(doubleQuoteString);
+        Assert.assertEquals(expectedDoubleQuote, actualDoubleQuote);
+    }
+
 }

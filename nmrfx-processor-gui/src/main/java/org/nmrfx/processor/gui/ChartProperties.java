@@ -1,24 +1,5 @@
-package org.nmrfx.processor.gui;
-
-import java.lang.reflect.InvocationTargetException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import javafx.application.Platform;
-import javafx.beans.property.BooleanProperty;
-import javafx.beans.property.DoubleProperty;
-import javafx.beans.property.IntegerProperty;
-import javafx.beans.property.SimpleBooleanProperty;
-import javafx.beans.property.SimpleDoubleProperty;
-import javafx.beans.property.SimpleIntegerProperty;
-import javafx.scene.paint.Color;
-import org.apache.commons.beanutils.PropertyUtils;
-import org.nmrfx.processor.gui.spectra.ColorProperty;
-import org.nmrfx.processor.gui.spectra.DatasetAttributes;
-
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2018 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -34,11 +15,27 @@ import org.nmrfx.processor.gui.spectra.DatasetAttributes;
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+package org.nmrfx.processor.gui;
+
+import javafx.application.Platform;
+import javafx.beans.property.*;
+import javafx.scene.paint.Color;
+import org.apache.commons.beanutils.PropertyUtils;
+import org.nmrfx.processor.gui.spectra.ColorProperty;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.lang.reflect.InvocationTargetException;
+import java.util.HashMap;
+import java.util.Map;
+
+
 /**
  *
  * @author brucejohnson
  */
 public class ChartProperties {
+    private static final Logger log = LoggerFactory.getLogger(ChartProperties.class);
 
     final private PolyChart polyChart;
 
@@ -46,6 +43,7 @@ public class ChartProperties {
     private IntegerProperty rightBorderSize;
     private IntegerProperty topBorderSize;
     private IntegerProperty bottomBorderSize;
+    private BooleanProperty intensityAxis;
     private DoubleProperty labelFontSize;
     private DoubleProperty ticFontSize;
     private ColorProperty cross0Color;
@@ -71,6 +69,7 @@ public class ChartProperties {
         destProps.setRightBorderSize(getRightBorderSize());
         destProps.setTopBorderSize(getTopBorderSize());
         destProps.setBottomBorderSize(getBottomBorderSize());
+        destProps.setIntensityAxis(getIntensityAxis());
 
         destProps.setLabelFontSize(getLabelFontSize());
         destProps.setTicFontSize(getTicFontSize());
@@ -148,6 +147,20 @@ public class ChartProperties {
         return bottomBorderSize;
     }
 
+    public BooleanProperty intensityAxisProperty() {
+        if (intensityAxis == null) {
+            intensityAxis = new SimpleBooleanProperty(polyChart, "onedAxis", false);
+        }
+        return intensityAxis;
+    }
+
+    public void setIntensityAxis(boolean value) {
+        intensityAxisProperty().set(value);
+    }
+
+    public boolean getIntensityAxis() {
+        return intensityAxisProperty().get();
+    }
     public double getLabelFontSize() {
         return labelFontSizeProperty().get();
     }
@@ -363,16 +376,16 @@ public class ChartProperties {
             try {
                 PropertyUtils.setSimpleProperty(this, name, value);
             } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException ex) {
-                Logger.getLogger(DatasetAttributes.class.getName()).log(Level.SEVERE, null, ex);
+                log.error(ex.getMessage(), ex);
             }
         } else {
             Platform.runLater(() -> {
-                try {
-                    PropertyUtils.setProperty(this, name, value);
-                } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException ex) {
-                    Logger.getLogger(DatasetAttributes.class.getName()).log(Level.SEVERE, null, ex);
-                }
-            }
+                        try {
+                            PropertyUtils.setProperty(this, name, value);
+                        } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException ex) {
+                            log.error(ex.getMessage(), ex);
+                        }
+                    }
             );
         }
     }
@@ -380,7 +393,7 @@ public class ChartProperties {
     public Map<String, Object> config() {
         Map<String, Object> data = new HashMap<>();
         String[] beanNames = {"ticFontSize", "labelFontSize", "bgColor",
-            "axesColor", "cross0Color", "cross1Color", "grid",
+            "axesColor", "cross0Color", "cross1Color", "grid", "intensityAxis",
             "leftBorderSize", "rightBorderSize",
             "topBorderSize", "bottomBorderSize", "regions", "integrals",
             "integralLowPos", "integralHighPos", "titles", "aspect", "aspectRatio"};
@@ -396,7 +409,7 @@ public class ChartProperties {
                     data.put(beanName, PropertyUtils.getSimpleProperty(this, beanName));
                 }
             } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException ex) {
-                Logger.getLogger(DatasetAttributes.class.getName()).log(Level.SEVERE, null, ex);
+                log.error(ex.getMessage(), ex);
             }
         }
         return data;

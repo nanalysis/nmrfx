@@ -103,6 +103,7 @@
         <VBox>
             <HBox>
                 <children>
+                    <Button fx:id="datasetFileButton" mnemonicParsing="false" onAction="#datasetFileAction" text="File..." />
                     <Button fx:id="processDatasetButton" mnemonicParsing="false" onAction="#processDatasetAction" text="Process" />
                     <Button fx:id="haltProcessButton" mnemonicParsing="false" onAction="#haltProcessAction" text="Halt" />
                     <CheckBox fx:id="autoProcess" mnemonicParsing="false" text="Auto Update" />

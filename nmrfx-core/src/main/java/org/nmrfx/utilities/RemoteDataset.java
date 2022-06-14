@@ -4,6 +4,9 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.annotations.Expose;
 import com.google.gson.reflect.TypeToken;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -20,6 +23,7 @@ import java.util.List;
  */
 public class RemoteDataset {
 
+    private static final Logger log = LoggerFactory.getLogger(RemoteDataset.class);
     static List<RemoteDataset> datasets = new ArrayList<>();
 
     @Expose
@@ -386,6 +390,7 @@ public class RemoteDataset {
         try {
             Files.writeString(outPath, jsonStr);
         } catch (IOException ex) {
+            log.warn(ex.getMessage(), ex);
         }
 
     }

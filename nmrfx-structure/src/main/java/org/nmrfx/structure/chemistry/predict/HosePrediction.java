@@ -1,11 +1,7 @@
 package org.nmrfx.structure.chemistry.predict;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.FileInputStream;
-import java.io.FileReader;
-import java.io.InputStream;
-import java.io.LineNumberReader;
+import java.io.*;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Collections;
@@ -13,10 +9,15 @@ import java.util.Objects;
 import java.util.TreeSet;
 import java.nio.charset.Charset;
 import java.util.List;
+import java.util.stream.Stream;
+
 import org.apache.commons.collections4.bag.HashBag;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class HosePrediction {
 
+    private static final Logger log = LoggerFactory.getLogger(HosePrediction.class);
     static Charset charset = Charset.forName("US-ASCII");
     int nShellGroups = 3;
     byte[] buffer = null;
@@ -539,17 +540,11 @@ public class HosePrediction {
         int[] nValues = new int[2];
         int[] nNulls = new int[2];
         int[] nViols = new int[2];
-        try {
-            FileReader reader = new FileReader(validate);
-            LineNumberReader lineReader = new LineNumberReader(reader);
-            while (true) {
+        try (Stream<String> lines = Files.lines(new File(validate).toPath())){
+             lines.forEach(line -> {
                 cPPMs.clear();
                 hPPMs.clear();
-                String string = lineReader.readLine();
-                if (string == null) {
-                    break;
-                }
-                String[] values = string.split("\t");
+                String[] values = line.split("\t");
                 String[] ppmValues = values[5].split(" ");
                 String[] hoseString = values[4].split(" ");
                 ArrayList<Integer> upDownList = compressStereo(hoseString[1]);
@@ -567,7 +562,6 @@ public class HosePrediction {
                         hPPMs.add(Double.parseDouble(ppmValues[i + 1]));
                     }
                 }
-//System.out.println(cPPMs.size() + " " + hPPMs.size() + " " + hoseString[0]);
                 String[] statNames = {"13C", "1H"};
                 double[] extra = {2.0, 0.4};
                 for (int i = 0; i < 2; i++) {
@@ -604,30 +598,22 @@ public class HosePrediction {
                         nNulls[i]++;
                     } else {
                         nValues[i]++;
-                        //double predPPM = stat.dStat.getPercentile(50.0);
                         double predPPM = stat.wmean;
                         deltaSums[i] += (ppm - predPPM) * (ppm - predPPM);
                         System.out.printf("%s\t%8.2f\t%8.2f\t%8.2f\t%d\t%d\t%s\t%s\t%s\n", statNames[i], ppm, predPPM, Math.abs(ppm - predPPM), iShell, stat.nValues, hoseString[0], smile, molNum);
                     }
-                    if ((stat == null) || (stat.nValues < 4)) {
-                        if (stat == null) {
-                            //System.err.println(lineReader.getLineNumber() + " " + statNames[i] + " " + hoseString[0] + " null " + iShell + " " +  ppm);
-                        } else {
-                            //System.err.println(lineReader.getLineNumber() + " " + statNames[i] + " " + hoseString[0] + " insufficient " + stat.nValues + " " +  iShell + " " + ppm);
-                        }
-                    } else {
+                    if ((stat != null && stat.nValues >= 4)) {
                         double p0 = stat.dStat.getPercentile(1.);
                         double p1 = stat.dStat.getPercentile(99.);
                         double extraValue = extra[i] * (maxShells - iShell);
                         if ((ppm < (p0 - extraValue)) || (ppm > (p1 + extraValue))) {
-                            //System.err.println(lineReader.getLineNumber() + " " + statNames[i] + " " + hoseString[0] + " " + (p0-extraValue) + " " + ppm + " " + (p1+extraValue) + " " + stat.nValues + " " + iShell);
                             nViols[i]++;
                         }
                     }
                 }
-            }
-            reader.close();
+            });
         } catch (IOException ioE) {
+            log.warn(ioE.getMessage(), ioE);
         }
         for (int i = 0; i < 2; i++) {
             System.err.println(nValues[i] + " " + deltaSums[i] + " " + Math.sqrt(deltaSums[i] / nValues[i]) + " " + nViols[i] + " " + nNulls[i]);
@@ -701,12 +687,8 @@ public class HosePrediction {
     }
 
     public void openData(String fileName, boolean resourceMode) {
-        try {
-            InputStream iStream;
+        try (InputStream iStream = resourceMode ? ClassLoader.getSystemResourceAsStream(fileName) : new FileInputStream(fileName)){
             if (resourceMode) {
-//                System.out.println("open " + fileName);
-                iStream = ClassLoader.getSystemResourceAsStream(fileName);
-//                System.out.println("got " + iStream);
                 ByteArrayOutputStream byteBuffer = new ByteArrayOutputStream();
                 int nRead;
                 byte[] data = new byte[16384];
@@ -716,12 +698,10 @@ public class HosePrediction {
                 byteBuffer.flush();
                 buffer = byteBuffer.toByteArray();
             } else {
-                iStream = new FileInputStream(fileName);
                 int size = iStream.available();
                 buffer = new byte[size];
                 iStream.read(buffer);
             }
-            iStream.close();
         } catch (IOException ioE) {
             System.out.println("error " + ioE.getMessage());
         }

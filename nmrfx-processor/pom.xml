@@ -6,7 +6,7 @@
     <parent>
         <groupId>org.nmrfx</groupId>
         <artifactId>nmrfx</artifactId>
-        <version>${revision}</version>
+        <version>11.2.5-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -18,7 +18,7 @@
             <dependency>
                 <groupId>org.nmrfx</groupId>
                 <artifactId>nmrfx-bom</artifactId>
-                <version>${revision}</version>
+                <version>11.2.5-SNAPSHOT</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -29,7 +29,15 @@
         <dependency>
             <groupId>org.nmrfx</groupId>
             <artifactId>nmrfx-core</artifactId>
-            <version>${revision}</version>
+            <version>11.2.5-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>com.nanalysis</groupId>
+            <artifactId>jcamp-parser</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
         </dependency>
         <dependency>
             <groupId>com.github.jnr</groupId>
@@ -87,10 +95,6 @@
         <dependency>
             <groupId>org.bytedeco</groupId>
             <artifactId>arpack-ng-platform</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.netty</groupId>
-            <artifactId>netty-all</artifactId>
         </dependency>
         <dependency>
             <groupId>org.python</groupId>

@@ -17,33 +17,25 @@
  */
 package org.nmrfx.structure.chemistry.energy;
 
-import org.nmrfx.chemistry.constraints.AngleConstraint;
+import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import org.nmrfx.chemistry.*;
-import org.nmrfx.chemistry.MolFilter;
+import org.nmrfx.chemistry.constraints.AngleConstraint;
 import org.nmrfx.chemistry.constraints.AtomDistancePair;
 import org.nmrfx.chemistry.constraints.DistanceConstraint;
-import org.nmrfx.structure.chemistry.Molecule;
-import org.nmrfx.structure.fastlinear.FastVector;
-import org.nmrfx.structure.fastlinear.FastVector3D;
-import java.io.BufferedOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.PrintStream;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Iterator;
-import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import org.nmrfx.chemistry.constraints.DistanceConstraintSet;
+import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.structure.chemistry.energy.RNARotamer.RotamerScore;
 import org.nmrfx.structure.chemistry.predict.Predictor;
+import org.nmrfx.structure.fastlinear.FastVector;
+import org.nmrfx.structure.fastlinear.FastVector3D;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.*;
+import java.util.*;
 
 public class EnergyLists {
+    private static final Logger log = LoggerFactory.getLogger(EnergyLists.class);
 
     public List<AtomPair> atomList = new ArrayList<>();
     public List<AtomPair> atomList2 = new ArrayList<>();
@@ -270,6 +262,7 @@ public class EnergyLists {
                 predictor.predictRNAWithDistances(polymer, 0, 0, true);
                 // predictor.predictRNAWithRingCurrent(polymer, 0, 0);
             } catch (InvalidMoleculeException imE) {
+                log.warn(imE.getMessage(), imE);
             }
         }
     }
@@ -382,7 +375,7 @@ public class EnergyLists {
             AtomEnergyProp.readPropFile();
             AtomEnergyProp.makeIrpMap();
         } catch (IOException ex) {
-            Logger.getLogger(EnergyLists.class.getName()).log(Level.SEVERE, null, ex);
+            log.error(ex.getMessage(), ex);
         }
         this.molecule = molecule;
         // initialize energy types for atoms
@@ -514,7 +507,7 @@ public class EnergyLists {
                 out = new PrintStream(fileName);
             }
         } catch (IOException ioE) {
-
+            log.warn(ioE.getMessage(), ioE);
         }
 
         OutputStream outStream = new BufferedOutputStream(out);
@@ -697,20 +690,9 @@ public class EnergyLists {
                     nIrp, irpEnergy, nDih, dihEnergy, nCFF, cffnbEnergy, nRepel, repelEnergy, nDistance, distanceEnergy,
                     maxDis, nShift, shiftTotEnergy, nRotamers, probDih, nStack, stackingEnergy, energySum);
         } catch (Exception e) {
-            e.printStackTrace();
+            log.warn(e.getMessage(), e);
         }
         writer.close();
-    }
-
-    class EnergyStat {
-
-        double vdw = 0.0;
-        int nVdw = 0;
-        double distance = 0.0;
-        int nDistance = 0;
-        double bond = 0.0;
-        int nBond = 0;
-        double total = 0.0;
     }
 
     public static double grabDihedral(AngleConstraint boundary) {
@@ -1255,7 +1237,7 @@ public class EnergyLists {
                 }
             }
         } catch (Exception ex) {
-            ex.printStackTrace();
+            log.error(ex.getMessage(), ex);
             System.exit(1);
         }
 
@@ -1314,7 +1296,7 @@ public class EnergyLists {
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error(e.getMessage(), e);
             System.exit(1);
         }
     }
@@ -1408,8 +1390,7 @@ public class EnergyLists {
                 i++;
             }
         } catch (Exception ex) {
-            System.out.println("error at branch " + i);
-            ex.printStackTrace();
+            log.error("Error at branch {} {}", i, ex.getMessage(), ex);
             System.exit(1);
         }
     }
@@ -1432,14 +1413,12 @@ public class EnergyLists {
                         for (int k = 0; k < 3; k++) {
                             System.out.printf(" %7.1f %7.1f ", branches[i].branches[j].farr[k], branches[i].branches[j].garr[k]);
                         }
-                    } else {
-                        //System.out.println("null branch");
                     }
                 }
                 System.out.println("");
             }
         } catch (Exception ex) {
-            ex.printStackTrace();
+            log.error(ex.getMessage(), ex);
             System.exit(1);
         }
     }
@@ -1475,7 +1454,7 @@ public class EnergyLists {
                 df[k++] = -1.0 * (dot1 + dot2);
             }
         } catch (Exception ex) {
-            ex.printStackTrace();
+            log.error(ex.getMessage(), ex);
             System.exit(1);
         }
         return df;
@@ -1618,7 +1597,7 @@ public class EnergyLists {
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            log.warn(e.getMessage(), e);
         }
     }
 

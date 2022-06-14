@@ -28,6 +28,8 @@ import javafx.scene.paint.Color;
 import org.nmrfx.graphicsio.GraphicsContextInterface;
 import org.nmrfx.graphicsio.GraphicsContextProxy;
 import org.nmrfx.graphicsio.GraphicsIOException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -35,6 +37,7 @@ import org.nmrfx.graphicsio.GraphicsIOException;
  */
 public class XYCanvasBoxChart extends XYCanvasChart {
 
+    private static final Logger log = LoggerFactory.getLogger(XYCanvasBoxChart.class);
     Orientation orientation = Orientation.VERTICAL;
 
     public static XYCanvasBoxChart buildChart(Canvas canvas) {
@@ -102,6 +105,7 @@ public class XYCanvasBoxChart extends XYCanvasChart {
             gC.rect(xPos + leftBorder, yPos + topBorder, xAxis.getWidth(), yAxis.getHeight());
 
         } catch (GraphicsIOException ioE) {
+            log.warn(ioE.getMessage(), ioE);
         }
         gC.clip();
         gC.beginPath();
@@ -119,14 +123,14 @@ public class XYCanvasBoxChart extends XYCanvasChart {
             double vMin = Double.MAX_VALUE;
             boolean ok = false;
             for (DataSeries dataSeries : data) {
-                if (!dataSeries.values.isEmpty()) {
+                if (!dataSeries.getValues().isEmpty()) {
                     ok = true;
-                    vMax = Math.max(vMax, dataSeries.values.stream().
+                    vMax = Math.max(vMax, dataSeries.getValues().stream().
                             mapToDouble(v
                                     -> ((BoxPlotData) v.getExtraValue()).max)
                             .max().getAsDouble());
 
-                    vMin = Math.min(vMin, dataSeries.values.stream().
+                    vMin = Math.min(vMin, dataSeries.getValues().stream().
                             mapToDouble(v
                                     -> ((BoxPlotData) v.getExtraValue()).min)
                             .min().getAsDouble());
@@ -164,7 +168,7 @@ public class XYCanvasBoxChart extends XYCanvasChart {
             DataSeries series = getData().get(seriesIndex);
             var boxMark = new BoxMark(series.fill, Color.BLACK, Orientation.VERTICAL);
             int iValue = 0;
-            for (XYValue value : series.values) {
+            for (XYValue value : series.getValues()) {
                 var fiveNum = (BoxPlotData) value.getExtraValue();
                 double x = value.getXValue();
                 if (pickPt != null) {

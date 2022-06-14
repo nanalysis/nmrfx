@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -576,21 +576,27 @@ public class PeakReader {
 
     }
 
+    /**
+     * Converts a String into a list of Strings based on white space or tab characters.
+     * Quotes are removed from the string. If there is an inner quote, that will be kept. Example {123.h5'} -> 123.h5'
+     * and {123.h5''} -> 123.h5''
+     * In this method, quote characters are any of the following four characters: ", ', {, }, Empty quotes are returned
+     * as an empty string in the list.
+     * @param line The String to parse.
+     * @return The parsed String as a list.
+     */
     public static List<String> parseXPKLine(String line) {
         List<String> store = new ArrayList<>();
         StringBuilder curVal = new StringBuilder();
         boolean inquotes = false;
-        boolean started = false;
         char quoteChar = '\'';
         for (int i = 0; i < line.length(); i++) {
             char ch = line.charAt(i);
             if (inquotes) {
-                started = true;
                 if (ch == quoteChar) {
                     inquotes = false;
                     store.add(curVal.toString().trim());
                     curVal = new StringBuilder();
-                    started = false;
                 } else {
                     curVal.append((char) ch);
                 }
@@ -598,16 +604,10 @@ public class PeakReader {
                 inquotes = true;
                 quoteChar = ch == '{' ? '}' : ch;
 
-                if (started) {
-                    // if this is the second quote in a value, add a quote
-                    // this is for the double quote in the middle of a value
-                    curVal.append(quoteChar);
-                }
             } else if ((ch == ' ') || (ch == '\t')) {
                 if (curVal.length() != 0) {
                     store.add(curVal.toString().trim());
                     curVal = new StringBuilder();
-                    started = false;
                 }
             } else {
                 curVal.append((char) ch);
@@ -622,15 +622,15 @@ public class PeakReader {
         String fileTail = path.getFileName().toString();
         fileTail = fileTail.substring(0, fileTail.lastIndexOf('.'));
         String listName = fileTail;
-        PythonInterpreter interpreter = new PythonInterpreter();
-        interpreter.exec("import sparky");
-        String rdString;
-        interpreter.set("pMap", pMap);
-        interpreter.exec("sparky.pMap=pMap");
-        rdString = String.format("sparky.loadSaveFile('%s','%s')", fileName, listName);
-        interpreter.exec(rdString);
-        PeakList peakList = PeakList.get(listName);
-        return peakList;
+        try (PythonInterpreter interpreter = new PythonInterpreter()) {
+            interpreter.exec("import sparky");
+            String rdString;
+            interpreter.set("pMap", pMap);
+            interpreter.exec("sparky.pMap=pMap");
+            rdString = String.format("sparky.loadSaveFile('%s','%s')", fileName, listName);
+            interpreter.exec(rdString);
+        }
+        return PeakList.get(listName);
     }
 
     public static PeakList readSparkyAssignmentFile(String fileName) throws IOException {

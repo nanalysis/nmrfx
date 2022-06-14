@@ -250,7 +250,7 @@ public class Axis {
         return gridLength;
     }
 
-    public double[] autoRange(double min, double max) {
+    public double[] autoRange(double min, double max, boolean tightMode) {
         double length = VERTICAL == getOrientation() ? getHeight() : getWidth();
         boolean keepMin = false;
         if (isZeroIncluded()) {
@@ -262,7 +262,6 @@ public class Axis {
                 max = 0.0;
             }
         }
-        boolean tightMode = true;
         TickInfo tf = getTickInfo(min, max, length);
         if (!tf.centerMode) {
             double adjust = tightMode ? tf.minorSpace : tf.majorSpace;
@@ -437,7 +436,7 @@ public class Axis {
             double gap1 = ticFontSize / 4;
             double gap2 = labelFontSize / 4;
             ticSize = ticFontSize * 0.75;
-            double border = 0.0;
+            double border = 2.0;
             if (tickMarksVisible) {
                 border += ticSize + gap1;
                 if (tickLabelsVisible) {
@@ -456,7 +455,7 @@ public class Axis {
             int nChar = tInfo.nDecimals;
             int nLeftDig = (int) Math.round(Math.log10(getUpperBound()));
             nChar += nLeftDig + 2;
-            double border = 0.0;
+            double border = 2.0;
             if (tickMarksVisible) {
                 border += ticSize + gap1;
                 if (tickLabelsVisible) {

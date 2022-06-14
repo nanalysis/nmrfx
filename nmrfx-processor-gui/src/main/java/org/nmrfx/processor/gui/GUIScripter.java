@@ -16,18 +16,21 @@ import org.nmrfx.peaks.Peak;
 import org.nmrfx.processor.gui.annotations.AnnoPolyLine;
 import org.nmrfx.processor.gui.annotations.AnnoShape;
 import org.nmrfx.processor.gui.controls.ConsoleUtil;
-import org.nmrfx.processor.gui.controls.FractionCanvas;
-import org.nmrfx.processor.gui.controls.FractionPane;
+import org.nmrfx.processor.gui.controls.GridPaneCanvas;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.processor.gui.spectra.KeyBindings;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
 import org.python.util.InteractiveInterpreter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
  * @author Bruce Johnson
  */
 public class GUIScripter {
+
+    private static final Logger log = LoggerFactory.getLogger(GUIScripter.class);
 
     final PolyChart useChart;
     static FXMLController controller = FXMLController.getActiveController();
@@ -80,7 +83,7 @@ public class GUIScripter {
                     ConsoleUtil.runOnFxThread(future);
                     future.get();
                 } catch (InterruptedException | ExecutionException iE) {
-
+                    log.warn(iE.getMessage(), iE);
                 }
             }
             chart = getActiveController().getActiveChart();
@@ -511,7 +514,7 @@ public class GUIScripter {
     }
 
     public void grid(String orientName) {
-        FractionCanvas.ORIENTATION orient = FractionCanvas.getOrientation(orientName);
+        GridPaneCanvas.ORIENTATION orient = GridPaneCanvas.getOrientation(orientName);
         ConsoleUtil.runOnFxThread(() -> {
             controller.arrange(orient);
             controller.draw();
@@ -520,7 +523,7 @@ public class GUIScripter {
 
     public void grid(int rows, int columns) {
         int nCharts = rows * columns;
-        FractionPane.ORIENTATION orient = FractionPane.getOrientation("grid");
+        GridPaneCanvas.ORIENTATION orient = GridPaneCanvas.getOrientation("grid");
         ConsoleUtil.runOnFxThread(() -> {
             FXMLController controller = getActiveController();
             PolyChart chart = controller.getActiveChart();
@@ -536,7 +539,7 @@ public class GUIScripter {
     }
 
     public void grid(int nCharts, String orientName) {
-        FractionCanvas.ORIENTATION orient = FractionCanvas.getOrientation(orientName);
+        GridPaneCanvas.ORIENTATION orient = GridPaneCanvas.getOrientation(orientName);
         ConsoleUtil.runOnFxThread(() -> {
             FXMLController controller = getActiveController();
             PolyChart chart = controller.getActiveChart();
@@ -551,7 +554,7 @@ public class GUIScripter {
     }
 
     public void grid(List<String> datasetNames, String orientName) {
-        FractionCanvas.ORIENTATION orient = FractionCanvas.getOrientation(orientName);
+        GridPaneCanvas.ORIENTATION orient = GridPaneCanvas.getOrientation(orientName);
         ConsoleUtil.runOnFxThread(() -> {
             FXMLController controller = getActiveController();
             PolyChart chart = controller.getActiveChart();
@@ -720,7 +723,7 @@ public class GUIScripter {
 
     public Cursor getCursor() throws InterruptedException, ExecutionException {
         FutureTask<Cursor> future = new FutureTask(() -> {
-            return getActiveController().getActiveChart().getCursor();
+            return getActiveController().getActiveChart().getCanvasCursor();
         });
         ConsoleUtil.runOnFxThread(future);
         return future.get();
@@ -729,7 +732,7 @@ public class GUIScripter {
     public void setCursor(String name) {
         Cursor cursor = Cursor.cursor(name);
         ConsoleUtil.runOnFxThread(() -> {
-            getActiveController().getActiveChart().setCursor(cursor);
+            getActiveController().getActiveChart().setCanvasCursor(cursor);
         });
     }
 

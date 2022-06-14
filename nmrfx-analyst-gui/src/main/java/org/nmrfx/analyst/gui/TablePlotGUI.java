@@ -41,6 +41,7 @@ import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import org.controlsfx.dialog.ExceptionDialog;
+import org.nmrfx.analyst.gui.tools.ScanTable;
 import org.nmrfx.chart.Axis;
 import org.nmrfx.chart.BoxPlotData;
 import org.nmrfx.chart.DataSeries;
@@ -210,7 +211,7 @@ public class TablePlotGUI {
                     DataSeries series = new DataSeries();
                     series.setFill(ScanTable.getGroupColor(groupNum));
 
-                    series.getData().clear();
+                    series.clear();
                     double[] ddata = new double[items.size()];
                     int i = 0;
                     for (FileTableItem item : items) {
@@ -253,11 +254,11 @@ public class TablePlotGUI {
                     int groupNum = groupEntry.getKey();
                     var items = groupEntry.getValue();
                     DataSeries series = new DataSeries();
-                    series.getData().clear();
+                    series.clear();
                     for (FileTableItem item : items) {
                         double x = item.getDouble(xElem);
                         double y = item.getDouble(yElem);
-                        series.getData().add(new XYValue(x, y));
+                        series.add(new XYValue(x, y));
                         series.setFill(ScanTable.getGroupColor(groupNum));
                     }
                     activeChart.getData().add(series);

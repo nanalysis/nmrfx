@@ -15,7 +15,7 @@ public interface Updater {
 
     }
 
-    default public void update() {
+    default public void update(Object object) {
 
     }
 
