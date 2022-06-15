@@ -14,12 +14,12 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 public class RS2DDataTest {
     public static String fidHome = "../../nmrfxp_tests/testfids/";
     public static String tmpHome = "../../nmrfxp_tests/tmp/";
+    final static long[] CORRECT = {0,0,0};
 
     boolean testFilesMissing(File testFile) {
         if (!testFile.exists()) {
@@ -42,8 +42,8 @@ public class RS2DDataTest {
         RS2DData rs2DData = new RS2DData(inFile.toString(), null, true);
         var dataset = rs2DData.toDataset("test.nv");
         rs2DData.writeOutputFile(dataset, procNumPath);
-        long compareResult = DatasetCompare.compare(inFileDat, outFile);
-        assertEquals(0, compareResult);
+        long[] compareResult = DatasetCompare.compare(inFileDat, outFile);
+        assertArrayEquals(CORRECT, compareResult);
     }
 
     @Test
@@ -58,11 +58,11 @@ public class RS2DDataTest {
         RS2DData rs2DData = new RS2DData(inFile.toString(), null, true);
         var dataset = rs2DData.toDataset("test.nv");
         rs2DData.writeOutputFile(dataset, procNumPath);
-        long compareResult = DatasetCompare.compare(inFileDat, outFile);
-        if (compareResult != 0) {
-            compareResult = DatasetCompare.compareFloat(inFileDat, outFile);
+        long[] compareResult = DatasetCompare.compare(inFileDat, outFile);
+        if (compareResult[1] != 0) {
+            compareResult[1] = DatasetCompare.compareFloat(inFileDat, outFile);
         }
-        assertEquals(0, compareResult);
+        assertArrayEquals(CORRECT, compareResult);
     }
 
     @Test

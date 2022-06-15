@@ -18,21 +18,16 @@
 package org.nmrfx.processor.datasets;
 
 import org.nmrfx.datasets.MatrixType;
+import org.nmrfx.processor.math.MatrixND;
+import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.processing.Processor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import org.nmrfx.datasets.MatrixType;
-import org.nmrfx.processor.math.MatrixND;
-import org.nmrfx.processor.math.Vec;
-import org.nmrfx.processor.processing.Processor;
 
 /**
  *

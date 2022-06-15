@@ -675,7 +675,7 @@ public class RS2DData implements NMRData {
         dvec.centerFreq = getSF(0);
 
         double delRef = ((1.0 / dvec.dwellTime) / dvec.centerFreq) / 2.0;
-        dvec.refValue = getRef(0) + delRef;
+        dvec.setRefValue(getRef(0) + delRef);
     }
 
     private void copyFloatVecData(byte[] dataBuf, Complex[] cdata) {

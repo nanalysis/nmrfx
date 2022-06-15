@@ -152,14 +152,14 @@ public class ProcessTest {
 
     @Test
     public void test_rs2d_1d() throws IOException {
-        long result = runAndCompare("rs2d_1dproton");
-        Assert.assertEquals(0, result);
+        long[] result = runAndCompare("rs2d_1dproton");
+        Assert.assertArrayEquals(CORRECT, result);
     }
 
     @Test
     public void test_rs2d_2d() throws IOException {
-        long result = runAndCompare("rs2d_2dhetero");
-        Assert.assertEquals(0, result);
+        long[] result = runAndCompare("rs2d_2dhetero");
+        Assert.assertArrayEquals(CORRECT, result);
     }
 
 

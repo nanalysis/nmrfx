@@ -18,6 +18,7 @@
 package org.nmrfx.processor.datasets;
 
 import org.apache.commons.math3.complex.Complex;
+import org.apache.commons.math3.util.MultidimensionalCounter;
 import org.nmrfx.datasets.DatasetStorageInterface;
 import org.nmrfx.processor.math.Vec;
 import org.slf4j.Logger;
@@ -28,13 +29,6 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
-import java.util.Iterator;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import org.apache.commons.math3.complex.Complex;
-import org.apache.commons.math3.util.MultidimensionalCounter;
-import org.nmrfx.datasets.DatasetStorageInterface;
-import org.nmrfx.processor.math.Vec;
 
 public class MemoryFile implements DatasetStorageInterface, Closeable {
     private static final Logger log = LoggerFactory.getLogger(MemoryFile.class);
