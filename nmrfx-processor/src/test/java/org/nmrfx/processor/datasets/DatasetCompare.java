@@ -23,7 +23,8 @@ public class DatasetCompare {
             MappedByteBuffer refBuffer = refRAFile.getChannel().map(FileChannel.MapMode.READ_ONLY, 0, refLen);
             MappedByteBuffer testBuffer = testRAFile.getChannel().map(FileChannel.MapMode.READ_ONLY, 0, testLen);
             if (refBuffer.compareTo(testBuffer) != 0) {
-                int headerSize = refFile.getName().endsWith(".nv") ? Dataset.NV_HEADER_SIZE : Dataset.UCSF_HEADER_SIZE;
+                int headerSize = refFile.getName().equals("data.dat") ? 0 :
+                        refFile.getName().endsWith(".nv") ? Dataset.NV_HEADER_SIZE : Dataset.UCSF_HEADER_SIZE;
                 refBuffer.position(0);
                 testBuffer.position(0);
                 for (int i = 0; i < headerSize; i++) {
