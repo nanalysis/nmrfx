@@ -1,8 +1,6 @@
 import os
 from pyproc import *
 procOpts(nprocess=7)
-FIDHOME="../../nmrfxp_tests/testfids/"
-TMPHOME="../../nmrfxp_tests/tmp/"
 FID(FIDHOME+'rs2d/2Dhetero/688/data.dat')
 CREATE(TMPHOME+'tst_rs2d_2dhetero/Proc/1/data.dat')
 acqOrder('1')
