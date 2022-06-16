@@ -13,12 +13,14 @@ import java.io.IOException;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assume.assumeFalse;
 
 public class ProcessTest {
 
     private static final String VALID_SUBMODULE_LOCATION = "nmrfx-test-data/valid";
     private static final String FID_SUBMODULE_LOCATION = "nmrfx-test-data/testfids/";
+    private static final String ERR_MSG = "File doesn't exist: ";
     public static String scriptHome = "src/test/resources/process_scripts";
     private static String fidHome;
     private static String tmpHome;
@@ -57,7 +59,7 @@ public class ProcessTest {
         if (!testFile.exists()) {
             boolean isBuildEnv = Boolean.parseBoolean(System.getenv("BUILD_ENV"));;
             if (isBuildEnv) {
-                throw new FileNotFoundException("Missing build environment requirement. " +"File doesn't exist." + testFile);
+                throw new FileNotFoundException("Missing build environment requirement. " + ERR_MSG + testFile);
             }
             return true;
         } else {
@@ -81,7 +83,7 @@ public class ProcessTest {
         }
         // someone running the tests may not have the test files as they take up a lot of disk space
         // so, currently,  if file doesn't exist a message is printed and the test passes
-        assumeFalse("File doesn't exist: " + refFile, testFilesMissing(refFile));
+        assumeFalse(ERR_MSG + refFile, testFilesMissing(refFile));
         executeScript(fileName);
         long result = DatasetCompare.compare(refFile, testFile);
         return result;
@@ -90,115 +92,115 @@ public class ProcessTest {
     @Test
     public void test_gb1_tract1d() throws IOException {
         long result = runAndCompare("gb1_tract1d");
-        Assert.assertEquals(-1, result);
+        assertEquals(-1, result);
     }
 
     @Test
     public void test_hnconus_grins_zf() throws IOException {
         long result = runAndCompare("hnconus_grins_zf");
-        Assert.assertEquals(-1, result);
+        assertEquals(-1, result);
     }
 
     @Test
     public void test_hnconus_nesta() throws IOException {
         long result = runAndCompare("hnconus_nesta");
-        Assert.assertEquals(-1, result);
+        assertEquals(-1, result);
     }
 
     @Test
     public void test_jcamp_1d() throws IOException {
         long result = runAndCompare("jcamp_1d");
-        Assert.assertEquals(-1, result);
+        assertEquals(-1, result);
     }
 
     @Test
     public void test_jeol_1d_1h() throws IOException {
         long result = runAndCompare("jeol_1d_1h");
-        Assert.assertEquals(-1, result);
+        assertEquals(-1, result);
     }
 
     @Test
     public void test_jeol_hsqc() throws IOException {
         long result = runAndCompare("jeol_hsqc");
-        Assert.assertEquals(-1, result);
+        assertEquals(-1, result);
     }
 
     @Test
     public void test_ubiq_cnoesqc() throws IOException {
         long result = runAndCompare("ubiq_cnoesqc");
-        Assert.assertEquals(-1, result);
+        assertEquals(-1, result);
     }
 
     @Test
     public void test_ubiq_hnca() throws IOException {
         long result = runAndCompare("ubiq_hnca");
-        Assert.assertEquals(-1, result);
+        assertEquals(-1, result);
     }
 
     @Test
     public void test_ubiq_hnco() throws IOException {
         long result = runAndCompare("ubiq_hnco");
-        Assert.assertEquals(-1, result);
+        assertEquals(-1, result);
     }
 
     @Test
     public void test_ubiq_hnco_lp() throws IOException {
         long result = runAndCompare("ubiq_hnco_lp");
-        Assert.assertEquals(-1, result);
+        assertEquals(-1, result);
     }
 
     @Test
     public void test_ubiq_hnco_skip2() throws IOException {
         long result = runAndCompare("ubiq_hnco_skip2");
-        Assert.assertEquals(-1, result);
+        assertEquals(-1, result);
     }
 
     @Test
     public void test_ubiq_hnco_skip3() throws IOException {
         long result = runAndCompare("ubiq_hnco_skip3");
-        Assert.assertEquals(-1, result);
+        assertEquals(-1, result);
     }
 
     @Test
     public void test_ubiq_hsqc() throws IOException {
         long result = runAndCompare("ubiq_hsqc");
-        Assert.assertEquals(-1, result);
+        assertEquals(-1, result);
     }
 
     @Test
     public void test_ubiq_hsqc_ucsf() throws IOException {
         long result = runAndCompare("ubiq_hsqc_ucsf");
-        Assert.assertEquals(-1, result);
+        assertEquals(-1, result);
     }
 
     @Test
     public void test_ubiq_noe() throws IOException {
         long result = runAndCompare("ubiq_noe");
-        Assert.assertEquals(-1, result);
+        assertEquals(-1, result);
     }
 
     @Test
     public void test_ubiq_t1() throws IOException {
         long result = runAndCompare("ubiq_t1");
-        Assert.assertEquals(-1, result);
+        assertEquals(-1, result);
     }
 
     @Test
     public void test_ubiq_t2() throws IOException {
         long result = runAndCompare("ubiq_t2");
-        Assert.assertEquals(-1, result);
+        assertEquals(-1, result);
     }
 
     @Test
     public void test_rs2d_1d() throws IOException {
         long result = runAndCompare("rs2d_1dproton");
-        Assert.assertEquals(-1, result);
+        assertEquals(-1, result);
     }
 
     @Test
     public void test_rs2d_2d() throws IOException {
         long result = runAndCompare("rs2d_2dhetero");
-        Assert.assertEquals(-1, result);
+        assertEquals(-1, result);
     }
 
 
