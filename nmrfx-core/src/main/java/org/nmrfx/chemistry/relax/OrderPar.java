@@ -36,7 +36,7 @@ import java.util.Map;
 public class OrderPar implements RelaxationValues {
 
     static final String[] PAR_NAMES = {"S2", "Tau_e", "Tau_f", "Tau_s", "Rex", "Sf2", "Ss2", "model", "rms"};
-    private ResonanceSource resSource;
+    private final ResonanceSource resSource;
     private Double value;
     private Double error;
     private Double TauE;
@@ -51,9 +51,9 @@ public class OrderPar implements RelaxationValues {
     private Double Sf2err;
     private Double Ss2;
     private Double Ss2err;
-    private Double sumSqErr;
-    private Integer nValues;
-    private Integer nPars;
+    private final Double sumSqErr;
+    private final Integer nValues;
+    private final Integer nPars;
     private String model;
     private Double modelNum;
 
@@ -278,6 +278,10 @@ public class OrderPar implements RelaxationValues {
         return resSource;
     }
 
+    public String getModel() {
+        return model;
+    }
+
     @Override
     public Double getValue() {
         return value;
@@ -314,6 +318,8 @@ public class OrderPar implements RelaxationValues {
                 } else {
                     return null;
                 }
+            case "chisq":
+                return sumSqErr;
             case "rchisq":
                 if ((nValues != null) && (nPars != null)) {
                     return sumSqErr / (nValues - nPars);
@@ -322,6 +328,22 @@ public class OrderPar implements RelaxationValues {
                 }
             default:
                 return null;
+        }
+    }
+
+    double getReducedChiSqr() {
+        if ((nValues != null) && (nPars != null)) {
+            return sumSqErr / (nValues - nPars);
+        } else {
+            return 0.0;
+        }
+    }
+
+    double getAIC() {
+        if ((nValues != null) && (nPars != null) && (sumSqErr != null)) {
+            return 2 * nPars + nValues * Math.log(sumSqErr);
+        } else {
+            return 0.0;
         }
     }
 
@@ -374,7 +396,8 @@ public class OrderPar implements RelaxationValues {
 
     public static void writeToFile(File file, List<OrderPar> orderPars) throws IOException {
         try (FileWriter fileWriter = new FileWriter(file)) {
-            fileWriter.write("Chain\tResidue\tAtom\tS2\tS2_err\tTauE\tTauE_err\tSf2\tSf2_err\tSs2\tSs2_err\tTauF\tTauF_err\tTauS\tTauS_err\tRex\tRex_err\tmodel\tmodelNum\n");
+            fileWriter.write("Chain\tResidue\tAtom\tS2\tS2_err\tTauE\tTauE_err\tSf2\tSf2_err\tSs2\tSs2_err\tTauF\t" +
+                    "TauF_err\tTauS\tTauS_err\tRex\tRex_err\tmodel\tmodelNum\tchiSq\tredChiSq\tAIC\tnValues\tnPars\n");
             for (var orderPar:orderPars) {
                 fileWriter.write(orderPar.toString());
                 fileWriter.write("\n");
@@ -398,6 +421,11 @@ public class OrderPar implements RelaxationValues {
         RelaxationValues.appendValueError(sBuilder, TauS, TauSerr,"%.4f");
         RelaxationValues.appendValueError(sBuilder, Rex, Rexerr,"%.2f");
         sBuilder.append("\t").append(model).append("\t").append(modelNum);
+        sBuilder.append("\t").append(String.format("%.4f", sumSqErr)).append("\t").
+                append(String.format("%.4f", getReducedChiSqr())).
+                append("\t").append(String.format("%.4f",getAIC())).append("\t").
+        append(nValues).append("\t").append(nPars);
+
         return sBuilder.toString();
     }
 
