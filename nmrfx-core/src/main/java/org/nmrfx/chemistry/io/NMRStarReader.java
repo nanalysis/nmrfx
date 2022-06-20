@@ -17,9 +17,7 @@
  */
 package org.nmrfx.chemistry.io;
 
-import org.nmrfx.chemistry.relax.OrderPar;
-import org.nmrfx.chemistry.relax.RelaxationRex;
-import org.nmrfx.chemistry.relax.RelaxationData;
+import org.nmrfx.chemistry.relax.*;
 import org.nmrfx.chemistry.Order;
 
 import java.io.BufferedReader;
@@ -55,7 +53,6 @@ import org.nmrfx.peaks.Peak;
 import org.nmrfx.utilities.NvUtil;
 import org.nmrfx.peaks.io.PeakPathReader;
 import org.nmrfx.chemistry.relax.RelaxationData.relaxTypes;
-import org.nmrfx.chemistry.relax.ResonanceSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
