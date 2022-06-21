@@ -26,12 +26,16 @@ import javafx.scene.paint.Color;
 import org.nmrfx.graphicsio.GraphicsContextInterface;
 import org.nmrfx.graphicsio.GraphicsContextProxy;
 import org.nmrfx.graphicsio.GraphicsIOException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
  * @author brucejohnson
  */
 public class XYCanvasBarChart extends XYCanvasChart {
+
+    private static final Logger log = LoggerFactory.getLogger(XYCanvasBarChart.class);
 
     public static XYCanvasBarChart buildChart(Canvas canvas) {
         Axis xAxis = new Axis(Orientation.HORIZONTAL, 0, 100, 400, 100.0);
@@ -97,6 +101,7 @@ public class XYCanvasBarChart extends XYCanvasChart {
             gC.rect(xPos + leftBorder, yPos + topBorder, xAxis.getWidth(), yAxis.getHeight());
 
         } catch (GraphicsIOException ioE) {
+            log.warn(ioE.getMessage(), ioE);
         }
         gC.clip();
         gC.beginPath();
@@ -126,7 +131,7 @@ public class XYCanvasBarChart extends XYCanvasChart {
             DataSeries series = getData().get(seriesIndex);
             BarMark barMark = new BarMark(series.fill, Color.BLACK, Orientation.VERTICAL);
             int iValue = 0;
-            for (XYValue value : series.values) {
+            for (XYValue value : series.getValues()) {
                 double x = xAxis.getDisplayPosition(value.getXValue());
                 double y = yAxis.getDisplayPosition(value.getYValue());
                 boolean drawError = false;

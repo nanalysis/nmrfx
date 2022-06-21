@@ -44,9 +44,7 @@ import org.nmrfx.structure.rna.BasePair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedWriter;
 import java.io.FileNotFoundException;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -552,6 +550,7 @@ public class Molecule extends MoleculeBase {
             AtomEnergyProp.readPropFile();
             AtomEnergyProp.makeIrpMap();
         } catch (FileNotFoundException ex) {
+            log.warn(ex.getMessage(), ex);
         } catch (IOException ex) {
             log.error(ex.getMessage(), ex);
         }
@@ -800,38 +799,6 @@ public class Molecule extends MoleculeBase {
                     atom.setPoint(newPt);
                 }
 
-            }
-        }
-    }
-
-    public void getAngles(final double[] dihedralAngles) {
-        Atom a1 = null;
-        Atom a2 = null;
-        Atom a4 = null;
-        int nAngles = 0;
-        updateAtomArray();
-
-        for (Atom a3 : atoms) {
-            for (int iBond = 0; iBond < a3.bonds.size(); iBond++) {
-                Bond bond = a3.bonds.get(iBond);
-                if (bond.begin == a3) {
-                    a4 = bond.end;
-                } else {
-                    a4 = bond.begin;
-                }
-                if (a4 == null) {
-                    continue;
-                }
-                if (a4 == a3.parent) {
-                    continue;
-                }
-                if (a4.parent != a3) {
-                    continue;
-                }
-                if (dihedralAngles == null) {
-                    dihedralAngles[nAngles] = a4.dihedralAngle;
-                }
-                nAngles++;
             }
         }
     }
@@ -1706,6 +1673,7 @@ public class Molecule extends MoleculeBase {
         try {
             c = getCenter(0);
         } catch (MissingCoordinatesException ex) {
+            log.warn(ex.getMessage(), ex);
         }
         List<double[]> molecCoords = new ArrayList<>();
         for (Atom atom : atoms) {
@@ -2211,39 +2179,7 @@ public class Molecule extends MoleculeBase {
         }
         return lcmbMap;
     }
-
-    public void calcDistanceInputMatrix(final int iStruct, double distLim, String filename) {
-        List atomSources = RNAAttributes.getAtomSources();
-        ArrayList<double[]> inputs = new ArrayList<>();
-        ArrayList<String> targetNames = new ArrayList<>();
-
-        for (Atom targetAtom : atoms) {
-            String prefix = targetAtom.getEntity().getName();
-            double[] distRow = calcDistanceInputMatrixRow(iStruct, distLim, targetAtom);
-            inputs.add(distRow);
-            targetNames.add(prefix + ";" + targetAtom.getFullName());
-        }
-        try {
-            BufferedWriter bw = new BufferedWriter(new FileWriter(filename));
-
-            bw.write("#" + "\t" + "\t" + "\t");
-            for (int i = 0; i < atomSources.size(); i++) {
-                bw.write(atomSources.get(i) + "\t");
-            }
-            bw.newLine();
-            for (int i = 0; i < inputs.size(); i++) {
-                bw.write(targetNames.get(i) + "\t");
-                for (int j = 0; j < inputs.get(i).length; j++) {
-                    bw.write(inputs.get(i)[j] + "\t");
-                }
-                bw.newLine();
-            }
-            bw.flush();
-        } catch (IOException e) {
-
-        }
-    }
-
+    
     public double[] calcDistanceInputMatrixRow(final int iStruct, double distLim, Atom targetAtom) {
         return calcDistanceInputMatrixRow(iStruct, distLim, targetAtom, 1.0);
 

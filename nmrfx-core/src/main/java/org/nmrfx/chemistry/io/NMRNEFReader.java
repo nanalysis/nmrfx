@@ -206,7 +206,7 @@ public class NMRNEFReader {
                             System.out.println("read residue " + chainCode + " " + seqCode + " from " + cifFile);
                             MMcifReader.readChemComp(cifFile, molecule, chainCode, seqCode);
                         } catch (Exception ex) {
-                            ex.printStackTrace();
+                            log.warn(ex.getMessage(), ex);
                         }
                     }
                 } catch (MoleculeIOException ex) {
@@ -483,7 +483,7 @@ public class NMRNEFReader {
             try {
                 angleSet.addAngleConstraint(atoms, lower, upper, scale, weight, target, targetErr, name);
             } catch (InvalidMoleculeException imE) {
-
+                log.warn(imE.getMessage(), imE);
             }
 
         }

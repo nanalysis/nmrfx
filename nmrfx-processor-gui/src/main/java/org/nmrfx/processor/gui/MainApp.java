@@ -22,7 +22,6 @@ import de.jangassen.dialogs.about.AboutStageBuilder;
 import javafx.application.Application;
 import javafx.application.HostServices;
 import javafx.application.Platform;
-import org.nmrfx.processor.gui.controls.GridPaneCanvas;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
@@ -39,6 +38,7 @@ import org.nmrfx.console.ConsoleController;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.io.PeakReader;
 import org.nmrfx.processor.datasets.Dataset;
+import org.nmrfx.processor.gui.controls.GridPaneCanvas;
 import org.nmrfx.processor.gui.log.Log;
 import org.nmrfx.processor.gui.project.GUIProject;
 import org.nmrfx.processor.utilities.WebConnect;
@@ -53,6 +53,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
+import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -136,12 +137,12 @@ public class MainApp extends Application {
         defaultFont = Font.loadFont(iStream, 12);
     }
 
-//    public static void addPeakListListener(MapChangeListener<String, PeakList> mapChangeListener) {
-//        ((ObservableMap<String, PeakList>) PeakList.peakListTable).addListener(mapChangeListener);
-//    }
     @Override
     public void start(Stage stage) throws Exception {
         Log.setupMemoryAppender();
+
+        //necessary to avoid "," as a decimal separator in output files or python scripts
+        Locale.setDefault(Locale.Category.FORMAT, Locale.US);
 
         mainApp = this;
         FXMLController controller = FXMLController.create(stage);
@@ -172,6 +173,10 @@ public class MainApp extends Application {
 
     public static MenuBar getMenuBar() {
         return mainApp.makeMenuBar(appName);
+    }
+
+    public static MenuBar getMainMenuBar() {
+        return mainMenuBar;
     }
 
     public void addStatusBarTools(SpectrumStatusBar statusBar) {

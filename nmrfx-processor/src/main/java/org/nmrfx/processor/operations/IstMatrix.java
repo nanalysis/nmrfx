@@ -23,6 +23,7 @@ import org.nmrfx.datasets.MatrixType;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.processing.ProcessingException;
 import org.nmrfx.processor.processing.SampleSchedule;
+
 import java.util.HashMap;
 import java.util.ArrayList;
 
@@ -117,7 +118,6 @@ public class IstMatrix extends MatrixOperation {
                 vector.set(i, real, imag);
             }
         } catch (Exception e) {
-            e.printStackTrace();
             throw new ProcessingException(e.getLocalizedMessage());
         }
         //PyObject obj = interpreter.get("a");

@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -53,7 +53,7 @@ import java.util.*;
  */
 public class VarianData implements NMRData {
     private static final Logger log = LoggerFactory.getLogger(VarianData.class);
-    
+
     DateTimeFormatter vTimeFormatter = DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss");//20050804T233538
     DateTimeFormatter vDateFormatter = DateTimeFormatter.ofPattern("MMM ppd yyyy");// Feb  4 2000
     private final static int MAXDIM = 10;
@@ -232,8 +232,8 @@ public class VarianData implements NMRData {
     public String getFTType(int iDim) {
         // fixme
         return  "ft";
-    } 
-    
+    }
+
     @Override
     public final int getNDim() {
         if (nDimVal == null) {
@@ -961,7 +961,7 @@ public class VarianData implements NMRData {
         copyVecData(dataBuf, rdata, idata);
     }
 
-    // check for and open sample schedule 
+    // check for and open sample schedule
     final boolean checkAndOpenSampleSchedule(String parPath) {
         boolean gotSchedule = false;
         String schedulePath = "sampling.sch";
@@ -1527,47 +1527,44 @@ public class VarianData implements NMRData {
 
     // write binary data into text file, using header info
     public void fileoutraw() {
-        try {
-            try (BufferedWriter bw = Files.newBufferedWriter(Paths.get("/tmp/bwraw.txt"), Charset.forName("US-ASCII"),
-                    StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.CREATE, StandardOpenOption.WRITE)) {
-                DataInputStream in = new DataInputStream(new FileInputStream(fpath));
-                bw.write("rawfile header");
-                bw.newLine();
-                for (int k = 0; k < 8; k++) // file header
+        try (BufferedWriter bw = Files.newBufferedWriter(Paths.get("/tmp/bwraw.txt"), Charset.forName("US-ASCII"),
+                StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.CREATE, StandardOpenOption.WRITE);
+             DataInputStream in = new DataInputStream(new FileInputStream(fpath))) {
+            bw.write("rawfile header");
+            bw.newLine();
+            for (int k = 0; k < 8; k++) // file header
+            {
+                bw.write(in.readInt() + " ");
+            }
+            bw.newLine();
+            for (int i = 0; i < nblocks; i++) {
+                bw.write("blockhdr " + i + " ");
+                for (int k = 0; k < 7; k++) // block header
                 {
                     bw.write(in.readInt() + " ");
                 }
                 bw.newLine();
-                for (int i = 0; i < nblocks; i++) {
-                    bw.write("blockhdr " + i + " ");
-                    for (int k = 0; k < 7; k++) // block header
-                    {
+                // check if int/float/short
+                for (int j = 0; j < np; j++) {  // data
+                    if (j % 512 == 0) {
+                        bw.write("\n  block " + i + ":" + (j / 512) + " : ");
+                    }
+                    if (isFloat) {
+                        bw.write(in.readFloat() + " ");
+                    } else if (isShort) {
+                        bw.write(in.readShort() + " ");
+                    } else {
                         bw.write(in.readInt() + " ");
                     }
-                    bw.newLine();
-                    // check if int/float/short
-                    for (int j = 0; j < np; j++) {  // data
-                        if (j % 512 == 0) {
-                            bw.write("\n  block " + i + ":" + (j / 512) + " : ");
-                        }
-                        if (isFloat) {
-                            bw.write(in.readFloat() + " ");
-                        } else if (isShort) {
-                            bw.write(in.readShort() + " ");
-                        } else {
-                            bw.write(in.readInt() + " ");
-                        }
-                    }
-                    bw.write(": endblock " + i);
-                    bw.newLine();
-                    bw.flush();
                 }
-//            bw.write(in.readInt() + " ");  // extra point, overflow
+                bw.write(": endblock " + i);
+                bw.newLine();
+                bw.flush();
             }
         } catch (IOException e) {
             log.warn(e.getMessage(), e);
         }
-    }  // end fileoutraw
+    }
 
     class VarianSinebellWt extends SinebellWt {
 
@@ -1881,14 +1878,5 @@ public class VarianData implements NMRData {
         SinebellWt sb = varian.getSinebellWt(1);
         System.out.print("  sinebell: exists=" + sb.exists() + " power=" + sb.power() + " sb=" + sb.sb() + " sbs=" + sb.sbs());
         System.out.println(" size=" + sb.size() + " offset=" + sb.offset() + " end=" + sb.end());
-
-//        Path autodir = Paths.get(adir);
-//        try {
-//            System.out.println("");
-//            System.out.println(">>>> starting PeekFiles with autodir "+autodir);
-//            Files.walkFileTree(autodir, new PeekFiles());
-//        } catch (IOException ex) {
-//            ex.printStackTrace();
-//        }
     }
 }

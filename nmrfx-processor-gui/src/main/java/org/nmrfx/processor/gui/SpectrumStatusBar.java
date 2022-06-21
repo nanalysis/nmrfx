@@ -23,6 +23,7 @@
  */
 package org.nmrfx.processor.gui;
 
+import javafx.scene.control.*;
 import org.nmrfx.utils.properties.CustomNumberTextField;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import de.jensd.fx.glyphs.GlyphsDude;
@@ -39,17 +40,6 @@ import javafx.fxml.FXML;
 import javafx.geometry.Insets;
 import javafx.scene.Cursor;
 import javafx.scene.Node;
-import javafx.scene.control.CheckBox;
-import javafx.scene.control.ContentDisplay;
-import javafx.scene.control.ListCell;
-import javafx.scene.control.ListView;
-import javafx.scene.control.Menu;
-import javafx.scene.control.MenuButton;
-import javafx.scene.control.MenuItem;
-import javafx.scene.control.Spinner;
-import javafx.scene.control.SpinnerValueFactory;
-import javafx.scene.control.TextField;
-import javafx.scene.control.ToolBar;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.ScrollEvent;
@@ -89,6 +79,11 @@ public class SpectrumStatusBar {
     CheckBox complexStatus = new CheckBox("Complex");
     CheckBox phaserStatus = new CheckBox("Phasing");
     MenuButton toolButton = new MenuButton("Tools");
+    List<Button> specialButtons = new ArrayList<>();
+    Button peakPickButton;
+
+
+
     TextField[] planePPMField = new TextField[maxSpinners];
     Spinner[] planeSpinner = new Spinner[maxSpinners];
     MenuButton[] dimMenus = new MenuButton[maxSpinners + 2];
@@ -119,7 +114,12 @@ public class SpectrumStatusBar {
     }
 
     public void buildBar(ToolBar btoolBar) {
+        String iconSize = "16px";
+        String fontSize = "7pt";
         this.btoolBar = btoolBar;
+        peakPickButton = GlyphsDude.createIconButton(FontAwesomeIcon.BULLSEYE, "Pick", iconSize, fontSize, ContentDisplay.LEFT);
+        peakPickButton.setOnAction(e -> PeakPicking.peakPickActive(controller, false, null));
+
         setupTools();
 
         for (int i = 0; i < 2; i++) {
@@ -179,10 +179,7 @@ public class SpectrumStatusBar {
             MenuButton mButton = new MenuButton(rowName);
             dimMenus[i] = mButton;
             if (iAxis < 2) {
-                mButton.showingProperty().addListener(e -> {
-
-                    updateXYMenu(mButton, iAxis);
-                });
+                mButton.showingProperty().addListener(e -> updateXYMenu(mButton, iAxis));
             } else {
                 MenuItem menuItem = new MenuItem("Full");
                 mButton.getItems().add(menuItem);
@@ -222,13 +219,13 @@ public class SpectrumStatusBar {
         filler = new Pane();
         HBox.setHgrow(filler, Priority.ALWAYS);
         btoolBar.getItems().add(filler);
-        phaserStatus.setOnAction(e -> phaserStatus(e));
+        phaserStatus.setOnAction(this::phaserStatus);
         btoolBar.getItems().add(sliceStatus);
         btoolBar.getItems().add(complexStatus);
         btoolBar.getItems().add(phaserStatus);
         controller.sliceStatus.bind(sliceStatus.selectedProperty());
-        sliceStatus.setOnAction(e -> sliceStatus(e));
-        complexStatus.setOnAction(e -> complexStatus(e));
+        sliceStatus.setOnAction(this::sliceStatus);
+        complexStatus.setOnAction(this::complexStatus);
         Text crosshairIcon = GlyphsDude.createIcon(FontAwesomeIcon.PLUS, "16");
         Text arrowIcon = GlyphsDude.createIcon(FontAwesomeIcon.MOUSE_POINTER, "16");
         cursorMap.put(Cursor.CROSSHAIR, crosshairIcon);
@@ -246,8 +243,8 @@ public class SpectrumStatusBar {
         Callback<ListView<Cursor>, ListCell<Cursor>> cellFactory = new Callback<ListView<Cursor>, ListCell<Cursor>>() {
             @Override
             public ListCell<Cursor> call(ListView<Cursor> p) {
-                return new ListCell<Cursor>() {
-                    Text icon = null;
+                return new ListCell<>() {
+                    Text icon;
 
                     {
                         icon = new Text();
@@ -275,6 +272,12 @@ public class SpectrumStatusBar {
         };
     }
 
+    public void addToolBarButtons(Button... buttons) {
+        for (var button:buttons) {
+            specialButtons.add(button);
+        }
+    }
+
     public void addToToolMenu(MenuItem menuItem) {
         toolButton.getItems().add(menuItem);
     }
@@ -297,24 +300,9 @@ public class SpectrumStatusBar {
         measureMenuItem.setOnAction(e -> controller.showSpectrumMeasureBar());
         MenuItem analyzerMenuItem = new MenuItem("Show Analyzer Bar");
         analyzerMenuItem.setOnAction(e -> controller.showAnalyzerBar());
-        MenuItem compareMenuItem = new MenuItem("Show Comparator");
 
-        specToolMenu.getItems().addAll(measureMenuItem, analyzerMenuItem,
-                compareMenuItem);
+        specToolMenu.getItems().addAll(measureMenuItem, analyzerMenuItem);
         addToToolMenu(specToolMenu);
-
-        Menu peakToolMenu = new Menu("Peak Tools");
-
-        compareMenuItem.setOnAction(e -> controller.showSpectrumComparator());
-        MenuItem peakNavigatorMenuItem = new MenuItem("Show Peak Navigator");
-        peakNavigatorMenuItem.setOnAction(e -> controller.showPeakNavigator());
-        MenuItem pathToolMenuItem = new MenuItem("Show Path Tool");
-        pathToolMenuItem.setOnAction(e -> controller.showPathTool());
-
-        peakToolMenu.getItems().addAll(peakNavigatorMenuItem,
-                pathToolMenuItem);
-
-        addToToolMenu(peakToolMenu);
     }
 
     public void setCursor(Cursor cursor) {
@@ -513,7 +501,7 @@ public class SpectrumStatusBar {
     private void sliceStatus(ActionEvent event) {
         CheckBox checkBox = (CheckBox) event.getSource();
         final boolean status = checkBox.isSelected();
-        controller.charts.stream().forEach(chart -> chart.setSliceStatus(status));
+        controller.charts.forEach(chart -> chart.setSliceStatus(status));
     }
 
     @FXML
@@ -528,8 +516,10 @@ public class SpectrumStatusBar {
 
     public void setPlaneRanges(int iDim, int max) {
         SpinnerValueFactory.IntegerSpinnerValueFactory planeFactory = (SpinnerValueFactory.IntegerSpinnerValueFactory) planeSpinner[iDim - 2].getValueFactory();
+        planeFactory.valueProperty().removeListener(planeListeners[iDim - 2]);
         planeFactory.setMin(0);
         planeFactory.setMax(max);
+        planeFactory.valueProperty().addListener(planeListeners[iDim - 2]);
     }
 
     public void set1DArray(int nDim, int nRows) {
@@ -572,9 +562,16 @@ public class SpectrumStatusBar {
         currentMode = mode;
         arrayMode = false;
         List<Node> nodes = new ArrayList<>();
+        nodes.add(cursorMenuButton);
         if (mode != 0) {
-            nodes.add(cursorMenuButton);
             nodes.add(toolButton);
+        }
+        if (mode == 1) {
+            for (var button:specialButtons) {
+                nodes.add(button);
+            }
+        } else if (mode > 1) {
+            nodes.add(peakPickButton);
         }
         HBox.setHgrow(filler1, Priority.ALWAYS);
         HBox.setHgrow(filler2, Priority.ALWAYS);
@@ -672,9 +669,9 @@ public class SpectrumStatusBar {
     }
 
     private void dimAction(String rowName, String dimName) {
-        controller.charts.stream().forEach((chart) -> {
+        controller.charts.forEach((chart) -> {
             if (!chart.datasetAttributesList.isEmpty()) {
-                DatasetAttributes datasetAttr = (DatasetAttributes) chart.datasetAttributesList.get(0);
+                DatasetAttributes datasetAttr = chart.datasetAttributesList.get(0);
                 datasetAttr.setDim(rowName, dimName);
 
                 for (int i = 0; i < chart.getNDim(); i++) {
@@ -689,13 +686,12 @@ public class SpectrumStatusBar {
         PolyChart chart = controller.getActiveChart();
         dimMenu.getItems().clear();
         if (!chart.datasetAttributesList.isEmpty()) {
-            DatasetAttributes datasetAttr = (DatasetAttributes) chart.datasetAttributesList.get(0);
+            DatasetAttributes datasetAttr = chart.datasetAttributesList.get(0);
             int nDim = datasetAttr.nDim;
             String rowName = rowNames[iAxis];
             for (int iDim = 0; iDim < nDim; iDim++) {
-                final int jDim = iDim;
                 String dimName = datasetAttr.getDataset().getLabel(iDim);
-                MenuItem menuItem = new MenuItem(String.valueOf(iDim + 1) + ":" + dimName);
+                MenuItem menuItem = new MenuItem(iDim + 1 + ":" + dimName);
                 menuItem.addEventHandler(ActionEvent.ACTION, event -> dimAction(rowName, dimName));
                 dimMenu.getItems().add(menuItem);
                 if (controller.isPhaseSliderVisible()) {

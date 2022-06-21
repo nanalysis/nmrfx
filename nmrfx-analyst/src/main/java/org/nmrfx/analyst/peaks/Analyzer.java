@@ -233,6 +233,7 @@ public class Analyzer {
         try {
             peakList = picker.peakPick();
         } catch (IOException | IllegalArgumentException ex) {
+            log.warn("Unable to peak pick.", ex);
         }
     }
 

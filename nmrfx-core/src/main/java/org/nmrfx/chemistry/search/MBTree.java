@@ -19,38 +19,20 @@
 package org.nmrfx.chemistry.search;
 
 import java.io.*;
+import java.nio.file.Files;
+import java.util.stream.Stream;
 
 public class MBTree {
 
     static public void readBTree(String fileName) {
-        LineNumberReader lineReader;
-        String string = null;
-
-        try {
-            BufferedReader bf = new BufferedReader(new FileReader(fileName));
-            lineReader = new LineNumberReader(bf);
-        } catch (IOException ioe) {
+        try (Stream<String> lines = Files.lines(new File(fileName).toPath())) {
+            lines.forEach(System.out::println);
+        } catch (FileNotFoundException fnf) {
             System.out.println("Cannot open the file " + fileName);
-            System.out.println(ioe.getMessage());
-
-            return;
-        }
-
-        try {
-            while (true) {
-                string = lineReader.readLine();
-
-                if (string == null) {
-                    return;
-                }
-
-                System.out.println(string);
-            }
+            System.out.println(fnf.getMessage());
         } catch (IOException ioe) {
             System.out.println("Cannot read the file " + fileName);
             System.out.println(ioe.getMessage());
-
-            return;
         }
     }
 }

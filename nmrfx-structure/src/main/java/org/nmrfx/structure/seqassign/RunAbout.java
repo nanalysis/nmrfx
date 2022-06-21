@@ -1,30 +1,33 @@
 package org.nmrfx.structure.seqassign;
 
+import org.nmrfx.chemistry.io.NMRStarWriter;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakDim;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.SpectralDim;
-import org.yaml.snakeyaml.Yaml;
+import org.nmrfx.project.ProjectBase;
+import org.nmrfx.star.Loop;
+import org.nmrfx.star.ParseException;
+import org.nmrfx.star.Saveframe;
+import org.nmrfx.star.SaveframeWriter;
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
+import java.io.Writer;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- *
  * @author brucejohnson
  */
-public class RunAbout {
-
+public class RunAbout implements SaveframeWriter {
+    static final List<String> peakListTags = List.of("ID", "Spectral_peak_list_ID");
+    static final private Map<Integer, RunAbout> runaboutMap = new HashMap<>();
+    int id = 1;
     SpinSystems spinSystems = new SpinSystems(this);
-    Map<String, Object> yamlData = null;
     Map<String, PeakList> peakListMap = new LinkedHashMap<>();
+    PeakList refList;
     List<PeakList> peakLists = new ArrayList<>();
-    Map<String, Map<String, List<String>>> arrange;
     Map<String, List<String>> dimLabels;
     Map<String, String> peakListTypes = new HashMap<>();
     Map<String, DatasetBase> datasetMap = new HashMap<>();
@@ -34,13 +37,13 @@ public class RunAbout {
 
     List<Map<String, Object>> typeList;
 
-    public void loadYaml(String fileName) throws FileNotFoundException, IOException {
-        try (InputStream input = new FileInputStream(fileName)) {
-            Yaml yaml = new Yaml();
-            yamlData = (Map<String, Object>) yaml.load(input);
-        }
-        setupPeakLists();
-        active = true;
+    public RunAbout() {
+        ProjectBase.getActive().addSaveframe(this);
+        runaboutMap.put(id, this);
+    }
+
+    public static final RunAbout getRunAbout(int id) {
+        return runaboutMap.get(id);
     }
 
     public boolean isActive() {
@@ -49,10 +52,6 @@ public class RunAbout {
 
     public SpinSystems getSpinSystems() {
         return spinSystems;
-    }
-
-    public Map<String, Map<String, List<String>>> getArrangements() {
-        return arrange;
     }
 
     public Optional<DatasetBase> getDataset(String key) {
@@ -70,10 +69,6 @@ public class RunAbout {
         return peakLists;
     }
 
-    public Map<String, Object> getYamlData() {
-        return yamlData;
-    }
-
     public List<String> getDimLabel(String dimType) {
         return dimLabels.get(dimType);
     }
@@ -82,30 +77,22 @@ public class RunAbout {
         return typeInfoMap.get(typeName).nTotal;
     }
 
-    List<String> setPatterns(List<Map<String, Object>> typeList, String typeName, PeakList peakList) {
+    List<String> getPatterns(PeakList peakList) {
         double[] tols = {0.04, 0.5, 0.6}; // fixme
         List<String> patElems = new ArrayList<>();
-        for (Map<String, Object> type : typeList) {
-            String thisName = (String) type.get("name");
-            if (typeName.equals(thisName)) {
-                patElems = (List<String>) type.get("patterns");
-                List<String> aTypes = new ArrayList<>();
-                for (int i = 0; i < patElems.size(); i++) {
-                    peakList.getSpectralDim(i).setPattern(patElems.get(i).trim());
-                    peakList.getSpectralDim(i).setIdTol(tols[i]);
-                    String patElem = patElems.get(i);
-                    int dotPos = patElem.indexOf(".");
-                    String aType = patElem.substring(dotPos + 1, dotPos + 2);
-                    aTypes.add(aType);
-                }
-                aTypeMap.put(typeName, aTypes);
-                break;
-            }
+        List<String> aTypes = new ArrayList<>();
+        for (var sDim : peakList.getSpectralDims()) {
+            String patElem = sDim.getPattern();
+            patElems.add(patElem);
+            int dotPos = patElem.indexOf(".");
+            String aType = patElem.substring(dotPos + 1, dotPos + 2);
+            aTypes.add(aType);
         }
+        aTypeMap.put(peakList.getExperimentType(), aTypes);
         return patElems;
     }
 
-    public class TypeInfo {
+    public static class TypeInfo {
 
         final boolean[][] intraResidue;
         final String[][] names;
@@ -145,7 +132,7 @@ public class RunAbout {
         return typeInfoMap.get(typeName);
     }
 
-    int setAtomCount(String typeName, List<String> patElems, int[][] counts, List<String> stdNames) {
+    void setAtomCount(String typeName, List<String> patElems, int[][] counts, List<String> stdNames) {
         int[] dimCount = new int[patElems.size()];
         int i = 0;
         for (String elem : patElems) {
@@ -212,41 +199,36 @@ public class RunAbout {
             }
             i++;
         }
-        return total;
     }
 
-    void setupPeakLists() {
+    public void setRefList(PeakList peakList) {
+        refList = peakList;
+        PeakList.clusterOrigin = refList;
+    }
+
+    public void setPeakLists(List<PeakList> lists) {
+        refList = lists.get(0);
+        PeakList.clusterOrigin = refList;
         List<String> stdNames = Arrays.asList(SpinSystem.ATOM_TYPES);
         int[][] counts = new int[2][stdNames.size()];
-        arrange = (Map<String, Map<String, List<String>>>) yamlData.get("arrangements");
-        dimLabels = (Map<String, List<String>>) yamlData.get("dims");
-
-        datasetMap.clear();
-        peakListMap.clear();
         peakLists.clear();
-        Map<String, String> datasetNameMap = (Map<String, String>) yamlData.get("datasets");
-        for (Map.Entry<String, String> entry : datasetNameMap.entrySet()) {
-            DatasetBase dataset = DatasetBase.getDataset(entry.getValue());
-            datasetMap.put(entry.getKey(), dataset);
-        }
+        peakListMap.clear();
+        datasetMap.clear();
+        peakListTypes.clear();
+        peakLists.addAll(lists);
 
-        List<String> peakListNames = (List<String>) yamlData.get("peakLists");
-        typeList = (List<Map<String, Object>>) yamlData.get("types");
-        for (String typeName : peakListNames) {
-            String datasetName = datasetNameMap.get(typeName);
-            PeakList peakList = PeakList.getPeakListForDataset(datasetName);
-            if (peakList != null) {
-                peakListTypes.put(peakList.getName(), typeName);
-                List<String> patElems = setPatterns(typeList, typeName, peakList);
-                peakListMap.put(typeName, peakList);
-                peakLists.add(peakList);
-                if (!patElems.isEmpty()) {
-                    int nPeaks = setAtomCount(typeName, patElems, counts, stdNames);
-                }
-            }
+        for (var peakList : peakLists) {
+            String typeName = peakList.getExperimentType();
+            peakListMap.put(typeName, peakList);
+            peakListTypes.put(peakList.getName(), typeName);
+            datasetMap.put(typeName, DatasetBase.getDataset(peakList.getDatasetName()));
+            List<String> patElems = getPatterns(peakList);
+            setAtomCount(typeName, patElems, counts, stdNames);
         }
         SpinSystem.nAtmPeaks = counts;
+        active = true;
     }
+
 
     public Optional<String> getTypeName(String row, String dDir) {
         Optional<String> typeName = Optional.empty();
@@ -264,26 +246,71 @@ public class RunAbout {
         return typeName;
     }
 
-    public List<String> getPatterns(String row, String dDir) {
+    public Optional<SpectralDim> getCarbonDim(PeakList peakList) {
+        for (var sDim : peakList.getSpectralDims()) {
+            if (!sDim.getPattern().contains("H") && !sDim.getPattern().contains("N")
+                    && sDim.getPattern().contains("C")) {
+                return Optional.of(sDim);
+            }
+        }
+        return Optional.empty();
+    }
+
+    public boolean checkRowType(String pattern, String testType) {
+        pattern = pattern.toUpperCase();
+        String[] types = {"CB", "CA", "C"};
+        String patternType = "";
+        for (var type : types) {
+            if (pattern.contains(type)) {
+                patternType = type;
+                break;
+            }
+        }
+        return patternType.equals(testType);
+    }
+
+    public Optional<PeakList> getPeakListForCell(String row, String dDir) {
         Optional<String> typeName = Optional.empty();
         dDir = dDir.replace("h", "i");
         dDir = dDir.replace("j", "i");
         dDir = dDir.replace("k", "i");
-        List<String> patElems = new ArrayList<>();
-        for (Map<String, Object> typeMap : typeList) {
-            String typeRow = (String) typeMap.get("row");
-            String typeDir = (String) typeMap.get("dir");
-            if (row.equals(typeRow) && dDir.equals(typeDir)) {
-                patElems = (List<String>) typeMap.get("patterns");
-                break;
+        final String iDir = dDir;
+        Optional<PeakList> result = Optional.empty();
+        for (PeakList peakList : peakLists) {
+            Optional<SpectralDim> sDimOpt = getCarbonDim(peakList);
+            if (sDimOpt.isPresent()) {
+                var sDim = sDimOpt.get();
+                String pattern = sDim.getPattern();
+                if (pattern.contains(".")) {
+                    String[] patternParts = pattern.split("\\.", 2);
+                    String resPart = patternParts[0];
+                    String atomPart = patternParts[1];
+                    if (checkRowType(atomPart, row)) {
+                        String[] resTypes = resPart.split(",");
+                        if (((resTypes.length == 2) && (iDir.equals("i"))) ||
+                                ((resTypes.length == 1) && resTypes[0].equals(iDir))) {
+                            result = Optional.of(peakList);
+                        }
+                    }
+                }
             }
         }
-        return patElems;
+        return result;
     }
 
-    public int[] getIDims(DatasetBase dataset, String typeName, List<String> dims) {
+    public List<SpectralDim> getPeakListDims(PeakList peakList, DatasetBase dataset, int[] iDims) {
+        List<SpectralDim> sDims = new ArrayList<>();
+        for (int i = 0; i < iDims.length; i++) {
+            int iDim = iDims[i];
+            String dataDimName = dataset.getLabel(iDim);
+            SpectralDim sDim = peakList.getSpectralDim(dataDimName);
+            sDims.add(sDim);
+        }
+        return sDims;
+    }
+
+    public int[] getIDims(DatasetBase dataset, PeakList peakList, String typeName, List<String> dims) {
         int[] iDims = new int[dims.size()];
-        System.out.println(typeName + " " + dims.toString());
         int j = 0;
         for (String dim : dims) {
             String dimName;
@@ -293,16 +320,36 @@ public class RunAbout {
             } else {
                 dimName = dim;
             }
-            int index = aTypeMap.get(typeName).indexOf(dimName);
-            iDims[index] = j;
+            int peakDim = aTypeMap.get(typeName).indexOf(dimName);
+            String peakListDimName = peakList.getSpectralDim(peakDim).getDimName();
+            iDims[j] = dataset.getDim(peakListDimName);
             j++;
         }
         return iDims;
     }
 
     public void assemble() {
-        System.out.println("assemble " + peakListMap.keySet().toString());
-        getSpinSystems().assembleWithClustering(peakLists);
+        System.out.println("assemble " + peakListMap.keySet());
+        getSpinSystems().assembleWithClustering(refList, peakLists);
+    }
+
+    public void addLists(List<PeakList> newPeakLists) {
+        getSpinSystems().addLists(refList, newPeakLists);
+    }
+
+    public void autoSetTolerance(double scale) {
+        autoSetTolerance(peakLists, scale);
+    }
+
+    public void autoSetTolerance(Collection<PeakList> peakLists, double scale) {
+        for (var peakList:peakLists) {
+            int nDim = peakList.getNDim();
+            for (int i=0;i<nDim;i++) {
+                var stat = peakList.widthDStatsPPM(i);
+                double median = stat.getPercentile(50.0);
+                peakList.getSpectralDim(i).setIdTol(median * scale);
+            }
+        }
     }
 
     public void calcCombinations() {
@@ -368,7 +415,7 @@ public class RunAbout {
                     dims[j++] = sDim.getDataDim();
                 }
                 double[] ppms = new double[dims.length];
-                peakList.peaks().stream().forEach(peak -> {
+                peakList.peaks().forEach(peak -> {
                     int jDim = 0;
                     for (int dim : dims) {
                         ppms[jDim++] = peak.getPeakDim(dim).getChemShiftValue();
@@ -382,8 +429,148 @@ public class RunAbout {
                 peakList.compress();
                 peakList.reNumber();
             }
-            System.out.println(peakList.getName() + " " + nFiltered.toString());
+            System.out.println(peakList.getName() + " " + nFiltered);
         }
     }
 
+    public boolean getHasAllAtoms(SpinSystem spinSystem) {
+        int nTypes = SpinSystem.getNAtomTypes();
+        boolean ok = true;
+        for (int k = 0; k < 2; k++) {
+            boolean isGly = false;
+            boolean justCB = true;
+            for (int i = 0; i < nTypes; i++) {
+                int n = SpinSystem.getNPeaksForType(k, i);
+                if (n != 0) {
+                    String aName = SpinSystem.getAtomName(i);
+                    if (k == 0) {
+                        aName = aName.toLowerCase();
+                    } else {
+                        aName = aName.toUpperCase();
+                    }
+                    double value = spinSystem.getValue(k, i);
+                    if (!Double.isNaN(value) && aName.equalsIgnoreCase("ca")) {
+                        if ((value < 50.0)  && (value > 40.0)) {
+                            isGly = true;
+                        }
+                    }
+                    if (Double.isNaN(value)) {
+                        if (!aName.equalsIgnoreCase("cb")) {
+                            justCB = false;
+                        }
+                        ok = false;
+                    }
+                }
+            }
+            if (!ok && justCB && isGly) {
+                ok = true;
+            }
+        }
+        return ok;
+    }
+
+    public int getExtraOrMissing(SpinSystem spinSys) {
+        int result = 0;
+        for (var peakList : peakLists) {
+            String typeName = peakList.getExperimentType();
+            int nExpected = getTypeCount(typeName);
+            int nPeaks = 0;
+            for (var peakMatch : spinSys.peakMatches()) {
+                if (peakMatch.getPeak().getPeakList() == peakList) {
+                    nPeaks++;
+                }
+            }
+            if (nPeaks > nExpected) {
+                result |= 1;
+            } else if (nPeaks < nExpected) {
+                result |= 2;
+            }
+        }
+        return result;
+    }
+
+    public void trim(SpinSystem spinSys) {
+        for (var peakList : peakLists) {
+            String typeName = peakList.getExperimentType();
+            int nExpected = getTypeCount(typeName);
+            int nPeaks = 0;
+            for (var peakMatch : spinSys.peakMatches()) {
+                if (peakMatch.getPeak().getPeakList() == peakList) {
+                    nPeaks++;
+                }
+            }
+            if (nPeaks > nExpected) {
+                spinSys.peakMatches().stream().
+                        map(SpinSystem.PeakMatch::getPeak).
+                        sorted(Comparator.comparingDouble(a -> Math.abs(a.getIntensity()))).
+                        limit(nPeaks - nExpected).
+                        forEach(Peak::delete);
+                spinSys.purgeDeleted();
+                peakList.compress();
+            }
+        }
+    }
+
+    void readSTARSaveFrame(Saveframe saveframe) throws ParseException {
+        String category = "_Runabout";
+        String frameCode = saveframe.getValue(category, "Sf_framecode");
+        String id = saveframe.getValue(category, "ID");
+        readPeakLists(saveframe);
+        spinSystems.readSTARSaveFrame(saveframe);
+    }
+
+
+    @Override
+    public void write(Writer chan) throws ParseException, IOException {
+        writeToSTAR(chan);
+    }
+
+    void writeToSTAR(Writer chan) throws ParseException, IOException {
+        String category = "_Runabout";
+        String categoryName = "runabout";
+        StringBuilder sBuilder = new StringBuilder();
+        NMRStarWriter.initSaveFrameOutput(sBuilder, category, categoryName, String.valueOf(id));
+
+        writePeakLists(sBuilder);
+
+        spinSystems.writeSpinSystemFragments(sBuilder);
+
+        spinSystems.writeSpinSystems(sBuilder);
+
+        spinSystems.writeSpinSystemPeaks(sBuilder);
+
+        chan.write(sBuilder.toString());
+        chan.write("save_");
+    }
+
+    void writePeakLists(StringBuilder sBuilder) {
+
+        NMRStarWriter.openLoop(sBuilder, "_Runabout_peak_lists", peakListTags);
+        int i = 1;
+        sBuilder.append(String.format("%3d %3d\n", i, refList.getId()));
+        for (PeakList peakList : peakLists) {
+            if (peakList != refList) {
+                sBuilder.append(String.format("%3d %3d\n", i, peakList.getId()));
+            }
+            i++;
+        }
+        NMRStarWriter.endLoop(sBuilder);
+    }
+
+    void readPeakLists(Saveframe saveframe) throws ParseException {
+        Loop peakListLoop = saveframe.getLoop("_Runabout_peak_lists");
+        if (peakListLoop != null) {
+            List<PeakList> loopLists = new ArrayList<>();
+            List<Integer> idColumn = peakListLoop.getColumnAsIntegerList("ID", -1);
+            List<Integer> peakListIDColumn = peakListLoop.getColumnAsIntegerList("Spectral_peak_list_ID", -1);
+            for (int i = 0; i < idColumn.size(); i++) {
+                Optional<PeakList> peakListOpt = PeakList.get(peakListIDColumn.get(i));
+                if (peakListOpt.isPresent()) {
+                    PeakList peakList = peakListOpt.get();
+                    loopLists.add(peakList);
+                }
+            }
+            setPeakLists(loopLists);
+        }
+    }
 }

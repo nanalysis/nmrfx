@@ -270,8 +270,9 @@ public class Predictor {
         Molecule molecule = (Molecule) MoleculeFactory.getActive();
         if (molecule != null) {
             if (!molecule.getDotBracket().equals("")) {
-                PythonInterpreter interp = new PythonInterpreter();
-                interp.exec("import rnapred\nrnapred.predictFromSequence(ppmSet=" + ppmSet + ")");
+                try (PythonInterpreter interp = new PythonInterpreter()) {
+                    interp.exec("import rnapred\nrnapred.predictFromSequence(ppmSet=" + ppmSet + ")");
+                }
             }
         }
     }
@@ -469,7 +470,6 @@ public class Predictor {
         } else {
             InputStreamReader reader = new InputStreamReader(istream);
             BufferedReader breader = new BufferedReader(reader);
-            String aType = "";
             String state = "";
             int nCoef = 0;
             String[] coefAtoms = null;
@@ -484,7 +484,8 @@ public class Predictor {
                         if (fields.length > 0) {
                             if (fields[0].equals("rmax")) {
                                 setRMax(Double.parseDouble(fields[1]));
-                                aType = fields[2];
+                                // For this line fields[2] is unused but its value is the atom type, e.g. H, C
+                                // it was previously used to help set the typeIndex
                                 setIntraScale(Double.parseDouble(fields[3]));
                             } else if (fields[0].equals("coef")) {
                                 state = "coef";

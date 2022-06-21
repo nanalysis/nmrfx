@@ -734,7 +734,7 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
             dAttr = (DatasetAttributes) o;
             copyTo(dAttr);
         } catch (CloneNotSupportedException e) {
-            e.printStackTrace(System.err);
+            log.warn(e.getMessage(), e);
         }
 
         return dAttr;
@@ -955,6 +955,9 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
         if (iDim != 0) {
             int jDim = dimC[0];
             int offset = theFile.ppmToPoint(jDim, ppmx);
+            if (theFile.getComplex(jDim)) {
+                offset *= 2;
+            }
             //int offset = (int) Math.round(ppmx);
             ptC[0][0] = offset;
             ptC[0][1] = offset;
@@ -967,7 +970,13 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
             ptC[3][1] = theFile.getSizeReal(dim[3]) - 1;
         }
         rearrangeDim(dimC, ptC);
-        specVec.resize(ptC[0][1] - ptC[0][0] + 1, theFile.getComplex_r(dimC[0]));
+        int size = ptC[0][1] - ptC[0][0] + 1;
+        if ((iDim  == 0) && theFile.getComplex(0)) {
+            ptC[0][0] *= 2;
+            ptC[0][1] *= 2;
+        }
+
+        specVec.resize(size, theFile.getComplex_r(dimC[0]));
         //System.out.println("get slice " + ptC[0][0] + " " + ptC[0][1] + " " + specVec.getSize());
         theFile.readVectorFromDatasetFile(ptC, dimC, specVec);
         return true;
@@ -1034,7 +1043,7 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
                     localPtD[i][1] = axModes[i].getIndexD(this, i, axes[1].getUpperBound());
                 } else {
                     localPtD[i][0] = 0;
-                    localPtD[i][0] = theFile.getSizeReal(dim[i]) - 1.0;
+                    localPtD[i][1] = theFile.getSizeReal(dim[i]) - 1.0;
                 }
             } else if (axModes.length <= i) {
                 localPtD[i][0] = theFile.getSizeReal(dim[i]) / 2.0;
@@ -1495,9 +1504,9 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
         return dim.clone();
     }
 
-    public void setDims(int[] dims) {
-        for (int i = 0; i < dims.length; i++) {
-            setDim(i, dims[i]);
+    public void setDims(int[] newDims) {
+        for (int i = 0; i < newDims.length; i++) {
+            setDim(newDims[i],i);
         }
     }
 
@@ -2014,6 +2023,7 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
                     try {
                         r.measure(theFile);
                     } catch (IOException ioE) {
+                        log.warn("Error encountered moving region.", ioE);
                     }
                     break;
                 case 2:

@@ -115,13 +115,7 @@ public class RDCConstraint extends RDC implements Constraint {
         result.append(sep);
         result.append(getErr());
         result.append(sep);
-
-        String ssID = null;
-        if (ssID == null) {
-            result.append(".");
-        } else {
-            result.append(ssID);
-        }
+        result.append(".");  // ssID
         result.append(sep);
         result.append("1");
         return result.toString();

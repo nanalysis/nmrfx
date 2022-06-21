@@ -1,0 +1,94 @@
+name: Build
+
+# Controls when the action will run. Triggers the workflow on push or pull request
+# events but only for the these branches.
+on:
+  push:
+    branches:
+      - master
+      - 'epic/**'
+      - 'release/**'
+  pull_request:
+    branches:
+      - master
+      - 'epic/**'
+      - 'release/**'
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  build:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - name: Git checkout
+        uses: actions/checkout@v2
+        with:
+          # Check-out the submodules as well
+          submodules: 'recursive'
+
+      - name: Setup Java
+        uses: actions/setup-java@v2
+        with:
+          distribution: 'zulu'
+          java-version: '15'
+          cache: 'maven'
+
+      - name: Cache SonarCloud packages
+        uses: actions/cache@v2
+        with:
+          path: ~/.sonar/cache
+          key: ${{ runner.os }}-sonar
+          restore-keys: ${{ runner.os }}-sonar
+
+      - name: Clean compile
+        run: mvn -f pom.xml clean compile
+
+      # Ignore test failures so that all tests are run
+      # The publish report step will take care of failing the build if needed
+      # Use jacoco to prepare test coverage report for sonar
+      - name: Execute tests
+        run: mvn org.jacoco:jacoco-maven-plugin:prepare-agent test -Dmaven.test.failure.ignore=true
+
+      - name: Publish test report
+        uses: scacap/action-surefire-report@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          fail_on_test_failures: true
+          fail_if_no_tests: true
+
+      - name: Generate test coverage report
+        run: mvn org.jacoco:jacoco-maven-plugin:report
+
+      # Must be done before calling formatter & sonar, otherwise BOM project can be out of date
+      # Skip assembly, it is done in the package phase for NMRfx
+      # Otherwise, it takes a lot of space (6Gb) AND be copied to the local repository (+3Gb)
+      - name: Install artifacts locally without assembly
+        run: mvn -f pom.xml install -Dmaven.test.skip=true -Dassembly.skipAssembly=true
+
+      - name: Analyze with sonar
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: mvn -B org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=nanalysis_nmrfx
+
+      - name: Assemble application archives
+        run: |
+          mvn -f ./nmrfx-analyst-gui/pom.xml -Dmaven.test.skip=true package
+
+      - name: Download sharepoint client
+        uses: dsaltares/fetch-gh-release-asset@master
+        with:
+          repo: "nanalysis/sharepoint-client"
+          version: "tags/v1.3"
+          file: "sharepoint-client-1.3-jar-with-dependencies.jar"
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish build
+        env:
+          SHAREPOINT_CLIENT_ID: ${{ secrets.SHAREPOINT_CLIENT_ID }}
+          SHAREPOINT_CLIENT_SECRET: ${{ secrets.SHAREPOINT_CLIENT_SECRET }}
+        run: bash .github/workflows/actions-publish-build.sh

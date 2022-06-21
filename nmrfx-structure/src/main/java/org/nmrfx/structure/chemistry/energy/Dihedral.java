@@ -29,6 +29,8 @@ import org.slf4j.LoggerFactory;
 import java.io.*;
 import java.util.*;
 
+import static java.util.Objects.requireNonNull;
+
 public class Dihedral {
     private static final Logger log = LoggerFactory.getLogger(Dihedral.class);
 
@@ -425,45 +427,25 @@ public class Dihedral {
             inputSigma[i] = sigma;
         }
         int aStart = nPseudoAngles * 2 * stepSize;
+        List<String> parentNamesToScale = Arrays.asList("P", "O5'", "C5'", "C4'", "O3'", "CA", "C");
         for (int iAtom = 0; iAtom < angleAtoms.size(); iAtom++) {
             Atom atom = angleAtoms.get(iAtom).daughterAtom;
             // temporarily set everything to use sigma, till we make sure counting is correct
-            if (atom == null) {
-                System.out.println("daughter null " + angleAtoms.get(iAtom).daughterAtom.getFullName());
-            }
-            if (atom.parent == null) {
-                System.out.println("parent null " + angleAtoms.get(iAtom).daughterAtom.getFullName());
-            }
-            if (atom.parent.getName().equals("P") || atom.parent.getName().equals("O5'") || atom.parent.getName().equals("C5'") || atom.parent.getName().equals("C4'") || atom.parent.getName().equals("O3'")) {
-                inputSigma[aStart++] = sigma / backBoneScale;
-                if (sinCosMode) {
-                    inputSigma[aStart++] = sigma / backBoneScale;
-                }
-            } else if (atom.parent.getName().equals("CA") || atom.parent.getName().equals("C")) {
-                inputSigma[aStart++] = sigma / backBoneScale;
-                if (sinCosMode) {
-                    inputSigma[aStart++] = sigma / backBoneScale;
-                }
+            requireNonNull(atom, "Encountered null daughter atom while setting boundaries.");
+            requireNonNull(atom.parent, "Encountered null parent atom while setting boundaries. " + atom.getFullName());
+            String parentName = atom.parent.getName();
+            double inputSigmaAtIndex;
+            if (parentNamesToScale.contains(parentName)) {
+                inputSigmaAtIndex = sigma / backBoneScale;
             } else {
-                inputSigma[aStart++] = sigma;
-                if (sinCosMode) {
-                    inputSigma[aStart++] = sigma;
-                }
+                inputSigmaAtIndex = sigma;
+            }
+            inputSigma[aStart++] = inputSigmaAtIndex;
+            if (sinCosMode) {
+                inputSigma[aStart++] = inputSigmaAtIndex;
             }
         }
 
-        /* works
-        for (int i = 0; i < normBoundaries[0].length; i++) {
-            Atom atom = angleAtoms.get(i / stepSize);
-            if (atom.parent.getName().equals("P") || atom.parent.getName().equals("O5'") || atom.parent.getName().equals("C5'") || atom.parent.getName().equals("C4'") || atom.parent.getName().equals("O3'")) {
-                inputSigma[i] = sigma/backBoneScale;
-            } else if (atom.parent.getName().equals("CA") || atom.parent.getName().equals("C")) {
-                inputSigma[i] = sigma/backBoneScale;
-            } else {
-                inputSigma[i] = sigma;
-            }
-        }
-         */
         for (int i = 0; i < boundaries[0].length; i++) {
             if (centerBoundaries) {
                 double angle = Util.reduceAngle(angleValues[i]);
@@ -477,9 +459,6 @@ public class Dihedral {
             ranBoundaries[1][i] = Math.PI;
         }
         setupAngleRestraints();
-        //for (int j=0;j<angleValues.length;j++) {
-        //System.out.printf("j %3d bou %9.3f bou %9.3f sig %9.3f ang %9.3f nrm %9.3f nrm %9.3f\n",j,toDeg*boundaries[0][j],toDeg*boundaries[1][j],inputSigma[j],toDeg*angleValues[j],normBoundaries[0][j],normBoundaries[1][j]);
-        //}
     }
 
     public void setupAngleRestraints() {
@@ -693,17 +672,7 @@ public class Dihedral {
                     atom = angleAtoms.get(i - 2 * nPseudoAngles).daughterAtom;
                 }
                 String atomName = atom.getFullName();
-//                AngleBoundary angleBoundary = angleBoundaries.get(atomName);
-//                /* adds angleBoundary values to boundaries array */
-//                if (angleBoundary != null) {
-//                    if (angleBoundary.angleProp != null) {
-//                        for (int j = 0; j < angleBoundary.angleProp.height.length; j++) {
-//                            if (angleBoundary.angleProp.height[j] == 1) {
-//                                angleValues[i] = angleBoundary.angleProp.target[j];
-//                            }
-//                        }
-//                    }
-//                }
+
                 if (usePseudo == true && incrementByTwo == true) {
                     angleValues[i++] = Util.reduceAngle(initPseudoAngle);
                     angleValues[i++] = initPuckerAmplitude;
@@ -715,33 +684,6 @@ public class Dihedral {
         }
         putDihedrals();
         molecule.genCoords(false, null);
-    }
-
-    public void printAngleTest() {
-        List<Atom> pseudoAngleAtoms = molecule.getPseudoAngleAtoms();
-        List<Atom> angleAtoms = molecule.getAngleAtoms();
-
-        System.out.println("Pseudo Angles + Boundaries");
-        System.out.println("Pseudo Angle Atom Size: " + pseudoAngleAtoms.size());
-        if (pseudoAngleAtoms == null) {
-            System.out.println("pseudoAngleAtoms is Null");
-        }
-        for (int i = 0; i < pseudoAngleAtoms.size() / 3; i++) {
-            Atom atom = pseudoAngleAtoms.get(i / 2 * 3);
-
-            if (atom == null) {
-                System.out.println("Atom is Null");
-            }
-            if (boundaries == null) {
-                System.out.println("Boundaries is Null");
-            }
-            System.out.println(atom.getFullName() + ", Lower Boundary: " + boundaries[0][i * 2] + ", Upper Boundary: " + boundaries[1][i * 2] + ", currentValue " + angleValues[i * 2]);
-            System.out.println(atom.getFullName() + ", Lower Boundary: " + boundaries[0][i * 2 + 1] + ", Upper Boundary: " + boundaries[1][i * 2 + 1] + ", currentValue " + angleValues[i * 2 + 1]);
-        }
-        for (int i = 0; i < angleAtoms.size(); i++) {
-            Atom atom = angleAtoms.get(i).daughterAtom;
-            System.out.println(atom.getFullName() + ", Lower Boundary: " + boundaries[0][i + 2 * pseudoAngleAtoms.size() / 3] + ", Upper Boundary: " + boundaries[1][i + 2 * pseudoAngleAtoms.size() / 3] + ", currentValue " + angleValues[i + 2 * pseudoAngleAtoms.size() / 3]);
-        }
     }
 
     public RotationalDynamics getRotationalDyamics() throws InvalidMoleculeException {

@@ -24,9 +24,11 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import org.nmrfx.peaks.PeakEvent;
+
+import org.nmrfx.peaks.Peak;
+import org.nmrfx.peaks.events.PeakEvent;
 import org.nmrfx.peaks.PeakList;
-import org.nmrfx.peaks.PeakListener;
+import org.nmrfx.peaks.events.PeakListener;
 import org.nmrfx.utilities.Updater;
 
 /**
@@ -55,8 +57,14 @@ public class PeakListUpdater implements Updater {
     }
 
     @Override
-    public void update() {
-        setUpdatedFlag(true);
+    public void update(Object object) {
+        if (object instanceof Peak) {
+            setPeakUpdatedFlag(true);
+        } else if (object instanceof PeakList) {
+            setPeakListUpdatedFlag(true);
+        } else if (object instanceof List) {
+            setPeakCountUpdatedFlag(true);
+        }
         startTimer();
     }
 
@@ -93,12 +101,24 @@ public class PeakListUpdater implements Updater {
         Iterator iter = PeakList.iterator();
         while (iter.hasNext()) {
             PeakList peakList = (PeakList) iter.next();
-            if ((peakList != null) && (peakList.thisListUpdated.get())) {
-                peakList.setUpdatedFlag(false);
-                // fixme should only do if necessary
-                //peakList.sortMultiplets();
-                peakList.notifyListeners();
-                anyUpdated = true;
+            if (peakList != null) {
+                if (peakList.peakUpdated.get()) {
+                    peakList.peakUpdated.set(false);
+                    // fixme should only do if necessary
+                    //peakList.sortMultiplets();
+                    peakList.notifyPeakChangeListeners();
+                    anyUpdated = true;
+                }
+                if (peakList.peakListUpdated.get()) {
+                    peakList.peakListUpdated.set(false);
+                    peakList.notifyPeakListChangeListeners();
+                    anyUpdated = true;
+                }
+                if (peakList.peakCountUpdated.get()) {
+                    peakList.peakCountUpdated.set(false);
+                    peakList.notifyPeakCountChangeListeners();
+                    anyUpdated = true;
+                }
             }
         }
         if (anyUpdated) {
@@ -106,8 +126,20 @@ public class PeakListUpdater implements Updater {
         }
     }
 
-    void setUpdatedFlag(boolean value) {
-        peakList.thisListUpdated.set(value);
+    void setPeakUpdatedFlag(boolean value) {
+        peakList.peakUpdated.set(value);
+        if (value) {
+            aListUpdated.set(value);
+        }
+    }
+    void setPeakListUpdatedFlag(boolean value) {
+        peakList.peakListUpdated.set(value);
+        if (value) {
+            aListUpdated.set(value);
+        }
+    }
+    void setPeakCountUpdatedFlag(boolean value) {
+        peakList.peakCountUpdated.set(value);
         if (value) {
             aListUpdated.set(value);
         }

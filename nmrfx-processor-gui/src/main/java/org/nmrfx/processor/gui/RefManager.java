@@ -32,6 +32,8 @@ import org.controlsfx.control.PropertySheet;
 import org.nmrfx.processor.datasets.DatasetType;
 import org.nmrfx.processor.datasets.vendor.NMRData;
 import org.nmrfx.utils.properties.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -44,6 +46,7 @@ import java.util.Map;
  */
 public class RefManager {
 
+    private static final Logger log = LoggerFactory.getLogger(RefManager.class);
     ChangeListener<Number> doubleListener;
     ChangeListener<Number> intListener;
     ChangeListener<String> stringListener;
@@ -246,11 +249,7 @@ public class RefManager {
                     }
                     break;
                 case "acqarray":
-                    if (getDefault) {
-                        value = "0";
-                    } else {
-                        value = "0";
-                    }
+                    value = "0";
                     break;
                 case "sf":
                     value = nmrData.getSFNames()[dim];
@@ -347,7 +346,7 @@ public class RefManager {
                 try {
                     iValue = Integer.parseInt(value);
                 } catch (NumberFormatException nFe) {
-
+                    log.warn("Unable to parse value.", nFe);
                 }
                 String defaultValue = getPropValue(dim, propName, true);
                 String comment = " (default is " + defaultValue + ")";
@@ -414,6 +413,7 @@ public class RefManager {
             dim--;
             propValue = getPropValue(dim, "skip", false);
         } catch (NumberFormatException nFE) {
+            log.warn("Unable to parse skip.", nFE);
         }
         return propValue.equals("1");
     }

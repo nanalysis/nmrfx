@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.nmrfx</groupId>
         <artifactId>nmrfx</artifactId>
-        <version>11.2.3-SNAPSHOT</version>
+        <version>11.2.5-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -112,7 +112,7 @@
             <dependency>
                 <groupId>org.controlsfx</groupId>
                 <artifactId>controlsfx</artifactId>
-                <version>11.1.0</version>
+                <version>11.1.1</version>
                 <!-- license: BSD (3 clause) -->
             </dependency>
             <dependency>
@@ -259,19 +259,19 @@
             <dependency>
                 <groupId>org.bytedeco</groupId>
                 <artifactId>javacpp</artifactId>
-                <version>1.5.4</version>
+                <version>1.5.7</version>
                 <!-- license: Apache 2 / GPLv2 with ClassPath exception -->
             </dependency>
             <dependency>
                 <groupId>org.bytedeco</groupId>
                 <artifactId>openblas-platform</artifactId>
-                <version>0.3.10-1.5.4</version>
+                <version>0.3.20-1.5.8-SNAPSHOT</version>
                 <!-- license: Apache 2 / GPLv2 with ClassPath exception -->
             </dependency>
             <dependency>
                 <groupId>org.bytedeco</groupId>
                 <artifactId>arpack-ng-platform</artifactId>
-                <version>3.7.0-1.5.4</version>
+                <version>3.8.0-1.5.7</version>
                 <!-- license: Apache 2 / GPLv2 with ClassPath exception -->
             </dependency>
             <dependency>
@@ -367,6 +367,11 @@
                 <version>3.3.1</version>
                 <!-- license: Apache License, Version 2.0 -->
             </dependency>
+        <dependency>
+            <groupId>org.ojalgo</groupId>
+            <artifactId>ojalgo</artifactId>
+            <version>47.2.0</version>
+        </dependency>
         </dependencies>
     </dependencyManagement>
 </project>

@@ -17,11 +17,9 @@
  */
 package org.nmrfx.processor.processing.processes;
 
-//import org.nmrfx.processor.math.Matrix;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.datasets.MatrixType;
 import org.nmrfx.processor.math.Vec;
-import org.nmrfx.math.VecException;
 import org.nmrfx.processor.operations.DatasetOperation;
 import org.nmrfx.processor.operations.MatrixOperation;
 import org.nmrfx.processor.operations.Operation;
@@ -36,6 +34,8 @@ import java.util.concurrent.Callable;
 import org.nmrfx.processor.operations.Apodization;
 import org.nmrfx.processor.operations.Ft;
 import org.nmrfx.processor.operations.Zf;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * The ProcessOps class will contain a list of all Operations which will be
@@ -46,6 +46,8 @@ import org.nmrfx.processor.operations.Zf;
  * @author johnsonb
  */
 public class ProcessOps implements Callable<Object> {
+
+    private static final Logger log = LoggerFactory.getLogger(ProcessOps.class);
 
     private ArrayList<Operation> operations = null;
     private List<Vec> vectors = null;
@@ -212,7 +214,6 @@ public class ProcessOps implements Callable<Object> {
         Processor processor = Processor.getProcessor();
 
         vectors = new ArrayList<>();
-        boolean error = false;
         // fixme  should we have don't write flag so write op doesn't get added
         if (!hasOperation(WriteVector.class)) {
             if (isUndo) {
@@ -221,7 +222,7 @@ public class ProcessOps implements Callable<Object> {
                 operations.add(new WriteVector(true));
             }
         }
-        while (!error) {
+        while (true) {
             if (processor.getProcessorError()) {
                 return this;
             }
@@ -230,7 +231,7 @@ public class ProcessOps implements Callable<Object> {
             } catch (Exception e) {
                 if (!processor.setProcessorError()) {
                     processor.setProcessorErrorMessage(e.getMessage());
-                    e.printStackTrace();
+                    log.warn(e.getMessage(), e);
                     throw new ProcessingException(e.getMessage());
                 } else {
                     return this;
@@ -242,32 +243,19 @@ public class ProcessOps implements Callable<Object> {
 
             for (Operation op : operations) {
                 if (processor.getProcessorError()) {
-                    error = true;
                     return this;
                 }
                 try {
                     op.eval(vectors);
-                } catch (OperationException oe) {
-                    if (!processor.setProcessorError()) {
-                        processor.setProcessorErrorMessage(oe.getMessage());
-                        oe.printStackTrace();
-                        throw new ProcessingException(oe.getMessage());
-                    } else {
-                        return this;
-                    }
                 } catch (Exception e) {
                     if (!processor.setProcessorError()) {
                         processor.setProcessorErrorMessage(e.getMessage());
-                        e.printStackTrace();
+                        log.warn(e.getMessage(), e);
                         throw new ProcessingException(e.getMessage());
                     } else {
                         return this;
                     }
                 }
-            }
-
-            if (error) {
-                break;
             }
 
             vectorsProcessed += vectors.size();
@@ -287,12 +275,11 @@ public class ProcessOps implements Callable<Object> {
     public Object callMatrix() {
         Processor processor = Processor.getProcessor();
 
-        boolean error = false;
         MatrixType matrix = null;
         // fixme  should we have don't write flag so write op doesn't get added
         operations.add(new WriteMatrix());
 
-        while (!error) {
+        while (true) {
             if (processor.getProcessorError()) {
                 return this;
             }
@@ -301,7 +288,7 @@ public class ProcessOps implements Callable<Object> {
             } catch (Exception e) {
                 if (!processor.setProcessorError()) {
                     processor.setProcessorErrorMessage(e.getMessage());
-                    e.printStackTrace();
+                    log.warn(e.getMessage(), e);
                     throw new ProcessingException(e.getMessage());
                 } else {
                     return this;
@@ -313,25 +300,14 @@ public class ProcessOps implements Callable<Object> {
 
             for (Operation op : operations) {
                 if (processor.getProcessorError()) {
-                    error = true;
                     return this;
                 }
                 try {
-                    if (matrix != null) {
-                        ((MatrixOperation) op).evalMatrix(matrix);
-                    }
-                } catch (OperationException oe) {
-                    if (!processor.setProcessorError()) {
-                        processor.setProcessorErrorMessage(oe.getMessage());
-                        oe.printStackTrace();
-                        throw new ProcessingException(oe.getMessage());
-                    } else {
-                        return this;
-                    }
+                    ((MatrixOperation) op).evalMatrix(matrix);
                 } catch (Exception e) {
                     if (!processor.setProcessorError()) {
                         processor.setProcessorErrorMessage(e.getMessage());
-                        e.printStackTrace();
+                        log.warn(e.getMessage(), e);
                         throw new ProcessingException(e.getMessage());
                     } else {
                         return this;
@@ -339,13 +315,8 @@ public class ProcessOps implements Callable<Object> {
                 }
             }
 
-            if (error) {
-                break;
-            }
+            vectorsProcessed++;
 
-            if (matrix != null) {
-                vectorsProcessed++;
-            }
         }
 
         completionMessage = "Process " + name + " has processed " + vectorsProcessed + " matrices.";
@@ -370,7 +341,7 @@ public class ProcessOps implements Callable<Object> {
         } catch (Exception e) {
             if (!processor.setProcessorError()) {
                 processor.setProcessorErrorMessage(e.getMessage());
-                e.printStackTrace();
+                log.warn(e.getMessage(), e);
                 throw new ProcessingException(e.getMessage());
             } else {
                 return this;
@@ -392,7 +363,7 @@ public class ProcessOps implements Callable<Object> {
             } catch (OperationException oe) {
                 if (!processor.setProcessorError()) {
                     processor.setProcessorErrorMessage(oe.getMessage());
-                    oe.printStackTrace();
+                    log.warn(oe.getMessage(), oe);
                     throw new ProcessingException(oe.getMessage());
                 } else {
                     return this;
@@ -400,7 +371,7 @@ public class ProcessOps implements Callable<Object> {
             } catch (Exception e) {
                 if (!processor.setProcessorError()) {
                     processor.setProcessorErrorMessage(e.getMessage());
-                    e.printStackTrace();
+                    log.warn(e.getMessage(), e);
                     throw new ProcessingException(e.getMessage());
                 } else {
                     return this;
@@ -432,18 +403,8 @@ public class ProcessOps implements Callable<Object> {
         for (Operation op : operations) {
             try {
                 op.eval(vectors);
-            } catch (ProcessingException pe) {
-//                pe.printStackTrace();
+            } catch (Exception pe) {
                 throw new IncompleteProcessException(pe.getMessage(), op.getName(), operations.indexOf(op), pe.getStackTrace());
-            } catch (OperationException oe) {
-//                oe.printStackTrace();
-                throw new IncompleteProcessException(oe.getMessage(), op.getName(), operations.indexOf(op), oe.getStackTrace());
-            } catch (VecException ve) {
-//                ve.printStackTrace();
-                throw new IncompleteProcessException(ve.getMessage(), op.getName(), operations.indexOf(op), ve.getStackTrace());
-            } catch (Exception e) {
-//                e.printStackTrace();
-                throw new IncompleteProcessException(e.getMessage(), op.getName(), operations.indexOf(op), e.getStackTrace());
             }
         }
         vectors.clear();

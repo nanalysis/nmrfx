@@ -25,6 +25,9 @@ import org.nmrfx.processor.math.GRINS;
 import static org.nmrfx.processor.operations.IstMatrix.genSrcTargetMap;
 import org.nmrfx.processor.processing.ProcessingException;
 import org.nmrfx.processor.processing.SampleSchedule;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 
 /**
@@ -32,6 +35,8 @@ import java.io.IOException;
  * @author Bruce Johnson
  */
 public class DGRINSOp extends DatasetOperation {
+
+    private static final Logger log = LoggerFactory.getLogger(DGRINSOp.class);
 
     private final SampleSchedule schedule;
     private final double noise;
@@ -94,8 +99,7 @@ public class DGRINSOp extends DatasetOperation {
             matrix = new MatrixND(writePt, matrixSizes);
             dataset.readMatrixND(pt, dim, matrix);
         } catch (IOException ex) {
-            ex.printStackTrace();
-//                Logger.getLogger(Processor.class.getName()).log(Level.SEVERE, null, ex);
+            log.warn(ex.getMessage(), ex);
         }
 
         return matrix;

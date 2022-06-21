@@ -11,7 +11,6 @@ from org.nmrfx.datasets import DatasetBase
 from org.nmrfx.peaks import Peak
 from org.nmrfx.peaks import PeakList
 from org.nmrfx.peaks.io import PeakWriter
-from org.nmrfx.chemistry import AtomResonanceFactory
 from org.nmrfx.structure.chemistry import Molecule
 from org.nmrfx.structure.rna import RNALabels
 from org.nmrfx.structure.chemistry import CouplingList

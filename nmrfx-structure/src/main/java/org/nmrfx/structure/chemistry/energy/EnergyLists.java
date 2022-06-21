@@ -262,6 +262,7 @@ public class EnergyLists {
                 predictor.predictRNAWithDistances(polymer, 0, 0, true);
                 // predictor.predictRNAWithRingCurrent(polymer, 0, 0);
             } catch (InvalidMoleculeException imE) {
+                log.warn(imE.getMessage(), imE);
             }
         }
     }
@@ -506,7 +507,7 @@ public class EnergyLists {
                 out = new PrintStream(fileName);
             }
         } catch (IOException ioE) {
-
+            log.warn(ioE.getMessage(), ioE);
         }
 
         OutputStream outStream = new BufferedOutputStream(out);
@@ -689,7 +690,7 @@ public class EnergyLists {
                     nIrp, irpEnergy, nDih, dihEnergy, nCFF, cffnbEnergy, nRepel, repelEnergy, nDistance, distanceEnergy,
                     maxDis, nShift, shiftTotEnergy, nRotamers, probDih, nStack, stackingEnergy, energySum);
         } catch (Exception e) {
-            e.printStackTrace();
+            log.warn(e.getMessage(), e);
         }
         writer.close();
     }
@@ -1236,7 +1237,7 @@ public class EnergyLists {
                 }
             }
         } catch (Exception ex) {
-            ex.printStackTrace();
+            log.error(ex.getMessage(), ex);
             System.exit(1);
         }
 
@@ -1295,7 +1296,7 @@ public class EnergyLists {
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error(e.getMessage(), e);
             System.exit(1);
         }
     }
@@ -1389,8 +1390,7 @@ public class EnergyLists {
                 i++;
             }
         } catch (Exception ex) {
-            System.out.println("error at branch " + i);
-            ex.printStackTrace();
+            log.error("Error at branch {} {}", i, ex.getMessage(), ex);
             System.exit(1);
         }
     }
@@ -1413,14 +1413,12 @@ public class EnergyLists {
                         for (int k = 0; k < 3; k++) {
                             System.out.printf(" %7.1f %7.1f ", branches[i].branches[j].farr[k], branches[i].branches[j].garr[k]);
                         }
-                    } else {
-                        //System.out.println("null branch");
                     }
                 }
                 System.out.println("");
             }
         } catch (Exception ex) {
-            ex.printStackTrace();
+            log.error(ex.getMessage(), ex);
             System.exit(1);
         }
     }
@@ -1456,7 +1454,7 @@ public class EnergyLists {
                 df[k++] = -1.0 * (dot1 + dot2);
             }
         } catch (Exception ex) {
-            ex.printStackTrace();
+            log.error(ex.getMessage(), ex);
             System.exit(1);
         }
         return df;
@@ -1599,7 +1597,7 @@ public class EnergyLists {
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            log.warn(e.getMessage(), e);
         }
     }
 

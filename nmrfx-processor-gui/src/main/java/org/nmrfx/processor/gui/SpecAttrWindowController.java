@@ -73,6 +73,8 @@ import org.nmrfx.processor.gui.spectra.PeakDisplayParameters;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
 import org.nmrfx.processor.gui.utils.ColorSchemes;
 import org.nmrfx.utilities.DictionarySort;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.URL;
@@ -91,6 +93,8 @@ import static org.nmrfx.processor.gui.PolyChart.DISDIM.TwoD;
  * @author johnsonb
  */
 public class SpecAttrWindowController implements Initializable {
+
+    private static final Logger log = LoggerFactory.getLogger(SpecAttrWindowController.class);
 
     static final DecimalFormat formatter = new DecimalFormat();
 
@@ -147,6 +151,7 @@ public class SpecAttrWindowController implements Initializable {
     Slider scaleSlider;
 
     PolyChart chart;
+    PolyChart boundChart = null;
     @FXML
     private CheckBox offsetTrackingCheckBox;
     @FXML
@@ -642,8 +647,7 @@ public class SpecAttrWindowController implements Initializable {
             stage.show();
             return controller;
         } catch (IOException ioE) {
-            ioE.printStackTrace();
-            System.out.println(ioE.getMessage());
+            log.warn(ioE.getMessage(), ioE);
             return null;
         }
     }
@@ -657,8 +661,7 @@ public class SpecAttrWindowController implements Initializable {
             controller = loader.getController();
             controller.pane = pane;
         } catch (IOException ioE) {
-            ioE.printStackTrace();
-            System.out.println(ioE.getMessage());
+            log.warn(ioE.getMessage(), ioE);
         }
 
         return controller;
@@ -690,8 +693,7 @@ public class SpecAttrWindowController implements Initializable {
         }
     }
 
-    public void updatePeakListTableView() {
-        boolean sceneMode = false;
+    public void updatePeakListTableView(boolean sceneMode) {
         if (peakListTableView == null) {
             System.out.println("null table");
         } else if (sceneMode) {
@@ -767,8 +769,9 @@ public class SpecAttrWindowController implements Initializable {
         if (isShowing()) {
             FXMLController fxmlController = FXMLController.getActiveController();
             chart = fxmlController.getActiveChart();
+            chart.setChartDisabled(true);
             updateDatasetTableView();
-            updatePeakListTableView();
+            updatePeakListTableView(false);
             clearDimActions();
             bindToChart(chart);
             setLimits();
@@ -777,6 +780,7 @@ public class SpecAttrWindowController implements Initializable {
             updateDims();
             setupDimActions();
             datasetTableView.getSelectionModel().clearSelection();
+            chart.setChartDisabled(false);
         }
     }
 
@@ -1414,9 +1418,11 @@ public class SpecAttrWindowController implements Initializable {
 
     // add delay so bindings between properties and controsl activate before refresh
     private void refreshLater() {
-        PauseTransition wait = new PauseTransition(Duration.millis(50.0));
-        wait.setOnFinished(e -> ConsoleUtil.runOnFxThread(chart::refresh));
-        wait.play();
+        if (!chart.isChartDisabled()) {
+            PauseTransition wait = new PauseTransition(Duration.millis(50.0));
+            wait.setOnFinished(e -> ConsoleUtil.runOnFxThread(chart::refresh));
+            wait.play();
+        }
     }
 
     private void refreshAction() {
@@ -1441,6 +1447,7 @@ public class SpecAttrWindowController implements Initializable {
                 charts.forEach(PolyChart::layoutPlotChildren);
             }
         } catch (ParseException parseE) {
+            log.warn(parseE.getMessage(), parseE);
         }
     }
 
@@ -1482,7 +1489,49 @@ public class SpecAttrWindowController implements Initializable {
         }
     }
 
+    private void unBindChart(PolyChart polyChart) {
+        offsetTrackingCheckBox.selectedProperty().unbindBidirectional(polyChart.sliceAttributes.offsetTrackingProperty());
+        useDatasetColorCheckBox.selectedProperty().unbindBidirectional(polyChart.sliceAttributes.useDatasetColorProperty());
+        slice1StateCheckBox.selectedProperty().unbindBidirectional(polyChart.sliceAttributes.slice1StateProperty());
+        slice2StateCheckBox.selectedProperty().unbindBidirectional(polyChart.sliceAttributes.slice2StateProperty());
+        xOffsetSlider.valueProperty().unbindBidirectional(polyChart.sliceAttributes.offsetXValueProperty());
+        yOffsetSlider.valueProperty().unbindBidirectional(polyChart.sliceAttributes.offsetYValueProperty());
+        scaleSlider.valueProperty().unbindBidirectional(polyChart.sliceAttributes.scaleValueProperty());
+        slice1ColorPicker.valueProperty().unbindBidirectional(polyChart.sliceAttributes.slice1ColorProperty());
+        slice2ColorPicker.valueProperty().unbindBidirectional(polyChart.sliceAttributes.slice2ColorProperty());
+
+        intensityAxisCheckBox.selectedProperty().unbindBidirectional(polyChart.chartProps.intensityAxisProperty());
+        ticFontSizeComboBox.valueProperty().unbindBidirectional(polyChart.chartProps.ticFontSizeProperty());
+        labelFontSizeComboBox.valueProperty().unbindBidirectional(polyChart.chartProps.labelFontSizeProperty());
+
+        leftBorderSizeComboBox.valueProperty().unbindBidirectional(polyChart.chartProps.leftBorderSizeProperty());
+        rightBorderSizeComboBox.valueProperty().unbindBidirectional(polyChart.chartProps.rightBorderSizeProperty());
+        topBorderSizeComboBox.valueProperty().unbindBidirectional(polyChart.chartProps.topBorderSizeProperty());
+        bottomBorderSizeComboBox.valueProperty().unbindBidirectional(polyChart.chartProps.bottomBorderSizeProperty());
+
+
+        gridCheckBox.selectedProperty().unbindBidirectional(polyChart.chartProps.gridProperty());
+        regionCheckBox.selectedProperty().unbindBidirectional(polyChart.chartProps.regionsProperty());
+        integralCheckBox.selectedProperty().unbindBidirectional(polyChart.chartProps.integralsProperty());
+
+        integralPosSlider.lowValueProperty().unbindBidirectional(polyChart.chartProps.integralLowPosProperty());
+        integralPosSlider.highValueProperty().unbindBidirectional(polyChart.chartProps.integralHighPosProperty());
+
+        titlesCheckBox.selectedProperty().unbindBidirectional(polyChart.chartProps.titlesProperty());
+
+        aspectSlider.valueProperty().unbindBidirectional(polyChart.chartProps.aspectRatioProperty());
+        aspectCheckBox.selectedProperty().unbindBidirectional((polyChart.chartProps.aspectProperty()));
+    }
+
     public void bindToChart(PolyChart polyChart) {
+        if (boundChart != null) {
+            if (boundChart == polyChart) {
+                return;
+            } else {
+                unBindChart(boundChart);
+            }
+        }
+        boundChart = polyChart;
         offsetTrackingCheckBox.selectedProperty().bindBidirectional(polyChart.sliceAttributes.offsetTrackingProperty());
         useDatasetColorCheckBox.selectedProperty().bindBidirectional(polyChart.sliceAttributes.useDatasetColorProperty());
         slice1StateCheckBox.selectedProperty().bindBidirectional(polyChart.sliceAttributes.slice1StateProperty());

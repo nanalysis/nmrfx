@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -205,24 +205,19 @@ public class Matrix implements MatrixType {
         if (outName != null) {
             fileWriter = new FileWriter(outName);
         }
-        int k = 0;
-        for (int i = 0; i < matrix.length; i++) {
-            for (int j = 0; j < matrix[i].length; j++) {
-                if (fileWriter != null) {
-                    fileWriter.write(String.format("%3d %3d ", i, j));
-                } else {
-                    System.out.printf("%3d %3d ", i, j);
-                }
+        try (FileWriter fw = fileWriter) {
+            int k = 0;
+            for (int i = 0; i < matrix.length; i++) {
+                for (int j = 0; j < matrix[i].length; j++) {
+                    String dump = String.format("%3d %3d %3d %.5f%n", i, j, k++, matrix[i][j]);
+                    if (fw != null) {
+                        fw.write(dump);
+                    } else {
+                        System.out.printf(dump);
+                    }
 
-                if (fileWriter != null) {
-                    fileWriter.write(String.format("%3d %.5f\n", k++, matrix[i][j]));
-                } else {
-                    System.out.printf("%3d %.5f\n", k++, matrix[i][j]);
                 }
             }
-        }
-        if (fileWriter != null) {
-            fileWriter.close();
         }
     }
 

@@ -23,76 +23,50 @@
  */
 package org.nmrfx.processor.gui;
 
-import java.io.IOException;
-import java.net.URL;
-import java.util.ResourceBundle;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.scene.Scene;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableView;
-import javafx.scene.control.cell.PropertyValueFactory;
-import javafx.scene.layout.Pane;
-import javafx.stage.Stage;
-import javafx.stage.StageStyle;
-import javafx.util.converter.DoubleStringConverter;
-import java.text.DecimalFormat;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
-import javafx.event.ActionEvent;
 import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.ScatterChart;
 import javafx.scene.chart.XYChart;
 import javafx.scene.chart.XYChart.Series;
-import javafx.scene.control.Alert;
-import javafx.scene.control.Button;
-import javafx.scene.control.ButtonType;
-import javafx.scene.control.CheckBox;
-import javafx.scene.control.ChoiceBox;
-import javafx.scene.control.ComboBox;
-import javafx.scene.control.Label;
-import javafx.scene.control.Menu;
-import javafx.scene.control.MenuButton;
-import javafx.scene.control.MenuItem;
-import javafx.scene.control.SelectionMode;
-import javafx.scene.control.Slider;
-import javafx.scene.control.TabPane;
+import javafx.scene.control.*;
 import javafx.scene.control.TableColumn.CellEditEvent;
-import javafx.scene.control.TablePosition;
-import javafx.scene.control.TextField;
-import javafx.scene.control.ToggleButton;
-import javafx.scene.control.ToolBar;
-import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.scene.control.cell.ComboBoxTableCell;
+import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.scene.input.KeyCode;
-import javafx.scene.layout.Background;
-import javafx.scene.layout.BackgroundFill;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.GridPane;
-import javafx.scene.layout.HBox;
+import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
+import javafx.stage.Stage;
+import javafx.stage.StageStyle;
 import javafx.util.StringConverter;
 import javafx.util.converter.DefaultStringConverter;
+import javafx.util.converter.DoubleStringConverter;
 import javafx.util.converter.FloatStringConverter;
 import javafx.util.converter.IntegerStringConverter;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.datasets.Nuclei;
-import org.nmrfx.peaks.AtomResPattern;
-import org.nmrfx.peaks.PeakDim;
-import org.nmrfx.peaks.SpectralDim;
+import org.nmrfx.peaks.*;
+import org.nmrfx.peaks.io.PeakPatternReader;
+import org.nmrfx.peaks.types.PeakListType;
+import org.nmrfx.peaks.types.PeakListTypes;
 import org.nmrfx.processor.datasets.Dataset;
-import org.nmrfx.peaks.Peak;
-import org.nmrfx.peaks.PeakList;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
+import org.nmrfx.utils.GUIUtils;
 import org.python.util.PythonInterpreter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.net.URL;
+import java.text.DecimalFormat;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  *
@@ -100,8 +74,10 @@ import org.python.util.PythonInterpreter;
  */
 public class PeakAttrController implements Initializable, PeakNavigable, PeakMenuTarget {
 
-    static final DecimalFormat formatter = new DecimalFormat();
+    private static final Logger log = LoggerFactory.getLogger(PeakAttrController.class);
 
+    static final DecimalFormat formatter = new DecimalFormat();
+    static PeakListTypes peakListTypes = null;
     private Stage stage;
     @FXML
     private TabPane tabPane;
@@ -123,6 +99,8 @@ public class PeakAttrController implements Initializable, PeakNavigable, PeakMen
     private TextField commentField;
     @FXML
     private TextField peakListNameField;
+    @FXML
+    private ChoiceBox<String> peakListTypeChoice;
     @FXML
     private ComboBox datasetNameField;
     @FXML
@@ -218,8 +196,8 @@ public class PeakAttrController implements Initializable, PeakNavigable, PeakMen
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
-        initMenuBar();
-        peakNavigator = PeakNavigator.create(this).initialize(peakNavigatorToolBar);
+        MenuButton peakListMenuButton = initMenuBar();
+        peakNavigator = PeakNavigator.create(this).initialize(peakNavigatorToolBar, peakListMenuButton);
         initTable();
         initReferenceTable();
         setFieldActions();
@@ -263,6 +241,19 @@ public class PeakAttrController implements Initializable, PeakNavigable, PeakMen
                 menu.getItems().add(item);
             }
         }
+        try {
+            if (peakListTypes == null) {
+                peakListTypes = PeakPatternReader.loadYaml();
+            }
+        } catch (IOException e) {
+            log.warn(e.getMessage(), e);
+        }
+        if (peakListTypes != null) {
+            for (PeakListType peakListType : peakListTypes.getTypes()) {
+                peakListTypeChoice.getItems().add(peakListType.getName());
+            }
+        }
+        peakListTypeChoice.setOnAction(this::setPeakListType);
 
         generateButton.setDisable(true);
 
@@ -333,12 +324,16 @@ public class PeakAttrController implements Initializable, PeakNavigable, PeakMen
             stage.setTitle("Peak Attributes");
             stage.show();
         } catch (IOException ioE) {
-            ioE.printStackTrace();
-            System.out.println(ioE.getMessage());
+            log.warn(ioE.getMessage(), ioE);
         }
 
         return controller;
 
+    }
+
+    public void selectTab(String tabName) {
+        var tabOpt = tabPane.getTabs().stream().filter(t -> t.getText().equals(tabName)).findFirst();
+        tabOpt.ifPresent(t -> tabPane.getSelectionModel().select(t));
     }
 
     public void refreshPeakView() {
@@ -456,6 +451,9 @@ public class PeakAttrController implements Initializable, PeakNavigable, PeakMen
             peakListNameField.setText(peakList.getName());
             datasetNameField.setValue(peakList.getDatasetName());
             conditionField.setValue(peakList.getSampleConditionLabel());
+            peakListTypeChoice.setOnAction(null);
+            peakListTypeChoice.setValue(peakList.getExperimentType());
+            peakListTypeChoice.setOnAction(this::setPeakListType);
             stage.setTitle(peakList.getName());
         } else {
             referenceTableView.getItems().clear();
@@ -495,9 +493,10 @@ public class PeakAttrController implements Initializable, PeakNavigable, PeakMen
         peakNavigator.setPeakList(peakList);
     }
 
-    void initMenuBar() {
+    MenuButton initMenuBar() {
         PeakMenuBar peakMenuBar = new PeakMenuBar(this);
-        peakMenuBar.initMenuBar(menuBar);
+        peakMenuBar.initMenuBar(menuBar, true);
+        return peakMenuBar.getPeakListMenu();
     }
 
     static class FloatStringConverter2 extends FloatStringConverter {
@@ -528,7 +527,9 @@ public class PeakAttrController implements Initializable, PeakNavigable, PeakMen
             } else {
             }
         }
-    };
+    }
+
+    ;
 
     static class TextFieldTableCellPeakLabel extends TextFieldTableCell<PeakDim, String> {
 
@@ -681,7 +682,7 @@ public class PeakAttrController implements Initializable, PeakNavigable, PeakMen
                         float value = Float.parseFloat(intensityField.getText().trim());
                         currentPeak.setIntensity(value);
                     } catch (NumberFormatException nfE) {
-
+                        log.warn("Unable to parse intensity field.", nfE);
                     }
 
                 }
@@ -694,7 +695,7 @@ public class PeakAttrController implements Initializable, PeakNavigable, PeakMen
                         float value = Float.parseFloat(volumeField.getText().trim());
                         currentPeak.setVolume1(value);
                     } catch (NumberFormatException nfE) {
-
+                        log.warn("Unable to parse volume field.", nfE);
                     }
 
                 }
@@ -858,6 +859,24 @@ public class PeakAttrController implements Initializable, PeakNavigable, PeakMen
         }
     }
 
+    void setPeakListType(ActionEvent actionEvent) {
+        String peakListTypeName = peakListTypeChoice.getValue();
+        peakListTypes.getTypes().stream().filter(pType -> pType.getName().equals(peakListTypeName)).findFirst().ifPresentOrElse(peakListType -> {
+            try {
+                peakListType.setPeakList(peakList);
+            } catch (IllegalArgumentException iaE) {
+                GUIUtils.warn("Set Peak List Type ", iaE.getMessage());
+            }
+
+        },this::setPeakListName);
+        referenceTableView.refresh();
+    }
+
+    void setPeakListName() {
+        String peakListTypeName = peakListTypeChoice.getValue();
+        PeakListType.setPeakList(peakList, peakListTypeName);
+    }
+
     void selectSimDataset() {
         String name = (String) simDatasetNameField.getValue();
         if (name != null) {
@@ -1019,7 +1038,7 @@ public class PeakAttrController implements Initializable, PeakNavigable, PeakMen
                     try {
                         sfH = Double.parseDouble(peakListParFields[0][1].getText());
                     } catch (NumberFormatException nfE) {
-
+                        log.warn("Unable to parse sfH.", nfE);
                     }
                     updateOptions();
                 }

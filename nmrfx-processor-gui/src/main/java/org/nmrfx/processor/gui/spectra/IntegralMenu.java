@@ -23,6 +23,7 @@ import javafx.scene.control.MenuItem;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.datasets.DatasetRegion;
 import org.nmrfx.processor.gui.PolyChart;
+import org.nmrfx.utils.GUIUtils;
 
 /**
  *
@@ -39,13 +40,18 @@ public class IntegralMenu extends ChartMenu {
     @Override
     public void makeChartMenu() {
         chartMenu = new ContextMenu();
-        int[] norms = {1, 2, 3, 4, 5, 6, 9, 100};
+        int[] norms = {1, 2, 3, 4, 5, 6, 9, 100, 0};
         for (var norm : norms) {
             final int iNorm = norm;
-            MenuItem normItem = new MenuItem(String.valueOf(iNorm));
-            normItem.setOnAction((ActionEvent e) -> {
-                setIntegralNorm(iNorm);
-            });
+            MenuItem normItem;
+            if (norm == 0) {
+                normItem = new MenuItem("Value...");
+                normItem.setOnAction((ActionEvent e) -> setIntegralNormToValue());
+
+            } else {
+                normItem = new MenuItem(String.valueOf(iNorm));
+                normItem.setOnAction((ActionEvent e) -> setIntegralNorm(iNorm));
+            }
 
             chartMenu.getItems().add(normItem);
         }
@@ -62,6 +68,20 @@ public class IntegralMenu extends ChartMenu {
         DatasetBase dataset = hit.getDatasetAttr().getDataset();
         dataset.setNorm(integral * dataset.getScale() / iNorm);
         chart.refresh();
+
+    }
+    void setIntegralNormToValue() {
+        DatasetRegion region = hit.getDatasetRegion();
+        double integral = region.getIntegral();
+        DatasetBase dataset = hit.getDatasetAttr().getDataset();
+        String normString = GUIUtils.input("Integral Norm Value");
+        try {
+            double norm = Double.parseDouble(normString);
+            dataset.setNorm(integral * dataset.getScale() / norm);
+            chart.refresh();
+        } catch (NumberFormatException ignored) {
+
+        }
 
     }
 

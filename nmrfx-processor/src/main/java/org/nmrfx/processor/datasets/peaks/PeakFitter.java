@@ -511,6 +511,7 @@ public class PeakFitter {
                 try {
                     peakFit.optimizeCMAES(nSteps);
                 } catch (TooManyEvaluationsException tmE) {
+                    log.warn(tmE.getMessage(), tmE);
                 } catch (Exception ex) {
                     log.error(ex.getMessage(), ex);
                 }
@@ -759,9 +760,7 @@ public class PeakFitter {
             updateBIC(rms, size, nPars);
 //            System.out.println("rms " + rms + " " + BIC);
         } catch (Exception ex) {
-
-            System.out.println(ex.getMessage());
-            ex.printStackTrace();
+            log.warn(ex.getMessage(), ex);
             return 0.0;
         }
         for (int iPeak = 0; iPeak < nPeaks; iPeak++) {

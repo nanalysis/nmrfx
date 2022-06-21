@@ -200,7 +200,7 @@ public class Align {
                 }
             }
         } catch (ArrayIndexOutOfBoundsException aiE) {
-            aiE.printStackTrace();
+            log.warn(aiE.getMessage(), aiE);
         }
         int delta = -iMax;
         CShift cShift = new CShift(delta, false);

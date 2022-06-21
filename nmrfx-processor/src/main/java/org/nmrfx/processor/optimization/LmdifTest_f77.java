@@ -22,7 +22,6 @@ import org.apache.commons.math3.linear.RealVector;
 
 public class LmdifTest_f77 {
     // epsmch is the machine precision
-
     static final double epsmch = 2.22044604926e-16;
     int evaluationCount = 0;
     double[] xv = null;
@@ -57,22 +56,6 @@ public class LmdifTest_f77 {
         } else {
             lmdifFunc = lmdifFuncs[funcNum];
         }
-
-        /*
-         try {
-         lmdifFunc = (Lmdif_fcn)  Class.forName("optimization.LmdifTest_f77.fexpc_f77").newInstance();
-         }
-         catch (java.lang.ClassNotFoundException cnfE) {
-         System.out.println(cnfE.toString());
-         }
-         catch (java.lang.InstantiationException iE) {
-         System.out.println(iE.toString());
-         iE.printStackTrace();
-         }
-         catch (java.lang.IllegalAccessException iaE) {
-         System.out.println(iaE.toString());
-         }
-         */
     }
 
     public String[] getEquations() {

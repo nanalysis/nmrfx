@@ -25,13 +25,13 @@ import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import org.controlsfx.control.StatusBar;
 import org.controlsfx.dialog.ExceptionDialog;
-import org.nmrfx.analyst.gui.AtomController;
+import org.nmrfx.analyst.gui.molecule.AtomController;
 import org.nmrfx.analyst.gui.molecule.MoleculeCanvas;
 import org.nmrfx.analyst.gui.molecule.SSViewer;
 import org.nmrfx.chemistry.*;
-import org.nmrfx.peaks.FreezeListener;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakList;
+import org.nmrfx.peaks.events.FreezeListener;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.project.Project;
 import org.nmrfx.structure.chemistry.Molecule;
@@ -152,6 +152,7 @@ public class MolSceneController implements Initializable, MolSelectionListener, 
                     selectAction(selectField.getText());
                     selectField.clear();
                 } catch (InvalidMoleculeException ex) {
+                    log.warn(ex.getMessage(), ex);
                 }
             }
         });
@@ -185,8 +186,7 @@ public class MolSceneController implements Initializable, MolSelectionListener, 
             stage.setTitle("Molecular Viewer");
             stage.show();
         } catch (IOException ioE) {
-            ioE.printStackTrace();
-            System.out.println(ioE.getMessage());
+            log.warn(ioE.getMessage(), ioE);
         }
 
         return controller;
@@ -859,12 +859,13 @@ public class MolSceneController implements Initializable, MolSelectionListener, 
                     return new Task() {
                         protected Object call() {
                             script = getScript();
-                            PythonInterpreter processInterp = new PythonInterpreter();
-                            updateStatus("Start calculating");
-                            updateTitle("Start calculating");
-                            processInterp.exec("import os\nfrom refine import *\nfrom molio import readYamlString\nimport osfiles");
-                            processInterp.set("yamlString", genYaml());
-                            processInterp.exec(script);
+                            try (PythonInterpreter processInterp = new PythonInterpreter()) {
+                                updateStatus("Start calculating");
+                                updateTitle("Start calculating");
+                                processInterp.exec("import os\nfrom refine import *\nfrom molio import readYamlString\nimport osfiles");
+                                processInterp.set("yamlString", genYaml());
+                                processInterp.exec(script);
+                            }
                             return 0;
                         }
                     };

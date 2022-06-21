@@ -42,6 +42,7 @@ import java.util.Set;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 /**
  *
@@ -123,9 +124,15 @@ public class GUIProject extends ProjectBase {
         clearAllPeakLists();
         clearAllDatasets();
         MainApp.closeAll();
-
     }
 
+    public static boolean checkProjectActive() {
+        ProjectBase project = ProjectBase.getActive();
+        boolean hasMolecules = !MoleculeFactory.getMolecules().isEmpty();
+        boolean hasDatasets =  project != null && !project.getDatasets().isEmpty();
+        boolean hasPeakLists = project != null && !project.getPeakLists().isEmpty();
+        return hasMolecules || hasDatasets || hasPeakLists;
+    }
     public void clearAllMolecules() {
         MoleculeFactory.clearAllMolecules();
     }
@@ -252,6 +259,7 @@ public class GUIProject extends ProjectBase {
 
                 }
             } catch (DirectoryIteratorException | IOException ex) {
+                log.warn(ex.getMessage(), ex);
             }
         }
         if (sstructPath != null) {
@@ -305,34 +313,37 @@ public class GUIProject extends ProjectBase {
         Pattern pattern = Pattern.compile("(.+)\\.(seq|pdb|mol|sdf)");
         Predicate<String> predicate = pattern.asPredicate();
         if (Files.isDirectory(directory)) {
-            Files.list(directory).sequential().filter(path -> predicate.test(path.getFileName().toString())).
-                    sorted(new FileComparator()).
-                    forEach(path -> {
-                        String pathName = path.toString();
-                        String fileName = path.getFileName().toString();
-                        Matcher matcher = pattern.matcher(fileName);
-                        String baseName = matcher.group(1);
-                        System.out.println("read mol: " + pathName);
+            try (Stream<Path> files = Files.list(directory)) {
+                files.sequential().filter(path -> predicate.test(path.getFileName().toString())).
+                        sorted(new FileComparator()).
+                        forEach(path -> {
+                            String pathName = path.toString();
+                            String fileName = path.getFileName().toString();
+                            Matcher matcher = pattern.matcher(fileName);
+                            String baseName = matcher.group(1);
+                            System.out.println("read mol: " + pathName);
 
-                        try {
-                            if (fileName.endsWith(".seq")) {
-                                Sequence sequence = new Sequence();
-                                sequence.read(pathName);
-                            } else if (fileName.endsWith(".pdb")) {
-                                if (mol.entities.isEmpty()) {
-                                    pdbReader.readSequence(pathName, false, 0);
-                                } else {
-                                    PDBFile.readResidue(pathName, null, mol, baseName);
+                            try {
+                                if (fileName.endsWith(".seq")) {
+                                    Sequence sequence = new Sequence();
+                                    sequence.read(pathName);
+                                } else if (fileName.endsWith(".pdb")) {
+                                    if (mol.entities.isEmpty()) {
+                                        pdbReader.readSequence(pathName, false, 0);
+                                    } else {
+                                        PDBFile.readResidue(pathName, null, mol, baseName);
+                                    }
+                                } else if (fileName.endsWith(".sdf")) {
+                                    SDFile.read(pathName, null, mol, baseName);
+                                } else if (fileName.endsWith(".mol")) {
+                                    SDFile.read(pathName, null, mol, baseName);
                                 }
-                            } else if (fileName.endsWith(".sdf")) {
-                                SDFile.read(pathName, null, mol, baseName);
-                            } else if (fileName.endsWith(".mol")) {
-                                SDFile.read(pathName, null, mol, baseName);
+                            } catch (MoleculeIOException molE) {
+                                log.warn(molE.getMessage(), molE);
                             }
-                        } catch (MoleculeIOException molE) {
-                        }
 
-                    });
+                        });
+            }
         }
     }
 
@@ -341,14 +352,16 @@ public class GUIProject extends ProjectBase {
         Pattern pattern = Pattern.compile("(.+)\\.(txt|ppm)");
         Predicate<String> predicate = pattern.asPredicate();
         if (Files.isDirectory(directory)) {
-            Files.list(directory).sequential().filter(path -> predicate.test(path.getFileName().toString())).
-                    sorted(new FileComparator()).
-                    forEach(path -> {
-                        String fileName = path.getFileName().toString();
-                        Optional<Integer> fileNum = getIndex(fileName);
-                        int ppmSet = fileNum.isPresent() ? fileNum.get() : 0;
-                        PPMFiles.readPPM(mol, path, ppmSet, refMode);
-                    });
+            try (Stream<Path> files = Files.list(directory)) {
+                files.sequential().filter(path -> predicate.test(path.getFileName().toString())).
+                        sorted(new FileComparator()).
+                        forEach(path -> {
+                            String fileName = path.getFileName().toString();
+                            Optional<Integer> fileNum = getIndex(fileName);
+                            int ppmSet = fileNum.isPresent() ? fileNum.get() : 0;
+                            PPMFiles.readPPM(mol, path, ppmSet, refMode);
+                        });
+            }
         }
     }
 
