@@ -68,8 +68,6 @@ public class DatasetsController implements Initializable, PropertyChangeListener
 
     private static final Logger log = LoggerFactory.getLogger(DatasetsController.class);
 
-    static final DecimalFormat formatter = new DecimalFormat();
-
     private Stage stage;
     @FXML
     private ToolBar toolBar;
