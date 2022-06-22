@@ -23,7 +23,9 @@
  */
 package org.nmrfx.processor.gui;
 
+import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ReadOnlyObjectWrapper;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
@@ -233,8 +235,18 @@ public class DatasetsController implements Initializable, PropertyChangeListener
         nDimCol.setEditable(false);
 
         TableColumn<DatasetBase, Boolean> posDrawOnCol = new TableColumn<>("on");
-        posDrawOnCol.setCellValueFactory(new PropertyValueFactory<>("posDrawOn"));
-        posDrawOnCol.setCellFactory(tc -> new CheckBoxTableCell<>());
+        posDrawOnCol.setCellValueFactory(new PropertyValueFactory<>("negDrawOn"));
+        posDrawOnCol.setCellFactory(col -> {
+            CheckBoxTableCell<DatasetBase, Boolean> cell = new CheckBoxTableCell<>(index -> {
+                BooleanProperty active = new SimpleBooleanProperty(tableView.getItems().get(index).getPosDrawOn());
+                active.addListener((obs, wasActive, isNowActive) -> {
+                    DatasetBase item = tableView.getItems().get(index);
+                    item.setPosDrawOn(isNowActive);
+                });
+                return active;
+            });
+            return cell;
+        });
         posDrawOnCol.setPrefWidth(25);
         posDrawOnCol.setMaxWidth(25);
         posDrawOnCol.setResizable(false);
@@ -271,7 +283,17 @@ public class DatasetsController implements Initializable, PropertyChangeListener
 
         TableColumn<DatasetBase, Boolean> negDrawOnCol = new TableColumn<>("on");
         negDrawOnCol.setCellValueFactory(new PropertyValueFactory<>("negDrawOn"));
-        negDrawOnCol.setCellFactory(tc -> new CheckBoxTableCell<>());
+        negDrawOnCol.setCellFactory(col -> {
+            CheckBoxTableCell<DatasetBase, Boolean> cell = new CheckBoxTableCell<>(index -> {
+                BooleanProperty active = new SimpleBooleanProperty(tableView.getItems().get(index).getNegDrawOn());
+                active.addListener((obs, wasActive, isNowActive) -> {
+                    DatasetBase item = tableView.getItems().get(index);
+                    item.setNegDrawOn(isNowActive);
+                });
+                return active;
+            });
+            return cell;
+        });
         negDrawOnCol.setPrefWidth(25);
         negDrawOnCol.setMaxWidth(25);
         negDrawOnCol.setResizable(false);

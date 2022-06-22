@@ -845,16 +845,8 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
         }
         setPosColor(Color.valueOf(theFile.getPosColor()));
         setNegColor(Color.valueOf(theFile.getNegColor()));
-
-        if ((theFile.getPosneg() & 2) == 2) {
-            setNegColor(Color.RED);
-            setNeg(true);
-        }
-
-        if ((theFile.getPosneg() & 1) != 1) {
-            setPosColor(Color.BLACK);
-            setPos(false);
-        }
+        setNeg(theFile.getNegDrawOn());
+        setPos(theFile.getPosDrawOn());
         hasLevel = false;
     }
 

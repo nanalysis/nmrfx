@@ -62,7 +62,8 @@ public class DatasetBase {
     protected boolean[] freqDomain_r;
     protected boolean[] axisReversed;
     protected double[][] rmsd;
-    protected int posneg;
+    protected boolean posDrawOn;
+    protected boolean negDrawOn;
     protected double lvl;
     protected double scale = 1.0;
     protected int rdims;
@@ -260,7 +261,8 @@ public class DatasetBase {
         lvl = 0.0;
         scale = 1.0;
         rdims = nDim;
-        posneg = 1;
+        posDrawOn = true;
+        negDrawOn = false;
 
         //rdims = 0;
         //theFile.dataType = 0;
@@ -1558,7 +1560,14 @@ public class DatasetBase {
      * @return the mode
      */
     public int getPosneg() {
-        return posneg;
+        int result = 0;
+        if (posDrawOn) {
+            result = 1;
+        }
+        if (negDrawOn) {
+            result |= 2;
+        }
+        return result;
     }
 
     /**
@@ -1569,7 +1578,25 @@ public class DatasetBase {
      * @param posneg the posneg to set
      */
     public void setPosneg(int posneg) {
-        this.posneg = posneg;
+        posDrawOn =  (posneg & 1) != 0;
+        negDrawOn =  (posneg & 2) != 0;
+    }
+
+
+    public boolean getPosDrawOn() {
+        return posDrawOn;
+    }
+
+    public void setPosDrawOn(boolean state) {
+        posDrawOn = state;
+    }
+
+    public boolean getNegDrawOn() {
+        return negDrawOn;
+    }
+
+    public void setNegDrawOn(boolean state) {
+        negDrawOn = state;
     }
 
     /**
