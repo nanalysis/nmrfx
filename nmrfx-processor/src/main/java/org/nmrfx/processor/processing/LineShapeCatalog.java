@@ -343,7 +343,6 @@ public class LineShapeCatalog {
             double frac = (lw - lws[iUpper - 1]) / (lws[iUpper] - lws[iUpper - 1]);
             dIndex = (iUpper - 1) + frac;
         }
-        //System.out.println(iDim + " " + iUpper + " " + dIndex + " " + lw + " " + n);
         return dIndex;
     }
 
@@ -373,7 +372,6 @@ public class LineShapeCatalog {
             if (indices[i] < 0) {
                 indices[i] = 0;
             }
-            // System.out.printf("%1d %4.2f %2d %7.1f %4d %4.2f %1d %2d\n", nFrac, lw, index, ptD, center[i], frac, offset, indices[i]);
 
         }
         addToDataset(dataset, indices, center, scale * peak.getIntensity());
@@ -390,7 +388,6 @@ public class LineShapeCatalog {
             values[i] = interpolate(i, ptD, lwPt);
             center[i] = (int) Math.round(ptD);
         }
-//        System.out.println(peak.getName());
         return addToDatasetInterpolated(dataset, values, center,
                 scale * peak.getIntensity(), lvl);
     }
@@ -406,8 +403,6 @@ public class LineShapeCatalog {
         frac = Math.abs(frac);
         int offset = (int) Math.floor(frac * nFrac);
         double frac2 = nFrac * frac - offset;
-//        System.out.printf("%7.2f %3d %7.2f", ptD, ctr, frac);
-//        System.out.printf(" %3d %3d %3d %7.2f %b ", offset, index1, index2, frac2, reverse);
         return interpolate(iDim, lwIndex, offset, frac2, reverse);
 
     }
@@ -416,7 +411,6 @@ public class LineShapeCatalog {
             double fP, boolean reverse) {
         int lwIndex1 = (int) Math.floor(lwIndex) * nFrac;
         int lwIndex2 = lwIndex1 + nFrac;
-        //System.out.printf("%d %7.2f %d %7.2f %b %2d", iDim, lwIndex, offset, fP, reverse, lwIndex1);
         double fL = lwIndex - Math.floor(lwIndex);
         int index1 = lwIndex1 + offset;
         int index2 = lwIndex2 + offset;
@@ -462,7 +456,6 @@ public class LineShapeCatalog {
                     ok = false;
                     break;
                 }
-//                System.out.print(j + " " + pt[j] + " " + dpt[j] + " ");
             }
             if (ok) {
                 double dataValue = dataset.readPointRaw(dpt);
@@ -470,7 +463,6 @@ public class LineShapeCatalog {
                 for (int j = 0; j < values.length; j++) {
                     value *= values[j][pt[j]];
                 }
-//            System.out.printf("%10.5f %10.5f %4d\n", value, dataValue, k);
                 dataValue += value;
                 if (lvl != null) {
                     if (dataValue > lvl) {
@@ -507,7 +499,6 @@ public class LineShapeCatalog {
                     ok = false;
                     break;
                 }
-//                System.out.print(j + " " + pt[j] + " " + dpt[j] + " ");
             }
             if (ok) {
                 double dataValue = dataset.readPointRaw(dpt);
@@ -515,7 +506,6 @@ public class LineShapeCatalog {
                 for (int j = 0; j < indices.length; j++) {
                     value *= data[j][indices[j]][pt[j]];
                 }
-//            System.out.printf("%10.5f %10.5f %4d\n", value, dataValue, k);
                 dataValue += value;
                 dataset.writePoint(dpt, dataValue);
             }

@@ -78,11 +78,11 @@ public class BigMappedMatrixFile implements DatasetStorageInterface, Closeable {
     void init() throws IOException {
         int blockHeaderSize = layout.getBlockHeaderSize() / BYTES;
         long matSize = BYTES;
-        System.err.println(dataset.getFileName());
-        System.err.println("header size " + layout.getFileHeaderSize());
+        log.info(dataset.getFileName());
+        log.info("header size {}", layout.getFileHeaderSize());
         strides[0] = 1;
         for (int i = 0; i < dataset.getNDim(); i++) {
-            System.err.println("big map " + i + " " + layout.blockSize[i] + " " + layout.nBlocks[i] + " " + dataset.getSizeTotal(i));
+            log.info("big map {} {} {} {}", i, layout.blockSize[i], layout.nBlocks[i], dataset.getSizeTotal(i));
             matSize *= (layout.blockSize[i] + blockHeaderSize) * layout.nBlocks[i];
             // strides only relevant if no block header and not submatrix
             if (i > 0) {
@@ -226,9 +226,7 @@ public class BigMappedMatrixFile implements DatasetStorageInterface, Closeable {
         long p = bytePosition(offsets);
         int mapN = (int) (p / mapSize);
         int offN = (int) (p % mapSize);
-//        if (mapN > 0) {
-//            System.err.println(p);
-//        }
+
         try {
             if (dataType == 0) {
                 getMapping(mapN).putFloat(offN, d);
@@ -257,7 +255,7 @@ public class BigMappedMatrixFile implements DatasetStorageInterface, Closeable {
             } catch (Exception e) {
                 log.warn(e.getMessage(), e);
             } finally {
-                System.out.println("close rafile");
+                log.info("close rafile");
                 raFile.close();
                 raFile = null;
             }
@@ -275,7 +273,7 @@ public class BigMappedMatrixFile implements DatasetStorageInterface, Closeable {
                 sum += getMapping(mapN).getFloat(offN);
             } catch (IOException e) {
                 MappedByteBuffer mapping = getMapping(mapN);
-                System.out.println(mapN + " Err " + offN + " " + mapping.capacity() + " " + mapping.limit());
+                log.error("{} Err {} {} {}", mapN, offN , mapping.capacity(), mapping.limit());
                 System.exit(0);
             }
         }
@@ -292,7 +290,7 @@ public class BigMappedMatrixFile implements DatasetStorageInterface, Closeable {
             try {
                 sum += mapping.getFloat(p);
             } catch (Exception e) {
-                System.out.println(p + " Err " + mapping.capacity() + " " + mapping.limit());
+                log.error("{} Err {} {}", p, mapping.capacity(), mapping.limit());
                 System.exit(0);
             }
         }
@@ -311,7 +309,7 @@ public class BigMappedMatrixFile implements DatasetStorageInterface, Closeable {
                     getMapping(mapN).putInt(offN, 0);
                 }
             } catch (java.lang.IndexOutOfBoundsException iOBE) {
-                System.err.println("out of bounds at " + i + " " + mapN + " " + offN);
+                log.warn("out of bounds at {} {} {}", i, mapN, offN);
                 throw iOBE;
             }
         }

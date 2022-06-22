@@ -252,7 +252,6 @@ public class Mol2File {
                         break;
                 }
 
-                //System.err.println (iBond + " " + jBond + " " + atomList.size ());
                 if (atomList != null) {
                     if ((iBond < atomList.size()) && (jBond < atomList.size())) {
                         Atom atom1 = (Atom) atomList.get(iBond);
@@ -262,8 +261,7 @@ public class Mol2File {
 
                         Atom.addBond(atom1, atom2, Order.getOrder(order), stereo, false);
                     } else {
-                        System.err.println("error in adding bond to molecule "
-                                + molName);
+                        log.warn("error in adding bond to molecule {}", molName);
                     }
                 }
             } catch (NumberFormatException nFE) {

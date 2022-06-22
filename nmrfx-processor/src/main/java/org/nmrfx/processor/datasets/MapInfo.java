@@ -85,7 +85,6 @@ public class MapInfo {
                 }
                 mapMap.put(this, this);
             }
-//System.out.println(size + " " + nMaps + " " + start);
         } catch (IOException e) {
             raFile.close();
             throw e;

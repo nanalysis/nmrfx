@@ -153,7 +153,6 @@ public class ComplexSingularValueDecomposition {
                 axkk1 = xkk1.abs();
                 xdata[k][k + 1] = new Complex(axkk1);
                 e[k] = axkk1;
-                //System.out.println("e[" + k + "]:" + e[k]);
                 scale = xkk1.conjugate().divide(axkk1);
                 if (k < xrow) {
                     xk1k1 = xdata[k][k + 1];// X.getEntry(k + 1, k + 1);
@@ -699,8 +698,6 @@ public class ComplexSingularValueDecomposition {
          */
         public static void genr(double x, double y, Rot P) {
             double s = FastMath.abs(x) + FastMath.abs(y);
-//            System.out.println("cmd genr");
-//            System.out.println(s);
 
             if (s == 0.) {
                 P.c = 1.;

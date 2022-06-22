@@ -164,7 +164,6 @@ public class LorentzGaussND implements MultivariateFunction {
         // double result = Math.sqrt(sum / positions.length);
         double result = sum / (positions.length * nDelays);
         //dumpArray(parameters);
-        //System.out.println(result);
         if ((best == null) || (best.getValue() > result)) {
             best = new PointValuePair(parameters, result);
         }

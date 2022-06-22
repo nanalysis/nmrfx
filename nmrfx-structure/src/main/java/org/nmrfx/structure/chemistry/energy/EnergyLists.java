@@ -404,7 +404,6 @@ public class EnergyLists {
             //entity - component of the molecule (could be individual residue or polymer)
             entity = (Entity) e.next();
 
-            //System.out.println(entity.name);
             if (entity instanceof Polymer) {
                 Polymer polymer = (Polymer) entity;
                 //residue - each monomer of the polymer
@@ -935,7 +934,6 @@ public class EnergyLists {
                     if (Double.isNaN(rotamerEnergy) || !Double.isFinite(rotamerEnergy)) {
                         System.out.println("rotamer nan " + rotamerScores.length);
                     }
-//                    System.out.printf("%10s %5.3g  ", residue.toString(), rotamerEnergy);
                     if (calcDeriv) {
                         Map<Integer, Double> rotDerivs = RNARotamer.calcDerivs(rotamerScores, rotamerEnergy);
                         for (int atomIndex : rotDerivs.keySet()) {
@@ -952,7 +950,6 @@ public class EnergyLists {
                         }
                     }
                     totalEnergy += (forceWeight.getDihedralProb() * rotamerEnergy);
-//                    System.out.println();
                 }
 
             }
@@ -1280,14 +1277,10 @@ public class EnergyLists {
             for (Atom atom : atoms) {
                 if (atom.rotUnit != -1) {
                     int unit = atom.rotUnit;
-                    //System.out.println("Unit "+unit + " " + atom.getFullName());
                     if (unit >= 0) {
                         int i = 0;
                         for (Atom branchAtom : atom.branchAtoms) {
                             if ((branchAtom != null) && branchAtom.rotActive) {
-                                //System.out.println("BranchAtom " + branchAtom.getFullName());
-                                //System.out.println("BranchUnit "+branchAtom.rotGroup.getFullName());
-                                //System.out.println("BranchUnit "+branchAtom.rotUnit + " " + branches[branchAtom.rotUnit]);
                                 branches[unit].branches[i++] = branches[branchAtom.rotUnit];
                                 branches[branchAtom.rotUnit].prev = branches[unit];
                             }
@@ -1428,14 +1421,10 @@ public class EnergyLists {
         double[] df = new double[n];
         try {
             for (int i = n - 1; i >= 0; i--) {
-                //System.out.println("recur " + i + " " + branches[i].branches.length);
                 for (int j = 0; j < branches[i].branches.length; j++) {
                     if (branches[i].branches[j] != null) {
-                        //System.out.println("recur " + branches[i].atom.getFullName() + " " + branches[i].branches[j].atom.getFullName());
                         branches[i].addToF(branches[i].branches[j].farr);
                         branches[i].addToG(branches[i].branches[j].garr);
-                    } else {
-                        //System.out.println("null branch");
                     }
                 }
             }

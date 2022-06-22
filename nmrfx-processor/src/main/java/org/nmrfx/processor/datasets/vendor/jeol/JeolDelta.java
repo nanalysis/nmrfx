@@ -223,7 +223,6 @@ public class JeolDelta implements NMRData {
             ref = refValue[dim];
         } else {
             ref = parMap.get(axisNames[dim] + "_OFFSET").getDouble();
-            //System.out.println("update ref " + ref + " " + (sw[dim] / sf[dim] / 2.0));
             // ref = ref + sw[dim] / sf[dim] / 2.0;
             refValue[dim] = ref;
 
@@ -842,8 +841,12 @@ public class JeolDelta implements NMRData {
     }
 
     public void dumpPars() {
-        for (String key : parMap.keySet()) {
-            System.out.println(parMap.get(key));
+        if (log.isDebugEnabled()) {
+            StringBuilder parString = new StringBuilder();
+            for (String key : parMap.keySet()) {
+                parString.append(parMap.get(key)).append(System.lineSeparator());
+            }
+            log.debug(parString.toString());
         }
     }
 
@@ -926,8 +929,7 @@ public class JeolDelta implements NMRData {
             raFile.seek(newPos);
             raFile.read(dataBytes, 0, length);
         } catch (IOException e) {
-            System.err.println("Unable to read from dataset.");
-            System.err.println(e.getMessage());
+            log.warn("Unable to read from dataset. {}", e.getMessage(), e);
         }
     }
 
@@ -951,7 +953,6 @@ public class JeolDelta implements NMRData {
             position[iDim] = i;
             int pos = getPositionInStrip(position);
             vector[j++] = strips[iSection].doubleBuffer.get(pos);
-            // System.out.println(i + " " + pos + " " + iSection + " " + strips[iSection].doubleBuffer.capacity() + " " + vector[j - 1]);
         }
         return vector;
     }

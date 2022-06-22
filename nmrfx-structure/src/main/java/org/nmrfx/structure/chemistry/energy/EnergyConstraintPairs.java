@@ -17,6 +17,8 @@ import java.util.Set;
 import org.nmrfx.chemistry.Atom;
 import static org.nmrfx.structure.chemistry.energy.AtomMath.RADJ;
 import org.nmrfx.structure.fastlinear.FastVector3D;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -24,6 +26,7 @@ import org.nmrfx.structure.fastlinear.FastVector3D;
  */
 public class EnergyConstraintPairs extends EnergyDistancePairs {
 
+    private static final Logger log = LoggerFactory.getLogger(EnergyConstraintPairs.class);
     int[] iGroups;
     int[] groupSizes;
     double[] rUp2;
@@ -70,7 +73,7 @@ public class EnergyConstraintPairs extends EnergyDistancePairs {
                     eCoords.setFixed(i, j, true);
                 }
             } else {
-                System.out.println("null fixed");
+                log.info("null fixed");
             }
             nPairs = iPair + 1;
         }
@@ -164,7 +167,6 @@ public class EnergyConstraintPairs extends EnergyDistancePairs {
             swapIt(i);
         }
 //        double restoreSwap = swapEnergy(swaps);
-//        System.out.printf("%3d %10s %8.3f %8.3f %8.3f\n", i, atoms[i].getFullName(), preSwap, postSwap, restoreSwap);
     }
 
     double swapEnergy(Set<Integer> swaps) {
@@ -208,16 +210,18 @@ public class EnergyConstraintPairs extends EnergyDistancePairs {
     }
 
     public void dumpSwap(int iAtom, Set<Integer> set) {
-        Atom[] atoms = eCoords.atoms;
-        System.out.print(atoms[iAtom].getFullName());
-        for (Integer k : set) {
-            int groupSize = groupSizes[k];
-            for (int kk = 0; kk < groupSize; kk++) {
-                int ik = kk + k;
-                System.out.print(" " + k + " " + ik + " " + atoms[iAtoms[ik]].getFullName() + " " + atoms[jAtoms[ik]].getFullName());
+        if (log.isDebugEnabled()) {
+            Atom[] atoms = eCoords.atoms;
+            StringBuilder swapStr = new StringBuilder(atoms[iAtom].getFullName());
+            for (Integer k : set) {
+                int groupSize = groupSizes[k];
+                for (int kk = 0; kk < groupSize; kk++) {
+                    int ik = kk + k;
+                    swapStr.append(" ").append(k).append(" ").append(ik).append(" ").append(atoms[iAtoms[ik]].getFullName()).append(" ").append(atoms[jAtoms[ik]].getFullName());
+                }
             }
+            log.debug(swapStr.toString());
         }
-        System.out.println("");
     }
 
     public double calcEnergy(boolean calcDeriv, double weight) {
@@ -367,7 +371,7 @@ public class EnergyConstraintPairs extends EnergyDistancePairs {
                 prevGroup = iGroup;
             }
         } catch (IOException e) {
-            System.err.println("Error dumping NMRFxS restraints. Exception : " + e);
+            log.warn("Error dumping NMRFxS restraints. {}", e.getMessage(), e);
         }
 
     }

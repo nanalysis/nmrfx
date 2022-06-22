@@ -69,7 +69,6 @@ public class EnergyDistancePairs extends EnergyPairs {
                 }
             }
         }
-//        System.out.println("repel " + nPairs + " " + sum);
 
         return sum;
     }
