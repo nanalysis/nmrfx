@@ -114,12 +114,10 @@ public class VecAutoPhase {
         im = ((Math.cos(newphase) * cvec[icenter].getImaginary())
                 + (Math.sin(newphase) * cvec[icenter].getReal()));
 
-        //System.out.println(dcSum+" "+dsSum+" "+num+" "+dem+" "+re+" "+im+" "+newphase*180.0/Math.PI);
         if (re < im) {
             newphase += Math.PI;
         }
 
-        //System.out.println(la+" "+ra+" "+f+" "+Math.atan(1.0-f)*180.0/Math.PI+" "+newphase*180.0/Math.PI);
         if (asym) {
             if (ra > la) {
                 f = la / ra;
@@ -130,18 +128,15 @@ public class VecAutoPhase {
             }
         }
 
-        //System.out.println(la+" "+ra+" "+f+" "+Math.atan(1.0-f)*180.0/Math.PI+" "+newphase*180.0/Math.PI+" hi ");
         newphase = (newphase * 180.0) / Math.PI;
 
         /*
-         //System.out.println("adjust");
          if (Math.abs (dcc) > Math.abs (dsc)) {
          newphase = newphase * 180.0 / Math.PI + 90.0;
          } else {
          newphase = newphase * 180.0 / Math.PI;
          }
          */
-        //System.out.println(dcc+" "+dsc+" "+f+" "+Math.atan(1.0-f)*180.0/Math.PI+" "+newphase);
         return (newphase);
     }
 

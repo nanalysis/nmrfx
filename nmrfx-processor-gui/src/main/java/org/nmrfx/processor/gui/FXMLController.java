@@ -1896,7 +1896,6 @@ public class FXMLController implements  Initializable, PeakNavigable {
                 chart.setAxisState(true, true);
             }
             double[] borders = chart.getMinBorders();
-//            System.out.println("prepare " + iChild + " " + iRow + " " + iCol + " " + borders[0] + " " + borders[1] + " " + borders[2] + " " + borders[3]);
             bordersGrid[0][iCol] = Math.max(bordersGrid[0][iCol], borders[0]);
             bordersGrid[1][iCol] = Math.max(bordersGrid[1][iCol], borders[1]);
             bordersGrid[2][iRow] = Math.max(bordersGrid[2][iRow], borders[2]);

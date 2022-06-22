@@ -219,9 +219,7 @@ public class NMRNEFWriter {
                     }
                 }
                 //collapse = atom.getStereo() == -1 ? 2 : atom.getStereo() == 0 ? 1 : 0;
-//                System.out.println("write  methyl  " + atom.getFullName() + " " + sameShift + " " + atom.getStereo() + " " + collapse);
             } else if (atom.isMethylene()) {
-//                System.out.println(atom.getFullName() + " " + atom.getPartners(1).toString());
                 List<List<Atom>> partners = atom.getPartners(1);
                 sameShift = checkPartnerShifts(atom, partners);
                 if (sameShift > 0) {
@@ -231,7 +229,6 @@ public class NMRNEFWriter {
                 }
                 //partnerOpt = atom.getMethylenePartner();
             } else if (atom.isAromaticFlippable()) {
-//                System.out.println(atom.getFullName() + " " + atom.getPartners(1).toString());
                 List<List<Atom>> partners = atom.getPartners(-1);
                 sameShift = checkPartnerShifts(atom, partners);
                 if (sameShift > 0) {
@@ -243,7 +240,6 @@ public class NMRNEFWriter {
             } else {
                 // check for aromatic atoms
                 List<Object> equiv = atom.getEquivalency();
-                //   System.out.println(atom.getFullName());
                 if (equiv.size() > 3) {
                     Object obj = equiv.get(2);
                     int shell = (Integer) obj;
@@ -257,9 +253,6 @@ public class NMRNEFWriter {
                         }
                     }
                 }
-//                for (Object obj : equiv) {
-//                    System.out.println(obj.toString());
-//                }
             }
 
             if (partnerOpt.isPresent()) {
@@ -274,7 +267,6 @@ public class NMRNEFWriter {
             if (writeLine) {
                 String result = atom.ppmToNEFString(iPPM, i, collapse, sameShift);
                 if (result != null) {
-//                    System.out.println("writer writePPM: iPPM = " + iPPM + " i = " + i);
                     chan.write(result + "\n");
                     i++;
                 }
@@ -323,7 +315,6 @@ public class NMRNEFWriter {
                 String pairName = atom1.getFullName() + "_" + atom2.getFullName();
                 pairNames.add(pairName);
             }
-            // System.out.println(pairNames.toString());
 
             for (int iPair = 0; iPair < nPairs; iPair++) {
                 AtomDistancePair pair = pairAtoms[iPair];
@@ -354,8 +345,7 @@ public class NMRNEFWriter {
                     List<List<Atom>> partners = atom1.getPartners(1);
                     if (partners.size() > 0) {
                         int commonLevel = checkPartnerInGroup(atom2, partners, pairNames, true);
-//                        System.out.println(atom2.getFullName() + " " + pairNames);
-//                        System.out.println(partners + " " + commonLevel);
+
                         if (commonLevel > 0) {
                             if (!checkFirstPartner(atom1, partners, commonLevel)) {
                                 skipPair[iPair] = true;
@@ -392,8 +382,6 @@ public class NMRNEFWriter {
                     List<List<Atom>> partners = atom2.getPartners(1);
                     if (partners.size() > 0) {
                         int commonLevel = checkPartnerInGroup(atom1, partners, pairNames, false);
-//                        System.out.println(atom2.getFullName() + " " + pairNames);
-//                        System.out.println(partners + " " + commonLevel);
                         if (commonLevel > 0) {
                             if (!checkFirstPartner(atom2, partners, commonLevel)) {
                                 skipPair[iPair] = true;

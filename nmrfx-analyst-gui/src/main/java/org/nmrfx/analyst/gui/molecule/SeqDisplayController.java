@@ -836,10 +836,6 @@ public class SeqDisplayController implements Initializable {
                                     Color color1 = colors2ndStr[sortedStates.get(0)];
                                     Color color2 = colors2ndStr[sortedStates.get(1)];
                                     double f = f1 / (f1 + f2);
-//                                System.out.println(resAnalysis.toString());
-//                                System.out.println(sortedStates.toString());
-//                                System.out.printf("%.3f %.3f %.3f\n",f1,f2,f);
-//                                System.out.println(color1.toString() + " " + color2.toString());
                                     color = color2.interpolate(color1, f);
                                 }
                             }

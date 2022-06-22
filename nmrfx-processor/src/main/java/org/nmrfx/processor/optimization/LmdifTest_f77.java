@@ -313,27 +313,6 @@ public class LmdifTest_f77 {
             //lmdiftest.nfev = 0;
             Minpack_f77.lmdif1_f77(lmdifFunc, m, n, a, fvec, tol, info);
             lmdifFunc.fcn(m, n, a, fvec, iflag);
-
-            //System.out.println("\n Initial L2 norm of the residuals: " + fnorm1 +
-            //"\n Final L2 norm of the residuals: " + fnorm2);
-            //for (i=1;i<a.length;i++) {
-            //System.out.println(a[i]);
-            //}
-            /*
-             na[ic] = n;
-             ma[ic] = m;
-             nf[ic] = lmdiftest.nfev;
-             na[ic] = info[1];
-
-             fnm[ic] = fnorm2;
-
-             System.out.print("\n Initial L2 norm of the residuals: " + fnorm1 +
-             "\n Final L2 norm of the residuals: " + fnorm2 +
-             "\n Number of function evaluations: " + nf[ic] +
-             "\n Number of Jacobian evaluations: " + nj[ic] +
-             "\n Info value: " + info[1] +
-             "\n Final approximate solution: \n\n");
-             */
             factor *= 10.0;
         }
     }

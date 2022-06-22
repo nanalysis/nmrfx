@@ -28,12 +28,16 @@ import org.nmrfx.peaks.SimpleResonance;
 import org.nmrfx.star.Loop;
 import org.nmrfx.star.Saveframe;
 import org.nmrfx.star.ParseException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
  * @author Bruce Johnson
  */
 public class AtomResonance extends SimpleResonance {
+
+    private static final Logger log = LoggerFactory.getLogger(AtomResonance.class);
 
     Atom atom = null;
     public final static String[] resonanceLoopStrings = {
@@ -181,7 +185,6 @@ public class AtomResonance extends SimpleResonance {
                 }
 //                ResonanceSet resonanceSet = ResonanceSet.get(idNum);
 //                if (resonanceSet == null) {
-//                    System.out.println("Resonance set " + idNum + " doesn't exist");
 //                    continue;
 //                }
                 String atomName = "";
@@ -216,8 +219,7 @@ public class AtomResonance extends SimpleResonance {
                 String mapID = entityAssemblyID + "." + entityID + "." + iRes;
                 Compound compound = compoundMap.get(mapID);
                 if (compound == null) {
-                    //throw new TclException("invalid compound in assignments saveframe \""+mapID+"\"");
-                    System.err.println("invalid compound in assignments saveframe \"" + mapID + "\"");
+                    log.warn("invalid compound in assignments saveframe \"{}\"", mapID);
                     continue;
                 }
                 Atom atom = compound.getAtomLoose(atomName);
@@ -227,7 +229,7 @@ public class AtomResonance extends SimpleResonance {
                     }
                 }
                 if (atom == null) {
-                    System.err.println("invalid atom in assignments saveframe \"" + mapID + "." + atomName + "\"");
+                    log.warn("invalid atom in assignments saveframe \"{}.{}\"", mapID, atomName);
                 } else {
 //                    resonance.setAtom(atom);
                 }

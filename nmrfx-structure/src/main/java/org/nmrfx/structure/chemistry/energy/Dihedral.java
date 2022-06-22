@@ -212,15 +212,11 @@ public class Dihedral {
                 v[3] = atom.dihedralAngle - deltaV3;
 
                 pseudoVals = calcPseudoAngle(v[2], v[3]);
-                //System.out.println("Get Dihedral PseudoAngle" + angleValues[i]);
                 angleValues[i++] = Util.reduceAngle(pseudoVals[0]);
-                //System.out.println("Get Dihedral PuckerValue: " + angleValues[i]);
                 angleValues[i++] = Util.reduceAngle(pseudoVals[1]);
 
                 //angleValues[i++] = reduceAngle(calcPseudoAngle(v[2], v[3]));
                 //angleValues[i++] = puckerAmplitude;
-                //System.out.printf("pseudo angle is %7.3f %7.3f %7.3f\n", v[2] * toDeg, v[3] * toDeg, angleValues[i - 1] * toDeg);
-                //System.out.println("getDihedrals: " + v[2] + ", " + v[1] + "," + v[3]);
             }
         }
         //List of all atoms with rotatable angles as specified in 
@@ -347,8 +343,6 @@ public class Dihedral {
                 Atom atom3 = pseudoAngleAtoms.get(j + 2);
                 atom3.dihedralAngle = (float) Util.reduceAngle(v[3] + deltaV3);
                 //atom3.dihAngle.angleValue = (float) reduceAngle(v[3] + deltaV3);
-                //System.out.println("Put PuckerValue: " + angleValues[i]);
-                //System.out.println("Put Value: ")
             }
         }
         List<Atom> angleAtoms = molecule.getAngleAtoms();
@@ -552,9 +546,6 @@ public class Dihedral {
         } else {
             for (int i = 0; i < inValues.length; i++) {
                 outValues[i] = toNormalized(inValues[i], i);
-                //System.out.println("inValues:" + inValues[i] + "outValues" + outValues[i]);
-                //System.out.println("inValues: Boundaries = : " + boundaries[0][i] + " , " + boundaries[1][i]);
-                //System.out.println();
 
             }
         }
@@ -573,9 +564,7 @@ public class Dihedral {
     public double fromNormalized(double value, int i) {
         //double f = (value - normBoundaries[0][i]) / (normBoundaries[1][i] - normBoundaries[0][i]);
         double f = value / 100.0;
-        if ((f < 0.1) || (f > 0.9)) {
-//            System.out.println("############################ " +f + " " + i);
-        }
+
         double normValue = f * (boundaries[1][i] - boundaries[0][i]) + boundaries[0][i];
         if (boundaries[1][i] > Math.PI) {
             normValue = Util.reduceAngle(normValue);
@@ -608,7 +597,6 @@ public class Dihedral {
             long deltaTime = time - startTime;
             bestEnergy = energy;
             System.arraycopy(angleValues, 0, bestValues, 0, angleValues.length);
-            //System.out.println(nEvaluations + " " + deltaTime + " " + energyList.atomList.size() + " " + energy);
         }
         nEvaluations++;
         return energy;
@@ -639,7 +627,6 @@ public class Dihedral {
         } else {
             pseudoAngle = Math.acos(cosValue);
         }
-        //System.out.println("PSEUDO ANGLE: " + pseudoAngle);
         double v3T1 = puckerAmplitude
                 * Math.cos(pseudoAngle + 4.0 * Math.PI / 5.0);
         double v3T2 = puckerAmplitude

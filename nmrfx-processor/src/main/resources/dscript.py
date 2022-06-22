@@ -49,7 +49,7 @@ class NMRFxDatasetScripting:
         if nDim > nDimSrc:
             raise Exception("New dataset has more dimensions than source")
         for iDim in range(nDim):
-            sizes.append(srcDataset.getSize(iDim))
+            sizes.append(srcDataset.getSizeTotal(iDim))
 
         Dataset.createDataset(fileName, "", sizes, True) 
         dataset = self.open(fileName, True)
@@ -60,11 +60,11 @@ class NMRFxDatasetScripting:
         return dataset
 
     def getVector(self, dataset, iDim):
-        vec = Vec(dataset.getSize(iDim), dataset.getComplex(iDim))
+        vec = Vec(dataset.getSizeReal(iDim), dataset.getComplex(iDim))
         return vec
 
     def extract(self, dataset, iDim, *indices):
-        vec = Vec(dataset.getSize(iDim), dataset.getComplex(iDim))
+        vec = Vec(dataset.getSizeReal(iDim), dataset.getComplex(iDim))
         dataset.readVector(vec, indices, iDim)
         extension = '_d'+str(iDim+1)
         for index in indices:
@@ -101,7 +101,7 @@ class NMRFxDatasetScripting:
         dim = array.array('i',range(0,nDim))
         vecs = []
         for i,dataset in enumerate(useDatasets):
-            vec = Vec(useDatasets[0].getSize(iDim))
+            vec = Vec(useDatasets[0].getSizeReal(iDim))
             vecs.append(vec)
         for vIndex in useDatasets[0].indexer(iDim):
             for i,dataset in enumerate(useDatasets):

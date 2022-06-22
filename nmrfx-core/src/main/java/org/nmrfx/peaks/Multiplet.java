@@ -374,7 +374,6 @@ public class Multiplet implements PeakOrMulti, Comparable {
                 double h2 = comp2.getIntensity();
                 double contrib = h2 * halfWid2 * halfWid2 / (halfWid2 * halfWid2 + (ctr2 - ctr) * (ctr2 - ctr));
                 hSum += contrib;
-//                System.out.println(ctr+" "+ctr2+" "+halfWid2+" "+h2+" "+contrib+" "+hSum);
             }
             if (hSum > maxIntensity) {
                 maxIntensity = hSum;
@@ -407,7 +406,6 @@ public class Multiplet implements PeakOrMulti, Comparable {
 
             if ((ctr < limits[j][0]) || (ctr > limits[j][1])) {
                 ok = false;
-//                System.out.println(j + " " + limits[j][0] + " " + limits[j][1] + " " + ctr);
                 break;
             }
 

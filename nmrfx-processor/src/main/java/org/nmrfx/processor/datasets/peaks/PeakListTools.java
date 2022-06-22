@@ -1231,10 +1231,6 @@ public class PeakListTools {
                 List<Peak> lPeaks = new ArrayList<>();
                 int nFit = 0;
                 for (int i = 0; i < 3; i++) {
-//                    for (Peak peak : oPeakSet.get(i)) {
-//                        System.out.print(peak.getName() + " ");
-//                    }
-//                    System.out.println("layer " + i);
                     lPeaks.addAll(oPeakSet.get(i));
                     if (i == 1) {
                         nFit = lPeaks.size();
@@ -1246,7 +1242,6 @@ public class PeakListTools {
                 for (int i = nFit; i < fitPeaks.length; i++) {
                     fitPeaks[i] = false;
                 }
-//                System.out.println("fit lpe " + lPeaks.size());
                 simPeakFit(peakList, theFile, rows, delays, lPeaks, fitPeaks, lsFit, constrainDim, arrayedFitMode);
             } catch (IllegalArgumentException | IOException | PeakFitException ex) {
                 log.error(ex.getMessage(), ex);
@@ -1575,7 +1570,6 @@ public class PeakListTools {
         //int nInterpolationPoints = (nFloating + 1) * (nFloating + 2) / 2;
         int nInterpolationPoints = 2 * nFloating + 1;
         int nSteps = nInterpolationPoints * 5;
-        //System.out.println(guess.length + " " + nInterpolationPoints);
         PointValuePair result;
         try {
             result = peakFit.optimizeBOBYQA(nSteps, nInterpolationPoints);

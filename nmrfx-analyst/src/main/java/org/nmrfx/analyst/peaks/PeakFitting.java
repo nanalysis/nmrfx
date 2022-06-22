@@ -304,7 +304,6 @@ public class PeakFitting {
                                     break;
                                 }
                                 double delta = (Math.abs(value - previous) / previous);
-//                                System.out.printf("%d %10.6f %10.6f %10.6f\n", iTry, previous, value, delta);
                                 if (delta < 1.0e-3) {
                                     break;
                                 }

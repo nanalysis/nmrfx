@@ -242,7 +242,6 @@ public class Peak implements Comparable, PeakOrMulti {
 
         if (string.length() > 3) {
             int start;
-            // System.out.println(string);
             if (string.charAt(1) == ':') {
                 start = 2;
             } else {
@@ -1216,7 +1215,6 @@ public class Peak implements Comparable, PeakOrMulti {
 
             p2 = pc - Math.abs(peakDims[i].getBoundsValue()) / 2;
             p[pdim[i]][1] = theFile.ppmToFoldedPoint(pdim[i], p2);
-//            System.out.println(i + " " + pdim[i] + " " + p1 + " " + p[pdim[i]][0] + " " + p2 + " " + p[pdim[i]][1]);
             cpt[pdim[i]] = theFile.ppmToFoldedPoint(pdim[i], pc);
 
             p1 = peakDims[i].getChemShiftValue() + (Math.abs(peakDims[i].getLineWidthValue()) / 2.0);
@@ -1463,7 +1461,6 @@ public class Peak implements Comparable, PeakOrMulti {
 
             if ((ctr < limits[j][0]) || (ctr > limits[j][1])) {
                 ok = false;
-//                System.out.println(j + " " + limits[j][0] + " " + limits[j][1] + " " + ctr);
                 break;
             }
 
