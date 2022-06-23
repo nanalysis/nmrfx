@@ -15,6 +15,10 @@
     <properties>
         <nd4j.version>1.0.0-beta7</nd4j.version>
         <dl4j.version>1.0.0-beta7</dl4j.version>
+        <openblas.version>0.3.20-1.5.8-SNAPSHOT</openblas.version>
+        <arpack.version>3.8.0-1.5.7</arpack.version>
+        <javacpp.version>1.5.8-SNAPSHOT</javacpp.version>
+        <mkl.version>2020.1-1.5.3</mkl.version>
     </properties>
 
     <dependencyManagement>
@@ -112,7 +116,71 @@
             <dependency>
                 <groupId>org.nd4j</groupId>
                 <artifactId>nd4j-native-platform</artifactId>
-                <version>${dl4j.version}</version>
+                <version>${nd4j.version}</version>
+                <!-- license: Apache License, Version 2.0 -->
+                <exclusions>
+                    <!-- excluding nd4j-native because it includes all platforms -->
+                    <!-- only the necessary ones should be included -->
+                    <exclusion>
+                        <groupId>org.nd4j</groupId>
+                        <artifactId>nd4j-native</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.nd4j</groupId>
+                <artifactId>nd4j-native</artifactId>
+                <version>${nd4j.version}</version>
+                <classifier>linux-x86_64</classifier>
+                <!-- license: Apache License, Version 2.0 -->
+            </dependency>
+            <dependency>
+                <groupId>org.nd4j</groupId>
+                <artifactId>nd4j-native</artifactId>
+                <version>${nd4j.version}</version>
+                <classifier>macosx-x86_64</classifier>
+                <!-- license: Apache License, Version 2.0 -->
+            </dependency>
+            <dependency>
+                <groupId>org.nd4j</groupId>
+                <artifactId>nd4j-native</artifactId>
+                <version>${nd4j.version}</version>
+                <classifier>windows-x86_64</classifier>
+                <!-- license: Apache License, Version 2.0 -->
+            </dependency>
+            <dependency>
+                <groupId>org.bytedeco</groupId>
+                <artifactId>mkl-platform</artifactId>
+                <version>${mkl.version}</version>
+                <!-- license: Apache License, Version 2.0 -->
+                <exclusions>
+                    <!-- excluding mkl because it includes all platforms -->
+                    <!-- only the necessary ones should be included -->
+                    <exclusion>
+                        <groupId>org.bytedeco</groupId>
+                        <artifactId>mkl</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.bytedeco</groupId>
+                <artifactId>mkl</artifactId>
+                <version>${mkl.version}</version>
+                <classifier>linux-x86_64</classifier>
+                <!-- license: Apache License, Version 2.0 -->
+            </dependency>
+            <dependency>
+                <groupId>org.bytedeco</groupId>
+                <artifactId>mkl</artifactId>
+                <version>${mkl.version}</version>
+                <classifier>macosx-x86_64</classifier>
+                <!-- license: Apache License, Version 2.0 -->
+            </dependency>
+            <dependency>
+                <groupId>org.bytedeco</groupId>
+                <artifactId>mkl</artifactId>
+                <version>${mkl.version}</version>
+                <classifier>windows-x86_64</classifier>
                 <!-- license: Apache License, Version 2.0 -->
             </dependency>
             <dependency>
@@ -264,20 +332,121 @@
             </dependency>
             <dependency>
                 <groupId>org.bytedeco</groupId>
+                <artifactId>javacpp-platform</artifactId>
+                <version>${javacpp.version}</version>
+                <!-- license: Apache 2 / GPLv2 with ClassPath exception -->
+                <exclusions>
+                    <!-- excluding openblas because it includes all platforms -->
+                    <!-- only the necessary ones should be included -->
+                    <exclusion>
+                        <groupId>org.bytedeco</groupId>
+                        <artifactId>javacpp</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.bytedeco</groupId>
                 <artifactId>javacpp</artifactId>
-                <version>1.5.7</version>
+                <version>${javacpp.version}</version>
+                <classifier>linux-x86_64</classifier>
+                <!-- license: Apache 2 / GPLv2 with ClassPath exception -->
+            </dependency>
+            <dependency>
+                <groupId>org.bytedeco</groupId>
+                <artifactId>javacpp</artifactId>
+                <version>${javacpp.version}</version>
+                <classifier>macosx-arm64</classifier>
+                <!-- license: Apache 2 / GPLv2 with ClassPath exception -->
+            </dependency>
+            <dependency>
+                <groupId>org.bytedeco</groupId>
+                <artifactId>javacpp</artifactId>
+                <version>${javacpp.version}</version>
+                <classifier>macosx-x86_64</classifier>
+                <!-- license: Apache 2 / GPLv2 with ClassPath exception -->
+            </dependency>
+            <dependency>
+                <groupId>org.bytedeco</groupId>
+                <artifactId>javacpp</artifactId>
+                <version>${javacpp.version}</version>
+                <classifier>windows-x86_64</classifier>
                 <!-- license: Apache 2 / GPLv2 with ClassPath exception -->
             </dependency>
             <dependency>
                 <groupId>org.bytedeco</groupId>
                 <artifactId>openblas-platform</artifactId>
-                <version>0.3.20-1.5.8-SNAPSHOT</version>
+                <version>${openblas.version}</version>
+                <!-- license: Apache 2 / GPLv2 with ClassPath exception -->
+                <exclusions>
+                    <!-- excluding openblas because it includes all platforms -->
+                    <!-- only the necessary ones should be included -->
+                    <exclusion>
+                        <groupId>org.bytedeco</groupId>
+                        <artifactId>openblas</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.bytedeco</groupId>
+                <artifactId>openblas</artifactId>
+                <version>${openblas.version}</version>
+                <classifier>linux-x86_64</classifier>
+                <!-- license: Apache 2 / GPLv2 with ClassPath exception -->
+            </dependency>
+            <dependency>
+                <groupId>org.bytedeco</groupId>
+                <artifactId>openblas</artifactId>
+                <version>${openblas.version}</version>
+                <classifier>macosx-arm64</classifier>
+                <!-- license: Apache 2 / GPLv2 with ClassPath exception -->
+            </dependency>
+            <dependency>
+                <groupId>org.bytedeco</groupId>
+                <artifactId>openblas</artifactId>
+                <version>${openblas.version}</version>
+                <classifier>macosx-x86_64</classifier>
+                <!-- license: Apache 2 / GPLv2 with ClassPath exception -->
+            </dependency>
+            <dependency>
+                <groupId>org.bytedeco</groupId>
+                <artifactId>openblas</artifactId>
+                <version>${openblas.version}</version>
+                <classifier>windows-x86_64</classifier>
                 <!-- license: Apache 2 / GPLv2 with ClassPath exception -->
             </dependency>
             <dependency>
                 <groupId>org.bytedeco</groupId>
                 <artifactId>arpack-ng-platform</artifactId>
-                <version>3.8.0-1.5.7</version>
+                <version>${arpack.version}</version>
+                <!-- license: Apache 2 / GPLv2 with ClassPath exception -->
+                <exclusions>
+                    <!-- excluding arpack-ng because it includes all platforms -->
+                    <!-- only the necessary ones should be included -->
+                    <exclusion>
+                        <groupId>org.bytedeco</groupId>
+                        <artifactId>arpack-ng</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.bytedeco</groupId>
+                <artifactId>arpack-ng</artifactId>
+                <version>${arpack.version}</version>
+                <classifier>linux-x86_64</classifier>
+                <!-- license: Apache 2 / GPLv2 with ClassPath exception -->
+            </dependency>
+            <dependency>
+                <groupId>org.bytedeco</groupId>
+                <artifactId>arpack-ng</artifactId>
+                <version>${arpack.version}</version>
+                <classifier>macosx-x86_64</classifier>
+                <!-- license: Apache 2 / GPLv2 with ClassPath exception -->
+            </dependency>
+            <dependency>
+                <groupId>org.bytedeco</groupId>
+                <artifactId>arpack-ng</artifactId>
+                <version>${arpack.version}</version>
+                <classifier>windows-x86_64</classifier>
                 <!-- license: Apache 2 / GPLv2 with ClassPath exception -->
             </dependency>
             <dependency>
