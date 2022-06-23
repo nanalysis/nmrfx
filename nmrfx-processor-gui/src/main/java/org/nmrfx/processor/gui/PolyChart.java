@@ -1389,7 +1389,7 @@ public class PolyChart extends Region implements PeakListener {
         if (phases.length == 2) {
             setPh1(phases[1]);
         }
-        System.out.println("ph0 " + getPh0() + " ph1 " + getPh1());
+        log.info("ph0 {} ph1 {}", getPh0(), getPh1());
 
         double sliderPH0 = getPh0();
         sliderPH0 = getPh0() + vec.getPH0();
@@ -1497,7 +1497,7 @@ public class PolyChart extends Region implements PeakListener {
         double newCenter = (newPPM - ppmPosition) + centerPPM;
 
         double f1 = position / (size - 1);
-        System.out.println(vecDim + " " + size + " " + position + " " + ppmPosition + " " + f1 + " " + refPoint + " " + refPPM + " " + newCenter);
+        log.info("{} {} {} {} {} {} {} {}", vecDim, size, position, ppmPosition, f1, refPoint, refPPM, newCenter);
         return newCenter;
     }
 
@@ -1633,7 +1633,7 @@ public class PolyChart extends Region implements PeakListener {
                     newList.add(newAttr);
                     updated = true;
                 } else {
-                    System.out.println("No dataset " + s);
+                    log.info("No dataset {}", s);
                 }
             }
             iTarget++;
@@ -2956,7 +2956,7 @@ public class PolyChart extends Region implements PeakListener {
         double[] values = null;
         if (nRows == 1) {
             values = dataAttr.getDataset().getValues(dims[nPeakDims]);
-            System.out.println("values " + values);
+            log.info("values {}", values);
         }
         return values;
     }
@@ -2989,7 +2989,7 @@ public class PolyChart extends Region implements PeakListener {
             }
             double[] delays = null;
             if (arrayedFitMode == ARRAYED_FIT_MODE.EXP) {
-                System.out.println("nrows " + fitRows[0]);
+                log.info("nrows {}", fitRows[0]);
                 delays = getFitValues(peakListAttr);
                 if ((delays == null)) {
 
@@ -2999,7 +2999,7 @@ public class PolyChart extends Region implements PeakListener {
                     alert.showAndWait();
                     return;
                 }
-                System.out.println("ndel " + delays.length);
+                log.info("ndel {}", delays.length);
             }
             try {
 
@@ -3038,7 +3038,7 @@ public class PolyChart extends Region implements PeakListener {
                     try {
                         int[] dim = getPeakDim(peakListAttr.getDatasetAttributes(), peakListAttr.getPeakList(), true);
                         for (int i = 0; i < dim.length; i++) {
-                            System.out.println(i + " " + dim[i]);
+                            log.info("{} {}", i, dim[i]);
                         }
                         int nExtra = dim.length - peakListAttr.getPeakList().nDim;
                         int[] planes = new int[nExtra];
@@ -3368,7 +3368,7 @@ public class PolyChart extends Region implements PeakListener {
                             }
                         }
                     } catch (GraphicsIOException ex) {
-                        System.out.println("draw peak exception " + ex.getMessage());
+                        log.warn("draw peak exception {}", ex.getMessage(), ex);
                     }
                 });
                 if (peakListAttr.getDrawLinks()) {
@@ -3388,7 +3388,7 @@ public class PolyChart extends Region implements PeakListener {
                             drawPeaks.drawMultiplet(peakListAttr, gC, peak.getPeakDim(0).getMultiplet(), dim, offsets, false, 0);
                             roots.add(peak);
                         } catch (GraphicsIOException ex) {
-                            System.out.println("draw peak exception " + ex.getMessage());
+                            log.warn("draw peak exception {}", ex.getMessage());
                         } catch (Exception ex2) {
                             log.warn(ex2.getMessage(), ex2);
                         }
@@ -4030,7 +4030,7 @@ public class PolyChart extends Region implements PeakListener {
                 }
                 int[] maxPoint = rData.getMaxPoint();
                 double planeValue = axModes[2].indexToValue(datasetAttributes, 2, maxPoint[2]);
-                System.out.println(rData.getMax() + " " + maxPoint[2] + " " + planeValue);
+                log.info("{} {} {}", rData.getMax(), maxPoint[2], planeValue);
                 axes[2].setLowerBound(planeValue);
                 axes[2].setUpperBound(planeValue);
 
@@ -4301,6 +4301,13 @@ public class PolyChart extends Region implements PeakListener {
 
     public static void registerPeakDeleteAction(Consumer<PeakDeleteEvent> func) {
         manualPeakDeleteAction = func;
+    }
+
+    public ProcessorController getProcessorController(boolean createIfNull) {
+        if ((processorController == null) && createIfNull) {
+            processorController = ProcessorController.create(getFXMLController(), getFXMLController().getProcessorPane(), this);
+        }
+        return processorController;
     }
 
 }

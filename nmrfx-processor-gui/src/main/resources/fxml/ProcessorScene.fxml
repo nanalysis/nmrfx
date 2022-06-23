@@ -1,26 +1,38 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import java.lang.*?>
-<?import java.net.*?>
-<?import javafx.scene.control.*?>
-<?import javafx.scene.layout.*?>
+<?import java.lang.String?>
+<?import java.net.URL?>
 <?import javafx.collections.FXCollections?>
-<?import org.controlsfx.control.*?>
-<?import org.nmrfx.processor.gui.*?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.CheckBox?>
+<?import javafx.scene.control.ChoiceBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ListView?>
+<?import javafx.scene.control.MenuButton?>
+<?import javafx.scene.control.MenuItem?>
+<?import javafx.scene.control.Slider?>
+<?import javafx.scene.control.Tab?>
+<?import javafx.scene.control.TabPane?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.control.ToolBar?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Pane?>
+<?import javafx.scene.layout.VBox?>
+<?import org.controlsfx.control.PropertySheet?>
+<?import org.controlsfx.control.StatusBar?>
 <?import org.fxmisc.richtext.CodeArea?>
 
-
-<BorderPane xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1"
-            fx:id="mainBox"  minWidth="400" styleClass="mainFxmlClass"
-            fx:controller="org.nmrfx.processor.gui.ProcessorController"
-            VBox.vgrow="ALWAYS" HBox.hgrow="ALWAYS">
+<BorderPane fx:id="mainBox" minWidth="400" styleClass="mainFxmlClass" HBox.hgrow="ALWAYS" VBox.vgrow="ALWAYS" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.nmrfx.processor.gui.ProcessorController">
     <stylesheets>
         <URL value="@/styles/Styles.css" />
     </stylesheets>
     <top>
         <ToolBar fx:id="toolBar">
             <items>
-                <MenuButton  mnemonicParsing="false" text="Scripts">
+                <MenuButton mnemonicParsing="false" text="Scripts">
                     <items>
                         <MenuItem mnemonicParsing="false" onAction="#genDefaultScript" text="Auto Generate" />
                         <MenuItem mnemonicParsing="false" onAction="#genDefaultScriptArrayed" text="Auto Generate (Arrayed)" />
@@ -32,8 +44,8 @@
                         <MenuItem mnemonicParsing="false" onAction="#writeVecScriptAction" text="Save Operations..." />
                     </items>
                 </MenuButton>
-                <ChoiceBox fx:id="dimChoice" value=""/>
-                <ChoiceBox fx:id="viewMode" value="FID" onAction="#viewMode">
+                <ChoiceBox fx:id="dimChoice" value="" />
+                <ChoiceBox fx:id="viewMode" onAction="#viewMode" value="FID">
                     <items>
                         <FXCollections fx:factory="observableArrayList">
                             <String fx:value="FID" />
@@ -41,20 +53,20 @@
                         </FXCollections>
                     </items>
                 </ChoiceBox>
-                <Pane HBox.hgrow="ALWAYS"/>
+                <Pane HBox.hgrow="ALWAYS" />
             </items>
         </ToolBar>
     </top>
     <center>
-        <TabPane minWidth="400" minHeight="100" maxWidth="400" VBox.vgrow="ALWAYS">
-            <Tab text="Parameters" closable="false">
+        <TabPane maxWidth="400" minHeight="100" minWidth="400" VBox.vgrow="ALWAYS">
+            <Tab closable="false" text="Parameters">
                 <VBox>
                     <children>
-                        <PropertySheet fx:id="refSheet" prefHeight="0" minHeight="0.0" VBox.vgrow="ALWAYS"/>
+                        <PropertySheet fx:id="refSheet" minHeight="0.0" prefHeight="0" VBox.vgrow="ALWAYS" />
                     </children>
                 </VBox>
             </Tab>
-            <Tab text="Operations" closable="false">
+            <Tab closable="false" text="Operations">
                 <VBox>
                     <children>
                         <HBox VBox.vgrow="NEVER">
@@ -64,36 +76,72 @@
                                     </items>
                                 </MenuButton>
                                 <TextField fx:id="opTextField" onAction="#handleNewOp" onKeyReleased="#handleOpKey" HBox.hgrow="ALWAYS" />
-                                <Button fx:id="opDocButton" text="OpDocs" onAction="#showOpDoc"/>
+                                <Button fx:id="opDocButton" onAction="#showOpDoc" text="OpDocs" />
                             </children>
                         </HBox>
-                        <ListView fx:id="scriptView" prefHeight="0.0" minHeight="0.0" VBox.vgrow="ALWAYS" onKeyReleased="#handleScriptKey"/>
-                        <PropertySheet fx:id="propertySheet" prefHeight="0.0" minHeight="0.0" VBox.vgrow="ALWAYS" minWidth="300.0"/>
+                        <ListView fx:id="scriptView" minHeight="0.0" onKeyReleased="#handleScriptKey" prefHeight="0.0" VBox.vgrow="ALWAYS" />
+                        <PropertySheet fx:id="propertySheet" minHeight="0.0" minWidth="300.0" prefHeight="0.0" VBox.vgrow="ALWAYS" />
                     </children>
                 </VBox>
             </Tab>
-            <Tab text="Options" closable="false" >
-                <Accordion>
-                    <panes>
-                        <TitledPane fx:id="lsOptionsPane" text="LineShape Catalog">
-                        </TitledPane>
-                    </panes>
-                </Accordion>
-            </Tab>
-            <Tab text="Script" closable="false" onSelectionChanged="#loadScriptTab" >
+         <Tab text="Navigation">
+            <content>
+               <HBox fx:id="navHBox" prefHeight="100.0" prefWidth="200.0">
+                  <children>
+                     <HBox prefHeight="410.0" prefWidth="59.0">
+                        <children>
+                            <Slider fx:id="vecNum1" blockIncrement="1.0" majorTickUnit="16.0" max="64.0" min="1" minorTickCount="4" onMouseReleased="#handleVecRelease" onValueChange="#handleVecNum" orientation="VERTICAL" showTickLabels="true" showTickMarks="true">
+                              <HBox.margin>
+                                 <Insets bottom="5.0" top="5.0" />
+                              </HBox.margin></Slider>
+                        </children>
+                        <HBox.margin>
+                           <Insets left="5.0" />
+                        </HBox.margin>
+                     </HBox>
+                     <VBox fx:id="navDetailsVBox" prefHeight="200.0" prefWidth="100.0" spacing="5.0" HBox.hgrow="ALWAYS">
+                        <children>
+                           <HBox prefHeight="30.0" prefWidth="200.0">
+                              <children>
+                                 <Label prefWidth="100.0" text="Dimension:" />
+                                 <VBox fx:id="dimVBox" prefHeight="69.0" prefWidth="236.0" spacing="5.0" HBox.hgrow="ALWAYS" />
+                              </children>
+                           </HBox>
+                           <HBox prefHeight="30.0" prefWidth="200.0">
+                              <children>
+                                 <Label prefWidth="100.0" text="Datatype: " />
+                                 <ChoiceBox fx:id="realImagChoiceBox" maxWidth="1.7976931348623157E308" prefWidth="150.0" HBox.hgrow="ALWAYS" />
+                              </children>
+                           </HBox>
+                           <HBox prefHeight="100.0" prefWidth="200.0">
+                              <children>
+                                 <Label prefWidth="100.0" text="File Index: " />
+                                 <TextField fx:id="fileIndexTextBox" HBox.hgrow="ALWAYS" />
+                              </children>
+                           </HBox>
+                        </children>
+                     </VBox>
+                  </children>
+                  <padding>
+                     <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+                  </padding>
+               </HBox>
+            </content>
+         </Tab>
+            <Tab closable="false" onSelectionChanged="#loadScriptTab" text="Script">
                 <VBox>
                     <children>
-                        <CodeArea fx:id="textArea" prefHeight="0" minHeight="0.0" VBox.vgrow="ALWAYS"/>
+                        <CodeArea fx:id="textArea" minHeight="0.0" prefHeight="0" VBox.vgrow="ALWAYS" />
                     </children>
                 </VBox>
             </Tab>
-            <Tab text="Vendor-Pars" closable="false" onSelectionChanged="#loadScriptTab" >
+            <Tab closable="false" onSelectionChanged="#loadScriptTab" text="Vendor-Pars">
                 <BorderPane>
                     <top>
-                        <ToolBar fx:id="fidParToolBar"/>
+                        <ToolBar fx:id="fidParToolBar" />
                     </top>
                     <center>
-                        <TableView fx:id="fidParTableView"/>
+                        <TableView fx:id="fidParTableView" />
                     </center>
                 </BorderPane>
             </Tab>
@@ -112,7 +160,7 @@
             </HBox>
             <HBox>
                 <children>
-                    <StatusBar fx:id="statusBar" HBox.hgrow="ALWAYS"/>
+                    <StatusBar fx:id="statusBar" HBox.hgrow="ALWAYS" />
                 </children>
             </HBox>
         </VBox>

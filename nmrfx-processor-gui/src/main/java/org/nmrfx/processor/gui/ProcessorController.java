@@ -127,6 +127,24 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     ToolBar fidParToolBar;
     @FXML
     TableView<VendorPar> fidParTableView;
+    @FXML
+    HBox navHBox;
+    @FXML
+    private VBox dimVBox;
+    @FXML
+    private Slider vecNum1;
+    @FXML
+    VBox navDetailsVBox;
+    private TextField[] rowTextBoxes = new TextField[0];
+    @FXML
+    private TextField fileIndexTextBox;
+    ToggleGroup rowToggleGroup = new ToggleGroup();
+    @FXML
+    private ChoiceBox<String> realImagChoiceBox;
+    private List<String> realImagChoices = new ArrayList<>();
+    ChangeListener<String> vecNumListener;
+    int[] rowIndices;
+    int[] vecSizes;
 
     CheckBox genLSCatalog;
     TextField nLSCatFracField;
@@ -137,7 +155,6 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     static String[] basicOps = {"SB ZF FT", "SB(c=0.5) ZF FT", "EXPD ZF FT", "VECREF GEN"};
     static String[] eaOps = {"TDCOMB(coef='ea2d')", "SB", "ZF", "FT"};
     ChartProcessor chartProcessor;
-    FXMLController fxmlController;
     DocWindowController dwc = null;
     SpecAttrWindowController specAttrWindowController = null;
     PolyChart chart;
@@ -156,14 +173,11 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         String fontSize = "7pt";
         FXMLLoader loader = new FXMLLoader(SpecAttrWindowController.class.getResource("/fxml/ProcessorScene.fxml"));
         final ProcessorController controller;
-        Stage stage = fxmlController.getStage();
-        double width = stage.getWidth();
         try {
             Pane pane = (Pane) loader.load();
             processorPane.getChildren().add(pane);
 
             controller = loader.<ProcessorController>getController();
-            controller.fxmlController = fxmlController;
             controller.chart = chart;
             chart.setProcessorController(controller);
             controller.chartProcessor.setChart(chart);
@@ -175,7 +189,6 @@ public class ProcessorController implements Initializable, ProgressUpdater {
             controller.toolBar.getItems().add(closeButton);
             fxmlController.processorCreated(pane);
 
-            stage.setWidth(width + pane.getMinWidth());
             return controller;
         } catch (IOException ioE) {
             log.warn(ioE.getMessage(), ioE);
@@ -200,8 +213,6 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     private Button processScanDirButton;
     @FXML
     private Button opDocButton;
-    @FXML
-    private TitledPane lsOptionsPane;
 
     ProcessingCodeAreaUtil codeAreaUtil;
     ConsoleUtil consoleUtil;
@@ -209,19 +220,12 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     public void show() {
         if (processorPane.getChildren().isEmpty()) {
             processorPane.getChildren().add(pane);
-            Stage stage = fxmlController.getStage();
-            double width = stage.getWidth();
-            stage.setWidth(width + pane.getMinWidth());
         }
     }
 
     public void hide() {
         if (!processorPane.getChildren().isEmpty()) {
             processorPane.getChildren().clear();
-            Stage stage = fxmlController.getStage();
-            double width = stage.getWidth();
-            stage.setWidth(width - pane.getMinWidth());
-
         }
     }
 
@@ -317,7 +321,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
             dimChoice.getSelectionModel().select(0);
             dimChoice.getSelectionModel().selectedItemProperty().addListener(dimListener);
 
-            chart.controller.updateVecNumChoice(complex);
+            updateVecNumChoice(complex);
         }
         updateLineshapeCatalog(nDim);
     }
@@ -370,7 +374,6 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         }
         borderPane.setTop(topBox);
         borderPane.setCenter(gridPane);
-        lsOptionsPane.setContent(borderPane);
     }
 
     String getLSScript() {
@@ -693,7 +696,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
             byte[] encoded = Files.readAllBytes(Paths.get(file.toString()));
             scriptString = new String(encoded);
         } catch (IOException ioe) {
-            System.out.println("Can't read script");
+            log.warn("Can't read script. {}", ioe.getMessage(), ioe);
         }
         if (scriptString != null) {
             String[] ops = scriptString.split("\n");
@@ -710,7 +713,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
             String scriptString = new String(encoded);
             parseScript(scriptString);
         } catch (IOException ioe) {
-            System.out.println("Can't read script");
+            log.warn("Can't read script {}", ioe.getMessage(), ioe);
         }
     }
 
@@ -722,7 +725,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
             chartProcessor.execScriptList(true);
             PolyChart.getActiveChart().refresh();
         } catch (IOException ioe) {
-            System.out.println("Can't read script");
+            log.warn("Can't read script {}", ioe.getMessage(), ioe);
         }
     }
 
@@ -983,7 +986,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
             processingThrowable = null;
         } else {
             statusCircle.setFill(Color.RED);
-            System.out.println("error: " + s);
+            log.warn("error: {}", s);
             processingThrowable = throwable;
         }
         statusBar.setProgress(0.0);
@@ -1008,7 +1011,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         menuHandler = new EventHandler<ActionEvent>() {
             @Override
             public void handle(ActionEvent e) {
-                System.out.println("menu action ");
+                log.info("menu action ");
             }
         };
 
@@ -1078,7 +1081,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
             @Override
             public void changed(ObservableValue<? extends String> observableValue, String dimName, String dimName2) {
 
-                System.out.println("dim " + dimName2);
+                log.info("dim {}", dimName2);
                 chartProcessor.setVecDim(dimName2);
                 try {
                     int vecDim = Integer.parseInt(dimName2.substring(1));
@@ -1095,7 +1098,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
             public void changed(ObservableValue<? extends Number> observableValue, Number number, Number number2) {
                 int vecDimOld = (Integer) number;
                 int vecDim = (Integer) number2;
-                System.out.println("refdim " + vecDim);
+                log.info("refdim {}", vecDim);
                 refManager.setupItems(vecDim);
             }
         };
@@ -1126,6 +1129,14 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         });
         initTable();
 
+        rowToggleGroup.selectedToggleProperty().addListener(e -> handleRowDimChange());
+        vecNumListener = (observableValue, string, string2) -> {
+            String text = realImagChoiceBox.getValue();
+            int vecNum = realImagChoices.indexOf(text);
+            chartProcessor.setVector(vecNum);
+            setFileIndex();
+        };
+
     }
 
     void initTable() {
@@ -1152,4 +1163,183 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     public PolyChart getChart() {
         return chart;
     }
+
+    @FXML
+    protected void vectorStatus(int[] sizes, int vecDim) {
+        int nDim = sizes.length;
+        double sepWidth = 20.0;
+        vecSizes = sizes.clone();
+        navHBox.getChildren().clear();
+        if (nDim > 1) {
+            if (rowTextBoxes.length != (nDim - 1)) {
+                navHBox.getChildren().add(vecNum1);
+                navHBox.getChildren().add(navDetailsVBox);
+                rowTextBoxes = new TextField[nDim - 1];
+                dimVBox.setId("dimVBox");
+                dimVBox.getChildren().clear();
+                for (int i = 0; i < nDim - 1; i++) {
+                    rowTextBoxes[i] = new TextField();
+                    rowTextBoxes[i].setEditable(false);
+                    HBox.setHgrow(rowTextBoxes[i], Priority.ALWAYS);
+                    RadioButton radioButton = new RadioButton((i + 2) + ": ");
+                    Pane pane = new Pane();
+                    pane.setMinWidth(sepWidth);
+                    dimVBox.getChildren().add(new HBox(radioButton, rowTextBoxes[i]));
+                    radioButton.setToggleGroup(rowToggleGroup);
+                    if (i == 0) {
+                        rowToggleGroup.selectToggle(radioButton);
+                    }
+                }
+                Pane pane = new Pane();
+                pane.setMinWidth(sepWidth);
+                fileIndexTextBox.setPrefWidth(60);
+                fileIndexTextBox.setEditable(false);
+
+            }
+            if (vecNum1 == null) {
+                log.info("null sl");
+            } else {
+                int sizeDim = 1;
+                if (vecDim != 0) {
+                    sizeDim = 0;
+                }
+                log.info("{} {}", sizeDim, sizes[sizeDim]);
+                int maxSize = sizes[sizeDim] < 256 ? sizes[sizeDim] : 256;
+                vecNum1.setMax(maxSize);
+                vecNum1.setValue(1);
+                for (int iDim = 1; iDim < sizes.length; iDim++) {
+                    rowTextBoxes[iDim - 1].setText(1 + " / " + sizes[iDim]);
+                }
+                fileIndexTextBox.setText("1");
+            }
+        }
+    }
+
+    Integer getRowChoice() {
+        RadioButton radioButton = (RadioButton) rowToggleGroup.getSelectedToggle();
+        Integer iDim;
+        if (radioButton == null) {
+            iDim = 1;
+        } else {
+            String text = radioButton.getText();
+            iDim = Integer.parseInt(text.substring(0, 1));
+        }
+        return iDim;
+    }
+
+    void handleRowDimChange() {
+        Integer iDim = getRowChoice();
+        if (iDim != null) {
+            int[] rows = getRows();
+            if (rows.length > 0) {
+                int row = rows[iDim - 2];
+                if ((vecNum1 != null) && vecNum1.isVisible()) {
+                    int maxSize = vecSizes[iDim - 1] < 256 ? vecSizes[iDim - 1] : 256;
+                    log.info("{} {} {}", iDim, vecSizes[iDim - 1], maxSize);
+                    vecNum1.setMax(maxSize);
+                    vecNum1.setValue(row + 1);
+                }
+            }
+        }
+    }
+
+    protected void setRowLabel(int row, int size) {
+        int iDim = getRowChoice() - 2;
+        if (iDim >= 0) {
+            rowTextBoxes[iDim].setText(row + " / " + size);
+        }
+    }
+
+    void setFileIndex(int[] indices) {
+        this.rowIndices = indices;
+        setFileIndex();
+    }
+
+    void setFileIndex() {
+        if (rowIndices != null) {
+            String text = realImagChoiceBox.getValue();
+            int riIndex = realImagChoices.indexOf(text);
+            if (riIndex != -1) {
+                int index = rowIndices[riIndex];
+                fileIndexTextBox.setText(String.valueOf(index + 1));
+            }
+        }
+    }
+
+    @FXML
+    private void handleVecNum(Event event) {
+        Slider slider = (Slider) event.getSource();
+        int iRow = (int) slider.getValue() - 1;
+        int iDim = getRowChoice() - 1;
+        chartProcessor.vecRow(iDim, iRow);
+        chart.layoutPlotChildren();
+    }
+
+    public int[] getRows() {
+        int[] rows = new int[rowTextBoxes.length];
+        for (int i = 0; i < rows.length; i++) {
+            if (rowTextBoxes[i] == null) {
+                rows[i] = 0;
+            } else {
+                String text = rowTextBoxes[i].getText();
+                if (text.isBlank()) {
+                    rows[i] = 0;
+                } else {
+                    String[] fields = text.split("/");
+                    int row = Integer.parseInt(fields[0].trim()) - 1;
+                    rows[i] = row;
+                }
+            }
+        }
+        return rows;
+    }
+
+    @FXML
+    private void handleVecRelease(Event event) {
+        Slider slider = (Slider) event.getSource();
+        int iRow = (int) slider.getValue();
+        int delta = (int) (slider.getMax() - slider.getMin());
+
+        int start = (int) (delta / 4 * Math.round(iRow / delta / 4)) - delta / 2;
+        if (start < 1) {
+            start = 1;
+        }
+        double end = start + delta;
+        slider.setMin(start);
+        slider.setMax(end);
+
+    }
+
+    protected void updateVecNumChoice(boolean[] complex) {
+        char[] chars = {'R', 'I'};
+        realImagChoices.clear();
+        realImagChoiceBox.getItems().clear();
+        int nDim = complex.length;
+        if (nDim > 1) {
+            int nVectors = 1;
+            for (int iDim = 1; iDim < nDim; iDim++) {
+                nVectors *= complex[iDim] ? 2 : 1;
+            }
+            realImagChoiceBox.valueProperty().removeListener(vecNumListener);
+            StringBuilder sBuilder = new StringBuilder();
+            for (int i = 0; i < nVectors; i++) {
+                sBuilder.setLength(0);
+                for (int j = nDim - 2; j >= 0; j--) {
+                    if (complex[j + 1]) {
+                        int k = (int) Math.pow(2, j);
+                        int kk = (i / k) % 2;
+                        sBuilder.append(chars[kk]);
+                    } else {
+                        sBuilder.append("R");
+                    }
+                }
+                log.info("{} {} {}", i, nVectors, sBuilder.toString());
+                realImagChoiceBox.getItems().add(sBuilder.toString());
+                realImagChoices.add(sBuilder.toString());
+            }
+            realImagChoiceBox.setValue(realImagChoices.get(0));
+            realImagChoiceBox.valueProperty().addListener(vecNumListener);
+        }
+    }
+
 }
