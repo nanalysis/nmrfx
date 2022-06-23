@@ -1468,13 +1468,8 @@ public class NMRStarReader {
     public void processOrder(Saveframe saveframe) throws ParseException {
         String catName = saveframe.getCategoryName();
         String frameName = saveframe.getName().substring(5);
-        for (String cat : saveframe.getCategories()) {
-            log.info(cat);
-        }
         String mainCat = "_Order_parameter_list";
-        log.info("{} {}", catName, frameName);
         Double field = saveframe.getDoubleValue(mainCat, "Rex_field_strength", null);
-        log.info("{}", field);
         String[] unitVars = {"Tau_e", "Tau_s", "Tau_f", "Rex"};
         Map<String, String> extras = new HashMap<>();
         for (var unitVar : unitVars) {
@@ -1493,36 +1488,44 @@ public class NMRStarReader {
         List<String> compIdxIDColumn = loop.getColumnAsList("Comp_index_ID");
         List<String> atomColumn = loop.getColumnAsList("Atom_ID");
 
-        String[] parNames = OrderPar.getNames();
-        List<Double>[] valColumns = new ArrayList[parNames.length];
-        List<Double>[] errColumns = new ArrayList[parNames.length];
-        int iCol = 0;
-        for (var parName : parNames) {
-            if (parName.equals("S2")) {
-                parName = "Order_param";
+        Map<String, List<Double>> valueColumns = new HashMap<>();
+        Map<String, List<Double>> errColumns = new HashMap<>();
+        for (int i = 0;i<OrderPar.orderParLoopStrings.length;i += 2) {
+            String fullName = OrderPar.orderParLoopStrings[i];
+            if (fullName.endsWith("_val")) {
+                var column = loop.getColumnAsDoubleList(fullName, null);
+                String parName = fullName.substring(0, fullName.length() - 4);
+                valueColumns.put(parName, column);
+            } else if (fullName.endsWith("_val_fit_err")) {
+                var column = loop.getColumnAsDoubleList(fullName, null);
+                String parName = fullName.substring(0, fullName.length() - 12);
+                errColumns.put(parName, column);
             }
-            valColumns[iCol] = loop.getColumnAsDoubleList(parName + "_val", null);
-            errColumns[iCol] = loop.getColumnAsDoubleList(parName + "_val_fit_err", null);
-            iCol++;
         }
-        var modelColumn = loop.getColumnAsDoubleList("Model_free_sum_squared_errs", null);
+        var modelfreeErrorColumn = loop.getColumnAsDoubleList("Model_free_sum_squared_errs", null);
+        var modelfreeNValuesColumn = loop.getColumnAsIntegerList("Model_free_n_values", null);
+        var modelfreeNParsColumn = loop.getColumnAsIntegerList("Model_free_n_pars", null);
         var modelNameColumn = loop.getColumnAsList("Model_fit");
-        Double[] values = new Double[parNames.length];
-        Double[] errs = new Double[parNames.length];
-
         for (int i = 0; i < entityAssemblyIDColumn.size(); i++) {
             Optional<Atom> atomOpt = getAtom(mol, saveframe,
                     entityAssemblyIDColumn, entityIDColumn, compIdxIDColumn,
                     atomColumn, i);
             if (atomOpt.isPresent()) {
-                for (int iPar = 0; iPar < parNames.length; iPar++) {
-                    values[iPar] = valColumns[iPar].get(i);
-                    errs[iPar] = errColumns[iPar].get(i);
-                }
-                Double modelSSErr = modelColumn.get(i);
+                Double modelSSErr = modelfreeErrorColumn.get(i);
+                Integer modelNValues = modelfreeNValuesColumn.get(i);
+                Integer modelNPars = modelfreeNParsColumn.get(i);
                 String modelName = modelNameColumn.get(i);
                 ResonanceSource resSource = new ResonanceSource(atomOpt.get());
-                OrderPar orderPar = new OrderPar(resSource, values, errs, modelSSErr, modelName);
+                OrderPar orderPar = new OrderPar(resSource, modelSSErr, modelNValues, modelNPars, modelName);
+                for (var parName: valueColumns.keySet()) {
+                    var valueColumn = valueColumns.get(parName);
+                    var errColumn = errColumns.get(parName);
+                    Double value= valueColumn.get(i);
+                    Double err = errColumn != null ? errColumn.get(i) : null;
+                    if (value != null) {
+                        orderPar = orderPar.set(parName, value, err);
+                    }
+                }
                 atomOpt.get().addOrderPar(frameName, orderPar);
             }
         }
