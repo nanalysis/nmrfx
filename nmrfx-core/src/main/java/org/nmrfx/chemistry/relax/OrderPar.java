@@ -326,7 +326,11 @@ public class OrderPar implements RelaxationValues {
         }
     }
 
-    double getReducedChiSqr() {
+    public double getChiSqr() {
+        return sumSqErr;
+    }
+
+    public double getReducedChiSqr() {
         if ((nValues != null) && (nPars != null)) {
             return sumSqErr / (nValues - nPars);
         } else {
@@ -334,7 +338,7 @@ public class OrderPar implements RelaxationValues {
         }
     }
 
-    double getAIC() {
+    public double getAIC() {
         if ((nValues != null) && (nPars != null) && (sumSqErr != null)) {
             return 2 * nPars + nValues * Math.log(sumSqErr);
         } else {
