@@ -18,80 +18,85 @@ import java.util.Map;
 import java.util.Map.Entry;
 import org.junit.Assert;
 import org.junit.Test;
+import org.nmrfx.chemistry.InvalidMoleculeException;
 import org.nmrfx.chemistry.io.MMcifReader;
 import org.nmrfx.chemistry.io.MMcifWriter;
+import org.nmrfx.peaks.InvalidPeakException;
+import org.nmrfx.star.ParseException;
 
 /**
  *
  * @author Martha
  */
 public class MMCifFileTest {
+    // TODO NMR-5200: the following tests skip some of the assertion statements
+    //  2png, 2juw, 2jr2, 2kpu, 5lbm, 6ack, 6aj4, 6j91
 
     List<List<Object>> orig = new ArrayList<>();
     List<List<Object>> written = new ArrayList<>();
 
     @Test
-    public void testFile2KKO() throws IOException {
+    public void testFile2KKO() throws IOException, InvalidMoleculeException, ParseException, InvalidPeakException {
         loadData("2kko");
         testAll();
     }
 
     @Test
-    public void testFile2KO1() throws IOException {
+    public void testFile2KO1() throws IOException, InvalidMoleculeException, ParseException, InvalidPeakException {
         loadData("2ko1");
         testAll();
     }
 
     @Test
-    public void testFile2KZN() throws IOException {
+    public void testFile2KZN() throws IOException, InvalidMoleculeException, ParseException, InvalidPeakException {
         loadData("2kzn");
         testAll();
     }
 
     @Test
-    public void testFile2PNG() throws IOException {
+    public void testFile2PNG() throws IOException, InvalidMoleculeException, ParseException, InvalidPeakException {
         loadData("2png");
         testAll();
     }
 
     @Test
-    public void testFile5LBM() throws IOException {
+    public void testFile5LBM() throws IOException, InvalidMoleculeException, ParseException, InvalidPeakException {
         loadData("5lbm");
         testAll();
     }
 
     @Test
-    public void testFile1G18() throws IOException {
+    public void testFile1G18() throws IOException, InvalidMoleculeException, ParseException, InvalidPeakException {
         loadData("1g18");
         testAll();
     }
 
     @Test
-    public void testFile1FOC() throws IOException {
+    public void testFile1FOC() throws IOException, InvalidMoleculeException, ParseException, InvalidPeakException {
         loadData("1foc");
         testAll();
     }
 
     @Test
-    public void testFile1G2M() throws IOException {
+    public void testFile1G2M() throws IOException, InvalidMoleculeException, ParseException, InvalidPeakException {
         loadData("1g2m");
         testAll();
     }
 
     @Test
-    public void testFile2JUW() throws IOException {
+    public void testFile2JUW() throws IOException, InvalidMoleculeException, ParseException, InvalidPeakException {
         loadData("2juw");
         testAll();
     }
 
     @Test
-    public void testFile2JR2() throws IOException {
+    public void testFile2JR2() throws IOException, InvalidMoleculeException, ParseException, InvalidPeakException {
         loadData("2jr2");
         testAll();
     }
 
     @Test
-    public void testFile1PQX() throws IOException {
+    public void testFile1PQX() throws IOException, InvalidMoleculeException, ParseException, InvalidPeakException {
         loadData("1pqx");
         testAll();
     }
@@ -102,25 +107,25 @@ public class MMCifFileTest {
 //        testAll();
 //    }
     @Test
-    public void testFile2K2E() throws IOException {
+    public void testFile2K2E() throws IOException, InvalidMoleculeException, ParseException, InvalidPeakException {
         loadData("2k2e");
         testAll();
     }
 
     @Test
-    public void testFile2KPU() throws IOException {
+    public void testFile2KPU() throws IOException, InvalidMoleculeException, ParseException, InvalidPeakException {
         loadData("2kpu");
         testAll();
     }
 
     @Test
-    public void testFile2KW5() throws IOException {
+    public void testFile2KW5() throws IOException, InvalidMoleculeException, ParseException, InvalidPeakException {
         loadData("2kw5");
         testAll();
     }
 
     @Test
-    public void testFile2LOY() throws IOException {
+    public void testFile2LOY() throws IOException, InvalidMoleculeException, ParseException, InvalidPeakException {
         loadData("2loy");
         testAll();
     }
@@ -132,13 +137,13 @@ public class MMCifFileTest {
 //    
 
     @Test
-    public void testFile2K07() throws IOException {
+    public void testFile2K07() throws IOException, InvalidMoleculeException, ParseException, InvalidPeakException {
         loadData("2k07");
         testAll();
     }
 
     @Test
-    public void testFile2KCU() throws IOException {
+    public void testFile2KCU() throws IOException, InvalidMoleculeException, ParseException, InvalidPeakException {
         loadData("2kcu");
         testAll();
     }
@@ -149,37 +154,37 @@ public class MMCifFileTest {
 //    }
 
     @Test
-    public void testFile3PUK() throws IOException {
+    public void testFile3PUK() throws IOException, InvalidMoleculeException, ParseException, InvalidPeakException {
         loadData("3puk");
         testAll();
     }
 
     @Test
-    public void testFile3Q4F() throws IOException {
+    public void testFile3Q4F() throws IOException, InvalidMoleculeException, ParseException, InvalidPeakException {
         loadData("3q4f");
         testAll();
     }
 
     @Test
-    public void testFile6ACK() throws IOException {
+    public void testFile6ACK() throws IOException, InvalidMoleculeException, ParseException, InvalidPeakException {
         loadData("6ack");
         testAll();
     }
 
     @Test
-    public void testFile6AJ4() throws IOException {
+    public void testFile6AJ4() throws IOException, InvalidMoleculeException, ParseException, InvalidPeakException {
         loadData("6aj4");
         testAll();
     }
 
     @Test
-    public void testFile2RF4() throws IOException {
+    public void testFile2RF4() throws IOException, InvalidMoleculeException, ParseException, InvalidPeakException {
         loadData("2rf4");
         testAll();
     }
 
     @Test
-    public void testFile6J91() throws IOException {
+    public void testFile6J91() throws IOException, InvalidMoleculeException, ParseException, InvalidPeakException {
         loadData("6j91");
         testAll();
     }
@@ -446,7 +451,7 @@ public class MMCifFileTest {
         return sheetMap;
     }
 
-    public void loadData(String cifFileName) throws IOException {
+    public void loadData(String cifFileName) throws IOException, ParseException, InvalidMoleculeException, InvalidPeakException {
         String fileName = String.join(File.separator, "src", "test", "data", "ciffiles", cifFileName + ".cif");
         String outPath = "tmp";
         File tmpDir = new File(outPath);
@@ -454,70 +459,62 @@ public class MMCifFileTest {
             Files.createDirectory(tmpDir.toPath());
         }
         String outFile = String.join(File.separator, outPath, cifFileName + "_mmCif_outTest.cif");
-        try {
-            if (orig.isEmpty()) {
-                MMcifReader.read(fileName);
-                MMcifWriter.writeAll(outFile, cifFileName.toUpperCase());
-                orig = convertFileLines(fileName);
-                written = convertFileLines(outFile);
+        if (orig.isEmpty()) {
+            MMcifReader.read(fileName);
+            MMcifWriter.writeAll(outFile, cifFileName.toUpperCase());
+            orig = convertFileLines(fileName);
+            written = convertFileLines(outFile);
 
-            }
-        } catch (Exception ex) {
-            ex.printStackTrace();
         }
     }
 
-    public boolean compareMaps(String mode, Map<String, List<Object>> origMap, Map<String, List<Object>> writtenMap) throws IOException {
-        try {
-            boolean ok = true;
-            for (Entry<String, List<Object>> entry : origMap.entrySet()) {
-                String key = entry.getKey();
-                if (!writtenMap.containsKey(key)) {
-                    System.out.println(mode + " key " + key + " not in written");
-                    ok = false;
-                } else {
-                    List<Object> origValues = entry.getValue();
-                    List<Object> writtenValues = writtenMap.get(key);
-                    List<List<Object>> allValues = new ArrayList<>();
-                    allValues.add(origValues);
-                    allValues.add(writtenValues);
-                    if (mode.equals("torsion")) {
-                        for (int v = 0; v < origValues.size(); v++) {
-                            if ((v == 1 || v == 3 || v == 4)
-                                    && !origValues.get(v).equals(writtenValues.get(v))) {
-                                for (int l = 0; l < allValues.size(); l++) {
-                                    List<Object> valList = allValues.get(l);
-                                    double val = (double) valList.get(v);
-                                    if (val >= 180.0 && val < 360.0) {
-                                        valList.set(v, val - 180.0);
-                                    } else if (val >= -360.0 && val < -180.0) {
-                                        valList.set(v, val + 360.0);
-                                    } else if (val >= -180.0 && val < 0.0) {
-                                        valList.set(v, val + 180.0);
-                                    }
+    public boolean compareMaps(String mode, Map<String, List<Object>> origMap, Map<String, List<Object>> writtenMap) {
+        boolean ok = true;
+        for (Entry<String, List<Object>> entry : origMap.entrySet()) {
+            String key = entry.getKey();
+            if (!writtenMap.containsKey(key)) {
+                System.out.println(mode + " key " + key + " not in written");
+                ok = false;
+            } else {
+                List<Object> origValues = entry.getValue();
+                List<Object> writtenValues = writtenMap.get(key);
+                List<List<Object>> allValues = new ArrayList<>();
+                allValues.add(origValues);
+                allValues.add(writtenValues);
+                if (mode.equals("torsion")) {
+                    for (int v = 0; v < origValues.size(); v++) {
+                        if ((v == 1 || v == 3 || v == 4)
+                                && !origValues.get(v).equals(writtenValues.get(v))) {
+                            for (int l = 0; l < allValues.size(); l++) {
+                                List<Object> valList = allValues.get(l);
+                                double val = (double) valList.get(v);
+                                if (val >= 180.0 && val < 360.0) {
+                                    valList.set(v, val - 180.0);
+                                } else if (val >= -360.0 && val < -180.0) {
+                                    valList.set(v, val + 360.0);
+                                } else if (val >= -180.0 && val < 0.0) {
+                                    valList.set(v, val + 180.0);
                                 }
                             }
                         }
                     }
-                    for (int i = 0; i < origValues.size(); i++) {
-                        if (!origValues.get(i).equals(writtenValues.get(i))) {
-                            System.out.println(mode + " " + key + " " + origValues.toString() + " " + writtenValues.toString());
-                            ok = false;
-                        }
+                }
+                for (int i = 0; i < origValues.size(); i++) {
+                    if (!origValues.get(i).equals(writtenValues.get(i))) {
+                        System.out.println(mode + " " + key + " " + origValues.toString() + " " + writtenValues.toString());
+                        ok = false;
                     }
                 }
             }
-            for (Entry<String, List<Object>> entry : writtenMap.entrySet()) {
-                String key = entry.getKey();
-                if (!origMap.containsKey(key)) {
-                    System.out.println(mode + " key " + key + " not in orig");
-                    ok = false;
-                }
-            }
-            return ok;
-        } catch (Exception ex) {
-            return false;
         }
+        for (Entry<String, List<Object>> entry : writtenMap.entrySet()) {
+            String key = entry.getKey();
+            if (!origMap.containsKey(key)) {
+                System.out.println(mode + " key " + key + " not in orig");
+                ok = false;
+            }
+        }
+        return ok;
 
     }
 
@@ -532,93 +529,65 @@ public class MMCifFileTest {
     }
 
     public void testSeqBlock() throws IOException {
-        try {
-            Map<String, List<Object>> origSeq = buildSequenceMap(orig);
-            Map<String, List<Object>> writtenSeq = buildSequenceMap(written);
-            if (!origSeq.isEmpty() && !writtenSeq.isEmpty()) {
-                boolean ok = compareMaps("seq", origSeq, writtenSeq);
-                Assert.assertTrue(ok);
-            }
-        } catch (Exception ex) {
-            ex.printStackTrace();
+        Map<String, List<Object>> origSeq = buildSequenceMap(orig);
+        Map<String, List<Object>> writtenSeq = buildSequenceMap(written);
+        if (!origSeq.isEmpty() && !writtenSeq.isEmpty()) {
+            boolean ok = compareMaps("seq", origSeq, writtenSeq);
+            Assert.assertTrue(ok);
         }
     }
 
     public void testAtomTypesBlock() throws IOException {
-        try {
-            Map<String, List<Object>> origTypes = buildAtomTypesMap(orig);
-            Map<String, List<Object>> writtenTypes = buildAtomTypesMap(written);
-            if (!origTypes.isEmpty() && !writtenTypes.isEmpty()) {
-                boolean ok = compareMaps("atom types", origTypes, writtenTypes);
-                Assert.assertTrue(ok);
-            }
-        } catch (Exception ex) {
-            ex.printStackTrace();
+        Map<String, List<Object>> origTypes = buildAtomTypesMap(orig);
+        Map<String, List<Object>> writtenTypes = buildAtomTypesMap(written);
+        if (!origTypes.isEmpty() && !writtenTypes.isEmpty()) {
+            boolean ok = compareMaps("atom types", origTypes, writtenTypes);
+            Assert.assertTrue(ok);
         }
     }
 
     public void testAtomSitesBlock() throws IOException {
-        try {
-            Map<String, List<Object>> origSites = buildAtomSitesMap(orig);
-            Map<String, List<Object>> writtenSites = buildAtomSitesMap(written);
-            if (!origSites.isEmpty() && !writtenSites.isEmpty()) {
-                boolean ok = compareMaps("atom sites", origSites, writtenSites);
-                Assert.assertTrue(ok);
-            }
-        } catch (Exception ex) {
-            ex.printStackTrace();
+        Map<String, List<Object>> origSites = buildAtomSitesMap(orig);
+        Map<String, List<Object>> writtenSites = buildAtomSitesMap(written);
+        if (!origSites.isEmpty() && !writtenSites.isEmpty()) {
+            boolean ok = compareMaps("atom sites", origSites, writtenSites);
+            Assert.assertTrue(ok);
         }
     }
 
     public void testChemCompBlock() throws IOException {
-        try {
-            Map<String, List<Object>> origComp = buildChemCompMap(orig);
-            Map<String, List<Object>> writtenComp = buildChemCompMap(written);
-            if (!origComp.isEmpty() && !writtenComp.isEmpty()) {
-                boolean ok = compareMaps("chem comp", origComp, writtenComp);
-                Assert.assertTrue(ok);
-            }
-        } catch (Exception ex) {
-            ex.printStackTrace();
+        Map<String, List<Object>> origComp = buildChemCompMap(orig);
+        Map<String, List<Object>> writtenComp = buildChemCompMap(written);
+        if (!origComp.isEmpty() && !writtenComp.isEmpty()) {
+            boolean ok = compareMaps("chem comp", origComp, writtenComp);
+            Assert.assertTrue(ok);
         }
     }
 
     public void testStructAsymBlock() throws IOException {
-        try {
-            Map<String, List<Object>> origAsym = buildStructAsymMap(orig);
-            Map<String, List<Object>> writtenAsym = buildStructAsymMap(written);
-            if (!origAsym.isEmpty() && !writtenAsym.isEmpty()) {
-                boolean ok = compareMaps("struct asym", origAsym, writtenAsym);
-                Assert.assertTrue(ok);
-            }
-        } catch (Exception ex) {
-            ex.printStackTrace();
+        Map<String, List<Object>> origAsym = buildStructAsymMap(orig);
+        Map<String, List<Object>> writtenAsym = buildStructAsymMap(written);
+        if (!origAsym.isEmpty() && !writtenAsym.isEmpty()) {
+            boolean ok = compareMaps("struct asym", origAsym, writtenAsym);
+            Assert.assertTrue(ok);
         }
     }
 
     public void testStructConfBlock() throws IOException {
-        try {
-            Map<String, List<Object>> origConf = buildStructConfMap(orig);
-            Map<String, List<Object>> writtenConf = buildStructConfMap(written);
-            if (!origConf.isEmpty() && !writtenConf.isEmpty()) {
-                boolean ok = compareMaps("struct conf", origConf, writtenConf);
-                Assert.assertTrue(ok);
-            }
-        } catch (Exception ex) {
-            ex.printStackTrace();
+        Map<String, List<Object>> origConf = buildStructConfMap(orig);
+        Map<String, List<Object>> writtenConf = buildStructConfMap(written);
+        if (!origConf.isEmpty() && !writtenConf.isEmpty()) {
+            boolean ok = compareMaps("struct conf", origConf, writtenConf);
+            Assert.assertTrue(ok);
         }
     }
 
     public void testSheetBlock() throws IOException {
-        try {
-            Map<String, List<Object>> origSheet = buildSheetMap(orig);
-            Map<String, List<Object>> writtenSheet = buildSheetMap(written);
-            if (!origSheet.isEmpty() && !writtenSheet.isEmpty()) {
-                boolean ok = compareMaps("sheet range", origSheet, writtenSheet);
-                Assert.assertTrue(ok);
-            }
-        } catch (Exception ex) {
-            ex.printStackTrace();
+        Map<String, List<Object>> origSheet = buildSheetMap(orig);
+        Map<String, List<Object>> writtenSheet = buildSheetMap(written);
+        if (!origSheet.isEmpty() && !writtenSheet.isEmpty()) {
+            boolean ok = compareMaps("sheet range", origSheet, writtenSheet);
+            Assert.assertTrue(ok);
         }
     }
 

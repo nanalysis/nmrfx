@@ -149,13 +149,11 @@ public class HoseCodeGenerator {
         }
 
         for (Atom atom : entity.atoms) {
-//            System.out.println("atom " + atom.getShortName());
             if (atom.getAtomicNumber() == 0) {
                 continue;
             }
 
             for (Bond bond : atom.bonds) {
-//                System.out.println("bond " + bond.toString());
                 if ((bond.begin.getAtomicNumber() == 1) || (bond.end.getAtomicNumber() == 1)) {
                     continue;
                 }
@@ -181,7 +179,6 @@ public class HoseCodeGenerator {
             if (!targetSet.contains(atomStart.getAtomicNumber())) {
                 continue;
             }
-//            System.out.println("start " + j + " " + atomStart.getShortName());
             mTree.broad_path(j);
             List<MNode> pathNodes = mTree.getPathNodes();
             for (MNode mNode : pathNodes) {
@@ -216,12 +213,10 @@ public class HoseCodeGenerator {
                 }
                 lastShellNodes.clear();
                 lastShellNodes.addAll(thisShell);
-//                System.out.println(thisShell.toString());
                 sortedNodes.add(thisShell);
             }
 
             String hoseCode = dumpCodes(entity, sortedNodes);
-//            System.out.println(hoseCode);
             atomStart.setProperty("hose", hoseCode);
             result.put(atomStart.getID(), hoseCode);
         }
@@ -267,7 +262,6 @@ public class HoseCodeGenerator {
         MNode centerNode = firstNodes.get(0);
         result.append(formatCenterNode(centerNode));
         for (List<MNode> sNodes : sortedNodes) {
-//            System.out.println("shell");
             result.append("/");
             List<Atom> thisShell = new ArrayList<>();
             int lastIndex = 0;
@@ -281,9 +275,7 @@ public class HoseCodeGenerator {
                 Atom parentAtom = parent.getAtom();
                 parentName = parentAtom.getFullName();
                 IBond iBond = entity.getBond(parentAtom, pathAtom);
-                if (iBond == null) {
-//                        System.out.println("null " + parentAtom.getShortName() + " " + pathAtom.getShortName());
-                } else {
+                if (iBond != null) {
                     order = iBond.getOrder();
                 }
                 index = lastShell.indexOf(parentAtom);
@@ -296,7 +288,6 @@ public class HoseCodeGenerator {
                         }
                     }
                     thisShell.add(pathAtom);
-//                    System.out.println("pshell " + mNode.getShell() + " " + pathAtom.getFullName() + " " + parentName + " " + mNode.isRingClosure() + " " + index);
                     if (pathAtom.getFlag(Atom.AROMATIC) && parentAtom.getFlag(Atom.AROMATIC)) {
                         result.append("*");
                     } else if ((order != null) && (order == Order.TRIPLE)) {

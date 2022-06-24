@@ -11,6 +11,7 @@ import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 /**
  *
@@ -58,8 +59,8 @@ public class RemoteDatasetAccess {
         boolean ok = false;
 
         if (knownHostsFile.exists() && identityFile.exists()) {
-            try {
-                ok = Files.lines(identityFile.toPath()).anyMatch(line -> line.startsWith(remoteHost));
+            try (Stream<String> lines = Files.lines(identityFile.toPath())){
+                ok = lines.anyMatch(line -> line.startsWith(remoteHost));
             } catch (IOException ex) {
                 ok = false;
             }

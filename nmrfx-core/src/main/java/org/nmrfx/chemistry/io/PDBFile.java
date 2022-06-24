@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures 
+ * NMRFx Structure : A Program for Calculating Structures
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -18,6 +18,8 @@
 package org.nmrfx.chemistry.io;
 
 import org.nmrfx.chemistry.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.vecmath.Vector3d;
 import java.io.*;
@@ -29,6 +31,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class PDBFile {
+
+    private static final Logger log = LoggerFactory.getLogger(PDBFile.class);
 
     static public boolean allowSequenceDiff = true;
     static private boolean iupacMode = true;
@@ -89,18 +93,9 @@ public class PDBFile {
         }
     }
 
-    public MoleculeBase read(String fileName)
+    public MoleculeBase read(String fileName, boolean strictMode)
             throws MoleculeIOException {
         String string;
-        LineNumberReader lineReader;
-
-        try {
-            BufferedReader bf = new BufferedReader(new FileReader(fileName));
-            lineReader = new LineNumberReader(bf);
-        } catch (IOException ioe) {
-            throw new MoleculeIOException(ioe.getMessage());
-        }
-
         String lastRes = "";
         File file = new File(fileName);
         int dotPos = file.getName().lastIndexOf('.');
@@ -118,13 +113,15 @@ public class PDBFile {
         molecule = MoleculeFactory.newMolecule(molName);
 
         Polymer polymer = null;
-        Atom prevAtom = null;
         Residue residue = null;
         Compound compound = null;
         String lastChain = null;
         String coordSetName = "";
 
-        try {
+        try (
+                BufferedReader bf = new BufferedReader(new FileReader(fileName));
+                LineNumberReader lineReader = new LineNumberReader(bf)
+        ){
             while (true) {
                 string = lineReader.readLine();
 
@@ -133,21 +130,16 @@ public class PDBFile {
                     molecule.structures.add(Integer.valueOf(structureNumber));
                     molecule.calcAllBonds();
                     molecule.getAtomTypes();
-                    lineReader.close();
                     return molecule;
                 }
 
-                if (string.startsWith("ATOM  ") || string.startsWith("HETATM")) {
+                if (string.startsWith("ATOM  ") || (string.startsWith("HETATM") && !strictMode)) {
                     PDBAtomParser atomParse = new PDBAtomParser(string);
 
                     if (!lastRes.equals(atomParse.resNum)) {
                         lastRes = atomParse.resNum;
                         residue = new Residue(atomParse.resNum,
                                 atomParse.resName);
-
-                        if (residue == null) {
-                            throw new MoleculeIOException("didn't form residue");
-                        }
 
                         String thisChain;
 
@@ -157,8 +149,7 @@ public class PDBFile {
                             thisChain = atomParse.segment;
                         }
 
-                        if ((lastChain == null)
-                                || !thisChain.equals(lastChain)) {
+                        if (!thisChain.equals(lastChain)) {
                             lastChain = thisChain;
 
                             if (lastChain.trim().equals("")) {
@@ -218,10 +209,13 @@ public class PDBFile {
                         molecule.addEntity(compound, coordSetName);
                     }
 
+                    if (compound == null) {
+                        throw new MoleculeIOException("didn't form compound");
+                    }
+
                     Atom atom = new Atom(atomParse);
                     atom.setEnergyProp();
                     atom.setPointValidity(structureNumber, true);
-                    pt = atom.getPoint(structureNumber);
                     pt = new Point3(atomParse.x, atomParse.y, atomParse.z);
                     atom.setPoint(structureNumber, pt);
                     atom.setOccupancy((float) atomParse.occupancy);
@@ -232,10 +226,10 @@ public class PDBFile {
             }
         } catch (MoleculeIOException tclE) {
             throw tclE;
+        } catch (FileNotFoundException fnf) {
+            throw new MoleculeIOException(fnf.getMessage());
         } catch (Exception e) {
-            System.err.println(e.getMessage());
-            e.printStackTrace();
-
+            log.warn(e.getMessage(), e);
             return molecule;
         }
     }
@@ -249,25 +243,21 @@ public class PDBFile {
 
     public ArrayList<String> readSequence(String fileName, boolean listMode, int structureNum)
             throws MoleculeIOException {
-        LineNumberReader lineReader;
         String lastRes = "";
         String lastLoc = "";
         File file = new File(fileName);
         int dotPos = file.getName().lastIndexOf('.');
         String molName = file.getName().substring(0, dotPos);
 
-        try {
-            BufferedReader bf = new BufferedReader(new FileReader(fileName));
-            lineReader = new LineNumberReader(bf);
-        } catch (IOException ioe) {
-            throw new MoleculeIOException(ioe.getMessage());
-        }
         String string;
         String polymerName = "";
         String lastChain = null;
         ArrayList<String> residueList = new ArrayList<>();
         residueList.add("-molecule " + molName);
-        try {
+        try (
+                BufferedReader bf = new BufferedReader(new FileReader(fileName));
+                LineNumberReader lineReader = new LineNumberReader(bf)
+        ){
             while (true) {
                 string = lineReader.readLine();
 
@@ -304,9 +294,6 @@ public class PDBFile {
                         lastRes = atomParse.resNum;
                         lastLoc = atomParse.loc;
                         atomParse.resName = atomParse.resName.toLowerCase();
-//                        if (atomParse.resName.equals("mse")) {
-//                            atomParse.resName = "met";
-//                        }
                         residueList.add(atomParse.resName + " " + atomParse.resNum);
                     }
                     // fixme should we do anything here with MODEL
@@ -317,14 +304,16 @@ public class PDBFile {
                     //break;
                 }
             }
-            lineReader.close();
             if (!listMode) {
                 Sequence sequence = new Sequence();
                 sequence.read(molName, residueList, null);
                 readCoordinates(fileName, structureNum, true, true);
             }
-        } catch (IOException e) {
-            System.err.println(e.getMessage());
+        } catch (FileNotFoundException ioe) {
+            throw new MoleculeIOException(ioe.getMessage());
+        }
+        catch (IOException e) {
+            log.warn(e.getMessage(), e);
 
             return null;
         }
@@ -342,16 +331,12 @@ public class PDBFile {
     }
 
     public int checkPDBType(String fileName) throws MoleculeIOException {
-        LineNumberReader lineReader;
-        try {
-            BufferedReader bf = new BufferedReader(new FileReader(fileName));
-            lineReader = new LineNumberReader(bf);
-        } catch (IOException ioe) {
-            throw new MoleculeIOException(ioe.getMessage());
-        }
         String lastRes = "";
-        HashMap atomMap = new HashMap();
-        try {
+        HashMap<String, Vector3d> atomMap = new HashMap<>();
+        try (
+                BufferedReader bf = new BufferedReader(new FileReader(fileName));
+                LineNumberReader lineReader = new LineNumberReader(bf)
+        ){
             while (true) {
                 String string = lineReader.readLine();
 
@@ -372,40 +357,26 @@ public class PDBFile {
                     String resNum = atomParse.resNum;
                     Vector3d vector3 = new Vector3d(atomParse.x, atomParse.y, atomParse.z);
                     atomMap.put(aName, vector3);
-                    boolean gotAtoms = false;
                     if (!resNum.equals(lastRes)) {
                         if (atomMap.containsKey("CA") && atomMap.containsKey("CG")) {
-                            Vector3d vectorCA = (Vector3d) atomMap.get("CA");
-                            Vector3d vectorCG = (Vector3d) atomMap.get("CG");
                             if (atomMap.containsKey("HB1") && atomMap.containsKey("HB2")) {
-                                Vector3d vectorHB1 = (Vector3d) atomMap.get("HB1");
-                                Vector3d vectorHB2 = (Vector3d) atomMap.get("HB1");
-                                double volume = chiralVolume(vectorCA, vectorCG, vectorHB1, vectorHB2);
-                                gotAtoms = true;
-                                lineReader.close();
                                 return 1;
                             } else if (atomMap.containsKey("HB2") && atomMap.containsKey("HB3")) {
-                                Vector3d vectorHB2 = (Vector3d) atomMap.get("HB2");
-                                Vector3d vectorHB3 = (Vector3d) atomMap.get("HB3");
-                                double volume = chiralVolume(vectorCA, vectorCG, vectorHB2, vectorHB3);
-                                gotAtoms = true;
-                                lineReader.close();
+
                                 return 2;
                             }
-                        }
-                        if (gotAtoms) {
-                            break;
                         }
                         lastRes = resNum;
                         atomMap.clear();
                     }
                 }
             }
-            lineReader.close();
 
-        } catch (Exception exc) {
-            System.err.println(exc.getMessage());
-            exc.printStackTrace();
+        } catch (FileNotFoundException ioe) {
+            throw new MoleculeIOException(ioe.getMessage());
+        }
+        catch (Exception exc) {
+            log.warn(exc.getMessage(),exc);
             return -1;
         }
         return 0;
@@ -462,7 +433,6 @@ public class PDBFile {
 
     public void readCoordinates(String fileName, int structureNumber, final boolean noComplain, boolean genCoords)
             throws MoleculeIOException {
-        LineNumberReader lineReader;
         String lastChain = "";
 
         MoleculeBase molecule = MoleculeFactory.getActive();
@@ -471,62 +441,52 @@ public class PDBFile {
         }
         String molName = molecule.getName();
         int type = checkPDBType(fileName);
+        boolean coordsGen = false;
+        TreeSet<Integer> selSet = new TreeSet<>();
+        try (BufferedReader bf = new BufferedReader(new FileReader(fileName));
+             LineNumberReader lineReader = new LineNumberReader(bf)) {
+            boolean swap = (molecule.checkType() == 2) && (type == 1);
+            boolean readJustOne = true;
 
-        try {
-            BufferedReader bf = new BufferedReader(new FileReader(fileName));
-            lineReader = new LineNumberReader(bf);
-        } catch (IOException ioe) {
-            throw new MoleculeIOException(ioe.getMessage());
-        }
+            if (structureNumber < 0) {
+                readJustOne = false;
+                structureNumber = 0;
+            }
 
-        boolean swap = false;
-        if ((molecule.checkType() == 2) && (type == 1)) {
-            swap = true;
-        }
-        boolean readJustOne = true;
+            if (readJustOne && !molecule.structures.contains(Integer.valueOf(structureNumber))) {
+                molecule.structures.add(Integer.valueOf(structureNumber));
+            }
 
-        if (structureNumber < 0) {
-            readJustOne = false;
-            structureNumber = 0;
-        }
+            String polymerName = molName;
 
-        if (readJustOne && !molecule.structures.contains(Integer.valueOf(structureNumber))) {
-            molecule.structures.add(Integer.valueOf(structureNumber));
-        }
+            Iterator e = molecule.coordSets.values().iterator();
 
-        String polymerName = null;
-        polymerName = molName;
+            CoordSet coordSet;
 
-        Iterator e = molecule.coordSets.values().iterator();
+            while (e.hasNext()) {
+                coordSet = (CoordSet) e.next();
 
-        CoordSet coordSet;
+                Iterator entIterator = coordSet.getEntities().values().iterator();
 
-        while (e.hasNext()) {
-            coordSet = (CoordSet) e.next();
+                while (entIterator.hasNext()) {
+                    Entity entity = (Entity) entIterator.next();
 
-            Iterator entIterator = coordSet.getEntities().values().iterator();
-
-            while (entIterator.hasNext()) {
-                Entity entity = (Entity) entIterator.next();
-
-                if (entity instanceof Polymer) {
-                    polymerName = entity.getName();
-                }
-                for (Atom atom : entity.getAtoms()) {
-                    atom.setPointValidity(structureNumber,
-                            false);
+                    if (entity instanceof Polymer) {
+                        polymerName = entity.getName();
+                    }
+                    for (Atom atom : entity.getAtoms()) {
+                        atom.setPointValidity(structureNumber,
+                                false);
+                    }
                 }
             }
-        }
 
-        Polymer polymer = null;
-        Residue residue = null;
-        Point3 pt = null;
-        String string;
-        String coordSetName = "";
-        TreeSet selSet = new TreeSet();
-        boolean coordsGen = false;
-        try {
+            Polymer polymer = null;
+            Residue residue = null;
+            Point3 pt = null;
+            String string;
+            String coordSetName = "";
+
             while (true) {
                 string = lineReader.readLine();
 
@@ -545,7 +505,7 @@ public class PDBFile {
                     //   but some software makes everything an atom
                     //   so check to see if we've made an entity with residue name
                     //     if so we treat it as HETATM
-                    if (string.startsWith("HETATM") || ((compoundEntity != null) && (compoundEntity instanceof Compound))) {
+                    if (string.startsWith("HETATM") || (compoundEntity instanceof Compound)) {
                         hetAtom = true;
                     }
                     if (compoundEntity == null) {
@@ -561,11 +521,8 @@ public class PDBFile {
                     }
                     if (!thisChain.equals(lastChain)) {
                         lastChain = thisChain;
-                    } else {
-                        if (!atomParse.resName.equals("HOH")) {
-                            //hetAtom = false;
-                        }
                     }
+
                     if (!hetAtom) {
 
                         if (lastChain.trim().equals("")) {
@@ -580,33 +537,25 @@ public class PDBFile {
                             polymer = (Polymer) molecule.getChain(polymerName);
                         }
                         if (polymer == null) {
-                            System.err.println("null polymer " + polymerName + " for line: " + string);
+                            log.warn("null polymer {} for line {}", polymerName, string);
 
                             continue;
                         }
 
                         if (!molecule.coordSetExists(coordSetName)) {
                             coordSetName = molecule.getFirstCoordSet().getName();
-                            //  molecule.addCoordSet(coordSetName, polymer);
                         }
 
                         residue = polymer.getResidue(atomParse.resNum);
 
                         if (residue == null) {
-                            //for (Residue resi : polymer.getResidues()) {
-                            //System.out.println(resi.getName() + " " + resi.getNumber());
-                            //}
-                            if (!atomParse.resName.equals("HOH")) {
-                                // System.err.println("null residue " + atomParse.resNum + " for polymer " + polymerName);
-                                // System.err.println(string);
-                            }
                             continue;
                         }
                         if (!AtomParser.isResNameConsistant(residue.getName(), atomParse.resName)) {
                             String msg = "Residue " + polymerName + ":" + residue.getName() + " at " + atomParse.resNum + " is not same as in file " + atomParse.resName;
                             if (allowSequenceDiff) {
-                                System.err.println(msg);
-                                System.err.println(string);
+                                log.warn(msg);
+                                log.warn(string);
                                 continue;
                             } else {
                                 throw new MoleculeIOException(msg);
@@ -615,8 +564,6 @@ public class PDBFile {
                         atom = residue.getAtomLoose(atomParse.atomName);
 
                         if (atom == null) {
-                            //System.err.println("null atom " + atomParse.atomName);
-                            //System.err.println("null atom " + string);
                             continue;
                         }
 
@@ -625,9 +572,7 @@ public class PDBFile {
 
                         if (compoundEntity == null) {
                             if (!noComplain) {
-                                System.err.println("no such compound as  "
-                                        + atomParse.resName);
-                                System.err.println("in file line  " + string);
+                                log.warn("no such compound as  {} in file line {}", atomParse.resName, string);
                             }
                             continue;
                         }
@@ -636,9 +581,7 @@ public class PDBFile {
 
                         if (atom == null) {
                             if (!noComplain) {
-                                System.err.println("no such atom as "
-                                        + atomParse.atomName);
-                                System.err.println("in file line " + string);
+                                log.warn("no such atom as {} in file line {}", atomParse.atomName, string);
                             }
                             continue;
                         }
@@ -684,14 +627,13 @@ public class PDBFile {
                     continue;
                 }
             }
-            lineReader.close();
-        } catch (MoleculeIOException psE) {
-            System.out.println("err " + psE.getMessage());
+        } catch (FileNotFoundException ioe) {
+            throw new MoleculeIOException(ioe.getMessage());
+        }
+        catch (MoleculeIOException psE) {
             throw psE;
         } catch (Exception exc) {
-            System.err.println(exc.getMessage());
-            exc.printStackTrace();
-
+            log.warn(exc.getMessage(), exc);
             return;
         }
         if (genCoords && !coordsGen) {
@@ -928,7 +870,6 @@ public class PDBFile {
                         iArgs++;
                     }
                 } else if (currentState.equals("ANGLE")) {
-                    //System.err.println(iArgs + " " + tokenizer.toString());
                     if ((newState != null)) {
                         if (iArgs < 2) {
                             throw new MoleculeIOException("too few arguments for ANGLE");
@@ -980,9 +921,7 @@ public class PDBFile {
             bf.close();
             return true;
         } catch (IOException e) {
-            System.err.println("Error reading \"" + fileName + "\"");
-            System.err.println(e.getMessage());
-            e.printStackTrace();
+            log.warn("Error reading \"{}\" : {}", fileName, e.getMessage(), e);
             return false;
         }
     }
@@ -1007,99 +946,76 @@ public class PDBFile {
         }
         int structureNumber = 0;
         String string;
-        LineNumberReader lineReader;
-
-        try {
-            if (fileContent == null) {
-                BufferedReader bf = new BufferedReader(new FileReader(fileName));
-                lineReader = new LineNumberReader(bf);
-            } else {
-                StringReader sf = new StringReader(fileContent);
-                lineReader = new LineNumberReader(sf);
-            }
-        } catch (IOException ioe) {
-            throw new MoleculeIOException(ioe.getMessage());
-        }
-        File file = new File(fileName);
-
-        String fileTail = file.getName();
-        String fileRoot;
-        int dot = fileTail.indexOf(".");
-
-        if (dot != -1) {
-            fileRoot = fileTail.substring(0, dot);
-        } else {
-            fileRoot = fileTail;
-        }
-
         Compound compound = null;
         Map<String, Atom> atomMap = new HashMap<>();
         boolean calcBonds = true;
-        while (true) {
-            try {
-                string = lineReader.readLine();
-            } catch (IOException ioe) {
-                System.err.println(ioe.getMessage());
-                molecule.getAtomTypes();
-                if (calcBonds) {
-                    compound.calcAllBonds();
-                }
-                return compound;
-            }
 
-            if (string == null) {
-                molecule.getAtomTypes();
-                if (calcBonds) {
-                    System.out.println("calculating bonds");
-                    compound.calcAllBonds();
-                }
-                return compound;
-            }
-            if (string.startsWith("ATOM  ") || string.startsWith("HETATM")) {
-                PDBAtomParser atomParse = new PDBAtomParser(string);
-                if (compound == null) {
-                    compound = residue != null ? residue : new Compound(atomParse.resNum, atomParse.resName);
-                    compound.molecule = molecule;
-                    compound.assemblyID = molecule.entityLabels.size() + 1;
-                    if (residue == null) {
-                        molecule.addEntity(compound, coordSetName);
-                    }
-                }
-                String atomNum = atomParse.atomNum;
-                String atomName = atomParse.atomName;
-                Atom atom = new Atom(atomParse);
-                atom.setEnergyProp();
-                atomMap.put(atomNum, atom);
-                atom.setPointValidity(structureNumber, true);
+        try (Reader reader = fileContent == null ? new FileReader(fileName): new StringReader(fileContent);
+             BufferedReader bufReader = new BufferedReader(reader)) {
+            while ((string = bufReader.readLine()) != null) {
 
-                atom.entity = compound;
-                atom.getPoint(structureNumber);
-                Point3 pt = new Point3(atomParse.x, atomParse.y, atomParse.z);
-                atom.setPoint(structureNumber, pt);
-                atom.setOccupancy((float) atomParse.occupancy);
-                atom.setBFactor((float) atomParse.bfactor);
-                compound.addAtom(atom);
-            }
-            if (string.startsWith("CONECT")) {
-                calcBonds = false;
-                String[] arguments = string.split("\\s+");
-                Atom bondedAtom = atomMap.get(arguments[1]);
-                for (int i = 2; i < arguments.length; i++) {
-                    Atom bondeeAtom = atomMap.get(arguments[i]);
-                    if (!bondedAtom.isBonded(bondeeAtom)) {
-                        // Prevent duplication of bonds
-                        Bond bond = new Bond(bondedAtom, bondeeAtom);
-                        if (residue != null) {
-                            residue.addBond(bond);
-                        } else {
-                            compound.addBond(bond);
+                if (string.startsWith("ATOM  ") || string.startsWith("HETATM")) {
+                    PDBAtomParser atomParse = new PDBAtomParser(string);
+                    if (compound == null) {
+                        compound = residue != null ? residue : new Compound(atomParse.resNum, atomParse.resName);
+                        compound.molecule = molecule;
+                        compound.assemblyID = molecule.entityLabels.size() + 1;
+                        if (residue == null) {
+                            molecule.addEntity(compound, coordSetName);
                         }
-                        bondedAtom.addBond(bond);
-                        bondeeAtom.addBond(bond);
+                    }
+                    String atomNum = atomParse.atomNum;
+                    Atom atom = new Atom(atomParse);
+                    atom.setEnergyProp();
+                    atomMap.put(atomNum, atom);
+                    atom.setPointValidity(structureNumber, true);
+
+                    atom.entity = compound;
+                    atom.getPoint(structureNumber);
+                    Point3 pt = new Point3(atomParse.x, atomParse.y, atomParse.z);
+                    atom.setPoint(structureNumber, pt);
+                    atom.setOccupancy((float) atomParse.occupancy);
+                    atom.setBFactor((float) atomParse.bfactor);
+                    compound.addAtom(atom);
+                }
+                if (string.startsWith("CONECT")) {
+                    calcBonds = false;
+                    String[] arguments = string.split("\\s+");
+                    Atom bondedAtom = atomMap.get(arguments[1]);
+                    for (int i = 2; i < arguments.length; i++) {
+                        Atom bondeeAtom = atomMap.get(arguments[i]);
+                        if (!bondedAtom.isBonded(bondeeAtom)) {
+                            // Prevent duplication of bonds
+                            Bond bond = new Bond(bondedAtom, bondeeAtom);
+                            if (residue != null) {
+                                residue.addBond(bond);
+                            } else if (compound != null) {
+                                compound.addBond(bond);
+                            }
+                            bondedAtom.addBond(bond);
+                            bondeeAtom.addBond(bond);
+                        }
                     }
                 }
             }
+        } catch (FileNotFoundException ioe) {
+            throw new MoleculeIOException(ioe.getMessage());
         }
+        catch (IOException ioe) {
+            log.warn(ioe.getMessage(), ioe);
+            molecule.getAtomTypes();
+            if (calcBonds && compound != null) {
+                compound.calcAllBonds();
+            }
+            return compound;
+        }
+
+        molecule.getAtomTypes();
+        if (calcBonds && compound != null) {
+            log.info("calculating bonds");
+            compound.calcAllBonds();
+        }
+        return compound;
 
     }
 }

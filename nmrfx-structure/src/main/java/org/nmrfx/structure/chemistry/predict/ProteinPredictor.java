@@ -324,7 +324,6 @@ public class ProteinPredictor {
                         if ((reportAtom != null) && atom.getFullName().equals(reportAtom)) {
                             dumpResult(predResult);
                         }
-                        //System.out.println(residue.getNumber() + " " + residue.getName() + " " + subName + " " + atom + " " + value);
                     }
                 });
             }
@@ -521,7 +520,6 @@ public class ProteinPredictor {
         String aaKey = aaChars[2] + "." + aName;
         if (shiftMap.containsKey(aaKey)) {
             result = shiftMap.get(aaKey);
-//            System.out.println(aaKey + " " + result);
             for (int i = 0; i < neighorPositions.length; i++) {
                 String neighborName = aaChars[2 + neighorPositions[i]];
                 String key = neighborName + "." + aName;
@@ -531,7 +529,6 @@ public class ProteinPredictor {
                 } else {
                     result += neighborCorrs[i];
                 }
-//                System.out.println(i + " " + neighborCorrs[i] + " " + result);
             }
             List<String> groupStr = new ArrayList<>();
             for (int i = 0; i < 5; i++) {
@@ -554,13 +551,9 @@ public class ProteinPredictor {
             String centerType = groupStr.get(2);
             for (String segment : segMap.keySet()) {
                 CorrComb corrComb = segMap.get(segment);
-//                System.out.println(segment + " " + centerType + " " + corrComb.centerAA + " " + corrComb.neighborType + " " + corrComb.relPos);
                 if (corrComb.centerAA.equals(centerType) && groupStr.get(2 + corrComb.relPos).equals(corrComb.neighborType)) {
-//                    System.out.println("gotgrp");
                     if ((!groupStr.get(2).equals("p") || !corrComb.neighborType.equals("p")) || "ST".contains(aaChars[2])) {
-
                         result += corrComb.value1;
-//                        System.out.println(segment + "  " + corrComb.value1 + " " + result);
                     }
                 }
             }

@@ -71,12 +71,16 @@ import javafx.scene.shape.Polygon;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.processor.gui.controls.GridPaneCanvas;
 import org.nmrfx.project.ProjectBase;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
  * @author johnsonb
  */
 public class DatasetsController implements Initializable, PropertyChangeListener {
+
+    private static final Logger log = LoggerFactory.getLogger(DatasetsController.class);
 
     static final DecimalFormat formatter = new DecimalFormat();
 
@@ -122,8 +126,7 @@ public class DatasetsController implements Initializable, PropertyChangeListener
             stage.setTitle("Datasets");
             stage.show();
         } catch (IOException ioE) {
-            ioE.printStackTrace();
-            System.out.println(ioE.getMessage());
+            log.warn(ioE.getMessage(), ioE);
         }
 
         return controller;
@@ -521,7 +524,6 @@ public class DatasetsController implements Initializable, PropertyChangeListener
             switch (column) {
                 case "Value":
                     value.setValue(newValue);
-//                    System.out.println("value changed to " + newValue);
                     saveValueTable();
                     break;
             }

@@ -98,7 +98,6 @@ public class MTree {
                 next = ((MNode) cNode.nodes.get(i)).getID();
                 nNode = (MNode) nodes.elementAt(next);
                 if (nNode.shell == -1) {
-                    //System.out.println(j+" "+i+" "+m+" "+nodesAdded+" "+next+" "+cNode.shell);
                     path[nodesAdded++] = next;
                     pathNodes.add(nNode);
                     nNode.shell = cNode.shell + 1;
@@ -195,7 +194,6 @@ public class MTree {
                                 }
                             }
                         }
-                        //System.out.println(j+" "+i+" "+m+" "+nodesAdded+" "+next+" "+cNode.shell);
                         path[nodesAdded++] = ((cNode.shell + 1) << 8) + next;
                         pathNodes.add(nNode);
                         nNode.shell = cNode.shell + 1;
@@ -203,12 +201,8 @@ public class MTree {
                         nNode.pathPos = nodesAdded - 1;
                     }
 
-//                    System.out.println("add " + (nodesAdded - 1 + " " + nNode.toString()));
                 } else {
-                    if ((nNode.parent == cNode) || (cNode.parent == nNode)) {
-//                        System.out.println("already notring");
-
-                    } else {
+                    if ((nNode.parent != cNode) && (cNode.parent != nNode)) {
                         List<Ring> nAtomRings = (List) nNode.getAtom().getProperty("rings");
                         List<Ring> cAtomRings = (List) cNode.getAtom().getProperty("rings");
                         if (nAtomRings != null && cAtomRings != null) {
@@ -265,7 +259,6 @@ public class MTree {
     public int[] broad_path2(int iStart) {
         int nNodes = nodes.size();
 
-        //System.out.println("nNodes "+nNodes);
         int[] path = new int[40 * nNodes];
 
         for (int i = 0; i < path.length; i++) {
@@ -296,7 +289,6 @@ public class MTree {
          * Finish when all nodes up to and including the last node added have been checked.
          **/
         while (((j * 2) + 1) <= ((2 * (nodesAdded - 1)) + 1)) {
-            // System.out.println(" j "+j+" "+nodesAdded);
             // m is the node index (and cNode the node with that index) in the path to be checked during this iteration
             m = (path[(j * 2) + 1] & 0xFF);
             cNode = (MNode) nodes.elementAt(m);
@@ -309,7 +301,6 @@ public class MTree {
 
             cNode.shell = j;
 
-            //System.out.println(cNode.nodes.size());
             // Loop over all the nodes connected to the current node
             for (int i = 0; i < cNode.nodes.size(); i++) {
                 next = ((MNode) cNode.nodes.get(i)).getID();
@@ -325,7 +316,6 @@ public class MTree {
                         return null;
                     }
 
-                    //System.out.println(j+" "+i+" "+m+" "+nodesAdded+" "+next+" "+cNode.shell);
                     path[2 * nodesAdded] = m; // node index of current node
                     path[(2 * nodesAdded) + 1] = next; // node index of the node this edge connects
                     nodesAdded++;

@@ -75,13 +75,12 @@ public class MatrixTypeService {
         try {
             executor.awaitTermination(4, TimeUnit.SECONDS);
         } catch (InterruptedException ex) {
-            ex.printStackTrace();
+            log.warn(ex.getMessage(), ex);
         }
     }
 
     public boolean finished() {
         if ((nRead.get() >= itemsToRead) && !unprocessedItemQueue.isEmpty()) {
-//            System.out.println("still " + unprocessedItemQueue.size());
             return false;
         } else {
             return (nRead.get() >= itemsToRead) && unprocessedItemQueue.isEmpty();
@@ -92,14 +91,14 @@ public class MatrixTypeService {
         try {
             return futureTask.get(timeOut, TimeUnit.MILLISECONDS);
         } catch (InterruptedException ex) {
-            ex.printStackTrace();
+            log.warn(ex.getMessage(), ex);
             return false;
         } catch (ExecutionException ex) {
-            ex.printStackTrace();
+            log.warn(ex.getMessage(), ex);
             return false;
         } catch (TimeoutException ex) {
-            System.out.println("time out " + nWritten.get() + " " + itemsToWrite + " " + nRead.get() + " " + itemsToRead);
-            ex.printStackTrace();
+            log.warn("time out {} {} {} {}", nWritten.get(), itemsToWrite, nRead.get(), itemsToRead);
+            log.warn(ex.getMessage(), ex);
             return false;
         }
     }
@@ -117,7 +116,6 @@ public class MatrixTypeService {
                 }
                 nRead.addAndGet(nVec);
             }
-//            System.out.println("n read " + nRead.get() + " of " + itemsToRead);
             return true;
         }
         return false;
@@ -137,7 +135,7 @@ public class MatrixTypeService {
             }
             return vecs;
         } catch (InterruptedException ex) {
-            ex.printStackTrace();
+            log.warn(ex.getMessage(), ex);
             return new ArrayList<>();
         }
     }

@@ -126,7 +126,6 @@ public class MoleculePrimitives {
 
         int nonCStart = i;
 
-        //System.out.println(maxX+" "+maxY);
         i += (nonC * 2);
 
         int nAtomValues = byteArray[i++];
@@ -227,19 +226,15 @@ public class MoleculePrimitives {
                 }
             }
 
-            //System.out.println(i+" "+p1+" "+p2+" "+byte1+" "+byte2+" "+order);
-            //System.out.println(p1+" "+p2+" "+(p1+p2+1));
             dx = (((1.0f * dx) / coordRes) - 0.5f) * maxX * 2.0f;
             dy = (((1.0f * dy) / coordRes) - 0.5f) * maxY * 2.0f;
             dz = (((1.0f * dz) / coordRes) - 0.5f) * maxZ * 2.0f;
             p2 = p1 + p2 + 1;
 
-            //System.out.println(p1+" "+p2+" "+dx+" "+dy);
             x[p2] = x[p1] + dx;
             y[p2] = y[p1] + dy;
             z[p2] = z[p1] + dz;
 
-            //System.out.println(x[p1]+" "+y[p1]+" "+x[p2]+" "+y[p2]);
             if (order > 1) {
                 float x1;
                 float y1;

@@ -17,7 +17,12 @@
  */
 package org.nmrfx.processor.optimization;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class Minimizer {
+    private static final Logger log = LoggerFactory.getLogger(Minimizer.class);
+
     // epsmch is the machine precision
     //static final double epsmch = 2.22044604926e-16;
 
@@ -44,8 +49,6 @@ public class Minimizer {
 
     public String initpt(double[] guess) {
         a = new double[lmdifFunc.getN() + 1];
-//System.out.println(a.length);
-
         if (a.length != (guess.length + 1)) {
             System.out.println("number of guesses not equal to number of pars");
             lmdifFunc.initpt(a);
@@ -64,8 +67,6 @@ public class Minimizer {
 
     public String initpt0(double[] guess, int[] map) {
         a = new double[lmdifFunc.getN() + 1];
-//System.out.println(a.length);
-
         for (int i = 1; i < a.length; i++) {
             a[i] = guess[map[i] - 1];
         }
@@ -170,7 +171,7 @@ public class Minimizer {
                 factor *= 10.0;
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            log.warn(e.getMessage(), e);
         }
     }
 }

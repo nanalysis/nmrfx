@@ -69,12 +69,16 @@ import org.nmrfx.utils.properties.ListOperationItem;
 import org.nmrfx.utils.properties.MenuTextOperationItem;
 import org.nmrfx.utils.properties.TextOperationItem;
 import org.nmrfx.utils.properties.TextWaitingOperationItem;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
  * @author brucejohnson
  */
 public class NvFxPropertyEditorFactory extends DefaultPropertyEditorFactory {
+
+    private static final Logger log = LoggerFactory.getLogger(NvFxPropertyEditorFactory.class);
 
     ProcessorController processorController = null;
 
@@ -122,9 +126,7 @@ public class NvFxPropertyEditorFactory extends DefaultPropertyEditorFactory {
         Class<?> type = item.getType();
 
         //TODO: add support for char and collection editors
-//        System.out.println("get editor " + item.getName() + " " + item.getType().toString());
         if (type == DoubleUnitsRangeOperationItem.class) {
-            //System.out.println("double item");
             Slider slider = new Slider();
             DoubleUnitsRangeOperationItem dItem = (DoubleUnitsRangeOperationItem) item;
             slider.setMin(dItem.getMin());
@@ -140,7 +142,6 @@ public class NvFxPropertyEditorFactory extends DefaultPropertyEditorFactory {
             dItem.setZoomSlider(zoomSlider);
             return new PropertySliderEditor(dItem, zoomSlider);
         } else if (type == DoubleRangeOperationItem.class) {
-            //System.out.println("double item");
             Slider slider = new Slider();
             DoubleRangeOperationItem dItem = (DoubleRangeOperationItem) item;
             slider.setMin(dItem.getMin());
@@ -173,17 +174,14 @@ public class NvFxPropertyEditorFactory extends DefaultPropertyEditorFactory {
             ((TextOperationItem) item).setEditor(editor);
             return editor;
         } else if (type == TextOperationItem.class) {
-            //System.out.println("text item");
             return Editors.createTextEditor(item);
         } else if (type == TextWaitingOperationItem.class) {
-            //System.out.println("textwait item");
             TextWaitingOperationItem tItem = (TextWaitingOperationItem) item;
             PropertyEditor editor = Editors.createTextEditor(item);
             TextField textField = (TextField) editor.getEditor();
             textField.setOnKeyReleased(e -> tItem.keyReleased(textField, e));
             return editor;
         } else if (type == MenuTextOperationItem.class) {
-            //System.out.println("text item");
             MenuTextOperationItem tItem = (MenuTextOperationItem) item;
             MenuTextField menuTextField;
             if (tItem.getName().equalsIgnoreCase("ref")) {
@@ -193,7 +191,6 @@ public class NvFxPropertyEditorFactory extends DefaultPropertyEditorFactory {
             }
             return new MenuTextFieldEditor(tItem, menuTextField);
         } else if (type == IntRangeOperationItem.class) {
-            //System.out.println("int range item");
             Slider slider = new Slider();
             IntRangeOperationItem iItem = (IntRangeOperationItem) item;
             slider.setMin(iItem.getMin());
@@ -214,7 +211,6 @@ public class NvFxPropertyEditorFactory extends DefaultPropertyEditorFactory {
             IntSlider zoomSlider = new IntSlider(slider, iItem.getMin(), iItem.getMax());
             return new IntPropertySliderEditor(iItem, zoomSlider);
         } else if (type == BooleanOperationItem.class) {
-            //System.out.println("bpp; range item");
             BooleanOperationItem bItem = (BooleanOperationItem) item;
             return Editors.createCheckEditor(bItem);
         } else if (type == EditableChoiceOperationItem.class) {
@@ -230,12 +226,9 @@ public class NvFxPropertyEditorFactory extends DefaultPropertyEditorFactory {
             IntChoiceOperationItem cItem = (IntChoiceOperationItem) item;
             return Editors.createChoiceEditor(item, cItem.getChoices());
         } else if (type == ComplexOperationItem.class) {
-            //System.out.println("cpx item");
-
             ComplexOperationItem croi = (ComplexOperationItem) item;
             return Editors.createTextEditor(croi);
         } else if (type == ListOperationItem.class) {
-            //System.out.println("list item");
 
             ListOperationItem loi = (ListOperationItem) item;
             return Editors.createTextEditor(loi);
@@ -311,7 +304,7 @@ public class NvFxPropertyEditorFactory extends DefaultPropertyEditorFactory {
                 try {
                     return sourceClass.getConstructor(String.class).newInstance(getEditor().getText());
                 } catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException | SecurityException e) {
-                    e.printStackTrace();
+                    log.warn(e.getMessage(), e);
                     return null;
                 }
             }

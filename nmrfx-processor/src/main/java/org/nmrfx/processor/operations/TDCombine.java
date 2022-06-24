@@ -61,7 +61,6 @@ public class TDCombine extends Operation {
             boolean[] used = new boolean[vectors.size()];
             int offset = dim;
             ArrayList<Vec> subList = new ArrayList<>();
-            //System.out.println(numInputVec+" " + numOutputVec + " " + nInGroup + " " + vectors.size());
             for (int vec0 = 0; vec0 < vectors.size(); vec0++) {
                 int vec1 = vec0 + offset;
                 if (vec1 >= vectors.size()) {
@@ -71,7 +70,6 @@ public class TDCombine extends Operation {
                     subList.clear();
                     used[vec0] = true;
                     used[vec1] = true;
-                    //System.out.println(i+" " + k + " " + vec0 + " " + vec1);
                     subList.add(vectors.get(vec0));
                     subList.add(vectors.get(vec1));
                     combine(subList);

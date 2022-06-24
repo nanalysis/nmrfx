@@ -270,8 +270,9 @@ public class Predictor {
         Molecule molecule = (Molecule) MoleculeFactory.getActive();
         if (molecule != null) {
             if (!molecule.getDotBracket().equals("")) {
-                PythonInterpreter interp = new PythonInterpreter();
-                interp.exec("import rnapred\nrnapred.predictFromSequence(ppmSet=" + ppmSet + ")");
+                try (PythonInterpreter interp = new PythonInterpreter()) {
+                    interp.exec("import rnapred\nrnapred.predictFromSequence(ppmSet=" + ppmSet + ")");
+                }
             }
         }
     }
@@ -442,7 +443,6 @@ public class Predictor {
             }
             if ((hoseAtom != null) && (hoseAtom.getAtomicNumber() == 6)) {
                 String hoseCode = (String) hoseAtom.getProperty("hose");
-//                System.out.println(atom.getShortName() + " " + hoseAtom.getShortName() + " " + hoseCode);
                 if (hoseCode != null) {
                     PredictResult predResult;
                     HosePrediction.HOSEPPM hosePPM = new HosePrediction.HOSEPPM(hoseCode);
@@ -450,7 +450,6 @@ public class Predictor {
                     HOSEStat hoseStat = predResult.getStat(predAtomType);
                     double shift = hoseStat.dStat.getPercentile(50);
                     shift = Math.round(shift * roundScale) / roundScale;
-                    // System.out.println(atom.getShortName() + " " + predResult.getShell() + " " + shift);
                     if (iRef < 0) {
                         atom.setRefPPM(-iRef - 1, shift);
                     } else {
@@ -469,7 +468,6 @@ public class Predictor {
         } else {
             InputStreamReader reader = new InputStreamReader(istream);
             BufferedReader breader = new BufferedReader(reader);
-            String aType = "";
             String state = "";
             int nCoef = 0;
             String[] coefAtoms = null;
@@ -484,7 +482,8 @@ public class Predictor {
                         if (fields.length > 0) {
                             if (fields[0].equals("rmax")) {
                                 setRMax(Double.parseDouble(fields[1]));
-                                aType = fields[2];
+                                // For this line fields[2] is unused but its value is the atom type, e.g. H, C
+                                // it was previously used to help set the typeIndex
                                 setIntraScale(Double.parseDouble(fields[3]));
                             } else if (fields[0].equals("coef")) {
                                 state = "coef";
@@ -524,9 +523,6 @@ public class Predictor {
                 }
             }
             breader.close();
-//            for (String key : statMap.keySet()) {
-//                System.out.println(key);
-//            }
         }
     }
 

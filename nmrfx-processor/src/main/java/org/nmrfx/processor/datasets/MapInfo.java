@@ -29,9 +29,12 @@ import java.nio.channels.FileChannel;
 import java.util.Collections;
 import java.util.Map;
 import org.apache.commons.collections4.map.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class MapInfo {
 
+    private static final Logger log = LoggerFactory.getLogger(MapInfo.class);
     public static int maxSize = 100;
 
     public static class MyLRUMap extends LRUMap {
@@ -82,7 +85,6 @@ public class MapInfo {
                 }
                 mapMap.put(this, this);
             }
-//System.out.println(size + " " + nMaps + " " + start);
         } catch (IOException e) {
             raFile.close();
             throw e;
@@ -172,6 +174,7 @@ public class MapInfo {
                 clean.invoke(theUnsafe, cb);
             }
         } catch (ClassNotFoundException | IllegalAccessException | IllegalArgumentException | NoSuchFieldException | NoSuchMethodException | SecurityException | InvocationTargetException ex) {
+            log.warn(ex.getMessage(), ex);
         }
     }
 }

@@ -26,6 +26,8 @@ import org.apache.commons.math3.complex.Complex;
 import org.apache.commons.math3.complex.ComplexUtils;
 import org.apache.commons.math3.util.FastMath;
 import org.apache.commons.math3.util.MultidimensionalCounter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -33,6 +35,7 @@ import org.apache.commons.math3.util.MultidimensionalCounter;
  */
 public class GRINS {
 
+    private static final Logger log = LoggerFactory.getLogger(GRINS.class);
     final MatrixND matrix;
     final double noise;
     final boolean preserve;
@@ -97,7 +100,6 @@ public class GRINS {
             for (iteration = 0; iteration < iterations; iteration++) {
                 matrix.doFTtoReal();
                 if (iteration == 0) {
-//                    System.out.println("noise " + noiseValue);
 
                     if (calcStats) {
                         preValue = matrix.calcSumAbs();
@@ -126,7 +128,6 @@ public class GRINS {
                     break;
                 }
                 ArrayList<MatrixPeak> peaks = matrix.peakPick(globalThreshold, noiseThreshold, true, false, scale);
-//            System.out.println("sort " + peaks.size());
                 Collections.sort(peaks, (a, b) -> Double.compare(Math.abs(b.height), Math.abs(a.height)));
                 if (peaks.size() > 1) {
                     peaks = filterPeaks(peaks);
@@ -154,7 +155,6 @@ public class GRINS {
                     doPeaks(peaks, matrix);
                 }
             }
-//        System.out.println("GRINS with " + nPeaks + " peaks");
             if (preserve) {
                 matrix.addDataFrom(addBuffer);
             } else {
@@ -207,7 +207,6 @@ public class GRINS {
             vecs[i] = new double[matrix.getSize(i)];
         }
         for (MatrixPeak peak : peaks) {
-//            System.out.println(matrix.getIndex() + " " + peak.toString());
             for (int i = 0; i < nDim; i++) {
                 int size = vecs[i].length;
                 double freq = (peak.centers[i + 1] - size / 2) / size;
@@ -307,6 +306,7 @@ public class GRINS {
             try {
                 fileWriter.write(outLine);
             } catch (IOException ex) {
+                log.warn(ex.getMessage(), ex);
             }
         }
 

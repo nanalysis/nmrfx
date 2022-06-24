@@ -53,6 +53,8 @@ import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.processor.gui.spectra.KeyBindings;
 import org.nmrfx.processor.optimization.BipartiteMatcher;
 import org.nmrfx.processor.project.Project;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -60,6 +62,7 @@ import org.nmrfx.processor.project.Project;
  */
 public class PeakSlider implements ControllerTool {
 
+    private static final Logger log = LoggerFactory.getLogger(PeakSlider.class);
     ToolBar sliderToolBar;
     FXMLController controller;
     Consumer closeAction;
@@ -249,8 +252,7 @@ public class PeakSlider implements ControllerTool {
     }
 
 //    public void freezePeaks(MouseEvent event) {
-//        System.out.println(event.getEventType().toString() + " " + event.getSource());
-//        
+//
 //        freezePeaks(event.isAltDown());
 //        event.consume();
 //        
@@ -365,7 +367,7 @@ public class PeakSlider implements ControllerTool {
                 peak.setFrozen(true, useAllConditions);
                 PeakList.notifyFreezeListeners(peak, true);
             } catch (IOException ioE) {
-
+                log.warn(ioE.getMessage(), ioE);
             }
         }
     }
@@ -1075,12 +1077,10 @@ public class PeakSlider implements ControllerTool {
         double maxScore = Double.NEGATIVE_INFINITY;
         List<PeakDim> peakDims = PeakList.getLinkedPeakDims(predHMQCPeak, 0);
         Peak maxPeak = null;
-//        System.out.println("hmqc " + predHMQCPeak.getName());
         for (PeakDim peakDim : peakDims) {
             if (peakDim.getPeakList() == predNOEPeakList) {
                 PeakClusterMatcher matcher = matchers[peakDim.getSpectralDim()];
                 PeakCluster peakCluster = matcher.getClusterWithPeak(peakDim.getPeak());
-//                System.out.println(matcher + " " + peakCluster + " " + peakDim.getPeak().getName());
                 if (peakCluster != null) {
                     peakCluster.setShift(expHMQCPeak.getPeakDim(0).getChemShiftValue());
                     PeakCluster[] expClusters = matcher.getExpPeakClus();
@@ -1098,9 +1098,7 @@ public class PeakSlider implements ControllerTool {
                 }
             }
         }
-//        if (maxPeak != null) {
-//            System.out.println(predHMQCPeak.getName() + " " + maxPeak.getName() + " " + maxScore);
-//        }
+
         return maxScore;
     }
 
@@ -1113,11 +1111,9 @@ public class PeakSlider implements ControllerTool {
         if (predHMQCPeak.getPeakDim(0).getLabel().endsWith("H5") || predHMQCPeak.getPeakDim(0).getLabel().endsWith("H6")) {
             double expPPM = expHMQCPeak.getPeakDim(0).getChemShiftValue();
             List<PeakDim> peakDims = PeakList.getLinkedPeakDims(predHMQCPeak, 0);
-//            System.out.println("linked " + peakDims.size() + " " + predHMQCPeak.getPeakDim(0).getLabel());
             for (PeakDim peakDim : peakDims) {
                 if (peakDim.getPeakList() == predTOCSYList) {
                     Peak predTOCSYPeak = peakDim.getPeak();
-//                    System.out.println("tocsy " + predTOCSYPeak.getName());
                     double[] ppms = {predTOCSYPeak.getPeakDim(0).getChemShiftValue(),
                         predTOCSYPeak.getPeakDim(1).getChemShiftValue()};
                     int ppmDim;
@@ -1142,7 +1138,6 @@ public class PeakSlider implements ControllerTool {
                     if (!nearPeaks.isEmpty()) {
                         double ppmNear = nearPeaks.get(0).getPeakDim(ppmDim).getChemShiftValue();
                         double tocsyDis = Math.abs(ppmNear - origPPM) / tocsyScale[0];
-//                        System.out.println(predHMQCPeak.getName() + " " + nearPeaks.get(0).getName() + " " + predTOCSYPeak.getName() + " " + tocsyDis);
                         weightAdj = tocsyDis;
                     }
                 }
@@ -1183,9 +1178,7 @@ public class PeakSlider implements ControllerTool {
             if ((match >= 0) && (match < sizeE)) {
                 Peak predPeak = predTOCSYList.getPeak(i);
                 Peak expPeak = expTOCSYList.getPeak(match);
-//                System.out.println(predPeak.getName() + " " + expPeak.getName());
                 for (int dim = 0; dim < 2; dim++) {
-//                    System.out.println(dim + " " + expPeak.getPeakDim(dim).getChemShiftValue());
                     predPeak.getPeakDim(dim).setChemShiftValue(
                             expPeak.getPeakDim(dim).getChemShiftValue());
                 }
@@ -1218,7 +1211,6 @@ public class PeakSlider implements ControllerTool {
 
             int sizeE = expHMQCList.size();
             int sizeP = predHMQCList.size();
-//        System.out.println("compare " + expHMQCList.getName() + " " + sizeE + " " + predHMQCList.getName() + " " + sizeP + " " + N);
             double smallTol = expTOCSYList.widthStatsPPM(0).getAverage() / 2.0;
             for (int iE = 0; iE < sizeE; iE++) {
                 for (int jP = 0; jP < sizeP; jP++) {
@@ -1235,8 +1227,6 @@ public class PeakSlider implements ControllerTool {
                         weight += noeAdj;
                     }
                     matcher.setWeight(jP, iE, weight);
-
-                    //  System.out.println(jP + " " + iE + " " + distance + " " + weight);
                 }
             }
             int[] matching = matcher.getMatching();
@@ -1250,9 +1240,7 @@ public class PeakSlider implements ControllerTool {
                 if ((match >= 0) && (match < sizeE)) {
                     Peak predPeak = predHMQCList.getPeak(i);
                     Peak expPeak = expHMQCList.getPeak(match);
-//                    System.out.println(predPeak.getName() + " " + expPeak.getName());
                     for (int dim = 0; dim < 2; dim++) {
-//                        System.out.println(dim + " " + expPeak.getPeakDim(dim).getChemShiftValue());
                         predPeak.getPeakDim(dim).setChemShiftValue(
                                 expPeak.getPeakDim(dim).getChemShiftValue());
                         predPeak.getPeakDim(dim).setFrozen(true);

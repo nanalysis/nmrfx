@@ -51,13 +51,13 @@ public class UnZipper extends SimpleFileVisitor<Path> {
 
     private void extractFile(ZipFile inFile, ZipEntry zipEntry, String filePath) throws IOException {
         InputStream zipIn = inFile.getInputStream(zipEntry);
-        BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(filePath));
         byte[] bytesIn = new byte[BUFFER_SIZE];
         int read = 0;
-        while ((read = zipIn.read(bytesIn)) != -1) {
-            bos.write(bytesIn, 0, read);
+        try (BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(filePath))) {
+            while ((read = zipIn.read(bytesIn)) != -1) {
+                bos.write(bytesIn, 0, read);
+            }
         }
-        bos.close();
     }
 
     public static void main(String[] argv) {

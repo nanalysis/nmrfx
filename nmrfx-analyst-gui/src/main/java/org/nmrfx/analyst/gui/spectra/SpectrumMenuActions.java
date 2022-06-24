@@ -5,6 +5,7 @@ import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
+import javafx.stage.StageStyle;
 import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.analyst.gui.MenuActions;
 import org.nmrfx.processor.gui.FXMLController;
@@ -12,11 +13,15 @@ import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.controls.GridPaneCanvas;
 import org.nmrfx.processor.gui.spectra.WindowIO;
 import org.nmrfx.project.ProjectBase;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.file.Path;
 
 public class SpectrumMenuActions extends MenuActions {
+
+    private static final Logger log = LoggerFactory.getLogger(SpectrumMenuActions.class);
     private static WindowIO windowIO = null;
 
     public SpectrumMenuActions(AnalystApp app, Menu menu) {
@@ -94,11 +99,14 @@ public class SpectrumMenuActions extends MenuActions {
                 }
             }
         } catch (IOException ex) {
+            log.warn(ex.getMessage(), ex);
         }
     }
 
     private void newGraphics(ActionEvent event) {
-        FXMLController.create();
+        Stage stage = new Stage(StageStyle.DECORATED);
+        stage.setTitle(AnalystApp.getAppName() + " " + AnalystApp.getVersion());
+        FXMLController.create(stage);
     }
 
     public void showStripsBar() {

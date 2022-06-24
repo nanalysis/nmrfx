@@ -14,12 +14,16 @@ import org.apache.commons.math3.optim.univariate.SearchInterval;
 import org.apache.commons.math3.optim.univariate.UnivariateObjectiveFunction;
 import org.apache.commons.math3.optim.univariate.UnivariatePointValuePair;
 import org.nmrfx.processor.optimization.Fitter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
  * @author brucejohnson
  */
 public class TRACTFit {
+
+    private static final Logger log = LoggerFactory.getLogger(TRACTFit.class);
 
     boolean reportFitness = true;
     int reportAt = 10;
@@ -109,8 +113,7 @@ public class TRACTFit {
             parErrs = fitter.bootstrap(result.getPoint(), 300);
             return result;
         } catch (Exception ex) {
-            System.out.println(ex.getMessage());
-            ex.printStackTrace();
+            log.warn(ex.getMessage(), ex);
             return null;
         }
 

@@ -23,6 +23,8 @@ import org.nmrfx.jmx.mbeans.Analyst;
 import org.nmrfx.jmx.mbeans.Console;
 import org.nmrfx.plugin.api.EntryPoint;
 import org.nmrfx.plugin.api.NMRFxPlugin;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.management.JMException;
 import javax.management.MBeanServer;
@@ -44,6 +46,9 @@ import java.util.Set;
  * A plugin to enable JMX server with NMRfx specific MBeans.
  */
 public class JmxConnectorPlugin implements NMRFxPlugin {
+
+    private static final Logger log = LoggerFactory.getLogger(JmxConnectorPlugin.class);
+
     @Override
     public Set<EntryPoint> getSupportedEntryPoints() {
         return Set.of(EntryPoint.STARTUP);
@@ -59,8 +64,7 @@ public class JmxConnectorPlugin implements NMRFxPlugin {
             writeToFile(url);
             System.out.println("Running JMX on port " + port);
         } catch (JMException | IOException e) {
-            System.err.println("Unable to setup JMX connector!");
-            e.printStackTrace();
+            log.warn("Unable to setup JMX connector! {}", e.getMessage(), e);
         }
     }
 

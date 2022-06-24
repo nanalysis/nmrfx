@@ -214,7 +214,7 @@ public class NMRPipeData implements NMRData {
                 }
                 found = ok;
             } catch (IOException ioE) {
-
+                log.warn(ioE.getMessage(), ioE);
             }
         }
         return found;
@@ -873,7 +873,7 @@ public class NMRPipeData implements NMRData {
             try {
                 fileChannel.close();
             } catch (IOException ioE) {
-
+                log.warn(ioE.getMessage(), ioE);
             }
             return true;  // actually delete entry
         }

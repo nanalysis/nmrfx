@@ -96,7 +96,7 @@ public class VNMRPar {
         Map parMap = (Map) parGroups.get(handle);
 
         if (parMap == null) {
-            return null;
+            return new ArrayList<>();
         }
         ArrayList<String> aList = new ArrayList<String>();
         aList.addAll(parMap.keySet());
@@ -115,10 +115,12 @@ public class VNMRPar {
         try {
             String handle = processVNMRParFile(fpath);
             ArrayList<String> parNames = getPars(handle);
-            hmap = new LinkedHashMap();
+            hmap = new LinkedHashMap<>();
             for (String parName : parNames) {
                 VNMRPar vp = getPar(handle, parName);
-                hmap.put(parName, vp.getJValues());
+                if (vp != null) {
+                    hmap.put(parName, vp.getJValues());
+                }
             }
             removeParGroup(handle);
         } catch (NMRParException ex) {

@@ -27,6 +27,8 @@ import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import org.nmrfx.chemistry.Compound;
 import org.nmrfx.star.*;
 import org.slf4j.Logger;
@@ -160,7 +162,6 @@ public class ProjectBase {
     }
 
     public List<DatasetBase> getDatasets() {
-//        System.out.println("get datasets " + datasets.toString());
         return datasets;
     }
 
@@ -405,42 +406,43 @@ public class ProjectBase {
         if (getDirectory() == null) {
             throw new IllegalArgumentException("Project directory not set");
         }
-        Path projectDir = this.getDirectory();
-        Path peakDirPath = Paths.get(projectDir.toString(), "peaks");
-        Files.list(peakDirPath).forEach(path -> {
-            String fileName = path.getFileName().toString();
-            if (fileName.endsWith(".xpk2") || fileName.endsWith(".mpk2")) {
-                String listName = fileName.substring(0, fileName.length() - 5);
-                if (PeakList.get(listName) == null) {
-                    try {
-                        Files.delete(path);
-                    } catch (IOException ex) {
-                        log.error(ex.getMessage(), ex);
+        Path projDir = this.getDirectory();
+        Path peakDirPath = Paths.get(projDir.toString(), "peaks");
+        try (Stream<Path> files = Files.list(peakDirPath)) {
+            files.forEach(path -> {
+                String fileName = path.getFileName().toString();
+                if (fileName.endsWith(".xpk2") || fileName.endsWith(".mpk2")) {
+                    String listName = fileName.substring(0, fileName.length() - 5);
+                    if (PeakList.get(listName) == null) {
+                        try {
+                            Files.delete(path);
+                        } catch (IOException ex) {
+                            log.error(ex.getMessage(), ex);
+                        }
                     }
-                }
 
-            }
-        });
+                }
+            });
+        }
 
         peakLists.values().stream().forEach(peakListObj -> {
             PeakList peakList = (PeakList) peakListObj;
-            Path peakFilePath = fileSystem.getPath(projectDir.toString(), "peaks", peakList.getName() + ".xpk2");
-            Path measureFilePath = fileSystem.getPath(projectDir.toString(), "peaks", peakList.getName() + ".mpk2");
+            Path peakFilePath = fileSystem.getPath(projDir.toString(), "peaks", peakList.getName() + ".xpk2");
+            Path measureFilePath = fileSystem.getPath(projDir.toString(), "peaks", peakList.getName() + ".mpk2");
             // fixme should only write if file doesn't already exist or peaklist changed since read
             try {
                 try (FileWriter writer = new FileWriter(peakFilePath.toFile())) {
                     PeakWriter peakWriter = new PeakWriter();
                     peakWriter.writePeaksXPK2(writer, peakList);
-                    writer.close();
                 }
                 if (peakList.hasMeasures()) {
                     try (FileWriter writer = new FileWriter(measureFilePath.toFile())) {
                         PeakWriter peakWriter = new PeakWriter();
                         peakWriter.writePeakMeasures(writer, peakList);
-                        writer.close();
                     }
                 }
             } catch (IOException | InvalidPeakException ioE) {
+                log.warn(ioE.getMessage(), ioE);
             }
         });
     }
@@ -449,31 +451,33 @@ public class ProjectBase {
         Pattern pattern = Pattern.compile("(.+)\\.(nv|ucsf|nvlnk)");
         Predicate<String> predicate = pattern.asPredicate();
         if (Files.isDirectory(directory)) {
-            Files.list(directory).sequential().filter(path -> predicate.test(path.getFileName().toString())).
-                    forEach(path -> {
-                        System.out.println("read dataset: " + path.toString());
-                        String pathName = path.toString();
-                        String fileName = path.getFileName().toString();
+            try (Stream<Path> files = Files.list(directory)) {
+                files.sequential().filter(path -> predicate.test(path.getFileName().toString())).
+                        forEach(path -> {
+                            System.out.println("read dataset: " + path.toString());
+                            String pathName = path.toString();
+                            String fileName = path.getFileName().toString();
 
-                        try {
-                            if (fileName.endsWith(".nvlnk")) {
-                                String newName = fileName.substring(0, fileName.length() - 6);
-                                DatasetBase dataset = (DatasetBase) DatasetFactory.newLinkDataset(newName, pathName);
-                            } else {
-                                DatasetBase dataset = DatasetFactory.newDataset(pathName, fileName, false, false);
-                                File regionFile = DatasetRegion.getRegionFile(path.toString());
-                                System.out.println("region " + regionFile.toString());
-                                if (regionFile.canRead()) {
-                                    System.out.println("read");
-                                    TreeSet<DatasetRegion> regions = DatasetRegion.loadRegions(regionFile);
-                                    dataset.setRegions(regions);
+                            try {
+                                if (fileName.endsWith(".nvlnk")) {
+                                    String newName = fileName.substring(0, fileName.length() - 6);
+                                    DatasetBase dataset = (DatasetBase) DatasetFactory.newLinkDataset(newName, pathName);
+                                } else {
+                                    DatasetBase dataset = DatasetFactory.newDataset(pathName, fileName, false, false);
+                                    File regionFile = DatasetRegion.getRegionFile(path.toString());
+                                    System.out.println("region " + regionFile.toString());
+                                    if (regionFile.canRead()) {
+                                        System.out.println("read");
+                                        TreeSet<DatasetRegion> regions = DatasetRegion.loadRegions(regionFile);
+                                        dataset.setRegions(regions);
+                                    }
                                 }
-                            }
 
-                        } catch (IOException ex) {
-                            log.error(ex.getMessage(), ex);
-                        }
-                    });
+                            } catch (IOException ex) {
+                                log.error(ex.getMessage(), ex);
+                            }
+                        });
+            }
         }
         refreshDatasetList();
     }

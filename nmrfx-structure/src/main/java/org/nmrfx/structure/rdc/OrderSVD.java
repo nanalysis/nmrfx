@@ -51,9 +51,12 @@ import org.nmrfx.star.ParseException;
 import org.nmrfx.chemistry.constraints.RDCConstraint;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.python.util.PythonInterpreter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class OrderSVD {
 
+    private static final Logger log = LoggerFactory.getLogger(OrderSVD.class);
     static double mu0 = 4.0e-7 * Math.PI;
     static double hbar = 1.054e-34;
     static double preFactor = -(mu0 * hbar) / (4 * (Math.PI * Math.PI));
@@ -129,7 +132,6 @@ public class OrderSVD {
         }
 
         AR = new Array2DRowRealMatrix(A);
-//        System.out.println("A = " + AR.toString());
         // perform SVD on the matrix A
         SingularValueDecomposition svd = new SingularValueDecomposition(AR);
         // construct the b vector, which contains the normalized dipolar couplings 
@@ -220,19 +222,15 @@ public class OrderSVD {
         ArrayList<Double[]> a1Coords = new ArrayList<>();
         ArrayList<Double[]> a2Coords = new ArrayList<>();
 
-        try {
-            BufferedReader bf = new BufferedReader(new FileReader(file));
-            LineNumberReader lineReader = new LineNumberReader(bf);
+        try (BufferedReader bf = new BufferedReader(new FileReader(file));
+             LineNumberReader lineReader = new LineNumberReader(bf)) {
             while (true) {
                 String line = lineReader.readLine();
                 if (line == null) {
                     break;
                 }
                 String sline = line.trim();
-                if (sline.length() == 0) {
-                    continue;
-                }
-                if (sline.charAt(0) == '#') {
+                if (sline.length() == 0 || sline.charAt(0) == '#') {
                     continue;
                 }
                 String[] sfields = sline.split("\\s+", -1);
@@ -252,8 +250,7 @@ public class OrderSVD {
                 }
             }
         } catch (IOException ioe) {
-            System.err.println(ioe.getMessage());
-            ioe.printStackTrace();
+            log.warn(ioe.getMessage(), ioe);
         }
 
         List info = new ArrayList<>();
@@ -1052,11 +1049,12 @@ public class OrderSVD {
         ArrayList<String> rdc = new ArrayList<>();
         ArrayList<String> err = new ArrayList<>();
         if (type.equals("xplor")) {
-            PythonInterpreter interpreter = new PythonInterpreter();
-            interpreter.exec("import refine");
-            interpreter.exec("ref = refine.refine()");
-            interpreter.exec(String.join("", "ref.addRDCFile(\"", file.getAbsolutePath(), "\", mode='xplor', keep=None)"));
-            interpreter.exec("ref.readRDCFiles()");
+            try (PythonInterpreter interpreter = new PythonInterpreter()) {
+                interpreter.exec("import refine");
+                interpreter.exec("ref = refine.refine()");
+                interpreter.exec(String.join("", "ref.addRDCFile(\"", file.getAbsolutePath(), "\", mode='xplor', keep=None)"));
+                interpreter.exec("ref.readRDCFiles()");
+            }
         } else if (type.equals("cyana")) {
             try (BufferedReader br = new BufferedReader(new FileReader(file))) {
                 String line;
@@ -1120,10 +1118,5 @@ public class OrderSVD {
                 }
             }
         }
-//        for (int i=0; i<rdcSet.getSize(); i++) {
-//            String Atom1 = rdcSet.get(i).getSpSets()[0].getFullName().split(":")[1];
-//            String Atom2 = rdcSet.get(i).getSpSets()[1].getFullName().split(":")[1];
-//            System.out.println("RDCConstraint " + i + " = " + Atom1 + " " + Atom2 + " " + rdcSet.get(i).getValue());
-//        }
     }
 }
