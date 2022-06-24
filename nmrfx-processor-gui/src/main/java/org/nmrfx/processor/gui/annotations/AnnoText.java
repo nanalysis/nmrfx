@@ -144,12 +144,8 @@ public class AnnoText implements CanvasAnnotation {
                 bounds2D = new BoundingBox(xp1, yp1 - font.getSize(), width, font.getSize());
                 gC.fillText(text, xp1, yp1);
             }
-<<<<<<< HEAD
-        } catch (Exception ignored) {
-=======
         } catch (Exception ex) {
             log.warn(ex.getMessage(), ex);
->>>>>>> master
         }
     }
 
