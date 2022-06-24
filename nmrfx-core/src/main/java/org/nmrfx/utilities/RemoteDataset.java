@@ -374,7 +374,7 @@ public class RemoteDataset {
                 datasets.add(dataset);
             }
         } catch (IOException x) {
-            System.err.format("IOException: %s%n", x);
+           log.warn(x.getMessage(), x);
         }
     }
 

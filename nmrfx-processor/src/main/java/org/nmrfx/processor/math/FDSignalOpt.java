@@ -144,9 +144,6 @@ public class FDSignalOpt implements MultivariateFunction {
     public void normalize(double[] inValues, double[] outValues) {
         for (int i = 0; i < inValues.length; i++) {
             outValues[i] = toNormalized(inValues[i], i);
-            //System.out.println("inValues:" + inValues[i] + "outValues" + outValues[i]);
-            //System.out.println("inValues: Boundaries = : " + boundaries[0][i] + " , " + boundaries[1][i]);
-            //System.out.println();
 
         }
     }
@@ -250,7 +247,6 @@ public class FDSignalOpt implements MultivariateFunction {
         } else {
             value = calcRMS();
         }
-        //System.out.println(rms);
         if (value < bestValue) {
             bestValue = value;
             System.arraycopy(opars, 0, bestPars, 0, opars.length);

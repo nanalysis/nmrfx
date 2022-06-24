@@ -122,12 +122,6 @@ public class MultiVecCounter {
         int iSize = 1;
         int iPhase = 1;
         groupSize = 1;
-//        for (int i=0;i<tdSizes.length;i++) {
-//            System.out.println("in size " + i + " " + tdSizes[i]);
-//        }
-//        for (int i=0;i<outSizes.length;i++) {
-//            System.out.println("ou size " + i + " " + outSizes[i]);
-//        }
 
         for (String mode : modes) {
             // dim is the indirect dimension index running from 1 (for indirect dim 1, 2nd dim) up
@@ -295,11 +289,8 @@ public class MultiVecCounter {
             int[] iCounts = outToInCounter(counts);
             inVecs[i] = inCounter.getCount(iCounts);
             int[] offsets = getOffsets(counts);
-            //System.out.println(vecNum + " " + inVecs[i] + " " + offsets[0] + " " + offsets[1] + " " + iCounts[0] + " " + iCounts[1] + " " + iCounts[2] + " " + iCounts[3]);
-            //System.out.println(vecNum + " " + outCount + " " + offsets[0] + " " + offsets[1] + " " + counts[0] + " " + counts[1] + " " + counts[2] + " " + counts[3]);
             int jDim = 1;
             for (int iDim = 1; iDim < nDim; iDim++) {
-                //System.out.println(nDim + " " + datasetNDim + " " + i + " " + iDim + " " + offsets[iDim-1] + " " + osizes[nDim-iDim-1]);
                 if ((datasetNDim < nDim) && (osizes[nDim - iDim - 1] < 2)) {
                     if (offsets[iDim - 1] > 0) {
                         outVecs[i][datasetNDim - 1][0] = -1;
@@ -333,11 +324,8 @@ public class MultiVecCounter {
             int[] iCounts = outToInCounter(counts);
             inVecs[i] = inCounter.getCount(iCounts);
             int[] offsets = getOffsets(counts);
-            //System.out.println(vecNum + " " + inVecs[i] + " " + offsets[0] + " " + offsets[1] + " " + iCounts[0] + " " + iCounts[1] + " " + iCounts[2] + " " + iCounts[3]);
-            //System.out.println(vecNum + " " + outCount + " " + offsets[0] + " " + offsets[1] + " " + counts[0] + " " + counts[1] + " " + counts[2] + " " + counts[3]);
             int jDim = 1;
             for (int iDim = 1; iDim < nDim; iDim++) {
-                //System.out.println(nDim + " " + datasetNDim + " " + i + " " + iDim + " " + offsets[iDim-1] + " " + osizes[nDim-iDim-1]);
                 if ((datasetNDim < nDim) && (osizes[nDim - iDim - 1] < 2)) {
                     if (offsets[iDim - 1] > 0) {
                         outVecs[i][datasetNDim - 1][0] = -1;
@@ -369,7 +357,6 @@ public class MultiVecCounter {
                     }
                 }
                 if (ok) {
-//                    System.out.println("found " + i + " ");
 //                    vecIndex.printMe(i, 1);
                     return i;
                 }

@@ -64,7 +64,6 @@ public class PropertyGenerator {
         MolFilter acceptorFilter = new MolFilter("*.O,O*");
         ArrayList<HydrogenBond> hBonds = molecule.hydrogenBonds(structures, hydrogenFilter, acceptorFilter);
         double shift = 0.0;
-        //System.out.println(hydrogenAtom + " " + hBonds.size());
         HydrogenBond hBest = null;
         for (HydrogenBond hBond : hBonds) {
             double testShift = hBond.getShift(structureNum);
@@ -130,7 +129,6 @@ public class PropertyGenerator {
 
     public double calcEInteractionShift(Map<String, Double> eShiftMap, String hydrogenAtom, int structureNum) {
         Atom atom = molecule.findAtom(hydrogenAtom);
-        //System.out.println(hydrogenAtom + " " + atom + " " + eShiftMap);
         double shift = 0.0;
         if ((atom != null) && (eShiftMap != null)) {
             Double shiftDouble = eShiftMap.get(atom.getFullName());
@@ -794,7 +792,6 @@ public class PropertyGenerator {
     public double getCorrectedRandomShift(String polyName, int firstRes, int iRes, int lastRes, String aName) {
         String resName = molecule.findAtom(polyName + ":" + Integer.toString(iRes) + ".N").getEntity().name;
         double corr = getRandomShift(aName, resName);
-        //System.out.print(resName + " " + aName + " " + corr + " ");
         int[] offsets = {-2, -1, 1, 2};
         for (int offset : offsets) {
             int kRes = iRes + offset;
@@ -889,7 +886,6 @@ public class PropertyGenerator {
                         value = 1.0;
                     }
                     double cs = getPPM(residue.getAtom("CB"));
-                    //System.out.println("DISULFIDE " + sgAtom.getFullName() + " " + value + " " + cs);
                     if (!Double.isNaN(cs) && (cs > -90.0)) {
                         if (cs > 38.0) {
                             value = 1.0;

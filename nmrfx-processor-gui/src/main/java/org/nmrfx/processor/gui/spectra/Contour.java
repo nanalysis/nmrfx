@@ -275,8 +275,6 @@ public class Contour extends java.lang.Object {
                     cellValue |= (edge1 << 16);
                     cellValue |= (edge0 << 8);
                     cellValue |= offset;
-//                    System.out.printf("%2d %2d %2d %9.3f %9.3f %9.3f %9.3f %5.3f %5.3f %3d %3d\n", i, j, cellStatus, corner00, corner10, corner01, corner11, f0, f1, edge0, edge1);
-//                    System.out.printf("%3d %3d %3d\n", (cellValue & 255), ((cellValue >> 8) & 255), ((cellValue >> 16) & 255));
                 }
                 cells[i][j] = cellValue;
             }
@@ -333,11 +331,9 @@ public class Contour extends java.lang.Object {
                     int cY = iy;
                     boolean start = true;
                     int nCells = 0;
-                    //System.out.println("start " + cX + " " + cY);
                     int lastSide = 0;
                     while (true) {
                         if ((cells[cY][cX] & 32) == 32) {
-                            // System.out.println("end " + cX + " " + cY);
                             if (nCells > 0) {
                                 g2.stroke();
                             }
@@ -350,16 +346,13 @@ public class Contour extends java.lang.Object {
                         start = false;
                         cX += nextX[nextSide];
                         cY += nextY[nextSide];
-                        // System.out.println(nextSide + " " + cX + " " + cY);
                         if ((cX < 0) || (cX >= (nx - 1)) || (cY < 0) || (cY >= (ny - 1))) {
-                            // System.out.println("edgey " + nx + " " + ny);
                             g2.stroke();
                             break;
                         }
                         if ((cX == ix) && (cY == iy)) {
                             g2.closePath();
                             g2.stroke();
-                            //  System.out.println("close " + ix + " " + iy);
                             break;
                         }
                     }
@@ -430,8 +423,6 @@ public class Contour extends java.lang.Object {
         g2.lineTo(xp2, yp2);
         nextSide = i1;
         cells[iy][ix] |= 32;
-//                    System.out.printf("%2d iy %2d ix %2d off %2d id0 %2d id1 %2d 0y %3d 1x %3d 2y %3d 3x %3d x0 %5.2f y0 %5.2f x1 %5.2f y1 %5.2f\n", lineCount, iy, ix, offset, index0, index1,
-//                            edge0y, edge1x, edge2y, edge3x, x0, y0, x1, y1, nx, ny);
 
         return nextSide;
 
@@ -495,8 +486,6 @@ public class Contour extends java.lang.Object {
             g2.lineTo(xp2, yp2);
             nextSide = i1;
             cells[iy][ix] |= 32;
-//                    System.out.printf("%2d iy %2d ix %2d off %2d id0 %2d id1 %2d 0y %3d 1x %3d 2y %3d 3x %3d x0 %5.2f y0 %5.2f x1 %5.2f y1 %5.2f\n", lineCount, iy, ix, offset, index0, index1,
-//                            edge0y, edge1x, edge2y, edge3x, x0, y0, x1, y1, nx, ny);
         }
         return nextSide;
 

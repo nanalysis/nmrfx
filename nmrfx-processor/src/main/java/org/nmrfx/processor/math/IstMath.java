@@ -22,6 +22,8 @@ import org.nmrfx.processor.processing.ProcessingException;
 import org.nmrfx.processor.processing.SampleSchedule;
 import org.apache.commons.math3.complex.Complex;
 import org.apache.commons.math3.util.FastMath;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Math routines for Iterative Soft Thresholding (IST) on a 1D vector. This is separate from the Ist.java operation so
@@ -30,6 +32,8 @@ import org.apache.commons.math3.util.FastMath;
  * @author bfetler
  */
 public class IstMath {
+
+    private static final Logger log = LoggerFactory.getLogger(IstMath.class);
 
     /**
      * Cutoff threshold as a fraction of maximum height : e.g. 0.98.
@@ -103,13 +107,13 @@ public class IstMath {
     public IstMath(double threshold, int loops, SampleSchedule schedule, String alg,
             boolean timeDomain, boolean adjustThreshold, boolean allValues) throws ProcessingException {
         if (threshold <= 0.0 || threshold >= 1.0) {
-            System.err.println("IST Warning: threshold " + threshold + " out of bounds, reset to 0.9");
+            log.warn("IST Warning: threshold {} out of bounds, reset to 0.9", threshold);
             threshold = 0.9;
         }
         this.threshold = threshold;
         this.allValues = allValues;
         if (loops < 1) {
-            System.out.println("IST Warning: number of iterations " + loops + " cannot be less than 1, reset to 1");
+            log.warn("IST Warning: number of iterations {} cannot be less than 1, reset to 1", loops);
             loops = 1;
         }
         this.loops = loops;

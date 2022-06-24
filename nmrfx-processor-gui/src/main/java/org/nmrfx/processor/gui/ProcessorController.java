@@ -774,12 +774,9 @@ public class ProcessorController implements Initializable, ProgressUpdater {
             if ((index != -1) && lastIsClosePar) {
                 String opName = line.substring(0, index);
                 String args = line.substring(index + 1, line.length() - 1);
-                //System.out.println(opName);
                 if (opName.equals("run")) {
                     continue;
                 }
-                //System.out.println(line);
-                //System.out.println(args);
                 if (opName.equals("DIM")) {
                     String newDim = args;
                     if (newDim.equals("")) {

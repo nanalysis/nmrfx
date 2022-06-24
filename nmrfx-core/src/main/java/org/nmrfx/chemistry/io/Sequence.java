@@ -193,7 +193,7 @@ public class Sequence {
                 String parentField = fields[1];
                 Atom refAtom = residue.getAtom(fields[2]);
                 if (refAtom == null) {
-                    System.out.println(Arrays.asList(fields));
+                    log.error("{}", Arrays.asList(fields));
                     throw new MoleculeIOException("No refAtom " + fields[2]);
                 }
                 boolean connectee = false;
@@ -324,7 +324,6 @@ public class Sequence {
                             sequence.connectBranch = atom1;
                         } else {
                             Atom atom = residue.getAtom(branchField);
-                            //System.out.println("branch " + atom1.getFullName() + " " + atom.getFullName());
                             atom1.branchAtoms[iBranch] = atom;
                         }
                     }
@@ -418,7 +417,7 @@ public class Sequence {
                 if (fileName.startsWith("resource:")) {
                     InputStream inputStream = this.getClass().getResourceAsStream(fileName.substring(9));
                     if (inputStream == null) {
-                        System.out.println("reso null " + fileName);
+                        log.warn("resource null {}", fileName);
                     } else {
                         bf = new BufferedReader(new InputStreamReader(inputStream));
                     }
@@ -483,7 +482,7 @@ public class Sequence {
                 addNonStandardResidue(residue);
             } else {
                 result = false;
-                System.out.println("cant read  " + fileName);
+                log.warn("cant read {}", fileName);
             }
             // FIXME : What happens if first residue is an unnatural residue
             if (this.connectAtom != null) {
@@ -819,7 +818,6 @@ public class Sequence {
             if (coordSetNames.isEmpty()) {
                 molecule.addEntity(polymer, "", polymer.assemblyID);
             } else {
-                //System.err.println("add entity named" + polymerName + " with cset " + ((String) coordSetNames.get(0)));
                 molecule.addEntity(polymer, (String) coordSetNames.get(0), polymer.assemblyID);
             }
         } else {
@@ -863,7 +861,7 @@ public class Sequence {
             connectAtom = newAtom;
         }
 
-        System.out.println("create linker " + numLinks);
+        log.info("create linker {}", numLinks);
     }
 
 }

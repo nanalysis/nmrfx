@@ -162,7 +162,6 @@ public class ProjectBase {
     }
 
     public List<DatasetBase> getDatasets() {
-//        System.out.println("get datasets " + datasets.toString());
         return datasets;
     }
 

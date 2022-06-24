@@ -430,10 +430,6 @@ public class ChartProcessor {
 
                     vecIndex = multiVecCounter.getNextGroup(index);
                 } else {
-//                    for (var iRow : rows) {
-//                        System.out.print(iRow + " ");
-//                    }
-//                    System.out.println(index);
                     index = multiVecCounter.findOutGroup(rows);
                     vecIndex = multiVecCounter.getNextGroup(index);
                 }
@@ -656,7 +652,6 @@ public class ChartProcessor {
             return;
         }
         scriptValid = false;
-        //System.out.println("update " + vecDimName + " " + processorController.getOperationList());
         List<String> oldList = new ArrayList<>();
         oldList.addAll(processorController.getOperationList());
         mapOpLists.put(vecDimName, oldList);
@@ -955,7 +950,6 @@ public class ChartProcessor {
             datasetFile = new File(outputDir, "multi.nv");
         }
         scriptBuilder.append("closeScanTable()").append(lineSep);
-        // System.out.println(scriptBuilder.toString());
         return scriptBuilder.toString();
     }
 
@@ -1155,10 +1149,8 @@ public class ChartProcessor {
     void setFlags() {
         Map<String, Boolean> flags = new HashMap<>();
         String flagString = processorController.getFlagString().trim();
-        //System.out.println("flag " + flagString);
         String[] flagStrings = flagString.split("\\s");
         for (String flag : flagStrings) {
-            //System.out.println(flag);
             String[] flagParts = flag.split("=");
             if (flagParts.length == 2) {
                 if (flagParts[0].equals("mode")) {
@@ -1171,7 +1163,6 @@ public class ChartProcessor {
                     //}
                 } else {
                     boolean flagValue = flagParts[1].equals("1");
-                    //System.out.println(flagParts[0] + " " + flagValue);
                     flags.put(flagParts[0], flagValue);
                 }
             }
@@ -1293,7 +1284,6 @@ public class ChartProcessor {
 
 //            chart.setDataset(null);
 //            chart.datasetAttributes = null;
-            //System.out.println("load vec from reload");
             loadVectors(0);
             chart.setCrossHairState(false, true, false, true);
             try {
@@ -1304,7 +1294,6 @@ public class ChartProcessor {
             }
             int[] sizes = new int[1];
             sizes[0] = 1;
-            //System.out.println("ndim " + nDim);
             if (nDim > 1) {
                 sizes = new int[nDim];
                 for (int i = 0; i < nDim; i++) {

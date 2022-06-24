@@ -332,7 +332,6 @@ public class EnergyCoords {
         int[] nCells = new int[3];
 
         setRadii(hardSphere, includeH, shrinkValue, shrinkHValue, useFF);
-//        System.out.println("set cells");
 
         ePairs.clear();
         eBaseStackingPairs.clear();
@@ -353,7 +352,6 @@ public class EnergyCoords {
             int index = idx[0] + idx[1] * strides[1] + idx[2] * strides[2];
             cellCounts[index]++;
             cellIndex[i] = index;
-//            System.out.println(i + " index " + index + " " + atoms[i].getShortName() + " " + idx[0] + " " + idx[1] + " " + idx[2]);
         }
         int[] offsets1 = new int[offsets.length];
         int start = 0;
@@ -370,7 +368,6 @@ public class EnergyCoords {
         for (int i = 0; i < nAtoms; i++) {
             int index = cellIndex[i];
             atomIndex[cellStarts[index] + nAdded[index]] = i;
-//            System.out.println("index " + i + " " + index + " " + (cellStarts[index] + nAdded[index]));
             nAdded[index]++;
         }
         for (int ix = 0; ix < nCells[0]; ix++) {
@@ -379,7 +376,6 @@ public class EnergyCoords {
                     int iCell = ix + iy * strides[1] + iz * strides[2];
                     int iStart = cellStarts[iCell];
                     int iEnd = iStart + cellCounts[iCell];
-//                    System.out.println("iCell " + iCell + " " + iStart + " " + iEnd + " " + ix + " " + iy + " " + iz);
                     int jOffset = 0;
                     for (int iOff = 0; iOff < offsets.length; iOff++) {
                         int dX = offsets[iOff][0];
@@ -388,7 +384,6 @@ public class EnergyCoords {
                         int jx = ix + dX;
                         int jy = iy + dY;
                         int jz = iz + dZ;
-//                        System.out.println(dX + " " + dY + " " + dZ + "iCell jCell");
                         if ((jx < 0) || (jx >= nCells[0])) {
                             continue;
                         }
@@ -399,10 +394,8 @@ public class EnergyCoords {
                             continue;
                         }
                         int jCell = jx + jy * strides[1] + jz * strides[2];
-//                        System.out.println(iCell + " cell " + jCell + " offset " + iOff + " " + jOffset++);
                         int jStart = cellStarts[jCell];
                         int jEnd = jStart + cellCounts[jCell];
-//                        System.out.println("iCell " + iCell + " jCell " + jCell + " " + jStart + " " + jEnd);
 
                         for (int i = iStart; i < iEnd; i++) {
                             int ip = atomIndex[i];
@@ -433,7 +426,6 @@ public class EnergyCoords {
                                     int jUnit = atom2.rotGroup == null ? -1 : atom2.rotGroup.rotUnit;
                                     if (((iUnit != -1) || (jUnit != -1)) && (iUnit != jUnit)) {
                                         double disSq = vecCoords[iAtom].disSq(vecCoords[jAtom]);
-//                                    System.out.println("i " + i + " j " + j + " iCell " + iCell + " " + jCell + " " + iOff + " atom " + iAtom + " " + (jAtom - iAtom - 1) + " " + atom1.getShortName() + " " + atom2.getShortName() + " " + disSq);
 
                                         double limit2R = limit2;
                                         boolean stackCheck = (forceWeight.getStacking() > 0.0) && (atom1.getEntity() != atom2.getEntity()) && atom1.getFlag(Atom.RING) && !atom1.getName().contains("'")
@@ -465,8 +457,6 @@ public class EnergyCoords {
                                             // fixme  this is fast, but could miss interactions for atoms that are not bonded
                                             // as it doesn't test for an explicit bond between the pairs
                                             // boolean notConstrained = !hasBondConstraint[iAtom] || !hasBondConstraint[jAtom];
-//                                        System.out.println("        " + notFixed + " " + (fixed[iAtom][jAtom - iAtom - 1]) + " " + deltaRes + " "
-//                                                + interactable1 + " " + notConstrained);
                                             if (notFixed && interactable1) {
                                                 //double rH = ePair.getRh();
                                                 double rH = contactRadii[iAtom] + contactRadii[jAtom];
@@ -504,14 +494,12 @@ public class EnergyCoords {
                                         }
                                     }
                                 }
-//                                System.out.println(iOff + " " + i + " " + j + " " + k + " " + ip + " " + jp + " " + disSq);
                             }
                         }
                     }
                 }
             }
         }
-//System.out.println("nrep " + (repelEnd-repelStart) + " " + includeH + " " + limit);
     }
 
     boolean getFixed(int i, int j) {
@@ -551,18 +539,14 @@ public class EnergyCoords {
         for (int i = 0; i < nAtoms; i++) {
             for (int j = 0; j < nAtoms; j++) {
                 double delta = Math.abs(disRanges[1][i][j] - disRanges[0][i][j]);
-//                System.out.println(i + " " + j + " " + atoms[i].getShortName() + " " + atoms[j].getShortName() + " " + delta);
                 if (delta < tol) {
                     setFixed(i, j, true);
                 }
                 if (getFixed(i, j)) {
                     nFixed++;
                 }
-//                if (fixed[i][j]) {
-//                    System.out.print(" " + j);
-//                }
+
             }
-//            System.out.println("");
         }
         //dumpFixed();
     }

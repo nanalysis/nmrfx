@@ -174,7 +174,6 @@ public class LinearPrediction {
             throw new VecException("svdPredLP: m < n");
         }
 
-        //System.out.printf("ncoef %2d mirror %d m %3d n %3d fitStart %4d fitEnd %4d startPred %4d endPred %4d size %d\n",ncoef, mirror,  m, n, fitStart, fitEnd, startPred, endPred, size);
         //printLocation();
         int startSize = size;
         if (mirror != 0) {
@@ -307,7 +306,6 @@ public class LinearPrediction {
             for (int j = 0; j < ncoef; j++) {
                 sum = sum.add(coef[j].multiply(cvec[endPred + 1 - i + j]));
             }
-            //System.out.println(i + " " + (endPred - i)  + " " + cvec[endPred - i].getReal()+" "+sum.getReal());
             cvec[endPred - i] = sum;
         }
     }
@@ -323,7 +321,6 @@ public class LinearPrediction {
             for (int j = 0; j < ncoef; j++) {
                 sum = sum.add(coef[j].multiply(cvec[startPred - ncoef + i + j]));
             }
-            //System.out.println(i + " " + (startPred + i) + " " + cvec[startPred + i].getReal() + " " + sum.getReal());
             cvec[startPred + i] = sum;
         }
     }
@@ -475,11 +472,6 @@ public class LinearPrediction {
         }
 
         FieldMatrix<Complex> V = csvd.V;
-//        for (int i = 0; i < V.getRowDimension(); ++i) {
-//            for (int j = 0; j < V.getColumnDimension(); ++j)
-//                System.out.println(i + " " + j + " " + V.getEntry(i, j));
-//            System.out.println();
-//        }
         int m1 = csvd.S.getRowDimension();
         double sValMin = csvd.S.getEntry(m1 - 1, m1 - 1).getReal();
         if (m1 == 1) {
@@ -503,13 +495,11 @@ public class LinearPrediction {
             sum += absVal * absVal;
         }
         double norm = -1.0 / sum;
-//        System.out.println("norm: " + norm);
         Complex[] ocoef = new Complex[m1 - 1];
         for (int k = 0; k < (m1 - 1); k++) {
             Complex zSum = Complex.ZERO;
             for (int i = p; i < m1; i++) {
                 Complex zval = V.getEntry(m1 - 1, i);
-                //System.out.println("zval: " + zval);
                 zval = zval.conjugate();
                 zval = zval.multiply(V.getEntry(k, i));
                 zSum = zSum.add(zval);
@@ -518,9 +508,7 @@ public class LinearPrediction {
 
             ocoef[k] = zSum;
         }
-//        System.out.println("ocoef:");
-//        for (int i = 0; i < ocoef.length; ++i)
-//            System.out.println(ocoef[i]);
+
         return ocoef;
     }
 

@@ -145,7 +145,6 @@ public class NESTAMath {
                 // Convergence criterion Section 3.5 of NESTAMath Paper
                 // changed to require at least statWinSize innerIterations
                 finalL1Norm = l1Norm;
-//                System.out.printf("%d %d %f %7.3f %8.5f ", oIter, iIter, l1Norm, mu, threshold);
                 int minIter = 3;
                 if (iIter >= minIter) {
                     double mean = dStats.getMean();
@@ -153,13 +152,10 @@ public class NESTAMath {
                     if (fileWriter != null) {
                         fileWriter.write(String.format("tIter %4d iIter %4d mean %9.5f delta %9.7f l1 %9.5f\n", totalIterations, iIter, mean, delta, l1Norm));
                     }
-
-//                    System.out.printf("%8.5f %8.5f",mean, delta);
                     if ((iIter > minIter) && (delta < tol)) {
                         break;
                     }
                 }
-//                System.out.println("");
 
                 dStats.addValue(l1Norm);
                 gradMatrix.doHIFT(0.5);

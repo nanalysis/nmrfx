@@ -830,7 +830,6 @@ checkLists(pp, 0.25, False)
         PeakPath path = peakPaths.getPath(peak);
         nField.setText("");
         if (path != null) {
-            //System.out.println(path.toString());
             int nPeaks = path.getPeakDistances().size();
             int nValid = path.getNValid();
             boolean confirmed = path.confirmed();
@@ -870,9 +869,7 @@ checkLists(pp, 0.25, False)
                 String[] parNames = peakPaths.getParNames();
                 if (fitPars != null) {
                     initFitFields(fitPars.length);
-//                    for (int i = 0; i < fitPars.length; i++) {
-//                        System.out.printf("%s= %.3f +/- %.3f\n", parNames[i], fitPars[i], fitErrs[i]);
-//                    }
+
                     for (int i = 0; i < fitPars.length; i++) {
                         fitFields[i].setText(String.format("%s= %.3f +/- %.3f", parNames[i], fitPars[i], fitErrs[i]));
                     }

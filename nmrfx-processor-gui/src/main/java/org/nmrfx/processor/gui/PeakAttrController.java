@@ -297,7 +297,6 @@ public class PeakAttrController implements Initializable, PeakNavigable, PeakMen
 //        ChangeListener<Dataset> listener = new ChangeListener<Dataset>() {
 //            @Override
 //            public void changed(ObservableValue<? extends Dataset> observable, Dataset oldValue, Dataset newValue) {
-//                System.out.println("datasets changed");
 //                PolyChart chart = PolyChart.activeChart;
 //                if (chart != null) {
 //                    setPeak(chart);

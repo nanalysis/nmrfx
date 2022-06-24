@@ -443,7 +443,6 @@ public class Predictor {
             }
             if ((hoseAtom != null) && (hoseAtom.getAtomicNumber() == 6)) {
                 String hoseCode = (String) hoseAtom.getProperty("hose");
-//                System.out.println(atom.getShortName() + " " + hoseAtom.getShortName() + " " + hoseCode);
                 if (hoseCode != null) {
                     PredictResult predResult;
                     HosePrediction.HOSEPPM hosePPM = new HosePrediction.HOSEPPM(hoseCode);
@@ -451,7 +450,6 @@ public class Predictor {
                     HOSEStat hoseStat = predResult.getStat(predAtomType);
                     double shift = hoseStat.dStat.getPercentile(50);
                     shift = Math.round(shift * roundScale) / roundScale;
-                    // System.out.println(atom.getShortName() + " " + predResult.getShell() + " " + shift);
                     if (iRef < 0) {
                         atom.setRefPPM(-iRef - 1, shift);
                     } else {
@@ -525,9 +523,6 @@ public class Predictor {
                 }
             }
             breader.close();
-//            for (String key : statMap.keySet()) {
-//                System.out.println(key);
-//            }
         }
     }
 

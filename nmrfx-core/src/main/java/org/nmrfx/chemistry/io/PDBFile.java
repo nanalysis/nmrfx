@@ -313,7 +313,7 @@ public class PDBFile {
             throw new MoleculeIOException(ioe.getMessage());
         }
         catch (IOException e) {
-            System.err.println(e.getMessage());
+            log.warn(e.getMessage(), e);
 
             return null;
         }
@@ -537,7 +537,7 @@ public class PDBFile {
                             polymer = (Polymer) molecule.getChain(polymerName);
                         }
                         if (polymer == null) {
-                            System.err.println("null polymer " + polymerName + " for line: " + string);
+                            log.warn("null polymer {} for line {}", polymerName, string);
 
                             continue;
                         }
@@ -554,8 +554,8 @@ public class PDBFile {
                         if (!AtomParser.isResNameConsistant(residue.getName(), atomParse.resName)) {
                             String msg = "Residue " + polymerName + ":" + residue.getName() + " at " + atomParse.resNum + " is not same as in file " + atomParse.resName;
                             if (allowSequenceDiff) {
-                                System.err.println(msg);
-                                System.err.println(string);
+                                log.warn(msg);
+                                log.warn(string);
                                 continue;
                             } else {
                                 throw new MoleculeIOException(msg);
@@ -572,9 +572,7 @@ public class PDBFile {
 
                         if (compoundEntity == null) {
                             if (!noComplain) {
-                                System.err.println("no such compound as  "
-                                        + atomParse.resName);
-                                System.err.println("in file line  " + string);
+                                log.warn("no such compound as  {} in file line {}", atomParse.resName, string);
                             }
                             continue;
                         }
@@ -583,9 +581,7 @@ public class PDBFile {
 
                         if (atom == null) {
                             if (!noComplain) {
-                                System.err.println("no such atom as "
-                                        + atomParse.atomName);
-                                System.err.println("in file line " + string);
+                                log.warn("no such atom as {} in file line {}", atomParse.atomName, string);
                             }
                             continue;
                         }
@@ -874,7 +870,6 @@ public class PDBFile {
                         iArgs++;
                     }
                 } else if (currentState.equals("ANGLE")) {
-                    //System.err.println(iArgs + " " + tokenizer.toString());
                     if ((newState != null)) {
                         if (iArgs < 2) {
                             throw new MoleculeIOException("too few arguments for ANGLE");
@@ -1007,7 +1002,7 @@ public class PDBFile {
             throw new MoleculeIOException(ioe.getMessage());
         }
         catch (IOException ioe) {
-            System.err.println(ioe.getMessage());
+            log.warn(ioe.getMessage(), ioe);
             molecule.getAtomTypes();
             if (calcBonds && compound != null) {
                 compound.calcAllBonds();
@@ -1017,7 +1012,7 @@ public class PDBFile {
 
         molecule.getAtomTypes();
         if (calcBonds && compound != null) {
-            System.out.println("calculating bonds");
+            log.info("calculating bonds");
             compound.calcAllBonds();
         }
         return compound;

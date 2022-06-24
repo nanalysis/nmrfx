@@ -168,8 +168,6 @@ public class PathIterator implements Iterator<List<Integer>> {
                 sBuilder.append(c1);
             }
         }
-//System.out.println(pattern);
-//System.out.println(sBuilder.toString());
         return sBuilder.toString();
     }
 
@@ -209,7 +207,6 @@ public class PathIterator implements Iterator<List<Integer>> {
         IBond bond = bonds[iBond];
         int order = getBondOrder(bond);
         int[] currentPath = new int[path.size()]; // fixme, need to populate
-        //System.out.println("check Bond index " + index + " iatom " + iBond + " pattern " + currentPattern + " btype "  + bType);
         return nodeValidator.checkBond(order, currentPath, currentPattern, index, iBond);
     }
 
@@ -227,7 +224,6 @@ public class PathIterator implements Iterator<List<Integer>> {
                 aType = true;
             }
         }
-        //System.out.println(testBond + " " + bond.getOrder() + " " + aType);
 
         return aType;
     }
@@ -488,16 +484,12 @@ public class PathIterator implements Iterator<List<Integer>> {
                 break;
             }
         }
-        //if ((path != null) && (pathLength > 1)) {
-        //System.out.println("gotpath " + path.toString() + " len " + pathLength + " pat " + currentPattern);
-        //}
 
         return ((path != null) && (pathLength != 0));
     }
 
     public void processPatterns() {
         for (currentPattern = 0; currentPattern < nPatterns; currentPattern++) {
-            //System.out.println("current pattern " + currentPattern + " of " + nPatterns);
             path = null;
             pathLength = 0;
             currentAtom = -1;
@@ -506,8 +498,8 @@ public class PathIterator implements Iterator<List<Integer>> {
                 int mode = nodeValidator.getMode(currentPattern);
                 if (mode == 0) {
                     nodeValidator.assignProps(nextPath, currentPattern);
-                } else if (mode == 2) {
-                    List params = nodeValidator.getParams(nextPath, currentPattern);
+                else if (mode == 2) {
+                    ArrayList params = nodeValidator.getParams(nextPath, currentPattern);
                     int atomIndex = (Integer) params.get(0);
                     for (int i = 1; i < params.size(); i += 2) {
                         String name = (String) params.get(i);
