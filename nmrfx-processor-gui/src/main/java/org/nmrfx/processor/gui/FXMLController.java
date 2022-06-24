@@ -290,6 +290,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
         // The chart has a processor controller setup, and can be in FID or Dataset mode.
         if (processorController != null) {
             isFID = !processorController.isViewingDataset();
+            chartProcessor = processorController.chartProcessor;
             processorController.show();
         }
         updateSpectrumStatusBarOptions();
@@ -428,9 +429,10 @@ public class FXMLController implements  Initializable, PeakNavigable {
                 setInitialDirectory(selectedFile.getParentFile());
                 NMRData nmrData = NMRDataUtil.getNMRData(selectedFile.toString());
                 ProcessorController processorController = getActiveChart().getProcessorController(false);
-                if (processorController != null && processorController.isViewingDataset()) {
+                if (processorController != null && (chartProcessor.datasetFile == null || !selectedFile.equals(chartProcessor.datasetFile))) {
                     processorPane.getChildren().clear();
                     getActiveChart().processorController = null;
+                    processorController.cleanUp();
                 }
                 if (nmrData instanceof NMRViewData) {
                     PreferencesController.saveRecentDatasets(selectedFile.toString());

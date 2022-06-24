@@ -20,7 +20,9 @@ package org.nmrfx.processor.gui;
 import de.jensd.fx.glyphs.GlyphsDude;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import javafx.application.Platform;
+import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.ReadOnlyObjectProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
@@ -47,7 +49,6 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.text.Text;
 import javafx.stage.FileChooser;
-import javafx.stage.Stage;
 import javafx.util.Callback;
 import org.apache.commons.lang3.SystemUtils;
 import org.controlsfx.control.PopOver;
@@ -62,6 +63,7 @@ import org.nmrfx.processor.datasets.vendor.VendorPar;
 import org.nmrfx.processor.gui.controls.ConsoleUtil;
 import org.nmrfx.processor.gui.controls.ProcessingCodeAreaUtil;
 import org.nmrfx.processor.processing.Processor;
+import org.nmrfx.processor.processing.ProcessorAvailableStatusListener;
 import org.nmrfx.utilities.ProgressUpdater;
 import org.nmrfx.utils.GUIUtils;
 import org.python.util.PythonInterpreter;
@@ -165,6 +167,8 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     ListChangeListener<String> opListListener = null;
 
     final ReadOnlyObjectProperty<Worker.State> stateProperty = processDataset.worker.stateProperty();
+    private final ObjectProperty<Boolean> processorAvailable = new SimpleObjectProperty<>();
+    private final ProcessorAvailableStatusListener listener = this::processorAvailableStatusUpdated;
     Throwable processingThrowable;
     String currentText = "";
 
@@ -1108,8 +1112,12 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         statusBar.setProgress(0.0);
 
         statusBar.getLeftItems().add(statusCircle);
-
-        processDatasetButton.disableProperty().bind(stateProperty.isEqualTo(Worker.State.RUNNING).or(chartProcessor.nmrDataProperty().isNull()));
+        Processor.getProcessor().addProcessorAvailableStatusListener(listener);
+        processorAvailable.set(Processor.getProcessor().isProcessorAvailable());
+        processDatasetButton.disableProperty()
+                .bind(stateProperty.isEqualTo(Worker.State.RUNNING)
+                        .or(chartProcessor.nmrDataProperty().isNull())
+                        .or(processorAvailable.isEqualTo(false)));
         haltProcessButton.disableProperty().bind(stateProperty.isNotEqualTo(Worker.State.RUNNING));
 
         codeAreaUtil = new ProcessingCodeAreaUtil(textArea);
@@ -1137,6 +1145,21 @@ public class ProcessorController implements Initializable, ProgressUpdater {
             setFileIndex();
         };
 
+    }
+
+    /**
+     * Listener for the Processor availability status and updates the processor available status
+     * @param newStatus the newly updated status
+     */
+    public void processorAvailableStatusUpdated(Boolean newStatus) {
+        processorAvailable.setValue(newStatus);
+    }
+
+    /**
+     * Removes the ProcessorAvailable listener.
+     */
+    public void cleanUp() {
+        Processor.getProcessor().removeProcessorAvailableStatusListener(listener);
     }
 
     void initTable() {

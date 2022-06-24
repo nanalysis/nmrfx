@@ -230,6 +230,9 @@ public class Processor {
 
     LineShapeCatalog simVecProcessor = null;
 
+    private final List<ProcessorAvailableStatusListener> listeners = new ArrayList<>();
+    private final AtomicBoolean processorAvailable = new AtomicBoolean(true);
+
     private void resetVecReadCount() {
         vecReadCount.set(0);
     }
@@ -580,12 +583,14 @@ public class Processor {
      */
     public boolean setDim(int[][] newPt, int iDim) {
         if (processor.getProcessorError()) {
+            setProcessorAvailableStatus(true);
             log.warn("proc error");
             return false;
         }
         // fixme remove + 1 when we convert nmrdata dim indexing to 0 start
         iDim = mapToDataset(iDim);
         if ((!nvDataset) && (iDim > 0)) {
+            setProcessorAvailableStatus(true);
             throw new ProcessingException("First DIM command must be DIM(1) not " + (iDim + 1));
         }
         this.dim = new int[dataset.getNDim()];
@@ -642,13 +647,16 @@ public class Processor {
 
     public boolean setMatDims(int[] dims) {
         if (processor.getProcessorError()) {
+            setProcessorAvailableStatus(true);
             log.warn("proc error");
             return false;
         }
         if (!nvDataset) {
+            setProcessorAvailableStatus(true);
             throw new ProcessingException("First process using DIM(1)");
         }
         if (dataset.getNDim() < 3 || dims.length < 2) {
+            setProcessorAvailableStatus(true);
             throw new ProcessingException("Number of dimensions must be greater than two.");
         }
         this.dim = new int[dataset.getNDim()];
@@ -726,6 +734,7 @@ public class Processor {
         try {
             nmrData = NMRDataUtil.getFID(filename, nusFile);
         } catch (IOException ex) {
+            setProcessorAvailableStatus(true);
             throw new ProcessingException("Cannot open FID " + filename);
         }
 
@@ -751,6 +760,7 @@ public class Processor {
         try {
             nmrData = NMRDataUtil.getFID(filename, nusFile);
         } catch (IOException ex) {
+            setProcessorAvailableStatus(true);
             throw new ProcessingException("Cannot open dataset \"" + filename + "\" because: " + ex.getMessage());
         }
         // read parameters
@@ -992,6 +1002,7 @@ public class Processor {
     public synchronized Matrix getMatrix2DFromFile() {
         Matrix matrix = null;
         if (!nvDataset) {
+            setProcessorAvailableStatus(true);
             throw new ProcessingException("Cannot get matrix, not indirect dimension.");
         }
         if (endOfFile.get()) {
@@ -1022,6 +1033,7 @@ public class Processor {
     public synchronized MatrixND getMatrixNDFromFile() {
         MatrixND matrix = null;
         if (!nvDataset) {
+            setProcessorAvailableStatus(true);
             throw new ProcessingException("Cannot get matrix, not indirect dimension.");
         }
         if (endOfFile.get()) {
@@ -1146,10 +1158,9 @@ public class Processor {
                         log.warn("extreme read");
                     }
                     vectors.add(temp);
-                } catch (IOException ex) {
+                } catch (Exception ex) {
+                    setProcessorAvailableStatus(true);
                     throw new ProcessingException(ex.getMessage());
-                } catch (Exception e) {
-                    throw new ProcessingException(e.getMessage());
                 }
             }
         } else {  // direct dimension, read FIDs
@@ -1182,6 +1193,7 @@ public class Processor {
                                 vectors.add(temp);
                             }
                         } catch (Exception e) {
+                            setProcessorAvailableStatus(true);
                             throw new ProcessingException(e.getMessage(), e);
                         }
                         vecReadCount.incrementAndGet();
@@ -1242,8 +1254,10 @@ public class Processor {
                 dataset.writeVector(vector);
             }
         } catch (IOException ex) {
+            setProcessorAvailableStatus(true);
             throw new ProcessingException(ex.getMessage());
         } catch (NullPointerException npe) {
+            setProcessorAvailableStatus(true);
             throw new ProcessingException("Dataset not open: can't write vector");
         }
     }
@@ -1289,8 +1303,10 @@ public class Processor {
                 dataset.writeMatrixToDatasetFile(dim, matrix);
             }
         } catch (IOException ex) {
+            setProcessorAvailableStatus(true);
             throw new ProcessingException(ex.getMessage());
         } catch (NullPointerException npe) {
+            setProcessorAvailableStatus(true);
             throw new ProcessingException("Dataset not open: can't write matrix");
         }
     }
@@ -1309,8 +1325,10 @@ public class Processor {
                 dataset.writeMatrixNDToDatasetFile(dim, matrix);
             }
         } catch (IOException ex) {
+            setProcessorAvailableStatus(true);
             throw new ProcessingException(ex.getMessage());
         } catch (NullPointerException npe) {
+            setProcessorAvailableStatus(true);
             throw new ProcessingException("Dataset not open: can't write matrix");
         }
     }
@@ -1371,6 +1389,7 @@ public class Processor {
     }
 
     public void runProcesses() throws IncompleteProcessException {
+        setProcessorAvailableStatus(false);
         if ((simVecProcessor != null) && !nmrDataSets.isEmpty()) {
             runSimVecProcessor(simVecProcessor, dimProcesses);
         }
@@ -1431,6 +1450,7 @@ public class Processor {
         }
         String elapsedTimeStr = String.format("Elapsed time %.2f", elapsedTime);
         log.info(elapsedTimeStr);
+        setProcessorAvailableStatus(true);
     }
 
     public void runSimVecProcessor(LineShapeCatalog simVecProcessor, ArrayList<ProcessOps> dimProcesses) {
@@ -1486,6 +1506,7 @@ public class Processor {
      */
     public void run(ProcessOps p) {
         if (processor.getProcessorError()) {
+            setProcessorAvailableStatus(true);
             return;
         }
         synchronized (isRunning) {
@@ -1518,6 +1539,7 @@ public class Processor {
                 try {
                     future.get();
                 } catch (InterruptedException | ExecutionException ex) {
+                    setProcessorAvailableStatus(true);
                     throw new ProcessingException(ex.getMessage());
                 }
             }
@@ -1554,6 +1576,7 @@ public class Processor {
             p.getOperations().clear();
             isRunning = false;
             if (getProcessorError()) {
+                setProcessorAvailableStatus(true);
                 dataset.close();
                 dataset = null;
                 throw new ProcessingException(errorMessage.get());
@@ -1582,6 +1605,7 @@ public class Processor {
                     try {
                         p.call();
                     } catch (ProcessingException e) {
+                        setProcessorAvailableStatus(true);
                         log.warn(e.getMessage(), e);
                         if (!pool.isShutdown()) {
                             pool.shutdown();
@@ -1718,5 +1742,26 @@ public class Processor {
 
     public boolean isDatasetOpen() {
         return dataset != null;
+    }
+
+    public void setProcessorAvailableStatus(boolean status) {
+        processorAvailable.set(status);
+        updateProcessorAvailableStatus(status);
+    }
+
+    public void updateProcessorAvailableStatus(boolean newStatus) {
+        listeners.forEach((listener -> listener.processorAvailableStatusUpdated(newStatus)));
+    }
+
+    public void addProcessorAvailableStatusListener(ProcessorAvailableStatusListener listener) {
+        listeners.add(listener);
+    }
+
+    public void removeProcessorAvailableStatusListener(ProcessorAvailableStatusListener listener) {
+        listeners.remove(listener);
+    }
+
+    public boolean isProcessorAvailable() {
+        return processorAvailable.get();
     }
 }
