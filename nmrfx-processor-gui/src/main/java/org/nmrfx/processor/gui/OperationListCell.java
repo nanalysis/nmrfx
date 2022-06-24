@@ -99,7 +99,7 @@ public class OperationListCell<T> extends ListCell<T> implements ChangeListener<
                     is.setOffsetX(1.0);
                     is.setColor(Color.web("#666666"));
                     is.setOffsetY(1.0);
-                    target.setEffect(is);
+                    OperationListCell.target.setEffect(is);
                 }
 
                 event.consume();
@@ -140,7 +140,7 @@ public class OperationListCell<T> extends ListCell<T> implements ChangeListener<
                 }
                 OperationListCell.target = temp;
                 scriptView.getSelectionModel().select(temp.getIndex());
-                target.setEffect(null);
+                OperationListCell.target.setEffect(null);
                 Dragboard db = event.getDragboard();
                 boolean success = false;
                 if (db.hasString()) {
@@ -160,26 +160,17 @@ public class OperationListCell<T> extends ListCell<T> implements ChangeListener<
 
                 /* the drag and drop gesture ended */
  /* if the data was successfully moved, clear it */
-                if (event == null || event.getTransferMode() == null) {
-                    ;
-                } else if (target.getIndex() < 0 || target == null) {
-                    ;
-                } else if (event.getTransferMode() == TransferMode.COPY) {
-                    int sourceIndex = Math.max(0, source.getIndex());
-                    int targetIndex = Math.min(target.getIndex(), listItems.size() - 1);
-                    //System.out.println("drag done source " + sourceIndex + " to " + targetIndex);
-                    String swap;
-                    //ObservableList<String> listItems = MainApp.mainController.listItems;
-
-                    swap = listItems.remove(sourceIndex);
-                    listItems.add(targetIndex, swap);
-                    scriptView.getSelectionModel().select(targetIndex);
-// fixme
-//                    processorController.chartProcessor.execScriptList();
-//                    processorController.propertyManager.chartProcessor.getChart().layoutPlotChildren();
-//                    processorController.propertyManager.popOver.hide();
+                if (event != null && target != null && target.getIndex() >= 0) {
+                    if (event.getTransferMode() == TransferMode.COPY) {
+                        int sourceIndex = Math.max(0, source.getIndex());
+                        int targetIndex = Math.min(target.getIndex(), listItems.size() - 1);
+                        String swap;
+                        swap = listItems.remove(sourceIndex);
+                        listItems.add(targetIndex, swap);
+                        scriptView.getSelectionModel().select(targetIndex);
+                    }
+                    event.consume();
                 }
-                event.consume();
             }
         });
 

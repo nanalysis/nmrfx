@@ -86,7 +86,6 @@ public class StorageCache {
             //releaseResources(entry.getValue());  // release resources held by entry
             DatasetKey key = entry.getKey();
 
-//            System.out.println("remove " + key.blockNum);
             if (key.file.writable) {
                 try {
                     key.file.writeBlock(key.blockNum, entry.getValue());
@@ -166,7 +165,6 @@ public class StorageCache {
                     buffer = buffers.get(key);
                 }
                 if (buffer == null) {
-//                    System.out.println("read io " + key.blockNum + " " + offset);
                     buffer = key.file.readBlock(key.blockNum);
                     buffers.put(key, buffer);
                 }
@@ -183,7 +181,6 @@ public class StorageCache {
                     buffer = buffers.get(key);
                 }
                 if (buffer == null) {
-//                    System.out.println("write io " + key.blockNum + " " + offset);
                     buffer = key.file.readBlock(key.blockNum);
                     buffers.put(key, buffer);
                 }

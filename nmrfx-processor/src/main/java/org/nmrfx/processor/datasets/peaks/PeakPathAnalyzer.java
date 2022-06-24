@@ -129,17 +129,12 @@ public class PeakPathAnalyzer {
         }
         for (Peak peak : firstList.peaks()) {
             if (peak.getStatus() == 0) {
-//                System.out.print(peak.getName() + " ");
                 ArrayList<ArrayList<PeakDistance>> filteredLists
                         = peakPaths.getNearPeaks(peak, radius);
                 PeakPath path = checkForUnambigous(peakPaths, filteredLists, useLast);
                 double delta = checkPath(peakPaths, path.getPeakDistances());
                 if (delta < 1.0) {
                     peakPaths.getPathMap().put(path.getFirstPeak(), path);
-//                    System.out.println(path.toString());
-//                    System.out.printf(" unam %.3f\n", delta);
-                } else {
-//                    System.out.println("");
                 }
             }
         }
@@ -440,7 +435,6 @@ public class PeakPathAnalyzer {
             Peak endPeak = endPeakDist.getPeak();
             System.out.println("test ############### " + endPeak.getName() + " ");
             double startToLast = endPeakDist.getDistance();
-            //System.out.println("end " + lastPeak.getName() + " " + startToLast);
             ArrayList<PeakDistance> midDistancePeaks = new ArrayList<>();
             for (PeakDistance midPeakDistance : midPeaks) {
                 System.out.println("try mid " + midPeakDistance.getPeak().getName());
@@ -465,7 +459,6 @@ public class PeakPathAnalyzer {
                     double area = Math.sqrt(s * (s - startToMid) * (s - startToLast) * (s - midToLast));
                     double height = 2.0 * area / startToLast;
                     // if peak too far off line between start and end skip it
-                    //System.out.println(midPeak.getName() + " " + tol + " " + height);
                     if (height > tol) {
                         continue;
                     }
@@ -483,7 +476,6 @@ public class PeakPathAnalyzer {
                 Peak midPeak = midPeakDistance.getPeak();
                 System.out.println(" mid " + midPeak.getName() + " ");
 
-                //System.out.println("mid " + midPeak.getName());
                 double[] yValues = new double[3];
                 double[][] xValues = new double[3][1];
                 double[] weightValues = new double[yValues.length];
@@ -546,7 +538,6 @@ public class PeakPathAnalyzer {
                             System.out.printf("%10s %d %7.3f %7.3f\n", testPeakDist.getPeak(), jDim, dis, estValue);
                             sum += (dis - estValue) * (dis - estValue);
                         }
-                        //System.out.println(testPeak.getName() + " " + sum + " " + minSum);
                         if (sum < minSum) {
                             minSum = sum;
                             minPeakDist = testPeakDist;
@@ -565,7 +556,6 @@ public class PeakPathAnalyzer {
                         }
                     }
                     path.add(minPeakDist);
-                    //System.out.println(minPeak.getName());
                     pathSum += minSum;
                 }
                 System.out.print(" nmiss " + nMissing + " " + pathOK);
@@ -574,7 +564,6 @@ public class PeakPathAnalyzer {
                         path.add(endPeakDist);
                     }
                     double rms = Math.sqrt(pathSum / (filteredLists.size() - 3));
-                    //System.out.println(rms);
                     System.out.println(" " + rms);
                     if (rms < minRMS) {
                         minRMS = rms;

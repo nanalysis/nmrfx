@@ -62,7 +62,7 @@ public class MolCoords {
         i = 0;
 
         for (int k = 0; k < n; k++) {
-            SpatialSet spatialSet1 = (SpatialSet) molecule.globalSelected.get(k);
+            SpatialSet spatialSet1 = molecule.globalSelected.get(k);
 
             int selected = spatialSet1.getSelected();
 
@@ -71,7 +71,7 @@ public class MolCoords {
                 SpatialSet spatialSet2 = null;
                 if (ptB != null) {
                     if ((k + 1) < n) {
-                        spatialSet2 = (SpatialSet) molecule.globalSelected.get(k
+                        spatialSet2 = molecule.globalSelected.get(k
                                 + 1);
                     }
 
@@ -99,7 +99,10 @@ public class MolCoords {
                         coords[i++] = (float) ptB.getZ();
                         levels[j++] = selected;
                     } else {
-                        Point3 ptE = spatialSet2.getPoint(iStructure);
+                        Point3 ptE = null;
+                        if (spatialSet2 != null) {
+                            ptE = spatialSet2.getPoint(iStructure);
+                        }
 
                         if (ptE != null) {
                             float dx = (float) (ptE.getX() - ptB.getX());

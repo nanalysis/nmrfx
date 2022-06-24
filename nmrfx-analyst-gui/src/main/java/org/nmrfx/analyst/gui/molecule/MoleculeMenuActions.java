@@ -158,7 +158,7 @@ public class MoleculeMenuActions extends MenuActions {
                     }
                     case "pdbx": {
                         PDBFile pdbReader = new PDBFile();
-                        pdbReader.read(file.toString());
+                        pdbReader.read(file.toString(), false);
                         System.out.println("read mol: " + file.toString());
                         break;
                     }

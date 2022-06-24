@@ -5,6 +5,9 @@
  */
 package org.nmrfx.star;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
@@ -24,6 +27,7 @@ import java.util.Map;
  */
 public class STAR3Base {
 
+    private static final Logger log = LoggerFactory.getLogger(STAR3Base.class);
     LineNumberReader lineReader = null;
     PrintWriter out = null;
     BufferedReader bfR;
@@ -50,9 +54,7 @@ public class STAR3Base {
             bfR = new BufferedReader(new FileReader(fileName));
             lineReader = new LineNumberReader(bfR);
         } catch (IOException ioe) {
-            System.err.println("Cannot open the STAR3 file.");
-            System.err.println(ioe.getMessage());
-
+            log.warn("Cannot open the STAR3 file. {}", ioe.getMessage(), ioe);
             return;
         }
 
@@ -322,7 +324,7 @@ public class STAR3Base {
     public void processSaveFrame(String saveFrameName) throws ParseException {
         Saveframe saveFrame = null;
         if (getSaveFrames().containsKey(saveFrameName)) {
-            System.err.println("Skipping duplicate save frame \"" + saveFrameName + "\"");
+            log.warn("Skipping duplicate save frame \"{}\"", saveFrameName);
             saveFrame = new Saveframe(this, "duplicate_" + saveFrameName);
         } else {
             saveFrame = new Saveframe(this, saveFrameName);

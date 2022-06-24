@@ -20,6 +20,8 @@ package org.nmrfx.processor.operations;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.math.VecException;
 import org.nmrfx.processor.processing.ProcessingException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
@@ -31,6 +33,8 @@ import java.util.List;
  * @author johnsonb
  */
 public abstract class Operation implements Cloneable {//extends ForkJoinTask<ArrayList<Vec>>{
+
+    private static final Logger log = LoggerFactory.getLogger(Operation.class);
 
     protected boolean invertOp = false;
 
@@ -78,7 +82,7 @@ public abstract class Operation implements Cloneable {//extends ForkJoinTask<Arr
         try {
             return (Operation) super.clone();
         } catch (CloneNotSupportedException cnse) {
-            cnse.printStackTrace();
+            log.warn(cnse.getMessage(), cnse);
             return null;
         }
     }

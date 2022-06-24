@@ -57,12 +57,15 @@ import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.TreeLine;
 import org.nmrfx.processor.gui.utils.GUIColorUtils;
 import org.nmrfx.utilities.Format;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author brucejohnson
  */
 public class DrawPeaks {
 
+    private static final Logger log = LoggerFactory.getLogger(DrawPeaks.class);
     static int nRegions = 32;
     static int minHitSize = 5;
     static double widthLimit = 0.0001;
@@ -295,6 +298,7 @@ public class DrawPeaks {
                     res = Integer.parseInt(label.substring(colonPos + 1, periodPos));
                 }
             } catch (NumberFormatException nfE) {
+                log.warn("Unable to parse residue.", nfE);
             }
         }
 
@@ -859,6 +863,7 @@ public class DrawPeaks {
                 try {
                     renderMultipletLabel(g2, multiplet, label, strokeColor, xM, yM, max);
                 } catch (Exception e) {
+                    log.warn(e.getMessage(), e);
                 }
             }
         }

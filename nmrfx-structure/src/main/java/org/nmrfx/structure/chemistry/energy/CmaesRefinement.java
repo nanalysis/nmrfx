@@ -109,24 +109,17 @@ public class CmaesRefinement extends Refinement implements MultivariateFunction 
             dihedrals.inputSigma[i] *= ranfact;
         }
 
-        PointValuePair result = null;
-
-        try {
-            result = optimizer.optimize(
-                    new CMAESOptimizer.PopulationSize(lambda),
-                    new CMAESOptimizer.Sigma(dihedrals.inputSigma),
-                    new MaxEval(2000000),
-                    new ObjectiveFunction(this), GoalType.MINIMIZE,
-                    new SimpleBounds(dihedrals.normBoundaries[0], dihedrals.normBoundaries[1]),
-                    new InitialGuess(dihedrals.normValues));
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        PointValuePair result = optimizer.optimize(
+                new CMAESOptimizer.PopulationSize(lambda),
+                new CMAESOptimizer.Sigma(dihedrals.inputSigma),
+                new MaxEval(2000000),
+                new ObjectiveFunction(this), GoalType.MINIMIZE,
+                new SimpleBounds(dihedrals.normBoundaries[0], dihedrals.normBoundaries[1]),
+                new InitialGuess(dihedrals.normValues));
 
         System.arraycopy(dihedrals.bestValues, 0, dihedrals.angleValues, 0, dihedrals.angleValues.length);
         putDihedrals();
         molecule.genCoords(false, null);
-        List<Double> fitnessHistory = optimizer.getStatisticsFitnessHistory();
         List<Double> sigmaHistory = optimizer.getStatisticsSigmaHistory();
         int nStat = sigmaHistory.size();
         if (nStat > 0) {
@@ -167,23 +160,16 @@ public class CmaesRefinement extends Refinement implements MultivariateFunction 
                 DEFAULT_RANDOMGENERATOR, true,
                 new Checker(100 * Precision.EPSILON, 100 * Precision.SAFE_MIN, nSteps));
 
-        PointValuePair result = null;
-
-        try {
-            result = optimizer.optimize(
-                    new CMAESOptimizer.PopulationSize(lambda),
-                    new CMAESOptimizer.Sigma(sigmaValues),
-                    new MaxEval(2000000),
-                    new ObjectiveFunction(this), GoalType.MINIMIZE,
-                    new SimpleBounds(normBoundaries[0], normBoundaries[1]),
-                    new InitialGuess(normBoundaries[2]));
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        PointValuePair result = optimizer.optimize(
+                new CMAESOptimizer.PopulationSize(lambda),
+                new CMAESOptimizer.Sigma(sigmaValues),
+                new MaxEval(2000000),
+                new ObjectiveFunction(this), GoalType.MINIMIZE,
+                new SimpleBounds(normBoundaries[0], normBoundaries[1]),
+                new InitialGuess(normBoundaries[2]));
         updateWithLinkedValues(linkedValues[3]);
 
         molecule.genCoords(false, null);
-        List<Double> fitnessHistory = optimizer.getStatisticsFitnessHistory();
         List<Double> sigmaHistory = optimizer.getStatisticsSigmaHistory();
         int nStat = sigmaHistory.size();
         if (nStat > 0) {
@@ -198,11 +184,9 @@ public class CmaesRefinement extends Refinement implements MultivariateFunction 
         int i = 0;
         for (List<Atom> atomArray : linkedAtoms) {
             if (i < linkedAtoms.length - 1) {
-                //System.out.println("do links");
                 double sumCos = 0.0;
                 double sumSin = 0.0;
                 for (Atom atom : atomArray) {
-                    //System.out.printf("%6.1f ", Math.toDegrees(atom.dihedralAngle));
                     sumCos += Math.cos(atom.dihedralAngle);
                     sumSin += Math.sin(atom.dihedralAngle);
 

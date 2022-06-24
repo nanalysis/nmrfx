@@ -22,7 +22,6 @@ import org.apache.commons.math3.linear.RealVector;
 
 public class LmdifTest_f77 {
     // epsmch is the machine precision
-
     static final double epsmch = 2.22044604926e-16;
     int evaluationCount = 0;
     double[] xv = null;
@@ -57,22 +56,6 @@ public class LmdifTest_f77 {
         } else {
             lmdifFunc = lmdifFuncs[funcNum];
         }
-
-        /*
-         try {
-         lmdifFunc = (Lmdif_fcn)  Class.forName("optimization.LmdifTest_f77.fexpc_f77").newInstance();
-         }
-         catch (java.lang.ClassNotFoundException cnfE) {
-         System.out.println(cnfE.toString());
-         }
-         catch (java.lang.InstantiationException iE) {
-         System.out.println(iE.toString());
-         iE.printStackTrace();
-         }
-         catch (java.lang.IllegalAccessException iaE) {
-         System.out.println(iaE.toString());
-         }
-         */
     }
 
     public String[] getEquations() {
@@ -330,27 +313,6 @@ public class LmdifTest_f77 {
             //lmdiftest.nfev = 0;
             Minpack_f77.lmdif1_f77(lmdifFunc, m, n, a, fvec, tol, info);
             lmdifFunc.fcn(m, n, a, fvec, iflag);
-
-            //System.out.println("\n Initial L2 norm of the residuals: " + fnorm1 +
-            //"\n Final L2 norm of the residuals: " + fnorm2);
-            //for (i=1;i<a.length;i++) {
-            //System.out.println(a[i]);
-            //}
-            /*
-             na[ic] = n;
-             ma[ic] = m;
-             nf[ic] = lmdiftest.nfev;
-             na[ic] = info[1];
-
-             fnm[ic] = fnorm2;
-
-             System.out.print("\n Initial L2 norm of the residuals: " + fnorm1 +
-             "\n Final L2 norm of the residuals: " + fnorm2 +
-             "\n Number of function evaluations: " + nf[ic] +
-             "\n Number of Jacobian evaluations: " + nj[ic] +
-             "\n Info value: " + info[1] +
-             "\n Final approximate solution: \n\n");
-             */
             factor *= 10.0;
         }
     }

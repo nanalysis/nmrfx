@@ -1,5 +1,8 @@
 package org.nmrfx.utilities;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.ClosedWatchServiceException;
@@ -23,6 +26,7 @@ import java.util.Map;
  */
 public class NMRFxFileWatcher implements Runnable {
 
+    private static final Logger log = LoggerFactory.getLogger(NMRFxFileWatcher.class);
     File watchDir;
     protected static final Map<String, WatchService> watchServices = new HashMap<>();
     protected List<FileWatchListener> listeners = new ArrayList<>();
@@ -58,6 +62,7 @@ public class NMRFxFileWatcher implements Runnable {
             try {
                 service.close();
             } catch (IOException ex) {
+                log.warn(ex.getMessage(), ex);
             }
         }
         return service != null;

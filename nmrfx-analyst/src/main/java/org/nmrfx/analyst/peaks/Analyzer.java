@@ -249,6 +249,7 @@ public class Analyzer {
         try {
             peakList = picker.peakPick();
         } catch (IOException | IllegalArgumentException ex) {
+            log.warn("Unable to peak pick.", ex);
         }
     }
 
@@ -711,7 +712,6 @@ public class Analyzer {
             min = dataset.pointToPPM(0, min);
             double max = rM.getEntry(iRow, 1);
             max = dataset.pointToPPM(0, max);
-            //  System.out.println(min + " " + max);
             DatasetRegion newRegion = new DatasetRegion(min, max);
             regions.add(newRegion);
         }

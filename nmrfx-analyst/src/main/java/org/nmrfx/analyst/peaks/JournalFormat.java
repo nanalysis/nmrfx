@@ -80,8 +80,6 @@ public class JournalFormat {
             }
             Multiplet multiplet = peak.getPeakDim(0).getMultiplet();
 
-//            System.out.println(multiplet.myPeakDim.myPeak.getName() + " "
-//                    + multiplet.myPeakDim.getChemShift() + " " + multiplet.getCouplingsAsString() + " " + Multiplets.getCouplingPattern(multiplet) + " " + multiplet.getVolume() / peakList.scale);
             double ppm = multiplet.getPeakDim().getChemShiftValue();
             int nH = (int) Math.round(multiplet.getVolume() / peakList.getScale());
             double bounds = multiplet.getPeakDim().getBounds().doubleValue();

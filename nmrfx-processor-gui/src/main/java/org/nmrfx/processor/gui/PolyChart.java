@@ -1527,7 +1527,6 @@ public class PolyChart extends Region implements PeakListener {
             size = dataset.getSizeReal(datasetAttributes.dim[vecDim]);
         }
         int[] currentRegion = controller.getExtractRegion(vecDimName, size);
-        //System.out.printf("%.3f %.3f %d %d %d\n", min, max, size, currentRegion[0], currentRegion[1]);
         if (min > max) {
             double hold = min;
             min = max;
@@ -1545,7 +1544,6 @@ public class PolyChart extends Region implements PeakListener {
          */
         double f1 = min / (size - 1);
         double f2 = max / (size - 1);
-        //System.out.printf("%.3f %.3f %d %d %d %.3f %.3f\n", min, max, size, currentRegion[0], currentRegion[1], f1, f2);
         double mul = Math.pow(10.0, Math.ceil(Math.log10(size)));
         f1 = Math.round(f1 * mul) / mul;
         f2 = Math.round(f2 * mul) / mul;
@@ -1757,7 +1755,6 @@ public class PolyChart extends Region implements PeakListener {
                 datasetAttributes.dim[i] = i;
             }
 
-            //System.out.println("set dataset " + dataset.getName() + " " + dataset.getNDim() + " " + dataset.getFreqDomain(0));
             updateAxisType();
             datasetFileProp.set(dataset.getFile());
             datasetAttributes.drawList.clear();
@@ -2235,7 +2232,7 @@ public class PolyChart extends Region implements PeakListener {
             highlightChart();
 
         } catch (GraphicsIOException ioE) {
-
+            log.warn(ioE.getMessage(), ioE);
         }
     }
 
@@ -2387,7 +2384,7 @@ public class PolyChart extends Region implements PeakListener {
                 }
 
             } catch (GraphicsIOException gIO) {
-
+                log.warn(gIO.getMessage(), gIO);
             }
         }
         for (DatasetAttributes datasetAttributes : datasetAttributesList) {
@@ -2554,6 +2551,7 @@ public class PolyChart extends Region implements PeakListener {
             try {
                 drawSpectrum.drawActiveRegion(gC, datasetAttr, r.getDatasetRegion());
             } catch (GraphicsIOException ex) {
+                log.warn(ex.getMessage(), ex);
             }
         });
     }
@@ -3162,7 +3160,7 @@ public class PolyChart extends Region implements PeakListener {
 
 //                peakGC.restore();
             } catch (Exception ioE) {
-
+                log.warn(ioE.getMessage(), ioE);
             }
         }
     }
@@ -3387,6 +3385,7 @@ public class PolyChart extends Region implements PeakListener {
                         try {
                             drawPeaks.drawLinkLines(peakListAttr, gC, peak, dim, false);
                         } catch (GraphicsIOException ex) {
+                            log.warn(ex.getMessage(), ex);
                         }
                     });
                 }
@@ -3400,6 +3399,7 @@ public class PolyChart extends Region implements PeakListener {
                         } catch (GraphicsIOException ex) {
                             System.out.println("draw peak exception " + ex.getMessage());
                         } catch (Exception ex2) {
+                            log.warn(ex2.getMessage(), ex2);
                         }
                     });
 
@@ -3428,6 +3428,7 @@ public class PolyChart extends Region implements PeakListener {
                 }
 
             } catch (GraphicsIOException gioE) {
+                log.warn(gioE.getMessage(), gioE);
             } finally {
                 gC.restore();
             }
@@ -3489,12 +3490,14 @@ public class PolyChart extends Region implements PeakListener {
                     try {
                         drawPeaks.drawPeak(peakListAttr, gC, peak, dim, offsets, true);
                     } catch (GraphicsIOException ex) {
+                        log.warn(ex.getMessage(), ex);
                     }
                     int nPeakDim = peak.peakList.nDim;
                     if (peak.getPeakList().isSlideable() && (nPeakDim > 1)) {
                         try {
                             drawPeaks.drawLinkLines(peakListAttr, gC, peak, dim, true);
                         } catch (GraphicsIOException ex) {
+                            log.warn(ex.getMessage(), ex);
                         }
                     }
                 });
@@ -3505,6 +3508,7 @@ public class PolyChart extends Region implements PeakListener {
                         try {
                             drawPeaks.drawMultiplet(peakListAttr, gC, multiplet, dim, offsets, true, line);
                         } catch (GraphicsIOException ex) {
+                            log.warn(ex.getMessage(), ex);
                         }
                     }
                 });
@@ -3579,6 +3583,7 @@ public class PolyChart extends Region implements PeakListener {
                     gC.restore();
                 }
             } catch (Exception gioE) {
+                log.warn(gioE.getMessage(), gioE);
             } finally {
                 gC.restore();
             }
@@ -3730,7 +3735,6 @@ public class PolyChart extends Region implements PeakListener {
                 }
             }
         }
-        //System.out.printf("pivot %.3f map %d dDim %d size %d pos %.3f frac %.3f\n",pivot, mapDim,datasetDim,size,position,phaseFraction);
     }
 
     public double getPivotFraction() {
@@ -3813,6 +3817,7 @@ public class PolyChart extends Region implements PeakListener {
                 updateDatasets(datasetNames);
                 refresh();
             } catch (IOException ex) {
+                log.warn(ex.getMessage(), ex);
             }
         }
 
@@ -4270,7 +4275,7 @@ public class PolyChart extends Region implements PeakListener {
         try {
             rData = dataset.analyzeRegion(pt, cpt, regionWidth, dim);
         } catch (IOException ioE) {
-
+            log.warn(ioE.getMessage(), ioE);
         }
         return rData;
     }

@@ -363,6 +363,7 @@ public class CanvasMolecule implements CanvasAnnotation {
                 try {
                     molecule.selectAtoms(aName);
                 } catch (InvalidMoleculeException ex) {
+                    log.warn(ex.getMessage(), ex);
                 }
 
                 return true;

@@ -43,6 +43,18 @@ public class LogRecord {
         return logbackEvent.getLoggerName();
     }
 
+    /**
+     * Gets the LogRecord's source method name from the caller data.
+     * @return A String of the caller's method name or an empty string if there is no caller data.
+     */
+    public String getSourceMethodName() {
+        String sourceMethodName = "";
+        if (logbackEvent.hasCallerData() && logbackEvent.getCallerData().length > 0) {
+            sourceMethodName = logbackEvent.getCallerData()[0].getMethodName();
+        }
+        return sourceMethodName;
+    }
+
     @Override
     public String toString() {
         return String.format("LogRecord{level=%s, time=%s, message=%s}", getLevel(), getTime(), getMessage());

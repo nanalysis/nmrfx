@@ -26,6 +26,8 @@ import javafx.scene.text.TextAlignment;
 import org.nmrfx.graphicsio.GraphicsContextInterface;
 import org.nmrfx.processor.gui.CanvasAnnotation;
 import org.nmrfx.utils.GUIUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -33,14 +35,16 @@ import org.nmrfx.utils.GUIUtils;
  */
 public class AnnoText implements CanvasAnnotation {
 
-     double x1;
-     double y1;
-     double x2;
-     double y2;
+    double x1;
+    double y1;
+    double x2;
+    double y2;
     double startX1;
     double startY1;
     double startX2;
     double startY2;
+    private static final Logger log = LoggerFactory.getLogger(AnnoText.class);
+
     POSTYPE xPosType;
     POSTYPE yPosType;
     Bounds bounds2D;
@@ -140,7 +144,12 @@ public class AnnoText implements CanvasAnnotation {
                 bounds2D = new BoundingBox(xp1, yp1 - font.getSize(), width, font.getSize());
                 gC.fillText(text, xp1, yp1);
             }
+<<<<<<< HEAD
         } catch (Exception ignored) {
+=======
+        } catch (Exception ex) {
+            log.warn(ex.getMessage(), ex);
+>>>>>>> master
         }
     }
 

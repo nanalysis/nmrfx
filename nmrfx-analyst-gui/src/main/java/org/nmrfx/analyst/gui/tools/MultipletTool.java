@@ -497,7 +497,7 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
                         refresh();
                     });
                 } catch (NumberFormatException nfE) {
-
+                    log.warn("Unable to parse integral field.", nfE);
                 }
 
             }
@@ -576,6 +576,7 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
             try {
                 analyzer.fitRegions();
             } catch (Exception ex) {
+                log.warn("Exception occured while fitting regions.", ex);
             }
             PeakList peakList = analyzer.getPeakList();
             List<String> peakListNames = new ArrayList<>();
@@ -1022,6 +1023,7 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
             chart.refresh();
 
         } catch (IOException ex) {
+            log.warn(ex.getMessage(), ex);
         }
     }
 
@@ -1186,7 +1188,7 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
 
     public void mergePeaks() {
         List<Peak> peaks = chart.getSelectedPeaks();
-        if (peaks.size() > 0) {
+        if (!peaks.isEmpty()) {
             activeMultiplet = Multiplets.mergePeaks(peaks);
             refresh();
         }
@@ -1249,6 +1251,7 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
                         refresh();
                     }
                 } catch (NumberFormatException nfE) {
+                    log.warn("Unable to parse new coupling value.", nfE);
 
                 }
             }

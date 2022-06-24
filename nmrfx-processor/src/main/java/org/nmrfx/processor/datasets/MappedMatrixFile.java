@@ -29,6 +29,8 @@ import org.nmrfx.datasets.DatasetHeaderIO;
 import org.nmrfx.datasets.DatasetLayout;
 import org.nmrfx.datasets.DatasetStorageInterface;
 import org.nmrfx.processor.math.Vec;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Create a memory-mapped interface to a Dataset file
@@ -37,6 +39,7 @@ import org.nmrfx.processor.math.Vec;
  */
 public class MappedMatrixFile implements DatasetStorageInterface, Closeable {
 
+    private static final Logger log = LoggerFactory.getLogger(MappedMatrixFile.class);
     private RandomAccessFile raFile;
     private final Dataset dataset;
     private final File file;
@@ -78,9 +81,8 @@ public class MappedMatrixFile implements DatasetStorageInterface, Closeable {
             } else {
                 strides[i] = strides[i - 1] * layout.sizes[i - 1];
             }
-            System.err.println("mapped " + i + " " + dataset.getSizeTotal(i) + " " + strides[i]);
+            log.info("mapped {} {} {}", i, dataset.getSizeTotal(i), strides[i]);
         }
-        //System.out.println("size " + totalSize);
         totalSize = size;
         try {
             long size2 = totalSize * Float.BYTES;
@@ -181,7 +183,7 @@ public class MappedMatrixFile implements DatasetStorageInterface, Closeable {
                 mappedBuffer.putInt(p, (int) d);
             }
         } catch (Exception e) {
-            System.out.println("map range error " + p + " " + totalSize);
+            log.warn("map range error {} {}", p, totalSize);
         }
     }
 

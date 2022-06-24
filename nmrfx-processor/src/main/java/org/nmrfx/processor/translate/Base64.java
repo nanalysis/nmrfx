@@ -17,7 +17,14 @@
  */
 package org.nmrfx.processor.translate;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 
 /**
  * Encodes and decodes to and from Base64 notation.
@@ -46,6 +53,7 @@ import java.io.IOException;
  */
 public class Base64 {
 
+    private static final Logger log = LoggerFactory.getLogger(Base64.class);
     /**
      * Specify encoding (value is <tt>true</tt>).
      */
@@ -217,7 +225,6 @@ public class Base64 {
     public static String encodeObject(java.io.Serializable serializableObject) {
         return encodeObject(serializableObject, true);
     }
-    // end encodeObject
 
     /**
      * Serializes an object and returns the Base64-encoded version of that serialized object. If the object cannot be
@@ -229,44 +236,17 @@ public class Base64 {
      * @since 1.4
      */
     public static String encodeObject(java.io.Serializable serializableObject,
-            boolean breakLines) {
-        java.io.ByteArrayOutputStream baos = null;
-        java.io.OutputStream b64os = null;
-        java.io.ObjectOutputStream oos = null;
-
-        try {
-            baos = new java.io.ByteArrayOutputStream();
-            b64os = new Base64.OutputStream(baos, Base64.ENCODE, breakLines);
-            oos = new java.io.ObjectOutputStream(b64os);
+                                      boolean breakLines) {
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
+             ObjectOutputStream oos = new ObjectOutputStream(new OutputStream(baos, Base64.ENCODE, breakLines))) {
 
             oos.writeObject(serializableObject);
-        } // end try
-        catch (java.io.IOException e) {
-            e.printStackTrace();
-
+            return baos.toString();
+        } catch(IOException e) {
+            log.warn(e.getMessage(), e);
             return null;
-        } // end catch
-        finally {
-            try {
-                oos.close();
-            } catch (Exception e) {
-            }
-
-            try {
-                b64os.close();
-            } catch (Exception e) {
-            }
-
-            try {
-                baos.close();
-            } catch (Exception e) {
-            }
         }
-        // end finally
-
-        return new String(baos.toByteArray());
     }
-    // end encode
 
     /**
      * Encodes a byte array into Base64 notation. Equivalen to calling
@@ -461,15 +441,9 @@ public class Base64 {
 
                 return 3;
             } catch (Exception e) {
-                System.out.println("" + source[srcOffset] + ": "
-                        + (DECODABET[source[srcOffset]]));
-                System.out.println("" + source[srcOffset + 1] + ": "
-                        + (DECODABET[source[srcOffset + 1]]));
-                System.out.println("" + source[srcOffset + 2] + ": "
-                        + (DECODABET[source[srcOffset + 2]]));
-                System.out.println("" + source[srcOffset + 3] + ": "
-                        + (DECODABET[source[srcOffset + 3]]));
-
+                log.warn("{}:{}, {}:{}, {}:{}, {}:{}", source[srcOffset], DECODABET[source[srcOffset]],
+                        source[srcOffset + 1], DECODABET[source[srcOffset + 1]], source[srcOffset + 2],
+                        DECODABET[source[srcOffset + 2]], source[srcOffset + 3], DECODABET[source[srcOffset + 3]]);
                 return -1;
             }
             //e nd catch
@@ -514,39 +488,14 @@ public class Base64 {
     public static Object decodeToObject(String encodedObject) {
         byte[] objBytes = decode(encodedObject);
 
-        java.io.ByteArrayInputStream bais = null;
-        java.io.ObjectInputStream ois = null;
-
-        try {
-            bais = new java.io.ByteArrayInputStream(objBytes);
-            ois = new java.io.ObjectInputStream(bais);
-
+        try (ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(objBytes))){
             return ois.readObject();
-        } // end try
-        catch (java.io.IOException e) {
-            e.printStackTrace();
-
-            return null;
-        } // end catch
-        catch (java.lang.ClassNotFoundException e) {
-            e.printStackTrace();
-
-            return null;
-        } // end catch
-        finally {
-            try {
-                bais.close();
-            } catch (Exception e) {
-            }
-
-            try {
-                ois.close();
-            } catch (Exception e) {
-            }
         }
-        // end finally
+        catch (IOException | ClassNotFoundException e) {
+            log.warn(e.getMessage(), e);
+            return null;
+        }
     }
-    // end decodeObject
 
     /**
      * Decodes Base64 content in byte array format and returns the decoded byte array.
@@ -591,8 +540,7 @@ public class Base64 {
                 // end if: equals sign or better
             } // end if: white space, equals sign or better
             else {
-                System.err.println("Bad Base64 input character at " + i + ": "
-                        + source[i] + "(decimal)");
+                log.warn("Bad Base64 input character at {}:{} (decimal)", i, source[i]);
 
                 return null;
             }
@@ -976,11 +924,13 @@ public class Base64 {
          *
          * @since 1.3
          */
+        @Override
         public void close() throws java.io.IOException {
             super.close();
 
-            //this.flush();
-            out.close();
+            if (out != null) {
+                out.close();
+            }
 
             buffer = null;
             out = null;

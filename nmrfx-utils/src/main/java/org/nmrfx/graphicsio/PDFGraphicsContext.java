@@ -115,6 +115,7 @@ public class PDFGraphicsContext implements GraphicsContextInterface {
             try {
                 pdfGC.contentStream.transform(matrix);
             } catch (IOException ex) {
+                log.warn(ex.getMessage(), ex);
             }
             // pdfGC.transforms.clear();
             // pdfGC.transforms.addAll(transforms);
@@ -135,6 +136,7 @@ public class PDFGraphicsContext implements GraphicsContextInterface {
             try {
                 font = PDType0Font.load(doc, iStream);
             } catch (IOException ex) {
+                log.warn(ex.getMessage(), ex);
             }
         }
 
@@ -269,6 +271,7 @@ public class PDFGraphicsContext implements GraphicsContextInterface {
         try {
             contentStream.curveTo(tX(xc1), tY(yc1), tX(xc2), tY(yc2), tX(x1), tY(y1));
         } catch (IOException ex) {
+            log.warn(ex.getMessage(), ex);
         }
     }
 
@@ -282,6 +285,7 @@ public class PDFGraphicsContext implements GraphicsContextInterface {
         try {
             contentStream.clip();
         } catch (IOException ex) {
+            log.warn(ex.getMessage(), ex);
         }
     }
 
@@ -290,6 +294,7 @@ public class PDFGraphicsContext implements GraphicsContextInterface {
         try {
             contentStream.closePath();
         } catch (IOException ex) {
+            log.warn(ex.getMessage(), ex);
         }
     }
 
@@ -629,6 +634,7 @@ public class PDFGraphicsContext implements GraphicsContextInterface {
         try {
             contentStream.setLineCapStyle(pdCap);
         } catch (IOException ex) {
+            log.warn(ex.getMessage(), ex);
         }
     }
 
@@ -720,6 +726,7 @@ public class PDFGraphicsContext implements GraphicsContextInterface {
             contentStream.lineTo(tX(x2), tY(y2));
             contentStream.stroke();
         } catch (IOException ioE) {
+            log.warn(ioE.getMessage(), ioE);
         }
     }
 
@@ -729,6 +736,7 @@ public class PDFGraphicsContext implements GraphicsContextInterface {
             contentStream.lineTo((float) x2, (float) y2);
             contentStream.stroke();
         } catch (IOException ioE) {
+            log.warn(ioE.getMessage(), ioE);
         }
     }
 
@@ -759,6 +767,7 @@ public class PDFGraphicsContext implements GraphicsContextInterface {
             }
             contentStream.stroke();
         } catch (IOException ioE) {
+            log.warn(ioE.getMessage(), ioE);
         }
     }
 

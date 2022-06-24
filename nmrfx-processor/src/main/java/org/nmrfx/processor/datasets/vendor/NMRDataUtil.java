@@ -47,6 +47,8 @@ import org.nmrfx.processor.datasets.vendor.varian.VarianData;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.operations.Expd;
 import org.nmrfx.utilities.RemoteDataset;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Utility helper class for NMRData interface.
@@ -54,6 +56,8 @@ import org.nmrfx.utilities.RemoteDataset;
  * @author bfetler
  */
 public final class NMRDataUtil {
+
+    private static final Logger log = LoggerFactory.getLogger(NMRDataUtil.class);
 
     private static NMRData currentNMRData = null;
 
@@ -261,7 +265,7 @@ public final class NMRDataUtil {
                         fileList.add(fidPath);
                     }
                 } catch (IOException ex) {
-                    ex.printStackTrace();
+                    log.warn(ex.getMessage(), ex);
                 }
             }
             return FileVisitResult.CONTINUE;
@@ -269,7 +273,7 @@ public final class NMRDataUtil {
 
         @Override
         public FileVisitResult visitFileFailed(Path file, IOException e) {
-            e.printStackTrace();
+            log.warn(e.getMessage(), e);
             return FileVisitResult.CONTINUE;
         }
 
@@ -299,7 +303,7 @@ public final class NMRDataUtil {
             fileList = filePeeker.getFiles();
 
         } catch (IOException ex) {
-            ex.printStackTrace();
+            log.warn(ex.getMessage(), ex);
         }
         return fileList;
 
@@ -333,6 +337,7 @@ public final class NMRDataUtil {
                 }
             }
         } catch (IOException ex) {
+            log.warn(ex.getMessage(), ex);
         }
         return lastFile;
     }
@@ -355,6 +360,7 @@ public final class NMRDataUtil {
                 datasetName = processed.get(0).getFileName().toString();
             }
         } catch (IOException ex) {
+            log.warn(ex.getMessage(), ex);
         }
         return datasetName;
 
@@ -378,6 +384,7 @@ public final class NMRDataUtil {
                         items.add(rData);
                     }
                 } catch (IOException ex) {
+                    log.warn(ex.getMessage(), ex);
                 }
             }
             if (savePath != null) {

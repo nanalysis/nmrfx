@@ -19,9 +19,12 @@ package org.nmrfx.star;
 
 import java.io.*;
 import org.nmrfx.star.Saveframe.Category;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class MMCIF extends STAR3Base {
 
+    private static final Logger log = LoggerFactory.getLogger(MMCIF.class);
     public MMCIF(String name) {
         super(name);
     }
@@ -65,7 +68,6 @@ public class MMCIF extends STAR3Base {
                 String name = saveFrame.name;
                 for (String catName : getCategories(name)) {
                     Category category = saveFrame.getCategory(catName);
-                    //System.out.println("cat " + category + " " + category.isLoop);
                     if (category.isLoop()) {
                         Loop loop = saveFrame.getLoop(catName);
                         STAR3Base.writeLoopStrings(fileWriter, catName, loop.tags);
@@ -102,7 +104,7 @@ public class MMCIF extends STAR3Base {
 
     public static void main(String[] argv) {
         if (argv.length != 1) {
-            System.err.println("usage: fileName");
+            log.warn("usage: fileName");
         } else {
             MMCIF star3 = new MMCIF(argv[0]);
             while (true) {
@@ -110,7 +112,7 @@ public class MMCIF extends STAR3Base {
                 if (token == null) {
                     break;
                 } else {
-                    System.err.println(token);
+                    log.warn(token);
                 }
             }
         }

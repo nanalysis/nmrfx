@@ -579,7 +579,6 @@ public class SpinSystems {
 
             for (int i = 0; i < systems.size(); i++) {
                 SpinSystem system = thisSystems.get(i);
-                SpinSystem previousSystem = previousSystems.get(i);
                 SpinSystem nextSystem = nextSystems.get(i);
                 SeqFragment fragment = fragmentMap.get(fragmentIDColumn.get(i));
                 if (fragment != null) {
@@ -589,6 +588,9 @@ public class SpinSystems {
                     // find match that is to next, confirm and add to a fragment
                     for (SpinSystemMatch match : system.getMatchToNext()) {
                         if ((match.getSpinSystemA() == system) && (match.getSpinSystemB() == nextSystem)) {
+                            if (fragment == null) {
+                                throw new ParseException("Could not parse STAR saveframe. Fragment was null.");
+                            }
                             fragment.getSpinSystemMatches().add(match);
                             system.confirmS = Optional.of(match);
                             nextSystem.confirmP = Optional.of(match);

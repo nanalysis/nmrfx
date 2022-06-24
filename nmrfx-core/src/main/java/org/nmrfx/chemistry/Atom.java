@@ -1376,7 +1376,6 @@ public class Atom implements IAtom, Comparable<Atom> {
             chainID = polymerName.charAt(0);
 
             // sequence code
-//            System.out.println(((Residue) entity).getIDNum() + ": " + writeName);
             seqCode = Integer.parseInt(((Residue) entity).getNumber());
 
         } else if (entity instanceof Compound) {
@@ -1394,7 +1393,6 @@ public class Atom implements IAtom, Comparable<Atom> {
         // value uncertainty
         double shiftErr = ppmv.getError();
 
-//            System.out.println("wrote " + ((Residue) entity).getIDNum() + " " + writeName + " " + ppmv.getValue());
         return String.format("         %-9s %-9d %-9s %-9s %-9.3f %-4.3f", chainID, seqCode, resName, writeName, shift, shiftErr);
     }
 
@@ -1476,7 +1474,6 @@ public class Atom implements IAtom, Comparable<Atom> {
                     writeName = formatNEFAtomName(atom);
                 }
             }
-//                System.out.println(chainID + " " + seqCode + " " + resName + " " + atoms[a].name + " " + writeName);
             sBuilder.append(String.format("%-8s", writeName));
         }
 

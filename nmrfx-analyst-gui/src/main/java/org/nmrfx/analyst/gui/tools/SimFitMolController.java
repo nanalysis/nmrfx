@@ -40,6 +40,8 @@ import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.math.Vec;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -47,6 +49,7 @@ import org.nmrfx.processor.math.Vec;
  */
 public class SimFitMolController extends SimMolController {
 
+    private static final Logger log = LoggerFactory.getLogger(SimFitMolController.class);
     ComboBox<String> activeField;
     Dataset currentDataset = null;
     Dataset sumDataset = null;
@@ -187,6 +190,7 @@ public class SimFitMolController extends SimMolController {
             try {
                 dataset.readVector(vec, 0, 0);
             } catch (IOException ex) {
+                log.warn(ex.getMessage(), ex);
             }
         }
         return vec;
@@ -366,7 +370,7 @@ public class SimFitMolController extends SimMolController {
                 }
             }
         } catch (NumberFormatException nfE) {
-
+            log.warn("Unable to parse scale.", nfE);
         }
     }
 
