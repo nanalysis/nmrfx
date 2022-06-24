@@ -130,6 +130,9 @@ public class FXMLController implements  Initializable, PeakNavigable {
     static boolean popOverMode = false;
     static PeakAttrController peakAttrController = null;
     Stage stage = null;
+    private double previousStageRestoreWidth = 0;
+    private double previousStageRestoreProcControllerWidth = 0;
+    private boolean previousStageRestoreProcControllerVisible = false;
     boolean isFID = true;
     static public final SimpleObjectProperty<FXMLController> activeController = new SimpleObjectProperty<>(null);
     static String docString = null;
@@ -1267,7 +1270,32 @@ public class FXMLController implements  Initializable, PeakNavigable {
         } catch (IOException ioE) {
             throw new IllegalStateException("Unable to create controller", ioE);
         }
+
+        stage.maximizedProperty().addListener(controller::adjustSizeAfterMaximize);
+
         return controller;
+    }
+
+    private void adjustSizeAfterMaximize(ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean newValue) {
+        if (Boolean.TRUE.equals(newValue)) {
+            previousStageRestoreWidth = stage.getWidth();
+            previousStageRestoreProcControllerVisible = getActiveChart().getProcessorController(false) != null;
+            if(previousStageRestoreProcControllerVisible) {
+                previousStageRestoreProcControllerWidth = ((Pane) processorPane.getChildren().get(0)).getMinWidth();
+            } else {
+                previousStageRestoreProcControllerWidth = 0;
+            }
+        } else {
+            boolean procControllerVisible = processorPane.getChildren().size() > 0;
+            if (procControllerVisible == previousStageRestoreProcControllerVisible) {
+                stage.setWidth(previousStageRestoreWidth);
+            } else if (procControllerVisible) {
+                Pane p = (Pane) processorPane.getChildren().get(0);
+                stage.setWidth(previousStageRestoreWidth + p.getMinWidth());
+            } else {
+                stage.setWidth(previousStageRestoreWidth - previousStageRestoreProcControllerWidth);
+            }
+        }
     }
 
     /**
