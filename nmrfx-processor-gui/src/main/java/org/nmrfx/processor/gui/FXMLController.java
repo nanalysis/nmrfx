@@ -1019,7 +1019,9 @@ public class FXMLController implements  Initializable, PeakNavigable {
                     log.info(s);
                     if (s.contains("REGIONS")) {
                         values = PropertyManager.parseOpString(s);
-                        log.info(values.toString());
+                        if (log.isInfoEnabled()) {
+                            log.info(values.toString());
+                        }
                     }
                 }
                 if (values == null) {
@@ -1286,7 +1288,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
                 previousStageRestoreProcControllerWidth = 0;
             }
         } else {
-            boolean procControllerVisible = processorPane.getChildren().size() > 0;
+            boolean procControllerVisible = !processorPane.getChildren().isEmpty();
             if (procControllerVisible == previousStageRestoreProcControllerVisible) {
                 stage.setWidth(previousStageRestoreWidth);
             } else if (procControllerVisible) {

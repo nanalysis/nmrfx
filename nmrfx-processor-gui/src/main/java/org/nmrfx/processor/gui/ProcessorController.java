@@ -1205,16 +1205,12 @@ public class ProcessorController implements Initializable, ProgressUpdater {
                     rowTextBoxes[i].setEditable(false);
                     HBox.setHgrow(rowTextBoxes[i], Priority.ALWAYS);
                     RadioButton radioButton = new RadioButton((i + 2) + ": ");
-                    Pane pane = new Pane();
-                    pane.setMinWidth(sepWidth);
                     dimVBox.getChildren().add(new HBox(radioButton, rowTextBoxes[i]));
                     radioButton.setToggleGroup(rowToggleGroup);
                     if (i == 0) {
                         rowToggleGroup.selectToggle(radioButton);
                     }
                 }
-                Pane pane = new Pane();
-                pane.setMinWidth(sepWidth);
                 fileIndexTextBox.setPrefWidth(60);
                 fileIndexTextBox.setEditable(false);
 
@@ -1356,7 +1352,9 @@ public class ProcessorController implements Initializable, ProgressUpdater {
                         sBuilder.append("R");
                     }
                 }
-                log.info("{} {} {}", i, nVectors, sBuilder.toString());
+                if (log.isInfoEnabled()) {
+                    log.info("{} {} {}", i, nVectors, sBuilder.toString());
+                }
                 realImagChoiceBox.getItems().add(sBuilder.toString());
                 realImagChoices.add(sBuilder.toString());
             }

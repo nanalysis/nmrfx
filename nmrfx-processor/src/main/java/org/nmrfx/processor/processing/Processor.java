@@ -1160,7 +1160,7 @@ public class Processor {
                     vectors.add(temp);
                 } catch (Exception ex) {
                     setProcessorAvailableStatus(true);
-                    throw new ProcessingException(ex.getMessage());
+                    throw new ProcessingException(ex.getMessage(), ex);
                 }
             }
         } else {  // direct dimension, read FIDs
