@@ -23,7 +23,10 @@
  */
 package org.nmrfx.processor.gui;
 
+import javafx.beans.binding.Bindings;
+import javafx.beans.binding.IntegerBinding;
 import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.collections.FXCollections;
@@ -131,7 +134,9 @@ public class DatasetsController implements Initializable, PropertyChangeListener
         closeButton.setOnAction(e -> closeDatasets());
         closeButton.setDisable(true);
 
-        MenuButton drawButton = new MenuButton("Draw");
+        SplitMenuButton drawButton = new SplitMenuButton();
+        drawButton.setText("Draw");
+        drawButton.setOnAction(this::drawDataset);
         MenuItem overlayItem = new MenuItem("Overlay");
         overlayItem.setOnAction(this::drawDataset);
         MenuItem gridItem = new MenuItem("Grid");
@@ -140,17 +145,26 @@ public class DatasetsController implements Initializable, PropertyChangeListener
         horizontalItem.setOnAction(e -> gridDataset(GridPaneCanvas.ORIENTATION.HORIZONTAL));
         MenuItem verticalItem = new MenuItem("Vertical");
         verticalItem.setOnAction(e -> gridDataset(GridPaneCanvas.ORIENTATION.VERTICAL));
-        ContextMenu drawMenu = new ContextMenu(overlayItem, horizontalItem, verticalItem, gridItem);
-        drawButton.setContextMenu(drawMenu);
-
+        drawButton.getItems().addAll(overlayItem, horizontalItem, verticalItem, gridItem);
+        for (var menuItem: drawButton.getItems()) {
+            IntegerBinding sizeProperty = Bindings.size(tableView.getSelectionModel().getSelectedIndices());
+            menuItem.disableProperty().bind(sizeProperty.lessThan(2));
+        }
         buttons.add(drawButton);
         valueButton = new Button("Values");
         valueButton.setOnAction(e -> makeValueTable());
         buttons.add(valueButton);
         valueButton.setDisable(true);
 
+
         for (ButtonBase button : buttons) {
             button.getStyleClass().add("toolButton");
+            IntegerBinding sizeProperty = Bindings.size(tableView.getSelectionModel().getSelectedIndices());
+            if (button == valueButton) {
+                button.disableProperty().bind(sizeProperty.isNotEqualTo(1));
+            } else {
+                button.disableProperty().bind(sizeProperty.isEqualTo(0));
+            }
         }
         toolBar.getItems().addAll(buttons);
     }
@@ -422,14 +436,6 @@ public class DatasetsController implements Initializable, PropertyChangeListener
         dim1Column.setContextMenu(menu);
         tableView.getColumns().setAll(fileNameCol, nDimCol, levelCol, scaleCol, noiseCol, positiveColumn, negativeColumn, dim1Column);
         tableView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
-        ListChangeListener listener = c -> {
-            int nSelected = tableView.getSelectionModel().getSelectedItems().size();
-            boolean state = nSelected == 1;
-            valueButton.setDisable(!state);
-            saveParButton.setDisable(nSelected == 0);
-            closeButton.setDisable(nSelected == 0);
-        };
-        tableView.getSelectionModel().getSelectedIndices().addListener(listener);
         setDatasetList((ObservableList<DatasetBase>) ProjectBase.getActive().getDatasets());
     }
 
