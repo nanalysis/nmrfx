@@ -1190,7 +1190,6 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     @FXML
     protected void vectorStatus(int[] sizes, int vecDim) {
         int nDim = sizes.length;
-        double sepWidth = 20.0;
         vecSizes = sizes.clone();
         navHBox.getChildren().clear();
         if (nDim > 1) {
@@ -1256,7 +1255,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
                     int maxSize = vecSizes[iDim - 1] < 256 ? vecSizes[iDim - 1] : 256;
                     log.info("{} {} {}", iDim, vecSizes[iDim - 1], maxSize);
                     vecNum1.setMax(maxSize);
-                    vecNum1.setValue(row + 1);
+                    vecNum1.setValue(row + 1.0);
                 }
             }
         }
@@ -1319,11 +1318,11 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         int iRow = (int) slider.getValue();
         int delta = (int) (slider.getMax() - slider.getMin());
 
-        int start = (int) (delta / 4 * Math.round(iRow / delta / 4)) - delta / 2;
+        int start = (int) (delta / 4 * (iRow / delta / 4)) - delta / 2;
         if (start < 1) {
             start = 1;
         }
-        double end = start + delta;
+        double end = (double) start + delta;
         slider.setMin(start);
         slider.setMax(end);
 
@@ -1353,7 +1352,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
                     }
                 }
                 if (log.isInfoEnabled()) {
-                    log.info("{} {} {}", i, nVectors, sBuilder.toString());
+                    log.info("{} {} {}", i, nVectors, sBuilder);
                 }
                 realImagChoiceBox.getItems().add(sBuilder.toString());
                 realImagChoices.add(sBuilder.toString());
