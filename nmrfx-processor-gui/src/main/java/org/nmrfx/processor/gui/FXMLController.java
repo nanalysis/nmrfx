@@ -597,8 +597,8 @@ public class FXMLController implements  Initializable, PeakNavigable {
 
     void addFID(NMRData nmrData, boolean clearOps, boolean reload) {
         isFID = true;
-        // The create method also creates and sets the chartProcessor variable
-        ProcessorController processorController = ProcessorController.create(this, processorPane, getActiveChart());
+        // Only create a new processor controller, if the active chart does not have one already created.
+        ProcessorController processorController = getActiveChart().getProcessorController(true);
         if (processorController != null) {
             chartProcessor.setData(nmrData, clearOps);
             processorController.viewingDataset(false);
