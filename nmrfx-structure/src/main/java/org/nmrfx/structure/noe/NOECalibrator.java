@@ -27,6 +27,8 @@ import org.nmrfx.chemistry.constraints.Flags;
 import org.nmrfx.chemistry.constraints.Noe;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakList;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
@@ -36,6 +38,9 @@ import static org.nmrfx.chemistry.constraints.Noe.*;
  * @author brucejohnson
  */
 public class NOECalibrator {
+
+    private static final Logger log = LoggerFactory.getLogger(NOECalibrator.class);
+    private static final String POLYMER_WARN_MSG_TEMPLATE = "Entity is not a polymer: {}";
     private static double SYM_BONUS = 10.0;
     private static double CMAX = 5.5;
     private static double CMAX_BONUS = 10.0;
@@ -305,7 +310,7 @@ public class NOECalibrator {
     public void findRedundant() {
         int nNoe = noeSet.getSize();
         if (molecule == null) {
-            System.out.println("null mol");
+            log.warn("null mol");
             return;
         }
         Map<String, List<Noe>> dupMap = new TreeMap<>();
@@ -328,12 +333,12 @@ public class NOECalibrator {
             if (e1 instanceof Residue) {
                 r1 = (Residue) e1;
             } else {
-                System.out.println(e1.getName() + " not polymer");
+                log.info(POLYMER_WARN_MSG_TEMPLATE, e1.getName());
             }
             if (e2 instanceof Residue) {
                 r2 = (Residue) e2;
             } else {
-                System.out.println(e2.getName() + " not polymer");
+                log.info(POLYMER_WARN_MSG_TEMPLATE, e2.getName());
             }
 
             if ((r1 != null) && (r2 != null)) {
@@ -425,7 +430,7 @@ public class NOECalibrator {
     public void findNetworks(boolean useContrib) {
         int nNoe = noeSet.getSize();
         if (molecule == null) {
-            System.out.println("null mol");
+            log.warn("null mol");
             return;
         }
         Map<String, Map<String, Noe>> resMap1 = new TreeMap<>();
@@ -464,12 +469,12 @@ public class NOECalibrator {
             if (e1 instanceof Residue) {
                 r1 = (Residue) e1;
             } else {
-                System.out.println(e1.getName() + " not polymer");
+                log.info(POLYMER_WARN_MSG_TEMPLATE, e1.getName());
             }
             if (e2 instanceof Residue) {
                 r2 = (Residue) e2;
             } else {
-                System.out.println(e2.getName() + " not polymer");
+                log.info(POLYMER_WARN_MSG_TEMPLATE, e2.getName());
             }
 
             if ((r1 != null) && (r2 != null)) {
@@ -569,7 +574,7 @@ public class NOECalibrator {
             }
         }
         long done = System.currentTimeMillis();
-        System.out.println((mid - start) + " " + (done - mid));
+        log.info("{} {}", (mid - start), (done - mid));
     }
 
     public void limitToAssigned() {
@@ -582,13 +587,13 @@ public class NOECalibrator {
             boolean isAssigned = false;
             for (int i = 0; i < protons[0].length; i++) {
                 if ((protons[0][i] != null) && (protons[1][i] != null)) {
-                    System.out.println(protons[0][i].spatialSet.getFullName());
-                    System.out.println(protons[1][i].spatialSet.getFullName());
+                    log.info(protons[0][i].spatialSet.getFullName());
+                    log.info(protons[1][i].spatialSet.getFullName());
                     isAssigned = true;
                     break;
                 }
             }
-            System.out.println(protons[0].length + " " + isAssigned);
+            log.info("{} {}", protons[0].length, isAssigned);
             for (Noe noe : noeList) {
                 String spg1Name = noe.spg1.getFullName();
                 String spg2Name = noe.spg2.getFullName();
@@ -606,7 +611,7 @@ public class NOECalibrator {
                         }
                     }
                 }
-                System.out.println(spg1Name + " " + spg2Name + " " + consistent);
+                log.info("{} {} {}", spg1Name, spg2Name, consistent);
                 if (isAssigned && !consistent) {
                     noe.inactivate(Flags.LABEL);
                 } else {

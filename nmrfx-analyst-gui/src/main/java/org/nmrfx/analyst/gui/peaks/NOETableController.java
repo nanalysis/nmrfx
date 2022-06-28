@@ -71,6 +71,8 @@ import org.nmrfx.processor.project.Project;
 import org.nmrfx.structure.noe.NOEAssign;
 import org.nmrfx.structure.noe.NOECalibrator;
 import org.nmrfx.utils.GUIUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -78,6 +80,7 @@ import org.nmrfx.utils.GUIUtils;
  */
 public class NOETableController implements Initializable {
 
+    private static final Logger log = LoggerFactory.getLogger(NOETableController.class);
     private Stage stage;
     @FXML
     private ToolBar toolBar;
@@ -143,7 +146,7 @@ public class NOETableController implements Initializable {
             stage.setTitle("Peaks");
             stage.show();
         } catch (IOException ioE) {
-            System.out.println(ioE.getMessage());
+            log.warn(ioE.getMessage(), ioE);
         }
 
         return controller;
@@ -317,17 +320,17 @@ public class NOETableController implements Initializable {
     }
 
     public void setNoeSet(NoeSet noeSet) {
-        System.out.println("set noes " + noeSet);
+        log.info("set noes {}", noeSet);
         this.noeSet = noeSet;
         if (tableView == null) {
-            System.out.println("null table");
+            log.warn("null table");
         } else {
             if (noeSet == null) {
                 stage.setTitle("Noes: ");
             } else {
 
                 ObservableList<Noe> noes = FXCollections.observableList(noeSet.getConstraints());
-                System.out.println("noes " + noes.size());
+                log.info("noes {}", noes.size());
                 updateColumns();
                 tableView.setItems(noes);
                 tableView.refresh();
@@ -355,7 +358,7 @@ public class NOETableController implements Initializable {
                 NOECalibrator noeCalibrator = new NOECalibrator(noeSetOpt.get());
                 noeCalibrator.updateContributions(false, false);
                 noeSet = noeSetOpt.get();
-                System.out.println("active " + noeSet.getName());
+                log.info("active {}", noeSet.getName());
             }
             setNoeSet(noeSet);
             updateNoeSetMenu();

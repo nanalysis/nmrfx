@@ -23,12 +23,16 @@ import org.nmrfx.structure.chemistry.MatchCriteria;
 import org.nmrfx.chemistry.SpatialSet;
 import org.nmrfx.chemistry.Util;
 import org.nmrfx.peaks.PeakList;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
  * @author brucejohnson
  */
 public class NOEAssign {
+
+    private static final Logger log = LoggerFactory.getLogger(NOEAssign.class);
 
     public static MatchCriteria[] getMatchCriteria(PeakList peakList) throws NumberFormatException {
         int nDim = peakList.nDim;
@@ -211,7 +215,7 @@ public class NOEAssign {
                 PeakDim peakDim = peak.getPeakDim(matchCriteria[0].getDim());
                 Float ppm = peakDim.getChemShift();
                 if (ppm == null) {
-                    System.out.println(peak.getName());
+                    log.info(peak.getName());
                     continue;
                 }
                 matchCriteria[0].setPPM(ppm);
@@ -420,7 +424,7 @@ public class NOEAssign {
                     dp = delta / matchCriteria[i].getTol();
                 } else {
                     dp = 1.0E30;
-                    System.out.println("no ppm for " + spSets[i].getFullName());
+                    log.info("no ppm for {}", spSets[i].getFullName());
                 }
                 sum += dp * dp;
             }

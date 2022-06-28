@@ -47,13 +47,13 @@ public class Align {
 
             dataset.readVector(vec2, j, 0);
             double corr = compareVec(vec1, vec2, pt1, pt2);
-            System.out.println(row + " " + j + " " + corr);
+            log.info("{} {} {}", row, j, corr);
             if (corr > maxCorr) {
                 maxCorr = corr;
                 index = j;
             }
         }
-        System.out.println(row + " max " + index + " " + maxCorr);
+        log.info("{} max {} {}", row, index, maxCorr);
         return index;
     }
 
@@ -79,7 +79,7 @@ public class Align {
             dataset.readVector(vec2, i, 0);
             dataset.writeVector(vec1, i, 0);
             dataset.writeVector(vec2, row, 0);
-            System.out.println("swap " + i + " " + row);
+            log.info("swap {} {}", i, row);
             row = findClosest(dataset, vec1, vec2, i, pt1, pt2);
         }
     }

@@ -29,9 +29,13 @@ import java.util.*;
 import java.util.stream.Collectors;
 import org.nmrfx.chemistry.relax.RelaxationData.relaxTypes;
 import org.nmrfx.chemistry.relax.SpectralDensity;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class Atom implements IAtom, Comparable<Atom> {
 
+    private static final Logger log = LoggerFactory.getLogger(Atom.class);
+    private static final String POINT_NULL_MSG_PREFIX = "Point null: ";
     public String type = "";
     public AtomEnergyProp atomEnergyProp = null;
     AtomProperty atomProperty = null;
@@ -996,17 +1000,17 @@ public class Atom implements IAtom, Comparable<Atom> {
             Point3 pt2 = spg2.getSpatialSet().getPoint(iStruct);
             if (pt1 == null) {
                 if (throwNullPoint) {
-                    throw new IllegalArgumentException("Point null \"" + spg1.getSpatialSet().getFullName());
+                    throw new IllegalArgumentException(POINT_NULL_MSG_PREFIX + spg1.getSpatialSet().getFullName());
                 } else {
-                    System.out.println("Point null \"" + spg1.getSpatialSet().getFullName());
+                    log.warn("{}{}", POINT_NULL_MSG_PREFIX, spg1.getSpatialSet().getFullName());
                     return 0.0;
                 }
             }
             if (pt2 == null) {
                 if (throwNullPoint) {
-                    throw new IllegalArgumentException("Point null \"" + spg2.getSpatialSet().getFullName());
+                    throw new IllegalArgumentException(POINT_NULL_MSG_PREFIX + spg2.getSpatialSet().getFullName());
                 } else {
-                    System.out.println("Point null \"" + spg2.getSpatialSet().getFullName());
+                    log.warn("{}{}", POINT_NULL_MSG_PREFIX, spg2.getSpatialSet().getFullName());
                     return 0.0;
                 }
             }
@@ -1018,9 +1022,9 @@ public class Atom implements IAtom, Comparable<Atom> {
                 Point3 pt1 = sp1.getPoint(iStruct);
                 if (pt1 == null) {
                     if (throwNullPoint) {
-                        throw new IllegalArgumentException("Point null \"" + sp1.atom.getFullName());
+                        throw new IllegalArgumentException(POINT_NULL_MSG_PREFIX + sp1.atom.getFullName());
                     } else {
-                        System.out.println("null point " + sp1.atom.getFullName());
+                        log.warn("{}{}", POINT_NULL_MSG_PREFIX, sp1.atom.getFullName());
                         return 0.0;
                     }
                 }
@@ -1028,9 +1032,9 @@ public class Atom implements IAtom, Comparable<Atom> {
                     Point3 pt2 = sp2.getPoint(iStruct);
                     if (pt2 == null) {
                         if (throwNullPoint) {
-                            throw new IllegalArgumentException("Point null \"" + sp2.atom.getFullName());
+                            throw new IllegalArgumentException(POINT_NULL_MSG_PREFIX + sp2.atom.getFullName());
                         } else {
-                            System.out.println("null point " + sp2.atom.getFullName());
+                            log.warn("{}{}", POINT_NULL_MSG_PREFIX, sp2.atom.getFullName());
                             return 0.0;
                         }
                     }
@@ -1064,12 +1068,12 @@ public class Atom implements IAtom, Comparable<Atom> {
         if ((spSet1.size() == 1) && (spSet2.size() == 1)) {
             Point3 pt1 = spg1.getSpatialSet().getPoint(iStruct);
             if (pt1 == null) {
-                System.out.println("Point null \"" + spg1.getSpatialSet().getFullName());
+                log.warn("{}{}", POINT_NULL_MSG_PREFIX, spg1.getSpatialSet().getFullName());
                 return;
             }
             Point3 pt2 = spg2.getSpatialSet().getPoint(iStruct);
             if (pt2 == null) {
-                System.out.println("Point null \"" + spg2.getSpatialSet().getFullName());
+                log.warn("{}{}", POINT_NULL_MSG_PREFIX, spg2.getSpatialSet().getFullName());
                 return;
             }
             double distance = calcDistance(pt1, pt2);
@@ -1079,13 +1083,13 @@ public class Atom implements IAtom, Comparable<Atom> {
             for (SpatialSet sp1 : spSet1) {
                 Point3 pt1 = sp1.getPoint(iStruct);
                 if (pt1 == null) {
-                    System.out.println("null point " + sp1.atom.getFullName());
+                    log.warn("{}{}", POINT_NULL_MSG_PREFIX, sp1.atom.getFullName());
                     return;
                 }
                 for (SpatialSet sp2 : spSet2) {
                     Point3 pt2 = sp2.getPoint(iStruct);
                     if (pt2 == null) {
-                        System.out.println("null point " + sp2.atom.getFullName());
+                        log.warn("{}{}", POINT_NULL_MSG_PREFIX, sp2.atom.getFullName());
                         return;
                     }
                     x = pt1.getX() - pt2.getX();
@@ -1136,12 +1140,12 @@ public class Atom implements IAtom, Comparable<Atom> {
         Vector3D pt1 = new Point3(0.0, 0.0, 0.0);
         int nPoints = 0;
         if (entity == null) {
-            System.out.println("null entity for " + getFullName());
+            log.warn("null entity for {}", getFullName());
             return 0.0;
         } else {
             MoleculeBase molecule = entity.molecule;
             if (molecule == null) {
-                System.out.println("null molecule for " + getFullName());
+                log.warn("null molecule for {}", getFullName());
                 return 0.0;
             }
 
