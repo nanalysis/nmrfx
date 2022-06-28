@@ -26,11 +26,9 @@ package org.nmrfx.processor.gui;
 import javafx.beans.binding.Bindings;
 import javafx.beans.binding.IntegerBinding;
 import javafx.beans.property.BooleanProperty;
-import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.collections.FXCollections;
-import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -250,17 +248,14 @@ public class DatasetsController implements Initializable, PropertyChangeListener
 
         TableColumn<DatasetBase, Boolean> posDrawOnCol = new TableColumn<>("on");
         posDrawOnCol.setCellValueFactory(new PropertyValueFactory<>("negDrawOn"));
-        posDrawOnCol.setCellFactory(col -> {
-            CheckBoxTableCell<DatasetBase, Boolean> cell = new CheckBoxTableCell<>(index -> {
-                BooleanProperty active = new SimpleBooleanProperty(tableView.getItems().get(index).getPosDrawOn());
-                active.addListener((obs, wasActive, isNowActive) -> {
-                    DatasetBase item = tableView.getItems().get(index);
-                    item.setPosDrawOn(isNowActive);
-                });
-                return active;
+        posDrawOnCol.setCellFactory(col -> new CheckBoxTableCell<>(index -> {
+            BooleanProperty active = new SimpleBooleanProperty(tableView.getItems().get(index).getPosDrawOn());
+            active.addListener((obs, wasActive, isNowActive) -> {
+                DatasetBase item = tableView.getItems().get(index);
+                item.setPosDrawOn(isNowActive);
             });
-            return cell;
-        });
+            return active;
+        }));
         posDrawOnCol.setPrefWidth(25);
         posDrawOnCol.setMaxWidth(25);
         posDrawOnCol.setResizable(false);
@@ -297,17 +292,14 @@ public class DatasetsController implements Initializable, PropertyChangeListener
 
         TableColumn<DatasetBase, Boolean> negDrawOnCol = new TableColumn<>("on");
         negDrawOnCol.setCellValueFactory(new PropertyValueFactory<>("negDrawOn"));
-        negDrawOnCol.setCellFactory(col -> {
-            CheckBoxTableCell<DatasetBase, Boolean> cell = new CheckBoxTableCell<>(index -> {
-                BooleanProperty active = new SimpleBooleanProperty(tableView.getItems().get(index).getNegDrawOn());
-                active.addListener((obs, wasActive, isNowActive) -> {
-                    DatasetBase item = tableView.getItems().get(index);
-                    item.setNegDrawOn(isNowActive);
-                });
-                return active;
+        negDrawOnCol.setCellFactory(col -> new CheckBoxTableCell<>(index -> {
+            BooleanProperty active = new SimpleBooleanProperty(tableView.getItems().get(index).getNegDrawOn());
+            active.addListener((obs, wasActive, isNowActive) -> {
+                DatasetBase item = tableView.getItems().get(index);
+                item.setNegDrawOn(isNowActive);
             });
-            return cell;
-        });
+            return active;
+        }));
         negDrawOnCol.setPrefWidth(25);
         negDrawOnCol.setMaxWidth(25);
         negDrawOnCol.setResizable(false);
