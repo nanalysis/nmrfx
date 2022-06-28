@@ -84,7 +84,7 @@
                     </children>
                 </VBox>
             </Tab>
-         <Tab text="Navigation">
+         <Tab closable="false" text="Navigation">
             <content>
                <HBox fx:id="navHBox" prefHeight="100.0" prefWidth="200.0">
                   <children>
