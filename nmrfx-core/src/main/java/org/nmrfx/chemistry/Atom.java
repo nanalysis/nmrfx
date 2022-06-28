@@ -992,21 +992,21 @@ public class Atom implements IAtom, Comparable<Atom> {
         Set<SpatialSet> spSet1 = spg1.getSpSets();
         Set<SpatialSet> spSet2 = spg2.getSpSets();
         if ((spSet1.size() == 1) && (spSet2.size() == 1)) {
-            Point3 pt1 = spg1.getFirstSet().getPoint(iStruct);
-            Point3 pt2 = spg2.getFirstSet().getPoint(iStruct);
+            Point3 pt1 = spg1.getSpatialSet().getPoint(iStruct);
+            Point3 pt2 = spg2.getSpatialSet().getPoint(iStruct);
             if (pt1 == null) {
                 if (throwNullPoint) {
-                    throw new IllegalArgumentException("Point null \"" + spg1.getFirstSet().getFullName());
+                    throw new IllegalArgumentException("Point null \"" + spg1.getSpatialSet().getFullName());
                 } else {
-                    System.out.println("Point null \"" + spg1.getFirstSet().getFullName());
+                    System.out.println("Point null \"" + spg1.getSpatialSet().getFullName());
                     return 0.0;
                 }
             }
             if (pt2 == null) {
                 if (throwNullPoint) {
-                    throw new IllegalArgumentException("Point null \"" + spg2.getFirstSet().getFullName());
+                    throw new IllegalArgumentException("Point null \"" + spg2.getSpatialSet().getFullName());
                 } else {
-                    System.out.println("Point null \"" + spg2.getFirstSet().getFullName());
+                    System.out.println("Point null \"" + spg2.getSpatialSet().getFullName());
                     return 0.0;
                 }
             }
@@ -1062,14 +1062,14 @@ public class Atom implements IAtom, Comparable<Atom> {
         Set<SpatialSet> spSet1 = spg1.getSpSets();
         Set<SpatialSet> spSet2 = spg2.getSpSets();
         if ((spSet1.size() == 1) && (spSet2.size() == 1)) {
-            Point3 pt1 = spg1.getFirstSet().getPoint(iStruct);
+            Point3 pt1 = spg1.getSpatialSet().getPoint(iStruct);
             if (pt1 == null) {
-                System.out.println("Point null \"" + spg1.getFirstSet().getFullName());
+                System.out.println("Point null \"" + spg1.getSpatialSet().getFullName());
                 return;
             }
-            Point3 pt2 = spg2.getFirstSet().getPoint(iStruct);
+            Point3 pt2 = spg2.getSpatialSet().getPoint(iStruct);
             if (pt2 == null) {
-                System.out.println("Point null \"" + spg2.getFirstSet().getFullName());
+                System.out.println("Point null \"" + spg2.getSpatialSet().getFullName());
                 return;
             }
             double distance = calcDistance(pt1, pt2);

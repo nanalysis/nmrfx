@@ -407,9 +407,9 @@ public class NOEAssign {
             if (matchCriteria[i] != null) {
                 matchCriteria[i].setPPM(noe.peak);
                 if (i == 0) {
-                    spSets[i] = noe.spg1.getFirstSet();
+                    spSets[i] = noe.spg1.getSpatialSet();
                 } else if (i == 1) {
-                    spSets[i] = noe.spg2.getFirstSet();
+                    spSets[i] = noe.spg2.getSpatialSet();
                 } else {
                     spSets[i] = spSets[i - 2].atom.getParent().spatialSet;
                 }

@@ -95,7 +95,7 @@ public class NOECalibrator {
             boolean hasDiagonal = false;
             List<Noe> noeList = entry.getValue();
             for (Noe noe : noeList) {
-                if (noe.spg1.getFirstSet() == noe.spg2.getFirstSet()) {  // don't include diagonal peaks
+                if (noe.spg1.getSpatialSet() == noe.spg2.getSpatialSet()) {  // don't include diagonal peaks
                     hasDiagonal = true;
                     break;
                 }
@@ -317,7 +317,7 @@ public class NOECalibrator {
             cName2.setLength(0);
             Noe iNoe = noeSet.get(i);
             iNoe.spg1.getName();
-            if (iNoe.spg1.getFirstSet() == iNoe.spg2.getFirstSet()) {  // don't include diagonal peaks
+            if (iNoe.spg1.getSpatialSet() == iNoe.spg2.getSpatialSet()) {  // don't include diagonal peaks
                 continue;
             }
             Entity e1 = iNoe.spg1.getAnAtom().getEntity();
@@ -453,7 +453,7 @@ public class NOECalibrator {
             cName2.setLength(0);
             Noe iNoe = noeSet.get(i);
             iNoe.spg1.getName();
-            if (iNoe.spg1.getFirstSet() == iNoe.spg2.getFirstSet()) {  // don't include diagonal peaks
+            if (iNoe.spg1.getSpatialSet() == iNoe.spg2.getSpatialSet()) {  // don't include diagonal peaks
                 continue;
             }
             Entity e1 = iNoe.spg1.getAnAtom().getEntity();
