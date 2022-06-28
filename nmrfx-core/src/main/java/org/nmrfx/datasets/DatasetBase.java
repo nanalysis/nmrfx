@@ -1582,7 +1582,6 @@ public class DatasetBase {
         negDrawOn =  (posneg & 2) != 0;
     }
 
-
     public boolean getPosDrawOn() {
         return posDrawOn;
     }
