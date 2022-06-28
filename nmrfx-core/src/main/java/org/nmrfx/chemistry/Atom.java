@@ -997,7 +997,6 @@ public class Atom implements IAtom, Comparable<Atom> {
         Set<SpatialSet> spSet2 = spg2.getSpSets();
         if ((spSet1.size() == 1) && (spSet2.size() == 1)) {
             Point3 pt1 = spg1.getSpatialSet().getPoint(iStruct);
-            Point3 pt2 = spg2.getSpatialSet().getPoint(iStruct);
             if (pt1 == null) {
                 if (throwNullPoint) {
                     throw new IllegalArgumentException(POINT_NULL_MSG_PREFIX + spg1.getSpatialSet().getFullName());
@@ -1006,6 +1005,7 @@ public class Atom implements IAtom, Comparable<Atom> {
                     return 0.0;
                 }
             }
+            Point3 pt2 = spg2.getSpatialSet().getPoint(iStruct);
             if (pt2 == null) {
                 if (throwNullPoint) {
                     throw new IllegalArgumentException(POINT_NULL_MSG_PREFIX + spg2.getSpatialSet().getFullName());
