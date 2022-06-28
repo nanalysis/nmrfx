@@ -251,7 +251,7 @@ public class Molecule extends MoleculeBase {
     /**
      * Removes the current active molecule and clears associated objects. If other molecules are available, one of
      * those molecules will be set to the new active molecule, but which molecule will be set is undefined since
-     * molecules are stored in a hash map.
+     * molecules may be stored in a collection without ordering.
      */
     public void remove() {
 

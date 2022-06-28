@@ -75,14 +75,13 @@ public class SpatialSetGroup {
     }
 
     /**
-     * Returns a spatial set from the set spSets. The actual spatial set returned is undefined
+     * Returns a spatial set from the set spSets. Which spatial set is returned is undefined
      * as spSets is unordered. In most cases spSets, only contains a single SpatialSet.
      * @return A SpatialSet
      */
     public SpatialSet getSpatialSet() {
         Iterator<SpatialSet> it = spSets.iterator();
         return it.hasNext() ? it.next() : null;
-
     }
 
     public Atom getAnAtom() {
