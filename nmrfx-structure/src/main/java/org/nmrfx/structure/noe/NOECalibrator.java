@@ -40,7 +40,6 @@ import static org.nmrfx.chemistry.constraints.Noe.*;
 public class NOECalibrator {
 
     private static final Logger log = LoggerFactory.getLogger(NOECalibrator.class);
-    private static final String POLYMER_WARN_MSG_TEMPLATE = "Entity is not a polymer: {}";
     private static double SYM_BONUS = 10.0;
     private static double CMAX = 5.5;
     private static double CMAX_BONUS = 10.0;
@@ -327,19 +326,8 @@ public class NOECalibrator {
             }
             Entity e1 = iNoe.spg1.getAnAtom().getEntity();
             Entity e2 = iNoe.spg2.getAnAtom().getEntity();
-            Residue r1 = null;
-            Residue r2 = null;
-
-            if (e1 instanceof Residue) {
-                r1 = (Residue) e1;
-            } else {
-                log.info(POLYMER_WARN_MSG_TEMPLATE, e1.getName());
-            }
-            if (e2 instanceof Residue) {
-                r2 = (Residue) e2;
-            } else {
-                log.info(POLYMER_WARN_MSG_TEMPLATE, e2.getName());
-            }
+            Residue r1 = checkEntityIsResidue(e1);
+            Residue r2 = checkEntityIsResidue(e2);
 
             if ((r1 != null) && (r2 != null)) {
                 String eName1, eName2;
@@ -427,6 +415,21 @@ public class NOECalibrator {
         }
     }
 
+    /**
+     * Checks if the entity is a residue and returns it as a residue, if not a message is logged and null is returned.
+     * @param entity The entity to check
+     * @return The entity cast to a residue
+     */
+    private Residue checkEntityIsResidue(Entity entity) {
+        Residue residue = null;
+        if (entity instanceof Residue ) {
+            residue = (Residue) entity;
+        } else {
+            log.info("Entity is not a polymer: {}", entity.getName());
+        }
+        return residue;
+    }
+
     public void findNetworks(boolean useContrib) {
         int nNoe = noeSet.getSize();
         if (molecule == null) {
@@ -463,19 +466,8 @@ public class NOECalibrator {
             }
             Entity e1 = iNoe.spg1.getAnAtom().getEntity();
             Entity e2 = iNoe.spg2.getAnAtom().getEntity();
-            Residue r1 = null;
-            Residue r2 = null;
-
-            if (e1 instanceof Residue) {
-                r1 = (Residue) e1;
-            } else {
-                log.info(POLYMER_WARN_MSG_TEMPLATE, e1.getName());
-            }
-            if (e2 instanceof Residue) {
-                r2 = (Residue) e2;
-            } else {
-                log.info(POLYMER_WARN_MSG_TEMPLATE, e2.getName());
-            }
+            Residue r1 = checkEntityIsResidue(e1);
+            Residue r2 = checkEntityIsResidue(e2);
 
             if ((r1 != null) && (r2 != null)) {
                 String eName1, eName2;
@@ -533,14 +525,8 @@ public class NOECalibrator {
         for (Noe iNoe : noeSet.getConstraints()) {
             Entity e1 = iNoe.spg1.getAnAtom().getEntity();
             Entity e2 = iNoe.spg2.getAnAtom().getEntity();
-            Residue r1 = null;
-            Residue r2 = null;
-            if (e1 instanceof Residue) {
-                r1 = (Residue) e1;
-            }
-            if (e2 instanceof Residue) {
-                r2 = (Residue) e2;
-            }
+            Residue r1 = checkEntityIsResidue(e1);
+            Residue r2 = checkEntityIsResidue(e2);
             if ((r1 != null) && (r2 != null)) {
                 if (r1 == r2) {
                     iNoe.setNetworkValue(1.0);
