@@ -413,7 +413,6 @@ public class Align {
 
     public void segmentedAlign(Vec targetVec, Vec sampleVec, Vec resultVec, int preExtraIn, int postExtraIn, int maxShift, List<AlignRegion> regions) {
         int sDevWindow = 32;
-        int nTries = 3;
         int vecSize = targetVec.getSize();
         double sdev = targetVec.sdev(sDevWindow);
         Vec subTarget = new Vec(32);
