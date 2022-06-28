@@ -1222,7 +1222,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
                     sizeDim = 0;
                 }
                 log.info("{} {}", sizeDim, sizes[sizeDim]);
-                int maxSize = sizes[sizeDim] < 256 ? sizes[sizeDim] : 256;
+                int maxSize = Math.min(sizes[sizeDim], 256);
                 vecNum1.setMax(maxSize);
                 vecNum1.setValue(1);
                 for (int iDim = 1; iDim < sizes.length; iDim++) {
@@ -1318,7 +1318,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         int iRow = (int) slider.getValue();
         int delta = (int) (slider.getMax() - slider.getMin());
 
-        int start = (int) (delta / 4 * (iRow / delta / 4)) - delta / 2;
+        int start = (delta / 4 * (iRow / delta / 4)) - delta / 2;
         if (start < 1) {
             start = 1;
         }
