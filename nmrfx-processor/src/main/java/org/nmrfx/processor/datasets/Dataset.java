@@ -110,7 +110,8 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
 
         scale = 1.0;
         lvl = 0.1;
-        posneg = 1;
+        posDrawOn = true;
+        negDrawOn = true;
         DatasetHeaderIO headerIO = new DatasetHeaderIO(this);
         if (fullName.contains(".ucsf")) {
             layout = headerIO.readHeaderUCSF(raFile);
@@ -158,7 +159,8 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
 
         scale = 1.0;
         lvl = 0.1;
-        posneg = 1;
+        posDrawOn = true;
+        negDrawOn = true;
         setDataType(dataType);
         setByteOrder(byteOrder);
         DatasetParameterFile parFile = new DatasetParameterFile(this, layout);
@@ -204,7 +206,8 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         foldDown[0] = 0.0;
         scale = 1.0;
         lvl = 0.1;
-        posneg = 1;
+        posDrawOn = true;
+        negDrawOn = true;
         sf[0] = vector.centerFreq;
         sw[0] = 1.0 / vector.dwellTime;
         sw_r[0] = sw[0];
