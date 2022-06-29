@@ -421,13 +421,12 @@ public class NOECalibrator {
      * @return The entity cast to a residue
      */
     private Residue checkEntityIsResidue(Entity entity) {
-        Residue residue = null;
         if (entity instanceof Residue ) {
-            residue = (Residue) entity;
+            return (Residue) entity;
         } else {
             log.info("Entity is not a polymer: {}", entity.getName());
+            return null;
         }
-        return residue;
     }
 
     public void findNetworks(boolean useContrib) {

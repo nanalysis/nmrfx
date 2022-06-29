@@ -76,7 +76,7 @@ public class SpatialSetGroup {
 
     /**
      * Returns a spatial set from the set spSets. Which spatial set is returned is undefined
-     * as spSets is unordered. In most cases spSets, only contains a single SpatialSet.
+     * as spSets is unordered. In most cases, spSets only contains a single SpatialSet.
      * @return A SpatialSet
      */
     public SpatialSet getSpatialSet() {
