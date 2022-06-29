@@ -37,6 +37,9 @@ import java.util.ArrayList;
 import java.util.List;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
@@ -47,6 +50,7 @@ import javax.xml.stream.XMLStreamWriter;
  */
 public class SVGGraphicsContext implements GraphicsContextInterface {
 
+    private static final Logger log = LoggerFactory.getLogger(SVGGraphicsContext.class);
     StringBuilder doc = new StringBuilder();
     double pageWidth = 1024;
     double pageHeight = 1024;
@@ -143,6 +147,7 @@ public class SVGGraphicsContext implements GraphicsContextInterface {
             OutputStream stream = new FileOutputStream(fileName);
             create(landScape, width, height, stream);
         } catch (FileNotFoundException ex) {
+            log.warn(ex.getMessage(), ex);
         }
 
     }
@@ -155,6 +160,7 @@ public class SVGGraphicsContext implements GraphicsContextInterface {
             try {
                 writer = factory.createXMLStreamWriter(stream);
             } catch (XMLStreamException ex) {
+                log.warn(ex.getMessage(), ex);
             }
             writer.writeStartDocument();
             writer.writeCharacters("\n");
@@ -166,6 +172,7 @@ public class SVGGraphicsContext implements GraphicsContextInterface {
 
             writer.writeCharacters("\n");
         } catch (XMLStreamException ex) {
+            log.warn(ex.getMessage(), ex);
         }
 
     }
@@ -253,6 +260,7 @@ public class SVGGraphicsContext implements GraphicsContextInterface {
 //            stream.flush();
 //            stream.close();
         } catch (XMLStreamException ex) {
+            log.warn(ex.getMessage(), ex);
         }
     }
 
@@ -436,6 +444,7 @@ public class SVGGraphicsContext implements GraphicsContextInterface {
             writer.writeCharacters("\n");
 
         } catch (XMLStreamException ex) {
+            log.warn(ex.getMessage(), ex);
         }
     }
 
@@ -464,6 +473,7 @@ public class SVGGraphicsContext implements GraphicsContextInterface {
             writer.writeAttribute("style", getStyle(false, true));
             writer.writeCharacters("\n");
         } catch (XMLStreamException ex) {
+            log.warn(ex.getMessage(), ex);
         }
     }
 
@@ -494,6 +504,7 @@ public class SVGGraphicsContext implements GraphicsContextInterface {
             writer.writeEndElement();
             writer.writeCharacters("\n");
         } catch (XMLStreamException ex) {
+            log.warn(ex.getMessage(), ex);
         }
     }
 
@@ -512,6 +523,7 @@ public class SVGGraphicsContext implements GraphicsContextInterface {
             writer.writeEndElement();
             writer.writeCharacters("\n");
         } catch (XMLStreamException ex) {
+            log.warn(ex.getMessage(), ex);
         }
     }
 
@@ -648,6 +660,7 @@ public class SVGGraphicsContext implements GraphicsContextInterface {
             try {
                 writer.writeEndElement();
             } catch (XMLStreamException ex) {
+                log.warn(ex.getMessage(), ex);
             }
             clipActive = false;
         }
@@ -767,6 +780,7 @@ public class SVGGraphicsContext implements GraphicsContextInterface {
             writer.writeCharacters("\n");
 
         } catch (XMLStreamException ex) {
+            log.warn(ex.getMessage(), ex);
         }
     }
 
@@ -786,6 +800,7 @@ public class SVGGraphicsContext implements GraphicsContextInterface {
             writer.writeAttribute("style", getStyle(true, false));
             writer.writeCharacters("\n");
         } catch (XMLStreamException ex) {
+            log.warn(ex.getMessage(), ex);
         }
     }
 
@@ -809,6 +824,7 @@ public class SVGGraphicsContext implements GraphicsContextInterface {
             writer.writeAttribute("style", getStyle(true, false));
             writer.writeCharacters("\n");
         } catch (XMLStreamException ex) {
+            log.warn(ex.getMessage(), ex);
         }
     }
 
@@ -827,6 +843,7 @@ public class SVGGraphicsContext implements GraphicsContextInterface {
             writer.writeAttribute("style", getStyle(true, false));
             writer.writeCharacters("\n");
         } catch (XMLStreamException ex) {
+            log.warn(ex.getMessage(), ex);
         }
     }
 
@@ -846,6 +863,7 @@ public class SVGGraphicsContext implements GraphicsContextInterface {
             writer.writeAttribute("style", style);
             writer.writeCharacters("\n");
         } catch (XMLStreamException ex) {
+            log.warn(ex.getMessage(), ex);
         }
     }
 
@@ -873,6 +891,7 @@ public class SVGGraphicsContext implements GraphicsContextInterface {
             writer.writeAttribute("style", style);
             writer.writeCharacters("\n");
         } catch (XMLStreamException ex) {
+            log.warn(ex.getMessage(), ex);
         }
     }
 
@@ -894,6 +913,7 @@ public class SVGGraphicsContext implements GraphicsContextInterface {
             writer.writeAttribute("style", style);
             writer.writeCharacters("\n");
         } catch (XMLStreamException ex) {
+            log.warn(ex.getMessage(), ex);
         }
     }
 
@@ -908,6 +928,7 @@ public class SVGGraphicsContext implements GraphicsContextInterface {
             writer.writeEndElement();
             writer.writeCharacters("\n");
         } catch (XMLStreamException ex) {
+            log.warn(ex.getMessage(), ex);
         }
     }
 
@@ -923,6 +944,7 @@ public class SVGGraphicsContext implements GraphicsContextInterface {
             writer.writeEndElement();
             writer.writeCharacters("\n");
         } catch (XMLStreamException ex) {
+            log.warn(ex.getMessage(), ex);
         }
     }
 

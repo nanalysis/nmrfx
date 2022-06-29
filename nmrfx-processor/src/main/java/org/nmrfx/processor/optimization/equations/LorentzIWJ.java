@@ -122,9 +122,7 @@ public class LorentzIWJ implements MultivariateFunction {
             nFit++;
 
             int nFreqs = 1;
-//System.out.println(splitCount[i].length);
             if ((splitCount[i].length == 1) && (splitCount[i][0] < 0)) { // generic multiplet
-//System.out.println("g "+splitCount[i][0]);
                 nFreqs = -splitCount[i][0];
                 couplings[i] = new double[0];
                 start += nFreqs;
@@ -143,14 +141,11 @@ public class LorentzIWJ implements MultivariateFunction {
             freqs[i] = new double[nFreqs];
             nAmps += nFreqs;
         }
-//System.out.println(ampStart+" "+nFit+" "+nPar);
         ampStart = nFit;
         nPar = nFit + nAmps;
-//System.out.println(ampStart+" "+nFit+" "+nPar);
     }
 
     public final void initpt(double[] a) {
-        //System.out.println("initpt "+nPar);
         aCalc = new double[nPar];
         map = new int[a.length];
 
@@ -161,12 +156,10 @@ public class LorentzIWJ implements MultivariateFunction {
     }
 
     public final void initLWAmpFit(double[] a) {
-        //  System.out.println("init lwamp");
         nFit = xy_nsig;
         map = new int[a.length];
         for (int iSig = 0; iSig < xy_nsig; iSig++) {
             int start = sigStarts[iSig];
-            // System.out.println(iSig+" "+start+" "+a[iSig]);
             // aCalc[start] = a[iSig];
             map[iSig + 1] = start;
         }
@@ -198,7 +191,6 @@ public class LorentzIWJ implements MultivariateFunction {
 
     public void fcn(int m, int n, double[] a, double[] fvec) {
         for (int i = 0; i < n; i++) {
-            //  System.out.println(i+" "+map[i]+" "+aCalc[map[i]]);
             aCalc[map[i]] = a[i];
         }
 
@@ -275,9 +267,7 @@ public class LorentzIWJ implements MultivariateFunction {
             System.out.println("acalc null");
             return 0.0;
         }
-        //for (int i=0;i<aCalc.length;i++) {
-        //System.out.println(i+" "+aCalc[i]);
-        //}
+
         double[][] A = fillMatrix(aCalc);
         double sumDevSq = 0.0;
         for (int i = 0; i < A.length; i++) {
@@ -687,7 +677,6 @@ public class LorentzIWJ implements MultivariateFunction {
                 amplitudes[iSig][iLine] = -1.0;
             }
 
-            //   System.out.print(" "+iLine+" "+amplitudes[iSig][iLine]+" "+freqs[iSig][iLine]);
         }
 
         return start;

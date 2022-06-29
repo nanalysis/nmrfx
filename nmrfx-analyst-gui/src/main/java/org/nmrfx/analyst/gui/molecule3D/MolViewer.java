@@ -142,6 +142,7 @@ public class MolViewer extends Pane {
         try {
             drawMol();
         } catch (InvalidMoleculeException ex) {
+            log.warn(ex.getMessage(), ex);
         }
         return subScene;
     }
@@ -530,6 +531,7 @@ public class MolViewer extends Pane {
             }
 
         } catch (MissingCoordinatesException ex) {
+            log.warn(ex.getMessage(), ex);
         }
     }
 
@@ -593,6 +595,7 @@ public class MolViewer extends Pane {
             }
 
         } catch (MissingCoordinatesException ex) {
+            log.warn(ex.getMessage(), ex);
         }
     }
 

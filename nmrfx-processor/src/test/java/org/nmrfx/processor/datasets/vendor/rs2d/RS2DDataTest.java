@@ -1,29 +1,53 @@
 package org.nmrfx.processor.datasets.vendor.rs2d;
 
+import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.nmrfx.processor.datasets.DatasetCompare;
-import org.nmrfx.processor.datasets.vendor.rs2d.RS2DData;
-import org.nmrfx.processor.datasets.vendor.rs2d.RS2DProcUtil;
-import org.nmrfx.processor.datasets.vendor.rs2d.XmlUtil;
 import org.w3c.dom.Document;
 
 import javax.xml.transform.TransformerException;
 import javax.xml.xpath.XPathExpressionException;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.Assume.assumeFalse;
 
 public class RS2DDataTest {
-    public static String fidHome = "../../nmrfxp_tests/testfids/";
-    public static String tmpHome = "../../nmrfxp_tests/tmp/";
+    private static final String FID_SUBMODULE_LOCATION = "nmrfx-test-data/testfids/";
+    private static String fidHome;
+    private static String tmpHome;
+    private static final String ERR_MSG = "File doesn't exist: ";
 
-    boolean testFilesMissing(File testFile) {
+    @ClassRule
+    public static final TemporaryFolder tmpFolder = TemporaryFolder.builder()
+            .parentFolder(new File(System.getProperty("user.dir")))
+            .assureDeletion()
+            .build();
+
+    @BeforeClass
+    public static void setup() {
+        fidHome =  FileSystems.getDefault()
+                .getPath("")
+                .toAbsolutePath()
+                .getParent()
+                .resolve(FID_SUBMODULE_LOCATION)
+                .toString();
+        tmpHome = tmpFolder.getRoot().toString();
+    }
+
+    boolean testFilesMissing(File testFile) throws FileNotFoundException {
         if (!testFile.exists()) {
-            System.out.println("File " + testFile + " doesn't exist, skipping test");
+            boolean isBuildEnv = Boolean.parseBoolean(System.getenv("BUILD_ENV"));;
+            if (isBuildEnv) {
+                throw new FileNotFoundException("Missing build environment requirement. " + ERR_MSG + testFile);
+            }
             return true;
         } else {
             return false;
@@ -34,6 +58,8 @@ public class RS2DDataTest {
     public void save1DToRS2DFile() throws IOException {
         File inFile = Path.of(fidHome, "rs2d/1Dproton/680/Proc/0").toFile();
         File inFileDat = Path.of(fidHome, "rs2d/1Dproton/680/Proc/0/data.dat").toFile();
+        assumeFalse(ERR_MSG + inFile, testFilesMissing(inFile));
+        assumeFalse(ERR_MSG + inFileDat, testFilesMissing(inFileDat));
         if (testFilesMissing(inFileDat)) {
             return;
         }
@@ -43,34 +69,31 @@ public class RS2DDataTest {
         var dataset = rs2DData.toDataset("test.nv");
         rs2DData.writeOutputFile(dataset, procNumPath);
         long compareResult = DatasetCompare.compare(inFileDat, outFile);
-        assertEquals(0, compareResult);
+        assertEquals(-1, compareResult);
     }
 
     @Test
     public void save2DToRS2DFile() throws IOException {
         File inFile = Path.of(fidHome, "rs2d/2Dhetero/688/Proc/0").toFile();
         File inFileDat = Path.of(fidHome, "rs2d/2Dhetero/688/Proc/0/data.dat").toFile();
-        if (testFilesMissing(inFileDat)) {
-            return;
-        }
+        assumeFalse(ERR_MSG + inFile, testFilesMissing(inFile));
+        assumeFalse(ERR_MSG + inFileDat, testFilesMissing(inFileDat));
         Path procNumPath = Path.of(tmpHome, "Proc", "2");
         File outFile = procNumPath.resolve("data.dat").toFile();
         RS2DData rs2DData = new RS2DData(inFile.toString(), null, true);
         var dataset = rs2DData.toDataset("test.nv");
         rs2DData.writeOutputFile(dataset, procNumPath);
         long compareResult = DatasetCompare.compare(inFileDat, outFile);
-        if (compareResult != 0) {
+        if (compareResult >= 0) {
             compareResult = DatasetCompare.compareFloat(inFileDat, outFile);
         }
-        assertEquals(0, compareResult);
+        assertEquals(-1, compareResult);
     }
 
     @Test
     public void modifyRS2DHeaderFile() throws IOException, XPathExpressionException, TransformerException {
         File inFile = Path.of(fidHome, "rs2d/1Dproton/680").toFile();
-        if (testFilesMissing(inFile)) {
-            return;
-        }
+        assumeFalse(ERR_MSG + inFile, testFilesMissing(inFile));
         File outHeader = Path.of(tmpHome, "header_mod.xml").toFile();
         RS2DData rs2DData = new RS2DData(inFile.toString(), null, true);
         Document header = rs2DData.getHeader().getDocument();
@@ -81,22 +104,18 @@ public class RS2DDataTest {
     }
 
     @Test
-    public void findProcNums() {
+    public void findProcNums() throws FileNotFoundException {
         Path seriesDirectory = Path.of(fidHome, "rs2d/1Dproton/680");
-        if (testFilesMissing(seriesDirectory.toFile())) {
-            return;
-        }
-
+        assumeFalse(ERR_MSG + seriesDirectory, testFilesMissing(seriesDirectory.toFile()));
         var procNums = RS2DProcUtil.listProcIds(seriesDirectory);
         assertEquals(List.of(0), procNums);
     }
 
     @Test
-    public void findLastProcNum() {
+    public void findLastProcNum() throws FileNotFoundException {
         Path seriesDirectory = Path.of(fidHome, "rs2d/1Dproton/680");
-        if (testFilesMissing(seriesDirectory.toFile())) {
-            return;
-        }
+        assumeFalse(ERR_MSG + seriesDirectory, testFilesMissing(seriesDirectory.toFile()));
+
         int lastProcNum = RS2DProcUtil.findLastProcId(seriesDirectory).orElse(-1);
         assertEquals(0, lastProcNum);
     }

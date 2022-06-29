@@ -65,6 +65,7 @@ public class GradientRefinement extends Refinement {
                             try {
                                 trajectoryWriter.writeStructure();
                             } catch (MissingCoordinatesException ex) {
+                                log.warn(ex.getMessage(), ex);
                             }
                         }
                         if (progressUpdater != null) {
@@ -108,7 +109,6 @@ public class GradientRefinement extends Refinement {
 
         prepareAngles(false);
         dihedrals.setBoundaries(0.1, false);
-        PointValuePair result = null;
         getDihedrals();
 
         dihedrals.energyList.makeAtomListFast();
@@ -124,16 +124,12 @@ public class GradientRefinement extends Refinement {
                 log.error(ex.getMessage(), ex);
             }
         }
-        try {
-            result = optimizer.optimize(
-                    new ObjectiveFunctionGradient(dihGradient),
-                    new ObjectiveFunction(dihEnergy),
-                    new MaxEval(nSteps * 1000),
-                    GoalType.MINIMIZE,
-                    new InitialGuess(dihedrals.angleValues));
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        PointValuePair result = optimizer.optimize(
+                new ObjectiveFunctionGradient(dihGradient),
+                new ObjectiveFunction(dihEnergy),
+                new MaxEval(nSteps * 1000),
+                GoalType.MINIMIZE,
+                new InitialGuess(dihedrals.angleValues));
         System.arraycopy(result.getPoint(), 0, dihedrals.angleValues, 0, dihedrals.angleValues.length);
         putDihedrals();
         molecule.genCoords(false, null);
@@ -164,7 +160,7 @@ public class GradientRefinement extends Refinement {
         try {
             value = BFGS.minimize(dihEnergyGradient, 5, values, tolerance * 1.0e-3, nSteps * 100);
         } catch (Exception e) {
-            e.printStackTrace();
+            log.warn(e.getMessage(), e);
         }
         System.out.println("end " + value);
         System.arraycopy(values, 0, dihedrals.angleValues, 0, dihedrals.angleValues.length);
@@ -181,7 +177,6 @@ public class GradientRefinement extends Refinement {
             double[] nDerivatives = numericalDerivatives(1.0e-6, false);
             eDeriv = new EnergyDeriv(eDeriv.getEnergy(), nDerivatives);
         }
-        //System.out.println(eDeriv.getEnergy());
         nEvaluations++;
         return eDeriv.getDerivatives();
     }
@@ -196,7 +191,6 @@ public class GradientRefinement extends Refinement {
             eDeriv = new EnergyDeriv(eDeriv.getEnergy(), nDerivatives);
             System.arraycopy(nDerivatives, 0, derivs, 0, nDerivatives.length);
         }
-        //System.out.println(eDeriv.getEnergy());
         nEvaluations++;
         return eDeriv.getDerivatives();
     }
@@ -304,9 +298,7 @@ public class GradientRefinement extends Refinement {
         //molecule.dumpCoordsGen();
         for (int i = 0; i < nAngles; i++) {
             Atom atom = dihedrals.energyList.branches[i].atom;
-//            System.out.println("Calc Deriv " + dihedrals.energyList.branches[i].atom.getFullName() + " " + Math.toDegrees(atom.daughterAtom.dihedralAngle));
             double deriv = calcDeriv(delta, i);
-//            System.out.println("Calc Deriv " + dihedrals.energyList.branches[i].atom.getFullName() + " " + Math.toDegrees(atom.daughterAtom.dihedralAngle));
             if (Math.abs(deriv) > maxDeriv) {
                 maxDeriv = Math.abs(deriv);
             }
@@ -314,7 +306,6 @@ public class GradientRefinement extends Refinement {
             if (deltaDeriv > maxError) {
                 maxError = deltaDeriv;
             }
-//            System.out.println("calc deriv ####### " + i + " " + atom.getFullName() + " " + derivatives[i] + " " + deriv);
         }
         double[] result = {maxDeriv, maxError};
         return result;

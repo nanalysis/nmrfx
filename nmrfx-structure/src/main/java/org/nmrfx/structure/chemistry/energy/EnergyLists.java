@@ -262,6 +262,7 @@ public class EnergyLists {
                 predictor.predictRNAWithDistances(polymer, 0, 0, true);
                 // predictor.predictRNAWithRingCurrent(polymer, 0, 0);
             } catch (InvalidMoleculeException imE) {
+                log.warn(imE.getMessage(), imE);
             }
         }
     }
@@ -403,7 +404,6 @@ public class EnergyLists {
             //entity - component of the molecule (could be individual residue or polymer)
             entity = (Entity) e.next();
 
-            //System.out.println(entity.name);
             if (entity instanceof Polymer) {
                 Polymer polymer = (Polymer) entity;
                 //residue - each monomer of the polymer
@@ -506,7 +506,7 @@ public class EnergyLists {
                 out = new PrintStream(fileName);
             }
         } catch (IOException ioE) {
-
+            log.warn(ioE.getMessage(), ioE);
         }
 
         OutputStream outStream = new BufferedOutputStream(out);
@@ -689,7 +689,7 @@ public class EnergyLists {
                     nIrp, irpEnergy, nDih, dihEnergy, nCFF, cffnbEnergy, nRepel, repelEnergy, nDistance, distanceEnergy,
                     maxDis, nShift, shiftTotEnergy, nRotamers, probDih, nStack, stackingEnergy, energySum);
         } catch (Exception e) {
-            e.printStackTrace();
+            log.warn(e.getMessage(), e);
         }
         writer.close();
     }
@@ -934,7 +934,6 @@ public class EnergyLists {
                     if (Double.isNaN(rotamerEnergy) || !Double.isFinite(rotamerEnergy)) {
                         System.out.println("rotamer nan " + rotamerScores.length);
                     }
-//                    System.out.printf("%10s %5.3g  ", residue.toString(), rotamerEnergy);
                     if (calcDeriv) {
                         Map<Integer, Double> rotDerivs = RNARotamer.calcDerivs(rotamerScores, rotamerEnergy);
                         for (int atomIndex : rotDerivs.keySet()) {
@@ -951,7 +950,6 @@ public class EnergyLists {
                         }
                     }
                     totalEnergy += (forceWeight.getDihedralProb() * rotamerEnergy);
-//                    System.out.println();
                 }
 
             }
@@ -1236,7 +1234,7 @@ public class EnergyLists {
                 }
             }
         } catch (Exception ex) {
-            ex.printStackTrace();
+            log.error(ex.getMessage(), ex);
             System.exit(1);
         }
 
@@ -1279,14 +1277,10 @@ public class EnergyLists {
             for (Atom atom : atoms) {
                 if (atom.rotUnit != -1) {
                     int unit = atom.rotUnit;
-                    //System.out.println("Unit "+unit + " " + atom.getFullName());
                     if (unit >= 0) {
                         int i = 0;
                         for (Atom branchAtom : atom.branchAtoms) {
                             if ((branchAtom != null) && branchAtom.rotActive) {
-                                //System.out.println("BranchAtom " + branchAtom.getFullName());
-                                //System.out.println("BranchUnit "+branchAtom.rotGroup.getFullName());
-                                //System.out.println("BranchUnit "+branchAtom.rotUnit + " " + branches[branchAtom.rotUnit]);
                                 branches[unit].branches[i++] = branches[branchAtom.rotUnit];
                                 branches[branchAtom.rotUnit].prev = branches[unit];
                             }
@@ -1295,7 +1289,7 @@ public class EnergyLists {
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error(e.getMessage(), e);
             System.exit(1);
         }
     }
@@ -1389,8 +1383,7 @@ public class EnergyLists {
                 i++;
             }
         } catch (Exception ex) {
-            System.out.println("error at branch " + i);
-            ex.printStackTrace();
+            log.error("Error at branch {} {}", i, ex.getMessage(), ex);
             System.exit(1);
         }
     }
@@ -1413,14 +1406,12 @@ public class EnergyLists {
                         for (int k = 0; k < 3; k++) {
                             System.out.printf(" %7.1f %7.1f ", branches[i].branches[j].farr[k], branches[i].branches[j].garr[k]);
                         }
-                    } else {
-                        //System.out.println("null branch");
                     }
                 }
                 System.out.println("");
             }
         } catch (Exception ex) {
-            ex.printStackTrace();
+            log.error(ex.getMessage(), ex);
             System.exit(1);
         }
     }
@@ -1430,14 +1421,10 @@ public class EnergyLists {
         double[] df = new double[n];
         try {
             for (int i = n - 1; i >= 0; i--) {
-                //System.out.println("recur " + i + " " + branches[i].branches.length);
                 for (int j = 0; j < branches[i].branches.length; j++) {
                     if (branches[i].branches[j] != null) {
-                        //System.out.println("recur " + branches[i].atom.getFullName() + " " + branches[i].branches[j].atom.getFullName());
                         branches[i].addToF(branches[i].branches[j].farr);
                         branches[i].addToG(branches[i].branches[j].garr);
-                    } else {
-                        //System.out.println("null branch");
                     }
                 }
             }
@@ -1456,7 +1443,7 @@ public class EnergyLists {
                 df[k++] = -1.0 * (dot1 + dot2);
             }
         } catch (Exception ex) {
-            ex.printStackTrace();
+            log.error(ex.getMessage(), ex);
             System.exit(1);
         }
         return df;
@@ -1599,7 +1586,7 @@ public class EnergyLists {
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            log.warn(e.getMessage(), e);
         }
     }
 

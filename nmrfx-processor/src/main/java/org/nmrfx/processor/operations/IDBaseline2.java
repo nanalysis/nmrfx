@@ -92,9 +92,7 @@ public class IDBaseline2 extends Operation {
         double sdevThreshold = sdevMean[0] + ratio * sdevMean[1];
         double autoThreshold = getThreshold(vector, ratio);
         double fractionThreshold = getFractionThreshold(vector, ratio);
-//        System.out.printf("sdev %.3f auto %.3f frac %.3f\n", sdevThreshold, autoThreshold, fractionThreshold);
 
-//        System.out.printf("%d ratio %.3f mean %.3f sdev %.3f sdevthresh %.3f autothresh %.3f\n", winSize, ratio, sdevMean[0], sdevMean[1], sdevThreshold, autoThreshold);
         switch (mode) {
             case SDEV:
                 threshold = sdevThreshold;
@@ -173,7 +171,6 @@ public class IDBaseline2 extends Operation {
             }
             lastBaseline = nBaseline;
             threshold = mean + ratio * sdev;
-//            System.out.println(nBaseline+" "+mean+" "+sdev+" "+threshold);
         }
         return threshold;
 

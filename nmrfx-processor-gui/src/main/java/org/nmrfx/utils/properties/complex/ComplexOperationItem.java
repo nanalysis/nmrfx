@@ -31,6 +31,8 @@ import org.apache.commons.math3.complex.ComplexFormat;
 import org.apache.commons.math3.exception.MathParseException;
 import org.nmrfx.utils.properties.OperationItem;
 import org.python.core.PyComplex;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -38,6 +40,7 @@ import org.python.core.PyComplex;
  */
 public class ComplexOperationItem extends OperationItem implements ObservableObjectValue<String> {
 
+    private static final Logger log = LoggerFactory.getLogger(ComplexOperationItem.class);
     Complex value;
     Complex defaultValue;
     Complex min = null;
@@ -89,6 +92,7 @@ public class ComplexOperationItem extends OperationItem implements ObservableObj
                     listener.changed(this, cf.format(oldValue), cf.format(value));
                 }
             } catch (MathParseException mpe) {
+                log.warn("Unable to parse new value", mpe);
             }
 
         } else if (o instanceof Complex) {

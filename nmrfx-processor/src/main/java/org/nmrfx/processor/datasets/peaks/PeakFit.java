@@ -202,10 +202,6 @@ public class PeakFit implements MultivariateFunction {
             sum += delta * delta;
         }
         double result = Math.sqrt(sum / yv.length);
-//        for (int i = 0; i < parameters.length; i++) {
-//            System.out.print(unscaledPars[i] + " ");
-//        }
-//        System.out.println(result);
         if ((best == null) || (best.getValue() > result)) {
             best = new PointValuePair(unscaledPars, result);
             if (ampVector != null) {
@@ -440,7 +436,6 @@ public class PeakFit implements MultivariateFunction {
         }
 
         for (int iLine = 0; iLine < freqs[iSig].length; iLine++) {
-//System.out.println(iLine + " "  + iSig + " " + iLine + " " + a.length + " " + amplitudes[iSig].length + " " + amplitudes.length);
             amplitudes[iSig][iLine] = a[start + iLine];
             //amplitudes[iSig][iLine] = 1.0;
         }
@@ -540,7 +535,6 @@ public class PeakFit implements MultivariateFunction {
                 }
 
                 for (int iLine = 0; iLine < freqs[iSig].length; iLine++) {
-//System.out.println(iLine + " "  + iSig + " " + iLine + " " + a.length + " " + amplitudes[iSig].length + " " + amplitudes.length);
                     //amplitudes[iSig][iLine] = a[start + iLine];
                     amplitudes[iSig][iLine] = 1.0;
                 }

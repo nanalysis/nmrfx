@@ -30,8 +30,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.nmrfx.structure.chemistry.Molecule;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class RNARotamer {
+
+    private static final Logger log = LoggerFactory.getLogger(RNARotamer.class);
 
     public static String SUITE_FORMAT = " %6.1f %5.1f";
     private static Atom[][] Atom;
@@ -228,7 +232,6 @@ public class RNARotamer {
         this.suiteName = makeSuiteName(this.angles);
         this.deltaDeltaGamma = getDeltaDeltaGamma(this.angles);
         this.nSamples = nSamples;
-        //System.out.println(this.name + " " + this.suiteName + " " + this.deltaDeltaGamma);
     }
 
     static void countSamples() {
@@ -380,7 +383,6 @@ public class RNARotamer {
         for (int i = 1; i < 5; i++) {
             double testAngle = angles[i] * toDEG;
             if ((testAngle >= ranges[i - 1][0]) && (testAngle <= ranges[i - 1][1])) {
-                // System.out.println("fail " + i + " " + testAngle + " " + ranges[i - 1][0] + " " + ranges[i - 1][1]);
                 result = i;
                 break;
             }
@@ -417,23 +419,7 @@ public class RNARotamer {
     public static void add(String name, int n, double... angles) {
         ROTAMERS.put(name, new RNARotamer(name, n, angles));
     }
-
-    public static void validateDetail() {
-        for (RNARotamer rotamer : ROTAMERS.values()) {
-            ArrayList<RotamerScore> hits = getHits(rotamer.angles);
-            for (RotamerScore rScore : hits) {
-                System.out.println(rotamer.fraction + " " + rotamer.name + " " + rScore.toString());
-            }
-        }
-    }
-
-    public static void validate() {
-        for (RNARotamer rotamer : ROTAMERS.values()) {
-            RotamerScore rScore = getBest(rotamer.angles);
-            System.out.println(rotamer.fraction + " " + rotamer.name + " " + rScore.toString());
-        }
-    }
-
+    
     public static RotamerScore[] getNBest(Polymer polymer, int residueNum, int n) {
         return getNBest(polymer, residueNum, n, null);
     }
@@ -772,6 +758,9 @@ public class RNARotamer {
      * refinement
      */
     public static void setDihedrals(Residue residue, String suiteName, double sdev, boolean doFreeze) {
+        if (residue == null) {
+            throw new IllegalArgumentException("Residue is null. Unable to set Dihedrals.");
+        }
         RNARotamer rotamer = ROTAMERS.get(suiteName);
         int j = 0;
         sdev = Math.toRadians(sdev);
@@ -860,7 +849,6 @@ public class RNARotamer {
                     if (sdev != 0.0) {
                         angle += CmaesRefinement.DEFAULT_RANDOMGENERATOR.nextGaussian() * sdev;
                     }
-                    //   System.out.println(atom.getFullName() + " " + Math.toDegrees(angle));
                     atom.setDihedral(Math.toDegrees(angle));
                     if (doFreeze) {
                         atom.parent.setRotActive(false);
@@ -967,7 +955,6 @@ public class RNARotamer {
                 lower += 360.0;
                 upper += 360.0;
             }
-            //System.out.printf("%3s %5s %8.3f %8.3f %8.3f %8.3f\n", residueNum, name, mean * toDEG, sdev * toDEG * mul, lower, upper);
             List<Atom> angleAtoms = new ArrayList<>();
             int j = 0;
             boolean ok = true;

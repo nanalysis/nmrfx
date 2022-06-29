@@ -6,12 +6,17 @@ import org.apache.commons.math3.transform.FastFourierTransformer;
 import org.apache.commons.math3.transform.TransformType;
 import org.nmrfx.processor.math.PositionValue;
 import org.nmrfx.processor.math.Vec;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
  * @author brucejohnson
  */
 public class VecCorrelation {
+
+    private static final Logger log = LoggerFactory.getLogger(VecCorrelation.class);
+
 
     /**
      * ****************************************************************************
@@ -189,7 +194,6 @@ public class VecCorrelation {
          Warping=>ws2:  j=0~m+u; popr=j/(m+u)*(m)+ w1;
          Correlation: cc=corr(wt,ws2)
          */
-//        System.out.println("T " + moveD.length + " P " + fixD.length + " x " + moveStart + " sS " + sectionStart + " m " + m + " u " + u);
         for (j = 0; j < m + u; j++) {
             popr = (double) (j * m) / (double) (m + u);
 
@@ -213,7 +217,6 @@ public class VecCorrelation {
                 mid1x2 += m1 * m2;
             }
         }
-//        System.out.println(mid1x1 + " " + mid2x2 + " " + mid1x2);
         if (mid1x1 == mid1 * mid1) {
             res = 1.0;
         } else {
@@ -600,11 +603,9 @@ public class VecCorrelation {
                     shift = shift - n;
                 }
             }
-//            System.out.println("shift " + shift + " n " + n + " clen " + corr_rs_power.length + " " + maxShift);
             pValue = new PositionValue(shift, max_corr);
         } catch (Exception e) {
-            System.out.println("Exception " + e.toString());
-            e.printStackTrace();
+            log.error(e.getMessage(), e);
             System.exit(-1);
         }
         return pValue;

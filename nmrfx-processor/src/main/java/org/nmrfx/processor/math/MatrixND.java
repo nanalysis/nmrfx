@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -186,24 +186,23 @@ public class MatrixND implements MatrixType {
         MultidimensionalCounter mdCounter = new MultidimensionalCounter(sizes);
         MultidimensionalCounter.Iterator iterator = mdCounter.iterator();
         int i = 0;
-        while (iterator.hasNext()) {
-            iterator.next();
-            int[] counts = iterator.getCounts();
-            for (int count : counts) {
-                if (fileWriter != null) {
-                    fileWriter.write(String.format("%3d ", count));
+        try (FileWriter fw = fileWriter) {
+            while (iterator.hasNext()) {
+                iterator.next();
+                int[] counts = iterator.getCounts();
+                for (int count : counts) {
+                    if (fw != null) {
+                        fw.write(String.format("%3d ", count));
+                    } else {
+                        System.out.printf("%3d ", count);
+                    }
+                }
+                if (fw != null) {
+                    fw.write(String.format("%3d %.5f%n", i, data[i++]));
                 } else {
-                    System.out.printf("%3d ", count);
+                    System.out.printf("%3d %.5f%n", i, data[i++]);
                 }
             }
-            if (fileWriter != null) {
-                fileWriter.write(String.format("%3d %.5f\n", i, data[i++]));
-            } else {
-                System.out.printf("%3d %.5f\n", i, data[i++]);
-            }
-        }
-        if (fileWriter != null) {
-            fileWriter.close();
         }
     }
 
@@ -1069,7 +1068,6 @@ public class MatrixND implements MatrixType {
                             double testValue = sign * data[index];
 //                            if ((ptValue < testValue) || (testValue < noiseThreshold)) {
                             if ((ptValue < testValue)) {
-//                                System.out.println(jDim + " < " + i + " " +index + " " + ptValue + " " + testValue + " " + noiseThreshold);
                                 ok = false;
                                 break;
                             }
@@ -1086,7 +1084,6 @@ public class MatrixND implements MatrixType {
                             double testValue = sign * data[index];
 //                            if ((ptValue < testValue) || (testValue < noiseThreshold)) {
                             if (ptValue < testValue) {
-//                                System.out.println(jDim + " > " + i + " " +index + " " + ptValue + " " + testValue + " " + noiseThreshold);
                                 ok = false;
                                 break;
                             }
@@ -1109,7 +1106,6 @@ public class MatrixND implements MatrixType {
                 }
             }
         }
-//        System.out.println("max value " + maxValue + " th " + threshold + " gt " + globalThreshold + " nt " + noiseThreshold + " " + peaks.size() + " " + nPossible);
         return peaks;
     }
 }

@@ -385,7 +385,6 @@ public class NanoMol {
                 pt12d = atomE.getPoint2d();
                 pt22d = atomB.getPoint2d();
             }
-//System.out.println(atom1+":"+index[atom1]+" "+atom2+":"+index[atom2]+" "+atomB.getAtomicNumber()+" "+atomE.getAtomicNumber());
 
             nanoBonds[i].atom1 = atom1;
             nanoBonds[i].atom2 = atom2;
@@ -435,7 +434,6 @@ public class NanoMol {
                 // atomDelta is number of elements between two atoms in index  (-1)
                 nanoBonds[i].atomDelta = index[atom2] - index[atom1] - 1;
                 if (nanoBonds[i].atomDelta > 15) {
-                    //    System.out.println("dp = " + nanoBonds[i].atomDelta+" "+atom1+" "+index[atom1]+" "+atom2+" "+index[atom2]);
                     throw new Exception("dp = " + nanoBonds[i].atomDelta + " " + atom1 + " " + index[atom1] + " " + atom2 + " " + index[atom2] + " " + nAtoms);
                 }
             }

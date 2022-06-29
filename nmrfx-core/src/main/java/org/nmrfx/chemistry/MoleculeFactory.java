@@ -1,31 +1,17 @@
 package org.nmrfx.chemistry;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.ParameterizedType;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
-//public class MoleculeFactory<T extends MoleculeBase> {
-/*  Class<T> molClass;
-    public MoleculeFactory(Class reference) {
-        molClass = reference;
-    }
-
-    public T newInstance(String molName)  {
-        Class[] parameterType = {String.class};
-        Constructor constructor = null;
-        T mol = null;
-        try {
-            constructor = molClass.getDeclaredConstructor(parameterType);
-            mol = (T) constructor.newInstance(molName);
-        } catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
-            e.printStackTrace();
-        }
-        return mol;
-    }*/
 public class MoleculeFactory {
+
+    private static final Logger log = LoggerFactory.getLogger(MoleculeFactory.class);
 
     static Constructor constructor = null;
     static MoleculeBase activeMol = null;
@@ -75,7 +61,7 @@ public class MoleculeFactory {
                     molClass
                             = Class.forName("org.nmrfx.chemistry.MoleculeBase");
                 } catch (ClassNotFoundException classNotFoundException) {
-                    classNotFoundException.printStackTrace();
+                    log.warn(classNotFoundException.getMessage(), classNotFoundException);
                 }
             }
             if (molClass != null) {
@@ -83,6 +69,7 @@ public class MoleculeFactory {
                 try {
                     constructor = molClass.getDeclaredConstructor(parameterType);
                 } catch (NoSuchMethodException e) {
+                    log.warn(e.getMessage(), e);
                 }
             }
         }
@@ -91,6 +78,7 @@ public class MoleculeFactory {
             try {
                 moleculeBase = (MoleculeBase) constructor.newInstance(molName);
             } catch (IllegalAccessException | InstantiationException | InvocationTargetException e) {
+                log.warn(e.getMessage(), e);
             }
         }
         if (moleculeBase != null) {

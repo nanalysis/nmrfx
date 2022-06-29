@@ -35,6 +35,8 @@ import org.nmrfx.graphicsio.GraphicsContextInterface;
 import org.nmrfx.graphicsio.GraphicsContextProxy;
 import org.nmrfx.graphicsio.GraphicsIOException;
 import org.nmrfx.graphicsio.SVGGraphicsContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -42,6 +44,7 @@ import org.nmrfx.graphicsio.SVGGraphicsContext;
  */
 public class XYCanvasChart {
 
+    private static final Logger log = LoggerFactory.getLogger(XYCanvasChart.class);
     public static final Color[] colors = {
         Color.web("#1b9e77"),
         Color.web("#d95f02"),
@@ -367,7 +370,7 @@ public class XYCanvasChart {
                 }
             }
         } catch (GraphicsIOException ioE) {
-            ioE.printStackTrace();
+            log.warn(ioE.getMessage(), ioE);
         }
         gC.restore();
     }

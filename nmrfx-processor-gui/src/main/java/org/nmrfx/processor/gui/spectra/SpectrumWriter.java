@@ -165,7 +165,6 @@ public class SpectrumWriter {
                         }
                         if (contours[iPosNeg].getLineCount() != 0) {
                             final int jPosNeg = iPosNeg;
-//                            System.out.println("chunk " + iChunk);
 
                             writer.setLineWidth(lineWidth[jPosNeg]);
                             if (jPosNeg == 0) {
@@ -284,7 +283,6 @@ public class SpectrumWriter {
 //                        try {
 //                            job.print();
 //                        } catch (PrinterException pE) {
-//                            System.out.println(pE.getMessage());
 //                        }
 //                    }
 //                }

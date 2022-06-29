@@ -34,12 +34,16 @@ import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.web.WebView;
 import javafx.stage.Stage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
  * @author johnsonb
  */
 public class DocWindowController implements Initializable {
+
+    private static final Logger log = LoggerFactory.getLogger(DocWindowController.class);
 
     Stage stage = null;
     @FXML
@@ -81,8 +85,7 @@ public class DocWindowController implements Initializable {
                 stage.show();
             }
         } catch (Exception e) {
-            e.printStackTrace();
-            System.out.println("load error!");
+            log.warn("Load error! {}", e.getMessage(), e);
         }
     }
 

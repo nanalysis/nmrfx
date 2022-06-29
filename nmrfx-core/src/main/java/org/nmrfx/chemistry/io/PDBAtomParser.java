@@ -18,10 +18,12 @@
 
 package org.nmrfx.chemistry.io;
 
-import org.nmrfx.chemistry.io.AtomParser;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class PDBAtomParser extends AtomParser {
-    
+
+    private static final Logger log = LoggerFactory.getLogger(PDBAtomParser.class);
     String atomNum;
 
     public PDBAtomParser(String string) {
@@ -101,6 +103,7 @@ public class PDBAtomParser extends AtomParser {
                 try {
                     occupancy = Double.parseDouble(temp);
                 } catch (NumberFormatException nE) {
+                    log.warn("Unable to parse occupancy.", nE);
                 }
             }
 
@@ -111,6 +114,7 @@ public class PDBAtomParser extends AtomParser {
                     try {
                         bfactor = Double.parseDouble(temp);
                     } catch (NumberFormatException nE) {
+                        log.warn("Unable to parse b factor.", nE);
                     }
                 }
 
@@ -127,6 +131,7 @@ public class PDBAtomParser extends AtomParser {
                                 try {
                                     charge = Double.parseDouble(temp);
                                 } catch (NumberFormatException nE) {
+                                    log.warn("Unable to parse charge.", nE);
                                 }
                             }
                         }

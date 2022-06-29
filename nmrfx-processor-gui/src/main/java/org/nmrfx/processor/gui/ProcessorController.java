@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -65,6 +65,8 @@ import org.nmrfx.processor.processing.Processor;
 import org.nmrfx.utilities.ProgressUpdater;
 import org.nmrfx.utils.GUIUtils;
 import org.python.util.PythonInterpreter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -74,6 +76,8 @@ import java.nio.file.Paths;
 import java.util.*;
 
 public class ProcessorController implements Initializable, ProgressUpdater {
+
+    private static final Logger log = LoggerFactory.getLogger(ProcessorController.class);
 
     Pane processorPane;
     Pane pane;
@@ -174,8 +178,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
             stage.setWidth(width + pane.getMinWidth());
             return controller;
         } catch (IOException ioE) {
-            ioE.printStackTrace();
-            System.out.println(ioE.getMessage());
+            log.warn(ioE.getMessage(), ioE);
             return null;
         }
     }
@@ -481,7 +484,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
                 try {
                     operationList.remove(index);
                 } catch (Exception ex) {
-                    ex.printStackTrace();
+                    log.warn(ex.getMessage(), ex);
                 } finally {
                     propertyManager.addScriptListener();
                     operationList.addListener(opListListener);
@@ -771,12 +774,9 @@ public class ProcessorController implements Initializable, ProgressUpdater {
             if ((index != -1) && lastIsClosePar) {
                 String opName = line.substring(0, index);
                 String args = line.substring(index + 1, line.length() - 1);
-                //System.out.println(opName);
                 if (opName.equals("run")) {
                     continue;
                 }
-                //System.out.println(line);
-                //System.out.println(args);
                 if (opName.equals("DIM")) {
                     String newDim = args;
                     if (newDim.equals("")) {
@@ -924,12 +924,13 @@ public class ProcessorController implements Initializable, ProgressUpdater {
                     return new Task() {
                         protected Object call() {
                             script = textArea.getText();
-                            PythonInterpreter processInterp = new PythonInterpreter();
-                            updateStatus("Start processing");
-                            updateTitle("Start Processing");
-                            processInterp.exec("from pyproc import *");
-                            processInterp.exec("useProcessor(inNMRFx=True)");
-                            processInterp.exec(script);
+                            try (PythonInterpreter processInterp = new PythonInterpreter()) {
+                                updateStatus("Start processing");
+                                updateTitle("Start Processing");
+                                processInterp.exec("from pyproc import *");
+                                processInterp.exec("useProcessor(inNMRFx=True)");
+                                processInterp.exec(script);
+                            }
                             return 0;
                         }
                     };
@@ -1010,12 +1011,10 @@ public class ProcessorController implements Initializable, ProgressUpdater {
                 System.out.println("menu action ");
             }
         };
-        List<MenuItem> subMenuItems = null;
-        Menu menu = null;
 
-        menu = new Menu("Common Op Lists");
+        Menu menu = new Menu("Common Op Lists");
         menuItems.add(menu);
-        subMenuItems = new ArrayList<>();
+        List<MenuItem> subMenuItems = new ArrayList<>();
         for (String op : basicOps) {
             MenuItem menuItem = new MenuItem(op);
             menuItem.addEventHandler(ActionEvent.ACTION, event -> opSequenceMenuAction(event));
@@ -1023,12 +1022,10 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         }
         menu.getItems().addAll(subMenuItems);
 
-        subMenuItems = null;
+        subMenuItems = new ArrayList<>();
         for (String op : OperationInfo.opOrders) {
             if (op.startsWith("Cascade-")) {
-                if (subMenuItems != null) {
-                    menu.getItems().addAll(subMenuItems);
-                }
+                menu.getItems().addAll(subMenuItems);
                 menu = new Menu(op.substring(8));
                 subMenuItems = new ArrayList<>();
                 menuItems.add(menu);
@@ -1038,9 +1035,8 @@ public class ProcessorController implements Initializable, ProgressUpdater {
                 subMenuItems.add(menuItem);
             }
         }
-        if (menu != null) {
-            menu.getItems().addAll(subMenuItems);
-        }
+        menu.getItems().addAll(subMenuItems);
+
         opMenuButton.getItems().addAll(menuItems);
         popOver.setContentNode(new Text("hello"));
 
@@ -1089,7 +1085,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
                     refManager.setupItems(vecDim - 1);
 
                 } catch (NumberFormatException nfE) {
-
+                    log.warn("Unable to parse vector dimension.", nfE);
                 }
             }
         };

@@ -309,6 +309,7 @@ public class RS2DData implements NMRData {
                 try {
                     fc.close();
                 } catch (IOException e) {
+                    log.warn(e.getMessage(), e);
                 }
             }
         }

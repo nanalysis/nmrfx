@@ -154,9 +154,6 @@ public class PeakCluster {
         double q = getQ(x);
         double q0 = getQ(x0);
         double QPred = 1.0 + (q / Math.abs(q0));
-        // Print Q information
-//        String outQ = "(Q) -> x: %f, Erf(x): %f, q: %f, Q: %f";
-//        System.out.println(String.format(outQ, x, Erf.erf(Math.abs(x) / Math.sqrt(2)), q, QPred));
         return QPred;
     }
 
@@ -180,10 +177,6 @@ public class PeakCluster {
         double predInt = peak2.getIntensity() * refScale;
         double Qval;
 
-        // Print name of peaks
-//        System.out.println(String.format("E_Peak: %s, P_Peak: %s", peak1.getName(), peak2.getName()));
-      //   Print intensity information
-//        System.out.println(String.format("E_Intenisty: %f (log-> %f), P_Intensity: %f (log-> %f)", expInt, Math.log(expInt), predInt, Math.log(predInt)));
         expInt = Math.log(expInt);
         predInt = Math.log(predInt);
         double sumOfQs = getQPred(expInt, predInt, intSigma, refDev);
@@ -196,13 +189,10 @@ public class PeakCluster {
                 Qval = -1000; // fixme  need appropriate value
             } else {
                 // Print chemical shift information
-//            System.out.println(String.format("E_PPM%d : %f, P_PPM%d: %f", dim, expPPMShift, dim, predPPMShift));
                 Qval = getQPred(expPPMShift, predPPMShift, ppmSigma, refDev);
             }
             sumOfQs += Qval;
         }
-        // Print final sum of Qs
-//        System.out.println(String.format("Sum(Qs) -> %f", sumOfQs));
         return sumOfQs;
     }
 

@@ -54,6 +54,8 @@ import org.nmrfx.graphicsio.SVGGraphicsContext;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.controls.FileTableItem;
 import org.nmrfx.processor.math.TRACTSimFit;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -61,6 +63,7 @@ import org.nmrfx.processor.math.TRACTSimFit;
  */
 public class TRACTGUI {
 
+    private static final Logger log = LoggerFactory.getLogger(TRACTGUI.class);
     ScannerTool scannerTool;
     Stage stage = null;
     XYCanvasChart activeChart;
@@ -364,6 +367,7 @@ public class TRACTGUI {
                     }
                 }
             } catch (IOException ioE) {
+                log.warn(ioE.getMessage(), ioE);
 
             }
 

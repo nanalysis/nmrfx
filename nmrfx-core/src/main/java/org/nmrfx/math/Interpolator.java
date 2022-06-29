@@ -20,6 +20,8 @@ package org.nmrfx.math;
 import org.apache.commons.math3.analysis.interpolation.SplineInterpolator;
 import org.apache.commons.math3.analysis.polynomials.PolynomialSplineFunction;
 import org.apache.commons.math3.exception.OutOfRangeException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -27,6 +29,7 @@ import org.apache.commons.math3.exception.OutOfRangeException;
  */
 public class Interpolator {
 
+    private static final Logger log = LoggerFactory.getLogger(Interpolator.class);
     public static double[] getInterpolated(final double[] values, final int newSize) {
         SplineInterpolator sInterp = new SplineInterpolator();
 
@@ -51,6 +54,7 @@ public class Interpolator {
                 interpIntensities[i] = pSF.value(xValue);
             }
         } catch (OutOfRangeException adE) {
+            log.warn(adE.getMessage(), adE);
         }
         return interpIntensities;
     }
@@ -87,6 +91,7 @@ public class Interpolator {
                 xValue += incr;
             }
         } catch (OutOfRangeException adE) {
+            log.warn(adE.getMessage(), adE);
         }
         return interpIntensities;
     }

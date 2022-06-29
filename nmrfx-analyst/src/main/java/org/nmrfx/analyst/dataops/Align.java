@@ -168,7 +168,6 @@ public class Align {
             sectionLength = vecSize / 128;
         }
         final int sL = fixedVec.getSize(); // fixme   XXXXXXXXXXXXXXXXXXXXXXXX
-//        System.out.println("indices " + indices.size() + " " + vecSize + " " + startVecPos[0][0] + " " + startVecPos[0][1] + " " + sectionLength);
         Double[] deltas = new Double[indices.size()];
 
         indices.stream().parallel().forEach(vi -> {
@@ -200,7 +199,7 @@ public class Align {
                 }
             }
         } catch (ArrayIndexOutOfBoundsException aiE) {
-            aiE.printStackTrace();
+            log.warn(aiE.getMessage(), aiE);
         }
         int delta = -iMax;
         CShift cShift = new CShift(delta, false);
@@ -385,7 +384,6 @@ public class Align {
             regions.add(region);
         }
         final int sL = fixedVec.getSize(); // fixme   XXXXXXXXXXXXXXXXXXXXXXXX
-//        System.out.println("indices " + indices.size() + " " + vecSize + " " + startVecPos[0][0] + " " + startVecPos[0][1] + " " + sectionLength);
         Double[] deltas = new Double[indices.size()];
         deltas[0] = 0.0;
         indices.stream().filter(vi -> vi != skipIndices).forEach(vi -> {
@@ -437,7 +435,6 @@ public class Align {
 //            }
 
             int size = region.max - region.min + 1;
-//            System.out.println(region.min + " max " + region.max + " sz " + size + " vsz " + vecSize + " maxsh " + maxShift + " use " + useSection);
             subTarget.resize(size);
             targetVec.copy(subTarget, region.min, size);
             var maxIndex = subTarget.maxIndex();
@@ -456,7 +453,6 @@ public class Align {
                 var posValue = VecCorrelation.fftCorr(subTarget, subSample, 0, maxShiftA);
                 corrValue = posValue.getValue() / (size - 1.0);
                 shift = posValue.getPosition();
-//                System.out.println("shift " + shift);
                 break;
 //                if (shift < 0) {
 //                    preExtra = preExtra - shift + 4;
@@ -465,17 +461,14 @@ public class Align {
 //                }
 //                maxShiftA = maxShift - preExtra;
 //                if (maxShiftA <  0) {
-//                    System.out.println("maxshift " + maxShiftA);
 //                    break;
 //                }
             }
-//            System.out.println("pt1e " + pt1e + " pt2e " + pt2e + " shift " + shift + " corr " + corrValue);
 //            if (shift < 0) {
 //                shift = 0;
 //            }
             Alignment alignment = new Alignment(region.min, region.max, pt1e + shift, pt1e + shift + size - 1, shift, shift - preExtra, corrValue, ratio, useSection);
             alignments.add(alignment);
-//            System.out.println(alignment);
         }
         sampleVec.copy(resultVec);
         resultVec.zeros();
