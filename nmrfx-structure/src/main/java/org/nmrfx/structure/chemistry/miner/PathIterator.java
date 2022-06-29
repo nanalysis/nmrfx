@@ -69,13 +69,6 @@ public class PathIterator implements Iterator<List<Integer>> {
         nPatterns = nodeValidator.patternCount();
     }
 
-    public PathVars getPathVars() {
-        return pVars;
-    }
-
-    void setOutputMode(int outputMode) {
-    }
-
     boolean initialize() {
         for (IAtom atom : ac.atoms()) {
             atom.setFlag(Atom.VISITED, false);
@@ -498,8 +491,8 @@ public class PathIterator implements Iterator<List<Integer>> {
                 int mode = nodeValidator.getMode(currentPattern);
                 if (mode == 0) {
                     nodeValidator.assignProps(nextPath, currentPattern);
-                else if (mode == 2) {
-                    ArrayList params = nodeValidator.getParams(nextPath, currentPattern);
+                } else if (mode == 2) {
+                    var params = nodeValidator.getParams(nextPath, currentPattern);
                     int atomIndex = (Integer) params.get(0);
                     for (int i = 1; i < params.size(); i += 2) {
                         String name = (String) params.get(i);
