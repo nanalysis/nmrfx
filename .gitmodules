@@ -1,0 +1,3 @@
+[submodule "nmrfx-test-data"]
+	path = nmrfx-test-data
+	url = git@github.com:nanalysis/nmrfx-test-data.git
