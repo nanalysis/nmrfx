@@ -1559,7 +1559,7 @@ public class NMRStarReader {
                 atoms[iAtom] = getSpatialSet(entityAssemblyIDColumns[iAtom],
                         entityIDColumns[iAtom], compIdxIDColumns[iAtom],
                         atomColumns[iAtom], resonanceColumns[iAtom], i).
-                        getFirstSet().atom;
+                        getSpatialSet().atom;
             }
             String upperValue = upperColumn.get(i);
             String lowerValue = lowerColumn.get(i);
@@ -1605,7 +1605,7 @@ public class NMRStarReader {
             for (int iAtom = 0; iAtom < 2; iAtom++) {
                 SpatialSetGroup spG = getSpatialSet(entityAssemblyIDColumns[iAtom], entityIDColumns[iAtom], compIdxIDColumns[iAtom], atomColumns[iAtom], resonanceColumns[iAtom], i);
                 if (spG != null) {
-                    spSets[iAtom] = spG.getFirstSet();
+                    spSets[iAtom] = spG.getSpatialSet();
                     if ((spSets[0] == null) || (spSets[1] == null)) {
                         log.warn("null spset id  {} iatom {} {}", i, iAtom, spG.getFullName());
                     } else {
