@@ -24,9 +24,12 @@ import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.apache.commons.math3.util.FastMath;
 import org.codehaus.commons.compiler.CompileException;
 import org.codehaus.janino.ExpressionEvaluator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class Fitter {
 
+    private static final Logger log = LoggerFactory.getLogger(Fitter.class);
     static RandomGenerator random = new SynchronizedRandomGenerator(new Well19937c());
 
     boolean reportFitness = false;
@@ -225,6 +228,7 @@ public class Fitter {
         try {
             value = (Double) ee.evaluate(exprPars);
         } catch (InvocationTargetException ex) {
+            log.warn(ex.getMessage(), ex);
         }
         return value;
     }
@@ -244,6 +248,7 @@ public class Fitter {
             try {
                 value = (Double) ee.evaluate(exprPars);
             } catch (InvocationTargetException ex) {
+                log.warn(ex.getMessage(), ex);
             }
             values[j] = value;
         }

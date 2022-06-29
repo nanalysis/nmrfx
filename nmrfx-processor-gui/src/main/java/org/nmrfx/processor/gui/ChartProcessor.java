@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -24,7 +24,6 @@ import org.nmrfx.processor.datasets.DatasetType;
 import org.nmrfx.processor.datasets.vendor.NMRData;
 import org.nmrfx.processor.datasets.vendor.NMRDataUtil;
 import org.nmrfx.processor.datasets.vendor.nmrview.NMRViewData;
-import org.nmrfx.processor.datasets.vendor.rs2d.RS2DData;
 import org.nmrfx.processor.datasets.vendor.rs2d.RS2DProcUtil;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.processing.MultiVecCounter;
@@ -36,12 +35,15 @@ import org.nmrfx.utils.GUIUtils;
 import org.python.core.PyException;
 import org.python.core.PyObject;
 import org.python.util.InteractiveInterpreter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.stream.Stream;
 
 /**
  * A ChartProcessor manages the processing of data assigned to a particular
@@ -50,6 +52,9 @@ import java.util.*;
  * @author brucejohnson
  */
 public class ChartProcessor {
+
+    private static final Logger log = LoggerFactory.getLogger(ChartProcessor.class);
+
     public static final DatasetType DEFAULT_DATASET_TYPE = DatasetType.NMRFX;
 
     private SimpleObjectProperty nmrDataObj;
@@ -296,7 +301,7 @@ public class ChartProcessor {
                 // if format like 321 don't do the rest, otherwise format should be like p1,d2,...
                 if (acqOrderArray.length == 1) {
                     // fixme, this done just so test at end passes
-                    // length of array depends on varian versus Bruker 
+                    // length of array depends on varian versus Bruker
                     nDimChars = nmrData.getNDim() - 1;
                     break;
                 }
@@ -425,10 +430,6 @@ public class ChartProcessor {
 
                     vecIndex = multiVecCounter.getNextGroup(index);
                 } else {
-//                    for (var iRow : rows) {
-//                        System.out.print(iRow + " ");
-//                    }
-//                    System.out.println(index);
                     index = multiVecCounter.findOutGroup(rows);
                     vecIndex = multiVecCounter.getNextGroup(index);
                 }
@@ -541,7 +542,7 @@ public class ChartProcessor {
                 ProcessOps process = getProcess();
                 process.exec();
             } catch (IncompleteProcessException ipe) {
-                ipe.printStackTrace();
+                log.warn(ipe.getMessage(), ipe);
             }
 
             chart.layoutPlotChildren();
@@ -575,7 +576,7 @@ public class ChartProcessor {
         if (mapOpLists != null) {
             for (Map.Entry<String, List<String>> entry : mapOpLists.entrySet()) {
                 List<String> newList = new ArrayList<>();
-                if (entry != null) {
+                if (entry.getValue() != null) {
                     newList.addAll(entry.getValue());
                 }
                 copyOfMapOpLists.put(entry.getKey(), newList);
@@ -651,7 +652,6 @@ public class ChartProcessor {
             return;
         }
         scriptValid = false;
-        //System.out.println("update " + vecDimName + " " + processorController.getOperationList());
         List<String> oldList = new ArrayList<>();
         oldList.addAll(processorController.getOperationList());
         mapOpLists.put(vecDimName, oldList);
@@ -667,8 +667,6 @@ public class ChartProcessor {
     public void setVecDim(String dimName) {
         int value;
         boolean isDim;
-        //dimName = dimName.substring(1);
-        //System.out.println("set vdim " + vecDimName + " " + dimName + " " + processorController.isViewingDataset());
         try {
             value = Integer.parseInt(dimName.substring(1));
             value--;
@@ -685,14 +683,8 @@ public class ChartProcessor {
             if (mapOpLists.get(vecDimName) != null) {
                 oldList.addAll(mapOpLists.get(vecDimName));
             }
-            //execScriptList(false);
-        } else {
-            if (mapOpLists == null) {
-
-            }
-            if (mapOpLists.containsKey(dimName)) {
-                oldList.addAll(mapOpLists.get(dimName));
-            }
+        } else if (mapOpLists.containsKey(dimName)) {
+            oldList.addAll(mapOpLists.get(dimName));
         }
         getCombineMode();
         if (!processorController.isViewingDataset()) {
@@ -791,16 +783,15 @@ public class ChartProcessor {
         File file = getDefaultScriptFile();
         StringBuilder resultBuilder = new StringBuilder();
         if (file.exists()) {
-            try {
-                Files.lines(file.toPath()).forEach(line -> {
+            try (Stream<String> lines = Files.lines(file.toPath())){
+                lines.forEach(line -> {
                     if (line.trim().startsWith("CREATE")) {
                         int firstParen = line.indexOf("(");
                         int lastParen = line.lastIndexOf(")");
                         String filePath = line.substring(firstParen + 2, lastParen - 1);
-                        File datasetFile = new File(filePath);
-                        String datasetName = datasetFile.getName();
+                        File datasetFileFromScript = new File(filePath);
+                        String datasetName = datasetFileFromScript.getName();
                         resultBuilder.append(datasetName);
-                        return;
                     }
                 });
             } catch (IOException ex) {
@@ -811,11 +802,19 @@ public class ChartProcessor {
 
     }
 
-    public void loadDefaultScriptIfPresent() {
+    /**
+     * Loads the default script if present.
+     * @return True if default script is loaded, false if it is not loaded.
+     */
+    public boolean loadDefaultScriptIfPresent() {
+        boolean scriptLoaded = false;
         File scriptFile = getDefaultScriptFile();
         if (scriptFile.exists() && scriptFile.canRead()) {
             processorController.openScript(scriptFile);
+            scriptLoaded = true;
+            log.info("Default script loaded: {}", scriptFile.getName());
         }
+        return scriptLoaded;
     }
 
     String buildScript() {
@@ -951,7 +950,6 @@ public class ChartProcessor {
             datasetFile = new File(outputDir, "multi.nv");
         }
         scriptBuilder.append("closeScanTable()").append(lineSep);
-        // System.out.println(scriptBuilder.toString());
         return scriptBuilder.toString();
     }
 
@@ -1120,6 +1118,7 @@ public class ChartProcessor {
                         }
                         mapToDataset[dimNum] = -1;
                     } catch (NumberFormatException nFE) {
+                        log.warn("Unable to parse dimension number.", nFE);
                     }
                     if (!processorController.refManager.getSkip(parDim)) {
                         if (dimMode.equals("D") && (dimNum != -1)) {
@@ -1150,10 +1149,8 @@ public class ChartProcessor {
     void setFlags() {
         Map<String, Boolean> flags = new HashMap<>();
         String flagString = processorController.getFlagString().trim();
-        //System.out.println("flag " + flagString);
         String[] flagStrings = flagString.split("\\s");
         for (String flag : flagStrings) {
-            //System.out.println(flag);
             String[] flagParts = flag.split("=");
             if (flagParts.length == 2) {
                 if (flagParts[0].equals("mode")) {
@@ -1166,7 +1163,6 @@ public class ChartProcessor {
                     //}
                 } else {
                     boolean flagValue = flagParts[1].equals("1");
-                    //System.out.println(flagParts[0] + " " + flagValue);
                     flags.put(flagParts[0], flagValue);
                 }
             }
@@ -1288,18 +1284,16 @@ public class ChartProcessor {
 
 //            chart.setDataset(null);
 //            chart.datasetAttributes = null;
-            //System.out.println("load vec from reload");
             loadVectors(0);
             chart.setCrossHairState(false, true, false, true);
             try {
                 ProcessOps process = getProcess();
                 process.exec();
             } catch (IncompleteProcessException ipe) {
-                ipe.printStackTrace();
+                log.warn(ipe.getMessage(), ipe);
             }
             int[] sizes = new int[1];
             sizes[0] = 1;
-            //System.out.println("ndim " + nDim);
             if (nDim > 1) {
                 sizes = new int[nDim];
                 for (int i = 0; i < nDim; i++) {
@@ -1375,7 +1369,7 @@ public class ChartProcessor {
                 } else {
                     processorController.setProcessingStatus(pyE.getCause().getMessage(), false, pE);
                 }
-                pyE.printStackTrace();
+                log.warn(pyE.getMessage(), pyE);
             } else {
                 processorController.setProcessingStatus("error " + pE.getMessage(), false, pE);
             }
@@ -1406,7 +1400,7 @@ public class ChartProcessor {
                     OperationListCell.failedOperation(e.index);
                     System.out.println("error message: " + e.getMessage());
                     processorController.setProcessingStatus(e.op + " " + e.index + ": " + e.getMessage(), false, e);
-                    e.printStackTrace();
+                    log.warn(e.getMessage(), e);
                     int j = 0;
                     for (Vec saveVec : saveVectors) {
                         Vec loadVec = vectors.get(j);

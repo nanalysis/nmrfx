@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -22,16 +22,18 @@
  */
 package org.nmrfx.processor.optimization;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStreamReader;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Scanner;
-import java.util.StringTokenizer;
+import java.util.stream.Stream;
+
 import org.apache.commons.math3.special.Erf;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -39,6 +41,7 @@ import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
  */
 public class PeakMatcher {
 
+    private static final Logger log = LoggerFactory.getLogger(PeakMatcher.class);
     final double SQRT2 = Math.sqrt(2.0);
     final double ERRMUL = 1.0;
     final double weightPred = 4.0;
@@ -160,10 +163,8 @@ public class PeakMatcher {
             for (int i = 0; i < values.length; i++) {
                 PPMTol ppmTol = b.getPPMTol(i);
                 double prob = ppmTol.getProb(values[i], tvalues[i]);
-//System.out.printf("%3d %5.3f %5.3f %5.3f",i,values[i],ppmTol.getPPM(),prob);
                 cumProb *= prob;
             }
-//System.out.printf("%5.3f\n",cumProb);
             if (cumProb < 1.0e-3) {
                 cumProb = 0.0;
             }
@@ -189,7 +190,7 @@ public class PeakMatcher {
             for (String name : names) {
                 Integer id = atomMap.get(name);
                 if (id == null) {
-                    System.err.println("No atom " + name + " in map");
+                    log.error("No atom {} in map", name);
                     System.exit(0);
                 }
                 atoms[i++] = id;
@@ -197,7 +198,6 @@ public class PeakMatcher {
         }
 
         double getValue(int index) {
-//System.out.println("getval " + index + " " + atoms[index]);
             return atomPPMList.get(atoms[index]).getPPM();
         }
 
@@ -258,8 +258,9 @@ public class PeakMatcher {
     public double globalScore(boolean dump) {
         double scoreSum = 0.0;
         double normSum = 0.0;
+        StringBuilder msg = new StringBuilder();
         if (dump) {
-            System.out.printf("%10s %3s %8s %8s %8s %8s %8s %8s\n", "Atom", "nVa", "ppm", "stdev", "delta", "QPred", "QMulti", "qTotal");
+            msg.append(String.format("%10s %3s %8s %8s %8s %8s %8s %8s%n", "Atom", "nVa", "ppm", "stdev", "delta", "QPred", "QMulti", "qTotal"));
         }
         for (PPMTol ppmTol : atomPPMList) {
             long nValues = ppmTol.stats.getN();
@@ -269,7 +270,7 @@ public class PeakMatcher {
             if (nValues == 0) {
                 qTotal = 0.0;
                 if (dump) {
-                    System.out.printf("%10s %3d %8.3f\n", ppmTol.getAtomName(), nValues, ppmTol.getPPM());
+                    msg.append(String.format("%10s %3d %8.3f%n", ppmTol.getAtomName(), nValues, ppmTol.getPPM()));
                 }
             } else {
                 double QPred = ppmTol.getQPred(ppmTol.getPPM());
@@ -278,7 +279,7 @@ public class PeakMatcher {
                 double delta = ppmTol.stats.getMax() - ppmTol.stats.getMin();
                 double stdev = ppmTol.stats.getStandardDeviation();
                 if (dump) {
-                    System.out.printf("%10s %3d %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f\n", ppmTol.getAtomName(), nValues, ppmTol.getPPM(), stdev, delta, QPred, (QMulti / nValues), qTotal / norm);
+                    msg.append(String.format("%10s %3d %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f%n", ppmTol.getAtomName(), nValues, ppmTol.getPPM(), stdev, delta, QPred, (QMulti / nValues), qTotal / norm));
                 }
             }
             scoreSum += qTotal;
@@ -286,17 +287,16 @@ public class PeakMatcher {
         }
         double score = scoreSum / normSum;
         if (dump) {
-            System.out.println("score: " + score);
+            String details = msg.toString();
+            log.info(details);
+            log.info("score: {}", score);
         }
         return score;
     }
 
     public void processPPMFile(String fileName) {
-        File file = new File(fileName);
-        try {
-            Scanner in = new Scanner(file);
-            while (in.hasNextLine()) {
-                String line = in.nextLine();
+        try (Stream<String> lines = Files.lines(new File(fileName).toPath())) {
+            lines.forEach(line -> {
                 String[] fields = line.split(" ");
                 String atom = fields[0];
                 double value = Double.parseDouble(fields[1]);
@@ -305,10 +305,9 @@ public class PeakMatcher {
                 int index = atomPPMList.size();
                 atomPPMList.add(ppmTol);
                 atomMap.put(atom, index);
-            }
+            });
         } catch (IOException ioE) {
-            System.out.println(ioE.getMessage());
-            return;
+            log.warn(ioE.getMessage(), ioE);
         }
     }
 
@@ -344,22 +343,19 @@ public class PeakMatcher {
                 //requireValues[0][0]=i;
                 //requireValues[0][1]=bestMatches[0][i];
                 score = processTypes(types, requireValues);
-                System.out.println("gscore " + score);
+                log.info("gscore {}", score);
             }
         }
     }
 
     public void processFile(String fileName) {
-        File file = new File(fileName);
-        try {
-            Scanner in = new Scanner(file);
+        try (Scanner in = new Scanner(new File(fileName))) {
             while (in.hasNextLine()) {
                 String line = in.nextLine();
                 processLine(line);
             }
         } catch (IOException ioE) {
-            System.out.println(ioE.getMessage());
-            return;
+            log.warn(ioE.getMessage(), ioE);
         }
     }
 
@@ -375,7 +371,7 @@ public class PeakMatcher {
         ArrayList<AtomValue> valuesAtom = peakListType.getAtoms();
         int nPeaks = valuesPeak.size();
         int nAtoms = valuesAtom.size();
-        System.out.println(nPeaks + " " + nAtoms);
+        log.info("{} {}", nPeaks, nAtoms);
         int nTotal = nAtoms + nPeaks;
         BipartiteMatcher matcher = new BipartiteMatcher();
         matcher.reset(nTotal, true);
@@ -390,7 +386,7 @@ public class PeakMatcher {
             matcher.setWeight(j, nPeaks + j, -1.0);
         }
         int[] bestMatch = new int[nAtoms];
-        System.out.printf("%s\t%s\t%4s\n", "atom", "peak", "prob");
+        StringBuilder logMessage = new StringBuilder(String.format("%s\t%s\t%4s%n", "atom", "peak", "prob"));
         for (int iAtom = 0; iAtom < nAtoms; iAtom++) {
             double bestProb = Double.NEGATIVE_INFINITY;
             bestMatch[iAtom] = -1;
@@ -405,7 +401,7 @@ public class PeakMatcher {
                             bestProb = probability;
                             bestMatch[iAtom] = jPeak;
                         }
-                        System.out.printf("%4d\t%4d\t%4.2f\n", atomIndex, pkIndex, probability);
+                        logMessage.append(String.format("%4d\t%4d\t%4.2f%n", atomIndex, pkIndex, probability));
                         matcher.setWeight(iAtom, jPeak, probability);
                         nMatch++;
                     }
@@ -415,11 +411,13 @@ public class PeakMatcher {
                 bestMatch[iAtom] = -1;
             }
         }
+        if (log.isInfoEnabled()) {
+            log.info(logMessage.toString());
+        }
         int[] matching = matcher.getMatching();
 
-        System.out.println(
-                "Maximum-weight matching:");
-        System.out.printf("%s\t%4s\t%4s\t%4s\t%s\t%10s\t%s\n", "type", "iAtm", "iPk", "prob", "atoms", "peak", "pkppms");
+        log.info("Maximum-weight matching:");
+        StringBuilder matchingLogMsg = new StringBuilder(String.format("%s\t%4s\t%4s\t%4s\t%s\t%10s\t%s%n", "type", "iAtm", "iPk", "prob", "atoms", "peak", "pkppms"));
         for (int iAtom = 0; iAtom < nTotal; iAtom++) {
             int jPeak = matching[iAtom];
             String name = "arti";
@@ -449,7 +447,10 @@ public class PeakMatcher {
             if ((jPeak >= 0) && (jPeak < valuesPeak.size())) {
                 pkname = "pk" + jPeak;
             }
-            System.out.printf("%s\t%4d\t%4d\t%4.5f\t%s\t%10s\t%s\n", type, atomIndex, pkIndex, probability, atomString, pkname, peakString);
+            matchingLogMsg.append(String.format("%s\t%4d\t%4d\t%4.5f\t%s\t%10s\t%s", type, atomIndex, pkIndex, probability, atomString, pkname, peakString));
+        }
+        if (log.isInfoEnabled()) {
+            log.info(matchingLogMsg.toString());
         }
         return bestMatch;
     }

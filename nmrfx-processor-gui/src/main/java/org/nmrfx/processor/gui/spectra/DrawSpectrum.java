@@ -64,6 +64,8 @@ import org.nmrfx.graphicsio.GraphicsIOException;
 import org.nmrfx.datasets.DatasetRegion;
 import org.nmrfx.math.VecBase;
 import org.nmrfx.processor.gui.PolyChart.DISDIM;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -71,6 +73,7 @@ import org.nmrfx.processor.gui.PolyChart.DISDIM;
  */
 public class DrawSpectrum {
 
+    private static final Logger log = LoggerFactory.getLogger(DrawSpectrum.class);
     final static ExecutorService MAKE_CONTOUR_SERVICE = Executors.newFixedThreadPool(30);
     final static ExecutorService DRAW_CONTOUR_SERVICE = Executors.newFixedThreadPool(100);
 
@@ -202,6 +205,7 @@ public class DrawSpectrum {
         try {
             finished = drawNow(g2I);
         } catch (IOException ex) {
+            log.warn(ex.getMessage(), ex);
         }
         lastPlotTime = 0;
 
@@ -279,8 +283,7 @@ public class DrawSpectrum {
                                     }
                                 }
                             } catch (IOException e) {
-                                System.out.println("error " + e.getMessage());
-                                e.printStackTrace();
+                                log.warn(e.getMessage(), e);
                             }
                             return 0;
                         }
@@ -325,7 +328,6 @@ public class DrawSpectrum {
                     break;
                 }
                 long currentTime = System.currentTimeMillis();
-//                System.out.println(fileData.mChunk + " " + (currentTime - startTime));
                 int iChunk = fileData.mChunk + 1;
                 double[][] pix = getPix(axes, fileData);
 
@@ -334,8 +336,6 @@ public class DrawSpectrum {
                     if (z != null) {
                         double xOff = offset[0];
                         double yOff = offset[1];
-//                        System.out.println("off " + xOff + " " + yOff + " " + 
-//                                fileData.ptd[0][0] + " " + fileData.ptd[1][0]);
 
                         for (int iPosNeg = 0; iPosNeg < 2; iPosNeg++) {
                             float sign = iPosNeg == 0 ? 1.0f : -1.0f;
@@ -392,8 +392,7 @@ public class DrawSpectrum {
                             try {
                                 drawAllContours(this);
                             } catch (Exception e) {
-                                e.printStackTrace();
-
+                                log.warn(e.getMessage(), e);
                             }
                             return 0;
                         }
@@ -459,7 +458,7 @@ public class DrawSpectrum {
                         try {
                             drawContourObject(drawObject);
                         } catch (ExecutionException ex) {
-                            ex.printStackTrace();
+                            log.warn(ex.getMessage(), ex);
                         }
                     } catch (InterruptedException ex) {
                         interrupted = true;
@@ -472,7 +471,6 @@ public class DrawSpectrum {
                 }
 
             }
-//            System.out.println("done " + drawSpectrum.makeContours.done + " " + drawSpectrum.contourQueue.isEmpty());
         }
 
     }
@@ -488,7 +486,6 @@ public class DrawSpectrum {
             float[][] z = null;
             do {
                 long currentTime = System.currentTimeMillis();
-//                System.out.println(fileData.mChunk + " " + (currentTime - startTime));
                 if ((g2I instanceof GraphicsContextProxy) && ((currentTime - startTime) > MAX_TIME)) {
                     return false;
 
@@ -565,7 +562,7 @@ public class DrawSpectrum {
             gC.clip();
             gC.beginPath();
         } catch (Exception ex) {
-
+            log.warn(ex.getMessage(), ex);
         }
 
     }
@@ -712,16 +709,12 @@ public class DrawSpectrum {
                 double xPoint2 = scale * contours.coords[coordIndex][iLine + 2] + cxOffset;
                 double yPoint1 = scale * contours.coords[coordIndex][iLine + 1] + cyOffset;
                 double yPoint2 = scale * contours.coords[coordIndex][iLine + 3] + cyOffset;
-//                if (MARCH_MODE) {
-//                    System.out.println("pt " + xPoint1 + " " + yPoint1 + " " + xPoint2 + " " + yPoint2);
-//                }
+
                 xPoint1 = dataset.pointToPPM(dataGenerator.dim[0], xPoint1);
                 xPoint2 = dataset.pointToPPM(dataGenerator.dim[0], xPoint2);
                 yPoint1 = dataset.pointToPPM(dataGenerator.dim[1], yPoint1);
                 yPoint2 = dataset.pointToPPM(dataGenerator.dim[1], yPoint2);
-//                if (MARCH_MODE) {
-//                    System.out.println("pp " + xPoint1 + " " + yPoint1 + " " + xPoint2 + " " + yPoint2);
-//                }
+
 
                 double x1 = axes[0].getDisplayPosition(xPoint1);
                 double x2 = axes[0].getDisplayPosition(xPoint2);
@@ -816,7 +809,6 @@ public class DrawSpectrum {
             datasetAttr.getProjection(dataset, sliceVec, sliceDim);
             double level = datasetAttr.lvlProperty().get();
             double scale = -sliceAttr.getScaleValue() / level;
-            //System.out.println(orientation + " " + slicePosX + " " + slicePosY);
             if (sliceDim == 0) {
                 double offset = axes[0].getYOrigin() - axes[1].getHeight() * 1.005;
                 drawVector(sliceVec, orientation, 0, AXMODE.PPM, drawReal, 0.0, 0.0, null,
@@ -843,7 +835,6 @@ public class DrawSpectrum {
             datasetAttr.getSlice(sliceVec, sliceDim, slicePosX, slicePosY);
             double level = datasetAttr.lvlProperty().get();
             double scale = -sliceAttr.getScaleValue() / level;
-            //System.out.println(orientation + " " + slicePosX + " " + slicePosY);
             if (sliceDim == 0) {
                 double offset;
                 if (offsetTracking) {
@@ -968,7 +959,7 @@ public class DrawSpectrum {
                 return result;
             }
         } catch (IOException ioE) {
-            ioE.printStackTrace();
+            log.warn(ioE.getMessage(), ioE);
             return result;
         }
         Double integralValue = specVec.getReal(specVec.getSize() - 1);
@@ -1021,7 +1012,6 @@ public class DrawSpectrum {
         }
         double dValue = indexAxis.getLowerBound();
 
-//        System.out.printf("%d %.5f %.5f %d %d %.4f %.4f\n", orientation, indexAxis.getLowerBound(), indexAxis.getUpperBound(), vecStartPoint, vecEndPoint, dValue, indexAxisDelta);
         if (vecStartPoint > vecEndPoint) {
             int hold = vecStartPoint;
             vecStartPoint = vecEndPoint;
@@ -1089,7 +1079,6 @@ public class DrawSpectrum {
         if (end > ((size + dataOffset) - 1)) {
             end = (size + dataOffset) - 1;
         }
-        //System.out.println((start - dataOffset) + " " + (end - dataOffset) + " " + dValue + " " + (dValue + delta * (end - start)));
         if (((Math.abs(ph0) > 1.0e-6) || (Math.abs(ph1) > 1.0e-6)) && !vec.isComplex()) {
             if (vec instanceof Vec) {
                 ((Vec) vec).hft();

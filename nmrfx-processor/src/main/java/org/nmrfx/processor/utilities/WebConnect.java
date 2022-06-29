@@ -17,6 +17,9 @@
  */
 package org.nmrfx.processor.utilities;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -25,6 +28,7 @@ import java.net.URL;
 
 public class WebConnect {
 
+    private static final Logger log = LoggerFactory.getLogger(WebConnect.class);
     static String webAddress = "https://nmrfx.org/downloads/version/version.txt";
 
     public static String getVersion() {
@@ -71,7 +75,7 @@ public class WebConnect {
                 try {
                     bufferedReader.close();
                 } catch (IOException ioe) {
-
+                    log.warn(ioe.getMessage(), ioe);
                 }
             }
         }

@@ -28,8 +28,12 @@ import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.structure.chemistry.predict.RNAAttributes;
 import org.nmrfx.structure.chemistry.predict.RNAStats;
 import org.nmrfx.structure.rna.SSLayout;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class SSViewer extends Pane {
+
+    private static final Logger log = LoggerFactory.getLogger(SSViewer.class);
 
     class AtomCoord {
 
@@ -104,12 +108,11 @@ public class SSViewer extends Pane {
     }
 
     public void drawSS() {
-        //System.out.println("refresh " + scene.getWidth() + " " + scene.getHeight());
         drawingGroup.getChildren().clear();
         try {
             layoutStructure(drawingGroup);
         } catch (Exception e) {
-            e.printStackTrace();
+            log.warn(e.getMessage(), e);
         }
     }
 
@@ -210,7 +213,6 @@ public class SSViewer extends Pane {
 //        stack.setAlignment(Pos.CENTER);     // Right-justify nodes in stack
 //        stack.setTranslateX(x - width / 2 + 1);
 //        stack.setTranslateY(y - width / 2 + 1);
-//        System.out.println("label " + text + " " + fontSize);
 //        atomMap.put(iRes + "", new AtomCoord(x, y));
 //        return stack;
     }
@@ -586,7 +588,6 @@ public class SSViewer extends Pane {
                 deltaX = deltaX * len2 / len1;
                 deltaY = deltaY * len2 / len1;
             }
-////            System.out.printf("%3d %1d %8.2f %8.2f %8.2f\n",iRes,mode, len1,deltaX,deltaY);
             if (ok) {
                 if ((mode != 0) && ((lastX != 0.0) || (lastY != 0.0))) {
                     double d1 = (deltaX - lastX) * (deltaX - lastX) + (deltaY - lastY) * (deltaY - lastY);
@@ -946,8 +947,7 @@ public class SSViewer extends Pane {
         sequence = null;
         basePairs = null;
         File file = new File(fileName);
-        try {
-            Scanner in = new Scanner(file);
+        try (Scanner in = new Scanner(file)){
             while (in.hasNextLine()) {
                 String line = in.nextLine();
                 String[] fields = line.split("\t");

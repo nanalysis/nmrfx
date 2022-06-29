@@ -128,13 +128,7 @@ public class ExtendNew extends Operation {
         if (calculateBackward) {
             Complex[] coefB = null;
             if (tlsMode) {
-//                for (int i = 0; i < 20; ++i)
-//                    System.out.println(vector.getComplex(i) + " ");
                 coefB = LinearPrediction.getCoefsByTLS(vector.getCvec(), start, m, n, threshold, true);
-//                System.out.println("coefB: ");
-//                for (int i = 0; i < coefB.length; ++i)
-//                    System.out.println(coefB[i]);
-//                System.out.println("end coefB");
             } else {
                 //FIXME implement this function
 //                coefB = calculateLPCoef(zInv, vector.getCvec(), start, m, n, threshold, true);
@@ -234,7 +228,6 @@ public class ExtendNew extends Operation {
             for (int j = 0; j < ncoef; j++) {
                 sum = sum.add(coef[j].multiply(vector.getComplex(endPred + 1 - i + j)));
             }
-            //System.out.println(i + " " + (endPred - i)  + " " + cvec[endPred - i].getReal()+" "+sum.getReal());
             vector.set(endPred - i, sum);
         }
     }
@@ -251,7 +244,6 @@ public class ExtendNew extends Operation {
             for (int j = 0; j < ncoef; j++) {
                 sum = sum.add(coef[j].multiply(vector.getComplex(startPred - ncoef + i + j)));
             }
-            //System.out.println(i + " " + (startPred + i) + " " + cvec[startPred + i].getReal() + " " + sum.getReal());
             vector.set(startPred + i, sum);
         }
     }

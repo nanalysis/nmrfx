@@ -14,6 +14,9 @@ import org.nmrfx.peaks.PeakDim;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.processor.datasets.peaks.PeakFitException;
 import org.nmrfx.processor.datasets.peaks.PeakFitter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import static org.nmrfx.processor.datasets.peaks.PeakListTools.FIT_ALL;
 import static org.nmrfx.processor.datasets.peaks.PeakListTools.FIT_AMPLITUDES;
 import static org.nmrfx.processor.datasets.peaks.PeakListTools.FIT_LW_AMPLITUDES;
@@ -25,6 +28,8 @@ import static org.nmrfx.processor.datasets.peaks.PeakListTools.FIT_RMS;
  * @author Bruce Johnson
  */
 public class PeakFitting {
+
+    private static final Logger log = LoggerFactory.getLogger(PeakFitting.class);
 
     final Dataset dataset;
     boolean success = false;
@@ -158,19 +163,22 @@ public class PeakFitting {
             if ((bounds == null) && (multiplet != null)) {
                 bounds = Multiplets.getBoundsOfPeakDims(multiplet.getAbsComponentList(), 1.5, regionShift);
             }
-            int[] dims = {0};
-            double[][] limits = new double[1][2];
-            limits[0][0] = bounds[0];
-            limits[0][1] = bounds[1];
-            List<Peak> peaks = peak.peakList.locatePeaks(limits, dims);
-            List<PeakDim> peakDims = new ArrayList<>();
-            for (Peak peakA : peaks) {
-                peakDims.add(peakA.getPeakDim(0));
+            if (bounds != null) {
+                int[] dims = {0};
+                double[][] limits = new double[1][2];
+                limits[0][0] = bounds[0];
+                limits[0][1] = bounds[1];
+                List<Peak> peaks = peak.peakList.locatePeaks(limits, dims);
+                List<PeakDim> peakDims = new ArrayList<>();
+                for (Peak peakA : peaks) {
+                    peakDims.add(peakA.getPeakDim(0));
+                }
+                value = fitPeakDims(peakDims, mode, bounds, fitMode);
+            } else {
+                log.warn("Unable to get bounds to fit peaks.");
             }
-
-            value = fitPeakDims(peakDims, mode, bounds, fitMode);
         } catch (PeakFitException | IOException | IllegalArgumentException e) {
-            System.out.println(e.getMessage());
+            log.warn(e.getMessage());
         }
         return value;
     }
@@ -296,7 +304,6 @@ public class PeakFitting {
                                     break;
                                 }
                                 double delta = (Math.abs(value - previous) / previous);
-//                                System.out.printf("%d %10.6f %10.6f %10.6f\n", iTry, previous, value, delta);
                                 if (delta < 1.0e-3) {
                                     break;
                                 }

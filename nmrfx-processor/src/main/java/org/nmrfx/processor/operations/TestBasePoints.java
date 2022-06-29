@@ -110,16 +110,12 @@ public class TestBasePoints implements MultivariateFunction {
             }
 
         }
-        //System.out.println(minPhase0);//+minPhase1);
         double phases[] = minZero(minPhase0 - stepSize0, minPhase0 + stepSize0);
-        //   System.out.println(phases[0]+" "+phases[1]);
 //        genTest(phases[0], 0.0);
 //        int checkSign = getNetSign();
         int checkSign = getSign(phases[0], 0.0);
 
-        //System.out.println(netSign);
         if (checkSign < 0) {
-            //System.out.println("0.001");
             phases[0] += 180.0;
         }
 
@@ -129,8 +125,7 @@ public class TestBasePoints implements MultivariateFunction {
         while (phases[0] < -180) {
             phases[0] += 360.0;
         }
-        //for (int i = 0; i < phases.length; ++i)
-        //    System.out.println(phases[i]);
+
         return phases;
 
     }
@@ -167,7 +162,6 @@ public class TestBasePoints implements MultivariateFunction {
                     continue;
                 }
                 double aVal = testEnds(phase0, phase1);
-//         System.out.println("test "+aVal + " " + phase0+" "+phase1);
 
                 if (aVal < minRMSD) {
                     minRMSD = aVal;
@@ -182,7 +176,6 @@ public class TestBasePoints implements MultivariateFunction {
                 minPhase0 + stepSize0 / 2, minPhase1 - stepSize1 / 2,
                 minPhase1 + stepSize1 / 2);
         int checkSign = getSign(phases[0], phases[1]);
-        //System.out.println(netSign);
         if (checkSign < 0) {
             phases[0] += 180.0;
         }
@@ -216,7 +209,6 @@ public class TestBasePoints implements MultivariateFunction {
         }
         boolean currentBaseline = true;
         bListTemp.add(startBase);
-        // System.out.println(startBase+" base");
         int lastBaseline = 0;
         for (int i = startBase; i <= end; i++) {
             if (currentBaseline) {
@@ -300,7 +292,6 @@ public class TestBasePoints implements MultivariateFunction {
         if (end >= (vector.getSize() - edgeSize)) {
             end = vector.getSize() - edgeSize;
         }
-        //System.out.println(start+" "+end);
         //dumpBase();
 
         //   dumpBase();
@@ -315,7 +306,6 @@ public class TestBasePoints implements MultivariateFunction {
         boolean currentBaseline = true;
         ArrayList<Integer> bListTemp = new ArrayList<>();
         bListTemp.add(startBase);
-        // System.out.println(startBase+" base");
         int lastBaseline = 0;
         for (int i = startBase; i <= end; i++) {
             if (currentBaseline) {
@@ -334,7 +324,6 @@ public class TestBasePoints implements MultivariateFunction {
             bListTemp.add(lastBaseline);
         }
         if (bListTemp.size() < 4) {
-            // System.out.println("blistsize "+bList.size());
             return;
         }
 
@@ -401,7 +390,6 @@ public class TestBasePoints implements MultivariateFunction {
             double re = Math.cos(p * DEGTORAD);
             double im = -Math.sin(p * DEGTORAD);
             testVec.set(i, (rvec[i] * re) - (ivec[i] * im));
-            //System.out.println(testVec.get(i));
 
         }
     }
@@ -452,7 +440,6 @@ public class TestBasePoints implements MultivariateFunction {
         f2 = testEnds(x2);
 
         while (Math.abs(x3 - x0) > 1.0) {
-            //System.out.println(x1+" "+f1+ " "+x2+" "+f2);
             if (f2 < f1) {
                 x0 = x1;
                 x1 = x2;
@@ -662,7 +649,6 @@ public class TestBasePoints implements MultivariateFunction {
             if (r2End > end2) {
                 r2End = end2;
             }
-//            System.out.println(start1 + " " + r1Start + " " + end1 + " " + start2 + " " + r2End + " " + end2);
 
             int regionSize = 0;
             DescriptiveStatistics rStat = new DescriptiveStatistics();
@@ -717,7 +703,6 @@ public class TestBasePoints implements MultivariateFunction {
             regionCenter = (start2 + r2End) / 2;
             RegionData region2 = new RegionData(meanR, meanI, regionCenter, regionSize);
             BRegionData bRD = new BRegionData(region1, region2, absMax, centerPos, centerR, centerI);
-            //    System.out.println(bRD);
             if (maxMode) {
                 if (absMax > max) {
                     max = absMax;
@@ -789,14 +774,12 @@ public class TestBasePoints implements MultivariateFunction {
                 re = Math.cos(p * DEGTORAD);
                 im = -Math.sin(p * DEGTORAD);
                 value2 = (meanR2 * re) - (meanI2 * im);
-                //    System.out.println(center1+" "+center2+" "+dDelta+" "+value1+" "+value2);
             }
 
             double delta = value2 - value1;
             // PAR
             sum += (delta * delta) * Math.sqrt(Math.abs(sigMax));
         }
-        //System.out.println(nRegions + " " + p0 + " " + p1 + " " + sum);
         return sum;
     }
 
@@ -843,7 +826,6 @@ public class TestBasePoints implements MultivariateFunction {
             // PAR
             sum += (delta * delta) * Math.sqrt(Math.abs(regData.max));
         }
-        //  System.out.println(p0+" "+p1+" "+sum);
         return sum;
     }
 
@@ -1065,7 +1047,6 @@ public class TestBasePoints implements MultivariateFunction {
         }
         penalty *= negativePenalty * 1.0e7;
         double result = entropy + penalty;
-        //System.out.println(n + " " + p0 + " " + p1 + " " + penalty + " " + entropy + " " + result);
 
         return result;
 
@@ -1076,7 +1057,6 @@ public class TestBasePoints implements MultivariateFunction {
         ArrayList<Double> valuesM = new ArrayList<>();
         //double sdev = VecMat.sdev(testVec.getRvec(), testVec.getSize(), 16, 4);
         double sdev = Util.sdev(testVec, 16, 4);
-        //System.out.println(sdev);
         double threshold = 50.0 * sdev;
         for (RegionPositions rPos : bList) {
             int start1 = rPos.base1;
@@ -1095,13 +1075,8 @@ public class TestBasePoints implements MultivariateFunction {
             for (int j = start2; j < oneThird2; j++) {
                 sum += testVec.getReal(j);
                 totalPoints++;
-                //System.out.println(sum);
             }
-            //System.out.println("end sum");
-            //System.out.println("total Points: " + totalPoints);
             double edgeMeans = totalPoints == 0 ? 0.0 : sum / totalPoints;
-            //System.out.println(mean);
-            //System.out.println(sum);
 
             double max = 0.0;
             for (int j = end1; j < start2; j++) {
@@ -1110,7 +1085,6 @@ public class TestBasePoints implements MultivariateFunction {
                     max = delta;
                 }
             }
-            //System.out.println(end1+" "+start2+" "+max+" "+threshold);
             if (Math.abs(max) > threshold) {
                 if (max > 0.0) {
                     valuesP.add(max);
@@ -1160,7 +1134,6 @@ public class TestBasePoints implements MultivariateFunction {
                 sumMinus += FastMath.sqrt(-value);
             }
         }
-//        System.out.println(sumPlus + " " + sumMinus);
         if (sumMinus > sumPlus) {
             return -1;
         } else {

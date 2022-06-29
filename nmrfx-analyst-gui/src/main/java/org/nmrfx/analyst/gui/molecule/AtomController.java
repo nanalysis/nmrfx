@@ -61,6 +61,8 @@ import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.structure.chemistry.predict.BMRBStats;
 import org.nmrfx.structure.chemistry.predict.ProteinPredictor;
 import org.nmrfx.utils.GUIUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -75,6 +77,7 @@ import java.util.*;
  * @author johnsonb
  */
 public class AtomController implements Initializable, FreezeListener {
+    private static final Logger log = LoggerFactory.getLogger(AtomController.class);
 
     static final DecimalFormat formatter = new DecimalFormat();
     static final Map<String, String> filterMap = new HashMap<>();
@@ -478,6 +481,7 @@ public class AtomController implements Initializable, FreezeListener {
             try {
                 Molecule.selectAtomsForTable(molFilter, atoms);
             } catch (InvalidMoleculeException ex) {
+                log.warn(ex.getMessage(), ex);
             }
         }
         atomTableView.setItems(atoms);
@@ -553,7 +557,7 @@ public class AtomController implements Initializable, FreezeListener {
             try {
                 predictor.predictRandom(mol, -1);
             } catch (IOException ioE) {
-
+                log.warn(ioE.getMessage(), ioE);
             }
 
         }

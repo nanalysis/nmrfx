@@ -25,9 +25,12 @@ import org.nmrfx.chemistry.Polymer;
 import org.nmrfx.chemistry.Residue;
 import org.nmrfx.chemistry.InvalidMoleculeException;
 import org.nmrfx.structure.chemistry.Molecule;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class SSLayout implements MultivariateFunction {
 
+    private static final Logger log = LoggerFactory.getLogger(SSLayout.class);
     private final int[][] interactions;
     private final int[] basePairs;
     private final int[] basePairs2;
@@ -179,8 +182,12 @@ public class SSLayout implements MultivariateFunction {
     }
 
     public void dumpPairs() {
-        for (int i = 0; i < basePairs.length; i++) {
-            System.out.printf("%4d %4d\n", i, basePairs[i]);
+        if (log.isDebugEnabled()) {
+            StringBuilder pairStr = new StringBuilder();
+            for (int i = 0; i < basePairs.length; i++) {
+                pairStr.append(String.format("%4d %4d%n", i, basePairs[i]));
+            }
+            log.debug(pairStr.toString());
         }
     }
 
@@ -200,16 +207,13 @@ public class SSLayout implements MultivariateFunction {
                     }
                 }
             }
-            //for (int i=0;i<nNuc;i++) {
-            //System.out.printf("%d %d %d\n",i,basePairs[i],basePairs2[i]);
-            //}
+
             for (int i = 0; i < (nNuc - 1); i++) {
                 int pos = 0;
                 int loopSize = 0;
                 int gapSize = 0;
                 int bulgeSize = 0;
                 int loopStart = -1;
-                //System.out.println(i + " " + basePairs[i]);
                 if (basePairs[i] == -1) {
                     for (int j = i - 1; j >= 0; j--) {
                         if (basePairs[j] != -1) {
@@ -218,14 +222,12 @@ public class SSLayout implements MultivariateFunction {
                             break;
                         }
                     }
-                    //System.out.println(loopStart);
                     for (int j = i + 1; j < nNuc; j++) {
                         if ((basePairs[j] != -1) && (loopStart != -1)) {
                             if (basePairs[loopStart] == j) {
                                 loopSize = j - loopStart - 1;
                             } else if (basePairs[loopStart] == (basePairs[j] + 1)) {
                                 bulgeSize = j - loopStart - 1;
-                                //System.out.println("bulge "+bulgeSize + " " + pos + " " + i);
                                 if (bulgeSize == 2) {
                                     baseBondLength[i - 1] = targetSeqDistance * 0.75;
                                     if (i > 1) {
@@ -244,7 +246,6 @@ public class SSLayout implements MultivariateFunction {
                         }
                     }
                 }
-                //System.err.println("loop " + i + " " + loopSize + " " + gapSize);
                 if (loopSize != 0) {
                     double interiorAngle = Math.PI * loopSize / (loopSize + 2);
                     double target;
@@ -257,19 +258,16 @@ public class SSLayout implements MultivariateFunction {
                         double endTarget = -(Math.PI - interiorAngle);
                         angleTargets[i - 1] = endTarget;
                         angleFixed[i - 1] = true;
-                        //System.err.println((i-1)+" " + pos + " " + loopSize + " " + (angleTargets[i-1]*180.0/Math.PI));
                         endTarget = (interiorAngle - Math.PI / 2.0);
                         if (i < angleTargets.length) {
                             angleTargets[i] = endTarget;
                             angleFixed[i] = true;
                         }
-                        //System.err.println((i)+" " + pos + " " + loopSize + " " + (angleTargets[i-1]*180.0/Math.PI));
                     }
                     if (i > 1) {
                         angleTargets[i - 2] = target;
                         angleFixed[i - 2] = true;
                     }
-                    //System.err.println((i-2)+" " + pos + " " + loopSize + " " + (angleTargets[i-2]*180.0/Math.PI));
                 } else if (gapSize > 4) {
                     boolean free = false;
                     if ((pos % 3) == 0) {
@@ -285,12 +283,11 @@ public class SSLayout implements MultivariateFunction {
                         angleFixed[i - 2] = true;
                         angleRelations[i - 2] = 1;
                     }
-                    System.err.println("gap " + pos + " " + free);
+                    log.warn("gap {} {}", pos, free);
                 }
             }
         } catch (ArrayIndexOutOfBoundsException aiE) {
-            aiE.printStackTrace();
-            return;
+            log.warn(aiE.getMessage(), aiE);
         }
     }
 
@@ -383,13 +380,11 @@ public class SSLayout implements MultivariateFunction {
             }
 
         } catch (ArrayIndexOutOfBoundsException aiE) {
-            aiE.printStackTrace();
-            return;
+            log.warn(aiE.getMessage(), aiE);
         }
     }
 
     void setXY(int i, double x, double y) {
-//        System.out.printf("setxy %3d %4.1f %4.1f\n", i, x, y);
         coords[0][i] = x;
         coords[1][i] = y;
         nSet++;
@@ -451,8 +446,6 @@ public class SSLayout implements MultivariateFunction {
         double jy1 = coords[1][j + 1];
         double dX = ix1 - jx1;
         double dY = iy1 - jy1;
-        // System.out.println(i + " " + j);
-        // System.out.printf("ix %3.1f iy %3.1f jx %3.1f jy %3.1f dx %3.1f dy %3.1f\n", ix1, iy1, jx1, jy1, dX, dY);
         if (!coordsSet[i]) {
             ssClass[i] = 1;
             setXY(i, ix1 + dY, iy1 - dX);
@@ -479,7 +472,6 @@ public class SSLayout implements MultivariateFunction {
 
             double dX = bx0 - bx1;
             double dY = by0 - by1;
-            //System.out.printf("x0 %3.1f y0 %3.1f x1 %3.1f y1 %3.1f dx %3.1f dy %3.1f\n", bx0, by0, bx1, by1, dX, dY);
             double curAngle = Math.atan2(dY, dX);
             double interiorAngle = Math.PI * (loopSize - 2) / loopSize;
             double angle = interiorAngle + curAngle;
@@ -487,7 +479,6 @@ public class SSLayout implements MultivariateFunction {
             double cos = Math.cos(angle);
             dX = cos * targetSeqDistance;
             dY = sin * targetSeqDistance;
-            //System.out.printf("cang %3.1f iang %3.1f ang %3.1f dx %3.1f dy %3.1f\n", curAngle * 180.0 / Math.PI, interiorAngle * 180.0 / Math.PI, angle * 180.0 / Math.PI, dX, dY);
             coords[0][b2] = bx1 + dX;
             coords[1][b2] = by1 + dY;
             if (!coordsSet[b2]) {
@@ -575,7 +566,6 @@ public class SSLayout implements MultivariateFunction {
                 if (nucChain[iNuc] != nucChain[iNuc + 1]) {
                     sBreak = true;
                 }
-                //System.out.println(i + " iNuc " + iNuc + " " + nucChain[iNuc] + " " + nucChain[iNuc+1]);
             }
             boundaries[0][i] = -Math.PI / 2;
             boundaries[1][i] = Math.PI / 2;
@@ -598,8 +588,12 @@ public class SSLayout implements MultivariateFunction {
     }
 
     public void dumpAngles(double[] pars) {
-        for (int i = 0; i < pars.length; i++) {
-            System.err.printf("%3d %.1f %.1f %.1f %.1f 5 %.1f\n", i, boundaries[0][i] * 180.0 / Math.PI, boundaries[1][i] * 180.0 / Math.PI, pars[i] * 180.0 / Math.PI, (inputSigma[i] * 180.0 / Math.PI), (angleTargets[i] * 180.0 / Math.PI));
+        if (log.isDebugEnabled()) {
+            StringBuilder angleStr = new StringBuilder();
+            for (int i = 0; i < pars.length; i++) {
+                angleStr.append(String.format("%3d %.1f %.1f %.1f %.1f 5 %.1f%n", i, boundaries[0][i] * 180.0 / Math.PI, boundaries[1][i] * 180.0 / Math.PI, pars[i] * 180.0 / Math.PI, (inputSigma[i] * 180.0 / Math.PI), (angleTargets[i] * 180.0 / Math.PI)));
+            }
+            log.debug(angleStr.toString());
         }
     }
 
@@ -757,14 +751,12 @@ public class SSLayout implements MultivariateFunction {
          for (int i=0;i<pars.length;i++) {
          if (angleTargets[i] > -999.0) {
          double delta = Math.abs(angleTargets[i]-pars[i]);
-         //System.err.printf("%3d %.1f %.1f %.1f\n",i,angleTargets[i]*180.0/Math.PI,pars[i]*180.0/Math.PI,(delta*180.0/Math.PI));
          sumAngle += delta*delta;
          }
          }
          */
         double value = sumPairError + sumNBError + sumAngle + nIntersections * 100.0;
         //double value = sumPairError+sumNBError + sumAngle + nIntersections*10.0;
-        //System.err.printf("%3d %3d %3d %7.3f %7.3f %7.3f %2d %7.3f\n",limit,nNuc, nFree,  sumPairError, sumNBError, sumAngle,nIntersections, value);
         return value;
     }
 
@@ -775,7 +767,7 @@ public class SSLayout implements MultivariateFunction {
             guess[i] = -1.0 * Math.PI / angleValues.length / 5;
         }
         double value = value(guess);
-        System.err.println("start value " + value + " free " + nFree);
+        log.info("start value {} free {}", value, nFree);
         // dumpAngles(guess);
         PointValuePair result = null;
         if (nFree > 0) {
@@ -818,60 +810,24 @@ public class SSLayout implements MultivariateFunction {
                         DEFAULT_RANDOMGENERATOR, true,
                         new SimpleValueChecker(100 * Precision.EPSILON, 100 * Precision.SAFE_MIN));
 
-                try {
-                    result = optimizer.optimize(
-                            new CMAESOptimizer.PopulationSize(lambda),
-                            new CMAESOptimizer.Sigma(lSigma), new MaxEval(2000000),
-                            new ObjectiveFunction(this), GoalType.MINIMIZE,
-                            new SimpleBounds(lboundaries[0], lboundaries[1]),
-                            new InitialGuess(lguess));
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-                System.err.println(limit + " " + optimizer.getIterations() + " " + result.getValue());
-                //dumpAngles(result.getPoint());
+                result = optimizer.optimize(
+                        new CMAESOptimizer.PopulationSize(lambda),
+                        new CMAESOptimizer.Sigma(lSigma), new MaxEval(2000000),
+                        new ObjectiveFunction(this), GoalType.MINIMIZE,
+                        new SimpleBounds(lboundaries[0], lboundaries[1]),
+                        new InitialGuess(lguess));
+                log.info("{} {} {}", limit, optimizer.getIterations(), result.getValue());
                 System.arraycopy(result.getPoint(), 0, guess, 0, result.getPoint().length);
                 value = result.getValue();
             }
         }
-        if (result != null) {
-            //dumpCoordinates(result.getPoint());
-        } else {
-            result = new PointValuePair(guess, value);
-            //dumpCoordinates(guess);
-        }
-        return result;
+
+        return result != null ? result : new PointValuePair(guess, value);
     }
 
     public void calcLayout(int nSteps) {
         PointValuePair result = refineCMAES(nSteps, 0.0, 0.5, 1.0, 0);
         getFullCoordinates(result.getPoint());
-    }
-
-    public void dumpCoordinates(double[] pars) {
-        getFullCoordinates(pars);
-    }
-
-    public void dumpCoordinates() {
-        double sumX = 0.0;
-        double sumY = 0.0;
-        for (int i = 0; i < nNuc; i++) {
-            sumX += values[i * 2];
-            sumY += values[i * 2 + 1];
-        }
-        double centerX = sumX / nNuc;
-        double centerY = sumY / nNuc;
-        for (int i = 0; i < nNuc; i++) {
-//            values[i*2] -= centerX;
-            //           values[i*2+1] -= centerY;
-            System.out.printf("%.3f\t%.3f\n", values[i * 2], values[i * 2 + 1]);
-        }
-    }
-
-    public void dumpCoordinatesNew() {
-        for (int i = 0; i < nNuc; i++) {
-            System.out.printf("%3d %.3f\t%.3f\n", i, coords[0][i], coords[1][i]);
-        }
     }
 
     public void interpVienna(String vienna) {
@@ -893,13 +849,12 @@ public class SSLayout implements MultivariateFunction {
                         levels[rightIndex]--;
                         int start = levelMap[levels[rightIndex]][rightIndex];                        
                         int end = i;
-                        //System.err.println(start + " <> " + end);
                         addPair(start, end);
 
                     }
                 }
             } catch (ArrayIndexOutOfBoundsException aiE) {
-                aiE.printStackTrace();
+                log.warn(aiE.getMessage(), aiE);
                 return;
             }
         } 
@@ -924,7 +879,6 @@ public class SSLayout implements MultivariateFunction {
                         levels[rightIndex]--;
                         int start = levelMap[levels[rightIndex]][rightIndex];                        
                         int end = i;
-                        //System.err.println(start + " <> " + end);
                         addPair(start, end);
                         res.get(start).pairedTo = res.get(end);
                         res.get(end).pairedTo = res.get(start);
@@ -932,7 +886,7 @@ public class SSLayout implements MultivariateFunction {
                     }
                 }
             } catch (ArrayIndexOutOfBoundsException aiE) {
-                aiE.printStackTrace();
+                log.warn(aiE.getMessage(), aiE);
                 break;
             }
         }
@@ -956,21 +910,8 @@ public class SSLayout implements MultivariateFunction {
         SSLayout ssLayout = new SSLayout(vienna.length());
         ssLayout.interpVienna(vienna);
         ssLayout.dumpPairs();
-        /*
-         ssLayout.addPair(1,20);
-         ssLayout.addPair(2,19);
-         ssLayout.addPair(3,18);
-         ssLayout.addPair(4,17);
-         ssLayout.addPair(5,16);
-         ssLayout.addPair(6,15);
-         ssLayout.addPair(7,14);
-         ssLayout.addPair(8,13);
-         */
         ssLayout.fillPairs();
         System.out.println("nf " + ssLayout.nFree);
-//        ssLayout.refineCMAES(30000,0.01,0.5,1.0,100);
-        //PointValuePair result = ssLayout.refineCMAES(1000, 1.0, 0.5, 1.0, 0);
-        //ssLayout.dumpCoordinates(result.getPoint());
-        //ssLayout.dumpCoordinates();
+
     }
 }

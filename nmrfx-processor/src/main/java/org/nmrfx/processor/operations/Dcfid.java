@@ -39,7 +39,6 @@ public class Dcfid extends Operation {
     }
 
     private void dcfid(Vec vector) throws OperationException {
-        //System.out.println("performing dcfid");
         int i;
         int width;
         double sum_re = 0.0;

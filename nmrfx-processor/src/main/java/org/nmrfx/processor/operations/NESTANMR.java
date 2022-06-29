@@ -29,6 +29,7 @@ import org.nmrfx.processor.math.NESTAMath;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.processing.ProcessingException;
 import org.nmrfx.processor.processing.SampleSchedule;
+
 import java.io.File;
 import java.util.ArrayList;
 
@@ -155,7 +156,6 @@ public class NESTANMR extends MatrixOperation {
             NESTAMath nesta = new NESTAMath(matrixND, zeroList, outerIterations, innerIterations, tolFinal, muFinal, phase, zeroAtStart, threshold, logFile);
             nesta.doNESTA();
         } catch (Exception e) {
-            e.printStackTrace();
             throw new ProcessingException(e.getLocalizedMessage());
 
         }

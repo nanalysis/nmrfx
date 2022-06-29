@@ -167,7 +167,6 @@ public class LorentzIWJ_f77 implements Lmdif_fcn {
     }
 
     public final void initpt(double[] a) {
-        //   System.out.println("initpt");
         aCalc = new double[nPar + 1];
         map = new int[a.length];
         for (int i = 0; i < a.length; i++) {
@@ -177,12 +176,10 @@ public class LorentzIWJ_f77 implements Lmdif_fcn {
     }
 
     public final void initLWAmpFit(double[] a) {
-        //  System.out.println("init lwamp");
         nFit = xy_nsig;
         map = new int[a.length];
         for (int iSig = 0; iSig < xy_nsig; iSig++) {
             int start = sigStarts[iSig];
-            // System.out.println(iSig+" "+start+" "+a[iSig]);
             // aCalc[start] = a[iSig];
             map[iSig + 1] = start;
         }
@@ -210,7 +207,6 @@ public class LorentzIWJ_f77 implements Lmdif_fcn {
 
     public void fcn(int m, int n, double[] a, double[] fvec, int[] iflag) {
         for (int i = 1; i <= n; i++) {
-            //  System.out.println(i+" "+map[i]+" "+aCalc[map[i]]);
             aCalc[map[i]] = a[i];
         }
 
@@ -669,7 +665,6 @@ public class LorentzIWJ_f77 implements Lmdif_fcn {
                 amplitudes[iSig][iLine] = -1.0;
             }
 
-            //   System.out.print(" "+iLine+" "+amplitudes[iSig][iLine]+" "+freqs[iSig][iLine]);
         }
 
         return start;
@@ -762,6 +757,5 @@ public class LorentzIWJ_f77 implements Lmdif_fcn {
         //minimizer.dumpXY();
         //      minimizer.randomizeGuess(0.5);
         //minimizer.doMin();
-        //System.out.println(minimizer.rms());
     }
 }

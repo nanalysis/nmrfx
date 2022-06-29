@@ -223,7 +223,6 @@ public class JeolDelta implements NMRData {
             ref = refValue[dim];
         } else {
             ref = parMap.get(axisNames[dim] + "_OFFSET").getDouble();
-            //System.out.println("update ref " + ref + " " + (sw[dim] / sf[dim] / 2.0));
             // ref = ref + sw[dim] / sf[dim] / 2.0;
             refValue[dim] = ref;
 
@@ -567,7 +566,7 @@ public class JeolDelta implements NMRData {
             if (type.equals("B")) {
                 return values[start];
             } else {
-                Number[] nums = convert(values);
+                Number[] nums = convertNumber(values);
                 return nums[0].intValue();
             }
         }
@@ -576,32 +575,15 @@ public class JeolDelta implements NMRData {
             if (type.equals("B")) {
                 return values[start + i];
             } else {
-                Number[] nums = convert(values);
+                Number[] nums = convertNumber(values);
                 return nums[i].intValue();
             }
         }
 
-        Number[] convert(byte[] values) {
-
-            if (type.startsWith("a")) {
-                convertStr(values);
-                return null;
-            } else if (type.startsWith("B")) {
-                convertBytes(values);
-                return null;
-            } else if (type.startsWith("S")) {
-                convertUnits(values);
-                return null;
-            } else if (type.startsWith("b")) {
-                convertBits(values);
-                return null;
-            } else if (type.startsWith("T")) {
-                convertTime(values);
-                return null;
-            } else {
-                Number[] result = ByteConversion.convert(values, type, start, n);
-                return result;
-            }
+        Number[] convertNumber(byte[] values) {
+            // Note: method was incomplete for conversion of other datatypes and no data available at the time to check
+            // functionality so incomplete code was removed in commit 832d627beb1f505f12cbaef5210c6d75c7cf8ef0
+            return ByteConversion.convert(values, type, start, n);
         }
 
         String[] convertStr(byte[] values) {
@@ -723,12 +705,12 @@ public class JeolDelta implements NMRData {
         int dataLength = JeolPars.Data_Length.getInteger(header);
         int dataStop = dataStart + dataLength - 1;
         nDim = JeolPars.Data_Dimension_Number.getInteger(header);
-        nPoints = JeolPars.Data_Points.convert(header)[0].intValue();
+        nPoints = JeolPars.Data_Points.convertNumber(header)[0].intValue();
         subMatrixPointCount = subMatrixEdges[nDim - 1];
         axes = new JeolDeltaAxis[nDim];
         dimSizes = new int[nDim];
         int nV = 1;
-        Number[] headerDimSizes = JeolPars.Data_Points.convert(header);
+        Number[] headerDimSizes = JeolPars.Data_Points.convertNumber(header);
         for (int iDim = 0; iDim < nDim; iDim++) {
             int dimSize = headerDimSizes[iDim].intValue();
             dimSizes[iDim] = dimSize;
@@ -795,13 +777,9 @@ public class JeolDelta implements NMRData {
     }
 
     void parseHeader(byte[] bytes) {
-        for (JeolPars jPars : JeolPars.values()) {
-            Number[] values = jPars.convert(bytes);
-        }
         int parStart = JeolPars.Param_Start.getInteger(bytes);
         int parLength = JeolPars.Param_Length.getInteger(bytes);
         loadParams(parStart, parLength);
-        // dumpPars();
     }
 
     String getString(ByteBuffer byteBuffer, int valueStart, int nChars) {
@@ -863,8 +841,12 @@ public class JeolDelta implements NMRData {
     }
 
     public void dumpPars() {
-        for (String key : parMap.keySet()) {
-            System.out.println(parMap.get(key));
+        if (log.isDebugEnabled()) {
+            StringBuilder parString = new StringBuilder();
+            for (String key : parMap.keySet()) {
+                parString.append(parMap.get(key)).append(System.lineSeparator());
+            }
+            log.debug(parString.toString());
         }
     }
 
@@ -947,8 +929,7 @@ public class JeolDelta implements NMRData {
             raFile.seek(newPos);
             raFile.read(dataBytes, 0, length);
         } catch (IOException e) {
-            System.err.println("Unable to read from dataset.");
-            System.err.println(e.getMessage());
+            log.warn("Unable to read from dataset. {}", e.getMessage(), e);
         }
     }
 
@@ -972,7 +953,6 @@ public class JeolDelta implements NMRData {
             position[iDim] = i;
             int pos = getPositionInStrip(position);
             vector[j++] = strips[iSection].doubleBuffer.get(pos);
-            // System.out.println(i + " " + pos + " " + iSection + " " + strips[iSection].doubleBuffer.capacity() + " " + vector[j - 1]);
         }
         return vector;
     }

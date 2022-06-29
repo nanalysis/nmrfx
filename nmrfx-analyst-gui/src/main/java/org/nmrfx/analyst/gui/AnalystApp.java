@@ -50,6 +50,7 @@ import org.nmrfx.peaks.PeakLabeller;
 import org.nmrfx.plugin.api.EntryPoint;
 import org.nmrfx.processor.gui.*;
 import org.nmrfx.processor.gui.log.Log;
+import org.nmrfx.processor.gui.log.LogConsoleController;
 import org.nmrfx.processor.gui.project.GUIProject;
 import org.nmrfx.processor.gui.spectra.KeyBindings;
 import org.nmrfx.processor.gui.spectra.WindowIO;
@@ -154,6 +155,7 @@ public class AnalystApp extends MainApp {
         interpreter.set("argv", parameters.getRaw());
         interpreter.exec("parseArgs(argv)");
         ConsoleController.create(interpreter, "NMRFx Console");
+        LogConsoleController.create();
         PeakPicking.registerSinglePickAction(this::pickedPeakAction);
         PeakMenuBar.addExtra("Add Residue Prefix", PeakLabeller::labelWithSingleResidueChar);
         PeakMenuBar.addExtra("Remove Residue Prefix", PeakLabeller::removeSingleResidueChar);
@@ -348,13 +350,13 @@ public class AnalystApp extends MainApp {
         if (viewMenuActions != null) {
             viewMenuActions.activateAdvanced();
         }
-        addAdvancedtools();
-        advancedIsActive = true;
+        if (!advancedIsActive) {
+            addAdvancedTools();
+            advancedIsActive = true;
+        }
         if (startAdvancedItem != null) {
             startAdvancedItem.setDisable(true);
         }
-
-
     }
 
     public void readMolecule(String type) {
@@ -397,7 +399,7 @@ public class AnalystApp extends MainApp {
         }
     }
 
-    private void addAdvancedtools() {
+    private void addAdvancedTools() {
         for (var controller: FXMLController.getControllers()) {
             addAdvancedTools(controller.getStatusBar());
         }
