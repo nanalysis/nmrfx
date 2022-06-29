@@ -1748,17 +1748,15 @@ public class Molecule extends MoleculeBase {
 
         return list;
     }
-    public List<Atom> getAtomsWithProperty(String propertyName) {
 
+    public List<Atom> getAtomsWithProperty(String propertyName) {
         List<Atom> list = new ArrayList<>();
         updateAtomArray();
         for (Atom atom : atoms) {
             Object prop = atom.getProperty(propertyName);
-            if ((prop != null) && prop instanceof Boolean) {
-                if (((Boolean) prop).booleanValue()) {
-                    SpatialSet spatialSet = atom.getSpatialSet();
-                    list.add(spatialSet.getAtom());
-                }
+            if ((prop instanceof Boolean) && ((Boolean) prop)) {
+                SpatialSet spatialSet = atom.getSpatialSet();
+                list.add(spatialSet.getAtom());
             }
         }
         return list;
