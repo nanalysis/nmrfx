@@ -216,11 +216,11 @@ public class PeakGenerator {
 
     public void generateHSQC(PeakList peakList, int parentElement) {
         Atom[] atoms = new Atom[2];
-        molecule.getAtoms().stream().
-                filter(atom -> atom.getAtomicNumber() == 1).
-                filter(atom -> !atom.isMethyl() || atom.isFirstInMethyl()).
-                filter(atom -> atom.getParent() != null && atom.getParent().getAtomicNumber() == parentElement).
-                forEach(atom -> {
+        molecule.getAtoms().stream()
+                .filter(atom -> atom.getAtomicNumber() == 1)
+                .filter(atom -> !atom.isMethyl() || atom.isFirstInMethyl())
+                .filter(atom -> atom.getParent() != null && atom.getParent().getAtomicNumber() == parentElement)
+                .forEach(atom -> {
                             atoms[0] = atom;
                             atoms[1] = atom.getParent();
                             double intensity = atom.isMethyl() ? 3.0 : 1.0;
