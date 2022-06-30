@@ -1,26 +1,23 @@
 package org.nmrfx.structure.chemistry.energy;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-
 import org.nmrfx.chemistry.*;
-import org.nmrfx.structure.chemistry.Molecule;
-import org.nmrfx.structure.chemistry.CoordinateGenerator;
 import org.nmrfx.chemistry.search.MNode;
 import org.nmrfx.chemistry.search.MTree;
+import org.nmrfx.structure.chemistry.CoordinateGenerator;
+import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.structure.chemistry.ring.HanserRingFinder;
-import org.nmrfx.chemistry.Ring;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.*;
 
 /**
  *
  * @author Bruce Johnson
  */
 public class AngleTreeGenerator {
+    private static final Logger log = LoggerFactory.getLogger(AngleTreeGenerator.class);
 
-    static final double TO_RAD = 180.0 / Math.PI;
     Map<Atom, Map<Atom, Double>> ringClosures;
     List<Bond> closureBonds = new ArrayList<>();
     List<Atom> atomPathList = new ArrayList<>();
@@ -66,7 +63,7 @@ public class AngleTreeGenerator {
         molecule.setRingClosures(aTreeGen.getRingClosures());
     }
 
-    class BondSort implements Comparable<BondSort> {
+    static class BondSort implements Comparable<BondSort> {
 
         final Bond bond;
         final MNode mNode;
@@ -90,8 +87,8 @@ public class AngleTreeGenerator {
     public Atom findStartAtom(ITree itree) {
         List<Atom> atoms = itree.getAtomArray();
         Atom startAtom = null;
-        if (itree instanceof Entity && (Entity) itree instanceof Polymer) {
-            Polymer polymer = (Polymer) (Entity) itree;
+        if (itree instanceof Entity && itree instanceof Polymer) {
+            Polymer polymer = (Polymer) itree;
             startAtom = polymer.getFirstResidue().getFirstBackBoneAtom();
         } else {
             for (Atom atom : atoms) {
@@ -122,7 +119,7 @@ public class AngleTreeGenerator {
             }
         } else {
             if (!checkStartAtom(startAtom)) {
-                //throw new IllegalArgumentException("Start atom has more than 1 bond \"" + startAtom.getShortName() + "\"");
+                log.debug("Start atom has more than 1 bond \"" + startAtom.getShortName() + "\"");
             }
         }
         Map<Atom, Integer> hash = new HashMap<>();
@@ -228,8 +225,7 @@ public class AngleTreeGenerator {
                     atomTree.add(branchList);
                 }
 
-                Optional<Bond> oBond = Optional.empty();
-                Atom atom2 = null;
+                Atom atom2;
                 Atom atom1 = null;
                 Atom atom0 = null;
                 if (mNode2 != null) {
@@ -238,13 +234,11 @@ public class AngleTreeGenerator {
                         atom2.daughterAtom = atom3;
                     }
                     atom3.parent = atom2;
-                    Point3 pt2 = atom2.getPoint();
                     if (atom2.getElementName() != null && atom3.getElementName() != null) {
                         Bond bond = new Bond(atom2, atom3);
                         atom2.addBond(bond);
                         atom3.addBond(bond);
                     }
-                    oBond = atom2.getBond(atom3);
                     MNode mNode1 = mNode2.getParent();
                     if (mNode1 != null) {
                         atom1 = mNode1.getAtom();
@@ -272,20 +266,9 @@ public class AngleTreeGenerator {
             mol.setAtomTree(atomTree);
         }
         ringClosures = new HashMap<>();
-        //        for (MNode mNode : pathNodes) {
-        //            if (mNode.isRingClosure()) {
-        //                Atom atom1 = mNode.getAtom();
-        //                Atom atom2 = mNode.getParent().getAtom();
-        //                if ((ringClosures.containsKey(atom1) && ringClosures.get(atom1).containsKey(atom2)) || (ringClosures.containsKey(atom2) && ringClosures.get(atom2).containsKey(atom1))) {
-        //                } else {
-        //                    addRingClosure(atom1, atom2);
-        //                    addRingClosurePairs(atom1, atom2);
-        //                    addRingClosurePairs(atom2, atom1);
-        //                }
-        //            }
-        //        }
-
-        //        dumpAtomTree(atomTree);
+        if (log.isDebugEnabled()) {
+            log.debug(dumpAtomTree(atomTree));
+        }
         return atomTree;
     }
 
@@ -371,6 +354,8 @@ public class AngleTreeGenerator {
 
                 // fixme write faster code to get bond (like atom2.getbond(atom3) so you search bonds for atom not whole entity
                 boolean rotatable = true;
+                // mode variable is used to explain the reason for setting rotatable state of a bond
+                // keep it here for use in debugging
                 int mode = 0;
                 if (oBond.isPresent() && (oBond.get().getOrder() != Order.SINGLE)) {
                     rotatable = false;
@@ -412,7 +397,6 @@ public class AngleTreeGenerator {
                     rotatable = false;
                     mode = 11;
                 }
-                boolean twoRing = false;
                 if (a3.getProperty("rings") != null && a2.getProperty("rings") != null) {
                     ArrayList<Ring> a3Rings = (ArrayList) a3.getProperty("rings");
                     ArrayList<Ring> a2Rings = (ArrayList) a2.getProperty("rings");
@@ -425,7 +409,6 @@ public class AngleTreeGenerator {
                     }
                     if (isRot) {
                         rotatable = true;
-                        twoRing = true;
                     }
                 }
 
@@ -465,25 +448,15 @@ public class AngleTreeGenerator {
             }
         }
     }
-
-    public static void dumpAtomTree(List<List<Atom>> atomTree) {
+    public static String dumpAtomTree(List<List<Atom>> atomTree) {
+        StringBuilder sBuilder = new StringBuilder();
         for (List<Atom> branch : atomTree) {
-
             for (Atom atom : branch) {
-                System.out.printf("%8s", atom == null ? "____" : atom.getShortName());
+                sBuilder.append(String.format("%8s", atom == null ? "____" : atom.getShortName()));
             }
-            for (int i=branch.size();i<8;i++) {
-                System.out.printf("%8s", "");
-            }
-            Atom branchAtom = branch.get(2);
-            System.out.printf(" %3d %6b %3d ", branchAtom.rotUnit, branchAtom.rotActive, branchAtom.irpIndex);
-            for (int i = 3;i<branch.size();i++) {
-                branchAtom = branch.get(i);
-                System.out.printf("%6s %8.2f %8.2f %8.2f",branchAtom.getName(), Math.toDegrees(branchAtom.valanceAngle), branchAtom.bondLength, Math.toDegrees(branchAtom.dihedralAngle));
-            }
-            System.out.println();
+            sBuilder.append(" " + branch.get(2).rotUnit + " " + branch.get(2).rotActive+"\n");
         }
-
+        return sBuilder.toString();
     }
 
     private List<MNode> getShellNodes(List<MNode> nodes, int iShell, int start) {
@@ -524,8 +497,7 @@ public class AngleTreeGenerator {
     private static void addRingClosurePairs(Map<Atom, Map<Atom, Double>> ringClosures,
             Atom a, Atom a1) {
         List<Atom> atoms = a.getConnected();
-        for (int i = 0; i < atoms.size(); i++) {
-            Atom a2 = atoms.get(i);
+        for (Atom a2 : atoms) {
             if ((a1 != a2)) {
                 addRingClosure(ringClosures, a1, a2);
             }
