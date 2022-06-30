@@ -150,10 +150,10 @@ public class PeakGenerator {
             generateCouplings();
         }
 
-        molecule.getAtoms().stream().
-                filter(atom -> atom.getAtomicNumber() == 1).
-                filter(atom -> !atom.isMethyl() || atom.isFirstInMethyl()).
-                forEach(atom -> {
+        molecule.getAtoms().stream()
+                .filter(atom -> atom.getAtomicNumber() == 1)
+                .filter(atom -> !atom.isMethyl() || atom.isFirstInMethyl())
+                .forEach(atom -> {
                     PPMv ppmV = refMode ? atom.getRefPPM(0) : atom.getPPM(0);
                     if ((ppmV != null) && ppmV.isValid()) {
                         var peak = peakList.getNewPeak();
