@@ -719,8 +719,8 @@ public class Noe extends DistanceConstraint implements Serializable {
     }
 
     public int getDeltaRes() {
-        Entity e1 = spg1.getFirstSet().atom.getEntity();
-        Entity e2 = spg2.getFirstSet().atom.getEntity();
+        Entity e1 = spg1.getSpatialSet().atom.getEntity();
+        Entity e2 = spg2.getSpatialSet().atom.getEntity();
         int iRes1 = 0;
         int iRes2 = 0;
         // fixme what about multiple polymers or other entities
