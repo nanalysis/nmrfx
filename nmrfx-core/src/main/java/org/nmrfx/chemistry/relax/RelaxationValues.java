@@ -60,5 +60,11 @@ public interface RelaxationValues {
             stringBuilder.append(defaultValue);
         }
     }
-
+    public  static void appendValue(StringBuilder stringBuilder, Double val,  String format, String defaultValue) {
+        if (val != null) {
+            stringBuilder.append(String.format(format, val));
+        } else {
+            stringBuilder.append(defaultValue);
+        }
+    }
 }

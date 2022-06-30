@@ -248,6 +248,11 @@ public class Molecule extends MoleculeBase {
         //molTableModel = new MoleculeTableModel();
     }
 
+    /**
+     * Removes the current active molecule and clears associated objects. If other molecules are available, one of
+     * those molecules will be set to the new active molecule, but which molecule will be set is undefined since
+     * molecules may be stored in a collection without ordering.
+     */
     public void remove() {
 
         StructureProject.getActive().removeMolecule(name);
@@ -260,9 +265,9 @@ public class Molecule extends MoleculeBase {
         Collection<MoleculeBase> mols = MoleculeFactory.getMolecules();
 
         MoleculeFactory.setActive(null);
-        for (MoleculeBase mol : mols) {
-            MoleculeFactory.setActive(mol);
-            break;
+        Iterator<MoleculeBase> it = mols.iterator();
+        if (it.hasNext()) {
+            MoleculeFactory.setActive(it.next());
         }
     }
 
