@@ -198,10 +198,10 @@ public class PeakGenerator {
             generateCouplings();
         }
         Atom[] atoms = new Atom[2];
-        molecule.getAtoms().stream().
-                filter(atom -> atom.getAtomicNumber() == 1).
-                filter(atom -> !atom.isMethyl() || atom.isFirstInMethyl()).
-                forEach(atom -> {
+        molecule.getAtoms().stream()
+                .filter(atom -> atom.getAtomicNumber() == 1)
+                .filter(atom -> !atom.isMethyl() || atom.isFirstInMethyl())
+                .forEach(atom -> {
                     var tocsyCouplings = tocsyCouplingMap.get(atom);
                     if ((tocsyCouplings != null)) {
                         for (var tocsyCoupling : tocsyCouplings) {
