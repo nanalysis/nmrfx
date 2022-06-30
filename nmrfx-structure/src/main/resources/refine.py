@@ -2502,7 +2502,6 @@ class refine:
                                  treeDict['end'] if 'end' in treeDict else None)
                                  if treeDict else (None, None))
 
-        print 'tree',start,end
         if start:
             if isinstance(start,Atom):
                 startAtom = start
