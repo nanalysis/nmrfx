@@ -431,6 +431,7 @@ public class OrderPar implements RelaxationValues {
 
     public void valuesToStarString(StringBuilder sBuilder) {
         String defaultValue = "      . ";
+
         for (int i=0;i<orderParLoopStrings.length;i += 2) {
             String fullName = orderParLoopStrings[i];
             String format = orderParLoopStrings[i+1];
