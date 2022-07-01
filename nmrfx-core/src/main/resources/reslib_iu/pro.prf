@@ -18,8 +18,8 @@ ATOM   HD3    H1    1.08  109.47  -61.5   0.03910
 ATOM   C      C     1.53  113.88  -65.5   0.58960
 ATOM   O      O     1.24  121.00  180.0   -0.57480 start
 ATOM   O      O     1.24  121.00  180.0   -0.57480 middle
-ATOM   O      O     1.24  180.00  120.0   -0.57480 end
-ATOM   OXT    OH    1.24  180.00  120.0   -0.57480 end
+ATOM   O      O     1.24  121.00  120.0   -0.57480 end
+ATOM   OXT    OH    1.24  121.00  120.0   -0.57480 end
 FAMILY   -      N      CD     CA    middle
 FAMILY   -      N      CD     CA    end
 FAMILY   -      N      H2     H3     CD    CA    start       

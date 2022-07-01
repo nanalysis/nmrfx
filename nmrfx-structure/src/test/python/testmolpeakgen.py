@@ -12,6 +12,7 @@ from org.nmrfx.project import ProjectBase
 class TestMolPeakGen(unittest.TestCase):
 
     def testrnaattr(self):
+        Molecule.removeAll()
         seq = 'GGCUCUGGUGAGAGCCAGAGCC'
         mol = molio.readSequenceString('A', seq)
         mol.setDotBracket('(((((((((....)))))))))')

@@ -1,7 +1,10 @@
 
 package org.nmrfx.structure.chemistry.miner;
+
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 public class NodeValidator implements NodeValidatorInterface {
 
      boolean[][] p;
@@ -753,7 +756,7 @@ public class NodeValidator implements NodeValidatorInterface {
 
      public NodeValidator() {
      }
-     public boolean checkAtom(int aNum, boolean visited, final int[] currentPath,final int patternIndex, final int pathIndex, final int atomIndex, HashMap bondMap) {
+     public boolean checkAtom(int aNum, boolean visited, final int[] currentPath,final int patternIndex, final int pathIndex, final int atomIndex, Map bondMap) {
         int atomRule = atomPatterns[patternIndex][pathIndex];
         if (visited) {return false;}
         boolean atomValid = false;
@@ -1073,13 +1076,13 @@ break;
         return jumpPositions[patternIndex][pathIndex];
     }
     
-    public ArrayList  getParams(ArrayList path, final int patternIndex) {
-        ArrayList<Object> result = new ArrayList<Object>();
+    public List  getParams(List path, final int patternIndex) {
+        List<Object> result = new ArrayList<>();
         int[] props = propertyValues[patternIndex];
         for (int i = 0; i < props.length; i++) {
             if (props[i] >= 0) {
                 int atomIndex = (Integer) path.get(i);
-                result.add(new Integer(atomIndex));
+                result.add(atomIndex);
                 int k = props[i];
                 int nStr = Integer.parseInt(paramValues[k])/2;
                 for (int j=0;j<nStr;j++) {
@@ -1093,7 +1096,7 @@ break;
         return result;
     }
     
-    public void assignProps(ArrayList path, final int patternIndex) {
+    public void assignProps(List path, final int patternIndex) {
         int[] props = propertyValues[patternIndex];
         for (int i = 0; i < props.length; i++) {
             if (props[i] >= 0) {
@@ -1102,7 +1105,7 @@ break;
             }
         }
     }
-    void assignParams(ArrayList path, final int patternIndex) {
+    void assignParams(List path, final int patternIndex) {
         int[] props = propertyValues[patternIndex];
         for (int i = 0; i < props.length; i++) {
             if (props[i] >= 0) {
@@ -1137,7 +1140,7 @@ break;
     }
 */
     
-    public boolean ringClosed(final int[] currentPath,final int bondOrder, final int atomIndex, final int ringIndex, HashMap bondMap) {
+    public boolean ringClosed(final int[] currentPath,final int bondOrder, final int atomIndex, final int ringIndex, Map bondMap) {
         String key = currentPath[ringIndex] + " " + atomIndex;
         Integer order = (Integer) bondMap.get(key);
         boolean value = false;

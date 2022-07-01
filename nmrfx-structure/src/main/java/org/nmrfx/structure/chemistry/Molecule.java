@@ -545,7 +545,7 @@ public class Molecule extends MoleculeBase {
         AngleTreeGenerator aTreeGen = new AngleTreeGenerator();
         atomTree = aTreeGen.genTree(this, startAtom, null);
         // fixme  need to not measure already measured geometry till we can only measure once
-        aTreeGen.measureAtomTree(this, atomTree);
+        aTreeGen.measureAtomTree(this, atomTree, true, false);
         setRingClosures(aTreeGen.getRingClosures());
         setupGenCoords();
     }
@@ -1751,6 +1751,19 @@ public class Molecule extends MoleculeBase {
             }
         }
 
+        return list;
+    }
+
+    public List<Atom> getAtomsWithProperty(String propertyName) {
+        List<Atom> list = new ArrayList<>();
+        updateAtomArray();
+        for (Atom atom : atoms) {
+            Object prop = atom.getProperty(propertyName);
+            if ((prop instanceof Boolean) && ((Boolean) prop)) {
+                SpatialSet spatialSet = atom.getSpatialSet();
+                list.add(spatialSet.getAtom());
+            }
+        }
         return list;
     }
 

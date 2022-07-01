@@ -30,8 +30,8 @@ ATOM   HH12   H     1.00  120.00  180.0   0.44780
 ATOM   C      C     1.53  109.47  120.0   0.73410
 ATOM   O      O     1.24  121.00  180.0   -0.58940 start
 ATOM   O      O     1.24  121.00  180.0   -0.58940 middle
-ATOM   O      O     1.24  180.00  120.0   -0.58940 end
-ATOM   OXT    OH    1.24  180.00  120.0   -0.58940 end
+ATOM   O      O     1.24  121.00  120.0   -0.58940 end
+ATOM   OXT    OH    1.24  121.00  120.0   -0.58940 end
 FAMILY   -      N      H      CA    middle
 FAMILY   -      N      H      CA    end
 FAMILY   -      N      H1     H2     H3    CA    start    
