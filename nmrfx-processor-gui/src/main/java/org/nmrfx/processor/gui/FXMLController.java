@@ -432,7 +432,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
                 setInitialDirectory(selectedFile.getParentFile());
                 NMRData nmrData = NMRDataUtil.getNMRData(selectedFile.toString());
                 ProcessorController processorController = getActiveChart().getProcessorController(false);
-                if (processorController != null && (chartProcessor.datasetFile == null || !selectedFile.equals(chartProcessor.datasetFile))) {
+                if (processorController != null && (!selectedFile.equals(chartProcessor.datasetFile))) {
                     processorPane.getChildren().clear();
                     getActiveChart().processorController = null;
                     processorController.cleanUp();
@@ -1278,6 +1278,13 @@ public class FXMLController implements  Initializable, PeakNavigable {
         return controller;
     }
 
+    /**
+     * If the window is maximized, the current window widths are saved. If the window is restored down, the previously
+     * saved values are used to set the window width.
+     * @param observable the maximize property
+     * @param oldValue previous value of maximize
+     * @param newValue new value of maximize
+     */
     private void adjustSizeAfterMaximize(ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean newValue) {
         if (Boolean.TRUE.equals(newValue)) {
             previousStageRestoreWidth = stage.getWidth();
@@ -2099,6 +2106,14 @@ public class FXMLController implements  Initializable, PeakNavigable {
     public void addSelectedPeakListener(ChangeListener listener) {
         selPeaks.addListener(listener);
 
+    }
+
+    /**
+     * Checks if the active chart has a processorController instances.
+     * @return True if active chart has ProcessorController else returns false.
+     */
+    public boolean isProcessorControllerAvailable() {
+        return getActiveChart().getProcessorController(false) != null;
     }
 
 }

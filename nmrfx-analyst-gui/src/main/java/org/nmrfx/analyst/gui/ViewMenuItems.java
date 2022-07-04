@@ -11,6 +11,8 @@ import org.nmrfx.processor.gui.project.GUIProject;
 import org.nmrfx.processor.project.Project;
 
 public class ViewMenuItems extends MenuActions {
+
+    private final String PROCESSOR_MENU_TEXT = "Show Processor";
     DatasetsController datasetController;
     public ViewMenuItems(AnalystApp app, Menu menu) {
         super(app, menu);
@@ -18,11 +20,11 @@ public class ViewMenuItems extends MenuActions {
 
     @Override
     public void basic() {
-        MenuItem procMenuItem = new MenuItem("Show Processor");
+        MenuItem procMenuItem = new MenuItem(PROCESSOR_MENU_TEXT);
         procMenuItem.setOnAction(e -> FXMLController.getActiveController().showProcessorAction(e));
 
         MenuItem dataMenuItem = new MenuItem("Show Datasets");
-        dataMenuItem.setOnAction(e -> showDatasetsTable(e));
+        dataMenuItem.setOnAction(this::showDatasetsTable);
 
         MenuItem consoleMenuItem = new MenuItem("Show Console");
         consoleMenuItem.setOnAction(e -> showConsole());
@@ -34,12 +36,22 @@ public class ViewMenuItems extends MenuActions {
         attrMenuItem.setOnAction(e -> FXMLController.getActiveController().showSpecAttrAction(e));
 
         menu.getItems().addAll(consoleMenuItem, logConsoleMenuItem, dataMenuItem, attrMenuItem, procMenuItem);
+        menu.onShowingProperty().set(e -> verifyMenuItems());
+    }
+
+    private void verifyMenuItems() {
+        for(MenuItem menuItem: menu.getItems()) {
+            if (PROCESSOR_MENU_TEXT.equals(menuItem.getText())) {
+                menuItem.setDisable(!FXMLController.getActiveController().isProcessorControllerAvailable());
+            }
+        }
     }
 
     @Override
     protected void advanced() {
 
     }
+
     private void showConsole() {
         AnalystApp.getConsoleController().show();
     }
@@ -58,6 +70,5 @@ public class ViewMenuItems extends MenuActions {
         datasetController.getStage().show();
         datasetController.getStage().toFront();
     }
-
 
 }
