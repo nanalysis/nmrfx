@@ -12,7 +12,7 @@ import org.nmrfx.processor.project.Project;
 
 public class ViewMenuItems extends MenuActions {
 
-    private final String PROCESSOR_MENU_TEXT = "Show Processor";
+    private static final String PROCESSOR_MENU_TEXT = "Show Processor";
     DatasetsController datasetController;
     public ViewMenuItems(AnalystApp app, Menu menu) {
         super(app, menu);
