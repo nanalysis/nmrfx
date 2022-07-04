@@ -36,7 +36,33 @@ import java.util.Map;
 public class OrderPar implements RelaxationValues {
 
     static final String[] PAR_NAMES = {"S2", "Tau_e", "Tau_f", "Tau_s", "Rex", "Sf2", "Ss2", "model", "rms"};
-    private ResonanceSource resSource;
+    static final String DEFAULT_FLOAT_FORMAT = " %10.6f";
+    public static final String[] orderParLoopStrings = {
+            "Order_param_val", DEFAULT_FLOAT_FORMAT,
+            "Order_param_val_fit_err",DEFAULT_FLOAT_FORMAT,
+            "Tau_e_val",DEFAULT_FLOAT_FORMAT,
+            "Tau_e_val_fit_err",DEFAULT_FLOAT_FORMAT,
+            "Tau_f_val",DEFAULT_FLOAT_FORMAT,
+            "Tau_f_val_fit_err",DEFAULT_FLOAT_FORMAT,
+            "Tau_s_val",DEFAULT_FLOAT_FORMAT,
+            "Tau_s_val_fit_err",DEFAULT_FLOAT_FORMAT,
+            "Rex_val",DEFAULT_FLOAT_FORMAT,
+            "Rex_val_fit_err",DEFAULT_FLOAT_FORMAT,
+            "Model_free_sum_squared_errs",DEFAULT_FLOAT_FORMAT,
+            "Model_free_n_values", " %4d",
+            "Model_free_n_pars", " %4d",
+            "Model_fit", " %10s",
+            "Sf2_val",DEFAULT_FLOAT_FORMAT,
+            "Sf2_val_fit_err",DEFAULT_FLOAT_FORMAT,
+            "Ss2_val",DEFAULT_FLOAT_FORMAT,
+            "Ss2_val_fit_err",DEFAULT_FLOAT_FORMAT,
+            "SH2_val",DEFAULT_FLOAT_FORMAT,
+            "SH2_val_fit_err",DEFAULT_FLOAT_FORMAT,
+            "SN2_val",DEFAULT_FLOAT_FORMAT,
+            "SN2_val_fit_err",DEFAULT_FLOAT_FORMAT,
+            "Resonance_ID"," %5d"};
+
+    private final ResonanceSource resSource;
     private Double value;
     private Double error;
     private Double TauE;
@@ -51,43 +77,11 @@ public class OrderPar implements RelaxationValues {
     private Double Sf2err;
     private Double Ss2;
     private Double Ss2err;
-    private Double sumSqErr;
-    private Integer nValues;
-    private Integer nPars;
+    private final Double sumSqErr;
+    private final Integer nValues;
+    private final Integer nPars;
     private String model;
     private Double modelNum;
-
-    public OrderPar(ResonanceSource resSource, Double[] values, Double[] errs, Double sumSqErr, String model) {
-        this(resSource,
-                values[0], errs[0],
-                values[1], errs[1],
-                values[2], errs[2],
-                values[3], errs[3],
-                values[4], errs[4],
-                values[5], errs[5],
-                values[6], errs[6],
-                sumSqErr, null, null, model
-        );
-    }
-
-    public OrderPar(ResonanceSource resSource, Double[] values, Double[] errs, Double sumSqErr, Integer nValues, Integer nPars, String model) {
-        this(resSource,
-                values[0], errs[0],
-                values[1], errs[1],
-                values[2], errs[2],
-                values[3], errs[3],
-                values[4], errs[4],
-                values[5], errs[5],
-                values[6], errs[6],
-                sumSqErr, nValues, nPars, model
-        );
-    }
-
-    public OrderPar(ResonanceSource resSource, Double value, Double error, Double sumSqErr, Integer nValues, Integer nPars, String model) {
-        this(resSource, value, error, null, null, null, null, null, null, null,
-                null, null, null, null, null, sumSqErr, nValues, nPars, model);
-
-    }
 
     public OrderPar(ResonanceSource resSource, Double sumSqErr, Integer nValues, Integer nPars, String model) {
         this(resSource, null, null, null, null, null, null, null, null, null,
@@ -193,6 +187,7 @@ public class OrderPar implements RelaxationValues {
                 Ss2, Ss2err,
                 sumSqErr, nValues, nPars, model);
         switch (name) {
+            case "Order_param":
             case "S2":
                 newPar.value = val;
                 newPar.error = err;
@@ -278,6 +273,10 @@ public class OrderPar implements RelaxationValues {
         return resSource;
     }
 
+    public String getModel() {
+        return model;
+    }
+
     @Override
     public Double getValue() {
         return value;
@@ -287,11 +286,11 @@ public class OrderPar implements RelaxationValues {
     public Double getError() {
         return error;
     }
-//    static final String[] PAR_NAMES = {"Order_param", "Tau_e", "Tau_f", "Tau_s", "Rex", "Sf2", "Ss2"};
 
     @Override
     public Double getValue(String name) {
         switch (name) {
+            case "Order_param":
             case "S2":
                 return value;
             case "Tau_e":
@@ -314,6 +313,8 @@ public class OrderPar implements RelaxationValues {
                 } else {
                     return null;
                 }
+            case "chisq":
+                return sumSqErr;
             case "rchisq":
                 if ((nValues != null) && (nPars != null)) {
                     return sumSqErr / (nValues - nPars);
@@ -325,9 +326,30 @@ public class OrderPar implements RelaxationValues {
         }
     }
 
+    public double getChiSqr() {
+        return sumSqErr;
+    }
+
+    public double getReducedChiSqr() {
+        if ((nValues != null) && (nPars != null)) {
+            return sumSqErr / (nValues - nPars);
+        } else {
+            return 0.0;
+        }
+    }
+
+    public double getAIC() {
+        if ((nValues != null) && (nPars != null) && (sumSqErr != null)) {
+            return 2 * nPars + nValues * Math.log(sumSqErr);
+        } else {
+            return 0.0;
+        }
+    }
+
     @Override
     public Double getError(String name) {
         switch (name) {
+            case "Order_param":
             case "S2":
                 return error;
             case "Tau_e":
@@ -374,7 +396,8 @@ public class OrderPar implements RelaxationValues {
 
     public static void writeToFile(File file, List<OrderPar> orderPars) throws IOException {
         try (FileWriter fileWriter = new FileWriter(file)) {
-            fileWriter.write("Chain\tResidue\tAtom\tS2\tS2_err\tTauE\tTauE_err\tSf2\tSf2_err\tSs2\tSs2_err\tTauF\tTauF_err\tTauS\tTauS_err\tRex\tRex_err\tmodel\tmodelNum\n");
+            fileWriter.write("Chain\tResidue\tAtom\tS2\tS2_err\tTauE\tTauE_err\tSf2\tSf2_err\tSs2\tSs2_err\tTauF\t" +
+                    "TauF_err\tTauS\tTauS_err\tRex\tRex_err\tmodel\tmodelNum\tchiSq\tredChiSq\tAIC\tnValues\tnPars\n");
             for (var orderPar:orderPars) {
                 fileWriter.write(orderPar.toString());
                 fileWriter.write("\n");
@@ -398,24 +421,64 @@ public class OrderPar implements RelaxationValues {
         RelaxationValues.appendValueError(sBuilder, TauS, TauSerr,"%.4f");
         RelaxationValues.appendValueError(sBuilder, Rex, Rexerr,"%.2f");
         sBuilder.append("\t").append(model).append("\t").append(modelNum);
+        sBuilder.append("\t").append(String.format("%.4f", sumSqErr)).append("\t").
+                append(String.format("%.4f", getReducedChiSqr())).
+                append("\t").append(String.format("%.4f",getAIC())).append("\t").
+        append(nValues).append("\t").append(nPars);
+
         return sBuilder.toString();
     }
 
     public void valuesToStarString(StringBuilder sBuilder) {
         String defaultValue = "      . ";
-        RelaxationValues.appendValueError(sBuilder, value, error,"%8.3f", defaultValue);
-        RelaxationValues.appendValueError(sBuilder, TauE, TauEerr,"%8.3f", defaultValue);
-        RelaxationValues.appendValueError(sBuilder, TauF, TauFerr,"%8.3f", defaultValue);
-        RelaxationValues.appendValueError(sBuilder, TauS, TauSerr,"%8.3f", defaultValue);
-        RelaxationValues.appendValueError(sBuilder, Rex, Rexerr,"%8.3f", defaultValue);
-        if (sumSqErr != null) {
-            sBuilder.append(String.format("%8.3f", sumSqErr));
-        } else {
-            sBuilder.append(defaultValue);
+
+        for (int i=0;i<orderParLoopStrings.length;i += 2) {
+            String fullName = orderParLoopStrings[i];
+            String format = orderParLoopStrings[i+1];
+            if (fullName.endsWith("_val")) {
+                String parName = fullName.substring(0, fullName.length() - 4);
+                RelaxationValues.appendValue(sBuilder, getValue(parName), format, defaultValue);
+            } else if (fullName.endsWith("_val_fit_err")) {
+                    String parName = fullName.substring(0, fullName.length() - 12);
+                    RelaxationValues.appendValue(sBuilder, getError(parName), format, defaultValue);
+            } else {
+                switch (fullName) {
+                    case "Model_free_sum_squared_errs":
+                        if (sumSqErr != null) {
+                            sBuilder.append(String.format(format, sumSqErr));
+                        } else {
+                            sBuilder.append(defaultValue);
+                        }
+                        break;
+                    case "Model_free_n_values":
+                        if (nValues != null) {
+                            sBuilder.append(String.format(format, nValues));
+                        } else {
+                            sBuilder.append(defaultValue);
+                        }
+                        break;
+                    case "Model_free_n_pars":
+                        if (nPars != null) {
+                            sBuilder.append(String.format(format, nPars));
+                        } else {
+                            sBuilder.append(defaultValue);
+                        }
+                        break;
+                    case "Model_fit":
+                        sBuilder.append(String.format(" %8s",model));
+                        break;
+                    default:
+                        sBuilder.append(defaultValue);
+                }
+            }
         }
-        sBuilder.append(String.format("%8s",model));
-        RelaxationValues.appendValueError(sBuilder, Sf2, Sf2err,"%8.3f", defaultValue);
-        RelaxationValues.appendValueError(sBuilder, Ss2, Ss2err,"%8.3f", defaultValue);
-        sBuilder.append(" . . . .  "); //sh2 sh2_er sn2 sn2_err
+    }
+
+    public static List<String> getOrderParLoopString() {
+        List<String> result = new ArrayList<>();
+        for (int i=0;i<orderParLoopStrings.length;i += 2) {
+            result.add(orderParLoopStrings[i]);
+        }
+        return result;
     }
 }

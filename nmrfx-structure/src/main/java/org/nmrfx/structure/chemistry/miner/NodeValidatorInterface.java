@@ -6,8 +6,8 @@
 package org.nmrfx.structure.chemistry.miner;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  *
@@ -15,11 +15,11 @@ import java.util.List;
  */
 public interface NodeValidatorInterface {
 
-    public boolean checkAtom(int aNum, boolean visited, final int[] currentPath, final int patternIndex, final int pathIndex, final int atomIndex, HashMap bondMap);
+    public boolean checkAtom(int aNum, boolean visited, final int[] currentPath, final int patternIndex, final int pathIndex, final int atomIndex, Map bondMap);
 
     public boolean checkBond(int order, final int[] currentPath, final int patternIndex, final int pathIndex, final int bondIndex);
 
-    public ArrayList getParams(ArrayList path, final int patternIndex);
+    public List getParams(List path, final int patternIndex);
 
     public String[] getPropertyNames();
 
@@ -61,6 +61,6 @@ public interface NodeValidatorInterface {
 
     public int getJump(int patternIndex, final int pathIndex);
 
-    void assignProps(ArrayList path, final int patternIndex);
+    void assignProps(List path, final int patternIndex);
 
 }
