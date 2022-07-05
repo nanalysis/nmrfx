@@ -294,7 +294,9 @@ public class FXMLController implements  Initializable, PeakNavigable {
         if (processorController != null) {
             isFID = !processorController.isViewingDataset();
             chartProcessor = processorController.chartProcessor;
-            processorController.show();
+            if(processorController.isVisible()) {
+                processorController.show();
+            }
         }
         updateSpectrumStatusBarOptions();
         if (specAttrWindowController != null) {
@@ -1288,7 +1290,12 @@ public class FXMLController implements  Initializable, PeakNavigable {
     private void adjustSizeAfterMaximize(ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean newValue) {
         if (Boolean.TRUE.equals(newValue)) {
             previousStageRestoreWidth = stage.getWidth();
-            previousStageRestoreProcControllerVisible = getActiveChart().getProcessorController(false) != null;
+            ProcessorController pc = getActiveChart().getProcessorController(false);
+            if (pc != null) {
+                previousStageRestoreProcControllerVisible = pc.isVisible();
+            } else {
+                previousStageRestoreProcControllerVisible = false;
+            }
             if(previousStageRestoreProcControllerVisible) {
                 previousStageRestoreProcControllerWidth = ((Pane) processorPane.getChildren().get(0)).getMinWidth();
             } else {

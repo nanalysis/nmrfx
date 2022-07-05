@@ -224,17 +224,19 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     public void show() {
         if (processorPane.getChildren().isEmpty()) {
             processorPane.getChildren().add(pane);
+            pane.setVisible(true);
         }
     }
 
     public void hide() {
         if (!processorPane.getChildren().isEmpty()) {
             processorPane.getChildren().clear();
+            pane.setVisible(false);
         }
     }
 
     public boolean isVisible() {
-        return pane.getParent() != null;
+        return pane.isVisible();
     }
 
     public PropertyManager getPropertyManager() {
