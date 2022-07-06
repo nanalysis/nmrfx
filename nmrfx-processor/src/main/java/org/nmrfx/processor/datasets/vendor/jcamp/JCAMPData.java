@@ -318,7 +318,7 @@ public class JCAMPData implements NMRData {
     }
 
     private Optional<Label> getSFLabel(int dim) {
-        return Stream.of(_OBSERVE_FREQUENCY, $SFO1)
+        return Stream.of($SFO1, _OBSERVE_FREQUENCY)
                 .filter(label -> block.optional(label, dim).isPresent())
                 .findFirst();
     }
@@ -759,14 +759,12 @@ public class JCAMPData implements NMRData {
         if("sep".equals(getSymbolicCoefs(dim))) {
             return false;
         }
-        boolean negateImage = block.optional($REVERSE, dim).map(JCampRecord::getString)
+        boolean reverse = block.optional($REVERSE, dim).map(JCampRecord::getString)
                 .map("yes"::equalsIgnoreCase)
                 .orElse(true);
         AcquisitionScheme scheme = getAcquisitionScheme();
-        if (scheme == AcquisitionScheme.ECHO_ANTIECHO || scheme == AcquisitionScheme.STATES_TPPI) {
-            negateImage = !negateImage;
-        }
-        return negateImage;
+        // For certain schemes use the opposite of reverse
+        return (scheme == AcquisitionScheme.ECHO_ANTIECHO || scheme == AcquisitionScheme.STATES_TPPI) != reverse;
     }
 
     @Override
