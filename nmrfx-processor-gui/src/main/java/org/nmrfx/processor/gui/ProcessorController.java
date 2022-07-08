@@ -1193,9 +1193,9 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     protected void vectorStatus(int[] sizes, int vecDim) {
         int nDim = sizes.length;
         vecSizes = sizes.clone();
-        navHBox.getChildren().clear();
         if (nDim > 1) {
             if (rowTextBoxes.length != (nDim - 1)) {
+                navHBox.getChildren().clear();
                 navHBox.getChildren().add(vecNum1);
                 navHBox.getChildren().add(navDetailsVBox);
                 rowTextBoxes = new TextField[nDim - 1];
@@ -1232,6 +1232,8 @@ public class ProcessorController implements Initializable, ProgressUpdater {
                 }
                 fileIndexTextBox.setText("1");
             }
+        } else {
+            navHBox.getChildren().clear();
         }
     }
 
