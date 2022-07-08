@@ -864,7 +864,7 @@ public class Processor {
         }
         try {
             if (inMemory) {
-                this.dataset = new Dataset(outputFile, datasetSizes);
+                this.dataset = new Dataset(outputFile, datasetSizes, false);
             } else {
                 this.dataset = Dataset.createDataset(outputFile, outputFile, datasetSizes, false);
             }
