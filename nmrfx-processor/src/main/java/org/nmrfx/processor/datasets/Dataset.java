@@ -67,19 +67,6 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
     Map<String, double[]> buffers = new HashMap<>();
     Dataset[] projections = null;
 
-    public int length() {
-        int length = 1;
-        for (int i = 0; i < nDim; i++) {
-            length *= layout.getSize(i);
-        }
-        return length;
-    }
-
-    @Override
-    public int compareTo(Dataset o) {
-        return getName().compareTo(o.getName());
-    }
-
     /**
      * Create a new Dataset object that refers to an existing random access file
      * in a format that can be described by this class.
@@ -325,6 +312,19 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         if (addFile) {
             addFile(title);
         }
+    }
+
+    public int length() {
+        int length = 1;
+        for (int i = 0; i < nDim; i++) {
+            length *= layout.getSize(i);
+        }
+        return length;
+    }
+
+    @Override
+    public int compareTo(Dataset o) {
+        return getName().compareTo(o.getName());
     }
 
     private void createDataFile(RandomAccessFile raFile, boolean writable) throws IOException {
