@@ -692,10 +692,10 @@ public class FXMLController implements  Initializable, PeakNavigable {
     }
 
     /**
-     * Updates the SpectrumStatusBar menu options based on whether FID mood is on, and the dimensions
+     * Updates the SpectrumStatusBar menu options based on whether FID mode is on, and the dimensions
      * of the dataset.
      */
-    private void updateSpectrumStatusBarOptions() {
+    public void updateSpectrumStatusBarOptions() {
         if (isFIDActive()) {
             statusBar.setMode(0);
         } else {

@@ -32,6 +32,8 @@ import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.OptionalInt;
+
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.ObservableList;
@@ -59,12 +61,31 @@ import org.apache.commons.lang3.SystemUtils;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.processor.gui.spectra.NMRAxis;
 import org.nmrfx.processor.gui.undo.ChartUndoLimits;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
  * @author Bruce Johnson
  */
 public class SpectrumStatusBar {
+
+    private static final Logger log = LoggerFactory.getLogger(SpectrumStatusBar.class);
+
+    private enum DisplayMode {
+        CURVES("Curves (1D)"),
+        CONTOURS("Contours (2D)");
+        private final String strValue;
+
+        DisplayMode(String strValue) {
+            this.strValue = strValue;
+        }
+
+        @Override
+        public String toString() {
+            return this.strValue;
+        }
+    }
 
     static final DecimalFormat formatter = new DecimalFormat();
 
@@ -87,6 +108,7 @@ public class SpectrumStatusBar {
     TextField[] planePPMField = new TextField[maxSpinners];
     Spinner[] planeSpinner = new Spinner[maxSpinners];
     MenuButton[] dimMenus = new MenuButton[maxSpinners + 2];
+    ComboBox<DisplayMode> displayModeComboBox = null;
     MenuButton[] rowMenus = new MenuButton[maxSpinners];
     ChangeListener<Integer>[] planeListeners = new ChangeListener[maxSpinners];
     ToolBar btoolBar;
@@ -198,6 +220,10 @@ public class SpectrumStatusBar {
                 menuItem.addEventHandler(ActionEvent.ACTION, event -> dimMenuAction(event, iAxis));
             }
         }
+        displayModeComboBox = new ComboBox<>();
+        displayModeComboBox.getItems().setAll(DisplayMode.values());
+        displayModeComboBox.addEventHandler(ActionEvent.ACTION, event -> displayModeComboBoxAction(event));
+
         for (int i = 0; i < rowMenus.length; i++) {
             final int iAxis = i + 1;
             String rowName = rowNames[iAxis];
@@ -528,6 +554,8 @@ public class SpectrumStatusBar {
         List<Node> nodes = new ArrayList<>();
         nodes.add(cursorMenuButton);
         nodes.add(toolButton);
+        displayModeComboBox.getSelectionModel().select(DisplayMode.CURVES);
+        nodes.add(displayModeComboBox);
 
         HBox.setHgrow(filler1, Priority.ALWAYS);
         HBox.setHgrow(filler2, Priority.ALWAYS);
@@ -540,6 +568,8 @@ public class SpectrumStatusBar {
         }
         nodes.add(filler2);
         for (int i = 1; i < nDim; i++) {
+            // Set the row menu selection to "First" to display the first spectrum in the array
+            rowMenus[i - 1].getItems().stream().filter(item -> item.getText().equals("First")).findFirst().get().fire();
             nodes.add(rowMenus[i - 1]);
             nodes.add(planeSpinner[i - 1]);
             Pane nodeFiller = new Pane();
@@ -580,6 +610,11 @@ public class SpectrumStatusBar {
         }
         if (mode > 2) {
             nodes.add(dimMenus[1]);
+        }
+
+        if (mode == 2) {
+            displayModeComboBox.getSelectionModel().select(DisplayMode.CONTOURS);
+            nodes.add(displayModeComboBox);
         }
         nodes.add(filler1);
 
@@ -666,6 +701,43 @@ public class SpectrumStatusBar {
             chart.setDrawlist(1000);
         }
         chart.refresh();
+    }
+
+    /**
+     * Updates the spectrum status bar and the type of plot displayed in the active chart
+     * based on the selected option.
+     * @param event The selection event.
+     */
+    private void displayModeComboBoxAction(ActionEvent event) {
+        ComboBox<DisplayMode> modeComboBox = (ComboBox<DisplayMode>) event.getSource();
+        if (modeComboBox.isShowing()) {
+            DisplayMode selected = modeComboBox.getSelectionModel().getSelectedItem();
+            PolyChart chart = controller.getActiveChart();
+            OptionalInt maxNDim = chart.getDatasetAttributes().stream().mapToInt(d -> d.nDim).max();
+            if (maxNDim.isEmpty()) {
+                log.warn("Unable to update display mode. No dimensions set.");
+                return;
+            }
+            DatasetBase dataset = chart.getDataset();
+            if (selected == DisplayMode.CURVES) {
+                OptionalInt maxRows = chart.getDatasetAttributes().stream().
+                        mapToInt(d -> d.nDim == 1 ? 1 : d.getDataset().getSizeReal(1)).max();
+                if (maxRows.isEmpty()) {
+                    log.warn("Unable to update display mode. No rows set.");
+                    return;
+                }
+                dataset.setNFreqDims(1);
+                chart.setDataset(dataset);
+                set1DArray(maxNDim.getAsInt(), maxRows.getAsInt());
+
+            } else if (selected == DisplayMode.CONTOURS) {
+                dataset.setNFreqDims(dataset.getNDim());
+                chart.setDataset(chart.getDataset());
+                setMode(maxNDim.getAsInt());
+            }
+            chart.full();
+            chart.autoScale();
+        }
     }
 
     private void dimAction(String rowName, String dimName) {

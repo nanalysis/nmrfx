@@ -55,6 +55,9 @@ public class SimplePeakRegionTool implements ControllerTool {
             if (!chart.getPeakListAttributes().isEmpty()) {
                 analyzer.setPeakList(chart.getPeakListAttributes().get(0).getPeakList());
             }
+        } else {
+            // Update the active chart in case it has changed
+            chart = getChart();
         }
         return analyzer;
     }
