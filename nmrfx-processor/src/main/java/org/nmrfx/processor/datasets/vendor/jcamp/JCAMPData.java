@@ -51,6 +51,7 @@ public class JCAMPData implements NMRData {
 
     private static final List<String> MATCHING_EXTENSIONS = List.of(".jdx", ".dx");
     private static final double AMBIENT_TEMPERATURE = 298.0; // in K, around 25° C
+    private static final double SCALE = 1.0;
 
     /**
      * JCamp-defined acquisition scheme.
@@ -890,6 +891,7 @@ public class JCAMPData implements NMRData {
         }
         // Create a dataset in memory
         Dataset dataset = new Dataset(datasetName + ".nv", dimSizes, true);
+        dataset.newHeader();
         // Set the processed data into the dataset
         boolean hasImaginaryData = this.imaginary.length != 0;
         Vec complex;
@@ -903,11 +905,12 @@ public class JCAMPData implements NMRData {
             dataset.writeVector(complex, index, 0);
         }
         // Set the header information in the dataset
-        dataset.newHeader();
-        dataset.setScale(1.0);
         for (int i = 0; i < dataset.getNDim(); i++) {
             dataset.setValues(i, getValues(i));
-            dataset.setComplex(i, isComplex(i));
+            // The first dimension is set when the vectors are set.
+            if (i > 0) {
+                dataset.setComplex(i, false);
+            }
             dataset.setSf(i, getSF(i));
             dataset.setSw(i, getSW(i));
             dataset.setRefValue(i, getRef(i));
@@ -920,6 +923,8 @@ public class JCAMPData implements NMRData {
         }
         dataset.setSolvent(getSolvent());
         dataset.setTempK(getTempK());
+        dataset.setScale(SCALE);
+        dataset.setDataType(0);
         dataset.writeHeader();
         return dataset;
     }

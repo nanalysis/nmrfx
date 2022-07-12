@@ -174,6 +174,7 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
         System.arraycopy(imaginaryValues, 0, ivec, 0, imaginaryValues.length);
         // Set useApache to false since ivec is being used.
         useApache = false;
+        this.isComplex = true;
     }
 
     /**
