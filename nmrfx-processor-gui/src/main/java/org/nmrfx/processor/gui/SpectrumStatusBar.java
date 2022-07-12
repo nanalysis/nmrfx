@@ -222,7 +222,7 @@ public class SpectrumStatusBar {
         }
         displayModeComboBox = new ComboBox<>();
         displayModeComboBox.getItems().setAll(DisplayMode.values());
-        displayModeComboBox.addEventHandler(ActionEvent.ACTION, event -> displayModeComboBoxAction(event));
+        displayModeComboBox.addEventHandler(ActionEvent.ACTION, this::displayModeComboBoxAction);
 
         for (int i = 0; i < rowMenus.length; i++) {
             final int iAxis = i + 1;
@@ -711,7 +711,6 @@ public class SpectrumStatusBar {
     private void displayModeComboBoxAction(ActionEvent event) {
         ComboBox<DisplayMode> modeComboBox = (ComboBox<DisplayMode>) event.getSource();
         if (modeComboBox.isShowing()) {
-            DisplayMode selected = modeComboBox.getSelectionModel().getSelectedItem();
             PolyChart chart = controller.getActiveChart();
             OptionalInt maxNDim = chart.getDatasetAttributes().stream().mapToInt(d -> d.nDim).max();
             if (maxNDim.isEmpty()) {
@@ -719,6 +718,7 @@ public class SpectrumStatusBar {
                 return;
             }
             DatasetBase dataset = chart.getDataset();
+            DisplayMode selected = modeComboBox.getSelectionModel().getSelectedItem();
             if (selected == DisplayMode.CURVES) {
                 OptionalInt maxRows = chart.getDatasetAttributes().stream().
                         mapToInt(d -> d.nDim == 1 ? 1 : d.getDataset().getSizeReal(1)).max();

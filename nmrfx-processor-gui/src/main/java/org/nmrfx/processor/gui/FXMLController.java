@@ -469,6 +469,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
                     log.info("Unable to find a dataset format for: {}", selectedFile);
                 }
             } catch (IOException | DatasetException ex) {
+                log.warn(ex.getMessage(), ex);
                 GUIUtils.warn("Open Dataset", ex.getMessage());
             }
         }
