@@ -90,7 +90,7 @@ jobs:
               owner: 'nanalysis',
               repo: 'nmrfx-private',
               workflow_id: 'build-installers.yml',
-              ref: 'NMR-5223-create-installer-on-trigger',
+              ref: 'NMR-5223-build-installers',
               inputs: {
                 nmrfx_commit_hash: '${{ github.sha }}',
                 nmrfx_head_ref: '${{ github.head_ref }}',
