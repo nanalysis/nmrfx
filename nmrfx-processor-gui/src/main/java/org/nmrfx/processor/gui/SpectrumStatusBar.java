@@ -32,6 +32,7 @@ import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Optional;
 import java.util.OptionalInt;
 
 import javafx.beans.value.ChangeListener;
@@ -569,7 +570,7 @@ public class SpectrumStatusBar {
         nodes.add(filler2);
         for (int i = 1; i < nDim; i++) {
             // Set the row menu selection to "First" to display the first spectrum in the array
-            rowMenus[i - 1].getItems().stream().filter(item -> item.getText().equals("First")).findFirst().get().fire();
+            rowMenus[i - 1].getItems().stream().filter(item -> item.getText().equals("First")).findFirst().ifPresent(MenuItem::fire);
             nodes.add(rowMenus[i - 1]);
             nodes.add(planeSpinner[i - 1]);
             Pane nodeFiller = new Pane();
