@@ -1300,7 +1300,6 @@ public class ChartProcessor {
                 }
             }
             processorController.vectorStatus(sizes, vecDim);
-            processorController.setRowLabel(1, sizes[0]);
         }
         chart.full();
         chart.autoScale();

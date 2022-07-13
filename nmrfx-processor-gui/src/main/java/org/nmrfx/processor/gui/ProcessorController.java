@@ -1231,6 +1231,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
                     rowTextBoxes[iDim - 1].setText(1 + " / " + sizes[iDim]);
                 }
                 fileIndexTextBox.setText("1");
+                realImagChoiceBox.setValue(realImagChoices.get(0));
             }
         } else {
             navHBox.getChildren().clear();
