@@ -79,6 +79,7 @@ import org.nmrfx.processor.gui.controls.GridPaneCanvas;
 import org.nmrfx.processor.gui.spectra.*;
 import org.nmrfx.processor.gui.tools.SpectrumComparator;
 import org.nmrfx.processor.gui.undo.UndoManager;
+import org.nmrfx.processor.gui.utils.FileExtensionFilterType;
 import org.nmrfx.utilities.DictionarySort;
 import org.nmrfx.utils.GUIUtils;
 import org.python.core.PyObject;
@@ -404,8 +405,8 @@ public class FXMLController implements  Initializable, PeakNavigable {
         fileChooser.setInitialDirectory(getInitialDirectory());
         fileChooser.setTitle("Open NMR FID");
         fileChooser.getExtensionFilters().addAll(
-                new ExtensionFilter("NMR Fid", "fid", "ser", "*.nv", "*.dx", "*.jdx", "*.jdf", "*.dat"),
-                new ExtensionFilter("Any File", "*.*")
+                FileExtensionFilterType.NMR_FID.getFilter(),
+                FileExtensionFilterType.ALL_FILES.getFilter()
         );
         File selectedFile = fileChooser.showOpenDialog(null);
         if (selectedFile != null) {
@@ -421,8 +422,8 @@ public class FXMLController implements  Initializable, PeakNavigable {
         fileChooser.setInitialDirectory(getInitialDirectory());
         fileChooser.setTitle("Open NMR Dataset");
         fileChooser.getExtensionFilters().addAll(
-                new ExtensionFilter("NMR Dataset", "*.nv", "*.ucsf", "*.dx", "*.jdx", "1r", "2rr", "3rrr", "4rrrr", RS2DData.DATA_FILE_NAME),
-                new ExtensionFilter("Any File", "*.*")
+                FileExtensionFilterType.NMR_DATASET.getFilter(),
+                FileExtensionFilterType.ALL_FILES.getFilter()
         );
         File selectedFile = fileChooser.showOpenDialog(null);
         openDataset(selectedFile, false);
@@ -471,8 +472,8 @@ public class FXMLController implements  Initializable, PeakNavigable {
         fileChooser.setInitialDirectory(getInitialDirectory());
         fileChooser.setTitle("Add NMR FID/Dataset");
         fileChooser.getExtensionFilters().addAll(
-                new ExtensionFilter("NMR Fid", "fid", "ser", "*.nv", "*.dx", "*.jdx"),
-                new ExtensionFilter("Any File", "*.*")
+                FileExtensionFilterType.NMR_FID.getFilter(),
+                FileExtensionFilterType.ALL_FILES.getFilter()
         );
         File selectedFile = fileChooser.showOpenDialog(null);
         if (selectedFile != null) {
@@ -488,8 +489,8 @@ public class FXMLController implements  Initializable, PeakNavigable {
         fileChooser.setInitialDirectory(getInitialDirectory());
         fileChooser.setTitle("Add NMR Dataset");
         fileChooser.getExtensionFilters().addAll(
-                new ExtensionFilter("NMR Dataset", "*.nv", "*.ucsf"),
-                new ExtensionFilter("Any File", "*.*")
+                FileExtensionFilterType.NMR_DATASET.getFilter(),
+                FileExtensionFilterType.ALL_FILES.getFilter()
         );
         List<File> selectedFiles = fileChooser.showOpenMultipleDialog(null);
         if (selectedFiles != null) {
@@ -854,8 +855,9 @@ public class FXMLController implements  Initializable, PeakNavigable {
         fileChooser.setTitle("Export to PNG");
         fileChooser.setInitialDirectory(getInitialDirectory());
         fileChooser.getExtensionFilters().addAll(
-                new ExtensionFilter("PNG (*.png)", "*.png"),
-                new ExtensionFilter("All Files", "*.*"));
+                FileExtensionFilterType.PNG.getFilter(),
+                FileExtensionFilterType.ALL_FILES.getFilter()
+        );
         File selectedFile = fileChooser.showSaveDialog(null);
         if (selectedFile != null) {
             try {
@@ -875,8 +877,9 @@ public class FXMLController implements  Initializable, PeakNavigable {
         fileChooser.setTitle("Export to PDF");
         fileChooser.setInitialDirectory(getInitialDirectory());
         fileChooser.getExtensionFilters().addAll(
-                new ExtensionFilter("PDF (*.pdf)", "*.pdf"),
-                new ExtensionFilter("All Files", "*.*"));
+                FileExtensionFilterType.PDF.getFilter(),
+                FileExtensionFilterType.ALL_FILES.getFilter()
+        );
         File selectedFile = fileChooser.showSaveDialog(null);
         if (selectedFile != null) {
             exportPDF(selectedFile);
@@ -909,8 +912,9 @@ public class FXMLController implements  Initializable, PeakNavigable {
         fileChooser.setTitle("Export to SVG");
         fileChooser.setInitialDirectory(getInitialDirectory());
         fileChooser.getExtensionFilters().addAll(
-                new ExtensionFilter("SVG (*.svg)", "*.svg"),
-                new ExtensionFilter("All Files", "*.*"));
+                FileExtensionFilterType.SVG.getFilter(),
+                FileExtensionFilterType.ALL_FILES.getFilter()
+        );
         File selectedFile = fileChooser.showSaveDialog(null);
         if (selectedFile != null) {
             exportSVG(selectedFile);
