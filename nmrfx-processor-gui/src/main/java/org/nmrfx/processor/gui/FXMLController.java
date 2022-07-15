@@ -853,12 +853,18 @@ public class FXMLController implements  Initializable, PeakNavigable {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Export to PNG");
         fileChooser.setInitialDirectory(getInitialDirectory());
+        fileChooser.getExtensionFilters().addAll(
+                new ExtensionFilter("PNG (*.png)", "*.png"),
+                new ExtensionFilter("All Files", "*.*"));
         File selectedFile = fileChooser.showSaveDialog(null);
         if (selectedFile != null) {
             try {
-                GUIUtils.snapNode(chartGroup, selectedFile);
+                plotContent.setVisible(false);
+                GUIUtils.snapNode(chartPane, selectedFile);
             } catch (IOException ex) {
                 GUIUtils.warn("Error saving png file", ex.getLocalizedMessage());
+            } finally {
+                plotContent.setVisible(true);
             }
         }
     }
@@ -868,8 +874,13 @@ public class FXMLController implements  Initializable, PeakNavigable {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Export to PDF");
         fileChooser.setInitialDirectory(getInitialDirectory());
+        fileChooser.getExtensionFilters().addAll(
+                new ExtensionFilter("PDF (*.pdf)", "*.pdf"),
+                new ExtensionFilter("All Files", "*.*"));
         File selectedFile = fileChooser.showSaveDialog(null);
-        exportPDF(selectedFile);
+        if (selectedFile != null) {
+            exportPDF(selectedFile);
+        }
     }
 
     public void exportPDF(File file) {
@@ -897,8 +908,13 @@ public class FXMLController implements  Initializable, PeakNavigable {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Export to SVG");
         fileChooser.setInitialDirectory(getInitialDirectory());
+        fileChooser.getExtensionFilters().addAll(
+                new ExtensionFilter("SVG (*.svg)", "*.svg"),
+                new ExtensionFilter("All Files", "*.*"));
         File selectedFile = fileChooser.showSaveDialog(null);
-        exportSVG(selectedFile);
+        if (selectedFile != null) {
+            exportSVG(selectedFile);
+        }
     }
 
     public void exportSVG(File file) {
