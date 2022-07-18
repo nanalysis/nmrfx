@@ -166,7 +166,6 @@ public class ChartProcessor {
     public ChartProcessor(ProcessorController processorController) {
         interpreter = MainApp.interpreter;
         this.processorController = processorController;
-        this.fxmlController = processorController.fxmlController;
         PyObject pyDocObject = interpreter.eval("getDocs()");
         pyDocs = (ArrayList) pyDocObject.__tojava__(java.util.ArrayList.class);
     }
@@ -306,13 +305,13 @@ public class ChartProcessor {
                     break;
                 }
                 if (acqOrderArray[i].length() != 2) {
-                    System.out.println("wrong len" + acqOrderArray[i]);
+                    log.warn("wrong len {}", acqOrderArray[i]);
                     ok = false;
                     break;
                 }
                 char char0 = acqOrderArray[i].charAt(0);
                 if ((char0 != 'p') && (char0 != 'd') && (char0 != 'a')) {
-                    System.out.println("acq order character not a p,d or a: " + char0);
+                    log.warn("acq order character not a p,d or a: {}", char0);
                     ok = false;
                     break;
                 }
@@ -321,14 +320,14 @@ public class ChartProcessor {
                 }
                 char char1 = acqOrderArray[i].charAt(1);
                 if (!Character.isDigit(char1)) {
-                    System.out.println("not digit " + char1);
+                    log.warn("not digit {}", char1);
                     ok = false;
                     break;
                 }
 
             }
             if (nDimChars != (nmrData.getNDim() - 1)) {
-                System.out.println(nDimChars + " " + (nmrData.getNDim() - 1));
+                log.warn("{} {}", nDimChars, (nmrData.getNDim() - 1));
                 ok = false;
             }
             if (ok) {
@@ -372,7 +371,7 @@ public class ChartProcessor {
                     int size = Integer.parseInt(sizeArg);
                     setArraySize(iDim, size);
                 } catch (NumberFormatException nfE) {
-                    System.out.println(nfE.getMessage());
+                    log.warn(nfE.getMessage(), nfE);
                 }
             }
         }
@@ -438,7 +437,7 @@ public class ChartProcessor {
                     if (vecIndex != null) {
                         vecIndex.printMe(index, 1);
                     } else {
-                        System.out.println("No vec");
+                        log.info("No vec");
                     }
 
                 }
@@ -534,10 +533,10 @@ public class ChartProcessor {
             if (i < 0) {
                 i = 0;
             }
-            fxmlController.setRowLabel(i + 1, size);
-            int[] rows = fxmlController.getRows();
+            processorController.setRowLabel(i + 1, size);
+            int[] rows = processorController.getRows();
             int[] fileIndices = loadVectors(1, rows);
-            fxmlController.setFileIndex(fileIndices);
+            processorController.setFileIndex(fileIndices);
             try {
                 ProcessOps process = getProcess();
                 process.exec();
@@ -624,7 +623,7 @@ public class ChartProcessor {
                 opIndex = OperationInfo.getPosition(listItems, op);
             }
             if (opIndex < 0) {
-                System.out.println("bad op");
+                log.warn("bad op");
             } else if (opIndex >= listItems.size()) {
                 listItems.add(op);
             } else {
@@ -1278,7 +1277,7 @@ public class ChartProcessor {
 //            chart.datasetAttributes = null;
             chart.setCrossHairState(true, true, true, true);
             int[] sizes = new int[0];
-            fxmlController.vectorStatus(sizes, vecDim);
+            processorController.vectorStatus(sizes, vecDim);
         } else {
             chart.controller.isFID = true;
 
@@ -1300,8 +1299,8 @@ public class ChartProcessor {
                     sizes[i] = nmrData.getSize(i);
                 }
             }
-            fxmlController.vectorStatus(sizes, vecDim);
-            fxmlController.setRowLabel(1, sizes[0]);
+            processorController.vectorStatus(sizes, vecDim);
+            processorController.setRowLabel(1, sizes[0]);
         }
         chart.full();
         chart.autoScale();
@@ -1323,7 +1322,7 @@ public class ChartProcessor {
         ProcessOps process = getProcess();
         process.clearOps();
         if (processorController == null) {
-            System.out.println("null proc");
+            log.info("null processor controller.");
             return;
         }
         if (processorController.isViewingDataset()) {
@@ -1342,7 +1341,7 @@ public class ChartProcessor {
                 return;
             }
             if (processorController.refManager == null) {
-                System.out.println("null refm");
+                log.info("null ref manager");
                 return;
             }
             processorController.clearProcessingTextLabel();
@@ -1398,7 +1397,7 @@ public class ChartProcessor {
                     process.exec();
                 } catch (IncompleteProcessException e) {
                     OperationListCell.failedOperation(e.index);
-                    System.out.println("error message: " + e.getMessage());
+                    log.warn("error message: {}", e.getMessage(), e);
                     processorController.setProcessingStatus(e.op + " " + e.index + ": " + e.getMessage(), false, e);
                     log.warn(e.getMessage(), e);
                     int j = 0;
@@ -1447,4 +1446,7 @@ public class ChartProcessor {
         return pyDocs;
     }
 
+    public ProcessorController getProcessorController() {
+        return processorController;
+    }
 }

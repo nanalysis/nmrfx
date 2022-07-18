@@ -67,19 +67,6 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
     Map<String, double[]> buffers = new HashMap<>();
     Dataset[] projections = null;
 
-    public int length() {
-        int length = 1;
-        for (int i = 0; i < nDim; i++) {
-            length *= layout.getSize(i);
-        }
-        return length;
-    }
-
-    @Override
-    public int compareTo(Dataset o) {
-        return getName().compareTo(o.getName());
-    }
-
     /**
      * Create a new Dataset object that refers to an existing random access file
      * in a format that can be described by this class.
@@ -294,14 +281,15 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
 
     // create in memory file
     /**
-     * Create a dataset in memory for fast access. This is an experimental mode,
-     * and the dataset is not currently written to disk so can't be persisted.
+     * Create a dataset in memory for fast access. The dataset is not
+     * written to disk so can't be persisted.
      *
      * @param title Dataset title
      * @param dimSizes Sizes of the dataset dimensions
+     * @param addFile Whether to add the dataset to the active projects
      * @throws DatasetException if an I/O error occurs
      */
-    public Dataset(String title, int[] dimSizes) throws DatasetException {
+    public Dataset(String title, int[] dimSizes, boolean addFile) throws DatasetException {
         try {
             this.nDim = dimSizes.length;
 
@@ -321,6 +309,22 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         } catch (IOException ioe) {
             throw new DatasetException("Can't create dataset " + ioe.getMessage());
         }
+        if (addFile) {
+            addFile(title);
+        }
+    }
+
+    public int length() {
+        int length = 1;
+        for (int i = 0; i < nDim; i++) {
+            length *= layout.getSize(i);
+        }
+        return length;
+    }
+
+    @Override
+    public int compareTo(Dataset o) {
+        return getName().compareTo(o.getName());
     }
 
     private void createDataFile(RandomAccessFile raFile, boolean writable) throws IOException {

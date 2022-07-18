@@ -149,6 +149,7 @@ public class RS2DData implements NMRData {
                 false, ByteOrder.BIG_ENDIAN, 0);
         dataset.newHeader();
         for (int i = 0; i < nDim; i++) {
+            resetSW(i);
             dataset.setComplex(i, i == 0);
             dataset.setSf(i, getSF(i));
             dataset.setSw(i, getSW(i));

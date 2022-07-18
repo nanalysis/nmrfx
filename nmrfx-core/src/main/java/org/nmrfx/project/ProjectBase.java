@@ -34,6 +34,8 @@ import org.nmrfx.star.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static java.util.Objects.requireNonNullElse;
+
 /**
  *
  * @author brucejohnson
@@ -145,11 +147,10 @@ public class ProjectBase {
 
     public List<DatasetBase> getDatasetsWithFile(File file) {
         try {
-            String testPath = file.getCanonicalPath();
-            List<DatasetBase> datasetsWithFile = datasetMap.values().stream().filter((dataset) -> (dataset.getCanonicalFile().equals(testPath))).collect(Collectors.toList());
-            return datasetsWithFile;
+            String testPath = requireNonNullElse(file.getCanonicalPath(), "");
+            return datasetMap.values().stream().filter(dataset -> (testPath.equals(dataset.getCanonicalFile()))).collect(Collectors.toList());
         } catch (IOException ex) {
-            return Collections.EMPTY_LIST;
+            return Collections.emptyList();
         }
     }
 
