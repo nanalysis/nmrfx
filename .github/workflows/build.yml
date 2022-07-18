@@ -6,6 +6,7 @@ on:
   push:
     branches:
       - master
+      - 'NMR-4812_create_installer_for_testing'
       - 'epic/**'
       - 'release/**'
   pull_request:
