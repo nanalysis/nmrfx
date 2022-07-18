@@ -54,21 +54,21 @@ jobs:
       - name: Clean compile
         run: mvn -f pom.xml clean compile
 
-      # Ignore test failures so that all tests are run
-      # The publish report step will take care of failing the build if needed
-      # Use jacoco to prepare test coverage report for sonar
-      - name: Execute tests
-        run: mvn org.jacoco:jacoco-maven-plugin:prepare-agent test -Dmaven.test.failure.ignore=true
-
-      - name: Publish test report
-        uses: scacap/action-surefire-report@v1
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          fail_on_test_failures: true
-          fail_if_no_tests: true
-
-      - name: Generate test coverage report
-        run: mvn org.jacoco:jacoco-maven-plugin:report
+#      # Ignore test failures so that all tests are run
+#      # The publish report step will take care of failing the build if needed
+#      # Use jacoco to prepare test coverage report for sonar
+#      - name: Execute tests
+#        run: mvn org.jacoco:jacoco-maven-plugin:prepare-agent test -Dmaven.test.failure.ignore=true
+#
+#      - name: Publish test report
+#        uses: scacap/action-surefire-report@v1
+#        with:
+#          github_token: ${{ secrets.GITHUB_TOKEN }}
+#          fail_on_test_failures: true
+#          fail_if_no_tests: true
+#
+#      - name: Generate test coverage report
+#        run: mvn org.jacoco:jacoco-maven-plugin:report
 
       # Must be done before calling formatter & sonar, otherwise BOM project can be out of date
       # Skip assembly, it is done in the package phase for NMRfx
@@ -94,7 +94,7 @@ jobs:
               ref: 'NMR-5223-build-installers',
               inputs: {
                 nmrfx_commit_hash: '${{ github.sha }}',
-                nmrfx_head_ref: '${{ github.head_ref }}',
+                nmrfx_head_ref: '${{ github.ref }}',
                 nmrfx_ref: '${{ github.ref }}'
               }
             })
