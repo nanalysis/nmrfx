@@ -13,11 +13,11 @@ public class DatasetCompare {
         long testLen = testFile.length();
         long result;
 
-  //      if (refLen != testLen) {
+        if (refLen != testLen) {
             result = Math.min(refLen, testLen);
-//        } else {
-//            result = Files.mismatch(refFile.toPath(), testFile.toPath());
-//        }
+        } else {
+            result = Files.mismatch(refFile.toPath(), testFile.toPath());
+        }
         return result;
     }
 
