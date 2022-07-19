@@ -65,7 +65,7 @@ import org.nmrfx.processor.gui.undo.ChartUndoLimits;
  * @author Bruce Johnson
  */
 public class SpectrumStatusBar {
-
+    public static final String ANALYSIS_1D_MENU_STRING = "Analysis (1D)";
     static final DecimalFormat formatter = new DecimalFormat();
 
     static {
@@ -551,6 +551,7 @@ public class SpectrumStatusBar {
 
         btoolBar.getItems().addAll(nodes);
         updateRowSpinner(0, 1);
+        disable1DAnalysisTools(true);
 
     }
 
@@ -606,7 +607,16 @@ public class SpectrumStatusBar {
         btoolBar.getItems().clear();
 
         btoolBar.getItems().addAll(nodes);
+        disable1DAnalysisTools(mode != 1);
 
+    }
+
+    public void disable1DAnalysisTools(boolean disable) {
+        for (MenuItem menuItem: toolButton.getItems()) {
+            if (ANALYSIS_1D_MENU_STRING.equals(menuItem.getText())) {
+                menuItem.setDisable(disable);
+            }
+        }
     }
 
     public void setCrossText(int iOrient, int iCross, Double value, boolean iconState) {

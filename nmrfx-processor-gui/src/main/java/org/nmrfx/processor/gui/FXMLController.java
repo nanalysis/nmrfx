@@ -284,6 +284,9 @@ public class FXMLController implements  Initializable, PeakNavigable {
     public void setActiveChart(PolyChart chart) {
         if (activeChart != chart) {
             deselectCharts();
+        } else {
+            // if previous active chart is the same as the new active chart, do nothing
+            return;
         }
         isFID = false;
         activeChart = chart;
@@ -304,6 +307,16 @@ public class FXMLController implements  Initializable, PeakNavigable {
         }
         if (statusBar != null) {
             statusBar.setChart(activeChart);
+        }
+        updateControllerTools();
+    }
+
+    private void updateControllerTools() {
+        List<ControllerTool> toolList = new ArrayList<>(getTools());
+        for (ControllerTool tool: toolList) {
+            if (tool instanceof AnalyzerTool) {
+                ((AnalyzerTool) tool).updateTool();
+            }
         }
     }
 
@@ -665,7 +678,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
         borderPane.setLeft(null);
         borderPane.setBottom(null);
         updateSpectrumStatusBarOptions();
-
+        updateControllerTools();
         phaser.getPhaseOp();
         if (!reload) {
             if (!datasetAttributes.getHasLevel()) {
@@ -688,6 +701,8 @@ public class FXMLController implements  Initializable, PeakNavigable {
     private void updateSpectrumStatusBarOptions() {
         if (isFIDActive()) {
             statusBar.setMode(0);
+        } else if (getActiveChart().getDataset() == null) {
+            statusBar.disable1DAnalysisTools(true);
         } else {
             ObservableList<DatasetAttributes> datasetAttrList = getActiveChart().getDatasetAttributes();
             OptionalInt maxNDim = datasetAttrList.stream().mapToInt(d -> d.nDim).max();
@@ -1219,6 +1234,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
 
         controllers.add(this);
         statusBar.setMode(1);
+        statusBar.disable1DAnalysisTools(true);
         activeController.set(this);
         for (int iCross = 0; iCross < 2; iCross++) {
             for (int jOrient = 0; jOrient < 2; jOrient++) {

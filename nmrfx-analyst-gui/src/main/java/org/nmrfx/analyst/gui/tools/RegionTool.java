@@ -26,12 +26,12 @@ import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import org.controlsfx.dialog.ExceptionDialog;
-import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.analyst.peaks.Analyzer;
 import org.nmrfx.datasets.DatasetRegion;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.processor.datasets.Dataset;
+import org.nmrfx.processor.gui.AnalyzerTool;
 import org.nmrfx.processor.gui.ControllerTool;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.PolyChart;
@@ -56,7 +56,7 @@ import static org.nmrfx.utils.GUIUtils.warn;
  *
  * @author brucejohnson
  */
-public class RegionTool implements ControllerTool {
+public class RegionTool implements ControllerTool, AnalyzerTool {
     private static final Logger log = LoggerFactory.getLogger(RegionTool.class);
 
     Stage stage = null;
@@ -84,27 +84,35 @@ public class RegionTool implements ControllerTool {
 
     FXMLController controller;
     Consumer<RegionTool> closeAction;
+    ListChangeListener<DatasetAttributes> datasetAttributesListChangeListener;
+    ListChangeListener<PeakListAttributes> peakListAttributesListChangeListener;
 
     public RegionTool(FXMLController controller, Consumer<RegionTool> closeAction) {
         this.controller = controller;
         this.closeAction = closeAction;
-        chart = controller.getActiveChart();
-        chart.getDatasetAttributes().addListener((ListChangeListener) c -> {
+        getAnalyzer();
+        datasetAttributesListChangeListener = c -> {
             if (chart.getDatasetAttributes().isEmpty()) {
                 analyzer = null;
             } else {
                 Analyzer thisAnalyzer = getAnalyzer();
-                thisAnalyzer.setDataset((Dataset) chart.getDatasetAttributes().get(0).getDataset());
+                if (thisAnalyzer != null) {
+                    thisAnalyzer.setDataset((Dataset) chart.getDatasetAttributes().get(0).getDataset());
+                }
             }
-        });
-        chart.getPeakListAttributes().addListener((ListChangeListener) c -> {
+        };
+        chart.getDatasetAttributes().addListener(datasetAttributesListChangeListener);
+        peakListAttributesListChangeListener = c -> {
             Analyzer thisAnalyzer = getAnalyzer();
-            if (chart.getPeakListAttributes().isEmpty()) {
-                thisAnalyzer.setPeakList(null);
-            } else {
-                thisAnalyzer.setPeakList((PeakList) chart.getPeakListAttributes().get(0).getPeakList());
+            if (thisAnalyzer != null) {
+                if (chart.getPeakListAttributes().isEmpty()) {
+                    thisAnalyzer.setPeakList(null);
+                } else {
+                    thisAnalyzer.setPeakList(chart.getPeakListAttributes().get(0).getPeakList());
+                }
             }
-        });
+        };
+        chart.getPeakListAttributes().addListener(peakListAttributesListChangeListener);
     }
 
     public VBox getBox() {
@@ -327,13 +335,17 @@ public class RegionTool implements ControllerTool {
             if (k.getCode() == KeyCode.ENTER) {
                 try {
                     double value = Double.parseDouble(integralField.getText().trim());
-                    activeRegion.ifPresent(region -> {
-                        double integral = region.getIntegral();
-                        Optional<Dataset> datasetOpt = getDataset();
-                        datasetOpt.ifPresent(d -> d.setNorm(integral / value));
-                        analyzer.normalizePeaks(region, value);
-                        refresh();
-                    });
+                    if (analyzer != null) {
+                        activeRegion.ifPresent(region -> {
+                            double integral = region.getIntegral();
+                            Optional<Dataset> datasetOpt = getDataset();
+                            datasetOpt.ifPresent(d -> d.setNorm(integral / value));
+                            analyzer.normalizePeaks(region, value);
+                            refresh();
+                        });
+                    } else{
+                        log.warn("Analyzer is null, unable to normalize peaks.");
+                    }
                 } catch (NumberFormatException nfE) {
                     log.warn("Unable to parse integral.", nfE);
                 }
@@ -344,36 +356,70 @@ public class RegionTool implements ControllerTool {
 
     void adjustPeakIntegrals() {
         activeRegion.ifPresent(region -> {
-            chart = getChart();
-            Dataset dataset = (Dataset) chart.getDataset();
-            double norm = dataset.getNorm() / dataset.getScale();
-            double integral = region.getIntegral();
-            double value = integral / norm;
-            analyzer.normalizePeaks(region, value);
-            refresh();
+            if (analyzer != null) {
+                chart = getChart();
+                Dataset dataset = (Dataset) chart.getDataset();
+                double norm = dataset.getNorm() / dataset.getScale();
+                double integral = region.getIntegral();
+                double value = integral / norm;
+                analyzer.normalizePeaks(region, value);
+                refresh();
+            } else {
+                log.warn("Analyzer is null, unable to adjust peak integrals.");
+            }
         });
     }
 
+    /**
+     * Gets the currently active chart and sets the analyzer based on the chart's
+     * dataset. A popup to the user will be displayed if the analyzer is set to null.
+     */
     public Analyzer getAnalyzer() {
+        chart = getChart();
+        Dataset dataset = (Dataset) chart.getDataset();
         if (analyzer == null) {
-            chart = getChart();
-            Dataset dataset = (Dataset) chart.getDataset();
             if ((dataset == null) || (dataset.getNDim() > 1)) {
-                Alert alert = new Alert(Alert.AlertType.ERROR);
-                alert.setContentText("Chart must have a 1D dataset");
-                alert.showAndWait();
-                return null;
+                invalidDatasetAlert();
+                analyzer = null;
+                return analyzer;
             }
             analyzer = new Analyzer(dataset);
-            if (!chart.getPeakListAttributes().isEmpty()) {
-                analyzer.setPeakList(chart.getPeakListAttributes().get(0).getPeakList());
+        }  else {
+            if (dataset == null || dataset.getNDim() > 1){
+                invalidDatasetAlert();
+                analyzer = null;
+                return analyzer;
             }
+            if (analyzer.getDataset() != dataset && dataset.getNDim() <= 1) {
+                analyzer = new Analyzer(dataset);
+            }
+        }
+        if (!chart.getPeakListAttributes().isEmpty()) {
+            analyzer.setPeakList(chart.getPeakListAttributes().get(0).getPeakList());
         }
         return analyzer;
     }
 
+    private void invalidDatasetAlert() {
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setContentText("Chart must have a 1D dataset to use regions tool.");
+        alert.showAndWait();
+    }
+
+    /**
+     * Updates the tool's chart and analyzer. If the analyzer is null after the update
+     * the tool will be closed.
+     */
+    @Override
+    public void updateTool() {
+        getAnalyzer();
+        if (analyzer == null) {
+            log.info("Analyzer is null, closing regions tool.");
+            close();
+        }
+    }
+
     private void analyze1D() {
-        Analyzer analyzer = getAnalyzer();
         if (analyzer != null) {
             try {
                 analyzer.analyze();
@@ -391,7 +437,10 @@ public class RegionTool implements ControllerTool {
 
     private void showPeakList() {
         List<String> peakListNames = new ArrayList<>();
-        PeakList peakList = analyzer.getPeakList();
+        PeakList peakList = null;
+        if (analyzer != null) {
+            peakList = analyzer.getPeakList();
+        }
         if (peakList != null) {
             peakListNames.add(peakList.getName());
             chart.updatePeakLists(peakListNames);
@@ -399,7 +448,6 @@ public class RegionTool implements ControllerTool {
     }
 
     private void loadRegions() {
-        Analyzer analyzer = getAnalyzer();
         if (analyzer != null) {
             FileChooser chooser = new FileChooser();
             chooser.setTitle("Read Regions File");
@@ -418,7 +466,6 @@ public class RegionTool implements ControllerTool {
     }
 
     private void findRegions() {
-        Analyzer analyzer = getAnalyzer();
         if (analyzer != null) {
             analyzer.calculateThreshold();
             analyzer.getThreshold();
@@ -439,7 +486,6 @@ public class RegionTool implements ControllerTool {
     }
 
     private void fitRegions() {
-        Analyzer analyzer = getAnalyzer();
         if (analyzer != null) {
             try {
                 restrainPosition();
@@ -454,7 +500,6 @@ public class RegionTool implements ControllerTool {
     }
 
     private void pickRegions() {
-        Analyzer analyzer = getAnalyzer();
         if (analyzer != null) {
             analyzer.peakPickRegions();
             PeakList peakList = analyzer.getPeakList();
@@ -472,15 +517,14 @@ public class RegionTool implements ControllerTool {
     }
 
     private void clearAnalysis() {
-        Analyzer regionAnalyzer = getAnalyzer();
-        if (regionAnalyzer != null) {
+        if (analyzer != null) {
             if (affirm("Clear Analysis")) {
-                PeakList peakList = regionAnalyzer.getPeakList();
+                PeakList peakList = analyzer.getPeakList();
                 if (peakList != null) {
                     peakList.remove();
-                    regionAnalyzer.setPeakList(null);
+                    analyzer.setPeakList(null);
                 }
-                regionAnalyzer.getDataset().setRegions(null);
+                analyzer.getDataset().setRegions(null);
                 chart.chartProps.setRegions(false);
                 chart.chartProps.setIntegrals(false);
                 chart.refresh();
@@ -495,7 +539,6 @@ public class RegionTool implements ControllerTool {
     }
 
     private void setThreshold() {
-        Analyzer analyzer = getAnalyzer();
         if (analyzer != null) {
             CrossHairs crossHairs = chart.getCrossHairs();
             if (!crossHairs.hasCrosshairState("h0")) {
@@ -503,7 +546,7 @@ public class RegionTool implements ControllerTool {
                 return;
             }
             Double[] pos = crossHairs.getCrossHairPositions(0);
-            System.out.println(pos[0] + " " + pos[1]);
+            log.info("{} {}", pos[0], pos[1]);
             analyzer.setThreshold(pos[1]);
         }
     }
@@ -640,7 +683,7 @@ public class RegionTool implements ControllerTool {
             controller.initMultiplet();
 
         } catch (IOException ioE) {
-            System.out.println(ioE.getMessage());
+            log.warn(ioE.getMessage(), ioE);
         }
         return controller;
     }
@@ -655,14 +698,15 @@ public class RegionTool implements ControllerTool {
         if (!attrs.isEmpty()) {
             peakListOpt = Optional.of(attrs.get(0).getPeakList());
         } else {
-            Analyzer analyzer = getAnalyzer();
-            PeakList peakList = analyzer.getPeakList();
-            if (peakList != null) {
-                List<String> peakListNames = new ArrayList<>();
-                peakListNames.add(peakList.getName());
-                chart.updatePeakLists(peakListNames);
-                attrs = chart.getPeakListAttributes();
-                peakListOpt = Optional.of(attrs.get(0).getPeakList());
+            if (analyzer != null) {
+                PeakList peakList = analyzer.getPeakList();
+                if (peakList != null) {
+                    List<String> peakListNames = new ArrayList<>();
+                    peakListNames.add(peakList.getName());
+                    chart.updatePeakLists(peakListNames);
+                    attrs = chart.getPeakListAttributes();
+                    peakListOpt = Optional.of(attrs.get(0).getPeakList());
+                }
             }
         }
         return peakListOpt;
@@ -671,9 +715,11 @@ public class RegionTool implements ControllerTool {
 
     Optional<Dataset> getDataset() {
         Optional<Dataset> datasetOpt = Optional.empty();
-        Dataset dataset = getAnalyzer().getDataset();
-        if (dataset != null) {
-            datasetOpt = Optional.of(dataset);
+        if (analyzer != null) {
+            Dataset dataset = getAnalyzer().getDataset();
+            if (dataset != null) {
+                datasetOpt = Optional.of(dataset);
+            }
         }
         return datasetOpt;
     }
@@ -705,28 +751,29 @@ public class RegionTool implements ControllerTool {
     }
 
     List<MultipletSelection> getMultipletSelection() {
-        FXMLController controller = FXMLController.getActiveController();
-        List<MultipletSelection> multiplets = chart.getSelectedMultiplets();
-        return multiplets;
+        return chart.getSelectedMultiplets();
     }
 
     private void restrainPosition() {
-        analyzer.setPositionRestraint(restraintPosCheckBox.isSelected()
-                ? restraintSlider.getValue() : null);
+        if (analyzer != null) {
+            analyzer.setPositionRestraint(restraintPosCheckBox.isSelected()
+                    ? restraintSlider.getValue() : null);
+        }
     }
 
     public void fitSelected() {
-        Analyzer analyzer = getAnalyzer();
-        activeRegion.ifPresent(m -> {
-            try {
-                restrainPosition();
-                Optional<Double> result = analyzer.fitRegion(m);
-                refresh();
-            } catch (Exception ex) {
-                ExceptionDialog eDialog = new ExceptionDialog(ex);
-                eDialog.showAndWait();
-            }
-        });
+        if (analyzer != null) {
+            activeRegion.ifPresent(m -> {
+                try {
+                    restrainPosition();
+                    Optional<Double> result = analyzer.fitRegion(m);
+                    refresh();
+                } catch (Exception ex) {
+                    ExceptionDialog eDialog = new ExceptionDialog(ex);
+                    eDialog.showAndWait();
+                }
+            });
+        }
     }
 
     public void splitRegion() {
@@ -741,13 +788,14 @@ public class RegionTool implements ControllerTool {
     }
 
     public void adjustRegion() {
-        Analyzer analyzer = getAnalyzer();
-        double ppm0 = chart.getVerticalCrosshairPositions()[0];
-        double ppm1 = chart.getVerticalCrosshairPositions()[1];
-        analyzer.removeRegion(ppm0, ppm1);
-        analyzer.addRegion(ppm0, ppm1);
-        RegionTool.this.updateRegion(false);
-        chart.refresh();
+        if (analyzer != null) {
+            double ppm0 = chart.getVerticalCrosshairPositions()[0];
+            double ppm1 = chart.getVerticalCrosshairPositions()[1];
+            analyzer.removeRegion(ppm0, ppm1);
+            analyzer.addRegion(ppm0, ppm1);
+            RegionTool.this.updateRegion(false);
+            chart.refresh();
+        }
     }
 
     public void regionAdded(DatasetRegion region) {
@@ -759,7 +807,6 @@ public class RegionTool implements ControllerTool {
     }
 
     public void addRegion(DatasetRegion region) {
-        getAnalyzer();
         double ppm0;
         double ppm1;
         if (region == null) {
@@ -775,9 +822,11 @@ public class RegionTool implements ControllerTool {
             activeRegion = Optional.of(region);
         }
         RegionTool.this.updateRegion(false);
-        PeakList peakList = analyzer.getPeakList();
-        if (peakList != null) {
-            analyzer.peakPickRegion(ppm0, ppm1);
+        if (analyzer != null) {
+            PeakList peakList = analyzer.getPeakList();
+            if (peakList != null) {
+                analyzer.peakPickRegion(ppm0, ppm1);
+            }
         }
 
         chart.refresh();
@@ -800,9 +849,7 @@ public class RegionTool implements ControllerTool {
         activeRegion.ifPresent(region -> {
             try {
                 Optional<Double> result = analyzer.measureRegion(region, "rms");
-                if (result.isPresent()) {
-                    System.out.println("rms " + result.get());
-                }
+                result.ifPresent(aDouble -> log.info("rms {}", aDouble));
             } catch (Exception ex) {
                 ExceptionDialog eDialog = new ExceptionDialog(ex);
                 eDialog.showAndWait();
@@ -829,7 +876,7 @@ public class RegionTool implements ControllerTool {
             try {
                 Optional<Double> result = analyzer.measureRegion(region, "maxdev");
                 if (result.isPresent()) {
-                    System.out.println("dev pos " + result.get());
+                    log.info("dev pos {}", result.get());
                     analyzer.addPeaksToRegion(region, result.get());
                     showPeakList();
                     chart.refresh();
@@ -908,4 +955,8 @@ public class RegionTool implements ControllerTool {
         }
     }
 
+    public void removeListeners() {
+        chart.getDatasetAttributes().removeListener(datasetAttributesListChangeListener);
+        chart.getPeakListAttributes().removeListener(peakListAttributesListChangeListener);
+    }
 }

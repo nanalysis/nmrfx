@@ -384,7 +384,7 @@ public class AnalystApp extends MainApp {
 
     @Override
     public void addStatusBarTools(SpectrumStatusBar statusBar) {
-        Menu oneDMenu = new Menu("Analysis (1D)");
+        Menu oneDMenu = new Menu(SpectrumStatusBar.ANALYSIS_1D_MENU_STRING );
         MenuItem multipletToolItem = new MenuItem("Show Multiplet Tool");
         multipletToolItem.setOnAction(e -> showMultipletTool());
 
@@ -482,6 +482,7 @@ public class AnalystApp extends MainApp {
         Button wizardButton = GlyphsDude.createIconButton(FontAwesomeIcon.MAGIC, "Multiplets", iconSize, fontSize, ContentDisplay.LEFT);
         wizardButton.setOnAction(e -> simplePeakRegionTool.analyzeMultiplets());
         statusBar.addToolBarButtons(regionButton, peakButton, wizardButton);
+         controller.addTool(simplePeakRegionTool);
     }
 
 
@@ -675,6 +676,8 @@ public class AnalystApp extends MainApp {
         FXMLController controller = FXMLController.getActiveController();
         controller.removeTool(RegionTool.class);
         controller.getBottomBox().getChildren().remove(regionTool.getBox());
+        // Must remove all listeners that the region tool set, or they will continue to be called.
+        regionTool.removeListeners();
     }
 
     public void showPeakPathTool() {
