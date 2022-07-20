@@ -10,7 +10,7 @@ import java.util.List;
  */
 public enum FileExtensionFilterType {
     ALL_FILES("All Files", "*.*"),
-    NMR_FID("NMR Fid","fid", "ser", "*.nv", "*.dx", "*.jdx", "*.jdf", "*.dat"),
+    NMR_FID("NMR Fid","fid", "ser", "*.nv", "*.dx", "*.jdx", "*.jdf", RS2DData.DATA_FILE_NAME),
     NMR_DATASET("NMR Dataset", "*.nv", "*.ucsf", "*.dx", "*.jdx", "1r", "2rr", "3rrr", "4rrrr", RS2DData.DATA_FILE_NAME),
     PDF("PDF", "*.pdf"),
     PNG("PNG", "*.png"),
