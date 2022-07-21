@@ -1115,6 +1115,9 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         statusBar.setProgress(0.0);
 
         statusBar.getLeftItems().add(statusCircle);
+        Tooltip statusBarToolTip = new Tooltip();
+        statusBarToolTip.textProperty().bind(statusBar.textProperty());
+        statusBar.setTooltip(statusBarToolTip);
         Processor.getProcessor().addProcessorAvailableStatusListener(listener);
         processorAvailable.set(Processor.getProcessor().isProcessorAvailable());
         processDatasetButton.disableProperty()
@@ -1232,6 +1235,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
                     rowTextBoxes[iDim - 1].setText(1 + " / " + sizes[iDim]);
                 }
                 fileIndexTextBox.setText("1");
+                realImagChoiceBox.setValue(realImagChoices.get(0));
             }
         } else {
             navHBox.getChildren().clear();

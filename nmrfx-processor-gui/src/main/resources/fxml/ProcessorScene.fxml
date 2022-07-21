@@ -148,7 +148,7 @@
         </TabPane>
     </center>
     <bottom>
-        <VBox>
+        <VBox maxWidth="400.0">
             <HBox>
                 <children>
                     <Button fx:id="datasetFileButton" mnemonicParsing="false" onAction="#datasetFileAction" text="File..." />
