@@ -1114,6 +1114,9 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         statusBar.setProgress(0.0);
 
         statusBar.getLeftItems().add(statusCircle);
+        Tooltip statusBarToolTip = new Tooltip();
+        statusBarToolTip.textProperty().bind(statusBar.textProperty());
+        statusBar.setTooltip(statusBarToolTip);
         Processor.getProcessor().addProcessorAvailableStatusListener(listener);
         processorAvailable.set(Processor.getProcessor().isProcessorAvailable());
         processDatasetButton.disableProperty()
