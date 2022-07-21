@@ -218,8 +218,12 @@ public class PolyChart extends Region implements PeakListener {
         }
     }
 
-    public void addMultipletListener(SetChangeListener listener) {
+    public void addMultipletListener(SetChangeListener<MultipletSelection> listener) {
         selectedMultiplets.addListener(listener);
+    }
+
+    public void removeMultipletListener(SetChangeListener<MultipletSelection> listener) {
+        selectedMultiplets.removeListener(listener);
     }
 
     public void setPeakStatus(boolean state) {

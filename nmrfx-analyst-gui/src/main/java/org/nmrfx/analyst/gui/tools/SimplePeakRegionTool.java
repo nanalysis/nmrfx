@@ -6,6 +6,7 @@ import org.nmrfx.analyst.peaks.Analyzer;
 import org.nmrfx.datasets.DatasetRegion;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.processor.datasets.Dataset;
+import org.nmrfx.processor.gui.AnalyzerTool;
 import org.nmrfx.processor.gui.ControllerTool;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.PeakPicking;
@@ -20,7 +21,7 @@ import java.util.Set;
 
 import static org.nmrfx.utils.GUIUtils.affirm;
 
-public class SimplePeakRegionTool implements ControllerTool {
+public class SimplePeakRegionTool implements ControllerTool, AnalyzerTool {
     private static final Logger log = LoggerFactory.getLogger(SimplePeakRegionTool.class);
     Analyzer analyzer;
     FXMLController controller;
@@ -41,27 +42,43 @@ public class SimplePeakRegionTool implements ControllerTool {
         return chart;
     }
 
+    /**
+     * Updates the tool's chart and analyzer.
+     */
+    public void updateTool() {
+        getAnalyzer();
+    }
+
+    /**
+     * Gets the currently active chart and sets the analyzer based on the chart's
+     * dataset.
+     */
     public Analyzer getAnalyzer() {
+        chart = getChart();
+        Dataset dataset = (Dataset) chart.getDataset();
         if (analyzer == null) {
-            chart = getChart();
-            Dataset dataset = (Dataset) chart.getDataset();
             if ((dataset == null) || (dataset.getNDim() > 1)) {
-                Alert alert = new Alert(Alert.AlertType.ERROR);
-                alert.setContentText("Chart must have a 1D dataset");
-                alert.showAndWait();
-                return null;
+                analyzer = null;
+                return analyzer;
             }
             analyzer = new Analyzer(dataset);
-            if (!chart.getPeakListAttributes().isEmpty()) {
-                analyzer.setPeakList(chart.getPeakListAttributes().get(0).getPeakList());
+        }  else {
+            if (dataset == null || dataset.getNDim() > 1){
+                analyzer = null;
+                return analyzer;
             }
+            if (analyzer.getDataset() != dataset && dataset.getNDim() <= 1) {
+                analyzer = new Analyzer(dataset);
+            }
+        }
+        if (!chart.getPeakListAttributes().isEmpty()) {
+            analyzer.setPeakList(chart.getPeakListAttributes().get(0).getPeakList());
         }
         return analyzer;
     }
 
     public void clearAnalysis(boolean prompt) {
         if (!prompt || affirm("Clear Analysis")) {
-            Analyzer analyzer = getAnalyzer();
             if (analyzer != null) {
                 PeakList peakList = analyzer.getPeakList();
                 if (peakList != null) {
@@ -75,16 +92,25 @@ public class SimplePeakRegionTool implements ControllerTool {
         }
     }
 
+    private void invalidDatasetAlert(String message) {
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setContentText(message);
+        alert.showAndWait();
+    }
+
     public boolean hasRegions() {
-        Set<DatasetRegion> regions = chart.getDataset().getRegions();
-        return (regions != null) && !regions.isEmpty();
+        Dataset dataset = (Dataset) chart.getDataset();
+        if (dataset != null) {
+            Set<DatasetRegion> regions = dataset.getRegions();
+            return (regions != null) && !regions.isEmpty();
+        }
+        return false;
     }
 
     public void findRegions() {
         if (hasRegions()) {
             clearAnalysis(true);
         }
-        Analyzer analyzer = getAnalyzer();
         if (analyzer != null) {
             analyzer.calculateThreshold();
             analyzer.getThreshold();
@@ -102,21 +128,21 @@ public class SimplePeakRegionTool implements ControllerTool {
                 // normalize to the smallest integral, but don't count very small integrals (less than 0.001 of max
                 // to avoid artifacts
 
-                double threshold = regions.stream().mapToDouble(r -> r.getIntegral()).max().orElse(1.0) / 1000.0;
-                regions.stream().mapToDouble(r -> r.getIntegral()).filter(r -> r > threshold).min().ifPresent(min -> {
-                    dataset.setNorm(min * dataset.getScale() / 1.0);
-                });
+                double threshold = regions.stream().mapToDouble(DatasetRegion::getIntegral).max().orElse(1.0) / 1000.0;
+                regions.stream().mapToDouble(DatasetRegion::getIntegral).filter(r -> r > threshold).min().ifPresent(
+                        min -> dataset.setNorm(min * dataset.getScale()));
             }
             chart.refresh();
             chart.chartProps.setRegions(true);
             chart.chartProps.setIntegrals(true);
             chart.setActiveRegion(null);
             chart.refresh();
+        } else {
+            invalidDatasetAlert("Chart must have a 1D dataset.");
         }
 
     }
     public void peakPick() {
-        Analyzer analyzer = getAnalyzer();
         if (analyzer != null) {
             Set<DatasetRegion> regions = chart.getDataset().getRegions();
             if ((regions == null) || regions.isEmpty()) {
@@ -139,12 +165,13 @@ public class SimplePeakRegionTool implements ControllerTool {
             peakList.setProperty("minWidth", String.valueOf(minWidth));
             peakList.setProperty("maxWidth", String.valueOf(maxWidth));
             chart.refresh();
+        } else {
+            invalidDatasetAlert("Chart must have a valid dataset.");
         }
 
     }
 
     public void analyzeMultiplets() {
-        Analyzer analyzer = getAnalyzer();
         if (analyzer != null) {
             try {
                 analyzer.analyze();
@@ -158,6 +185,8 @@ public class SimplePeakRegionTool implements ControllerTool {
             } catch (IOException ex) {
                 log.error(ex.getMessage(), ex);
             }
+        } else {
+            invalidDatasetAlert("Chart must have a 1D dataset.");
         }
     }
 
