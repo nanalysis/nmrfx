@@ -131,7 +131,6 @@ public class ProjectBase {
     }
 
     public boolean removeDataset(String datasetName) {
-        DatasetBase toRemove = datasetMap.get(datasetName);
         boolean result = datasetMap.remove(datasetName) != null;
         refreshDatasetList();
         return result;

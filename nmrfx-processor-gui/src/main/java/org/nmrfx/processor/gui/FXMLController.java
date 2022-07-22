@@ -81,6 +81,7 @@ import org.nmrfx.processor.gui.spectra.*;
 import org.nmrfx.processor.gui.tools.SpectrumComparator;
 import org.nmrfx.processor.gui.undo.UndoManager;
 import org.nmrfx.processor.gui.utils.FileExtensionFilterType;
+import org.nmrfx.project.ProjectBase;
 import org.nmrfx.utilities.DictionarySort;
 import org.nmrfx.utils.GUIUtils;
 import org.python.core.PyObject;
@@ -430,11 +431,38 @@ public class FXMLController implements  Initializable, PeakNavigable {
         openDataset(selectedFile, false);
     }
 
+    /**
+     * Checks if the dataset is an FID and returns true or false if it matches expectingFID. If the dataset does
+     * not match what was expected an alert message is created. If the dataset is of type NMRViewData, the dataset
+     * will be removed from the project.
+     * @param data The data to verify
+     * @param expectingFID True if the data is expected to be using FID, otherwise false
+     * @param alertMsg A String message to display if verification fails
+     * @return True if data matches expectingFID, otherwise false.
+     */
+    private boolean verifyData(NMRData data, boolean expectingFID, String alertMsg) {
+        boolean dataOkay = data.isFID() == expectingFID;
+        if (!dataOkay) {
+            Alert alert = new Alert(Alert.AlertType.WARNING, alertMsg);
+            alert.showAndWait();
+            // The NMRViewData constructor adds the dataset to the project, so it should be removed if it is
+            // not going to be displayed.
+            if (data instanceof NMRViewData) {
+                String datasetName = ((NMRViewData) data).getDataset().getName();
+                ProjectBase.getActive().removeDataset(datasetName);
+            }
+        }
+        return dataOkay;
+    }
+
     public void openDataset(File selectedFile, boolean append) {
         if (selectedFile != null) {
             try {
                 setInitialDirectory(selectedFile.getParentFile());
                 NMRData nmrData = NMRDataUtil.getNMRData(selectedFile.toString());
+                if (!verifyData(nmrData, false, "Use \"Open FID\" to open an fid file")) {
+                    return;
+                }
                 ProcessorController processorController = getActiveChart().getProcessorController(false);
                 if (processorController != null && (!selectedFile.equals(chartProcessor.datasetFile))) {
                     processorPane.getChildren().clear();
@@ -562,9 +590,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
 
             }
             if (nmrData != null) {
-                if ((nmrData instanceof NMRViewData || nmrData instanceof JCAMPData) && !nmrData.isFID()) {
-                    Alert alert = new Alert(Alert.AlertType.WARNING, "Use \"Open Dataset\" to open non-fid file");
-                    alert.showAndWait();
+                if (!verifyData(nmrData, true, "Use \"Open Dataset\" to open non-fid file")) {
                     return;
                 } else {
                     if (datasetType != null) {

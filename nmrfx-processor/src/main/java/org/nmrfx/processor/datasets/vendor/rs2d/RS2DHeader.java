@@ -46,6 +46,13 @@ public class RS2DHeader {
                 .collect(Collectors.toList());
     }
 
+    public boolean isPresent(RS2DParam param) {
+        return isPresent(param.name());
+    }
+
+    public boolean isPresent(String name) {
+        return params.containsKey(name);
+    }
 
     public String getString(RS2DParam param) {
         return getString(param.name());
@@ -95,6 +102,16 @@ public class RS2DHeader {
 
     public Integer getInt(String name) {
         return asInteger(getString(name));
+    }
+
+    public List<Integer> getInts(RS2DParam param) {
+        return getInts(param.name());
+    }
+
+    public List<Integer> getInts(String names) {
+        return getStrings(names).stream()
+                .map(RS2DHeader::asInteger)
+                .collect(Collectors.toList());
     }
 
     public void writeParam(String name, String value) throws XPathExpressionException {
