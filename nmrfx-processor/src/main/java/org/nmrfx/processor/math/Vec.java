@@ -108,6 +108,23 @@ public class Vec extends VecBase {
     }
 
     /**
+     * Create a real vector.
+     * @param real The real data to store in the vector.
+     */
+    public Vec(double[] real) {
+        super(real);
+    }
+
+    /**
+     * Create a complex vector that stores real and imaginary in separate arrays.
+     * @param real
+     * @param imaginary
+     */
+    public Vec(double[] real, double[] imaginary) {
+        super(real, imaginary);
+    }
+
+    /**
      * Create a vector with the specified name, size and complex mode and store
      * it in a Map of Vec objects.
      *

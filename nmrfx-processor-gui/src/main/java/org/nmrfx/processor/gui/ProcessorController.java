@@ -464,6 +464,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         chartProcessor.setVecDim("D1");
         viewMode.setValue("FID");
         chart.controller.undoManager.clear();
+        chart.controller.updateSpectrumStatusBarOptions();
     }
 
     public String getScript() {

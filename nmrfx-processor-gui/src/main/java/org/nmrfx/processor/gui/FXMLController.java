@@ -65,6 +65,7 @@ import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakDim;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.processor.datasets.Dataset;
+import org.nmrfx.processor.datasets.DatasetException;
 import org.nmrfx.processor.datasets.DatasetType;
 import org.nmrfx.processor.datasets.peaks.PeakLinker;
 import org.nmrfx.processor.datasets.peaks.PeakListAlign;
@@ -72,6 +73,7 @@ import org.nmrfx.processor.datasets.peaks.PeakNeighbors;
 import org.nmrfx.processor.datasets.peaks.PeakNetworkMatch;
 import org.nmrfx.processor.datasets.vendor.*;
 import org.nmrfx.processor.datasets.vendor.bruker.BrukerData;
+import org.nmrfx.processor.datasets.vendor.jcamp.JCAMPData;
 import org.nmrfx.processor.datasets.vendor.nmrview.NMRViewData;
 import org.nmrfx.processor.datasets.vendor.rs2d.RS2DData;
 import org.nmrfx.processor.gui.controls.GridPaneCanvas;
@@ -457,8 +459,17 @@ public class FXMLController implements  Initializable, PeakNavigable {
                     String suggestedName = rs2dData.suggestName(new File(rs2dData.getFilePath()));
                     Dataset dataset = rs2dData.toDataset(suggestedName);
                     addDataset(dataset, append, false);
+                } else if (nmrData instanceof JCAMPData) {
+                    PreferencesController.saveRecentDatasets(selectedFile.toString());
+                    JCAMPData jcampData = (JCAMPData) nmrData;
+                    String suggestedName = jcampData.suggestName(new File (jcampData.getFilePath()));
+                    Dataset dataset = jcampData.toDataset(suggestedName);
+                    addDataset(dataset, append, false);
+                } else {
+                    log.info("Unable to find a dataset format for: {}", selectedFile);
                 }
-            } catch (IOException ex) {
+            } catch (IOException | DatasetException ex) {
+                log.warn(ex.getMessage(), ex);
                 GUIUtils.warn("Open Dataset", ex.getMessage());
             }
         }
@@ -551,7 +562,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
 
             }
             if (nmrData != null) {
-                if ((nmrData instanceof NMRViewData) && !nmrData.isFID()) {
+                if ((nmrData instanceof NMRViewData || nmrData instanceof JCAMPData) && !nmrData.isFID()) {
                     Alert alert = new Alert(Alert.AlertType.WARNING, "Use \"Open Dataset\" to open non-fid file");
                     alert.showAndWait();
                     return;
@@ -682,10 +693,10 @@ public class FXMLController implements  Initializable, PeakNavigable {
     }
 
     /**
-     * Updates the SpectrumStatusBar menu options based on whether FID mood is on, and the dimensions
+     * Updates the SpectrumStatusBar menu options based on whether FID mode is on, and the dimensions
      * of the dataset.
      */
-    private void updateSpectrumStatusBarOptions() {
+    public void updateSpectrumStatusBarOptions() {
         if (isFIDActive()) {
             statusBar.setMode(0);
         } else {
