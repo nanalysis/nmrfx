@@ -1819,6 +1819,11 @@ public class BrukerData implements NMRData {
     }
 
     @Override
+    public boolean isFID() {
+        return !isFrequencyDim(0);
+    }
+
+    @Override
     public SampleSchedule getSampleSchedule() {
         return sampleSchedule;
     }
