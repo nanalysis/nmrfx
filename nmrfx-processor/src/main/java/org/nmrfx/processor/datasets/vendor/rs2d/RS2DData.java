@@ -216,6 +216,8 @@ public class RS2DData implements NMRData {
             List<Integer> states = header.getInts(RS2DParam.STATE);
             if (states != null) {
                 return states.get(0) == 0;
+            } else {
+                log.debug("Unable to find state parameter. Setting state to FID.");
             }
         }
         return true;
