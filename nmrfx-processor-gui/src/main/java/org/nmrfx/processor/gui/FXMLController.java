@@ -690,6 +690,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
             }
         }
         getActiveChart().layoutPlotChildren();
+        undoManager.clear();
     }
 
     /**
