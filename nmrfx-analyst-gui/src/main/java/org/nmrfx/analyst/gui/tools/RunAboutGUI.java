@@ -56,6 +56,8 @@ import org.nmrfx.structure.seqassign.RunAbout.TypeInfo;
 import org.nmrfx.structure.seqassign.SpinSystem.AtomPresent;
 import org.nmrfx.structure.seqassign.SpinSystem.PeakMatch;
 import org.nmrfx.utils.GUIUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.*;
@@ -70,6 +72,8 @@ import static org.nmrfx.processor.gui.spectra.DatasetAttributes.AXMODE.PPM;
  * @author Bruce Johnson
  */
 public class RunAboutGUI implements PeakListener, ControllerTool {
+
+    private static final Logger log = LoggerFactory.getLogger(RunAboutGUI.class);
     static Font activeFont = Font.font(null, FontWeight.BOLD, 14);
     static Font regularFont = Font.font(null, FontWeight.NORMAL, 14);
 
@@ -143,14 +147,18 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         int getNRows() {
             int totalRows = 0;
             Molecule mol = Molecule.getActive();
-            for (Polymer polymer : mol.getPolymers()) {
-                if (polymer.isPeptide()) {
-                    int nRes = polymer.getResidues().size();
-                    double width = (resWidth * (10 + 1)) * nRes / 10.0;
-                    int rows = (int) Math.ceil(width / vBox.getWidth());
-                    totalRows += rows;
+            if (mol != null) {
+                for (Polymer polymer : mol.getPolymers()) {
+                    if (polymer.isPeptide()) {
+                        int nRes = polymer.getResidues().size();
+                        double width = (resWidth * (10 + 1)) * nRes / 10.0;
+                        int rows = (int) Math.ceil(width / vBox.getWidth());
+                        totalRows += rows;
 
+                    }
                 }
+            } else {
+                log.info("No active molecule. Unable to get rows.");
             }
             return totalRows;
 
@@ -178,7 +186,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
             return active;
         }
         public void setActive(boolean value) {
-            System.out.println("set value " + value);
+            log.info("set value {}", value);
             activeProperty().set(value);
         }
         public boolean getActive() {
@@ -286,7 +294,11 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         gridBox1.add(refLabel, 0, 0);
         gridBox1.add(referenceChoice, 1, 0);
         referenceChoice.getItems().addAll(peakLists);
-        refListObj.set(peakLists.get(0));
+        if (!peakLists.isEmpty()) {
+            refListObj.set(peakLists.get(0));
+        } else {
+            log.warn("Peaks list is empty, unable to set peaks.");
+        }
         referenceChoice.valueProperty().bindBidirectional(refListObj);
 
         VBox vBox2 = new VBox();
@@ -356,7 +368,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         var model = peakTableView.getSelectionModel();
         configureButton.setDisable(true);
         model.selectedIndexProperty().addListener(e -> {
-            System.out.println("selected " + model.getSelectedIndices());
+            log.info("selected {}", model.getSelectedIndices());
             configureButton.setDisable(model.getSelectedIndices().isEmpty());
         });
     }
@@ -817,7 +829,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
                     frag.setResSeqScore(resSeqScores.get(0));
                 }
                 for (ResidueSeqScore resSeqScore : resSeqScores) {
-                    System.out.println(resSeqScore.getFirstResidue().getNumber() + " " + resSeqScore.getScore());
+                    log.debug("{} {}", resSeqScore.getFirstResidue().getNumber(), resSeqScore.getScore());
                     Residue residue = resSeqScore.getFirstResidue();
                     for (int iRes = 0; iRes < resSeqScore.getNResidues(); iRes++) {
                         String key = residue.getPolymer().getName() + residue.getNumber();
