@@ -17,8 +17,12 @@
  */
 package org.nmrfx.chemistry.constraints;
 
+import org.nmrfx.chemistry.SpatialSetGroup;
 import org.nmrfx.peaks.Peak;
 
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.*;
 import java.util.Map.Entry;
 
@@ -192,6 +196,23 @@ public class NoeSet implements ConstraintSet, Iterable {
         memberID = -1;
         lastPeakWritten = null;
         ID = 0;
+    }
+
+    public void writeNMRFxFile(File file) throws IOException {
+        try ( FileWriter fileWriter = new FileWriter(file)) {
+            int i = 0;
+            for (Noe noe : constraints) {
+                double lower = noe.getLower();
+                double upper = noe.getUpper();
+                SpatialSetGroup spg1 = noe.spg1;
+                SpatialSetGroup spg2 = noe.spg2;
+                String aName1 = spg1.getFullName();
+                String aName2 = spg2.getFullName();
+                String outputString = String.format("%d\t%d\t%s\t%s\t%.3f\t%.3f\n", i, i, aName1, aName2, lower, upper);
+                fileWriter.write(outputString);
+                i++;
+            }
+        }
     }
 
 

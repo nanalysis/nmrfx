@@ -70,6 +70,7 @@ public class NoeCalibrationExp extends NoeCalibration {
             bound = bound > maxBound ? maxBound : bound;
             bound = bound < minBound ? minBound : bound;
         }
+        System.out.println("ref " + referenceDist + " " + expValue + " " + intensity + " " + bound);
         noe.setTarget(target);
         noe.setUpper(bound);
         noe.setLower(lower);

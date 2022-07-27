@@ -23,21 +23,23 @@
  */
 package org.nmrfx.analyst.gui.peaks;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.text.DecimalFormat;
+import java.util.HashMap;
+import java.util.List;
 import java.util.ResourceBundle;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
+import javafx.geometry.Side;
 import javafx.scene.Scene;
-import javafx.scene.control.Button;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableView;
-import javafx.scene.control.ToolBar;
+import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.scene.layout.Pane;
+import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import java.text.Format;
@@ -48,15 +50,12 @@ import javafx.collections.ListChangeListener;
 import javafx.collections.MapChangeListener;
 import javafx.collections.ObservableList;
 import javafx.collections.ObservableMap;
-import javafx.scene.control.Label;
-import javafx.scene.control.MenuButton;
-import javafx.scene.control.MenuItem;
-import javafx.scene.control.SelectionMode;
-import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn.CellDataFeatures;
 import javafx.util.Callback;
 import javafx.util.StringConverter;
 import javafx.util.converter.DefaultStringConverter;
+import org.controlsfx.control.MasterDetailPane;
+import org.controlsfx.control.PropertySheet;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.chemistry.InvalidMoleculeException;
 import org.nmrfx.chemistry.MoleculeBase;
@@ -70,7 +69,11 @@ import org.nmrfx.peaks.PeakList;
 import org.nmrfx.processor.project.Project;
 import org.nmrfx.structure.noe.NOEAssign;
 import org.nmrfx.structure.noe.NOECalibrator;
+import org.nmrfx.structure.noe.NoeCalibration;
+import org.nmrfx.structure.noe.NoeCalibrationExp;
 import org.nmrfx.utils.GUIUtils;
+import org.nmrfx.utils.properties.DoubleRangeOperationItem;
+import org.nmrfx.utils.properties.NvFxPropertyEditorFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -85,6 +88,8 @@ public class NOETableController implements Initializable {
     @FXML
     private ToolBar toolBar;
     @FXML
+    MasterDetailPane masterDetailPane;
+    @FXML
     private TableView<Noe> tableView;
     private NoeSet noeSet;
 
@@ -96,10 +101,24 @@ public class NOETableController implements Initializable {
     ObservableMap<String, NoeSet> noeSetMap;
     MoleculeBase molecule = null;
     MolecularConstraints molConstr = null;
+    PropertySheet propertySheet;
+    CheckBox detailsCheckBox;
+    DoubleRangeOperationItem refDistanceItem;
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
         initToolBar();
+        tableView = new TableView<>();
+        masterDetailPane.setMasterNode(tableView);
+        propertySheet = new PropertySheet();
+        masterDetailPane.setDetailSide(Side.RIGHT);
+        masterDetailPane.setDetailNode(propertySheet);
+        masterDetailPane.setShowDetailNode(true);
+        propertySheet.setPropertyEditorFactory(new NvFxPropertyEditorFactory());
+        propertySheet.setMode(PropertySheet.Mode.CATEGORY);
+        propertySheet.setModeSwitcherVisible(false);
+        propertySheet.setSearchBoxVisible(false);
+
         initTable();
         molecule = MoleculeFactory.getActive();
         if (molecule != null) {
@@ -119,6 +138,10 @@ public class NOETableController implements Initializable {
 
         updateNoeSetMenu();
         updatePeakListMenu();
+        masterDetailPane.showDetailNodeProperty().bindBidirectional(detailsCheckBox.selectedProperty());
+        refDistanceItem = new DoubleRangeOperationItem((a, b, c) -> refresh(),
+                3.0, 1.0, 7.0, false, "Exp Calibrate", "RefDist", "Reference Distance for Exp. Calibration");
+        propertySheet.getItems().addAll(refDistanceItem);
 
     }
 
@@ -126,6 +149,9 @@ public class NOETableController implements Initializable {
         return stage;
     }
 
+    private void refresh() {
+        tableView.refresh();
+    }
     public static NOETableController create() {
         if (MoleculeFactory.getActive() == null) {
             GUIUtils.warn("NOE Table", "No active molecule");        
@@ -154,10 +180,14 @@ public class NOETableController implements Initializable {
     }
 
     void initToolBar() {
-
+        Button exportButton = new Button("Export");
+        exportButton.setOnAction(e -> exportNMRFxFile());
+        Button calibrateButton = new Button("Calibrate");
+        calibrateButton.setOnAction(e -> calibrate());
         noeSetMenuItem = new MenuButton("NoeSets");
         peakListMenuButton = new MenuButton("PeakLists");
-        toolBar.getItems().addAll(noeSetMenuItem, peakListMenuButton);
+        detailsCheckBox = new CheckBox("Details");
+        toolBar.getItems().addAll(exportButton, noeSetMenuItem, peakListMenuButton, detailsCheckBox, calibrateButton);
         updateNoeSetMenu();
     }
 
@@ -186,6 +216,19 @@ public class NOETableController implements Initializable {
                 extractPeakList(PeakList.get(peakListName));
             });
             peakListMenuButton.getItems().add(menuItem);
+        }
+    }
+
+    private void exportNMRFxFile() {
+        FileChooser fileChooser = new FileChooser();
+        File file = fileChooser.showSaveDialog(null);
+        if (file != null) {
+            try {
+                noeSet.writeNMRFxFile(file);
+            } catch (IOException ioE) {
+                ExceptionDialog exceptionDialog = new ExceptionDialog(ioE);
+                exceptionDialog.show();
+            }
         }
     }
 
@@ -338,6 +381,24 @@ public class NOETableController implements Initializable {
             }
         }
 
+    }
+
+    void calibrate() {
+        Optional<NoeSet> noeSetOpt = molConstr.activeNOESet();
+        if (noeSetOpt.isEmpty()) {
+            noeSet = molConstr.newNOESet("default");
+            noeSetOpt = Optional.of(noeSet);
+        } else {
+            noeSet = noeSetOpt.get();
+        }
+        if (noeSetOpt.isPresent()) {
+            double referenceDist = refDistanceItem.doubleValue();
+            noeSetOpt.get().setCalibratable(true);
+            NOECalibrator noeCalibrator = new NOECalibrator(noeSetOpt.get());
+            noeCalibrator.setScale(referenceDist);
+            noeCalibrator.calibrateExp(null);
+            refresh();
+        }
     }
 
     void extractPeakList(PeakList peakList) {
