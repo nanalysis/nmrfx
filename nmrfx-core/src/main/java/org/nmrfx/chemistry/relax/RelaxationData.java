@@ -25,6 +25,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  *
@@ -173,48 +174,75 @@ public class RelaxationData implements RelaxationValues {
         return extras;
     }
 
-    public static  Map<Long, R1R2NOE>  assembleAtomData(Atom atom) {
+    public static Map<Long, Map<relaxTypes, RelaxationData>> assembleAtomData(Atom atom) {
         var relaxData = atom.getRelaxationData();
-        Map<Long, R1R2NOE> dataMap = new HashMap<>();
+        Map<Long, Map<relaxTypes, RelaxationData>> dataMap = new HashMap<>();
         Set<Long> fields = new HashSet<>();
         for (var entry : relaxData.entrySet()) {
             RelaxationData data = entry.getValue();
             fields.add(Math.round(data.getField()));
         }
         for (var field : fields) {
+            Map<relaxTypes, RelaxationData> values = new HashMap<>();
             Double r1 = null, r1Error = null, r2 = null, r2Error = null, noe = null, noeError = null;
             Double dField = null;
             for (var entry : relaxData.entrySet()) {
                 RelaxationData data = entry.getValue();
                 if (Math.round(data.getField()) == field) {
-                    switch (data.getExpType()) {
-                        case R1:
-                            r1 = data.getValue();
-                            dField  = data.getField();
-                            r1Error = data.getError();
-                            break;
-                        case R2:
-                            r2 = data.getValue();
-                            r2Error = data.getError();
-                            break;
-                        case NOE:
-                            noe = data.getValue();
-                            noeError = data.getError();
-                            break;
+                    if (!data.getExpType().getName().startsWith("S")) {
+                        if (data.getValue() != null) {
+                            values.put(data.getExpType(), data);
+                        }
                     }
                 }
             }
-            R1R2NOE r1R2NOE = new R1R2NOE(r1, r1Error, r2, r2Error, noe, noeError, dField);
-            dataMap.put(field, r1R2NOE);
+            if (!values.isEmpty()) {
+                dataMap.put(field, values);
+            }
         }
         return dataMap;
+    }
+
+    private static String toFileString(Map<relaxTypes, RelaxationData> values, List<relaxTypes> types) {
+        StringBuilder sBuilder = new StringBuilder();
+        for (var  type: types) {
+            var data = values.get(type);
+            if (sBuilder.length() == 0) {
+                if (data != null) {
+                    sBuilder.append(String.format("%.2f", data.getField()));
+                }
+            }
+            Double value = data != null ? data.getValue() : null;
+            Double error = data != null ? data.getError() : null;
+            RelaxationValues.appendValueError(sBuilder, data.getValue(), data.getError(),"%.3f");
+        }
+        return sBuilder.toString();
     }
 
     public static void writeToFile(File file) throws IOException {
         MoleculeBase moleculeBase = MoleculeFactory.getActive();
         List<Atom> atoms = moleculeBase.getAtomArray();
+        Set<relaxTypes> typesUsed = new HashSet<relaxTypes>();
+
+
+        // figure out what relaxtypes are used so header can be setup
+        for (Atom atom : atoms) {
+            var dataMap = assembleAtomData(atom);
+            for (var relaxData:dataMap.values()) {
+                for (var relaxType:relaxData.values()) {
+                    typesUsed.add(relaxType.getExpType());
+                }
+            }
+        }
+        List<relaxTypes> typeList = Arrays.stream(relaxTypes.values())
+                .filter(v -> typesUsed.contains(v)).collect(Collectors.toList());
+
         try (FileWriter fileWriter = new FileWriter(file)) {
-            fileWriter.write("Chain\tResidue\tAtom\tfield\tR1\tR1_err\tR2\tR2_err\tNOE\tNOE_err\n");
+            fileWriter.write("Chain\tResidue\tAtom\tfield");
+            for (var type:typeList) {
+                fileWriter.write("\t" + type.getName() + "\t" + type.getName()+"_err");
+            }
+            fileWriter.write("\n");
             for (Atom atom : atoms) {
                 var dataMap = assembleAtomData(atom);
                 if (!dataMap.isEmpty()) {
@@ -223,7 +251,7 @@ public class RelaxationData implements RelaxationValues {
                         polymer = polymer == null ? "A" : polymer;
                         String resNum = String.valueOf(atom.getResidueNumber());
                         fileWriter.write(polymer + "\t" + resNum+"\t" + atom.getName() + "\t");
-                        fileWriter.write(r1R1NOE.toString());
+                        fileWriter.write(toFileString(r1R1NOE, typeList));
                         fileWriter.write("\n");
                     }
                 }
