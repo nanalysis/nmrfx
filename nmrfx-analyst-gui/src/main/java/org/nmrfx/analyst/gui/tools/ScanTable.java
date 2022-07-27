@@ -55,6 +55,7 @@ import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.ProcessorController;
 import org.nmrfx.processor.gui.controls.FileTableItem;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
+import org.nmrfx.processor.processing.Processor;
 import org.nmrfx.utils.GUIUtils;
 import org.python.util.PythonInterpreter;
 import org.slf4j.Logger;
@@ -254,6 +255,8 @@ public class ScanTable {
             }
             chart.refresh();
 
+        } else if (!Processor.getProcessor().isProcessorAvailable()) {
+            log.warn("Unable to load row. Processor unavailable.");
         } else {
             openSelectedListFile();
         }
