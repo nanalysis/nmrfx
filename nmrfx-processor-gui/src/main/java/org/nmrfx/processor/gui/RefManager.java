@@ -309,10 +309,10 @@ public class RefManager {
                         }
                         choices.add(sBuilder.toString());
                     }
-                    newItems.add(new EditableChoiceOperationItem(stringListener, chartProcessor.getAcqOrder(), choices, dimName, "acqOrder", "Enter the acquisiton order of the dataset"));
+                    newItems.add(new EditableChoiceOperationItem(stringListener, chartProcessor.getAcqOrder(), choices, dimName, "acqOrder", "Enter the acquisition order of the dataset"));
                 }
             } else {
-                newItems.add(new TextOperationItem(stringListener, chartProcessor.getAcqOrder(), dimName, "acqOrder", "Enter the acquisiton order of the dataset"));
+                newItems.add(new TextOperationItem(stringListener, chartProcessor.getAcqOrder(), dimName, "acqOrder", "Enter the acquisition order of the dataset"));
             }
             if ((nmrData != null) && nmrData.getVendor().equals("bruker")) {
                 newItems.add(new BooleanOperationItem(boolListener, chartProcessor.getFixDSP(), dimName, "fixdsp", "Fix DSP buildup before FT"));

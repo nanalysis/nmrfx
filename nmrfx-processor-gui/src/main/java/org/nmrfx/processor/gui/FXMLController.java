@@ -51,7 +51,6 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
 import javafx.stage.FileChooser;
-import javafx.stage.FileChooser.ExtensionFilter;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.util.Callback;
@@ -66,6 +65,7 @@ import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakDim;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.processor.datasets.Dataset;
+import org.nmrfx.processor.datasets.DatasetException;
 import org.nmrfx.processor.datasets.DatasetType;
 import org.nmrfx.processor.datasets.peaks.PeakLinker;
 import org.nmrfx.processor.datasets.peaks.PeakListAlign;
@@ -73,12 +73,14 @@ import org.nmrfx.processor.datasets.peaks.PeakNeighbors;
 import org.nmrfx.processor.datasets.peaks.PeakNetworkMatch;
 import org.nmrfx.processor.datasets.vendor.*;
 import org.nmrfx.processor.datasets.vendor.bruker.BrukerData;
+import org.nmrfx.processor.datasets.vendor.jcamp.JCAMPData;
 import org.nmrfx.processor.datasets.vendor.nmrview.NMRViewData;
 import org.nmrfx.processor.datasets.vendor.rs2d.RS2DData;
 import org.nmrfx.processor.gui.controls.GridPaneCanvas;
 import org.nmrfx.processor.gui.spectra.*;
 import org.nmrfx.processor.gui.tools.SpectrumComparator;
 import org.nmrfx.processor.gui.undo.UndoManager;
+import org.nmrfx.processor.gui.utils.FileExtensionFilterType;
 import org.nmrfx.utilities.DictionarySort;
 import org.nmrfx.utils.GUIUtils;
 import org.python.core.PyObject;
@@ -404,8 +406,8 @@ public class FXMLController implements  Initializable, PeakNavigable {
         fileChooser.setInitialDirectory(getInitialDirectory());
         fileChooser.setTitle("Open NMR FID");
         fileChooser.getExtensionFilters().addAll(
-                new ExtensionFilter("NMR Fid", "fid", "ser", "*.nv", "*.dx", "*.jdx", "*.jdf", "*.dat"),
-                new ExtensionFilter("Any File", "*.*")
+                FileExtensionFilterType.NMR_FID.getFilter(),
+                FileExtensionFilterType.ALL_FILES.getFilter()
         );
         File selectedFile = fileChooser.showOpenDialog(null);
         if (selectedFile != null) {
@@ -421,8 +423,8 @@ public class FXMLController implements  Initializable, PeakNavigable {
         fileChooser.setInitialDirectory(getInitialDirectory());
         fileChooser.setTitle("Open NMR Dataset");
         fileChooser.getExtensionFilters().addAll(
-                new ExtensionFilter("NMR Dataset", "*.nv", "*.ucsf", "*.dx", "*.jdx", "1r", "2rr", "3rrr", "4rrrr", RS2DData.DATA_FILE_NAME),
-                new ExtensionFilter("Any File", "*.*")
+                FileExtensionFilterType.NMR_DATASET.getFilter(),
+                FileExtensionFilterType.ALL_FILES.getFilter()
         );
         File selectedFile = fileChooser.showOpenDialog(null);
         openDataset(selectedFile, false);
@@ -457,8 +459,17 @@ public class FXMLController implements  Initializable, PeakNavigable {
                     String suggestedName = rs2dData.suggestName(new File(rs2dData.getFilePath()));
                     Dataset dataset = rs2dData.toDataset(suggestedName);
                     addDataset(dataset, append, false);
+                } else if (nmrData instanceof JCAMPData) {
+                    PreferencesController.saveRecentDatasets(selectedFile.toString());
+                    JCAMPData jcampData = (JCAMPData) nmrData;
+                    String suggestedName = jcampData.suggestName(new File (jcampData.getFilePath()));
+                    Dataset dataset = jcampData.toDataset(suggestedName);
+                    addDataset(dataset, append, false);
+                } else {
+                    log.info("Unable to find a dataset format for: {}", selectedFile);
                 }
-            } catch (IOException ex) {
+            } catch (IOException | DatasetException ex) {
+                log.warn(ex.getMessage(), ex);
                 GUIUtils.warn("Open Dataset", ex.getMessage());
             }
         }
@@ -471,8 +482,8 @@ public class FXMLController implements  Initializable, PeakNavigable {
         fileChooser.setInitialDirectory(getInitialDirectory());
         fileChooser.setTitle("Add NMR FID/Dataset");
         fileChooser.getExtensionFilters().addAll(
-                new ExtensionFilter("NMR Fid", "fid", "ser", "*.nv", "*.dx", "*.jdx"),
-                new ExtensionFilter("Any File", "*.*")
+                FileExtensionFilterType.NMR_FID.getFilter(),
+                FileExtensionFilterType.ALL_FILES.getFilter()
         );
         File selectedFile = fileChooser.showOpenDialog(null);
         if (selectedFile != null) {
@@ -488,8 +499,8 @@ public class FXMLController implements  Initializable, PeakNavigable {
         fileChooser.setInitialDirectory(getInitialDirectory());
         fileChooser.setTitle("Add NMR Dataset");
         fileChooser.getExtensionFilters().addAll(
-                new ExtensionFilter("NMR Dataset", "*.nv", "*.ucsf"),
-                new ExtensionFilter("Any File", "*.*")
+                FileExtensionFilterType.NMR_DATASET.getFilter(),
+                FileExtensionFilterType.ALL_FILES.getFilter()
         );
         List<File> selectedFiles = fileChooser.showOpenMultipleDialog(null);
         if (selectedFiles != null) {
@@ -551,7 +562,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
 
             }
             if (nmrData != null) {
-                if ((nmrData instanceof NMRViewData) && !nmrData.isFID()) {
+                if ((nmrData instanceof NMRViewData || nmrData instanceof JCAMPData) && !nmrData.isFID()) {
                     Alert alert = new Alert(Alert.AlertType.WARNING, "Use \"Open Dataset\" to open non-fid file");
                     alert.showAndWait();
                     return;
@@ -682,10 +693,10 @@ public class FXMLController implements  Initializable, PeakNavigable {
     }
 
     /**
-     * Updates the SpectrumStatusBar menu options based on whether FID mood is on, and the dimensions
+     * Updates the SpectrumStatusBar menu options based on whether FID mode is on, and the dimensions
      * of the dataset.
      */
-    private void updateSpectrumStatusBarOptions() {
+    public void updateSpectrumStatusBarOptions() {
         if (isFIDActive()) {
             statusBar.setMode(0);
         } else {
@@ -853,12 +864,19 @@ public class FXMLController implements  Initializable, PeakNavigable {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Export to PNG");
         fileChooser.setInitialDirectory(getInitialDirectory());
+        fileChooser.getExtensionFilters().addAll(
+                FileExtensionFilterType.PNG.getFilter(),
+                FileExtensionFilterType.ALL_FILES.getFilter()
+        );
         File selectedFile = fileChooser.showSaveDialog(null);
         if (selectedFile != null) {
             try {
-                GUIUtils.snapNode(chartGroup, selectedFile);
+                plotContent.setVisible(false);
+                GUIUtils.snapNode(chartPane, selectedFile);
             } catch (IOException ex) {
                 GUIUtils.warn("Error saving png file", ex.getLocalizedMessage());
+            } finally {
+                plotContent.setVisible(true);
             }
         }
     }
@@ -868,8 +886,14 @@ public class FXMLController implements  Initializable, PeakNavigable {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Export to PDF");
         fileChooser.setInitialDirectory(getInitialDirectory());
+        fileChooser.getExtensionFilters().addAll(
+                FileExtensionFilterType.PDF.getFilter(),
+                FileExtensionFilterType.ALL_FILES.getFilter()
+        );
         File selectedFile = fileChooser.showSaveDialog(null);
-        exportPDF(selectedFile);
+        if (selectedFile != null) {
+            exportPDF(selectedFile);
+        }
     }
 
     public void exportPDF(File file) {
@@ -897,8 +921,14 @@ public class FXMLController implements  Initializable, PeakNavigable {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Export to SVG");
         fileChooser.setInitialDirectory(getInitialDirectory());
+        fileChooser.getExtensionFilters().addAll(
+                FileExtensionFilterType.SVG.getFilter(),
+                FileExtensionFilterType.ALL_FILES.getFilter()
+        );
         File selectedFile = fileChooser.showSaveDialog(null);
-        exportSVG(selectedFile);
+        if (selectedFile != null) {
+            exportSVG(selectedFile);
+        }
     }
 
     public void exportSVG(File file) {
