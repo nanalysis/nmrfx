@@ -4,7 +4,6 @@ import javafx.scene.control.*;
 import javafx.scene.input.Clipboard;
 import javafx.scene.input.ClipboardContent;
 import javafx.scene.input.DataFormat;
-import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.analyst.gui.AnalystApp;
@@ -21,7 +20,6 @@ import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.*;
 import org.nmrfx.processor.gui.controls.ConsoleUtil;
 import org.nmrfx.processor.gui.spectra.CrossHairs;
-import org.nmrfx.processor.gui.spectra.mousehandlers.MouseBindings;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.utils.GUIUtils;
 import org.slf4j.Logger;
@@ -39,7 +37,6 @@ import static org.nmrfx.utils.GUIUtils.warn;
 
 public class SimplePeakRegionTool implements ControllerTool, PeakListener {
     private static final Logger log = LoggerFactory.getLogger(SimplePeakRegionTool.class);
-    Analyzer analyzer;
     FXMLController controller;
     PolyChart chart;
     CheckMenuItem journalCheckBox;
@@ -111,19 +108,17 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
     }
 
     public Analyzer getAnalyzer() {
-        if (analyzer == null) {
-            chart = getChart();
-            Dataset dataset = (Dataset) chart.getDataset();
-            if ((dataset == null) || (dataset.getNDim() > 1)) {
-                Alert alert = new Alert(Alert.AlertType.ERROR);
-                alert.setContentText("Chart must have a 1D dataset");
-                alert.showAndWait();
-                return null;
-            }
-            analyzer = new Analyzer(dataset);
-            if (!chart.getPeakListAttributes().isEmpty()) {
-                analyzer.setPeakList(chart.getPeakListAttributes().get(0).getPeakList());
-            }
+        chart = getChart();
+        Dataset dataset = (Dataset) chart.getDataset();
+        if ((dataset == null) || (dataset.getNDim() > 1)) {
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setContentText("Chart must have a 1D dataset");
+            alert.showAndWait();
+            return null;
+        }
+        Analyzer analyzer = Analyzer.getAnalyzer(dataset);
+        if (!chart.getPeakListAttributes().isEmpty()) {
+            analyzer.setPeakList(chart.getPeakListAttributes().get(0).getPeakList());
         }
         return analyzer;
     }
@@ -199,8 +194,8 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
     }
 
     private void clearThreshold() {
-        if (analyzer != null) {
-            analyzer.clearThreshold();
+        if (getAnalyzer() != null) {
+            getAnalyzer().clearThreshold();
         }
     }
 
@@ -294,8 +289,8 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
     public void journalFormatToClipboard() {
         JournalFormat format = JournalFormatPeaks.getFormat("JMedCh");
         getAnalyzer();
-        if (analyzer != null) {
-            PeakList peakList = analyzer.getPeakList();
+        if (getAnalyzer() != null) {
+            PeakList peakList = getAnalyzer().getPeakList();
             String journalText = format.genOutput(peakList);
             String plainText = JournalFormatPeaks.formatToPlain(journalText);
             String rtfText = JournalFormatPeaks.formatToRTF(journalText);
@@ -318,8 +313,8 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
 
     public void showJournalFormatOnChart() {
         getAnalyzer();
-        if (analyzer != null) {
-            PeakList peakList = analyzer.getPeakList();
+        if (getAnalyzer() != null) {
+            PeakList peakList = getAnalyzer().getPeakList();
             if (peakList == null) {
                 removeJournalFormatOnChart();
             } else {
@@ -339,7 +334,7 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
 
     public void removeJournalFormatOnChart() {
         getAnalyzer();
-        PeakList peakList = analyzer.getPeakList();
+        PeakList peakList = getAnalyzer().getPeakList();
         if (peakList != null) {
             peakList.removePeakChangeListener(this);
         }
@@ -387,6 +382,4 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
         chart.clearAnnoType(CanvasMolecule.class);
         chart.refresh();
     }
-
-
 }

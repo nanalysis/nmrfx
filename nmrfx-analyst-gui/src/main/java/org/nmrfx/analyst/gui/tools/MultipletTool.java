@@ -7,32 +7,13 @@ package org.nmrfx.analyst.gui.tools;
 
 import de.jensd.fx.glyphs.GlyphsDude;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import java.util.function.Consumer;
-
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.ObservableSet;
 import javafx.collections.SetChangeListener;
 import javafx.event.ActionEvent;
 import javafx.geometry.Orientation;
-import javafx.scene.control.Alert;
-import javafx.scene.control.Button;
-import javafx.scene.control.CheckBox;
-import javafx.scene.control.ChoiceBox;
-import javafx.scene.control.ContentDisplay;
-import javafx.scene.control.Label;
-import javafx.scene.control.Menu;
-import javafx.scene.control.MenuButton;
-import javafx.scene.control.MenuItem;
-import javafx.scene.control.Separator;
-import javafx.scene.control.TextField;
-import javafx.scene.control.ToolBar;
+import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.Clipboard;
@@ -48,26 +29,14 @@ import javafx.stage.Stage;
 import org.controlsfx.control.PopOver;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.analyst.gui.AnalystApp;
+import org.nmrfx.analyst.gui.molecule.CanvasMolecule;
 import org.nmrfx.analyst.peaks.Analyzer;
 import org.nmrfx.analyst.peaks.JournalFormat;
 import org.nmrfx.analyst.peaks.JournalFormatPeaks;
 import org.nmrfx.analyst.peaks.Multiplets;
 import org.nmrfx.datasets.DatasetRegion;
-import org.nmrfx.peaks.AbsMultipletComponent;
-import org.nmrfx.peaks.ComplexCoupling;
-import org.nmrfx.peaks.Coupling;
-import org.nmrfx.peaks.CouplingPattern;
-import org.nmrfx.peaks.Multiplet;
-import org.nmrfx.peaks.Peak;
-import org.nmrfx.peaks.events.PeakEvent;
-import org.nmrfx.peaks.PeakList;
-import org.nmrfx.peaks.events.PeakListener;
-import org.nmrfx.peaks.Singlet;
+import org.nmrfx.peaks.*;
 import org.nmrfx.processor.datasets.Dataset;
-import org.nmrfx.analyst.gui.annotations.AnnoJournalFormat;
-import org.nmrfx.processor.gui.controls.ConsoleUtil;
-import org.nmrfx.analyst.gui.molecule.CanvasMolecule;
-import org.nmrfx.processor.gui.CanvasAnnotation;
 import org.nmrfx.processor.gui.ControllerTool;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.PolyChart;
@@ -80,6 +49,13 @@ import org.nmrfx.structure.chemistry.Molecule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import java.util.function.Consumer;
+
 import static org.nmrfx.utils.GUIUtils.affirm;
 import static org.nmrfx.utils.GUIUtils.warn;
 
@@ -91,7 +67,6 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
 
     Stage stage = null;
     VBox vBox;
-    PopOver popOver;
     TextField multipletIdField;
     HBox typeToolBar = new HBox();
     GridPane gridPane = new GridPane();
@@ -102,12 +77,14 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
     TextField[] slopeFields;
     FXMLController controller;
     Consumer<MultipletTool> closeAction;
+    CheckBox restraintPosCheckBox;
+    Slider restraintSlider;
+
 
     private PolyChart chart;
     Optional<Multiplet> activeMultiplet = Optional.empty();
     boolean ignoreCouplingChanges = false;
     ChangeListener<String> patternListener;
-    Analyzer analyzer = null;
     CheckBox molButton;
     CanvasMolecule cMol = null;
 
@@ -145,6 +122,8 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
             couplingChanged();
         };
         addPatternListener();
+        restraintPosCheckBox = new CheckBox("Restraint");
+        restraintSlider = new Slider(0.02, 2.0, 1.0);
         popOver.setContentNode(vBox);
     }
 
@@ -533,33 +512,24 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
         toolBar.getItems().addAll(peakTypeChoice);
     }
 
-    public void getAnalyzer() {
+    public Analyzer getAnalyzer() {
+        chart = getChart();
         Dataset dataset = (Dataset) chart.getDataset();
-        PeakList activePeaklist = null;
+        if ((dataset == null) || (dataset.getNDim() > 1)) {
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setContentText("Chart must have a 1D dataset");
+            alert.showAndWait();
+            return null;
+        }
+        Analyzer analyzer = Analyzer.getAnalyzer(dataset);
         if (!chart.getPeakListAttributes().isEmpty()) {
-            activePeaklist = chart.getPeakListAttributes().get(0).getPeakList();
+            analyzer.setPeakList(chart.getPeakListAttributes().get(0).getPeakList());
         }
-        if (analyzer == null) {
-            if ((dataset == null) || (dataset.getNDim() > 1)) {
-                Alert alert = new Alert(Alert.AlertType.ERROR);
-                alert.setContentText("Chart must have a 1D dataset");
-                alert.showAndWait();
-                analyzer = null;
-                return;
-            }
-            analyzer = new Analyzer(dataset);
-        } else {
-            if (analyzer.getDataset() != dataset) {
-                analyzer = new Analyzer(dataset);
-            }
-        }
-        if (activePeaklist != null) {
-            analyzer.setPeakList(activePeaklist);
-        }
+        return analyzer;
     }
 
     private void analyze1D(boolean clear) {
-        getAnalyzer();
+        Analyzer analyzer = getAnalyzer();
         if (analyzer != null) {
             if (clear) {
                 clearAnalysis(false);
@@ -579,7 +549,7 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
     }
 
     private void findRegions() {
-        getAnalyzer();
+        Analyzer analyzer = getAnalyzer();
         if (analyzer != null) {
             analyzer.calculateThreshold();
             analyzer.getThreshold();
@@ -598,7 +568,7 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
     }
 
     private void pickRegions() {
-        getAnalyzer();
+        Analyzer analyzer = getAnalyzer();
         if (analyzer != null) {
             analyzer.peakPickRegions();
             analyzer.renumber();
@@ -618,7 +588,7 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
     }
 
     private void clearAnalysis(boolean prompt) {
-        getAnalyzer();
+        Analyzer analyzer = getAnalyzer();
         if (analyzer != null) {
             if (!prompt || affirm("Clear Analysis")) {
                 PeakList peakList = analyzer.getPeakList();
@@ -634,13 +604,15 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
     }
 
     private void clearThreshold() {
+        Analyzer analyzer = getAnalyzer();
+
         if (analyzer != null) {
             analyzer.clearThreshold();
         }
     }
 
     private void setThreshold() {
-        getAnalyzer();
+        Analyzer analyzer = getAnalyzer();
         if (analyzer != null) {
             CrossHairs crossHairs = chart.getCrossHairs();
             if (!crossHairs.hasCrosshairState("h0")) {
@@ -656,7 +628,7 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
     void deleteMultiplet() {
         activeMultiplet.ifPresent(m -> {
             double shift = m.getCenter();
-            getAnalyzer();
+            Analyzer analyzer = getAnalyzer();
             analyzer.removeRegion(shift);
         });
         refresh();
@@ -870,7 +842,7 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
         if (!attrs.isEmpty()) {
             peakListOpt = Optional.of(attrs.get(0).getPeakList());
         } else {
-            getAnalyzer();
+            Analyzer analyzer = getAnalyzer();
             PeakList peakList = analyzer.getPeakList();
             if (peakList != null) {
                 List<String> peakListNames = new ArrayList<>();
@@ -903,11 +875,16 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
     }
 
     public void fitSelected() {
-        getAnalyzer();
+        Analyzer analyzer = getAnalyzer();
         activeMultiplet.ifPresent(m -> {
             Optional<Double> result = analyzer.fitMultiplet(m);
         });
         refresh();
+    }
+    private void restrainPosition() {
+        Analyzer analyzer = getAnalyzer();
+        analyzer.setPositionRestraint(restraintPosCheckBox.isSelected()
+                ? restraintSlider.getValue() : null);
     }
 
     public void splitSelected() {
@@ -924,15 +901,17 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
     public void split() {
         CrossHairs crossHairs = chart.getCrossHairs();
         if (crossHairs.hasCrosshairState("v0")) {
-            splitRegion();
+            splitMultipletRegion();
         } else {
-            splitMultiplet();
+            if (getAnalyzer().getPeakList() != null) {
+                splitMultiplet();
+            }
         }
     }
 
-    public void splitRegion() {
+    public void splitMultipletRegion() {
         double ppm = chart.getVerticalCrosshairPositions()[0];
-        getAnalyzer();
+        Analyzer analyzer = getAnalyzer();
         try {
             List<Multiplet> multiplets = analyzer.splitRegion(ppm);
             if (!multiplets.isEmpty()) {
@@ -940,15 +919,17 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
             } else {
                 activeMultiplet = Optional.empty();
             }
-            updateMultipletField(false);
+            if (getAnalyzer().getPeakList() != null) {
+                updateMultipletField(false);
+            }
         } catch (IOException ex) {
-            log.warn(ex.getMessage(), ex);
+            log.error("Failure to split region", ex);
         }
         chart.refresh();
     }
 
     public void splitMultiplet() {
-        getAnalyzer();
+        Analyzer analyzer = getAnalyzer();
         if (analyzer != null) {
             Multiplets.findMultipletMidpoint(activeMultiplet.get()).ifPresent(ppmCenter -> {
                 try {
@@ -965,9 +946,19 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
             });
         }
     }
+    public void splitRegion() {
+       double ppm = chart.getVerticalCrosshairPositions()[0];
+//
+//        activeRegion.ifPresent(r -> {
+//            DatasetRegion newRegion = r.split(ppm - 0.001, ppm + 0.001);
+//            getRegions().add(newRegion);
+//            updateRegion();
+//        });
+//        chart.refresh();
+    }
 
     public void adjustRegion() {
-        getAnalyzer();
+        Analyzer analyzer = getAnalyzer();
         Double ppm0 = null;
         Double ppm1 = null;
         if (chart.getCrossHairs().hasCrosshairState("||")) {
@@ -1005,7 +996,7 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
 
 
     public void addRegion(DatasetRegion region) {
-        getAnalyzer();
+        Analyzer analyzer = getAnalyzer();
         double ppm0;
         double ppm1;
         if (region == null) {
@@ -1038,7 +1029,7 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
     }
 
     public void removeRegion() {
-        getAnalyzer();
+        Analyzer analyzer = getAnalyzer();
         activeMultiplet.ifPresent(m -> {
             int id = m.getIDNum();
             double ppm = m.getCenter();
@@ -1058,7 +1049,7 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
     }
 
     public void objectiveDeconvolution() {
-        getAnalyzer();
+        Analyzer analyzer = getAnalyzer();
         activeMultiplet.ifPresent(m -> {
             analyzer.objectiveDeconvolution(m);
             chart.refresh();
@@ -1067,7 +1058,7 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
     }
 
     public void addAuto() {
-        getAnalyzer();
+        Analyzer analyzer = getAnalyzer();
         activeMultiplet.ifPresent(m -> {
             Optional<Double> result = Multiplets.deviation(m);
             if (result.isPresent()) {
@@ -1092,7 +1083,7 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
     }
 
     public void addPeaks(boolean both) {
-        getAnalyzer();
+        Analyzer analyzer = getAnalyzer();
         activeMultiplet.ifPresent(m -> {
             double ppm1 = chart.getVerticalCrosshairPositions()[0];
             double ppm2 = chart.getVerticalCrosshairPositions()[1];
@@ -1223,7 +1214,7 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
     }
 
     private void couplingChanged() {
-        getAnalyzer();
+        Analyzer analyzer = getAnalyzer();
         activeMultiplet.ifPresent(m -> {
             StringBuilder sBuilder = new StringBuilder();
             for (ChoiceBox<String> choice : patternChoices) {
@@ -1302,7 +1293,7 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
 
     public void journalFormatToClipboard() {
         JournalFormat format = JournalFormatPeaks.getFormat("JMedCh");
-        getAnalyzer();
+        Analyzer analyzer = getAnalyzer();
         if (analyzer != null) {
             PeakList peakList = analyzer.getPeakList();
             String journalText = format.genOutput(peakList);

@@ -1,17 +1,24 @@
 package org.nmrfx.analyst.gui.tools;
 
 import javafx.event.ActionEvent;
+import javafx.scene.control.Button;
 import javafx.scene.control.MenuButton;
 import javafx.scene.control.MenuItem;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import org.controlsfx.control.PopOver;
+import org.nmrfx.analyst.peaks.Analyzer;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.datasets.DatasetRegion;
+import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.FXMLController;
+import org.nmrfx.processor.gui.PolyChart;
+import org.nmrfx.processor.gui.spectra.CrossHairs;
 import org.nmrfx.processor.gui.spectra.IntegralHit;
 import org.nmrfx.utils.GUIUtils;
+
+import java.io.IOException;
 
 public class IntegralTool {
     VBox vBox;
@@ -29,13 +36,16 @@ public class IntegralTool {
         HBox hBox = new HBox();
         hBox.setMinHeight(10);
         HBox.setHgrow(hBox, Priority.ALWAYS);
-        MenuButton menu = makeChartMenu();
+        MenuButton menu = makeMenu();
 
-        vBox.getChildren().addAll(hBox, menu);
+        Button splitItem = new Button("Split");
+        splitItem.setOnAction(e -> splitRegion());
+
+        vBox.getChildren().addAll(hBox, menu, splitItem);
         popOver.setContentNode(vBox);
     }
 
-    public MenuButton makeChartMenu() {
+    public MenuButton makeMenu() {
         MenuButton integralMenu = new MenuButton("Normalize");
         int[] norms = {1, 2, 3, 4, 5, 6, 9, 100, 0};
         for (var norm : norms) {
@@ -52,6 +62,7 @@ public class IntegralTool {
 
             integralMenu.getItems().add(normItem);
         }
+
         return integralMenu;
     }
 
@@ -80,5 +91,21 @@ public class IntegralTool {
         } catch (NumberFormatException ignored) {
 
         }
+    }
 
-    }}
+    public void splitRegion() {
+        PolyChart chart = FXMLController.getActiveController().getActiveChart();
+        CrossHairs crossHairs = chart.getCrossHairs();
+
+        if (crossHairs.hasCrosshairState("v0")) {
+            double ppm = FXMLController.getActiveController().getActiveChart().getVerticalCrosshairPositions()[0];
+            try {
+                Analyzer.getAnalyzer((Dataset) chart.getDataset()).splitRegion(ppm);
+            } catch (IOException e) {
+                GUIUtils.warn("Error Splitting Region", e.getMessage());
+            }
+            chart.refresh();
+        }
+
+    }
+}
