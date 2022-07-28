@@ -1594,7 +1594,6 @@ public class PeakList {
 
         for (i = 0; i < nSearchDim; i++) {
             //FIXME 10.0 makes no sense, need to use size of dataset
-            //System.out.println(i+" "+limits[i][0]+" "+limits[i][1]);
             if (limits[i][0] == limits[i][1]) {
                 limits[i][0] = limits[i][0] - (getSpectralDim(i).getSw() / getSpectralDim(i).getSf() / 10.0);
                 limits[i][1] = limits[i][1] + (getSpectralDim(i).getSw() / getSpectralDim(i).getSf() / 10.0);
@@ -1606,8 +1605,6 @@ public class PeakList {
                 limits[i][1] = hold;
             }
 
-//            System.out.println(i + " " + limits[i][0] + " " + limits[i][1]);
-//            System.out.println(i + " " + foldLimits[i][0] + " " + foldLimits[i][1]);
             lCtr[i] = (limits[i][0] + limits[i][1]) / 2.0;
             width[i] = Math.abs(limits[i][0] - limits[i][1]);
         }

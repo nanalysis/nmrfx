@@ -36,6 +36,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+import static java.util.Objects.requireNonNull;
+
 /**
  *
  * @author brucejohnson
@@ -79,7 +81,6 @@ public class RotationalDynamics {
     double[][] accStore;
     double[] velStoreAng;
     DynState dynState = null;
-    static boolean REPORTBAD = false;
 
     public RotationalDynamics(Dihedral dihedrals, Random rand) {
         this.dihedrals = dihedrals;
@@ -194,16 +195,12 @@ public class RotationalDynamics {
             double a1 = branch.rotAccel.getEntry(2);
             delAngle = v * timestep + (4.0 * a1 - a0) * timestep * timestep / 6.0;
             Atom diAtom = branch.atom;
-            Atom daughter = diAtom.daughterAtom;
+            Atom daughter = requireNonNull(diAtom.daughterAtom, "daughter atom is null " + diAtom.getShortName());
             double absDelta = Math.abs(delAngle);
             if (absDelta > max) {
                 max = absDelta;
             }
             sumSq += delAngle * delAngle;
-            //System.out.println(deltaSum);
-            if (daughter == null) {
-                System.out.println("daughter atom is null " + diAtom.getShortName());
-            }
             daughter.dihedralAngle += delAngle;
             daughter.dihedralAngle = (float) Util.reduceAngle(daughter.dihedralAngle);
         }
@@ -251,9 +248,7 @@ public class RotationalDynamics {
             double a0 = branch.rotAccel.getEntry(0);
             double a1 = branch.rotAccel.getEntry(1);
             double a2 = branch.rotAccel.getEntry(2);
-//        System.out.printf("accelerations is %f\t%f\t%f\n", a0,a1,a2);
             double delVelocity = lambda * (2.0 * a2 + 5.0 * a1 - a0) * timestep / 6.0;
-//        System.out.printf("change in velocity is %f\n", delVelocity);
             branch.rotVel += delVelocity;
             if (Math.abs(delVelocity) > maxChange) {
                 maxChange = Math.abs(delVelocity);
@@ -262,7 +257,6 @@ public class RotationalDynamics {
         }
 //        double accel = maxBranch.epsk / maxBranch.dk - maxBranch.gkVec.dotProduct(maxBranch.alphaVec);
 
-//        System.out.printf("max change in velocity is %10.6g %10.6g %10.6g accel %10.6g %10.6g %10.6g %10.6g %10.6g %10.6g %10.6g\n", maxChange, maxBranch.rotAccel.getEntry(0), maxBranch.rotAccel.getEntry(1), maxBranch.rotAccel.getEntry(2), maxBranch.force, maxBranch.epsk, maxBranch.dk, maxBranch.gkVec.dotProduct(maxBranch.alphaVec), maxBranch.epsk / maxBranch.dk, accel);
     }
 
     double calcKineticEnergy() {
@@ -453,14 +447,6 @@ public class RotationalDynamics {
             }
             branch.phiMatF.transOperate(alphaPreF, branch.alphaVecF);
             double accelF = branch.epskF / branch.dkF - branch.gkVecF.dotProduct(branch.alphaVecF);
-
-            if (REPORTBAD && (Math.abs(accelF) > 1.0)) {
-//                System.out.printf("max accel is %2d %10.6g %10.6g %10.6g %10.6g %10.6g %10.6g\n", iAccel, branch.force, branch.epsk, branch.dk, branch.gkVec.dotProduct(branch.alphaVec), branch.epsk / branch.dk, accel);
-//                System.out.println(branch.linVel + " " + branch.angVel);
-            }
-            //System.out.println("accel " + iAccel + " " + accel);
-            //System.out.println(branch.gkVec);
-            //System.out.println(branch.alphaVec);
             branch.rotAccel.setEntry(2, accelF);
             branch.eVecF.multiply(accelF, tempVecF);
             tempVecF.add(branch.aVecF, tempVecF);
@@ -480,7 +466,6 @@ public class RotationalDynamics {
             AtomBranch prevBranch = iBranch.prev;
             FastVector unitVecF = iBranch.getUnitVecF();
             if (null != prevBranch) {
-//                System.out.printf("ang, lin are %f\t%f\n", iBranch.angVel, iBranch.linVel);
                 unitVecF.multiply(iBranch.rotVel);
                 prevBranch.angVelF.add(unitVecF, iBranch.angVelF);
                 FastVector iVec = iBranch.getVectorF();
@@ -488,7 +473,6 @@ public class RotationalDynamics {
                 iVec.subtract(pVec, pVec);
                 pVec.crossProduct(prevBranch.angVelF, iVec);
                 prevBranch.linVelF.subtract(iVec, iBranch.linVelF);
-//                System.out.printf("ang, lin are %f\t%f\n", iBranch.angVel, iBranch.linVel);
             } else {
                 unitVecF.multiply(iBranch.rotVel);
                 iBranch.angVelF.copyFrom(unitVecF);
@@ -506,7 +490,6 @@ public class RotationalDynamics {
         double lambda = getLambda(bathTemp, currentTemp);
         adjustTemp(lambda);
         updateVelocitiesRecursive();
-//        System.out.printf("step2 %10.2f %10.2f %6.4f %10.2f %10.2f %10.2f %10.2f %10.3f\n", bathTemp, currentTemp, lambda, newTemp, potentialEnergy * 1000.0, kineticEnergy * 1000.0, total * 1000.0, timeStep);
         if (iStep == 0) {
             calcAcceleration2(1);
         } else {
@@ -548,7 +531,6 @@ public class RotationalDynamics {
 //        FastVector3D v2 = vecCoords[a2.eAtom];
 //        double dis = v1.dis(v2);
 //
-//        System.out.println(iStep + " " + total + " " + dis + " " + timeStep);
 //        if ((total / lastTotalEnergy) > 10.0) {
 //            dihedrals.energyList.dump(0.2, 0.2, "energy"+iStep+".txt");
 //        }

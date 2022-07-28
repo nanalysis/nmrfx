@@ -57,6 +57,8 @@ import org.nmrfx.processor.gui.controls.FileTableItem;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.utils.GUIUtils;
 import org.python.util.PythonInterpreter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.nio.charset.Charset;
@@ -71,6 +73,8 @@ import java.util.*;
  * @author Bruce Johnson
  */
 public class ScanTable {
+
+    private static final Logger log = LoggerFactory.getLogger(ScanTable.class);
 
     ScannerTool scannerTool;
     TableView<FileTableItem> tableView;
@@ -169,7 +173,8 @@ public class ScanTable {
         Map<Integer, Double> offsetMap = new HashMap<>();
         Set<Integer> groupSet = new HashSet<>();
         List<Integer> selected = tableView.getSelectionModel().getSelectedIndices();
-        ProcessorController processorController = scannerTool.getFXMLController().getProcessorController(false);
+        PolyChart chart = scannerTool.getChart();
+        ProcessorController processorController = chart.getProcessorController(false);
         if ((processorController == null)
                 || processorController.isViewingDataset()
                 || !processorController.isVisible()) {
@@ -181,7 +186,6 @@ public class ScanTable {
             } else {
                 showRows.addAll(selected);
             }
-            PolyChart chart = scannerTool.getChart();
             Optional<Double> curLvl = Optional.empty();
             if (!chart.getDatasetAttributes().isEmpty()) {
                 DatasetAttributes dataAttr = chart.getDatasetAttributes().get(0);
@@ -330,6 +334,7 @@ public class ScanTable {
             fileListItems.clear();
             loadScanFiles(nmrFiles);
         } catch (Exception e) {
+            log.warn(e.getMessage(), e);
         } finally {
             processingTable = false;
         }
@@ -452,7 +457,7 @@ public class ScanTable {
             if ((scanDir == null) || scanDir.toString().isBlank()) {
                 return;
             }
-            ProcessorController processorController = scannerTool.getFXMLController().getProcessorController(true);
+            ProcessorController processorController = scannerTool.getChart().getProcessorController(true);
             if (processorController != null) {
                 String scriptString = processorController.getCurrentScript();
                 FileTableItem fileTableItem = (FileTableItem) tableView.getItems().get(selItem);
@@ -477,6 +482,7 @@ public class ScanTable {
             try {
                 nmrData = NMRDataUtil.getFID(filePath);
             } catch (IOException ioE) {
+                log.warn(ioE.getMessage(), ioE);
 
             }
             if (nmrData != null) {
@@ -642,7 +648,7 @@ public class ScanTable {
 
                         if (!hasAll) {
                             if ((fileName == null) || (fileName.length() == 0)) {
-                                System.out.println("No path field or value");
+                                log.info("No path field or value");
                                 return;
                             }
                             if ((scanDir == null) || scanDir.toString().isBlank()) {
@@ -679,7 +685,7 @@ public class ScanTable {
                     iLine++;
                 }
             } catch (IOException ioE) {
-
+                log.warn(ioE.getMessage(), ioE);
             }
             for (int i = 0; i < headers.length; i++) {
                 if (!notInteger[i]) {
@@ -719,6 +725,7 @@ public class ScanTable {
             scannerTool.miner.setDisable(!combineFileMode);
 
         } catch (NumberFormatException e) {
+            log.warn(e.getMessage(), e);
         } finally {
             processingTable = false;
         }
@@ -770,6 +777,7 @@ public class ScanTable {
                 writer.write(s, 0, s.length());
             }
         } catch (IOException x) {
+            log.warn(x.getMessage(), x);
         }
     }
 
@@ -790,6 +798,7 @@ public class ScanTable {
                                 maxColumn = columnNum;
                             }
                         } catch (NumberFormatException nfE) {
+                            log.warn("Unable to parse column number.", nfE);
                         }
                     }
                 }
@@ -873,7 +882,7 @@ public class ScanTable {
             String type = columnTypes.get(header);
             if (type == null) {
                 type = "S";
-                System.out.println("No type for " + header);
+                log.info("No type for {}", header);
             }
             switch (type) {
                 case "D":

@@ -126,12 +126,10 @@ public class Saveframe {
             String key = (String) entry.getKey();
             String value = (String) entry.getValue();
             category.addTag(key, value);
-            //System.out.println("put "+key+" "+value+" in "+name);
         }
     }
 
     public void read() throws ParseException {
-        //System.out.println("process save frame "+name+" with category "+saveframeCategory);
         if (star3 instanceof MMCIF) {
             saveframeCategory = name;
         }
@@ -189,7 +187,6 @@ public class Saveframe {
                     tokenMap.put(tokenPair[1], tagValue);
                 }
                 currentTagCategory = tokenPair[0];
-                //System.out.println("process entity "+tokenPair[0]+" "+tokenPair[1]+" "+tagValue);
             }
         }
     }
@@ -207,16 +204,17 @@ public class Saveframe {
         return result;
     }
 
-    public String getOptionalLabelValue(String tagCategory, String tag) throws ParseException {
+    public String getOptionalLabelValue(String tagCategory, String tag) {
         Category category = getCategory(tagCategory);
-        String value = (String) category.get(tag);
+        String value = category.get(tag);
         String result = "";
         if (value != null) {
             result = value;
+            if (value.startsWith("$")) {
+                result = value.substring(1);
+            }
         }
-        if (value.startsWith("$")) {
-            result = value.substring(1);
-        }
+
         return result;
     }
 

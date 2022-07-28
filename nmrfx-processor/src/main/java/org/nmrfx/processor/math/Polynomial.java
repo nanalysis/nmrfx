@@ -25,12 +25,16 @@ import java.util.Arrays;
 import java.util.Comparator;
 import org.apache.commons.math3.complex.Complex;
 import org.apache.commons.math3.util.Precision;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
  * @author brucejohnson
  */
 public class Polynomial {
+
+    private static final Logger log = LoggerFactory.getLogger(Polynomial.class);
 
     public static double rootTol = 1.0e-6;
     double eps = 1.1102230246252e-16;
@@ -116,7 +120,7 @@ public class Polynomial {
             apolyr[i] = apoly[i];
         }
         if ((amax) >= (big / (n + 1))) {
-            System.err.println("warning: coefficients too big, overflow is likely");
+            log.warn("warning: coefficients too big, overflow is likely");
         }
         // initialize
         for (int i = 0; i < n; i++) {
@@ -131,8 +135,7 @@ public class Polynomial {
             apoly[i] = eps * apoly[i] * (3.8 * i + 1);
         }
         if ((apoly[0] == 0) || (apoly[n] == 0)) {
-            System.err.println("warning: the computation of some inclusion radius");
-            System.err.println("may fail. this is reported by radius=0");
+            log.warn("warning: the computation of some inclusion radius may fail. this is reported by radius=0");
         }
         for (int i = 0; i < n; i++) {
             err[i] = true;
@@ -145,7 +148,6 @@ public class Polynomial {
         for (int iter = 0; iter < nitmax; iter++) {
             for (int i = 0; i < n; i++) {
                 if (err[i]) {
-                    //System.out.println("root " + i);
                     NewtonResult newtonResult = newton(n, poly, apoly, apolyr, root[i], small, radius[i]);
                     if (newtonResult.again) {
                         Complex abcorr = aberth(n, i, root);
@@ -219,7 +221,7 @@ public class Polynomial {
         // given the upper convex hull of the set (a(i),i) compute the moduli
         // of the starting approximations by means of rouche's theorem
         int iold = 0;
-
+        String warningMessage = "warning: {} zero(s) are too small too represent their inverses as Complex, they are replaced by small numbers, the corresponding radii are set to -1";
         double th = 2.0 * Math.PI / n;
         double r = 0.0;
         for (int i = 1; i <= n; i++) {
@@ -228,28 +230,19 @@ public class Polynomial {
                 double temp = (a[iold] - a[i]) / nzeros;
                 // check if the modulus is too small
                 if ((temp < -xbig) && (temp >= xsmall)) {
-                    System.err.println("warning:" + nzeros + " zero(s) are too small to");
-                    System.err.println("represent their inverses as Complex, they");
-                    System.err.println("are replaced by small numbers, the corresponding");
-                    System.err.println("radii are set to -1");
+                    log.warn(warningMessage, nzeros);
                     nz = nz + nzeros;
                     r = 1.0 / big;
                 }
                 if (temp < xsmall) {
                     nz = nz + nzeros;
-                    System.err.println("warning:" + nzeros + " zero(s) are too small to");
-                    System.err.println("be represented as Complex, they are set to 0");
-                    System.err.println("and the corresponding");
-                    System.err.println("radii are set to -1");
+                    log.warn(warningMessage, nzeros);
                 }
                 // check if the modulus is too big
                 if (temp > xbig) {
                     r = big;
                     nz = nz + nzeros;
-                    System.err.println("warning:" + nzeros + " zero(s) are too big to");
-                    System.err.println("be represented as Complex, ");
-                    System.err.println("the corresponding");
-                    System.err.println("radii are set to -1");
+                    log.warn(warningMessage, nzeros);
                 }
                 if ((temp <= xbig) && (temp > Math.max(-xbig, xsmall))) {
                     r = Math.exp(temp);
@@ -317,12 +310,9 @@ public class Polynomial {
                 p1 = p1.multiply(z).add(p);
                 ap = ap * az + apoly[i];
             }
-            //System.err.println(" " + z.getReal()+","+z.getImaginary()+" "+p.getReal()+","+p.getImaginary());
             //p = p.multiply(z).add(poly[0]);
             p = p.multiply(z);
-            //System.err.println(" " + poly[0].getReal()+","+poly[0].getImaginary()+" "+p.getReal()+","+p.getImaginary());
             p = p.add(poly[0]);
-            //System.err.println(" " + poly[0].getReal()+","+poly[0].getImaginary()+" "+p.getReal()+","+p.getImaginary());
             ap = ap * az + apoly[0];
             corr = p.divide(p1);
             double absp = p.abs();
@@ -754,7 +744,7 @@ public class Polynomial {
         double[] ivals = {0, 1, 0, 0};
         // double[] rvals = {-5,3,-3,1};
 
-        System.out.println("specRoots");
+        log.info("specRoots");
 
         // double[] ivals = new double[rvals.length];
         Complex[] polyVals = new Complex[rvals.length];
@@ -762,7 +752,7 @@ public class Polynomial {
             polyVals[i] = new Complex(rvals[i], ivals[i]);
         }
         Polynomial poly = new Polynomial(polyVals.length);
-        System.out.println("  rvals length=" + rvals.length + " polyVals length=" + polyVals.length);
+        log.info("  rvals length={} polyVals length={}", rvals.length, polyVals.length);
 
         //poly.polzeros(polyVals.length - 1, polyVals);
         //poly.svejgardRoot();
@@ -771,13 +761,12 @@ public class Polynomial {
         ComplexComparator cCompare = new ComplexComparator();
         Arrays.sort(poly.root, cCompare);  // is sort needed?
         for (int i = 0; i < poly.root.length; i++) {
-            System.out.println("  " + i + " root " + poly.root[i].getReal() + " i " + poly.root[i].getImaginary());
+            log.info("  {} root {} i {}", i, poly.root[i].getReal(), poly.root[i].getImaginary());
         }
         Complex[] coef2 = poly.makeCoeffs();
         for (int i = 0; i < poly.root.length; i++) {
-            System.out.println("  " + i + " coef " + coef2[i].getReal() + " i " + coef2[i].getImaginary());
+            log.info("  {} coef {} i {}", i, coef2[i].getReal(), coef2[i].getImaginary());
         }
-        System.out.println("");
 
     }
 

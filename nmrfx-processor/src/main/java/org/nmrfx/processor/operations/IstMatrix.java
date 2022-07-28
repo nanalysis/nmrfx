@@ -23,6 +23,9 @@ import org.nmrfx.datasets.MatrixType;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.processing.ProcessingException;
 import org.nmrfx.processor.processing.SampleSchedule;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.HashMap;
 import java.util.ArrayList;
 
@@ -31,6 +34,8 @@ import java.util.ArrayList;
  * @author bfetler
  */
 public class IstMatrix extends MatrixOperation {
+
+    private static final Logger log = LoggerFactory.getLogger(IstMatrix.class);
 
     /**
      * Cutoff threshold as a fraction of maximum height : e.g. 0.98.
@@ -117,7 +122,6 @@ public class IstMatrix extends MatrixOperation {
                 vector.set(i, real, imag);
             }
         } catch (Exception e) {
-            e.printStackTrace();
             throw new ProcessingException(e.getLocalizedMessage());
         }
         //PyObject obj = interpreter.get("a");
@@ -155,12 +159,12 @@ public class IstMatrix extends MatrixOperation {
     public IstMatrix(double threshold, int loops, SampleSchedule schedule, String alg,
             boolean timeDomain) throws ProcessingException {
         if (threshold <= 0.0 || threshold >= 1.0) {
-            System.err.println("IST Warning: threshold " + threshold + " out of bounds, reset to 0.9");
+            log.warn("IST Warning: threshold {} out of bounds, reset to 0.9", threshold);
             threshold = 0.9;
         }
         this.threshold = threshold;
         if (loops < 2) {
-            System.out.println("IST Warning: number of iterations " + loops + " cannot be less than 2, reset to 100");
+            log.warn("IST Warning: number of iterations {} cannot be less than 2, reset to 100", loops);
             loops = 100;
         }
         this.loops = loops;
@@ -298,7 +302,6 @@ public class IstMatrix extends MatrixOperation {
         boolean[] validPositions = new boolean[matrix.getNElems()];
         int nComplex = (int) Math.round(Math.pow(2, matrix.getNDim()));
         int nZeros = matrix.getNElems() - samples.length * nComplex;
-        // System.out.println("nelems " + matrix.getNElems() + " nZeros " + nZeros + " nComp " + nComplex + " nsam " + samples.length);
         int nValid = 0;
         for (int[] sample : samples) {
             int[] complexSample = new int[sample.length];
@@ -310,7 +313,6 @@ public class IstMatrix extends MatrixOperation {
                     complexSample[sample.length - j - 1] = sample[sample.length - j - 1] * 2 + cDelta;
                 }
                 int offset = matrix.getOffset(complexSample);
-//                    System.out.println("offset is " + offset + " " + k + " " + complexSample[0] + " " + complexSample[1] + " " + sample[0] + " " + sample[1]);
                 if (offset >= validPositions.length) {
                 }
                 validPositions[offset] = true;
@@ -371,7 +373,7 @@ public class IstMatrix extends MatrixOperation {
         matrix.doHIFT(fpMul);
         if (calcStats) {
             double delta = matrix.calcDifference(matrixCopy, srcTargetMap);
-            System.out.println(loops + " " + preValue + " " + postValue + " " + delta);
+            log.info("{} {} {} {}", loops, preValue, postValue, delta);
         }
         matrix.copyValuesFrom(matrixCopy, srcTargetMap);
     }

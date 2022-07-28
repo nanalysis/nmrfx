@@ -45,6 +45,8 @@ import org.controlsfx.property.editor.AbstractPropertyEditor;
 import org.controlsfx.property.editor.DefaultPropertyEditorFactory;
 import org.controlsfx.property.editor.Editors;
 import org.controlsfx.property.editor.PropertyEditor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -52,6 +54,7 @@ import org.controlsfx.property.editor.PropertyEditor;
  */
 public class NvFxPropertyEditorFactory extends DefaultPropertyEditorFactory {
 
+    private static final Logger log = LoggerFactory.getLogger(NvFxPropertyEditorFactory.class);
     public NvFxPropertyEditorFactory() {
         super();
     }
@@ -61,9 +64,7 @@ public class NvFxPropertyEditorFactory extends DefaultPropertyEditorFactory {
         Class<?> type = item.getType();
 
         //TODO: add support for char and collection editors
-        //System.out.println("get editor " + item.getName() + " " + item.getType().toString());
         if (type == DoubleRangeOperationItem.class) {
-            //System.out.println("double item");
             Slider slider = new Slider();
             DoubleRangeOperationItem dItem = (DoubleRangeOperationItem) item;
             slider.setMin(dItem.getMin());
@@ -86,23 +87,19 @@ public class NvFxPropertyEditorFactory extends DefaultPropertyEditorFactory {
         } else if (type == DirectoryOperationItem.class) {
             return createFileEditor(item, true);
         } else if (type == TextOperationItem.class) {
-            //System.out.println("text item");
             return Editors.createTextEditor(item);
         } else if (type == TextWaitingOperationItem.class) {
-            //System.out.println("textwait item");
             TextWaitingOperationItem tItem = (TextWaitingOperationItem) item;
             PropertyEditor editor = Editors.createTextEditor(item);
             TextField textField = (TextField) editor.getEditor();
             textField.setOnKeyReleased(e -> tItem.keyReleased(textField, e));
             return editor;
         } else if (type == MenuTextOperationItem.class) {
-            //System.out.println("text item");
             MenuTextOperationItem tItem = (MenuTextOperationItem) item;
             MenuTextField menuTextField;
             menuTextField = new MenuTextField();
             return new MenuTextFieldEditor(tItem, menuTextField);
         } else if (type == IntRangeOperationItem.class) {
-            //System.out.println("int range item");
             Slider slider = new Slider();
             IntRangeOperationItem iItem = (IntRangeOperationItem) item;
             slider.setMin(iItem.getMin());
@@ -131,7 +128,6 @@ public class NvFxPropertyEditorFactory extends DefaultPropertyEditorFactory {
             return new CheckComboEditor(cItem, comboBox);
 
         } else if (type == BooleanOperationItem.class) {
-            //System.out.println("bpp; range item");
             BooleanOperationItem bItem = (BooleanOperationItem) item;
             return Editors.createCheckEditor(bItem);
         } else if (type == EditableChoiceOperationItem.class) {
@@ -147,7 +143,6 @@ public class NvFxPropertyEditorFactory extends DefaultPropertyEditorFactory {
             IntChoiceOperationItem cItem = (IntChoiceOperationItem) item;
             return Editors.createChoiceEditor(item, cItem.getChoices());
         } else if (type == ListOperationItem.class) {
-            //System.out.println("list item");
 
             ListOperationItem loi = (ListOperationItem) item;
             return Editors.createTextEditor(loi);
@@ -223,7 +218,7 @@ public class NvFxPropertyEditorFactory extends DefaultPropertyEditorFactory {
                 try {
                     return sourceClass.getConstructor(String.class).newInstance(getEditor().getText());
                 } catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException | SecurityException e) {
-                    e.printStackTrace();
+                    log.warn(e.getMessage(), e);
                     return null;
                 }
             }

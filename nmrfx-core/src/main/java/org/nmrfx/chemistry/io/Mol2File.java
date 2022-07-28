@@ -18,6 +18,9 @@
 package org.nmrfx.chemistry.io;
 
 import org.nmrfx.chemistry.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -28,6 +31,7 @@ import java.util.regex.Pattern;
  * @author brucejohnson
  */
 public class Mol2File {
+    private static final Logger log = LoggerFactory.getLogger(Mol2File.class);
 
     static final int MOLECULE = 0;
     static final int ATOM = 1;
@@ -159,10 +163,15 @@ public class Mol2File {
             int dotPos = atomType.indexOf(".");
 
             String atomSymbol;
+            boolean aromatic = false;
             if (dotPos == -1) {
                 atomSymbol = atomType;
             } else {
                 atomSymbol = atomType.substring(0, dotPos);
+                String type = atomType.substring(dotPos + 1);
+                if (type.equals("ar")) {
+                    aromatic = true;
+                }
             }
 
             Atom atom = Atom.genAtomWithElement(aName, atomSymbol);
@@ -170,6 +179,7 @@ public class Mol2File {
             atom.setPointValidity(structureNumber, true);
             Point3 pt = new Point3(x, y, z);
             atom.setPoint(structureNumber, pt);
+            atom.setFlag(Atom.AROMATIC, aromatic);
 
             if (fields.length > 8) {
                 String chargeString = fields[8].trim();
@@ -178,6 +188,7 @@ public class Mol2File {
                     atom.setCharge(charge);
 
                 } catch (NumberFormatException nfE) {
+                    log.warn("Unable to parse atom charge.", nfE);
                 }
             }
             /*
@@ -247,18 +258,18 @@ public class Mol2File {
                         break;
                 }
 
-                //System.err.println (iBond + " " + jBond + " " + atomList.size ());
                 if (atomList != null) {
                     if ((iBond < atomList.size()) && (jBond < atomList.size())) {
                         Atom atom1 = (Atom) atomList.get(iBond);
                         Atom atom2 = (Atom) atomList.get(jBond);
-                        atom1.setFlag(Atom.AROMATIC, aromatic);
-                        atom2.setFlag(Atom.AROMATIC, aromatic);
+                        if (aromatic) {
+                            atom1.setFlag(Atom.AROMATIC, aromatic);
+                            atom2.setFlag(Atom.AROMATIC, aromatic);
+                        }
 
                         Atom.addBond(atom1, atom2, Order.getOrder(order), stereo, false);
                     } else {
-                        System.err.println("error in adding bond to molecule "
-                                + molName);
+                        log.warn("error in adding bond to molecule {}", molName);
                     }
                 }
             } catch (NumberFormatException nFE) {

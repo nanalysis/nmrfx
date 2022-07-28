@@ -21,6 +21,7 @@ import org.nmrfx.chemistry.Order;
 import org.nmrfx.chemistry.*;
 import org.nmrfx.chemistry.Residue.RES_POSITION;
 import java.io.*;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -30,10 +31,11 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
+
 import org.nmrfx.chemistry.AtomEnergyProp;
-//import org.nmrfx.structure.chemistry.energy.AngleTreeGenerator;
-//import org.nmrfx.structure.chemistry.miner.NodeValidator;
-//import org.nmrfx.structure.chemistry.miner.PathIterator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -41,6 +43,7 @@ import org.nmrfx.chemistry.AtomEnergyProp;
  */
 public class Sequence {
 
+    private static final Logger log = LoggerFactory.getLogger(Sequence.class);
     private Atom connectAtom = null;
     private Bond connectBond = null;
     private Atom connectBranch = null;
@@ -190,7 +193,7 @@ public class Sequence {
                 String parentField = fields[1];
                 Atom refAtom = residue.getAtom(fields[2]);
                 if (refAtom == null) {
-                    System.out.println(Arrays.asList(fields));
+                    log.error("{}", Arrays.asList(fields));
                     throw new MoleculeIOException("No refAtom " + fields[2]);
                 }
                 boolean connectee = false;
@@ -321,7 +324,6 @@ public class Sequence {
                             sequence.connectBranch = atom1;
                         } else {
                             Atom atom = residue.getAtom(branchField);
-                            //System.out.println("branch " + atom1.getFullName() + " " + atom.getFullName());
                             atom1.branchAtoms[iBranch] = atom;
                         }
                     }
@@ -408,14 +410,14 @@ public class Sequence {
 
     public ArrayList<String[]> loadResidue(final String fileName, boolean throwTclException) throws MoleculeIOException {
         BufferedReader bf;
-        ArrayList<String[]> fieldArray = new ArrayList<String[]>();
+        ArrayList<String[]> fieldArray = new ArrayList<>();
         bf = getLocalResidueReader(fileName);
         if (bf == null) {
             try {
                 if (fileName.startsWith("resource:")) {
                     InputStream inputStream = this.getClass().getResourceAsStream(fileName.substring(9));
                     if (inputStream == null) {
-                        System.out.println("reso null " + fileName);
+                        log.warn("resource null {}", fileName);
                     } else {
                         bf = new BufferedReader(new InputStreamReader(inputStream));
                     }
@@ -431,17 +433,15 @@ public class Sequence {
             }
         }
         if (bf != null) {
-            try {
-                while (bf.ready()) {
-                    String line = bf.readLine();
-                    if (line == null) {
-                        break;
-                    }
+            try (BufferedReader bufferedReader = bf) {
+                String line;
+                while ((line = bufferedReader.readLine()) != null) {
                     line = line.trim();
                     String[] fields = line.split("\\s+");
                     fieldArray.add(fields);
                 }
             } catch (IOException ioe) {
+                log.warn(ioe.getMessage(), ioe);
             }
         }
         return fieldArray;
@@ -482,7 +482,7 @@ public class Sequence {
                 addNonStandardResidue(residue);
             } else {
                 result = false;
-                System.out.println("cant read  " + fileName);
+                log.warn("cant read {}", fileName);
             }
             // FIXME : What happens if first residue is an unnatural residue
             if (this.connectAtom != null) {
@@ -533,30 +533,15 @@ public class Sequence {
 
     public MoleculeBase read(String fileName, String polymerName) throws MoleculeIOException {
         ArrayList<String> inputStrings = new ArrayList<>();
-        LineNumberReader lineReader = null;
-        try {
-            BufferedReader bf = new BufferedReader(new FileReader(fileName));
-            lineReader = new LineNumberReader(bf);
-        } catch (FileNotFoundException ioe) {
+        File file = new File(fileName);
+        try (Stream<String> lines = Files.lines(file.toPath())) {
+            lines.forEach(inputStrings::add);
+        }  catch (FileNotFoundException ioe) {
             throw new MoleculeIOException(ioe.getMessage());
+        } catch (IOException ioE) {
+            log.warn(ioE.getMessage(), ioE);
         }
 
-        File file = new File(fileName);
-        while (true) {
-            String inputString = null;
-            try {
-                inputString = lineReader.readLine();
-                if (inputString == null) {
-                    lineReader.close();
-                }
-            } catch (IOException ioE) {
-            }
-            if (inputString != null) {
-                inputStrings.add(inputString);
-            } else {
-                break;
-            }
-        }
         String parentDir = file.getParent();
         read(polymerName, inputStrings, parentDir);
         return molecule;
@@ -569,7 +554,6 @@ public class Sequence {
 
     public MoleculeBase read(String polymerName, List<String> inputStrings, String parentDir, String molName)
             throws MoleculeIOException {
-        LineNumberReader lineReader = null;
         Polymer polymer = null;
         Residue residue = null;
         boolean setPolymerType = false;
@@ -771,6 +755,7 @@ public class Sequence {
                     iRes = String.valueOf(nRes);
                 }
             } catch (NumberFormatException nfE) {
+                log.warn(nfE.getMessage(), nfE);
             }
         }
         for (Polymer cpolymer : polymers) {
@@ -833,7 +818,6 @@ public class Sequence {
             if (coordSetNames.isEmpty()) {
                 molecule.addEntity(polymer, "", polymer.assemblyID);
             } else {
-                //System.err.println("add entity named" + polymerName + " with cset " + ((String) coordSetNames.get(0)));
                 molecule.addEntity(polymer, (String) coordSetNames.get(0), polymer.assemblyID);
             }
         } else {
@@ -877,7 +861,7 @@ public class Sequence {
             connectAtom = newAtom;
         }
 
-        System.out.println("create linker " + numLinks);
+        log.info("create linker {}", numLinks);
     }
 
 }

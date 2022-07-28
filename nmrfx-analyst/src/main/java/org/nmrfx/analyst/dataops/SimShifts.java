@@ -70,16 +70,10 @@ public class SimShifts {
                 couplings.set(i, j, matrix[i][j]);
             }
         }
-        //System.out.println(shifts.toString());
-        //System.out.println(couplings.toString());
         getMatrices(shifts, couplings);
-        //System.out.println("got mats");
-        //System.out.println("sym " + MatrixFeatures_DDRM.isSymmetric(ham));
         EigenDecomposition_F64 eigDec = DecompositionFactory_DDRM.eig(ham.getNumCols(), true);
-        //System.out.println("got eig");
         //dump(ham);
         eigDec.decompose(ham);
-        //System.out.println("done");
         int nEig = eigDec.getNumberOfEigenvalues();
         DMatrixRMaj eValues = new DMatrixRMaj(1, nEig);
         DMatrixRMaj eVecs = new DMatrixRMaj(nEig, nEig);
@@ -91,7 +85,6 @@ public class SimShifts {
         for (int i = 0; i < nEig; i++) {
             int k = indices[i];
             eValues.set(i, eigDec.getEigenvalue(k).getReal());
-            //System.out.println(i + " " + k + "  eig " + eValues.get(i));
 
             DMatrixRMaj vec = (DMatrixRMaj) eigDec.getEigenVector(k);
             for (int j = 0; j < eVecs.getNumRows(); j++) {
@@ -101,7 +94,6 @@ public class SimShifts {
 
         double max = CommonOps_DDRM.elementMax(eVecs);
         double threshold = max * 0.01;
-        //System.out.println("thresh " + max + " " + threshold);
         absThreshold(eVecs, threshold);
         //dump(eVecs);
         SimpleMatrix vS = SimpleMatrix.wrap(eVecs);
@@ -135,7 +127,6 @@ public class SimShifts {
         }
         for (int i = 0; i < intensities.size(); i++) {
             intensities.set(i, intensities.get(i) / maxValue);
-            //System.out.println(i + " " + ppms.get(i) + " " + intensities.get(i));
         }
     }
 
@@ -145,7 +136,6 @@ public class SimShifts {
             double ppm = ppms.get(i);
             double intensity = intensities.get(i);
             int pt = vec.refToPt(ppm);
-            //System.out.println(ppm + " " + pt);
             if ((pt >= 0) && (pt < vec.getSize())) {
                 vec.add(pt, intensity);
             }
@@ -165,7 +155,6 @@ public class SimShifts {
         int[] sortedIndices = IntStream.range(0, eValues.getNumElements())
                 .boxed().sorted((i, j) -> Double.compare(eValues.get(i), eValues.get(j)))
                 .mapToInt(ele -> ele).toArray();
-        //System.out.println(eValues.getNumElements() + " " + sortedIndices.length);
         return sortedIndices;
     }
 
@@ -184,9 +173,6 @@ public class SimShifts {
         y.set(0, 1, 0.0, 0.5);  // y = i*(z*x-x*z)
         y.set(1, 0, 0.0, -0.5);
 
-        //System.out.println(x.toString());
-        //System.out.println(y.toString());
-        //System.out.println(z.toString());
         ham = buildHamiltonian(x, y, z, shifts, couplings);
         state = buildState(shifts.getNumCols(), x);
         obs = buildOBservable(shifts.getNumCols(), y, state);

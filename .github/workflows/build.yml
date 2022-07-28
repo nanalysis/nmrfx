@@ -14,6 +14,10 @@ on:
       - 'epic/**'
       - 'release/**'
 
+# Set environment variables
+env:
+  BUILD_ENV: true
+
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   # This workflow contains a single job called "build"
@@ -27,6 +31,8 @@ jobs:
       - name: Git checkout
         uses: actions/checkout@v2
         with:
+          token: ${{ secrets.SUBMODULE_ACCESS_TOKEN }}
+          lfs: 'true'
           # Check-out the submodules as well
           submodules: 'recursive'
 

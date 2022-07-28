@@ -75,9 +75,7 @@ public class EnergyShiftPairs extends EnergyPairs {
         for (int i = 0; i < nPairs; i++) {
             int iAtom = iAtoms[i];
             int jAtom = jAtoms[i];
-//            if (atoms[iAtom].getShortName().equals("5.C1'")) {
-//                System.out.println(i + " " + iAtom + " " + jAtom + " " + atoms[iAtom].getShortName()+ " " + atoms[jAtom].getShortName() + " " + baseShifts[iAtom]+ " " + shiftClass[jAtom]);
-//            }
+
             if ((baseShifts[iAtom] != 0.0) && shiftClass[jAtom] >= 0) {
                 int alphaClass = getRNAClass(atoms[iAtom]);
                 if (alphaClass >= 0) {
@@ -94,9 +92,7 @@ public class EnergyShiftPairs extends EnergyPairs {
 
                         }
                         refShifts[iAtom] += shiftContrib;
-//                        if (atoms[iAtom].getShortName().equals("5.C1'")) {
-//                            System.out.println(atoms[jAtom].getShortName() + " " + alphaIndex + " " + alphaClass + " " + alpha + " " + baseShifts[iAtom] + " " + shiftContrib + " " + r + " " + refShifts[iAtom]);
-//                        }
+
                         if (calcDeriv) {
                             //  what is needed is actually the derivative/r, therefore
                             // we divide by r
@@ -122,9 +118,6 @@ public class EnergyShiftPairs extends EnergyPairs {
                 for (int j = 0; j < angleValues.length; j++) {
                     double alpha = Predictor.getAngleAlpha(alphaClass, j);
                     angleDelta += angleValues[j] * alpha;
-//                    if (atoms[i].getShortName().equals("5.C1'")) {
-//                        System.out.println(atoms[i].getShortName() + " " + alphaClass + " " +alpha + " " + chi + " " + nu2 + " " +  angleDelta + " " + (refShifts[i]+angleDelta));
-//                    }
                 }
 
                 refShifts[i] += angleDelta;
@@ -138,7 +131,6 @@ public class EnergyShiftPairs extends EnergyPairs {
                 double mae = Predictor.getMAE(atoms[i]);
                 double shiftDelta = (shifts[i] - refShifts[i]) / mae;
                 sum += weight * shiftDelta * shiftDelta;
-                //   System.out.println(i + " " + atoms[i].getShortName() + " " + refShifts[i]);
                 atoms[i].setRefPPM(refShifts[i]);
             }
         }

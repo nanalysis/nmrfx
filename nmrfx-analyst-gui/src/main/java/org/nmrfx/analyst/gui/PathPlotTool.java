@@ -52,6 +52,8 @@ import org.nmrfx.chart.DataSeries;
 import org.nmrfx.chart.XYCanvasChart;
 import org.nmrfx.chart.XYChartPane;
 import org.nmrfx.peaks.PeakPath;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -59,6 +61,7 @@ import org.nmrfx.peaks.PeakPath;
  */
 public class PathPlotTool {
 
+    private static final Logger log = LoggerFactory.getLogger(PathPlotTool.class);
     PathTool pathTool;
     Stage stage = null;
     XYCanvasChart activeChart = null;
@@ -283,6 +286,7 @@ public class PathPlotTool {
                 writer.write(s, 0, s.length());
             }
         } catch (IOException x) {
+            log.warn(x.getMessage(), x);
         }
     }
 

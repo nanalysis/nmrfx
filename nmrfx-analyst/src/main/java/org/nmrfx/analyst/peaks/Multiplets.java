@@ -165,7 +165,7 @@ public class Multiplets {
 
     public static Optional<Multiplet> mergePeaks(List<Peak> peaks) {
         Optional<Multiplet> result = Optional.empty();
-        if (peaks.size() > 0) {
+        if (!peaks.isEmpty()) {
             Set<PeakDim> peakDims = new HashSet<>();
             for (Peak peak : peaks) {
                 peakDims.add(peak.getPeakDim(0).getMultiplet().getPeakDim());
@@ -184,7 +184,6 @@ public class Multiplets {
                 }
             }
             firstPeakDim.getMultiplet().updateCoupling(comps);
-
             PeakList peakList = firstPeakDim.getPeak().getPeakList();
             peakList.compress();
             peakList.sortPeaks(0, true);
@@ -240,26 +239,25 @@ public class Multiplets {
     }
 
     public static void addPeaksToMultiplet(Multiplet multiplet, double... ppms) {
-        int iDim = 0;
         PeakDim peakDim = getMultipletRoot(multiplet);
-        PeakList refList = peakDim.getPeak().peakList;
-        double intensity = peakDim.getPeak().getIntensity();
-        double volume = peakDim.getPeak().getVolume1();
-        float width = peakDim.getLineWidth();
-        float bounds = width * 3.0f;
+        if (peakDim != null) {
+            double intensity = peakDim.getPeak().getIntensity();
+            double volume = peakDim.getPeak().getVolume1();
+            float width = peakDim.getLineWidth();
 
-        List<AbsMultipletComponent> comps = multiplet.getAbsComponentList();
-        volume = volume / comps.size();
-        intensity /= 4;
+            List<AbsMultipletComponent> comps = multiplet.getAbsComponentList();
+            volume = volume / comps.size();
+            intensity /= 4;
 
-        for (double ppm : ppms) {
-            AbsMultipletComponent comp = new AbsMultipletComponent(multiplet, ppm, intensity, volume, width);
-            comps.add(comp);
+            for (double ppm : ppms) {
+                AbsMultipletComponent comp = new AbsMultipletComponent(multiplet, ppm, intensity, volume, width);
+                comps.add(comp);
+            }
+            multiplet.updateCoupling(comps);
+            fitComponents(multiplet);
+        } else {
+            throw new IllegalArgumentException("Multiplet is null. Unable to add peaks.");
         }
-        multiplet.updateCoupling(comps);
-        fitComponents(multiplet);
-        //  analyzeMultiplet(multiplet.getOrigin());
-        // updateAfterMultipletConversion(multiplet);
     }
 
     public static Optional<Double> findMultipletMidpoint(Multiplet multiplet) {
@@ -289,10 +287,6 @@ public class Multiplets {
         return Optional.ofNullable(offset);
     }
 
-//    public static void addOuterCoupling(int addNumber, String mSpec) {
-//        Multiplet multiplet = getMultiplet(mSpec);
-//        addOuterCoupling(addNumber, multiplet);
-//    }
     public static void addOuterCoupling(int addNumber, Multiplet multiplet) {
         PeakDim peakDim = getMultipletRoot(multiplet);
         int type = peakDim.getPeak().getType();
@@ -681,7 +675,6 @@ public class Multiplets {
         double sf = peakDim.getSpectralDimObj().getSf();
         for (int i = 0; i < nComps; i++) {
             AbsMultipletComponent comp = comps.get(i);
-//            System.out.printf("off %10.3f vol %10.3f int %10.3f\n", comp.getOffset(), comp.getVolume(), comp.getIntensity());
         }
         if (checkMultiplet(comps)) {
             System.out.println("check");
@@ -775,7 +768,6 @@ public class Multiplets {
             System.out.println("singlet");
             return new CouplingData(ppmCenter, 1);
         }
-//        System.out.println("c " + ppmList.size() + " " + ppmList.toString());
 
         double tol = 0.5 / sf;
         double lastCoupling = 0.0;
@@ -903,7 +895,6 @@ public class Multiplets {
             pattern += "d";
             int nPeaksExpected = getMultiplicityCount(pattern);
             int nPeaksExpectedNext = getMultiplicityCount(pattern + "d");
-//            System.out.println(pattern + " " + nPeaksExpected + " " + nPeaksExpectedNext + " " + nPeaks);
             if (nPeaks == nPeaksExpected) {
                 jCoup = iCoup + 1;
                 break;

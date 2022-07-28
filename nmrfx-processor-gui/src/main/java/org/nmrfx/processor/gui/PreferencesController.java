@@ -55,12 +55,16 @@ import javafx.scene.layout.Pane;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import org.controlsfx.control.PropertySheet;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
  * @author johnsonb
  */
 public class PreferencesController implements Initializable {
+
+    private static final Logger log = LoggerFactory.getLogger(PreferencesController.class);
 
     @FXML
     PropertySheet prefSheet;
@@ -151,8 +155,7 @@ public class PreferencesController implements Initializable {
             controller.stage = stage;
             stage.show();
         } catch (IOException ioE) {
-            ioE.printStackTrace();
-            System.out.println(ioE.getMessage());
+            log.warn(ioE.getMessage(), ioE);
         }
 
         return controller;

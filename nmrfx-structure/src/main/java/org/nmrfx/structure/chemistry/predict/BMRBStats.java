@@ -60,7 +60,7 @@ public class BMRBStats {
         boolean result = false;
         InputStream iStream = Util.getResourceStream(fileName, resourceMode);
         if (iStream != null) {
-            try (BufferedReader bReader = new BufferedReader(new InputStreamReader(iStream));) {
+            try (BufferedReader bReader = new BufferedReader(new InputStreamReader(iStream))) {
                 boolean firstLine = true;
                 result = true;
                 while (true) {

@@ -127,11 +127,9 @@ public class MatrixAnalyzer {
             int kk = iter.next();
             int[] elems = iter.getCounts();
             for (int k = 0; k < dims.length; k++) {
-//                System.out.print(elems[k] + " ");
                 bpt[k][0] = pt[k][0] + deltas[k] * elems[k];
                 bpt[k][1] = bpt[k][0] + deltas[k];
             }
-//            System.out.print(kk + " ");
             double[] width = new double[nDim];
             double max = Double.NEGATIVE_INFINITY;
             double[] values = new double[nCols];

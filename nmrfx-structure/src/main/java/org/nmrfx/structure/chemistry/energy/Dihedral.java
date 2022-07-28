@@ -29,6 +29,8 @@ import org.slf4j.LoggerFactory;
 import java.io.*;
 import java.util.*;
 
+import static java.util.Objects.requireNonNull;
+
 public class Dihedral {
     private static final Logger log = LoggerFactory.getLogger(Dihedral.class);
 
@@ -210,15 +212,11 @@ public class Dihedral {
                 v[3] = atom.dihedralAngle - deltaV3;
 
                 pseudoVals = calcPseudoAngle(v[2], v[3]);
-                //System.out.println("Get Dihedral PseudoAngle" + angleValues[i]);
                 angleValues[i++] = Util.reduceAngle(pseudoVals[0]);
-                //System.out.println("Get Dihedral PuckerValue: " + angleValues[i]);
                 angleValues[i++] = Util.reduceAngle(pseudoVals[1]);
 
                 //angleValues[i++] = reduceAngle(calcPseudoAngle(v[2], v[3]));
                 //angleValues[i++] = puckerAmplitude;
-                //System.out.printf("pseudo angle is %7.3f %7.3f %7.3f\n", v[2] * toDeg, v[3] * toDeg, angleValues[i - 1] * toDeg);
-                //System.out.println("getDihedrals: " + v[2] + ", " + v[1] + "," + v[3]);
             }
         }
         //List of all atoms with rotatable angles as specified in 
@@ -345,8 +343,6 @@ public class Dihedral {
                 Atom atom3 = pseudoAngleAtoms.get(j + 2);
                 atom3.dihedralAngle = (float) Util.reduceAngle(v[3] + deltaV3);
                 //atom3.dihAngle.angleValue = (float) reduceAngle(v[3] + deltaV3);
-                //System.out.println("Put PuckerValue: " + angleValues[i]);
-                //System.out.println("Put Value: ")
             }
         }
         List<Atom> angleAtoms = molecule.getAngleAtoms();
@@ -425,45 +421,25 @@ public class Dihedral {
             inputSigma[i] = sigma;
         }
         int aStart = nPseudoAngles * 2 * stepSize;
+        List<String> parentNamesToScale = Arrays.asList("P", "O5'", "C5'", "C4'", "O3'", "CA", "C");
         for (int iAtom = 0; iAtom < angleAtoms.size(); iAtom++) {
             Atom atom = angleAtoms.get(iAtom).daughterAtom;
             // temporarily set everything to use sigma, till we make sure counting is correct
-            if (atom == null) {
-                System.out.println("daughter null " + angleAtoms.get(iAtom).daughterAtom.getFullName());
-            }
-            if (atom.parent == null) {
-                System.out.println("parent null " + angleAtoms.get(iAtom).daughterAtom.getFullName());
-            }
-            if (atom.parent.getName().equals("P") || atom.parent.getName().equals("O5'") || atom.parent.getName().equals("C5'") || atom.parent.getName().equals("C4'") || atom.parent.getName().equals("O3'")) {
-                inputSigma[aStart++] = sigma / backBoneScale;
-                if (sinCosMode) {
-                    inputSigma[aStart++] = sigma / backBoneScale;
-                }
-            } else if (atom.parent.getName().equals("CA") || atom.parent.getName().equals("C")) {
-                inputSigma[aStart++] = sigma / backBoneScale;
-                if (sinCosMode) {
-                    inputSigma[aStart++] = sigma / backBoneScale;
-                }
+            requireNonNull(atom, "Encountered null daughter atom while setting boundaries.");
+            requireNonNull(atom.parent, "Encountered null parent atom while setting boundaries. " + atom.getFullName());
+            String parentName = atom.parent.getName();
+            double inputSigmaAtIndex;
+            if (parentNamesToScale.contains(parentName)) {
+                inputSigmaAtIndex = sigma / backBoneScale;
             } else {
-                inputSigma[aStart++] = sigma;
-                if (sinCosMode) {
-                    inputSigma[aStart++] = sigma;
-                }
+                inputSigmaAtIndex = sigma;
+            }
+            inputSigma[aStart++] = inputSigmaAtIndex;
+            if (sinCosMode) {
+                inputSigma[aStart++] = inputSigmaAtIndex;
             }
         }
 
-        /* works
-        for (int i = 0; i < normBoundaries[0].length; i++) {
-            Atom atom = angleAtoms.get(i / stepSize);
-            if (atom.parent.getName().equals("P") || atom.parent.getName().equals("O5'") || atom.parent.getName().equals("C5'") || atom.parent.getName().equals("C4'") || atom.parent.getName().equals("O3'")) {
-                inputSigma[i] = sigma/backBoneScale;
-            } else if (atom.parent.getName().equals("CA") || atom.parent.getName().equals("C")) {
-                inputSigma[i] = sigma/backBoneScale;
-            } else {
-                inputSigma[i] = sigma;
-            }
-        }
-         */
         for (int i = 0; i < boundaries[0].length; i++) {
             if (centerBoundaries) {
                 double angle = Util.reduceAngle(angleValues[i]);
@@ -477,9 +453,6 @@ public class Dihedral {
             ranBoundaries[1][i] = Math.PI;
         }
         setupAngleRestraints();
-        //for (int j=0;j<angleValues.length;j++) {
-        //System.out.printf("j %3d bou %9.3f bou %9.3f sig %9.3f ang %9.3f nrm %9.3f nrm %9.3f\n",j,toDeg*boundaries[0][j],toDeg*boundaries[1][j],inputSigma[j],toDeg*angleValues[j],normBoundaries[0][j],normBoundaries[1][j]);
-        //}
     }
 
     public void setupAngleRestraints() {
@@ -573,9 +546,6 @@ public class Dihedral {
         } else {
             for (int i = 0; i < inValues.length; i++) {
                 outValues[i] = toNormalized(inValues[i], i);
-                //System.out.println("inValues:" + inValues[i] + "outValues" + outValues[i]);
-                //System.out.println("inValues: Boundaries = : " + boundaries[0][i] + " , " + boundaries[1][i]);
-                //System.out.println();
 
             }
         }
@@ -594,9 +564,7 @@ public class Dihedral {
     public double fromNormalized(double value, int i) {
         //double f = (value - normBoundaries[0][i]) / (normBoundaries[1][i] - normBoundaries[0][i]);
         double f = value / 100.0;
-        if ((f < 0.1) || (f > 0.9)) {
-//            System.out.println("############################ " +f + " " + i);
-        }
+
         double normValue = f * (boundaries[1][i] - boundaries[0][i]) + boundaries[0][i];
         if (boundaries[1][i] > Math.PI) {
             normValue = Util.reduceAngle(normValue);
@@ -629,7 +597,6 @@ public class Dihedral {
             long deltaTime = time - startTime;
             bestEnergy = energy;
             System.arraycopy(angleValues, 0, bestValues, 0, angleValues.length);
-            //System.out.println(nEvaluations + " " + deltaTime + " " + energyList.atomList.size() + " " + energy);
         }
         nEvaluations++;
         return energy;
@@ -660,7 +627,6 @@ public class Dihedral {
         } else {
             pseudoAngle = Math.acos(cosValue);
         }
-        //System.out.println("PSEUDO ANGLE: " + pseudoAngle);
         double v3T1 = puckerAmplitude
                 * Math.cos(pseudoAngle + 4.0 * Math.PI / 5.0);
         double v3T2 = puckerAmplitude

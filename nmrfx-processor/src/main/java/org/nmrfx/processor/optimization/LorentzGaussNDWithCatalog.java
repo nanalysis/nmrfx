@@ -33,11 +33,9 @@ public class LorentzGaussNDWithCatalog extends LorentzGaussND {
             if (intensities.length > 1) {
                 iPar += 2;
             }
-//            System.out.printf("iamp %2d amp %7.3f ",sigStarts[iSig], pars[sigStarts[iSig]]);
             for (int iDim = 0; iDim < nDim; iDim++) {
                 double lw = pars[iPar++];
                 double freq = pars[iPar++];
-//                System.out.printf("lw %7.3f fr %7.3f ", lw, freq);
                 catValues[iSig][iDim] = lsCatalog.interpolate(iDim, freq, lw);
                 offsets[iSig][iDim] = (int) Math.round(freq);
             }
@@ -73,13 +71,11 @@ public class LorentzGaussNDWithCatalog extends LorentzGaussND {
                 //sum += delta * delta;
                 sum += FastMath.abs(delta);
             }
-//            System.out.printf("%7.3f\n", sum);
 
         }
         // double result = Math.sqrt(sum / positions.length);
         double result = sum / (positions.length * nDelays);
         //dumpArray(parameters);
-        //System.out.println(result);
         if ((best == null) || (best.getValue() > result)) {
             best = new PointValuePair(pars, result);
         }
