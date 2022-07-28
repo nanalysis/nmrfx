@@ -35,7 +35,6 @@ import org.slf4j.LoggerFactory;
  */
 public class AnnoText implements CanvasAnnotation {
     private static final Logger log = LoggerFactory.getLogger(AnnoText.class);
-    private static final Logger log = LoggerFactory.getLogger(AnnoText.class);
 
     double x1;
     double y1;
