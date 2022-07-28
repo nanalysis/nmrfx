@@ -19,6 +19,8 @@ jobs:
       - name: Git checkout
         uses: actions/checkout@v2
         with:
+          token: ${{ secrets.SUBMODULE_ACCESS_TOKEN }}
+          lfs: 'true'
           # Check-out the submodules as well
           submodules: 'recursive'
 

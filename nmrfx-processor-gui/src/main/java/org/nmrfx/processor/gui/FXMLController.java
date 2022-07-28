@@ -28,9 +28,9 @@ import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
+import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
-import javafx.event.Event;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -113,46 +113,26 @@ public class FXMLController implements  Initializable, PeakNavigable {
     @FXML
     private VBox phaserBox;
     @FXML
-    private VBox vectorBox;
-
-    @FXML
     private BorderPane borderPane;
     @FXML
     private BorderPane mainBox;
     @FXML
     private StackPane processorPane;
     @FXML
-    private HBox dimHBox;
-    @FXML
-    private HBox dimHBox2;
-    @FXML
-    private Slider vecNum1;
-    @FXML
     private GridPane rightBox;
-    private TextField[] rowTextBoxes = new TextField[0];
-    private TextField fileIndexTextBox = new TextField();
-    ToggleGroup rowToggleGroup = new ToggleGroup();
-    private ChoiceBox<String> realImagChoiceBox = new ChoiceBox();
-    private List<String> realImagChoices = new ArrayList<>();
-    ChangeListener<String> vecNumListener;
-    int[] rowIndices;
-    int[] vecSizes;
-
     private Button cancelButton;
-    EventHandler<ActionEvent> menuHandler;
     PopOver popOver = null;
     PopOver attributesPopOver = null;
-
-    ChangeListener<String> dimListener;
-    ChangeListener<Number> refDimListener;
 
     ChartProcessor chartProcessor;
     DocWindowController dwc = null;
     static SpecAttrWindowController specAttrWindowController = null;
     static boolean popOverMode = false;
     static PeakAttrController peakAttrController = null;
-    ProcessorController processorController = null;
     Stage stage = null;
+    private double previousStageRestoreWidth = 0;
+    private double previousStageRestoreProcControllerWidth = 0;
+    private boolean previousStageRestoreProcControllerVisible = false;
     boolean isFID = true;
     static public final SimpleObjectProperty<FXMLController> activeController = new SimpleObjectProperty<>(null);
     static String docString = null;
@@ -305,8 +285,20 @@ public class FXMLController implements  Initializable, PeakNavigable {
         if (activeChart != chart) {
             deselectCharts();
         }
+        isFID = false;
         activeChart = chart;
         PolyChart.activeChart.set(chart);
+        ProcessorController processorController = chart.getProcessorController(false);
+        processorPane.getChildren().clear();
+        // The chart has a processor controller setup, and can be in FID or Dataset mode.
+        if (processorController != null) {
+            isFID = !processorController.isViewingDataset();
+            chartProcessor = processorController.chartProcessor;
+            if(processorController.isVisible()) {
+                processorController.show();
+            }
+        }
+        updateSpectrumStatusBarOptions();
         if (specAttrWindowController != null) {
             specAttrWindowController.setChart(activeChart);
         }
@@ -441,6 +433,12 @@ public class FXMLController implements  Initializable, PeakNavigable {
             try {
                 setInitialDirectory(selectedFile.getParentFile());
                 NMRData nmrData = NMRDataUtil.getNMRData(selectedFile.toString());
+                ProcessorController processorController = getActiveChart().getProcessorController(false);
+                if (processorController != null && (!selectedFile.equals(chartProcessor.datasetFile))) {
+                    processorPane.getChildren().clear();
+                    getActiveChart().processorController = null;
+                    processorController.cleanUp();
+                }
                 if (nmrData instanceof NMRViewData) {
                     PreferencesController.saveRecentDatasets(selectedFile.toString());
                     NMRViewData nvData = (NMRViewData) nmrData;
@@ -587,11 +585,8 @@ public class FXMLController implements  Initializable, PeakNavigable {
         return state;
     }
 
-    public ProcessorController getProcessorController(boolean createIfNull) {
-        if ((processorController == null) && createIfNull) {
-            processorController = ProcessorController.create(this, processorPane, getActiveChart());
-        }
-        return processorController;
+    public StackPane getProcessorPane() {
+        return processorPane;
     }
 
     public ChartProcessor getChartProcessor() {
@@ -604,10 +599,8 @@ public class FXMLController implements  Initializable, PeakNavigable {
 
     void addFID(NMRData nmrData, boolean clearOps, boolean reload) {
         isFID = true;
-        if (chartProcessor == null && processorController == null) {
-            // The create method also creates and sets the chartProcessor variable
-            processorController = ProcessorController.create(this, processorPane, getActiveChart());
-        }
+        // Only create a new processor controller, if the active chart does not have one already created.
+        ProcessorController processorController = getActiveChart().getProcessorController(true);
         if (processorController != null) {
             chartProcessor.setData(nmrData, clearOps);
             processorController.viewingDataset(false);
@@ -619,7 +612,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
             if (!reload) {
                 getActiveChart().full();
                 getActiveChart().autoScale();
-                generateScriptAndParse(nmrData);
+                generateScriptAndParse(nmrData, processorController);
             }
             getActiveChart().layoutPlotChildren();
             statusBar.setMode(0);
@@ -632,8 +625,9 @@ public class FXMLController implements  Initializable, PeakNavigable {
      * Check for existing default processing script and parse if present, otherwise generate
      * and parse a processing script for FID data for 1D and 2D data.
      * @param nmrData The NMRData set that will be processed.
+     * @param processorController The ProcessorController to parse the script with.
      */
-    private void generateScriptAndParse(NMRData nmrData) {
+    private void generateScriptAndParse(NMRData nmrData, ProcessorController processorController) {
         int nDim = nmrData.getNDim();
         if (isFIDActive() && chartProcessor != null && !chartProcessor.loadDefaultScriptIfPresent()) {
             if (nDim == 1 || nDim == 2) {
@@ -664,22 +658,13 @@ public class FXMLController implements  Initializable, PeakNavigable {
             datasetAttributes.dim[1] = 1;
         }
         getActiveChart().setCrossHairState(true, true, true, true);
+        ProcessorController processorController = getActiveChart().processorController;
         if (processorController != null) {
             processorController.viewingDataset(true);
         }
         borderPane.setLeft(null);
         borderPane.setBottom(null);
-        ObservableList<DatasetAttributes> datasetAttrList = getActiveChart().getDatasetAttributes();
-        OptionalInt maxNDim = datasetAttrList.stream().mapToInt(d -> d.nDim).max();
-        if (maxNDim.isPresent()) {
-            if (getActiveChart().is1D() && (maxNDim.getAsInt() > 1)) {
-                OptionalInt maxRows = datasetAttrList.stream().
-                        mapToInt(d -> d.nDim == 1 ? 1 : d.getDataset().getSizeReal(1)).max();
-                statusBar.set1DArray(maxNDim.getAsInt(), maxRows.getAsInt());
-            } else {
-                statusBar.setMode(maxNDim.getAsInt());
-            }
-        }
+        updateSpectrumStatusBarOptions();
 
         phaser.getPhaseOp();
         if (!reload) {
@@ -694,6 +679,28 @@ public class FXMLController implements  Initializable, PeakNavigable {
             }
         }
         getActiveChart().layoutPlotChildren();
+    }
+
+    /**
+     * Updates the SpectrumStatusBar menu options based on whether FID mood is on, and the dimensions
+     * of the dataset.
+     */
+    private void updateSpectrumStatusBarOptions() {
+        if (isFIDActive()) {
+            statusBar.setMode(0);
+        } else {
+            ObservableList<DatasetAttributes> datasetAttrList = getActiveChart().getDatasetAttributes();
+            OptionalInt maxNDim = datasetAttrList.stream().mapToInt(d -> d.nDim).max();
+            if (maxNDim.isPresent()) {
+                if (getActiveChart().is1D() && (maxNDim.getAsInt() > 1)) {
+                    OptionalInt maxRows = datasetAttrList.stream().
+                            mapToInt(d -> d.nDim == 1 ? 1 : d.getDataset().getSizeReal(1)).max();
+                    statusBar.set1DArray(maxNDim.getAsInt(), maxRows.getAsInt());
+                } else {
+                    statusBar.setMode(maxNDim.getAsInt());
+                }
+            }
+        }
     }
 
     public void closeFile(File target) {
@@ -744,7 +751,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
                 stage.toFront();
             }
         } else {
-            System.out.println("Coudn't make controller");
+            log.warn("Couldn't make controller");
         }
     }
 
@@ -796,19 +803,17 @@ public class FXMLController implements  Initializable, PeakNavigable {
             peakAttrController.getStage().show();
             peakAttrController.getStage().toFront();
         } else {
-            System.out.println("Coudn't make controller");
+            log.warn("Couldn't make controller");
         }
     }
 
     @FXML
     public void showProcessorAction(ActionEvent event) {
-        if (processorController == null) {
-            processorController = ProcessorController.create(this, processorPane, getActiveChart());
-        }
+        ProcessorController processorController = getActiveChart().getProcessorController(false);
         if (processorController != null) {
             processorController.show();
         } else {
-            System.out.println("Coudn't make controller");
+            log.warn("No controller to show.");
         }
     }
 
@@ -841,51 +846,6 @@ public class FXMLController implements  Initializable, PeakNavigable {
 
     public Button getCancelButton() {
         return cancelButton;
-    }
-
-    @FXML
-    private void handleVecNum(Event event) {
-        Slider slider = (Slider) event.getSource();
-        int iRow = (int) slider.getValue() - 1;
-        int iDim = getRowChoice() - 1;
-        chartProcessor.vecRow(iDim, iRow);
-        getActiveChart().layoutPlotChildren();
-        //label.setText("Hello World!");
-    }
-
-    public int[] getRows() {
-        int[] rows = new int[rowTextBoxes.length];
-        for (int i = 0; i < rows.length; i++) {
-            if (rowTextBoxes[i] == null) {
-                rows[i] = 0;
-            } else {
-                String text = rowTextBoxes[i].getText();
-                if (text.isBlank()) {
-                    rows[i] = 0;
-                } else {
-                    String[] fields = text.split("/");
-                    int row = Integer.parseInt(fields[0].trim()) - 1;
-                    rows[i] = row;
-                }
-            }
-        }
-        return rows;
-    }
-
-    @FXML
-    private void handleVecRelease(Event event) {
-        Slider slider = (Slider) event.getSource();
-        int iRow = (int) slider.getValue();
-        int delta = (int) (slider.getMax() - slider.getMin());
-
-        int start = (int) (delta / 4 * Math.round(iRow / delta / 4)) - delta / 2;
-        if (start < 1) {
-            start = 1;
-        }
-        double end = start + delta;
-        slider.setMin(start);
-        slider.setMax(end);
-
     }
 
     @FXML
@@ -999,63 +959,6 @@ public class FXMLController implements  Initializable, PeakNavigable {
         }
     }
 
-    @FXML
-    protected void vectorStatus(int[] sizes, int vecDim) {
-        int nDim = sizes.length;
-        statusBar.setMode(0);
-        double sepWidth = 20.0;
-        vecSizes = sizes.clone();
-
-        if (nDim > 1) {
-            borderPane.setLeft(vectorBox);
-            borderPane.setBottom(dimHBox);
-            if (rowTextBoxes.length != (nDim - 1)) {
-                rowTextBoxes = new TextField[nDim - 1];
-                dimHBox2.getChildren().clear();
-                for (int i = 0; i < nDim - 1; i++) {
-                    rowTextBoxes[i] = new TextField();
-                    rowTextBoxes[i].setEditable(false);
-                    rowTextBoxes[i].setPrefWidth(100);
-                    RadioButton radioButton = new RadioButton((i + 2) + ": ");
-                    Pane pane = new Pane();
-                    pane.setMinWidth(sepWidth);
-                    dimHBox2.getChildren().addAll(radioButton, rowTextBoxes[i], pane);
-                    radioButton.setToggleGroup(rowToggleGroup);
-                    if (i == 0) {
-                        rowToggleGroup.selectToggle(radioButton);
-                    }
-                }
-                Pane pane = new Pane();
-                pane.setMinWidth(sepWidth);
-                fileIndexTextBox.setPrefWidth(60);
-                fileIndexTextBox.setEditable(false);
-                dimHBox2.getChildren().addAll(realImagChoiceBox, pane, new Label("File Index: "),
-                        fileIndexTextBox);
-
-            }
-            if (vecNum1 == null) {
-                System.out.println("null sl");
-            } else {
-                int sizeDim = 1;
-                if (vecDim != 0) {
-                    sizeDim = 0;
-                }
-                System.out.println(sizeDim + " " + sizes[sizeDim]);
-                int maxSize = sizes[sizeDim] < 256 ? sizes[sizeDim] : 256;
-                vecNum1.setMax(maxSize);
-                vecNum1.setValue(1);
-                for (int iDim = 1; iDim < sizes.length; iDim++) {
-                    rowTextBoxes[iDim - 1].setText(1 + " / " + sizes[iDim]);
-                }
-                fileIndexTextBox.setText("1");
-            }
-
-        } else {
-            borderPane.setLeft(null);
-            borderPane.setBottom(null);
-        }
-    }
-
     public void updateAttrDims() {
         if (specAttrWindowController != null) {
             specAttrWindowController.updateDims();
@@ -1069,57 +972,6 @@ public class FXMLController implements  Initializable, PeakNavigable {
 
     protected void setPhaseDimChoice(int phaseDim) {
         phaser.setPhaseDim(phaseDim);
-    }
-
-    protected void setRowLabel(int row, int size) {
-        int iDim = getRowChoice() - 2;
-        if (iDim >= 0) {
-            rowTextBoxes[iDim].setText(row + " / " + size);
-        }
-    }
-
-    void setFileIndex(int[] indices) {
-        this.rowIndices = indices;
-        setFileIndex();
-    }
-
-    void setFileIndex() {
-        if (rowIndices != null) {
-            String text = realImagChoiceBox.getValue();
-            int riIndex = realImagChoices.indexOf(text);
-            if (riIndex != -1) {
-                int index = rowIndices[riIndex];
-                fileIndexTextBox.setText(String.valueOf(index + 1));
-            }
-        }
-    }
-
-    Integer getRowChoice() {
-        RadioButton radioButton = (RadioButton) rowToggleGroup.getSelectedToggle();
-        Integer iDim;
-        if (radioButton == null) {
-            iDim = 1;
-        } else {
-            String text = radioButton.getText();
-            iDim = Integer.parseInt(text.substring(0, 1));
-        }
-        return iDim;
-    }
-
-    void handleRowDimChange() {
-        Integer iDim = getRowChoice();
-        if (iDim != null) {
-            int[] rows = getRows();
-            if (rows.length > 0) {
-                int row = rows[iDim - 2];
-                if ((vecNum1 != null) && vecNum1.isVisible()) {
-                    int maxSize = vecSizes[iDim - 1] < 256 ? vecSizes[iDim - 1] : 256;
-                    System.out.println(iDim + " " + vecSizes[iDim - 1] + " " + maxSize);
-                    vecNum1.setMax(maxSize);
-                    vecNum1.setValue(row + 1);
-                }
-            }
-        }
     }
 
     void updateRowDimMenu(int nDim) {
@@ -1159,17 +1011,19 @@ public class FXMLController implements  Initializable, PeakNavigable {
     protected ArrayList<Double> getBaselineRegions(String vecDimName) {
         ArrayList<Double> fracs = new ArrayList<>();
         if (chartProcessor != null) {
-            int currentIndex = processorController.propertyManager.getCurrentIndex();
+            int currentIndex = chartProcessor.getProcessorController().getPropertyManager().getCurrentIndex();
             List<String> listItems = chartProcessor.getOperations(vecDimName);
             if (listItems != null) {
-                System.out.println("curr ind " + currentIndex);
+                log.info("curr ind {}", currentIndex);
                 Map<String, String> values = null;
                 if (currentIndex != -1) {
                     String s = listItems.get(currentIndex);
-                    System.out.println(s);
+                    log.info(s);
                     if (s.contains("REGIONS")) {
                         values = PropertyManager.parseOpString(s);
-                        System.out.println(values.toString());
+                        if (log.isInfoEnabled()) {
+                            log.info(values.toString());
+                        }
                     }
                 }
                 if (values == null) {
@@ -1198,7 +1052,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
                             }
 
                         } catch (NumberFormatException nfE) {
-                            System.out.println("Error " + value);
+                            log.warn("Error {}", value, nfE);
                         }
                     }
                 }
@@ -1257,7 +1111,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
 
     public void refreshPeakView(String peakSpecifier) {
         Peak peak = PeakList.getAPeak(peakSpecifier);
-        System.out.println("show peak2 " + peakSpecifier + " " + peak);
+        log.info("show peak2 {} {}", peakSpecifier, peak);
 
         if (peak != null) {
             refreshPeakView(peak);
@@ -1372,16 +1226,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
             }
         }
         phaser = new Phaser(this, phaserBox);
-        rowToggleGroup.selectedToggleProperty().addListener(e -> handleRowDimChange());
-        vecNumListener = new ChangeListener<String>() {
-            @Override
-            public void changed(ObservableValue<? extends String> observableValue, String string, String string2) {
-                String text = realImagChoiceBox.getValue();
-                int vecNum = realImagChoices.indexOf(text);
-                chartProcessor.setVector(vecNum);
-                setFileIndex();
-            }
-        };
+        processorPane.getChildren().addListener(this::updateStageSize);
     }
 
     public void resizeCanvases(double width, double height) {
@@ -1429,7 +1274,60 @@ public class FXMLController implements  Initializable, PeakNavigable {
         } catch (IOException ioE) {
             throw new IllegalStateException("Unable to create controller", ioE);
         }
+
+        stage.maximizedProperty().addListener(controller::adjustSizeAfterMaximize);
+
         return controller;
+    }
+
+    /**
+     * If the window is maximized, the current window widths are saved. If the window is restored down, the previously
+     * saved values are used to set the window width.
+     * @param observable the maximize property
+     * @param oldValue previous value of maximize
+     * @param newValue new value of maximize
+     */
+    private void adjustSizeAfterMaximize(ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean newValue) {
+        if (Boolean.TRUE.equals(newValue)) {
+            previousStageRestoreWidth = stage.getWidth();
+            ProcessorController pc = getActiveChart().getProcessorController(false);
+            if (pc != null) {
+                previousStageRestoreProcControllerVisible = pc.isVisible();
+            } else {
+                previousStageRestoreProcControllerVisible = false;
+            }
+            if(previousStageRestoreProcControllerVisible) {
+                previousStageRestoreProcControllerWidth = ((Pane) processorPane.getChildren().get(0)).getMinWidth();
+            } else {
+                previousStageRestoreProcControllerWidth = 0;
+            }
+        } else {
+            boolean procControllerVisible = !processorPane.getChildren().isEmpty();
+            if (procControllerVisible == previousStageRestoreProcControllerVisible) {
+                stage.setWidth(previousStageRestoreWidth);
+            } else if (procControllerVisible) {
+                Pane p = (Pane) processorPane.getChildren().get(0);
+                stage.setWidth(previousStageRestoreWidth + p.getMinWidth());
+            } else {
+                stage.setWidth(previousStageRestoreWidth - previousStageRestoreProcControllerWidth);
+            }
+        }
+    }
+
+    /**
+     * Listener for changes to the processorPane's children, if a pane is added or removed, the stage width is adjusted accordingly.
+     * @param c The change to processorPane's children
+     */
+    private void updateStageSize(ListChangeListener.Change<? extends Node> c) {
+        double paneAdj = 0;
+        if (processorPane.getChildren().isEmpty()) {
+            if (c.next()) {
+                paneAdj = -1 * ((Pane) c.getRemoved().get(0)).getMinWidth();
+            }
+        } else if (processorPane.getChildren().size() == 1) {
+            paneAdj = ((Pane) c.getList().get(0)).getMinWidth();
+        }
+        stage.setWidth(stage.getWidth() + paneAdj);
     }
 
     public static StackPane makeNewWinIcon() {
@@ -2045,7 +1943,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
         for (int i = 2; i < dims.length; i++) {
             dims[i] = -1;
         }
-        System.out.println(refList.getName());
+        log.info(refList.getName());
         for (PolyChart chart : charts) {
             ObservableList<DatasetAttributes> dataAttrList = chart.getDatasetAttributes();
             for (DatasetAttributes dataAttr : dataAttrList) {
@@ -2056,12 +1954,12 @@ public class FXMLController implements  Initializable, PeakNavigable {
                     movingList.addSearchDim(dimName1, 0.05);
                     movingList.addSearchDim(dimName2, 0.1);
                     //movingList.clusterPeaks();
-                    System.out.println("act " + dataAttr.getFileName() + " " + movingList.size());
+                    log.info("act {} {}", dataAttr.getFileName(), movingList.size());
 
-                    System.out.println("test " + movingList.getName());
+                    log.info("test {}", movingList.getName());
                     double[] centers = refList.centerAlign(movingList, dims);
                     for (double center : centers) {
-                        System.out.println(center);
+                        log.info("{}", center);
                     }
                     double[] match;
                     if (false) {
@@ -2217,36 +2115,12 @@ public class FXMLController implements  Initializable, PeakNavigable {
 
     }
 
-    protected void updateVecNumChoice(boolean[] complex) {
-        char[] chars = {'R', 'I'};
-        realImagChoices.clear();
-        realImagChoiceBox.getItems().clear();
-        int nDim = complex.length;
-        if (nDim > 1) {
-            int nVectors = 1;
-            for (int iDim = 1; iDim < nDim; iDim++) {
-                nVectors *= complex[iDim] ? 2 : 1;
-            }
-            realImagChoiceBox.valueProperty().removeListener(vecNumListener);
-            StringBuilder sBuilder = new StringBuilder();
-            for (int i = 0; i < nVectors; i++) {
-                sBuilder.setLength(0);
-                for (int j = nDim - 2; j >= 0; j--) {
-                    if (complex[j + 1]) {
-                        int k = (int) Math.pow(2, j);
-                        int kk = (i / k) % 2;
-                        sBuilder.append(chars[kk]);
-                    } else {
-                        sBuilder.append("R");
-                    }
-                }
-                System.out.println(i + " " + nVectors + " " + sBuilder.toString());
-                realImagChoiceBox.getItems().add(sBuilder.toString());
-                realImagChoices.add(sBuilder.toString());
-            }
-            realImagChoiceBox.setValue(realImagChoices.get(0));
-            realImagChoiceBox.valueProperty().addListener(vecNumListener);
-        }
+    /**
+     * Checks if the active chart has a processorController instances.
+     * @return True if active chart has ProcessorController else returns false.
+     */
+    public boolean isProcessorControllerAvailable() {
+        return getActiveChart().getProcessorController(false) != null;
     }
 
 }

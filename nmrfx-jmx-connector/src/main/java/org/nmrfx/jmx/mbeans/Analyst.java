@@ -67,7 +67,7 @@ public class Analyst extends NotificationBroadcasterSupport implements AnalystMB
             // open() then generateAutoScript() could try to access the chart processor before its creation.
             ChartProcessor chartProcessor = FXMLController.getActiveController().getChartProcessor();
             String script = chartProcessor.getGenScript(isPseudo2D);
-            FXMLController.getActiveController().getProcessorController(true).parseScript(script);
+            chartProcessor.getProcessorController().parseScript(script);
         });
     }
 
