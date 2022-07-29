@@ -50,6 +50,7 @@ public class Analyzer {
 
     Dataset dataset;
     PeakList peakList;
+    boolean analyzed = false;
 
     private double trimRatio = 2.0;
     boolean scaleToLargest = true;
@@ -1234,6 +1235,25 @@ public class Analyzer {
         renumber();
         normalizeMultiplets();
         normalizeIntegrals();
+        analyzed = true;
+    }
+
+    public boolean isAnalyzed() {
+        return analyzed;
+    }
+
+    public void resetAnalyzed() {
+        analyzed = false;
+    }
+
+    public void clearAnalysis() {
+        analyzed = false;
+        PeakList peakList = getPeakList();
+        if (peakList != null) {
+            PeakList.remove(peakList.getName());
+            setPeakList(null);
+        }
+        clearRegions();
     }
 
     public void loadRegions(File regionFile) throws IOException {

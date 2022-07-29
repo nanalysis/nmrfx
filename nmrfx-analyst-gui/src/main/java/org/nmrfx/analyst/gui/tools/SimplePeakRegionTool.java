@@ -80,6 +80,9 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
         var peakButton = new SplitMenuButton();
         peakButton.setText("PeakPick");
         peakButton.setOnAction(e -> peakPick());
+        MenuItem clearPeakListItem = new MenuItem("Clear PeakList");
+        clearPeakListItem.setOnAction(e -> clearPeakList());
+        peakButton.getItems().add(clearPeakListItem);
 
         var wizardButton = new SplitMenuButton();
         wizardButton.setText("Analyze");
@@ -127,12 +130,7 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
         if (!prompt || affirm("Clear Analysis")) {
             Analyzer analyzer = getAnalyzer();
             if (analyzer != null) {
-                PeakList peakList = analyzer.getPeakList();
-                if (peakList != null) {
-                    PeakList.remove(peakList.getName());
-                    analyzer.setPeakList(null);
-                }
-                analyzer.clearRegions();
+                analyzer.clearAnalysis();
             }
             chart.chartProps.setRegions(false);
             chart.chartProps.setIntegrals(false);
@@ -269,10 +267,32 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
 
     }
 
+    public void clearPeakList() {
+        Analyzer analyzer = getAnalyzer();
+        if (analyzer != null) {
+            PeakList peakList = analyzer.getPeakList();
+            if (peakList != null) {
+                PeakList.remove(peakList.getName());
+                analyzer.setPeakList(null);
+                analyzer.resetAnalyzed();
+                List<String> peakListNames = new ArrayList<>();
+                chart.updatePeakLists(peakListNames);
+                chart.refresh();
+            }
+        }
+    }
+
     public void analyzeMultiplets() {
         Analyzer analyzer = getAnalyzer();
         if (analyzer != null) {
             try {
+                if (analyzer.isAnalyzed()) {
+                    if (affirm("Clear Analysis")) {
+                        clearAnalysis(false);
+                    } else {
+                        return;
+                    }
+                }
                 analyzer.analyze();
                 PeakList peakList = analyzer.getPeakList();
                 List<String> peakListNames = new ArrayList<>();
