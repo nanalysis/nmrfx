@@ -130,6 +130,7 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
                 PeakList peakList = analyzer.getPeakList();
                 if (peakList != null) {
                     PeakList.remove(peakList.getName());
+                    analyzer.setPeakList(null);
                 }
                 analyzer.clearRegions();
             }
