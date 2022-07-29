@@ -214,7 +214,7 @@ public class RelaxationData implements RelaxationValues {
     public static void writeToFile(File file) throws IOException {
         MoleculeBase moleculeBase = MoleculeFactory.getActive();
         List<Atom> atoms = moleculeBase.getAtomArray();
-        Set<relaxTypes> typesUsed = new HashSet<>();
+        Set<relaxTypes> typesUsed = EnumSet.noneOf(relaxTypes.class);
 
 
         // figure out what relaxtypes are used so header can be setup
