@@ -126,7 +126,7 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
         return analyzer;
     }
 
-    public void clearAnalysis(boolean prompt) {
+    public boolean clearAnalysis(boolean prompt) {
         if (!prompt || affirm("Clear Analysis")) {
             Analyzer analyzer = getAnalyzer();
             if (analyzer != null) {
@@ -135,6 +135,9 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
             chart.chartProps.setRegions(false);
             chart.chartProps.setIntegrals(false);
             chart.refresh();
+            return true;
+        } else {
+            return false;
         }
     }
 
@@ -145,7 +148,9 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
 
     public void findRegions() {
         if (hasRegions()) {
-            clearAnalysis(true);
+            if (!clearAnalysis(true)) {
+                return;
+            }
         }
         Analyzer analyzer = getAnalyzer();
         if (analyzer != null) {
