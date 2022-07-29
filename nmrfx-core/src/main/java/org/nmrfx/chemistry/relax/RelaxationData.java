@@ -33,15 +33,6 @@ import java.util.stream.Collectors;
  */
 public class RelaxationData implements RelaxationValues {
 
-    public String getId() {
-        return id;
-    }
-
-
-    public ResonanceSource getResSource() {
-        return resSource;
-    }
-
     public enum relaxTypes {
         R1("R1"), R2("R2"), T1RHO("T1rho"),
         NOE("NOE"), S2("S2"),
@@ -85,7 +76,7 @@ public class RelaxationData implements RelaxationValues {
     @Override
     public String toString() {
         return "RelaxationData{" + "ID=" + getId() + ", expType=" + getExpType()
-                + ", atom=" + getResSource().toString() + ", field=" + getField()
+                + ", atom=" + getResonanceSource().toString() + ", field=" + getField()
                 + ", temperature=" + getTemperature()
                 + ", value=" + getValue() + ", error=" + getError() + '}';
     }
@@ -119,6 +110,10 @@ public class RelaxationData implements RelaxationValues {
         resSource.getAtom().addRelaxationData(id, rData);
     }
 
+    public String getId() {
+        return id;
+    }
+
     @Override
     public String getName() {
         return getExpType().getName();
@@ -126,7 +121,7 @@ public class RelaxationData implements RelaxationValues {
 
     @Override
     public ResonanceSource getResonanceSource() {
-        return getResSource();
+        return resSource;
     }
 
     public relaxTypes getExpType() {
@@ -215,6 +210,7 @@ public class RelaxationData implements RelaxationValues {
         return sBuilder.toString();
     }
 
+    // This method is called from RING NMR Dynamics
     public static void writeToFile(File file) throws IOException {
         MoleculeBase moleculeBase = MoleculeFactory.getActive();
         List<Atom> atoms = moleculeBase.getAtomArray();
