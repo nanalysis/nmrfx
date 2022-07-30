@@ -931,19 +931,22 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
     public void splitMultiplet() {
         Analyzer analyzer = getAnalyzer();
         if (analyzer != null) {
-            Multiplets.findMultipletMidpoint(activeMultiplet.get()).ifPresent(ppmCenter -> {
-                try {
-                    List<Multiplet> multiplets = analyzer.splitRegion(ppmCenter);
-                    if (!multiplets.isEmpty()) {
-                        activeMultiplet = Optional.of(multiplets.get(0));
-                    } else {
-                        activeMultiplet = Optional.empty();
+            if (activeMultiplet.isPresent()) {
+                Multiplets.findMultipletMidpoint(activeMultiplet.get()).ifPresent(ppmCenter -> {
+                    try {
+                        activeMultiplet.get().setGenericMultiplet();
+                        List<Multiplet> multiplets = analyzer.splitRegion(ppmCenter);
+                        if (!multiplets.isEmpty()) {
+                            activeMultiplet = Optional.of(multiplets.get(0));
+                        } else {
+                            activeMultiplet = Optional.empty();
+                        }
+                        updateMultipletField(false);
+                        chart.refresh();
+                    } catch (IOException ex) {
                     }
-                    updateMultipletField(false);
-                    chart.refresh();
-                } catch (IOException ex) {
-                }
-            });
+                });
+            }
         }
     }
     public void splitRegion() {
