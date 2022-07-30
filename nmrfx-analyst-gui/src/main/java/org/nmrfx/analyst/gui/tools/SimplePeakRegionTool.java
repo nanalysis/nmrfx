@@ -142,11 +142,22 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
     }
 
     public boolean hasRegions() {
-        Set<DatasetRegion> regions = chart.getDataset().getRegions();
-        return (regions != null) && !regions.isEmpty();
+        if (!chart.hasData()) {
+            return false;
+        } else {
+            Set<DatasetRegion> regions = chart.getDataset().getRegions();
+            return (regions != null) && !regions.isEmpty();
+        }
     }
 
     public void findRegions() {
+        if (!chart.hasData()) {
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setContentText("Chart must have a 1D dataset");
+            alert.showAndWait();
+            return;
+        }
+
         if (hasRegions()) {
             if (!clearAnalysis(true)) {
                 return;
