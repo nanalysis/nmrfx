@@ -87,6 +87,7 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
     ChangeListener<String> patternListener;
     CheckBox molButton;
     CanvasMolecule cMol = null;
+    PopOver popOver = null;
 
     public MultipletTool(FXMLController controller, Consumer<MultipletTool> closeAction) {
         this.controller = controller;
@@ -125,6 +126,7 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
         restraintPosCheckBox = new CheckBox("Restraint");
         restraintSlider = new Slider(0.02, 2.0, 1.0);
         popOver.setContentNode(vBox);
+        this.popOver = popOver;
     }
 
     public void initialize(VBox vBox) {
@@ -906,6 +908,9 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
             if (getAnalyzer().getPeakList() != null) {
                 splitMultiplet();
             }
+        }
+        if (popOver != null) {
+            popOver.hide();
         }
     }
 
