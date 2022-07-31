@@ -736,8 +736,8 @@ public class AnalystApp extends MainApp {
         browserStage.show();
     }
 
-    public void hidePopover() {
-        popoverTool.hide();
+    public void hidePopover(boolean always) {
+        popoverTool.hide(always);
     }
 
     public void showPopover(PolyChart chart, Bounds objectBounds, Object hitObject) {

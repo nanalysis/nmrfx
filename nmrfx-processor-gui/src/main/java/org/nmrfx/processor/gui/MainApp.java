@@ -610,7 +610,7 @@ public class MainApp extends Application {
         }
     }
 
-    public void hidePopover() {
+    public void hidePopover(boolean always) {
 
     }
 

@@ -16,8 +16,8 @@ public class PopOverTools {
     private static JournalTool journalTool = null;
     private static IntegralTool integralTool = null;
 
-    public void hide() {
-        if (popOver.isShowing() && !popOver.isDetached()) {
+    public void hide(boolean always) {
+        if (popOver.isShowing() && (always || !popOver.isDetached())) {
             popOver.hide();
         }
     }

@@ -135,6 +135,7 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
             }
             chart.chartProps.setRegions(false);
             chart.chartProps.setIntegrals(false);
+            AnalystApp.getAnalystApp().hidePopover(true);
             chart.refresh();
             return true;
         } else {
@@ -295,6 +296,7 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
                 List<String> peakListNames = new ArrayList<>();
                 chart.updatePeakLists(peakListNames);
                 chart.refresh();
+                AnalystApp.getAnalystApp().hidePopover(true);
             }
         }
     }

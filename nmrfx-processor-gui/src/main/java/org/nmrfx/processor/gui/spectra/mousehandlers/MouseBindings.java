@@ -144,8 +144,8 @@ public class MouseBindings {
         }
     }
 
-    private void hidePopOver() {
-        MainApp.getMainApp().hidePopover();
+    private void hidePopOver(boolean always) {
+        MainApp.getMainApp().hidePopover(always);
     }
 
     private void showAfterDelay() {
@@ -272,7 +272,7 @@ public class MouseBindings {
         int clickCount = mouseEvent.getClickCount();
         handler = null;
         waitingForPopover.set(false);
-        hidePopOver();
+        hidePopOver(false);
 
         boolean altShift = mouseEvent.isShiftDown() && (mouseEvent.isAltDown() || mouseEvent.isControlDown());
         int border = chart.hitBorder(mouseX, mouseY);
