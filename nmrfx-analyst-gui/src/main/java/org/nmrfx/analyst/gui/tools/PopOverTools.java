@@ -44,6 +44,7 @@ public class PopOverTools {
         popOver.setArrowLocation(PopOver.ArrowLocation.BOTTOM_CENTER);
         multipletPopOverTool.setActiveMultiplet(multiplet);
         popOver.setContentNode(multipletPopOverTool.getBox());
+        popOver.setTitle("Multiplets");
         if (!popOver.isShowing() || (popOver.isShowing() && !popOver.isDetached())) {
             popOver.show(chart.getCanvas(), objectBounds.getCenterX(), objectBounds.getMinY() - 10);
         }
@@ -59,6 +60,7 @@ public class PopOverTools {
             popOver.setArrowLocation(PopOver.ArrowLocation.TOP_CENTER);
             var annoJournalFormat = (AnnoJournalFormat) annoText;
             journalTool.setAnnoJournalFormat(annoJournalFormat);
+            popOver.setTitle("Report");
             popOver.setContentNode(journalTool.getBox());
             if (!popOver.isShowing() || (popOver.isShowing() && !popOver.isDetached())) {
                 popOver.show(chart.getCanvas(), objectBounds.getCenterX(), objectBounds.getMaxY() + 10);
@@ -74,6 +76,7 @@ public class PopOverTools {
         }
         integralTool.setHit(integralHit);
         popOver.setArrowLocation(PopOver.ArrowLocation.TOP_CENTER);
+        popOver.setTitle("Integrals");
         popOver.setContentNode(integralTool.getBox());
         if (!popOver.isShowing() || (popOver.isShowing() && !popOver.isDetached())) {
             popOver.show(chart.getCanvas(), objectBounds.getCenterX(), objectBounds.getMaxY() + 10);
