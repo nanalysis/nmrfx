@@ -3565,6 +3565,17 @@ public class PolyChart extends Region implements PeakListener {
         }
     }
 
+    public boolean hasAnnoType(Class annoClass) {
+        Iterator<CanvasAnnotation> iter = canvasAnnotations.iterator();
+        while (iter.hasNext()) {
+            CanvasAnnotation anno = iter.next();
+            if (anno.getClass() == annoClass) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public void clearAnnoType(Class annoClass) {
         Iterator<CanvasAnnotation> iter = canvasAnnotations.iterator();
         while (iter.hasNext()) {

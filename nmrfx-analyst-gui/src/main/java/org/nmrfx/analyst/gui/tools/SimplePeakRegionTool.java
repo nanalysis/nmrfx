@@ -39,7 +39,6 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
     private static final Logger log = LoggerFactory.getLogger(SimplePeakRegionTool.class);
     FXMLController controller;
     PolyChart chart;
-    CheckMenuItem journalCheckBox;
     CanvasMolecule cMol = null;
 
 
@@ -88,12 +87,14 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
         wizardButton.setText("Analyze");
         wizardButton.setOnAction(e -> analyzeMultiplets());
 
-        journalCheckBox = new CheckMenuItem("Show Report");
+        MenuItem showJournalItem = new MenuItem("Display Report");
+        showJournalItem.setOnAction(e -> showJournalFormatOnChart());
+        MenuItem removeJournalItem = new MenuItem("Remove Report");
+        removeJournalItem.setOnAction(e -> removeJournalFormatOnChart());
         MenuItem copyJournalFormatMenuItem = new MenuItem("Copy Report");
-        journalCheckBox.setOnAction(e -> toggleJournalFormatDisplay());
-
         copyJournalFormatMenuItem.setOnAction(e -> journalFormatToClipboard());
-        wizardButton.getItems().addAll(journalCheckBox, copyJournalFormatMenuItem);
+
+        wizardButton.getItems().addAll(showJournalItem, removeJournalItem, copyJournalFormatMenuItem);
 
         var moleculeButton = new SplitMenuButton();
         moleculeButton.setText("Molecule");
@@ -340,14 +341,6 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
         }
     }
 
-    public void toggleJournalFormatDisplay() {
-        if (journalCheckBox.isSelected()) {
-            showJournalFormatOnChart();
-        } else {
-            removeJournalFormatOnChart();
-        }
-    }
-
     public void showJournalFormatOnChart() {
         getAnalyzer();
         if (getAnalyzer() != null) {
@@ -384,7 +377,7 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
     @Override
     public void peakListChanged(PeakEvent peakEvent) {
         ConsoleUtil.runOnFxThread(() -> {
-            if (journalCheckBox.isSelected()) {
+            if (chart.hasAnnoType(AnnoJournalFormat.class)) {
                 showJournalFormatOnChart();
             }
         });
