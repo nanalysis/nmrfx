@@ -581,17 +581,6 @@ public class AnalystApp extends MainApp {
         return (StripController) controller.getTool(StripController.class);
     }
 
-    public void showMultipletTool() {
-        FXMLController controller = FXMLController.getActiveController();
-        if (!controller.containsTool(MultipletTool.class)) {
-            VBox vBox = new VBox();
-            controller.getBottomBox().getChildren().add(vBox);
-            MultipletTool multipletTool = new MultipletTool(controller, this::removeMultipletToolBar);
-            multipletTool.initialize(vBox);
-            controller.addTool(multipletTool);
-        }
-    }
-
     public void showPeakAssignTool() {
         FXMLController controller = FXMLController.getActiveController();
         if (!controller.containsTool(PeakAssignTool.class)) {
@@ -624,17 +613,6 @@ public class AnalystApp extends MainApp {
         FXMLController controller = FXMLController.getActiveController();
         controller.removeTool(PeakSlider.class);
         controller.getBottomBox().getChildren().remove(peakSlider.getToolBar());
-    }
-
-    public MultipletTool getMultipletTool() {
-        FXMLController controller = FXMLController.getActiveController();
-        return (MultipletTool) controller.getTool(MultipletTool.class);
-    }
-
-    public void removeMultipletToolBar(MultipletTool multipletTool) {
-        FXMLController controller = FXMLController.getActiveController();
-        controller.removeTool(MultipletTool.class);
-        controller.getBottomBox().getChildren().remove(multipletTool.getBox());
     }
 
     public void showPeakPathTool() {

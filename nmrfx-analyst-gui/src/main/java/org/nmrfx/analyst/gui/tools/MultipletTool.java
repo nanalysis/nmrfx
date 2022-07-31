@@ -5,20 +5,14 @@
  */
 package org.nmrfx.analyst.gui.tools;
 
-import de.jensd.fx.glyphs.GlyphsDude;
-import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.ObservableSet;
 import javafx.collections.SetChangeListener;
-import javafx.event.ActionEvent;
 import javafx.geometry.Orientation;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.input.Clipboard;
-import javafx.scene.input.ClipboardContent;
-import javafx.scene.input.DataFormat;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
@@ -27,42 +21,30 @@ import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
 import org.controlsfx.control.PopOver;
-import org.controlsfx.dialog.ExceptionDialog;
-import org.nmrfx.analyst.gui.AnalystApp;
-import org.nmrfx.analyst.gui.molecule.CanvasMolecule;
 import org.nmrfx.analyst.peaks.Analyzer;
-import org.nmrfx.analyst.peaks.JournalFormat;
-import org.nmrfx.analyst.peaks.JournalFormatPeaks;
 import org.nmrfx.analyst.peaks.Multiplets;
 import org.nmrfx.datasets.DatasetRegion;
 import org.nmrfx.peaks.*;
 import org.nmrfx.processor.datasets.Dataset;
-import org.nmrfx.processor.gui.ControllerTool;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.spectra.CrossHairs;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.processor.gui.spectra.MultipletSelection;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
-import org.nmrfx.processor.gui.utils.ToolBarUtils;
-import org.nmrfx.structure.chemistry.Molecule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
 
-import static org.nmrfx.utils.GUIUtils.affirm;
-import static org.nmrfx.utils.GUIUtils.warn;
-
 /**
  * @author brucejohnson
  */
-public class MultipletTool implements SetChangeListener<MultipletSelection>, ControllerTool {
+public class MultipletTool implements SetChangeListener<MultipletSelection> {
     private static final Logger log = LoggerFactory.getLogger(MultipletTool.class);
 
     Stage stage = null;
@@ -85,8 +67,6 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
     Optional<Multiplet> activeMultiplet = Optional.empty();
     boolean ignoreCouplingChanges = false;
     ChangeListener<String> patternListener;
-    CheckBox molButton;
-    CanvasMolecule cMol = null;
     PopOver popOver = null;
 
     public MultipletTool(FXMLController controller, Consumer<MultipletTool> closeAction) {
@@ -119,9 +99,7 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
         chart.addMultipletListener(this);
         getAnalyzer();
         chart.setRegionConsumer(this::regionAdded);
-        patternListener = (ObservableValue<? extends String> observable, String oldValue, String newValue) -> {
-            couplingChanged();
-        };
+        patternListener = (ObservableValue<? extends String> observable, String oldValue, String newValue) -> couplingChanged();
         addPatternListener();
         restraintPosCheckBox = new CheckBox("Restraint");
         restraintSlider = new Slider(0.02, 2.0, 1.0);
@@ -129,50 +107,6 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
         this.popOver = popOver;
     }
 
-    public void initialize(VBox vBox) {
-        this.vBox = vBox;
-        double width1 = 30;
-        String iconSize = "12px";
-        String fontSize = "7pt";
-        ToolBar toolBar1 = new ToolBar();
-        Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "Close", iconSize, fontSize, ContentDisplay.TOP);
-        closeButton.setOnAction(e -> close());
-        toolBar1.getItems().add(closeButton);
-        initMenus(toolBar1);
-        ToolBarUtils.addFiller(toolBar1, 10, 500);
-        initNavigator(toolBar1);
-        ToolBarUtils.addFiller(toolBar1, 10, 20);
-        initIntegralType(toolBar1);
-        ToolBarUtils.addFiller(toolBar1, 25, 50);
-        initCouplingFields(Orientation.HORIZONTAL, 5);
-
-        molButton = new CheckBox("Molecule");
-        molButton.getStyleClass().add("toolButton");
-        molButton.setOnAction(e -> toggleMoleculeDisplay());
-
-        toolBar1.getItems().addAll(molButton);
-
-        ToolBarUtils.addFiller(toolBar1, 10, 500);
-
-        ToolBar toolBar2 = new ToolBar();
-        initTools(toolBar2);
-
-        Separator vsep1 = new Separator(Orientation.HORIZONTAL);
-        Separator vsep2 = new Separator(Orientation.HORIZONTAL);
-        vBox.getChildren().addAll(toolBar1, vsep1, toolBar2, vsep2, gridPane);
-
-        patternListener = (ObservableValue<? extends String> observable, String oldValue, String newValue) -> {
-            couplingChanged();
-        };
-        addPatternListener();
-        FXMLController controller = FXMLController.getActiveController();
-        controller.selPeaks.addListener(e -> setActivePeaks(controller.selPeaks.get()));
-        chart = controller.getActiveChart();
-        chart.addMultipletListener(this);
-        initMultiplet();
-        chart.setRegionConsumer(e -> regionAdded(e));
-
-    }
 
     private void updateCouplingGrid(int nCouplings) {
         if (nCouplings + 1 != patternChoices.length) {
@@ -214,7 +148,7 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
             int iRow = orientation == Orientation.HORIZONTAL ? 0 : iCoupling;
             int iColumn = orientation == Orientation.HORIZONTAL ? iCoupling * 3 : 0;
 
-            gridPane.add(patternChoices[iCoupling], iColumn + 0, iRow);
+            gridPane.add(patternChoices[iCoupling], iColumn, iRow);
             gridPane.add(couplingFields[iCoupling], iColumn + 1, iRow);
             gridPane.add(slopeFields[iCoupling], iColumn + 2, iRow);
         }
@@ -224,101 +158,10 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
         addRegion(region);
     }
 
-    public void initMenus(ToolBar toolBar) {
-        MenuButton menu = new MenuButton("Actions");
-        toolBar.getItems().add(menu);
-        MenuItem analyzeMenuItem = new MenuItem("Analyze");
-        analyzeMenuItem.setOnAction(e -> analyze1D(true));
-
-        Menu stepMenu = new Menu("Stepwise");
-
-        MenuItem findRegionsMenuItem = new MenuItem("Find Regions");
-        findRegionsMenuItem.setOnAction(e -> findRegions());
-
-        MenuItem pickRegionsMenuItem = new MenuItem("Pick Regions");
-        pickRegionsMenuItem.setOnAction(e -> pickRegions());
-
-        MenuItem analyzePeaksMenuItem = new MenuItem("Analyze Peaks");
-        analyzePeaksMenuItem.setOnAction(e -> analyze1D(false));
-
-        MenuItem clearMenuItem = new MenuItem("Clear");
-        clearMenuItem.setOnAction(e -> clearAnalysis(true));
-
-        Menu thresholdMenu = new Menu("Threshold");
-
-        MenuItem thresholdMenuItem = new MenuItem("Set Threshold");
-        thresholdMenuItem.setOnAction(e -> setThreshold());
-
-        MenuItem clearThresholdMenuItem = new MenuItem("Clear Threshold");
-        clearThresholdMenuItem.setOnAction(e -> clearThreshold());
-
-        thresholdMenu.getItems().addAll(thresholdMenuItem, clearThresholdMenuItem);
-
-        Menu reportMenu = new Menu("Report");
-        MenuItem copyJournalFormatMenuItem = new MenuItem("Copy");
-
-        copyJournalFormatMenuItem.setOnAction(e -> journalFormatToClipboard());
-        reportMenu.getItems().addAll(copyJournalFormatMenuItem);
-
-        menu.getItems().addAll(analyzeMenuItem, stepMenu, clearMenuItem, thresholdMenu, reportMenu);
-        stepMenu.getItems().addAll(findRegionsMenuItem, pickRegionsMenuItem, analyzePeaksMenuItem);
-    }
-
-    public void initNavigator(ToolBar toolBar) {
-        multipletIdField = new TextField();
-        multipletIdField.setMinWidth(35);
-        multipletIdField.setMaxWidth(35);
-        multipletIdField.setPrefWidth(35);
-
-        String iconSize = "12px";
-        String fontSize = "7pt";
-        ArrayList<Button> buttons = new ArrayList<>();
-        Button bButton;
-
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.FAST_BACKWARD, "", iconSize, fontSize, ContentDisplay.GRAPHIC_ONLY);
-        bButton.setOnAction(e -> firstMultiplet(e));
-        buttons.add(bButton);
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.BACKWARD, "", iconSize, fontSize, ContentDisplay.GRAPHIC_ONLY);
-        bButton.setOnAction(e -> previousMultiplet(e));
-        buttons.add(bButton);
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.FORWARD, "", iconSize, fontSize, ContentDisplay.GRAPHIC_ONLY);
-        bButton.setOnAction(e -> nextMultiplet(e));
-        buttons.add(bButton);
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.FAST_FORWARD, "", iconSize, fontSize, ContentDisplay.GRAPHIC_ONLY);
-        bButton.setOnAction(e -> lastMultiplet(e));
-        buttons.add(bButton);
-        Button deleteButton = GlyphsDude.createIconButton(FontAwesomeIcon.BAN, "", fontSize, iconSize, ContentDisplay.GRAPHIC_ONLY);
-
-        // prevent accidental activation when inspector gets focus after hitting space bar on peak in spectrum
-        // a second space bar hit would activate
-        deleteButton.setOnKeyPressed(e -> e.consume());
-        deleteButton.setOnAction(e -> deleteMultiplet());
-
-        toolBar.getItems().addAll(buttons);
-        toolBar.getItems().add(multipletIdField);
-        toolBar.getItems().add(deleteButton);
-        HBox spacer = new HBox();
-        toolBar.getItems().add(spacer);
-        HBox.setHgrow(spacer, Priority.ALWAYS);
-
-        multipletIdField.setOnKeyReleased(kE -> {
-            if (null != kE.getCode()) {
-                switch (kE.getCode()) {
-                    case ENTER:
-                        gotoPeakId(multipletIdField);
-                        break;
-                    default:
-                        break;
-                }
-            }
-        });
-
-    }
 
     ImageView getIcon(String name) {
         Image imageIcon = new Image("/images/" + name + ".png", true);
-        ImageView imageView = new ImageView(imageIcon);
-        return imageView;
+        return new ImageView(imageIcon);
     }
 
     void initBasicButtons(ToolBar toolBar1, ToolBar toolBar2) {
@@ -378,111 +221,6 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
 
     }
 
-    void initTools(ToolBar toolBar) {
-        Font font = new Font(7);
-        List<Button> peakButtons = new ArrayList<>();
-        List<Button> regionButtons = new ArrayList<>();
-        List<Button> multipletButtons = new ArrayList<>();
-        List<Button> fitButtons = new ArrayList<>();
-        Button button;
-
-        button = new Button("Add", getIcon("region_add"));
-        button.setOnAction(e -> addRegion(null));
-        regionButtons.add(button);
-
-        button = new Button("Adjust", getIcon("region_adjust"));
-        button.setOnAction(e -> adjustRegion());
-        regionButtons.add(button);
-
-        button = new Button("Split", getIcon("region_split"));
-        button.setOnAction(e -> splitRegion());
-        regionButtons.add(button);
-
-        button = new Button("Delete", getIcon("region_delete"));
-        button.setOnAction(e -> removeRegion());
-        regionButtons.add(button);
-
-        button = new Button("Add 1", getIcon("peak_add1"));
-        button.setOnAction(e -> addPeak());
-        peakButtons.add(button);
-
-        button = new Button("Add 2", getIcon("peak_add2"));
-        button.setOnAction(e -> addTwoPeaks());
-        peakButtons.add(button);
-
-        button = new Button("AutoAdd", getIcon("peak_auto"));
-        button.setOnAction(e -> addAuto());
-        peakButtons.add(button);
-
-        button = new Button("Delete", getIcon("editdelete"));
-        button.setOnAction(e -> removeWeakPeak());
-        peakButtons.add(button);
-
-        button = new Button("Extract", getIcon("extract"));
-        button.setOnAction(e -> extractMultiplet());
-        multipletButtons.add(button);
-
-        button = new Button("Merge", getIcon("merge"));
-        button.setOnAction(e -> mergePeaks());
-        multipletButtons.add(button);
-
-        button = new Button("Transfer", getIcon("transfer"));
-        button.setOnAction(e -> transferPeaks());
-        multipletButtons.add(button);
-
-        Button doubletButton = new Button("Doublets", getIcon("tree"));
-        doubletButton.setOnAction(e -> toDoublets());
-        multipletButtons.add(doubletButton);
-
-        button = new Button("Fit", getIcon("reload"));
-        button.setOnAction(e -> fitSelected());
-        fitButtons.add(button);
-
-        button = new Button("BICFit", getIcon("reload"));
-        button.setOnAction(e -> objectiveDeconvolution());
-        fitButtons.add(button);
-        Label regionLabel = new Label("Regions:");
-        Label peakLabel = new Label("Peaks:");
-        Label multipletLabel = new Label("Multiplets:");
-        Label fitLabel = new Label("Fit: ");
-
-        ToolBarUtils.addFiller(toolBar, 2, 200);
-        toolBar.getItems().add(regionLabel);
-
-        for (Button button1 : regionButtons) {
-            button1.setContentDisplay(ContentDisplay.TOP);
-            button1.setFont(font);
-            button1.getStyleClass().add("toolButton");
-            toolBar.getItems().add(button1);
-        }
-        ToolBarUtils.addFiller(toolBar, 5, 20);
-        toolBar.getItems().add(peakLabel);
-        for (Button button1 : peakButtons) {
-            button1.setContentDisplay(ContentDisplay.TOP);
-            button1.setFont(font);
-            button1.getStyleClass().add("toolButton");
-            toolBar.getItems().add(button1);
-        }
-        ToolBarUtils.addFiller(toolBar, 5, 20);
-        toolBar.getItems().add(multipletLabel);
-        for (Button button1 : multipletButtons) {
-            button1.setContentDisplay(ContentDisplay.TOP);
-            button1.setFont(font);
-            button1.getStyleClass().add("toolButton");
-            toolBar.getItems().add(button1);
-        }
-        ToolBarUtils.addFiller(toolBar, 5, 20);
-        toolBar.getItems().add(fitLabel);
-        for (Button button1 : fitButtons) {
-            button1.setContentDisplay(ContentDisplay.TOP);
-            button1.setFont(font);
-            button1.getStyleClass().add("toolButton");
-            toolBar.getItems().add(button1);
-        }
-        ToolBarUtils.addFiller(toolBar, 2, 200);
-
-    }
-
     void initIntegralType(ToolBar toolBar) {
         Label integralLabel = new Label("N: ");
         integralField = new TextField();
@@ -528,148 +266,6 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
             analyzer.setPeakList(chart.getPeakListAttributes().get(0).getPeakList());
         }
         return analyzer;
-    }
-
-    private void analyze1D(boolean clear) {
-        Analyzer analyzer = getAnalyzer();
-        if (analyzer != null) {
-            if (clear) {
-                clearAnalysis(false);
-            }
-            try {
-                analyzer.analyze();
-                PeakList peakList = analyzer.getPeakList();
-                List<String> peakListNames = new ArrayList<>();
-                peakListNames.add(peakList.getName());
-                chart.chartProps.setRegions(false);
-                chart.chartProps.setIntegrals(true);
-                chart.updatePeakLists(peakListNames);
-            } catch (IOException ex) {
-                log.error(ex.getMessage(), ex);
-            }
-        }
-    }
-
-    private void findRegions() {
-        Analyzer analyzer = getAnalyzer();
-        if (analyzer != null) {
-            analyzer.calculateThreshold();
-            analyzer.getThreshold();
-            analyzer.autoSetRegions();
-            try {
-                analyzer.integrate();
-            } catch (IOException ex) {
-                ExceptionDialog eDialog = new ExceptionDialog(ex);
-                eDialog.showAndWait();
-                return;
-            }
-            chart.chartProps.setRegions(false);
-            chart.chartProps.setIntegrals(true);
-            chart.refresh();
-        }
-    }
-
-    private void pickRegions() {
-        Analyzer analyzer = getAnalyzer();
-        if (analyzer != null) {
-            analyzer.peakPickRegions();
-            analyzer.renumber();
-            analyzer.setVolumesFromIntegrals();
-            try {
-                analyzer.fitRegions();
-            } catch (Exception ex) {
-                log.warn("Exception occured while fitting regions.", ex);
-            }
-            PeakList peakList = analyzer.getPeakList();
-            List<String> peakListNames = new ArrayList<>();
-            peakListNames.add(peakList.getName());
-            chart.chartProps.setRegions(false);
-            chart.chartProps.setIntegrals(true);
-            chart.updatePeakLists(peakListNames);
-        }
-    }
-
-    private void clearAnalysis(boolean prompt) {
-        Analyzer analyzer = getAnalyzer();
-        if (analyzer != null) {
-            if (!prompt || affirm("Clear Analysis")) {
-                PeakList peakList = analyzer.getPeakList();
-                if (peakList != null) {
-                    PeakList.remove(peakList.getName());
-                }
-                analyzer.clearRegions();
-                chart.chartProps.setRegions(false);
-                chart.chartProps.setIntegrals(false);
-                chart.refresh();
-            }
-        }
-    }
-
-    private void clearThreshold() {
-        Analyzer analyzer = getAnalyzer();
-
-        if (analyzer != null) {
-            analyzer.clearThreshold();
-        }
-    }
-
-    private void setThreshold() {
-        Analyzer analyzer = getAnalyzer();
-        if (analyzer != null) {
-            CrossHairs crossHairs = chart.getCrossHairs();
-            if (!crossHairs.hasCrosshairState("h0")) {
-                warn("Threshold", "Must have horizontal crosshair");
-                return;
-            }
-            Double[] pos = crossHairs.getCrossHairPositions(0);
-            System.out.println(pos[0] + " " + pos[1]);
-            analyzer.setThreshold(pos[1]);
-        }
-    }
-
-    void deleteMultiplet() {
-        activeMultiplet.ifPresent(m -> {
-            double shift = m.getCenter();
-            Analyzer analyzer = getAnalyzer();
-            analyzer.removeRegion(shift);
-        });
-        refresh();
-
-    }
-
-    public void initMultiplet() {
-        getAnalyzer();
-        if (!gotoSelectedMultiplet()) {
-            List<Peak> peaks = getPeaks();
-            if (!peaks.isEmpty()) {
-                Multiplet m = peaks.get(0).getPeakDim(0).getMultiplet();
-                activeMultiplet = Optional.of(m);
-                updateMultipletField(false);
-            }
-        }
-    }
-
-    public boolean gotoSelectedMultiplet() {
-        getAnalyzer();
-        boolean result = false;
-        List<MultipletSelection> multiplets = chart.getSelectedMultiplets();
-        if (!multiplets.isEmpty()) {
-            Multiplet m = multiplets.get(0).getMultiplet();
-            activeMultiplet = Optional.of(m);
-            updateMultipletField(false);
-            result = true;
-        }
-        return result;
-    }
-
-    List<Peak> getPeaks() {
-        List<Peak> peaks = Collections.EMPTY_LIST;
-        Optional<PeakList> peakListOpt = getPeakList();
-        if (peakListOpt.isPresent()) {
-            PeakList peakList = peakListOpt.get();
-            peaks = peakList.peaks();
-        }
-        return peaks;
     }
 
     void updateMultipletField() {
@@ -764,76 +360,6 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
         updateMultipletField(false);
     }
 
-    int getCurrentIndex() {
-        int id = activeMultiplet.get().getPeakDim().getPeak().getIndex();
-        return id;
-    }
-
-    void firstMultiplet(ActionEvent e) {
-        List<Peak> peaks = getPeaks();
-        if (!peaks.isEmpty()) {
-            activeMultiplet = Optional.of(peaks.get(0).getPeakDim(0).getMultiplet());
-        } else {
-            activeMultiplet = Optional.empty();
-        }
-        updateMultipletField();
-    }
-
-    void previousMultiplet(ActionEvent e) {
-        if (activeMultiplet.isPresent()) {
-            int id = getCurrentIndex();
-            id--;
-            if (id < 0) {
-                id = 0;
-            }
-            List<Peak> peaks = getPeaks();
-            activeMultiplet = Optional.of(peaks.get(id).getPeakDim(0).getMultiplet());
-            updateMultipletField();
-        } else {
-            firstMultiplet(e);
-        }
-
-    }
-
-    void gotoPrevious(int id) {
-        id--;
-        if (id < 0) {
-            id = 0;
-        }
-        List<Peak> peaks = getPeaks();
-        activeMultiplet = Optional.of(peaks.get(id).getPeakDim(0).getMultiplet());
-        updateMultipletField(false);
-
-    }
-
-    void nextMultiplet(ActionEvent e) {
-        if (activeMultiplet.isPresent()) {
-            List<Peak> peaks = getPeaks();
-            int id = getCurrentIndex();
-            int last = peaks.size() - 1;
-            id++;
-            if (id > last) {
-                id = last;
-            }
-            activeMultiplet = Optional.of(peaks.get(id).getPeakDim(0).getMultiplet());
-            updateMultipletField();
-        } else {
-            firstMultiplet(e);
-        }
-    }
-
-    void lastMultiplet(ActionEvent e) {
-        List<Peak> peaks = getPeaks();
-        if (!peaks.isEmpty()) {
-            activeMultiplet = Optional.of(peaks.get(peaks.size() - 1).getPeakDim(0).getMultiplet());
-        }
-        updateMultipletField();
-    }
-
-    void gotoPeakId(TextField textField) {
-
-    }
-
     public Stage getStage() {
         return stage;
     }
@@ -860,20 +386,13 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
 
     PolyChart getChart() {
         FXMLController controller = FXMLController.getActiveController();
-        PolyChart activeChart = controller.getActiveChart();
-        return activeChart;
+        return controller.getActiveChart();
     }
 
     void refresh() {
         chart.refresh();
         updateMultipletField(false);
 
-    }
-
-    List<MultipletSelection> getMultipletSelection() {
-        FXMLController controller = FXMLController.getActiveController();
-        List<MultipletSelection> multiplets = chart.getSelectedMultiplets();
-        return multiplets;
     }
 
     public void fitSelected() {
@@ -887,17 +406,6 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
         Analyzer analyzer = getAnalyzer();
         analyzer.setPositionRestraint(restraintPosCheckBox.isSelected()
                 ? restraintSlider.getValue() : null);
-    }
-
-    public void splitSelected() {
-        activeMultiplet.ifPresent(m -> {
-            if (m.isGenericMultiplet()) {
-            } else {
-                Multiplets.splitToMultiplicity(m, "d");
-                Multiplets.updateAfterMultipletConversion(m);
-            }
-        });
-        refresh();
     }
 
     public void split() {
@@ -954,21 +462,11 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
             }
         }
     }
-    public void splitRegion() {
-       double ppm = chart.getVerticalCrosshairPositions()[0];
-//
-//        activeRegion.ifPresent(r -> {
-//            DatasetRegion newRegion = r.split(ppm - 0.001, ppm + 0.001);
-//            getRegions().add(newRegion);
-//            updateRegion();
-//        });
-//        chart.refresh();
-    }
 
     public void adjustRegion() {
         Analyzer analyzer = getAnalyzer();
-        Double ppm0 = null;
-        Double ppm1 = null;
+        Double ppm0;
+        Double ppm1;
         if (chart.getCrossHairs().hasCrosshairState("||")) {
             ppm0 = chart.getVerticalCrosshairPositions()[0];
             ppm1 = chart.getVerticalCrosshairPositions()[1];
@@ -1024,8 +522,7 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
             if (peakListOpt.isPresent()) {
                 PeakList peakList = peakListOpt.get();
                 if (peakList.peaks().size() == 1) {
-                    double volume = activeMultiplet.get().getVolume();
-                    peakList.scale = volume;
+                    peakList.scale = activeMultiplet.get().getVolume();
                 }
             }
             updateMultipletField(false);
@@ -1034,17 +531,6 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
         } catch (IOException ex) {
             log.warn(ex.getMessage(), ex);
         }
-    }
-
-    public void removeRegion() {
-        Analyzer analyzer = getAnalyzer();
-        activeMultiplet.ifPresent(m -> {
-            int id = m.getIDNum();
-            double ppm = m.getCenter();
-            analyzer.removeRegion(ppm);
-            gotoPrevious(id);
-            chart.refresh();
-        });
     }
 
     public void rms() {
@@ -1115,16 +601,12 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
     }
 
     public void toDoublets() {
-        activeMultiplet.ifPresent(m -> {
-            Multiplets.toDoublets(m);
-        });
+        activeMultiplet.ifPresent(Multiplets::toDoublets);
         refresh();
     }
 
     public void guessGeneric() {
-        activeMultiplet.ifPresent(m -> {
-            Multiplets.guessMultiplicityFromGeneric(m);
-        });
+        activeMultiplet.ifPresent(Multiplets::guessMultiplicityFromGeneric);
         refresh();
     }
 
@@ -1188,9 +670,7 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
             Multiplet multiplet = multiplets.get(0);
 
             Multiplet newMultiplet = extractMultiplet(mSet, multiplet);
-            activeMultiplet.ifPresent(m -> {
-                activeMultiplet = Multiplets.transferPeaks(m, List.of(newMultiplet.getPeakDim().getPeak()));
-            });
+            activeMultiplet.ifPresent(m -> activeMultiplet = Multiplets.transferPeaks(m, List.of(newMultiplet.getPeakDim().getPeak())));
         }
         refresh();
     }
@@ -1289,67 +769,5 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
                 });
             }
         }
-    }
-
-    public void setActivePeaks(List<Peak> peaks) {
-        if ((peaks != null) && !peaks.isEmpty()) {
-            Peak peak = peaks.get(0);
-            activeMultiplet = Optional.of(peak.getPeakDim(0).getMultiplet());
-            updateMultipletField(false);
-        }
-    }
-
-    public void journalFormatToClipboard() {
-        JournalFormat format = JournalFormatPeaks.getFormat("JMedCh");
-        Analyzer analyzer = getAnalyzer();
-        if (analyzer != null) {
-            PeakList peakList = analyzer.getPeakList();
-            String journalText = format.genOutput(peakList);
-            String plainText = JournalFormatPeaks.formatToPlain(journalText);
-            String rtfText = JournalFormatPeaks.formatToRTF(journalText);
-
-            Clipboard clipBoard = Clipboard.getSystemClipboard();
-            ClipboardContent content = new ClipboardContent();
-            content.put(DataFormat.PLAIN_TEXT, plainText);
-            content.put(DataFormat.RTF, rtfText);
-            clipBoard.setContent(content);
-        }
-    }
-
-    public void toggleMoleculeDisplay() {
-        if (molButton.isSelected()) {
-            addMolecule();
-        } else {
-            removeMolecule();
-        }
-    }
-
-    void addMolecule() {
-        Molecule activeMol = Molecule.getActive();
-        if (activeMol == null) {
-            ((AnalystApp) AnalystApp.getMainApp()).readMolecule("mol");
-            activeMol = Molecule.getActive();
-        }
-        if (activeMol != null) {
-            if (cMol == null) {
-                cMol = new CanvasMolecule(FXMLController.getActiveController().getActiveChart());
-                cMol.setPosition(0.1, 0.1, 0.3, 0.3, "FRACTION", "FRACTION");
-            }
-
-            cMol.setMolName(activeMol.getName());
-            activeMol.label = Molecule.LABEL_NONHC;
-            activeMol.clearSelected();
-
-            PolyChart chart = FXMLController.getActiveController().getActiveChart();
-            chart.clearAnnoType(CanvasMolecule.class);
-            chart.addAnnotation(cMol);
-            chart.refresh();
-        }
-    }
-
-    void removeMolecule() {
-        PolyChart chart = FXMLController.getActiveController().getActiveChart();
-        chart.clearAnnoType(CanvasMolecule.class);
-        chart.refresh();
     }
 }
