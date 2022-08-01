@@ -39,7 +39,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Consumer;
 
 /**
  * @author brucejohnson
@@ -58,7 +57,6 @@ public class MultipletTool implements SetChangeListener<MultipletSelection> {
     TextField[] couplingFields;
     TextField[] slopeFields;
     FXMLController controller;
-    Consumer<MultipletTool> closeAction;
     CheckBox restraintPosCheckBox;
     Slider restraintSlider;
 
@@ -69,17 +67,26 @@ public class MultipletTool implements SetChangeListener<MultipletSelection> {
     ChangeListener<String> patternListener;
     PopOver popOver = null;
 
-    public MultipletTool(FXMLController controller, Consumer<MultipletTool> closeAction) {
-        this.controller = controller;
-        this.closeAction = closeAction;
+    public MultipletTool(PolyChart chart) {
+        this.chart = chart;
+        this.controller = chart.getController();
     }
 
     public VBox getBox() {
         return vBox;
     }
 
-    public void close() {
-        closeAction.accept(this);
+    public boolean popoverInitialized() {
+        return vBox != null;
+    }
+
+    public static MultipletTool getTool(PolyChart chart) {
+        MultipletTool multipletTool = (MultipletTool) chart.getPopoverTool(MultipletTool.class.getName());
+        if (multipletTool == null) {
+            multipletTool = new MultipletTool(chart);
+            chart.setPopoverTool(MultipletTool.class.getName(), multipletTool);
+        }
+        return multipletTool;
     }
 
     public void initializePopover(PopOver popOver) {
@@ -95,7 +102,6 @@ public class MultipletTool implements SetChangeListener<MultipletSelection> {
         HBox.setHgrow(hbox, Priority.ALWAYS);
 
         vBox.getChildren().addAll(hbox, topBar, gridPane, buttonBar1, buttonBar2);
-        chart = controller.getActiveChart();
         chart.addMultipletListener(this);
         getAnalyzer();
         chart.setRegionConsumer(this::regionAdded);
@@ -253,7 +259,6 @@ public class MultipletTool implements SetChangeListener<MultipletSelection> {
     }
 
     public Analyzer getAnalyzer() {
-        chart = getChart();
         Dataset dataset = (Dataset) chart.getDataset();
         if ((dataset == null) || (dataset.getNDim() > 1)) {
             Alert alert = new Alert(Alert.AlertType.ERROR);
@@ -503,6 +508,7 @@ public class MultipletTool implements SetChangeListener<MultipletSelection> {
 
     public void addRegion(DatasetRegion region) {
         Analyzer analyzer = getAnalyzer();
+        System.out.println("add region " + analyzer);
         double ppm0;
         double ppm1;
         if (region == null) {

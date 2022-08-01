@@ -12,10 +12,6 @@ import org.nmrfx.processor.gui.spectra.MultipletSelection;
 public class PopOverTools {
     static PopOver popOver = new PopOver();
 
-    private static MultipletTool multipletPopOverTool = null;
-    private static JournalTool journalTool = null;
-    private static IntegralTool integralTool = null;
-
     public void hide(boolean always) {
         if (popOver.isShowing() && (always || !popOver.isDetached())) {
             popOver.hide();
@@ -36,14 +32,14 @@ public class PopOverTools {
 
 
     public void showPopover(PolyChart chart, Bounds objectBounds, Multiplet multiplet) {
-        if (multipletPopOverTool == null) {
-            multipletPopOverTool = new MultipletTool(chart.getController(), null);
-            multipletPopOverTool.initializePopover(popOver);
+        MultipletTool multipletTool = MultipletTool.getTool(chart);
+        if (!multipletTool.popoverInitialized()) {
+            multipletTool.initializePopover(popOver);
             popOver.setCloseButtonEnabled(true);
         }
         popOver.setArrowLocation(PopOver.ArrowLocation.BOTTOM_CENTER);
-        multipletPopOverTool.setActiveMultiplet(multiplet);
-        popOver.setContentNode(multipletPopOverTool.getBox());
+        multipletTool.setActiveMultiplet(multiplet);
+        popOver.setContentNode(multipletTool.getBox());
         popOver.setTitle("Multiplets");
         if (!popOver.isShowing() || (popOver.isShowing() && !popOver.isDetached())) {
             popOver.show(chart.getCanvas(), objectBounds.getCenterX(), objectBounds.getMinY() - 10);
@@ -52,8 +48,8 @@ public class PopOverTools {
 
     public void showPopover(PolyChart chart, Bounds objectBounds, AnnoText annoText) {
         if (annoText instanceof AnnoJournalFormat) {
-            if (journalTool == null) {
-                journalTool = new JournalTool();
+            JournalTool journalTool = JournalTool.getTool(chart);
+            if (!journalTool.popoverInitialized()) {
                 journalTool.initializePopover(popOver);
                 popOver.setCloseButtonEnabled(true);
             }
@@ -69,8 +65,8 @@ public class PopOverTools {
     }
 
     public void showPopover(PolyChart chart, Bounds objectBounds, IntegralHit integralHit) {
-        if (integralTool == null) {
-            integralTool = new IntegralTool();
+        IntegralTool integralTool = IntegralTool.getTool(chart);
+        if (!integralTool.popoverInitialized()) {
             integralTool.initializePopover(popOver);
             popOver.setCloseButtonEnabled(true);
         }
@@ -81,7 +77,5 @@ public class PopOverTools {
         if (!popOver.isShowing() || (popOver.isShowing() && !popOver.isDetached())) {
             popOver.show(chart.getCanvas(), objectBounds.getCenterX(), objectBounds.getMaxY() + 10);
         }
-
     }
-
 }

@@ -170,6 +170,7 @@ public class PolyChart extends Region implements PeakListener {
     FXMLController sliceController = null;
     SimpleObjectProperty<DatasetRegion> activeRegion = new SimpleObjectProperty<>(null);
     SimpleBooleanProperty chartSelected = new SimpleBooleanProperty(false);
+    Map<String, Object> popoverMap = new HashMap<>();
 
     int iVec = 0;
 //    Vec vec;
@@ -4360,4 +4361,15 @@ public class PolyChart extends Region implements PeakListener {
         return processorController;
     }
 
+    public Object getPopoverTool(String className) {
+        return popoverMap.get(className);
+    }
+
+    public void setPopoverTool(String name, Object object) {
+        popoverMap.put(name, object);
+    }
+
+    public void clearPopoverTools() {
+        popoverMap.clear();
+    }
 }

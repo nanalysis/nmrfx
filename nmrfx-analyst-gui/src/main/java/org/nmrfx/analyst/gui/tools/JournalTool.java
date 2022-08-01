@@ -8,6 +8,7 @@ import org.controlsfx.control.PopOver;
 import org.nmrfx.analyst.gui.annotations.AnnoJournalFormat;
 import org.nmrfx.analyst.peaks.JournalFormatPeaks;
 import org.nmrfx.processor.gui.FXMLController;
+import org.nmrfx.processor.gui.PolyChart;
 
 public class JournalTool {
     static String formatName = "JMedCh";
@@ -19,6 +20,19 @@ public class JournalTool {
 
     public VBox getBox() {
         return vBox;
+    }
+
+    public boolean popoverInitialized() {
+        return vBox != null;
+    }
+
+    public static JournalTool getTool(PolyChart chart) {
+        JournalTool journalTool = (JournalTool) chart.getPopoverTool(JournalTool.class.getName());
+        if (journalTool == null) {
+            journalTool = new JournalTool();
+            chart.setPopoverTool(JournalTool.class.getName(), journalTool);
+        }
+        return journalTool;
     }
 
     public void initializePopover(PopOver popOver) {

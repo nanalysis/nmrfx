@@ -671,6 +671,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
         }
         getActiveChart().setCrossHairState(true, true, true, true);
         getActiveChart().clearAnnotations();
+        getActiveChart().clearPopoverTools();
         ProcessorController processorController = getActiveChart().processorController;
         if (processorController != null) {
             processorController.viewingDataset(true);

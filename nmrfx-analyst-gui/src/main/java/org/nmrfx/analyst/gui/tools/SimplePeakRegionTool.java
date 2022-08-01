@@ -113,6 +113,7 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
 
     public Analyzer getAnalyzer() {
         chart = getChart();
+        MultipletTool multipletTool = MultipletTool.getTool(chart);
         Dataset dataset = (Dataset) chart.getDataset();
         if ((dataset == null) || (dataset.getNDim() > 1)) {
             Alert alert = new Alert(Alert.AlertType.ERROR);

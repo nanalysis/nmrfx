@@ -21,14 +21,29 @@ import org.nmrfx.utils.GUIUtils;
 import java.io.IOException;
 
 public class IntegralTool {
+    PolyChart chart;
     VBox vBox;
     IntegralHit hit;
 
-    public IntegralTool() {
+    public IntegralTool(PolyChart chart) {
+        this.chart = chart;
     }
 
     public VBox getBox() {
         return vBox;
+    }
+
+    public boolean popoverInitialized() {
+        return vBox != null;
+    }
+
+    public static IntegralTool getTool(PolyChart chart) {
+        IntegralTool integralTool = (IntegralTool) chart.getPopoverTool(IntegralTool.class.getName());
+        if (integralTool == null) {
+            integralTool = new IntegralTool(chart);
+            chart.setPopoverTool(IntegralTool.class.getName(), integralTool);
+        }
+        return integralTool;
     }
 
     public void initializePopover(PopOver popOver) {
@@ -94,7 +109,6 @@ public class IntegralTool {
     }
 
     public void splitRegion() {
-        PolyChart chart = FXMLController.getActiveController().getActiveChart();
         CrossHairs crossHairs = chart.getCrossHairs();
 
         if (crossHairs.hasCrosshairState("v0")) {
