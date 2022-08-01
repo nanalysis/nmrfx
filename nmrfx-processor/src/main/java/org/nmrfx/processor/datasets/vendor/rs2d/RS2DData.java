@@ -210,6 +210,19 @@ public class RS2DData implements NMRData {
         return found;
     }
 
+    @Override
+    public boolean isFID() {
+        if (header.isPresent(RS2DParam.STATE)) {
+            List<Integer> states = header.getInts(RS2DParam.STATE);
+            if (states != null) {
+                return states.get(0) == 0;
+            } else {
+                log.debug("Unable to find state parameter. Setting state to FID.");
+            }
+        }
+        return true;
+    }
+
 
     private static boolean findFIDFiles(String dirPath) {
         Path headerPath = Paths.get(dirPath, HEADER_FILE_NAME);
