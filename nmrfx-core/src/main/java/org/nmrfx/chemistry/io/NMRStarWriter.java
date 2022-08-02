@@ -892,7 +892,7 @@ public class NMRStarWriter {
      */
     public static void writeNOE(Writer chan, MoleculeBase molecule, List<RelaxationData> noeDataList, int listID) throws IOException {
         RelaxationData noeData0 = noeDataList.get(0);
-        String frameName = noeData0.getID();
+        String frameName = noeData0.getId();
         double field = noeData0.getField();
         chan.write("    ########################################\n");
         chan.write("    #  Heteronuclear NOE values  #\n");
@@ -1015,7 +1015,7 @@ public class NMRStarWriter {
             expName = "T2";
         }
 
-        String frameName = relaxDataA0.getID();
+        String frameName = relaxDataA0.getId();
         double field = relaxDataA0.getField();
         String coherenceType = relaxDataA0.getExtras().get("coherenceType");
         String units = relaxDataA0.getExtras().get("units");
