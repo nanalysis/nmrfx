@@ -170,7 +170,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
     Set<ControllerTool> tools = new HashSet<>();
 
     SimpleBooleanProperty processControllerVisible = new SimpleBooleanProperty(false);
-    SimpleObjectProperty<Cursor> cursorProperty = new SimpleObjectProperty<Cursor>(Cursor.CROSSHAIR);
+    SimpleObjectProperty<Cursor> cursorProperty = new SimpleObjectProperty<>(Cursor.CROSSHAIR);
 
     private BooleanProperty minBordersProperty() {
         if (minBorders == null) {
