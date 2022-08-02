@@ -333,9 +333,9 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
 
     public void journalFormatToClipboard() {
         JournalFormat format = JournalFormatPeaks.getFormat("JMedCh");
-        getAnalyzer();
-        if (getAnalyzer() != null) {
-            PeakList peakList = getAnalyzer().getPeakList();
+        Analyzer analyzer = getAnalyzer();
+        if (analyzer != null) {
+            PeakList peakList = analyzer.getPeakList();
             String journalText = format.genOutput(peakList);
             String plainText = JournalFormatPeaks.formatToPlain(journalText);
             String rtfText = JournalFormatPeaks.formatToRTF(journalText);
@@ -349,9 +349,9 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
     }
 
     public void showJournalFormatOnChart() {
-        getAnalyzer();
-        if (getAnalyzer() != null) {
-            PeakList peakList = getAnalyzer().getPeakList();
+        Analyzer analyzer = getAnalyzer();
+        if (analyzer != null) {
+            PeakList peakList = analyzer.getPeakList();
             if (peakList == null) {
                 removeJournalFormatOnChart();
             } else {
@@ -371,16 +371,18 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
     }
 
     public void removeJournalFormatOnChart() {
-        getAnalyzer();
-        PeakList peakList = getAnalyzer().getPeakList();
-        if (peakList != null) {
-            peakList.removePeakChangeListener(this);
-        }
+        Analyzer analyzer = getAnalyzer();
+        if (analyzer != null) {
+            PeakList peakList = analyzer.getPeakList();
+            if (peakList != null) {
+                peakList.removePeakChangeListener(this);
+            }
 
-        PolyChart chart = getChart();
-        chart.chartProps.setTopBorderSize(7);
-        chart.clearAnnoType(AnnoJournalFormat.class);
-        chart.refresh();
+            PolyChart chart = getChart();
+            chart.chartProps.setTopBorderSize(7);
+            chart.clearAnnoType(AnnoJournalFormat.class);
+            chart.refresh();
+        }
     }
 
     @Override
