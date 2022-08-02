@@ -209,17 +209,11 @@ public class KeyBindings {
                 keyMonitor.clear();
                 break;
             case "cc":
-                SpectrumStatusBar statusBar = chart.getController().getStatusBar();
-                if (statusBar != null) {
-                    statusBar.setCursor(Cursor.CROSSHAIR);
-                }
+                chart.getController().setCursor(Cursor.CROSSHAIR);
                 keyMonitor.clear();
                 break;
             case "cs":
-                statusBar = chart.getController().getStatusBar();
-                if (statusBar != null) {
-                    statusBar.setCursor(SpectrumStatusBar.SEL_CURSOR);
-                }
+                chart.getController().setCursor(SpectrumStatusBar.SEL_CURSOR);
                 keyMonitor.clear();
                 break;
             case "p":

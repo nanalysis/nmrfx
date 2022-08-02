@@ -118,8 +118,7 @@ public class SpectrumStatusBar {
     Pane filler1 = new Pane();
     Pane filler2 = new Pane();
     static String[] rowNames = {"X", "Y", "Z", "A", "B", "C", "D", "E"};
-    MenuButton cursorMenuButton = new MenuButton();
-    Cursor currentCursor = Cursor.CROSSHAIR;
+    ComboBox<Cursor> cursorChoiceBox = new ComboBox<>();
     HashMap<Cursor, Text> cursorMap = new HashMap<>();
     HashMap<String, Cursor> cursorNameMap = new HashMap<>();
     static Background errorBackground = new Background(new BackgroundFill(Color.ORANGE, CornerRadii.EMPTY, Insets.EMPTY));
@@ -252,26 +251,14 @@ public class SpectrumStatusBar {
         controller.sliceStatus.bind(sliceStatus.selectedProperty());
         sliceStatus.setOnAction(this::sliceStatus);
         complexStatus.setOnAction(this::complexStatus);
-        Text crosshairIcon = GlyphsDude.createIcon(FontAwesomeIcon.PLUS, "16");
-        Text arrowIcon = GlyphsDude.createIcon(FontAwesomeIcon.MOUSE_POINTER, "16");
-        cursorMap.put(Cursor.CROSSHAIR, crosshairIcon);
-        cursorMap.put(SEL_CURSOR, arrowIcon);
-        cursorNameMap.put("CrossHair", Cursor.CROSSHAIR);
-        cursorNameMap.put("Selector", SEL_CURSOR);
-        String[] cursorModes = {"CrossHair", "Selector"};
-        for (String cursorMode : cursorModes) {
-            MenuItem cursorMenuItem = new MenuItem(cursorMode);
-            cursorMenuButton.getItems().add(cursorMenuItem);
-            cursorMenuItem.setOnAction(e -> setCursor(cursorMode));
-        }
-        cursorMenuButton.setGraphic(cursorMap.get(Cursor.CROSSHAIR));
+        cursorChoiceBox.getItems().addAll(Cursor.CROSSHAIR, SEL_CURSOR);
+        cursorChoiceBox.setValue(Cursor.CROSSHAIR);
 
         Callback<ListView<Cursor>, ListCell<Cursor>> cellFactory = new Callback<ListView<Cursor>, ListCell<Cursor>>() {
             @Override
             public ListCell<Cursor> call(ListView<Cursor> p) {
                 return new ListCell<>() {
                     Text icon;
-
                     {
                         icon = new Text();
                         setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
@@ -296,6 +283,9 @@ public class SpectrumStatusBar {
                 };
             }
         };
+        cursorChoiceBox.setButtonCell(cellFactory.call(null));
+        cursorChoiceBox.setCellFactory(cellFactory);
+        cursorChoiceBox.valueProperty().bindBidirectional(controller.getCursorProperty());
     }
 
     public void addToolBarButtons(ButtonBase... buttons) {
@@ -329,23 +319,6 @@ public class SpectrumStatusBar {
 
         specToolMenu.getItems().addAll(measureMenuItem, analyzerMenuItem);
         addToToolMenu(specToolMenu);
-    }
-
-    public void setCursor(Cursor cursor) {
-        cursorMenuButton.setGraphic(cursorMap.get(cursor));
-        for (PolyChart chart : controller.charts) {
-            chart.setCanvasCursor(cursor);
-            if (cursor.toString().equals("CROSSHAIR")) {
-                chart.getCrossHairs().setCrossHairState(true);
-            } else {
-                chart.getCrossHairs().setCrossHairState(false);
-            }
-        }
-        currentCursor = cursor;
-    }
-
-    public void setCursor(String cursorName) {
-        setCursor(cursorNameMap.get(cursorName));
     }
 
     private StackPane makeIcon(int i, int j, boolean boundMode) {
@@ -447,9 +420,6 @@ public class SpectrumStatusBar {
                 updatePlaneSpinner(center, axNum);
             }
         }
-
-        chart.setCanvasCursor(currentCursor);
-
     }
 
     public void updateRowSpinner(int row, int axNum) {
@@ -552,7 +522,7 @@ public class SpectrumStatusBar {
         arrayMode = true;
         setPlaneRanges(2, nRows);
         List<Node> nodes = new ArrayList<>();
-        nodes.add(cursorMenuButton);
+        nodes.add(cursorChoiceBox);
         nodes.add(toolButton);
         displayModeComboBox.getSelectionModel().select(DisplayMode.CURVES);
         nodes.add(displayModeComboBox);
@@ -592,7 +562,7 @@ public class SpectrumStatusBar {
         currentMode = mode;
         arrayMode = false;
         List<Node> nodes = new ArrayList<>();
-        nodes.add(cursorMenuButton);
+        nodes.add(cursorChoiceBox);
         if (mode != 0) {
             nodes.add(toolButton);
         }

@@ -465,10 +465,6 @@ public class PolyChart extends Region implements PeakListener {
         return canvas.getCursor();
     }
 
-    public void setCanvasCursor(Cursor cursor) {
-        canvas.setCursor(cursor);
-    }
-
     public boolean contains(double x, double y) {
         return (x > getLayoutX()) && (x < (getLayoutX() + getWidth())) && (y > getLayoutY()) && (y < (getLayoutY() + getHeight()));
     }

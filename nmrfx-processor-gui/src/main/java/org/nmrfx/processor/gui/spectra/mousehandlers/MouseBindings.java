@@ -25,6 +25,7 @@ import javafx.scene.input.MouseEvent;
 import javafx.util.Duration;
 import org.nmrfx.datasets.DatasetRegion;
 import org.nmrfx.processor.gui.CanvasAnnotation;
+import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.MainApp;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.annotations.AnnoText;
@@ -169,10 +170,7 @@ public class MouseBindings {
             setCursor(Cursor.H_RESIZE);
             return;
         } else {
-            Cursor currentCursor = chart.getCanvas().getCursor();
-            if (currentCursor == Cursor.H_RESIZE || currentCursor == Cursor.V_RESIZE) {
-                chart.setCanvasCursor(Cursor.DEFAULT);
-            }
+            unsetCursor();
         }
 
         if (hit.isPresent()) {
@@ -241,18 +239,17 @@ public class MouseBindings {
     }
 
     private void setCursor(Cursor cursor) {
+        FXMLController controller = chart.getController();
         Cursor currentCursor = chart.getCanvas().getCursor();
-        if (currentCursor != cursor) {
-            previousCursor = currentCursor;
-            chart.setCanvasCursor(cursor);
+        if (controller.getCurrentCursor() != cursor) {
+            controller.setCurrentCursor(cursor);
         }
     }
 
     private void unsetCursor() {
-        Cursor currentCursor = chart.getCanvas().getCursor();
-        if ((previousCursor != null) && (currentCursor != previousCursor)) {
-            chart.setCanvasCursor(previousCursor);
-            chart.getCanvas().setCursor(previousCursor);
+        FXMLController controller = chart.getController();
+        if (controller.getCurrentCursor() != controller.getCursor()) {
+            controller.setCurrentCursor(controller.getCursor());
         }
     }
 

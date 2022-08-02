@@ -732,7 +732,7 @@ public class GUIScripter {
     public void setCursor(String name) {
         Cursor cursor = Cursor.cursor(name);
         ConsoleUtil.runOnFxThread(() -> {
-            getActiveController().getActiveChart().setCanvasCursor(cursor);
+            getActiveController().setCursor(cursor);
         });
     }
 
