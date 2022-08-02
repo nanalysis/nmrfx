@@ -459,7 +459,7 @@ public class AnalystApp extends MainApp {
         String iconSize = "16px";
         String fontSize = "7pt";
         var controller = statusBar.getController();
-        SimplePeakRegionTool simplePeakRegionTool = new SimplePeakRegionTool(controller, controller.getActiveChart());
+        SimplePeakRegionTool simplePeakRegionTool = new SimplePeakRegionTool(controller);
         simplePeakRegionTool.addButtons(statusBar);
     }
 

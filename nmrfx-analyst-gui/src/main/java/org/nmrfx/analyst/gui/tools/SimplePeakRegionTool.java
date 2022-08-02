@@ -38,13 +38,11 @@ import static org.nmrfx.utils.GUIUtils.warn;
 public class SimplePeakRegionTool implements ControllerTool, PeakListener {
     private static final Logger log = LoggerFactory.getLogger(SimplePeakRegionTool.class);
     FXMLController controller;
-    PolyChart chart;
     CanvasMolecule cMol = null;
 
 
-    public SimplePeakRegionTool(FXMLController controller, PolyChart chart) {
+    public SimplePeakRegionTool(FXMLController controller) {
         this.controller = controller;
-        this.chart = chart;
     }
 
     @Override
@@ -107,12 +105,11 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
     }
 
     PolyChart getChart() {
-        chart = controller.getActiveChart();
-        return chart;
+        return controller.getActiveChart();
     }
 
     public Analyzer getAnalyzer() {
-        chart = getChart();
+        PolyChart chart = getChart();
         MultipletTool multipletTool = MultipletTool.getTool(chart);
         Dataset dataset = (Dataset) chart.getDataset();
         if ((dataset == null) || (dataset.getNDim() > 1)) {
@@ -129,6 +126,7 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
     }
 
     public boolean clearAnalysis(boolean prompt) {
+        PolyChart chart = getChart();
         if (!prompt || affirm("Clear Analysis")) {
             Analyzer analyzer = getAnalyzer();
             if (analyzer != null) {
@@ -145,6 +143,7 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
     }
 
     public boolean hasRegions() {
+        PolyChart chart = getChart();
         if (!chart.hasData()) {
             return false;
         } else {
@@ -154,6 +153,7 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
     }
 
     public void findRegions() {
+        PolyChart chart = getChart();
         if (!chart.hasData()) {
             Alert alert = new Alert(Alert.AlertType.ERROR);
             alert.setContentText("Chart must have a 1D dataset");
@@ -200,6 +200,7 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
     private void setThreshold() {
         Analyzer analyzer = getAnalyzer();
         if (analyzer != null) {
+            PolyChart chart = getChart();
             CrossHairs crossHairs = chart.getCrossHairs();
             if (!crossHairs.hasCrosshairState("h0")) {
                 warn("Threshold", "Must have horizontal crosshair");
@@ -261,6 +262,7 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
     public void peakPick() {
         Analyzer analyzer = getAnalyzer();
         if (analyzer != null) {
+            PolyChart chart = getChart();
             Set<DatasetRegion> regions = chart.getDataset().getRegions();
             if ((regions == null) || regions.isEmpty()) {
                 analyzer.calculateThreshold();
@@ -295,6 +297,7 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
                 analyzer.setPeakList(null);
                 analyzer.resetAnalyzed();
                 List<String> peakListNames = new ArrayList<>();
+                PolyChart chart = getChart();
                 chart.updatePeakLists(peakListNames);
                 chart.refresh();
                 AnalystApp.getAnalystApp().hidePopover(true);
@@ -317,6 +320,7 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
                 PeakList peakList = analyzer.getPeakList();
                 List<String> peakListNames = new ArrayList<>();
                 peakListNames.add(peakList.getName());
+                PolyChart chart = getChart();
                 chart.chartProps.setRegions(false);
                 chart.chartProps.setIntegrals(true);
                 chart.updatePeakLists(peakListNames);
@@ -356,6 +360,7 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
                         CanvasAnnotation.POSTYPE.FRACTION,
                         CanvasAnnotation.POSTYPE.PIXEL,
                         peakList.getName());
+                PolyChart chart = getChart();
                 chart.chartProps.setTopBorderSize(50);
 
                 chart.clearAnnoType(AnnoJournalFormat.class);
@@ -372,6 +377,7 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
             peakList.removePeakChangeListener(this);
         }
 
+        PolyChart chart = getChart();
         chart.chartProps.setTopBorderSize(7);
         chart.clearAnnoType(AnnoJournalFormat.class);
         chart.refresh();
@@ -380,6 +386,7 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
     @Override
     public void peakListChanged(PeakEvent peakEvent) {
         ConsoleUtil.runOnFxThread(() -> {
+            PolyChart chart = getChart();
             if (chart.hasAnnoType(AnnoJournalFormat.class)) {
                 showJournalFormatOnChart();
             }
