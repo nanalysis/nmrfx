@@ -190,6 +190,7 @@ public class Multiplet implements PeakOrMulti, Comparable {
             this.getPeakDim().setChemShift((float) comps.get(0).offset);
             getOrigin().setIntensity((float) comps.get(0).getIntensity());
             getOrigin().setVolume1((float) comps.get(0).getVolume());
+            getOrigin().getPeakDim(0).setLineWidthValue((float) comps.get(0).getLineWidth());
         } else {
             coupling = new ComplexCoupling(this, comps);
         }

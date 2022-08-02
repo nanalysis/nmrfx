@@ -78,10 +78,12 @@ public class CanvasMolecule implements CanvasAnnotation {
     double by1;
     double bx2;
     double by2;
-    double startBx1;
-    double startBy1;
-    double startBx2;
-    double startBy2;
+
+    double startX1;
+    double startY1;
+    double startX2;
+    double startY2;
+
     POSTYPE xPosType;
     POSTYPE yPosType;
 
@@ -343,10 +345,10 @@ public class CanvasMolecule implements CanvasAnnotation {
             return false;
         } else {
             hitAtom = pick(null, x, y);
-            startBx1 = bx1;
-            startBy1 = by1;
-            startBx2 = bx2;
-            startBy2 = by2;
+            startX1 = bx1;
+            startY1 = by1;
+            startX2 = bx2;
+            startY2 = by2;
 
             if (hitAtom == -1) {
                 Molecule molecule = Molecule.get(molName);
@@ -369,15 +371,14 @@ public class CanvasMolecule implements CanvasAnnotation {
         }
     }
 
-    public void move(double[] start, double[] pos) {
+    @Override
+    public void move(double[][] bounds, double[][] world, double[] start, double[] pos) {
         double dx = pos[0] - start[0];
         double dy = pos[1] - start[1];
-        double deltaBx = dx * (bx2 - bx1) / (x2 - x1);
-        double deltaBy = dy * (by2 - by1) / (y2 - y1);
-        bx1 = startBx1 + deltaBx;
-        by1 = startBy1 + deltaBy;
-        bx2 = startBx2 + deltaBx;
-        by2 = startBy2 + deltaBy;
+        bx1 = xPosType.move(startX1, dx, bounds[0], world[0]);
+        bx2 = xPosType.move(startX2, dx, bounds[0], world[0]);
+        by1 = yPosType.move(startY1, dy, bounds[1], world[1]);
+        by2 = yPosType.move(startY2, dy, bounds[1], world[1]);
     }
 
     public void zoom(double factor) {

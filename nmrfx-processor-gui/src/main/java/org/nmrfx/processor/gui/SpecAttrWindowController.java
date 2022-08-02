@@ -205,6 +205,8 @@ public class SpecAttrWindowController implements Initializable {
     private ComboBox<Number> bottomBorderSizeComboBox;
     @FXML
     private CheckBox titlesCheckBox;
+    @FXML
+    private CheckBox parametersCheckBox;
 
     SegmentedButton groupButton;
     ChoiceBox<String> showOnlyCompatibleBox = new ChoiceBox<>();
@@ -322,6 +324,7 @@ public class SpecAttrWindowController implements Initializable {
         ticFontSizeComboBox.valueProperty().addListener(e -> refreshLater());
         labelFontSizeComboBox.valueProperty().addListener(e -> refreshLater());
         titlesCheckBox.selectedProperty().addListener(e -> refreshLater());
+        parametersCheckBox.selectedProperty().addListener(e -> refreshLater());
         intensityAxisCheckBox.selectedProperty().addListener(e -> refreshLater());
         leftBorderSizeComboBox.valueProperty().addListener(e -> refreshLater());
         rightBorderSizeComboBox.valueProperty().addListener(e -> refreshLater());
@@ -1518,6 +1521,7 @@ public class SpecAttrWindowController implements Initializable {
         integralPosSlider.highValueProperty().unbindBidirectional(polyChart.chartProps.integralHighPosProperty());
 
         titlesCheckBox.selectedProperty().unbindBidirectional(polyChart.chartProps.titlesProperty());
+        parametersCheckBox.selectedProperty().unbindBidirectional(polyChart.chartProps.parametersProperty());
 
         aspectSlider.valueProperty().unbindBidirectional(polyChart.chartProps.aspectRatioProperty());
         aspectCheckBox.selectedProperty().unbindBidirectional((polyChart.chartProps.aspectProperty()));
@@ -1582,6 +1586,7 @@ public class SpecAttrWindowController implements Initializable {
         integralPosSlider.highValueProperty().bindBidirectional(polyChart.chartProps.integralHighPosProperty());
 
         titlesCheckBox.selectedProperty().bindBidirectional(polyChart.chartProps.titlesProperty());
+        parametersCheckBox.selectedProperty().bindBidirectional(polyChart.chartProps.parametersProperty());
 
         aspectSlider.valueProperty().bindBidirectional(polyChart.chartProps.aspectRatioProperty());
         aspectCheckBox.selectedProperty().bindBidirectional((polyChart.chartProps.aspectProperty()));

@@ -3,6 +3,7 @@ package org.nmrfx.processor.gui.spectra.mousehandlers;
 import javafx.scene.input.MouseEvent;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.spectra.IntegralHit;
+import org.nmrfx.processor.gui.spectra.MultipletSelection;
 
 import java.util.Optional;
 
@@ -14,6 +15,12 @@ public class IntegralMouseHandlerHandler extends MouseHandler {
     public IntegralMouseHandlerHandler(MouseBindings mouseBindings, IntegralHit integralHit) {
         super(mouseBindings);
         this.integralHit = integralHit;
+    }
+
+    public static Optional<IntegralHit> handlerOverIntegral(MouseBindings mouseBindings) {
+        PolyChart chart = mouseBindings.getChart();
+        Optional<IntegralHit> hit = chart.hitIntegral(mouseBindings.getMouseX(), mouseBindings.getMouseY());
+        return hit;
     }
 
     public static Optional<MouseHandler> handler(MouseBindings mouseBindings) {

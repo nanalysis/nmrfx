@@ -444,8 +444,16 @@ public class PeakListAttributes implements PeakListener {
         }
         return hit;
     }
-
     public Optional<MultipletSelection> hitMultiplet(DrawPeaks drawPeaks, double pickX, double pickY) {
+        Optional<MultipletSelection> hit =  drawPeaks.hitMultipletLabel(pickX, pickY);
+        if (hit.isPresent()) {
+            return hit;
+        } else {
+            return hitMultipletLine(drawPeaks, pickX, pickY);
+        }
+    }
+
+    public Optional<MultipletSelection> hitMultipletLine(DrawPeaks drawPeaks, double pickX, double pickY) {
         Optional<MultipletSelection> hit = Optional.empty();
         if (peaksInRegion.isPresent()) {
             int[] peakDim = getPeakDim();
@@ -454,7 +462,7 @@ public class PeakListAttributes implements PeakListener {
             if (peakList.nDim == 1) {
                 var pickResult = peaksInRegion.get().stream().filter(peak -> peak.getStatus() >= 0).
                         map(peak -> peak.getPeakDim(0).getMultiplet())
-                        .map((multiplet) -> drawPeaks.pick1DMultiplet(this, peakDim, multiplet, pickX, pickY)).findFirst();
+                        .map((multiplet) -> drawPeaks.pick1DMultiplet(this, peakDim, multiplet, pickX, pickY)).filter(hitMulti -> hitMulti.isPresent()).findFirst();
                 if (pickResult.isPresent()) {
                     hit = pickResult.get();
                 }
@@ -585,6 +593,9 @@ public class PeakListAttributes implements PeakListener {
         Multiplet multiplet = mSel.getMultiplet();
         int iDim = 0;
         int mLine = mSel.getLine();
+        if (mLine < 0) {
+            return;
+        }
         double oldAxisValue = getAxisValue(iDim, oldValue[iDim]);
         double newAxisValue = getAxisValue(iDim, newValue[iDim]);
         double delta = newAxisValue - oldAxisValue;

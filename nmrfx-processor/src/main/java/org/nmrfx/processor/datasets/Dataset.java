@@ -66,6 +66,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
     LineShapeCatalog simVecs = null;
     Map<String, double[]> buffers = new HashMap<>();
     Dataset[] projections = null;
+    private Object analyzerObject = null;
 
     /**
      * Create a new Dataset object that refers to an existing random access file
@@ -2426,5 +2427,13 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         Dataset projDataset = new Dataset(projVec);
         projDataset.setLabel(0, getLabel(iDim));
         projections[iDim] = projDataset;
+    }
+
+    public Object getAnalyzerObject() {
+        return analyzerObject;
+    }
+
+    public void setAnalyzerObject(Object analyzerObject) {
+        this.analyzerObject = analyzerObject;
     }
 }
