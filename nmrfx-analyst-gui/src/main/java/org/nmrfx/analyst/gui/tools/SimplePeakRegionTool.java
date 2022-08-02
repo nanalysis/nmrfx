@@ -38,7 +38,6 @@ import static org.nmrfx.utils.GUIUtils.warn;
 public class SimplePeakRegionTool implements ControllerTool, PeakListener {
     private static final Logger log = LoggerFactory.getLogger(SimplePeakRegionTool.class);
     FXMLController controller;
-    CanvasMolecule cMol = null;
 
 
     public SimplePeakRegionTool(FXMLController controller) {
@@ -47,7 +46,6 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
 
     @Override
     public void close() {
-
     }
 
     public void addButtons(SpectrumStatusBar statusBar) {
@@ -403,9 +401,13 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
             activeMol = Molecule.getActive();
         }
         if (activeMol != null) {
-            if (cMol == null) {
+            var cMols = controller.getActiveChart().findAnnoTypes(CanvasMolecule.class);
+            CanvasMolecule cMol = null;
+            if (cMols.isEmpty()) {
                 cMol = new CanvasMolecule(FXMLController.getActiveController().getActiveChart());
                 cMol.setPosition(0.1, 0.1, 0.3, 0.3, "FRACTION", "FRACTION");
+            } else {
+                cMol = (CanvasMolecule) cMols.get(0);
             }
 
             cMol.setMolName(activeMol.getName());

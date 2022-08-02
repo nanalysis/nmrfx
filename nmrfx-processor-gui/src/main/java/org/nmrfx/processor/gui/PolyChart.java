@@ -81,6 +81,7 @@ import java.io.IOException;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.DoubleFunction;
+import java.util.stream.Collectors;
 
 import static org.nmrfx.processor.gui.PolyChart.DISDIM.TwoD;
 
@@ -3575,6 +3576,10 @@ public class PolyChart extends Region implements PeakListener {
             }
         }
         return false;
+    }
+
+    public List<CanvasAnnotation> findAnnoTypes(Class annoClass) {
+        return canvasAnnotations.stream().filter(anno -> anno.getClass() == annoClass).collect(Collectors.toList());
     }
 
     public void clearAnnoType(Class annoClass) {
