@@ -61,7 +61,7 @@ public class MultipletTool implements SetChangeListener<MultipletSelection> {
     Slider restraintSlider;
 
 
-    private PolyChart chart;
+    private final PolyChart chart;
     Optional<Multiplet> activeMultiplet = Optional.empty();
     boolean ignoreCouplingChanges = false;
     ChangeListener<String> patternListener;
@@ -249,7 +249,7 @@ public class MultipletTool implements SetChangeListener<MultipletSelection> {
             }
         });
 
-        peakTypeChoice = new ChoiceBox();
+        peakTypeChoice = new ChoiceBox<>();
         typeToolBar.getChildren().addAll(peakTypeChoice);
         peakTypeChoice.getItems().addAll(Peak.getPeakTypes());
         peakTypeChoice.valueProperty().addListener(e -> setPeakType());
@@ -391,11 +391,6 @@ public class MultipletTool implements SetChangeListener<MultipletSelection> {
 
     }
 
-    PolyChart getChart() {
-        FXMLController controller = FXMLController.getActiveController();
-        return controller.getActiveChart();
-    }
-
     void refresh() {
         chart.refresh();
         updateMultipletField(false);
@@ -479,8 +474,8 @@ public class MultipletTool implements SetChangeListener<MultipletSelection> {
     public void adjustRegion() {
         Analyzer analyzer = getAnalyzer();
         if (analyzer != null) {
-            Double ppm0;
-            Double ppm1;
+            double ppm0;
+            double ppm1;
             if (chart.getCrossHairs().hasCrosshairState("||")) {
                 ppm0 = chart.getVerticalCrosshairPositions()[0];
                 ppm1 = chart.getVerticalCrosshairPositions()[1];
@@ -501,16 +496,14 @@ public class MultipletTool implements SetChangeListener<MultipletSelection> {
                     return;
                 }
             }
-            if ((ppm0 != null) && (ppm1 != null)) {
-                analyzer.removeRegion(ppm0, ppm1);
-                analyzer.addRegion(ppm0, ppm1);
-                try {
-                    activeMultiplet = analyzer.analyzeRegion((ppm0 + ppm1) / 2);
-                    updateMultipletField(false);
-                    chart.refresh();
-                } catch (IOException ex) {
-                    log.warn(ex.getMessage(), ex);
-                }
+            analyzer.removeRegion(ppm0, ppm1);
+            analyzer.addRegion(ppm0, ppm1);
+            try {
+                activeMultiplet = analyzer.analyzeRegion((ppm0 + ppm1) / 2);
+                updateMultipletField(false);
+                chart.refresh();
+            } catch (IOException ex) {
+                log.warn(ex.getMessage(), ex);
             }
         }
     }
@@ -519,7 +512,6 @@ public class MultipletTool implements SetChangeListener<MultipletSelection> {
     public void addRegion(DatasetRegion region) {
         Analyzer analyzer = getAnalyzer();
         if (analyzer != null) {
-            System.out.println("add region " + analyzer);
             double ppm0;
             double ppm1;
             if (region == null) {
@@ -684,10 +676,8 @@ public class MultipletTool implements SetChangeListener<MultipletSelection> {
 
         System.out.println("selected peaks " + peaks);
         System.out.println("selected mult " + multiplets);
-        if (peaks.size() > 0) {
-            activeMultiplet.ifPresent(m -> {
-                activeMultiplet = Multiplets.transferPeaks(m, peaks);
-            });
+        if (!peaks.isEmpty()) {
+            activeMultiplet.ifPresent(m -> activeMultiplet = Multiplets.transferPeaks(m, peaks));
         } else if (multiplets.size() == 1) {
             Multiplet multiplet = multiplets.get(0);
 
@@ -711,7 +701,7 @@ public class MultipletTool implements SetChangeListener<MultipletSelection> {
             double center = multiplet.getCenter();
             double widthScale = 2.5;
             if ((chart != null) && !chart.getDatasetAttributes().isEmpty()) {
-                DatasetAttributes dataAttr = (DatasetAttributes) chart.getDatasetAttributes().get(0);
+                DatasetAttributes dataAttr = chart.getDatasetAttributes().get(0);
                 Double[] ppms = {center};
                 Double[] widths = {bounds * widthScale};
                 if (resize && (widthScale > 0.0)) {
