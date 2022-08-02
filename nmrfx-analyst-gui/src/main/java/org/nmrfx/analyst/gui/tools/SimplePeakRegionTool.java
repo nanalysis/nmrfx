@@ -205,7 +205,6 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
                 return;
             }
             Double[] pos = crossHairs.getCrossHairPositions(0);
-            System.out.println(pos[0] + " " + pos[1]);
             analyzer.setThreshold(pos[1]);
         }
     }

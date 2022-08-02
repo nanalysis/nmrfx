@@ -145,7 +145,6 @@ public class MultipletTool implements SetChangeListener<MultipletSelection> {
             couplingFields[iCoupling].setPrefWidth(width3);
             final int couplingIndex = iCoupling;
             couplingFields[iCoupling].setOnKeyReleased(e -> {
-                System.out.println(e.getCode());
                 if (e.getCode() == KeyCode.ENTER) {
                     couplingValueTyped(couplingIndex);
                 }
@@ -546,7 +545,6 @@ public class MultipletTool implements SetChangeListener<MultipletSelection> {
         activeMultiplet.ifPresent(m -> {
             Optional<Double> result = Multiplets.rms(m);
             if (result.isPresent()) {
-                System.out.println("rms " + result.get());
             }
         });
     }
@@ -568,7 +566,6 @@ public class MultipletTool implements SetChangeListener<MultipletSelection> {
             activeMultiplet.ifPresent(m -> {
                 Optional<Double> result = Multiplets.deviation(m);
                 if (result.isPresent()) {
-                    System.out.println("dev pos " + result.get());
                     Multiplets.addPeaksToMultiplet(m, result.get());
                     analyzer.fitMultiplet(m);
                     chart.refresh();
@@ -674,8 +671,6 @@ public class MultipletTool implements SetChangeListener<MultipletSelection> {
         List<MultipletSelection> mSet = chart.getSelectedMultiplets();
         List<Multiplet> multiplets = getSelMultiplets(mSet);
 
-        System.out.println("selected peaks " + peaks);
-        System.out.println("selected mult " + multiplets);
         if (!peaks.isEmpty()) {
             activeMultiplet.ifPresent(m -> activeMultiplet = Multiplets.transferPeaks(m, peaks));
         } else if (multiplets.size() == 1) {
@@ -727,7 +722,6 @@ public class MultipletTool implements SetChangeListener<MultipletSelection> {
                 String multNew = sBuilder.toString();
 
                 String multOrig = m.getMultiplicity();
-                System.out.println("convert " + multOrig + " " + multNew);
                 if (!multNew.equals(multOrig)) {
                     Multiplets.convertMultiplicity(m, multOrig, multNew);
                     analyzer.fitMultiplet(m);
