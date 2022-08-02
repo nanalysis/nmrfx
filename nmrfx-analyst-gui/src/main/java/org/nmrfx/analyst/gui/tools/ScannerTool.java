@@ -667,7 +667,7 @@ public class ScannerTool implements ControllerTool {
      * Disable the options if the processor is busy processing.
      * @param newStatus
      */
-    public void processorAvailableStatusUpdated(Boolean newStatus) {
+    public void processorAvailableStatusUpdated(boolean newStatus) {
         fileMenuButton.setDisable(!newStatus);
         processMenuButton.setDisable(!newStatus);
         regionMenuButton.setDisable(!newStatus);
