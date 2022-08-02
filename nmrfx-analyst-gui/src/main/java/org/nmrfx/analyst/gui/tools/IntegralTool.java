@@ -12,7 +12,6 @@ import org.nmrfx.analyst.peaks.Analyzer;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.datasets.DatasetRegion;
 import org.nmrfx.processor.datasets.Dataset;
-import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.spectra.CrossHairs;
 import org.nmrfx.processor.gui.spectra.IntegralHit;
@@ -91,9 +90,10 @@ public class IntegralTool {
         double integral = region.getIntegral();
         DatasetBase dataset = hit.getDatasetAttr().getDataset();
         dataset.setNorm(integral * dataset.getScale() / iNorm);
-        FXMLController.getActiveController().getActiveChart().refresh();
+        chart.refresh();
 
     }
+
     void setIntegralNormToValue() {
         DatasetRegion region = hit.getDatasetRegion();
         double integral = region.getIntegral();
@@ -102,9 +102,8 @@ public class IntegralTool {
         try {
             double norm = Double.parseDouble(normString);
             dataset.setNorm(integral * dataset.getScale() / norm);
-            FXMLController.getActiveController().getActiveChart().refresh();
+            chart.refresh();
         } catch (NumberFormatException ignored) {
-
         }
     }
 
@@ -112,7 +111,7 @@ public class IntegralTool {
         CrossHairs crossHairs = chart.getCrossHairs();
 
         if (crossHairs.hasCrosshairState("v0")) {
-            double ppm = FXMLController.getActiveController().getActiveChart().getVerticalCrosshairPositions()[0];
+            double ppm = chart.getVerticalCrosshairPositions()[0];
             try {
                 Analyzer.getAnalyzer((Dataset) chart.getDataset()).splitRegion(ppm);
             } catch (IOException e) {
