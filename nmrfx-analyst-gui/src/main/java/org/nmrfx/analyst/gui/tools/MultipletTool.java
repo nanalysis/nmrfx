@@ -59,7 +59,9 @@ public class MultipletTool implements SetChangeListener<MultipletSelection> {
     FXMLController controller;
     CheckBox restraintPosCheckBox;
     Slider restraintSlider;
-
+    Button mergeButton;
+    Button extractButton;
+    Button transferButton;
 
     private final PolyChart chart;
     Optional<Multiplet> activeMultiplet = Optional.empty();
@@ -200,17 +202,17 @@ public class MultipletTool implements SetChangeListener<MultipletSelection> {
         button.setOnAction(e -> fitSelected());
         peakButtons.add(button);
 
-        button = new Button("Extract", getIcon("extract"));
-        button.setOnAction(e -> extractMultiplet());
-        multipletButtons.add(button);
+        extractButton = new Button("Extract", getIcon("extract"));
+        extractButton.setOnAction(e -> extractMultiplet());
+        multipletButtons.add(extractButton);
 
-        button = new Button("Merge", getIcon("merge"));
-        button.setOnAction(e -> mergePeaks());
-        multipletButtons.add(button);
+        mergeButton = new Button("Merge", getIcon("merge"));
+        mergeButton.setOnAction(e -> mergePeaks());
+        multipletButtons.add(mergeButton);
 
-        button = new Button("Transfer", getIcon("transfer"));
-        button.setOnAction(e -> transferPeaks());
-        multipletButtons.add(button);
+        transferButton = new Button("Transfer", getIcon("transfer"));
+        transferButton.setOnAction(e -> transferPeaks());
+        multipletButtons.add(transferButton);
         for (Button button1 : peakButtons) {
             button1.setContentDisplay(ContentDisplay.TOP);
             button1.setFont(font);
@@ -288,6 +290,9 @@ public class MultipletTool implements SetChangeListener<MultipletSelection> {
             }
             Coupling coup = multiplet.getCoupling();
             updateCouplingChoices(coup);
+            mergeButton.setDisable(!mergeable());
+            transferButton.setDisable(!transferable());
+            extractButton.setDisable(!extractable());
             String peakType = Peak.typeToString(multiplet.getOrigin().getType());
             peakTypeChoice.setValue(peakType);
             double scale = multiplet.getOrigin().getPeakList().scale;
@@ -656,38 +661,121 @@ public class MultipletTool implements SetChangeListener<MultipletSelection> {
         return multiplet;
     }
 
-    public void extractMultiplet() {
-        List<MultipletSelection> mSet = chart.getSelectedMultiplets();
-        List<Multiplet> multiplets = getSelMultiplets(mSet);
-        if (multiplets.size() == 1) {
-            Multiplet multiplet = multiplets.get(0);
-            extractMultiplet(mSet, multiplet);
-            refresh();
+    private boolean extractable() {
+        if (activeMultiplet.isPresent()) {
+            var m = activeMultiplet.get();
+            return extractable(m);
+        } else {
+            return false;
         }
     }
 
-    public void transferPeaks() {
-        List<Peak> peaks = chart.getSelectedPeaks();
+    private boolean extractable(Multiplet m) {
+        boolean result = false;
+        if (m.isGenericMultiplet()) {
+            List<MultipletSelection> mSet = chart.getSelectedMultiplets();
+            List<Multiplet> multiplets = getSelMultiplets(mSet);
+            if (multiplets.size() == 1) {
+                var extractMultiplet = multiplets.get(0);
+                if (extractMultiplet == m) {
+                    List<AbsMultipletComponent> comps = m.getAbsComponentList();
+                    List<AbsMultipletComponent> comps1 = new ArrayList<>();
+                    for (MultipletSelection mSel : mSet) {
+                        if (mSel.isLine()) {
+                            comps1.add(comps.get(mSel.getLine()));
+                        }
+                    }
+                    result = !comps1.isEmpty() && comps.size() > comps1.size();
+                }
+            }
+        }
+
+        return result;
+    }
+
+    public void extractMultiplet() {
+        if (extractable()) {
+            List<MultipletSelection> mSet = chart.getSelectedMultiplets();
+            List<Multiplet> multiplets = getSelMultiplets(mSet);
+            if (multiplets.size() == 1) {
+                Multiplet multiplet = multiplets.get(0);
+                extractMultiplet(mSet, multiplet);
+                activeMultiplet = Optional.empty();
+                refresh();
+            }
+        }
+    }
+
+
+    public List<Multiplet>  getTransferMultiplets() {
         List<MultipletSelection> mSet = chart.getSelectedMultiplets();
         List<Multiplet> multiplets = getSelMultiplets(mSet);
+        return multiplets;
+    }
 
-        if (!peaks.isEmpty()) {
-            activeMultiplet.ifPresent(m -> activeMultiplet = Multiplets.transferPeaks(m, peaks));
-        } else if (multiplets.size() == 1) {
+    private boolean transferable() {
+        boolean result = false;
+        if (activeMultiplet.isPresent()) {
+            List<Multiplet> multiplets = getTransferMultiplets();
+            if (multiplets.size() == 1) {
+                Multiplet multiplet = multiplets.get(0);
+                if (multiplet != activeMultiplet.get()) {
+                    result = extractable(multiplet);
+                }
+            }
+        }
+        return result;
+    }
+
+
+    public void transferPeaks() {
+        List<Multiplet> multiplets = getTransferMultiplets();
+
+       if (multiplets.size() == 1) {
             Multiplet multiplet = multiplets.get(0);
-
+            List<MultipletSelection> mSet = chart.getSelectedMultiplets();
             Multiplet newMultiplet = extractMultiplet(mSet, multiplet);
             activeMultiplet.ifPresent(m -> activeMultiplet = Multiplets.transferPeaks(m, List.of(newMultiplet.getPeakDim().getPeak())));
         }
         refresh();
     }
 
-    public void mergePeaks() {
+    private  List<Peak> getMergePeaks(Peak activePeak) {
         List<Peak> peaks = chart.getSelectedPeaks();
-        if (!peaks.isEmpty()) {
-            activeMultiplet = Multiplets.mergePeaks(peaks);
-            refresh();
+        List<MultipletSelection> mSet = chart.getSelectedMultiplets();
+        List<Multiplet> multiplets = getSelMultiplets(mSet);
+
+        for (Multiplet multiplet:multiplets) {
+            if (!peaks.contains(multiplet.getOrigin())) {
+                peaks.add(multiplet.getOrigin());
+            }
         }
+        if (!peaks.contains(activePeak)) {
+            peaks.add(activePeak);
+        }
+        return peaks;
+    }
+
+    private boolean mergeable() {
+        if (activeMultiplet.isPresent()) {
+            var m = activeMultiplet.get();
+            return getMergePeaks(m.getOrigin()).size() > 1;
+        } else {
+            return false;
+        }
+    }
+
+    public void mergePeaks() {
+        activeMultiplet.ifPresent(m -> {
+            List<Peak> peaks = getMergePeaks(m.getOrigin());
+            if (peaks.size() > 1) {
+                activeMultiplet = Multiplets.mergePeaks(peaks);
+                if (popOver != null) {
+                    popOver.hide();
+                }
+                refresh();
+            }
+        });
     }
 
     public void refreshPeakView(Multiplet multiplet, boolean resize) {
