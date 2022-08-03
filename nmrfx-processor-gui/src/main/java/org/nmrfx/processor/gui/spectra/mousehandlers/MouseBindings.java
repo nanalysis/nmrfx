@@ -25,6 +25,7 @@ import javafx.scene.input.MouseEvent;
 import javafx.util.Duration;
 import org.nmrfx.datasets.DatasetRegion;
 import org.nmrfx.processor.gui.CanvasAnnotation;
+import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.MainApp;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.annotations.AnnoText;
@@ -58,7 +59,6 @@ public class MouseBindings {
     PolyChart chart;
     MouseHandler handler;
     MouseEvent mouseEvent;
-    Cursor previousCursor = null;
     double[] dragStart = new double[2];
     boolean moved = false;
     boolean mouseDown = false;
@@ -130,10 +130,8 @@ public class MouseBindings {
         if ((deltaX > tol) || (deltaY > tol)) {
             moved = true;
         }
-        if (!isPopupTrigger(mouseEvent)) {
-            if (handler != null) {
-                handler.mouseDragged(mouseEvent);
-            }
+        if (!isPopupTrigger(mouseEvent) && (handler != null)) {
+            handler.mouseDragged(mouseEvent);
         }
     }
 
@@ -169,10 +167,7 @@ public class MouseBindings {
             setCursor(Cursor.H_RESIZE);
             return;
         } else {
-            Cursor currentCursor = chart.getCanvas().getCursor();
-            if (currentCursor == Cursor.H_RESIZE || currentCursor == Cursor.V_RESIZE) {
-                chart.setCanvasCursor(Cursor.DEFAULT);
-            }
+            unsetCursor();
         }
 
         if (hit.isPresent()) {
@@ -182,13 +177,11 @@ public class MouseBindings {
             if (!hit.get().isLine()) {
                 MultipletSelection multipletSelection = hit.get();
                 Bounds bounds = multipletSelection.getBounds();
-                if (bounds != null) {
-                    if (!waitingForPopover.get()) {
-                        currentBounds = bounds;
-                        currentSelection = multipletSelection;
-                        waitingForPopover.set(true);
-                        showAfterDelay();
-                    }
+                if ((bounds != null) && !waitingForPopover.get()) {
+                    currentBounds = bounds;
+                    currentSelection = multipletSelection;
+                    waitingForPopover.set(true);
+                    showAfterDelay();
                 }
             }
             setCursor(Cursor.HAND);
@@ -199,14 +192,12 @@ public class MouseBindings {
                 if (handler == null) {
                     handler = new AnnotationMouseHandlerHandler(this, annotation);
                 }
-                if (!waitingForPopover.get()) {
-                    if (annotation instanceof AnnoText) {
-                        var annoText = (AnnoText) annotation;
-                        currentBounds = annoText.getBounds();
-                        waitingForPopover.set(true);
-                        currentSelection = annotation;
-                        showAfterDelay();
-                    }
+                if (!waitingForPopover.get() && (annotation instanceof AnnoText)) {
+                    var annoText = (AnnoText) annotation;
+                    currentBounds = annoText.getBounds();
+                    waitingForPopover.set(true);
+                    currentSelection = annotation;
+                    showAfterDelay();
                 }
                 setCursor(Cursor.HAND);
             } else {
@@ -241,18 +232,16 @@ public class MouseBindings {
     }
 
     private void setCursor(Cursor cursor) {
-        Cursor currentCursor = chart.getCanvas().getCursor();
-        if (currentCursor != cursor) {
-            previousCursor = currentCursor;
-            chart.setCanvasCursor(cursor);
+        FXMLController controller = chart.getController();
+        if (controller.getCurrentCursor() != cursor) {
+            controller.setCurrentCursor(cursor);
         }
     }
 
     private void unsetCursor() {
-        Cursor currentCursor = chart.getCanvas().getCursor();
-        if ((previousCursor != null) && (currentCursor != previousCursor)) {
-            chart.setCanvasCursor(previousCursor);
-            chart.getCanvas().setCursor(previousCursor);
+        FXMLController controller = chart.getController();
+        if (controller.getCurrentCursor() != controller.getCursor()) {
+            controller.setCurrentCursor(controller.getCursor());
         }
     }
 
@@ -278,8 +267,6 @@ public class MouseBindings {
         int border = chart.hitBorder(mouseX, mouseY);
         if (chart.isSelected()) {
             Optional<Integer> hitCorner = hitChartCorner(mouseX, mouseY, 10);
-            if (hitCorner.isPresent()) {
-            }
             return;
         }
 
@@ -318,7 +305,6 @@ public class MouseBindings {
                         if (handler == null) {
                             IntegralMouseHandlerHandler.handler(this).ifPresent(this::setHandler);
                         }
-                        //selectedRegion = chart.selectIntegral(x, y);
                     }
                     if (handler == null) {
                         chart.selectPeaks(mouseX, mouseY, false);
@@ -356,10 +342,8 @@ public class MouseBindings {
         mouseDown = false;
         MouseEvent mouseEvent = (MouseEvent) event;
         boolean menuShowing = chart.getSpectrumMenu().chartMenu.isShowing();
-        if (!menuShowing && !mouseEvent.isPopupTrigger()) {
-            if (handler != null) {
-                handler.mouseReleased(mouseEvent);
-            }
+        if (!menuShowing && !mouseEvent.isPopupTrigger() && (handler != null)) {
+            handler.mouseReleased(mouseEvent);
         }
         handler = null;
     }

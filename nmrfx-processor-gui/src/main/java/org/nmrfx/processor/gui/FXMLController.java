@@ -38,6 +38,7 @@ import javafx.fxml.Initializable;
 import javafx.geometry.Bounds;
 import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
+import javafx.scene.Cursor;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -169,6 +170,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
     Set<ControllerTool> tools = new HashSet<>();
 
     SimpleBooleanProperty processControllerVisible = new SimpleBooleanProperty(false);
+    SimpleObjectProperty<Cursor> cursorProperty = new SimpleObjectProperty<>(Cursor.CROSSHAIR);
 
     private BooleanProperty minBordersProperty() {
         if (minBorders == null) {
@@ -229,6 +231,14 @@ public class FXMLController implements  Initializable, PeakNavigable {
 
     public void setInitialDirectory(File file) {
         initialDir = file;
+    }
+
+    public SimpleObjectProperty<Cursor> getCursorProperty() {
+        return cursorProperty;
+    }
+
+    public Cursor getCursor() {
+        return cursorProperty.get();
     }
 
     void close() {
@@ -1287,6 +1297,31 @@ public class FXMLController implements  Initializable, PeakNavigable {
         }
         phaser = new Phaser(this, phaserBox);
         processorPane.getChildren().addListener(this::updateStageSize);
+        cursorProperty.addListener( e -> setCursor());
+    }
+
+    public void setCursor(Cursor cursor) {
+        cursorProperty.set(cursor);
+    }
+
+    public void setCurrentCursor(Cursor cursor) {
+        canvas.setCursor(cursor);
+    }
+
+    public Cursor getCurrentCursor() {
+        return canvas.getCursor();
+    }
+
+    void setCursor() {
+        Cursor cursor = cursorProperty.getValue();
+        canvas.setCursor(cursor);
+        for (PolyChart chart : charts) {
+            if (cursor.toString().equals("CROSSHAIR")) {
+                chart.getCrossHairs().setCrossHairState(true);
+            } else {
+                chart.getCrossHairs().setCrossHairState(false);
+            }
+        }
     }
 
     public void resizeCanvases(double width, double height) {
