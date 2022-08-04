@@ -1252,9 +1252,9 @@ public class ChartProcessor {
             complex[iDim] = data.isComplex(iDim);
         }
         processorController.updateDimChoice(complex);
-        reloadData();
         processorController.refManager.resetData();
         processorController.refManager.setupItems(0);
+        reloadData();
         processorController.updateParTable(data);
         if (!clearOps) {
             setScripts(saveHeaderList, listOfScripts);
