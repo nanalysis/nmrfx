@@ -428,6 +428,7 @@ public class MultipletTool implements SetChangeListener<MultipletSelection> {
                 splitMultiplet();
             }
         }
+        activeMultiplet = Optional.empty();
         if (popOver != null) {
             popOver.hide();
         }
@@ -501,8 +502,8 @@ public class MultipletTool implements SetChangeListener<MultipletSelection> {
                     return;
                 }
             }
-            analyzer.removeRegion(ppm0, ppm1);
-            analyzer.addRegion(ppm0, ppm1);
+            analyzer.removeRegion(ppm0, ppm1, true);
+            analyzer.addRegion(ppm0, ppm1, true);
             try {
                 activeMultiplet = analyzer.analyzeRegion((ppm0 + ppm1) / 2);
                 updateMultipletField(false);
@@ -510,6 +511,33 @@ public class MultipletTool implements SetChangeListener<MultipletSelection> {
             } catch (IOException ex) {
                 log.warn(ex.getMessage(), ex);
             }
+        }
+    }
+
+    public void mergeRegion(List<Peak> peaks) {
+        Analyzer analyzer = getAnalyzer();
+        if (analyzer != null) {
+            double ppmMin = Double.MAX_VALUE;
+            double ppmMax = Double.NEGATIVE_INFINITY;
+            for (Peak peak : peaks) {
+                Multiplet multiplet = peak.getPeakDim(0).getMultiplet();
+                var optRegion = analyzer.getRegion(multiplet.getCenter());
+                double ppm0;
+                double ppm1;
+                if (optRegion.isPresent()) {
+                    var region = optRegion.get();
+                    ppm0 = region.getRegionStart(0);
+                    ppm1 = region.getRegionEnd(0);
+                } else {
+                    double[] minMax = Multiplets.getBoundsOfMultiplet(multiplet, analyzer.getTrimRatio());
+                    ppm0 = minMax[0];
+                    ppm1 = minMax[1];
+                }
+                analyzer.removeRegion(ppm0, ppm1, false);
+                ppmMin = Math.min(ppmMin, ppm0);
+                ppmMax = Math.max(ppmMax, ppm1);
+            }
+            analyzer.addRegion(ppmMin, ppmMax, false);
         }
     }
 
@@ -522,7 +550,7 @@ public class MultipletTool implements SetChangeListener<MultipletSelection> {
             if (region == null) {
                 ppm0 = chart.getVerticalCrosshairPositions()[0];
                 ppm1 = chart.getVerticalCrosshairPositions()[1];
-                analyzer.addRegion(ppm0, ppm1);
+                analyzer.addRegion(ppm0, ppm1, true);
             } else {
                 ppm0 = region.getRegionStart(0);
                 ppm1 = region.getRegionEnd(0);
@@ -778,6 +806,7 @@ public class MultipletTool implements SetChangeListener<MultipletSelection> {
         activeMultiplet.ifPresent(m -> {
             List<Peak> peaks = getMergePeaks(m.getOrigin());
             if (peaks.size() > 1) {
+                mergeRegion(peaks);
                 Multiplets.mergePeaks(peaks);
                 activeMultiplet = Optional.empty();
                 chart.clearSelectedMultiplets();

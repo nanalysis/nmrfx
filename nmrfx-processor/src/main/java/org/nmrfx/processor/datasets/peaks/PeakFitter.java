@@ -769,8 +769,6 @@ public class PeakFitter {
         int[] cpt = new int[dataDim];
         double[] width = new double[dataDim];
         double result;
-
-        //double guesses[] = new double[3*nPeaks];
         int nPeaks = peaks.length;
 
         if (i0 > i1) {
