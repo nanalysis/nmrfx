@@ -1820,7 +1820,7 @@ public class BrukerData implements NMRData {
 
     @Override
     public boolean isFID() {
-        return !isFrequencyDim(0);
+        return findFIDFiles(fpath);
     }
 
     @Override
