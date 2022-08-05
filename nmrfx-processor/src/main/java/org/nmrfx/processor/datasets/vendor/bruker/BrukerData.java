@@ -109,6 +109,7 @@ public class BrukerData implements NMRData {
         }
         this.fpath = path;
         this.nusFile = nusFile;
+        hasFID = findFIDFiles(this.fpath);
         File file = new File(path);
         openParFile(file);
         openDataFile(path);
@@ -128,6 +129,7 @@ public class BrukerData implements NMRData {
         File file = new File(path);
         this.fpath = path;
         this.nusFile = null;
+        hasFID = findFIDFiles(this.fpath);
         openParFile(file.getParentFile().getParentFile().getParentFile());
         scale = 1.0;
     }
@@ -1820,7 +1822,7 @@ public class BrukerData implements NMRData {
 
     @Override
     public boolean isFID() {
-        return findFIDFiles(fpath);
+        return hasFID;
     }
 
     @Override
