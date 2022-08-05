@@ -220,36 +220,39 @@ public class Multiplet implements PeakOrMulti, Comparable {
 
     public Optional<Multiplet> split(double ppm) {
         List<RelMultipletComponent> relComps = getRelComponentList();
-        List<RelMultipletComponent> removeComps = new ArrayList<>();
+        List<AbsMultipletComponent> removeAbsComps = new ArrayList<>();
+        List<AbsMultipletComponent> keepAbsComps = new ArrayList<>();
         for (RelMultipletComponent comp : relComps) {
             AbsMultipletComponent absComp = comp.toAbsolute();
             if (absComp.getOffset() < ppm) {
-                removeComps.add(comp);
+                removeAbsComps.add(absComp);
+            } else {
+                keepAbsComps.add(absComp);
             }
         }
         Optional<Multiplet> result = Optional.empty();
-        if (!removeComps.isEmpty()) {
+        if (!removeAbsComps.isEmpty()) {
             Peak peak = getOrigin();
             PeakList peakList = peak.getPeakList();
             Peak newPeak = peakList.getNewPeak();
             PeakDim newPeakDim = newPeak.getPeakDim(0);
             Multiplet newMultiplet = newPeakDim.getMultiplet();
-            newMultiplet.moveCouplings(removeComps);
+            moveCouplings(this,keepAbsComps, newMultiplet, removeAbsComps);
             result = Optional.of(newMultiplet);
         }
         return result;
     }
 
-    public void moveCouplings(List<RelMultipletComponent> relComps) {
-        Multiplet oldMultiplet = relComps.get(0).multiplet;
-        List<AbsMultipletComponent> newComps = new ArrayList<>();
-        for (RelMultipletComponent comp : relComps) {
-            AbsMultipletComponent newComp = comp.toAbsolute();
-            newComp.multiplet = this;
-            newComps.add(newComp);
+    public static void moveCouplings(Multiplet keepMultiplet, List<AbsMultipletComponent> keepAbsComps,
+                                     Multiplet newMultiplet, List<AbsMultipletComponent> moveAbsComps) {
+        for (var comp:keepAbsComps) {
+            comp.multiplet = keepMultiplet;
         }
-        updateCoupling(newComps);
-        oldMultiplet.removePeakComponents(relComps);
+        for (var comp:moveAbsComps) {
+            comp.multiplet = newMultiplet;
+        }
+        keepMultiplet.updateCoupling(keepAbsComps);
+        newMultiplet.updateCoupling(moveAbsComps);
     }
 
     public void removePeakComponent(int index) {

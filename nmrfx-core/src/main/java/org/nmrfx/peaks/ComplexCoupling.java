@@ -53,6 +53,7 @@ public class ComplexCoupling extends Coupling {
             sumpPPM += comp.getOffset();
             sumVolume += comp.getVolume();
             maxIntensity = Math.max(maxIntensity, comp.getIntensity());
+            comp.multiplet = multiplet;
         }
         double sf = multiplet.getPeakDim().getSpectralDimObj().getSf();
         double center = sumpPPM / absComponents.size();
