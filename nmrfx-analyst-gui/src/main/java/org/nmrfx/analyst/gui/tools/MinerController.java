@@ -53,6 +53,7 @@ public class MinerController {
 
     ScannerTool scannerTool;
     List<Menu> menus = new ArrayList<>();
+    private MenuButton adjusterMenu = null;
 
     public MinerController(ScannerTool scannerTool) {
         this.scannerTool = scannerTool;
@@ -61,7 +62,7 @@ public class MinerController {
 
     private void makeMenus() {
         ToolBar scannerBar = scannerTool.getToolBar();
-        MenuButton adjusterMenu = new MenuButton("Adjust");
+        adjusterMenu = new MenuButton("Adjust");
         Menu normMenu = new Menu("Normalize");
         Menu alignMenu = new Menu("Align");
         adjusterMenu.getItems().addAll(normMenu, alignMenu);
@@ -77,7 +78,6 @@ public class MinerController {
         undoNormMenuItem.setOnAction(e -> undoNormalize(e));
         normMenu.getItems().addAll(maxMenuItem, medianMenuItem, integralMenuItem, undoNormMenuItem);
 
-        MenuButton alignButton = new MenuButton("Align");
         MenuItem maxAlignMenuItem = new MenuItem("By Max");
         maxAlignMenuItem.setOnAction(e -> alignToMax(e));
         MenuItem covMenuItem = new MenuItem("By Covariance");
@@ -93,10 +93,22 @@ public class MinerController {
         menus.add(alignMenu);
     }
 
-    public void setDisable(boolean state) {
+    /**
+     * Set the disabled state of the sub menu items.
+     * @param state If true, disable sub menu items.
+     */
+    public void setDisableSubMenus(boolean state) {
         for (var menu : menus) {
             menu.setDisable(state);
         }
+    }
+
+    /**
+     * Set the disabled state of the adjuster menu button.
+     * @param state If true, disable button.
+     */
+    public void disableController(boolean state) {
+        adjusterMenu.setDisable(state);
     }
 
     @FXML
