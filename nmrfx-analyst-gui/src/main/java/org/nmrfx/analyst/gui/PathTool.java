@@ -228,7 +228,7 @@ public class PathTool implements PeakNavigable, ControllerTool {
         // The different control items end up with different heights based on font and icon size,
         // set all the items to use the same height
         toolBar.heightProperty().addListener((observable, oldValue, newValue) -> {
-            double height = actionMenu.prefHeight(Control.USE_COMPUTED_SIZE);
+            double height = actionMenu.prefHeight(Region.USE_COMPUTED_SIZE);
             List<Node> toolBarItems = toolBar.getItems();
             // don't adjust the height of the close button which is always at index 0
             for (int i = 1; i < toolBarItems.size(); i++) {

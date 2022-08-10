@@ -79,10 +79,10 @@ public class MainApp extends Application {
     static boolean isAnalyst = false;
     static Font defaultFont;
     // Icon and font sizes for icon buttons
-    public static String ICON_SIZE_STR = "16px";
-    public static String ICON_FONT_SIZE_STR = "7pt";
+    public static final String ICON_SIZE_STR = "16px";
+    public static final String ICON_FONT_SIZE_STR = "7pt";
     // The default font size
-    public static String REG_FONT_SIZE_STR = "9pt";
+    public static final String REG_FONT_SIZE_STR = "9pt";
 
     public static void closeAll() {
         for (PolyChart chart : PolyChart.CHARTS) {

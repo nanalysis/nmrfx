@@ -16,6 +16,7 @@ import javafx.scene.control.ToolBar;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import org.nmrfx.processor.gui.FXMLController;
@@ -149,7 +150,7 @@ public class SpectrumComparator {
         toolBar1.getItems().add(filler5a);
         toolBar2.getItems().add(filler5b);
         toolBar1.heightProperty().addListener((observable, oldValue, newValue) -> {
-            double height = datasetColorPickers[0].prefHeight(Control.USE_COMPUTED_SIZE);
+            double height = datasetColorPickers[0].prefHeight(Region.USE_COMPUTED_SIZE);
             List<Node> toolBar1Items = toolBar1.getItems();
             // don't adjust the height of the close button which is always at index 0
             for (int i = 1; i < toolBar1Items.size(); i++) {

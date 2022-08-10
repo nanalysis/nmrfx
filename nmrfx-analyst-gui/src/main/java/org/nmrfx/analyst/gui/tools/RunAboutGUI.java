@@ -608,7 +608,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         // The different control items end up with different heights based on font and icon size,
         // set all the items to use the same height
         this.navigatorToolBar.heightProperty().addListener((observable, oldValue, newValue) -> {
-            double height = peakIdField.prefHeight(Control.USE_COMPUTED_SIZE);
+            double height = peakIdField.prefHeight(Region.USE_COMPUTED_SIZE);
             List<Node> navToolBarItems = this.navigatorToolBar.getItems();
             // don't adjust the height of the close button which is always at index 0
             for (int i = 1; i < navToolBarItems.size(); i++) {

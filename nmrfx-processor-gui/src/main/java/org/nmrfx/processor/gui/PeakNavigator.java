@@ -27,6 +27,7 @@ import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
 import javafx.scene.paint.Color;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakDim;
@@ -210,7 +211,7 @@ public class PeakNavigator implements PeakListener {
         // The different control items end up with different heights based on font and icon size,
         // set all the items to use the same height
         this.navigatorToolBar.heightProperty().addListener((observable, oldValue, newValue) -> {
-            double height = peakIdField.prefHeight(Control.USE_COMPUTED_SIZE);
+            double height = peakIdField.prefHeight(Region.USE_COMPUTED_SIZE);
             List<Node> navToolBarItems = this.navigatorToolBar.getItems();
             // don't adjust the height of the close button which is always at index 0
             for (int i = 1; i < navToolBarItems.size(); i++) {
