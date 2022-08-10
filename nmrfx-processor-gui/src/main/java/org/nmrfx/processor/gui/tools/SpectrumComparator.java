@@ -4,6 +4,7 @@ import de.jensd.fx.glyphs.GlyphsDude;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Consumer;
 
 import javafx.scene.Node;
@@ -150,19 +151,20 @@ public class SpectrumComparator {
         toolBar1.getItems().add(filler5a);
         toolBar2.getItems().add(filler5b);
         toolBar1.heightProperty().addListener((observable, oldValue, newValue) -> {
-            double height = datasetColorPickers[0].prefHeight(Region.USE_COMPUTED_SIZE);
-            List<Node> toolBar1Items = toolBar1.getItems();
             // don't adjust the height of the close button which is always at index 0
-            for (int i = 1; i < toolBar1Items.size(); i++) {
-                Node node = toolBar1Items.get(i);
-                if (node instanceof Control) {
-                    ((Control) node).setMaxHeight(height);
+            List<Node> toolBar1Items = this.toolBar1.getItems().subList(1, this.toolBar1.getItems().size());
+            Optional<Double> height = toolBar1Items.stream().map(node -> node.prefHeight(Region.USE_COMPUTED_SIZE)).max(Double::compare);
+            if (height.isPresent()) {
+                for (Node node : toolBar1Items) {
+                    if (node instanceof Control) {
+                        ((Control) node).setMaxHeight(height.get());
+                    }
                 }
-            }
-            List<Node> toolBar2Items = toolBar2.getItems();
-            for (Node node : toolBar2Items) {
-                if (node instanceof Control) {
-                    ((Control) node).setMaxHeight(height);
+                List<Node> toolBar2Items = toolBar2.getItems();
+                for (Node node : toolBar2Items) {
+                    if (node instanceof Control) {
+                        ((Control) node).setMaxHeight(height.get());
+                    }
                 }
             }
         });

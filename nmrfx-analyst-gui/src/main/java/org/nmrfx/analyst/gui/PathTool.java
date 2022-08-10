@@ -35,6 +35,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Consumer;
 
 /**
@@ -228,19 +229,20 @@ public class PathTool implements PeakNavigable, ControllerTool {
         // The different control items end up with different heights based on font and icon size,
         // set all the items to use the same height
         toolBar.heightProperty().addListener((observable, oldValue, newValue) -> {
-            double height = actionMenu.prefHeight(Region.USE_COMPUTED_SIZE);
-            List<Node> toolBarItems = toolBar.getItems();
             // don't adjust the height of the close button which is always at index 0
-            for (int i = 1; i < toolBarItems.size(); i++) {
-                Node node = toolBarItems.get(i);
-                if (node instanceof Control) {
-                    ((Control) node).setMaxHeight(height);
+            List<Node> toolBarItems = this.toolBar.getItems().subList(1, this.toolBar.getItems().size());
+            Optional<Double> height = toolBarItems.stream().map(node -> node.prefHeight(Region.USE_COMPUTED_SIZE)).max(Double::compare);
+            if (height.isPresent()) {
+                for (Node node : toolBarItems) {
+                    if (node instanceof Control) {
+                        ((Control) node).setMaxHeight(height.get());
+                    }
                 }
-            }
-            List<Node> fitBarItems = fitBar.getItems();
-            for (Node node : fitBarItems) {
-                if (node instanceof Control) {
-                    ((Control) node).setMaxHeight(height);
+                List<Node> fitBarItems = fitBar.getItems();
+                for (Node node : fitBarItems) {
+                    if (node instanceof Control) {
+                        ((Control) node).setPrefHeight(height.get());
+                    }
                 }
             }
         });

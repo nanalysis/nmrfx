@@ -106,11 +106,10 @@ public class SpectrumMeasureBar {
         Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "Close", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
         closeButton.setOnAction(e -> close());
         absModeButton = new ToggleButton("SF");
-        absModeButton.setPrefWidth(prefWidthLabelsButtons);
         gridModeButton = new ToggleButton("Grid");
-        gridModeButton.setPrefWidth(prefWidthLabelsButtons);
         absModeButton.setOnAction(e -> update());
         gridModeButton.setOnAction(e -> update());
+        absModeButton.prefWidthProperty().bind(gridModeButton.widthProperty());
         Button sdevButton = new Button("SD");
         sdevButton.getStyleClass().add("toolButton");
         sdevButton.setPrefWidth(prefWidthLabelsButtons);
