@@ -5,9 +5,12 @@ import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
+
+import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.ColorPicker;
 import javafx.scene.control.ContentDisplay;
+import javafx.scene.control.Control;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ToolBar;
 import javafx.scene.layout.HBox;
@@ -124,7 +127,9 @@ public class SpectrumComparator {
         toolBar1.getItems().addAll(sampleFields[0]);
 
         Pane filler2 = new Pane();
-        filler2.setMinWidth(30);
+        // filler2 is placeholder width for close button in toolbar2, bind to width so color pickers in
+        // both toolbars align
+        filler2.minWidthProperty().bind(closeButton.widthProperty());
         Pane filler1b = new Pane();
         HBox.setHgrow(filler1b, Priority.ALWAYS);
 
@@ -143,6 +148,23 @@ public class SpectrumComparator {
 
         toolBar1.getItems().add(filler5a);
         toolBar2.getItems().add(filler5b);
+        toolBar1.heightProperty().addListener((observable, oldValue, newValue) -> {
+            double height = datasetColorPickers[0].prefHeight(Control.USE_COMPUTED_SIZE);
+            List<Node> toolBar1Items = toolBar1.getItems();
+            // don't adjust the height of the close button which is always at index 0
+            for (int i = 1; i < toolBar1Items.size(); i++) {
+                Node node = toolBar1Items.get(i);
+                if (node instanceof Control) {
+                    ((Control) node).setMaxHeight(height);
+                }
+            }
+            List<Node> toolBar2Items = toolBar2.getItems();
+            for (Node node : toolBar2Items) {
+                if (node instanceof Control) {
+                    ((Control) node).setMaxHeight(height);
+                }
+            }
+        });
     }
 
     void setDatasetState() {

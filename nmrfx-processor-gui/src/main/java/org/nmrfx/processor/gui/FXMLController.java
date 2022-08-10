@@ -1681,10 +1681,10 @@ public class FXMLController implements  Initializable, PeakNavigable {
 
     public void showSpectrumMeasureBar() {
         if (measureBar == null) {
-            GridPane navBar = new GridPane();
+            VBox vBox = new VBox();
             measureBar = new SpectrumMeasureBar(this, this::removeSpectrumMeasureBar);
-            measureBar.buildBar(navBar);
-            bottomBox.getChildren().add(navBar);
+            measureBar.buildBar(vBox);
+            bottomBox.getChildren().add(vBox);
         }
     }
 
@@ -1702,10 +1702,10 @@ public class FXMLController implements  Initializable, PeakNavigable {
 
     public void showAnalyzerBar() {
         if (analyzerBar == null) {
-            GridPane navBar = new GridPane();
+            VBox vBox = new VBox();
             analyzerBar = new AnalyzerBar(this, this::removeAnalyzerBar);
-            analyzerBar.buildBar(navBar);
-            bottomBox.getChildren().add(navBar);
+            analyzerBar.buildBar(vBox);
+            bottomBox.getChildren().add(vBox);
         }
     }
 

@@ -29,8 +29,9 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ContentDisplay;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
+import javafx.scene.control.ToolBar;
 import javafx.scene.layout.GridPane;
-import javafx.scene.text.Font;
+import javafx.scene.layout.VBox;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.datasets.RegionData;
 
@@ -42,6 +43,7 @@ public class AnalyzerBar {
 
     FXMLController controller;
     Consumer closeAction = null;
+    VBox vBox;
     GridPane gridPane;
     DatasetBase dataset;
     private final Map<String, TextField> fieldMap = new HashMap<>();
@@ -53,11 +55,16 @@ public class AnalyzerBar {
         this.closeAction = closeAction;
     }
 
-    public void buildBar(GridPane gridPane) {
-        this.gridPane = gridPane;
-        Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.GRAPHIC_ONLY);
+    public void buildBar(VBox vBox) {
+        this.vBox = vBox;
+        gridPane = new GridPane();
+        gridPane.setVgap(5);
+        gridPane.setHgap(5);
+        ToolBar toolBar = new ToolBar();
+        Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "Close", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
         closeButton.setOnAction(e -> close());
-        gridPane.add(closeButton, 0, 0);
+        toolBar.getItems().addAll(closeButton, gridPane);
+        vBox.getChildren().add(toolBar);
         Button analyzeButton = new Button("Analyze");
         analyzeButton.setOnAction(e -> analyze(e));
         analyzeButton.setPrefWidth(75.0);
@@ -86,8 +93,8 @@ public class AnalyzerBar {
         }
     }
 
-    public GridPane getToolBar() {
-        return gridPane;
+    public VBox getToolBar() {
+        return vBox;
     }
 
     public void close() {
