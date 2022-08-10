@@ -135,10 +135,8 @@ public class SpectrumStatusBar {
     }
 
     public void buildBar(ToolBar btoolBar) {
-        String iconSize = "16px";
-        String fontSize = "7pt";
         this.btoolBar = btoolBar;
-        peakPickButton = GlyphsDude.createIconButton(FontAwesomeIcon.BULLSEYE, "Pick", iconSize, fontSize, ContentDisplay.LEFT);
+        peakPickButton = GlyphsDude.createIconButton(FontAwesomeIcon.BULLSEYE, "Pick", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.LEFT);
         peakPickButton.setOnAction(e -> PeakPicking.peakPickActive(controller, false, null));
 
         setupTools();

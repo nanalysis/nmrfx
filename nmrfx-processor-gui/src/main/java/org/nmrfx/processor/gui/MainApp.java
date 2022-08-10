@@ -49,6 +49,8 @@ import org.nmrfx.processor.gui.project.GUIProject;
 import org.nmrfx.processor.utilities.WebConnect;
 import org.nmrfx.project.ProjectBase;
 import org.python.util.InteractiveInterpreter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.beans.PropertyChangeSupport;
 import java.io.File;
@@ -63,7 +65,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class MainApp extends Application {
-
+    private static final Logger log = LoggerFactory.getLogger(MainApp.class);
     public static ArrayList<Stage> stages = new ArrayList<>();
     public static PreferencesController preferencesController;
     public static DocWindowController docWindowController;
@@ -76,6 +78,11 @@ public class MainApp extends Application {
     protected static MainApp mainApp = null;
     static boolean isAnalyst = false;
     static Font defaultFont;
+    // Icon and font sizes for icon buttons
+    public static String ICON_SIZE_STR = "16px";
+    public static String ICON_FONT_SIZE_STR = "7pt";
+    // The default font size
+    public static String REG_FONT_SIZE_STR = "9pt";
 
     public static void closeAll() {
         for (PolyChart chart : PolyChart.CHARTS) {
@@ -174,6 +181,20 @@ public class MainApp extends Application {
 
     public static boolean isMac() {
         return SystemUtils.IS_OS_MAC;
+    }
+
+    /**
+     * Set the default font size of the provided stage with the provided
+     * font size string.
+     * @param stage The stage to set the font for
+     * @param fontSizeStr A string font size ex. '9pt'
+     */
+    public static void setStageFontSize(Stage stage, String fontSizeStr) {
+        if (stage != null && stage.getScene() != null) {
+            stage.getScene().getRoot().setStyle("-fx-font-size: " + fontSizeStr);
+        } else {
+            log.info("Unable to set font size for stage.");
+        }
     }
 
     public static MenuBar getMenuBar() {

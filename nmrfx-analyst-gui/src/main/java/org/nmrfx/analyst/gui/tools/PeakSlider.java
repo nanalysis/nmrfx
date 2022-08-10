@@ -43,6 +43,7 @@ import org.nmrfx.peaks.PeakList;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.ControllerTool;
 import org.nmrfx.processor.gui.FXMLController;
+import org.nmrfx.processor.gui.MainApp;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
 import org.nmrfx.structure.chemistry.Molecule;
@@ -101,37 +102,34 @@ public class PeakSlider implements ControllerTool {
     public void initSlider(ToolBar toolBar) {
         this.sliderToolBar = toolBar;
 
-        String iconSize = "16px";
-        String fontSize = "7pt";
         ArrayList<Button> buttons = new ArrayList<>();
-        Button bButton;
-        Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "Close", iconSize, fontSize, ContentDisplay.TOP);
+        Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "Close", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
         closeButton.setOnAction(e -> close());
 
-        shiftFreezeButton = GlyphsDude.createIconButton(FontAwesomeIcon.CODE_FORK, "Shift+Freeze", iconSize, fontSize, ContentDisplay.TOP);
+        shiftFreezeButton = GlyphsDude.createIconButton(FontAwesomeIcon.CODE_FORK, "Shift+Freeze", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
         shiftFreezeButton.setOnMouseClicked(e -> evalMatchCriteria(selPeaks));
         buttons.add(shiftFreezeButton);
 
-        freezeButton = GlyphsDude.createIconButton(FontAwesomeIcon.LOCK, "Freeze", iconSize, fontSize, ContentDisplay.TOP);
+        freezeButton = GlyphsDude.createIconButton(FontAwesomeIcon.LOCK, "Freeze", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
         freezeButton.setOnAction(e -> freezePeaks(e));
         freezeButton.setOnMouseClicked(e -> freezePeaks(e));
         buttons.add(freezeButton);
 
-        thawButton = GlyphsDude.createIconButton(FontAwesomeIcon.UNLOCK, "Thaw", iconSize, fontSize, ContentDisplay.TOP);
+        thawButton = GlyphsDude.createIconButton(FontAwesomeIcon.UNLOCK, "Thaw", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
         thawButton.setOnAction(e -> thawPeaks(e));
         thawButton.setOnMouseClicked(e -> thawPeaks(e));
         buttons.add(thawButton);
 
-        tweakFreezeButton = GlyphsDude.createIconButton(FontAwesomeIcon.BULLSEYE, "Tweak+Freeze", iconSize, fontSize, ContentDisplay.TOP);
+        tweakFreezeButton = GlyphsDude.createIconButton(FontAwesomeIcon.BULLSEYE, "Tweak+Freeze", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
         tweakFreezeButton.setOnAction(e -> tweakPeaks(e));
         tweakFreezeButton.setOnMouseClicked(e -> tweakPeaks(e));
         buttons.add(tweakFreezeButton);
 
-        linkButton = GlyphsDude.createIconButton(FontAwesomeIcon.CHAIN, "Link", iconSize, fontSize, ContentDisplay.TOP);
+        linkButton = GlyphsDude.createIconButton(FontAwesomeIcon.CHAIN, "Link", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
         linkButton.setOnAction(e -> linkDims());
         buttons.add(linkButton);
 
-        unlinkButton = GlyphsDude.createIconButton(FontAwesomeIcon.CHAIN_BROKEN, "UnLink", iconSize, fontSize, ContentDisplay.TOP);
+        unlinkButton = GlyphsDude.createIconButton(FontAwesomeIcon.CHAIN_BROKEN, "UnLink", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
         unlinkButton.setOnAction(e -> unlinkDims());
         buttons.add(unlinkButton);
 

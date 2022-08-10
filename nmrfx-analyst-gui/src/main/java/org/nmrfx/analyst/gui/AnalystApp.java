@@ -456,8 +456,6 @@ public class AnalystApp extends MainApp {
     }
 
     private void addStatusBarButtons(SpectrumStatusBar statusBar) {
-        String iconSize = "16px";
-        String fontSize = "7pt";
         var controller = statusBar.getController();
         SimplePeakRegionTool simplePeakRegionTool = new SimplePeakRegionTool(controller);
         simplePeakRegionTool.addButtons(statusBar);

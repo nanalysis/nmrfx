@@ -9,6 +9,7 @@ import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.event.Event;
 import javafx.geometry.Insets;
+import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
@@ -93,9 +94,6 @@ public class PathTool implements PeakNavigable, ControllerTool {
         peakNavigator.setPeakList();
         controller.addScaleBox(peakNavigator, toolBar);
 
-
-        String iconSize = "16px";
-        String fontSize = "7pt";
         ArrayList<Button> buttons = new ArrayList<>();
         Button bButton;
 
@@ -108,24 +106,24 @@ public class PathTool implements PeakNavigable, ControllerTool {
         allButton.setOnAction(e -> allDatasets());
         allButton.getStyleClass().add("toolButton");
         dataButtons.add(allButton);
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.FAST_BACKWARD, "", iconSize, fontSize, ContentDisplay.GRAPHIC_ONLY);
+        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.FAST_BACKWARD, "", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.GRAPHIC_ONLY);
         bButton.setOnAction(e -> firstDataset(e));
         dataButtons.add(bButton);
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.BACKWARD, "", iconSize, fontSize, ContentDisplay.GRAPHIC_ONLY);
+        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.BACKWARD, "", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.GRAPHIC_ONLY);
         bButton.setOnAction(e -> previousDataset(e));
         dataButtons.add(bButton);
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.FORWARD, "", iconSize, fontSize, ContentDisplay.GRAPHIC_ONLY);
+        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.FORWARD, "", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.GRAPHIC_ONLY);
         bButton.setOnAction(e -> nextDataset(e));
         dataButtons.add(bButton);
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.FAST_FORWARD, "", iconSize, fontSize, ContentDisplay.GRAPHIC_ONLY);
+        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.FAST_FORWARD, "", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.GRAPHIC_ONLY);
         bButton.setOnAction(e -> lastDataset(e));
         dataButtons.add(bButton);
 
-        Button plusButton = GlyphsDude.createIconButton(FontAwesomeIcon.PLUS, "", iconSize, fontSize, ContentDisplay.GRAPHIC_ONLY);
+        Button plusButton = GlyphsDude.createIconButton(FontAwesomeIcon.PLUS, "", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.GRAPHIC_ONLY);
         plusButton.setOnAction(e -> addPeakToPath());
         dataButtons.add(plusButton);
 
-        Button minusButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS, "", iconSize, fontSize, ContentDisplay.GRAPHIC_ONLY);
+        Button minusButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS, "", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.GRAPHIC_ONLY);
         minusButton.setOnAction(e -> removePeakFromPath());
         dataButtons.add(minusButton);
 
@@ -227,7 +225,25 @@ public class PathTool implements PeakNavigable, ControllerTool {
 
         fitBar.getItems().addAll(nField, fillerf1, fitButton, addButton, showButton, fillerf2);
         setActionMenuDisabled(true);
-
+        // The different control items end up with different heights based on font and icon size,
+        // set all the items to use the same height
+        toolBar.heightProperty().addListener((observable, oldValue, newValue) -> {
+            double height = actionMenu.prefHeight(Control.USE_COMPUTED_SIZE);
+            List<Node> toolBarItems = toolBar.getItems();
+            // don't adjust the height of the close button which is always at index 0
+            for (int i = 1; i < toolBarItems.size(); i++) {
+                Node node = toolBarItems.get(i);
+                if (node instanceof Control) {
+                    ((Control) node).setMaxHeight(height);
+                }
+            }
+            List<Node> fitBarItems = fitBar.getItems();
+            for (Node node : fitBarItems) {
+                if (node instanceof Control) {
+                    ((Control) node).setMaxHeight(height);
+                }
+            }
+        });
         ChangeListener<List<Peak>> selPeakListener = new ChangeListener<List<Peak>>() {
 
             @Override

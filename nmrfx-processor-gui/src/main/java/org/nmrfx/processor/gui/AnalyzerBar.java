@@ -55,10 +55,7 @@ public class AnalyzerBar {
 
     public void buildBar(GridPane gridPane) {
         this.gridPane = gridPane;
-        String iconSize = "12px";
-        String fontSize = "7pt";
-        Font font = new Font(10);
-        Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "", iconSize, fontSize, ContentDisplay.GRAPHIC_ONLY);
+        Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.GRAPHIC_ONLY);
         closeButton.setOnAction(e -> close());
         gridPane.add(closeButton, 0, 0);
         Button analyzeButton = new Button("Analyze");
