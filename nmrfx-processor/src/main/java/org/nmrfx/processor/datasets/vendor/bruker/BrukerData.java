@@ -91,6 +91,8 @@ public class BrukerData implements NMRData {
     private String[] acqOrder;
     private SampleSchedule sampleSchedule = null;
     private final double scale;
+    // flag to indicate BrukerData has been opened as an FID
+    private boolean isFID;
     boolean hasFID = false;
     boolean hasSpectrum = false;
     List<Double> arrayValues = new ArrayList<>();
@@ -109,6 +111,7 @@ public class BrukerData implements NMRData {
         }
         this.fpath = path;
         this.nusFile = nusFile;
+        isFID = true;
         File file = new File(path);
         openParFile(file);
         openDataFile(path);
@@ -128,6 +131,7 @@ public class BrukerData implements NMRData {
         File file = new File(path);
         this.fpath = path;
         this.nusFile = null;
+        isFID = false;
         openParFile(file.getParentFile().getParentFile().getParentFile());
         scale = 1.0;
     }
@@ -1820,7 +1824,7 @@ public class BrukerData implements NMRData {
 
     @Override
     public boolean isFID() {
-        return !isFrequencyDim(0);
+        return isFID;
     }
 
     @Override
