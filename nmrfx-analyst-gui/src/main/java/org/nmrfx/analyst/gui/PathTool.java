@@ -235,9 +235,10 @@ public class PathTool implements PeakNavigable, ControllerTool {
             if (height.isPresent()) {
                 for (Node node : toolBarItems) {
                     if (node instanceof Control) {
-                        ((Control) node).setMaxHeight(height.get());
+                        ((Control) node).setPrefHeight(height.get());
                     }
                 }
+                fitBar.setPrefHeight(toolBar.prefHeight(Region.USE_COMPUTED_SIZE));
                 List<Node> fitBarItems = fitBar.getItems();
                 for (Node node : fitBarItems) {
                     if (node instanceof Control) {

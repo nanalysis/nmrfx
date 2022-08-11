@@ -454,7 +454,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         bButton = GlyphsDude.createIconButton(FontAwesomeIcon.FAST_FORWARD, "", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.GRAPHIC_ONLY);
         bButton.setOnAction(navigator::lastPeak);
         buttons.add(bButton);
-        deleteButton = GlyphsDude.createIconToggleButton(FontAwesomeIcon.BAN, MainApp.ICON_FONT_SIZE_STR, MainApp.ICON_SIZE_STR, ContentDisplay.GRAPHIC_ONLY);
+        deleteButton = GlyphsDude.createIconToggleButton(FontAwesomeIcon.BAN, "", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.GRAPHIC_ONLY);
         // prevent accidental activation when inspector gets focus after hitting space bar on peak in spectrum
         // a second space bar hit would activate
         deleteButton.setOnKeyPressed(Event::consume);
@@ -614,7 +614,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
             if (height.isPresent()) {
                 for (Node node : navToolBarItems) {
                     if (node instanceof Control) {
-                        ((Control) node).setMaxHeight(height.get());
+                        ((Control) node).setPrefHeight(height.get());
                     }
                 }
             }

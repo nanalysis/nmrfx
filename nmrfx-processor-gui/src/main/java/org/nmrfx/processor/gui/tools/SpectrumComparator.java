@@ -122,7 +122,6 @@ public class SpectrumComparator {
         HBox.setHgrow(filler1a, Priority.ALWAYS);
 
         toolBar1.getItems().addAll(buttons);
-        toolBar1.getItems().add(filler1a);
         toolBar1.getItems().add(datasetColorPickers[0]);
         toolBar1.getItems().addAll(dataset1Buttons);
         toolBar1.getItems().addAll(datasetFields[0]);
@@ -136,7 +135,6 @@ public class SpectrumComparator {
         HBox.setHgrow(filler1b, Priority.ALWAYS);
 
         toolBar2.getItems().add(filler2);
-        toolBar2.getItems().add(filler1b);
         toolBar2.getItems().add(datasetColorPickers[1]);
         toolBar2.getItems().addAll(dataset2Buttons);
         toolBar2.getItems().addAll(datasetFields[1]);
@@ -157,13 +155,14 @@ public class SpectrumComparator {
             if (height.isPresent()) {
                 for (Node node : toolBar1Items) {
                     if (node instanceof Control) {
-                        ((Control) node).setMaxHeight(height.get());
+                        ((Control) node).setPrefHeight(height.get());
                     }
                 }
+                toolBar2.setPrefHeight(toolBar1.prefHeight(Region.USE_COMPUTED_SIZE));
                 List<Node> toolBar2Items = toolBar2.getItems();
                 for (Node node : toolBar2Items) {
                     if (node instanceof Control) {
-                        ((Control) node).setMaxHeight(height.get());
+                        ((Control) node).setPrefHeight(height.get());
                     }
                 }
             }
