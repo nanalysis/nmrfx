@@ -2893,6 +2893,14 @@ public class PolyChart extends Region implements PeakListener {
         return selectedPeaks;
     }
 
+    public void clearSelectedMultiplets() {
+        peakListAttributesList.stream().forEach(peakListAttr -> {
+            if (peakListAttr.getDrawPeaks()) {
+                peakListAttr.clearSelectedPeaks();
+            }
+        });
+    }
+
     public List<MultipletSelection> getSelectedMultiplets() {
         List<MultipletSelection> multiplets = new ArrayList<>();
         peakListAttributesList.stream().forEach(peakListAttr -> {

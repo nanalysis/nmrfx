@@ -144,25 +144,6 @@ public class Multiplets {
         peakList.reNumber();
     }
 
-    public static Optional<Multiplet> extractMultiplet(List<RelMultipletComponent> relComps) {
-        Optional<Multiplet> result = Optional.empty();
-        if (!relComps.isEmpty()) {
-            Multiplet multiplet = relComps.get(0).getMultiplet();
-            Peak peak = multiplet.getOrigin();
-            PeakList peakList = peak.getPeakList();
-            Peak newPeak = peakList.getNewPeak();
-            PeakDim newPeakDim = newPeak.getPeakDim(0);
-            Multiplet newMultiplet = newPeakDim.getMultiplet();
-            newMultiplet.moveCouplings(relComps);
-
-            peakList.compress();
-            peakList.sortPeaks(0, true);
-            peakList.reNumber();
-            result = Optional.of(newMultiplet);
-        }
-        return result;
-    }
-
     public static Optional<Multiplet> mergePeaks(List<Peak> peaks) {
         Optional<Multiplet> result = Optional.empty();
         if (!peaks.isEmpty()) {

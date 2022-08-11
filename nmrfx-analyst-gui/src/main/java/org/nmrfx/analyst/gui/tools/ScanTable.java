@@ -253,7 +253,6 @@ public class ScanTable {
                 }
             }
             chart.refresh();
-
         } else {
             openSelectedListFile();
         }
@@ -444,7 +443,7 @@ public class ScanTable {
 
             File saveTableFile = new File(scanDir, "scntbl.txt");
             saveScanTable(saveTableFile);
-            scannerTool.miner.setDisable(!combineFileMode);
+            scannerTool.miner.setDisableSubMenus(!combineFileMode);
 
         } finally {
             processingTable = false;
@@ -722,7 +721,7 @@ public class ScanTable {
                 chart.autoScale();
             }
             addGroupColumn();
-            scannerTool.miner.setDisable(!combineFileMode);
+            scannerTool.miner.setDisableSubMenus(!combineFileMode);
 
         } catch (NumberFormatException e) {
             log.warn(e.getMessage(), e);

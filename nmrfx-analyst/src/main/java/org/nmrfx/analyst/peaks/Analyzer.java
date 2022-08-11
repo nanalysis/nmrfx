@@ -277,7 +277,6 @@ public class Analyzer {
 
     public void removeWeakPeaksInRegion(DatasetRegion region, int nRemove) throws Exception {
         List<PeakDim> peakDims = Multiplets.findPeaksInRegion(peakList, region);
-        System.out.println("remove peaks " + nRemove + " " + peakDims.size());
         if (peakDims.size() > 1) {
             peakDims.sort(comparing((p) -> p.getPeak().getIntensity()));
             if (nRemove < 0) {
@@ -500,7 +499,7 @@ public class Analyzer {
         }
     }
 
-    public void removeRegion(double ppm1, double ppm2) {
+    public void removeRegion(double ppm1, double ppm2, boolean removePeaks) {
         Set<DatasetRegion> newRegions = new TreeSet<>();
         Set<DatasetRegion> regions = getRegions();
         int rDim = 0;
@@ -515,7 +514,7 @@ public class Analyzer {
         });
         regions.clear();
         regions.addAll(newRegions);
-        if (peakList != null) {
+        if (removePeaks && (peakList != null)) {
             removePeaksFromNonRegions();
         }
     }
@@ -723,11 +722,13 @@ public class Analyzer {
         regions.clear();
     }
 
-    public void addRegion(double min, double max) {
+    public void addRegion(double min, double max, boolean pick) {
         Set<DatasetRegion> regions = getRegions();
         DatasetRegion newRegion = new DatasetRegion(min, max);
         regions.add(newRegion);
-        peakPickRegion(min, max);
+        if (pick) {
+            peakPickRegion(min, max);
+        }
     }
 
     public List<Multiplet> splitRegion(double ppm) throws IOException {
@@ -738,21 +739,20 @@ public class Analyzer {
             DatasetRegion region = found.get();
             double start = region.getRegionStart(0);
             double end = region.getRegionEnd(0);
+            if (start > end) {
+                double hold = start;
+                start = end;
+                end = hold;
+            }
             regions.remove(region);
             double pt1 = dataset.ppmToDPoint(0, ppm);
             double ppm1 = dataset.pointToPPM(0, pt1 + 1);
             double ppm2 = dataset.pointToPPM(0, pt1 - 1);
-            if (start < end) {
-                double hold = ppm1;
-                ppm1 = ppm2;
-                ppm2 = hold;
-            }
             double[][] limits = new double[1][2];
-            limits[0][0] = region.getRegionStart(0);
-            limits[0][1] = region.getRegionEnd(0);
+            limits[0][0] = start;
+            limits[0][1] = end;
             int[] dim = {0};
 
-            System.out.println(start + " " + ppm1 + " " + ppm2 + " " + end);
             DatasetRegion newRegion1 = new DatasetRegion(start, ppm1);
             DatasetRegion newRegion2 = new DatasetRegion(ppm2, end);
             regions.add(newRegion1);
@@ -1176,7 +1176,7 @@ public class Analyzer {
     }
 
     public void renumber() {
-        peakList.sortPeaks(0, false);
+        peakList.sortPeaks(0, true);
         peakList.compress();
         peakList.reNumber();
     }

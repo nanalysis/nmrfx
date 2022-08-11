@@ -1158,7 +1158,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
      * Listener for the Processor availability status and updates the processor available status
      * @param newStatus the newly updated status
      */
-    public void processorAvailableStatusUpdated(Boolean newStatus) {
+    public void processorAvailableStatusUpdated(boolean newStatus) {
         processorAvailable.setValue(newStatus);
     }
 
