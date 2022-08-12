@@ -343,7 +343,10 @@ public class RefManager {
                 String value = getPropValue(dim, propName, false);
                 int iValue = 0;
                 try {
-                    iValue = Integer.parseInt(value);
+                    // Set empty strings to have a value of 0
+                    if (!value.isEmpty()) {
+                        iValue = Integer.parseInt(value);
+                    }
                 } catch (NumberFormatException nFe) {
                     log.warn("Unable to parse value.", nFe);
                 }
@@ -407,12 +410,15 @@ public class RefManager {
 
     public boolean getSkip(String dimName) {
         String propValue = "0";
-        try {
-            int dim = Integer.parseInt(dimName);
-            dim--;
-            propValue = getPropValue(dim, "skip", false);
-        } catch (NumberFormatException nFE) {
-            log.warn("Unable to parse skip.", nFE);
+        boolean parseName = !dimName.isEmpty() && !dimName.contains(",");
+        if (parseName) {
+            try {
+                int dim = Integer.parseInt(dimName);
+                dim--;
+                propValue = getPropValue(dim, "skip", false);
+            } catch (NumberFormatException nFE) {
+                log.warn("Unable to parse skip.", nFE);
+            }
         }
         return propValue.equals("1");
     }
