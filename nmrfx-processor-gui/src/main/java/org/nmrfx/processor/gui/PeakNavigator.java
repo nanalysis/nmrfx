@@ -11,10 +11,8 @@ import javafx.collections.MapChangeListener;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.geometry.Insets;
-import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.ContentDisplay;
-import javafx.scene.control.Control;
 import javafx.scene.control.Label;
 import javafx.scene.control.MenuButton;
 import javafx.scene.control.MenuItem;
@@ -27,7 +25,6 @@ import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
-import javafx.scene.layout.Region;
 import javafx.scene.paint.Color;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakDim;
@@ -37,6 +34,7 @@ import org.nmrfx.peaks.events.PeakListener;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
 import org.nmrfx.project.ProjectBase;
+import org.nmrfx.utils.GUIUtils;
 
 /*
  * To change this license header, choose License Headers in Project Properties.
@@ -210,18 +208,7 @@ public class PeakNavigator implements PeakListener {
         ProjectBase.getActive().addPeakListListener(mapChangeListener);
         // The different control items end up with different heights based on font and icon size,
         // set all the items to use the same height
-        this.navigatorToolBar.heightProperty().addListener((observable, oldValue, newValue) -> {
-            // don't adjust the height of the close button which is always at index 0
-            List<Node> navToolBarItems = this.navigatorToolBar.getItems().subList(1, this.navigatorToolBar.getItems().size());
-            Optional<Double> height = navToolBarItems.stream().map(node -> node.prefHeight(Region.USE_COMPUTED_SIZE)).max(Double::compare);
-            if (height.isPresent()) {
-                for (Node node : navToolBarItems) {
-                    if (node instanceof Control) {
-                        ((Control) node).setPrefHeight(height.get());
-                    }
-                }
-            }
-        });
+        this.navigatorToolBar.heightProperty().addListener((observable, oldValue, newValue) -> GUIUtils.toolbarAdjustHeights(List.of(navigatorToolBar)));
     }
 
     public void updatePeakListMenu() {

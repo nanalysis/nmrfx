@@ -41,6 +41,7 @@ import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.MainApp;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.math.Vec;
+import org.nmrfx.utils.GUIUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -161,7 +162,7 @@ public class SimFitMolController extends SimMolController {
         activeBox = new CheckBox();
         fitBar.getItems().add(activeBox);
         activeBox.setOnAction(e -> setActive());
-
+        toolBar.heightProperty().addListener((observable, oldValue, newValue) -> GUIUtils.toolbarAdjustHeights(Arrays.asList(toolBar, fitBar)));
     }
 
     public void close() {

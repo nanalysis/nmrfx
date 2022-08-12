@@ -9,7 +9,6 @@ import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.event.Event;
 import javafx.geometry.Insets;
-import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
@@ -29,13 +28,14 @@ import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.processor.gui.spectra.PeakDisplayParameters;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
 import org.nmrfx.processor.optimization.Fitter;
+import org.nmrfx.utils.GUIUtils;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import java.util.Optional;
 import java.util.function.Consumer;
 
 /**
@@ -228,25 +228,7 @@ public class PathTool implements PeakNavigable, ControllerTool {
         setActionMenuDisabled(true);
         // The different control items end up with different heights based on font and icon size,
         // set all the items to use the same height
-        toolBar.heightProperty().addListener((observable, oldValue, newValue) -> {
-            // don't adjust the height of the close button which is always at index 0
-            List<Node> toolBarItems = this.toolBar.getItems().subList(1, this.toolBar.getItems().size());
-            Optional<Double> height = toolBarItems.stream().map(node -> node.prefHeight(Region.USE_COMPUTED_SIZE)).max(Double::compare);
-            if (height.isPresent()) {
-                for (Node node : toolBarItems) {
-                    if (node instanceof Control) {
-                        ((Control) node).setPrefHeight(height.get());
-                    }
-                }
-                fitBar.setPrefHeight(toolBar.prefHeight(Region.USE_COMPUTED_SIZE));
-                List<Node> fitBarItems = fitBar.getItems();
-                for (Node node : fitBarItems) {
-                    if (node instanceof Control) {
-                        ((Control) node).setPrefHeight(height.get());
-                    }
-                }
-            }
-        });
+        toolBar.heightProperty().addListener((observable, oldValue, newValue) -> GUIUtils.toolbarAdjustHeights(Arrays.asList(toolBar, fitBar)));
         ChangeListener<List<Peak>> selPeakListener = new ChangeListener<List<Peak>>() {
 
             @Override

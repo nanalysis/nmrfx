@@ -3,27 +3,25 @@ package org.nmrfx.processor.gui.tools;
 import de.jensd.fx.glyphs.GlyphsDude;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 import java.util.function.Consumer;
 
-import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.ColorPicker;
 import javafx.scene.control.ContentDisplay;
-import javafx.scene.control.Control;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ToolBar;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
-import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.MainApp;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
+import org.nmrfx.utils.GUIUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -148,25 +146,7 @@ public class SpectrumComparator {
 
         toolBar1.getItems().add(filler5a);
         toolBar2.getItems().add(filler5b);
-        toolBar1.heightProperty().addListener((observable, oldValue, newValue) -> {
-            // don't adjust the height of the close button which is always at index 0
-            List<Node> toolBar1Items = this.toolBar1.getItems().subList(1, this.toolBar1.getItems().size());
-            Optional<Double> height = toolBar1Items.stream().map(node -> node.prefHeight(Region.USE_COMPUTED_SIZE)).max(Double::compare);
-            if (height.isPresent()) {
-                for (Node node : toolBar1Items) {
-                    if (node instanceof Control) {
-                        ((Control) node).setPrefHeight(height.get());
-                    }
-                }
-                toolBar2.setPrefHeight(toolBar1.prefHeight(Region.USE_COMPUTED_SIZE));
-                List<Node> toolBar2Items = toolBar2.getItems();
-                for (Node node : toolBar2Items) {
-                    if (node instanceof Control) {
-                        ((Control) node).setPrefHeight(height.get());
-                    }
-                }
-            }
-        });
+        toolBar1.heightProperty().addListener((observable, oldValue, newValue) -> GUIUtils.toolbarAdjustHeights(Arrays.asList(toolBar1, toolBar2)));
     }
 
     void setDatasetState() {
