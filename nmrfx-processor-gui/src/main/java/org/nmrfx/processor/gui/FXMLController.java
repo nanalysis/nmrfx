@@ -1009,6 +1009,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
                 svgFormat = new DataFormat("image/svg+xml");
             }
             content.put(svgFormat, ByteBuffer.wrap(stream.toByteArray()));
+            content.put(DataFormat.PLAIN_TEXT, stream.toString());
             clipboard.setContent(content);
         } catch (GraphicsIOException ex) {
             ExceptionDialog eDialog = new ExceptionDialog(ex);
