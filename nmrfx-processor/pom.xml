@@ -33,6 +33,10 @@
         </dependency>
         <dependency>
             <groupId>com.nanalysis</groupId>
+            <artifactId>spinlab-dataset</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.nanalysis</groupId>
             <artifactId>jcamp-parser</artifactId>
         </dependency>
         <dependency>
