@@ -15,7 +15,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Random;
 import java.util.Set;
 import java.util.function.Consumer;
 import javafx.event.ActionEvent;
@@ -41,6 +40,7 @@ import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakDim;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.processor.datasets.Dataset;
+import org.nmrfx.processor.datasets.peaks.PeakListTools;
 import org.nmrfx.processor.gui.ControllerTool;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.PolyChart;
@@ -163,11 +163,13 @@ public class PeakSlider implements ControllerTool {
         matchColumnItem.setOnAction(e -> matchClusters(0, true));
         MenuItem matchRowItem = new MenuItem("Do Match Rows");
         matchRowItem.setOnAction(e -> matchClusters(1, true));
+        MenuItem matchExpPredItem = new MenuItem("Match Exp/Pred Lists");
+        matchExpPredItem.setOnAction(e -> matchPredWithExpPeakList());
         MenuItem clearMatchItem = new MenuItem("Clear Matches");
         clearMatchItem.setOnAction(e -> clearMatches());
         MenuItem autoItem = new MenuItem("Auto");
         autoItem.setOnAction(e -> autoAlign());
-        matchingMenu.getItems().addAll(matchColumnItem, matchRowItem, clearMatchItem, autoItem);
+        matchingMenu.getItems().addAll(matchColumnItem, matchRowItem, clearMatchItem, autoItem, matchExpPredItem);
 
         actionMenu.getItems().addAll(thawAllItem, restoreItem, restoreAllItem, randomizeAllItem, matchingMenu);
 
@@ -993,6 +995,43 @@ public class PeakSlider implements ControllerTool {
             }
         }
         return isNull;
+    }
+    PeakList[] createNDMatcher() {
+        PeakList[] result = new PeakList[2];
+        List<PeakList> predLists = new ArrayList<>();
+        List<PeakList> expLists = new ArrayList<>();
+        controller.getCharts().stream().forEach(chart -> {
+                    for (DatasetAttributes dataAttr : chart.getDatasetAttributes()) {
+                        Optional<PeakList> expListOpt = Optional.empty();
+                        Optional<PeakList> predListOpt = Optional.empty();
+                        for (PeakList peakList : Project.getActive().getPeakLists()) {
+                            if (peakList.getDatasetName().equals(dataAttr.getDataset().getName())) {
+                                if (peakList.isSimulated()) {
+                                    predListOpt = Optional.of(peakList);
+                                } else {
+                                    expListOpt = Optional.of(peakList);
+                                }
+                            }
+                        }
+                        if (expListOpt.isPresent() && predListOpt.isPresent()) {
+                            result[0] = predListOpt.get();
+                            result[1] = expListOpt.get();
+                        }
+                    }
+                }
+        );
+        return result;
+    }
+
+    void matchPredWithExpPeakList() {
+        PeakList[] peakLists = createNDMatcher();
+        if ((peakLists[0] != null) && (peakLists[1] != null)) {
+            int[] dims = new int[peakLists[0].getNDim()];
+            for (int i=0;i<dims.length;i++) {
+                dims[i] = i;
+            }
+            PeakListTools.shiftAndFreezePeakList(peakLists[0], peakLists[1], dims, null);
+        }
     }
 
     public void autoAlign() {
