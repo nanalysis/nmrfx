@@ -26,6 +26,10 @@ import org.apache.commons.math3.optimization.univariate.UnivariatePointValuePair
 import org.apache.commons.math3.stat.StatUtils;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.apache.commons.math3.util.FastMath;
+import org.nmrfx.chemistry.Atom;
+import org.nmrfx.chemistry.MoleculeBase;
+import org.nmrfx.chemistry.MoleculeFactory;
+import org.nmrfx.chemistry.Residue;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.datasets.RegionData;
 import org.nmrfx.peaks.*;
@@ -531,14 +535,119 @@ public class PeakListTools {
         }
     }
 
+    public static MatchResult matchPeakLists(PeakList peakListA, PeakList peakListB, int[] dims, double[] tol) {
+        List<MatchItem> peakItemsA = getMatchingItems(peakListA, dims);
+        List<MatchItem> peakItemsB = getMatchingItems(peakListB, dims);
+        if (tol == null) {
+            tol = new double[dims.length];
+            for (int iDim = 0; iDim < dims.length; iDim++) {
+                tol[iDim] = peakListA.widthStatsPPM(iDim).getAverage() * 2.0;
+            }
+        }
+        double[] iOffsets = new double[dims.length];
+        double[] jOffsets = new double[dims.length];
+        MatchResult result = doBPMatch(peakListA, peakItemsA, iOffsets, peakItemsB, jOffsets, tol);
+        return result;
+    }
+    /**
+     *
+     * @param peakListA
+     * @param peakListB
+     * @param dims
+     * @param tol
+     */
+    public static void assignFromPeakList(PeakList peakListA, PeakList peakListB, int[] dims, double[] tol) {
+        MatchResult matchResult = matchPeakLists(peakListA, peakListB, dims, tol);
+        int[] matching = matchResult.matching;
+        for (int i = 0; i < matchResult.matchItemsA.size(); i++) {
+            MatchItem item = matchResult.matchItemsA.get(i);
+            if (item.itemIndex < peakListA.size()) {
+                if (matching[i] != -1) {
+                    int j = matching[i];
+                    if ((j < matchResult.matchItemsB.size()) && (item.itemIndex < matchResult.matchItemsA.size())) {
+                        Peak peak = peakListA.getPeak(item.itemIndex);
+                        for (int iDim = 0; iDim < dims.length; iDim++) {
+                            peak.peakDims[dims[iDim]].setLabel(peakListB.getPeak(j).peakDims[iDim].getLabel());
+                        }
+                    }
+                }
+
+            }
+        }
+    }
+
+    public static List<Peak[]> getExpPredMatches(PeakList predPeakList, PeakList expPeakList, int[] dims, double[] tol) {
+        List<Peak[]> result = new ArrayList<>();
+        MatchResult matchResult = matchPeakLists(predPeakList, expPeakList, dims, tol);
+        int[] matching = matchResult.matching;
+        for (int i = 0; i < matchResult.matchItemsA.size(); i++) {
+            MatchItem item = matchResult.matchItemsA.get(i);
+            if (item.itemIndex < predPeakList.size()) {
+                if (matching[i] != -1) {
+                    int j = matching[i];
+                    if ((j < matchResult.matchItemsB.size()) && (item.itemIndex < matchResult.matchItemsA.size())) {
+                        Peak predPeak = predPeakList.getPeak(item.itemIndex);
+                        Peak expPeak = expPeakList.getPeak(j);
+                        Peak[] peakPair = {predPeak, expPeak};
+                        result.add(peakPair);
+                    }
+                }
+            }
+        }
+        return result;
+    }
+
+
+    public static void shiftAndFreezePeakList(List<Peak[]> peakMatches, int[] dims) {
+        for (var peakMatch : peakMatches) {
+            Peak predPeak = peakMatch[0];
+            Peak expPeak = peakMatch[1];
+            for (int iDim = 0; iDim < dims.length; iDim++) {
+                predPeak.peakDims[dims[iDim]].setChemShiftValueNoCheck(expPeak.peakDims[iDim].getChemShiftValue());
+                predPeak.peakDims[dims[iDim]].setFrozen(true);
+            }
+        }
+
+    }
+
     /**
      *
      * @param dims
      * @param tol
-     * @param positions
-     * @param names
+     * @param aNames
      */
-    public static void assignAtomLabels(PeakList peakList, int[] dims, double[] tol, double[][] positions, String[][] names) {
+    public static void assignAtomLabels(PeakList peakList, int[] dims, double[] tol, String[] aNames) {
+        MoleculeBase mol = MoleculeFactory.getActive();
+        Atom[] atoms = new Atom[aNames.length];
+        List<double[]> positions = new ArrayList<>();
+        List<String[]> names = new ArrayList<>();
+        for (var cR:mol.getCompoundsAndResidues()) {
+            if (cR instanceof Residue) {
+                Residue res = (Residue) cR;
+                int i = 0;
+                boolean ok = true;
+                for (var name:aNames) {
+                    Atom atom = res.getAtom(name);
+                    if ((atom == null) || (atom.getPPM() == null)) {
+                        ok = false;
+                        break;
+                    } else {
+                        atoms[i++] = atom;
+                    }
+                }
+                if (ok) {
+                    double[] shifts = new double[atoms.length];
+                    String[] resAtomNames = new String[atoms.length];
+                    int j = 0;
+                    for (Atom atom:atoms) {
+                        shifts[j] = atom.getPPM();
+                        resAtomNames[j] = atom.getShortName();
+                    }
+                    positions.add(shifts);
+                    names.add(resAtomNames);
+                }
+            }
+        }
         List<MatchItem> peakItems = getMatchingItems(peakList, dims);
         List<MatchItem> atomItems = getMatchingItems(positions);
         if (tol == null) {
@@ -556,10 +665,10 @@ public class PeakListTools {
             if (item.itemIndex < peakList.size()) {
                 if (matching[i] != -1) {
                     int j = matching[i];
-                    if ((j < names.length) && (item.itemIndex < peakItems.size())) {
+                    if ((j < names.size()) && (item.itemIndex < peakItems.size())) {
                         Peak peak = peakList.getPeak(item.itemIndex);
                         for (int iDim = 0; iDim < dims.length; iDim++) {
-                            peak.peakDims[dims[iDim]].setLabel(names[j][iDim]);
+                            peak.peakDims[dims[iDim]].setLabel(names.get(j)[iDim]);
                         }
                     }
                 }
@@ -597,22 +706,25 @@ public class PeakListTools {
         return matchList;
     }
 
-    static List<MatchItem> getMatchingItems(double[][] positions) {
+    static List<MatchItem> getMatchingItems(List<double[]> positions) {
         List<MatchItem> matchList = new ArrayList<>();
-        for (int j = 0; j < positions.length; j++) {
-            MatchItem matchItem = new MatchItem(j, positions[j]);
+        for (int j = 0; j < positions.size(); j++) {
+            MatchItem matchItem = new MatchItem(j, positions.get(j));
             matchList.add(matchItem);
         }
         return matchList;
     }
 
     static class MatchResult {
-
+        List<MatchItem> matchItemsA;
+        List<MatchItem> matchItemsB;
         final double score;
         final int nMatches;
         final int[] matching;
 
-        MatchResult(final int[] matching, final int nMatches, final double score) {
+        MatchResult(List<MatchItem> matchItemsA, List<MatchItem> matchItemsB, final int[] matching, final int nMatches, final double score) {
+            this.matchItemsA = matchItemsA;
+            this.matchItemsB = matchItemsB;
             this.matching = matching;
             this.score = score;
             this.nMatches = nMatches;
@@ -674,7 +786,7 @@ public class PeakListTools {
             }
 
         }
-        MatchResult matchResult = new MatchResult(matching, nMatches, score);
+        MatchResult matchResult = new MatchResult(iMList, jMList, matching, nMatches, score);
         return matchResult;
     }
 
@@ -1194,7 +1306,7 @@ public class PeakListTools {
         boolean doFit = true;
         int fitMode = FIT_ALL;
         boolean updatePeaks = true;
-        double multiplier = 0.686;
+        double multiplier = 3.0;
         return peakFit(peakList, theFile, peaks, fitPeaks, rows, doFit, fitMode, updatePeaks, delays, multiplier, lsFit, constrainDim, arrayedFitMode);
     }
 
@@ -1339,6 +1451,7 @@ public class PeakListTools {
         int nPeaks = peaks.size();
         int[][] cpt = new int[nPeaks][dataDim];
         double[][] width = new double[nPeaks][dataDim];
+        double[] meanDimWidth = new double[nPeakDim];
         double maxDelay = 0.0;
         int nPlanes = 1;
         if ((delays != null) && (delays.length > 0)) {
@@ -1352,6 +1465,7 @@ public class PeakListTools {
         //int k=0;
         for (int i = 0; i < nPeakDim; i++) {
             pdim[i] = -1;
+            meanDimWidth[i] = peakList.widthDStatsPPM(i).getMean();
         }
 
         // a list of guesses for the fitter
@@ -1398,7 +1512,7 @@ public class PeakListTools {
                 }
             }
 
-            peak.getPeakRegion(theFile, pdim, p1, cpt[iPeak], width[iPeak]);
+            peak.getPeakRegion(theFile, pdim, p1, cpt[iPeak], width[iPeak], meanDimWidth);
 
             double intensity = (double) peak.getIntensity();
             GuessValue gValue;
@@ -1457,7 +1571,7 @@ public class PeakListTools {
                 if (fitMode == FIT_AMPLITUDES) {
                     gValue = new GuessValue(width[iPeak][dDim], width[iPeak][dDim] * 0.05, width[iPeak][dDim] * 1.05, false);
                 } else {
-                    gValue = new GuessValue(width[iPeak][dDim], width[iPeak][dDim] * 0.2, width[iPeak][dDim] * 2.0, fitThis);
+                    gValue = new GuessValue(width[iPeak][dDim], width[iPeak][dDim] * 0.7, width[iPeak][dDim] * 1.5, fitThis);
                 }
                 guessList.add(gValue);
                 centerList.add(new CenterRef(parIndex, dDim));
@@ -1466,7 +1580,7 @@ public class PeakListTools {
                 if (fitMode == FIT_AMPLITUDES) {
                     gValue = new GuessValue(cpt[iPeak][dDim], cpt[iPeak][dDim] - width[iPeak][dDim] / 40, cpt[iPeak][dDim] + width[iPeak][dDim] / 40, false);
                 } else {
-                    gValue = new GuessValue(cpt[iPeak][dDim], cpt[iPeak][dDim] - width[iPeak][dDim] / 2, cpt[iPeak][dDim] + width[iPeak][dDim] / 2, fitThis);
+                    gValue = new GuessValue(cpt[iPeak][dDim], cpt[iPeak][dDim] - width[iPeak][dDim] / 3, cpt[iPeak][dDim] + width[iPeak][dDim] / 3, fitThis);
                 }
                 guessList.add(gValue);
 
@@ -1488,7 +1602,7 @@ public class PeakListTools {
         }
         guessList.add(0, new GuessValue(0.0, -0.5 * globalMax, 0.5 * globalMax, false));
         // get a list of positions that are near the centers of each of the peaks
-        ArrayList<int[]> posArray = theFile.getFilteredPositions(p2, cpt, width, pdim, multiplier);
+        ArrayList<int[]> posArray = theFile.getFilteredPositions(p2, cpt, width, pdim, multiplier, 2);
         if (posArray.isEmpty()) {
             System.out.println("no positions");
             for (Peak peak : peaks) {

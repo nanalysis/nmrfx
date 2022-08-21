@@ -213,7 +213,7 @@ public class Peak implements Comparable, PeakOrMulti {
         }
 
         int k = 0;
-        peak.getPeakRegion(theFile, pdim, p, cpt, width);
+        peak.getPeakRegion(theFile, pdim, p, cpt, width, null);
 
         for (int i = 0; i < dataDim; i++) {
             dim[i] = i;
@@ -1199,9 +1199,11 @@ public class Peak implements Comparable, PeakOrMulti {
      * @param cpt Array of ints specifying the center of the peak region.
      * @param width Array of doubles containing the widths of the peak in units
      * of dataset points. The width is determined by the peak linewidth
+     * @param meanLineWidths Array of mean widths of peaks in list. If null, the
+     *                       line width of individual peak is used.
      */
     public void getPeakRegion(DatasetBase theFile, int[] pdim, int[][] p,
-                              int[] cpt, double[] width) {
+                              int[] cpt, double[] width, double[] meanLineWidths) {
         double p1;
         double p2;
         double p1d;
@@ -1216,10 +1218,10 @@ public class Peak implements Comparable, PeakOrMulti {
             p2 = pc - Math.abs(peakDims[i].getBoundsValue()) / 2;
             p[pdim[i]][1] = theFile.ppmToFoldedPoint(pdim[i], p2);
             cpt[pdim[i]] = theFile.ppmToFoldedPoint(pdim[i], pc);
-
-            p1 = peakDims[i].getChemShiftValue() + (Math.abs(peakDims[i].getLineWidthValue()) / 2.0);
+            double lineWidth = meanLineWidths == null ? peakDims[i].getLineWidthValue() : meanLineWidths[i];
+            p1 = peakDims[i].getChemShiftValue() + (Math.abs(lineWidth) / 2.0);
             p1d = theFile.ppmToDPoint(pdim[i], p1);
-            p2 = peakDims[i].getChemShiftValue() - (Math.abs(peakDims[i].getLineWidthValue()) / 2.0);
+            p2 = peakDims[i].getChemShiftValue() - (Math.abs(lineWidth) / 2.0);
             p2d = theFile.ppmToDPoint(pdim[i], p2);
             width[pdim[i]] = Math.abs(p2d - p1d);
         }

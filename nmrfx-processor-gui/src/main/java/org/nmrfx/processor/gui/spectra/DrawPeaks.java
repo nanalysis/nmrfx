@@ -144,16 +144,20 @@ public class DrawPeaks {
         xAxis = (NMRAxis) chart.getXAxis();
         yAxis = (NMRAxis) chart.getYAxis();
     }
+
     class PeakBox {
         Bounds bounds;
         Peak peak;
+
         PeakBox(Bounds bounds, Peak peak) {
             this.bounds = bounds;
             this.peak = peak;
         }
-        boolean intersects(Bounds testBounds)  {
+
+        boolean intersects(Bounds testBounds) {
             return this.bounds.intersects(testBounds);
         }
+
         boolean contains(double x, double y) {
             return this.bounds.contains(x, y);
         }
@@ -949,7 +953,7 @@ public class DrawPeaks {
 
     Optional<MultipletSelection> hitMultipletLabel(double hitX, double hitY) {
         MultipletSelection multipletSelection = null;
-        for (var peakBox:lastTextBoxes) {
+        for (var peakBox : lastTextBoxes) {
             if (peakBox.contains(hitX, hitY)) {
                 Multiplet multiplet = peakBox.getMultiplet();
                 multipletSelection = new MultipletSelection(multiplet, peakBox.getBounds());
@@ -1070,6 +1074,7 @@ public class DrawPeaks {
         double[] ctr = {0.0, 0.0};
         double[] bou = {0.0, 0.0};
         double[] wid = {0.0, 0.0};
+        double widthScale = 1.37 / 2.0;  // optimal integration region size.  divide by 2.0 to get width of one side
 
         if ((jmode == 0) && peak.peakDims[dim[0]].hasMultiplet() && (peak.peakDims[dim[0]].getMultiplet().isCoupled())) {
             jx = 2;
@@ -1146,10 +1151,10 @@ public class DrawPeaks {
                                 g2.stroke();
                                 break;
                             case Cross:
-                                x1 = xAxis.getDisplayPosition(ctr[0] + (wid[0] * 0.68 / 2.0));
-                                x2 = xAxis.getDisplayPosition(ctr[0] - (wid[0] * 0.68 / 2.0));
-                                y2 = yAxis.getDisplayPosition(ctr[1] + (wid[1] * 0.68 / 2.0));
-                                y1 = yAxis.getDisplayPosition(ctr[1] - (wid[1] * 0.68 / 2.0));
+                                x1 = xAxis.getDisplayPosition(ctr[0] + (wid[0] * widthScale));
+                                x2 = xAxis.getDisplayPosition(ctr[0] - (wid[0] * widthScale));
+                                y2 = yAxis.getDisplayPosition(ctr[1] + (wid[1] * widthScale));
+                                y1 = yAxis.getDisplayPosition(ctr[1] - (wid[1] * widthScale));
                                 g2.beginPath();
                                 g2.moveTo(x1, yc);
                                 g2.lineTo(x2, yc);
@@ -1165,10 +1170,10 @@ public class DrawPeaks {
                                 break;
                             case Ellipse:
                             case FillEllipse:
-                                x1 = xAxis.getDisplayPosition(ctr[0] + (wid[0] * 0.68 / 2.0));
-                                x2 = xAxis.getDisplayPosition(ctr[0] - (wid[0] * 0.68 / 2.0));
-                                y2 = yAxis.getDisplayPosition(ctr[1] + (wid[1] * 0.68 / 2.0));
-                                y1 = yAxis.getDisplayPosition(ctr[1] - (wid[1] * 0.68 / 2.0));
+                                x1 = xAxis.getDisplayPosition(ctr[0] + (wid[0] * widthScale));
+                                x2 = xAxis.getDisplayPosition(ctr[0] - (wid[0] * widthScale));
+                                y2 = yAxis.getDisplayPosition(ctr[1] + (wid[1] * widthScale));
+                                y1 = yAxis.getDisplayPosition(ctr[1] - (wid[1] * widthScale));
                                 if (disType == DisplayTypes.Ellipse) {
                                     g2.strokeOval(x1, y1, x2 - x1, y2 - y1);
                                 } else {
