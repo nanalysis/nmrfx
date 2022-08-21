@@ -576,7 +576,8 @@ public class PeakListTools {
         }
     }
 
-    public static void shiftAndFreezePeakList(PeakList predPeakList, PeakList expPeakList, int[] dims, double[] tol) {
+    public static List<Peak[]> getExpPredMatches(PeakList predPeakList, PeakList expPeakList, int[] dims, double[] tol) {
+        List<Peak[]> result = new ArrayList<>();
         MatchResult matchResult = matchPeakLists(predPeakList, expPeakList, dims, tol);
         int[] matching = matchResult.matching;
         for (int i = 0; i < matchResult.matchItemsA.size(); i++) {
@@ -587,15 +588,26 @@ public class PeakListTools {
                     if ((j < matchResult.matchItemsB.size()) && (item.itemIndex < matchResult.matchItemsA.size())) {
                         Peak predPeak = predPeakList.getPeak(item.itemIndex);
                         Peak expPeak = expPeakList.getPeak(j);
-                        for (int iDim = 0; iDim < dims.length; iDim++) {
-                            predPeak.peakDims[dims[iDim]].setChemShiftValueNoCheck(expPeak.peakDims[iDim].getChemShiftValue());
-                            predPeak.peakDims[dims[iDim]].setFrozen(true);
-                        }
+                        Peak[] peakPair = {predPeak, expPeak};
+                        result.add(peakPair);
                     }
                 }
-
             }
         }
+        return result;
+    }
+
+
+    public static void shiftAndFreezePeakList(List<Peak[]> peakMatches, int[] dims) {
+        for (var peakMatch : peakMatches) {
+            Peak predPeak = peakMatch[0];
+            Peak expPeak = peakMatch[1];
+            for (int iDim = 0; iDim < dims.length; iDim++) {
+                predPeak.peakDims[dims[iDim]].setChemShiftValueNoCheck(expPeak.peakDims[iDim].getChemShiftValue());
+                predPeak.peakDims[dims[iDim]].setFrozen(true);
+            }
+        }
+
     }
 
     /**

@@ -164,7 +164,7 @@ public class PeakSlider implements ControllerTool {
         MenuItem matchRowItem = new MenuItem("Do Match Rows");
         matchRowItem.setOnAction(e -> matchClusters(1, true));
         MenuItem matchExpPredItem = new MenuItem("Match Exp/Pred Lists");
-        matchExpPredItem.setOnAction(e -> matchPredWithExpPeakList());
+        matchExpPredItem.setOnAction(e -> matchPredWithExpPeakList(false));
         MenuItem clearMatchItem = new MenuItem("Clear Matches");
         clearMatchItem.setOnAction(e -> clearMatches());
         MenuItem autoItem = new MenuItem("Auto");
@@ -1023,16 +1023,29 @@ public class PeakSlider implements ControllerTool {
         return result;
     }
 
-    void matchPredWithExpPeakList() {
+    void matchPredWithExpPeakList(boolean draw) {
         PeakList[] peakLists = createNDMatcher();
         if ((peakLists[0] != null) && (peakLists[1] != null)) {
             int[] dims = new int[peakLists[0].getNDim()];
-            for (int i=0;i<dims.length;i++) {
+            for (int i = 0; i < dims.length; i++) {
                 dims[i] = i;
             }
-            PeakListTools.shiftAndFreezePeakList(peakLists[0], peakLists[1], dims, null);
+            List<Peak[]> peakMatches = PeakListTools.getExpPredMatches(peakLists[0], peakLists[1], dims, null);
+            if (draw) {
+                for (var peakMatch : peakMatches) {
+                    List<Peak> pairedPeaks = List.of(peakMatch[0], peakMatch[1]);
+                    ConnectPeakAttributes connPeakAttrs = setPeakPairAttrs(false, pairedPeaks);
+                    if (connPeakAttrs != null) {
+                        controller.getActiveChart().addPeakPath(connPeakAttrs);
+                    }
+                }
+                controller.getActiveChart().drawPeakLists(true);
+            } else {
+                PeakListTools.shiftAndFreezePeakList(peakMatches, dims);
+            }
         }
     }
+
 
     public void autoAlign() {
         Optional<PeakList> hmqcPredListOpt = Optional.empty();
