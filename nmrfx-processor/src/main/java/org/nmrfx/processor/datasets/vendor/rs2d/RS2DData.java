@@ -248,7 +248,7 @@ public class RS2DData implements NMRData {
             groupDelay = readGroupDelay();
             obsNucleus = header.get(OBSERVED_NUCLEUS).stringValue();
             Double obsFreq = null;
-            double obsSW = header.get(SPECTRAL_WIDTH).doubleValue();
+            double obsSW = header.<NumberValue>get(SPECTRAL_WIDTH).getValueAsHertz(header);
             tempK = header.get(SAMPLE_TEMPERATURE).doubleValue();
             nDim = 0;
 
