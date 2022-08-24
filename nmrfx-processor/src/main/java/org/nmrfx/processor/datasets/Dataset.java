@@ -111,6 +111,22 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         if (layout != null) {
             createDataFile(raFile, writable);
         }
+        // Datasets that were not generated in NMRFx don't
+        // have freqDomain  attribute set so set freq domain
+        // here
+        boolean isFID =  (getNFreqDims() == 0) && ((!getFreqDomain(0) && (getComplex(0))));
+        if (!isFID && !getFreqDomain(0)) {
+            int nFreq = getNFreqDims() == 0 ? nDim : getNFreqDims();
+            for (int i = 0; i < nFreq; i++) {
+                setFreqDomain(i, true);
+            }
+        }
+
+        System.out.println("fds " + getNFreqDims());
+        for (int i = 0; i < nDim; i++) {
+            System.out.println(i + " fd  " + getFreqDomain(i));
+        }
+
         log.info("new dataset {}", fileName);
         setStrides();
         addFile(fileName);
