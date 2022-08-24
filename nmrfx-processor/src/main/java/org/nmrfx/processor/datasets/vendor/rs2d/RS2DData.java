@@ -249,7 +249,11 @@ public class RS2DData implements NMRData {
             obsNucleus = header.get(OBSERVED_NUCLEUS).stringValue();
             Double obsFreq = null;
             double obsSW = header.<NumberValue>get(SPECTRAL_WIDTH).getValueAsHertz(header);
-            tempK = header.get(SAMPLE_TEMPERATURE).doubleValue();
+
+            if (header.contains(SAMPLE_TEMPERATURE)) {
+                tempK = header.get(SAMPLE_TEMPERATURE).doubleValue();
+            }
+
             nDim = 0;
 
             for (int i = 0; i < MAXDIM; i++) {
