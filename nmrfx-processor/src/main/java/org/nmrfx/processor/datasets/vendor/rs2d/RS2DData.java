@@ -482,7 +482,8 @@ public class RS2DData implements NMRData {
         // otherwise, read from header
         Optional<Value<?>> value = header.optional(BASE_FREQ_PARAMS.get(iDim));
         if (value.isPresent()) {
-            double sf = value.get().doubleValue() + getOffset(iDim) / 1.0e6;
+            double baseFreq = value.get().doubleValue();
+            double sf = (baseFreq + getOffset(iDim)) / 1.0e6;
             Sf[iDim] = sf;
             return sf;
         }
