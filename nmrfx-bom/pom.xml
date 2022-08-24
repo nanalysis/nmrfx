@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.nmrfx</groupId>
         <artifactId>nmrfx</artifactId>
-        <version>11.2.5-SNAPSHOT</version>
+        <version>11.3.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -13,6 +13,7 @@
     <packaging>pom</packaging>
 
     <properties>
+        <javafx.version>17.0.2</javafx.version>
         <nd4j.version>1.0.0-beta7</nd4j.version>
         <dl4j.version>1.0.0-beta7</dl4j.version>
     </properties>
@@ -136,100 +137,100 @@
             <dependency>
                 <groupId>org.openjfx</groupId>
                 <artifactId>javafx-graphics</artifactId>
-                <version>15</version>
+                <version>${javafx.version}</version>
                 <!-- license: GPLv2 license, includes the CLASSPATH exception -->
             </dependency>
             <dependency>
                 <groupId>org.openjfx</groupId>
                 <artifactId>javafx-graphics</artifactId>
-                <version>15</version>
+                <version>${javafx.version}</version>
                 <classifier>win</classifier>
                 <!-- license: GPLv2 license, includes the CLASSPATH exception -->
             </dependency>
             <dependency>
                 <groupId>org.openjfx</groupId>
                 <artifactId>javafx-graphics</artifactId>
-                <version>15</version>
+                <version>${javafx.version}</version>
                 <classifier>mac</classifier>
                 <!-- license: GPLv2 license, includes the CLASSPATH exception -->
             </dependency>
             <dependency>
                 <groupId>org.openjfx</groupId>
                 <artifactId>javafx-graphics</artifactId>
-                <version>15</version>
+                <version>${javafx.version}</version>
                 <classifier>linux</classifier>
                 <!-- license: GPLv2 license, includes the CLASSPATH exception -->
             </dependency>
             <dependency>
                 <groupId>org.openjfx</groupId>
                 <artifactId>javafx-fxml</artifactId>
-                <version>15</version>
+                <version>${javafx.version}</version>
                 <!-- license: GPLv2 license, includes the CLASSPATH exception -->
             </dependency>
             <dependency>
                 <groupId>org.openjfx</groupId>
                 <artifactId>javafx-fxml</artifactId>
-                <version>15</version>
+                <version>${javafx.version}</version>
                 <classifier>win</classifier>
                 <!-- license: GPLv2 license, includes the CLASSPATH exception -->
             </dependency>
             <dependency>
                 <groupId>org.openjfx</groupId>
                 <artifactId>javafx-fxml</artifactId>
-                <version>15</version>
+                <version>${javafx.version}</version>
                 <classifier>mac</classifier>
                 <!-- license: GPLv2 license, includes the CLASSPATH exception -->
             </dependency>
             <dependency>
                 <groupId>org.openjfx</groupId>
                 <artifactId>javafx-fxml</artifactId>
-                <version>15</version>
+                <version>${javafx.version}</version>
                 <classifier>linux</classifier>
                 <!-- license: GPLv2 license, includes the CLASSPATH exception -->
             </dependency>
             <dependency>
                 <groupId>org.openjfx</groupId>
                 <artifactId>javafx-web</artifactId>
-                <version>15</version>
+                <version>${javafx.version}</version>
                 <!-- license: GPLv2 license, includes the CLASSPATH exception -->
             </dependency>
             <dependency>
                 <groupId>org.openjfx</groupId>
                 <artifactId>javafx-web</artifactId>
-                <version>15</version>
+                <version>${javafx.version}</version>
                 <classifier>win</classifier>
                 <!-- license: GPLv2 license, includes the CLASSPATH exception -->
             </dependency>
             <dependency>
                 <groupId>org.openjfx</groupId>
                 <artifactId>javafx-web</artifactId>
-                <version>15</version>
+                <version>${javafx.version}</version>
                 <classifier>mac</classifier>
                 <!-- license: GPLv2 license, includes the CLASSPATH exception -->
             </dependency>
             <dependency>
                 <groupId>org.openjfx</groupId>
                 <artifactId>javafx-web</artifactId>
-                <version>15</version>
+                <version>${javafx.version}</version>
                 <classifier>linux</classifier>
                 <!-- license: GPLv2 license, includes the CLASSPATH exception -->
             </dependency>
             <dependency>
                 <groupId>org.openjfx</groupId>
                 <artifactId>javafx-swing</artifactId>
-                <version>15</version>
+                <version>${javafx.version}</version>
                 <!-- license: GPLv2 license, includes the CLASSPATH exception -->
             </dependency>
             <dependency>
                 <groupId>org.openjfx</groupId>
                 <artifactId>javafx-controls</artifactId>
-                <version>14</version>
+                <version>${javafx.version}</version>
                 <!-- license: GPLv2 license, includes the CLASSPATH exception -->
             </dependency>
             <dependency>
                 <groupId>org.openjfx</groupId>
                 <artifactId>javafx-base</artifactId>
-                <version>14</version>
+                <version>${javafx.version}</version>
                 <!-- license: GPLv2 license, includes the CLASSPATH exception -->
             </dependency>
             <dependency>
