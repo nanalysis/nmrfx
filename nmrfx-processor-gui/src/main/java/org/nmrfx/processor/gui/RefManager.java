@@ -28,6 +28,7 @@ import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import org.apache.commons.collections4.iterators.PermutationIterator;
+import org.apache.commons.lang3.StringUtils;
 import org.controlsfx.control.PropertySheet;
 import org.nmrfx.processor.datasets.DatasetType;
 import org.nmrfx.processor.datasets.vendor.NMRData;
@@ -410,8 +411,7 @@ public class RefManager {
 
     public boolean getSkip(String dimName) {
         String propValue = "0";
-        boolean parseName = !dimName.isEmpty() && !dimName.contains(",");
-        if (parseName) {
+        if (StringUtils.isNumeric(dimName)) {
             try {
                 int dim = Integer.parseInt(dimName);
                 dim--;
