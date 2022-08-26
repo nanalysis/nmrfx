@@ -1,17 +1,19 @@
 package org.nmrfx.processor.datasets.vendor.rs2d;
 
+import com.nanalysis.spinlab.dataset.Header;
+import com.nanalysis.spinlab.dataset.HeaderWriter;
+import com.nanalysis.spinlab.dataset.enums.Parameter;
+import com.nanalysis.spinlab.dataset.values.ListNumberValue;
+import com.nanalysis.spinlab.dataset.values.NumberValue;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.nmrfx.processor.datasets.DatasetCompare;
-import org.w3c.dom.Document;
 
+import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
-import javax.xml.xpath.XPathExpressionException;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
+import java.io.*;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.util.List;
@@ -91,16 +93,19 @@ public class RS2DDataTest {
     }
 
     @Test
-    public void modifyRS2DHeaderFile() throws IOException, XPathExpressionException, TransformerException {
+    public void modifyRS2DHeaderFile() throws IOException, TransformerException, ParserConfigurationException {
         File inFile = Path.of(fidHome, "rs2d/1Dproton/680").toFile();
         assumeFalse(ERR_MSG + inFile, testFilesMissing(inFile));
         File outHeader = Path.of(tmpHome, "header_mod.xml").toFile();
         RS2DData rs2DData = new RS2DData(inFile.toString(), null, true);
-        Document header = rs2DData.getHeader().getDocument();
-        XmlUtil.setParam(header, "MATRIX_DIMENSION_1D", "555");
-        XmlUtil.setParam(header, "PHASE_0", "55.5");
-        XmlUtil.setParam(header, "PHASE_1", "5.55");
-        XmlUtil.writeDocument(header, outHeader);
+
+        Header header = rs2DData.getHeader();
+        header.<NumberValue>get(Parameter.MATRIX_DIMENSION_1D).setValue(555);
+        header.<ListNumberValue>get(Parameter.PHASE_0).setValue(List.of(55.5));
+        header.<ListNumberValue>get(Parameter.PHASE_1).setValue(List.of(5.55));
+        try (OutputStream out = new FileOutputStream(outHeader)) {
+            new HeaderWriter().writeXml(header, out);
+        }
     }
 
     @Test

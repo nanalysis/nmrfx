@@ -95,7 +95,7 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
-import java.nio.charset.StandardCharsets;
+import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
@@ -1008,7 +1008,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
             if (svgFormat == null) {
                 svgFormat = new DataFormat("image/svg+xml");
             }
-            content.put(svgFormat, stream.toString().getBytes(StandardCharsets.UTF_8));
+            content.put(svgFormat, ByteBuffer.wrap(stream.toByteArray()));
             content.put(DataFormat.PLAIN_TEXT, stream.toString());
             clipboard.setContent(content);
         } catch (GraphicsIOException ex) {

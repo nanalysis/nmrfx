@@ -317,7 +317,7 @@ public class MainApp extends Application {
                 recentFIDMenuItem, recentDatasetMenuItem, newMenuItem, new SeparatorMenuItem(), pdfMenuItem, svgMenuItem, pngMenuItem, loadPeakListMenuItem);
 
         Menu spectraMenu = new Menu("Spectra");
-        MenuItem copyItem = new MenuItem("Copy Spectrum as SVG Text");
+        MenuItem copyItem = new MenuItem("Copy Spectrum as SVG");
         copyItem.setOnAction(e -> FXMLController.getActiveController().copySVGAction(e));
         MenuItem deleteItem = new MenuItem("Delete Spectrum");
         deleteItem.setOnAction(e -> FXMLController.getActiveController().getActiveChart().close());
