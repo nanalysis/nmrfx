@@ -410,7 +410,7 @@ public class RefManager {
     }
 
     public boolean getSkip(String dimName) {
-        if (StringUtils.isNumeric(dimName)) {
+        if (!StringUtils.isNumeric(dimName)) {
             return false;
         }
         String propValue = "0";
