@@ -84,25 +84,28 @@ public class GUIUtils {
         if (toolBarList.isEmpty()) {
             return;
         }
-        List<List<Node>> toolBarsItems = new ArrayList<>();
-        for (ToolBar toolBar: toolBarList) {
-            toolBarsItems.add(toolBar.getItems());
-        }
         // Set height of all toolbars to be the same
-        double heightToolBar = Collections.max(toolBarList.stream().map(node -> node.prefHeight(Region.USE_COMPUTED_SIZE)).collect(Collectors.toList()));
+        double heightToolBar = Collections.max(toolBarList.stream().map(node -> node.prefHeight(Region.USE_COMPUTED_SIZE)).toList());
         for (ToolBar toolBar : toolBarList) {
             toolBar.setPrefHeight(heightToolBar);
         }
+
+        List<Node> toolBarsItems = new ArrayList<>();
+        for (ToolBar toolBar: toolBarList) {
+            toolBarsItems.addAll(toolBar.getItems());
+        }
+        nodeAdjustHeights(toolBarsItems);
+    }
+
+    public static void nodeAdjustHeights(List<Node> nodeList) {
         // Set height of controls within a toolbar to be the same.
-        Optional<Double> height = toolBarsItems.get(0).stream().map(node -> node.prefHeight(Region.USE_COMPUTED_SIZE)).max(Double::compare);
+        Optional<Double> height = nodeList.stream().map(node -> node.prefHeight(Region.USE_COMPUTED_SIZE)).max(Double::compare);
         if (height.isEmpty()) {
             return;
         }
-        for (List<Node> toolBarItems: toolBarsItems) {
-            for (Node node: toolBarItems) {
-                if (node instanceof Control) {
-                    ((Control) node).setPrefHeight(height.get());
-                }
+        for (Node node : nodeList) {
+            if (node instanceof Control) {
+                ((Control) node).setPrefHeight(height.get());
             }
         }
     }

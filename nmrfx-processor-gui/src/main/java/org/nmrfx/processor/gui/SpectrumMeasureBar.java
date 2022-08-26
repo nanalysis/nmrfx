@@ -48,6 +48,7 @@ import javafx.scene.text.TextAlignment;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.math.VecBase;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
+import org.nmrfx.utils.GUIUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -162,14 +163,10 @@ public class SpectrumMeasureBar {
 
         // The different control items end up with different heights based on font and icon size,
         // set all the items to use the same height
-        toolBar.heightProperty().addListener((observable, oldValue, newValue) -> {
-            List<Node> items = new ArrayList<>(Arrays.asList(closeButton, absModeButton, gridModeButton));
-            items.addAll(gridPane.getChildren());
-            double height = items.stream().map(node -> node.prefHeight(Region.USE_COMPUTED_SIZE)).max(Double::compare).get();
-            for (Node node : items) {
-                ((Control) node).setPrefHeight(height);
-            }
-        });
+        List<Node> items = new ArrayList<>(Arrays.asList(closeButton, absModeButton, gridModeButton));
+        items.addAll(gridPane.getChildren());
+        toolBar.heightProperty().addListener(
+                (observable, oldValue, newValue) -> GUIUtils.nodeAdjustHeights(items));
 
     }
 

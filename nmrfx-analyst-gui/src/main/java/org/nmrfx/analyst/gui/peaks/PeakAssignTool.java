@@ -26,6 +26,7 @@ import org.nmrfx.processor.gui.MainApp;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
 import org.nmrfx.structure.chemistry.Molecule;
+import org.nmrfx.utils.GUIUtils;
 
 /**
  *
@@ -92,14 +93,10 @@ public class PeakAssignTool implements ControllerTool {
 
         // The different control items end up with different heights based on font and icon size,
         // set all the items to use the same height
-        toolBar.heightProperty().addListener((observable, oldValue, newValue) -> {
-            List<Node> items = new ArrayList<>(Arrays.asList(closeButton, pickButton));
-            items.addAll(gridPane.getChildren());
-            double height = items.stream().map(node -> node.prefHeight(Region.USE_COMPUTED_SIZE)).max(Double::compare).get();
-            for (Node node : items) {
-                ((Control) node).setPrefHeight(height);
-            }
-        });
+        List<Node> items = new ArrayList<>(Arrays.asList(closeButton, pickButton));
+        items.addAll(gridPane.getChildren());
+        toolBar.heightProperty().addListener(
+                (observable, oldValue, newValue) -> GUIUtils.nodeAdjustHeights(items));
 
     }
 
