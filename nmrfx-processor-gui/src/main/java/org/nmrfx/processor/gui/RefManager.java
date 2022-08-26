@@ -410,15 +410,16 @@ public class RefManager {
     }
 
     public boolean getSkip(String dimName) {
-        String propValue = "0";
         if (StringUtils.isNumeric(dimName)) {
-            try {
-                int dim = Integer.parseInt(dimName);
-                dim--;
-                propValue = getPropValue(dim, "skip", false);
-            } catch (NumberFormatException nFE) {
-                log.warn("Unable to parse skip.", nFE);
-            }
+            return false;
+        }
+        String propValue = "0";
+        try {
+            int dim = Integer.parseInt(dimName);
+            dim--;
+            propValue = getPropValue(dim, "skip", false);
+        } catch (NumberFormatException nFE) {
+            log.warn("Unable to parse skip.", nFE);
         }
         return propValue.equals("1");
     }
