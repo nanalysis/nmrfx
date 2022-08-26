@@ -59,7 +59,7 @@ public class SpectrumMenuActions extends MenuActions {
         arrangeMenu.getItems().addAll(createGridItem, horizItem, vertItem, gridItem, overlayItem, minimizeItem, normalizeItem);
         MenuItem favoritesMenuItem = new MenuItem("Favorites");
         favoritesMenuItem.setOnAction(e -> showFavorites());
-        MenuItem copyItem = new MenuItem("Copy Spectrum as SVG Text");
+        MenuItem copyItem = new MenuItem("Copy Spectrum as SVG");
         copyItem.setOnAction(e -> FXMLController.getActiveController().copySVGAction(e));
         menu.getItems().addAll(newMenuItem, deleteItem, arrangeMenu, favoritesMenuItem, syncMenuItem, copyItem);
         MenuItem[] disableItems = {deleteItem, arrangeMenu, favoritesMenuItem, syncMenuItem, copyItem};
