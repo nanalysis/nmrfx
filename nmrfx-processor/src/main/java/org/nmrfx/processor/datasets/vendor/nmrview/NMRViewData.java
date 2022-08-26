@@ -372,7 +372,10 @@ public class NMRViewData implements NMRData {
 
     @Override
     public boolean isFID() {
-        return !dataset.getFreqDomain(0);
+        // freqDomain parameter might not be set in older
+        // datasets so do somewhat complex check here to
+        // decide if the file is FIDs
+        return (dataset.getNFreqDims() == 0) && ((!dataset.getFreqDomain(0) && (dataset.getComplex(0))));
     }
 
     @Override

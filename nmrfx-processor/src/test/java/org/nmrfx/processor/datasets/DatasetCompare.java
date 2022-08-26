@@ -1,74 +1,44 @@
 package org.nmrfx.processor.datasets;
 
+import java.io.DataInputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.RandomAccessFile;
-import java.nio.MappedByteBuffer;
-import java.nio.channels.FileChannel;
+import java.nio.file.Files;
 
 public class DatasetCompare {
-    public static long[] compare(File refFile, File testFile) throws IOException {
+
+    public static long compare(File refFile, File testFile) throws IOException {
         long refLen = refFile.length();
         long testLen = testFile.length();
-        long fileSizeCorrect = 0;
-        long headerCorrect = 0;
-        long dataCorrect = 0;
+        long result;
 
         if (refLen != testLen) {
-            fileSizeCorrect = Math.min(refLen, testLen);
+            result = Math.min(refLen, testLen);
         } else {
-            RandomAccessFile refRAFile = new RandomAccessFile(refFile, "r");
-            RandomAccessFile testRAFile = new RandomAccessFile(testFile, "r");
-
-            MappedByteBuffer refBuffer = refRAFile.getChannel().map(FileChannel.MapMode.READ_ONLY, 0, refLen);
-            MappedByteBuffer testBuffer = testRAFile.getChannel().map(FileChannel.MapMode.READ_ONLY, 0, testLen);
-            if (refBuffer.compareTo(testBuffer) != 0) {
-                int headerSize = refFile.getName().equals("data.dat") ? 0 :
-                        refFile.getName().endsWith(".nv") ? Dataset.NV_HEADER_SIZE : Dataset.UCSF_HEADER_SIZE;
-                refBuffer.position(0);
-                testBuffer.position(0);
-                for (int i = 0; i < headerSize; i++) {
-                    if (refBuffer.get(i) != testBuffer.get(i)) {
-                        // if match fails at position 0 return -1
-                        headerCorrect = i == 0 ? -1 : i;
-                        break;
-                    }
-                }
-                for (int i = headerSize; i < refLen; i++) {
-                    if (refBuffer.get(i) != testBuffer.get(i)) {
-                        // if match fails at position 0 return -1
-                        dataCorrect = i;
-                        break;
-                    }
-                }
-            }
+            result = Files.mismatch(refFile.toPath(), testFile.toPath());
         }
-        return new long[]{fileSizeCorrect, dataCorrect, headerCorrect};
+        return result;
     }
 
     public static long compareFloat(File refFile, File testFile) throws IOException {
         long refLen = refFile.length();
         long testLen = testFile.length();
-        long result = 0;
+        long result = -1;
 
         if (refLen != testLen) {
             result = Math.min(refLen, testLen);
         } else {
-            RandomAccessFile refRAFile = new RandomAccessFile(refFile, "r");
-            RandomAccessFile testRAFile = new RandomAccessFile(testFile, "r");
-
-            MappedByteBuffer refBuffer = refRAFile.getChannel().map(FileChannel.MapMode.READ_ONLY, 0, refLen);
-            MappedByteBuffer testBuffer = testRAFile.getChannel().map(FileChannel.MapMode.READ_ONLY, 0, testLen);
-            var refFloat = refBuffer.asFloatBuffer();
-            var testFloat = testBuffer.asFloatBuffer();
-                refFloat.position(0);
-                testFloat.position(0);
-                for (int i = 0; i < testLen / Float.BYTES; i++) {
-                    if (refFloat.get(i) != testFloat.get(i)) {
-                        // if match fails at position 0 return -1
-                        result = i == 0 ? -1 : i;
+            try (DataInputStream refStream = new DataInputStream(new FileInputStream(refFile));
+                 DataInputStream testStream = new DataInputStream(new FileInputStream(testFile))) {
+                int i = 0;
+                while (refStream.available() > 0) {
+                    if (Float.compare(refStream.readFloat(), testStream.readFloat()) != 0) {
+                        result = i == 0? -1 : i;
                         break;
                     }
+                    i++;
+                }
             }
         }
         return result;

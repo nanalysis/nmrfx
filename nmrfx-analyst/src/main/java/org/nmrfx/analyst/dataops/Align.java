@@ -47,13 +47,13 @@ public class Align {
 
             dataset.readVector(vec2, j, 0);
             double corr = compareVec(vec1, vec2, pt1, pt2);
-            System.out.println(row + " " + j + " " + corr);
+            log.info("{} {} {}", row, j, corr);
             if (corr > maxCorr) {
                 maxCorr = corr;
                 index = j;
             }
         }
-        System.out.println(row + " max " + index + " " + maxCorr);
+        log.info("{} max {} {}", row, index, maxCorr);
         return index;
     }
 
@@ -79,7 +79,7 @@ public class Align {
             dataset.readVector(vec2, i, 0);
             dataset.writeVector(vec1, i, 0);
             dataset.writeVector(vec2, row, 0);
-            System.out.println("swap " + i + " " + row);
+            log.info("swap {} {}", i, row);
             row = findClosest(dataset, vec1, vec2, i, pt1, pt2);
         }
     }
@@ -168,7 +168,6 @@ public class Align {
             sectionLength = vecSize / 128;
         }
         final int sL = fixedVec.getSize(); // fixme   XXXXXXXXXXXXXXXXXXXXXXXX
-//        System.out.println("indices " + indices.size() + " " + vecSize + " " + startVecPos[0][0] + " " + startVecPos[0][1] + " " + sectionLength);
         Double[] deltas = new Double[indices.size()];
 
         indices.stream().parallel().forEach(vi -> {
@@ -385,7 +384,6 @@ public class Align {
             regions.add(region);
         }
         final int sL = fixedVec.getSize(); // fixme   XXXXXXXXXXXXXXXXXXXXXXXX
-//        System.out.println("indices " + indices.size() + " " + vecSize + " " + startVecPos[0][0] + " " + startVecPos[0][1] + " " + sectionLength);
         Double[] deltas = new Double[indices.size()];
         deltas[0] = 0.0;
         indices.stream().filter(vi -> vi != skipIndices).forEach(vi -> {
@@ -415,7 +413,6 @@ public class Align {
 
     public void segmentedAlign(Vec targetVec, Vec sampleVec, Vec resultVec, int preExtraIn, int postExtraIn, int maxShift, List<AlignRegion> regions) {
         int sDevWindow = 32;
-        int nTries = 3;
         int vecSize = targetVec.getSize();
         double sdev = targetVec.sdev(sDevWindow);
         Vec subTarget = new Vec(32);
@@ -437,45 +434,26 @@ public class Align {
 //            }
 
             int size = region.max - region.min + 1;
-//            System.out.println(region.min + " max " + region.max + " sz " + size + " vsz " + vecSize + " maxsh " + maxShift + " use " + useSection);
             subTarget.resize(size);
             targetVec.copy(subTarget, region.min, size);
             var maxIndex = subTarget.maxIndex();
             var ratio = maxIndex.getValue() / sdev;
-            int preExtra = preExtraIn;
-            int postExtra = postExtraIn;
             int maxShiftA = maxShift + Math.max(preExtraIn, postExtraIn);
-            for (int i = 0; i < nTries; i++) {
-                pt1e = region.min - preExtra;
-                pt2e = region.max + postExtra;
-                pt1e = Math.max(0, pt1e);
-                pt2e = Math.min(pt2e, vecSize - 1);
-                int sizeE = pt2e - pt1e + 1;
-                subSample.resize(sizeE);
-                sampleVec.copy(subSample, pt1e, sizeE);
-                var posValue = VecCorrelation.fftCorr(subTarget, subSample, 0, maxShiftA);
-                corrValue = posValue.getValue() / (size - 1.0);
-                shift = posValue.getPosition();
-//                System.out.println("shift " + shift);
-                break;
-//                if (shift < 0) {
-//                    preExtra = preExtra - shift + 4;
-//                } else {
-//                    break;
-//                }
-//                maxShiftA = maxShift - preExtra;
-//                if (maxShiftA <  0) {
-//                    System.out.println("maxshift " + maxShiftA);
-//                    break;
-//                }
-            }
-//            System.out.println("pt1e " + pt1e + " pt2e " + pt2e + " shift " + shift + " corr " + corrValue);
-//            if (shift < 0) {
-//                shift = 0;
-//            }
-            Alignment alignment = new Alignment(region.min, region.max, pt1e + shift, pt1e + shift + size - 1, shift, shift - preExtra, corrValue, ratio, useSection);
+            // Note: originally this method tried three times to calculate the shift to get a shift that was greater
+            // than 0 and then used a shift of 0 if the shift was still <0 but the code was commented out so removed it
+            pt1e = region.min - preExtraIn;
+            pt2e = region.max + postExtraIn;
+            pt1e = Math.max(0, pt1e);
+            pt2e = Math.min(pt2e, vecSize - 1);
+            int sizeE = pt2e - pt1e + 1;
+            subSample.resize(sizeE);
+            sampleVec.copy(subSample, pt1e, sizeE);
+            var posValue = VecCorrelation.fftCorr(subTarget, subSample, 0, maxShiftA);
+            corrValue = posValue.getValue() / (size - 1.0);
+            shift = posValue.getPosition();
+
+            Alignment alignment = new Alignment(region.min, region.max, pt1e + shift, pt1e + shift + size - 1, shift, shift - preExtraIn, corrValue, ratio, useSection);
             alignments.add(alignment);
-//            System.out.println(alignment);
         }
         sampleVec.copy(resultVec);
         resultVec.zeros();

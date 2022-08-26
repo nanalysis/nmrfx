@@ -166,7 +166,6 @@ public class ChartProcessor {
     public ChartProcessor(ProcessorController processorController) {
         interpreter = MainApp.interpreter;
         this.processorController = processorController;
-        this.fxmlController = processorController.fxmlController;
         PyObject pyDocObject = interpreter.eval("getDocs()");
         pyDocs = (ArrayList) pyDocObject.__tojava__(java.util.ArrayList.class);
     }
@@ -306,13 +305,13 @@ public class ChartProcessor {
                     break;
                 }
                 if (acqOrderArray[i].length() != 2) {
-                    System.out.println("wrong len" + acqOrderArray[i]);
+                    log.warn("wrong len {}", acqOrderArray[i]);
                     ok = false;
                     break;
                 }
                 char char0 = acqOrderArray[i].charAt(0);
                 if ((char0 != 'p') && (char0 != 'd') && (char0 != 'a')) {
-                    System.out.println("acq order character not a p,d or a: " + char0);
+                    log.warn("acq order character not a p,d or a: {}", char0);
                     ok = false;
                     break;
                 }
@@ -321,14 +320,14 @@ public class ChartProcessor {
                 }
                 char char1 = acqOrderArray[i].charAt(1);
                 if (!Character.isDigit(char1)) {
-                    System.out.println("not digit " + char1);
+                    log.warn("not digit {}", char1);
                     ok = false;
                     break;
                 }
 
             }
             if (nDimChars != (nmrData.getNDim() - 1)) {
-                System.out.println(nDimChars + " " + (nmrData.getNDim() - 1));
+                log.warn("{} {}", nDimChars, (nmrData.getNDim() - 1));
                 ok = false;
             }
             if (ok) {
@@ -372,7 +371,7 @@ public class ChartProcessor {
                     int size = Integer.parseInt(sizeArg);
                     setArraySize(iDim, size);
                 } catch (NumberFormatException nfE) {
-                    System.out.println(nfE.getMessage());
+                    log.warn(nfE.getMessage(), nfE);
                 }
             }
         }
@@ -430,10 +429,6 @@ public class ChartProcessor {
 
                     vecIndex = multiVecCounter.getNextGroup(index);
                 } else {
-//                    for (var iRow : rows) {
-//                        System.out.print(iRow + " ");
-//                    }
-//                    System.out.println(index);
                     index = multiVecCounter.findOutGroup(rows);
                     vecIndex = multiVecCounter.getNextGroup(index);
                 }
@@ -442,7 +437,7 @@ public class ChartProcessor {
                     if (vecIndex != null) {
                         vecIndex.printMe(index, 1);
                     } else {
-                        System.out.println("No vec");
+                        log.info("No vec");
                     }
 
                 }
@@ -538,10 +533,10 @@ public class ChartProcessor {
             if (i < 0) {
                 i = 0;
             }
-            fxmlController.setRowLabel(i + 1, size);
-            int[] rows = fxmlController.getRows();
+            processorController.setRowLabel(i + 1, size);
+            int[] rows = processorController.getRows();
             int[] fileIndices = loadVectors(1, rows);
-            fxmlController.setFileIndex(fileIndices);
+            processorController.setFileIndex(fileIndices);
             try {
                 ProcessOps process = getProcess();
                 process.exec();
@@ -628,7 +623,7 @@ public class ChartProcessor {
                 opIndex = OperationInfo.getPosition(listItems, op);
             }
             if (opIndex < 0) {
-                System.out.println("bad op");
+                log.warn("bad op");
             } else if (opIndex >= listItems.size()) {
                 listItems.add(op);
             } else {
@@ -656,7 +651,6 @@ public class ChartProcessor {
             return;
         }
         scriptValid = false;
-        //System.out.println("update " + vecDimName + " " + processorController.getOperationList());
         List<String> oldList = new ArrayList<>();
         oldList.addAll(processorController.getOperationList());
         mapOpLists.put(vecDimName, oldList);
@@ -955,7 +949,6 @@ public class ChartProcessor {
             datasetFile = new File(outputDir, "multi.nv");
         }
         scriptBuilder.append("closeScanTable()").append(lineSep);
-        // System.out.println(scriptBuilder.toString());
         return scriptBuilder.toString();
     }
 
@@ -1155,10 +1148,8 @@ public class ChartProcessor {
     void setFlags() {
         Map<String, Boolean> flags = new HashMap<>();
         String flagString = processorController.getFlagString().trim();
-        //System.out.println("flag " + flagString);
         String[] flagStrings = flagString.split("\\s");
         for (String flag : flagStrings) {
-            //System.out.println(flag);
             String[] flagParts = flag.split("=");
             if (flagParts.length == 2) {
                 if (flagParts[0].equals("mode")) {
@@ -1171,7 +1162,6 @@ public class ChartProcessor {
                     //}
                 } else {
                     boolean flagValue = flagParts[1].equals("1");
-                    //System.out.println(flagParts[0] + " " + flagValue);
                     flags.put(flagParts[0], flagValue);
                 }
             }
@@ -1287,13 +1277,12 @@ public class ChartProcessor {
 //            chart.datasetAttributes = null;
             chart.setCrossHairState(true, true, true, true);
             int[] sizes = new int[0];
-            fxmlController.vectorStatus(sizes, vecDim);
+            processorController.vectorStatus(sizes, vecDim);
         } else {
             chart.controller.isFID = true;
 
 //            chart.setDataset(null);
 //            chart.datasetAttributes = null;
-            //System.out.println("load vec from reload");
             loadVectors(0);
             chart.setCrossHairState(false, true, false, true);
             try {
@@ -1304,15 +1293,13 @@ public class ChartProcessor {
             }
             int[] sizes = new int[1];
             sizes[0] = 1;
-            //System.out.println("ndim " + nDim);
             if (nDim > 1) {
                 sizes = new int[nDim];
                 for (int i = 0; i < nDim; i++) {
                     sizes[i] = nmrData.getSize(i);
                 }
             }
-            fxmlController.vectorStatus(sizes, vecDim);
-            fxmlController.setRowLabel(1, sizes[0]);
+            processorController.vectorStatus(sizes, vecDim);
         }
         chart.full();
         chart.autoScale();
@@ -1334,7 +1321,7 @@ public class ChartProcessor {
         ProcessOps process = getProcess();
         process.clearOps();
         if (processorController == null) {
-            System.out.println("null proc");
+            log.info("null processor controller.");
             return;
         }
         if (processorController.isViewingDataset()) {
@@ -1353,7 +1340,7 @@ public class ChartProcessor {
                 return;
             }
             if (processorController.refManager == null) {
-                System.out.println("null refm");
+                log.info("null ref manager");
                 return;
             }
             processorController.clearProcessingTextLabel();
@@ -1409,7 +1396,7 @@ public class ChartProcessor {
                     process.exec();
                 } catch (IncompleteProcessException e) {
                     OperationListCell.failedOperation(e.index);
-                    System.out.println("error message: " + e.getMessage());
+                    log.warn("error message: {}", e.getMessage(), e);
                     processorController.setProcessingStatus(e.op + " " + e.index + ": " + e.getMessage(), false, e);
                     log.warn(e.getMessage(), e);
                     int j = 0;
@@ -1458,4 +1445,7 @@ public class ChartProcessor {
         return pyDocs;
     }
 
+    public ProcessorController getProcessorController() {
+        return processorController;
+    }
 }

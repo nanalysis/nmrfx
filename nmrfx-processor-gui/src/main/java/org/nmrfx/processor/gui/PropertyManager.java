@@ -94,7 +94,6 @@ public class PropertyManager {
             public void changed(ObservableValue<? extends Number> observableValue, Number number, Number number2) {
                 PropertySheet.Item item = (PropertySheet.Item) observableValue;
                 if (item.getCategory().equals("PHASE")) {
-                    // System.out.println(item.getName());
                     if (item.getName().equals("ph0") || item.getName().equals("ph1")) {
                         //updatePhases(item, number, number2);
                     }
@@ -107,7 +106,6 @@ public class PropertyManager {
             public void changed(ObservableValue<? extends Number> observableValue, Number number, Number number2) {
                 PropertySheet.Item item = (PropertySheet.Item) observableValue;
                 if (item.getCategory().equals("PHASE")) {
-                    // System.out.println(item.getName());
                     if (item.getName().equals("ph0") || item.getName().equals("ph1")) {
                         updatePhases(item, number, number2);
                     }
@@ -406,7 +404,6 @@ public class PropertyManager {
             opPars = op.substring(op.indexOf('(') + 1, op.length() - 1);
             pattern = Pattern.compile(patternString);
         }
-        //System.out.println("set prop sheet " + scriptIndex + " " + op);
         ObservableList<PropertySheet.Item> newItems = FXCollections.observableArrayList();
         for (PropertySheet.Item item : propItems) {
             if (item == null) {

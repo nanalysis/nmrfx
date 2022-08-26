@@ -106,10 +106,6 @@ public class PeakPicking {
             }
         }
         PeakPicker picker = new PeakPicker(peakPickPar);
-        String canonFileName = dataset.getCanonicalFile();
-        int lastDot = canonFileName.lastIndexOf(".");
-        String listFileName = lastDot < 0 ? canonFileName + ".xpk2"
-                : canonFileName.substring(0, lastDot) + ".xpk2";
         PeakList peakList = null;
         try {
             if (refineLS) {
@@ -120,6 +116,10 @@ public class PeakPicking {
             if (peakList != null) {
                 chart.setupPeakListAttributes(peakList);
                 if (saveFile) {
+                    String canonFileName = dataset.getCanonicalFile();
+                    int lastDot = canonFileName.lastIndexOf(".");
+                    String listFileName = lastDot < 0 ? canonFileName + ".xpk2"
+                            : canonFileName.substring(0, lastDot) + ".xpk2";
                     try (final FileWriter writer = new FileWriter(listFileName)) {
                         PeakWriter peakWriter = new PeakWriter();
                         peakWriter.writePeaksXPK2(writer, peakList);

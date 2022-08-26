@@ -91,6 +91,8 @@ public class BrukerData implements NMRData {
     private String[] acqOrder;
     private SampleSchedule sampleSchedule = null;
     private final double scale;
+    // flag to indicate BrukerData has been opened as an FID
+    private boolean isFID;
     boolean hasFID = false;
     boolean hasSpectrum = false;
     List<Double> arrayValues = new ArrayList<>();
@@ -109,6 +111,7 @@ public class BrukerData implements NMRData {
         }
         this.fpath = path;
         this.nusFile = nusFile;
+        isFID = true;
         File file = new File(path);
         openParFile(file);
         openDataFile(path);
@@ -128,6 +131,7 @@ public class BrukerData implements NMRData {
         File file = new File(path);
         this.fpath = path;
         this.nusFile = null;
+        isFID = false;
         openParFile(file.getParentFile().getParentFile().getParentFile());
         scale = 1.0;
     }
@@ -1323,8 +1327,9 @@ public class BrukerData implements NMRData {
         dvec.dwellTime = 1.0 / getSW(0);
         dvec.centerFreq = getSF(0);
 
-        dvec.setRefValue(getRef(0));
-        //System.out.println("zeroref " + dvec.refValue);
+        //double delRef = (dvec.getSize() / 2 - 0) * (1.0 / dvec.dwellTime) / dvec.centerFreq / dvec.getSize();
+        double delRef = ((1.0 / dvec.dwellTime) / dvec.centerFreq) / 2.0;
+        dvec.refValue = getRef(0) + delRef;
         //dvec.setPh0(getPH0(1));
         //dvec.setPh1(getPH1(1));
     }
@@ -1350,7 +1355,8 @@ public class BrukerData implements NMRData {
         dvec.dwellTime = 1.0 / getSW(iDim);
         dvec.centerFreq = getSF(iDim);
 //        double delRef = (dvec.getSize() / 2 - 0) * (1.0 / dvec.dwellTime) / dvec.centerFreq / dvec.getSize();
-        dvec.setRefValue(getRef(iDim));
+        double delRef = ((1.0 / dvec.dwellTime) / dvec.centerFreq) / 2.0;
+        dvec.refValue = getRef(iDim) + delRef;
         dvec.setPh0(getPH0(iDim));
         dvec.setPh1(getPH1(iDim));
         if (iDim == 0) {
@@ -1818,6 +1824,11 @@ public class BrukerData implements NMRData {
     }
 
     @Override
+    public boolean isFID() {
+        return isFID;
+    }
+
+    @Override
     public SampleSchedule getSampleSchedule() {
         return sampleSchedule;
     }
@@ -1985,7 +1996,6 @@ public class BrukerData implements NMRData {
                 System.out.print(" " + cdata[pt + i]);
             }
             System.out.println(" : " + cdata[bruker.getNPoints() - 1]);
-            //        System.out.print("last tdsize "+bruker.tdsize+" :");
             pt = vc.getSize() - 20;
             for (int i = 0; i < 20; i++) {
                 System.out.print(" " + cdata[pt + i]);

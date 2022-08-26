@@ -32,6 +32,8 @@ import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.OptionalInt;
+
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.ObservableList;
@@ -59,12 +61,31 @@ import org.apache.commons.lang3.SystemUtils;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.processor.gui.spectra.NMRAxis;
 import org.nmrfx.processor.gui.undo.ChartUndoLimits;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
  * @author Bruce Johnson
  */
 public class SpectrumStatusBar {
+
+    private static final Logger log = LoggerFactory.getLogger(SpectrumStatusBar.class);
+
+    private enum DisplayMode {
+        CURVES("Curves (1D)"),
+        CONTOURS("Contours (2D)");
+        private final String strValue;
+
+        DisplayMode(String strValue) {
+            this.strValue = strValue;
+        }
+
+        @Override
+        public String toString() {
+            return this.strValue;
+        }
+    }
 
     static final DecimalFormat formatter = new DecimalFormat();
 
@@ -79,7 +100,7 @@ public class SpectrumStatusBar {
     CheckBox complexStatus = new CheckBox("Complex");
     CheckBox phaserStatus = new CheckBox("Phasing");
     MenuButton toolButton = new MenuButton("Tools");
-    List<Button> specialButtons = new ArrayList<>();
+    List<ButtonBase> specialButtons = new ArrayList<>();
     Button peakPickButton;
 
 
@@ -87,6 +108,7 @@ public class SpectrumStatusBar {
     TextField[] planePPMField = new TextField[maxSpinners];
     Spinner[] planeSpinner = new Spinner[maxSpinners];
     MenuButton[] dimMenus = new MenuButton[maxSpinners + 2];
+    ComboBox<DisplayMode> displayModeComboBox = null;
     MenuButton[] rowMenus = new MenuButton[maxSpinners];
     ChangeListener<Integer>[] planeListeners = new ChangeListener[maxSpinners];
     ToolBar btoolBar;
@@ -96,8 +118,7 @@ public class SpectrumStatusBar {
     Pane filler1 = new Pane();
     Pane filler2 = new Pane();
     static String[] rowNames = {"X", "Y", "Z", "A", "B", "C", "D", "E"};
-    MenuButton cursorMenuButton = new MenuButton();
-    Cursor currentCursor = Cursor.CROSSHAIR;
+    ComboBox<Cursor> cursorChoiceBox = new ComboBox<>();
     HashMap<Cursor, Text> cursorMap = new HashMap<>();
     HashMap<String, Cursor> cursorNameMap = new HashMap<>();
     static Background errorBackground = new Background(new BackgroundFill(Color.ORANGE, CornerRadii.EMPTY, Insets.EMPTY));
@@ -198,6 +219,10 @@ public class SpectrumStatusBar {
                 menuItem.addEventHandler(ActionEvent.ACTION, event -> dimMenuAction(event, iAxis));
             }
         }
+        displayModeComboBox = new ComboBox<>();
+        displayModeComboBox.getItems().setAll(DisplayMode.values());
+        displayModeComboBox.addEventHandler(ActionEvent.ACTION, this::displayModeComboBoxAction);
+
         for (int i = 0; i < rowMenus.length; i++) {
             final int iAxis = i + 1;
             String rowName = rowNames[iAxis];
@@ -226,26 +251,14 @@ public class SpectrumStatusBar {
         controller.sliceStatus.bind(sliceStatus.selectedProperty());
         sliceStatus.setOnAction(this::sliceStatus);
         complexStatus.setOnAction(this::complexStatus);
-        Text crosshairIcon = GlyphsDude.createIcon(FontAwesomeIcon.PLUS, "16");
-        Text arrowIcon = GlyphsDude.createIcon(FontAwesomeIcon.MOUSE_POINTER, "16");
-        cursorMap.put(Cursor.CROSSHAIR, crosshairIcon);
-        cursorMap.put(SEL_CURSOR, arrowIcon);
-        cursorNameMap.put("CrossHair", Cursor.CROSSHAIR);
-        cursorNameMap.put("Selector", SEL_CURSOR);
-        String[] cursorModes = {"CrossHair", "Selector"};
-        for (String cursorMode : cursorModes) {
-            MenuItem cursorMenuItem = new MenuItem(cursorMode);
-            cursorMenuButton.getItems().add(cursorMenuItem);
-            cursorMenuItem.setOnAction(e -> setCursor(cursorMode));
-        }
-        cursorMenuButton.setGraphic(cursorMap.get(Cursor.CROSSHAIR));
+        cursorChoiceBox.getItems().addAll(Cursor.CROSSHAIR, SEL_CURSOR);
+        cursorChoiceBox.setValue(Cursor.CROSSHAIR);
 
         Callback<ListView<Cursor>, ListCell<Cursor>> cellFactory = new Callback<ListView<Cursor>, ListCell<Cursor>>() {
             @Override
             public ListCell<Cursor> call(ListView<Cursor> p) {
                 return new ListCell<>() {
                     Text icon;
-
                     {
                         icon = new Text();
                         setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
@@ -270,9 +283,12 @@ public class SpectrumStatusBar {
                 };
             }
         };
+        cursorChoiceBox.setButtonCell(cellFactory.call(null));
+        cursorChoiceBox.setCellFactory(cellFactory);
+        cursorChoiceBox.valueProperty().bindBidirectional(controller.getCursorProperty());
     }
 
-    public void addToolBarButtons(Button... buttons) {
+    public void addToolBarButtons(ButtonBase... buttons) {
         for (var button:buttons) {
             specialButtons.add(button);
         }
@@ -303,23 +319,6 @@ public class SpectrumStatusBar {
 
         specToolMenu.getItems().addAll(measureMenuItem, analyzerMenuItem);
         addToToolMenu(specToolMenu);
-    }
-
-    public void setCursor(Cursor cursor) {
-        cursorMenuButton.setGraphic(cursorMap.get(cursor));
-        for (PolyChart chart : controller.charts) {
-            chart.setCanvasCursor(cursor);
-            if (cursor.toString().equals("CROSSHAIR")) {
-                chart.getCrossHairs().setCrossHairState(true);
-            } else {
-                chart.getCrossHairs().setCrossHairState(false);
-            }
-        }
-        currentCursor = cursor;
-    }
-
-    public void setCursor(String cursorName) {
-        setCursor(cursorNameMap.get(cursorName));
     }
 
     private StackPane makeIcon(int i, int j, boolean boundMode) {
@@ -421,9 +420,6 @@ public class SpectrumStatusBar {
                 updatePlaneSpinner(center, axNum);
             }
         }
-
-        chart.setCanvasCursor(currentCursor);
-
     }
 
     public void updateRowSpinner(int row, int axNum) {
@@ -526,8 +522,10 @@ public class SpectrumStatusBar {
         arrayMode = true;
         setPlaneRanges(2, nRows);
         List<Node> nodes = new ArrayList<>();
-        nodes.add(cursorMenuButton);
+        nodes.add(cursorChoiceBox);
         nodes.add(toolButton);
+        displayModeComboBox.getSelectionModel().select(DisplayMode.CURVES);
+        nodes.add(displayModeComboBox);
 
         HBox.setHgrow(filler1, Priority.ALWAYS);
         HBox.setHgrow(filler2, Priority.ALWAYS);
@@ -540,6 +538,8 @@ public class SpectrumStatusBar {
         }
         nodes.add(filler2);
         for (int i = 1; i < nDim; i++) {
+            // Set the row menu selection to "First" to display the first spectrum in the array
+            rowMenus[i - 1].getItems().stream().filter(item -> item.getText().equals("First")).findFirst().ifPresent(MenuItem::fire);
             nodes.add(rowMenus[i - 1]);
             nodes.add(planeSpinner[i - 1]);
             Pane nodeFiller = new Pane();
@@ -562,7 +562,7 @@ public class SpectrumStatusBar {
         currentMode = mode;
         arrayMode = false;
         List<Node> nodes = new ArrayList<>();
-        nodes.add(cursorMenuButton);
+        nodes.add(cursorChoiceBox);
         if (mode != 0) {
             nodes.add(toolButton);
         }
@@ -580,6 +580,11 @@ public class SpectrumStatusBar {
         }
         if (mode > 2) {
             nodes.add(dimMenus[1]);
+        }
+
+        if (mode == 2) {
+            displayModeComboBox.getSelectionModel().select(DisplayMode.CONTOURS);
+            nodes.add(displayModeComboBox);
         }
         nodes.add(filler1);
 
@@ -666,6 +671,43 @@ public class SpectrumStatusBar {
             chart.setDrawlist(1000);
         }
         chart.refresh();
+    }
+
+    /**
+     * Updates the spectrum status bar and the type of plot displayed in the active chart
+     * based on the selected option.
+     * @param event The selection event.
+     */
+    private void displayModeComboBoxAction(ActionEvent event) {
+        ComboBox<DisplayMode> modeComboBox = (ComboBox<DisplayMode>) event.getSource();
+        if (modeComboBox.isShowing()) {
+            PolyChart chart = controller.getActiveChart();
+            OptionalInt maxNDim = chart.getDatasetAttributes().stream().mapToInt(d -> d.nDim).max();
+            if (maxNDim.isEmpty()) {
+                log.warn("Unable to update display mode. No dimensions set.");
+                return;
+            }
+            DatasetBase dataset = chart.getDataset();
+            DisplayMode selected = modeComboBox.getSelectionModel().getSelectedItem();
+            if (selected == DisplayMode.CURVES) {
+                OptionalInt maxRows = chart.getDatasetAttributes().stream().
+                        mapToInt(d -> d.nDim == 1 ? 1 : d.getDataset().getSizeReal(1)).max();
+                if (maxRows.isEmpty()) {
+                    log.warn("Unable to update display mode. No rows set.");
+                    return;
+                }
+                dataset.setNFreqDims(1);
+                chart.setDataset(dataset);
+                set1DArray(maxNDim.getAsInt(), maxRows.getAsInt());
+
+            } else if (selected == DisplayMode.CONTOURS) {
+                dataset.setNFreqDims(dataset.getNDim());
+                chart.setDataset(chart.getDataset());
+                setMode(maxNDim.getAsInt());
+            }
+            chart.full();
+            chart.autoScale();
+        }
     }
 
     private void dimAction(String rowName, String dimName) {

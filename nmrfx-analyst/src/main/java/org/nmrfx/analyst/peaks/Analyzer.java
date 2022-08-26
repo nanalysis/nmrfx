@@ -2,19 +2,23 @@ package org.nmrfx.analyst.peaks;
 
 import java.io.File;
 
-import org.nmrfx.analyst.dataops.Normalize;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.datasets.Nuclei;
 import org.nmrfx.datasets.DatasetRegion;
 import org.nmrfx.peaks.io.PeakWriter;
+
 import static org.nmrfx.analyst.peaks.Multiplets.locatePeaks;
+
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.math.VecBase.IndexValue;
+
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+
 import static java.util.Comparator.comparing;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -22,6 +26,7 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
+
 import org.apache.commons.math3.linear.RealMatrix;
 import org.nmrfx.peaks.AbsMultipletComponent;
 import org.nmrfx.peaks.InvalidPeakException;
@@ -38,7 +43,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- *
  * @author Bruce Johnson
  */
 public class Analyzer {
@@ -46,8 +50,9 @@ public class Analyzer {
 
     Dataset dataset;
     PeakList peakList;
+    boolean analyzed = false;
 
-    double trimRatio = 2.0;
+    private double trimRatio = 2.0;
     boolean scaleToLargest = true;
     int nWin = 32;
     double maxRatio = 20.0;
@@ -71,6 +76,18 @@ public class Analyzer {
         this.dataset = dataset;
         solvents = new Solvents();
         Solvents.loadYaml();
+    }
+
+    public static Analyzer getAnalyzer(Dataset dataset) {
+        Object analyzerObject = dataset.getAnalyzerObject();
+        Analyzer analyzer;
+        if (analyzerObject == null) {
+            analyzer = new Analyzer(dataset);
+            dataset.setAnalyzerObject(analyzer);
+        } else {
+            analyzer = (Analyzer) analyzerObject;
+        }
+        return analyzer;
     }
 
     public Dataset getDataset() {
@@ -185,7 +202,7 @@ public class Analyzer {
         try {
             peakList = picker.peakPick();
             removePeaksFromNonRegions();
-        } catch (IOException|IllegalArgumentException ex) {
+        } catch (IOException | IllegalArgumentException ex) {
             log.error(ex.getMessage(), ex);
         }
         return peakList;
@@ -260,7 +277,6 @@ public class Analyzer {
 
     public void removeWeakPeaksInRegion(DatasetRegion region, int nRemove) throws Exception {
         List<PeakDim> peakDims = Multiplets.findPeaksInRegion(peakList, region);
-        System.out.println("remove peaks " + nRemove + " " + peakDims.size());
         if (peakDims.size() > 1) {
             peakDims.sort(comparing((p) -> p.getPeak().getIntensity()));
             if (nRemove < 0) {
@@ -418,9 +434,9 @@ public class Analyzer {
                     for (AbsMultipletComponent absComp : absComps) {
                         double ppm = absComp.getOffset();
                         double width = Math.abs(absComp.getLineWidth());
-                        double tppm = ppm + trimRatio * width;
+                        double tppm = ppm + getTrimRatio() * width;
                         max = Math.max(tppm, max);
-                        tppm = ppm - trimRatio * width;
+                        tppm = ppm - getTrimRatio() * width;
                         min = Math.min(tppm, min);
                     }
                 }
@@ -483,7 +499,7 @@ public class Analyzer {
         }
     }
 
-    public void removeRegion(double ppm1, double ppm2) {
+    public void removeRegion(double ppm1, double ppm2, boolean removePeaks) {
         Set<DatasetRegion> newRegions = new TreeSet<>();
         Set<DatasetRegion> regions = getRegions();
         int rDim = 0;
@@ -498,7 +514,7 @@ public class Analyzer {
         });
         regions.clear();
         regions.addAll(newRegions);
-        if (peakList != null) {
+        if (removePeaks && (peakList != null)) {
             removePeaksFromNonRegions();
         }
     }
@@ -696,7 +712,6 @@ public class Analyzer {
             min = dataset.pointToPPM(0, min);
             double max = rM.getEntry(iRow, 1);
             max = dataset.pointToPPM(0, max);
-            //  System.out.println(min + " " + max);
             DatasetRegion newRegion = new DatasetRegion(min, max);
             regions.add(newRegion);
         }
@@ -707,11 +722,13 @@ public class Analyzer {
         regions.clear();
     }
 
-    public void addRegion(double min, double max) {
+    public void addRegion(double min, double max, boolean pick) {
         Set<DatasetRegion> regions = getRegions();
         DatasetRegion newRegion = new DatasetRegion(min, max);
         regions.add(newRegion);
-        peakPickRegion(min, max);
+        if (pick) {
+            peakPickRegion(min, max);
+        }
     }
 
     public List<Multiplet> splitRegion(double ppm) throws IOException {
@@ -722,43 +739,44 @@ public class Analyzer {
             DatasetRegion region = found.get();
             double start = region.getRegionStart(0);
             double end = region.getRegionEnd(0);
+            if (start > end) {
+                double hold = start;
+                start = end;
+                end = hold;
+            }
             regions.remove(region);
             double pt1 = dataset.ppmToDPoint(0, ppm);
             double ppm1 = dataset.pointToPPM(0, pt1 + 1);
             double ppm2 = dataset.pointToPPM(0, pt1 - 1);
-            if (start < end) {
-                double hold = ppm1;
-                ppm1 = ppm2;
-                ppm2 = hold;
-            }
             double[][] limits = new double[1][2];
-            limits[0][0] = region.getRegionStart(0);
-            limits[0][1] = region.getRegionEnd(0);
+            limits[0][0] = start;
+            limits[0][1] = end;
             int[] dim = {0};
 
-            System.out.println(start + " " + ppm1 + " " + ppm2 + " " + end);
             DatasetRegion newRegion1 = new DatasetRegion(start, ppm1);
             DatasetRegion newRegion2 = new DatasetRegion(ppm2, end);
             regions.add(newRegion1);
             regions.add(newRegion2);
             integrate();
-            List<Peak> peaks = locatePeaks(peakList, limits, dim);
-            for (Peak peak : peaks) {
-                peak.setFlag(4, false);
-            }
-            if (!peaks.isEmpty()) {
-                Multiplet multiplet = peaks.get(0).getPeakDim(0).getMultiplet();
-                Optional<Multiplet> splitResult = multiplet.split(ppm);
-                setVolumesFromIntegrals();
-                PeakFitting peakFitting = new PeakFitting(dataset);
-                peakFitting.fitLinkedPeak(multiplet.getOrigin(), true);
-                peakFitting.jfitLinkedPeak(multiplet.getOrigin(), "all");
-                if (splitResult.isPresent()) {
-                    Multiplet newMultiplet = splitResult.get();
-                    peakFitting.fitLinkedPeak(newMultiplet.getOrigin(), true);
-                    peakFitting.jfitLinkedPeak(newMultiplet.getOrigin(), "all");
+            if (peakList != null) {
+                List<Peak> peaks = locatePeaks(peakList, limits, dim);
+                for (Peak peak : peaks) {
+                    peak.setFlag(4, false);
                 }
-                renumber();
+                if (!peaks.isEmpty()) {
+                    Multiplet multiplet = peaks.get(0).getPeakDim(0).getMultiplet();
+                    Optional<Multiplet> splitResult = multiplet.split(ppm);
+                    setVolumesFromIntegrals();
+                    PeakFitting peakFitting = new PeakFitting(dataset);
+                    peakFitting.fitLinkedPeak(multiplet.getOrigin(), true);
+                    peakFitting.jfitLinkedPeak(multiplet.getOrigin(), "all");
+                    if (splitResult.isPresent()) {
+                        Multiplet newMultiplet = splitResult.get();
+                        peakFitting.fitLinkedPeak(newMultiplet.getOrigin(), true);
+                        peakFitting.jfitLinkedPeak(newMultiplet.getOrigin(), "all");
+                    }
+                    renumber();
+                }
             }
         }
         return result;
@@ -776,7 +794,7 @@ public class Analyzer {
             setVolumesFromIntegrals();
             Multiplets.unlinkPeaksInRegion(peakList, region);
             Multiplet multiplet = Multiplets.linkPeaksInRegion(peakList, region);
-            result = Optional.of(multiplet);
+            result = Optional.ofNullable(multiplet);
             peakFitting.fitLinkedPeak(multiplet.getOrigin(), true);
             renumber();
             Multiplets.analyzeMultiplet(multiplet.getOrigin());
@@ -805,7 +823,7 @@ public class Analyzer {
     public void setPositionRestraint(Double restraint) {
         this.positionRestraint = restraint;
     }
-    
+
     public void fitRegions() throws Exception {
         for (DatasetRegion region : getRegions()) {
             fitRegion(region);
@@ -1158,7 +1176,7 @@ public class Analyzer {
     }
 
     public void renumber() {
-        peakList.sortPeaks(0, false);
+        peakList.sortPeaks(0, true);
         peakList.compress();
         peakList.reNumber();
     }
@@ -1217,6 +1235,25 @@ public class Analyzer {
         renumber();
         normalizeMultiplets();
         normalizeIntegrals();
+        analyzed = true;
+    }
+
+    public boolean isAnalyzed() {
+        return analyzed;
+    }
+
+    public void resetAnalyzed() {
+        analyzed = false;
+    }
+
+    public void clearAnalysis() {
+        analyzed = false;
+        PeakList peakList = getPeakList();
+        if (peakList != null) {
+            PeakList.remove(peakList.getName());
+            setPeakList(null);
+        }
+        clearRegions();
     }
 
     public void loadRegions(File regionFile) throws IOException {
@@ -1224,6 +1261,20 @@ public class Analyzer {
             TreeSet<DatasetRegion> regions = DatasetRegion.loadRegions(regionFile);
             dataset.setRegions(regions);
         }
+    }
 
+    public void saveRegions(File regionFile) throws IOException {
+        TreeSet<DatasetRegion> regions = dataset.getRegions();
+        if (!regions.isEmpty()) {
+            DatasetRegion.saveRegions(regionFile, dataset.getRegions());
+        }
+    }
+
+    public double getTrimRatio() {
+        return trimRatio;
+    }
+
+    public void setTrimRatio(double trimRatio) {
+        this.trimRatio = trimRatio;
     }
 }

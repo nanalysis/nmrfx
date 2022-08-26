@@ -24,6 +24,8 @@ import javafx.application.HostServices;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.geometry.Bounds;
+import javafx.geometry.Point2D;
 import javafx.scene.control.*;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.image.Image;
@@ -35,11 +37,14 @@ import org.apache.commons.lang3.SystemUtils;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.chemistry.io.MoleculeIOException;
 import org.nmrfx.console.ConsoleController;
+import org.nmrfx.peaks.Multiplet;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.io.PeakReader;
 import org.nmrfx.processor.datasets.Dataset;
+import org.nmrfx.processor.gui.annotations.AnnoText;
 import org.nmrfx.processor.gui.controls.GridPaneCanvas;
 import org.nmrfx.processor.gui.log.Log;
+import org.nmrfx.processor.gui.log.LogConsoleController;
 import org.nmrfx.processor.gui.project.GUIProject;
 import org.nmrfx.processor.utilities.WebConnect;
 import org.nmrfx.project.ProjectBase;
@@ -312,7 +317,7 @@ public class MainApp extends Application {
                 recentFIDMenuItem, recentDatasetMenuItem, newMenuItem, new SeparatorMenuItem(), pdfMenuItem, svgMenuItem, pngMenuItem, loadPeakListMenuItem);
 
         Menu spectraMenu = new Menu("Spectra");
-        MenuItem copyItem = new MenuItem("Copy Spectrum as SVG Text");
+        MenuItem copyItem = new MenuItem("Copy Spectrum as SVG");
         copyItem.setOnAction(e -> FXMLController.getActiveController().copySVGAction(e));
         MenuItem deleteItem = new MenuItem("Delete Spectrum");
         deleteItem.setOnAction(e -> FXMLController.getActiveController().getActiveChart().close());
@@ -533,6 +538,10 @@ public class MainApp extends Application {
         return ConsoleController.getConsoleController();
     }
 
+    public static LogConsoleController getLogConsoleController() {
+        return LogConsoleController.getLogConsoleController();
+    }
+
     public static void writeOutput(String string) {
         if (getConsoleController() == null) {
             System.out.println(string);
@@ -599,5 +608,13 @@ public class MainApp extends Application {
                 dialog.showAndWait();
             }
         }
+    }
+
+    public void hidePopover(boolean always) {
+
+    }
+
+    public void showPopover(PolyChart chart, Bounds objectBounds, Object hitObject) {
+
     }
 }

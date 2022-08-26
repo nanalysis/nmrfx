@@ -892,7 +892,7 @@ public class NMRStarWriter {
      */
     public static void writeNOE(Writer chan, MoleculeBase molecule, List<RelaxationData> noeDataList, int listID) throws IOException {
         RelaxationData noeData0 = noeDataList.get(0);
-        String frameName = noeData0.getID();
+        String frameName = noeData0.getId();
         double field = noeData0.getField();
         chan.write("    ########################################\n");
         chan.write("    #  Heteronuclear NOE values  #\n");
@@ -1015,7 +1015,7 @@ public class NMRStarWriter {
             expName = "T2";
         }
 
-        String frameName = relaxDataA0.getID();
+        String frameName = relaxDataA0.getId();
         double field = relaxDataA0.getField();
         String coherenceType = relaxDataA0.getExtras().get("coherenceType");
         String units = relaxDataA0.getExtras().get("units");
@@ -1137,6 +1137,7 @@ public class NMRStarWriter {
         return sBuilder.toString();
 
     }
+
     /**
      * Write out the Relaxation Data (R1, R2, T1rho) sections of the STAR file.
      *
@@ -1146,10 +1147,9 @@ public class NMRStarWriter {
      * @param listID int. The number of the R1/R2/T1rho/NOE block in the file.
      * @throws IOException
      */
-    public static void writeOrderPars(Writer chan, MoleculeBase molecule, List<OrderPar> orderParList, int listID) throws IOException {
+    public static void writeOrderPars(Writer chan, MoleculeBase molecule, List<OrderPar> orderParList, int listID, String frameName) throws IOException {
         OrderPar orderPar0 = orderParList.get(0);
         String catName = "_Order_parameter_list";
-        String frameName = "order_parameters_" + listID;
 
         chan.write("    ########################################\n");
         chan.write("    #  Order parameters  #\n");
@@ -1190,19 +1190,6 @@ public class NMRStarWriter {
         String[] atomIDLoopStrings = {"ID", "Assembly_atom_ID", "Entity_assembly_ID", "Entity_ID", "Comp_index_ID", "Seq_ID",
                 "Comp_ID", "Atom_ID", "Atom_type", "Atom_isotope_number"};
 
-        String[] valueLoopStrings = {
-                "Order_param_val","Order_param_val_fit_err",
-                "Tau_e_val","Tau_e_val_fit_err",
-                "Tau_f_val","Tau_f_val_fit_err",
-                "Tau_s_val","Tau_s_val_fit_err",
-                "Rex_val","Rex_val_fit_err",
-                "Model_free_sum_squared_errs",
-                "Model_fit",
-                "Sf2_val","Sf2_val_fit_err",
-                "Ss2_val","Ss2_val_fit_err",
-                "SH2_val","SH2_val_fit_err",
-                "SN2_val","SN2_val_fit_err",
-                "Resonance_ID"};
         String[] authStrings = {"Auth_entity_assembly_ID",
                 "Auth_seq_ID", "Auth_comp_ID", "Auth_atom_ID", "Entry_ID", "Order_parameter_list_ID"};
 
@@ -1211,7 +1198,7 @@ public class NMRStarWriter {
         for (String loopString : atomIDLoopStrings) {
             chan.write("      " + catName + "." + loopString + "\n");
         }
-        for (String loopString : valueLoopStrings) {
+        for (String loopString : OrderPar.getOrderParLoopString()) {
             chan.write("      " + catName + "." + loopString + "\n");
         }
         for (String loopString : authStrings) {
@@ -1255,7 +1242,6 @@ public class NMRStarWriter {
         sBuilder.append(String.format("%-5d", idx));
         buildAtomString(sBuilder, atom, entityID);
         orderPar.valuesToStarString(sBuilder);
-        sBuilder.append(String.format("%-3s", "."));
 
         buildAuthorAtomString(sBuilder,atom);
         sBuilder.append(String.format("%-4s", "."));
@@ -1350,7 +1336,7 @@ public class NMRStarWriter {
             for (var relaxEntry : orderParData.entrySet()) {
                 var orderParList = relaxEntry.getValue();
                 if (!orderParList.isEmpty()) {
-                    writeOrderPars(chan, molecule, orderParList, listID);
+                    writeOrderPars(chan, molecule, orderParList, listID, relaxEntry.getKey());
                     listID++;
                 }
             }

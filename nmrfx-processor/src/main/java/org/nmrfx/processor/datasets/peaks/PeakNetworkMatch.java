@@ -276,7 +276,6 @@ public class PeakNetworkMatch {
                 Peak peak = peakDim.getPeak();
                 PeakDim peakDim2 = peak.getPeakDim(iDim2);
                 MatchItem matchItem = new MatchItem(i, peakDim2.getChemShift());
-//System.out.println(i + " " + peak.getIdNum() + " " + peakDim2.getChemShift());
                 iPPMs.add(matchItem);
             }
             i++;
@@ -288,17 +287,14 @@ public class PeakNetworkMatch {
                 Peak peak = peakDim.getPeak();
                 PeakDim peakDim2 = peak.getPeakDim(jDim2);
                 MatchItem matchItem = new MatchItem(i, peakDim2.getChemShift());
-//System.out.println(i + " " + peak.getIdNum() + " " + peakDim2.getChemShift());
                 jPPMs.add(matchItem);
             }
             i++;
         }
-//System.out.println(iIndex + " nI " + iPeakDims.size() + " " + iPPMs.size() + " " + jIndex + " nJ " + jPeakDims.size() + " " + jPPMs.size());
         double[] iOffsets = {0.0};
         double[] jOffsets = {0.0};
         double[] tol = {0.1};
         MatchResult result = doBPMatch(iPPMs, iOffsets, jPPMs, jOffsets, tol, false);
-//System.out.println(matchResult.score + " " + matchResult.nMatches);
         return result.score;
     }
 
@@ -425,10 +421,8 @@ public class PeakNetworkMatch {
                 }
                 if (weight != Double.NEGATIVE_INFINITY) {
                     if (doLinkMatch) {
-                        //System.out.println("weigh");
                         double linkedSum = getLinkedSum(matchI.itemIndex, matchJ.itemIndex);
                         weight += linkedSum / 10.0;
-                        //System.out.println(iPeak + " " + jPeak + " " + deltaSqSum + " " + linkedSum);
                     }
                     bpMatch.setWeight(iPeak, jPeak, weight);
                     nMatches++;
@@ -443,7 +437,6 @@ public class PeakNetworkMatch {
             if ((matching[i] >= 0) && (matching[i] < jMList.size())) {
                 MatchItem matchJ = jMList.get(matching[i]);
                 double deltaSqSum = getMatchingDistanceSq(matchI, iOffsets, matchJ, jOffsets, tol);
-//System.out.println(i + " " + Math.sqrt(deltaSqSum));
                 if (deltaSqSum < minDelta) {
                     score += 1.0 - Math.exp(-deltaSqSum);
                 } else {
@@ -476,7 +469,6 @@ public class PeakNetworkMatch {
                     minOffsets[i] = iOffsets[i] + x[i];
                 }
                 MatchResult matchResult = doBPMatch(iMList, minOffsets, jMList, jOffsets, tol, true);
-//                System.out.println("score " + matchResult.score);
                 if (matchResult.score < bestValue) {
                     bestValue = matchResult.score;
                     if (bestMatch == null) {

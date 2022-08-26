@@ -173,7 +173,8 @@ public class ScanTable {
         Map<Integer, Double> offsetMap = new HashMap<>();
         Set<Integer> groupSet = new HashSet<>();
         List<Integer> selected = tableView.getSelectionModel().getSelectedIndices();
-        ProcessorController processorController = scannerTool.getFXMLController().getProcessorController(false);
+        PolyChart chart = scannerTool.getChart();
+        ProcessorController processorController = chart.getProcessorController(false);
         if ((processorController == null)
                 || processorController.isViewingDataset()
                 || !processorController.isVisible()) {
@@ -185,7 +186,6 @@ public class ScanTable {
             } else {
                 showRows.addAll(selected);
             }
-            PolyChart chart = scannerTool.getChart();
             Optional<Double> curLvl = Optional.empty();
             if (!chart.getDatasetAttributes().isEmpty()) {
                 DatasetAttributes dataAttr = chart.getDatasetAttributes().get(0);
@@ -253,7 +253,6 @@ public class ScanTable {
                 }
             }
             chart.refresh();
-
         } else {
             openSelectedListFile();
         }
@@ -444,7 +443,7 @@ public class ScanTable {
 
             File saveTableFile = new File(scanDir, "scntbl.txt");
             saveScanTable(saveTableFile);
-            scannerTool.miner.setDisable(!combineFileMode);
+            scannerTool.miner.setDisableSubMenus(!combineFileMode);
 
         } finally {
             processingTable = false;
@@ -457,7 +456,7 @@ public class ScanTable {
             if ((scanDir == null) || scanDir.toString().isBlank()) {
                 return;
             }
-            ProcessorController processorController = scannerTool.getFXMLController().getProcessorController(true);
+            ProcessorController processorController = scannerTool.getChart().getProcessorController(true);
             if (processorController != null) {
                 String scriptString = processorController.getCurrentScript();
                 FileTableItem fileTableItem = (FileTableItem) tableView.getItems().get(selItem);
@@ -648,7 +647,7 @@ public class ScanTable {
 
                         if (!hasAll) {
                             if ((fileName == null) || (fileName.length() == 0)) {
-                                System.out.println("No path field or value");
+                                log.info("No path field or value");
                                 return;
                             }
                             if ((scanDir == null) || scanDir.toString().isBlank()) {
@@ -722,7 +721,7 @@ public class ScanTable {
                 chart.autoScale();
             }
             addGroupColumn();
-            scannerTool.miner.setDisable(!combineFileMode);
+            scannerTool.miner.setDisableSubMenus(!combineFileMode);
 
         } catch (NumberFormatException e) {
             log.warn(e.getMessage(), e);
@@ -882,7 +881,7 @@ public class ScanTable {
             String type = columnTypes.get(header);
             if (type == null) {
                 type = "S";
-                System.out.println("No type for " + header);
+                log.info("No type for {}", header);
             }
             switch (type) {
                 case "D":

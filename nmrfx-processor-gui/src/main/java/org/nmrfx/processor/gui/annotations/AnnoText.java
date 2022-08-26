@@ -17,6 +17,8 @@
  */
 package org.nmrfx.processor.gui.annotations;
 
+import javafx.geometry.BoundingBox;
+import javafx.geometry.Bounds;
 import javafx.geometry.VPos;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
@@ -32,15 +34,20 @@ import org.slf4j.LoggerFactory;
  * @author brucejohnson
  */
 public class AnnoText implements CanvasAnnotation {
-
     private static final Logger log = LoggerFactory.getLogger(AnnoText.class);
 
-    final double x1;
-    final double y1;
-    final double x2;
-    final double y2;
+    double x1;
+    double y1;
+    double x2;
+    double y2;
+    double startX1;
+    double startY1;
+    double startX2;
+    double startY2;
+
     POSTYPE xPosType;
     POSTYPE yPosType;
+    Bounds bounds2D;
     protected String text;
     Font font = Font.font("Liberation Sans", 12);
 
@@ -55,6 +62,14 @@ public class AnnoText implements CanvasAnnotation {
         this.xPosType = xPosType;
         this.yPosType = yPosType;
         this.text = text;
+    }
+
+    public void setText(String text) {
+        this.text = text;
+    }
+
+    public String getText() {
+        return text;
     }
 
     public Font getFont() {
@@ -79,6 +94,31 @@ public class AnnoText implements CanvasAnnotation {
         this.fill = fill;
     }
 
+    public boolean hit(double x, double y) {
+        boolean hit = (bounds2D != null) && bounds2D.contains(x, y);
+        if (hit) {
+            startX1 = x1;
+            startX2 = x2;
+            startY1 = y1;
+            startY2 = y2;
+        }
+        return hit;
+    }
+
+    public Bounds getBounds() {
+        return bounds2D;
+    }
+
+    @Override
+    public void move(double[][] bounds, double[][] world, double[] start, double[] pos) {
+        double dx = pos[0] - start[0];
+        double dy = pos[1] - start[1];
+        x1 = xPosType.move(startX1, dx, bounds[0], world[0]);
+        x2 = xPosType.move(startX2, dx, bounds[0], world[0]);
+        y1 = yPosType.move(startY1, dy, bounds[1], world[1]);
+        y2 = yPosType.move(startY2, dy, bounds[1], world[1]);
+    }
+
     @Override
     public void draw(GraphicsContextInterface gC, double[][] bounds, double[][] world) {
         try {
@@ -86,34 +126,38 @@ public class AnnoText implements CanvasAnnotation {
             gC.setFont(font);
             gC.setTextAlign(TextAlignment.LEFT);
             gC.setTextBaseline(VPos.BASELINE);
-            double width = GUIUtils.getTextWidth(text, font);
 
             double xp1 = xPosType.transform(x1, bounds[0], world[0]);
             double yp1 = yPosType.transform(y1, bounds[1], world[1]);
             double xp2 = xPosType.transform(x2, bounds[0], world[0]);
-            double yp2 = yPosType.transform(y2, bounds[1], world[1]);
             double regionWidth = xp2 - xp1;
-            if (width > regionWidth) {
-                double charWidth = width / text.length();
-                int start = 0;
-                int end;
-                double yOffset = 0.0;
-                while (true) {
-                    end = start + (int) (regionWidth / charWidth);
-                    if (end > text.length()) {
-                        end = text.length();
-                    }
-                    String subStr = text.substring(start, end);
-                    gC.fillText(subStr, xp1, yp1 + yOffset);
-                    start = end;
-                    yOffset += font.getSize() + 3;
-                    if (start >= text.length()) {
-                        break;
-                    }
+            String[] segments = text.split("\n");
+            double topY = yp1-font.getSize();
+            double y = yp1;
+            for (String segment:segments) {
+                double width = GUIUtils.getTextWidth(segment, font);
+                if (width > regionWidth) {
+                    double charWidth = width / segment.length();
+                    int start = 0;
+                    int end;
+                    double yOffset = 0.0;
+                    do {
+                        end = start + (int) (regionWidth / charWidth);
+                        if (end > segment.length()) {
+                            end = segment.length();
+                        }
+                        String subStr = segment.substring(start, end);
+                        gC.fillText(subStr, xp1, y);
+                        y += font.getSize() + 3;
+                        start = end;
+                        yOffset += font.getSize() + 3;
+                    } while (start < segment.length());
+                } else {
+                    gC.fillText(segment, xp1, y);
+                    y += font.getSize() +3;
                 }
-            } else {
-                gC.fillText(text, xp1, yp1);
             }
+            bounds2D = new BoundingBox(xp1, topY, regionWidth, y - topY);
         } catch (Exception ex) {
             log.warn(ex.getMessage(), ex);
         }

@@ -42,7 +42,13 @@ public class MoleculeFactory {
     }
 
     public static void removeMolecule(String name) {
-        molecules.remove(name);
+        var mol = molecules.get(name);
+        if (mol == activeMol) {
+            activeMol = null;
+        }
+        if (mol != null) {
+            molecules.remove(name);
+        }
     }
 
     public static void clearAllMolecules() {

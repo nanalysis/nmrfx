@@ -260,7 +260,6 @@ public class CompoundFitter implements MultivariateFunction {
                 int iVecStart = (int) Math.ceil(vecStart);
                 int iVecEnd = (int) Math.floor(vecEnd);
 
-                //System.out.println("mask " + iRegion + " " + start + " " + end);
                 for (int i = iVecStart; i <= iVecEnd; i++) {
                     mask[i] = true;
                 }
@@ -482,11 +481,9 @@ public class CompoundFitter implements MultivariateFunction {
         for (CompoundRegion cR : cList) {
             for (int iRegion = 0; iRegion < cR.regions.length; iRegion++) {
                 cR.shifts[iRegion] = x[j++];
-                //System.out.print(cR.shifts[iRegion] + " ");
             }
         }
         FitResult fitResult = fitXY();
-        //System.out.println(fitResult.getDev());
         return fitResult.getDev();
     }
 
@@ -500,12 +497,9 @@ public class CompoundFitter implements MultivariateFunction {
         for (CompoundRegion cR : cList) {
             for (int iRegion = 0; iRegion < cR.regions.length; iRegion++) {
                 cR.shifts[iRegion] = x[j++];
-                //System.out.print(cR.shifts[iRegion] + " ");
             }
         }
-        //System.out.println("");
         double rmsd = scoreLeastSqNonNeg();
-        //System.out.println("vrmsd " + rmsd);
         return rmsd;
 
     }
@@ -550,11 +544,9 @@ public class CompoundFitter implements MultivariateFunction {
             for (CompoundRegion cR : cList) {
                 for (int iRegion = 0; iRegion < cR.regions.length; iRegion++) {
                     cR.shifts[iRegion] = current[j++] + x;
-                    //System.out.print(cR.shifts[iRegion] + " ");
                 }
             }
             double rmsd = scoreLeastSqNonNeg();
-            //System.out.println(rmsd);
             return rmsd;
         }
     }
@@ -719,7 +711,6 @@ public class CompoundFitter implements MultivariateFunction {
                 int vecRegionSize = values.length;
 
                 for (int i = 0; i < vecRegionSize; i++) {
-//System.out.println("iR " + iRegion + " " + (i+vecStart) + " " + rmap[i+vecStart]);
                     if (rmap[i + iVecStart] >= 0) {
                         refData[rmap[i + iVecStart]] += values[i];
                     }
@@ -762,7 +753,6 @@ public class CompoundFitter implements MultivariateFunction {
                 double xMax = 0.0;
                 double yMax = 0.0;
                 for (int i = 0; i < vecRegionSize; i++) {
-//System.out.println("iR " + iRegion + " " + (i+vecStart) + " " + rmap[i+vecStart]);
                     if (rmap[i + iVecStart] >= 0) {
                         y[i] = values[i] * scale + offset;
                         x[i] = vData[i + iVecStart];
@@ -811,7 +801,6 @@ public class CompoundFitter implements MultivariateFunction {
             iCol++;
         }
         System.out.println("bc " + bcNum + " " + iCol + " np " + nPoints + " vdlen " + vData.length);
-        //System.out.println("cList " + nPoints + " " + cList.size());
         for (CompoundRegion cR : cList) {
             double[] aCol = new double[nPoints];
             CompoundData cData = cR.cMatch.cData;
@@ -848,9 +837,6 @@ public class CompoundFitter implements MultivariateFunction {
                 iCol++;
             }
         }
-        // for (int i=0;i<b.length;i++) {
-        //   System.out.printf("%5d %7.4f %7.4f\n",i,A.get(i,0),b[i]);
-        //}
     }
 
     /**

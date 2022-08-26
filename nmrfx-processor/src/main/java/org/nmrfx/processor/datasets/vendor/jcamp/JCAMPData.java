@@ -22,6 +22,8 @@ import com.nanalysis.jcamp.parser.JCampParser;
 import com.nanalysis.jcamp.util.JCampUtil;
 import org.apache.commons.math3.complex.Complex;
 import org.codehaus.commons.nullanalysis.Nullable;
+import org.nmrfx.processor.datasets.Dataset;
+import org.nmrfx.processor.datasets.DatasetException;
 import org.nmrfx.processor.datasets.DatasetType;
 import org.nmrfx.processor.datasets.parameters.*;
 import org.nmrfx.processor.datasets.vendor.NMRData;
@@ -34,6 +36,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.*;
 import java.util.stream.Stream;
 
@@ -48,6 +51,7 @@ public class JCAMPData implements NMRData {
 
     private static final List<String> MATCHING_EXTENSIONS = List.of(".jdx", ".dx");
     private static final double AMBIENT_TEMPERATURE = 298.0; // in K, around 25° C
+    private static final double SCALE = 1.0;
 
     /**
      * JCamp-defined acquisition scheme.
@@ -318,7 +322,7 @@ public class JCAMPData implements NMRData {
     }
 
     private Optional<Label> getSFLabel(int dim) {
-        return Stream.of(_OBSERVE_FREQUENCY, $SFO1)
+        return Stream.of($SFO1, _OBSERVE_FREQUENCY)
                 .filter(label -> block.optional(label, dim).isPresent())
                 .findFirst();
     }
@@ -759,10 +763,12 @@ public class JCAMPData implements NMRData {
         if("sep".equals(getSymbolicCoefs(dim))) {
             return false;
         }
-
-        return block.optional($REVERSE, dim).map(JCampRecord::getString)
+        boolean reverse = block.optional($REVERSE, dim).map(JCampRecord::getString)
                 .map("yes"::equalsIgnoreCase)
                 .orElse(true);
+        AcquisitionScheme scheme = getAcquisitionScheme();
+        // For certain schemes use the opposite of reverse
+        return (scheme == AcquisitionScheme.ECHO_ANTIECHO || scheme == AcquisitionScheme.STATES_TPPI) != reverse;
     }
 
     @Override
@@ -837,5 +843,89 @@ public class JCAMPData implements NMRData {
     public static boolean findData(StringBuilder bpath) {
         // FID and Dataset have the same extensions
         return findFID(bpath);
+    }
+
+    /**
+     * Get the total size of a dimension including both real and imaginary.
+     * @param dim The dimension to use.
+     * @return The total size.
+     */
+    private int getTotalSize(int dim) {
+        int factor = isComplex(dim) ? 2: 1;
+        return getSize(dim) * factor;
+    }
+
+    /**
+     * Get a name to use for a dataset based on the provided filename.
+     * @param file The File object to parse the dataset name from.
+     * @return A String dataset name.
+     */
+    public String suggestName(File file) {
+        String fileName = file.getName();
+        int lastDot = fileName.lastIndexOf(".");
+        if (lastDot != -1) {
+            fileName = fileName.substring(0, lastDot);
+        }
+        return fileName;
+    }
+
+    /**
+     * Create a Dataset from the JCAMP data. This method assumes the JCAMP data has already
+     * been processed.
+     * @param datasetName The String name to use for the new Dataset.
+     * @return The newly created Dataset.
+     * @throws IOException
+     * @throws DatasetException
+     */
+    public Dataset toDataset(String datasetName) throws IOException, DatasetException {
+        File file = new File(path);
+        Path fpath = file.toPath();
+
+        int[] dimSizes = new int[getNDim()];
+        for(int i = 0; i < getNDim(); i++) {
+            dimSizes[i] = getTotalSize(i);
+        }
+
+        if (datasetName == null) {
+            datasetName = suggestName(fpath.toFile());
+        }
+        // Create a dataset in memory
+        Dataset dataset = new Dataset(datasetName + ".nv", dimSizes, true);
+        dataset.newHeader();
+        // Set the processed data into the dataset
+        boolean hasImaginaryData = this.imaginary.length != 0;
+        Vec complex;
+        for (int index = 0; index < this.real.length; index++){
+            if (hasImaginaryData) {
+                complex = new Vec(this.real[index], this.imaginary[index]);
+            } else {
+                complex = new Vec(this.real[index]);
+            }
+            complex.setFreqDomain(true);
+            dataset.writeVector(complex, index, 0);
+        }
+        // Set the header information in the dataset
+        for (int i = 0; i < dataset.getNDim(); i++) {
+            dataset.setValues(i, getValues(i));
+            // The first dimension is set when the vectors are set.
+            if (i > 0) {
+                dataset.setComplex(i, false);
+            }
+            dataset.setSf(i, getSF(i));
+            dataset.setSw(i, getSW(i));
+            dataset.setRefValue(i, getRef(i));
+            dataset.setRefPt(i, dataset.getSizeReal(i) / 2.0);
+            dataset.setFreqDomain(i, true);
+            String nucLabel = getTN(i);
+            dataset.setNucleus(i, nucLabel);
+            dataset.setLabel(i, nucLabel + (i + 1));
+            dataset.syncPars(i);
+        }
+        dataset.setSolvent(getSolvent());
+        dataset.setTempK(getTempK());
+        dataset.setScale(SCALE);
+        dataset.setDataType(0);
+        dataset.writeHeader();
+        return dataset;
     }
 }

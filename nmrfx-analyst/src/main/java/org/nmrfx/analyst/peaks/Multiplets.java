@@ -144,25 +144,6 @@ public class Multiplets {
         peakList.reNumber();
     }
 
-    public static Optional<Multiplet> extractMultiplet(List<RelMultipletComponent> relComps) {
-        Optional<Multiplet> result = Optional.empty();
-        if (!relComps.isEmpty()) {
-            Multiplet multiplet = relComps.get(0).getMultiplet();
-            Peak peak = multiplet.getOrigin();
-            PeakList peakList = peak.getPeakList();
-            Peak newPeak = peakList.getNewPeak();
-            PeakDim newPeakDim = newPeak.getPeakDim(0);
-            Multiplet newMultiplet = newPeakDim.getMultiplet();
-            newMultiplet.moveCouplings(relComps);
-
-            peakList.compress();
-            peakList.sortPeaks(0, true);
-            peakList.reNumber();
-            result = Optional.of(newMultiplet);
-        }
-        return result;
-    }
-
     public static Optional<Multiplet> mergePeaks(List<Peak> peaks) {
         Optional<Multiplet> result = Optional.empty();
         if (!peaks.isEmpty()) {
@@ -258,6 +239,33 @@ public class Multiplets {
         } else {
             throw new IllegalArgumentException("Multiplet is null. Unable to add peaks.");
         }
+    }
+
+    public static Optional<Double> findMultipletMidpoint(Multiplet multiplet) {
+        List<AbsMultipletComponent> comps = multiplet.getAbsComponentList();
+        Double offset = null;
+        if (comps.size() > 1) {
+            double sumVolume = 0.0;
+            for (var comp : comps) {
+                sumVolume += comp.getVolume();
+            }
+            double halfVolume = 0.0;
+            double minDelta = Double.MAX_VALUE;
+            int iMin = 0;
+            for (int i = 0; i < comps.size(); i++) {
+                var comp = comps.get(i);
+                halfVolume += comp.getVolume();
+                double delta = Math.abs(halfVolume - (sumVolume / 2.0));
+                if (delta < minDelta) {
+                    iMin = i;
+                    minDelta = delta;
+                }
+            }
+            if (iMin < comps.size() -1 ) {
+                offset = (comps.get(iMin).getOffset() + comps.get(iMin + 1).getOffset()) / 2.0;
+            }
+        }
+        return Optional.ofNullable(offset);
     }
 
     public static void addOuterCoupling(int addNumber, Multiplet multiplet) {
@@ -648,7 +656,6 @@ public class Multiplets {
         double sf = peakDim.getSpectralDimObj().getSf();
         for (int i = 0; i < nComps; i++) {
             AbsMultipletComponent comp = comps.get(i);
-//            System.out.printf("off %10.3f vol %10.3f int %10.3f\n", comp.getOffset(), comp.getVolume(), comp.getIntensity());
         }
         if (checkMultiplet(comps)) {
             System.out.println("check");
@@ -742,7 +749,6 @@ public class Multiplets {
             System.out.println("singlet");
             return new CouplingData(ppmCenter, 1);
         }
-//        System.out.println("c " + ppmList.size() + " " + ppmList.toString());
 
         double tol = 0.5 / sf;
         double lastCoupling = 0.0;
@@ -870,7 +876,6 @@ public class Multiplets {
             pattern += "d";
             int nPeaksExpected = getMultiplicityCount(pattern);
             int nPeaksExpectedNext = getMultiplicityCount(pattern + "d");
-//            System.out.println(pattern + " " + nPeaksExpected + " " + nPeaksExpectedNext + " " + nPeaks);
             if (nPeaks == nPeaksExpected) {
                 jCoup = iCoup + 1;
                 break;
@@ -978,8 +983,23 @@ public class Multiplets {
             min = Math.min(min, tPPM);
 
         }
-        double[] result = {min, max};
-        return result;
+        return new double[]{min, max};
+    }
+
+    public static double[] getBoundsOfMultiplet(Multiplet multiplet, double trimRatio) {
+        List<AbsMultipletComponent> absComps = multiplet.getAbsComponentList();
+        double min = Double.MAX_VALUE;
+        double max = Double.NEGATIVE_INFINITY;
+
+        for (AbsMultipletComponent absComp : absComps) {
+            double ppm = absComp.getOffset();
+            double width = Math.abs(absComp.getLineWidth());
+            double tppm = ppm + trimRatio * width;
+            max = Math.max(tppm, max);
+            tppm = ppm - trimRatio * width;
+            min = Math.min(tppm, min);
+        }
+        return new double[]{min, max};
     }
 
     public static void removeSplittingInMultiplet(Multiplet multiplet, String couplingSymbol) {
@@ -1153,13 +1173,19 @@ public class Multiplets {
     public static void linkPeaksInRegions(PeakList peakList, Set<DatasetRegion> regions) {
         regions.stream().forEach(region -> {
             List<PeakDim> peakDims = findPeaksInRegion(peakList, region);
-            Multiplet.groupPeakDims(peakDims);
+            if (!peakDims.isEmpty()) {
+                Multiplet.groupPeakDims(peakDims);
+            }
         });
     }
 
     public static Multiplet linkPeaksInRegion(PeakList peakList, DatasetRegion region) {
         List<PeakDim> peakDims = findPeaksInRegion(peakList, region);
-        return Multiplet.groupPeakDims(peakDims);
+        if (!peakDims.isEmpty()) {
+            Multiplet multiplet = Multiplet.groupPeakDims(peakDims);
+            return multiplet;
+        }
+        return null;
     }
 
     public static List<PeakDim> findPeaksInRegion(PeakList peakList, DatasetRegion region) {

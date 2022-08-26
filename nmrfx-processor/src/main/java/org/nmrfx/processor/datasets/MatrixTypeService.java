@@ -83,7 +83,6 @@ public class MatrixTypeService {
 
     public boolean finished() {
         if ((nRead.get() >= itemsToRead) && !unprocessedItemQueue.isEmpty()) {
-//            System.out.println("still " + unprocessedItemQueue.size());
             return false;
         } else {
             return (nRead.get() >= itemsToRead) && unprocessedItemQueue.isEmpty();
@@ -119,7 +118,6 @@ public class MatrixTypeService {
                 }
                 nRead.addAndGet(nVec);
             }
-//            System.out.println("n read " + nRead.get() + " of " + itemsToRead);
             return true;
         }
         return false;
