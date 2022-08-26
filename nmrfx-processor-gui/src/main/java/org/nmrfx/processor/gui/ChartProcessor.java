@@ -1110,7 +1110,7 @@ public class ChartProcessor {
                 String parDim = entry.getKey().substring(1);
                 if (dimMode.equals("D")) {
                     int dimNum = -1;
-                    boolean parseInt = !parDim.isEmpty() && !parDim.contains(",");
+                    boolean parseInt = !parDim.isEmpty() && !parDim.contains(",") && !parDim.contains("_ALL");
                     if (parseInt) {
                         try {
                             dimNum = Integer.parseInt(parDim) - 1;
