@@ -50,6 +50,7 @@ import javafx.scene.shape.Circle;
 import javafx.scene.text.Text;
 import javafx.stage.FileChooser;
 import javafx.util.Callback;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.SystemUtils;
 import org.controlsfx.control.PopOver;
 import org.controlsfx.control.PropertySheet;
@@ -1087,13 +1088,14 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         dimListener = new ChangeListener<String>() {
             @Override
             public void changed(ObservableValue<? extends String> observableValue, String dimName, String dimName2) {
-
-                log.info("dim {}", dimName2);
                 chartProcessor.setVecDim(dimName2);
                 try {
-                    int vecDim = Integer.parseInt(dimName2.substring(1));
-                    refManager.setupItems(vecDim - 1);
-
+                    if (StringUtils.isNumeric(dimName2.substring(1))) {
+                        int vecDim = Integer.parseInt(dimName2.substring(1));
+                        refManager.setupItems(vecDim - 1);
+                    } else {
+                        refManager.clearItems();
+                    }
                 } catch (NumberFormatException nfE) {
                     log.warn("Unable to parse vector dimension.", nfE);
                 }

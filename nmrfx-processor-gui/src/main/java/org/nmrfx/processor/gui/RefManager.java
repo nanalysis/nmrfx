@@ -282,6 +282,10 @@ public class RefManager {
         refMap.clear();
     }
 
+    void clearItems() {
+        refSheet.getItems().clear();
+    }
+
     void setupItems(int dim) {
         ChartProcessor chartProcessor = processorController.chartProcessor;
         NMRData nmrData = getNMRData();
