@@ -77,7 +77,7 @@ public class GUIUtils {
     /**
      * Utility function to adjust the height of toolbars used in ControllerTools. The height of each toolbar is adjusted
      * to the largest prefHeight. The height of all the toolbar items are adjusted to the prefHeight of the largest
-     * item in the first tool bar in the list. The height of "Close" buttons in the toolbars are not adjusted
+     * item in the first tool bar in the list.
      * @param toolBarList A list of toolbars to adjust
      */
     public static void toolbarAdjustHeights(List<ToolBar> toolBarList) {
@@ -86,13 +86,7 @@ public class GUIUtils {
         }
         List<List<Node>> toolBarsItems = new ArrayList<>();
         for (ToolBar toolBar: toolBarList) {
-            Node firstItem = toolBar.getItems().get(0);
-            // don't adjust the height of the close button which is always at index 0
-            if (firstItem instanceof Labeled && "Close".equals(((Labeled) toolBar.getItems().get(0)).getText())) {
-                toolBarsItems.add(toolBar.getItems().subList(1, toolBar.getItems().size()));
-            } else {
-                toolBarsItems.add(toolBar.getItems());
-            }
+            toolBarsItems.add(toolBar.getItems());
         }
         // Set height of all toolbars to be the same
         double heightToolBar = Collections.max(toolBarList.stream().map(node -> node.prefHeight(Region.USE_COMPUTED_SIZE)).collect(Collectors.toList()));

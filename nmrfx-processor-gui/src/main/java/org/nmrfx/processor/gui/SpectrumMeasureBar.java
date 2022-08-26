@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
- /*
+/*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
@@ -27,27 +27,20 @@ import de.jensd.fx.glyphs.GlyphsDude;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import java.io.IOException;
 
-import javafx.scene.control.ToolBar;
-import javafx.scene.layout.VBox;
+import javafx.scene.Node;
+import javafx.scene.control.*;
+import javafx.scene.layout.*;
 import org.nmrfx.processor.datasets.Dataset;
 import java.text.DecimalFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
 import javafx.beans.value.ChangeListener;
 import javafx.geometry.HPos;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.control.Button;
-import javafx.scene.control.ContentDisplay;
-import javafx.scene.control.Label;
-import javafx.scene.control.TextField;
-import javafx.scene.control.ToggleButton;
-import javafx.scene.layout.Background;
-import javafx.scene.layout.BackgroundFill;
-import javafx.scene.layout.CornerRadii;
-import javafx.scene.layout.GridPane;
-import javafx.scene.layout.Pane;
-import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
@@ -102,8 +95,8 @@ public class SpectrumMeasureBar {
         gridPane.setVgap(5);
         ToolBar toolBar = new ToolBar();
         vBox.getChildren().add(toolBar);
-        double prefWidthLabelsButtons = 40.0;
-        Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "Close", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
+        double prefWidthLabelsButtons = 35.0;
+        Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "Close", MainApp.ICON_SIZE_STR, MainApp.REG_FONT_SIZE_STR, ContentDisplay.LEFT);
         closeButton.setOnAction(e -> close());
         absModeButton = new ToggleButton("SF");
         gridModeButton = new ToggleButton("Grid");
@@ -119,7 +112,7 @@ public class SpectrumMeasureBar {
         gridPane.add(absModeButton, 0, 0);
         gridPane.add(gridModeButton, 0, 1);
         toolBar.getItems().add(gridPane);
-        double[] prefWidths = {75.0, 120.0};
+        double[] prefWidths = {75.0, 110.0};
         String[] rowNames = {"1", "2", "\u0394"};
 
         String[] xys = {"x", "y"};
@@ -166,6 +159,17 @@ public class SpectrumMeasureBar {
         gridPane.add(sdevField, 10, 0);
         gridPane.add(snLabel, 9, 1);
         gridPane.add(snField, 10, 1);
+
+        // The different control items end up with different heights based on font and icon size,
+        // set all the items to use the same height
+        toolBar.heightProperty().addListener((observable, oldValue, newValue) -> {
+            List<Node> items = new ArrayList<>(Arrays.asList(closeButton, absModeButton, gridModeButton));
+            items.addAll(gridPane.getChildren());
+            double height = items.stream().map(node -> node.prefHeight(Region.USE_COMPUTED_SIZE)).max(Double::compare).get();
+            for (Node node : items) {
+                ((Control) node).setPrefHeight(height);
+            }
+        });
 
     }
 

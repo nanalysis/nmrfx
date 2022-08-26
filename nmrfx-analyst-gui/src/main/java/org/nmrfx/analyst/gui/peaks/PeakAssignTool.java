@@ -2,19 +2,15 @@ package org.nmrfx.analyst.gui.peaks;
 
 import de.jensd.fx.glyphs.GlyphsDude;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+
+import java.util.*;
 import java.util.function.Consumer;
-import javafx.scene.control.Button;
-import javafx.scene.control.ChoiceBox;
-import javafx.scene.control.ComboBox;
-import javafx.scene.control.ContentDisplay;
-import javafx.scene.control.Label;
-import javafx.scene.control.TextField;
-import javafx.scene.control.ToolBar;
+
+import javafx.scene.Node;
+import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import org.nmrfx.analyst.gui.peaks.AtomBrowser.AtomDelta;
 import org.nmrfx.datasets.DatasetBase;
@@ -84,7 +80,7 @@ public class PeakAssignTool implements ControllerTool {
                 nDim = dataset.getNDim();
             }
         }
-        Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "Close", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
+        Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "Close", MainApp.ICON_SIZE_STR, MainApp.REG_FONT_SIZE_STR, ContentDisplay.LEFT);
         closeButton.setOnAction(e -> close());
         toolBar.getItems().add(closeButton);
         toolBar.getItems().add(pickButton);
@@ -93,6 +89,17 @@ public class PeakAssignTool implements ControllerTool {
         toolBar.getItems().add(gridPane);
         updateGrid(nDim);
         controller.selPeaks.addListener(e -> setActivePeaks(controller.selPeaks.get()));
+
+        // The different control items end up with different heights based on font and icon size,
+        // set all the items to use the same height
+        toolBar.heightProperty().addListener((observable, oldValue, newValue) -> {
+            List<Node> items = new ArrayList<>(Arrays.asList(closeButton, pickButton));
+            items.addAll(gridPane.getChildren());
+            double height = items.stream().map(node -> node.prefHeight(Region.USE_COMPUTED_SIZE)).max(Double::compare).get();
+            for (Node node : items) {
+                ((Control) node).setPrefHeight(height);
+            }
+        });
 
     }
 

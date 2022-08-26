@@ -64,13 +64,8 @@ public class SpectrumComparator {
 
         ArrayList<Button> buttons = new ArrayList<>();
         Button bButton;
-        Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "Close", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
+        Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "Close", MainApp.ICON_SIZE_STR, MainApp.REG_FONT_SIZE_STR, ContentDisplay.LEFT);
         closeButton.setOnAction(e -> close(this));
-        buttons.add(closeButton);
-
-        buttons.forEach((button) -> {
-            button.getStyleClass().add("toolButton");
-        });
 
         ArrayList<Button> dataset1Buttons = new ArrayList<>();
         ArrayList<Button> dataset2Buttons = new ArrayList<>();
@@ -119,6 +114,7 @@ public class SpectrumComparator {
         Pane filler1a = new Pane();
         HBox.setHgrow(filler1a, Priority.ALWAYS);
 
+        toolBar1.getItems().add(closeButton);
         toolBar1.getItems().addAll(buttons);
         toolBar1.getItems().add(datasetColorPickers[0]);
         toolBar1.getItems().addAll(dataset1Buttons);

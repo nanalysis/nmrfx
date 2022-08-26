@@ -289,8 +289,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         ObservableList<PeakList> peakLists = FXCollections.observableArrayList(new ArrayList<>(PeakList.peakLists()));
         ToolBar buttonBar = new ToolBar();
 
-        Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "Close", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP
-        );
+        Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "Close", MainApp.ICON_SIZE_STR, MainApp.REG_FONT_SIZE_STR, ContentDisplay.LEFT);
         closeButton.setOnAction(e -> close());
         if (closeAction != null) {
             buttonBar.getItems().add(closeButton);
@@ -324,7 +323,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
 
         TableColumn<PeakListSelection, Boolean> peakListPatternColumn = new TableColumn<>("Pattern");
         peakListPatternColumn.setCellValueFactory(new PropertyValueFactory<>("pattern"));
-       // peakListPatternColumn.setCellFactory(param -> new CheckBoxTableCell<>());
+        // peakListPatternColumn.setCellFactory(param -> new CheckBoxTableCell<>());
         peakListPatternColumn.setEditable(false);
 
         TableColumn<PeakListSelection, Integer> peakListSizeColumn = new TableColumn<>("Size");
@@ -383,7 +382,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         peakTableView.getItems().setAll(peakListSelectors);
         for (var peakListSelector:peakListSelectors) {
             if (runAbout.getPeakLists().contains(peakListSelector.peakList)) {
-                 peakListSelector.setActive(true);
+                peakListSelector.setActive(true);
             }
         }
         registerPeakLists();
@@ -438,8 +437,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
 
         ArrayList<Button> buttons = new ArrayList<>();
         Button bButton;
-        Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "Close", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP
-        );
+        Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "Close", MainApp.ICON_SIZE_STR, MainApp.REG_FONT_SIZE_STR, ContentDisplay.LEFT);
         closeButton.setOnAction(e -> close());
 
         bButton = GlyphsDude.createIconButton(FontAwesomeIcon.FAST_BACKWARD, "", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.GRAPHIC_ONLY);

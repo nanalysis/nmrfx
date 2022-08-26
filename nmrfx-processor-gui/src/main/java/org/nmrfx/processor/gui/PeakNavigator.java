@@ -117,7 +117,7 @@ public class PeakNavigator implements PeakListener {
 
         ArrayList<Button> buttons = new ArrayList<>();
         Button bButton;
-        Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "Close", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
+        Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "Close", MainApp.ICON_SIZE_STR, MainApp.REG_FONT_SIZE_STR, ContentDisplay.LEFT);
         closeButton.setOnAction(e -> close());
 
         bButton = GlyphsDude.createIconButton(FontAwesomeIcon.FAST_BACKWARD, "", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.GRAPHIC_ONLY);
@@ -494,8 +494,8 @@ public class PeakNavigator implements PeakListener {
                     peakNavigable.refreshPeakView();
                 } else {
                     Platform.runLater(() -> {
-                        peakNavigable.refreshPeakView();
-                    }
+                                peakNavigable.refreshPeakView();
+                            }
                     );
                 }
             }
