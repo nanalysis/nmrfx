@@ -18,6 +18,8 @@ module org.nmrfx.processor {
     exports org.nmrfx.processor.datasets.vendor.varian;
     exports org.nmrfx.processor.datasets.vendor.nmrpipe;
     exports org.nmrfx.processor.datasets.vendor.nmrview;
+    requires com.nanalysis.rs2d.dataset;
+    requires com.nanalysis.jcamp;
     requires commons.math3;
     requires org.apache.commons.lang3;
     requires org.apache.commons.collections4;
@@ -32,7 +34,6 @@ module org.nmrfx.processor {
     requires janino;
     requires commons.compiler;
     requires jython.slim;
-    requires com.nanalysis.jcamp;
     requires org.slf4j;
     requires eventbus.java;
 }

@@ -40,6 +40,8 @@ import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.MainApp;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.controls.FileTableItem;
+import org.nmrfx.processor.processing.Processor;
+import org.nmrfx.processor.processing.ProcessorAvailableStatusListener;
 import org.nmrfx.utils.GUIUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -82,6 +84,12 @@ public class ScannerTool implements ControllerTool {
     static final Pattern WPAT = Pattern.compile("([^:]+):([0-9\\.\\-]+)_([0-9\\.\\-]+)_([0-9\\.\\-]+)_([0-9\\.\\-]+)(_[VMmE]W)$");
     static final Pattern RPAT = Pattern.compile("([^:]+):([0-9\\.\\-]+)_([0-9\\.\\-]+)(_[VMmE][NR])?$");
     static final Pattern[] PATS = {WPAT, RPAT};
+    private final ProcessorAvailableStatusListener listener = this::processorAvailableStatusUpdated;
+    private MenuButton fileMenuButton = null;
+    private MenuButton processMenuButton = null;
+    private MenuButton regionMenuButton = null;
+    private MenuButton scoreMenuButton = null;
+    private MenuButton toolMenuButton = null;
 
     public ScannerTool(FXMLController controller, Consumer<ScannerTool> closeAction) {
         this.controller = controller;
@@ -107,6 +115,10 @@ public class ScannerTool implements ControllerTool {
         scannerBar.getItems().add(makeToolMenu());
         miner = new MinerController(this);
         scanTable = new ScanTable(this, tableView);
+        Processor.getProcessor().addProcessorAvailableStatusListener(listener);
+        processorAvailableStatusUpdated(Processor.getProcessor().isProcessorAvailable());
+        // Disable until after scan table rows are processed
+        miner.setDisableSubMenus(true);
     }
 
     public static void addCreateAction(Consumer<ScannerTool> action) {
@@ -115,6 +127,7 @@ public class ScannerTool implements ControllerTool {
 
     @Override
     public void close() {
+        Processor.getProcessor().removeProcessorAvailableStatusListener(listener);
         closeAction.accept(this);
     }
 
@@ -123,7 +136,7 @@ public class ScannerTool implements ControllerTool {
     }
 
     private MenuButton makeFileMenu() {
-        MenuButton menu = new MenuButton("File");
+        fileMenuButton = new MenuButton("File");
         MenuItem scanMenuItem = new MenuItem("Scan Directory...");
         scanMenuItem.setOnAction(e -> scanDirAction());
         MenuItem openTableItem = new MenuItem("Open Table...");
@@ -134,26 +147,26 @@ public class ScannerTool implements ControllerTool {
         purgeInactiveItem.setOnAction(e -> purgeInactive());
         MenuItem loadFromDatasetItem = new MenuItem("Load From Dataset");
         loadFromDatasetItem.setOnAction(e -> loadFromDataset());
-        menu.getItems().addAll(scanMenuItem, openTableItem, saveTableItem,
+        fileMenuButton.getItems().addAll(scanMenuItem, openTableItem, saveTableItem,
                 purgeInactiveItem, loadFromDatasetItem);
-        return menu;
+        return fileMenuButton;
     }
 
     private MenuButton makeProcessMenu() {
-        MenuButton menu = new MenuButton("Process");
+        processMenuButton = new MenuButton("Process");
         MenuItem loadRowFIDItem = new MenuItem("Load Row FID");
         loadRowFIDItem.setOnAction(e -> openSelectedListFile());
         MenuItem processAndCombineItem = new MenuItem("Process and Combine");
         processAndCombineItem.setOnAction(e -> processScanDirAndCombine());
         MenuItem processItem = new MenuItem("Process");
         processItem.setOnAction(e -> processScanDir());
-        menu.getItems().addAll(loadRowFIDItem, processAndCombineItem,
+        processMenuButton.getItems().addAll(loadRowFIDItem, processAndCombineItem,
                 processItem);
-        return menu;
+        return processMenuButton;
     }
 
     private MenuButton makeRegionMenu() {
-        MenuButton menu = new MenuButton("Regions");
+        regionMenuButton = new MenuButton("Regions");
 
         Menu measureMode = new Menu("Measure Modes");
         for (var mType : MeasureTypes.values()) {
@@ -182,27 +195,27 @@ public class ScannerTool implements ControllerTool {
         showAllMenuItem.setOnAction(e -> showRegions());
         MenuItem clearAllMenuItem = new MenuItem("Clear All");
         clearAllMenuItem.setOnAction(e -> clearRegions());
-        menu.getItems().addAll(addRegionMenuItem, measureMode, offsetMode, saveRegionsMenuItem, loadRegionsMenuItem,
+        regionMenuButton.getItems().addAll(addRegionMenuItem, measureMode, offsetMode, saveRegionsMenuItem, loadRegionsMenuItem,
                 measureMenuItem, showAllMenuItem, clearAllMenuItem);
-        return menu;
+        return regionMenuButton;
     }
 
     private MenuButton makeScoreMenu() {
-        MenuButton menu = new MenuButton("Score");
+        scoreMenuButton = new MenuButton("Score");
         MenuItem scoreMenuItem = new MenuItem("Cosine Score");
         scoreMenuItem.setOnAction(e -> scoreSimilarity());
-        menu.getItems().addAll(scoreMenuItem);
-        return menu;
+        scoreMenuButton.getItems().addAll(scoreMenuItem);
+        return scoreMenuButton;
     }
 
     private MenuButton makeToolMenu() {
-        MenuButton menu = new MenuButton("Tools");
+        toolMenuButton = new MenuButton("Tools");
         MenuItem plotMenuItem = new MenuItem("Show Plot Tool");
         plotMenuItem.setOnAction(e -> showPlotGUI());
         MenuItem tractMenuItem = new MenuItem("Show TRACT Tool");
         tractMenuItem.setOnAction(e -> showTRACTGUI());
-        menu.getItems().addAll(plotMenuItem, tractMenuItem);
-        return menu;
+        toolMenuButton.getItems().addAll(plotMenuItem, tractMenuItem);
+        return toolMenuButton;
     }
 
     MeasureTypes getMeasureType() {
@@ -647,6 +660,20 @@ public class ScannerTool implements ControllerTool {
 
         }
         tractGUI.showMCplot();
+    }
+
+    /**
+     * Disable the options if the processor is busy processing.
+     * @param newStatus
+     */
+    public void processorAvailableStatusUpdated(boolean newStatus) {
+        fileMenuButton.setDisable(!newStatus);
+        processMenuButton.setDisable(!newStatus);
+        regionMenuButton.setDisable(!newStatus);
+        scoreMenuButton.setDisable(!newStatus);
+        toolMenuButton.setDisable(!newStatus);
+        miner.disableController(!newStatus);
+        scanTable.tableView.setDisable(!newStatus);
     }
 
 }
