@@ -122,11 +122,6 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
             }
         }
 
-        System.out.println("fds " + getNFreqDims());
-        for (int i = 0; i < nDim; i++) {
-            System.out.println(i + " fd  " + getFreqDomain(i));
-        }
-
         log.info("new dataset {}", fileName);
         setStrides();
         addFile(fileName);
