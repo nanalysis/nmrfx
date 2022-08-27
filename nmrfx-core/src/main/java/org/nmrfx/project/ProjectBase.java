@@ -420,7 +420,7 @@ public class ProjectBase {
 
         peakLists.values().stream().forEach(peakListObj -> {
             Path peakFilePath = fileSystem.getPath(projDir.toString(), "peaks", peakListObj.getName() + ".xpk2");
-            Path measureFilePath = fileSystem.getPath(projDir.toString(), "peaks", (peakListObj).getName() + ".mpk2");
+            Path measureFilePath = fileSystem.getPath(projDir.toString(), "peaks", peakListObj.getName() + ".mpk2");
             // fixme should only write if file doesn't already exist or peaklist changed since read
             try {
                 try (FileWriter writer = new FileWriter(peakFilePath.toFile())) {
