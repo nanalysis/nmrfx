@@ -427,7 +427,7 @@ public class ProjectBase {
                     PeakWriter peakWriter = new PeakWriter();
                     peakWriter.writePeaksXPK2(writer, peakListObj);
                 }
-                if ((peakListObj).hasMeasures()) {
+                if (peakListObj.hasMeasures()) {
                     try (FileWriter writer = new FileWriter(measureFilePath.toFile())) {
                         PeakWriter peakWriter = new PeakWriter();
                         peakWriter.writePeakMeasures(writer, peakListObj);
