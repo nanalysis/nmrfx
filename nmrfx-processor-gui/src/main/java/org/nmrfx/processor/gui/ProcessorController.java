@@ -174,8 +174,6 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     String currentText = "";
 
     public static ProcessorController create(FXMLController fxmlController, StackPane processorPane, PolyChart chart) {
-        String iconSize = "12px";
-        String fontSize = "7pt";
         FXMLLoader loader = new FXMLLoader(SpecAttrWindowController.class.getResource("/fxml/ProcessorScene.fxml"));
         final ProcessorController controller;
         try {
@@ -189,7 +187,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
             controller.chartProcessor.fxmlController = fxmlController;
             controller.processorPane = processorPane;
             controller.pane = pane;
-            Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "", iconSize, fontSize, ContentDisplay.GRAPHIC_ONLY);
+            Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.GRAPHIC_ONLY);
             closeButton.setOnAction(e -> controller.hide());
             controller.toolBar.getItems().add(closeButton);
             fxmlController.processorCreated(pane);

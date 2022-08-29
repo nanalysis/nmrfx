@@ -456,8 +456,6 @@ public class AnalystApp extends MainApp {
     }
 
     private void addStatusBarButtons(SpectrumStatusBar statusBar) {
-        String iconSize = "16px";
-        String fontSize = "7pt";
         var controller = statusBar.getController();
         SimplePeakRegionTool simplePeakRegionTool = new SimplePeakRegionTool(controller);
         simplePeakRegionTool.addButtons(statusBar);
@@ -601,10 +599,10 @@ public class AnalystApp extends MainApp {
     public void showPeakSlider() {
         FXMLController controller = FXMLController.getActiveController();
         if (!controller.containsTool(PeakSlider.class)) {
-            ToolBar navBar = new ToolBar();
-            controller.getBottomBox().getChildren().add(navBar);
+            VBox vBox = new VBox();
+            controller.getBottomBox().getChildren().add(vBox);
             PeakSlider peakSlider = new PeakSlider(controller, this::removePeakSlider);
-            peakSlider.initSlider(navBar);
+            peakSlider.initSlider(vBox);
             controller.addTool(peakSlider);
         }
     }
@@ -612,7 +610,7 @@ public class AnalystApp extends MainApp {
     public void removePeakSlider(PeakSlider peakSlider) {
         FXMLController controller = FXMLController.getActiveController();
         controller.removeTool(PeakSlider.class);
-        controller.getBottomBox().getChildren().remove(peakSlider.getToolBar());
+        controller.getBottomBox().getChildren().remove(peakSlider.getBox());
     }
 
     public void showPeakPathTool() {
