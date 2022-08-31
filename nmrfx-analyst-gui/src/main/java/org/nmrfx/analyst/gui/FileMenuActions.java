@@ -3,6 +3,8 @@ package org.nmrfx.analyst.gui;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
 import javafx.stage.Stage;
+import org.nmrfx.analyst.gui.plugin.PluginLoader;
+import org.nmrfx.plugin.api.EntryPoint;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.PreferencesController;
 
@@ -47,6 +49,8 @@ public class FileMenuActions extends MenuActions {
         menu.getItems().addAll(openMenuItem, openDatasetMenuItem,
                 recentFIDMenuItem, recentDatasetMenuItem, datasetBrowserMenuItem,
                 graphicsMenu);
+
+        PluginLoader.getInstance().registerPluginsOnEntryPoint(EntryPoint.MENU_FILE, menu);
     }
 
     public void addAdvancedMenuItem() {
