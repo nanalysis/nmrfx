@@ -49,8 +49,6 @@ public class FileMenuActions extends MenuActions {
         menu.getItems().addAll(openMenuItem, openDatasetMenuItem,
                 recentFIDMenuItem, recentDatasetMenuItem, datasetBrowserMenuItem,
                 graphicsMenu);
-
-        PluginLoader.getInstance().registerPluginsOnEntryPoint(EntryPoint.MENU_FILE, menu);
     }
 
     public void addAdvancedMenuItem() {
