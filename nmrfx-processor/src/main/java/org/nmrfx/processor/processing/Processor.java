@@ -1446,7 +1446,7 @@ public class Processor {
             if (!dataset.isMemoryFile()) {
                 dataset.writeParFile();
             }
-            closeDataset();
+            closeDataset(true);
         }
         String elapsedTimeStr = String.format("Elapsed time %.2f", elapsedTime);
         log.info(elapsedTimeStr);
@@ -1465,9 +1465,9 @@ public class Processor {
         simVecProcessor.saveSimFids();
     }
 
-    public void closeDataset() {
+    public void closeDataset(boolean saveDataset) {
         if (dataset != null) {
-            if (dataset.isMemoryFile()) {
+            if (dataset.isMemoryFile() && saveDataset) {
                 try {
                     if (dataset.getFileName().endsWith(RS2DData.DATA_FILE_NAME) && (getNMRData() instanceof RS2DData)) {
                         RS2DData rs2DData = (RS2DData) getNMRData();
@@ -1577,8 +1577,7 @@ public class Processor {
             isRunning = false;
             if (getProcessorError()) {
                 setProcessorAvailableStatus(true);
-                dataset.close();
-                dataset = null;
+                closeDataset(false);
                 throw new ProcessingException(errorMessage.get());
             }
         }
