@@ -2216,4 +2216,11 @@ public class FXMLController implements  Initializable, PeakNavigable {
         return getActiveChart().getProcessorController(false) != null;
     }
 
+    /**
+     * Sets the provided event handler to the canvas key pressed event.
+     * @param handler The key event handler.
+     */
+    public void addCanvasKeyEventHandler(EventHandler<KeyEvent> handler) {
+        this.canvas.setOnKeyPressed(handler);
+    }
 }

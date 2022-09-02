@@ -1,0 +1,45 @@
+package org.nmrfx.analyst.gui.molecule;
+
+import org.nmrfx.processor.gui.FXMLController;
+import org.nmrfx.processor.gui.PolyChart;
+import org.nmrfx.structure.chemistry.Molecule;
+
+public class MoleculeUtils {
+
+    private MoleculeUtils() {}
+
+    /**
+     * Adds the active molecule to the active chart and refreshes the chart.
+     */
+    public static void addActiveMoleculeToCanvas() {
+        Molecule activeMol = Molecule.getActive();
+        if (activeMol != null) {
+            PolyChart activeChart = FXMLController.getActiveController().getActiveChart();
+            var cMols = activeChart.findAnnoTypes(CanvasMolecule.class);
+            CanvasMolecule cMol = null;
+            if (cMols.isEmpty()) {
+                cMol = new CanvasMolecule(activeChart);
+                cMol.setPosition(0.1, 0.1, 0.3, 0.3, "FRACTION", "FRACTION");
+            } else {
+                cMol = (CanvasMolecule) cMols.get(0);
+            }
+
+            cMol.setMolName(activeMol.getName());
+            activeMol.label = Molecule.LABEL_NONHC;
+            activeMol.clearSelected();
+
+            activeChart.clearAnnoType(CanvasMolecule.class);
+            activeChart.addAnnotation(cMol);
+            activeChart.refresh();
+        }
+    }
+
+    /**
+     * Clears any molecules from the active chart and refreshes it.
+     */
+    public static void removeMoleculeFromCanvas() {
+        PolyChart chart = FXMLController.getActiveController().getActiveChart();
+        chart.clearAnnoType(CanvasMolecule.class);
+        chart.refresh();
+    }
+}
