@@ -91,10 +91,10 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     private TextField opTextField;
 
     @FXML
-    private ChoiceBox dimChoice;
+    private ChoiceBox<String> dimChoice;
 
     @FXML
-    private ListView scriptView;
+    private ListView<String> scriptView;
     @FXML
     private StatusBar statusBar;
     private Circle statusCircle = new Circle(10.0, Color.GREEN);
@@ -303,7 +303,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         dimChoice.getSelectionModel().selectedItemProperty().removeListener(dimListener);
         ObservableList<String> dimList = FXCollections.observableArrayList();
         for (int i = 1; i <= nDim; i++) {
-            dimList.add("D" + String.valueOf(i));
+            dimList.add("D" + i);
             if ((i == 1) && (nDim > 2)) {
                 StringBuilder sBuilder = new StringBuilder();
                 sBuilder.append("D2");
@@ -316,7 +316,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         }
         dimList.add("D_ALL");
         for (int i = 1; i <= nDim; i++) {
-            dimList.add("P" + String.valueOf(i));
+            dimList.add("P" + i);
             if ((i == 1) && (nDim > 2)) {
                 dimList.add("P2,3");
             }
