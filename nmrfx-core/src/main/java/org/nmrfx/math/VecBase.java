@@ -3,6 +3,7 @@ package org.nmrfx.math;
 import org.apache.commons.math3.complex.Complex;
 import org.apache.commons.math3.util.ArithmeticUtils;
 import org.apache.commons.math3.util.FastMath;
+import org.nmrfx.datasets.DatasetLayout;
 import org.nmrfx.datasets.DatasetStorageInterface;
 import org.nmrfx.datasets.MatrixType;
 import org.nmrfx.math.units.*;
@@ -259,6 +260,10 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
         ArrayList<String> names = new ArrayList<>();
         names.addAll(vecMap.keySet());
         return names;
+    }
+
+    public DatasetLayout getLayout() {
+        return null;
     }
 
     /**

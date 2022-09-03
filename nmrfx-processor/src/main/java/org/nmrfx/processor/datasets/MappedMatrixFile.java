@@ -72,6 +72,10 @@ public class MappedMatrixFile implements DatasetStorageInterface, Closeable {
         init();
     }
 
+    public DatasetLayout getLayout() {
+        return layout;
+    }
+
     void init() throws IOException {
         long size = 1;
         for (int i = 0; i < layout.nDim; i++) {

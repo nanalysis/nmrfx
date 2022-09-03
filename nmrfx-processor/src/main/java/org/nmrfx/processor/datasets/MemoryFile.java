@@ -19,6 +19,7 @@ package org.nmrfx.processor.datasets;
 
 import org.apache.commons.math3.complex.Complex;
 import org.apache.commons.math3.util.MultidimensionalCounter;
+import org.nmrfx.datasets.DatasetLayout;
 import org.nmrfx.datasets.DatasetStorageInterface;
 import org.nmrfx.processor.math.Vec;
 import org.slf4j.Logger;
@@ -37,26 +38,28 @@ public class MemoryFile implements DatasetStorageInterface, Closeable {
     private final long[] strides;
     private final long totalSize;
     private final int dataType;
+    private final DatasetLayout layout;
     final boolean writable;
     private final FloatBuffer floatBuffer;
     private final IntBuffer intBuffer;
     int BYTES = Float.BYTES;
 
-    public MemoryFile(final Dataset dataset, final boolean writable) {
+    public MemoryFile(final Dataset dataset, DatasetLayout layout, final boolean writable) {
         dataType = dataset.getDataType();
         sizes = new int[dataset.getNDim()];
         strides = new long[dataset.getNDim()];
+        this.layout = layout;
         this.writable = writable;
         long size = 1;
         for (int i = 0; i < dataset.getNDim(); i++) {
-            sizes[i] = dataset.getSizeTotal(i);
+            sizes[i] = layout.getSize(i);
             size *= sizes[i];
             if (i == 0) {
                 strides[i] = 1;
             } else {
                 strides[i] = strides[i - 1] * sizes[i - 1];
             }
-            log.info("mem file {} {} {}", i, dataset.getSizeTotal(i), strides[i]);
+            log.info("mem file {} {} {}", i, layout.getSize(i), strides[i]);
         }
         totalSize = size;
         ByteBuffer byteBuffer = ByteBuffer.allocateDirect((int) totalSize * Float.BYTES);
@@ -72,6 +75,10 @@ public class MemoryFile implements DatasetStorageInterface, Closeable {
         } catch (IOException ex) {
             log.error(ex.getMessage(), ex);
         }
+    }
+
+    public DatasetLayout getLayout() {
+        return layout;
     }
 
     @Override

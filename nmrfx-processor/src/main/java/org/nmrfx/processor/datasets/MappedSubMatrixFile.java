@@ -75,7 +75,7 @@ public class MappedSubMatrixFile implements DatasetStorageInterface, Closeable {
         log.info(dataset.getFileName());
         log.info("header size {}", layout.getFileHeaderSize());
         for (int i = 0; i < dataset.getNDim(); i++) {
-            log.info("map sub {} {} {} {}", i, layout.blockSize[i], layout.nBlocks[i], dataset.getSizeTotal(i));
+            log.info("map sub {} {} {} {}", i, layout.blockSize[i], layout.nBlocks[i], layout.getSize(i));
             matSize *= (layout.blockSize[i] + blockHeaderSize) * layout.nBlocks[i];
         }
         totalSize = matSize / BYTES;
@@ -92,6 +92,10 @@ public class MappedSubMatrixFile implements DatasetStorageInterface, Closeable {
             this.raFile.close();
             throw e;
         }
+    }
+
+    public DatasetLayout getLayout() {
+        return layout;
     }
 
     @Override
