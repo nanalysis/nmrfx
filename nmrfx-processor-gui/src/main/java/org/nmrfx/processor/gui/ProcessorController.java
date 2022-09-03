@@ -426,7 +426,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     void viewMode() {
         if (viewMode.getSelectionModel().getSelectedIndex() == 1) {
             if (chart.controller.isFIDActive()) {
-                viewDatasetInApp();
+                viewDatasetInApp(null);
             }
         } else if (!chart.controller.isFIDActive()) {
             viewFID();
@@ -434,14 +434,18 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     }
 
     @FXML
-    public void viewDatasetInApp() {
-        if (chartProcessor.datasetFile != null) {
-            boolean viewingDataset = isViewingDataset();
-            chart.controller.openDataset(chartProcessor.datasetFile, false);
-            viewMode.getSelectionModel().select(1);
-            if (!viewingDataset) {
-                chart.full();
-                chart.autoScale();
+    public void viewDatasetInApp(Dataset dataset) {
+        if (dataset != null) {
+            chart.controller.addDataset(dataset, false, false);
+        } else {
+            if (chartProcessor.datasetFile != null) {
+                boolean viewingDataset = isViewingDataset();
+                chart.controller.openDataset(chartProcessor.datasetFile, false);
+                viewMode.getSelectionModel().select(1);
+                if (!viewingDataset) {
+                    chart.full();
+                    chart.autoScale();
+                }
             }
         }
     }
@@ -873,10 +877,10 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         doProcessWhenDone = true;
     }
 
-    void finishProcessing() {
+    void finishProcessing(Dataset dataset) {
         Platform.runLater(() -> {
             //chartProcessor.renameDataset();
-            viewDatasetInApp();
+            viewDatasetInApp(dataset);
         });
     }
 
@@ -923,7 +927,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     }
 
     private class ProcessDataset {
-
+        Processor processor;
         String script;
         public Worker<Integer> worker;
 
@@ -938,6 +942,9 @@ public class ProcessorController implements Initializable, ProgressUpdater {
                                 updateStatus("Start processing");
                                 updateTitle("Start Processing");
                                 processInterp.exec("from pyproc import *");
+                                processor = Processor.getProcessor();
+                                processor.keepDatasetOpen(true);
+                                processor.clearDataset();
                                 processInterp.exec("useProcessor(inNMRFx=True)");
                                 processInterp.exec(script);
                             }
@@ -949,7 +956,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
 
             ((Service<Integer>) worker).setOnSucceeded(event -> {
                 processable = true;
-                finishProcessing();
+                finishProcessing(processor.getDataset());
                 try {
                     writeScript(script);
                 } catch (IOException ex) {
