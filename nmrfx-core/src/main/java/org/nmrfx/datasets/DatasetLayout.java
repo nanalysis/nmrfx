@@ -70,6 +70,24 @@ public class DatasetLayout {
         return layout;
     }
 
+    public static DatasetLayout createBlockMatrix(int[] sizes) {
+        DatasetLayout layout = new DatasetLayout(sizes);
+        layout.setFileHeaderSize(DatasetBase.NV_HEADER_SIZE);
+        layout.setBlockHeaderSize(0);
+        layout.setBlockSize(4096);
+        layout.dimDataset();
+        return layout;
+    }
+    public static DatasetLayout resize(DatasetLayout source, int[] sizes) {
+        DatasetLayout layout = new DatasetLayout(sizes);
+        layout.setFileHeaderSize(source.getFileHeaderSize());
+        layout.setBlockHeaderSize(source.getBlockHeaderSize());
+        layout.blockPoints = source.blockPoints;
+        layout.setBlockSize(4096);
+        layout.dimDataset();
+        return layout;
+    }
+
     public boolean isSubMatrix() {
         return subMatrix;
     }

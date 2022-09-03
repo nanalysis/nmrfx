@@ -67,6 +67,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
     Map<String, double[]> buffers = new HashMap<>();
     Dataset[] projections = null;
     private Object analyzerObject = null;
+    boolean memoryMode = false;
 
     /**
      * Create a new Dataset object that refers to an existing random access file
@@ -106,6 +107,8 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         } else {
             layout = headerIO.readHeader(raFile);
         }
+        memoryMode = false;
+
         DatasetParameterFile parFile = new DatasetParameterFile(this, layout);
         parFile.readFile();
         if (layout != null) {
@@ -160,6 +163,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         lvl = 0.1;
         posDrawOn = true;
         negDrawOn = true;
+        memoryMode = false;
         setDataType(dataType);
         setByteOrder(byteOrder);
         DatasetParameterFile parFile = new DatasetParameterFile(this, layout);
@@ -200,6 +204,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         fileSize = vector.getSize();
         layout = DatasetLayout.createFullMatrix(vsize);
         newHeader();
+        memoryMode = false;
 
         foldUp[0] = 0.0;
         foldDown[0] = 0.0;
@@ -229,7 +234,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
     }
 
     private Dataset(String fullName, String title,
-            int[] dimSizes, boolean closeDataset) throws DatasetException {
+            int[] dimSizes, boolean closeDataset, boolean createFile) throws DatasetException {
         try {
             file = new File(fullName);
 
@@ -250,15 +255,17 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
             rmsd = new double[nDim][];
             values = new double[nDim][];
             fileSize = 1;
+            memoryMode = false;
 
             for (i = 0; i < this.nDim; i++) {
                 fileDimSizes[i] = dimSizes[i];
                 fileSize *= dimSizes[i];
             }
-            layout = new DatasetLayout(dimSizes);
-            layout.setBlockSize(4096);
-            layout.dimDataset();
-
+            if (createFile) {
+                layout = new DatasetLayout(dimSizes);
+                layout.setBlockSize(4096);
+                layout.dimDataset();
+            }
             this.title = title;
             newHeader();
             int fileHeaderSize;
@@ -267,25 +274,10 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
             } else {
                 fileHeaderSize = NV_HEADER_SIZE;
             }
-            if (layout != null) {
-                layout.setFileHeaderSize(fileHeaderSize);
-                // Cannot close this here as it is used in places outside this try
-                RandomAccessFile raFile = new RandomAccessFile(fullName, "rw");
-                createDataFile(raFile, true);
-                if (useCacheFile) {
-                    raFile.setLength(layout.getTotalSize());
-                }
-            }
             setStrides();
-            writeHeader();
-            if (closeDataset) {
-                dataFile.zero();
-                dataFile.close();
-            } else {
-                addFile(fileName);
+            if (layout != null) {
+                setLayout(layout, closeDataset);
             }
-            DatasetParameterFile parFile = new DatasetParameterFile(this, layout);
-            parFile.remove();
         } catch (IOException ioe) {
             throw new DatasetException("Can't create dataset " + ioe.getMessage());
         }
@@ -316,8 +308,9 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
             this.fileName = title;
             setStrides();
             newHeader();
-            dataFile = new MemoryFile(this, true);
+            dataFile = new MemoryFile(this, layout, true);
             dataFile.zero();
+            memoryMode = true;
         } catch (IOException ioe) {
             throw new DatasetException("Can't create dataset " + ioe.getMessage());
         }
@@ -362,26 +355,61 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         this.fileName = title;
         newHeader();
         dataFile = null;
+        memoryMode = true;
     }
 
+    private void setLayout(DatasetLayout layout, boolean closeDataset) throws IOException {
+        int fileHeaderSize;
+        String fullName = file.getCanonicalPath();
+        if (fullName.contains(".ucsf")) {
+            fileHeaderSize = UCSF_HEADER_SIZE + 128 * nDim;
+        } else {
+            fileHeaderSize = NV_HEADER_SIZE;
+        }
+
+        layout.setFileHeaderSize(fileHeaderSize);
+        // Cannot close this here as it is used in places outside this try
+        RandomAccessFile raFile = new RandomAccessFile(fullName, "rw");
+        createDataFile(raFile, true);
+        if (useCacheFile) {
+            raFile.setLength(layout.getTotalSize());
+        }
+        for (int i=0;i<nDim;i++) {
+            setFileDimSize(i, layout.getSize(i));
+        }
+        writeHeader();
+        if (closeDataset) {
+            dataFile.zero();
+            dataFile.close();
+        } else {
+            addFile(fileName);
+        }
+        DatasetParameterFile parFile = new DatasetParameterFile(this, layout);
+        parFile.remove();
+
+    }
     public void resize(int directDimSize, int[] idSizes) throws DatasetException {
         System.out.print("resize " + directDimSize);
         int[] dimSizes = new int[nDim];
         dimSizes[0] = directDimSize;
         for (int i = 1; i < nDim; i++) {
             dimSizes[i] = idSizes[i - 1];
-            System.out.print(" " + dimSizes[i]);
         }
         System.out.println("");
         try {
-            layout = DatasetLayout.createFullMatrix(dimSizes);
-            setStrides();
-            for (int i = 0; i < nDim; i++) {
-                refPt[i] = getSizeReal(i) / 2;
-                refPt_r[i] = getSizeReal(i) / 2;
+            if (memoryMode) {
+                layout = DatasetLayout.createFullMatrix(dimSizes);
+                setStrides();
+                for (int i = 0; i < nDim; i++) {
+                    refPt[i] = getSizeReal(i) / 2;
+                    refPt_r[i] = getSizeReal(i) / 2;
+                }
+                dataFile = new MemoryFile(this, layout, true);
+                dataFile.zero();
+            } else {
+               layout = DatasetLayout.createBlockMatrix(dimSizes);
+               setLayout(layout, false);
             }
-            dataFile = new MemoryFile(this, true);
-            dataFile.zero();
         } catch (IOException ioe) {
             throw new DatasetException("Can't create dataset " + ioe.getMessage());
         }
@@ -398,34 +426,41 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
             System.out.println("new size " + i + " " + dimSizes[i]);
         }
         try {
-            DatasetLayout oldLayout = layout;
-            layout = DatasetLayout.createFullMatrix(dimSizes);
+            dataFile = StorageResizer.resizeDim(this, layout, dataFile, dimSizes);
+            layout = dataFile.getLayout();
+            setFileDimSize(iDim, dimSize);
             setStrides();
             refPt[iDim] = getSizeReal(iDim) / 2;
             refPt_r[iDim] = getSizeReal(iDim) / 2;
-            MemoryFile oldFile = (MemoryFile) dataFile;
-            dataFile = new MemoryFile(this, true);
-            dataFile.zero();
-            oldFile.copyTo((MemoryFile) dataFile);
+            if (dataFile instanceof MemoryFile) {
+
+            }
         } catch (IOException ioe) {
+            ioe.printStackTrace();
             throw new DatasetException("Can't resize dataset " + ioe.getMessage());
         }
     }
 
     private void createDataFile(RandomAccessFile raFile, boolean writable) throws IOException {
+        dataFile = createDataFile(this, raFile, file, layout, writable);
+    }
+
+    public static DatasetStorageInterface createDataFile(Dataset dataset, RandomAccessFile raFile, File file, DatasetLayout newLayout, boolean writable) throws IOException {
+        DatasetStorageInterface newDataFile;
         if (useCacheFile) {
-            dataFile = new SubMatrixFile(this, file, layout, raFile, writable);
+            newDataFile = new SubMatrixFile(dataset, file, newLayout, raFile, writable);
         } else {
-            if (layout.getNDataBytes() > 512e6) {
-                dataFile = new BigMappedMatrixFile(this, file, layout, raFile, writable);
+            if (newLayout.getNDataBytes() > 512e6) {
+                newDataFile = new BigMappedMatrixFile(dataset, file, newLayout, raFile, writable);
             } else {
-                if (layout.isSubMatrix()) {
-                    dataFile = new MappedSubMatrixFile(this, file, layout, raFile, writable);
+                if (newLayout.isSubMatrix()) {
+                    newDataFile = new MappedSubMatrixFile(dataset, file, newLayout, raFile, writable);
                 } else {
-                    dataFile = new MappedMatrixFile(this, file, layout, raFile, writable);
+                    newDataFile = new MappedMatrixFile(dataset, file, newLayout, raFile, writable);
                 }
             }
         }
+        return newDataFile;
     }
 
     @Override
@@ -443,8 +478,8 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
      * @return the created Dataset
      * @throws DatasetException if an I/O error occurred when writing out file
      */
-    public static Dataset createDataset(String fullName, String title, int[] dimSizes, boolean closeDataset) throws DatasetException {
-        Dataset dataset = new Dataset(fullName, title, dimSizes, closeDataset);
+    public static Dataset createDataset(String fullName, String title, int[] dimSizes, boolean closeDataset, boolean createFile) throws DatasetException {
+        Dataset dataset = new Dataset(fullName, title, dimSizes, closeDataset, createFile);
         if (closeDataset) {
             dataset.close();
             dataset = null;
@@ -1704,7 +1739,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         int nColumns = matrix.getColumnDimension();
         int[] dimSizes = {nRows, nColumns};
         int[] pt = new int[2];
-        Dataset dataset = createDataset(fullName, datasetName, dimSizes, false);
+        Dataset dataset = createDataset(fullName, datasetName, dimSizes, false, true);
         for (int i = 0; i < nRows; i++) {
             for (int j = 0; j < nColumns; j++) {
                 pt[0] = i;
@@ -2110,7 +2145,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         int newSize = pt[0][1] - pt[0][0] + 1;
         Dataset newDataset = null;
         try {
-            newDataset = Dataset.createDataset(newFileName, newFileName, datasetSizes, false);
+            newDataset = Dataset.createDataset(newFileName, newFileName, datasetSizes, false, true);
 
             Vec scanVec = new Vec(newSize, false);
             ScanRegion scanRegion = new ScanRegion(pt, dim, this);

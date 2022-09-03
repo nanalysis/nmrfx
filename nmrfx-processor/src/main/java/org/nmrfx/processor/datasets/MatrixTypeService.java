@@ -68,7 +68,6 @@ public class MatrixTypeService {
         unprocessedItemQueue = new LinkedBlockingQueue<>();
         processedItemQueue = new LinkedBlockingQueue<>();
         futureTask = new FutureTask(() -> readWriteItems());
-        System.out.println("mts " + itemsToRead + " " + itemsToWrite);
         executor.execute(futureTask);
     }
 
@@ -177,16 +176,21 @@ public class MatrixTypeService {
         if (!dataset.hasLayout()) {
             int[] idNVectors = processor.getIndirectSizes();
             int size = vec.getSize();
-            System.out.println("nDim " + nDim + " nvecs " + " size " + size + " " + vec.getDim()[0]);
             dataset.resize(size, idNVectors);
         }
         for (int i = 0; i < nDim; i++) {
-//            System.out.printf("wv i %4d dim %4d pt0 %4d pt1 %4d size %4d vsize %4d fsize %4d\n",
-//                    i, dim[i], pt[i][0], pt[i][1], dataset.getSizeTotal(dim[i]),
-//                    dataset.getVSize(dim[i]), dataset.getFileDimSize(dim[i]));
             if (pt[i][0] == pt[i][1]) {
-                if ((pt[i][0] + 1) > dataset.getFileDimSize(dim[i])) {
-                    dataset.resizeDim(dim[i], pt[i][1] + 1);
+                int testSize = pt[i][0] + 1;
+                if (testSize > dataset.getFileDimSize(dim[i])) {
+                    if (i > 0) {
+                        int[] idNVectors = processor.getIndirectSizes();
+                        testSize = testSize < idNVectors[i - 1] ? idNVectors[i - 1] : (int) Math.ceil(testSize / 16.0) * 16;
+                    } else {
+                        if (testSize > dataset.getFileDimSize(dim[i])) {
+                            testSize = (int) Math.ceil(testSize / 16.0) * 16;
+                        }
+                    }
+                    dataset.resizeDim(dim[i], testSize);
                 }
             } else {
                 if ((pt[i][1] + 1) > dataset.getFileDimSize(dim[i])) {
@@ -194,7 +198,6 @@ public class MatrixTypeService {
                 }
             }
         }
-
     }
     private void checkMatrix(Dataset dataset, MatrixND matrix) throws DatasetException {
         int[][] pt = matrix.getPt();
@@ -243,7 +246,6 @@ public class MatrixTypeService {
                     }
                 } else {
                     if (nWritten.get() >= itemsToWrite) {
-                        System.out.println("finished writing");
                         return true;
                     }
                 }

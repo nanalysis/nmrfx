@@ -454,9 +454,6 @@ public class Processor {
             acqOrderToUse = acqOrder;
         }
         if (log.isDebugEnabled()) {
-            for (int i = 0; i < (nDim + nArray); i++) {
-                log.debug("new td {} {} {}", i, adjustedTDSizes[i], newComplex[i]);
-            }
             StringBuilder acqOrderStr = new StringBuilder();
             for (int i = 0; i < acqOrderToUse.length; i++) {
                 acqOrderStr.append(acqOrderToUse[i]).append(" ");
@@ -835,8 +832,7 @@ public class Processor {
         for (int i = 0; i < datasetSizes.length; i++) {
             size *= datasetSizes[i];
         }
-        boolean memoryMode = size < 135e6;
-        return memoryMode;
+        return size < 135e6;
     }
 
     public boolean createNV(String outputFile, int[] useSizes) {
@@ -870,7 +866,11 @@ public class Processor {
             if (inMemory) {
                 this.dataset = new Dataset(outputFile, nDimToUse);
             } else {
-                //  this.dataset = Dataset.createDataset(outputFile, outputFile, datasetSizes, false);
+                int[] idSizes = getIndirectSizes();
+                for (int i=0;i<idSizes.length;i++) {
+                    useSizes[i +1] = idSizes[i];
+                }
+                this.dataset = Dataset.createDataset(outputFile, outputFile, useSizes, false, false);
             }
         } catch (DatasetException ex) {
             log.error(ex.getMessage(), ex);
@@ -1459,6 +1459,13 @@ public class Processor {
         simVecProcessor.saveSimFids();
     }
 
+    public void clearDataset() {
+        if (dataset != null) {
+            dataset.close();
+            dataset = null;
+        }
+    }
+
     public void closeDataset() {
         if (dataset != null) {
             if (dataset.isMemoryFile()) {
@@ -1523,13 +1530,11 @@ public class Processor {
                     datasetWriter.shutdown();
                 }
                 datasetWriter = new MatrixTypeService(this, queueLimit, itemsToRead, itemsToWrite);
-                System.out.println("got writer");
             }
 
             for (Runnable process : processes) {
                 completedProcesses.add(pool.submit(process));
             }
-            System.out.println("submitted");
 
             for (Future future : completedProcesses) {
                 try {
