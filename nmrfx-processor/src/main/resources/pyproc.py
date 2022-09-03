@@ -623,7 +623,6 @@ def readNUS(fileName, demo=True):
 def genNUS(sizes):
     global fidInfo
     fidObj = fidInfo.fidObj
-    print "gen ",sizes
     fidObj.createUniformSchedule(sizes)
 
 class genericOperation(object):
@@ -833,7 +832,6 @@ def initMSize(fidInfo, size):
 def createDataset(nvFileName=None):
     global fidInfo
     global dataInfo
-    print 'create',dataInfo.msize,'extra',dataInfo.extra
 
     if (nvFileName == None):
         nvFileName = dataInfo.filename
@@ -863,10 +861,8 @@ def createDataset(nvFileName=None):
             processor.createNVInMemory(nvFileName, useSize)
         elif (fidInfo and fidInfo.flags):
             processor.createNV(nvFileName, useSize, fidInfo.flags)
-            print 'exists',os.path.exists(nvFileName)
         else:
             processor.createNV(nvFileName, useSize)
-            print 'exists',os.path.exists(nvFileName)
 
         dataset = processor.getDataset()
         psspecial.datasetMods(dataset, fidInfo)
@@ -875,7 +871,6 @@ def createDataset(nvFileName=None):
 
 def closeDataset():
     if not processor.isDatasetOpen():
-        print 'fexists',os.path.exists(nvFileName)
         processor.closeDataset()
 
 def setDataInfo(dSize):
@@ -900,7 +895,6 @@ def setDataInfo(dSize):
                     dataset.setSf(iDim,fidInfo.sf[fidDim])
                 if fidInfo.label:
                     dataset.setLabel(iDim,fidInfo.label[fidDim])
-                print dataset.getRefValue_r(iDim),dataset.getRefPt_r(iDim)
         if fidInfo.label:
             if (nDim > len(fidInfo.label)):
                 dataset.setLabel(nDim-1,'array')
@@ -2870,7 +2864,6 @@ def GRINS(noise=0.0, scale=0.5, zf=0, phase=None, preserve=False, synthetic=Fals
     else:
         process.addOperation(op)
         curDims = dataInfo.curDims
-        print 'curdims', curDims
     return op
 
 
