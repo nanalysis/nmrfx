@@ -14,7 +14,8 @@ public enum FileExtensionFilterType {
     NMR_DATASET("NMR Dataset", "*.nv", "*.ucsf", "*.dx", "*.jdx", "1r", "2rr", "3rrr", "4rrrr", RS2DData.DATA_FILE_NAME),
     PDF("PDF", "*.pdf"),
     PNG("PNG", "*.png"),
-    SVG("SVG", "*.svg");
+    SVG("SVG", "*.svg"),
+    TXT("TXT", "*.txt");
 
     private final String description;
     private final List<String> filters;

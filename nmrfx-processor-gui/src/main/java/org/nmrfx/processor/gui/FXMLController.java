@@ -1357,7 +1357,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
             Scene scene = new Scene((Pane) parent);
             stage.setScene(scene);
             scene.getStylesheets().add("/styles/Styles.css");
-
+            MainApp.setStageFontSize(stage, MainApp.REG_FONT_SIZE_STR);
             controller = loader.<FXMLController>getController();
             controller.stage = stage;
             //controllers.add(controller);
@@ -1455,21 +1455,19 @@ public class FXMLController implements  Initializable, PeakNavigable {
     }
 
     void initToolBar(ToolBar toolBar) {
-        String iconSize = "16px";
-        String fontSize = "7pt";
         ArrayList<Node> buttons = new ArrayList<>();
 
         ButtonBase bButton;
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.FOLDER_OPEN, "Open", iconSize, fontSize, ContentDisplay.TOP);
+        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.FOLDER_OPEN, "Open", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
         bButton.setOnAction(e -> openFIDAction(e));
         // buttons.add(bButton);
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.FILE, "Datasets", iconSize, fontSize, ContentDisplay.TOP);
+        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.FILE, "Datasets", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
         bButton.setOnAction(e -> showDatasetsAction(e));
         buttons.add(bButton);
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.WRENCH, "Attributes", iconSize, fontSize, ContentDisplay.TOP);
+        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.WRENCH, "Attributes", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
         bButton.setOnAction(e -> showSpecAttrAction(e));
         buttons.add(bButton);
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.HEART, "Favorite", iconSize, fontSize, ContentDisplay.TOP);
+        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.HEART, "Favorite", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
         bButton.setOnAction(e -> saveAsFavorite());
         buttons.add(bButton);
         buttons.add(new Separator(Orientation.VERTICAL));
@@ -1480,29 +1478,29 @@ public class FXMLController implements  Initializable, PeakNavigable {
         bButton.setOnAction(e -> printAction(e));
         buttons.add(bButton);
          */
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.REFRESH, "Refresh", iconSize, fontSize, ContentDisplay.TOP);
+        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.REFRESH, "Refresh", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
         bButton.setOnAction(e -> getActiveChart().refresh());
         buttons.add(bButton);
-        cancelButton = GlyphsDude.createIconButton(FontAwesomeIcon.STOP, "Halt", iconSize, fontSize, ContentDisplay.TOP);
+        cancelButton = GlyphsDude.createIconButton(FontAwesomeIcon.STOP, "Halt", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
         buttons.add(cancelButton);
 
         buttons.add(new Separator(Orientation.VERTICAL));
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.UNDO, "Undo", iconSize, fontSize, ContentDisplay.TOP);
+        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.UNDO, "Undo", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
         bButton.setOnAction(e -> undoManager.undo());
         buttons.add(bButton);
         bButton.disableProperty().bind(undoManager.undoable.not());
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.REPEAT, "Redo", iconSize, fontSize, ContentDisplay.TOP);
+        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.REPEAT, "Redo", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
         bButton.setOnAction(e -> undoManager.redo());
         buttons.add(bButton);
         bButton.disableProperty().bind(undoManager.redoable.not());
 
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.EXPAND, "Full", iconSize, fontSize, ContentDisplay.TOP);
+        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.EXPAND, "Full", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
         bButton.setOnMouseClicked(e -> doFull(e));
         buttons.add(bButton);
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.SEARCH, "Expand", iconSize, fontSize, ContentDisplay.TOP);
+        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.SEARCH, "Expand", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
         bButton.setOnMouseClicked(e -> doExpand(e));
         buttons.add(bButton);
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.SEARCH_MINUS, "In", iconSize, fontSize, ContentDisplay.TOP);
+        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.SEARCH_MINUS, "In", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
         bButton.setOnMouseClicked(e -> doZoom(e, 1.2));
         bButton.setOnScroll((ScrollEvent event) -> {
             double x = event.getDeltaX();
@@ -1515,7 +1513,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
             }
         });
         buttons.add(bButton);
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.SEARCH_PLUS, "Out", iconSize, fontSize, ContentDisplay.TOP);
+        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.SEARCH_PLUS, "Out", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
         bButton.setOnMouseClicked(e -> doZoom(e, 0.8));
         bButton.setOnScroll((ScrollEvent event) -> {
             double x = event.getDeltaX();
@@ -1530,10 +1528,10 @@ public class FXMLController implements  Initializable, PeakNavigable {
         buttons.add(bButton);
 
         buttons.add(new Separator(Orientation.VERTICAL));
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.ARROWS_V, "Auto", iconSize, fontSize, ContentDisplay.TOP);
+        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.ARROWS_V, "Auto", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
         bButton.setOnMouseClicked(e -> doScale(e, 0.0));
         buttons.add(bButton);
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.ARROW_UP, "Higher", iconSize, fontSize, ContentDisplay.TOP);
+        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.ARROW_UP, "Higher", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
         bButton.setOnMouseClicked(e -> doScale(e, 0.8));
         bButton.setOnScroll((ScrollEvent event) -> {
             double x = event.getDeltaX();
@@ -1547,7 +1545,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
             }
         });
         buttons.add(bButton);
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.ARROW_DOWN, "Lower", iconSize, fontSize, ContentDisplay.TOP);
+        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.ARROW_DOWN, "Lower", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
         bButton.setOnMouseClicked(e -> doScale(e, 1.2));
 
         bButton.setOnScroll((ScrollEvent event) -> {
@@ -1683,10 +1681,10 @@ public class FXMLController implements  Initializable, PeakNavigable {
 
     public void showSpectrumMeasureBar() {
         if (measureBar == null) {
-            GridPane navBar = new GridPane();
+            VBox vBox = new VBox();
             measureBar = new SpectrumMeasureBar(this, this::removeSpectrumMeasureBar);
-            measureBar.buildBar(navBar);
-            bottomBox.getChildren().add(navBar);
+            measureBar.buildBar(vBox);
+            bottomBox.getChildren().add(vBox);
         }
     }
 
@@ -1704,10 +1702,10 @@ public class FXMLController implements  Initializable, PeakNavigable {
 
     public void showAnalyzerBar() {
         if (analyzerBar == null) {
-            GridPane navBar = new GridPane();
+            VBox vBox = new VBox();
             analyzerBar = new AnalyzerBar(this, this::removeAnalyzerBar);
-            analyzerBar.buildBar(navBar);
-            bottomBox.getChildren().add(navBar);
+            analyzerBar.buildBar(vBox);
+            bottomBox.getChildren().add(vBox);
         }
     }
 

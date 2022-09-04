@@ -28,6 +28,7 @@ import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import org.apache.commons.collections4.iterators.PermutationIterator;
+import org.apache.commons.lang3.StringUtils;
 import org.controlsfx.control.PropertySheet;
 import org.nmrfx.processor.datasets.DatasetType;
 import org.nmrfx.processor.datasets.vendor.NMRData;
@@ -281,6 +282,10 @@ public class RefManager {
         refMap.clear();
     }
 
+    void clearItems() {
+        refSheet.getItems().clear();
+    }
+
     void setupItems(int dim) {
         ChartProcessor chartProcessor = processorController.chartProcessor;
         NMRData nmrData = getNMRData();
@@ -343,7 +348,10 @@ public class RefManager {
                 String value = getPropValue(dim, propName, false);
                 int iValue = 0;
                 try {
-                    iValue = Integer.parseInt(value);
+                    // Set empty strings to have a value of 0
+                    if (!value.isEmpty()) {
+                        iValue = Integer.parseInt(value);
+                    }
                 } catch (NumberFormatException nFe) {
                     log.warn("Unable to parse value.", nFe);
                 }
@@ -406,6 +414,9 @@ public class RefManager {
     }
 
     public boolean getSkip(String dimName) {
+        if (!StringUtils.isNumeric(dimName)) {
+            return false;
+        }
         String propValue = "0";
         try {
             int dim = Integer.parseInt(dimName);

@@ -8,31 +8,20 @@ package org.nmrfx.analyst.gui.tools;
 import de.jensd.fx.glyphs.GlyphsDude;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Random;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
+
 import javafx.event.ActionEvent;
 import javafx.event.Event;
-import javafx.scene.control.Alert;
-import javafx.scene.control.Button;
-import javafx.scene.control.ContentDisplay;
-import javafx.scene.control.ContextMenu;
-import javafx.scene.control.Label;
-import javafx.scene.control.MenuButton;
-import javafx.scene.control.Menu;
-import javafx.scene.control.MenuItem;
-import javafx.scene.control.ToolBar;
+import javafx.scene.Node;
+import javafx.scene.control.*;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import org.apache.commons.math3.random.RandomDataGenerator;
 import org.nmrfx.chemistry.Atom;
@@ -43,6 +32,7 @@ import org.nmrfx.peaks.PeakList;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.ControllerTool;
 import org.nmrfx.processor.gui.FXMLController;
+import org.nmrfx.processor.gui.MainApp;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
 import org.nmrfx.structure.chemistry.Molecule;
@@ -53,6 +43,7 @@ import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.processor.gui.spectra.KeyBindings;
 import org.nmrfx.processor.optimization.BipartiteMatcher;
 import org.nmrfx.processor.project.Project;
+import org.nmrfx.utils.GUIUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -63,6 +54,7 @@ import org.slf4j.LoggerFactory;
 public class PeakSlider implements ControllerTool {
 
     private static final Logger log = LoggerFactory.getLogger(PeakSlider.class);
+    VBox vBox;
     ToolBar sliderToolBar;
     FXMLController controller;
     Consumer closeAction;
@@ -89,8 +81,8 @@ public class PeakSlider implements ControllerTool {
         setupLists(true);
     }
 
-    public ToolBar getToolBar() {
-        return sliderToolBar;
+    public VBox getBox() {
+        return this.vBox;
     }
 
     public void close() {
@@ -98,40 +90,39 @@ public class PeakSlider implements ControllerTool {
         closeAction.accept(this);
     }
 
-    public void initSlider(ToolBar toolBar) {
-        this.sliderToolBar = toolBar;
+    public void initSlider(VBox vBox) {
+        this.vBox = vBox;
+        sliderToolBar = new ToolBar();
+        vBox.getChildren().add(sliderToolBar);
 
-        String iconSize = "16px";
-        String fontSize = "7pt";
         ArrayList<Button> buttons = new ArrayList<>();
-        Button bButton;
-        Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "Close", iconSize, fontSize, ContentDisplay.TOP);
+        Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "Close", MainApp.ICON_SIZE_STR, MainApp.REG_FONT_SIZE_STR, ContentDisplay.LEFT);
         closeButton.setOnAction(e -> close());
 
-        shiftFreezeButton = GlyphsDude.createIconButton(FontAwesomeIcon.CODE_FORK, "Shift+Freeze", iconSize, fontSize, ContentDisplay.TOP);
+        shiftFreezeButton = new Button("Shift+Freeze");
         shiftFreezeButton.setOnMouseClicked(e -> evalMatchCriteria(selPeaks));
         buttons.add(shiftFreezeButton);
 
-        freezeButton = GlyphsDude.createIconButton(FontAwesomeIcon.LOCK, "Freeze", iconSize, fontSize, ContentDisplay.TOP);
+        freezeButton = new Button("Freeze");
         freezeButton.setOnAction(e -> freezePeaks(e));
         freezeButton.setOnMouseClicked(e -> freezePeaks(e));
         buttons.add(freezeButton);
 
-        thawButton = GlyphsDude.createIconButton(FontAwesomeIcon.UNLOCK, "Thaw", iconSize, fontSize, ContentDisplay.TOP);
+        thawButton = new Button("Thaw");
         thawButton.setOnAction(e -> thawPeaks(e));
         thawButton.setOnMouseClicked(e -> thawPeaks(e));
         buttons.add(thawButton);
 
-        tweakFreezeButton = GlyphsDude.createIconButton(FontAwesomeIcon.BULLSEYE, "Tweak+Freeze", iconSize, fontSize, ContentDisplay.TOP);
+        tweakFreezeButton = new Button("Tweak+Freeze");
         tweakFreezeButton.setOnAction(e -> tweakPeaks(e));
         tweakFreezeButton.setOnMouseClicked(e -> tweakPeaks(e));
         buttons.add(tweakFreezeButton);
 
-        linkButton = GlyphsDude.createIconButton(FontAwesomeIcon.CHAIN, "Link", iconSize, fontSize, ContentDisplay.TOP);
+        linkButton = new Button("Link");
         linkButton.setOnAction(e -> linkDims());
         buttons.add(linkButton);
 
-        unlinkButton = GlyphsDude.createIconButton(FontAwesomeIcon.CHAIN_BROKEN, "UnLink", iconSize, fontSize, ContentDisplay.TOP);
+        unlinkButton = new Button("UnLink");
         unlinkButton.setOnAction(e -> unlinkDims());
         buttons.add(unlinkButton);
 
@@ -143,11 +134,11 @@ public class PeakSlider implements ControllerTool {
         atomYFieldLabel = new Label("Y:");
         intensityFieldLabel = new Label("I:");
         atomXLabel = new Label();
-        atomXLabel.setMinWidth(75);
+        atomXLabel.setMinWidth(55);
         atomYLabel = new Label();
-        atomYLabel.setMinWidth(75);
+        atomYLabel.setMinWidth(55);
         intensityLabel = new Label();
-        intensityLabel.setMinWidth(75);
+        intensityLabel.setMinWidth(55);
 
         MenuButton actionMenu = new MenuButton("Actions");
         MenuItem thawAllItem = new MenuItem("Thaw All");
@@ -174,23 +165,26 @@ public class PeakSlider implements ControllerTool {
         Pane filler1 = new Pane();
         HBox.setHgrow(filler1, Priority.ALWAYS);
         Pane filler2 = new Pane();
-        filler2.setMinWidth(50);
+        filler2.setMinWidth(20);
         Pane filler3 = new Pane();
-        filler3.setMinWidth(50);
+        filler3.setMinWidth(20);
         Pane filler4 = new Pane();
-        filler4.setMinWidth(50);
+        filler4.setMinWidth(20);
         Pane filler5 = new Pane();
         HBox.setHgrow(filler5, Priority.ALWAYS);
 
-        if (toolBar != null) {
-            toolBar.getItems().add(closeButton);
-            toolBar.getItems().add(filler1);
-            toolBar.getItems().add(actionMenu);
-            toolBar.getItems().addAll(buttons);
-            toolBar.getItems().add(filler2);
-            toolBar.getItems().addAll(atomXFieldLabel, atomXLabel, filler3, atomYFieldLabel, atomYLabel, filler4, intensityFieldLabel, intensityLabel);
+        if (sliderToolBar != null) {
+            sliderToolBar.getItems().add(closeButton);
+            sliderToolBar.getItems().add(filler1);
+            sliderToolBar.getItems().add(actionMenu);
+            sliderToolBar.getItems().addAll(buttons);
+            sliderToolBar.getItems().add(filler2);
+            sliderToolBar.getItems().addAll(atomXFieldLabel, atomXLabel, filler3, atomYFieldLabel, atomYLabel, filler4, intensityFieldLabel, intensityLabel);
+            sliderToolBar.getItems().add(filler5);
 
-            toolBar.getItems().add(filler5);
+            // The different control items end up with different heights based on font and icon size,
+            // set all the items to use the same height
+            sliderToolBar.heightProperty().addListener((observable, oldValue, newValue) -> GUIUtils.toolbarAdjustHeights(List.of(sliderToolBar)));
         }
         controller.selPeaks.addListener(e -> setActivePeaks(controller.selPeaks.get()));
         for (PolyChart chart : controller.getCharts()) {
@@ -251,11 +245,11 @@ public class PeakSlider implements ControllerTool {
         }
     }
 
-//    public void freezePeaks(MouseEvent event) {
+    //    public void freezePeaks(MouseEvent event) {
 //
 //        freezePeaks(event.isAltDown());
 //        event.consume();
-//        
+//
 //    }
     public void freezePeaks(boolean useAllConditions) {
         // do setup because we could have added a peak list after adding slider controller.  Should be a better way
@@ -456,7 +450,7 @@ public class PeakSlider implements ControllerTool {
             PeakDim peakDim11 = selPeaks.get(1).getPeakDim(1);
             double delta0 = Math.abs(peakDim00.getChemShift() - peakDim01.getChemShift());
             double delta1 = Math.abs(peakDim10.getChemShift() - peakDim11.getChemShift());
-            // scale delta ppm between peaks by the bounds of the peaks so we can 
+            // scale delta ppm between peaks by the bounds of the peaks so we can
             //  compare axes with different nuclei
             double delta0F = Math.abs(delta0 / peakDim00.getBounds());
             double delta1F = Math.abs(delta1 / peakDim10.getBounds());
@@ -621,7 +615,7 @@ public class PeakSlider implements ControllerTool {
             System.out.println(String.format("\tClicked peak '%s' meets criteria 1 (%s) and 2 (%s)", clickedPeak, c1ClickedPeak, c2ClickedPeak));
 
             if (c1ClickedPeak && c2ClickedPeak) {
-                // TODO: debugging list, need to delete 
+                // TODO: debugging list, need to delete
                 List<Peak> peaksToFreeze = new ArrayList<>();
                 peaksToFreeze.add(clickedPeak);
                 shiftAndFreezePeak(clickedPeak);
@@ -906,32 +900,32 @@ public class PeakSlider implements ControllerTool {
         List<PeakList> predLists = new ArrayList<>();
         List<PeakList> expLists = new ArrayList<>();
         controller.getCharts().stream().forEach(chart -> {
-            for (DatasetAttributes dataAttr : chart.getDatasetAttributes()) {
-                double xMin = chart.getXAxis().getLowerBound();
-                double xMax = chart.getXAxis().getUpperBound();
-                double yMin = chart.getYAxis().getLowerBound();
-                double yMax = chart.getYAxis().getUpperBound();
-                double[][] limits = {{xMin, xMax}, {yMin, yMax}};
-                Optional<PeakList> expListOpt = Optional.empty();
-                Optional<PeakList> predListOpt = Optional.empty();
-                for (PeakList peakList : Project.getActive().getPeakLists()) {
-                    if (peakList.getDatasetName().equals(dataAttr.getDataset().getName())) {
-                        if (peakList.isSimulated()) {
-                            predListOpt = Optional.of(peakList);
-                        } else {
-                            expListOpt = Optional.of(peakList);
+                    for (DatasetAttributes dataAttr : chart.getDatasetAttributes()) {
+                        double xMin = chart.getXAxis().getLowerBound();
+                        double xMax = chart.getXAxis().getUpperBound();
+                        double yMin = chart.getYAxis().getLowerBound();
+                        double yMax = chart.getYAxis().getUpperBound();
+                        double[][] limits = {{xMin, xMax}, {yMin, yMax}};
+                        Optional<PeakList> expListOpt = Optional.empty();
+                        Optional<PeakList> predListOpt = Optional.empty();
+                        for (PeakList peakList : Project.getActive().getPeakLists()) {
+                            if (peakList.getDatasetName().equals(dataAttr.getDataset().getName())) {
+                                if (peakList.isSimulated()) {
+                                    predListOpt = Optional.of(peakList);
+                                } else {
+                                    expListOpt = Optional.of(peakList);
+                                }
+                            }
+                        }
+                        if (expListOpt.isPresent() && predListOpt.isPresent()) {
+                            PeakCluster.prepareList(expListOpt.get(), limits);
+                            PeakCluster.prepareList(predListOpt.get(), limits);
+                            expLists.add(expListOpt.get());
+                            predLists.add(predListOpt.get());
+                            System.out.println("create " + iDim + " " + expListOpt.get().getName() + " " + predListOpt.get().getName());
                         }
                     }
                 }
-                if (expListOpt.isPresent() && predListOpt.isPresent()) {
-                    PeakCluster.prepareList(expListOpt.get(), limits);
-                    PeakCluster.prepareList(predListOpt.get(), limits);
-                    expLists.add(expListOpt.get());
-                    predLists.add(predListOpt.get());
-                    System.out.println("create " + iDim + " " + expListOpt.get().getName() + " " + predListOpt.get().getName());
-                }
-            }
-        }
         );
         matchers[iDim] = new PeakClusterMatcher(expLists, predLists, iDim);
 
@@ -954,12 +948,12 @@ public class PeakSlider implements ControllerTool {
                                     })
                                     .forEachOrdered((matchingPeaks) -> {
                                         matchingPeaks.forEach(pairedPeaks -> {
-                                            boolean isColumn = matcher.getMatchDim() == 0;
-                                            ConnectPeakAttributes connPeakAttrs = setPeakPairAttrs(isColumn, pairedPeaks);
-                                            if (connPeakAttrs != null) {
-                                                chart.addPeakPath(connPeakAttrs);
-                                            }
-                                        }
+                                                    boolean isColumn = matcher.getMatchDim() == 0;
+                                                    ConnectPeakAttributes connPeakAttrs = setPeakPairAttrs(isColumn, pairedPeaks);
+                                                    if (connPeakAttrs != null) {
+                                                        chart.addPeakPath(connPeakAttrs);
+                                                    }
+                                                }
                                         );
                                     });
                             chart.drawPeakLists(true);
@@ -1103,8 +1097,8 @@ public class PeakSlider implements ControllerTool {
     }
 
     double calcTOCSYAdj(PeakList predTOCSYList, PeakList expTOCSYList,
-            Peak predHMQCPeak, Peak expHMQCPeak,
-            double[] tocsyScale, double smallTol) {
+                        Peak predHMQCPeak, Peak expHMQCPeak,
+                        double[] tocsyScale, double smallTol) {
         double weightAdj = 1.0;
         double[][] limits = new double[2][2];
 
@@ -1115,7 +1109,7 @@ public class PeakSlider implements ControllerTool {
                 if (peakDim.getPeakList() == predTOCSYList) {
                     Peak predTOCSYPeak = peakDim.getPeak();
                     double[] ppms = {predTOCSYPeak.getPeakDim(0).getChemShiftValue(),
-                        predTOCSYPeak.getPeakDim(1).getChemShiftValue()};
+                            predTOCSYPeak.getPeakDim(1).getChemShiftValue()};
                     int ppmDim;
                     double origPPM;
                     if (peakDim.getSpectralDim() == 1) {
@@ -1187,10 +1181,9 @@ public class PeakSlider implements ControllerTool {
     }
 
     void alignPeakList(PeakList predHMQCList, PeakList expHMQCList,
-            PeakList predTOCSYList, PeakList expTOCSYList,
-            PeakList predNOESYList, PeakList expNOESYList,
-            double[] scale, double[] tocsyScale) {
-        System.out.println("align");
+                       PeakList predTOCSYList, PeakList expTOCSYList,
+                       PeakList predNOESYList, PeakList expNOESYList,
+                       double[] scale, double[] tocsyScale) {
         try {
             alignTOCSY(predTOCSYList, expTOCSYList, tocsyScale);
             PolyChart.setPeakListenerState(false);

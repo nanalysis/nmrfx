@@ -788,32 +788,30 @@ public class SpecAttrWindowController implements Initializable {
     }
 
     void initToolBar() {
-        String iconSize = "16px";
-        String fontSize = "7pt";
         ArrayList<Button> buttons = new ArrayList<>();
         Button bButton;
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.REFRESH, "Refresh", iconSize, fontSize, ContentDisplay.TOP);
+        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.REFRESH, "Refresh", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
         bButton.setOnAction(e -> refreshAction());
         buttons.add(bButton);
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.EXPAND, "Full", iconSize, fontSize, ContentDisplay.TOP);
+        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.EXPAND, "Full", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
         bButton.setOnAction(e -> chart.full());
         buttons.add(bButton);
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.SEARCH, "Expand", iconSize, fontSize, ContentDisplay.TOP);
+        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.SEARCH, "Expand", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
         bButton.setOnAction(e -> chart.expand());
         buttons.add(bButton);
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.SEARCH_MINUS, "In", iconSize, fontSize, ContentDisplay.TOP);
+        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.SEARCH_MINUS, "In", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
         bButton.setOnAction(e -> chart.zoom(1.2));
         buttons.add(bButton);
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.SEARCH_PLUS, "Out", iconSize, fontSize, ContentDisplay.TOP);
+        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.SEARCH_PLUS, "Out", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
         bButton.setOnAction(e -> chart.zoom(0.8));
         buttons.add(bButton);
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.ARROWS_V, "Auto", iconSize, fontSize, ContentDisplay.TOP);
+        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.ARROWS_V, "Auto", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
         bButton.setOnAction(e -> autoScale());
         buttons.add(bButton);
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.ARROW_UP, "Higher", iconSize, fontSize, ContentDisplay.TOP);
+        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.ARROW_UP, "Higher", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
         bButton.setOnAction(e -> adjustScale(0.8));
         buttons.add(bButton);
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.ARROW_DOWN, "Lower", iconSize, fontSize, ContentDisplay.TOP);
+        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.ARROW_DOWN, "Lower", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
         bButton.setOnAction(e -> adjustScale(1.2));
         buttons.add(bButton);
 

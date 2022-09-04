@@ -1110,14 +1110,17 @@ public class ChartProcessor {
                 String parDim = entry.getKey().substring(1);
                 if (dimMode.equals("D")) {
                     int dimNum = -1;
-                    try {
-                        dimNum = Integer.parseInt(parDim) - 1;
-                        if (dimNum >= nDim) {
-                            break;
+                    boolean parseInt = !parDim.isEmpty() && !parDim.contains(",") && !parDim.contains("_ALL");
+                    if (parseInt) {
+                        try {
+                            dimNum = Integer.parseInt(parDim) - 1;
+                            if (dimNum >= nDim) {
+                                break;
+                            }
+                            mapToDataset[dimNum] = -1;
+                        } catch (NumberFormatException nFE) {
+                            log.warn("Unable to parse dimension number.", nFE);
                         }
-                        mapToDataset[dimNum] = -1;
-                    } catch (NumberFormatException nFE) {
-                        log.warn("Unable to parse dimension number.", nFE);
                     }
                     if (!processorController.refManager.getSkip(parDim)) {
                         if (dimMode.equals("D") && (dimNum != -1)) {
@@ -1252,9 +1255,9 @@ public class ChartProcessor {
             complex[iDim] = data.isComplex(iDim);
         }
         processorController.updateDimChoice(complex);
-        reloadData();
         processorController.refManager.resetData();
         processorController.refManager.setupItems(0);
+        reloadData();
         processorController.updateParTable(data);
         if (!clearOps) {
             setScripts(saveHeaderList, listOfScripts);
