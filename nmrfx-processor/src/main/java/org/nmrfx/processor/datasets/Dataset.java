@@ -567,7 +567,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
     @Override
     public int getSizeTotal(int iDim) {
         if (vecMat != null) {
-            return vecMat.getSize();
+            return vecMat.getSize() * (vecMat.isComplex() ? 2 : 1);
         } else {
             if (layout == null) {
                 return 0;
@@ -1526,8 +1526,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         rwVector.setTDSize(getTDSize(dim[0]));
         rwVector.setPt(pt, dim);
 
-      //  rwVector.setRefValue(getRefValue_r(dim[0]), (getRefPt_r(dim[0])-pt[0][0]));
-        rwVector.setRefValue(getRefValue_r(dim[0]));
+        rwVector.setRefValue(getRefValue_r(dim[0]), (getRefPt_r(dim[0])-pt[0][0]));
         rwVector.setFreqDomain(getFreqDomain_r(dim[0]));
 
         int[] point = new int[nDim];

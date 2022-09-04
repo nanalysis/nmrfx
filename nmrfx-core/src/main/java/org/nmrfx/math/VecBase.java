@@ -1385,9 +1385,15 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
         return refValue;
     }
 
+    /**
+     *
+     */
+    public double getRefValue(int refPt) {
+        return refValue + getDeltaRef(refPt);
+    }
+
     public double getZeroRefValue() {
-        double delRef = ((1.0 / dwellTime) / centerFreq) / 2.0;
-        return refValue + delRef;
+        return refValue + getDeltaRef(0.0);
     }
 
     public void setRefValue(double refValue) {
@@ -1395,11 +1401,11 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
     }
 
     public void setRefValue(double refValue, double refPt) {
-        this.refValue = refValue + getDeltaRef(refPt);
+        this.refValue = refValue - getDeltaRef(refPt);
     }
+
     public void setZeroRefValue(double refValue) {
-        double delRef = getDeltaRef(0.0);
-        this.refValue = refValue - delRef;
+        this.refValue = refValue -  getDeltaRef(0.0);
     }
 
     public double getDeltaRef(double refPt) {
@@ -2403,7 +2409,7 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
      * @return position in points
      */
     public int refToPt(double ref) {
-        return (int) ((refValue - ref) * centerFreq * dwellTime * size + 0.5);
+        return (int) (refToPtD(ref) + 0.5);
     }
 
     /**

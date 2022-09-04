@@ -608,7 +608,7 @@ public class DatasetBase {
         }
 
         if (getRefUnits(iDim) == 3) {
-            ppm = (-(pt - refPt[iDim]) * (getSw(iDim) / aa)) + getRefValue(iDim);
+            ppm = (-(pt - getRefPt(iDim)) * (getSw(iDim) / aa)) + getRefValue(iDim);
         } else if (getRefUnits(iDim) == 1) {
             ppm = pt + 1;
         }
@@ -1018,7 +1018,7 @@ public class DatasetBase {
         if (vecMat == null) {
             value = refPt[iDim];
         } else {
-            value = refPt[0];
+            value = vecMat.getSize() / 2;
         }
         return value;
     }
@@ -1033,7 +1033,7 @@ public class DatasetBase {
     public void setRefPt(final int iDim, final double refPt) {
         this.refPt[iDim] = refPt;
         if (vecMat != null) {
-            vecMat.setRefValue(refValue[iDim], refPt);
+            vecMat.setRefValue(vecMat.getRefValue(), refPt);
         }
 
     }
@@ -1049,8 +1049,7 @@ public class DatasetBase {
         if (vecMat == null) {
             value = refValue[iDim];
         } else {
-            double delRef = getRefPt(iDim) * getSw(iDim) / getSf(iDim) / getSizeReal(iDim);
-            value = vecMat.getRefValue() - delRef;
+            value = vecMat.getRefValue();
         }
         return value;
     }
