@@ -283,6 +283,13 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         }
     }
 
+    public void setFile(File file) throws IOException {
+        this.file = file;
+        canonicalName = file.getCanonicalPath();
+        fileName = file.getName().replace(' ', '_');
+
+    }
+
     // create in memory file
     /**
      * Create a dataset in memory for fast access. The dataset is not
@@ -358,7 +365,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         memoryMode = true;
     }
 
-    private void setLayout(DatasetLayout layout, boolean closeDataset) throws IOException {
+    public void setLayout(DatasetLayout layout, boolean closeDataset) throws IOException {
         int fileHeaderSize;
         String fullName = file.getCanonicalPath();
         if (fullName.contains(".ucsf")) {
@@ -432,9 +439,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
             setStrides();
             refPt[iDim] = getSizeReal(iDim) / 2;
             refPt_r[iDim] = getSizeReal(iDim) / 2;
-            if (dataFile instanceof MemoryFile) {
-
-            }
+            memoryMode = dataFile instanceof MemoryFile;
         } catch (IOException ioe) {
             ioe.printStackTrace();
             throw new DatasetException("Can't resize dataset " + ioe.getMessage());
@@ -460,6 +465,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
                 }
             }
         }
+        dataset.layout = newLayout;
         return newDataFile;
     }
 

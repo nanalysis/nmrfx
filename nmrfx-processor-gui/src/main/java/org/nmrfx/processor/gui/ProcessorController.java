@@ -942,7 +942,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
                                 updateTitle("Start Processing");
                                 processInterp.exec("from pyproc import *");
                                 processor = Processor.getProcessor();
-                                processor.keepDatasetOpen(true);
+                                processor.keepDatasetOpen(false);
                                 processor.clearDataset();
                                 processInterp.exec("useProcessor(inNMRFx=True)");
                                 processInterp.exec(script);

@@ -17,18 +17,29 @@ public class StorageResizer {
     }
 
     public static DatasetStorageInterface resizeDim(Dataset dataset, DatasetLayout sourceLayout, DatasetStorageInterface source, int[] newSizes) throws IOException {
-        DatasetStorageInterface target;
-        DatasetLayout targetLayout;
+        DatasetStorageInterface target = null;
+        DatasetLayout targetLayout = null;
         Path targetPath = null;
         File origFile = null;
         if (source instanceof MemoryFile) {
             targetLayout = DatasetLayout.createFullMatrix(newSizes);
-            target = new MemoryFile(dataset, targetLayout, true);
-            target.zero();
-        } else {
-            origFile = dataset.getFile();
+            long nPoints = targetLayout.getNPoints();
+            if (nPoints * Float.BYTES < 137e6) {
+                target = new MemoryFile(dataset, targetLayout, true);
+                target.zero();
+            }
+        }
+        if (target == null) {
             targetLayout = DatasetLayout.resize(sourceLayout, newSizes);
-            String fullName = dataset.getCanonicalFile() + ".tmp";
+            String fullName;
+            if (dataset.getFile() == null) {
+                File file = new File(dataset.getFileName());
+                dataset.setFile(file);
+                fullName = dataset.getCanonicalFile();
+            } else {
+                fullName = dataset.getCanonicalFile() + ".tmp";
+                origFile = dataset.getFile();
+            }
             File file = new File(fullName);
             targetPath = file.toPath();
             RandomAccessFile raFile = new RandomAccessFile(fullName, "rw");
@@ -36,7 +47,7 @@ public class StorageResizer {
             target.zero();
         }
         copyTo(sourceLayout, source, target);
-        if (targetPath != null) {
+        if ((targetPath != null) && (origFile != null)) {
             source.close();
             Files.move(targetPath,origFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
             target.writeHeader(true);
