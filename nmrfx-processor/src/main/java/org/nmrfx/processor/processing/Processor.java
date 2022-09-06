@@ -65,6 +65,7 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public class Processor {
     private static final Logger log = LoggerFactory.getLogger(Processor.class);
+    private static long MEMORY_MODE_LIMIT = 536870912L;
 
     private String fileName;
     private Dataset dataset;
@@ -827,12 +828,20 @@ public class Processor {
         return mapToFID[i];
     }
 
-    private boolean useMemoryMode(int[] datasetSizes) {
+    public static boolean useMemoryMode(int[] datasetSizes) {
         long size = Float.BYTES;
         for (int i = 0; i < datasetSizes.length; i++) {
             size *= datasetSizes[i];
         }
-        return size < 135e6;
+        return useMemoryMode(size);
+    }
+
+    public static boolean useMemoryMode(long size) {
+        return size <=  MEMORY_MODE_LIMIT;
+    }
+
+    public static void setMemoryModeLimit(long size) {
+        MEMORY_MODE_LIMIT = size;
     }
 
     public boolean createNV(String outputFile, int[] useSizes) {

@@ -60,6 +60,7 @@ import java.util.stream.Collectors;
 public class Dataset extends DatasetBase implements Comparable<Dataset> {
 
     private static final Logger log = LoggerFactory.getLogger(Dataset.class);
+    private static long BIG_MAP_LIMIT = Integer.MAX_VALUE / 2;
     static boolean useCacheFile = false;
 
     private boolean dirty = false;  // flag set if a vector has been written to dataset, should purge bufferVectors
@@ -406,7 +407,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         try {
             if (memoryMode) {
                 layout = DatasetLayout.createFullMatrix(dimSizes);
-                setStrides();
+               // setStrides();
                 for (int i = 0; i < nDim; i++) {
                     refPt[i] = getSizeReal(i) / 2;
                     refPt_r[i] = getSizeReal(i) / 2;
@@ -455,7 +456,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         if (useCacheFile) {
             newDataFile = new SubMatrixFile(dataset, file, newLayout, raFile, writable);
         } else {
-            if (newLayout.getNDataBytes() > 512e6) {
+            if (newLayout.getNDataBytes() > BIG_MAP_LIMIT) {
                 newDataFile = new BigMappedMatrixFile(dataset, file, newLayout, raFile, writable);
             } else {
                 if (newLayout.isSubMatrix()) {
@@ -467,6 +468,10 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         }
         dataset.layout = newLayout;
         return newDataFile;
+    }
+
+    public static void setBigMapLimit(long size) {
+        BIG_MAP_LIMIT = size;
     }
 
     @Override

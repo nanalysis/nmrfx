@@ -2,6 +2,7 @@ package org.nmrfx.processor.datasets;
 
 import org.nmrfx.datasets.DatasetLayout;
 import org.nmrfx.datasets.DatasetStorageInterface;
+import org.nmrfx.processor.processing.Processor;
 
 import java.io.File;
 import java.io.IOException;
@@ -24,7 +25,7 @@ public class StorageResizer {
         if (source instanceof MemoryFile) {
             targetLayout = DatasetLayout.createFullMatrix(newSizes);
             long nPoints = targetLayout.getNPoints();
-            if (nPoints * Float.BYTES < 137e6) {
+            if (Processor.useMemoryMode(nPoints * Float.BYTES)) {
                 target = new MemoryFile(dataset, targetLayout, true);
                 target.zero();
             }
@@ -45,6 +46,7 @@ public class StorageResizer {
             RandomAccessFile raFile = new RandomAccessFile(fullName, "rw");
             target = Dataset.createDataFile(dataset, raFile, file, targetLayout, true);
             target.zero();
+            target.force();
         }
         copyTo(sourceLayout, source, target);
         if ((targetPath != null) && (origFile != null)) {
@@ -58,16 +60,15 @@ public class StorageResizer {
     public static void copyTo(DatasetLayout sourceLayout, DatasetStorageInterface source, DatasetStorageInterface target) throws IOException {
         int nDim = sourceLayout.nDim;
         int[] counterSizes = new int[nDim];
-        int[] dim = new int[nDim];
         for (int i = 0; i < nDim; i++) {
             counterSizes[i] = sourceLayout.getSize(i);
-            dim[i] = i;
         }
         DimCounter counter = new DimCounter(counterSizes);
         for (int[] counts : counter) {
             float value = source.getFloat(counts);
             target.setFloat(value, counts);
         }
+        target.force();
     }
 
 }

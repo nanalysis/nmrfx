@@ -234,14 +234,4 @@ public class MemoryFile implements DatasetStorageInterface, Closeable {
         return iter;
     }
 
-    public void copyTo(MemoryFile target) throws IOException {
-        MultidimensionalCounter.Iterator iter = pointIterator();
-        while (iter.hasNext()) {
-            iter.next();
-            int[] pt = iter.getCounts();
-            float value = getFloat(pt);
-            target.setFloat(value, pt);
-        }
-    }
-
 }
