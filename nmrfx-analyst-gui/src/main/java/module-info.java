@@ -22,6 +22,7 @@ module org.nmrfx.analyst.gui {
     exports org.nmrfx.analyst.gui.spectra;
     exports org.nmrfx.analyst.gui.molecule;
     exports org.nmrfx.analyst.gui.tools;
+    exports org.nmrfx.analyst.gui.events;
     uses org.nmrfx.plugin.api.NMRFxPlugin;
     requires org.nmrfx.core;
     requires org.nmrfx.processor.gui;

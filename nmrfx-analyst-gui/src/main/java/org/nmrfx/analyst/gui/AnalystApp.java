@@ -33,6 +33,7 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import org.apache.commons.lang3.SystemUtils;
+import org.nmrfx.analyst.gui.events.DataFormatHandlerUtil;
 import org.nmrfx.analyst.gui.molecule.*;
 import org.nmrfx.analyst.gui.molecule3D.MolSceneController;
 import org.nmrfx.analyst.gui.peaks.*;
@@ -40,7 +41,6 @@ import org.nmrfx.analyst.gui.plugin.PluginLoader;
 import org.nmrfx.analyst.gui.spectra.SpectrumMenuActions;
 import org.nmrfx.analyst.gui.spectra.StripController;
 import org.nmrfx.analyst.gui.tools.*;
-import org.nmrfx.analyst.gui.molecule.CopyMoleculeEventHandler;
 import org.nmrfx.chemistry.MoleculeBase;
 import org.nmrfx.chemistry.MoleculeFactory;
 import org.nmrfx.chemistry.io.PDBFile;
@@ -134,7 +134,9 @@ public class AnalystApp extends MainApp {
         MainApp.setAnalyst();
         mainApp = this;
         analystApp = this;
-        FXMLController.create(stage).addCanvasKeyEventHandler(new CopyMoleculeEventHandler());
+        FXMLController fxmlController = FXMLController.create(stage);
+        DataFormatHandlerUtil.addHandlersToController(fxmlController);
+
         Platform.setImplicitExit(true);
         hostServices = getHostServices();
         stage.setTitle(appName + " " + getVersion());

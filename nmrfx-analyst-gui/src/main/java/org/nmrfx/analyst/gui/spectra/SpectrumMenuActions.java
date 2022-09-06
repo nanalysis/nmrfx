@@ -8,7 +8,7 @@ import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.analyst.gui.MenuActions;
-import org.nmrfx.analyst.gui.molecule.CopyMoleculeEventHandler;
+import org.nmrfx.analyst.gui.events.DataFormatHandlerUtil;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.controls.GridPaneCanvas;
@@ -107,7 +107,8 @@ public class SpectrumMenuActions extends MenuActions {
     private void newGraphics(ActionEvent event) {
         Stage stage = new Stage(StageStyle.DECORATED);
         stage.setTitle(AnalystApp.getAppName() + " " + AnalystApp.getVersion());
-        FXMLController.create(stage).addCanvasKeyEventHandler(new CopyMoleculeEventHandler());
+        FXMLController fxmlController = FXMLController.create(stage);
+        DataFormatHandlerUtil.addHandlersToController(fxmlController);
     }
 
     public void showStripsBar() {

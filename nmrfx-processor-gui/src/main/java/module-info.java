@@ -26,6 +26,7 @@ open module org.nmrfx.processor.gui {
     exports org.nmrfx.processor.gui.annotations;
     exports org.nmrfx.processor.gui.spectra.mousehandlers;
     exports org.nmrfx.processor.gui.log;
+    exports org.nmrfx.processor.gui.events;
     requires org.nmrfx.core;
     requires org.nmrfx.processor;
     requires org.nmrfx.utils;

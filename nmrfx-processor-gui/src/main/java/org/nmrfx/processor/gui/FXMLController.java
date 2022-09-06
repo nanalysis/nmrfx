@@ -78,6 +78,8 @@ import org.nmrfx.processor.datasets.vendor.jcamp.JCAMPData;
 import org.nmrfx.processor.datasets.vendor.nmrview.NMRViewData;
 import org.nmrfx.processor.datasets.vendor.rs2d.RS2DData;
 import org.nmrfx.processor.gui.controls.GridPaneCanvas;
+import org.nmrfx.processor.gui.events.DataFormatEventHandler;
+import org.nmrfx.processor.gui.events.CanvasKeyEventHandler;
 import org.nmrfx.processor.gui.spectra.*;
 import org.nmrfx.processor.gui.tools.SpectrumComparator;
 import org.nmrfx.processor.gui.undo.UndoManager;
@@ -168,7 +170,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
     private BooleanProperty minBorders;
     Phaser phaser;
     Set<ControllerTool> tools = new HashSet<>();
-
+    CanvasKeyEventHandler canvasKeyEventHandler = new CanvasKeyEventHandler();
     SimpleBooleanProperty processControllerVisible = new SimpleBooleanProperty(false);
     SimpleObjectProperty<Cursor> cursorProperty = new SimpleObjectProperty<>(Cursor.CROSSHAIR);
 
@@ -1298,6 +1300,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
         phaser = new Phaser(this, phaserBox);
         processorPane.getChildren().addListener(this::updateStageSize);
         cursorProperty.addListener( e -> setCursor());
+        canvas.setOnKeyPressed(canvasKeyEventHandler);
     }
 
     public void setCursor(Cursor cursor) {
@@ -2217,10 +2220,11 @@ public class FXMLController implements  Initializable, PeakNavigable {
     }
 
     /**
-     * Sets the provided event handler to the canvas key pressed event.
-     * @param handler The key event handler.
+     * Sets the provided DataFormat event handler to the canvas key event handler.
+     * @param dataFormat The DataFormat.
+     * @param handler The DataFormat handler.
      */
-    public void addCanvasKeyEventHandler(EventHandler<KeyEvent> handler) {
-        this.canvas.setOnKeyPressed(handler);
+    public void addCanvasDataFormatHandler(DataFormat dataFormat, DataFormatEventHandler handler) {
+        this.canvasKeyEventHandler.addDataFormatHandler(dataFormat, handler);
     }
 }
