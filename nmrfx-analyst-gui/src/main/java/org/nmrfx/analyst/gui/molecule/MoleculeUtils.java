@@ -1,8 +1,11 @@
 package org.nmrfx.analyst.gui.molecule;
 
+import javafx.scene.control.TextInputDialog;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.structure.chemistry.Molecule;
+
+import java.util.Optional;
 
 public class MoleculeUtils {
 
@@ -41,5 +44,18 @@ public class MoleculeUtils {
         PolyChart chart = FXMLController.getActiveController().getActiveChart();
         chart.clearAnnoType(CanvasMolecule.class);
         chart.refresh();
+    }
+
+    /**
+     * Displays a text input dialog to the user to get a name for a molecule.
+     * @return The provided name or an empty string.
+     */
+    public static String moleculeNamePrompt() {
+        TextInputDialog dialog = new TextInputDialog();
+        dialog.setTitle("Set Molecule Name");
+        dialog.setHeaderText("Molecule name missing.");
+        dialog.setContentText("Set a name for the molecule");
+        Optional<String> result = dialog.showAndWait();
+        return result.orElse("");
     }
 }

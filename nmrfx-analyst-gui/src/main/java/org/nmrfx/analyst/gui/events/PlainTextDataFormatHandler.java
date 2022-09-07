@@ -38,10 +38,14 @@ public class PlainTextDataFormatHandler implements DataFormatEventHandler {
         if (molString.indexOf('\n') < 0) {
             return false;
         }
-        // Use the first line of the string as the filename
-        String filename = molString.split("\n")[0];
+
+        // Use the first line of the string as the molecule name if it is not blank, else prompt for a name
+        String moleculeName = molString.split("\n")[0];
+        if (moleculeName.isBlank()) {
+            moleculeName = MoleculeUtils.moleculeNamePrompt();
+        }
         try {
-            SDFile.read(filename, molString);
+            SDFile.read(moleculeName, molString);
         } catch (MoleculeIOException e) {
             log.error("Unable to read molecule file.");
             return false;
