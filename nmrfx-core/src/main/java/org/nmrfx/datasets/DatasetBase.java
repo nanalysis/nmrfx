@@ -29,8 +29,6 @@ public class DatasetBase {
     protected String title;
     protected File file = null;
     protected int nDim;
-    protected int[] strides;
-    protected int[] fileDimSizes;
     protected int[] size;
     protected int[] vsize;
     protected int[] vsize_r;
@@ -171,8 +169,6 @@ public class DatasetBase {
      *
      */
     public final void setNDim() {
-        strides = new int[nDim];
-        fileDimSizes = new int[nDim];
         vsize = new int[nDim];
         vsize_r = new int[nDim];
         tdSize = new int[nDim];
@@ -1856,13 +1852,6 @@ public class DatasetBase {
         return "\u03B4 " + getNucleus(iDim).toLatexString();
     }
 
-    public final void setStrides() {
-        strides[0] = 1;
-        for (int i = 1; i < nDim; i++) {
-            strides[i] = strides[i - 1] * getSizeTotal(i - 1);
-        }
-    }
-
     /**
      * Get the properties used by this dataset
      *
@@ -2010,27 +1999,13 @@ public class DatasetBase {
     }
 
     /**
-     * Set the size of the dataset along the specified dimension.
-     *
-     * @param iDim Dataset dimension index
-     * @param size the size to set
-     */
-    public void setFileDimSize(final int iDim, final int size) {
-        this.fileDimSizes[iDim] = size;
-    }
-
-    /**
      * Get the size of the dataset along the specified dimension.
      *
      * @param iDim Dataset dimension index
      * @return the size
      */
     public int getFileDimSize(int iDim) {
-        int value = fileDimSizes[iDim];
-        if (value == 0) {
-            value = layout.getSize(iDim);
-        }
-        return value;
+        return layout.getSize(iDim);
     }
 
     public boolean hasLayout() {

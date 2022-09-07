@@ -23,7 +23,7 @@ public class StorageResizer {
         Path targetPath = null;
         File origFile = null;
         if (source instanceof MemoryFile) {
-            targetLayout = DatasetLayout.createFullMatrix(newSizes);
+            targetLayout = DatasetLayout.createFullMatrix(0, newSizes);
             long nPoints = targetLayout.getNPoints();
             if (Processor.useMemoryMode(nPoints * Float.BYTES)) {
                 target = new MemoryFile(dataset, targetLayout, true);
@@ -31,7 +31,6 @@ public class StorageResizer {
             }
         }
         if (target == null) {
-            targetLayout = DatasetLayout.resize(sourceLayout, newSizes);
             String fullName;
             if (dataset.getFile() == null) {
                 File file = new File(dataset.getFileName());
@@ -44,6 +43,7 @@ public class StorageResizer {
             File file = new File(fullName);
             targetPath = file.toPath();
             RandomAccessFile raFile = new RandomAccessFile(fullName, "rw");
+            targetLayout = DatasetLayout.createBlockMatrix(dataset.getFileHeaderSize(file.getName()), newSizes);
             target = Dataset.createDataFile(dataset, raFile, file, targetLayout, true);
             target.zero();
             target.force();

@@ -124,7 +124,6 @@ public class DatasetHeaderIO {
 
             for (i = 0; i < nDim; i++) {
                 lay.setSize(i, DataUtilities.readSwapInt(dis, checkSwap));
-                d.setFileDimSize(i, lay.getSize(i));
                 lay.blockSize[i] = DataUtilities.readSwapInt(dis, checkSwap);
                 lay.nBlocks[i] = DataUtilities.readSwapInt(dis, checkSwap);
                 lay.nBlocks[i] = lay.getSize(i) / lay.blockSize[i];
@@ -271,7 +270,6 @@ public class DatasetHeaderIO {
                 d.setLabel(iDim, labelBuffer.toString());
 
                 lay.setSize(iDim, DataUtilities.readSwapInt(dis, checkSwap));
-                d.setFileDimSize(iDim, lay.getSize(iDim));
                 // skip empty entry
                 DataUtilities.readSwapInt(dis, checkSwap);
                 lay.blockSize[iDim] = DataUtilities.readSwapInt(dis, checkSwap);

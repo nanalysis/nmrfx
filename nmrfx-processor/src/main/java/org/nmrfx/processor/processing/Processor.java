@@ -840,6 +840,7 @@ public class Processor {
         return size <=  MEMORY_MODE_LIMIT;
     }
 
+    // used from Python for testing
     public static void setMemoryModeLimit(long size) {
         MEMORY_MODE_LIMIT = size;
     }

@@ -55,9 +55,9 @@ public class DatasetLayout {
         offsetPoints = new int[nDim];
     }
 
-    public static DatasetLayout createFullMatrix(int[] sizes) {
+    public static DatasetLayout createFullMatrix(int headerSize, int[] sizes) {
         DatasetLayout layout = new DatasetLayout(sizes);
-        layout.setFileHeaderSize(0);
+        layout.setFileHeaderSize(headerSize);
         layout.setBlockHeaderSize(0);
         layout.blockPoints = 1;
         layout.totalBlocks = 1;
@@ -70,9 +70,9 @@ public class DatasetLayout {
         return layout;
     }
 
-    public static DatasetLayout createBlockMatrix(int[] sizes) {
+    public static DatasetLayout createBlockMatrix(int headerSize, int[] sizes) {
         DatasetLayout layout = new DatasetLayout(sizes);
-        layout.setFileHeaderSize(DatasetBase.NV_HEADER_SIZE);
+        layout.setFileHeaderSize(headerSize);
         layout.setBlockHeaderSize(0);
         layout.setBlockSize(4096);
         layout.dimDataset();

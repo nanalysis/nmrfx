@@ -206,7 +206,7 @@ public class MappedSubMatrixFile implements DatasetStorageInterface, Closeable {
     public double sumFast() {
         double sum = 0.0;
         for (int i = 0; i < totalSize; i++) {
-            sum += mappedBuffer.getFloat(i);
+            sum += mappedBuffer.getFloat(i * Float.BYTES);
         }
         return sum;
     }
@@ -215,9 +215,9 @@ public class MappedSubMatrixFile implements DatasetStorageInterface, Closeable {
     public void zero() {
         for (int i = 0; i < totalSize; i++) {
             if (dataType == 0) {
-                mappedBuffer.putFloat(i, 0.0f);
+                mappedBuffer.putFloat(i * Float.BYTES, 0.0f);
             } else {
-                mappedBuffer.putInt(i, 0);
+                mappedBuffer.putInt(i * Integer.BYTES, 0);
             }
         }
     }

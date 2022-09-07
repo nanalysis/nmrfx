@@ -127,7 +127,6 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         }
 
         log.info("new dataset {}", fileName);
-        setStrides();
         addFile(fileName);
         loadLSCatalog();
     }
@@ -175,7 +174,6 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
             setNDim(layout.nDim);
             createDataFile(raFile, writable);
         }
-        setStrides();
         addFile(fileName);
     }
 
@@ -192,18 +190,15 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         dataFile = vector;
         title = fileName;
         nDim = 1;
-        strides = new int[1];
-        fileDimSizes = new int[1];
         vsize = new int[1];
         vsize_r = new int[1];
         tdSize = new int[1];
         zfSize = new int[1];
         extFirst = new int[1];
         extLast = new int[1];
-        strides[0] = 1;
         tdSize[0] = vector.getTDSize();
         fileSize = vector.getSize();
-        layout = DatasetLayout.createFullMatrix(vsize);
+        layout = DatasetLayout.createFullMatrix(0, vsize);
         newHeader();
         memoryMode = false;
 
@@ -245,8 +240,6 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
             this.nDim = dimSizes.length;
 
             int i;
-            this.strides = new int[this.nDim];
-            this.fileDimSizes = new int[this.nDim];
             this.vsize = new int[this.nDim];
             this.vsize_r = new int[this.nDim];
             this.tdSize = new int[this.nDim];
@@ -259,7 +252,6 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
             memoryMode = false;
 
             for (i = 0; i < this.nDim; i++) {
-                fileDimSizes[i] = dimSizes[i];
                 fileSize *= dimSizes[i];
             }
             if (createFile) {
@@ -275,7 +267,6 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
             } else {
                 fileHeaderSize = NV_HEADER_SIZE;
             }
-            setStrides();
             if (layout != null) {
                 setLayout(layout, closeDataset);
             }
@@ -308,13 +299,9 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
             int i;
             setNDim(nDim);
 
-            for (i = 0; i < this.nDim; i++) {
-                fileDimSizes[i] = dimSizes[i];
-            }
-            layout = DatasetLayout.createFullMatrix(dimSizes);
+            layout = DatasetLayout.createFullMatrix(0, dimSizes);
             this.title = title;
             this.fileName = title;
-            setStrides();
             newHeader();
             dataFile = new MemoryFile(this, layout, true);
             dataFile.zero();
@@ -355,9 +342,6 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         int i;
         setNDim(nDim);
 
-        for (i = 0; i < this.nDim; i++) {
-            fileDimSizes[i] = 0;
-        }
         layout = null;
         this.title = title;
         this.fileName = title;
@@ -382,9 +366,6 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         if (useCacheFile) {
             raFile.setLength(layout.getTotalSize());
         }
-        for (int i=0;i<nDim;i++) {
-            setFileDimSize(i, layout.getSize(i));
-        }
         writeHeader();
         if (closeDataset) {
             dataFile.zero();
@@ -396,6 +377,19 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         parFile.remove();
 
     }
+
+    int getFileHeaderSize(String name) {
+        int fileHeaderSize;
+
+        if (name.contains(".ucsf")) {
+            fileHeaderSize = UCSF_HEADER_SIZE + 128 * nDim;
+        } else {
+            fileHeaderSize = NV_HEADER_SIZE;
+        }
+
+        return fileHeaderSize;
+    }
+
     public void resize(int directDimSize, int[] idSizes) throws DatasetException {
         System.out.print("resize " + directDimSize);
         int[] dimSizes = new int[nDim];
@@ -406,8 +400,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         System.out.println("");
         try {
             if (memoryMode) {
-                layout = DatasetLayout.createFullMatrix(dimSizes);
-               // setStrides();
+                layout = DatasetLayout.createFullMatrix(0, dimSizes);
                 for (int i = 0; i < nDim; i++) {
                     refPt[i] = getSizeReal(i) / 2;
                     refPt_r[i] = getSizeReal(i) / 2;
@@ -415,7 +408,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
                 dataFile = new MemoryFile(this, layout, true);
                 dataFile.zero();
             } else {
-               layout = DatasetLayout.createBlockMatrix(dimSizes);
+               layout = DatasetLayout.createBlockMatrix(getFileHeaderSize(file.getName()), dimSizes);
                setLayout(layout, false);
             }
         } catch (IOException ioe) {
@@ -436,8 +429,6 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         try {
             dataFile = StorageResizer.resizeDim(this, layout, dataFile, dimSizes);
             layout = dataFile.getLayout();
-            setFileDimSize(iDim, dimSize);
-            setStrides();
             refPt[iDim] = getSizeReal(iDim) / 2;
             refPt_r[iDim] = getSizeReal(iDim) / 2;
             memoryMode = dataFile instanceof MemoryFile;
