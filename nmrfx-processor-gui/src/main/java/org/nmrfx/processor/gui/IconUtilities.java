@@ -37,14 +37,6 @@ import org.slf4j.LoggerFactory;
  */
 public class IconUtilities {
     private static final Logger log = LoggerFactory.getLogger(IconUtilities.class);
-
-    private IconUtilities() {}
-
-    static {
-        // Register a custom default font
-        GlyphFontRegistry.register("icomoon", SpecAttrWindowController.class.getResourceAsStream("/images/icomoon.ttf"), 16);
-    }
-
     private static GlyphFont icoMoon = GlyphFontRegistry.font("icomoon");
 
     public static final char IM_COGS = '\ue995';
@@ -104,6 +96,13 @@ public class IconUtilities {
     public static final char IM_ARROW_UP = '\uea32';
     public static final char IM_UNLOCKED = '\ue990';
     public static final char IM_ARROW_DOWN_RIGHT = '\uea35';
+
+    static {
+        // Register a custom default font
+        GlyphFontRegistry.register("icomoon", SpecAttrWindowController.class.getResourceAsStream("/images/icomoon.ttf"), 16);
+    }
+    
+    private IconUtilities() {}
 
     public static Glyph create(char fontChar) {
         return icoMoon.create(fontChar);
