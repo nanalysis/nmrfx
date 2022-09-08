@@ -437,6 +437,21 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
             throw new DatasetException("Can't resize dataset " + ioe.getMessage());
         }
     }
+    public void resizeDims(int[] dimSizes) throws DatasetException {
+        System.out.println("resize dim " + dimSizes[0] + " " + dimSizes[1] + " " + dimSizes[2]);
+        try {
+            dataFile = StorageResizer.resizeDim(this, layout, dataFile, dimSizes);
+            layout = dataFile.getLayout();
+            for (int iDim=0;iDim<dimSizes.length;iDim++) {
+                refPt[iDim] = getSizeReal(iDim) / 2;
+                refPt_r[iDim] = getSizeReal(iDim) / 2;
+            }
+            memoryMode = dataFile instanceof MemoryFile;
+        } catch (IOException ioe) {
+            ioe.printStackTrace();
+            throw new DatasetException("Can't resize dataset " + ioe.getMessage());
+        }
+    }
 
     private void createDataFile(RandomAccessFile raFile, boolean writable) throws IOException {
         dataFile = createDataFile(this, raFile, file, layout, writable);
