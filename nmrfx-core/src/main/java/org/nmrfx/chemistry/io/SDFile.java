@@ -46,7 +46,7 @@ public class SDFile {
     static final int VALUE = 7;
     static final int HEADER_LENGTH = 4;
     private static final Pattern[] supportedMolFormatsPatterns = {
-            Pattern.compile("\\d+\s+\\d+\s+\\d+\s+\\d+\s+\\d+\s*\\d*\s*\\d*\s*\\d*\s*\\d+\s+V2000")};
+            Pattern.compile("(\\d+\s+\\d+\s+\\d+\s+\\d+\s+\\d+\s+)(?)(\\d+\s+V2000)")};
     static Pattern pattern = Pattern.compile("> +<(.*)>");
 
     int nMols = 0;
