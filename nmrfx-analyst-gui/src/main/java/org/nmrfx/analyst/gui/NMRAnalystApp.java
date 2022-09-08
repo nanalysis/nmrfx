@@ -18,6 +18,9 @@
 package org.nmrfx.analyst.gui;
 
 import javafx.application.Application;
+import org.nmrfx.processor.gui.log.Log;
+
+import java.io.File;
 
 public class NMRAnalystApp {
 
@@ -29,7 +32,12 @@ public class NMRAnalystApp {
      * @param args the command line arguments
      */
     public static void main(String[] args) {
-        System.out.println("analyst");
+        // setup default logging when run from IDE
+        File sourceLogbackConfig = new File("nmrfx-analyst-gui/src/main/config/logback.xml");
+        if (!Log.isConfigFileSet() && sourceLogbackConfig.exists()) {
+            Log.setConfigFile("nmrfx-analyst-gui/src/main/config/logback.xml");
+        }
+
         Application.launch(AnalystApp.class, args);
     }
 
