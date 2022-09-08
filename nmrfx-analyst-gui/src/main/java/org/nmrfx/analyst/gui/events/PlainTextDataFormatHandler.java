@@ -40,8 +40,8 @@ public class PlainTextDataFormatHandler implements DataFormatEventHandler {
         }
 
         // Use the first line of the string as the molecule name if it is not blank, else prompt for a name
-        String moleculeName = molString.split("\n")[0];
-        if (moleculeName.isBlank()) {
+        String moleculeName = molString.split("\n")[0].trim();
+        if (moleculeName.isEmpty()) {
             moleculeName = MoleculeUtils.moleculeNamePrompt();
         }
         try {
