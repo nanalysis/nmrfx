@@ -33,3 +33,6 @@ Thumbs.db
 */sandbox/
 */installers/
 */tmp/
+
+# installer copied files
+additional-installer-jars
