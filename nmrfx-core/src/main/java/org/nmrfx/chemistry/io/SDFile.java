@@ -17,6 +17,7 @@
  */
 package org.nmrfx.chemistry.io;
 
+import org.apache.commons.lang3.StringUtils;
 import org.nmrfx.chemistry.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,6 +44,9 @@ public class SDFile {
     static final int PROP = 5;
     static final int FREE = 6;
     static final int VALUE = 7;
+    static final int HEADER_LENGTH = 4;
+    private static final Pattern[] supportedMolFormatsPatterns = {
+            Pattern.compile("\\d+\s+\\d+\s+\\d+\s+\\d+\s+\\d+\s*\\d*\s*\\d*\s*\\d*\s*\\d+\s+V2000")};
     static Pattern pattern = Pattern.compile("> +<(.*)>");
 
     int nMols = 0;
@@ -82,7 +86,7 @@ public class SDFile {
     }
 
     void readHeader(String fileName, LineNumberReader lineReader, Compound compound) throws MoleculeIOException {
-        String[] header = new String[4];
+        String[] header = new String[HEADER_LENGTH];
         try {
             for (int i = 0; i < header.length; i++) {
                 header[i] = lineReader.readLine();
@@ -443,5 +447,40 @@ public class SDFile {
             throws MoleculeIOException {
         SDFile sdFile = new SDFile();
         return sdFile.readMol(fileName, fileContent);
+    }
+
+    /**
+     * Checks if a string is in mol file format by taking a look at the count line and verifying
+     * that the string contains atleast as many lines as the header + parsed atom and bond lines
+     * @param molContent the content to check
+     * @return true if the content is in a mol file format, false otherwise
+     */
+    public static boolean inMolFileFormat(String molContent) {
+        boolean isMolFileFormat = false;
+        // Not a mol file without multiple lines
+        String[] lines = molContent.split("\n");
+        if (lines.length < HEADER_LENGTH) {
+            return isMolFileFormat;
+        }
+        String countLine = lines[3];
+        for (Pattern pattern : supportedMolFormatsPatterns) {
+            Matcher matcher = pattern.matcher(countLine);
+            if (matcher.find()) {
+                isMolFileFormat = true;
+                break;
+            }
+        }
+        // Check that there are atleast as many lines as the header lines + #atoms+ #bonds
+        if (isMolFileFormat) {
+            String[] counts = StringUtils.split(countLine);
+            try {
+                int numAtoms = Integer.parseInt(counts[0]);
+                int numBonds = Integer.parseInt(counts[1]);
+                isMolFileFormat = lines.length >= (HEADER_LENGTH + numAtoms + numBonds);
+            } catch (NumberFormatException e) {
+                return false;
+            }
+        }
+        return isMolFileFormat;
     }
 }

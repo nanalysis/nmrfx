@@ -34,11 +34,9 @@ public class PlainTextDataFormatHandler implements DataFormatEventHandler {
             return false;
         }
 
-        // Not a mol file without multiple lines
-        if (molString.indexOf('\n') < 0) {
+        if (!SDFile.inMolFileFormat(molString)) {
             return false;
         }
-
         // Use the first line of the string as the molecule name if it is not blank, else prompt for a name
         String moleculeName = molString.split("\n")[0].trim();
         if (moleculeName.isEmpty()) {

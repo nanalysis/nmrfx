@@ -34,8 +34,7 @@ public class MoleculeDataFormatHandler implements DataFormatEventHandler {
             return;
         }
         String molContents = parseMdlctBuffer((ByteBuffer)  o);
-        // Not a mol file without multiple lines
-        if (molContents.indexOf('\n') < 0) {
+        if (!SDFile.inMolFileFormat(molContents)) {
             return;
         }
         // Use the first line of the string as the molecule name if it is not blank, else prompt for a name
