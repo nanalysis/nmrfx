@@ -107,8 +107,7 @@ public class SpectrumMenuActions extends MenuActions {
     private void newGraphics(ActionEvent event) {
         Stage stage = new Stage(StageStyle.DECORATED);
         stage.setTitle(AnalystApp.getAppName() + " " + AnalystApp.getVersion());
-        FXMLController fxmlController = FXMLController.create(stage);
-        DataFormatHandlerUtil.addHandlersToController(fxmlController);
+        FXMLController.create(stage);
     }
 
     public void showStripsBar() {

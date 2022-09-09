@@ -1,15 +1,15 @@
 package org.nmrfx.analyst.gui.events;
 
 import javafx.scene.input.DataFormat;
-import org.nmrfx.processor.gui.FXMLController;
+import org.nmrfx.processor.gui.spectra.KeyBindings;
 
 public class DataFormatHandlerUtil {
 
     private DataFormatHandlerUtil() {}
 
-    public static void addHandlersToController(FXMLController controller) {
-        controller.addCanvasDataFormatHandler(getDataFormat("MDLCT"), new MoleculeDataFormatHandler());
-        controller.addCanvasDataFormatHandler(DataFormat.PLAIN_TEXT, new PlainTextDataFormatHandler());
+    public static void addHandlersToController() {
+        KeyBindings.registerCanvasDataFormatHandler(getDataFormat("MDLCT"), new MoleculeDataFormatHandler());
+        KeyBindings.registerCanvasDataFormatHandler(DataFormat.PLAIN_TEXT, new PlainTextDataFormatHandler());
     }
 
     private static DataFormat getDataFormat(String format) {

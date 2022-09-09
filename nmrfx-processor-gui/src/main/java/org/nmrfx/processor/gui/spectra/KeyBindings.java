@@ -26,12 +26,17 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javafx.scene.Cursor;
 import javafx.scene.control.Alert;
+import javafx.scene.input.Clipboard;
+import javafx.scene.input.DataFormat;
 import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyCodeCombination;
+import javafx.scene.input.KeyCombination;
 import javafx.scene.input.KeyEvent;
 import org.nmrfx.processor.gui.KeyMonitor;
 import org.nmrfx.processor.gui.PeakPicking;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.SpectrumStatusBar;
+import org.nmrfx.processor.gui.events.DataFormatEventHandler;
 
 /**
  *
@@ -43,9 +48,19 @@ public class KeyBindings {
     PolyChart chart;
     Map<String, Consumer> keyActionMap = new HashMap<>();
     static Map<String, BiConsumer<String, PolyChart>> globalKeyActionMap = new HashMap<>();
-
+    private static final Map<DataFormat, DataFormatEventHandler> dataFormatHandlers = new HashMap<>();
+    private final KeyCodeCombination pasteKeyCodeCombination = new KeyCodeCombination(KeyCode.V, KeyCombination.SHORTCUT_DOWN);
     public KeyBindings(PolyChart chart) {
         this.chart = chart;
+    }
+
+    /**
+     * Adds the provided DataFormat event handler to the dataFormatHandler map.
+     * @param dataFormat The DataFormat.
+     * @param handler The DataFormat handler.
+     */
+    public static void registerCanvasDataFormatHandler(DataFormat dataFormat, DataFormatEventHandler handler) {
+        dataFormatHandlers.put(dataFormat, handler);
     }
 
     public static void registerGlobalKeyAction(String keyString, BiConsumer<String, PolyChart> action) {
@@ -71,35 +86,11 @@ public class KeyBindings {
         if (null != code) {
             switch (code) {
                 case DOWN:
-                    if (keyEvent.isShiftDown()) {
-                        List<DatasetAttributes> dataAttrs = chart.getDatasetAttributes();
-                        dataAttrs.stream().forEach(d -> d.rotateDim(1, -1));
-                        chart.getController().updateAttrDims();
-                        chart.full();
-                        chart.focus();
-                    } else {
-                        if (chart.is1D()) {
-                            chart.incrementRow(-1);
-                        } else {
-                            chart.incrementPlane(2, -1);
-                        }
-                    }
+                    handleDownAction(keyEvent);
                     keyEvent.consume();
                     break;
                 case UP:
-                    if (keyEvent.isShiftDown()) {
-                        List<DatasetAttributes> dataAttrs = chart.getDatasetAttributes();
-                        dataAttrs.stream().forEach(d -> d.rotateDim(1, 1));
-                        chart.getController().updateAttrDims();
-                        chart.full();
-                        chart.focus();
-                    } else {
-                        if (chart.is1D()) {
-                            chart.incrementRow(1);
-                        } else {
-                            chart.incrementPlane(2, 1);
-                        }
-                    }
+                    handleUpAction(keyEvent);
                     keyEvent.consume();
                     break;
                 case RIGHT:
@@ -120,16 +111,21 @@ public class KeyBindings {
                     chart.getController().deselectCharts();
                     break;
                 case DELETE:
-                    keyMonitor.complete();
+                    handleDeleteAction();
                     keyEvent.consume();
-                    chart.deleteSelectedPeaks();
-                    chart.refresh();
                     break;
                 case BACK_SPACE:
                     keyMonitor.complete();
                     keyEvent.consume();
                     chart.deleteSelectedPeaks();
                     chart.refresh();
+                    break;
+                case V:
+                    // Paste command is shortcut + V, so make sure the KeyEvent matches that combination
+                    if (pasteKeyCodeCombination.match(keyEvent)) {
+                        handlePasteAction();
+                    }
+                    keyEvent.consume();
                     break;
                 default:
                     break;
@@ -315,5 +311,76 @@ public class KeyBindings {
                 keyMonitor.clear();
         }
 
+    }
+
+    private void handleUpAction(KeyEvent keyEvent) {
+        if (keyEvent.isShiftDown()) {
+            List<DatasetAttributes> dataAttrs = chart.getDatasetAttributes();
+            dataAttrs.stream().forEach(d -> d.rotateDim(1, 1));
+            chart.getController().updateAttrDims();
+            chart.full();
+            chart.focus();
+        } else {
+            if (chart.is1D()) {
+                chart.incrementRow(1);
+            } else {
+                chart.incrementPlane(2, 1);
+            }
+        }
+    }
+
+    private void handleDownAction(KeyEvent keyEvent) {
+        if (keyEvent.isShiftDown()) {
+            List<DatasetAttributes> dataAttrs = chart.getDatasetAttributes();
+            dataAttrs.forEach(d -> d.rotateDim(1, -1));
+            chart.getController().updateAttrDims();
+            chart.full();
+            chart.focus();
+        } else {
+            if (chart.is1D()) {
+                chart.incrementRow(-1);
+            } else {
+                chart.incrementPlane(2, -1);
+            }
+        }
+    }
+
+    private void handleDeleteAction() {
+        boolean deleteActionSuccessful = false;
+        // Iterate over Handlers and break on first successful delete
+        for (DataFormatEventHandler e : dataFormatHandlers.values()) {
+            deleteActionSuccessful = e.handleDelete();
+            if (deleteActionSuccessful) {
+                break;
+            }
+        }
+        // If dataformat delete wasn't successful, attempt alternative delete functionality
+        if (!deleteActionSuccessful) {
+            keyMonitor.complete();
+            chart.deleteSelectedPeaks();
+            chart.refresh();
+        }
+    }
+
+    /**
+     * Checks the clipboard and calls the appropriate DataFormatHandler.
+     */
+    private void handlePasteAction() {
+        final Clipboard clipboard = Clipboard.getSystemClipboard();
+        // Handlers should be arranged in highest to lowest priority as the clipboard may contain multiple DataFormats
+        if (clipboard.getContentTypes().contains(getDataFormat("MDLCT"))) {
+            DataFormat df = getDataFormat("MDLCT");
+            dataFormatHandlers.get(df).handlePaste(clipboard.getContent(df));
+        } else if (clipboard.getContentTypes().contains(DataFormat.PLAIN_TEXT)) {
+            dataFormatHandlers.get(DataFormat.PLAIN_TEXT).handlePaste(clipboard.getContent(DataFormat.PLAIN_TEXT));
+        }
+    }
+
+    private DataFormat getDataFormat(String format) {
+        DataFormat dataFormat = DataFormat.lookupMimeType(format);
+        if (dataFormat == null) {
+            dataFormat = new DataFormat(format);
+        }
+        return dataFormat;
     }
 }
