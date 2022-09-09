@@ -45,7 +45,7 @@ public class MoleculeDataFormatHandler implements DataFormatEventHandler {
         try {
             SDFile.read(moleculeName, molContents);
         } catch (MoleculeIOException e) {
-            log.error("Unable to read molecule file.");
+            log.error("Unable to read molecule file. {}", e.getMessage());
             return;
         }
         MoleculeUtils.addActiveMoleculeToCanvas();

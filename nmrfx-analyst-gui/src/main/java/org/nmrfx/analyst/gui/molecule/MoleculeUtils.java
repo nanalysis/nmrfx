@@ -1,6 +1,7 @@
 package org.nmrfx.analyst.gui.molecule;
 
 import javafx.scene.control.TextInputDialog;
+import org.nmrfx.chemistry.MoleculeBase;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.structure.chemistry.Molecule;
@@ -28,7 +29,7 @@ public class MoleculeUtils {
             }
 
             cMol.setMolName(activeMol.getName());
-            activeMol.label = Molecule.LABEL_NONHC;
+            activeMol.label = MoleculeBase.LABEL_NONHC;
             activeMol.clearSelected();
 
             activeChart.clearAnnoType(CanvasMolecule.class);
