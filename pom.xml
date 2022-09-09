@@ -26,7 +26,6 @@
         <module>nmrfx-structure</module>
         <module>nmrfx-analyst</module>
         <module>nmrfx-analyst-gui</module>
-        <module>nmrfx-launchers</module>
         <module>nmrfx-jmx-connector</module>
     </modules>
 
