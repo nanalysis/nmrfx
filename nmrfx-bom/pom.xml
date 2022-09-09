@@ -339,7 +339,7 @@
             </dependency>
             <dependency>
                 <groupId>org.ejml</groupId>
-                <artifactId>ejml-fat</artifactId>
+                <artifactId>ejml-all</artifactId>
                 <version>0.40</version>
                 <!-- license: Apache License, Version 2.0 -->
             </dependency>
