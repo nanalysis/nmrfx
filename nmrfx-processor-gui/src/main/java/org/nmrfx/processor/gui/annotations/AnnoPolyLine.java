@@ -53,16 +53,6 @@ public class AnnoPolyLine extends AnnoShape {
         this.yPosType = yPosType;
     }
 
-    public AnnoPolyLine(double[] xPoints, double[] yPoints,
-                        POSTYPE xPosType, POSTYPE yPosType) {
-        this.xPoints = xPoints;
-        this.yPoints = yPoints;
-        xCPoints = new double[xPoints.length];
-        yCPoints = new double[yPoints.length];
-        this.xPosType = xPosType;
-        this.yPosType = yPosType;
-    }
-
     @Override
     public boolean hit( double x, double y, boolean selectMode) {
         return false;

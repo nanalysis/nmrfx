@@ -161,7 +161,6 @@ public class AnnoText implements CanvasAnnotation {
                         }
                         String subStr = segment.substring(start, end);
                         gC.fillText(subStr, xp1, y);
-                        System.out.println(start + " " + end + " " + GUIUtils.getTextWidth(subStr, font));
                         y += font.getSize() + 3;
                         start = end;
                     } while (start < segment.length());

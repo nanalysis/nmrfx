@@ -36,7 +36,6 @@ public class CanvasMolecule implements CanvasAnnotation {
     private static final int SQUARE_SHAPE = 1;
     private static final int TRIANGLE_SHAPE = 2;
     float radius = 0.4f;
-    boolean closePath = false;
     float valueScale = 10.0f;
     float valueZero = 0.0f;
     boolean valueMode = true;
@@ -52,7 +51,6 @@ public class CanvasMolecule implements CanvasAnnotation {
     String molName = null;
     Affine canvasTransform = new Affine();
     float canvasScale = 1.0f;
-    double strokeD = 1.0;
     double stroke3 = 3.0;
     Rectangle2D bounds2D = Rectangle2D.EMPTY;
     int hitAtom = -1;
@@ -178,14 +176,10 @@ public class CanvasMolecule implements CanvasAnnotation {
         if (molecule != null) {
             molecule.updateAtomArray();
             List<Atom> atoms = molecule.getAtomArray();
-            atoms.forEach((atom) -> {
-                atom.setProperty(Atom.DISPLAY);
-            });
+            atoms.forEach(atom -> atom.setProperty(Atom.DISPLAY));
             molecule.updateBondArray();
             ArrayList<Bond> bonds = molecule.getBondList();
-            bonds.forEach((bond) -> {
-                bond.setProperty(Bond.DISPLAY);
-            });
+            bonds.forEach((bond) -> bond.setProperty(Bond.DISPLAY));
             getSphereCoords();
             getLineCoords();
             getLabelCoords();
@@ -426,12 +420,12 @@ public class CanvasMolecule implements CanvasAnnotation {
         x2 = xPosType.transform(bx2, canvasBounds[0], worldBounds[0]);
         y1 = yPosType.transform(by1, canvasBounds[1], worldBounds[1]);
         y2 = yPosType.transform(by2, canvasBounds[1], worldBounds[1]);
-        double minX = x1 < x2 ? x1 : x2;
-        double minY = y1 < y2 ? y1 : y2;
+        double xMin = Math.min(x1, x2);
+        double yMin = Math.min(y1, y2);
         double width = Math.abs(x2 - x1);
         double height = Math.abs(y2 - y1);
 
-        bounds2D = new Rectangle2D(minX, minY, width, height);
+        bounds2D = new Rectangle2D(xMin, yMin, width, height);
         transformValid = false;
         paintShape(gC);
         if (isSelected()) {
@@ -843,9 +837,9 @@ public class CanvasMolecule implements CanvasAnnotation {
                 y1 = vecOut1.getY() + transformPt.getY();
                 z1 = vecOut1.getZ();
 
-                x2 = (float) molPrims.lineCoords[(i * 6) + 3];
-                y2 = (float) molPrims.lineCoords[(i * 6) + 4];
-                z2 = (float) molPrims.lineCoords[(i * 6) + 5];
+                x2 = molPrims.lineCoords[(i * 6) + 3];
+                y2 = molPrims.lineCoords[(i * 6) + 4];
+                z2 = molPrims.lineCoords[(i * 6) + 5];
 
                 Point3D vecIn2 = new Point3D(x2, y2, z2);
                 Point3D vecOut2 = canvasTransform.transform(vecIn2);
@@ -911,7 +905,6 @@ public class CanvasMolecule implements CanvasAnnotation {
         } else {
             activeHandle = -1;
         }
-        System.out.println("hit " + activeHandle);
         return activeHandle;
     }
 

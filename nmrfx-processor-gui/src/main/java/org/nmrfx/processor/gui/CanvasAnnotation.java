@@ -27,8 +27,8 @@ import org.nmrfx.processor.gui.spectra.ChartMenu;
  * @author Bruce Johnson
  */
 public interface CanvasAnnotation {
-    double handleWidth = 10;
-    public enum POSTYPE {
+    double HANDLE_WIDTH = 10;
+    enum POSTYPE {
         PIXEL {
             @Override
             public double transform(double v, double[] b, double[] w) {
@@ -79,67 +79,67 @@ public interface CanvasAnnotation {
 
     }
 
-    public void draw(GraphicsContextInterface gC, double[][] bounds, double[][] world);
+    void draw(GraphicsContextInterface gC, double[][] bounds, double[][] world);
 
-    public POSTYPE getXPosType();
+    POSTYPE getXPosType();
 
-    public POSTYPE getYPosType();
+    POSTYPE getYPosType();
 
-    public  boolean hit(double x, double y, boolean selectMode);
+    boolean hit(double x, double y, boolean selectMode);
 
-    public default void move(double[] start, double[] pos) {
+    default void move(double[] start, double[] pos) {
     }
 
-    public default void move(double[][] bounds, double[][] world, double[] start, double[] pos) {
+    default void move(double[][] bounds, double[][] world, double[] start, double[] pos) {
     }
 
-    public default ChartMenu getMenu() {
+    default ChartMenu getMenu() {
         return null;
     }
 
-    public default boolean getClipInAxes() {
+    default boolean getClipInAxes() {
         return false;
     }
 
     private static double getHOffset(Pos pos) {
         return switch (pos.getHpos()) {
-            case LEFT -> handleWidth;
-            case RIGHT -> -handleWidth;
-            case CENTER -> handleWidth/ 2;
+            case LEFT -> HANDLE_WIDTH;
+            case RIGHT -> -HANDLE_WIDTH;
+            case CENTER -> HANDLE_WIDTH / 2;
         };
     }
     private static double getVOffset(Pos pos) {
         return switch (pos.getVpos()) {
-            case TOP -> handleWidth;
-            case CENTER -> handleWidth / 2;
-            case BOTTOM, BASELINE -> -handleWidth;
+            case TOP -> HANDLE_WIDTH;
+            case CENTER -> HANDLE_WIDTH / 2;
+            case BOTTOM, BASELINE -> -HANDLE_WIDTH;
         };
     }
 
-    public default void drawHandle(GraphicsContextInterface gC, double x, double y, Pos pos) {
+    default void drawHandle(GraphicsContextInterface gC, double x, double y, Pos pos) {
         gC.setStroke(Color.ORANGE);
         double hOffset = getHOffset(pos);
         double vOffset = getVOffset(pos);
-        gC.strokeRect(x  + hOffset, y - vOffset, handleWidth, handleWidth );
+        gC.strokeRect(x  + hOffset, y - vOffset, HANDLE_WIDTH, HANDLE_WIDTH);
     }
 
-    public void drawHandles(GraphicsContextInterface gC);
+    void drawHandles(GraphicsContextInterface gC);
 
-    public boolean isSelected();
+    boolean isSelected();
 
-    public boolean isSelectable();
+    boolean isSelectable();
 
-    public void setSelectable(boolean state);
+    void setSelectable(boolean state);
 
-    public int hitHandle(double x, double y);
+    int hitHandle(double x, double y);
 
-    public default boolean hitHandle(double x, double y, Pos pos, double handleX, double handleY) {
+    default boolean hitHandle(double x, double y, Pos pos, double handleX, double handleY) {
         double hOffset = getHOffset(pos);
         double vOffset = getVOffset(pos);
-        Rectangle2D rect = new Rectangle2D(handleX + hOffset, handleY - vOffset, handleWidth, handleWidth );
+        Rectangle2D rect = new Rectangle2D(handleX + hOffset, handleY - vOffset, HANDLE_WIDTH, HANDLE_WIDTH);
         return rect.contains(x, y);
     }
 
-    public int getActiveHandle();
+    int getActiveHandle();
 
 }
