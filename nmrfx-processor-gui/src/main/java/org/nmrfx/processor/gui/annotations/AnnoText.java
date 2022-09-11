@@ -30,6 +30,8 @@ import org.nmrfx.utils.GUIUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
+
 /**
  *
  * @author brucejohnson
@@ -151,19 +153,11 @@ public class AnnoText implements CanvasAnnotation {
             for (String segment:segments) {
                 double width = GUIUtils.getTextWidth(segment, font);
                 if (width > regionWidth) {
-                    double charWidth = width / segment.length();
-                    int start = 0;
-                    int end;
-                    do {
-                        end = start + (int) (regionWidth / charWidth);
-                        if (end > segment.length()) {
-                            end = segment.length();
-                        }
-                        String subStr = segment.substring(start, end);
-                        gC.fillText(subStr, xp1, y);
+                    List<String> strings = GUIUtils.splitToWidth(regionWidth, segment,font);
+                    for (String string:strings) {
+                        gC.fillText(string, xp1, y);
                         y += font.getSize() + 3;
-                        start = end;
-                    } while (start < segment.length());
+                    }
                 } else {
                     gC.fillText(segment, xp1, y);
                     y += font.getSize() +3;

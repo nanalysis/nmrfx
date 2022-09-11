@@ -5,39 +5,33 @@
  */
 package org.nmrfx.utils;
 
+import javafx.embed.swing.SwingFXUtils;
+import javafx.geometry.Bounds;
+import javafx.geometry.Pos;
+import javafx.scene.Node;
+import javafx.scene.SnapshotParameters;
+import javafx.scene.control.*;
+import javafx.scene.image.WritableImage;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Region;
+import javafx.scene.text.Font;
+import javafx.scene.text.Text;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
-
-import javafx.geometry.Bounds;
-import javafx.geometry.Pos;
-import javafx.scene.Node;
-import javafx.scene.SnapshotParameters;
-import javafx.scene.control.Alert;
-import javafx.scene.control.ButtonType;
-import javafx.scene.control.Control;
-import javafx.scene.control.Dialog;
-import javafx.scene.control.Label;
-import javafx.scene.control.Labeled;
-import javafx.scene.control.PasswordField;
-import javafx.scene.control.TextInputDialog;
-import javafx.scene.control.ToolBar;
-import javafx.scene.image.WritableImage;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Region;
-import javafx.scene.text.Font;
-import javafx.scene.text.Text;
-import javafx.embed.swing.SwingFXUtils;
 
 /**
  *
  * @author brucejohnson
  */
 public class GUIUtils {
+
+    private GUIUtils() {
+    }
 
     public static boolean affirm(String message) {
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION, message, ButtonType.CANCEL, ButtonType.YES);
@@ -74,10 +68,45 @@ public class GUIUtils {
         return text.getLayoutBounds().getWidth();
     }
 
+    public static List<String> splitToWidth(double regionWidth, String segment, Font font) {
+        double width = GUIUtils.getTextWidth(segment, font);
+
+        double charWidth = width / segment.length();
+        int start = 0;
+        int end;
+        List<String> result = new ArrayList<>();
+        do {
+            end = start + (int) (regionWidth / charWidth);
+            if (end > segment.length()) {
+                end = segment.length();
+            }
+            double testWidth = GUIUtils.getTextWidth(segment.substring(start, end), font);
+            while (testWidth > regionWidth) {
+                if (end < 2) {
+                    break;
+                }
+                end--;
+                testWidth = GUIUtils.getTextWidth(segment.substring(start, end), font);
+            }
+            while (testWidth < regionWidth - charWidth) {
+                end++;
+                if (end > segment.length()) {
+                    end = segment.length();
+                    break;
+                }
+                testWidth = GUIUtils.getTextWidth(segment.substring(start, end), font);
+            }
+            String subStr = segment.substring(start, end);
+            result.add(subStr);
+            start = end;
+        } while (start < segment.length());
+        return result;
+    }
+
     /**
      * Utility function to adjust the height of toolbars used in ControllerTools. The height of each toolbar is adjusted
      * to the largest prefHeight. The height of all the toolbar items are adjusted to the prefHeight of the largest
-     * item in the first tool bar in the list.
+     * item in the first toolbar in the list.
      * @param toolBarList A list of toolbars to adjust
      */
     public static void toolbarAdjustHeights(List<ToolBar> toolBarList) {
@@ -104,8 +133,8 @@ public class GUIUtils {
             return;
         }
         for (Node node : nodeList) {
-            if (node instanceof Control) {
-                ((Control) node).setPrefHeight(height.get());
+            if (node instanceof Control control) {
+                control.setPrefHeight(height.get());
             }
         }
     }
