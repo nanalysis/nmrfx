@@ -3544,13 +3544,15 @@ public class PolyChart extends Region implements PeakListener {
         }
     }
 
-    public Optional<CanvasAnnotation> hitAnnotation(double x, double y) {
+    public Optional<CanvasAnnotation> hitAnnotation(double x, double y, boolean selectMode) {
         Optional<CanvasAnnotation> result = Optional.empty();
         for (CanvasAnnotation anno : canvasAnnotations) {
-            if (anno.hit(x, y)) {
+            int handle = anno.hitHandle(x, y);
+            if ((handle >= 0) || anno.hit(x, y, selectMode)) {
                 result = Optional.of(anno);
                 break;
             }
+
         }
         return result;
     }

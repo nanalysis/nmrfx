@@ -148,7 +148,7 @@ public class MouseBindings {
 
     private void showAfterDelay() {
         if (pause == null) {
-            pause = new PauseTransition(Duration.millis(500));
+            pause = new PauseTransition(Duration.millis(1000));
             pause.setOnFinished(
                     e -> showPopOver());
         }
@@ -186,7 +186,7 @@ public class MouseBindings {
             }
             setCursor(Cursor.HAND);
         } else {
-            Optional<CanvasAnnotation> annoOpt = chart.hitAnnotation(mouseX, mouseY);
+            Optional<CanvasAnnotation> annoOpt = chart.hitAnnotation(mouseX, mouseY, false);
             if (annoOpt.isPresent()) {
                 var annotation = annoOpt.get();
                 if (handler == null) {

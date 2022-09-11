@@ -17,7 +17,9 @@
  */
 package org.nmrfx.processor.gui;
 
-import javafx.scene.canvas.Canvas;
+import javafx.geometry.Pos;
+import javafx.geometry.Rectangle2D;
+import javafx.scene.paint.Color;
 import org.nmrfx.graphicsio.GraphicsContextInterface;
 import org.nmrfx.processor.gui.spectra.ChartMenu;
 
@@ -25,7 +27,7 @@ import org.nmrfx.processor.gui.spectra.ChartMenu;
  * @author Bruce Johnson
  */
 public interface CanvasAnnotation {
-
+    double handleWidth = 10;
     public enum POSTYPE {
         PIXEL {
             @Override
@@ -83,9 +85,7 @@ public interface CanvasAnnotation {
 
     public POSTYPE getYPosType();
 
-    public default boolean hit(double x, double y) {
-        return false;
-    }
+    public  boolean hit(double x, double y, boolean selectMode);
 
     public default void move(double[] start, double[] pos) {
     }
@@ -100,5 +100,42 @@ public interface CanvasAnnotation {
     public default boolean getClipInAxes() {
         return false;
     }
+
+    private static double getHOffset(Pos pos) {
+        return switch (pos.getHpos()) {
+            case LEFT -> handleWidth;
+            case RIGHT -> -handleWidth;
+            case CENTER -> handleWidth/ 2;
+        };
+    }
+    private static double getVOffset(Pos pos) {
+        return switch (pos.getVpos()) {
+            case TOP -> handleWidth;
+            case CENTER -> handleWidth / 2;
+            case BOTTOM, BASELINE -> -handleWidth;
+        };
+    }
+
+    public default void drawHandle(GraphicsContextInterface gC, double x, double y, Pos pos) {
+        gC.setStroke(Color.ORANGE);
+        double hOffset = getHOffset(pos);
+        double vOffset = getVOffset(pos);
+        gC.strokeRect(x  + hOffset, y - vOffset, handleWidth, handleWidth );
+    }
+
+    public void drawHandles(GraphicsContextInterface gC);
+
+    public boolean isSelected();
+
+    public int hitHandle(double x, double y);
+
+    public default boolean hitHandle(double x, double y, Pos pos, double handleX, double handleY) {
+        double hOffset = getHOffset(pos);
+        double vOffset = getVOffset(pos);
+        Rectangle2D rect = new Rectangle2D(handleX + hOffset, handleY - vOffset, handleWidth, handleWidth );
+        return rect.contains(x, y);
+    }
+
+    public int getActiveHandle();
 
 }

@@ -19,6 +19,7 @@ package org.nmrfx.processor.gui.annotations;
 
 import javafx.geometry.BoundingBox;
 import javafx.geometry.Bounds;
+import javafx.geometry.Pos;
 import javafx.geometry.VPos;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
@@ -44,6 +45,8 @@ public class AnnoText implements CanvasAnnotation {
     double startY1;
     double startX2;
     double startY2;
+    boolean selected = false;
+    int activeHandle = -1;
 
     POSTYPE xPosType;
     POSTYPE yPosType;
@@ -94,13 +97,17 @@ public class AnnoText implements CanvasAnnotation {
         this.fill = fill;
     }
 
-    public boolean hit(double x, double y) {
+    @Override
+    public boolean hit(double x, double y, boolean selectMode) {
         boolean hit = (bounds2D != null) && bounds2D.contains(x, y);
         if (hit) {
             startX1 = x1;
             startX2 = x2;
             startY1 = y1;
             startY2 = y2;
+        }
+        if (selectMode) {
+            selected = hit;
         }
         return hit;
     }
@@ -113,10 +120,16 @@ public class AnnoText implements CanvasAnnotation {
     public void move(double[][] bounds, double[][] world, double[] start, double[] pos) {
         double dx = pos[0] - start[0];
         double dy = pos[1] - start[1];
-        x1 = xPosType.move(startX1, dx, bounds[0], world[0]);
-        x2 = xPosType.move(startX2, dx, bounds[0], world[0]);
-        y1 = yPosType.move(startY1, dy, bounds[1], world[1]);
-        y2 = yPosType.move(startY2, dy, bounds[1], world[1]);
+        if (activeHandle < 0) {
+            x1 = xPosType.move(startX1, dx, bounds[0], world[0]);
+            x2 = xPosType.move(startX2, dx, bounds[0], world[0]);
+            y1 = yPosType.move(startY1, dy, bounds[1], world[1]);
+            y2 = yPosType.move(startY2, dy, bounds[1], world[1]);
+        } else if (activeHandle == 0) {
+            x1 = xPosType.move(startX1, dx, bounds[0], world[0]);
+        } else if (activeHandle == 1) {
+            x2 = xPosType.move(startX2, dx, bounds[0], world[0]);
+        }
     }
 
     @Override
@@ -140,7 +153,6 @@ public class AnnoText implements CanvasAnnotation {
                     double charWidth = width / segment.length();
                     int start = 0;
                     int end;
-                    double yOffset = 0.0;
                     do {
                         end = start + (int) (regionWidth / charWidth);
                         if (end > segment.length()) {
@@ -148,9 +160,9 @@ public class AnnoText implements CanvasAnnotation {
                         }
                         String subStr = segment.substring(start, end);
                         gC.fillText(subStr, xp1, y);
+                        System.out.println(start + " " + end + " " + GUIUtils.getTextWidth(subStr, font));
                         y += font.getSize() + 3;
                         start = end;
-                        yOffset += font.getSize() + 3;
                     } while (start < segment.length());
                 } else {
                     gC.fillText(segment, xp1, y);
@@ -158,6 +170,9 @@ public class AnnoText implements CanvasAnnotation {
                 }
             }
             bounds2D = new BoundingBox(xp1, topY, regionWidth, y - topY);
+            if (isSelected()) {
+                drawHandles(gC);
+            }
         } catch (Exception ex) {
             log.warn(ex.getMessage(), ex);
         }
@@ -173,4 +188,31 @@ public class AnnoText implements CanvasAnnotation {
         return yPosType;
     }
 
+    @Override
+    public void drawHandles(GraphicsContextInterface gC) {
+        drawHandle(gC, bounds2D.getMinX(), (bounds2D.getMinY() + bounds2D.getMaxY())/2, Pos.CENTER_RIGHT);
+        drawHandle(gC, bounds2D.getMaxX(), (bounds2D.getMinY() + bounds2D.getMaxY())/2, Pos.CENTER_LEFT);
+    }
+
+    @Override
+    public boolean isSelected() {
+        return selected;
+    }
+
+    @Override
+    public int hitHandle(double x, double y) {
+        if (hitHandle(x,y, Pos.CENTER_RIGHT, bounds2D.getMinX(), (bounds2D.getMinY() + bounds2D.getMaxY())/2)) {
+            activeHandle = 0;
+        } else if (hitHandle(x,y, Pos.CENTER_LEFT, bounds2D.getMaxX(), (bounds2D.getMinY() + bounds2D.getMaxY())/2)) {
+            activeHandle = 1;
+        } else {
+            activeHandle = -1;
+        }
+        return activeHandle;
+    }
+
+    @Override
+    public int getActiveHandle() {
+        return activeHandle;
+    }
 }

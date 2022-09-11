@@ -6,10 +6,7 @@
 package org.nmrfx.analyst.gui.molecule;
 
 
-import javafx.geometry.Point2D;
-import javafx.geometry.Point3D;
-import javafx.geometry.Rectangle2D;
-import javafx.geometry.VPos;
+import javafx.geometry.*;
 import javafx.scene.paint.Color;
 import javafx.scene.text.TextAlignment;
 import javafx.scene.transform.Affine;
@@ -83,6 +80,8 @@ public class CanvasMolecule implements CanvasAnnotation {
     double startY1;
     double startX2;
     double startY2;
+    boolean selected = true;
+    int activeHandle = -1;
 
     POSTYPE xPosType;
     POSTYPE yPosType;
@@ -339,9 +338,12 @@ public class CanvasMolecule implements CanvasAnnotation {
     }
 
     @Override
-    public boolean hit(double x, double y) {
+    public boolean hit(double x, double y, boolean selectMode) {
         if (!bounds2D.contains(x, y)) {
             hitAtom = -1;
+            if (selectMode) {
+                selected = false;
+            }
             return false;
         } else {
             hitAtom = pick(null, x, y);
@@ -355,15 +357,20 @@ public class CanvasMolecule implements CanvasAnnotation {
                 if (!molecule.globalSelected.isEmpty()) {
                     molecule.clearSelected();
                 }
+                if (selectMode) {
+                    selected = true;
+                }
                 return true;
             } else {
-                System.out.println(getHit());
                 String aName = getHit();
                 Molecule molecule = Molecule.get(molName);
                 try {
                     molecule.selectAtoms(aName);
                 } catch (InvalidMoleculeException ex) {
                     log.warn(ex.getMessage(), ex);
+                }
+                if (selectMode) {
+                    selected = true;
                 }
 
                 return true;
@@ -375,10 +382,29 @@ public class CanvasMolecule implements CanvasAnnotation {
     public void move(double[][] bounds, double[][] world, double[] start, double[] pos) {
         double dx = pos[0] - start[0];
         double dy = pos[1] - start[1];
-        bx1 = xPosType.move(startX1, dx, bounds[0], world[0]);
-        bx2 = xPosType.move(startX2, dx, bounds[0], world[0]);
-        by1 = yPosType.move(startY1, dy, bounds[1], world[1]);
-        by2 = yPosType.move(startY2, dy, bounds[1], world[1]);
+        if (activeHandle < 0) {
+            bx1 = xPosType.move(startX1, dx, bounds[0], world[0]);
+            bx2 = xPosType.move(startX2, dx, bounds[0], world[0]);
+            by1 = yPosType.move(startY1, dy, bounds[1], world[1]);
+            by2 = yPosType.move(startY2, dy, bounds[1], world[1]);
+
+        }
+        if (activeHandle == 0) {
+            bx1 = xPosType.move(startX1, dx, bounds[0], world[0]);
+            by1 = yPosType.move(startY1, dy, bounds[1], world[1]);
+        }
+        if (activeHandle == 1) {
+            bx2 = xPosType.move(startX2, dx, bounds[0], world[0]);
+            by1 = yPosType.move(startY1, dy, bounds[1], world[1]);
+        }
+        if (activeHandle == 2) {
+            bx2 = xPosType.move(startX2, dx, bounds[0], world[0]);
+            by2 = yPosType.move(startY2, dy, bounds[1], world[1]);
+        }
+        if (activeHandle == 3) {
+            bx1 = xPosType.move(startX1, dx, bounds[0], world[0]);
+            by2 = yPosType.move(startY2, dy, bounds[1], world[1]);
+        }
     }
 
     public void zoom(double factor) {
@@ -405,9 +431,11 @@ public class CanvasMolecule implements CanvasAnnotation {
         double height = Math.abs(y2 - y1);
 
         bounds2D = new Rectangle2D(minX, minY, width, height);
-
         transformValid = false;
         paintShape(gC);
+        if (isSelected()) {
+            drawHandles(gC);
+        }
     }
 
     public void paintShape(GraphicsContextInterface g2) {
@@ -846,4 +874,38 @@ public class CanvasMolecule implements CanvasAnnotation {
         }
     }
 
+    @Override
+    public void drawHandles(GraphicsContextInterface gC) {
+        drawHandle(gC, bounds2D.getMinX(), bounds2D.getMinY(), Pos.BOTTOM_RIGHT);
+        drawHandle(gC, bounds2D.getMaxX(), bounds2D.getMinY(), Pos.BOTTOM_LEFT);
+        drawHandle(gC, bounds2D.getMaxX(), bounds2D.getMaxY(), Pos.TOP_LEFT);
+        drawHandle(gC, bounds2D.getMinX(), bounds2D.getMaxY(), Pos.TOP_RIGHT);
+    }
+
+    @Override
+    public boolean isSelected() {
+        return selected;
+    }
+
+    @Override
+    public int hitHandle(double x, double y) {
+        if (hitHandle(x,y, Pos.BOTTOM_RIGHT,bounds2D.getMinX(), bounds2D.getMinY())) {
+            activeHandle = 0;
+        } else if (hitHandle(x,y, Pos.BOTTOM_LEFT,bounds2D.getMaxX(), bounds2D.getMinY())) {
+            activeHandle = 1;
+        } else if (hitHandle(x,y, Pos.TOP_LEFT,bounds2D.getMaxX(), bounds2D.getMaxY())) {
+            activeHandle = 2;
+        } else if (hitHandle(x,y, Pos.TOP_RIGHT, bounds2D.getMinX(), bounds2D.getMaxY())) {
+            activeHandle = 3;
+        } else {
+            activeHandle = -1;
+        }
+        System.out.println("hit " + activeHandle);
+        return activeHandle;
+    }
+
+    @Override
+    public int getActiveHandle() {
+        return activeHandle;
+    }
 }

@@ -71,7 +71,7 @@ public class CanvasBindings {
                             ((RegionMenu) menu).setHit(hitRegion.get());
                         }
                     } else {
-                        Optional<CanvasAnnotation> hitAnno = chart.hitAnnotation(x, y);
+                        Optional<CanvasAnnotation> hitAnno = chart.hitAnnotation(x, y, false);
                         if (hitAnno.isPresent()) {
                             menu = hitAnno.get().getMenu();
                         }
