@@ -216,8 +216,4 @@ public class AnnoText implements CanvasAnnotation {
         return activeHandle;
     }
 
-    @Override
-    public int getActiveHandle() {
-        return activeHandle;
-    }
 }

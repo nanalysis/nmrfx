@@ -81,10 +81,6 @@ public interface CanvasAnnotation {
 
     void draw(GraphicsContextInterface gC, double[][] bounds, double[][] world);
 
-    POSTYPE getXPosType();
-
-    POSTYPE getYPosType();
-
     boolean hit(double x, double y, boolean selectMode);
 
     default void move(double[] start, double[] pos) {
@@ -123,6 +119,10 @@ public interface CanvasAnnotation {
         gC.strokeRect(x  + hOffset, y + vOffset, HANDLE_WIDTH, HANDLE_WIDTH);
     }
 
+    public POSTYPE getXPosType();
+
+    public POSTYPE getYPosType();
+
     void drawHandles(GraphicsContextInterface gC);
 
     boolean isSelected();
@@ -139,7 +139,5 @@ public interface CanvasAnnotation {
         Rectangle2D rect = new Rectangle2D(handleX + hOffset, handleY + vOffset, HANDLE_WIDTH, HANDLE_WIDTH);
         return rect.contains(x, y);
     }
-
-    int getActiveHandle();
 
 }

@@ -36,8 +36,6 @@ public class AnnoLine extends AnnoShape {
     double yp1;
     double xp2;
     double yp2;
-    POSTYPE xPosType;
-    POSTYPE yPosType;
     int activeHandle = -1;
 
     public AnnoLine(double x1, double y1, double x2, double y2,
@@ -74,16 +72,6 @@ public class AnnoLine extends AnnoShape {
     }
 
     @Override
-    public POSTYPE getXPosType() {
-        return xPosType;
-    }
-
-    @Override
-    public POSTYPE getYPosType() {
-        return yPosType;
-    }
-
-    @Override
     public void drawHandles(GraphicsContextInterface gC) {
         drawHandle(gC, xp1, yp1, Pos.CENTER);
         drawHandle(gC, xp2, yp2, Pos.CENTER);
@@ -98,11 +86,6 @@ public class AnnoLine extends AnnoShape {
         } else {
             activeHandle = -1;
         }
-        return activeHandle;
-    }
-
-    @Override
-    public int getActiveHandle() {
         return activeHandle;
     }
 

@@ -32,6 +32,8 @@ public abstract class AnnoShape implements CanvasAnnotation {
     boolean clipInAxes = false;
     boolean selected = false;
     boolean selectable = false;
+    POSTYPE xPosType;
+    POSTYPE yPosType;
 
     /**
      * @return the stroke
@@ -73,6 +75,16 @@ public abstract class AnnoShape implements CanvasAnnotation {
      */
     public void setLineWidth(double lineWidth) {
         this.lineWidth = lineWidth;
+    }
+
+    @Override
+    public POSTYPE getXPosType() {
+        return xPosType;
+    }
+
+    @Override
+    public POSTYPE getYPosType() {
+        return yPosType;
     }
 
     @Override

@@ -34,8 +34,6 @@ public class AnnoPolyLine extends AnnoShape {
     final double[] yPoints;
     final double[] xCPoints;
     final double[] yCPoints;
-    POSTYPE xPosType;
-    POSTYPE yPosType;
     int activeHandle = -1;
 
     public AnnoPolyLine(List<Double> xList, List<Double> yList,
@@ -77,16 +75,6 @@ public class AnnoPolyLine extends AnnoShape {
     }
 
     @Override
-    public POSTYPE getXPosType() {
-        return xPosType;
-    }
-
-    @Override
-    public POSTYPE getYPosType() {
-        return yPosType;
-    }
-
-    @Override
     public void drawHandles(GraphicsContextInterface gC) {
         int last = xCPoints.length - 1;
         drawHandle(gC, xCPoints[0], yCPoints[0], Pos.CENTER);
@@ -106,8 +94,4 @@ public class AnnoPolyLine extends AnnoShape {
         return activeHandle;
     }
 
-    @Override
-    public int getActiveHandle() {
-        return activeHandle;
-    }
 }
