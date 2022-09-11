@@ -7,23 +7,25 @@ import org.nmrfx.chemistry.IAtom;
 import org.nmrfx.chemistry.IBond;
 import org.nmrfx.chemistry.Atom;
 import org.nmrfx.chemistry.Order;
+import org.nmrfx.structure.chemistry.Molecule;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-public class PathIterator implements Iterator {
+public class PathIterator implements Iterator<List<Integer>> {
+    private static final Logger log = LoggerFactory.getLogger(PathIterator.class);
 
-    AtomContainer ac = null;
-    ArrayList pathAtoms = null;
-    ArrayList pathBonds = null;
-    HashMap bondMap = new HashMap();
-    ArrayList path = null;
+    AtomContainer ac;
+    List<List<Integer>> pathAtoms = null;
+    List<List<Integer>> pathBonds = null;
+    Map<String, Integer> bondMap = new HashMap<>();
+    List<Integer> path = null;
     public static boolean debug = false;
     int pathLength = 0;
     int pathPos = 0;
-    int firstAtom = 0;
-    int lastAtom = 0;
-    int min = 3;
+    int lastAtom;
     int currentAtom = -1;
     Map<IAtom, Integer> atomMap = new HashMap<>();
-    PathVars pVars = null;
+    PathVars pVars;
     NodeValidatorInterface nodeValidator;
     IAtom[] atoms;
     IBond[] bonds;
@@ -53,15 +55,15 @@ public class PathIterator implements Iterator {
                 Integer iAtom0 = atomMap.get(atom0);
                 Integer iAtom1 = atomMap.get(atom1);
                 if (iAtom0 == null) {
-                    System.out.println("no atom0 " + atom0 + " " + atom1);
+                    log.error("no atom0 " + atom0 + " " + atom1);
                     continue;
                 }
                 if (iAtom1 == null) {
-                    System.out.println("no atom1 " + atom0 + " " + atom1);
+                    log.error("no atom1 " + atom0 + " " + atom1);
                     continue;
                 }
-                String key01 = iAtom0 + " " + iAtom1.intValue();
-                String key10 = iAtom1 + " " + iAtom0.intValue();
+                String key01 = iAtom0 + " " + iAtom1;
+                String key10 = iAtom1 + " " + iAtom0;
                 Integer order = getBondOrder(bonds[i]);
                 bondMap.put(key01, order);
                 bondMap.put(key10, order);
@@ -73,9 +75,6 @@ public class PathIterator implements Iterator {
 
     public PathVars getPathVars() {
         return pVars;
-    }
-
-    void setOutputMode(int outputMode) {
     }
 
     boolean initialize() {
@@ -92,7 +91,7 @@ public class PathIterator implements Iterator {
     }
 
     void initialize(int start) {
-        IAtom startAtom = null;
+        IAtom startAtom;
         startAtom = ac.getAtom(start);
 
         for (IBond bond : ac.bonds()) {
@@ -103,16 +102,16 @@ public class PathIterator implements Iterator {
             atom.setFlag(Atom.VISITED, false);
         }
 
-        pathAtoms = new ArrayList();
-        pathBonds = new ArrayList();
+        pathAtoms = new ArrayList<>();
+        pathBonds = new ArrayList<>();
 
         for (int i = 0; i < nodeValidator.pathSize(currentPattern); i++) {
             pathAtoms.add(null);
             pathBonds.add(null);
         }
 
-        path = new ArrayList();
-        path.add(new Integer(start));
+        path = new ArrayList<>();
+        path.add(start);
         startAtom.setFlag(Atom.VISITED, true);
         pathLength = 1;
         pathPos = 0;
@@ -120,13 +119,13 @@ public class PathIterator implements Iterator {
 
     int getBondOrder(IBond bond) {
         Order cOrder = bond.getOrder();
-        int order = 1;
-        if (cOrder == Order.SINGLE) {
-            order = 1;
-        } else if (cOrder == Order.DOUBLE) {
+        final int order;
+        if (cOrder == Order.DOUBLE) {
             order = 2;
         } else if (cOrder == Order.TRIPLE) {
             order = 3;
+        } else {
+            order = 1;
         }
         return order;
 
@@ -138,7 +137,7 @@ public class PathIterator implements Iterator {
         for (int i = 0, sLen = cArray.length; i < sLen; i++) {
             char c1 = cArray[i];
             char c2 = cArray[i];
-            String elemName = null;;
+            String elemName = null;
             int nChar = 0;
             if (Character.isLetter(c1) && Character.isUpperCase(c1)) {
                 nChar = 1;
@@ -170,8 +169,6 @@ public class PathIterator implements Iterator {
                 sBuilder.append(c1);
             }
         }
-//System.out.println(pattern);
-//System.out.println(sBuilder.toString());
         return sBuilder.toString();
     }
 
@@ -196,12 +193,12 @@ public class PathIterator implements Iterator {
         if (path != null) {
             currentPath = new int[path.size()]; // fixme, need to populate
             for (int i = 0; i < currentPath.length; i++) {
-                currentPath[i] = ((Integer) path.get(i));
+                currentPath[i] = path.get(i);
             }
         }
         boolean aType = nodeValidator.checkAtom(aNum, visited, currentPath, currentPattern, index, iAtom, bondMap);
-        if (debug) {
-            System.out.println("check Atom index " + index + " iatom " + iAtom + " pattern " + currentPattern + " atype " + aType);
+        if (log.isDebugEnabled()) {
+            log.debug("check Atom index " + index + " iatom " + iAtom + " pattern " + currentPattern + " atype " + aType);
         }
         return aType;
     }
@@ -211,9 +208,7 @@ public class PathIterator implements Iterator {
         IBond bond = bonds[iBond];
         int order = getBondOrder(bond);
         int[] currentPath = new int[path.size()]; // fixme, need to populate
-        boolean bType = nodeValidator.checkBond(order, currentPath, currentPattern, index, iBond);
-        //System.out.println("check Bond index " + index + " iatom " + iBond + " pattern " + currentPattern + " btype "  + bType);
-        return bType;
+        return nodeValidator.checkBond(order, currentPath, currentPattern, index, iBond);
     }
 
     boolean checkBond(String testBond, IBond bond) {
@@ -230,17 +225,16 @@ public class PathIterator implements Iterator {
                 aType = true;
             }
         }
-        //System.out.println(testBond + " " + bond.getOrder() + " " + aType);
 
         return aType;
     }
 
     int getAtomIndex(IAtom atom) {
-        Integer value = (Integer) atomMap.get(atom);
+        Integer value = atomMap.get(atom);
         int index = -1;
 
         if (value != null) {
-            index = value.intValue();
+            index = value;
         }
 
         return index;
@@ -250,42 +244,43 @@ public class PathIterator implements Iterator {
         return getAtomIndex(path, i);
     }
 
-    int getAtomIndex(ArrayList aList, int i) {
-        int iAtom = ((Integer) aList.get(i)).intValue();
-        return iAtom;
+    int getAtomIndex(List<Integer> aList, int i) {
+        return aList.get(i);
     }
 
-    int getBondIndex(ArrayList aList, int i) {
-        int iBond = ((Integer) aList.get(i)).intValue();
+    int getBondIndex(List<Integer> aList, int i) {
+        int iBond = aList.get(i);
         if (iBond == -1) {
-            System.out.println(aList.toString() + " " + i);
+            log.error(aList + " " + i);
         }
 
         return iBond;
     }
 
-    void dumpPath() {
+    String dumpPath() {
         int n = path.size();
-        System.out.println("Current Path **************");
+        StringBuilder sBuilder = new StringBuilder();
+        sBuilder.append("Current Path **************");
         for (int i = 0; i < n; i++) {
             int iAtom = getAtomIndex(i);
-            System.out.print(iAtom + " ");
+            sBuilder.append(iAtom + " ");
         }
-        System.out.println("");
+        sBuilder.append("\n");
         for (int i = 0; i < n; i++) {
             IAtom atom = ac.getAtom(getAtomIndex(i));
-            System.out.print(atom.getSymbol());
+            sBuilder.append(atom.getSymbol());
         }
-        System.out.println("");
+        sBuilder.append("\n");
+        return sBuilder.toString();
     }
 
     boolean dfIterate() {
-        boolean ok = true;
-        IAtom startAtom = null;
+
+        IAtom startAtom;
         int startAtomIndex = -1;
 
-        if (debug) {
-            System.out.println("dfIterate current Atom " + currentAtom + " pathLength " + pathLength
+        if (log.isDebugEnabled()) {
+            log.debug("dfIterate current Atom " + currentAtom + " pathLength " + pathLength
                     + " pathPos  " + pathPos);
         }
 
@@ -295,83 +290,60 @@ public class PathIterator implements Iterator {
 
             if (checkAtom(0, startAtomIndex)) {
                 initialize(currentAtom);
-
-                if (debug) {
-                    System.out.println(
-                            "initialized <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<");
-                }
+                log.debug("initialized <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<");
                 if (nodeValidator.pathSize(currentPattern) == 1) {
                     return true;
                 }
                 return dfIterate();
             } else {
-                if (debug) {
-                    System.out.println("initial atom failed");
-                }
-
+                log.error("initial atom failed");
                 return false;
             }
         }
 
-        if ((pathLength == 0) || (pathPos < 0)) {
+        if (pathPos < 0) {
             pathLength = 0;
-
-            if (debug) {
-                System.out.println("pathLength zero");
-            }
-
+            log.debug("pathLength zero");
             return false;
         }
 
-        if (debug) {
-            //dumpPath();
-        }
+        log.debug("path pos is " + pathPos);
 
-        if (debug) {
-            System.out.println("path pos is " + pathPos);
+        List<Integer> localSphere = pathAtoms.get(pathPos);
+        List<Integer> localBonds = pathBonds.get(pathPos);
+        if (log.isDebugEnabled()) {
+            log.debug(dumpPath());
         }
-
-        ArrayList localSphere = null;
-        ArrayList localBonds = null;
-        localSphere = (ArrayList) pathAtoms.get(pathPos);
-        localBonds = (ArrayList) pathBonds.get(pathPos);
 
         if (localSphere == null) {
-            localSphere = new ArrayList();
-            localBonds = new ArrayList();
+            localSphere = new ArrayList<>();
+            localBonds = new ArrayList<>();
             pathAtoms.set(pathPos, localSphere);
             pathBonds.set(pathPos, localBonds);
 
-            if (debug) {
-                System.out.println("empty sphere pathLength " + pathLength + " pathPos " + pathPos);
-            }
+            log.debug(String.format("empty sphere pathLength %d pathPos %d", pathLength, pathPos));
 
-            boolean addedAtom = false;
             startAtomIndex = getAtomIndex(pathPos);
             startAtom = ac.getAtom(startAtomIndex);
 
-            if (debug) {
-                System.out.println("look for atoms bonded to " + getAtomIndex(startAtom) + " " + startAtom.getSymbol() + " " + startAtom.getID());
-            }
+            log.debug(String.format("look for atoms bonded to %d %s %d", getAtomIndex(startAtom), startAtom.getSymbol(), startAtom.getID()));
 
             if (pathLength < nodeValidator.pathSize(currentPattern)) {
                 List<IBond> bonds = ac.getConnectedBondsList(startAtom);
                 for (IBond bond : bonds) {
                     IAtom sAtom = bond.getConnectedAtom(startAtom);
 
-                    if (debug) {
-                        System.out.println("test atom " + getAtomIndex(sAtom));
-                    }
+                    log.debug(String.format("test atom %d",getAtomIndex(sAtom)));
+
                     if (sAtom.getAtomicNumber() > 0) {
                         if (!sAtom.getFlag(Atom.VISITED)) {
-                            if (debug) {
-                                System.out.println("add atom indexed " + getAtomIndex(sAtom) + " with symbol " + sAtom.getSymbol() + " to sphere at path pos " + pathPos);
-                            }
+                            log.debug(String.format("add atom indexed %d with symbol %s to sphere at path pos %d",
+                                    getAtomIndex(sAtom), sAtom.getSymbol(), pathPos));
+
                             int bondNumber = ac.getBondNumber(bond);
                             if (bondNumber >= 0) {
                                 localSphere.add(ac.getAtomNumber(sAtom));
                                 localBonds.add(ac.getBondNumber(bond));
-                                addedAtom = true;
                             }
                         }
                     }
@@ -379,12 +351,10 @@ public class PathIterator implements Iterator {
             }
         }
 
-        IAtom nextAtom = null;
-        int nextAtomIndex = -1;
+        IAtom nextAtom;
+        int nextAtomIndex;
         int branchAtom = -1;
-        if (debug) {
-            System.out.println("check for an atom in sphere");
-        }
+        log.debug("check for an atom in sphere");
 
         if (pathLength < nodeValidator.pathSize(currentPattern)) {
             for (int i = 0; i < localSphere.size(); i++) {
@@ -394,9 +364,7 @@ public class PathIterator implements Iterator {
                 boolean bType = checkBond(pathLength, iBond);
 
                 if (aType && bType) {
-                    if (debug) {
-                        System.out.println("got sphere atom " + i);
-                    }
+                    log.debug(String.format("got sphere atom %d", i));
                     branchAtom = i;
 
                     break;
@@ -408,35 +376,27 @@ public class PathIterator implements Iterator {
 // fixme cheap trick to turn off test
             if (pathPos < ((pathLength - 1) - 100)) {
                 pathPos++;
-                if (debug) {
-                    System.out.println("pathPos incr  " + pathLength + " " + pathPos);
-                }
+                log.debug(String.format("pathPos incr %d %d",pathLength, pathPos));
             } else {
                 path.remove(path.size() - 1);
                 pathAtoms.set(pathPos, null);
                 pathBonds.set(pathPos, null);
                 pathLength--;
                 pathPos--;
-                if (debug) {
-                    System.out.println("pathLength reduce  " + pathLength + " " + pathPos);
-                }
+                log.debug(String.format("pathPos reduce %d %d",pathLength, pathPos));
             }
             if (pathLength == 0) {
-                if (debug) {
-                    System.out.println("pathLength zero return ");
-                }
-
+                log.debug("pathLength zero return ");
                 return false;
             }
         } else {
             nextAtomIndex = getAtomIndex(localSphere, branchAtom);
             nextAtom = ac.getAtom(nextAtomIndex);
 
-            if (debug) {
-                System.out.println(" add to path branchAtom " + branchAtom + " with Index  " + nextAtomIndex + " " + nextAtom.getSymbol());
-            }
+            log.debug(String.format(" add to path branchAtom %d with Index %d %s", branchAtom, nextAtomIndex, nextAtom.getSymbol()));
+
             nextAtom.setFlag(Atom.VISITED, true);
-            path.add(new Integer(ac.getAtomNumber(nextAtom)));
+            path.add(ac.getAtomNumber(nextAtom));
             pathLength++;
             pathPos++;
             if (debug) {
@@ -445,16 +405,9 @@ public class PathIterator implements Iterator {
 
             if (pathPos < nodeValidator.pathSize(currentPattern)) {
                 int jumpPos = nodeValidator.getJump(currentPattern, pathPos);
-
-                if (debug) {
-                    System.out.println("check atomNode for jump" + pathPos);
-                }
-
+                log.debug(String.format("check atomNode for jump %d", pathPos));
                 if (jumpPos != -1) {
-                    if (debug) {
-                        System.out.println(" jump to " + jumpPos);
-                    }
-
+                    log.debug(String.format(" jump to %d", jumpPos));
                     pathPos = jumpPos;
                 }
             }
@@ -462,17 +415,12 @@ public class PathIterator implements Iterator {
 
 // fixme not correct for ring closures ??
         if (pathLength < nodeValidator.pathSize(currentPattern)) {
-            if (debug) {
-                System.out.println("pathLength min return pathLength " + pathLength + " pathPos "
-                        + pathPos + " max " + nodeValidator.pathSize(currentPattern));
-            }
-
+            log.debug(String.format("pathLength min return pathLength %d pathPos %d max %d", pathLength,
+                    pathPos, nodeValidator.pathSize(currentPattern)));
             return dfIterate();
         }
 
-        if (debug) {
-            System.out.println("end return  pathLength " + pathLength + " pathPos " + pathPos);
-        }
+        log.debug(String.format("end return  pathLength %d pathPos %d",pathLength, pathPos));
 
         return true;
     }
@@ -480,11 +428,11 @@ public class PathIterator implements Iterator {
     public void remove() {
     }
 
-    public Object next() {
-        if (debug) {
-            System.out.println("############ next #################");
+    public List<Integer> next() {
+        log.debug("############ next #################");
+        if ((path == null) || (pathLength == 0)) {
+            throw new NoSuchElementException();
         }
-
         return path;
     }
 
@@ -501,36 +449,27 @@ public class PathIterator implements Iterator {
                 break;
             }
         }
-        //if ((path != null) && (pathLength > 1)) {
-        //System.out.println("gotpath " + path.toString() + " len " + pathLength + " pat " + currentPattern);
-        //}
 
         return ((path != null) && (pathLength != 0));
     }
 
     public void processPatterns() {
         for (currentPattern = 0; currentPattern < nPatterns; currentPattern++) {
-            //System.out.println("current pattern " + currentPattern + " of " + nPatterns);
             path = null;
             pathLength = 0;
             currentAtom = -1;
             while (hasNext()) {
-                ArrayList nextPath = (ArrayList) next();
+                List<Integer> nextPath = next();
                 int mode = nodeValidator.getMode(currentPattern);
                 if (mode == 0) {
                     nodeValidator.assignProps(nextPath, currentPattern);
-                } else if (mode == 1) {
-                    //System.out.println("is type " + currentPattern);
                 } else if (mode == 2) {
-                    ArrayList params = nodeValidator.getParams(nextPath, currentPattern);
-                    //System.out.println("params " + params);
+                    var params = nodeValidator.getParams(nextPath, currentPattern);
                     int atomIndex = (Integer) params.get(0);
                     for (int i = 1; i < params.size(); i += 2) {
                         String name = (String) params.get(i);
                         String value = (String) params.get(i + 1);
                         atoms[atomIndex].setProperty(name, value);
-                        Atom atom = (Atom) atoms[atomIndex];
-//                        System.out.println(atom.getFullName() + " " + name + " " + value);
                     }
                 }
             }
@@ -575,7 +514,13 @@ public class PathIterator implements Iterator {
         if (arIndex != -1) {
             boolean[][] props = nodeValidator.getProperties();
             for (int i = 0; i < props.length; i++) {
-                atoms[i].setFlag(flag, props[i][arIndex]);
+                if (flag == Atom.AROMATIC) {
+                    if (!atoms[i].getFlag(flag)) {
+                        atoms[i].setFlag(flag, props[i][arIndex]);
+                    }
+                } else {
+                    atoms[i].setFlag(flag, props[i][arIndex]);
+                }
             }
         }
     }

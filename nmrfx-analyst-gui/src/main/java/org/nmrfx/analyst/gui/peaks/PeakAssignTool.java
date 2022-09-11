@@ -2,19 +2,15 @@ package org.nmrfx.analyst.gui.peaks;
 
 import de.jensd.fx.glyphs.GlyphsDude;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+
+import java.util.*;
 import java.util.function.Consumer;
-import javafx.scene.control.Button;
-import javafx.scene.control.ChoiceBox;
-import javafx.scene.control.ComboBox;
-import javafx.scene.control.ContentDisplay;
-import javafx.scene.control.Label;
-import javafx.scene.control.TextField;
+
+import javafx.scene.Node;
+import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.GridPane;
-import javafx.scene.layout.HBox;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import org.nmrfx.analyst.gui.peaks.AtomBrowser.AtomDelta;
 import org.nmrfx.datasets.DatasetBase;
@@ -26,9 +22,11 @@ import org.nmrfx.peaks.SpectralDim;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.ControllerTool;
 import org.nmrfx.processor.gui.FXMLController;
+import org.nmrfx.processor.gui.MainApp;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
 import org.nmrfx.structure.chemistry.Molecule;
+import org.nmrfx.utils.GUIUtils;
 
 /**
  *
@@ -39,6 +37,7 @@ public class PeakAssignTool implements ControllerTool {
     FXMLController controller;
     Consumer<PeakAssignTool> closeAction;
     VBox vBox;
+    ToolBar toolBar;
     GridPane gridPane;
     ComboBox<String>[] atomChoices;
     TextField[] atomChoicesTF;
@@ -69,6 +68,8 @@ public class PeakAssignTool implements ControllerTool {
 
     public void initialize(VBox vBox) {
         this.vBox = vBox;
+        toolBar = new ToolBar();
+        this.vBox.getChildren().add(toolBar);
         Button pickButton = new Button("Assign");
         pickButton.setOnAction(e -> doAssign());
 
@@ -80,19 +81,22 @@ public class PeakAssignTool implements ControllerTool {
                 nDim = dataset.getNDim();
             }
         }
-        HBox hBox = new HBox();
-        String iconSize = "12px";
-        String fontSize = "7pt";
-        Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "Close", iconSize, fontSize, ContentDisplay.TOP);
+        Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "Close", MainApp.ICON_SIZE_STR, MainApp.REG_FONT_SIZE_STR, ContentDisplay.LEFT);
         closeButton.setOnAction(e -> close());
-        hBox.getChildren().add(closeButton);
-        hBox.getChildren().add(pickButton);
+        toolBar.getItems().add(closeButton);
+        toolBar.getItems().add(pickButton);
         gridPane = new GridPane();
-        hBox.getChildren().add(gridPane);
+        gridPane.setHgap(5);
+        toolBar.getItems().add(gridPane);
         updateGrid(nDim);
-        vBox.getChildren().add(hBox);
-        FXMLController controller = FXMLController.getActiveController();
         controller.selPeaks.addListener(e -> setActivePeaks(controller.selPeaks.get()));
+
+        // The different control items end up with different heights based on font and icon size,
+        // set all the items to use the same height
+        List<Node> items = new ArrayList<>(Arrays.asList(closeButton, pickButton));
+        items.addAll(gridPane.getChildren());
+        toolBar.heightProperty().addListener(
+                (observable, oldValue, newValue) -> GUIUtils.nodeAdjustHeights(items));
 
     }
 

@@ -1,5 +1,8 @@
 package org.nmrfx.datasets;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -9,6 +12,7 @@ import java.util.*;
 // fixme add document "Note: this comparator imposes orderings that are inconsistent with equals."
 public class DatasetRegion implements Comparator, Comparable {
 
+    private static final Logger log = LoggerFactory.getLogger(DatasetRegion.class);
     private final double[] x;
     private final double[] startIntensity;
     private final double[] endIntensity;
@@ -83,6 +87,7 @@ public class DatasetRegion implements Comparator, Comparable {
                 }
 
             } catch (IOException ioE) {
+                log.warn(ioE.getMessage(), ioE);
             }
         } else {
             if (file.canWrite()) {
@@ -277,9 +282,9 @@ public class DatasetRegion implements Comparator, Comparable {
         DatasetRegion r1 = (DatasetRegion) o1;
         DatasetRegion r2 = (DatasetRegion) o2;
         if ((r1 != null) || (r2 != null)) {
-            if (r1 == null) {
+            if (r1 == null || r1.x == null) {
                 result = -1;
-            } else if (r2 == null) {
+            } else if (r2 == null || r2.x == null) {
                 result = 1;
             } else if (r1.x[0] < r2.x[0]) {
                 result = -1;
@@ -297,7 +302,15 @@ public class DatasetRegion implements Comparator, Comparable {
     }
 
     @Override
+    public int hashCode() {
+        return x == null ? Objects.hashCode(x) : Double.hashCode(x[0]);
+    }
+
+    @Override
     public boolean equals(Object o2) {
+        if (!(o2 instanceof DatasetRegion)) {
+            return false;
+        }
         return (compare(this, o2) == 0);
     }
 

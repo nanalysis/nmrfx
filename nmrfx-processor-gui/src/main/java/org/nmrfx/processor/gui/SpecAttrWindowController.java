@@ -73,6 +73,8 @@ import org.nmrfx.processor.gui.spectra.PeakDisplayParameters;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
 import org.nmrfx.processor.gui.utils.ColorSchemes;
 import org.nmrfx.utilities.DictionarySort;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.URL;
@@ -91,6 +93,8 @@ import static org.nmrfx.processor.gui.PolyChart.DISDIM.TwoD;
  * @author johnsonb
  */
 public class SpecAttrWindowController implements Initializable {
+
+    private static final Logger log = LoggerFactory.getLogger(SpecAttrWindowController.class);
 
     static final DecimalFormat formatter = new DecimalFormat();
 
@@ -201,6 +205,8 @@ public class SpecAttrWindowController implements Initializable {
     private ComboBox<Number> bottomBorderSizeComboBox;
     @FXML
     private CheckBox titlesCheckBox;
+    @FXML
+    private CheckBox parametersCheckBox;
 
     SegmentedButton groupButton;
     ChoiceBox<String> showOnlyCompatibleBox = new ChoiceBox<>();
@@ -318,6 +324,7 @@ public class SpecAttrWindowController implements Initializable {
         ticFontSizeComboBox.valueProperty().addListener(e -> refreshLater());
         labelFontSizeComboBox.valueProperty().addListener(e -> refreshLater());
         titlesCheckBox.selectedProperty().addListener(e -> refreshLater());
+        parametersCheckBox.selectedProperty().addListener(e -> refreshLater());
         intensityAxisCheckBox.selectedProperty().addListener(e -> refreshLater());
         leftBorderSizeComboBox.valueProperty().addListener(e -> refreshLater());
         rightBorderSizeComboBox.valueProperty().addListener(e -> refreshLater());
@@ -643,8 +650,7 @@ public class SpecAttrWindowController implements Initializable {
             stage.show();
             return controller;
         } catch (IOException ioE) {
-            ioE.printStackTrace();
-            System.out.println(ioE.getMessage());
+            log.warn(ioE.getMessage(), ioE);
             return null;
         }
     }
@@ -658,8 +664,7 @@ public class SpecAttrWindowController implements Initializable {
             controller = loader.getController();
             controller.pane = pane;
         } catch (IOException ioE) {
-            ioE.printStackTrace();
-            System.out.println(ioE.getMessage());
+            log.warn(ioE.getMessage(), ioE);
         }
 
         return controller;
@@ -691,8 +696,7 @@ public class SpecAttrWindowController implements Initializable {
         }
     }
 
-    public void updatePeakListTableView() {
-        boolean sceneMode = false;
+    public void updatePeakListTableView(boolean sceneMode) {
         if (peakListTableView == null) {
             System.out.println("null table");
         } else if (sceneMode) {
@@ -770,7 +774,7 @@ public class SpecAttrWindowController implements Initializable {
             chart = fxmlController.getActiveChart();
             chart.setChartDisabled(true);
             updateDatasetTableView();
-            updatePeakListTableView();
+            updatePeakListTableView(false);
             clearDimActions();
             bindToChart(chart);
             setLimits();
@@ -784,32 +788,30 @@ public class SpecAttrWindowController implements Initializable {
     }
 
     void initToolBar() {
-        String iconSize = "16px";
-        String fontSize = "7pt";
         ArrayList<Button> buttons = new ArrayList<>();
         Button bButton;
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.REFRESH, "Refresh", iconSize, fontSize, ContentDisplay.TOP);
+        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.REFRESH, "Refresh", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
         bButton.setOnAction(e -> refreshAction());
         buttons.add(bButton);
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.EXPAND, "Full", iconSize, fontSize, ContentDisplay.TOP);
+        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.EXPAND, "Full", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
         bButton.setOnAction(e -> chart.full());
         buttons.add(bButton);
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.SEARCH, "Expand", iconSize, fontSize, ContentDisplay.TOP);
+        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.SEARCH, "Expand", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
         bButton.setOnAction(e -> chart.expand());
         buttons.add(bButton);
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.SEARCH_MINUS, "In", iconSize, fontSize, ContentDisplay.TOP);
+        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.SEARCH_MINUS, "In", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
         bButton.setOnAction(e -> chart.zoom(1.2));
         buttons.add(bButton);
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.SEARCH_PLUS, "Out", iconSize, fontSize, ContentDisplay.TOP);
+        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.SEARCH_PLUS, "Out", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
         bButton.setOnAction(e -> chart.zoom(0.8));
         buttons.add(bButton);
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.ARROWS_V, "Auto", iconSize, fontSize, ContentDisplay.TOP);
+        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.ARROWS_V, "Auto", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
         bButton.setOnAction(e -> autoScale());
         buttons.add(bButton);
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.ARROW_UP, "Higher", iconSize, fontSize, ContentDisplay.TOP);
+        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.ARROW_UP, "Higher", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
         bButton.setOnAction(e -> adjustScale(0.8));
         buttons.add(bButton);
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.ARROW_DOWN, "Lower", iconSize, fontSize, ContentDisplay.TOP);
+        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.ARROW_DOWN, "Lower", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
         bButton.setOnAction(e -> adjustScale(1.2));
         buttons.add(bButton);
 
@@ -1446,6 +1448,7 @@ public class SpecAttrWindowController implements Initializable {
                 charts.forEach(PolyChart::layoutPlotChildren);
             }
         } catch (ParseException parseE) {
+            log.warn(parseE.getMessage(), parseE);
         }
     }
 
@@ -1516,6 +1519,7 @@ public class SpecAttrWindowController implements Initializable {
         integralPosSlider.highValueProperty().unbindBidirectional(polyChart.chartProps.integralHighPosProperty());
 
         titlesCheckBox.selectedProperty().unbindBidirectional(polyChart.chartProps.titlesProperty());
+        parametersCheckBox.selectedProperty().unbindBidirectional(polyChart.chartProps.parametersProperty());
 
         aspectSlider.valueProperty().unbindBidirectional(polyChart.chartProps.aspectRatioProperty());
         aspectCheckBox.selectedProperty().unbindBidirectional((polyChart.chartProps.aspectProperty()));
@@ -1580,6 +1584,7 @@ public class SpecAttrWindowController implements Initializable {
         integralPosSlider.highValueProperty().bindBidirectional(polyChart.chartProps.integralHighPosProperty());
 
         titlesCheckBox.selectedProperty().bindBidirectional(polyChart.chartProps.titlesProperty());
+        parametersCheckBox.selectedProperty().bindBidirectional(polyChart.chartProps.parametersProperty());
 
         aspectSlider.valueProperty().bindBidirectional(polyChart.chartProps.aspectRatioProperty());
         aspectCheckBox.selectedProperty().bindBidirectional((polyChart.chartProps.aspectProperty()));

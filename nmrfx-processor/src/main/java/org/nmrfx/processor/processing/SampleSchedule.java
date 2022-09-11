@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -21,15 +21,17 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.regex.Pattern;
-//import org.apache.commons.math3.random.RandomDataGenerator;
 import org.apache.commons.math3.random.Well19937c;
 import org.apache.commons.math3.util.MultidimensionalCounter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * A SampleSchedule specifies the sequence of increments or array elements used
@@ -54,6 +56,8 @@ import org.apache.commons.math3.util.MultidimensionalCounter;
  * @author bfetler
  */
 public class SampleSchedule {
+
+    private static final Logger log = LoggerFactory.getLogger(SampleSchedule.class);
 
     /**
      * Half of <i>PI</i> math constant.
@@ -255,12 +259,15 @@ public class SampleSchedule {
     }
 
     public void dumpSchedule() {
-        for (int i = 0; i < v_samples.length; i++) {
-            System.out.print(i);
-            for (int j = 0; j < v_samples[i].length; j++) {
-                System.out.print(" " + v_samples[i][j]);
+        if (log.isDebugEnabled()) {
+            StringBuilder scheduleString = new StringBuilder();
+            for (int i = 0; i < v_samples.length; i++) {
+                scheduleString.append(i);
+                for (int j = 0; j < v_samples[i].length; j++) {
+                    scheduleString.append(" ").append(v_samples[i][j]);
+                }
+                log.debug(scheduleString.toString());
             }
-            System.out.println("");
         }
     }
 
@@ -290,7 +297,7 @@ public class SampleSchedule {
      */
     public void setDims(int[] dims) {
         if (dims.length < nDim - 1) {
-            System.out.println("too few dimensions in SAMPLE_SCHEDULE dims, ignore values");
+            log.info("too few dimensions in SAMPLE_SCHEDULE dims, ignore values");
         } else {
             // ignore values if too many, just use the ones available
             for (int i = 0; i < nDim - 1; i++) {
@@ -351,13 +358,11 @@ public class SampleSchedule {
     public VecIndex convertToNUSGroup(VecIndex fullIndex, int groupNum) {
         int groupSize = fullIndex.inVecs.length;
         int[] inVecs = fullIndex.inVecs;
-        // System.out.print("next index " + sampleIndices.length + " gs " + groupSize + " gNum " + groupNum + " ");
         boolean ok = true;
         if (offsetMul == 0) {
             offsetMul = groupSize;
         }
         for (int i = 0; i < groupSize; i++) {
-            // System.out.print(i + " inv " + inVecs[i]+" ");
             int j = inVecs[i];
             int phOff = j % groupSize;
             j /= groupSize;
@@ -368,68 +373,13 @@ public class SampleSchedule {
             } else if (!demo) {
                 inVecs[i] = offsetMul * index + phOff;
             }
-            // System.out.print(inVecs[i]+" ");
         }
 
-        // System.out.println(ok);
         VecIndex nusIndex = null;
         if (ok) {
             nusIndex = fullIndex;
         }
         return nusIndex;
-    }
-
-    /**
-     * Get next group of Vecs for processing. Input and output locations depend
-     * on demo mode. If demo, tmult contains correct input and output, but
-     * location depends on sample schedule (v_samples). If not demo, two
-     * MultiVecCounters are needed: tmult for input and outMult for output.
-     *
-     * @param vecGroup location in MultiVecCounter
-     * @param tmult input MultiVecCounter
-     * @return vecIndex contains input and output arrays
-     * @see MultiVecCounter
-     * @see VecIndex
-     */
-    public VecIndex getNextGroup(final int vecGroup, MultiVecCounter tmult) {
-        int groupSize = tmult.getGroupSize();
-        int[] inVecs = new int[groupSize];
-        int k = vecGroup;
-        VecIndex vecIndex = tmult.getNextGroup(vecGroup);
-        for (int i = 0; i < groupSize; i++) {
-            // inVecs[i] = vecIndex.inVecs[i];  // store inVecs, non-demo
-            inVecs[i] = vecGroup * groupSize + i;
-        }
-        if (k < nSamples) {
-            int[] oSizes;
-            if (demo) {
-                oSizes = tmult.getOutSizes();
-            } else {
-//                oSizes = outMult.getOutSizes();
-                oSizes = tmult.getOutSizes();
-            }
-
-            int sampGroup = v_samples[k][nDim - 2];  // read from sample schedule
-            for (int i = nDim - 2; i > 0; i--) {  // works for nDim=2 or 3; nDim>3 untested
-                sampGroup = oSizes[nDim - i - 1] * sampGroup + v_samples[k][i - 1];
-            }
-//            System.out.print(vecGroup + " " + sampGroup + " ");
-//            for (int i = 0; i < v_samples[k].length; i++) {
-//                System.out.print(v_samples[k][i] + " " + oSizes[i] + " ");
-//            }
-//            System.out.println("");
-//            tmult.findOutGroup(v_samples[k]);
-            if (demo) {
-                vecIndex = tmult.getNextGroup(sampGroup);  // get outVecs for demo
-            } else {
-                vecIndex = outMult.getNextGroup(sampGroup);  // get outVecs
-                for (int i = 0; i < groupSize; i++) {
-                    // seems incorrect for nDim == 3
-                    vecIndex.inVecs[i] = inVecs[i];         // copy inVecs
-                }
-            }
-        }
-        return vecIndex;
     }
 
     public synchronized boolean reloadFile(String path, int vecSize) {
@@ -487,7 +437,6 @@ public class SampleSchedule {
         do {
             i = 0;
             n = 0;
-//            System.out.print("iter "+count+":");
             while (i < nPoints) {
                 if (n < nSamples) {
                     v_samples[n][0] = i;  // no need to assign if bigger than array
@@ -496,12 +445,10 @@ public class SampleSchedule {
                 arg = adj * Math.sin(HALF_PI * (double) (i + 0.5) / (double) (nPoints + 1.0));
                 k = poisson(arg);
 //                k = (int) rData.nextPoisson(arg);  // alternate to poisson()
-//                System.out.print(" "+k);
                 // ex: adj init = 6, sin between 0 and 1
                 i += k;
                 n++;
             }
-//            System.out.println(": n="+n+" adj="+adj);
             if (n > nSamples) {
                 adj *= 1.02;
             } // too many points
@@ -513,7 +460,7 @@ public class SampleSchedule {
 
         if (count >= MAX_TRY) {  // avoid infinite loop
             nSamples = n;
-            System.err.println("sample schedule created with " + n + " samples, max tries reached");
+            log.warn("sample schedule created with {} samples, max tries reached", n);
         }
     }
 
@@ -550,20 +497,22 @@ public class SampleSchedule {
     }
 
     /**
-     * Display SampleSchedule in <i>stdout</i>.
+     * Display SampleSchedule in log messages.
      */
     public void display() {
-        System.out.print("sample schedule:");
-        for (int j = 0; j < nSamples; j++) {
-            for (int k : v_samples[j]) {
-                System.out.print(" " + k);
+        if (log.isDebugEnabled()) {
+            StringBuilder scheduleStr = new StringBuilder("sample schedule:");
+            for (int j = 0; j < nSamples; j++) {
+                for (int k : v_samples[j]) {
+                    scheduleStr.append(" ").append(k);
+                }
+                if (j < nSamples - 1) {
+                    scheduleStr.append(",");
+                }
             }
-            if (j < nSamples - 1) {
-                System.out.print(",");
-            }
+            scheduleStr.append(System.lineSeparator()).append(nSamples).append(" points out of ").append(nPoints).append(" total");
+            log.debug(scheduleStr.toString());
         }
-        System.out.println();
-        System.out.println("  " + nSamples + " points out of " + nPoints + " total");
     }
 
     /**
@@ -572,20 +521,16 @@ public class SampleSchedule {
      * @see #fpath
      */
     private void writeFile() {
-        try {
-            BufferedWriter bw = Files.newBufferedWriter(Paths.get(fpath), Charset.forName("US-ASCII"),
-                    StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.CREATE, StandardOpenOption.WRITE);
-            System.out.println("writing new sample schedule: " + fpath);
-//            bw.write("sizes "+z_total);
-//            bw.newLine();
+        try (BufferedWriter bw = Files.newBufferedWriter(Paths.get(fpath), StandardCharsets.US_ASCII,
+                StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.CREATE, StandardOpenOption.WRITE)) {
+            log.info("writing new sample schedule: {}", fpath);
             for (int j = 0; j < nSamples; j++) {
                 bw.write(v_samples[j][0] + " ");
                 bw.newLine();
             }
             bw.flush();
-            bw.close();
         } catch (IOException e) {
-            e.printStackTrace();
+            log.warn(e.getMessage(), e);
         }
     }
 
@@ -657,9 +602,8 @@ public class SampleSchedule {
                 calcDims();
                 calcSampleHash();
                 calcSampleIndices();
-                System.out.println("sample schedule read " + nSamples + " points from " + fpath);
+                log.info("sample schedule read {} points from {}", nSamples, fpath);
             }
-            br.close();
         } catch (IOException e) {
             throw new ProcessingException("error reading " + fpath);
         }

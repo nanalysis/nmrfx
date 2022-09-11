@@ -38,6 +38,8 @@ import org.nmrfx.processor.operations.Util;
 import org.nmrfx.processor.processing.LineShapeCatalog;
 import org.nmrfx.processor.processing.ProcessingException;
 import org.nmrfx.project.ProjectBase;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -57,25 +59,14 @@ import java.util.stream.Collectors;
  */
 public class Dataset extends DatasetBase implements Comparable<Dataset> {
 
+    private static final Logger log = LoggerFactory.getLogger(Dataset.class);
     static boolean useCacheFile = false;
 
     private boolean dirty = false;  // flag set if a vector has been written to dataset, should purge bufferVectors
     LineShapeCatalog simVecs = null;
     Map<String, double[]> buffers = new HashMap<>();
     Dataset[] projections = null;
-
-    public int length() {
-        int length = 1;
-        for (int i = 0; i < nDim; i++) {
-            length *= layout.getSize(i);
-        }
-        return length;
-    }
-
-    @Override
-    public int compareTo(Dataset o) {
-        return getName().compareTo(o.getName());
-    }
+    private Object analyzerObject = null;
 
     /**
      * Create a new Dataset object that refers to an existing random access file
@@ -107,7 +98,8 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
 
         scale = 1.0;
         lvl = 0.1;
-        posneg = 1;
+        posDrawOn = true;
+        negDrawOn = true;
         DatasetHeaderIO headerIO = new DatasetHeaderIO(this);
         if (fullName.contains(".ucsf")) {
             layout = headerIO.readHeaderUCSF(raFile);
@@ -119,7 +111,18 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         if (layout != null) {
             createDataFile(raFile, writable);
         }
-        System.out.println("new dataset " + fileName);
+        // Datasets that were not generated in NMRFx don't
+        // have freqDomain  attribute set so set freq domain
+        // here
+        boolean isFID =  (getNFreqDims() == 0) && ((!getFreqDomain(0) && (getComplex(0))));
+        if (!isFID && !getFreqDomain(0)) {
+            int nFreq = getNFreqDims() == 0 ? nDim : getNFreqDims();
+            for (int i = 0; i < nFreq; i++) {
+                setFreqDomain(i, true);
+            }
+        }
+
+        log.info("new dataset {}", fileName);
         setStrides();
         addFile(fileName);
         loadLSCatalog();
@@ -150,19 +153,20 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         boolean writable = false;
         RandomAccessFile raFile;
         this.layout = datasetLayout;
-        raFile = new RandomAccessFile(file, "r");
 
         title = fileName;
 
         scale = 1.0;
         lvl = 0.1;
-        posneg = 1;
+        posDrawOn = true;
+        negDrawOn = true;
         setDataType(dataType);
         setByteOrder(byteOrder);
         DatasetParameterFile parFile = new DatasetParameterFile(this, layout);
         parFile.readFile();
 
         if (layout != null) {
+            raFile = new RandomAccessFile(file, "r");
             setNDim(layout.nDim);
             createDataFile(raFile, writable);
         }
@@ -201,7 +205,8 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         foldDown[0] = 0.0;
         scale = 1.0;
         lvl = 0.1;
-        posneg = 1;
+        posDrawOn = true;
+        negDrawOn = true;
         sf[0] = vector.centerFreq;
         sw[0] = 1.0 / vector.dwellTime;
         sw_r[0] = sw[0];
@@ -220,15 +225,12 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         refUnits[0] = 3;
         rmsd = new double[1][1];
         values = new double[1][];
-        //System.err.println("Opened file " + fileName + " with " + this.nDim + " dimensions");
         addFile(fileName);
     }
 
     private Dataset(String fullName, String title,
             int[] dimSizes, boolean closeDataset) throws DatasetException {
-        //LOGGER.info("Make dataset {}", fullName);
         try {
-            RandomAccessFile raFile = new RandomAccessFile(fullName, "rw");
             file = new File(fullName);
 
             canonicalName = file.getCanonicalPath();
@@ -267,6 +269,8 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
             }
             if (layout != null) {
                 layout.setFileHeaderSize(fileHeaderSize);
+                // Cannot close this here as it is used in places outside this try
+                RandomAccessFile raFile = new RandomAccessFile(fullName, "rw");
                 createDataFile(raFile, true);
                 if (useCacheFile) {
                     raFile.setLength(layout.getTotalSize());
@@ -283,21 +287,21 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
             DatasetParameterFile parFile = new DatasetParameterFile(this, layout);
             parFile.remove();
         } catch (IOException ioe) {
-            //LOGGER.error(ioe.getMessage());
             throw new DatasetException("Can't create dataset " + ioe.getMessage());
         }
     }
 
     // create in memory file
     /**
-     * Create a dataset in memory for fast access. This is an experimental mode,
-     * and the dataset is not currently written to disk so can't be persisted.
+     * Create a dataset in memory for fast access. The dataset is not
+     * written to disk so can't be persisted.
      *
      * @param title Dataset title
      * @param dimSizes Sizes of the dataset dimensions
+     * @param addFile Whether to add the dataset to the active projects
      * @throws DatasetException if an I/O error occurs
      */
-    public Dataset(String title, int[] dimSizes) throws DatasetException {
+    public Dataset(String title, int[] dimSizes, boolean addFile) throws DatasetException {
         try {
             this.nDim = dimSizes.length;
 
@@ -317,6 +321,22 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         } catch (IOException ioe) {
             throw new DatasetException("Can't create dataset " + ioe.getMessage());
         }
+        if (addFile) {
+            addFile(title);
+        }
+    }
+
+    public int length() {
+        int length = 1;
+        for (int i = 0; i < nDim; i++) {
+            length *= layout.getSize(i);
+        }
+        return length;
+    }
+
+    @Override
+    public int compareTo(Dataset o) {
+        return getName().compareTo(o.getName());
     }
 
     private void createDataFile(RandomAccessFile raFile, boolean writable) throws IOException {
@@ -361,11 +381,11 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
 
     public static Dataset newLinkDataset(String name, String fullName) throws IOException {
         File linkFile = new File(fullName);
-        System.out.println(fullName);
+        log.info(fullName);
         String fileString = Files.readString(linkFile.toPath());
-        System.out.println(fileString);
+        log.info(fileString);
         NMRData nmrData = NMRDataUtil.getNMRData(fileString);
-        System.out.println(nmrData);
+        log.info("{}", nmrData);
         BrukerData brukerData = (BrukerData) nmrData;
         return brukerData.toDataset(name);
     }
@@ -638,7 +658,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         return rData;
     }
 
-public double[] getPercentile(double p, int[][] pt, int[] dim) throws IOException {
+    public double[] getPercentile(double p, int[][] pt, int[] dim) throws IOException {
         PSquarePercentile pSquarePos = new PSquarePercentile(p);
         PSquarePercentile pSquareNeg = new PSquarePercentile(p);
 
@@ -952,9 +972,7 @@ public double[] getPercentile(double p, int[][] pt, int[] dim) throws IOExceptio
             } else {
                 sizes[iDim] = layout.getSize(iDim) - p2[iDim][0] - p2[iDim][1] + 1;
             }
-//            System.out.println("size " + iDim + " " + p2[iDim][0] + " " + p2[iDim][1] + " " + sizes[iDim]);
         }
-//        System.out.println("np " + nPoints);
         ArrayList<int[]> posArray = new ArrayList<>();
         DimCounter counter = new DimCounter(sizes);
         for (int[] counts : counter) {
@@ -975,7 +993,7 @@ public double[] getPercentile(double p, int[][] pt, int[] dim) throws IOExceptio
                 double delta2 = 0.0;
                 for (int value : aCounts) {
                     if ((iDim >= sizes.length) || (iPeak > width.length)) {
-                        System.out.println(iPeak + " " + sizes.length + " " + width.length);
+                        log.info("{} {} {}", iPeak, sizes.length, width.length);
                         posArray.clear();
                         return posArray;
                     }
@@ -1227,7 +1245,6 @@ public double[] getPercentile(double p, int[][] pt, int[] dim) throws IOExceptio
             setPh1(dim[i], matrix.getPh1(i));
             setPh0_r(dim[i], matrix.getPh0(i));
             setPh1_r(dim[i], matrix.getPh1(i));
-//            System.out.println("write ph " +i + " " + dim[i] + " " +  matrix.getPh0(i) + " " + matrix.getPh1(i));
         }
 
         MultidimensionalCounter counter = new MultidimensionalCounter(mPoint);
@@ -1441,7 +1458,6 @@ public double[] getPercentile(double p, int[][] pt, int[] dim) throws IOExceptio
                 }
             }
         }
-        //System.out.println("done reading vector from dataset file");
     }
 
     /**
@@ -1908,7 +1924,6 @@ public double[] getPercentile(double p, int[][] pt, int[] dim) throws IOExceptio
             point[dim[i]] = pt[i][0];
         }
         for (int i = 0; i < nDim; i++) {
-//            System.out.printf("wv i %4d dim %4d pt0 %4d pt1 %4d size %4d vsize %4d fsize %4d\n",i,dim[i],pt[i][0],pt[i][1],size[dim[i]],vsize[dim[i]],fileDimSizes[dim[i]]);
             if (pt[i][0] == pt[i][1]) {
                 if ((pt[i][0] + 1) > getFileDimSize(dim[i])) {
                     throw new ProcessingException("dataset size for DIM(" + (dim[i] + 1) + ") = "
@@ -1950,7 +1965,6 @@ public double[] getPercentile(double p, int[][] pt, int[] dim) throws IOExceptio
         setZFSize(dim[0], vector.getZFSize());
         setTDSize(dim[0], vector.getTDSize());
 
-//        System.err.printf("write %d %d %4d %4d %4d %4d %7.3f %7.3f %7.3f %7.3f %7.3f cmplx %b fd %b\n", dim[0],dim[1],pt[0][0],pt[0][1],pt[1][0],pt[1][1],(1.0/rwVector.dwellTime),(rwVector.refValue-delRef),rwVector.refValue,delRef,refPt_r[dim[0]],rwVector.isComplex(),rwVector.getFreqDomain());
     }
 
     /**
@@ -2016,50 +2030,55 @@ public double[] getPercentile(double p, int[][] pt, int[] dim) throws IOExceptio
             datasetSizes[i] = getSizeTotal(i);
         }
         int newSize = pt[0][1] - pt[0][0] + 1;
+        Dataset newDataset = null;
+        try {
+            newDataset = Dataset.createDataset(newFileName, newFileName, datasetSizes, false);
 
-        Dataset newDataset = Dataset.createDataset(newFileName, newFileName, datasetSizes, false);
-
-        Vec scanVec = new Vec(newSize, false);
-        ScanRegion scanRegion = new ScanRegion(pt, dim, this);
-        int nEntries = scanRegion.buildIndex();
-        int origSize = pt[0][1];
-        for (int iEntry = 0; iEntry < nEntries; iEntry++) {
-            int[] iE = scanRegion.getIndexEntry(iEntry);
-            pt[0][1] = origSize;
-            for (int jDim = 1; jDim < nDim; jDim++) {
-                pt[jDim][0] = iE[jDim];
-                pt[jDim][1] = iE[jDim];
+            Vec scanVec = new Vec(newSize, false);
+            ScanRegion scanRegion = new ScanRegion(pt, dim, this);
+            int nEntries = scanRegion.buildIndex();
+            int origSize = pt[0][1];
+            for (int iEntry = 0; iEntry < nEntries; iEntry++) {
+                int[] iE = scanRegion.getIndexEntry(iEntry);
+                pt[0][1] = origSize;
+                for (int jDim = 1; jDim < nDim; jDim++) {
+                    pt[jDim][0] = iE[jDim];
+                    pt[jDim][1] = iE[jDim];
+                }
+                readVectorFromDatasetFile(pt, dim, scanVec);
+                newDataset.writeVector(scanVec);
             }
-            readVectorFromDatasetFile(pt, dim, scanVec);
-            newDataset.writeVector(scanVec);
-        }
-        for (int i = 0; i < nDim; i++) {
-            newDataset.setSf(i, getSf(i));
-            newDataset.setSw(i, getSw(i));
-            newDataset.setSw_r(i, getSw_r(i));
-            newDataset.setRefValue_r(i, getRefValue_r(i));
-            newDataset.setRefValue(i, getRefValue(i));
-            newDataset.setRefPt_r(i, getRefPt_r(i));
-            newDataset.setRefPt(i, getRefPt(i));
-            newDataset.setRefUnits(i, getRefUnits(i));
-            newDataset.setLabel(i, getLabel(i));
-            newDataset.setDlabel(i, getDlabel(i));
-            newDataset.setNucleus(i, getNucleus(i));
-            newDataset.setValues(i, getValues(i));
-            newDataset.setComplex(i, getComplex(i));
-            newDataset.setFreqDomain(i, getFreqDomain(i));
-            newDataset.setPh0(i, getPh0(i));
-            newDataset.setPh1(i, getPh1(i));
-            newDataset.setPh0_r(i, getPh0_r(i));
-            newDataset.setPh1_r(i, getPh1_r(i));
-        }
-        newDataset.setNFreqDims(getNFreqDims());
-        newDataset.setSolvent(getSolvent());
-        newDataset.setTitle(getTitle());
+            for (int i = 0; i < nDim; i++) {
+                newDataset.setSf(i, getSf(i));
+                newDataset.setSw(i, getSw(i));
+                newDataset.setSw_r(i, getSw_r(i));
+                newDataset.setRefValue_r(i, getRefValue_r(i));
+                newDataset.setRefValue(i, getRefValue(i));
+                newDataset.setRefPt_r(i, getRefPt_r(i));
+                newDataset.setRefPt(i, getRefPt(i));
+                newDataset.setRefUnits(i, getRefUnits(i));
+                newDataset.setLabel(i, getLabel(i));
+                newDataset.setDlabel(i, getDlabel(i));
+                newDataset.setNucleus(i, getNucleus(i));
+                newDataset.setValues(i, getValues(i));
+                newDataset.setComplex(i, getComplex(i));
+                newDataset.setFreqDomain(i, getFreqDomain(i));
+                newDataset.setPh0(i, getPh0(i));
+                newDataset.setPh1(i, getPh1(i));
+                newDataset.setPh0_r(i, getPh0_r(i));
+                newDataset.setPh1_r(i, getPh1_r(i));
+            }
+            newDataset.setNFreqDims(getNFreqDims());
+            newDataset.setSolvent(getSolvent());
+            newDataset.setTitle(getTitle());
 
-        newDataset.writeHeader(false);
-        newDataset.writeParFile();
-        newDataset.close();
+            newDataset.writeHeader(false);
+            newDataset.writeParFile();
+        } finally {
+            if (newDataset != null) {
+                newDataset.close();
+            }
+        }
     }
 
     /**
@@ -2264,7 +2283,7 @@ public double[] getPercentile(double p, int[][] pt, int[] dim) throws IOExceptio
         File shapeFile = new File(shapeFileName);
         if (shapeFile.exists() && shapeFile.canRead()) {
             simVecs = LineShapeCatalog.loadSimFids(shapeFileName, nDim);
-            System.out.println("simVecs " + simVecs);
+            log.info("simVecs {}", simVecs);
         }
     }
 
@@ -2419,5 +2438,13 @@ public double[] getPercentile(double p, int[][] pt, int[] dim) throws IOExceptio
         Dataset projDataset = new Dataset(projVec);
         projDataset.setLabel(0, getLabel(iDim));
         projections[iDim] = projDataset;
+    }
+
+    public Object getAnalyzerObject() {
+        return analyzerObject;
+    }
+
+    public void setAnalyzerObject(Object analyzerObject) {
+        this.analyzerObject = analyzerObject;
     }
 }

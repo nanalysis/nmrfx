@@ -94,7 +94,6 @@ public class PropertyManager {
             public void changed(ObservableValue<? extends Number> observableValue, Number number, Number number2) {
                 PropertySheet.Item item = (PropertySheet.Item) observableValue;
                 if (item.getCategory().equals("PHASE")) {
-                    // System.out.println(item.getName());
                     if (item.getName().equals("ph0") || item.getName().equals("ph1")) {
                         //updatePhases(item, number, number2);
                     }
@@ -107,7 +106,6 @@ public class PropertyManager {
             public void changed(ObservableValue<? extends Number> observableValue, Number number, Number number2) {
                 PropertySheet.Item item = (PropertySheet.Item) observableValue;
                 if (item.getCategory().equals("PHASE")) {
-                    // System.out.println(item.getName());
                     if (item.getName().equals("ph0") || item.getName().equals("ph1")) {
                         updatePhases(item, number, number2);
                     }
@@ -339,37 +337,6 @@ public class PropertyManager {
 
     }
 
-    void addRegionRangeOld(double min, double max, double f1, double f2) {
-        System.out.println("add region range " + f1 + " " + f2);
-        List<PropertySheet.Item> items = propertySheet.getItems();
-        for (PropertySheet.Item item : items) {
-            if ((item != null) && item.getCategory().equals("REGIONS") && item.getName().equals("regions")) {
-                System.out.println("really add region range " + f1 + " " + f2);
-                ListOperationItem listOpItem = (ListOperationItem) item;
-                ArrayList newValue = new ArrayList(listOpItem.getValueList());
-                f1 = Math.round(f1 * 1.0e5) / 1.0e5;
-                f2 = Math.round(f2 * 1.0e5) / 1.0e5;
-                newValue.add(new Double(f1));
-                newValue.add(new Double(f2));
-                ((OperationItem) item).setValue(newValue);
-                //setPropSheet("REGIONS");
-                break;
-            } else if ((item != null) && item.getCategory().equals("EXTRACT") && item.getName().equals("start")) {
-                //int imin = (((int) min) / 32) * 32;
-                int imin = (int) (min + 0.5);
-                //System.out.println("really add start" + imin);
-                ((OperationItem) item).setValue(imin);
-            } else if ((item != null) && item.getCategory().equals("EXTRACT") && item.getName().equals("end")) {
-                //int imax = ((((int) max) / 32) + 1) * 32;
-                int imax = (int) (max + 0.5);
-                //System.out.println("really add end" + imax);
-                ((OperationItem) item).setValue(imax);
-            } else if ((item != null) && item.getCategory().equals("EXTRACT") && item.getName().equals("mode")) {
-                ((OperationItem) item).setValue("region");
-            }
-        }
-    }
-
     void addExtractRegion(double min, double max, double f1, double f2) {
         int imin = (int) (min + 0.5);
         int imax = (int) (max + 0.5);
@@ -437,7 +404,6 @@ public class PropertyManager {
             opPars = op.substring(op.indexOf('(') + 1, op.length() - 1);
             pattern = Pattern.compile(patternString);
         }
-        //System.out.println("set prop sheet " + scriptIndex + " " + op);
         ObservableList<PropertySheet.Item> newItems = FXCollections.observableArrayList();
         for (PropertySheet.Item item : propItems) {
             if (item == null) {
@@ -748,23 +714,11 @@ public class PropertyManager {
 
                             break;
                         case "list":
-                            ArrayList listTypes = (ArrayList) parMap.get("listTypes");
                             ListOperationItem lstItem;
                             ArrayList defaultList = (ArrayList) parMap.get("default");
-                            //ListOperationItemTypeSelector typeSelector = new ListOperationItemTypeSelector(stringListener, (String) listTypes.get(0), listTypes, op, "listType", parDesc);
                             ListOperationItemTypeSelector typeSelector = null;
-
-                            if (listTypes == null || listTypes.isEmpty()) { // just a default list, so treat them as real values.
-                                lstItem = new ListOperationItem(listListener, defaultList, listTypes, op, name, parDesc, typeSelector);
-                            } else {
-                                lstItem = new ListOperationItem(listListener, defaultList, listTypes, op, name, parDesc, typeSelector);
-                            }
-
+                            lstItem = new ListOperationItem(listListener, defaultList, op, name, parDesc, typeSelector);
                             propItems.add(lstItem);
-                            //propItems.add(typeSelector);
-                            //propItems.add(listItemTypeSelector(listType));
-
-//                            ListOperationItem lstItem = new ListOperationItem(listListener, defaultList, listType, op, name, parDesc)
                             break;
                         default:
                             break;
@@ -785,13 +739,11 @@ public class PropertyManager {
 
                     }
                 }
-                // propItems.add(new DoubleRangeOperationItem(doubleListener, 1.0, 0.5, 1.0, "SB", "c", "First point multiplier"));
 
             }
             propItems.add(new BooleanOperationItem(boolListener, false, op, "disabled", "Disable this operation"));
         }
 
-        //propItems.add(new DoubleRangeOperationItem(doubleListener, 1.0, 0.5, 1.0, "SB", "c", "First point multiplier"));
     }
 
 }

@@ -66,12 +66,15 @@ import org.nmrfx.processor.tools.LigandScannerInfo;
 import org.nmrfx.processor.tools.MatrixAnalyzer;
 import org.nmrfx.structure.tools.MCSAnalysis;
 import org.nmrfx.structure.tools.MCSAnalysis.Hit;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
  * @author Bruce Johnson
  */
 public class LigandScannerController implements Initializable {
+    private static final Logger log = LoggerFactory.getLogger(LigandScannerController.class);
 
     private Stage stage;
 
@@ -216,6 +219,7 @@ public class LigandScannerController implements Initializable {
             try {
                 matrixAnalyzer.readScannerFile(file.toString());
             } catch (IOException ex) {
+                log.warn(ex.getMessage(), ex);
             }
             ligandTableView.getItems().setAll(matrixAnalyzer.getScannerRows());
             refresh();

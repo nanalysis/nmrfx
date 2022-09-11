@@ -6,7 +6,7 @@
     <parent>
         <groupId>org.nmrfx</groupId>
         <artifactId>nmrfx</artifactId>
-        <version>11.2.4</version>
+        <version>11.3.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -19,7 +19,7 @@
             <dependency>
                 <groupId>org.nmrfx</groupId>
                 <artifactId>nmrfx-bom</artifactId>
-                <version>11.2.4</version>
+                <version>11.3.0-SNAPSHOT</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -30,7 +30,7 @@
         <dependency>
             <groupId>org.nmrfx</groupId>
             <artifactId>nmrfx-core</artifactId>
-            <version>11.2.4</version>
+            <version>11.3.0-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>javax.vecmath</groupId>
@@ -177,24 +177,6 @@
                                 <argument>target/Manifest.txt</argument>
                             </arguments>
                         </configuration>
-                    </execution>
-                    <execution>
-                        <configuration>
-                            <workingDirectory>src/test/python/</workingDirectory>
-                            <executable>java</executable>
-                            <classpathScope>test</classpathScope>
-                            <arguments>
-                                <argument>-classpath</argument>
-                                <classpath/>
-                                <argument>org.python.util.jython</argument>
-                                <argument>runtests.py</argument>
-                            </arguments>
-                        </configuration>
-                        <id>python-test</id>
-                        <phase>test</phase>
-                        <goals>
-                            <goal>exec</goal>
-                        </goals>
                     </execution>
                 </executions>
             </plugin>

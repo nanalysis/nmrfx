@@ -75,10 +75,10 @@ public class SubMatrixFile implements DatasetStorageInterface, Closeable {
         fc = raFile.getChannel();
         int blockHeaderSize = layout.getBlockHeaderSize() / BYTES;
         long matSize = BYTES;
-        System.err.println(dataset.getFileName());
-        System.err.println("header size " + layout.getFileHeaderSize());
+        log.info(dataset.getFileName());
+        log.info("header size {}", layout.getFileHeaderSize());
         for (int i = 0; i < dataset.getNDim(); i++) {
-            System.err.println("sub cache " + i + " " + layout.blockSize[i] + " " + layout.nBlocks[i] + " " + dataset.getSizeTotal(i));
+            log.info("sub cache {} {} {} {}", i, layout.blockSize[i], layout.nBlocks[i], dataset.getSizeTotal(i));
             matSize *= (layout.blockSize[i] + blockHeaderSize) * layout.nBlocks[i];
         }
         totalSize = matSize / BYTES;
@@ -130,10 +130,8 @@ public class SubMatrixFile implements DatasetStorageInterface, Closeable {
         for (int iDim = 0; iDim < offsets.length; iDim++) {
             blockNum += ((offsets[iDim] / layout.blockSize[iDim]) * layout.offsetBlocks[iDim]);
             offsetInBlock += ((offsets[iDim] % layout.blockSize[iDim]) * layout.offsetPoints[iDim]);
-//                System.out.println(iDim + " " + offsets[iDim] + " " + blockNum + " " + offsetInBlock + " " + layout.offsetPoints[iDim] + " " + layout.offsetBlocks[iDim]);
         }
         long position = blockNum * (layout.blockPoints * BYTES + layout.blockHeaderSize) + offsetInBlock * BYTES + layout.fileHeaderSize;
-//            System.out.println(position + " " + layout.blockPoints);
         return position;
     }
 
@@ -144,10 +142,8 @@ public class SubMatrixFile implements DatasetStorageInterface, Closeable {
         for (int iDim = 0; iDim < offsets.length; iDim++) {
             blockNum += ((offsets[iDim] / layout.blockSize[iDim]) * layout.offsetBlocks[iDim]);
             offsetInBlock += ((offsets[iDim] % layout.blockSize[iDim]) * layout.offsetPoints[iDim]);
-//                System.out.println(iDim + " " + offsets[iDim] + " " + blockNum + " " + offsetInBlock + " " + layout.offsetPoints[iDim] + " " + layout.offsetBlocks[iDim]);
         }
         long position = blockNum * layout.blockPoints + offsetInBlock;
-//            System.out.println(position + " " + layout.blockPoints);
         return position;
     }
 
@@ -178,20 +174,18 @@ public class SubMatrixFile implements DatasetStorageInterface, Closeable {
     }
 
     synchronized ByteBuffer readBlock(long iBlock) throws IOException {
-//        System.out.println("read block " + iBlock);
         long blockPos = iBlock * (layout.blockPoints * BYTES + layout.blockHeaderSize) + layout.fileHeaderSize;
         ByteBuffer buffer = ByteBuffer.allocate((int) (layout.blockPoints * BYTES));
         buffer.order(dataset.getByteOrder());
 
         int nc = fc.read(buffer, blockPos);
         if (nc != layout.blockPoints * BYTES) {
-            System.out.println("read failed " + nc);
+            log.warn("read failed {}", nc);
         }
         return buffer;
     }
 
     synchronized void writeBlock(int iBlock, ByteBuffer buffer) throws IOException {
-//        System.out.println("write block " + iBlock);
         long blockPos = iBlock * (layout.blockPoints * BYTES + layout.blockHeaderSize) + layout.fileHeaderSize;
         buffer.position(0);
         int nw = fc.write(buffer, blockPos);

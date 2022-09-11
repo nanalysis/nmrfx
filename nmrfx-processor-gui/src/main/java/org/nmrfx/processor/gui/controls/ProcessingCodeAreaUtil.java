@@ -35,8 +35,12 @@ import org.fxmisc.richtext.LineNumberFactory;
 import org.fxmisc.richtext.model.StyleSpans;
 import org.fxmisc.richtext.model.StyleSpansBuilder;
 import org.reactfx.EventStream;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ProcessingCodeAreaUtil {
+
+    private static final Logger log = LoggerFactory.getLogger(ProcessingCodeAreaUtil.class);
 
     private static final String[] OPS = OperationInfo.opOrders;
     private static final String[] PROPS = RefManager.propNames;
@@ -90,7 +94,7 @@ public class ProcessingCodeAreaUtil {
                     if (t.isSuccess()) {
                         return Optional.of(t.get());
                     } else {
-                        t.getFailure().printStackTrace();
+                        log.warn(t.getFailure().getMessage(), t.getFailure());
                         return Optional.empty();
                     }
                 })

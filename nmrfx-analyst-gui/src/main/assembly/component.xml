@@ -53,6 +53,21 @@
         <dependencySet>
             <outputDirectory>lib</outputDirectory>
             <excludes>
+                <!--
+                Exclude native libraries for unsupported platforms.
+                The only platforms we want to keep are: linux-x86_64, macosx_arm64, macosx_x86_64, windows-x86_64.
+                -->
+                <exclude>*:android-arm</exclude>
+                <exclude>*:android-arm64</exclude>
+                <exclude>*:android-x86</exclude>
+                <exclude>*:android-x86_64</exclude>
+                <exclude>*:ios-arm64</exclude>
+                <exclude>*:ios-x86_64</exclude>
+                <exclude>*:linux-arm64</exclude>
+                <exclude>*:linux-armhf</exclude>
+                <exclude>*:linux-ppc64le</exclude>
+                <exclude>*:linux-x86</exclude>
+                <exclude>*:windows-x86</exclude>
             </excludes>
             <unpack>false</unpack>
         </dependencySet>

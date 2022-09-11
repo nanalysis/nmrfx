@@ -12,7 +12,6 @@
 .toolButton {
     -fx-content-display:top;
     -fx-font-weight: normal;
-    -fx-font-size:7pt;
     -fx-fill:#8A0808;
 }
 .toolButton > .glyph-icon  {
@@ -20,7 +19,6 @@
 }
 .menuButton {
     -fx-font-weight: normal;
-    -fx-font-size:7pt;
 }
 #expandButton {
     -fx-graphic:url('/images/viewmag.png');

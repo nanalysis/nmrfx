@@ -250,7 +250,7 @@ public class Axis {
         return gridLength;
     }
 
-    public double[] autoRange(double min, double max) {
+    public double[] autoRange(double min, double max, boolean tightMode) {
         double length = VERTICAL == getOrientation() ? getHeight() : getWidth();
         boolean keepMin = false;
         if (isZeroIncluded()) {
@@ -262,7 +262,6 @@ public class Axis {
                 max = 0.0;
             }
         }
-        boolean tightMode = true;
         TickInfo tf = getTickInfo(min, max, length);
         if (!tf.centerMode) {
             double adjust = tightMode ? tf.minorSpace : tf.majorSpace;

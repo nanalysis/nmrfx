@@ -7,9 +7,12 @@ import java.text.DecimalFormat;
 
 import org.nmrfx.chemistry.*;
 import org.nmrfx.structure.chemistry.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class PropertyGenerator {
 
+    private static final Logger log = LoggerFactory.getLogger(PropertyGenerator.class);
     private static HashMap<String, HashMap<String, Double>> properties = null;
     private static HashMap<String, double[]> residueFactors = null;
     private static HashMap<String, Double> offsetTable;
@@ -61,7 +64,6 @@ public class PropertyGenerator {
         MolFilter acceptorFilter = new MolFilter("*.O,O*");
         ArrayList<HydrogenBond> hBonds = molecule.hydrogenBonds(structures, hydrogenFilter, acceptorFilter);
         double shift = 0.0;
-        //System.out.println(hydrogenAtom + " " + hBonds.size());
         HydrogenBond hBest = null;
         for (HydrogenBond hBond : hBonds) {
             double testShift = hBond.getShift(structureNum);
@@ -127,7 +129,6 @@ public class PropertyGenerator {
 
     public double calcEInteractionShift(Map<String, Double> eShiftMap, String hydrogenAtom, int structureNum) {
         Atom atom = molecule.findAtom(hydrogenAtom);
-        //System.out.println(hydrogenAtom + " " + atom + " " + eShiftMap);
         double shift = 0.0;
         if ((atom != null) && (eShiftMap != null)) {
             Double shiftDouble = eShiftMap.get(atom.getFullName());
@@ -442,12 +443,10 @@ public class PropertyGenerator {
     }
 
     public void init(Molecule molecule, int iStructure) throws InvalidMoleculeException, IOException {
-        //NvShell nvShell = new NvShell(interp);
         if (properties == null) {
             properties = loadPropertyFile();
         }
         HashMap<String, TreeMap<Integer, LinkedHashMap<String, String>>> data = new HashMap<String, TreeMap<Integer, LinkedHashMap<String, String>>>();
-        // offsetTable = loadCorrTable("corrtable.txt");
         this.molecule = molecule;
         contactMap = molecule.calcContactSum(iStructure, true);
         hBondMap = new HashMap<>();
@@ -466,7 +465,6 @@ public class PropertyGenerator {
             eShiftMap.putAll(eShiftMapForAtom);
         }
     }
-//Molecule molecule = Molecule.get(Molecule.defaultMol);
 
     public void clearMap() {
         valueMap.clear();
@@ -552,7 +550,7 @@ public class PropertyGenerator {
                 valueMap.put("C1", 1.0);
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            log.warn(e.getMessage(), e);
             return false;
         }
         return true;
@@ -567,7 +565,7 @@ public class PropertyGenerator {
             valueMap.put("ARO" + suffix, getProperty("AROMATIC", residue));
             valueMap.put("DIS" + suffix, getProperty("DISULFIDE", residue));
         } catch (Exception e) {
-            e.printStackTrace();
+            log.warn(e.getMessage(), e);
             return false;
         }
         return true;
@@ -671,7 +669,7 @@ public class PropertyGenerator {
             }
             valueMap.put("methyl", methyl);
         } catch (Exception e) {
-            e.printStackTrace();
+            log.warn(e.getMessage(), e);
             return false;
         }
         return true;
@@ -720,8 +718,7 @@ public class PropertyGenerator {
     }
 
     public static void writeData(String name, HashMap<String, TreeMap<Integer, LinkedHashMap<String, String>>> data) {
-        try {
-            BufferedWriter b = new BufferedWriter(new FileWriter(name));
+        try (BufferedWriter b = new BufferedWriter(new FileWriter(name))) {
             b.write("@relation " + new Date().toString().replace(" ", "_"));
             b.newLine();
             /*
@@ -765,16 +762,13 @@ public class PropertyGenerator {
                     String v = map.values().toString();
                     v = v.substring(1, v.length() - 1); // trim brackets
                     b.write(v);
-//    			System.out.printf("%s ", v);
                     b.write(",");
                     b.write(cs);
-//    			System.out.printf(",%s\n", Double.toString(cs));
                     b.newLine();
                 }
             }
-            b.close();
         } catch (Exception e) {
-            e.printStackTrace();
+            log.warn(e.getMessage(), e);
         }
     }
 
@@ -798,7 +792,6 @@ public class PropertyGenerator {
     public double getCorrectedRandomShift(String polyName, int firstRes, int iRes, int lastRes, String aName) {
         String resName = molecule.findAtom(polyName + ":" + Integer.toString(iRes) + ".N").getEntity().name;
         double corr = getRandomShift(aName, resName);
-        //System.out.print(resName + " " + aName + " " + corr + " ");
         int[] offsets = {-2, -1, 1, 2};
         for (int offset : offsets) {
             int kRes = iRes + offset;
@@ -808,12 +801,11 @@ public class PropertyGenerator {
                     resName = molecule.findAtom(polyName + ":" + Integer.toString(kRes) + ".N").getEntity().name;
                     offsetValue = getOffset(aName, resName, -offset);
                 } catch (Exception e) {
+                    log.warn(e.getMessage(), e);
                 }
-                //System.out.print(resName + " " + offsetValue + " ");
                 corr += offsetValue;
             }
         }
-        //System.out.println(corr);
         return corr;
     }
 
@@ -875,32 +867,6 @@ public class PropertyGenerator {
         return map;
     }
 
-    private static HashMap<String, Double> loadCorrTable(String fn) throws FileNotFoundException, IOException {
-        HashMap<String, Double> offsetTable = new HashMap<String, Double>();
-        BufferedReader b = new BufferedReader(new FileReader(fn));
-        String line = b.readLine();
-        String[] fields = line.split("\t");
-        // the first column is assumed to be the amino acid single letter so we ignore its header
-        while ((line = b.readLine()) != null) {
-            String[] values = line.split("\t");
-            String aaName = values[1];
-            for (int i = 2; i < values.length; ++i) {
-                String key = fields[i];
-                int barPos = key.indexOf("_");
-                if (values[i].trim().length() != 0) {
-                    if (barPos == -1) {
-                        offsetTable.put(aaName + "_" + key, Double.parseDouble(values[i].trim()));
-                    } else {
-                        String offsetChar = key.substring(barPos + 1);
-                        String atomName = key.substring(0, barPos);
-                        offsetTable.put(aaName + "_" + atomName + "_" + offsetChar, Double.parseDouble(values[i].trim()));
-                    }
-                }
-            }
-        }
-        return offsetTable;
-    }
-
     public double getProperty(String property, Residue residue) throws IllegalStateException {
         if (properties == null) {
             throw new IllegalStateException("Attempting to use getProperty without a property table.");
@@ -920,7 +886,6 @@ public class PropertyGenerator {
                         value = 1.0;
                     }
                     double cs = getPPM(residue.getAtom("CB"));
-                    //System.out.println("DISULFIDE " + sgAtom.getFullName() + " " + value + " " + cs);
                     if (!Double.isNaN(cs) && (cs > -90.0)) {
                         if (cs > 38.0) {
                             value = 1.0;
@@ -953,9 +918,9 @@ public class PropertyGenerator {
         if (verbose) {
             System.out.printf("Reading attributes from %s.\n", attributeFile);
         }
-        try {
+        try (BufferedReader b = new BufferedReader(new FileReader(attributeFile))) {
             ArrayList<String> attributes = new ArrayList<String>();
-            BufferedReader b = new BufferedReader(new FileReader(attributeFile));
+
             String line = b.readLine();
             while (line != null) {
                 String[] fields = line.split(" ");
@@ -968,7 +933,7 @@ public class PropertyGenerator {
             System.out.println("Attribute file not found.");
             System.exit(-1);
         } catch (Exception e) {
-            e.printStackTrace();
+            log.warn(e.getMessage(), e);
         }
         return null;
     }

@@ -148,7 +148,6 @@ public class BroadSearch {
             scoreVal = 0;
 
             for (int i = 0; (cTestCode[i] >= 0) && (i < m); i++) {
-                //System.out.println(iStart+" "+search[i]+" "+cTestCode[i]);
                 if (cTestCode[i] == search[i]) {
                     scoreVal++;
                 } else {
@@ -164,7 +163,6 @@ public class BroadSearch {
                 nHits++;
             }
 
-            //System.out.println(iStart+" "+scoreVal);
             iStart++;
         }
 

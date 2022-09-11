@@ -41,12 +41,8 @@ import java.util.*;
  * access through NMRDataUtil
  */
 public class NMRViewData implements NMRData {
-
     private final String fpath;
-    private boolean isSpectrum = true;
-    private boolean isFloat = false, isShort = false, isComplex = true;
     private Dataset dataset;
-    private final HashMap<String, String> parMap = null;
     private String[] acqOrder;
     private SampleSchedule sampleSchedule = null;
     private DatasetType preferredDatasetType = DatasetType.NMRFX;
@@ -65,23 +61,14 @@ public class NMRViewData implements NMRData {
         openDataFile(path);
     }
 
-    public NMRViewData(Dataset dataset) {
-        this.dataset = dataset;
-        this.fpath = dataset.getFileName();
-    }
-
     @Override
     public void close() {
         dataset.close();
     }
 
     public static boolean findFID(StringBuilder bpath) {
-        boolean found = false;
-        if (findFIDFiles(bpath.toString())) {
-            found = true;
-        }
-        return found;
-    } // findFID
+        return findFIDFiles(bpath.toString());
+    }
 
     private static boolean findFIDFiles(String dpath) {
         boolean found = false;
@@ -91,7 +78,7 @@ public class NMRViewData implements NMRData {
             found = true;
         }
         return found;
-    } // findFIDFiles
+    }
 
     @Override
     public String toString() {
@@ -120,40 +107,23 @@ public class NMRViewData implements NMRData {
 
     @Override
     public List<VendorPar> getPars() {
-        List<VendorPar> vendorPars = new ArrayList<>();
-        if (parMap != null) {
-            for (Map.Entry<String, String> par : parMap.entrySet()) {
-                vendorPars.add(new VendorPar(par.getKey(), par.getValue()));
-            }
-        }
-        return vendorPars;
+
+        return new ArrayList<>();
     }
 
     @Override
     public String getPar(String parname) {
-        if (parMap == null) {
             return null;
-        } else {
-            return parMap.get(parname);
-        }
     }
 
     @Override
     public Double getParDouble(String parname) {
-        if ((parMap == null) || (parMap.get(parname) == null)) {
             return null;
-        } else {
-            return Double.parseDouble(parMap.get(parname));
-        }
     }
 
     @Override
     public Integer getParInt(String parname) {
-        if ((parMap == null) || (parMap.get(parname) == null)) {
             return null;
-        } else {
-            return Integer.parseInt(parMap.get(parname));
-        }
     }
 
     @Override
@@ -176,7 +146,7 @@ public class NMRViewData implements NMRData {
     }
 
     public boolean isSpectrum() {
-        return isSpectrum;
+        return true;
     }
 
     @Override
@@ -284,7 +254,7 @@ public class NMRViewData implements NMRData {
     @Override
     public double[] getCoefs(int iDim) {
         String name = "f" + iDim + "coef";
-        double dcoefs[] = {1, 0, 0, 0}; // reasonable for noesy, tocsy
+        double[] dcoefs = {1, 0, 0, 0}; // reasonable for noesy, tocsy
         String s;
         if ((s = getPar(name)) == null) {
             s = "";
@@ -293,71 +263,10 @@ public class NMRViewData implements NMRData {
             String[] coefs = s.split(" ");
             dcoefs = new double[coefs.length];
             for (int i = 0; i < coefs.length; i++) {
-                dcoefs[i] = Double.valueOf(coefs[i]);
+                dcoefs[i] = Double.parseDouble(coefs[i]);
             }
         }
         return dcoefs;
-    }
-// e.g. hnco3d.fid f1coef="1 0 0 0 0 0 -1 0" f2coef="1 0 1 0 0 1 0 -1"
-
-    private char getAxisChar(int iDim) {
-        char achar = 'h';
-        String axis = getPar("axis");
-        if (axis != null) {
-            if (iDim < axis.length()) {
-                achar = axis.charAt(iDim);
-            } else {
-                switch (iDim) {
-                    case 1:
-                        achar = 'd';
-                        break;
-                    case 2:
-                        achar = '2';
-                        break;
-                    case 3:
-                        achar = '3';
-                        break;
-                    default:
-                        achar = 'h';
-                        break;
-                }
-            }
-        }
-        return achar;
-    }
-
-    private String getAxisFreqName(int iDim) {
-        String freqName;
-        char achar = getAxisChar(iDim);
-        switch (achar) {
-            case 'h':
-                freqName = "hz";
-                break;
-            case 'p':
-                freqName = "sfrq";
-                break;
-            case 'd':
-                freqName = "dfrq";
-                break;
-            case '1':
-                freqName = "dfrq";
-                break;
-            case '2':
-                freqName = "dfrq2";
-                break;
-            case '3':
-                freqName = "dfrq3";
-                break;
-            default:
-                freqName = "hz";
-                break;
-        }
-        return freqName;
-    }
-
-    public String getApptype() {
-        // homo2d hetero2d etc. if exists
-        return getPar("apptype");
     }
 
     @Override
@@ -402,7 +311,6 @@ public class NMRViewData implements NMRData {
     public String[] getSWNames() {
         int nDim = getNDim();
         String[] names = new String[nDim];
-        String name;
         for (int i = 0; i < nDim; i++) {
             names[i] = "sw" + (i + 1);
         }
@@ -417,10 +325,6 @@ public class NMRViewData implements NMRData {
             names[i] = getTN(i) + "_" + (i + 1);
         }
         return names;
-    }
-
-    private String getAxisTNname(int iDim) {
-        return dataset.getStdLabel(iDim);
     }
 
     @Override
@@ -468,7 +372,10 @@ public class NMRViewData implements NMRData {
 
     @Override
     public boolean isFID() {
-        return !dataset.getFreqDomain(0);
+        // freqDomain parameter might not be set in older
+        // datasets so do somewhat complex check here to
+        // decide if the file is FIDs
+        return (dataset.getNFreqDims() == 0) && ((!dataset.getFreqDomain(0) && (dataset.getComplex(0))));
     }
 
     @Override
@@ -554,11 +461,11 @@ public class NMRViewData implements NMRData {
     public List<Double> getValues(int dim) {
         double[] values = dataset.getValues(dim);
         if (values == null) {
-            return Collections.EMPTY_LIST;
+            return Collections.emptyList();
         } else {
             List<Double> valueList = new ArrayList<>();
-            for (int i = 0; i < values.length; i++) {
-                valueList.add(values[i]);
+            for (double value : values) {
+                valueList.add(value);
             }
             return valueList;
         }
@@ -571,7 +478,6 @@ public class NMRViewData implements NMRData {
         int[] dim = new int[nDim];
         pt[0][0] = 0;
         pt[0][1] = dataset.getSizeTotal(0) - 1;
-        int offset = iVec;
         int[] strides = new int[nDim];
         strides[0] = 1;
         int nIndirect = nDim - 1;
@@ -603,9 +509,6 @@ public class NMRViewData implements NMRData {
     public void readVector(int iVec, Complex[] cdata) {
     }
 
-    public void readVector(int iDim, int iVec, Complex[] cdata) {
-    }
-
     @Override
     public void readVector(int iVec, double[] data) {
     }
@@ -630,8 +533,5 @@ public class NMRViewData implements NMRData {
 
     public Dataset getDataset() {
         return dataset;
-    }
-
-    public static void main(String args[]) {
     }
 }

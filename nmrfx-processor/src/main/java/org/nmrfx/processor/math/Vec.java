@@ -108,6 +108,23 @@ public class Vec extends VecBase {
     }
 
     /**
+     * Create a real vector.
+     * @param real The real data to store in the vector.
+     */
+    public Vec(double[] real) {
+        super(real);
+    }
+
+    /**
+     * Create a complex vector that stores real and imaginary in separate arrays.
+     * @param real
+     * @param imaginary
+     */
+    public Vec(double[] real, double[] imaginary) {
+        super(real, imaginary);
+    }
+
+    /**
      * Create a vector with the specified name, size and complex mode and store
      * it in a Map of Vec objects.
      *
@@ -519,7 +536,6 @@ public class Vec extends VecBase {
                     double a1 = initPt.abs() * amp / simVec.getComplex(0).abs();
                     double p1 = initPt.getArgument() + phase;
                     initPt = new Complex(a1 * Math.cos(p1), a1 * Math.sin(p1));
-//                System.out.println("fix phase=" + (initPt.getArgument() * 180 / Math.PI));
                     simVec.multiply(initPt);   // set phase and amplitude
                     simVec.set(0, 0.0, 0.0);   // remove 1st point dc offset
                 }
@@ -710,7 +726,6 @@ public class Vec extends VecBase {
         double f = freq / (1.0 / dwellTime);
         double d = Math.exp(-Math.PI * lw * dwellTime);
         Complex w = ComplexUtils.polar2Complex(d, f * Math.PI * 2.0);
-        //System.out.println(w.getReal() + " " + w.getImaginary());
         Complex tempC = new Complex(amp * Math.cos(ph * Math.PI / 180.0), amp * Math.sin(ph * Math.PI / 180.0));
         if (isComplex) {
             if (useApache) {
@@ -743,7 +758,6 @@ public class Vec extends VecBase {
      */
     public void genSignal(double freq, double decay, double amp, double ph) {
         Complex w = ComplexUtils.polar2Complex(decay, freq * Math.PI / 180.0);
-        //System.out.println(w.getReal() + " " + w.getImaginary());
         Complex tempC = new Complex(amp * Math.cos(ph * Math.PI / 180.0), amp * Math.sin(ph * Math.PI / 180.0));
         if (isComplex) {
             if (useApache) {
@@ -2127,7 +2141,6 @@ public class Vec extends VecBase {
         int vStart = getStart();
         copy(tempVec, vStart, size - vStart);
         tempVec.movingAverageFilter(winSize, nPasses);
-//        System.out.println("vStart " + vStart);
         if (vStart != 0) {
             tempVec.shiftWithExpand(vStart);
         }
@@ -2910,7 +2923,6 @@ public class Vec extends VecBase {
         int nMax = AR.getColumnDimension();
         RealMatrix redAR = AR.copy();
         AmplitudeFitResult afR = nnlsFit(redAR, BR.copy());
-        //  System.out.println("nCols " + nCols + " rss " + afR.getRss() + " fit max " + afR.getMaxValue() + " indx " + afR.getMaxIndex() + " lw " + lineWidth);
         return afR;
     }
 
@@ -3132,7 +3144,6 @@ public class Vec extends VecBase {
             }
 
             sdVec[j] = Math.sqrt(sumsq / pointsInRegion);
-            //System.out.println(j+" "+reVec[j]+" "+sdVec[j]);
         }
         /* Estimate standard deviation from sorted vector */
         Arrays.sort(sdVec);
@@ -3145,7 +3156,6 @@ public class Vec extends VecBase {
 
         if (nRegions > 16) {
             while (j < (nRegions - 2)) {
-                //System.out.println(j+" "+threshold+" "+ceVec1.get(j));
                 if (sdVec[j + 2] > threshold) {
                     rmsd = sdVec[j + 2];
                     break;
@@ -3159,7 +3169,6 @@ public class Vec extends VecBase {
         int nPeakRegions = 0;
         boolean lastWasBase = false;
         threshold = rmsd * ratio;
-        //System.out.println(rmsd+" "+ratio+" "+threshold); 
         if ((minThreshold > 0.0) && (threshold < minThreshold)) {
             threshold = minThreshold;
         }
@@ -3175,7 +3184,6 @@ public class Vec extends VecBase {
                 lastWasBase = true;
             } else {
                 if (lastWasBase) {
-                    // System.out.println("end   base at " + i + " " + rvec[i] + " " + pointToPPM(i));
                     nPeakRegions++;
                 }
 
@@ -3199,7 +3207,7 @@ public class Vec extends VecBase {
         for (int i = 0; i < size; i++) {
             if (Math.abs(rvec[i] - regionAvg) < threshold) { // baseline point
                 if (!lastWasBase) {
-                    lastNarrow = addedRegion && ((i - begin) < regionWidth); //System.out.println("narrow at "+i);
+                    lastNarrow = addedRegion && ((i - begin) < regionWidth);
                 }
                 addedRegion = false;
                 lastWasBase = true;
@@ -3211,9 +3219,7 @@ public class Vec extends VecBase {
                 }
 
                 if (lastWasBase) {
-                    //System.out.println("maybe start new at "+i);
                     if ((i - end) > joinWidth) { // start new region
-                        //System.out.println("start new at "+i+" "+iIntRegion+" "+lastNarrow);
                         regionSum = 0.0;
                         nPoints = 0;
                         begin = i - extend;
@@ -3265,7 +3271,6 @@ public class Vec extends VecBase {
         RealMatrix xyValsFinal = new Array2DRowRealMatrix(iIntRegion + 1, 3);
 
         for (int i = 0; i <= iIntRegion; i++) {
-            //System.out.println(i+" "+xyVals.get(i, 0)+" "+ xyVals.get(i, 1)+" "+xyVals.get(i, 2));
             xyValsFinal.setEntry(i, 0, xyVals.getEntry(i, 0));
             xyValsFinal.setEntry(i, 1, xyVals.getEntry(i, 1));
             xyValsFinal.setEntry(i, 2, xyVals.getEntry(i, 2));

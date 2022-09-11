@@ -140,9 +140,6 @@ public class RNAStats {
                 }
             }
             breader.close();
-//            for (String key : statMap.keySet()) {
-//                System.out.println(key);
-//            }
         }
     }
 }

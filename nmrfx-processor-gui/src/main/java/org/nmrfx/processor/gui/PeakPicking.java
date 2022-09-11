@@ -97,14 +97,15 @@ public class PeakPicking {
             } else {
                 int p1 = chart.axModes[iDim].getIndex(dataAttr, iDim, chart.axes[iDim].getLowerBound());
                 int p2 = chart.axModes[iDim].getIndex(dataAttr, iDim, chart.axes[iDim].getUpperBound());
-                peakPickPar.limit(jDim, p1, p2);
+                if (dataAttr.drawList.isEmpty()) {
+                    peakPickPar.limit(jDim, p1, p2);
+                } else {
+                    int firstPlane = dataAttr.drawList.get(0);
+                    peakPickPar.limit(jDim, firstPlane, firstPlane);
+                }
             }
         }
         PeakPicker picker = new PeakPicker(peakPickPar);
-        String canonFileName = dataset.getCanonicalFile();
-        int lastDot = canonFileName.lastIndexOf(".");
-        String listFileName = lastDot < 0 ? canonFileName + ".xpk2"
-                : canonFileName.substring(0, lastDot) + ".xpk2";
         PeakList peakList = null;
         try {
             if (refineLS) {
@@ -115,6 +116,10 @@ public class PeakPicking {
             if (peakList != null) {
                 chart.setupPeakListAttributes(peakList);
                 if (saveFile) {
+                    String canonFileName = dataset.getCanonicalFile();
+                    int lastDot = canonFileName.lastIndexOf(".");
+                    String listFileName = lastDot < 0 ? canonFileName + ".xpk2"
+                            : canonFileName.substring(0, lastDot) + ".xpk2";
                     try (final FileWriter writer = new FileWriter(listFileName)) {
                         PeakWriter peakWriter = new PeakWriter();
                         peakWriter.writePeaksXPK2(writer, peakList);

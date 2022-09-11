@@ -202,10 +202,6 @@ public class PeakFit implements MultivariateFunction {
             sum += delta * delta;
         }
         double result = Math.sqrt(sum / yv.length);
-//        for (int i = 0; i < parameters.length; i++) {
-//            System.out.print(unscaledPars[i] + " ");
-//        }
-//        System.out.println(result);
         if ((best == null) || (best.getValue() > result)) {
             best = new PointValuePair(unscaledPars, result);
             if (ampVector != null) {
@@ -440,7 +436,6 @@ public class PeakFit implements MultivariateFunction {
         }
 
         for (int iLine = 0; iLine < freqs[iSig].length; iLine++) {
-//System.out.println(iLine + " "  + iSig + " " + iLine + " " + a.length + " " + amplitudes[iSig].length + " " + amplitudes.length);
             amplitudes[iSig][iLine] = a[start + iLine];
             //amplitudes[iSig][iLine] = 1.0;
         }
@@ -450,7 +445,7 @@ public class PeakFit implements MultivariateFunction {
         double y = 0.0;
 
         for (int iLine = 0; iLine < freqs[iSig].length; iLine++) {
-            double yTemp = lShape(x, sigLw, freqs[iSig][iLine]);
+            double yTemp = lShape(x, sigLw, freqs[iSig][iLine], true);
 
             if (amplitudes[iSig][iLine] < 0) {
                 yTemp = -yTemp;
@@ -478,7 +473,7 @@ public class PeakFit implements MultivariateFunction {
                 for (int i = 0; i < xv.length; i++) {
                     double y = 0.0;
                     for (int iLine = 0; iLine < freqs[iSig].length; iLine++) {
-                        y += amplitudes[iSig][iLine] * lShape(xv[i], sigLw, freqs[iSig][iLine]);
+                        y += amplitudes[iSig][iLine] * lShape(xv[i], sigLw, freqs[iSig][iLine], true);
                     }
                     V.addToEntry(i, y);
                 }
@@ -498,7 +493,7 @@ public class PeakFit implements MultivariateFunction {
                 for (int i = 0; i < xv.length; i++) {
                     double y = 0.0;
                     for (int iLine = 0; iLine < freqs[iSig].length; iLine++) {
-                        y += amplitudes[iSig][iLine] * lShape(xv[i], sigLw, freqs[iSig][iLine]);
+                        y += amplitudes[iSig][iLine] * lShape(xv[i], sigLw, freqs[iSig][iLine], true);
                     }
                     V.addToEntry(i, y);
 
@@ -523,8 +518,7 @@ public class PeakFit implements MultivariateFunction {
                 }
                 for (int i = 0; i < xv.length; i++) {
                     for (int iLine = 0; iLine < freqs[iSig].length; iLine++) {
-                        double y = lShape(xv[i], sigLw, freqs[iSig][iLine]);
-//                    System.out.println(iSig + " " + i+ " " + iLine + " " + yTemp + " " + lw + " " + freqs[iSig][iLine]);
+                        double y = lShape(xv[i], sigLw, freqs[iSig][iLine], true);
                         if (amplitudes[iSig][iLine] < 0) {
                             y = -y;
                         }
@@ -541,7 +535,6 @@ public class PeakFit implements MultivariateFunction {
                 }
 
                 for (int iLine = 0; iLine < freqs[iSig].length; iLine++) {
-//System.out.println(iLine + " "  + iSig + " " + iLine + " " + a.length + " " + amplitudes[iSig].length + " " + amplitudes.length);
                     //amplitudes[iSig][iLine] = a[start + iLine];
                     amplitudes[iSig][iLine] = 1.0;
                 }
@@ -551,8 +544,7 @@ public class PeakFit implements MultivariateFunction {
                     double y = 0.0;
                     for (int iLine = 0; iLine < freqs[iSig].length; iLine++) {
 
-                        double yTemp = lShape(xv[i], sigLw, freqs[iSig][iLine]);
-//                    System.out.println(iSig + " " + i+ " " + iLine + " " + yTemp + " " + lw + " " + freqs[iSig][iLine]);
+                        double yTemp = lShape(xv[i], sigLw, freqs[iSig][iLine], true);
                         if (amplitudes[iSig][iLine] < 0) {
                             yTemp = -yTemp;
                         }
@@ -576,10 +568,9 @@ public class PeakFit implements MultivariateFunction {
         return y;
     }
 
-    public double lShape(double x, double b, double freq) {
+    public double lShape(double x, double b, double freq, boolean useLorentzian) {
         double y;
-        boolean LORENTZIAN = true;
-        if (LORENTZIAN) {
+        if (useLorentzian) {
             b *= 0.5;
             y = (b * b) / ((b * b) + ((x - freq) * (x - freq)));
         } else {
@@ -610,7 +601,7 @@ public class PeakFit implements MultivariateFunction {
                 double amp = pars[j * 3];
                 double f = pars[j * 3 + 1];
                 double lw = pars[j * 3 + 2];
-                yCalc += amp * lShape(x, lw, f);
+                yCalc += amp * lShape(x, lw, f, true);
             }
             double delta = yCalc - y;
             sum += delta * delta;
@@ -632,7 +623,7 @@ public class PeakFit implements MultivariateFunction {
                 double amp = pars[j * 3];
                 double f = pars[j * 3 + 1];
                 double lw = pars[j * 3 + 2];
-                yCalc += amp * lShape(x, lw, f);
+                yCalc += amp * lShape(x, lw, f, true);
             }
             ySim[i] = yCalc;
         }

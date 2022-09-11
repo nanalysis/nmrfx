@@ -50,7 +50,8 @@ tags2 = '''    _Atom_chem_shift.Details
 def predictRNA(mol, outputMode="star"):
     refiner=refine()
     shifts = refiner.predictRNAShifts()
-    dumpPredictions(mol)
+    if outputMode != '':
+        dumpPredictions(mol, outputMode)
 
 
 def predictProtein(mol, iStruct, outputMode="star"):

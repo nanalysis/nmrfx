@@ -17,6 +17,7 @@
  */
 package org.nmrfx.processor.gui.spectra;
 
+import javafx.geometry.Bounds;
 import org.nmrfx.datasets.DatasetRegion;
 
 /**
@@ -28,11 +29,16 @@ public class IntegralHit {
     final DatasetRegion region;
     final DatasetAttributes datasetAttr;
     final int handle;
+    final Bounds bounds;
 
     public IntegralHit(DatasetAttributes datasetAttr, DatasetRegion region, int handle) {
+        this(datasetAttr, region, handle, null);
+    }
+    public IntegralHit(DatasetAttributes datasetAttr, DatasetRegion region, int handle, Bounds bounds) {
         this.datasetAttr = datasetAttr;
         this.region = region;
         this.handle = handle;
+        this.bounds = bounds;
     }
 
     public DatasetAttributes getDatasetAttr() {
@@ -45,5 +51,9 @@ public class IntegralHit {
 
     public int getHandle() {
         return handle;
+    }
+
+    public Bounds getBounds() {
+        return bounds;
     }
 }

@@ -34,6 +34,7 @@ import org.nmrfx.peaks.events.PeakListener;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
 import org.nmrfx.project.ProjectBase;
+import org.nmrfx.utils.GUIUtils;
 
 /*
  * To change this license header, choose License Headers in Project Properties.
@@ -114,26 +115,24 @@ public class PeakNavigator implements PeakListener {
         peakIdField.setMaxWidth(75);
         PeakNavigator navigator = parentNavigator == null ? this : parentNavigator;
 
-        String iconSize = "12px";
-        String fontSize = "7pt";
         ArrayList<Button> buttons = new ArrayList<>();
         Button bButton;
-        Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "", iconSize, fontSize, ContentDisplay.GRAPHIC_ONLY);
+        Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "Close", MainApp.ICON_SIZE_STR, MainApp.REG_FONT_SIZE_STR, ContentDisplay.LEFT);
         closeButton.setOnAction(e -> close());
 
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.FAST_BACKWARD, "", iconSize, fontSize, ContentDisplay.GRAPHIC_ONLY);
+        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.FAST_BACKWARD, "", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.GRAPHIC_ONLY);
         bButton.setOnAction(e -> navigator.firstPeak(e));
         buttons.add(bButton);
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.BACKWARD, "", iconSize, fontSize, ContentDisplay.GRAPHIC_ONLY);
+        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.BACKWARD, "", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.GRAPHIC_ONLY);
         bButton.setOnAction(e -> navigator.previousPeak(e));
         buttons.add(bButton);
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.FORWARD, "", iconSize, fontSize, ContentDisplay.GRAPHIC_ONLY);
+        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.FORWARD, "", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.GRAPHIC_ONLY);
         bButton.setOnAction(e -> navigator.nextPeak(e));
         buttons.add(bButton);
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.FAST_FORWARD, "", iconSize, fontSize, ContentDisplay.GRAPHIC_ONLY);
+        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.FAST_FORWARD, "", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.GRAPHIC_ONLY);
         bButton.setOnAction(e -> navigator.lastPeak(e));
         buttons.add(bButton);
-        deleteButton = GlyphsDude.createIconToggleButton(FontAwesomeIcon.BAN, fontSize, iconSize, ContentDisplay.GRAPHIC_ONLY);
+        deleteButton = GlyphsDude.createIconToggleButton(FontAwesomeIcon.BAN, "", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.GRAPHIC_ONLY);
         // prevent accidental activation when inspector gets focus after hitting space bar on peak in spectrum
         // a second space bar hit would activate
         deleteButton.setOnKeyPressed(e -> e.consume());
@@ -207,7 +206,9 @@ public class PeakNavigator implements PeakListener {
         };
 
         ProjectBase.getActive().addPeakListListener(mapChangeListener);
-
+        // The different control items end up with different heights based on font and icon size,
+        // set all the items to use the same height
+        this.navigatorToolBar.heightProperty().addListener((observable, oldValue, newValue) -> GUIUtils.toolbarAdjustHeights(List.of(navigatorToolBar)));
     }
 
     public void updatePeakListMenu() {
@@ -299,7 +300,7 @@ public class PeakNavigator implements PeakListener {
                 PeakDim peakDimY = null;
                 if (!peakAttrs.isEmpty()) {
                     PeakListAttributes peakAttr = peakAttrs.get(0);
-                    int pdims[] = peakAttr.getPeakDim();
+                    int[] pdims = peakAttr.getPeakDim();
                     peakDimX = peak.getPeakDim(pdims[0]);
                     if (peak.getPeakDims().length > 1) {
                         peakDimY = peak.getPeakDim(pdims[1]);
@@ -311,17 +312,18 @@ public class PeakNavigator implements PeakListener {
                         peakDimY = peak.getPeakDim(dataAttr.getLabel(1));
                     }
                 }
-                atomXLabel.setText(peakDimX.getLabel());
+                if (peakDimX != null) {
+                    atomXLabel.setText(peakDimX.getLabel());
+                }
                 if (peakDimY != null) {
                     atomYLabel.setText(peakDimY.getLabel());
                 }
                 intensityLabel.setText(String.format("%.2f", peak.getIntensity()));
             } else {
-                if (showAtoms) {
-                    atomXLabel.setText("");
-                    atomYLabel.setText("");
-                    intensityLabel.setText("");
-                }
+                atomXLabel.setText("");
+                atomYLabel.setText("");
+                intensityLabel.setText("");
+
             }
         }
     }
@@ -492,8 +494,8 @@ public class PeakNavigator implements PeakListener {
                     peakNavigable.refreshPeakView();
                 } else {
                     Platform.runLater(() -> {
-                        peakNavigable.refreshPeakView();
-                    }
+                                peakNavigable.refreshPeakView();
+                            }
                     );
                 }
             }

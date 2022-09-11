@@ -38,8 +38,12 @@ import org.nmrfx.analyst.dataops.SimDataVecPars;
 import org.nmrfx.analyst.gui.AnalystPrefs;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.FXMLController;
+import org.nmrfx.processor.gui.MainApp;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.math.Vec;
+import org.nmrfx.utils.GUIUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -47,6 +51,7 @@ import org.nmrfx.processor.math.Vec;
  */
 public class SimFitMolController extends SimMolController {
 
+    private static final Logger log = LoggerFactory.getLogger(SimFitMolController.class);
     ComboBox<String> activeField;
     Dataset currentDataset = null;
     Dataset sumDataset = null;
@@ -74,9 +79,7 @@ public class SimFitMolController extends SimMolController {
         this.browserToolBar = toolBar;
         toolBar.setPrefWidth(900.0);
 
-        String iconSize = "16px";
-        String fontSize = "7pt";
-        Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "Close", iconSize, fontSize, ContentDisplay.TOP);
+        Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "Close", MainApp.ICON_SIZE_STR, MainApp.REG_FONT_SIZE_STR, ContentDisplay.LEFT);
         closeButton.setOnAction(e -> close());
 
         toolBar.getItems().add(closeButton);
@@ -159,7 +162,7 @@ public class SimFitMolController extends SimMolController {
         activeBox = new CheckBox();
         fitBar.getItems().add(activeBox);
         activeBox.setOnAction(e -> setActive());
-
+        toolBar.heightProperty().addListener((observable, oldValue, newValue) -> GUIUtils.toolbarAdjustHeights(Arrays.asList(toolBar, fitBar)));
     }
 
     public void close() {
@@ -187,6 +190,7 @@ public class SimFitMolController extends SimMolController {
             try {
                 dataset.readVector(vec, 0, 0);
             } catch (IOException ex) {
+                log.warn(ex.getMessage(), ex);
             }
         }
         return vec;
@@ -366,7 +370,7 @@ public class SimFitMolController extends SimMolController {
                 }
             }
         } catch (NumberFormatException nfE) {
-
+            log.warn("Unable to parse scale.", nfE);
         }
     }
 

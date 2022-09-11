@@ -28,10 +28,13 @@ import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import org.apache.commons.collections4.iterators.PermutationIterator;
+import org.apache.commons.lang3.StringUtils;
 import org.controlsfx.control.PropertySheet;
 import org.nmrfx.processor.datasets.DatasetType;
 import org.nmrfx.processor.datasets.vendor.NMRData;
 import org.nmrfx.utils.properties.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -44,6 +47,7 @@ import java.util.Map;
  */
 public class RefManager {
 
+    private static final Logger log = LoggerFactory.getLogger(RefManager.class);
     ChangeListener<Number> doubleListener;
     ChangeListener<Number> intListener;
     ChangeListener<String> stringListener;
@@ -95,7 +99,6 @@ public class RefManager {
         } else {
             refMap.put(nameWithDim, value);
         }
-        //System.out.println(nameWithDim + " value is " + value + " was " + updateItem.getValue().toString());
         boolean refresh = true;
         switch (propName) {
             case "fixdsp":
@@ -246,11 +249,7 @@ public class RefManager {
                     }
                     break;
                 case "acqarray":
-                    if (getDefault) {
-                        value = "0";
-                    } else {
-                        value = "0";
-                    }
+                    value = "0";
                     break;
                 case "sf":
                     value = nmrData.getSFNames()[dim];
@@ -283,6 +282,10 @@ public class RefManager {
         refMap.clear();
     }
 
+    void clearItems() {
+        refSheet.getItems().clear();
+    }
+
     void setupItems(int dim) {
         ChartProcessor chartProcessor = processorController.chartProcessor;
         NMRData nmrData = getNMRData();
@@ -311,10 +314,10 @@ public class RefManager {
                         }
                         choices.add(sBuilder.toString());
                     }
-                    newItems.add(new EditableChoiceOperationItem(stringListener, chartProcessor.getAcqOrder(), choices, dimName, "acqOrder", "Enter the acquisiton order of the dataset"));
+                    newItems.add(new EditableChoiceOperationItem(stringListener, chartProcessor.getAcqOrder(), choices, dimName, "acqOrder", "Enter the acquisition order of the dataset"));
                 }
             } else {
-                newItems.add(new TextOperationItem(stringListener, chartProcessor.getAcqOrder(), dimName, "acqOrder", "Enter the acquisiton order of the dataset"));
+                newItems.add(new TextOperationItem(stringListener, chartProcessor.getAcqOrder(), dimName, "acqOrder", "Enter the acquisition order of the dataset"));
             }
             if ((nmrData != null) && nmrData.getVendor().equals("bruker")) {
                 newItems.add(new BooleanOperationItem(boolListener, chartProcessor.getFixDSP(), dimName, "fixdsp", "Fix DSP buildup before FT"));
@@ -345,9 +348,12 @@ public class RefManager {
                 String value = getPropValue(dim, propName, false);
                 int iValue = 0;
                 try {
-                    iValue = Integer.parseInt(value);
+                    // Set empty strings to have a value of 0
+                    if (!value.isEmpty()) {
+                        iValue = Integer.parseInt(value);
+                    }
                 } catch (NumberFormatException nFe) {
-
+                    log.warn("Unable to parse value.", nFe);
                 }
                 String defaultValue = getPropValue(dim, propName, true);
                 String comment = " (default is " + defaultValue + ")";
@@ -408,12 +414,16 @@ public class RefManager {
     }
 
     public boolean getSkip(String dimName) {
+        if (!StringUtils.isNumeric(dimName)) {
+            return false;
+        }
         String propValue = "0";
         try {
             int dim = Integer.parseInt(dimName);
             dim--;
             propValue = getPropValue(dim, "skip", false);
         } catch (NumberFormatException nFE) {
+            log.warn("Unable to parse skip.", nFE);
         }
         return propValue.equals("1");
     }

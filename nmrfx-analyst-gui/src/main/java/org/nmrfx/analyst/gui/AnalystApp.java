@@ -19,11 +19,14 @@ package org.nmrfx.analyst.gui;
 
 import de.jangassen.MenuToolkit;
 import de.jangassen.dialogs.about.AboutStageBuilder;
-import de.jensd.fx.glyphs.GlyphsDude;
-import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import javafx.application.Platform;
+import javafx.collections.FXCollections;
+import javafx.collections.MapChangeListener;
+import javafx.collections.ObservableMap;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.geometry.Bounds;
+import javafx.geometry.Point2D;
 import javafx.scene.control.*;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.image.Image;
@@ -31,6 +34,8 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import org.apache.commons.lang3.SystemUtils;
+import org.controlsfx.control.PopOver;
+import org.nmrfx.analyst.gui.annotations.AnnoJournalFormat;
 import org.nmrfx.analyst.gui.molecule.*;
 import org.nmrfx.analyst.gui.molecule3D.MolSceneController;
 import org.nmrfx.analyst.gui.peaks.*;
@@ -38,13 +43,18 @@ import org.nmrfx.analyst.gui.plugin.PluginLoader;
 import org.nmrfx.analyst.gui.spectra.SpectrumMenuActions;
 import org.nmrfx.analyst.gui.spectra.StripController;
 import org.nmrfx.analyst.gui.tools.*;
+import org.nmrfx.chemistry.MoleculeBase;
+import org.nmrfx.chemistry.MoleculeFactory;
 import org.nmrfx.chemistry.io.PDBFile;
 import org.nmrfx.chemistry.utilities.NvUtil;
 import org.nmrfx.console.ConsoleController;
+import org.nmrfx.peaks.Multiplet;
 import org.nmrfx.peaks.PeakLabeller;
 import org.nmrfx.plugin.api.EntryPoint;
 import org.nmrfx.processor.gui.*;
+import org.nmrfx.processor.gui.annotations.AnnoText;
 import org.nmrfx.processor.gui.log.Log;
+import org.nmrfx.processor.gui.log.LogConsoleController;
 import org.nmrfx.processor.gui.project.GUIProject;
 import org.nmrfx.processor.gui.spectra.KeyBindings;
 import org.nmrfx.processor.gui.spectra.WindowIO;
@@ -77,7 +87,6 @@ public class AnalystApp extends MainApp {
     private static ViewMenuItems viewMenuActions;
     private static boolean startInAdvanced = true;
     private static boolean advancedIsActive = false;
-    private static MultipletController multipletController;
     private static AtomController atomController;
     private static LigandScannerController scannerController;
     private static MolSceneController molController;
@@ -88,6 +97,8 @@ public class AnalystApp extends MainApp {
     private static WindowIO windowIO = null;
     private static SeqDisplayController seqDisplayController = null;
     private static DatasetBrowserController browserController = null;
+    private static PopOverTools popoverTool = new PopOverTools();
+    private static ObservableMap<String, MoleculeBase> moleculeMap;
     MenuToolkit menuTk;
     Boolean isMac = null;
     PeakAtomPicker peakAtomPicker = null;
@@ -149,6 +160,7 @@ public class AnalystApp extends MainApp {
         interpreter.set("argv", parameters.getRaw());
         interpreter.exec("parseArgs(argv)");
         ConsoleController.create(interpreter, "NMRFx Console");
+        LogConsoleController.create();
         PeakPicking.registerSinglePickAction(this::pickedPeakAction);
         PeakMenuBar.addExtra("Add Residue Prefix", PeakLabeller::labelWithSingleResidueChar);
         PeakMenuBar.addExtra("Remove Residue Prefix", PeakLabeller::removeSingleResidueChar);
@@ -159,6 +171,12 @@ public class AnalystApp extends MainApp {
         ProjectBase.addSaveframeProcessor("runabout", runAboutSaveFrameProcessor);
 
         PluginLoader.getInstance().registerPluginsOnEntryPoint(EntryPoint.STARTUP, null);
+        moleculeMap = FXCollections.observableHashMap();
+        MoleculeFactory.setMoleculeMap(moleculeMap);
+    }
+
+    public static void addMoleculeListener(MapChangeListener<String, MoleculeBase> listener) {
+        moleculeMap.addListener(listener);
     }
 
     void pickedPeakAction(Object peakObject) {
@@ -291,9 +309,11 @@ public class AnalystApp extends MainApp {
 
         helpMenu.getItems().addAll(docsMenuItem, webSiteMenuItem, mailingListItem, versionMenuItem, refMenuItem, openSourceItem);
 
+        PluginLoader pluginLoader = PluginLoader.getInstance();
         Menu pluginsMenu = new Menu("Plugins");
-        PluginLoader.getInstance().registerPluginsOnEntryPoint(EntryPoint.MENU_PLUGINS, pluginsMenu);
+        pluginLoader.registerPluginsOnEntryPoint(EntryPoint.MENU_PLUGINS, pluginsMenu);
         pluginsMenu.setVisible(!pluginsMenu.getItems().isEmpty());
+        pluginLoader.registerPluginsOnEntryPoint(EntryPoint.MENU_FILE, fileMenu);
 
         if (tk != null) {
             Menu windowMenu = new Menu("Window");
@@ -337,13 +357,13 @@ public class AnalystApp extends MainApp {
         if (viewMenuActions != null) {
             viewMenuActions.activateAdvanced();
         }
-        addAdvancedtools();
-        advancedIsActive = true;
+        if (!advancedIsActive) {
+            addAdvancedTools();
+            advancedIsActive = true;
+        }
         if (startAdvancedItem != null) {
             startAdvancedItem.setDisable(true);
         }
-
-
     }
 
     public void readMolecule(String type) {
@@ -371,22 +391,13 @@ public class AnalystApp extends MainApp {
 
     @Override
     public void addStatusBarTools(SpectrumStatusBar statusBar) {
-        Menu oneDMenu = new Menu("Analysis (1D)");
-        MenuItem multipletToolItem = new MenuItem("Show Multiplet Tool");
-        multipletToolItem.setOnAction(e -> showMultipletTool());
-
-        MenuItem regionsMenuItem = new MenuItem("Show Regions Tool");
-        regionsMenuItem.disableProperty().bind(FXMLController.activeController.isNull());
-        regionsMenuItem.setOnAction(e -> showRegionTool());
-        oneDMenu.getItems().addAll(multipletToolItem, regionsMenuItem);
-        statusBar.addToToolMenu(oneDMenu);
         addStatusBarButtons(statusBar);
         if (advancedIsActive) {
             addAdvancedTools(statusBar);
         }
     }
 
-    private void addAdvancedtools() {
+    private void addAdvancedTools() {
         for (var controller: FXMLController.getControllers()) {
             addAdvancedTools(controller.getStatusBar());
         }
@@ -430,15 +441,6 @@ public class AnalystApp extends MainApp {
         libraryMenu.getItems().addAll(spectrumLibraryMenuItem, spectrumFitLibraryMenuItem);
         statusBar.addToToolMenu(libraryMenu);
 
-        Menu molMenu = new Menu("Molecule");
-        MenuItem canvasMolMenuItem = new MenuItem("Show Molecule");
-        canvasMolMenuItem.setOnAction(e -> addMolecule());
-        MenuItem delCanvasMolMenuItem = new MenuItem("Remove Molecule");
-        delCanvasMolMenuItem.setOnAction(e -> removeMolecule());
-        molMenu.getItems().addAll(canvasMolMenuItem, delCanvasMolMenuItem);
-
-        statusBar.addToToolMenu(molMenu);
-
 
         MenuItem scannerToolItem = new MenuItem("Show Scanner");
         statusBar.addToToolMenu(scannerToolItem);
@@ -456,19 +458,12 @@ public class AnalystApp extends MainApp {
     }
 
     private void addStatusBarButtons(SpectrumStatusBar statusBar) {
-        String iconSize = "16px";
-        String fontSize = "7pt";
         var controller = statusBar.getController();
-        SimplePeakRegionTool simplePeakRegionTool = new SimplePeakRegionTool(controller, controller.getActiveChart());
-        Button regionButton = GlyphsDude.createIconButton(FontAwesomeIcon.SQUARE, "Regions", iconSize, fontSize, ContentDisplay.LEFT);
-        regionButton.setOnAction(e -> simplePeakRegionTool.findRegions());
+        SimplePeakRegionTool simplePeakRegionTool = new SimplePeakRegionTool(controller);
+        simplePeakRegionTool.addButtons(statusBar);
+    }
 
-        Button peakButton = GlyphsDude.createIconButton(FontAwesomeIcon.BULLSEYE, "Pick", iconSize, fontSize, ContentDisplay.LEFT);
-        peakButton.setOnAction(e -> simplePeakRegionTool.peakPick());
-
-        Button wizardButton = GlyphsDude.createIconButton(FontAwesomeIcon.MAGIC, "Multiplets", iconSize, fontSize, ContentDisplay.LEFT);
-        wizardButton.setOnAction(e -> simplePeakRegionTool.analyzeMultiplets());
-        statusBar.addToolBarButtons(regionButton, peakButton, wizardButton);
+    public static void addMultipletPopOver(FXMLController controller) {
     }
 
 
@@ -586,17 +581,6 @@ public class AnalystApp extends MainApp {
         return (StripController) controller.getTool(StripController.class);
     }
 
-    public void showMultipletTool() {
-        FXMLController controller = FXMLController.getActiveController();
-        if (!controller.containsTool(MultipletTool.class)) {
-            VBox vBox = new VBox();
-            controller.getBottomBox().getChildren().add(vBox);
-            MultipletTool multipletTool = new MultipletTool(controller, this::removeMultipletToolBar);
-            multipletTool.initialize(vBox);
-            controller.addTool(multipletTool);
-        }
-    }
-
     public void showPeakAssignTool() {
         FXMLController controller = FXMLController.getActiveController();
         if (!controller.containsTool(PeakAssignTool.class)) {
@@ -617,10 +601,10 @@ public class AnalystApp extends MainApp {
     public void showPeakSlider() {
         FXMLController controller = FXMLController.getActiveController();
         if (!controller.containsTool(PeakSlider.class)) {
-            ToolBar navBar = new ToolBar();
-            controller.getBottomBox().getChildren().add(navBar);
+            VBox vBox = new VBox();
+            controller.getBottomBox().getChildren().add(vBox);
             PeakSlider peakSlider = new PeakSlider(controller, this::removePeakSlider);
-            peakSlider.initSlider(navBar);
+            peakSlider.initSlider(vBox);
             controller.addTool(peakSlider);
         }
     }
@@ -628,40 +612,7 @@ public class AnalystApp extends MainApp {
     public void removePeakSlider(PeakSlider peakSlider) {
         FXMLController controller = FXMLController.getActiveController();
         controller.removeTool(PeakSlider.class);
-        controller.getBottomBox().getChildren().remove(peakSlider.getToolBar());
-    }
-
-    public MultipletTool getMultipletTool() {
-        FXMLController controller = FXMLController.getActiveController();
-        return (MultipletTool) controller.getTool(MultipletTool.class);
-    }
-
-    public void removeMultipletToolBar(MultipletTool multipletTool) {
-        FXMLController controller = FXMLController.getActiveController();
-        controller.removeTool(MultipletTool.class);
-        controller.getBottomBox().getChildren().remove(multipletTool.getBox());
-    }
-
-    public void showRegionTool() {
-        FXMLController controller = FXMLController.getActiveController();
-        if (!controller.containsTool(RegionTool.class)) {
-            VBox vBox = new VBox();
-            controller.getBottomBox().getChildren().add(vBox);
-            RegionTool regionTool = new RegionTool(controller, this::removeRegionTool);
-            regionTool.initialize(vBox);
-            controller.addTool(regionTool);
-        }
-    }
-
-    public RegionTool getRegionTool() {
-        FXMLController controller = FXMLController.getActiveController();
-        return (RegionTool) controller.getTool(RegionTool.class);
-    }
-
-    public void removeRegionTool(RegionTool regionTool) {
-        FXMLController controller = FXMLController.getActiveController();
-        controller.removeTool(RegionTool.class);
-        controller.getBottomBox().getChildren().remove(regionTool.getBox());
+        controller.getBottomBox().getChildren().remove(peakSlider.getBox());
     }
 
     public void showPeakPathTool() {
@@ -762,4 +713,13 @@ public class AnalystApp extends MainApp {
         browserStage.toFront();
         browserStage.show();
     }
+
+    public void hidePopover(boolean always) {
+        popoverTool.hide(always);
+    }
+
+    public void showPopover(PolyChart chart, Bounds objectBounds, Object hitObject) {
+        popoverTool.showPopover(chart, objectBounds, hitObject);
+    }
+
 }

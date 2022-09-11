@@ -18,6 +18,7 @@
 package org.nmrfx.chemistry;
 
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Set;
 import java.util.ArrayList;
 import java.util.List;
@@ -65,7 +66,7 @@ public class SpatialSetGroup {
     }
 
     public String getName() {
-        SpatialSet sp = getFirstSet();
+        SpatialSet sp = getSpatialSet();
         return sp.getName();
     }
 
@@ -73,18 +74,18 @@ public class SpatialSetGroup {
         spSets.add(spSet);
     }
 
-    public SpatialSet getFirstSet() {
-        SpatialSet result = null;
-        for (SpatialSet sp : spSets) {
-            result = sp;
-            break;
-        }
-        return result;
-
+    /**
+     * Returns a spatial set from the set spSets. Which spatial set is returned is undefined
+     * as spSets is unordered. In most cases, spSets only contains a single SpatialSet.
+     * @return A SpatialSet
+     */
+    public SpatialSet getSpatialSet() {
+        Iterator<SpatialSet> it = spSets.iterator();
+        return it.hasNext() ? it.next() : null;
     }
 
     public Atom getAnAtom() {
-        SpatialSet sp = getFirstSet();
+        SpatialSet sp = getSpatialSet();
         return sp.atom;
     }
 
@@ -95,15 +96,13 @@ public class SpatialSetGroup {
 
     public void convertToMethyl() {
         if (spSets.size() == 1) {
-            SpatialSet sp = getFirstSet();
+            SpatialSet sp = getSpatialSet();
             Atom atom = sp.atom;
             if (atom.isMethyl()) {
                 AtomEquivalency aEquiv = atom.equivAtoms.get(0);
                 ArrayList<Atom> atoms = aEquiv.getAtoms();
                 spSets.clear();
-                atoms.forEach((atom2) -> {
-                    spSets.add(atom2.spatialSet);
-                });
+                atoms.forEach(atom2 -> spSets.add(atom2.spatialSet));
             }
         }
     }
@@ -112,7 +111,7 @@ public class SpatialSetGroup {
         char sep = ' ';
         result.append(".");                           //  Assembly_atom_ID
         result.append(sep);
-        Atom atom = getFirstSet().atom;
+        Atom atom = getSpatialSet().atom;
         Entity entity = atom.getEntity();
         int entityID = entity.getIDNum();
         int entityAssemblyID = entity.assemblyID;

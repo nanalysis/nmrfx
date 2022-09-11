@@ -1,88 +1,168 @@
 package org.nmrfx.analyst.gui.tools;
 
-import javafx.scene.control.Alert;
+import javafx.scene.control.*;
+import javafx.scene.input.Clipboard;
+import javafx.scene.input.ClipboardContent;
+import javafx.scene.input.DataFormat;
+import javafx.stage.FileChooser;
 import org.controlsfx.dialog.ExceptionDialog;
+import org.nmrfx.analyst.gui.AnalystApp;
+import org.nmrfx.analyst.gui.annotations.AnnoJournalFormat;
+import org.nmrfx.analyst.gui.molecule.CanvasMolecule;
 import org.nmrfx.analyst.peaks.Analyzer;
+import org.nmrfx.analyst.peaks.JournalFormat;
+import org.nmrfx.analyst.peaks.JournalFormatPeaks;
 import org.nmrfx.datasets.DatasetRegion;
 import org.nmrfx.peaks.PeakList;
+import org.nmrfx.peaks.events.PeakEvent;
+import org.nmrfx.peaks.events.PeakListener;
 import org.nmrfx.processor.datasets.Dataset;
-import org.nmrfx.processor.gui.ControllerTool;
-import org.nmrfx.processor.gui.FXMLController;
-import org.nmrfx.processor.gui.PeakPicking;
-import org.nmrfx.processor.gui.PolyChart;
+import org.nmrfx.processor.gui.*;
+import org.nmrfx.processor.gui.controls.ConsoleUtil;
+import org.nmrfx.processor.gui.spectra.CrossHairs;
+import org.nmrfx.structure.chemistry.Molecule;
+import org.nmrfx.utils.GUIUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.TreeSet;
 
 import static org.nmrfx.utils.GUIUtils.affirm;
+import static org.nmrfx.utils.GUIUtils.warn;
 
-public class SimplePeakRegionTool implements ControllerTool {
+public class SimplePeakRegionTool implements ControllerTool, PeakListener {
     private static final Logger log = LoggerFactory.getLogger(SimplePeakRegionTool.class);
-    Analyzer analyzer;
     FXMLController controller;
-    PolyChart chart;
 
-    public SimplePeakRegionTool(FXMLController controller, PolyChart chart) {
+
+    public SimplePeakRegionTool(FXMLController controller) {
         this.controller = controller;
-        this.chart = chart;
     }
 
     @Override
     public void close() {
+    }
 
+    public void addButtons(SpectrumStatusBar statusBar) {
+
+        var regionButton = new SplitMenuButton();
+        regionButton.setText("Integrate");
+
+        MenuItem clearRegionsItem = new MenuItem("Clear");
+        clearRegionsItem.setOnAction(e -> clearAnalysis(true));
+
+        MenuItem thresholdMenuItem = new MenuItem("Set Threshold");
+        thresholdMenuItem.setOnAction(e -> setThreshold());
+
+        MenuItem clearThresholdMenuItem = new MenuItem("Clear Threshold");
+        clearThresholdMenuItem.setOnAction(e -> clearThreshold());
+
+        MenuItem saveRegionsMenuItem = new MenuItem("Save Regions");
+        saveRegionsMenuItem.setOnAction(e -> saveRegions());
+
+        MenuItem loadRegionsMenuItem = new MenuItem("Load Regions");
+        loadRegionsMenuItem.setOnAction(e -> loadRegions());
+
+        regionButton.getItems().addAll(clearRegionsItem, saveRegionsMenuItem, loadRegionsMenuItem,
+                thresholdMenuItem, clearThresholdMenuItem);
+        regionButton.setOnAction(e -> findRegions());
+
+        var peakButton = new SplitMenuButton();
+        peakButton.setText("PeakPick");
+        peakButton.setOnAction(e -> peakPick());
+        MenuItem clearPeakListItem = new MenuItem("Clear PeakList");
+        clearPeakListItem.setOnAction(e -> clearPeakList());
+        peakButton.getItems().add(clearPeakListItem);
+
+        var wizardButton = new SplitMenuButton();
+        wizardButton.setText("Analyze");
+        wizardButton.setOnAction(e -> analyzeMultiplets());
+
+        MenuItem showJournalItem = new MenuItem("Display Report");
+        showJournalItem.setOnAction(e -> showJournalFormatOnChart());
+        MenuItem removeJournalItem = new MenuItem("Remove Report");
+        removeJournalItem.setOnAction(e -> removeJournalFormatOnChart());
+        MenuItem copyJournalFormatMenuItem = new MenuItem("Copy Report");
+        copyJournalFormatMenuItem.setOnAction(e -> journalFormatToClipboard());
+
+        wizardButton.getItems().addAll(showJournalItem, removeJournalItem, copyJournalFormatMenuItem);
+
+        var moleculeButton = new SplitMenuButton();
+        moleculeButton.setText("Molecule");
+        moleculeButton.setOnAction(e -> addMolecule());
+        MenuItem delCanvasMolMenuItem = new MenuItem("Remove Molecule");
+        delCanvasMolMenuItem.setOnAction(e -> removeMolecule());
+        moleculeButton.getItems().add(delCanvasMolMenuItem);
+
+        statusBar.addToolBarButtons(regionButton, peakButton, wizardButton, moleculeButton);
     }
 
     PolyChart getChart() {
-        chart = controller.getActiveChart();
-        return chart;
+        return controller.getActiveChart();
     }
 
     public Analyzer getAnalyzer() {
-        if (analyzer == null) {
-            chart = getChart();
-            Dataset dataset = (Dataset) chart.getDataset();
-            if ((dataset == null) || (dataset.getNDim() > 1)) {
-                Alert alert = new Alert(Alert.AlertType.ERROR);
-                alert.setContentText("Chart must have a 1D dataset");
-                alert.showAndWait();
-                return null;
-            }
-            analyzer = new Analyzer(dataset);
-            if (!chart.getPeakListAttributes().isEmpty()) {
-                analyzer.setPeakList(chart.getPeakListAttributes().get(0).getPeakList());
-            }
+        PolyChart chart = getChart();
+        MultipletTool multipletTool = MultipletTool.getTool(chart);
+        Dataset dataset = (Dataset) chart.getDataset();
+        if ((dataset == null) || (dataset.getNDim() > 1)) {
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setContentText("Chart must have a 1D dataset");
+            alert.showAndWait();
+            return null;
+        }
+        Analyzer analyzer = Analyzer.getAnalyzer(dataset);
+        if (!chart.getPeakListAttributes().isEmpty()) {
+            analyzer.setPeakList(chart.getPeakListAttributes().get(0).getPeakList());
         }
         return analyzer;
     }
 
-    public void clearAnalysis(boolean prompt) {
+    public boolean clearAnalysis(boolean prompt) {
+        PolyChart chart = getChart();
         if (!prompt || affirm("Clear Analysis")) {
-            PeakList peakList = analyzer.getPeakList();
-            if (peakList != null) {
-                PeakList.remove(peakList.getName());
-            }
             Analyzer analyzer = getAnalyzer();
             if (analyzer != null) {
-                analyzer.clearRegions();
+                analyzer.clearAnalysis();
             }
             chart.chartProps.setRegions(false);
             chart.chartProps.setIntegrals(false);
+            AnalystApp.getAnalystApp().hidePopover(true);
             chart.refresh();
+            return true;
+        } else {
+            return false;
         }
     }
 
     public boolean hasRegions() {
-        Set<DatasetRegion> regions = chart.getDataset().getRegions();
-        return (regions != null) && !regions.isEmpty();
+        PolyChart chart = getChart();
+        if (!chart.hasData()) {
+            return false;
+        } else {
+            Set<DatasetRegion> regions = chart.getDataset().getRegions();
+            return (regions != null) && !regions.isEmpty();
+        }
     }
 
     public void findRegions() {
+        PolyChart chart = getChart();
+        if (!chart.hasData()) {
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setContentText("Chart must have a 1D dataset");
+            alert.showAndWait();
+            return;
+        }
+
         if (hasRegions()) {
-            clearAnalysis(true);
+            if (!clearAnalysis(true)) {
+                return;
+            }
         }
         Analyzer analyzer = getAnalyzer();
         if (analyzer != null) {
@@ -113,11 +193,73 @@ public class SimplePeakRegionTool implements ControllerTool {
             chart.setActiveRegion(null);
             chart.refresh();
         }
-
     }
+
+    private void setThreshold() {
+        Analyzer analyzer = getAnalyzer();
+        if (analyzer != null) {
+            PolyChart chart = getChart();
+            CrossHairs crossHairs = chart.getCrossHairs();
+            if (!crossHairs.hasCrosshairState("h0")) {
+                warn("Threshold", "Must have horizontal crosshair");
+                return;
+            }
+            Double[] pos = crossHairs.getCrossHairPositions(0);
+            analyzer.setThreshold(pos[1]);
+        }
+    }
+
+    private void clearThreshold() {
+        if (getAnalyzer() != null) {
+            getAnalyzer().clearThreshold();
+        }
+    }
+
+
+    private void saveRegions() {
+        Analyzer analyzer = getAnalyzer();
+        if (analyzer != null) {
+            TreeSet<DatasetRegion> regions = analyzer.getDataset().getRegions();
+            if (regions.isEmpty()) {
+                GUIUtils.warn("Regions Save", "No regions to save");
+                return;
+            }
+            FileChooser chooser = new FileChooser();
+            chooser.setTitle("Save Regions File");
+            File regionFile = chooser.showSaveDialog(null);
+            if (regionFile != null) {
+                try {
+                    analyzer.saveRegions(regionFile);
+                } catch (IOException ioE) {
+                    GUIUtils.warn("Error writing regions file", ioE.getMessage());
+                }
+            }
+        }
+    }
+
+    private void loadRegions() {
+        Analyzer analyzer = getAnalyzer();
+        if (analyzer != null) {
+            FileChooser chooser = new FileChooser();
+            chooser.setTitle("Read Regions File");
+            File regionFile = chooser.showOpenDialog(null);
+            if (regionFile != null) {
+                try {
+                    analyzer.loadRegions(regionFile);
+                    getChart().chartProps.setIntegrals(true);
+                    getChart().chartProps.setRegions(true);
+                    getChart().refresh();
+                } catch (IOException ioE) {
+                    GUIUtils.warn("Error reading regions file", ioE.getMessage());
+                }
+            }
+        }
+    }
+
     public void peakPick() {
         Analyzer analyzer = getAnalyzer();
         if (analyzer != null) {
+            PolyChart chart = getChart();
             Set<DatasetRegion> regions = chart.getDataset().getRegions();
             if ((regions == null) || regions.isEmpty()) {
                 analyzer.calculateThreshold();
@@ -143,14 +285,39 @@ public class SimplePeakRegionTool implements ControllerTool {
 
     }
 
+    public void clearPeakList() {
+        Analyzer analyzer = getAnalyzer();
+        if (analyzer != null) {
+            PeakList peakList = analyzer.getPeakList();
+            if (peakList != null) {
+                PeakList.remove(peakList.getName());
+                analyzer.setPeakList(null);
+                analyzer.resetAnalyzed();
+                List<String> peakListNames = new ArrayList<>();
+                PolyChart chart = getChart();
+                chart.updatePeakLists(peakListNames);
+                chart.refresh();
+                AnalystApp.getAnalystApp().hidePopover(true);
+            }
+        }
+    }
+
     public void analyzeMultiplets() {
         Analyzer analyzer = getAnalyzer();
         if (analyzer != null) {
             try {
+                if (analyzer.isAnalyzed()) {
+                    if (affirm("Clear Analysis")) {
+                        clearAnalysis(false);
+                    } else {
+                        return;
+                    }
+                }
                 analyzer.analyze();
                 PeakList peakList = analyzer.getPeakList();
                 List<String> peakListNames = new ArrayList<>();
                 peakListNames.add(peakList.getName());
+                PolyChart chart = getChart();
                 chart.chartProps.setRegions(false);
                 chart.chartProps.setIntegrals(true);
                 chart.updatePeakLists(peakListNames);
@@ -161,5 +328,101 @@ public class SimplePeakRegionTool implements ControllerTool {
         }
     }
 
+    public void journalFormatToClipboard() {
+        JournalFormat format = JournalFormatPeaks.getFormat("JMedCh");
+        Analyzer analyzer = getAnalyzer();
+        if (analyzer != null) {
+            PeakList peakList = analyzer.getPeakList();
+            String journalText = format.genOutput(peakList);
+            String plainText = JournalFormatPeaks.formatToPlain(journalText);
+            String rtfText = JournalFormatPeaks.formatToRTF(journalText);
 
+            Clipboard clipBoard = Clipboard.getSystemClipboard();
+            ClipboardContent content = new ClipboardContent();
+            content.put(DataFormat.PLAIN_TEXT, plainText);
+            content.put(DataFormat.RTF, rtfText);
+            clipBoard.setContent(content);
+        }
+    }
+
+    public void showJournalFormatOnChart() {
+        Analyzer analyzer = getAnalyzer();
+        if (analyzer != null) {
+            PeakList peakList = analyzer.getPeakList();
+            if (peakList == null) {
+                removeJournalFormatOnChart();
+            } else {
+                peakList.registerPeakChangeListener(this);
+                AnnoJournalFormat annoText = new AnnoJournalFormat(0.1, 20, 0.9, 100,
+                        CanvasAnnotation.POSTYPE.FRACTION,
+                        CanvasAnnotation.POSTYPE.PIXEL,
+                        peakList.getName());
+                PolyChart chart = getChart();
+                chart.chartProps.setTopBorderSize(50);
+
+                chart.clearAnnoType(AnnoJournalFormat.class);
+                chart.addAnnotation(annoText);
+                chart.refresh();
+            }
+        }
+    }
+
+    public void removeJournalFormatOnChart() {
+        Analyzer analyzer = getAnalyzer();
+        if (analyzer != null) {
+            PeakList peakList = analyzer.getPeakList();
+            if (peakList != null) {
+                peakList.removePeakChangeListener(this);
+            }
+
+            PolyChart chart = getChart();
+            chart.chartProps.setTopBorderSize(7);
+            chart.clearAnnoType(AnnoJournalFormat.class);
+            chart.refresh();
+        }
+    }
+
+    @Override
+    public void peakListChanged(PeakEvent peakEvent) {
+        ConsoleUtil.runOnFxThread(() -> {
+            PolyChart chart = getChart();
+            if (chart.hasAnnoType(AnnoJournalFormat.class)) {
+                showJournalFormatOnChart();
+            }
+        });
+    }
+
+    void addMolecule() {
+        removeMolecule();
+        Molecule activeMol = Molecule.getActive();
+        if (activeMol == null) {
+            ((AnalystApp) AnalystApp.getMainApp()).readMolecule("mol");
+            activeMol = Molecule.getActive();
+        }
+        if (activeMol != null) {
+            var cMols = controller.getActiveChart().findAnnoTypes(CanvasMolecule.class);
+            CanvasMolecule cMol = null;
+            if (cMols.isEmpty()) {
+                cMol = new CanvasMolecule(FXMLController.getActiveController().getActiveChart());
+                cMol.setPosition(0.1, 0.1, 0.3, 0.3, "FRACTION", "FRACTION");
+            } else {
+                cMol = (CanvasMolecule) cMols.get(0);
+            }
+
+            cMol.setMolName(activeMol.getName());
+            activeMol.label = Molecule.LABEL_NONHC;
+            activeMol.clearSelected();
+
+            PolyChart chart = FXMLController.getActiveController().getActiveChart();
+            chart.clearAnnoType(CanvasMolecule.class);
+            chart.addAnnotation(cMol);
+            chart.refresh();
+        }
+    }
+
+    void removeMolecule() {
+        PolyChart chart = FXMLController.getActiveController().getActiveChart();
+        chart.clearAnnoType(CanvasMolecule.class);
+        chart.refresh();
+    }
 }

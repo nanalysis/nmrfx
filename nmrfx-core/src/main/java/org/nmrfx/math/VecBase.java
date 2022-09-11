@@ -164,6 +164,19 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
         System.arraycopy(values, 0, rvec, 0, values.length);
     }
 
+    public VecBase(double[] realValues, double[] imaginaryValues) throws IllegalArgumentException {
+        this(realValues.length, true);
+        if (realValues.length != imaginaryValues.length) {
+            throw new IllegalArgumentException("Real and imaginary values have different dimensions.");
+        }
+        ivec = new double[imaginaryValues.length];
+        System.arraycopy(realValues, 0, rvec, 0, realValues.length);
+        System.arraycopy(imaginaryValues, 0, ivec, 0, imaginaryValues.length);
+        // Set useApache to false since ivec is being used.
+        useApache = false;
+        this.isComplex = true;
+    }
+
     /**
      * Create a new Vec object for real data and with the specified size and
      * specified dataset location.
@@ -3206,26 +3219,15 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
         if (outName != null) {
             fileWriter = new FileWriter(outName);
         }
-        if (fileWriter != null) {
+        try (FileWriter fw = fileWriter) {
             for (int i = 0; i < size; i++) {
-                if (isComplex) {
-                    fileWriter.write(String.format("%3d %.5f %.5f\n", i, getReal(i), getImag(i)));
+                String dump = isComplex ? String.format("%3d %.5f %.5f%n", i, getReal(i), getImag(i)) : String.format("%3d %.5f%n", i, getReal(i));
+                if (fw != null) {
+                    fw.write(dump);
                 } else {
-                    fileWriter.write(String.format("%3d %.5f\n", i, getReal(i)));
+                    System.out.println(dump);
                 }
             }
-        } else {
-            for (int i = 0; i < size; i++) {
-                if (isComplex) {
-                    System.out.printf(String.format("%3d %.5f %.5f\n", i, getReal(i), getImag(i)));
-                } else {
-                    System.out.printf(String.format("%3d %.5f\n", i, getReal(i)));
-                }
-            }
-        }
-
-        if (fileWriter != null) {
-            fileWriter.close();
         }
     }
 

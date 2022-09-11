@@ -28,10 +28,12 @@ import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.processor.gui.spectra.PeakDisplayParameters;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
 import org.nmrfx.processor.optimization.Fitter;
+import org.nmrfx.utils.GUIUtils;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.function.Consumer;
@@ -93,9 +95,6 @@ public class PathTool implements PeakNavigable, ControllerTool {
         peakNavigator.setPeakList();
         controller.addScaleBox(peakNavigator, toolBar);
 
-
-        String iconSize = "16px";
-        String fontSize = "7pt";
         ArrayList<Button> buttons = new ArrayList<>();
         Button bButton;
 
@@ -108,24 +107,24 @@ public class PathTool implements PeakNavigable, ControllerTool {
         allButton.setOnAction(e -> allDatasets());
         allButton.getStyleClass().add("toolButton");
         dataButtons.add(allButton);
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.FAST_BACKWARD, "", iconSize, fontSize, ContentDisplay.GRAPHIC_ONLY);
+        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.FAST_BACKWARD, "", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.GRAPHIC_ONLY);
         bButton.setOnAction(e -> firstDataset(e));
         dataButtons.add(bButton);
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.BACKWARD, "", iconSize, fontSize, ContentDisplay.GRAPHIC_ONLY);
+        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.BACKWARD, "", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.GRAPHIC_ONLY);
         bButton.setOnAction(e -> previousDataset(e));
         dataButtons.add(bButton);
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.FORWARD, "", iconSize, fontSize, ContentDisplay.GRAPHIC_ONLY);
+        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.FORWARD, "", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.GRAPHIC_ONLY);
         bButton.setOnAction(e -> nextDataset(e));
         dataButtons.add(bButton);
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.FAST_FORWARD, "", iconSize, fontSize, ContentDisplay.GRAPHIC_ONLY);
+        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.FAST_FORWARD, "", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.GRAPHIC_ONLY);
         bButton.setOnAction(e -> lastDataset(e));
         dataButtons.add(bButton);
 
-        Button plusButton = GlyphsDude.createIconButton(FontAwesomeIcon.PLUS, "", iconSize, fontSize, ContentDisplay.GRAPHIC_ONLY);
+        Button plusButton = GlyphsDude.createIconButton(FontAwesomeIcon.PLUS, "", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.GRAPHIC_ONLY);
         plusButton.setOnAction(e -> addPeakToPath());
         dataButtons.add(plusButton);
 
-        Button minusButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS, "", iconSize, fontSize, ContentDisplay.GRAPHIC_ONLY);
+        Button minusButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS, "", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.GRAPHIC_ONLY);
         minusButton.setOnAction(e -> removePeakFromPath());
         dataButtons.add(minusButton);
 
@@ -227,7 +226,9 @@ public class PathTool implements PeakNavigable, ControllerTool {
 
         fitBar.getItems().addAll(nField, fillerf1, fitButton, addButton, showButton, fillerf2);
         setActionMenuDisabled(true);
-
+        // The different control items end up with different heights based on font and icon size,
+        // set all the items to use the same height
+        toolBar.heightProperty().addListener((observable, oldValue, newValue) -> GUIUtils.toolbarAdjustHeights(Arrays.asList(toolBar, fitBar)));
         ChangeListener<List<Peak>> selPeakListener = new ChangeListener<List<Peak>>() {
 
             @Override
@@ -830,7 +831,6 @@ checkLists(pp, 0.25, False)
         PeakPath path = peakPaths.getPath(peak);
         nField.setText("");
         if (path != null) {
-            //System.out.println(path.toString());
             int nPeaks = path.getPeakDistances().size();
             int nValid = path.getNValid();
             boolean confirmed = path.confirmed();
@@ -870,9 +870,7 @@ checkLists(pp, 0.25, False)
                 String[] parNames = peakPaths.getParNames();
                 if (fitPars != null) {
                     initFitFields(fitPars.length);
-//                    for (int i = 0; i < fitPars.length; i++) {
-//                        System.out.printf("%s= %.3f +/- %.3f\n", parNames[i], fitPars[i], fitErrs[i]);
-//                    }
+
                     for (int i = 0; i < fitPars.length; i++) {
                         fitFields[i].setText(String.format("%s= %.3f +/- %.3f", parNames[i], fitPars[i], fitErrs[i]));
                     }

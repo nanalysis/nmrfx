@@ -1,11 +1,7 @@
 package org.nmrfx.structure.chemistry.predict;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.FileInputStream;
-import java.io.FileReader;
-import java.io.InputStream;
-import java.io.LineNumberReader;
+import java.io.*;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Collections;
@@ -13,10 +9,15 @@ import java.util.Objects;
 import java.util.TreeSet;
 import java.nio.charset.Charset;
 import java.util.List;
+import java.util.stream.Stream;
+
 import org.apache.commons.collections4.bag.HashBag;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class HosePrediction {
 
+    private static final Logger log = LoggerFactory.getLogger(HosePrediction.class);
     static Charset charset = Charset.forName("US-ASCII");
     int nShellGroups = 3;
     byte[] buffer = null;
@@ -83,9 +84,6 @@ public class HosePrediction {
             this.ppmH = null;
             this.ppmC = null;
             upDownList = new ArrayList<>();
-//             for (String shell:shells) {
-            //                System.out.println("shell " + shell);
-            //           }
         }
 
         HOSEPPM(String code, ArrayList<Integer> upDownList) {
@@ -94,9 +92,6 @@ public class HosePrediction {
             this.ppmH = null;
             this.ppmC = null;
             this.upDownList = upDownList;
-//             for (String shell:shells) {
-            //                System.out.println("shell " + shell);
-            //           }
         }
 
         HOSEPPM(String code, String[] shells, Double ppmC, Double ppmH, ArrayList<Integer> upDownList) {
@@ -185,7 +180,6 @@ public class HosePrediction {
         public int shellEquals(HOSEPPM hosePPM) {
             int nEqual = 0;
             for (int i = 0; i < shells.length; i++) {
-                //System.out.println(shells[i] + " " + hosePPM.shells[i]);
                 if (!shells[i].equals(hosePPM.shells[i])) {
                     break;
                 }
@@ -322,33 +316,31 @@ public class HosePrediction {
                 if (cPPMs.size() > 1) {
                     HOSEStat cStat = new HOSEStat(cPPMs);
                     if (cStat.range > 30.0) {
-                        System.out.println(cPPMs);
-                        System.out.println("C " + cStat.range + " " + hosePPM.code);
+                        log.info("{}", cPPMs);
+                        log.info("C {} {}", cStat.range, hosePPM.code);
                     }
                 }
                 if (hPPMs.size() > 1) {
                     HOSEStat hStat = new HOSEStat(hPPMs);
                     if (hStat.range > 1.0) {
-                        System.out.println(hPPMs);
-                        System.out.println("H " + hStat.range + " " + hosePPM.code);
+                        log.info("{}", hPPMs);
+                        log.info("H {} {}", hStat.range, hosePPM.code);
                     }
                 }
                 nMatched++;
             }
             i += nMatch;
         }
-        System.out.println(nMatched);
+        log.info("{}", nMatched);
         return 0;
     }
 
     public int find(String s) {
         int pos = Collections.binarySearch(hoseList, s, (Comparator) new HOSEComparator());
         int hosePos = -1;
-        //System.out.println("find at " + pos);
 
         if (pos >= 0) {
             hosePos = hoseList.get(pos);
-            //System.out.println(getHose(hosePos));
         } else {
             pos = -(pos + 1);
             if ((pos > 0) && (pos < hoseList.size())) {
@@ -454,7 +446,6 @@ public class HosePrediction {
             pResult = predict(hosePPM, iShell);
             if (pResult != null) {
                 HOSEStat stat = pResult.getStat(elemType);
-//System.out.println(stat.nValues);
                 if ((stat != null) && (stat.nValues >= 1)) {
                     break;
                 }
@@ -469,13 +460,11 @@ public class HosePrediction {
         ArrayList<Double> cDistances = new ArrayList<>();
         ArrayList<Double> hDistances = new ArrayList<>();
         int pos = find(hosePPM);
-//System.out.println("pred pos " + pos + " with shell " + nShells);
         HashBag hoseBag = hosePPM.getShellBag(nShells + 1);
         int searchPos = pos;
         while ((searchPos >= 0)) {
             HOSEPPM testHOSE = getHose(searchPos);
             int nEqual = testHOSE.shellEquals(hosePPM);
-//System.out.println("AnEqual " + searchPos + " " +  nEqual + " " + testHOSE.ppmC);
             if (nEqual < nShells) {
                 break;
             }
@@ -501,7 +490,6 @@ public class HosePrediction {
         while ((searchPos >= 0) && (searchPos < hoseList.size())) {
             HOSEPPM testHOSE = getHose(searchPos);
             int nEqual = testHOSE.shellEquals(hosePPM);
-//System.out.println("BnEqual " + searchPos + " " +  nEqual + " " + testHOSE.ppmC);
             if (nEqual < nShells) {
                 break;
             }
@@ -539,17 +527,11 @@ public class HosePrediction {
         int[] nValues = new int[2];
         int[] nNulls = new int[2];
         int[] nViols = new int[2];
-        try {
-            FileReader reader = new FileReader(validate);
-            LineNumberReader lineReader = new LineNumberReader(reader);
-            while (true) {
+        try (Stream<String> lines = Files.lines(new File(validate).toPath())){
+             lines.forEach(line -> {
                 cPPMs.clear();
                 hPPMs.clear();
-                String string = lineReader.readLine();
-                if (string == null) {
-                    break;
-                }
-                String[] values = string.split("\t");
+                String[] values = line.split("\t");
                 String[] ppmValues = values[5].split(" ");
                 String[] hoseString = values[4].split(" ");
                 ArrayList<Integer> upDownList = compressStereo(hoseString[1]);
@@ -567,7 +549,6 @@ public class HosePrediction {
                         hPPMs.add(Double.parseDouble(ppmValues[i + 1]));
                     }
                 }
-//System.out.println(cPPMs.size() + " " + hPPMs.size() + " " + hoseString[0]);
                 String[] statNames = {"13C", "1H"};
                 double[] extra = {2.0, 0.4};
                 for (int i = 0; i < 2; i++) {
@@ -604,33 +585,28 @@ public class HosePrediction {
                         nNulls[i]++;
                     } else {
                         nValues[i]++;
-                        //double predPPM = stat.dStat.getPercentile(50.0);
                         double predPPM = stat.wmean;
                         deltaSums[i] += (ppm - predPPM) * (ppm - predPPM);
-                        System.out.printf("%s\t%8.2f\t%8.2f\t%8.2f\t%d\t%d\t%s\t%s\t%s\n", statNames[i], ppm, predPPM, Math.abs(ppm - predPPM), iShell, stat.nValues, hoseString[0], smile, molNum);
-                    }
-                    if ((stat == null) || (stat.nValues < 4)) {
-                        if (stat == null) {
-                            //System.err.println(lineReader.getLineNumber() + " " + statNames[i] + " " + hoseString[0] + " null " + iShell + " " +  ppm);
-                        } else {
-                            //System.err.println(lineReader.getLineNumber() + " " + statNames[i] + " " + hoseString[0] + " insufficient " + stat.nValues + " " +  iShell + " " + ppm);
+                        if (log.isInfoEnabled()) {
+                            String logMsg = String.format("%s\t%8.2f\t%8.2f\t%8.2f\t%d\t%d\t%s\t%s\t%s", statNames[i], ppm, predPPM, Math.abs(ppm - predPPM), iShell, stat.nValues, hoseString[0], smile, molNum);
+                            log.info(logMsg);
                         }
-                    } else {
+                    }
+                    if ((stat != null && stat.nValues >= 4)) {
                         double p0 = stat.dStat.getPercentile(1.);
                         double p1 = stat.dStat.getPercentile(99.);
                         double extraValue = extra[i] * (maxShells - iShell);
                         if ((ppm < (p0 - extraValue)) || (ppm > (p1 + extraValue))) {
-                            //System.err.println(lineReader.getLineNumber() + " " + statNames[i] + " " + hoseString[0] + " " + (p0-extraValue) + " " + ppm + " " + (p1+extraValue) + " " + stat.nValues + " " + iShell);
                             nViols[i]++;
                         }
                     }
                 }
-            }
-            reader.close();
+            });
         } catch (IOException ioE) {
+            log.warn(ioE.getMessage(), ioE);
         }
         for (int i = 0; i < 2; i++) {
-            System.err.println(nValues[i] + " " + deltaSums[i] + " " + Math.sqrt(deltaSums[i] / nValues[i]) + " " + nViols[i] + " " + nNulls[i]);
+            log.warn("{} {} {} {} {}", nValues[i], deltaSums[i], Math.sqrt(deltaSums[i] / nValues[i]), nViols[i], nNulls[i]);
         }
     }
 
@@ -701,12 +677,8 @@ public class HosePrediction {
     }
 
     public void openData(String fileName, boolean resourceMode) {
-        try {
-            InputStream iStream;
+        try (InputStream iStream = resourceMode ? ClassLoader.getSystemResourceAsStream(fileName) : new FileInputStream(fileName)){
             if (resourceMode) {
-//                System.out.println("open " + fileName);
-                iStream = ClassLoader.getSystemResourceAsStream(fileName);
-//                System.out.println("got " + iStream);
                 ByteArrayOutputStream byteBuffer = new ByteArrayOutputStream();
                 int nRead;
                 byte[] data = new byte[16384];
@@ -716,38 +688,26 @@ public class HosePrediction {
                 byteBuffer.flush();
                 buffer = byteBuffer.toByteArray();
             } else {
-                iStream = new FileInputStream(fileName);
                 int size = iStream.available();
                 buffer = new byte[size];
                 iStream.read(buffer);
             }
-            iStream.close();
         } catch (IOException ioE) {
-            System.out.println("error " + ioE.getMessage());
+            log.warn(ioE.getMessage(), ioE);
         }
     }
 
     public static HosePrediction getPredictor() {
-//        System.out.println("getP");
         HosePrediction hosePredictor = new HosePrediction();
-//        System.out.println("gotP");
         hosePredictor.openData("data/hosecodes.txt", true);
-//        System.out.println("gotD");
-//        System.out.println("gotI");
         hosePredictor.genIndex();
-//        System.out.println("gend");
         return hosePredictor;
     }
 
     public static HosePrediction getPredictorN() {
-//        System.out.println("getPN");
         HosePrediction hosePredictor = new HosePrediction();
-//        System.out.println("gotPN");
         hosePredictor.openData("data/hosecodesN.txt", true);
-//        System.out.println("gotDN");
-//        System.out.println("gotIN");
         hosePredictor.genIndex();
-//        System.out.println("gendN");
         return hosePredictor;
     }
 
@@ -766,10 +726,14 @@ public class HosePrediction {
     }
 
     public void dump() {
-        int i = 0;
-        for (Integer j : hoseList) {
-            System.out.println(i + " " + j + " " + codeStarts.get(j) + " " + getHose(j));
-            i++;
+        if (log.isDebugEnabled()) {
+            StringBuilder hoseStr = new StringBuilder();
+            int i = 0;
+            for (Integer j : hoseList) {
+                hoseStr.append(i).append(" ").append(j).append(" ").append(codeStarts.get(j)).append(" ").append(getHose(j));
+                i++;
+            }
+            log.debug(hoseStr.toString());
         }
     }
 

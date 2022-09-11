@@ -20,6 +20,8 @@ package org.nmrfx.processor.datasets;
 import org.nmrfx.datasets.DatasetHeaderIO;
 import org.nmrfx.datasets.DatasetLayout;
 import org.nmrfx.datasets.DatasetStorageInterface;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.Closeable;
 import java.io.File;
@@ -36,6 +38,7 @@ import java.nio.channels.FileChannel;
  */
 public class MappedSubMatrixFile implements DatasetStorageInterface, Closeable {
 
+    private static final Logger log = LoggerFactory.getLogger(MappedSubMatrixFile.class);
     private RandomAccessFile raFile;
     private final Dataset dataset;
     private final File file;
@@ -69,10 +72,10 @@ public class MappedSubMatrixFile implements DatasetStorageInterface, Closeable {
     void init() throws IOException {
         int blockHeaderSize = layout.getBlockHeaderSize() / BYTES;
         long matSize = BYTES;
-        System.err.println(dataset.getFileName());
-        System.err.println("header size " + layout.getFileHeaderSize());
+        log.info(dataset.getFileName());
+        log.info("header size {}", layout.getFileHeaderSize());
         for (int i = 0; i < dataset.getNDim(); i++) {
-            System.err.println("map sub " + i + " " + layout.blockSize[i] + " " + layout.nBlocks[i] + " " + dataset.getSizeTotal(i));
+            log.info("map sub {} {} {} {}", i, layout.blockSize[i], layout.nBlocks[i], dataset.getSizeTotal(i));
             matSize *= (layout.blockSize[i] + blockHeaderSize) * layout.nBlocks[i];
         }
         totalSize = matSize / BYTES;
@@ -132,11 +135,8 @@ public class MappedSubMatrixFile implements DatasetStorageInterface, Closeable {
         for (int iDim = 0; iDim < offsets.length; iDim++) {
             blockNum += ((offsets[iDim] / layout.blockSize[iDim]) * layout.offsetBlocks[iDim]);
             offsetInBlock += ((offsets[iDim] % layout.blockSize[iDim]) * layout.offsetPoints[iDim]);
-//                System.out.println(iDim + " " + offsets[iDim] + " " + blockNum + " " + offsetInBlock + " " + layout.offsetPoints[iDim] + " " + layout.offsetBlocks[iDim]);
         }
-        long position = blockNum * (layout.blockPoints * BYTES + layout.blockHeaderSize) + offsetInBlock * BYTES;
-//            System.out.println(position + " " + layout.blockPoints);
-        return position;
+        return blockNum * (layout.blockPoints * BYTES + layout.blockHeaderSize) + offsetInBlock * BYTES;
     }
 
     @Override
@@ -181,7 +181,7 @@ public class MappedSubMatrixFile implements DatasetStorageInterface, Closeable {
                 mappedBuffer.putInt(p, (int) d);
             }
         } catch (Exception e) {
-            System.out.println("map range error " + p + " " + totalSize);
+            log.warn("map range error {} {}", p, totalSize);
         }
     }
 

@@ -27,6 +27,7 @@ import javafx.application.Platform;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
+import javafx.collections.MapChangeListener;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -46,22 +47,22 @@ import javafx.util.StringConverter;
 import javafx.util.converter.DoubleStringConverter;
 import javafx.util.converter.FloatStringConverter;
 import org.controlsfx.dialog.ExceptionDialog;
-import org.nmrfx.chemistry.Atom;
-import org.nmrfx.chemistry.InvalidMoleculeException;
-import org.nmrfx.chemistry.MolFilter;
-import org.nmrfx.chemistry.PPMv;
+import org.nmrfx.analyst.gui.AnalystApp;
+import org.nmrfx.chemistry.*;
 import org.nmrfx.chemistry.io.MoleculeIOException;
 import org.nmrfx.chemistry.io.NMRStarReader;
 import org.nmrfx.chemistry.io.PDBFile;
 import org.nmrfx.chemistry.io.PPMFiles;
-import org.nmrfx.peaks.events.FreezeListener;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakList;
+import org.nmrfx.peaks.events.FreezeListener;
 import org.nmrfx.star.ParseException;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.structure.chemistry.predict.BMRBStats;
 import org.nmrfx.structure.chemistry.predict.ProteinPredictor;
 import org.nmrfx.utils.GUIUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -76,6 +77,7 @@ import java.util.*;
  * @author johnsonb
  */
 public class AtomController implements Initializable, FreezeListener {
+    private static final Logger log = LoggerFactory.getLogger(AtomController.class);
 
     static final DecimalFormat formatter = new DecimalFormat();
     static final Map<String, String> filterMap = new HashMap<>();
@@ -158,12 +160,20 @@ public class AtomController implements Initializable, FreezeListener {
             controller.stage = stage;
             stage.setTitle("Atom Attributes");
             stage.show();
+            AnalystApp.addMoleculeListener(controller::moleculeMapChanged);
         } catch (IOException ioE) {
             System.out.println(ioE.getMessage());
         }
 
         return controller;
 
+    }
+
+    private void moleculeMapChanged(MapChangeListener.Change<? extends String,? extends MoleculeBase> change) {
+        if (MoleculeFactory.getMolecules().isEmpty()) {
+            setFilterString("");
+            refreshAtomTable();
+        }
     }
 
     private void clearInsepctor() {
@@ -471,6 +481,7 @@ public class AtomController implements Initializable, FreezeListener {
             try {
                 Molecule.selectAtomsForTable(molFilter, atoms);
             } catch (InvalidMoleculeException ex) {
+                log.warn(ex.getMessage(), ex);
             }
         }
         atomTableView.setItems(atoms);
@@ -546,7 +557,7 @@ public class AtomController implements Initializable, FreezeListener {
             try {
                 predictor.predictRandom(mol, -1);
             } catch (IOException ioE) {
-
+                log.warn(ioE.getMessage(), ioE);
             }
 
         }

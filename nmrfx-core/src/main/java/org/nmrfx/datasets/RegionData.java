@@ -110,7 +110,6 @@ public class RegionData {
                 }
                 r2 += (delta * delta) / (0.47 * width[ii] * width[ii]);
             }
-            //System.err.println(ii+" "+iVec[ii]+" "+iPointAbs[ii]+" "+cpt[ii]+" "+value+" "+width[ii]);
         }
         if (iscenter) {
             center = value;

@@ -12,6 +12,8 @@ import java.io.InputStream;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+
 import org.apache.commons.text.TextStringBuilder;
 import org.yaml.snakeyaml.Yaml;
 
@@ -65,6 +67,10 @@ public class JournalFormatPeaks {
             JournalFormat journalFormat = parseYamlMap(map);
             journalFormats.put(journalFormat.name, journalFormat);
         }
+    }
+
+    public static Set<String> getFormatNames() {
+        return journalFormats.keySet();
     }
 
     public static JournalFormat getFormat(String journal) {

@@ -195,15 +195,12 @@ public class OperationInfo {
         }
         if (index == -1) {
             int orderIndex = opOrderList.indexOf(newOp);
-//            System.out.println("order index " + orderIndex);
             if (orderIndex != -1) {
                 int i = 0;
                 for (String curOp : current) {
                     curOp = trimOp(curOp);
                     int curIndex = opOrderList.indexOf(curOp);
-//                    System.out.println("cur " + curOp + " " + curIndex);
                     if (curIndex >= orderIndex) {
-//                        System.out.println("found " + index);
                         index = i;
                         break;
                     }

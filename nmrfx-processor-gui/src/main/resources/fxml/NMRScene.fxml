@@ -1,16 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import java.lang.*?>
-<?import java.net.*?>
-<?import javafx.scene.control.*?>
-<?import javafx.scene.layout.*?>
-<?import org.controlsfx.control.*?>
-<?import org.nmrfx.processor.gui.*?>
-<HBox  xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1"
-       styleClass="mainFxmlClass" fx:controller="org.nmrfx.processor.gui.FXMLController"
-       prefHeight="600.0" prefWidth="900.0"  HBox.hgrow="ALWAYS" VBox.vgrow="ALWAYS">
+<?import java.net.URL?>
+<?import javafx.scene.control.Separator?>
+<?import javafx.scene.control.ToolBar?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Pane?>
+<?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+
+<HBox prefHeight="600.0" prefWidth="900.0" styleClass="mainFxmlClass" HBox.hgrow="ALWAYS" VBox.vgrow="ALWAYS" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.nmrfx.processor.gui.FXMLController">
     <children>
-        <BorderPane fx:id="mainBox" HBox.hgrow="ALWAYS" VBox.vgrow="ALWAYS" >
+        <BorderPane fx:id="mainBox" HBox.hgrow="ALWAYS" VBox.vgrow="ALWAYS">
             <stylesheets>
                 <URL value="@/styles/Styles.css" />
             </stylesheets>
@@ -29,15 +33,8 @@
                     <top>
                     </top>
                     <center>
-                        <StackPane fx:id="chartPane" VBox.vgrow="ALWAYS" prefHeight="1000" />
+                        <StackPane fx:id="chartPane" prefHeight="1000" VBox.vgrow="ALWAYS" />
                     </center>
-                    <left>
-                        <VBox fx:id="vectorBox" BorderPane.alignment="CENTER">
-                            <children>
-                                <Slider fx:id="vecNum1" blockIncrement="1.0" majorTickUnit="16.0" min="1" max="64.0" minorTickCount="4" onValueChange="#handleVecNum" onMouseReleased="#handleVecRelease" orientation="VERTICAL" showTickLabels="true" showTickMarks="true" VBox.vgrow="ALWAYS" />
-                            </children>
-                        </VBox>
-                    </left>
                     <right>
                         <GridPane fx:id="rightBox" BorderPane.alignment="CENTER">
                             <columnConstraints>
@@ -48,19 +45,11 @@
                                 <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
                             </rowConstraints>
                             <children>
-                                <VBox fx:id="phaserBox" GridPane.columnIndex="0" fillWidth="false" GridPane.hgrow="NEVER" GridPane.vgrow="ALWAYS">
+                                <VBox fx:id="phaserBox" fillWidth="false" GridPane.columnIndex="0" GridPane.hgrow="NEVER" GridPane.vgrow="ALWAYS">
                                 </VBox>
                             </children>
                         </GridPane>
                     </right>
-                    <bottom>
-                        <HBox fx:id="dimHBox" alignment="CENTER_LEFT">
-                            <children>
-                                <Label text="Dimension: " alignment="CENTER_LEFT"/>
-                                <HBox fx:id="dimHBox2" alignment="CENTER_LEFT"/>
-                            </children>
-                        </HBox>
-                    </bottom>
                 </BorderPane>
             </center>
             <right>
@@ -68,7 +57,7 @@
             <bottom>
                 <VBox fx:id="bottomBox">
                     <children>
-                        <ToolBar fx:id="btoolBar" >
+                        <ToolBar fx:id="btoolBar">
                             <items>
                                 <Pane HBox.hgrow="ALWAYS" />
                             </items>
@@ -77,9 +66,8 @@
                 </VBox>
             </bottom>
         </BorderPane>
-        <Separator orientation="VERTICAL"/>
+        <Separator orientation="VERTICAL" />
         <StackPane fx:id="processorPane" VBox.vgrow="ALWAYS" />
     </children>
         
 </HBox>
-

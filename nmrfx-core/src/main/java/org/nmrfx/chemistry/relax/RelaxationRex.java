@@ -47,14 +47,14 @@ public class RelaxationRex extends RelaxationData {
 
     @Override
     public String[] getParNames() {
-        String[] parNames = {expType.getName(), "Rex"};
+        String[] parNames = {getExpType().getName(), "Rex"};
         return parNames;
     }
 
     @Override
     public Double getValue(String name) {
-        if (name.equals(expType.getName())) {
-            return value;
+        if (name.equals(getExpType().getName())) {
+            return getValue();
         } else if (name.equals("Rex")) {
             return RexValue;
         } else {
@@ -64,8 +64,8 @@ public class RelaxationRex extends RelaxationData {
 
     @Override
     public Double getError(String name) {
-        if (name.equals(expType.getName())) {
-            return error;
+        if (name.equals(getExpType().getName())) {
+            return getError();
         } else if (name.equals("Rex")) {
             return RexError;
         } else {

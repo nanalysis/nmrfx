@@ -35,6 +35,8 @@ import org.nmrfx.graphicsio.GraphicsContextInterface;
 import org.nmrfx.graphicsio.GraphicsContextProxy;
 import org.nmrfx.graphicsio.GraphicsIOException;
 import org.nmrfx.graphicsio.SVGGraphicsContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -42,6 +44,7 @@ import org.nmrfx.graphicsio.SVGGraphicsContext;
  */
 public class XYCanvasChart {
 
+    private static final Logger log = LoggerFactory.getLogger(XYCanvasChart.class);
     public static final Color[] colors = {
         Color.web("#1b9e77"),
         Color.web("#d95f02"),
@@ -199,12 +202,12 @@ public class XYCanvasChart {
             if (minMax != null) {
                 bounds = new double[4];
                 if (force || xAxis.isAutoRanging()) {
-                    double[] axBounds = xAxis.autoRange(minMax[0], minMax[1]);
+                    double[] axBounds = xAxis.autoRange(minMax[0], minMax[1], true);
                     bounds[0] = axBounds[0];
                     bounds[1] = axBounds[1];
                 }
                 if (force || yAxis.isAutoRanging()) {
-                    double[] axBounds = yAxis.autoRange(minMax[2], minMax[3]);
+                    double[] axBounds = yAxis.autoRange(minMax[2], minMax[3], true);
                     bounds[2] = axBounds[0];
                     bounds[3] = axBounds[1];
                 }
@@ -367,7 +370,7 @@ public class XYCanvasChart {
                 }
             }
         } catch (GraphicsIOException ioE) {
-            ioE.printStackTrace();
+            log.warn(ioE.getMessage(), ioE);
         }
         gC.restore();
     }

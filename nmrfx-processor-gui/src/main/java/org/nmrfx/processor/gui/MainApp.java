@@ -24,6 +24,8 @@ import javafx.application.HostServices;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.geometry.Bounds;
+import javafx.geometry.Point2D;
 import javafx.scene.control.*;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.image.Image;
@@ -35,15 +37,20 @@ import org.apache.commons.lang3.SystemUtils;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.chemistry.io.MoleculeIOException;
 import org.nmrfx.console.ConsoleController;
+import org.nmrfx.peaks.Multiplet;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.io.PeakReader;
 import org.nmrfx.processor.datasets.Dataset;
+import org.nmrfx.processor.gui.annotations.AnnoText;
 import org.nmrfx.processor.gui.controls.GridPaneCanvas;
 import org.nmrfx.processor.gui.log.Log;
+import org.nmrfx.processor.gui.log.LogConsoleController;
 import org.nmrfx.processor.gui.project.GUIProject;
 import org.nmrfx.processor.utilities.WebConnect;
 import org.nmrfx.project.ProjectBase;
 import org.python.util.InteractiveInterpreter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.beans.PropertyChangeSupport;
 import java.io.File;
@@ -58,7 +65,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class MainApp extends Application {
-
+    private static final Logger log = LoggerFactory.getLogger(MainApp.class);
     public static ArrayList<Stage> stages = new ArrayList<>();
     public static PreferencesController preferencesController;
     public static DocWindowController docWindowController;
@@ -71,6 +78,11 @@ public class MainApp extends Application {
     protected static MainApp mainApp = null;
     static boolean isAnalyst = false;
     static Font defaultFont;
+    // Icon and font sizes for icon buttons
+    public static final String ICON_SIZE_STR = "16px";
+    public static final String ICON_FONT_SIZE_STR = "7pt";
+    // The default font size
+    public static final String REG_FONT_SIZE_STR = "9pt";
 
     public static void closeAll() {
         for (PolyChart chart : PolyChart.CHARTS) {
@@ -169,6 +181,20 @@ public class MainApp extends Application {
 
     public static boolean isMac() {
         return SystemUtils.IS_OS_MAC;
+    }
+
+    /**
+     * Set the default font size of the provided stage with the provided
+     * font size string.
+     * @param stage The stage to set the font for
+     * @param fontSizeStr A string font size ex. '9pt'
+     */
+    public static void setStageFontSize(Stage stage, String fontSizeStr) {
+        if (stage != null && stage.getScene() != null) {
+            stage.getScene().getRoot().setStyle("-fx-font-size: " + fontSizeStr);
+        } else {
+            log.info("Unable to set font size for stage.");
+        }
     }
 
     public static MenuBar getMenuBar() {
@@ -312,7 +338,7 @@ public class MainApp extends Application {
                 recentFIDMenuItem, recentDatasetMenuItem, newMenuItem, new SeparatorMenuItem(), pdfMenuItem, svgMenuItem, pngMenuItem, loadPeakListMenuItem);
 
         Menu spectraMenu = new Menu("Spectra");
-        MenuItem copyItem = new MenuItem("Copy Spectrum as SVG Text");
+        MenuItem copyItem = new MenuItem("Copy Spectrum as SVG");
         copyItem.setOnAction(e -> FXMLController.getActiveController().copySVGAction(e));
         MenuItem deleteItem = new MenuItem("Delete Spectrum");
         deleteItem.setOnAction(e -> FXMLController.getActiveController().getActiveChart().close());
@@ -533,6 +559,10 @@ public class MainApp extends Application {
         return ConsoleController.getConsoleController();
     }
 
+    public static LogConsoleController getLogConsoleController() {
+        return LogConsoleController.getLogConsoleController();
+    }
+
     public static void writeOutput(String string) {
         if (getConsoleController() == null) {
             System.out.println(string);
@@ -599,5 +629,13 @@ public class MainApp extends Application {
                 dialog.showAndWait();
             }
         }
+    }
+
+    public void hidePopover(boolean always) {
+
+    }
+
+    public void showPopover(PolyChart chart, Bounds objectBounds, Object hitObject) {
+
     }
 }

@@ -44,9 +44,7 @@ import org.nmrfx.structure.rna.BasePair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedWriter;
 import java.io.FileNotFoundException;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -250,6 +248,11 @@ public class Molecule extends MoleculeBase {
         //molTableModel = new MoleculeTableModel();
     }
 
+    /**
+     * Removes the current active molecule and clears associated objects. If other molecules are available, one of
+     * those molecules will be set to the new active molecule, but which molecule will be set is undefined since
+     * molecules may be stored in a collection without ordering.
+     */
     public void remove() {
 
         StructureProject.getActive().removeMolecule(name);
@@ -262,9 +265,9 @@ public class Molecule extends MoleculeBase {
         Collection<MoleculeBase> mols = MoleculeFactory.getMolecules();
 
         MoleculeFactory.setActive(null);
-        for (MoleculeBase mol : mols) {
-            MoleculeFactory.setActive(mol);
-            break;
+        Iterator<MoleculeBase> it = mols.iterator();
+        if (it.hasNext()) {
+            MoleculeFactory.setActive(it.next());
         }
     }
 
@@ -351,7 +354,7 @@ public class Molecule extends MoleculeBase {
         int i = 0;
         for (Atom atom : atoms) {
             if (atom == null) {
-                System.out.println(aname0 + " " + aname1);
+                log.warn("{} {}", aname0, aname1);
                 throw new IllegalArgumentException("No atom for " + i);
             }
             spSets[i] = atom.spatialSet;
@@ -426,7 +429,7 @@ public class Molecule extends MoleculeBase {
         int i = 0;
         for (Atom atom : atoms) {
             if (atom == null) {
-                System.out.println(aname0 + " " + aname1 + " " + aname2);
+                log.warn("{} {} {}", aname0, aname1, aname2);
                 throw new IllegalArgumentException("No atom for " + i);
             }
             spSets[i] = atom.spatialSet;
@@ -503,7 +506,7 @@ public class Molecule extends MoleculeBase {
         int i = 0;
         for (Atom atom : atoms) {
             if (atom == null) {
-                System.out.println(aname0 + " " + aname1 + " " + aname2 + " " + aname3);
+                log.warn("{} {} {} {}", aname0, aname1, aname2, aname3);
                 throw new IllegalArgumentException("No atom for " + i);
             }
             spSets[i] = atom.spatialSet;
@@ -542,7 +545,7 @@ public class Molecule extends MoleculeBase {
         AngleTreeGenerator aTreeGen = new AngleTreeGenerator();
         atomTree = aTreeGen.genTree(this, startAtom, null);
         // fixme  need to not measure already measured geometry till we can only measure once
-        aTreeGen.measureAtomTree(this, atomTree);
+        aTreeGen.measureAtomTree(this, atomTree, true, false);
         setRingClosures(aTreeGen.getRingClosures());
         setupGenCoords();
     }
@@ -552,6 +555,7 @@ public class Molecule extends MoleculeBase {
             AtomEnergyProp.readPropFile();
             AtomEnergyProp.makeIrpMap();
         } catch (FileNotFoundException ex) {
+            log.warn(ex.getMessage(), ex);
         } catch (IOException ex) {
             log.error(ex.getMessage(), ex);
         }
@@ -585,8 +589,6 @@ public class Molecule extends MoleculeBase {
     }
 
     public void dumpCoordsGen() {
-        System.out.printf("    %8s %8s %8s %8s %10s %10s %10s \n", "GPName", "PName", "Name", "DName", "BondL", "ValAng",
-                "DihAng");
         if (genVecs == null) {
             return;
         }
@@ -717,13 +719,10 @@ public class Molecule extends MoleculeBase {
                     } else {
                         dihedralAngle += dihedralAngles[nAngles];
                     }
-//                    if (!Double.isFinite(dihedralAngle)) {
-//                        System.out.println(nAngles + " " + a4.getFullName());
-//                    }
                     nAngles++;
                     boolean ok = coords.calculateNeRF(dihedralAngle, a4.bndCos, a4.bndSin, v4);
                     if (!ok) {
-                        System.out.println(a4.getParent() + " " + a4.getFullName() + " " + a4.valanceAngle);
+                        log.info("{} {} {}", a4.getParent(), a4.getFullName(), a4.valanceAngle);
                     }
                     // boolean ok = coords.calculate(dihedralAngle, a4.bndCos, a4.bndSin, v4);
                 }
@@ -770,7 +769,7 @@ public class Molecule extends MoleculeBase {
             }
             Point3 pt = atom.getPoint(iStruct);
             if (pt == null) {
-                System.err.println("updateVecCoords null pt " + atom.getFullName() + " " + (i - 1));
+                log.warn("updateVecCoords null pt {} {}", atom.getFullName(), (i - 1));
             } else {
                 eCoords.setCoords(i, pt.getX(), pt.getY(), pt.getZ(), resNum, atom);
             }
@@ -790,7 +789,7 @@ public class Molecule extends MoleculeBase {
             //            atom.iAtom = i;
             Point3 pt = atom.getPoint();
             if (pt == null) {
-                System.out.println("updateFromVecCoords null pt " + atom.getFullName() + " " + atom.eAtom);
+                log.warn("updateFromVecCoords null pt {} {}", atom.getFullName(), atom.eAtom);
             } else {
                 FastVector3D fVec = vecCoords[atom.eAtom];
                 if (fVec == null) {
@@ -800,38 +799,6 @@ public class Molecule extends MoleculeBase {
                     atom.setPoint(newPt);
                 }
 
-            }
-        }
-    }
-
-    public void getAngles(final double[] dihedralAngles) {
-        Atom a1 = null;
-        Atom a2 = null;
-        Atom a4 = null;
-        int nAngles = 0;
-        updateAtomArray();
-
-        for (Atom a3 : atoms) {
-            for (int iBond = 0; iBond < a3.bonds.size(); iBond++) {
-                Bond bond = a3.bonds.get(iBond);
-                if (bond.begin == a3) {
-                    a4 = bond.end;
-                } else {
-                    a4 = bond.begin;
-                }
-                if (a4 == null) {
-                    continue;
-                }
-                if (a4 == a3.parent) {
-                    continue;
-                }
-                if (a4.parent != a3) {
-                    continue;
-                }
-                if (dihedralAngles == null) {
-                    dihedralAngles[nAngles] = a4.dihedralAngle;
-                }
-                nAngles++;
             }
         }
     }
@@ -846,7 +813,7 @@ public class Molecule extends MoleculeBase {
             } else {
                 checkAtom = bond.begin;
             }
-            System.err.println(atom.getName() + " " + checkAtom.getName() + " " + checkAtom.getAtomicNumber());
+            log.warn("{} {} {}", atom.getName(), checkAtom.getName(), checkAtom.getAtomicNumber());
             if (checkAtom.getAtomicNumber() == 1) {
                 hydrogens.add(checkAtom);
             }
@@ -893,7 +860,6 @@ public class Molecule extends MoleculeBase {
     public int selectAtoms(String selectionString, boolean append, boolean inverse) throws InvalidMoleculeException {
         MolFilter molFilter = new MolFilter(selectionString);
         List<SpatialSet> selected = matchAtoms(molFilter);
-//        System.out.println(selectionString + " " + molFilter + " " + selected.size());
         int nSelected = setSelected(selected, append, inverse);
         return nSelected;
     }
@@ -1706,6 +1672,7 @@ public class Molecule extends MoleculeBase {
         try {
             c = getCenter(0);
         } catch (MissingCoordinatesException ex) {
+            log.warn(ex.getMessage(), ex);
         }
         List<double[]> molecCoords = new ArrayList<>();
         for (Atom atom : atoms) {
@@ -1784,6 +1751,19 @@ public class Molecule extends MoleculeBase {
             }
         }
 
+        return list;
+    }
+
+    public List<Atom> getAtomsWithProperty(String propertyName) {
+        List<Atom> list = new ArrayList<>();
+        updateAtomArray();
+        for (Atom atom : atoms) {
+            Object prop = atom.getProperty(propertyName);
+            if ((prop instanceof Boolean) && ((Boolean) prop)) {
+                SpatialSet spatialSet = atom.getSpatialSet();
+                list.add(spatialSet.getAtom());
+            }
+        }
         return list;
     }
 
@@ -1997,7 +1977,7 @@ public class Molecule extends MoleculeBase {
         updateAtomArray();
         for (Atom atom : atoms) {
             if (atom.entity == null) {
-                System.err.println("Null entity " + atom.getFullName());
+                log.warn("Null entity {}", atom.getFullName());
             } else {
                 SpatialSet spatialSet = atom.getSpatialSet();
 
@@ -2108,7 +2088,7 @@ public class Molecule extends MoleculeBase {
 
                             int paired = BasePair.getBasePairType(residueA, residueB);
                             if (paired != 0) {
-                                System.out.println(paired + " " + residueA.getName() + " " + residueB.getName());
+                                log.info("{} {} {}", paired, residueA.getName(), residueB.getName());
                             }
                         }
 
@@ -2211,39 +2191,7 @@ public class Molecule extends MoleculeBase {
         }
         return lcmbMap;
     }
-
-    public void calcDistanceInputMatrix(final int iStruct, double distLim, String filename) {
-        List atomSources = RNAAttributes.getAtomSources();
-        ArrayList<double[]> inputs = new ArrayList<>();
-        ArrayList<String> targetNames = new ArrayList<>();
-
-        for (Atom targetAtom : atoms) {
-            String prefix = targetAtom.getEntity().getName();
-            double[] distRow = calcDistanceInputMatrixRow(iStruct, distLim, targetAtom);
-            inputs.add(distRow);
-            targetNames.add(prefix + ";" + targetAtom.getFullName());
-        }
-        try {
-            BufferedWriter bw = new BufferedWriter(new FileWriter(filename));
-
-            bw.write("#" + "\t" + "\t" + "\t");
-            for (int i = 0; i < atomSources.size(); i++) {
-                bw.write(atomSources.get(i) + "\t");
-            }
-            bw.newLine();
-            for (int i = 0; i < inputs.size(); i++) {
-                bw.write(targetNames.get(i) + "\t");
-                for (int j = 0; j < inputs.get(i).length; j++) {
-                    bw.write(inputs.get(i)[j] + "\t");
-                }
-                bw.newLine();
-            }
-            bw.flush();
-        } catch (IOException e) {
-
-        }
-    }
-
+    
     public double[] calcDistanceInputMatrixRow(final int iStruct, double distLim, Atom targetAtom) {
         return calcDistanceInputMatrixRow(iStruct, distLim, targetAtom, 1.0);
 
@@ -2350,7 +2298,6 @@ public class Molecule extends MoleculeBase {
         while (e.hasNext()) {
             entity = (Entity) e.next();
 
-            //System.err.println(entity.name);
             if (entity instanceof Polymer) {
                 Polymer polymer = (Polymer) entity;
                 firstResidue = polymer.getFirstResidue();
@@ -2657,7 +2604,7 @@ public class Molecule extends MoleculeBase {
             }
             // skip hydrogens that are likely to be in rapid exchange
             if (atom1.getParent() == null) {
-                System.out.println("atom1 parent null " + atom1.getFullName());
+                log.warn("atom1 parent null {}", atom1.getFullName());
             } else {
                 if ((atom1.getAtomicNumber() == 1) && atom1.getParent().getType().equals("N+")) {
                     continue;
@@ -2678,7 +2625,7 @@ public class Molecule extends MoleculeBase {
                 }
                 // skip hydrogens that are likely to be in rapid exchange
                 if (atom2.getParent() == null) {
-                    System.out.println("atom2 parent null " + atom2.getFullName());
+                    log.warn("atom2 parent null {}", atom2.getFullName());
                 } else {
 
                     if ((atom2.getAtomicNumber() == 1) && atom2.getParent().getType().equals("N+")) {
@@ -2713,11 +2660,11 @@ public class Molecule extends MoleculeBase {
                         pt2 = atom2.getPoint(iStruct);
                     }
                     if (pt1 == null) {
-                        System.out.println("null point for " + atom1.getShortName() + " " + iStruct);
+                        log.warn("null point for {} {}", atom1.getShortName(), iStruct);
                         continue;
                     }
                     if (pt2 == null) {
-                        System.out.println("null point for " + atom2.getShortName() + " " + iStruct);
+                        log.warn("null point for {} {}", atom2.getShortName(), iStruct);
                         continue;
                     }
                     double distance = Atom.calcDistance(pt1, pt2);
@@ -2955,14 +2902,12 @@ public class Molecule extends MoleculeBase {
                             branch.add(atomEnd);
                             lastRotName = lastRot.getShortName();
                         }
-                        //  System.out.println(atomStart.getShortName() + " " + atomEnd.getShortName() + " " + mNode.getShell() + " " + mNode.getMaxShell() + " " + lastRotName);
                     }
                 }
             }
         }
         for (Atom atom : atomList) {
             if (atomBranches.containsKey(atom)) {
-                //  System.out.print(atom.getShortName());
                 ArrayList<Atom> branch = atomBranches.get(atom);
                 Collections.sort(branch, (a, b) -> Integer.compare(a.getIndex(), b.getIndex()));
                 atom.branchAtoms = new Atom[branch.size()];
@@ -3053,7 +2998,7 @@ public class Molecule extends MoleculeBase {
             }
         }
 
-        System.err.println("no bond");
+        log.warn("no bond");
 
         return null;
     }
@@ -3219,7 +3164,7 @@ public class Molecule extends MoleculeBase {
                 case LABEL_HPPM: {
                     ArrayList<Atom> hydrogens = getAttachedHydrogens(atom);
                     int nH = hydrogens.size();
-                    System.err.println("nH " + nH);
+                    log.warn("nH {}", nH);
                     PPMv ppmV0 = null;
                     PPMv ppmV1 = null;
                     Atom hAtom = null;

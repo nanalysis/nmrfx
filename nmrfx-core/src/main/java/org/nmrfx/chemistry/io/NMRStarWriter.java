@@ -274,7 +274,15 @@ public class NMRStarWriter {
         }
     }
 
-    static void writeEntityHeaderSTAR3(Writer chan, Entity entity, int entityID) throws IOException {
+    /**
+     * Writes the header information for the entity.
+     * @param chan The Writer object to use to write the header.
+     * @param entity The entity for the header information.
+     * @param entityID The id of the entity.
+     * @param nonStandard If true, write yes and if false write no after the "Nstd_monomer" entry.
+     * @throws IOException
+     */
+    static void writeEntityHeaderSTAR3(Writer chan, Entity entity, int entityID,  boolean nonStandard) throws IOException {
         String label = entity.label;
         chan.write("save_" + label + "\n");
         chan.write("_Entity.Sf_category                 ");
@@ -303,7 +311,6 @@ public class NMRStarWriter {
             String oneLetterCode = polymer.getOneLetterCode();
             chan.write("\n;\n");
             int codeLen = oneLetterCode.length();
-            boolean nonStandard = false;
             int j = 0;
             while (j < codeLen) {
                 int endIndex = j + 40;
@@ -507,7 +514,7 @@ public class NMRStarWriter {
         while (entityIterator.hasNext()) {
             Entity entity = entityIterator.next();
             if (entity instanceof Polymer) {
-                writeEntityHeaderSTAR3(chan, entity, entityID);
+                writeEntityHeaderSTAR3(chan, entity, entityID, false);
                 writeEntityCommonNamesSTAR3(chan, entity, entityID);
                 Polymer polymer = (Polymer) entity;
                 writeEntitySeqSTAR3(chan, polymer, entityID);
@@ -807,13 +814,14 @@ public class NMRStarWriter {
             atomName = atom.getName();
         }
         sBuilder.append(String.format("%-3s", "."));
-        sBuilder.append(String.format("%-6s", resNum));
-        sBuilder.append(String.format("%-4s", resName));
-        sBuilder.append(String.format("%-4s", atomName));
+        sBuilder.append(String.format("%-6s ", resNum));
+        sBuilder.append(String.format("%-4s ", resName));
+        sBuilder.append(String.format("%-4s ", atomName));
     }
     static void buildAtomString(StringBuilder sBuilder, Atom atom, int entityID) {
        String resNum = ".";
         String resName = ".";
+        String atomName = ".";
         String nucName = ".";
         int isotope = 1;
         int compID = 1;
@@ -822,7 +830,8 @@ public class NMRStarWriter {
             Entity atomEntity = atom.getEntity();
             compID = atomEntity.getIDNum();
             resName = atom.getResidueName();
-            nucName = atom.getName();
+            atomName = atom.getName();
+            nucName = atom.getElementName();
             switch (nucName) {
                 case "C":
                     isotope = 13;
@@ -842,15 +851,15 @@ public class NMRStarWriter {
             }
         }
 
-        sBuilder.append(String.format("%-4s", "."));
-        sBuilder.append(String.format("%-4d", entityID));
-        sBuilder.append(String.format("%-4d", entityID));
-        sBuilder.append(String.format("%-6d", compID));
-        sBuilder.append(String.format("%-6s", resNum));
-        sBuilder.append(String.format("%-6s", resName));
-        sBuilder.append(String.format("%-4s", nucName));
-        sBuilder.append(String.format("%-4s", nucName));
-        sBuilder.append(String.format("%-4s", isotope));
+        sBuilder.append(String.format("%-4s ", "."));
+        sBuilder.append(String.format("%-4d ", entityID));
+        sBuilder.append(String.format("%-4d ", entityID));
+        sBuilder.append(String.format("%-6d ", compID));
+        sBuilder.append(String.format("%-6s ", resNum));
+        sBuilder.append(String.format("%-6s ", resName));
+        sBuilder.append(String.format("%-4s ", atomName));
+        sBuilder.append(String.format("%-4s ", nucName));
+        sBuilder.append(String.format("%-4d ", isotope));
     }
 
     void writeExperiment(Writer chan, String catName, int expID, String nmrExpType, int sampleID, String sampleLabel,
@@ -883,7 +892,7 @@ public class NMRStarWriter {
      */
     public static void writeNOE(Writer chan, MoleculeBase molecule, List<RelaxationData> noeDataList, int listID) throws IOException {
         RelaxationData noeData0 = noeDataList.get(0);
-        String frameName = noeData0.getID();
+        String frameName = noeData0.getId();
         double field = noeData0.getField();
         chan.write("    ########################################\n");
         chan.write("    #  Heteronuclear NOE values  #\n");
@@ -1006,7 +1015,7 @@ public class NMRStarWriter {
             expName = "T2";
         }
 
-        String frameName = relaxDataA0.getID();
+        String frameName = relaxDataA0.getId();
         double field = relaxDataA0.getField();
         String coherenceType = relaxDataA0.getExtras().get("coherenceType");
         String units = relaxDataA0.getExtras().get("units");
@@ -1128,6 +1137,7 @@ public class NMRStarWriter {
         return sBuilder.toString();
 
     }
+
     /**
      * Write out the Relaxation Data (R1, R2, T1rho) sections of the STAR file.
      *
@@ -1137,10 +1147,9 @@ public class NMRStarWriter {
      * @param listID int. The number of the R1/R2/T1rho/NOE block in the file.
      * @throws IOException
      */
-    public static void writeOrderPars(Writer chan, MoleculeBase molecule, List<OrderPar> orderParList, int listID) throws IOException {
+    public static void writeOrderPars(Writer chan, MoleculeBase molecule, List<OrderPar> orderParList, int listID, String frameName) throws IOException {
         OrderPar orderPar0 = orderParList.get(0);
         String catName = "_Order_parameter_list";
-        String frameName = "order_parameters_" + listID;
 
         chan.write("    ########################################\n");
         chan.write("    #  Order parameters  #\n");
@@ -1181,19 +1190,6 @@ public class NMRStarWriter {
         String[] atomIDLoopStrings = {"ID", "Assembly_atom_ID", "Entity_assembly_ID", "Entity_ID", "Comp_index_ID", "Seq_ID",
                 "Comp_ID", "Atom_ID", "Atom_type", "Atom_isotope_number"};
 
-        String[] valueLoopStrings = {
-                "Order_param_val","Order_param_val_fit_err",
-                "Tau_e_val","Tau_e_val_fit_err",
-                "Tau_f_val","Tau_f_val_fit_err",
-                "Tau_s_val","Tau_s_val_fit_err",
-                "Rex_val","Rex_val_fit_err",
-                "Model_free_sum_squared_errs",
-                "Model_fit",
-                "Sf2_val","Sf2_val_fit_err",
-                "Ss2_val","Ss2_val_fit_err",
-                "SH2_val","SH2_val_fit_err",
-                "SN2_val","SN2_val_fit_err",
-                "Resonance_ID"};
         String[] authStrings = {"Auth_entity_assembly_ID",
                 "Auth_seq_ID", "Auth_comp_ID", "Auth_atom_ID", "Entry_ID", "Order_parameter_list_ID"};
 
@@ -1202,7 +1198,7 @@ public class NMRStarWriter {
         for (String loopString : atomIDLoopStrings) {
             chan.write("      " + catName + "." + loopString + "\n");
         }
-        for (String loopString : valueLoopStrings) {
+        for (String loopString : OrderPar.getOrderParLoopString()) {
             chan.write("      " + catName + "." + loopString + "\n");
         }
         for (String loopString : authStrings) {
@@ -1246,7 +1242,6 @@ public class NMRStarWriter {
         sBuilder.append(String.format("%-5d", idx));
         buildAtomString(sBuilder, atom, entityID);
         orderPar.valuesToStarString(sBuilder);
-        sBuilder.append(String.format("%-3s", "."));
 
         buildAuthorAtomString(sBuilder,atom);
         sBuilder.append(String.format("%-4s", "."));
@@ -1319,8 +1314,7 @@ public class NMRStarWriter {
             var molRelaxData = RelaxationData.getRelaxationData(molecule.getAtomArray());
             // loop over types so they always end up in same order in star file (useful for testing)
             // also results in listID counting from 1 for each type
-            relaxTypes[] types = {relaxTypes.R1, relaxTypes.R2, relaxTypes.NOE};
-            for (var type:types) {
+            for (var type:relaxTypes.values()) {
                 int listID = 1;
                 for (var relaxEntry : molRelaxData.entrySet()) {
                     var relaxDataList = relaxEntry.getValue();
@@ -1342,7 +1336,7 @@ public class NMRStarWriter {
             for (var relaxEntry : orderParData.entrySet()) {
                 var orderParList = relaxEntry.getValue();
                 if (!orderParList.isEmpty()) {
-                    writeOrderPars(chan, molecule, orderParList, listID);
+                    writeOrderPars(chan, molecule, orderParList, listID, relaxEntry.getKey());
                     listID++;
                 }
             }

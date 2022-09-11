@@ -5,6 +5,9 @@
  */
 package org.nmrfx.datasets;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
@@ -19,6 +22,8 @@ import static org.nmrfx.datasets.DatasetBase.*;
  * @author brucejohnson
  */
 public class DatasetHeaderIO {
+
+    private static final Logger log = LoggerFactory.getLogger(DatasetHeaderIO.class);
 
     /**
      * Read the header of an NMRView format dataset file into the fields of this
@@ -59,13 +64,13 @@ public class DatasetHeaderIO {
                 magic = DataUtilities.readSwapInt(dis, checkSwap);
 
                 if (magic != 874032077) {
-                    System.err.println("couldn't read header");
+                    log.warn("couldn't read header");
 
                     return null;
                 }
             }
         } catch (IOException e) {
-            System.err.println(e.getMessage());
+            log.warn(e.getMessage(), e);
 
             return null;
         }
@@ -184,7 +189,7 @@ public class DatasetHeaderIO {
             }
             lay.dimDataset();
         } catch (IOException e) {
-            System.err.println(e.getMessage());
+            log.warn(e.getMessage(), e);
 
             return null;
         }
@@ -221,7 +226,7 @@ public class DatasetHeaderIO {
             }
 
         } catch (IOException e) {
-            System.err.println(e.getMessage());
+            log.warn(e.getMessage(), e);
 
             return null;
         }
@@ -408,7 +413,7 @@ public class DatasetHeaderIO {
                 DataUtilities.writeBytes(outFile, byteBuffer.array(), 0, NV_HEADER_SIZE);
             }
         } catch (Exception e) {
-            System.err.println(e.getMessage());
+            log.warn(e.getMessage(), e);
         }
     }
 
@@ -491,7 +496,7 @@ public class DatasetHeaderIO {
                 DataUtilities.writeBytes(outFile, byteBuffer.array(), 0, ucsfFileHeaderSize);
             }
         } catch (Exception e) {
-            System.err.println(e.getMessage());
+            log.warn(e.getMessage(), e);
         }
     }
 }

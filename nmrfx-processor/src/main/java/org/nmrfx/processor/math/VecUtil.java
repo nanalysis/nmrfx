@@ -34,6 +34,9 @@ import org.apache.commons.math3.analysis.solvers.BisectionSolver;
 import org.apache.commons.math3.analysis.UnivariateFunction;
 import org.apache.commons.math3.analysis.solvers.UnivariateSolverUtils;
 import org.apache.commons.math3.exception.MathIllegalArgumentException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import static org.nmrfx.processor.math.Vec.apache_ift;
 
 /**
@@ -45,6 +48,7 @@ import static org.nmrfx.processor.math.Vec.apache_ift;
  */
 public class VecUtil {
 
+    private static final Logger log = LoggerFactory.getLogger(VecUtil.class);
     /**
      * Do a non-negative least squares fit of AX=B to find X given A and B.
      * Results are returned in an AmplitudeFitResult object which provides
@@ -78,9 +82,6 @@ public class VecUtil {
         ArrayRealVector Ax = (ArrayRealVector) AR.operate(rV);
         ArrayRealVector b = (ArrayRealVector) BR.getColumnVector(0);
         ArrayRealVector AxMinusB = Ax.subtract(b);
-        //    for (int i=0;i<nRows;i++) {
-        //        System.out.println(String.format("%10.5f %10.5f %10.5f",Ax.getEntry(i),b.getEntry(i),AxMinusB.getEntry(i)));
-        //  }
         ArrayRealVector delAbs = (ArrayRealVector) AxMinusB.mapToSelf(new org.apache.commons.math3.analysis.function.Abs());
         int maxIndex = delAbs.getMaxIndex();
         double maxValue = delAbs.getMaxValue();
@@ -177,7 +178,7 @@ public class VecUtil {
             b = bisect.solve(100, abF, b1, b2);
             a = abF.getA();
         } catch (MathIllegalArgumentException fE) {
-            System.out.println("function evaluation failure " + fE.getMessage());
+            log.warn("function evaluation failure {}", fE.getMessage(), fE);
         }
         parameters[0] = a;
         parameters[1] = b;
@@ -498,7 +499,6 @@ public class VecUtil {
             }
             // double fr = -Math.atan2(roots[i].getImaginary(), roots[i].getReal());
             // double dr = 1.0 - Math.log(roots[i].abs());
-            //System.err.println(i + " root " + roots[i].getReal() + " i " + roots[i].getImaginary()+" "+f+" "+d+" "+fr+" "+dr+" "+dSqr);
         }
     }
 

@@ -268,7 +268,6 @@ public class AlignmentCalc {
             for (int j = i + 1; j < vectors.size(); j++) {
                 Vector3D vec2 = vectors.get(j);
                 double dis = vec1.distance(vec2);
-                // System.out.printf("%6.1f %6.1f %6.1f\n", Math.toDegrees(ab[0]), Math.toDegrees(ab[1]),  dis);
                 min = Math.min(min, dis);
 
             }
@@ -288,19 +287,16 @@ public class AlignmentCalc {
         double dAlpha = Math.PI / mAlpha;
         double dBeta = a / dAlpha;
         angleMinimums.clear();
-//        System.out.println("gen angles " + n + " " + a + " " + d + " " + mAlpha + " " + dAlpha + " " + dBeta);
         for (int i = 0; i < mAlpha; i++) {
             double alpha = Math.PI * (i + 0.5) / mAlpha;
             int mBeta = (int) Math.round(2.0 * Math.PI * Math.sin(alpha) / dBeta);
             double mBetaD = (2.0 * Math.PI * Math.sin(alpha) / dBeta);
             double scale = mBetaD / mBeta;
-//            System.out.println(mBeta + " " + scale);
             for (int j = 0; j < mBeta; j++) {
                 double beta = 2.0 * Math.PI * (j + 0.5) / mBeta;
                 for (int h = 0; h < nGamma; h++) {
                     double gamma = (h + 0.5) * (2.0 * Math.PI) / nGamma;
                     nAngles++;
-//                System.out.printf("%6.1f %6.1f\n", Math.toDegrees(alpha), Math.toDegrees(beta));
                     Rotation rot = new Rotation(RotationOrder.XZX, RotationConvention.FRAME_TRANSFORM, alpha, beta, 0.0);
                     Vector3D rZVec = rot.applyTo(zVec);
                     Rotation rot2 = new Rotation(rZVec, gamma, RotationConvention.FRAME_TRANSFORM);
@@ -345,7 +341,6 @@ public class AlignmentCalc {
         double lastMin = lastAMin.getMin();
         nFreePositions = (int) ((rMid - d / 2 + lastMin) / slabWidth);
         nConstrainedPositions = (int) ((firstMin - lastMin) / slabWidth);
-//        System.out.println("first " + firstMin + " free " + nFreePositions + " " + angleMinimums.size() + " " + rMid + " " + nTotal + " nCons " + nConstrainedPositions);
 
         for (AngleMinimum aMin : angleMinimums) {
             double min1 = aMin.getMin();
@@ -456,11 +451,6 @@ public class AlignmentCalc {
             for (int i = 0; i < 3; i++) {
                 dots[i] = aMin.vecs[i].dotProduct(BVEC);// * aMin.scale;
             }
-//            System.out.printf("%5.2f %5.2f %8.5f %6d %6.2f\n", Math.toDegrees(aMin.getAlpha()), Math.toDegrees(aMin.getBeta()), scale, aMin.count, aMin.min);
-//            System.out.printf("%5.2f %5.2f %5.2f\n", aMin.vecs[0].getX(), aMin.vecs[0].getY(), aMin.vecs[0].getZ());
-//            System.out.printf("%5.2f %5.2f %5.2f\n", aMin.vecs[1].getX(), aMin.vecs[1].getY(), aMin.vecs[1].getZ());
-//            System.out.printf("%5.2f %5.2f %5.2f\n", aMin.vecs[2].getX(), aMin.vecs[2].getY(), aMin.vecs[2].getZ());
-//            System.out.printf("%5.2f %5.2f %5.2f\n", dots[0], dots[1], dots[2]);
             for (int i = 0; i < 3; i++) {
                 for (int j = 0; j < 3; j++) {
                     double k = i == j ? 1.0 : 0.0;

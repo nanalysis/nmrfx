@@ -13,12 +13,16 @@ import java.nio.file.Path;
 import java.util.List;
 
 import org.nmrfx.chemistry.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
  * @author Bruce Johnson
  */
 public class PPMFiles {
+
+    private static final Logger log = LoggerFactory.getLogger(PPMFiles.class);
 
     public static void writePPM(MoleculeBase molecule, FileWriter chan, int ppmSet, boolean refMode) throws IOException {
         int i;
@@ -108,7 +112,7 @@ public class PPMFiles {
                 }
             }
         } catch (IOException ioE) {
-
+            log.warn(ioE.getMessage(), ioE);
         }
     }
 }

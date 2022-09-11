@@ -56,6 +56,8 @@ import org.nmrfx.structure.seqassign.RunAbout.TypeInfo;
 import org.nmrfx.structure.seqassign.SpinSystem.AtomPresent;
 import org.nmrfx.structure.seqassign.SpinSystem.PeakMatch;
 import org.nmrfx.utils.GUIUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.*;
@@ -70,6 +72,8 @@ import static org.nmrfx.processor.gui.spectra.DatasetAttributes.AXMODE.PPM;
  * @author Bruce Johnson
  */
 public class RunAboutGUI implements PeakListener, ControllerTool {
+
+    private static final Logger log = LoggerFactory.getLogger(RunAboutGUI.class);
     static Font activeFont = Font.font(null, FontWeight.BOLD, 14);
     static Font regularFont = Font.font(null, FontWeight.NORMAL, 14);
 
@@ -143,14 +147,18 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         int getNRows() {
             int totalRows = 0;
             Molecule mol = Molecule.getActive();
-            for (Polymer polymer : mol.getPolymers()) {
-                if (polymer.isPeptide()) {
-                    int nRes = polymer.getResidues().size();
-                    double width = (resWidth * (10 + 1)) * nRes / 10.0;
-                    int rows = (int) Math.ceil(width / vBox.getWidth());
-                    totalRows += rows;
+            if (mol != null) {
+                for (Polymer polymer : mol.getPolymers()) {
+                    if (polymer.isPeptide()) {
+                        int nRes = polymer.getResidues().size();
+                        double width = (resWidth * (10 + 1)) * nRes / 10.0;
+                        int rows = (int) Math.ceil(width / vBox.getWidth());
+                        totalRows += rows;
 
+                    }
                 }
+            } else {
+                log.info("No active molecule. Unable to get rows.");
             }
             return totalRows;
 
@@ -178,7 +186,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
             return active;
         }
         public void setActive(boolean value) {
-            System.out.println("set value " + value);
+            log.info("set value {}", value);
             activeProperty().set(value);
         }
         public boolean getActive() {
@@ -279,14 +287,23 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
     void initPreferences(HBox hBox) {
         GUIProject.getActive().getPeakLists();
         ObservableList<PeakList> peakLists = FXCollections.observableArrayList(new ArrayList<>(PeakList.peakLists()));
+        ToolBar buttonBar = new ToolBar();
 
-        GridPane gridBox1 = new GridPane();
+        Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "Close", MainApp.ICON_SIZE_STR, MainApp.REG_FONT_SIZE_STR, ContentDisplay.LEFT);
+        closeButton.setOnAction(e -> close());
+        if (closeAction != null) {
+            buttonBar.getItems().add(closeButton);
+        }
         Label refLabel = new Label("Ref List");
         ChoiceBox<PeakList> referenceChoice = new ChoiceBox<>();
-        gridBox1.add(refLabel, 0, 0);
-        gridBox1.add(referenceChoice, 1, 0);
+        buttonBar.getItems().add(refLabel);
+        buttonBar.getItems().add(referenceChoice);
         referenceChoice.getItems().addAll(peakLists);
-        refListObj.set(peakLists.get(0));
+        if (!peakLists.isEmpty()) {
+            refListObj.set(peakLists.get(0));
+        } else {
+            log.warn("Peaks list is empty, unable to set peaks.");
+        }
         referenceChoice.valueProperty().bindBidirectional(refListObj);
 
         VBox vBox2 = new VBox();
@@ -306,7 +323,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
 
         TableColumn<PeakListSelection, Boolean> peakListPatternColumn = new TableColumn<>("Pattern");
         peakListPatternColumn.setCellValueFactory(new PropertyValueFactory<>("pattern"));
-       // peakListPatternColumn.setCellFactory(param -> new CheckBoxTableCell<>());
+        // peakListPatternColumn.setCellFactory(param -> new CheckBoxTableCell<>());
         peakListPatternColumn.setEditable(false);
 
         TableColumn<PeakListSelection, Integer> peakListSizeColumn = new TableColumn<>("Size");
@@ -348,15 +365,14 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         Button addListButton = new Button("Add Lists");
         addListButton.setOnAction(e-> addLists());
 
-        HBox buttonBar = new HBox();
-        buttonBar.getChildren().addAll(configureButton, setupButton, autoTolButton, addListButton);
+        buttonBar.getItems().addAll(configureButton, setupButton, autoTolButton, addListButton);
         vBox2.getChildren().addAll(buttonBar, peakTableView);
-
-        hBox.getChildren().addAll(gridBox1, vBox2);
+        HBox.setHgrow(vBox2, Priority.ALWAYS);
+        hBox.getChildren().addAll(vBox2);
         var model = peakTableView.getSelectionModel();
         configureButton.setDisable(true);
         model.selectedIndexProperty().addListener(e -> {
-            System.out.println("selected " + model.getSelectedIndices());
+            log.info("selected {}", model.getSelectedIndices());
             configureButton.setDisable(model.getSelectedIndices().isEmpty());
         });
     }
@@ -366,7 +382,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         peakTableView.getItems().setAll(peakListSelectors);
         for (var peakListSelector:peakListSelectors) {
             if (runAbout.getPeakLists().contains(peakListSelector.peakList)) {
-                 peakListSelector.setActive(true);
+                peakListSelector.setActive(true);
             }
         }
         registerPeakLists();
@@ -419,26 +435,24 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         peakIdField.setMaxWidth(75);
         RunAboutGUI navigator = this;
 
-        String iconSize = "12px";
-        String fontSize = "7pt";
         ArrayList<Button> buttons = new ArrayList<>();
         Button bButton;
-        Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "", iconSize, fontSize, ContentDisplay.GRAPHIC_ONLY);
+        Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "Close", MainApp.ICON_SIZE_STR, MainApp.REG_FONT_SIZE_STR, ContentDisplay.LEFT);
         closeButton.setOnAction(e -> close());
 
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.FAST_BACKWARD, "", iconSize, fontSize, ContentDisplay.GRAPHIC_ONLY);
+        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.FAST_BACKWARD, "", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.GRAPHIC_ONLY);
         bButton.setOnAction(navigator::firstPeak);
         buttons.add(bButton);
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.BACKWARD, "", iconSize, fontSize, ContentDisplay.GRAPHIC_ONLY);
+        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.BACKWARD, "", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.GRAPHIC_ONLY);
         bButton.setOnAction(navigator::previousPeak);
         buttons.add(bButton);
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.FORWARD, "", iconSize, fontSize, ContentDisplay.GRAPHIC_ONLY);
+        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.FORWARD, "", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.GRAPHIC_ONLY);
         bButton.setOnAction(navigator::nextPeak);
         buttons.add(bButton);
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.FAST_FORWARD, "", iconSize, fontSize, ContentDisplay.GRAPHIC_ONLY);
+        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.FAST_FORWARD, "", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.GRAPHIC_ONLY);
         bButton.setOnAction(navigator::lastPeak);
         buttons.add(bButton);
-        deleteButton = GlyphsDude.createIconToggleButton(FontAwesomeIcon.BAN, fontSize, iconSize, ContentDisplay.GRAPHIC_ONLY);
+        deleteButton = GlyphsDude.createIconToggleButton(FontAwesomeIcon.BAN, "", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.GRAPHIC_ONLY);
         // prevent accidental activation when inspector gets focus after hitting space bar on peak in spectrum
         // a second space bar hit would activate
         deleteButton.setOnKeyPressed(Event::consume);
@@ -588,6 +602,10 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         MapChangeListener<String, PeakList> mapChangeListener = (MapChangeListener.Change<? extends String, ? extends PeakList> change) -> updatePeakListMenu();
 
         Project.getActive().addPeakListListener(mapChangeListener);
+
+        // The different control items end up with different heights based on font and icon size,
+        // set all the items to use the same height
+        this.navigatorToolBar.heightProperty().addListener((observable, oldValue, newValue) -> GUIUtils.toolbarAdjustHeights(List.of(navigatorToolBar)));
     }
 
     class ClusterStatus {
@@ -817,7 +835,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
                     frag.setResSeqScore(resSeqScores.get(0));
                 }
                 for (ResidueSeqScore resSeqScore : resSeqScores) {
-                    System.out.println(resSeqScore.getFirstResidue().getNumber() + " " + resSeqScore.getScore());
+                    log.debug("{} {}", resSeqScore.getFirstResidue().getNumber(), resSeqScore.getScore());
                     Residue residue = resSeqScore.getFirstResidue();
                     for (int iRes = 0; iRes < resSeqScore.getNResidues(); iRes++) {
                         String key = residue.getPolymer().getName() + residue.getNumber();

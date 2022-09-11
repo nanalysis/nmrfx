@@ -4,8 +4,7 @@ import ch.qos.logback.classic.LoggerContext;
 import org.slf4j.ILoggerFactory;
 import org.slf4j.LoggerFactory;
 
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 import static org.slf4j.Logger.ROOT_LOGGER_NAME;
 
@@ -13,7 +12,10 @@ import static org.slf4j.Logger.ROOT_LOGGER_NAME;
  * Utility class to manipulate logging framework at runtime, and hide implementation details.
  */
 public class Log {
+    private static final String LOGBACK_CONFIGURATION_FILE_PROPERTY = "logback.configurationFile";
     public static MemoryAppender memoryAppender;
+
+    private static final Map<String, LogLevel> updatedLoggers = new HashMap<>();
 
     /**
      * Specify where to find the log configuration file.
@@ -21,7 +23,16 @@ public class Log {
      * @param path the path to the configuration file
      */
     public static void setConfigFile(String path) {
-        System.setProperty("logback.configurationFile", path);
+        System.setProperty(LOGBACK_CONFIGURATION_FILE_PROPERTY, path);
+    }
+
+    /**
+     * Check if the log configuration file has already been set by a system property
+     *
+     * @return true if the log configuration property has been set.
+     */
+    public static boolean isConfigFileSet() {
+        return System.getProperty(LOGBACK_CONFIGURATION_FILE_PROPERTY) != null;
     }
 
     /**
@@ -79,6 +90,12 @@ public class Log {
         return Collections.unmodifiableList(memoryAppender.getRecords());
     }
 
+    public static void clearRecordsFromMemory() {
+        if (memoryAppender != null) {
+            memoryAppender.clearRecords();
+        }
+    }
+
     /**
      * Change a log level dynamically.
      *
@@ -90,6 +107,16 @@ public class Log {
         if (factory instanceof LoggerContext) {
             LoggerContext context = (LoggerContext) factory;
             context.getLogger(packageName).setLevel(level.getLogbackLevel());
+            updatedLoggers.put(packageName, level);
         }
+    }
+
+    /**
+     * Gets a copy of the updateLoggers.
+     *
+     * @return A SortedMap of logger name to LogLevel pairings.
+     */
+    public static SortedMap<String, LogLevel> getModifiedLogLevels() {
+        return new TreeMap<>(updatedLoggers);
     }
 }

@@ -48,10 +48,13 @@ import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.SpectralDim;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.FXMLController;
+import org.nmrfx.processor.gui.MainApp;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.controls.GridPaneCanvas;
 import org.nmrfx.processor.project.Project;
 import org.nmrfx.structure.chemistry.Molecule;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -59,6 +62,7 @@ import org.nmrfx.structure.chemistry.Molecule;
  */
 public class AtomBrowser {
 
+    private static final Logger log = LoggerFactory.getLogger(AtomBrowser.class);
     ToolBar browserToolBar;
     FXMLController controller;
     Consumer closeAction;
@@ -101,9 +105,7 @@ public class AtomBrowser {
         this.browserToolBar = toolBar;
         toolBar.setPrefWidth(900.0);
 
-        String iconSize = "16px";
-        String fontSize = "7pt";
-        Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "Close", iconSize, fontSize, ContentDisplay.TOP);
+        Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "Close", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
         closeButton.setOnAction(e -> close());
 
         toolBar.getItems().add(closeButton);
@@ -300,7 +302,7 @@ public class AtomBrowser {
             rangeItem.min = min;
             rangeItem.max = max;
         } catch (NumberFormatException nfE) {
-
+            log.warn("Unable to update range value.", nfE);
         }
         updateRange();
     }
@@ -315,12 +317,8 @@ public class AtomBrowser {
             maxField.setText(String.format("%.1f", max));
 
             controller.getCharts().stream().forEach(chart -> {
-                try {
-                    chart.getAxis(rangeDim).setLowerBound(min);
-                    chart.getAxis(rangeDim).setUpperBound(max);
-                } catch (NumberFormatException nfE) {
-
-                }
+                chart.getAxis(rangeDim).setLowerBound(min);
+                chart.getAxis(rangeDim).setUpperBound(max);
             });
         }
     }
@@ -343,7 +341,7 @@ public class AtomBrowser {
                 chart.getAxis(rangeDim).setLowerBound(min);
                 chart.getAxis(rangeDim).setUpperBound(max);
             } catch (NumberFormatException nfE) {
-
+                log.warn("Unable to update range value.", nfE);
             }
         });
     }

@@ -38,4 +38,8 @@ public class MemoryAppender extends AppenderBase<ILoggingEvent> {
     public List<LogRecord> getRecords() {
         return records;
     }
+
+    public void clearRecords() {
+        records.clear();
+    }
 }

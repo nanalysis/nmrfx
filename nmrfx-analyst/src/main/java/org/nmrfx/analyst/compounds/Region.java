@@ -8,6 +8,8 @@ import org.apache.commons.math3.analysis.interpolation.SplineInterpolator;
 import org.apache.commons.math3.analysis.polynomials.PolynomialSplineFunction;
 import org.apache.commons.math3.exception.OutOfRangeException;
 import org.apache.commons.math3.stat.correlation.PearsonsCorrelation;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -15,6 +17,7 @@ import org.apache.commons.math3.stat.correlation.PearsonsCorrelation;
  */
 public class Region {
 
+    private static final Logger log = LoggerFactory.getLogger(Region.class);
     private final CompoundData cData;
     private final double[] intensities;
     private final int start;
@@ -210,6 +213,7 @@ public class Region {
                 interpIntensities[i] = pSF.value(xValue);
             }
         } catch (OutOfRangeException adE) {
+            log.warn(adE.getMessage(), adE);
         }
         return interpIntensities;
     }

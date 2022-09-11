@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
- /*
+/*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
@@ -26,33 +26,31 @@ package org.nmrfx.processor.gui;
 import de.jensd.fx.glyphs.GlyphsDude;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import java.io.IOException;
+
+import javafx.scene.Node;
+import javafx.scene.control.*;
+import javafx.scene.layout.*;
 import org.nmrfx.processor.datasets.Dataset;
 import java.text.DecimalFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
 import javafx.beans.value.ChangeListener;
 import javafx.geometry.HPos;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.control.Button;
-import javafx.scene.control.ContentDisplay;
-import javafx.scene.control.Label;
-import javafx.scene.control.TextField;
-import javafx.scene.control.ToggleButton;
-import javafx.scene.layout.Background;
-import javafx.scene.layout.BackgroundFill;
-import javafx.scene.layout.CornerRadii;
-import javafx.scene.layout.GridPane;
-import javafx.scene.layout.Pane;
-import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
-import javafx.scene.text.Font;
 import javafx.scene.text.TextAlignment;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.math.VecBase;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
+import org.nmrfx.utils.GUIUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -60,6 +58,7 @@ import org.nmrfx.processor.gui.spectra.DatasetAttributes;
  */
 public class SpectrumMeasureBar {
 
+    private static final Logger log = LoggerFactory.getLogger(SpectrumMeasureBar.class);
     static final DecimalFormat formatter = new DecimalFormat();
 
     static {
@@ -70,6 +69,7 @@ public class SpectrumMeasureBar {
     TextField sdevField = new TextField();
     TextField snField = new TextField();
     FXMLController controller;
+    VBox vBox;
     GridPane gridPane;
     boolean[][] iconStates = new boolean[2][2];
     ChangeListener<String> vecNumListener;
@@ -89,36 +89,38 @@ public class SpectrumMeasureBar {
         this.closeAction = closeAction;
     }
 
-    public void buildBar(GridPane gridPane) {
-        this.gridPane = gridPane;
-        String iconSize = "12px";
-        String fontSize = "7pt";
-        Font font = new Font(10);
-        Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "", iconSize, fontSize, ContentDisplay.GRAPHIC_ONLY);
+    public void buildBar(VBox vBox) {
+        this.vBox = vBox;
+        gridPane = new GridPane();
+        gridPane.setHgap(5);
+        gridPane.setVgap(5);
+        ToolBar toolBar = new ToolBar();
+        vBox.getChildren().add(toolBar);
+        double prefWidthLabelsButtons = 35.0;
+        Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "Close", MainApp.ICON_SIZE_STR, MainApp.REG_FONT_SIZE_STR, ContentDisplay.LEFT);
         closeButton.setOnAction(e -> close());
         absModeButton = new ToggleButton("SF");
         gridModeButton = new ToggleButton("Grid");
-        absModeButton.setFont(font);
-        gridModeButton.setFont(font);
         absModeButton.setOnAction(e -> update());
         gridModeButton.setOnAction(e -> update());
+        absModeButton.prefWidthProperty().bind(gridModeButton.widthProperty());
         Button sdevButton = new Button("SD");
-        sdevButton.setStyle("-fx-font-weight: normal; -fx-font-size:10pt;");
-        sdevButton.setFont(font);
+        sdevButton.getStyleClass().add("toolButton");
+        sdevButton.setPrefWidth(prefWidthLabelsButtons);
         sdevButton.setOnAction(e -> measureSDev());
 
-        gridPane.add(closeButton, 0, 0);
-        gridPane.add(absModeButton, 0, 1);
-        gridPane.add(gridModeButton, 0, 2);
-        double[] prefWidths = {75.0, 120.0};
+        toolBar.getItems().add(closeButton);
+        gridPane.add(absModeButton, 0, 0);
+        gridPane.add(gridModeButton, 0, 1);
+        toolBar.getItems().add(gridPane);
+        double[] prefWidths = {75.0, 110.0};
         String[] rowNames = {"1", "2", "\u0394"};
 
         String[] xys = {"x", "y"};
         for (int row = 0; row < rowNames.length; row++) {
             for (int col = 0; col < xys.length; col++) {
                 Label label = new Label(rowNames[row] + xys[col] + ":");
-                label.setFont(font);
-                label.setPrefWidth(40);
+                label.setPrefWidth(prefWidthLabelsButtons);
                 label.setTextAlignment(TextAlignment.RIGHT);
                 label.setAlignment(Pos.CENTER_RIGHT);
                 gridPane.add(label, col * 3 + 1, row);
@@ -132,7 +134,6 @@ public class SpectrumMeasureBar {
                 for (int kType = 0; kType < 2; kType++) {
                     crossText[iCross][jOrient][kType] = new TextField();
                     crossText[iCross][jOrient][kType].setPrefWidth(prefWidths[kType]);
-                    crossText[iCross][jOrient][kType].setFont(font);
                     gridPane.add(crossText[iCross][jOrient][kType], 2 + jDim * 3 + kType, iCross);
                 }
             }
@@ -140,22 +141,17 @@ public class SpectrumMeasureBar {
         for (int i = 0; i < intensityField.length; i++) {
             intensityField[i] = new TextField();
             intensityField[i].setPrefWidth(100.0);
-            intensityField[i].setFont(font);
             Label label = new Label("Int " + (i + 1) + ":");
-            label.setFont(font);
-            label.setPrefWidth(60);
+            label.setPrefWidth(prefWidthLabelsButtons);
             label.setTextAlignment(TextAlignment.RIGHT);
             label.setAlignment(Pos.CENTER_RIGHT);
             gridPane.add(label, 7, i);
             gridPane.add(intensityField[i], 8, i);
         }
-        sdevField.setFont(font);
         sdevField.setPrefWidth(100.0);
-        snField.setFont(font);
         snField.setPrefWidth(100.0);
         Label snLabel = new Label("S/N:");
-        snLabel.setFont(font);
-        snLabel.setPrefWidth(60);
+        snLabel.setPrefWidth(prefWidthLabelsButtons);
         snLabel.setTextAlignment(TextAlignment.RIGHT);
         snLabel.setAlignment(Pos.CENTER_RIGHT);
 
@@ -165,10 +161,17 @@ public class SpectrumMeasureBar {
         gridPane.add(snLabel, 9, 1);
         gridPane.add(snField, 10, 1);
 
+        // The different control items end up with different heights based on font and icon size,
+        // set all the items to use the same height
+        List<Node> items = new ArrayList<>(Arrays.asList(closeButton, absModeButton, gridModeButton));
+        items.addAll(gridPane.getChildren());
+        toolBar.heightProperty().addListener(
+                (observable, oldValue, newValue) -> GUIUtils.nodeAdjustHeights(items));
+
     }
 
-    public GridPane getToolBar() {
-        return gridPane;
+    public VBox getToolBar() {
+        return vBox;
     }
 
     public void close() {
@@ -433,7 +436,7 @@ public class SpectrumMeasureBar {
                 sdevField.setText(String.format("%.6f", sdevMin));
                 sDev = sdevMin;
             } catch (IOException ioE) {
-
+                log.warn(ioE.getMessage(), ioE);
             }
         }
         return sDev;

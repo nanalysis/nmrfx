@@ -706,6 +706,7 @@ public class PeakListTools {
 
             iOffsets[minDim] += optValue.getPoint();
         } catch (Exception e) {
+            log.warn(e.getMessage(), e);
         }
     }
 // fixme removed bpmatchpeaks
@@ -963,7 +964,7 @@ public class PeakListTools {
         int nDataDim = datasets.get(0).getNDim();
         int nDim = peakList.getNDim();
         if (nDim == nDataDim) {
-            quantifyPeaks(peakList, datasets, f, mode, 1);  // fixme will this work
+            quantifyPeaks(peakList, datasets, f, mode, 1);
         } else if (nDim == (nDataDim - 1)) {
             int scanDim = 2;
             int nPlanes = datasets.get(0).getSizeTotal(scanDim);
@@ -1056,10 +1057,13 @@ public class PeakListTools {
     private static void measurePlanes(int nPlanes, Peak peak, Dataset dataset,
             java.util.function.Function<RegionData, Double> f,
             String mode, double[][] values, int iValue) {
-        int[] planes = new int[1];
+        int extraPlanes = Math.max(0, dataset.getNDim() - peak.getNDim());
+        int[] planes = new int[extraPlanes];
         int[] pdim = peak.getPeakList().getDimsForDataset(dataset, true);
         for (int i = 0; i < nPlanes; i++) {
-            planes[0] = i;
+            if (planes.length > 0) {
+                planes[0] = i;
+            }
             try {
                 double[] value = peak.measurePeak(dataset, pdim, planes, f, mode);
                 values[0][iValue] = value[0];
@@ -1092,6 +1096,7 @@ public class PeakListTools {
     public static void setMeasureX(PeakList peakList, List<Dataset> datasets, int nValues) {
         double[] allValues = new double[nValues * datasets.size()];
         int j = 0;
+        int k = 0;
         for (Dataset dataset : datasets) {
             double[] pValues = null;
             for (int iDim = 0; iDim < dataset.getNDim(); iDim++) {
@@ -1103,7 +1108,7 @@ public class PeakListTools {
             if (pValues == null) {
                 pValues = new double[nValues];
                 for (int i = 0; i < pValues.length; i++) {
-                    pValues[i] = i;
+                    pValues[i] = k++;
                 }
             }
             for (int i = 0; i < pValues.length; i++) {
@@ -1226,10 +1231,6 @@ public class PeakListTools {
                 List<Peak> lPeaks = new ArrayList<>();
                 int nFit = 0;
                 for (int i = 0; i < 3; i++) {
-//                    for (Peak peak : oPeakSet.get(i)) {
-//                        System.out.print(peak.getName() + " ");
-//                    }
-//                    System.out.println("layer " + i);
                     lPeaks.addAll(oPeakSet.get(i));
                     if (i == 1) {
                         nFit = lPeaks.size();
@@ -1241,7 +1242,6 @@ public class PeakListTools {
                 for (int i = nFit; i < fitPeaks.length; i++) {
                     fitPeaks[i] = false;
                 }
-//                System.out.println("fit lpe " + lPeaks.size());
                 simPeakFit(peakList, theFile, rows, delays, lPeaks, fitPeaks, lsFit, constrainDim, arrayedFitMode);
             } catch (IllegalArgumentException | IOException | PeakFitException ex) {
                 log.error(ex.getMessage(), ex);
@@ -1399,16 +1399,6 @@ public class PeakListTools {
             }
 
             peak.getPeakRegion(theFile, pdim, p1, cpt[iPeak], width[iPeak]);
-//            System.out.println("fit " + peak);
-//            for (int i = 0; i < p2.length; i++) {
-//                System.out.println(i + " p1 " + p1[i][0] + " " + p1[i][1]);
-//                System.out.println(i + " p2 " + p2[i][0] + " " + p2[i][1]);
-//            }
-//            for (int i = 0; i < width.length; i++) {
-//                for (int j = 0; j < width[i].length; j++) {
-//                    System.out.println(i + " " + j + " wid " + width[i][j] + " cpt " + cpt[i][j]);
-//                }
-//            }
 
             double intensity = (double) peak.getIntensity();
             GuessValue gValue;
@@ -1479,7 +1469,6 @@ public class PeakListTools {
                     gValue = new GuessValue(cpt[iPeak][dDim], cpt[iPeak][dDim] - width[iPeak][dDim] / 2, cpt[iPeak][dDim] + width[iPeak][dDim] / 2, fitThis);
                 }
                 guessList.add(gValue);
-//System.out.println(iDim + " " + p1[iDim][0] + " " +  p1[iDim][1]);
 
                 // update p2 based on region of peak so it encompasses all peaks
                 if (firstPeak) {
@@ -1497,13 +1486,7 @@ public class PeakListTools {
             }
             firstPeak = false;
         }
-        if ((delays != null) && (delays.length > 0)) {
-            GuessValue gValue = new GuessValue(0.0, -0.5 * globalMax, 0.5 * globalMax, false);
-            guessList.add(0, gValue);
-        } else {
-            GuessValue gValue = new GuessValue(0.0, -0.5 * globalMax, 0.5 * globalMax, false);
-            guessList.add(0, gValue);
-        }
+        guessList.add(0, new GuessValue(0.0, -0.5 * globalMax, 0.5 * globalMax, false));
         // get a list of positions that are near the centers of each of the peaks
         ArrayList<int[]> posArray = theFile.getFilteredPositions(p2, cpt, width, pdim, multiplier);
         if (posArray.isEmpty()) {
@@ -1526,10 +1509,9 @@ public class PeakListTools {
         // adjust guesses for positions so they are relative to initial point
         // position in each dimension
         for (CenterRef centerRef : centerList) {
-            GuessValue gValue = guessList.get(centerRef.index);
+            GuessValue gValueAdj = guessList.get(centerRef.index);
             int offset = p2[centerRef.dim][0];
-            gValue = new GuessValue(gValue.value - offset, gValue.lower - offset, gValue.upper - offset, gValue.floating);
-            guessList.set(centerRef.index, gValue);
+            guessList.set(centerRef.index, new GuessValue(gValueAdj.value - offset, gValueAdj.lower - offset, gValueAdj.upper - offset, gValueAdj.floating));
         }
         int[][] positions = new int[posArray.size()][nPeakDim];
         int i = 0;
@@ -1551,11 +1533,11 @@ public class PeakListTools {
         double[] upper = new double[guess.length];
         boolean[] floating = new boolean[guess.length];
         i = 0;
-        for (GuessValue gValue : guessList) {
-            guess[i] = gValue.value;
-            lower[i] = gValue.lower;
-            upper[i] = gValue.upper;
-            floating[i] = gValue.floating;
+        for (GuessValue gVal : guessList) {
+            guess[i] = gVal.value;
+            lower[i] = gVal.lower;
+            upper[i] = gVal.upper;
+            floating[i] = gVal.floating;
             i++;
         }
         int nRates = nPlanes;
@@ -1588,7 +1570,6 @@ public class PeakListTools {
         //int nInterpolationPoints = (nFloating + 1) * (nFloating + 2) / 2;
         int nInterpolationPoints = 2 * nFloating + 1;
         int nSteps = nInterpolationPoints * 5;
-        //System.out.println(guess.length + " " + nInterpolationPoints);
         PointValuePair result;
         try {
             result = peakFit.optimizeBOBYQA(nSteps, nInterpolationPoints);
