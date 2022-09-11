@@ -184,8 +184,8 @@ public class AnnoText implements CanvasAnnotation {
 
     @Override
     public void drawHandles(GraphicsContextInterface gC) {
-        drawHandle(gC, bounds2D.getMinX(), (bounds2D.getMinY() + bounds2D.getMaxY())/2, Pos.CENTER_RIGHT);
-        drawHandle(gC, bounds2D.getMaxX(), (bounds2D.getMinY() + bounds2D.getMaxY())/2, Pos.CENTER_LEFT);
+        drawHandle(gC, bounds2D.getMinX(), (bounds2D.getMinY() + bounds2D.getMaxY())/2, Pos.BOTTOM_RIGHT);
+        drawHandle(gC, bounds2D.getMaxX(), (bounds2D.getMinY() + bounds2D.getMaxY())/2, Pos.BOTTOM_LEFT);
     }
 
     @Override
@@ -206,9 +206,9 @@ public class AnnoText implements CanvasAnnotation {
 
     @Override
     public int hitHandle(double x, double y) {
-        if (hitHandle(x,y, Pos.CENTER_RIGHT, bounds2D.getMinX(), (bounds2D.getMinY() + bounds2D.getMaxY())/2)) {
+        if (hitHandle(x,y, Pos.BOTTOM_RIGHT, bounds2D.getMinX(), (bounds2D.getMinY() + bounds2D.getMaxY())/2)) {
             activeHandle = 0;
-        } else if (hitHandle(x,y, Pos.CENTER_LEFT, bounds2D.getMaxX(), (bounds2D.getMinY() + bounds2D.getMaxY())/2)) {
+        } else if (hitHandle(x,y, Pos.BOTTOM_LEFT, bounds2D.getMaxX(), (bounds2D.getMinY() + bounds2D.getMaxY())/2)) {
             activeHandle = 1;
         } else {
             activeHandle = -1;

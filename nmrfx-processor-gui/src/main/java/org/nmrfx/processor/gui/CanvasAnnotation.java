@@ -120,7 +120,7 @@ public interface CanvasAnnotation {
         gC.setStroke(Color.ORANGE);
         double hOffset = getHOffset(pos);
         double vOffset = getVOffset(pos);
-        gC.strokeRect(x  + hOffset, y - vOffset, HANDLE_WIDTH, HANDLE_WIDTH);
+        gC.strokeRect(x  + hOffset, y + vOffset, HANDLE_WIDTH, HANDLE_WIDTH);
     }
 
     void drawHandles(GraphicsContextInterface gC);
@@ -136,7 +136,7 @@ public interface CanvasAnnotation {
     default boolean hitHandle(double x, double y, Pos pos, double handleX, double handleY) {
         double hOffset = getHOffset(pos);
         double vOffset = getVOffset(pos);
-        Rectangle2D rect = new Rectangle2D(handleX + hOffset, handleY - vOffset, HANDLE_WIDTH, HANDLE_WIDTH);
+        Rectangle2D rect = new Rectangle2D(handleX + hOffset, handleY + vOffset, HANDLE_WIDTH, HANDLE_WIDTH);
         return rect.contains(x, y);
     }
 
