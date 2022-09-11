@@ -46,6 +46,7 @@ public class AnnoText implements CanvasAnnotation {
     double startX2;
     double startY2;
     boolean selected = false;
+    boolean selectable = true;
     int activeHandle = -1;
 
     POSTYPE xPosType;
@@ -106,7 +107,7 @@ public class AnnoText implements CanvasAnnotation {
             startY1 = y1;
             startY2 = y2;
         }
-        if (selectMode) {
+        if (selectMode && selectable) {
             selected = hit;
         }
         return hit;
@@ -198,6 +199,17 @@ public class AnnoText implements CanvasAnnotation {
     public boolean isSelected() {
         return selected;
     }
+
+    @Override
+    public boolean isSelectable() {
+        return selectable;
+    }
+
+    @Override
+    public void setSelectable(boolean state) {
+        selectable = state;
+    }
+
 
     @Override
     public int hitHandle(double x, double y) {

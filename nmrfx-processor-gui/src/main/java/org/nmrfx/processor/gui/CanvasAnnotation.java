@@ -127,6 +127,10 @@ public interface CanvasAnnotation {
 
     public boolean isSelected();
 
+    public boolean isSelectable();
+
+    public void setSelectable(boolean state);
+
     public int hitHandle(double x, double y);
 
     public default boolean hitHandle(double x, double y, Pos pos, double handleX, double handleY) {

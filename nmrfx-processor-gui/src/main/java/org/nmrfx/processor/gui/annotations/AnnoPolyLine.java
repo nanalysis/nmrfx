@@ -36,7 +36,6 @@ public class AnnoPolyLine extends AnnoShape {
     final double[] yCPoints;
     POSTYPE xPosType;
     POSTYPE yPosType;
-    boolean selected = false;
     int activeHandle = -1;
 
     public AnnoPolyLine(List<Double> xList, List<Double> yList,
@@ -102,11 +101,6 @@ public class AnnoPolyLine extends AnnoShape {
         int last = xCPoints.length - 1;
         drawHandle(gC, xCPoints[0], yCPoints[0], Pos.CENTER);
         drawHandle(gC, xCPoints[last], yCPoints[last], Pos.CENTER);
-    }
-
-    @Override
-    public boolean isSelected() {
-        return selected;
     }
 
     @Override

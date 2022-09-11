@@ -80,7 +80,8 @@ public class CanvasMolecule implements CanvasAnnotation {
     double startY1;
     double startX2;
     double startY2;
-    boolean selected = true;
+    boolean selected = false;
+    boolean selectable = true;
     int activeHandle = -1;
 
     POSTYPE xPosType;
@@ -357,7 +358,7 @@ public class CanvasMolecule implements CanvasAnnotation {
                 if (!molecule.globalSelected.isEmpty()) {
                     molecule.clearSelected();
                 }
-                if (selectMode) {
+                if (selectMode && selectable) {
                     selected = true;
                 }
                 return true;
@@ -369,7 +370,7 @@ public class CanvasMolecule implements CanvasAnnotation {
                 } catch (InvalidMoleculeException ex) {
                     log.warn(ex.getMessage(), ex);
                 }
-                if (selectMode) {
+                if (selectMode && selectable) {
                     selected = true;
                 }
 
@@ -885,6 +886,16 @@ public class CanvasMolecule implements CanvasAnnotation {
     @Override
     public boolean isSelected() {
         return selected;
+    }
+
+    @Override
+    public boolean isSelectable() {
+        return selectable;
+    }
+
+    @Override
+    public void setSelectable(boolean state) {
+        selectable = state;
     }
 
     @Override

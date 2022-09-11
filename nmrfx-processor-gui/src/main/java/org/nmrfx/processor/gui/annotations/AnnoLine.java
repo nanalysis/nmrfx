@@ -38,7 +38,6 @@ public class AnnoLine extends AnnoShape {
     double yp2;
     POSTYPE xPosType;
     POSTYPE yPosType;
-    boolean selected = false;
     int activeHandle = -1;
 
     public AnnoLine(double x1, double y1, double x2, double y2,
@@ -88,11 +87,6 @@ public class AnnoLine extends AnnoShape {
     public void drawHandles(GraphicsContextInterface gC) {
         drawHandle(gC, xp1, yp1, Pos.CENTER);
         drawHandle(gC, xp2, yp2, Pos.CENTER);
-    }
-
-    @Override
-    public boolean isSelected() {
-        return selected;
     }
 
     @Override

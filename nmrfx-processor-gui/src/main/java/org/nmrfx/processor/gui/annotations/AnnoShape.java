@@ -30,6 +30,8 @@ public abstract class AnnoShape implements CanvasAnnotation {
     Color fill = Color.BLACK;
     double lineWidth = 1.0;
     boolean clipInAxes = false;
+    boolean selected = false;
+    boolean selectable = false;
 
     /**
      * @return the stroke
@@ -80,6 +82,21 @@ public abstract class AnnoShape implements CanvasAnnotation {
 
     public void setClipInAxes(boolean state) {
         clipInAxes = state;
+    }
+
+    @Override
+    public boolean isSelected() {
+        return selected;
+    }
+
+    @Override
+    public boolean isSelectable() {
+        return selected;
+    }
+
+    @Override
+    public void setSelectable(boolean state) {
+        selectable = state;
     }
 
 }
