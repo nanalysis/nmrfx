@@ -2867,6 +2867,11 @@ public class PolyChart extends Region implements PeakListener {
         canvas.setCursor(Cursor.CROSSHAIR);
     }
 
+    public void deleteSelectedItems() {
+        deleteSelectedPeaks();
+        deleteSelectedAnnotations();
+    }
+
     public void deleteSelectedPeaks() {
         List<Peak> deletedPeaks = new ArrayList<>();
         for (PeakListAttributes peakListAttr : peakListAttributesList) {
@@ -3555,6 +3560,19 @@ public class PolyChart extends Region implements PeakListener {
 
         }
         return result;
+    }
+
+    public void deleteSelectedAnnotations() {
+        Iterator<CanvasAnnotation> iter = canvasAnnotations.iterator();
+        while (iter.hasNext()) {
+            CanvasAnnotation anno = iter.next();
+            if (anno.isSelected()) {
+                iter.remove();
+                if ((anno != null) && (anno == parameterText)) {
+                    parameterText = null;
+                }
+            }
+        }
     }
 
     public void clearAnnotations() {

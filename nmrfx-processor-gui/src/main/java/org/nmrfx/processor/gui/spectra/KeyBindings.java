@@ -128,7 +128,7 @@ public class KeyBindings {
                 case BACK_SPACE:
                     keyMonitor.complete();
                     keyEvent.consume();
-                    chart.deleteSelectedPeaks();
+                    chart.deleteSelectedItems();
                     chart.refresh();
                     break;
                 default:
