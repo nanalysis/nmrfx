@@ -91,6 +91,7 @@ public class OperationInfo {
         "MAG",
         "POWER",
         "Cascade-Baseline",
+        "BC",
         "DC",
         "DCFID",
         "REGIONS",

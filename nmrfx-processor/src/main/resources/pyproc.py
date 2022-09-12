@@ -16,6 +16,7 @@ from org.nmrfx.processor.operations import BasicApodization
 from org.nmrfx.processor.operations import Asmooth
 from org.nmrfx.processor.operations import AutoPhase
 from org.nmrfx.processor.operations import AutoPhaseDataset
+from org.nmrfx.processor.operations import BCAUTO
 from org.nmrfx.processor.operations import BcMed
 from org.nmrfx.processor.operations import BcPoly
 from org.nmrfx.processor.operations import BcSine
@@ -1185,6 +1186,28 @@ def AUTOREGIONS(mode='sdev', winSize=16, minBase=12, ratio=10.0, disabled=False,
     process = process or getCurrentProcess()
 
     op = Regions(mode,  winSize, minBase, ratio)
+    if (vector != None):
+        op.eval(vector)
+    else:
+        process.addOperation(op)
+    return op
+
+
+def BC(ratio=10.0, disabled=False, vector=None, process=None):
+    '''Baseline correction using a polynomial fit.
+    Parameters
+    ---------
+    ratio : real
+        amin : 1.0
+        min : 1.0
+        max : 100.0
+        Ratio relative to noise used in determining if region is signal or baseline, or percent baseline in cwtdf mode.
+    ''' 
+    if disabled:
+        return None
+    process = process or getCurrentProcess()
+
+    op = BCAUTO(ratio)
     if (vector != None):
         op.eval(vector)
     else:
