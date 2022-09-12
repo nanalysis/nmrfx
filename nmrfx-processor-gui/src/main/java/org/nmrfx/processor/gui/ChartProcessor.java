@@ -1415,7 +1415,7 @@ public class ChartProcessor {
                 }
             }
             if (!processorController.isViewingDataset()) {
-                chart.layoutPlotChildren();
+                chart.autoScale();
             }
 
         }
