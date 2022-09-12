@@ -155,7 +155,8 @@ public class ProcessorController implements Initializable, ProgressUpdater {
 
     //PopOver propOver = new PopOver();
     //PropertySheet propSheet = new PropertySheet();
-    static String[] basicOps = {"SB ZF FT", "SB(c=0.5) ZF FT", "EXPD ZF FT", "VECREF GEN"};
+    static String[] basicOps = {"APODIZATION(lb=0.5) ZF FT", "SB ZF FT", "SB(c=0.5) ZF FT", "VECREF GEN"};
+    static String[] commonOps = {"APODIZATION", "TDSS", "ZF", "FT", "BC"};
     static String[] eaOps = {"TDCOMB(coef='ea2d')", "SB", "ZF", "FT"};
     ChartProcessor chartProcessor;
     DocWindowController dwc = null;
@@ -1022,8 +1023,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     }
 
     @Override
-    public void initialize(URL url, ResourceBundle rb
-    ) {
+    public void initialize(URL url, ResourceBundle rb) {
         chartProcessor = new ChartProcessor(this);
         scriptView.setItems(operationList);
         List<MenuItem> menuItems = new ArrayList<>();
@@ -1034,7 +1034,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
             }
         };
 
-        Menu menu = new Menu("Common Op Lists");
+        Menu menu = new Menu("Common Operation Groups");
         menuItems.add(menu);
         List<MenuItem> subMenuItems = new ArrayList<>();
         for (String op : basicOps) {
@@ -1044,13 +1044,29 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         }
         menu.getItems().addAll(subMenuItems);
 
+        Menu commonOpMenu = new Menu("Common Operations");
+        menuItems.add(commonOpMenu);
+        List<MenuItem> commonOpMenuItems = new ArrayList<>();
+        for (String op : commonOps) {
+            MenuItem menuItem = new MenuItem(op);
+            menuItem.addEventHandler(ActionEvent.ACTION, event -> opMenuAction(event));
+            commonOpMenuItems.add(menuItem);
+        }
+        commonOpMenu.getItems().addAll(commonOpMenuItems);
+
+        Menu advancedOpMenu = new Menu("Advanced Operations");
+        menuItems.add(advancedOpMenu);
+
         subMenuItems = new ArrayList<>();
+        menu = null;
         for (String op : OperationInfo.opOrders) {
             if (op.startsWith("Cascade-")) {
-                menu.getItems().addAll(subMenuItems);
+                if (menu != null) {
+                    menu.getItems().addAll(subMenuItems);
+                }
                 menu = new Menu(op.substring(8));
+                advancedOpMenu.getItems().add(menu);
                 subMenuItems = new ArrayList<>();
-                menuItems.add(menu);
             } else {
                 MenuItem menuItem = new MenuItem(op);
                 menuItem.addEventHandler(ActionEvent.ACTION, event -> opMenuAction(event));
