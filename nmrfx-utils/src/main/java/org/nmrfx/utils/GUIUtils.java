@@ -79,6 +79,10 @@ public class GUIUtils {
             end = start + (int) (regionWidth / charWidth);
             if (end > segment.length()) {
                 end = segment.length();
+            } else if (end <= 0) {
+                // If region is so small that it has less than one character in it, just return a list of strings of
+                // 1 character each
+                return List.of(segment.split(""));
             }
             double testWidth = GUIUtils.getTextWidth(segment.substring(start, end), font);
             while (testWidth > regionWidth) {
