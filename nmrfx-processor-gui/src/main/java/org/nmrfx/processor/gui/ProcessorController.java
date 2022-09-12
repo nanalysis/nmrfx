@@ -478,36 +478,48 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     @FXML
     void handleScriptKey(KeyEvent event) {
         if ((event.getCode() == KeyCode.DELETE) || (event.getCode() == KeyCode.BACK_SPACE)) {
-            if (!operationList.isEmpty()) {
-                int index = scriptView.getSelectionModel().getSelectedIndex();
+            deleteItem();
+        }
+    }
 
-                /**
-                 *
-                 * If we are deleting the last element, select the previous,
-                 * else select the next element. If this is the first element,
-                 * then unselect the scriptView.
-                 */
-                propertyManager.removeScriptListener();
-                operationList.removeListener(opListListener);
 
-                try {
-                    operationList.remove(index);
-                } catch (Exception ex) {
-                    log.warn(ex.getMessage(), ex);
-                } finally {
-                    propertyManager.addScriptListener();
-                    operationList.addListener(opListListener);
-                    OperationListCell.updateCells();
-                    chartProcessor.updateOpList();
+    public void deleteOp(ActionEvent actionEvent) {
+        deleteItem();
+    }
+
+    void deleteItem() {
+        if (!operationList.isEmpty()) {
+            int index = scriptView.getSelectionModel().getSelectedIndex();
+
+            /**
+             *
+             * If we are deleting the last element, select the previous,
+             * else select the next element. If this is the first element,
+             * then unselect the scriptView.
+             */
+            propertyManager.removeScriptListener();
+            operationList.removeListener(opListListener);
+
+            try {
+                operationList.remove(index);
+                if (operationList.isEmpty()) {
+                    propertyManager.clearPropSheet();
                 }
-                if (index == operationList.size()) {
-                    scriptView.getSelectionModel().select(index - 1);
-                } else {
-                    scriptView.getSelectionModel().select(index);
-                }
-                chartProcessor.execScript(getScript(), true, false);
-                chart.layoutPlotChildren();
+            } catch (Exception ex) {
+                log.warn(ex.getMessage(), ex);
+            } finally {
+                propertyManager.addScriptListener();
+                operationList.addListener(opListListener);
+                OperationListCell.updateCells();
+                chartProcessor.updateOpList();
             }
+            if (index == operationList.size()) {
+                scriptView.getSelectionModel().select(index - 1);
+            } else {
+                scriptView.getSelectionModel().select(index);
+            }
+            chartProcessor.execScript(getScript(), true, false);
+            chart.layoutPlotChildren();
         }
     }
 

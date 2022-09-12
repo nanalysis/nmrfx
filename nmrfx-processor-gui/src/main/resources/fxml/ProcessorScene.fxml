@@ -71,11 +71,12 @@
                     <children>
                         <HBox VBox.vgrow="NEVER">
                             <children>
-                                <MenuButton fx:id="opMenuButton" mnemonicParsing="false" text="+">
+                                <MenuButton fx:id="opMenuButton" mnemonicParsing="false" text="Add Operation">
                                     <items>
                                     </items>
                                 </MenuButton>
                                 <TextField fx:id="opTextField" onAction="#handleNewOp" onKeyReleased="#handleOpKey" HBox.hgrow="ALWAYS" />
+                                <Button fx:id="opDeleteButton" onAction="#deleteOp" text="Delete" />
                                 <Button fx:id="opDocButton" onAction="#showOpDoc" text="OpDocs" />
                             </children>
                         </HBox>
