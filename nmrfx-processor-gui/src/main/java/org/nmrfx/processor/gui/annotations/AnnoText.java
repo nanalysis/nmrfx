@@ -119,6 +119,15 @@ public class AnnoText implements CanvasAnnotation {
         return bounds2D;
     }
 
+    /**
+     * Moves the annotext around the canvas. If a handle is selected, the handle can be
+     * moved to adjust the size of the molecule but, it cannot be moved past another handle.
+     * (i.e. The text cannot be sized to a negative width)
+     * @param bounds The bounds of the canvas.
+     * @param world The bounds of the canvas in the units of the canvas axis.
+     * @param start The starting position.
+     * @param pos The new position.
+     */
     @Override
     public void move(double[][] bounds, double[][] world, double[] start, double[] pos) {
         double dx = pos[0] - start[0];
@@ -130,8 +139,10 @@ public class AnnoText implements CanvasAnnotation {
             y2 = yPosType.move(startY2, dy, bounds[1], world[1]);
         } else if (activeHandle == 0) {
             x1 = xPosType.move(startX1, dx, bounds[0], world[0]);
+            x1 = Math.min(x1, x2);
         } else if (activeHandle == 1) {
             x2 = xPosType.move(startX2, dx, bounds[0], world[0]);
+            x2 = Math.max(x1, x2);
         }
     }
 

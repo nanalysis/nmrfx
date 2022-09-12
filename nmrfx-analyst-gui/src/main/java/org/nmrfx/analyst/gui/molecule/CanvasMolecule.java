@@ -375,6 +375,15 @@ public class CanvasMolecule implements CanvasAnnotation {
         }
     }
 
+    /**
+     * Moves the molecule around the canvas. If a handle is selected, the handle can be
+     * moved to adjust the size of the molecule but, it cannot be moved past another handle.
+     * (i.e. The molecule cannot be sized to a negative width or height)
+     * @param bounds The bounds of the canvas.
+     * @param world The bounds of the canvas in the units of the canvas axis.
+     * @param start The starting position.
+     * @param pos The new position.
+     */
     @Override
     public void move(double[][] bounds, double[][] world, double[] start, double[] pos) {
         double dx = pos[0] - start[0];
@@ -385,22 +394,26 @@ public class CanvasMolecule implements CanvasAnnotation {
             by1 = yPosType.move(startY1, dy, bounds[1], world[1]);
             by2 = yPosType.move(startY2, dy, bounds[1], world[1]);
 
-        }
-        if (activeHandle == 0) {
+        } else if (activeHandle == 0) { // upper left
             bx1 = xPosType.move(startX1, dx, bounds[0], world[0]);
             by1 = yPosType.move(startY1, dy, bounds[1], world[1]);
-        }
-        if (activeHandle == 1) {
+            bx1 = Math.min(bx1, bx2);
+            by1 = Math.min(by1, by2);
+        } else if (activeHandle == 1) { // upper right
             bx2 = xPosType.move(startX2, dx, bounds[0], world[0]);
             by1 = yPosType.move(startY1, dy, bounds[1], world[1]);
-        }
-        if (activeHandle == 2) {
+            bx2 = Math.max(bx1, bx2);
+            by1 = Math.min(by1, by2);
+        } else if (activeHandle == 2) { // bottom right
             bx2 = xPosType.move(startX2, dx, bounds[0], world[0]);
             by2 = yPosType.move(startY2, dy, bounds[1], world[1]);
-        }
-        if (activeHandle == 3) {
+            bx2 = Math.max(bx1, bx2);
+            by2 = Math.max(by1, by2);
+        } else if (activeHandle == 3) { // bottom left
             bx1 = xPosType.move(startX1, dx, bounds[0], world[0]);
             by2 = yPosType.move(startY2, dy, bounds[1], world[1]);
+            bx1 = Math.min(bx1, bx2);
+            by2 = Math.max(by1, by2);
         }
     }
 
