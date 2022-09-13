@@ -111,8 +111,10 @@ public class KeyBindings {
                     chart.getController().deselectCharts();
                     break;
                 case DELETE:
-                    handleDeleteAction();
+                    keyMonitor.complete();
                     keyEvent.consume();
+                    chart.deleteSelectedPeaks();
+                    chart.refresh();
                     break;
                 case BACK_SPACE:
                     keyMonitor.complete();
@@ -342,23 +344,6 @@ public class KeyBindings {
             } else {
                 chart.incrementPlane(2, -1);
             }
-        }
-    }
-
-    private void handleDeleteAction() {
-        boolean deleteActionSuccessful = false;
-        // Iterate over Handlers and break on first successful delete
-        for (DataFormatEventHandler e : dataFormatHandlers.values()) {
-            deleteActionSuccessful = e.handleDelete();
-            if (deleteActionSuccessful) {
-                break;
-            }
-        }
-        // If dataformat delete wasn't successful, attempt alternative delete functionality
-        if (!deleteActionSuccessful) {
-            keyMonitor.complete();
-            chart.deleteSelectedPeaks();
-            chart.refresh();
         }
     }
 
