@@ -43,12 +43,11 @@ import org.nmrfx.processor.gui.events.DataFormatEventHandler;
  * @author Bruce Johnson
  */
 public class KeyBindings {
-
+    private static final Map<DataFormat, DataFormatEventHandler> dataFormatHandlers = new HashMap<>();
     KeyMonitor keyMonitor = new KeyMonitor();
     PolyChart chart;
     Map<String, Consumer> keyActionMap = new HashMap<>();
     static Map<String, BiConsumer<String, PolyChart>> globalKeyActionMap = new HashMap<>();
-    private static final Map<DataFormat, DataFormatEventHandler> dataFormatHandlers = new HashMap<>();
     private final KeyCodeCombination pasteKeyCodeCombination = new KeyCodeCombination(KeyCode.V, KeyCombination.SHORTCUT_DOWN);
     public KeyBindings(PolyChart chart) {
         this.chart = chart;
