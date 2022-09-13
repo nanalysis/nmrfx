@@ -3568,7 +3568,7 @@ public class PolyChart extends Region implements PeakListener {
             CanvasAnnotation anno = iter.next();
             if (anno.isSelected()) {
                 iter.remove();
-                if ((anno != null) && (anno == parameterText)) {
+                if (anno == parameterText) {
                     parameterText = null;
                 }
             }
