@@ -119,13 +119,7 @@ public class KeyBindings {
                     keyEvent.consume();
                     chart.getController().deselectCharts();
                     break;
-                case DELETE:
-                    keyMonitor.complete();
-                    keyEvent.consume();
-                    chart.deleteSelectedPeaks();
-                    chart.refresh();
-                    break;
-                case BACK_SPACE:
+                case DELETE, BACK_SPACE:
                     keyMonitor.complete();
                     keyEvent.consume();
                     chart.deleteSelectedItems();
