@@ -20,7 +20,9 @@ import javafx.scene.text.Text;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 
@@ -68,14 +70,34 @@ public class GUIUtils {
         return text.getLayoutBounds().getWidth();
     }
 
+    /**
+     * Splits the provided string segment into a list of strings where each string is shorter than the region length.
+     * The segment string is split by words unless the region width is smaller than the width of the longest word in the
+     * segment. In that case the segment string will be split by character.
+     * If the regionWidth is less than the average character list, the segement string will be returned as a list of
+     * strings containing a single character only.
+     * @param regionWidth The width of the display region.
+     * @param segment The string segment to be displayed.
+     * @param font The font being used.
+     * @return A list of strings that fit within the region width.
+     */
     public static List<String> splitToWidth(double regionWidth, String segment, Font font) {
         double width = GUIUtils.getTextWidth(segment, font);
 
         double charWidth = width / segment.length();
         int start = 0;
         int end;
+        boolean splitByWord = true;
         List<String> result = new ArrayList<>();
+        Double longestWord = Arrays.stream(segment.split(" "))
+                .map(word -> GUIUtils.getTextWidth(word, font))
+                .max(Comparator.naturalOrder()).orElse(0.0);
+        // If the region width is smaller than the width of the longest word, split by character instead.
+        if (regionWidth < longestWord) {
+            splitByWord = false;
+        }
         do {
+            // Get initial estimate for index close to region width
             end = start + (int) (regionWidth / charWidth);
             if (end > segment.length()) {
                 end = segment.length();
@@ -84,27 +106,81 @@ public class GUIUtils {
                 // 1 character each
                 return List.of(segment.split(""));
             }
-            double testWidth = GUIUtils.getTextWidth(segment.substring(start, end), font);
-            while (testWidth > regionWidth) {
-                if (end < 2) {
-                    break;
-                }
-                end--;
-                testWidth = GUIUtils.getTextWidth(segment.substring(start, end), font);
+
+            if (splitByWord) {
+                end = GUIUtils.getEndingIndexByWord(segment, start, end, regionWidth, font);
+            } else {
+                end = GUIUtils.getEndingIndexByCharacter(segment, start, end, regionWidth, charWidth, font);
             }
-            while (testWidth < regionWidth - charWidth) {
-                end++;
-                if (end > segment.length()) {
-                    end = segment.length();
-                    break;
-                }
-                testWidth = GUIUtils.getTextWidth(segment.substring(start, end), font);
-            }
+
             String subStr = segment.substring(start, end);
             result.add(subStr);
             start = end;
         } while (start < segment.length());
         return result;
+    }
+
+    /**
+     * Splits the portion of the fullString provided between start and end indexes by word. The initial end index is
+     * an estimate and will be adjusted to fit within the region width without splitting a word.
+     * @param fullString The string to be split.
+     * @param start The starting index to look at.
+     * @param end The ending index to look at.
+     * @param regionWidth The width of the display region
+     * @param font The font to use.
+     * @return The adjusted end index value for the appropriate width of substring.
+     */
+    private static int getEndingIndexByWord(String fullString, int start, int end, double regionWidth, Font font) {
+        // adjust end to last word
+        int indexEndWord = fullString.indexOf(" ", end);
+        if (indexEndWord != -1) {
+            end = indexEndWord;
+        } else {
+            end = fullString.length();
+        }
+
+        double testWidth = GUIUtils.getTextWidth(fullString.substring(start, end), font);
+        while (testWidth > regionWidth) {
+            int indexPrevWord = fullString.substring(start, end).lastIndexOf(" ") + start;
+            if (indexPrevWord <= start) {
+                break;
+            }
+            end = indexPrevWord;
+            testWidth = GUIUtils.getTextWidth(fullString.substring(start, end), font);
+        }
+        return end;
+    }
+
+    /**
+     * Splits the portion of the fullString provided between start and end indexes by character. The initial end index is
+     * an estimate and will be adjusted to fit within the region width.
+     * @param fullString The string to be split.
+     * @param start The starting index to look at.
+     * @param end The ending index to look at.
+     * @param regionWidth The width of the display region
+     * @param charWidth The average width of a char in the fullString.
+     * @param font The font to use.
+     * @return The adjusted end index value for the appropriate width of substring.
+     */
+    private static int getEndingIndexByCharacter(String fullString, int start, int end, double regionWidth, double charWidth, Font font) {
+        double testWidth = GUIUtils.getTextWidth(fullString.substring(start, end), font);
+        while (testWidth > regionWidth) {
+           if (end < 2) {
+                break;
+            }
+            end--;
+
+            testWidth = GUIUtils.getTextWidth(fullString.substring(start, end), font);
+        }
+        while (testWidth < regionWidth - charWidth) {
+            end++;
+            if (end > fullString.length()) {
+                end = fullString.length();
+                break;
+            }
+            testWidth = GUIUtils.getTextWidth(fullString.substring(start, end), font);
+        }
+        return end;
     }
 
     /**
