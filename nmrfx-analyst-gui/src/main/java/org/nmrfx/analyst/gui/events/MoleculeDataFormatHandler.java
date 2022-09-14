@@ -1,10 +1,8 @@
 package org.nmrfx.analyst.gui.events;
 
-import org.nmrfx.analyst.gui.molecule.CanvasMolecule;
 import org.nmrfx.analyst.gui.molecule.MoleculeUtils;
 import org.nmrfx.chemistry.io.MoleculeIOException;
 import org.nmrfx.chemistry.io.SDFile;
-import org.nmrfx.processor.gui.CanvasAnnotation;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.events.DataFormatEventHandler;
@@ -13,7 +11,6 @@ import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
-import java.util.Optional;
 
 /**
  * Class to handle clipboard MDLCT DataFormat.
@@ -45,7 +42,7 @@ public class MoleculeDataFormatHandler implements DataFormatEventHandler {
         try {
             SDFile.read(moleculeName, molContents);
         } catch (MoleculeIOException e) {
-            log.error("Unable to read molecule file.");
+            log.error("Unable to read molecule file. {}", e.getMessage());
             return;
         }
         MoleculeUtils.addActiveMoleculeToCanvas();
@@ -71,20 +68,5 @@ public class MoleculeDataFormatHandler implements DataFormatEventHandler {
         }
 
         return molStringBuilder.toString();
-    }
-
-    /**
-     * Deletes the molecule from the canvas if the mouse is currently hovering over the molecule.
-     * @return True if a molecule is deleted, otherwise false.
-     */
-    @Override
-    public boolean handleDelete() {
-        PolyChart activeChart = FXMLController.getActiveController().getActiveChart();
-        Optional<CanvasAnnotation> anno = activeChart.hitAnnotation(activeChart.getMouseX(), activeChart.getMouseY());
-        if (anno.isPresent() && anno.get() instanceof CanvasMolecule) {
-            MoleculeUtils.removeMoleculeFromCanvas();
-            return true;
-        }
-        return false;
     }
 }

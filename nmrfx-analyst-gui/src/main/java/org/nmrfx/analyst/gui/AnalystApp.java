@@ -134,8 +134,7 @@ public class AnalystApp extends MainApp {
         MainApp.setAnalyst();
         mainApp = this;
         analystApp = this;
-        FXMLController fxmlController = FXMLController.create(stage);
-        DataFormatHandlerUtil.addHandlersToController(fxmlController);
+        FXMLController.create(stage);
 
         Platform.setImplicitExit(true);
         hostServices = getHostServices();
@@ -163,6 +162,7 @@ public class AnalystApp extends MainApp {
         PeakMenuBar.addExtra("Add Residue Prefix", PeakLabeller::labelWithSingleResidueChar);
         PeakMenuBar.addExtra("Remove Residue Prefix", PeakLabeller::removeSingleResidueChar);
         KeyBindings.registerGlobalKeyAction("pa", this::assignPeak);
+        DataFormatHandlerUtil.addHandlersToController();
         Project.setPCS(new FxPropertyChangeSupport(this));
         PDBFile.setLocalResLibDir(AnalystPrefs.getLocalResidueDirectory());
         runAboutSaveFrameProcessor = new RunAboutSaveFrameProcessor();
@@ -307,9 +307,11 @@ public class AnalystApp extends MainApp {
 
         helpMenu.getItems().addAll(docsMenuItem, webSiteMenuItem, mailingListItem, versionMenuItem, refMenuItem, openSourceItem);
 
+        PluginLoader pluginLoader = PluginLoader.getInstance();
         Menu pluginsMenu = new Menu("Plugins");
-        PluginLoader.getInstance().registerPluginsOnEntryPoint(EntryPoint.MENU_PLUGINS, pluginsMenu);
+        pluginLoader.registerPluginsOnEntryPoint(EntryPoint.MENU_PLUGINS, pluginsMenu);
         pluginsMenu.setVisible(!pluginsMenu.getItems().isEmpty());
+        pluginLoader.registerPluginsOnEntryPoint(EntryPoint.MENU_FILE, fileMenu);
 
         if (tk != null) {
             Menu windowMenu = new Menu("Window");
