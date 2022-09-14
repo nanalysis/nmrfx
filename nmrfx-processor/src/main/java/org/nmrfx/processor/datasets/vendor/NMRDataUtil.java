@@ -169,10 +169,9 @@ public final class NMRDataUtil {
      *
      * @param fpath absolute file path
      * @return a standardized file path
-     * @throws IOException if an I/O error occurs
      * @see NMRData
      */
-    public static String isFIDDir(String fpath) throws IOException {
+    public static String isFIDDir(String fpath) {
         StringBuilder bpath = new StringBuilder(fpath);
         if (BrukerData.findFID(bpath)) {
             return bpath.toString();
@@ -190,10 +189,9 @@ public final class NMRDataUtil {
      *
      * @param fpath absolute file path
      * @return a standardized file path
-     * @throws IOException if an I/O error occurs
      * @see NMRData
      */
-    public static String isDatasetFile(String fpath) throws IOException {
+    public static String isDatasetFile(String fpath) {
         StringBuilder bpath = new StringBuilder(fpath);
         if (NMRViewData.findFID(bpath)) {
             return bpath.toString();
@@ -259,13 +257,9 @@ public final class NMRDataUtil {
         @Override
         public FileVisitResult visitFile(Path file, BasicFileAttributes attr) {
             if (attr.isRegularFile() && (file.endsWith("fid") || (file.endsWith("ser")) || file.toString().endsWith(".jdx") || file.toString().endsWith(".dx"))) {
-                try {
-                    String fidPath = NMRDataUtil.isFIDDir(file.toString());
-                    if (fidPath != null) {
-                        fileList.add(fidPath);
-                    }
-                } catch (IOException ex) {
-                    log.warn(ex.getMessage(), ex);
+                String fidPath = NMRDataUtil.isFIDDir(file.toString());
+                if (fidPath != null) {
+                    fileList.add(fidPath);
                 }
             }
             return FileVisitResult.CONTINUE;

@@ -47,6 +47,8 @@ public class SDFile {
     static final int HEADER_LENGTH = 4;
     private static final Pattern[] supportedMolFormatsPatterns = {
             Pattern.compile("(\\d+\s+\\d+\s+\\d+\s+\\d+\s+\\d+\s+)(?)(\\d+\s+V2000)")};
+    private static final List<String> MATCHING_EXTENSIONS = List.of(".mol", ".sdf");
+
     static Pattern pattern = Pattern.compile("> +<(.*)>");
 
     int nMols = 0;
@@ -482,5 +484,11 @@ public class SDFile {
             }
         }
         return isMolFileFormat;
+    }
+
+    public static boolean isSDFFile(String filename) {
+        String lowerCaseFilename = filename.toLowerCase();
+        return MATCHING_EXTENSIONS.stream().anyMatch(lowerCaseFilename::endsWith);
+
     }
 }

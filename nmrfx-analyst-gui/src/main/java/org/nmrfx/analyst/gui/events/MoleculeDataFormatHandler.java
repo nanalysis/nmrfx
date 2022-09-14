@@ -3,7 +3,6 @@ package org.nmrfx.analyst.gui.events;
 import org.nmrfx.analyst.gui.molecule.MoleculeUtils;
 import org.nmrfx.chemistry.io.MoleculeIOException;
 import org.nmrfx.chemistry.io.SDFile;
-import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.events.DataFormatEventHandler;
 import org.slf4j.Logger;
@@ -20,19 +19,19 @@ public class MoleculeDataFormatHandler implements DataFormatEventHandler {
 
     /**
      * Attempt to add a molecule in MDCLT format to the canvas.
-     * @param o ByteBuffer containing molecule information in MDCLT format.
+     *
+     * @param o     ByteBuffer containing molecule information in MDCLT format.
+     * @param chart The chart to add the molecule to.
+     * @return
      */
     @Override
-    public void handlePaste(Object o) {
-
-        // Don't try to paste the molecule if there is no dataset displayed
-        PolyChart activeChart = FXMLController.getActiveController().getActiveChart();
-        if (activeChart.getDataset() == null) {
-            return;
+    public boolean handlePaste(Object o, PolyChart chart) {
+        if (chart.getDataset() == null) {
+            return false;
         }
         String molContents = parseMdlctBuffer((ByteBuffer)  o);
         if (!SDFile.inMolFileFormat(molContents)) {
-            return;
+            return false;
         }
         // Use the first line of the string as the molecule name if it is not blank, else prompt for a name
         String moleculeName = molContents.split("\n")[0].trim();
@@ -43,10 +42,11 @@ public class MoleculeDataFormatHandler implements DataFormatEventHandler {
             SDFile.read(moleculeName, molContents);
         } catch (MoleculeIOException e) {
             log.error("Unable to read molecule file. {}", e.getMessage());
-            return;
+            return false;
         }
+        chart.setActiveChart();
         MoleculeUtils.addActiveMoleculeToCanvas();
-
+        return true;
     }
 
     /**
