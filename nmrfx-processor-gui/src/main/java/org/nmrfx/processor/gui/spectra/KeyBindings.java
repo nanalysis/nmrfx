@@ -352,10 +352,10 @@ public class KeyBindings {
     private void handlePasteAction() {
         final Clipboard clipboard = Clipboard.getSystemClipboard();
         // Handlers should be arranged in highest to lowest priority as the clipboard may contain multiple DataFormats
-        if (clipboard.getContentTypes().contains(getDataFormat("MDLCT"))) {
-            DataFormat df = getDataFormat("MDLCT");
-            dataFormatHandlers.get(df).handlePaste(clipboard.getContent(df));
-        } else if (clipboard.getContentTypes().contains(DataFormat.PLAIN_TEXT)) {
+        DataFormat dfMDCLT = getDataFormat("MDLCT");
+        if (clipboard.getContentTypes().contains(getDataFormat("MDLCT")) && dataFormatHandlers.containsKey(dfMDCLT)) {
+            dataFormatHandlers.get(dfMDCLT).handlePaste(clipboard.getContent(dfMDCLT));
+        } else if (clipboard.getContentTypes().contains(DataFormat.PLAIN_TEXT) && dataFormatHandlers.containsKey(DataFormat.PLAIN_TEXT)) {
             dataFormatHandlers.get(DataFormat.PLAIN_TEXT).handlePaste(clipboard.getContent(DataFormat.PLAIN_TEXT));
         }
     }
