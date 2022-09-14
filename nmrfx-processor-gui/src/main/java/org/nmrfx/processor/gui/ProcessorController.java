@@ -961,6 +961,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
             ((Service<Integer>) worker).setOnCancelled(event -> {
                 setProcessingOff();
                 setProcessingStatus("cancelled", false);
+                Processor.getProcessor().closeDataset(false);
             });
             ((Service<Integer>) worker).setOnFailed(event -> {
                 setProcessingOff();
