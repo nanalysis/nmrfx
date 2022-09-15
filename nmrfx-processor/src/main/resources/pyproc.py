@@ -885,10 +885,6 @@ def setDataInfo(dSize):
                 if fidInfo.ref:
                     dataset.setRefValue(iDim,fidInfo.ref[fidDim])
                     dataset.setRefValue_r(iDim,fidInfo.ref[fidDim])
-                if fidInfo.refpt:
-                    center = fidInfo.refpt[iDim]*2
-                    dataset.setRefPt(iDim,center)
-                    dataset.setRefPt_r(iDim,center)
                 if fidInfo.sw:
                     dataset.setSw(iDim,fidInfo.sw[fidDim])
                 if fidInfo.sf:
