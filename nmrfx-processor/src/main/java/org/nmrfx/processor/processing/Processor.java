@@ -1185,9 +1185,6 @@ public class Processor {
                 VecIndex vecIndex = getNextGroup(vecGroup);
                 if (vecIndex != null) {
                     iStep++;
-                    if (log.isDebugEnabled()) {
-                        vecIndex.printMe(vecGroup, 1);
-                    }
                     for (int j = 0; j < vectorsPerGroup; j++) {
                         try {
                             for (NMRData nmrData : nmrDataSets) {
