@@ -132,6 +132,7 @@ public class AnnoText implements CanvasAnnotation {
     public void move(double[][] bounds, double[][] world, double[] start, double[] pos) {
         double dx = pos[0] - start[0];
         double dy = pos[1] - start[1];
+        double handleSeparationLimit = getHandleSeparationLimit(bounds, world);
         if (activeHandle < 0) {
             x1 = xPosType.move(startX1, dx, bounds[0], world[0]);
             x2 = xPosType.move(startX2, dx, bounds[0], world[0]);
@@ -139,10 +140,10 @@ public class AnnoText implements CanvasAnnotation {
             y2 = yPosType.move(startY2, dy, bounds[1], world[1]);
         } else if (activeHandle == 0) {
             x1 = xPosType.move(startX1, dx, bounds[0], world[0]);
-            x1 = Math.min(x1, x2);
+            x1 = Math.min(x1, x2 - handleSeparationLimit);
         } else if (activeHandle == 1) {
             x2 = xPosType.move(startX2, dx, bounds[0], world[0]);
-            x2 = Math.max(x1, x2);
+            x2 = Math.max(x1 + handleSeparationLimit, x2);
         }
     }
 

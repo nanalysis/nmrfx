@@ -388,6 +388,7 @@ public class CanvasMolecule implements CanvasAnnotation {
     public void move(double[][] bounds, double[][] world, double[] start, double[] pos) {
         double dx = pos[0] - start[0];
         double dy = pos[1] - start[1];
+        double handleSeparationLimit = getHandleSeparationLimit(bounds, world);
         if (activeHandle < 0) {
             bx1 = xPosType.move(startX1, dx, bounds[0], world[0]);
             bx2 = xPosType.move(startX2, dx, bounds[0], world[0]);
@@ -397,23 +398,23 @@ public class CanvasMolecule implements CanvasAnnotation {
         } else if (activeHandle == 0) { // upper left
             bx1 = xPosType.move(startX1, dx, bounds[0], world[0]);
             by1 = yPosType.move(startY1, dy, bounds[1], world[1]);
-            bx1 = Math.min(bx1, bx2);
-            by1 = Math.min(by1, by2);
+            bx1 = Math.min(bx1, bx2 - handleSeparationLimit);
+            by1 = Math.min(by1, by2 - handleSeparationLimit);
         } else if (activeHandle == 1) { // upper right
             bx2 = xPosType.move(startX2, dx, bounds[0], world[0]);
             by1 = yPosType.move(startY1, dy, bounds[1], world[1]);
-            bx2 = Math.max(bx1, bx2);
-            by1 = Math.min(by1, by2);
+            bx2 = Math.max(bx1 + handleSeparationLimit, bx2);
+            by1 = Math.min(by1, by2 - handleSeparationLimit);
         } else if (activeHandle == 2) { // bottom right
             bx2 = xPosType.move(startX2, dx, bounds[0], world[0]);
             by2 = yPosType.move(startY2, dy, bounds[1], world[1]);
-            bx2 = Math.max(bx1, bx2);
-            by2 = Math.max(by1, by2);
+            bx2 = Math.max(bx1 + handleSeparationLimit, bx2);
+            by2 = Math.max(by1 + handleSeparationLimit, by2);
         } else if (activeHandle == 3) { // bottom left
             bx1 = xPosType.move(startX1, dx, bounds[0], world[0]);
             by2 = yPosType.move(startY2, dy, bounds[1], world[1]);
-            bx1 = Math.min(bx1, bx2);
-            by2 = Math.max(by1, by2);
+            bx1 = Math.min(bx1, bx2 - handleSeparationLimit);
+            by2 = Math.max(by1 + handleSeparationLimit, by2);
         }
     }
 
