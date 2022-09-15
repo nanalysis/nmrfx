@@ -1542,8 +1542,11 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         rwVector.setPh1(getPh1_r(dim[0]));
         rwVector.setTDSize(getTDSize(dim[0]));
         rwVector.setPt(pt, dim);
-
-        rwVector.setRefValue(getRefValue_r(dim[0]), (getRefPt_r(dim[0])-pt[0][0]));
+        if (getFreqDomain_r(dim[0])) {
+            rwVector.setRefValue(getRefValue_r(dim[0]), (getRefPt_r(dim[0])-pt[0][0]));
+        } else {
+            rwVector.setRefValue(getRefValue_r(dim[0]));
+        }
         rwVector.setFreqDomain(getFreqDomain_r(dim[0]));
 
         int[] point = new int[nDim];
@@ -2077,8 +2080,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         setSf(dim[0], vector.centerFreq);
         setSw(dim[0], 1.0 / vector.dwellTime);
 
-        //  FIXME should have flag to allow/disallow updating reference
-        double dimRefPoint = (getVSize(dim[0]) / 2);
+        double dimRefPoint = vector.freqDomain() ? (vector.getSize() / 2) + pt[0][0] : getSizeReal(dim[0]) / 2;
         double dimRefValue = vector.getRefValue();
 
         setRefValue(dim[0], dimRefValue);
