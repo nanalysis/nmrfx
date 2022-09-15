@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2018 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,12 +17,12 @@
  */
 package org.nmrfx.processor.gui.annotations;
 
+import javafx.geometry.Pos;
 import org.nmrfx.graphicsio.GraphicsContextInterface;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- *
  * @author brucejohnson
  */
 public class AnnoLine extends AnnoShape {
@@ -32,11 +32,14 @@ public class AnnoLine extends AnnoShape {
     final double y1;
     final double x2;
     final double y2;
-    POSTYPE xPosType;
-    POSTYPE yPosType;
+    double xp1;
+    double yp1;
+    double xp2;
+    double yp2;
+    int activeHandle = -1;
 
     public AnnoLine(double x1, double y1, double x2, double y2,
-            POSTYPE xPosType, POSTYPE yPosType) {
+                    POSTYPE xPosType, POSTYPE yPosType) {
         this.x1 = x1;
         this.y1 = y1;
         this.x2 = x2;
@@ -46,28 +49,45 @@ public class AnnoLine extends AnnoShape {
     }
 
     @Override
+    public boolean hit( double x, double y, boolean selectMode) {
+        return false;
+    }
+
+    @Override
     public void draw(GraphicsContextInterface gC, double[][] bounds, double[][] world) {
         try {
             gC.setStroke(stroke);
             gC.setLineWidth(lineWidth);
-            double xp1 = xPosType.transform(x1, bounds[0], world[0]);
-            double yp1 = yPosType.transform(y1, bounds[1], world[1]);
-            double xp2 = xPosType.transform(x2, bounds[0], world[0]);
-            double yp2 = yPosType.transform(y2, bounds[1], world[1]);
+            xp1 = xPosType.transform(x1, bounds[0], world[0]);
+            yp1 = yPosType.transform(y1, bounds[1], world[1]);
+            xp2 = xPosType.transform(x2, bounds[0], world[0]);
+            yp2 = yPosType.transform(y2, bounds[1], world[1]);
             gC.strokeLine(xp1, yp1, xp2, yp2);
+            if (isSelected()) {
+                drawHandles(gC);
+            }
         } catch (Exception ex) {
             log.error(ex.getMessage(), ex);
         }
     }
 
     @Override
-    public POSTYPE getXPosType() {
-        return xPosType;
+    public void drawHandles(GraphicsContextInterface gC) {
+        drawHandle(gC, xp1, yp1, Pos.CENTER);
+        drawHandle(gC, xp2, yp2, Pos.CENTER);
     }
 
     @Override
-    public POSTYPE getYPosType() {
-        return yPosType;
+    public int hitHandle(double x, double y) {
+        if (hitHandle(x,y, Pos.CENTER, xp1, yp1)) {
+            activeHandle = 0;
+        } else if (hitHandle(x,y, Pos.CENTER, xp2, yp2)) {
+            activeHandle = 1;
+        } else {
+            activeHandle = -1;
+        }
+        return activeHandle;
     }
+
 
 }

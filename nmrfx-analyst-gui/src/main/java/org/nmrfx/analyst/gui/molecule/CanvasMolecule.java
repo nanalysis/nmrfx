@@ -1,15 +1,11 @@
 /**
- *
  * @author JOHNBRUC
  * @version
  */
 package org.nmrfx.analyst.gui.molecule;
 
 
-import javafx.geometry.Point2D;
-import javafx.geometry.Point3D;
-import javafx.geometry.Rectangle2D;
-import javafx.geometry.VPos;
+import javafx.geometry.*;
 import javafx.scene.paint.Color;
 import javafx.scene.text.TextAlignment;
 import javafx.scene.transform.Affine;
@@ -39,7 +35,6 @@ public class CanvasMolecule implements CanvasAnnotation {
     private static final int SQUARE_SHAPE = 1;
     private static final int TRIANGLE_SHAPE = 2;
     float radius = 0.4f;
-    boolean closePath = false;
     float valueScale = 10.0f;
     float valueZero = 0.0f;
     boolean valueMode = true;
@@ -55,7 +50,6 @@ public class CanvasMolecule implements CanvasAnnotation {
     String molName = null;
     Affine canvasTransform = new Affine();
     float canvasScale = 1.0f;
-    double strokeD = 1.0;
     double stroke3 = 3.0;
     Rectangle2D bounds2D = Rectangle2D.EMPTY;
     int hitAtom = -1;
@@ -83,6 +77,9 @@ public class CanvasMolecule implements CanvasAnnotation {
     double startY1;
     double startX2;
     double startY2;
+    boolean selected = false;
+    boolean selectable = true;
+    int activeHandle = -1;
 
     POSTYPE xPosType;
     POSTYPE yPosType;
@@ -111,10 +108,12 @@ public class CanvasMolecule implements CanvasAnnotation {
         setPosition(x1, y1, x2, y2, POSTYPE.PIXEL, POSTYPE.PIXEL);
     }
 
+    @Override
     public POSTYPE getXPosType() {
         return xPosType;
     }
 
+    @Override
     public POSTYPE getYPosType() {
         return yPosType;
     }
@@ -284,7 +283,6 @@ public class CanvasMolecule implements CanvasAnnotation {
         double yCenterMol = (maxY + minY) / 2.0;
         double dX = x2 - x1;
         double dY = y2 - y1;
-        double aspect = dY / dX;
         double scaleX = dX / dXMol;
         double scaleY = dY / dYMol;
         double scale;
@@ -310,10 +308,8 @@ public class CanvasMolecule implements CanvasAnnotation {
 
     @Override
     public ChartMenu getMenu() {
-        if (chart != null) {
-            if (menu == null) {
-                menu = new MoleculeMenu(chart, this);
-            }
+        if ((chart != null) && (menu == null)) {
+            menu = new MoleculeMenu(chart, this);
         }
         return menu;
     }
@@ -329,15 +325,40 @@ public class CanvasMolecule implements CanvasAnnotation {
     }
 
     public int pick(GraphicsContextInterface gC, double x, double y) {
-        int atomNum = genSpheres(gC, true, x, y);
-
-        return atomNum;
+        return genSpheres(gC, true, x, y);
     }
 
+    void selectAtom(boolean selectMode) {
+        String aName = getHit();
+        Molecule molecule = Molecule.get(molName);
+        try {
+            molecule.selectAtoms(aName);
+        } catch (InvalidMoleculeException ex) {
+            log.warn(ex.getMessage(), ex);
+        }
+        if (selectMode && selectable) {
+            selected = true;
+        }
+    }
+
+    void selectMolecule(boolean selectMode) {
+        Molecule molecule = Molecule.get(molName);
+        if (!molecule.globalSelected.isEmpty()) {
+            molecule.clearSelected();
+        }
+        if (selectMode && selectable) {
+            selected = true;
+        }
+    }
+
+
     @Override
-    public boolean hit(double x, double y) {
+    public boolean hit(double x, double y, boolean selectMode) {
         if (!bounds2D.contains(x, y)) {
             hitAtom = -1;
+            if (selectMode) {
+                selected = false;
+            }
             return false;
         } else {
             hitAtom = pick(null, x, y);
@@ -345,35 +366,56 @@ public class CanvasMolecule implements CanvasAnnotation {
             startY1 = by1;
             startX2 = bx2;
             startY2 = by2;
-
             if (hitAtom == -1) {
-                Molecule molecule = Molecule.get(molName);
-                if (!molecule.globalSelected.isEmpty()) {
-                    molecule.clearSelected();
-                }
-                return true;
+                selectMolecule(selectMode);
             } else {
-                String aName = getHit();
-                Molecule molecule = Molecule.get(molName);
-                try {
-                    molecule.selectAtoms(aName);
-                } catch (InvalidMoleculeException ex) {
-                    log.warn(ex.getMessage(), ex);
-                }
-
-                return true;
+                selectAtom(selectMode);
             }
+            return true;
         }
     }
 
+    /**
+     * Moves the molecule around the canvas. If a handle is selected, the handle can be
+     * moved to adjust the size of the molecule but, it cannot be moved past another handle.
+     * (i.e. The molecule cannot be sized to a negative width or height)
+     * @param bounds The bounds of the canvas.
+     * @param world The bounds of the canvas in the units of the canvas axis.
+     * @param start The starting position.
+     * @param pos The new position.
+     */
     @Override
     public void move(double[][] bounds, double[][] world, double[] start, double[] pos) {
         double dx = pos[0] - start[0];
         double dy = pos[1] - start[1];
-        bx1 = xPosType.move(startX1, dx, bounds[0], world[0]);
-        bx2 = xPosType.move(startX2, dx, bounds[0], world[0]);
-        by1 = yPosType.move(startY1, dy, bounds[1], world[1]);
-        by2 = yPosType.move(startY2, dy, bounds[1], world[1]);
+        double handleSeparationLimit = getHandleSeparationLimit(bounds, world);
+        if (activeHandle < 0) {
+            bx1 = xPosType.move(startX1, dx, bounds[0], world[0]);
+            bx2 = xPosType.move(startX2, dx, bounds[0], world[0]);
+            by1 = yPosType.move(startY1, dy, bounds[1], world[1]);
+            by2 = yPosType.move(startY2, dy, bounds[1], world[1]);
+
+        } else if (activeHandle == 0) { // upper left
+            bx1 = xPosType.move(startX1, dx, bounds[0], world[0]);
+            by1 = yPosType.move(startY1, dy, bounds[1], world[1]);
+            bx1 = Math.min(bx1, bx2 - handleSeparationLimit);
+            by1 = Math.min(by1, by2 - handleSeparationLimit);
+        } else if (activeHandle == 1) { // upper right
+            bx2 = xPosType.move(startX2, dx, bounds[0], world[0]);
+            by1 = yPosType.move(startY1, dy, bounds[1], world[1]);
+            bx2 = Math.max(bx1 + handleSeparationLimit, bx2);
+            by1 = Math.min(by1, by2 - handleSeparationLimit);
+        } else if (activeHandle == 2) { // bottom right
+            bx2 = xPosType.move(startX2, dx, bounds[0], world[0]);
+            by2 = yPosType.move(startY2, dy, bounds[1], world[1]);
+            bx2 = Math.max(bx1 + handleSeparationLimit, bx2);
+            by2 = Math.max(by1 + handleSeparationLimit, by2);
+        } else if (activeHandle == 3) { // bottom left
+            bx1 = xPosType.move(startX1, dx, bounds[0], world[0]);
+            by2 = yPosType.move(startY2, dy, bounds[1], world[1]);
+            bx1 = Math.min(bx1, bx2 - handleSeparationLimit);
+            by2 = Math.max(by1 + handleSeparationLimit, by2);
+        }
     }
 
     public void zoom(double factor) {
@@ -400,9 +442,11 @@ public class CanvasMolecule implements CanvasAnnotation {
         double height = Math.abs(y2 - y1);
 
         bounds2D = new Rectangle2D(xMin, yMin, width, height);
-
         transformValid = false;
         paintShape(gC);
+        if (isSelected()) {
+            drawHandles(gC);
+        }
     }
 
     public void paintShape(GraphicsContextInterface g2) {
@@ -615,10 +659,10 @@ public class CanvasMolecule implements CanvasAnnotation {
                     try {
                         outline = Color.color(sphereColors[i * 3],
                                 sphereColors[(i * 3) + 1], sphereColors[(i * 3)
-                                + 2]);
+                                        + 2]);
                         fill = Color.color(sphereColors[i * 3],
                                 sphereColors[(i * 3) + 1], sphereColors[(i * 3)
-                                + 2]);
+                                        + 2]);
                         gC.setFill(fill);
                         gC.setStroke(outline);
                         gC.setLineWidth(stroke3);
@@ -712,7 +756,7 @@ public class CanvasMolecule implements CanvasAnnotation {
             setupTransform();
         }
 
-        int j = 0;
+        int j;
         int k = 0;
 
         for (int i = 0; i < molPrims.nSelected; i++) {
@@ -839,6 +883,45 @@ public class CanvasMolecule implements CanvasAnnotation {
                 log.error(ex.getMessage(), ex);
             }
         }
+    }
+
+    @Override
+    public void drawHandles(GraphicsContextInterface gC) {
+        drawHandle(gC, bounds2D.getMinX(), bounds2D.getMinY(), Pos.BOTTOM_RIGHT);
+        drawHandle(gC, bounds2D.getMaxX(), bounds2D.getMinY(), Pos.BOTTOM_LEFT);
+        drawHandle(gC, bounds2D.getMaxX(), bounds2D.getMaxY(), Pos.TOP_LEFT);
+        drawHandle(gC, bounds2D.getMinX(), bounds2D.getMaxY(), Pos.TOP_RIGHT);
+    }
+
+    @Override
+    public boolean isSelected() {
+        return selected;
+    }
+
+    @Override
+    public boolean isSelectable() {
+        return selectable;
+    }
+
+    @Override
+    public void setSelectable(boolean state) {
+        selectable = state;
+    }
+
+    @Override
+    public int hitHandle(double x, double y) {
+        if (hitHandle(x, y, Pos.BOTTOM_RIGHT, bounds2D.getMinX(), bounds2D.getMinY())) {
+            activeHandle = 0;
+        } else if (hitHandle(x, y, Pos.BOTTOM_LEFT, bounds2D.getMaxX(), bounds2D.getMinY())) {
+            activeHandle = 1;
+        } else if (hitHandle(x, y, Pos.TOP_LEFT, bounds2D.getMaxX(), bounds2D.getMaxY())) {
+            activeHandle = 2;
+        } else if (hitHandle(x, y, Pos.TOP_RIGHT, bounds2D.getMinX(), bounds2D.getMaxY())) {
+            activeHandle = 3;
+        } else {
+            activeHandle = -1;
+        }
+        return activeHandle;
     }
 
 }
