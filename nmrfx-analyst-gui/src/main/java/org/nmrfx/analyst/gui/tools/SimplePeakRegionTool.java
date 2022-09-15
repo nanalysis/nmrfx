@@ -8,7 +8,7 @@ import javafx.stage.FileChooser;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.analyst.gui.annotations.AnnoJournalFormat;
-import org.nmrfx.analyst.gui.molecule.CanvasMolecule;
+import org.nmrfx.analyst.gui.molecule.MoleculeUtils;
 import org.nmrfx.analyst.peaks.Analyzer;
 import org.nmrfx.analyst.peaks.JournalFormat;
 import org.nmrfx.analyst.peaks.JournalFormatPeaks;
@@ -397,32 +397,11 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
         Molecule activeMol = Molecule.getActive();
         if (activeMol == null) {
             ((AnalystApp) AnalystApp.getMainApp()).readMolecule("mol");
-            activeMol = Molecule.getActive();
         }
-        if (activeMol != null) {
-            var cMols = controller.getActiveChart().findAnnoTypes(CanvasMolecule.class);
-            CanvasMolecule cMol = null;
-            if (cMols.isEmpty()) {
-                cMol = new CanvasMolecule(FXMLController.getActiveController().getActiveChart());
-                cMol.setPosition(0.1, 0.1, 0.3, 0.3, "FRACTION", "FRACTION");
-            } else {
-                cMol = (CanvasMolecule) cMols.get(0);
-            }
-
-            cMol.setMolName(activeMol.getName());
-            activeMol.label = Molecule.LABEL_NONHC;
-            activeMol.clearSelected();
-
-            PolyChart chart = FXMLController.getActiveController().getActiveChart();
-            chart.clearAnnoType(CanvasMolecule.class);
-            chart.addAnnotation(cMol);
-            chart.refresh();
-        }
+        MoleculeUtils.addActiveMoleculeToCanvas();
     }
 
     void removeMolecule() {
-        PolyChart chart = FXMLController.getActiveController().getActiveChart();
-        chart.clearAnnoType(CanvasMolecule.class);
-        chart.refresh();
+        MoleculeUtils.removeMoleculeFromCanvas();
     }
 }

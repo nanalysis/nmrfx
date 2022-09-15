@@ -168,7 +168,6 @@ public class FXMLController implements  Initializable, PeakNavigable {
     private BooleanProperty minBorders;
     Phaser phaser;
     Set<ControllerTool> tools = new HashSet<>();
-
     SimpleBooleanProperty processControllerVisible = new SimpleBooleanProperty(false);
     SimpleObjectProperty<Cursor> cursorProperty = new SimpleObjectProperty<>(Cursor.CROSSHAIR);
 
@@ -2213,5 +2212,4 @@ public class FXMLController implements  Initializable, PeakNavigable {
     public boolean isProcessorControllerAvailable() {
         return getActiveChart().getProcessorController(false) != null;
     }
-
 }
