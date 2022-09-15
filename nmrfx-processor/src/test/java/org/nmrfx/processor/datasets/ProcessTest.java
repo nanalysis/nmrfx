@@ -43,7 +43,6 @@ public class ProcessTest {
         fidHome = parent.resolve(FID_SUBMODULE_LOCATION).toString().replace("\\", "/") + "/";
         validHome = parent.resolve(VALID_SUBMODULE_LOCATION).toString().replace("\\", "/") +"/";
         tmpHome = tmpFolder.getRoot().toString().replace("\\", "/") + "/";
-        tmpHome =  "/Users/brucejohnson/tmpfolder/";
     }
 
     public void executeScript(String fileName) {
