@@ -91,10 +91,10 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     private TextField opTextField;
 
     @FXML
-    private ChoiceBox dimChoice;
+    private ChoiceBox<String> dimChoice;
 
     @FXML
-    private ListView scriptView;
+    private ListView<String> scriptView;
     @FXML
     private StatusBar statusBar;
     private Circle statusCircle = new Circle(10.0, Color.GREEN);
@@ -300,34 +300,33 @@ public class ProcessorController implements Initializable, ProgressUpdater {
 
     protected void updateDimChoice(boolean[] complex) {
         int nDim = complex.length;
-        if (nDim > 1) {
-            dimChoice.getSelectionModel().selectedItemProperty().removeListener(dimListener);
-            ObservableList<String> dimList = FXCollections.observableArrayList();
-            for (int i = 1; i <= nDim; i++) {
-                dimList.add("D" + String.valueOf(i));
-                if ((i == 1) && (nDim > 2)) {
-                    StringBuilder sBuilder = new StringBuilder();
-                    sBuilder.append("D2");
-                    for (int j = 3; j <= nDim; j++) {
-                        sBuilder.append(",");
-                        sBuilder.append(j);
-                    }
-                    dimList.add(sBuilder.toString());
+        dimChoice.getSelectionModel().selectedItemProperty().removeListener(dimListener);
+        ObservableList<String> dimList = FXCollections.observableArrayList();
+        for (int i = 1; i <= nDim; i++) {
+            dimList.add("D" + i);
+            if ((i == 1) && (nDim > 2)) {
+                StringBuilder sBuilder = new StringBuilder();
+                sBuilder.append("D2");
+                for (int j = 3; j <= nDim; j++) {
+                    sBuilder.append(",");
+                    sBuilder.append(j);
                 }
+                dimList.add(sBuilder.toString());
             }
-            dimList.add("D_ALL");
-            for (int i = 1; i <= nDim; i++) {
-                dimList.add("P" + String.valueOf(i));
-                if ((i == 1) && (nDim > 2)) {
-                    dimList.add("P2,3");
-                }
-            }
-            dimChoice.setItems(dimList);
-            dimChoice.getSelectionModel().select(0);
-            dimChoice.getSelectionModel().selectedItemProperty().addListener(dimListener);
-
-            updateVecNumChoice(complex);
         }
+        dimList.add("D_ALL");
+        for (int i = 1; i <= nDim; i++) {
+            dimList.add("P" + i);
+            if ((i == 1) && (nDim > 2)) {
+                dimList.add("P2,3");
+            }
+        }
+        dimChoice.setItems(dimList);
+        dimChoice.getSelectionModel().select(0);
+        dimChoice.getSelectionModel().selectedItemProperty().addListener(dimListener);
+
+        updateVecNumChoice(complex);
+
         updateLineshapeCatalog(nDim);
     }
 

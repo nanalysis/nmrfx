@@ -295,7 +295,7 @@ public class CanvasMolecule implements CanvasAnnotation {
         double yCenter = (y2 + y1) / 2.0;
         canvasTransform.setToIdentity();
         canvasTransform.appendTranslation(xCenter, yCenter);
-        canvasTransform.appendScale(scale, scale);
+        canvasTransform.appendScale(scale, -scale);
         canvasTransform.appendTranslation(-xCenterMol, -yCenterMol);
         canvasScale = (float) scale;
         transformValid = true;
