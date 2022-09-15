@@ -153,7 +153,9 @@ public class IntegralTool {
             chart.setActiveRegion(null);
             hit.getDatasetAttr().setActiveRegion(null);
         }
-        Analyzer.getAnalyzer((Dataset) chart.getDataset()).getRegions().remove(this.hit.getDatasetRegion());
+        Analyzer analyzer = Analyzer.getAnalyzer((Dataset) chart.getDataset());
+        analyzer.removePeaksFromRegion(this.hit.getDatasetRegion());
+        analyzer.getRegions().remove(this.hit.getDatasetRegion());
         chart.refresh();
         AnalystApp.getAnalystApp().hidePopover(false);
     }
