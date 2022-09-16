@@ -542,11 +542,6 @@ public class PeakSlider implements ControllerTool {
             tweakFreezeButton.setDisable(true);
             linkButton.setDisable(true);
             unlinkButton.setDisable(false);
-            controller.getCharts().stream()
-                    .forEach(chart -> {
-                        chart.clearPeakPaths();
-                        chart.drawPeakLists(true);
-                    });
         } else {
             // fixme axes could be swapped
             Peak peak = peaks.get(peaks.size() - 1);
@@ -595,7 +590,6 @@ public class PeakSlider implements ControllerTool {
                                         });
                                     }
                                 }
-                                chart.drawPeakLists(true);
                             }
                         }
                     });
