@@ -1,5 +1,7 @@
 package org.nmrfx.analyst.gui.tools;
 
+import javafx.event.ActionEvent;
+import javafx.event.Event;
 import javafx.scene.control.*;
 import javafx.scene.input.Clipboard;
 import javafx.scene.input.ClipboardContent;
@@ -12,6 +14,8 @@ import org.nmrfx.analyst.gui.molecule.MoleculeUtils;
 import org.nmrfx.analyst.peaks.Analyzer;
 import org.nmrfx.analyst.peaks.JournalFormat;
 import org.nmrfx.analyst.peaks.JournalFormatPeaks;
+import org.nmrfx.chemistry.MoleculeBase;
+import org.nmrfx.chemistry.MoleculeFactory;
 import org.nmrfx.datasets.DatasetRegion;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.events.PeakEvent;
@@ -38,6 +42,8 @@ import static org.nmrfx.utils.GUIUtils.warn;
 public class SimplePeakRegionTool implements ControllerTool, PeakListener {
     private static final Logger log = LoggerFactory.getLogger(SimplePeakRegionTool.class);
     FXMLController controller;
+
+    private Menu changeMoleculeMenu;
 
 
     public SimplePeakRegionTool(FXMLController controller) {
@@ -98,8 +104,52 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
         MenuItem delCanvasMolMenuItem = new MenuItem("Remove Molecule");
         delCanvasMolMenuItem.setOnAction(e -> removeMolecule());
         moleculeButton.getItems().add(delCanvasMolMenuItem);
-
+        changeMoleculeMenu = new Menu("Change Molecule");
+        moleculeButton.setOnShowing(this::adjustMenuOptions);
         statusBar.addToolBarButtons(regionButton, peakButton, wizardButton, moleculeButton);
+    }
+
+    /**
+     * Adds/Populates the changeMoleculeMenu to the "Molecule" SplitMenuButton if atleast one
+     * molecule is loaded into memory, otherwise the menu is removed.
+     * @param event The on showing event.
+     */
+    private void adjustMenuOptions(Event event) {
+        SplitMenuButton moleculeButton = (SplitMenuButton) event.getSource();
+        if (MoleculeFactory.getMoleculeNames().isEmpty()) {
+            moleculeButton.getItems().remove(changeMoleculeMenu);
+        } else {
+            populateChangeMoleculeMenu();
+            if (!moleculeButton.getItems().contains(changeMoleculeMenu)) {
+                moleculeButton.getItems().add(changeMoleculeMenu);
+            }
+        }
+    }
+
+    /**
+     * Clears the contents of the changeMoleculeMenu and adds the names of the current molecules loaded
+     * into memory as MenuItems.
+     */
+    private void populateChangeMoleculeMenu() {
+        changeMoleculeMenu.getItems().clear();
+        Set<String> moleculeNames = (Set<String>) MoleculeFactory.getMoleculeNames();
+        MenuItem moleculeMenuItem;
+        for (String moleculeName: moleculeNames) {
+            moleculeMenuItem = new MenuItem(moleculeName);
+            moleculeMenuItem.setOnAction(this::moleculeSelected);
+            changeMoleculeMenu.getItems().add(moleculeMenuItem);
+        }
+    }
+
+    /**
+     * Sets the selected molecule as the active molecule and updates it on the active chart.
+     * @param actionEvent
+     */
+    private void moleculeSelected(ActionEvent actionEvent) {
+        MenuItem selectedMoleculeMenuItem = (MenuItem) actionEvent.getSource();
+        MoleculeBase selectedMolecule = MoleculeFactory.getMolecule(selectedMoleculeMenuItem.getText());
+        MoleculeFactory.setActive(selectedMolecule);
+        MoleculeUtils.addActiveMoleculeToCanvas();
     }
 
     PolyChart getChart() {

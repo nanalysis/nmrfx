@@ -30,6 +30,10 @@ public abstract class AnnoShape implements CanvasAnnotation {
     Color fill = Color.BLACK;
     double lineWidth = 1.0;
     boolean clipInAxes = false;
+    boolean selected = false;
+    boolean selectable = false;
+    POSTYPE xPosType;
+    POSTYPE yPosType;
 
     /**
      * @return the stroke
@@ -74,12 +78,37 @@ public abstract class AnnoShape implements CanvasAnnotation {
     }
 
     @Override
+    public POSTYPE getXPosType() {
+        return xPosType;
+    }
+
+    @Override
+    public POSTYPE getYPosType() {
+        return yPosType;
+    }
+
+    @Override
     public boolean getClipInAxes() {
         return clipInAxes;
     }
 
     public void setClipInAxes(boolean state) {
         clipInAxes = state;
+    }
+
+    @Override
+    public boolean isSelected() {
+        return selected;
+    }
+
+    @Override
+    public boolean isSelectable() {
+        return selected;
+    }
+
+    @Override
+    public void setSelectable(boolean state) {
+        selectable = state;
     }
 
 }

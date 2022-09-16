@@ -1499,10 +1499,9 @@ public class FXMLController implements  Initializable, PeakNavigable {
         bButton = GlyphsDude.createIconButton(FontAwesomeIcon.SEARCH, "Expand", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
         bButton.setOnMouseClicked(e -> doExpand(e));
         buttons.add(bButton);
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.SEARCH_MINUS, "In", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
+        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.SEARCH_PLUS, "In", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
         bButton.setOnMouseClicked(e -> doZoom(e, 1.2));
         bButton.setOnScroll((ScrollEvent event) -> {
-            double x = event.getDeltaX();
             double y = event.getDeltaY();
             if (y < 0.0) {
                 getActiveChart().zoom(1.1);
@@ -1512,10 +1511,9 @@ public class FXMLController implements  Initializable, PeakNavigable {
             }
         });
         buttons.add(bButton);
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.SEARCH_PLUS, "Out", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
+        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.SEARCH_MINUS, "Out", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
         bButton.setOnMouseClicked(e -> doZoom(e, 0.8));
         bButton.setOnScroll((ScrollEvent event) -> {
-            double x = event.getDeltaX();
             double y = event.getDeltaY();
             if (y < 0.0) {
                 getActiveChart().zoom(1.1);
