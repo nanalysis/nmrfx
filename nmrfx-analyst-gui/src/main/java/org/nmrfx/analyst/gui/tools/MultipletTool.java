@@ -12,8 +12,6 @@ import javafx.collections.SetChangeListener;
 import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
 import javafx.scene.control.*;
-import javafx.scene.image.Image;
-import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
@@ -27,6 +25,7 @@ import org.nmrfx.datasets.DatasetRegion;
 import org.nmrfx.peaks.*;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.FXMLController;
+import org.nmrfx.processor.gui.IconUtilities;
 import org.nmrfx.processor.gui.MainApp;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.spectra.CrossHairs;
@@ -167,59 +166,45 @@ public class MultipletTool implements SetChangeListener<MultipletSelection> {
         addRegion(region);
     }
 
-
-    ImageView getIcon(String name) {
-        Image imageIcon = new Image("/images/" + name + ".png", true);
-        ImageView imageView = new ImageView(imageIcon);
-        try {
-            double size = Double.parseDouble(MainApp.ICON_SIZE_STR.replaceAll("[^\\d.]", ""));
-            imageView.setFitHeight(size);
-            imageView.setFitWidth(size);
-        } catch (NumberFormatException e) {
-            log.warn("Unable to set icon size.");
-        }
-        return imageView;
-    }
-
     void initBasicButtons(ToolBar toolBar1, ToolBar toolBar2) {
         Button button;
         List<Button> peakButtons = new ArrayList<>();
         List<Button> multipletButtons = new ArrayList<>();
 
-        button = new Button("AutoAdd", getIcon("peak_auto"));
+        button = new Button("AutoAdd", IconUtilities.getIcon("peak_auto"));
         button.setOnAction(e -> addAuto());
         peakButtons.add(button);
 
-        button = new Button("Delete", getIcon("editdelete"));
+        button = new Button("Delete", IconUtilities.getIcon("editdelete"));
         button.setOnAction(e -> removeWeakPeak());
         peakButtons.add(button);
 
-        button = new Button("Split", getIcon("region_split"));
+        button = new Button("Split", IconUtilities.getIcon("region_split"));
         button.setOnAction(e -> split());
         peakButtons.add(button);
 
-        button = new Button("Adjust", getIcon("region_adjust"));
+        button = new Button("Adjust", IconUtilities.getIcon("region_adjust"));
         button.setOnAction(e -> adjustRegion());
         peakButtons.add(button);
 
 
-        Button doubletButton = new Button("Doublets", getIcon("tree"));
+        Button doubletButton = new Button("Doublets", IconUtilities.getIcon("tree"));
         doubletButton.setOnAction(e -> toDoublets());
         multipletButtons.add(doubletButton);
 
-        button = new Button("Fit", getIcon("reload"));
+        button = new Button("Fit", IconUtilities.getIcon("reload"));
         button.setOnAction(e -> fitSelected());
         peakButtons.add(button);
 
-        extractButton = new Button("Extract", getIcon("extract"));
+        extractButton = new Button("Extract", IconUtilities.getIcon("extract"));
         extractButton.setOnAction(e -> extractMultiplet());
         multipletButtons.add(extractButton);
 
-        mergeButton = new Button("Merge", getIcon("merge"));
+        mergeButton = new Button("Merge", IconUtilities.getIcon("merge"));
         mergeButton.setOnAction(e -> mergePeaks());
         multipletButtons.add(mergeButton);
 
-        transferButton = new Button("Transfer", getIcon("transfer"));
+        transferButton = new Button("Transfer", IconUtilities.getIcon("transfer"));
         transferButton.setOnAction(e -> transferPeaks());
         multipletButtons.add(transferButton);
         for (Button button1 : peakButtons) {

@@ -1,23 +1,32 @@
 package org.nmrfx.analyst.gui.tools;
 
 import javafx.event.ActionEvent;
+import javafx.geometry.Insets;
 import javafx.scene.control.Button;
+import javafx.scene.control.ContentDisplay;
 import javafx.scene.control.MenuButton;
 import javafx.scene.control.MenuItem;
+import javafx.scene.control.ToolBar;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import org.controlsfx.control.PopOver;
+import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.analyst.peaks.Analyzer;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.datasets.DatasetRegion;
 import org.nmrfx.processor.datasets.Dataset;
+import org.nmrfx.processor.gui.IconUtilities;
+import org.nmrfx.processor.gui.MainApp;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.spectra.CrossHairs;
 import org.nmrfx.processor.gui.spectra.IntegralHit;
 import org.nmrfx.utils.GUIUtils;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 
 public class IntegralTool {
     PolyChart chart;
@@ -47,15 +56,29 @@ public class IntegralTool {
 
     public void initializePopover(PopOver popOver) {
         this.vBox = new VBox();
+        vBox.setPadding(new Insets(0, 1, 0, 1));
         HBox hBox = new HBox();
         hBox.setMinHeight(10);
         HBox.setHgrow(hBox, Priority.ALWAYS);
         MenuButton menu = makeMenu();
-
-        Button splitItem = new Button("Split");
+        ToolBar topBar = new ToolBar();
+        topBar.getItems().add(menu);
+        ToolBar buttonBar = new ToolBar();
+        List<Button> buttons = new ArrayList<>();
+        Button splitItem = new Button("Split", IconUtilities.getIcon("region_split"));
         splitItem.setOnAction(e -> splitRegion());
+        buttons.add(splitItem);
+        Button deleteItem = new Button("Delete", IconUtilities.getIcon("editdelete"));
+        deleteItem.setOnAction(e -> deleteRegion());
+        buttons.add(deleteItem);
+        for (Button button1 : buttons) {
+            button1.setContentDisplay(ContentDisplay.TOP);
+            button1.setStyle("-fx-font-size:" + MainApp.ICON_FONT_SIZE_STR);
+            button1.getStyleClass().add("toolButton");
+            buttonBar.getItems().add(button1);
+        }
 
-        vBox.getChildren().addAll(hBox, menu, splitItem);
+        vBox.getChildren().addAll(hBox, topBar, buttonBar);
         popOver.setContentNode(vBox);
     }
 
@@ -120,5 +143,20 @@ public class IntegralTool {
             chart.refresh();
         }
 
+    }
+
+    public void deleteRegion() {
+        Optional<DatasetRegion> activeRegion = chart.getActiveRegion();
+        // If the region being deleted is the active region, set active regions to null so
+        // green active region bars are not drawn by the PolyChart
+        if (activeRegion.isPresent() && activeRegion.get() == this.hit.getDatasetRegion()) {
+            chart.setActiveRegion(null);
+            hit.getDatasetAttr().setActiveRegion(null);
+        }
+        Analyzer analyzer = Analyzer.getAnalyzer((Dataset) chart.getDataset());
+        analyzer.removePeaksFromRegion(this.hit.getDatasetRegion());
+        analyzer.getRegions().remove(this.hit.getDatasetRegion());
+        chart.refresh();
+        AnalystApp.getAnalystApp().hidePopover(false);
     }
 }

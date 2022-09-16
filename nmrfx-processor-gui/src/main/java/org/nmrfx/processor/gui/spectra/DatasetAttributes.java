@@ -765,6 +765,7 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
         iBlkPut = new int[theFile.getNDim()];
         iWDim = new int[theFile.getNDim()];
         title = aFile.getTitle();
+        setActiveRegion(null);
         int i;
 
         for (i = 0; i < theFile.getNDim(); i++) {
