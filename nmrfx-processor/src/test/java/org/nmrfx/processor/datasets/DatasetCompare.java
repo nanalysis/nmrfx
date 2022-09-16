@@ -28,30 +28,31 @@ public class DatasetCompare {
         if (refLen != testLen) {
             fileSizeError = Math.min(refLen, testLen);
         } else {
-            RandomAccessFile refRAFile = new RandomAccessFile(refFile, "r");
-            RandomAccessFile testRAFile = new RandomAccessFile(testFile, "r");
+            try (RandomAccessFile refRAFile = new RandomAccessFile(refFile, "r");
+                 RandomAccessFile testRAFile = new RandomAccessFile(testFile, "r")) {
 
-            int headerSize = refFile.getName().equals("data.dat") ? 0 :
-                    refFile.getName().endsWith(".nv") ? Dataset.NV_HEADER_SIZE : Dataset.UCSF_HEADER_SIZE;
-            refRAFile.seek(0);
-            testRAFile.seek(0);
+                int headerSize = refFile.getName().equals("data.dat") ? 0 :
+                        refFile.getName().endsWith(".nv") ? Dataset.NV_HEADER_SIZE : Dataset.UCSF_HEADER_SIZE;
+                refRAFile.seek(0);
+                testRAFile.seek(0);
 
-            for (int i = 0; i < headerSize; i++) {
-                byte refByte = refRAFile.readByte();
-                byte testByte = testRAFile.readByte();
-                if (refByte != testByte) {
-                    headerErrorPosition = i;
-                    break;
+                for (int i = 0; i < headerSize; i++) {
+                    byte refByte = refRAFile.readByte();
+                    byte testByte = testRAFile.readByte();
+                    if (refByte != testByte) {
+                        headerErrorPosition = i;
+                        break;
+                    }
                 }
-            }
-            refRAFile.seek(headerSize);
-            testRAFile.seek(headerSize);
-            for (int i = headerSize; i < refLen; i++) {
-                byte refByte = refRAFile.readByte();
-                byte testByte = testRAFile.readByte();
-                if (refByte != testByte) {
-                    dataErrorPosition = i;
-                    break;
+                refRAFile.seek(headerSize);
+                testRAFile.seek(headerSize);
+                for (int i = headerSize; i < refLen; i++) {
+                    byte refByte = refRAFile.readByte();
+                    byte testByte = testRAFile.readByte();
+                    if (refByte != testByte) {
+                        dataErrorPosition = i;
+                        break;
+                    }
                 }
             }
 
