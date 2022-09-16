@@ -462,9 +462,7 @@ public class Processor {
             log.debug(acqOrderStr.toString());
         }
 
-        // tdSizes = new int[adjAcqSizes.length];
         acqSizesToUse = new int[adjustedTDSizes.length];
-        // System.arraycopy(adjAcqSizes, 0, tdSizes, 0, tdSizes.length);
         System.arraycopy(adjustedTDSizes, 0, acqSizesToUse, 0, adjustedTDSizes.length);
     }
 
@@ -489,14 +487,11 @@ public class Processor {
             } else if (adjustedTDSizes == null) {
                 log.info("call adjustSizes {} new acqorder {}", acqSizesToUse.length, acqOrderToUse.length);
                 adjustSizes();
-// fixme
                 tmult = new MultiVecCounter(adjustedTDSizes, acqSizesToUse, newComplex, acqOrderToUse, dataset.getNDim());
             } else if (acqSizesToUse.length <= adjustedTDSizes.length) {
                 log.info("useSizes <= than newTDSizes {}", acqSizesToUse.length);
-// fixme
                 tmult = new MultiVecCounter(adjustedTDSizes, acqSizesToUse, newComplex, acqOrderToUse, dataset.getNDim());
             } else {
-                // String[] acqOrder = {"d2", "p1", "d1", "p2"};
                 //String[] acqOrder = {"p2", "d2", "p1", "d1"};
                 log.info("use newTDSize with useSize length {}", acqSizesToUse.length);
                 tmult = new MultiVecCounter(adjustedTDSizes, newComplex, acqOrderToUse, acqSizesToUse.length);
@@ -871,7 +866,7 @@ public class Processor {
         for (var sz : useSizes) {
             nDimToUse += sz > 1 ? 1 : 0;
         }
-        this.acqSizesToUse = useSizes;  // fixme
+        this.acqSizesToUse = useSizes;
         try {
             if (inMemory) {
                 this.dataset = new Dataset(outputFile, nDimToUse);
@@ -908,8 +903,6 @@ public class Processor {
                 dataset.setRefValue(i, nmrData.getRef(mapToFID(i)));
                 dataset.setRefPt(i, nmrData.getRefPoint(mapToFID(i)));
                 dataset.setTDSize(i, useSizes[mapToFID(i)]);
-                //dataset.setPh0(i, nmrData.getPH0(mapToFID(i)));
-                //dataset.setPh1(i, nmrData.getPH1(mapToFID(i)));
                 dataset.setValues(i, nmrData.getValues(i));
                 dataset.setComplex(i, nmrData.isComplex(mapToFID(i)));
             }
@@ -968,7 +961,6 @@ public class Processor {
                 matPrint.append(" ").append(dim[i]);
             }
             matPrint.append(" ] ");
-//        if ((nDim==3 && pt[1][0]<2 && pt[2][0]<2)) {
             matPrint.append(" pt=[");
             for (int j = 0; j < pt.length; j++) {
                 for (int k = 0; k < pt[j].length; k++) {
@@ -977,7 +969,6 @@ public class Processor {
                 matPrint.append(";");
             }
             matPrint.append(" ]");
-//        }
             log.debug(matPrint.toString());
         }
     }
