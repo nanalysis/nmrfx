@@ -29,8 +29,6 @@ public class DatasetBase {
     protected String title;
     protected File file = null;
     protected int nDim;
-    protected int[] strides;
-    protected int[] fileDimSizes;
     protected int[] size;
     protected int[] vsize;
     protected int[] vsize_r;
@@ -171,8 +169,6 @@ public class DatasetBase {
      *
      */
     public final void setNDim() {
-        strides = new int[nDim];
-        fileDimSizes = new int[nDim];
         vsize = new int[nDim];
         vsize_r = new int[nDim];
         tdSize = new int[nDim];
@@ -244,8 +240,8 @@ public class DatasetBase {
             sw[i] = 7000.0;
             sw_r[i] = 7000.0;
             sf[i] = 600.0;
-            refPt[i] = getSizeReal(i) / 2;
-            refPt_r[i] = getSizeReal(i) / 2;
+            refPt[i] = getSizeReal(i) / 2.0;
+            refPt_r[i] = getSizeReal(i) / 2.0;
             refValue[i] = 4.73;
             refValue_r[i] = 4.73;
             complex[i] = true;
@@ -608,7 +604,7 @@ public class DatasetBase {
         }
 
         if (getRefUnits(iDim) == 3) {
-            ppm = (-(pt - refPt[iDim]) * (getSw(iDim) / aa)) + getRefValue(iDim);
+            ppm = (-(pt - getRefPt(iDim)) * (getSw(iDim) / aa)) + getRefValue(iDim);
         } else if (getRefUnits(iDim) == 1) {
             ppm = pt + 1;
         }
@@ -1018,7 +1014,7 @@ public class DatasetBase {
         if (vecMat == null) {
             value = refPt[iDim];
         } else {
-            value = refPt[0];
+            value = vecMat.getSize() / 2.0;
         }
         return value;
     }
@@ -1033,8 +1029,7 @@ public class DatasetBase {
     public void setRefPt(final int iDim, final double refPt) {
         this.refPt[iDim] = refPt;
         if (vecMat != null) {
-            double delRef = getRefPt(iDim) * getSw(iDim) / getSf(iDim) / getSizeReal(iDim);
-            vecMat.refValue = refValue[iDim] + delRef;
+            vecMat.setRefValue(vecMat.getRefValue(), refPt);
         }
 
     }
@@ -1050,8 +1045,7 @@ public class DatasetBase {
         if (vecMat == null) {
             value = refValue[iDim];
         } else {
-            double delRef = getRefPt(iDim) * getSw(iDim) / getSf(iDim) / getSizeReal(iDim);
-            value = vecMat.refValue - delRef;
+            value = vecMat.getRefValue();
         }
         return value;
     }
@@ -1065,8 +1059,7 @@ public class DatasetBase {
     public void setRefValue(final int iDim, final double refValue) {
         this.refValue[iDim] = refValue;
         if (vecMat != null) {
-            double delRef = getRefPt(iDim) * getSw(iDim) / getSf(iDim) / getSizeReal(iDim);
-            vecMat.refValue = refValue + delRef;
+            vecMat.setRefValue(refValue, getRefPt(iDim));
         }
     }
 
@@ -1188,8 +1181,7 @@ public class DatasetBase {
     public void setRefPt_r(final int iDim, final double refPt_r) {
         this.refPt_r[iDim] = refPt_r;
         if (vecMat != null) {
-            double delRef = getRefPt_r(iDim) * getSw(iDim) / getSf(iDim) / getSizeReal(iDim);
-            vecMat.refValue = refValue_r[iDim] + delRef;
+            vecMat.setRefValue(refValue_r[iDim], getRefPt_r(iDim));
         }
     }
 
@@ -1205,7 +1197,7 @@ public class DatasetBase {
             value = refValue_r[iDim];
         } else {
             double delRef = getRefPt_r(iDim) * getSw_r(iDim) / getSf(iDim) / getSizeReal(iDim);
-            value = vecMat.refValue - delRef;
+            value = vecMat.getRefValue() - delRef;
         }
         return value;
     }
@@ -1219,8 +1211,7 @@ public class DatasetBase {
     public void setRefValue_r(final int iDim, final double refValue_r) {
         this.refValue_r[iDim] = refValue_r;
         if (vecMat != null) {
-            double delRef = getRefPt_r(iDim) * getSw_r(iDim) / getSf(iDim) / getSizeReal(iDim);
-            vecMat.refValue = refValue_r + delRef;
+            vecMat.setRefValue(refValue_r, getRefPt_r(iDim));
         }
     }
 
@@ -1861,13 +1852,6 @@ public class DatasetBase {
         return "\u03B4 " + getNucleus(iDim).toLatexString();
     }
 
-    public final void setStrides() {
-        strides[0] = 1;
-        for (int i = 1; i < nDim; i++) {
-            strides[i] = strides[i - 1] * getSizeTotal(i - 1);
-        }
-    }
-
     /**
      * Get the properties used by this dataset
      *
@@ -2007,24 +1991,11 @@ public class DatasetBase {
         if ((values == null) || values.isEmpty()) {
             this.values[iDim] = null;
         } else {
-            if (values.size() != getSizeTotal(iDim)) {
-                throw new IllegalArgumentException("Number of values (" + values.size() + ") must equal dimension size (" + getSizeTotal(iDim) + ") for dim " + iDim);
-            }
             this.values[iDim] = new double[values.size()];
             for (int i = 0; i < values.size(); i++) {
                 this.values[iDim][i] = values.get(i);
             }
         }
-    }
-
-    /**
-     * Set the size of the dataset along the specified dimension.
-     *
-     * @param iDim Dataset dimension index
-     * @param size the size to set
-     */
-    public void setFileDimSize(final int iDim, final int size) {
-        this.fileDimSizes[iDim] = size;
     }
 
     /**
@@ -2034,11 +2005,11 @@ public class DatasetBase {
      * @return the size
      */
     public int getFileDimSize(int iDim) {
-        int value = fileDimSizes[iDim];
-        if (value == 0) {
-            value = layout.getSize(iDim);
-        }
-        return value;
+        return layout.getSize(iDim);
+    }
+
+    public boolean hasLayout() {
+        return layout != null;
     }
 
     synchronized public RegionData analyzeRegion(int[][] pt, int[] cpt, double[] width, int[] dim)

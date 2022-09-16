@@ -389,7 +389,7 @@ public class Vec extends VecBase {
      * Set the annotation values. Values are typically used for display of
      * apodization.
      *
-     * @param region double array.
+     * @param data double array.
      */
     public void setAnnotation(double[] data) {
         if ((annotationData == null) || (annotationData.length != data.length)) {
@@ -631,8 +631,7 @@ public class Vec extends VecBase {
      */
     public static Complex[] apache_rfft(final double[] ftvec) {
         FastFourierTransformer ffTrans = new FastFourierTransformer(DftNormalization.STANDARD);
-        Complex[] ftResult = ffTrans.transform(ftvec, TransformType.FORWARD);
-        return ftResult;
+        return ffTrans.transform(ftvec, TransformType.FORWARD);
     }
 
     /**
@@ -874,7 +873,7 @@ public class Vec extends VecBase {
      *
      * @param rvec vector of doubles to process
      */
-    public static void negatePairs(double rvec[]) {
+    public static void negatePairs(double[] rvec) {
         negatePairs(rvec, rvec.length);
     }
 
@@ -885,7 +884,7 @@ public class Vec extends VecBase {
      * @param rvec real values
      * @param vecSize size of vector
      */
-    public static void negatePairs(double rvec[], int vecSize) {
+    public static void negatePairs(double[] rvec, int vecSize) {
         for (int i = 3; i < vecSize; i += 4) {
             rvec[i - 1] = -rvec[i - 1];
             rvec[i] = -rvec[i];
@@ -899,7 +898,7 @@ public class Vec extends VecBase {
      * @param rvec real values
      * @param ivec imaginary values
      */
-    public static void negatePairs(double rvec[], double ivec[]) {
+    public static void negatePairs(double[] rvec, double[] ivec) {
         negatePairs(rvec, ivec, rvec.length);
     }
 
@@ -911,7 +910,7 @@ public class Vec extends VecBase {
      * @param ivec imaginary values
      * @param vecSize size of vector
      */
-    public static void negatePairs(double rvec[], double ivec[], int vecSize) {
+    public static void negatePairs(double[] rvec, double[] ivec, int vecSize) {
         for (int i = 1; i < vecSize; i += 2) {
             rvec[i] = -rvec[i];
             ivec[i] = -ivec[i];
@@ -924,7 +923,7 @@ public class Vec extends VecBase {
      *
      * @param cvec complex values
      */
-    public static void negatePairs(Complex cvec[]) {
+    public static void negatePairs(Complex[] cvec) {
         negatePairs(cvec, cvec.length);
     }
 
@@ -935,7 +934,7 @@ public class Vec extends VecBase {
      * @param cvec complex values
      * @param vecSize size of vector
      */
-    public static void negatePairs(Complex cvec[], int vecSize) {
+    public static void negatePairs(Complex[] cvec, int vecSize) {
         for (int i = 1; i < vecSize; i += 2) {
             cvec[i] = new Complex(-cvec[i].getReal(), -cvec[i].getImaginary());
         }
@@ -1140,13 +1139,7 @@ public class Vec extends VecBase {
         rft(inverse, false, false);
     }
 
-    /**
-     * Perform Fast Fourier Transform (FFT) of this vector with various options.
-     *
-     * @param negatePairs negate alternate real/imaginary pairs
-     * @param fixGroupDelay modify vector to remove DSP charge-up at front of
-     * vector
-     */
+
     /**
      * Real FT.
      *
@@ -1558,14 +1551,14 @@ public class Vec extends VecBase {
         rVec.freqDomain = getFreqDomain();
         rVec.dwellTime = dwellTime;
         rVec.centerFreq = centerFreq;
-        rVec.refValue = refValue;
+        rVec.setRefValue(getRefValue());
         rVec.ph0 = ph0;
         rVec.ph1 = ph1;
         iVec.isComplex = false;
         iVec.freqDomain = getFreqDomain();
         iVec.dwellTime = dwellTime;
         iVec.centerFreq = centerFreq;
-        iVec.refValue = refValue;
+        iVec.setRefValue(getRefValue());
 
     }
 
@@ -1625,9 +1618,7 @@ public class Vec extends VecBase {
         } else {
             int newSize = size * 2;
             double[] newarr = new double[newSize];
-            if (rvec == null) {
-                rvec = newarr;
-            } else {
+            if (rvec != null) {
                 //copy rvec from 0 to size
                 //(because from size to rvec.length is junk data that we don't want)
                 System.arraycopy(rvec, 0, newarr, 0, Math.min(size, rvec.length));
@@ -2049,8 +2040,8 @@ public class Vec extends VecBase {
             //is this fine?
             Util.asmooth(w, y, z, a, lambda, vecSize, order);
             if (baselineMode) {
-                for (int i = 0; i < vecSize; i++) {
-                    rvec[i] = z[i + 1];
+                if (vecSize >= 0) {
+                    System.arraycopy(z, 1, rvec, 0, vecSize);
                 }
             } else {
                 for (int i = 0; i < vecSize; i++) {
@@ -2501,8 +2492,8 @@ public class Vec extends VecBase {
             y[i + 1] = getReal(i);
         }
         VecUtil.psmooth(y, size, 500);
-        for (int i = 0; i < size; i++) {
-            vecY[i] = y[i + 1];
+        if (size >= 0) {
+            System.arraycopy(y, 1, vecY, 0, size);
         }
         ArrayList<Integer> xValues = new ArrayList<>();
         ArrayList<Double> yValues = new ArrayList<>();
@@ -2573,7 +2564,7 @@ public class Vec extends VecBase {
                 double y3 = (yValues2.get(k + 2));
                 double yTest = (1.0 * x2 - x1) / (1.0 * x3 - x1) * (y3 - y1) + y1;
                 if (yTest < y2) {
-                    y2 = (yTest * 3.0 + y2 * 1.0) / 4.0;
+                    y2 = (yTest * 3.0 + y2) / 4.0;
                 }
                 xValues3.add(x2);
                 yValues3.add(y2);
@@ -2610,8 +2601,8 @@ public class Vec extends VecBase {
             VecUtil.psmooth(z, size, 500);
         }
         if (baselineMode) {
-            for (int i = 0; i < size; i++) {
-                rvec[i] = z[i + 1];
+            if (size >= 0) {
+                System.arraycopy(z, 1, rvec, 0, size);
             }
         } else {
             for (int i = 0; i < size; i++) {
@@ -2705,7 +2696,7 @@ public class Vec extends VecBase {
      * @param shiftValue the number of points to shift vector values by
      */
     public void shift(int shiftValue) {
-        if ((shiftValue != 0) && (((int) Math.abs(shiftValue)) < size)) {
+        if ((shiftValue != 0) && (Math.abs(shiftValue) < size)) {
             if (isComplex) {
                 if (useApache) {
                     if (shiftValue > 0) {
@@ -2728,6 +2719,7 @@ public class Vec extends VecBase {
                         ivec[i] = 0.0;
                     }
                 } else {
+                    shiftValue = -shiftValue;
                     System.arraycopy(rvec, shiftValue, rvec, 0, size - shiftValue);
                     System.arraycopy(ivec, shiftValue, ivec, 0, size - shiftValue);
                     for (int i = 0; i < shiftValue; i++) {
@@ -2779,11 +2771,10 @@ public class Vec extends VecBase {
      */
     public static double lShape(double x, double b, double freq) {
         b *= 0.5;
-        double y = (1.0 / Math.PI) * b / ((b * b) + ((x - freq) * (x - freq)));
-        return y;
+        return (1.0 / Math.PI) * b / ((b * b) + ((x - freq) * (x - freq)));
     }
 
-    static double[][] fillMatrix(final double[] f, final double d[], final int nRows) {
+    static double[][] fillMatrix(final double[] f, final double[] d, final int nRows) {
         int nCols = f.length;
         double[][] A = new double[nRows][nCols];
         int iCol = 0;
@@ -2920,10 +2911,8 @@ public class Vec extends VecBase {
         for (int i = 0; i < winSize; i++) {
             BR.setEntry(i, 0, x[i]);
         }
-        int nMax = AR.getColumnDimension();
         RealMatrix redAR = AR.copy();
-        AmplitudeFitResult afR = nnlsFit(redAR, BR.copy());
-        return afR;
+        return nnlsFit(redAR, BR.copy());
     }
 
     /**
@@ -2935,9 +2924,9 @@ public class Vec extends VecBase {
     public Vec cwtd(int winSize) {
         if (isComplex()) {
             // fixme check for apache mode
-            cwtd((Object) cvec, size, winSize);
+            cwtd(cvec, size, winSize);
         } else {
-            cwtd((Object) rvec, size, winSize);
+            cwtd(rvec, size, winSize);
         }
         return this;
     }
@@ -2953,21 +2942,20 @@ public class Vec extends VecBase {
             complex = true;
         }
 
-        int m = size;
-        double[] reVec = new double[m];
-        double[] imVec = new double[m];
+        double[] reVec = new double[size];
+        double[] imVec = new double[size];
 
         double reSum;
         double imSum;
         int halfWin = winSize / 2;
         double scaleCorr = 1.0 / Math.sqrt(winSize);
 
-        for (int i = 0; i < m; i++) {
+        for (int i = 0; i < size; i++) {
             reSum = 0.0;
             imSum = 0.0;
             int max = (i + winSize);
-            if (max > (m - 1)) {
-                max = m - 1;
+            if (max > (size - 1)) {
+                max = size - 1;
             }
             for (int j = i; j <= max; j++) {
                 int dIJ = (j - i);
@@ -2997,15 +2985,15 @@ public class Vec extends VecBase {
             for (int i = 0; i < halfWin; i++) {
                 cvec[i] = Complex.ZERO;
             }
-            for (int i = halfWin; i < m; i++) {
+            for (int i = halfWin; i < size; i++) {
                 cvec[i] = new Complex(reVec[i - halfWin], imVec[i - halfWin]);
             }
         } else {
             for (int i = 0; i < halfWin; i++) {
                 vec[i] = 0.0;
             }
-            for (int i = halfWin; i < m; i++) {
-                vec[i] = reVec[i - halfWin];
+            if (size - halfWin >= 0) {
+                System.arraycopy(reVec, halfWin, vec, halfWin, size - halfWin);
             }
         }
     }

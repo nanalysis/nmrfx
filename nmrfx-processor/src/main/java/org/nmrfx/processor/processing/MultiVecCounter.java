@@ -18,6 +18,8 @@
 package org.nmrfx.processor.processing;
 
 import org.apache.commons.math3.util.MultidimensionalCounter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -30,6 +32,7 @@ import org.apache.commons.math3.util.MultidimensionalCounter;
  * the indirect dimensions.
  */
 public class MultiVecCounter {
+    private static final Logger log = LoggerFactory.getLogger(MultiVecCounter.class);
 
     public static boolean showDebugInfo = false;
     int[] osizes;
@@ -39,7 +42,7 @@ public class MultiVecCounter {
     int[] outPhases;
     int[] outPoints;
     int groupSize = 1;
-    int nDim = 1;
+    int nDim;
     int datasetNDim;
     MultidimensionalCounter outCounter;
     MultidimensionalCounter inCounter;
@@ -143,7 +146,6 @@ public class MultiVecCounter {
                     inPoints[dim - 1] = argIndex - 1;
                     isizes[argIndex] = 1;
                     isizes[argIndex - 1] = tdSizes[dim];
-                    groupSize *= 1;
                     iArg++;
                 }
             } else {
@@ -157,8 +159,8 @@ public class MultiVecCounter {
                 outPhases[i] = inPhases[i];
                 outPoints[i] = inPoints[i];
             }
-            for (int i = 0; i < isizes.length; i++) {
-                osizes[i] = isizes[i];
+            if (isizes.length > 0) {
+                System.arraycopy(isizes, 0, osizes, 0, isizes.length);
             }
         } else {
             for (int i = 0; i < nIDim; i++) {
@@ -176,37 +178,41 @@ public class MultiVecCounter {
                 }
             }
         }
-        if (showDebugInfo) {
-            System.out.println("  MultiVecCounter: ");
+        if (log.isDebugEnabled()) {
+            var sBuilder = new StringBuilder();
+
+            sBuilder.append("  MultiVecCounter: ");
             for (int i = 0; i < outPhases.length; i++) {
-                System.out.print("ouPh[" + i + "]=" + outPhases[i] + " ");
+                sBuilder.append("ouPh[").append(i).append("]=").append(outPhases[i]).append(" ");
             }
-            System.out.println("");
+            sBuilder.append('\n');
+
 
             for (int i = 0; i < outPoints.length; i++) {
-                System.out.print("ouPt[" + i + "]=" + outPoints[i] + " ");
+                sBuilder.append("ouPt[").append(i).append("]=").append(outPoints[i]).append(" ");
             }
-            System.out.println("");
+            sBuilder.append('\n');
 
             for (int i = 0; i < inPhases.length; i++) {
-                System.out.print("inPh[" + i + "]=" + inPhases[i] + " ");
+                sBuilder.append("inPh[").append(i).append("]=").append(inPhases[i]).append(" ");
             }
-            System.out.println("");
+            sBuilder.append('\n');
 
             for (int i = 0; i < inPoints.length; i++) {
-                System.out.print("inPt[" + i + "]=" + inPoints[i] + " ");
+                sBuilder.append("inPt[").append(i).append("]=").append(inPoints[i]).append(" ");
             }
-            System.out.println("");
+            sBuilder.append('\n');
 
             for (int i = 0; i < isizes.length; i++) {
-                System.out.print(" inSz[" + i + "]=" + isizes[i]);
+                sBuilder.append("inSz[").append(i).append("]=").append(isizes[i]).append(" ");
             }
-            System.out.println("");
+            sBuilder.append('\n');
             for (int i = 0; i < osizes.length; i++) {
-                System.out.print(" ouSz[" + i + "]=" + osizes[i]);
+                sBuilder.append("ouSz[").append(i).append("]=").append(osizes[i]).append(" ");
             }
-            System.out.println("");
-            System.out.println("groupsize " + groupSize);
+            sBuilder.append('\n');
+            sBuilder.append("groupsize ").append(groupSize);
+            log.debug(sBuilder.toString());
         }
         outCounter = new MultidimensionalCounter(osizes);
         inCounter = new MultidimensionalCounter(isizes);
@@ -221,6 +227,14 @@ public class MultiVecCounter {
      */
     public int[] getOutSizes() {
         return osizes;
+    }
+
+    public int[] getIndirectSizes() {
+        int[] dimSizes = new int[outPoints.length];
+        for (int i =0;i<outPoints.length;i++) {
+            dimSizes[i] = osizes[outPoints[i]] * osizes[outPhases[i]];
+        }
+        return dimSizes;
     }
 
     /**
@@ -277,7 +291,7 @@ public class MultiVecCounter {
      * group. A group represents all the vectors that have the same time value
      * in the indirect dimensions.
      *
-     * @param vecNum
+     * @param vecNum index of the group to be returned
      * @return VecIndex with positions corresponding to specified group number.
      */
     public VecIndex getNextGroup(final int vecNum) {
@@ -313,7 +327,7 @@ public class MultiVecCounter {
      * group. A group represents all the vectors that have the same time value
      * in the indirect dimensions.
      *
-     * @param vecNum
+     * @param counts indices of positions in output
      * @return VecIndex with positions corresponding to specified group number.
      */
     public VecIndex getNextGroup(final int[] counts) {
@@ -371,35 +385,8 @@ public class MultiVecCounter {
     }
 
     /**
-     * Unused
      *
-     */
-    public void getNextGroup() {
-        int i = 0;
-        while (iterator.hasNext()) {
-            iterator.next();
-            int[] counts = iterator.getCounts();
-            int j = 0;
-            for (int value : counts) {
-                System.out.print(" " + value);
-            }
-            System.out.println("");
-            int[] iCounts = outToInCounter(counts);
-            int iCount = outCounter.getCount(counts);
-            for (int value : iCounts) {
-                System.out.print(" " + value);
-            }
-            System.out.println("");
-            int inVec = inCounter.getCount(iCounts);
-            System.out.println(" i " + i + " " + inVec);
-            getOffsets(counts);
-            i++;
-        }
-    }
-
-    /**
-     *
-     * @param args
+     * @param args optional command line arguments
      */
     public static void main(String[] args) {
         int[] sizes = {64, 3, 4};

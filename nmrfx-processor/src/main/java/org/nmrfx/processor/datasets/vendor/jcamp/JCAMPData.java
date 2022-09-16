@@ -646,8 +646,7 @@ public class JCAMPData implements NMRData {
         dvec.dwellTime = 1.0 / getSW(0);
         dvec.centerFreq = getSF(0);
 
-        double delRef = (dvec.getSize() / 2d) * (1.0 / dvec.dwellTime) / dvec.centerFreq / dvec.getSize();
-        dvec.refValue = getRef(0) + delRef;
+        dvec.setRefValue(getRef(0));
     }
 
     @Override
@@ -705,8 +704,7 @@ public class JCAMPData implements NMRData {
         dvec.dwellTime = 1.0 / getSW(1);
         dvec.centerFreq = getSF(1);
 
-        double delRef = ((1.0 / dvec.dwellTime) / dvec.centerFreq) / 2.0;
-        dvec.refValue = getRef(1) + delRef;
+        dvec.setRefValue(getRef(1));
     }
 
     @Override
