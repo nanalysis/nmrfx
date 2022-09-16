@@ -19,6 +19,7 @@ package org.nmrfx.processor.gui.annotations;
 
 import javafx.geometry.BoundingBox;
 import javafx.geometry.Bounds;
+import javafx.geometry.Pos;
 import javafx.geometry.VPos;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
@@ -28,6 +29,8 @@ import org.nmrfx.processor.gui.CanvasAnnotation;
 import org.nmrfx.utils.GUIUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.List;
 
 /**
  *
@@ -44,6 +47,9 @@ public class AnnoText implements CanvasAnnotation {
     double startY1;
     double startX2;
     double startY2;
+    boolean selected = false;
+    boolean selectable = true;
+    int activeHandle = -1;
 
     POSTYPE xPosType;
     POSTYPE yPosType;
@@ -94,13 +100,17 @@ public class AnnoText implements CanvasAnnotation {
         this.fill = fill;
     }
 
-    public boolean hit(double x, double y) {
+    @Override
+    public boolean hit(double x, double y, boolean selectMode) {
         boolean hit = (bounds2D != null) && bounds2D.contains(x, y);
         if (hit) {
             startX1 = x1;
             startX2 = x2;
             startY1 = y1;
             startY2 = y2;
+        }
+        if (selectMode && selectable) {
+            selected = hit;
         }
         return hit;
     }
@@ -109,14 +119,32 @@ public class AnnoText implements CanvasAnnotation {
         return bounds2D;
     }
 
+    /**
+     * Moves the annotext around the canvas. If a handle is selected, the handle can be
+     * moved to adjust the size of the molecule but, it cannot be moved past another handle.
+     * (i.e. The text cannot be sized to a negative width)
+     * @param bounds The bounds of the canvas.
+     * @param world The bounds of the canvas in the units of the canvas axis.
+     * @param start The starting position.
+     * @param pos The new position.
+     */
     @Override
     public void move(double[][] bounds, double[][] world, double[] start, double[] pos) {
         double dx = pos[0] - start[0];
         double dy = pos[1] - start[1];
-        x1 = xPosType.move(startX1, dx, bounds[0], world[0]);
-        x2 = xPosType.move(startX2, dx, bounds[0], world[0]);
-        y1 = yPosType.move(startY1, dy, bounds[1], world[1]);
-        y2 = yPosType.move(startY2, dy, bounds[1], world[1]);
+        double handleSeparationLimit = getHandleSeparationLimit(bounds, world);
+        if (activeHandle < 0) {
+            x1 = xPosType.move(startX1, dx, bounds[0], world[0]);
+            x2 = xPosType.move(startX2, dx, bounds[0], world[0]);
+            y1 = yPosType.move(startY1, dy, bounds[1], world[1]);
+            y2 = yPosType.move(startY2, dy, bounds[1], world[1]);
+        } else if (activeHandle == 0) {
+            x1 = xPosType.move(startX1, dx, bounds[0], world[0]);
+            x1 = Math.min(x1, x2 - handleSeparationLimit);
+        } else if (activeHandle == 1) {
+            x2 = xPosType.move(startX2, dx, bounds[0], world[0]);
+            x2 = Math.max(x1 + handleSeparationLimit, x2);
+        }
     }
 
     @Override
@@ -137,27 +165,20 @@ public class AnnoText implements CanvasAnnotation {
             for (String segment:segments) {
                 double width = GUIUtils.getTextWidth(segment, font);
                 if (width > regionWidth) {
-                    double charWidth = width / segment.length();
-                    int start = 0;
-                    int end;
-                    double yOffset = 0.0;
-                    do {
-                        end = start + (int) (regionWidth / charWidth);
-                        if (end > segment.length()) {
-                            end = segment.length();
-                        }
-                        String subStr = segment.substring(start, end);
-                        gC.fillText(subStr, xp1, y);
+                    List<String> strings = GUIUtils.splitToWidth(regionWidth, segment,font);
+                    for (String string:strings) {
+                        gC.fillText(string, xp1, y);
                         y += font.getSize() + 3;
-                        start = end;
-                        yOffset += font.getSize() + 3;
-                    } while (start < segment.length());
+                    }
                 } else {
                     gC.fillText(segment, xp1, y);
                     y += font.getSize() +3;
                 }
             }
             bounds2D = new BoundingBox(xp1, topY, regionWidth, y - topY);
+            if (isSelected()) {
+                drawHandles(gC);
+            }
         } catch (Exception ex) {
             log.warn(ex.getMessage(), ex);
         }
@@ -171,6 +192,40 @@ public class AnnoText implements CanvasAnnotation {
     @Override
     public POSTYPE getYPosType() {
         return yPosType;
+    }
+
+    @Override
+    public void drawHandles(GraphicsContextInterface gC) {
+        drawHandle(gC, bounds2D.getMinX(), (bounds2D.getMinY() + bounds2D.getMaxY())/2, Pos.BOTTOM_RIGHT);
+        drawHandle(gC, bounds2D.getMaxX(), (bounds2D.getMinY() + bounds2D.getMaxY())/2, Pos.BOTTOM_LEFT);
+    }
+
+    @Override
+    public boolean isSelected() {
+        return selected;
+    }
+
+    @Override
+    public boolean isSelectable() {
+        return selectable;
+    }
+
+    @Override
+    public void setSelectable(boolean state) {
+        selectable = state;
+    }
+
+
+    @Override
+    public int hitHandle(double x, double y) {
+        if (hitHandle(x,y, Pos.BOTTOM_RIGHT, bounds2D.getMinX(), (bounds2D.getMinY() + bounds2D.getMaxY())/2)) {
+            activeHandle = 0;
+        } else if (hitHandle(x,y, Pos.BOTTOM_LEFT, bounds2D.getMaxX(), (bounds2D.getMinY() + bounds2D.getMaxY())/2)) {
+            activeHandle = 1;
+        } else {
+            activeHandle = -1;
+        }
+        return activeHandle;
     }
 
 }

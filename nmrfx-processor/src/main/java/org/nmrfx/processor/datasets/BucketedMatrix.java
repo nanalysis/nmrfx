@@ -84,7 +84,7 @@ public class BucketedMatrix {
         double extraPPM = width * extraFrac;
         ppm0 += extraPPM;
         ppm1 -= extraPPM;
-        vecMat.refValue = ppm0;
+        vecMat.setRefValue(ppm0, 0.0);
         vecMat.centerFreq = sf;
         double sw = ((ppm0 - ppm1) * sf);
         vecMat.dwellTime = 1.0 / sw;

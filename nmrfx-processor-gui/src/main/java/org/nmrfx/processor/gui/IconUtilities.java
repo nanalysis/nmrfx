@@ -23,21 +23,20 @@
  */
 package org.nmrfx.processor.gui;
 
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import org.controlsfx.glyphfont.Glyph;
 import org.controlsfx.glyphfont.GlyphFont;
 import org.controlsfx.glyphfont.GlyphFontRegistry;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
  * @author brucejohnson
  */
 public class IconUtilities {
-
-    static {
-        // Register a custom default font
-        GlyphFontRegistry.register("icomoon", SpecAttrWindowController.class.getResourceAsStream("/images/icomoon.ttf"), 16);
-    }
-
+    private static final Logger log = LoggerFactory.getLogger(IconUtilities.class);
     private static GlyphFont icoMoon = GlyphFontRegistry.font("icomoon");
 
     public static final char IM_COGS = '\ue995';
@@ -98,8 +97,28 @@ public class IconUtilities {
     public static final char IM_UNLOCKED = '\ue990';
     public static final char IM_ARROW_DOWN_RIGHT = '\uea35';
 
+    static {
+        // Register a custom default font
+        GlyphFontRegistry.register("icomoon", SpecAttrWindowController.class.getResourceAsStream("/images/icomoon.ttf"), 16);
+    }
+    
+    private IconUtilities() {}
+
     public static Glyph create(char fontChar) {
         return icoMoon.create(fontChar);
+    }
+
+    public static ImageView getIcon(String name) {
+        Image imageIcon = new Image("/images/" + name + ".png", true);
+        ImageView imageView = new ImageView(imageIcon);
+        try {
+            double size = Double.parseDouble(MainApp.ICON_SIZE_STR.replaceAll("[^\\d.]", ""));
+            imageView.setFitHeight(size);
+            imageView.setFitWidth(size);
+        } catch (NumberFormatException e) {
+            log.warn("Unable to set icon size.");
+        }
+        return imageView;
     }
 
 }

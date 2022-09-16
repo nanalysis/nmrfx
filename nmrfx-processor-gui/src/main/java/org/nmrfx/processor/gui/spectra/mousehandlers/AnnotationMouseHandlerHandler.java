@@ -16,7 +16,7 @@ public class AnnotationMouseHandlerHandler extends MouseHandler {
 
     public static Optional<AnnotationMouseHandlerHandler> handler(MouseBindings mouseBindings) {
         PolyChart chart = mouseBindings.getChart();
-        Optional<CanvasAnnotation> anno = chart.hitAnnotation(mouseBindings.getMouseX(), mouseBindings.getMouseY());
+        Optional<CanvasAnnotation> anno = chart.hitAnnotation(mouseBindings.getMouseX(), mouseBindings.getMouseY(), true);
         AnnotationMouseHandlerHandler handler = null;
         if (anno.isPresent()) {
             handler = new AnnotationMouseHandlerHandler(mouseBindings, anno.get());

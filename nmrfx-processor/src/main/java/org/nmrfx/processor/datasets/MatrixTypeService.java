@@ -18,11 +18,12 @@
 package org.nmrfx.processor.datasets;
 
 import org.nmrfx.datasets.MatrixType;
+import org.nmrfx.processor.math.MatrixND;
+import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.processing.Processor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.*;
@@ -140,17 +141,87 @@ public class MatrixTypeService {
         }
     }
 
-    private void writeItems(List<MatrixType> temp) {
+    private boolean writeItems(List<MatrixType> temp) {
         for (MatrixType vector : temp) {
             try {
+                Dataset dataset = processor.getDataset();
+                checkDataset(dataset, vector);
                 processor.getDataset().writeMatrixType(vector);
                 nWritten.incrementAndGet();
-            } catch (IOException ex) {
+            } catch (Exception ex) {
                 log.error(ex.getMessage(), ex);
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private void checkDataset(Dataset dataset, MatrixType matrixType) throws DatasetException {
+        if (matrixType instanceof Vec vec) {
+            checkVector(dataset, vec);
+        } else {
+            MatrixND matrix = (MatrixND) matrixType;
+            checkMatrix(dataset, matrix);
+        }
+        for (int i = 0; i < dataset.getNDim(); i++) {
+
+        }
+    }
+
+    private void checkVector(Dataset dataset, Vec vec) throws DatasetException {
+        int[][] pt = vec.getPt();
+        int[] dim = vec.getDim();
+        int nDim = dataset.getNDim();
+        if (!dataset.hasLayout()) {
+            int[] idNVectors = processor.getIndirectSizes();
+            int size = vec.getSize();
+            dataset.resize(size, idNVectors);
+        }
+        for (int i = 0; i < nDim; i++) {
+            if (pt[i][0] == pt[i][1]) {
+                int testSize = pt[i][0] + 1;
+                if (testSize > dataset.getFileDimSize(dim[i])) {
+                    if (i > 0) {
+                        int[] idNVectors = processor.getIndirectSizes();
+                        testSize = testSize < idNVectors[i - 1] ? idNVectors[i - 1] : (int) Math.ceil(testSize / 16.0) * 16;
+                    } else {
+                        testSize = (int) Math.ceil(testSize / 16.0) * 16;
+                    }
+                    dataset.resizeDim(dim[i], testSize);
+                }
+            } else {
+                if ((pt[i][1] + 1) > dataset.getFileDimSize(dim[i])) {
+                    dataset.resizeDim(dim[i], pt[i][1] + 1);
+                }
             }
         }
     }
-    
+
+    private void checkMatrix(Dataset dataset, MatrixND matrix) throws DatasetException {
+        int[][] pt = matrix.getPt();
+        int[] dim = matrix.getDim();
+        int nDim = dataset.getNDim();
+        boolean resize = false;
+        int[] dimSizes = new int[nDim];
+        for (int i = 0; i < nDim; i++) {
+            dimSizes[dim[i]] = dataset.getFileDimSize(dim[i]);
+            if (pt[i][0] == pt[i][1]) {
+                if ((pt[i][0] + 1) > dataset.getFileDimSize(dim[i])) {
+                    dimSizes[dim[i]] = pt[i][1] + 1;
+                    resize = true;
+                }
+            } else {
+                if ((pt[i][1] + 1) > dataset.getFileDimSize(dim[i])) {
+                    dimSizes[dim[i]] = pt[i][1] + 1;
+                    resize = true;
+                }
+            }
+        }
+        if (resize) {
+            dataset.resizeDims(dimSizes);
+        }
+    }
+
     /**
      * Writes all of the items from the processedItemQueue to file.
      */
@@ -170,10 +241,12 @@ public class MatrixTypeService {
 
                 temp = processedItemQueue.poll(100, TimeUnit.MILLISECONDS);
                 if (temp != null) {
-                    writeItems(temp);
+                    boolean ok = writeItems(temp);
+                    if (!ok) {
+                        return false;
+                    }
                 } else {
                     if (nWritten.get() >= itemsToWrite) {
-                        System.out.println("finished writing");
                         return true;
                     }
                 }

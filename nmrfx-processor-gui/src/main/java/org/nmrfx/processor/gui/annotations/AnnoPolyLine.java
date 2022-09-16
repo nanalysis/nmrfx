@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2018 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,6 +17,7 @@
  */
 package org.nmrfx.processor.gui.annotations;
 
+import javafx.geometry.Pos;
 import org.nmrfx.graphicsio.GraphicsContextInterface;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,7 +25,6 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 
 /**
- *
  * @author brucejohnson
  */
 public class AnnoPolyLine extends AnnoShape {
@@ -34,14 +34,13 @@ public class AnnoPolyLine extends AnnoShape {
     final double[] yPoints;
     final double[] xCPoints;
     final double[] yCPoints;
-    POSTYPE xPosType;
-    POSTYPE yPosType;
+    int activeHandle = -1;
 
     public AnnoPolyLine(List<Double> xList, List<Double> yList,
-            POSTYPE xPosType, POSTYPE yPosType) {
+                        POSTYPE xPosType, POSTYPE yPosType) {
         xPoints = new double[xList.size()];
         yPoints = new double[yList.size()];
-        for (int i=0;i<xPoints.length;i++) {
+        for (int i = 0; i < xPoints.length; i++) {
             xPoints[i] = xList.get(i);
             yPoints[i] = yList.get(i);
         }
@@ -52,14 +51,9 @@ public class AnnoPolyLine extends AnnoShape {
         this.yPosType = yPosType;
     }
 
-    public AnnoPolyLine(double[] xPoints, double[] yPoints,
-            POSTYPE xPosType, POSTYPE yPosType) {
-        this.xPoints = xPoints;
-        this.yPoints = yPoints;
-        xCPoints = new double[xPoints.length];
-        yCPoints = new double[yPoints.length];
-        this.xPosType = xPosType;
-        this.yPosType = yPosType;
+    @Override
+    public boolean hit( double x, double y, boolean selectMode) {
+        return false;
     }
 
     @Override
@@ -72,19 +66,32 @@ public class AnnoPolyLine extends AnnoShape {
                 yCPoints[i] = yPosType.transform(yPoints[i], bounds[1], world[1]);
             }
             gC.strokePolyline(xCPoints, yCPoints, xCPoints.length);
+            if (isSelected()) {
+                drawHandles(gC);
+            }
         } catch (Exception ex) {
             log.error(ex.getMessage(), ex);
         }
     }
 
     @Override
-    public POSTYPE getXPosType() {
-        return xPosType;
+    public void drawHandles(GraphicsContextInterface gC) {
+        int last = xCPoints.length - 1;
+        drawHandle(gC, xCPoints[0], yCPoints[0], Pos.CENTER);
+        drawHandle(gC, xCPoints[last], yCPoints[last], Pos.CENTER);
     }
 
     @Override
-    public POSTYPE getYPosType() {
-        return yPosType;
+    public int hitHandle(double x, double y) {
+        int last = xCPoints.length - 1;
+        if (hitHandle(x, y, Pos.CENTER, xCPoints[0], yCPoints[0])) {
+            activeHandle = 0;
+        } else if (hitHandle(x, y, Pos.CENTER, xCPoints[last], yCPoints[last])) {
+            activeHandle = 1;
+        } else {
+            activeHandle = -1;
+        }
+        return activeHandle;
     }
 
 }

@@ -123,8 +123,7 @@ public class SimData {
         Vec vec = new Vec(pars.getN());
         vec.setSF(pars.getSf());
         vec.setSW(pars.getSw());
-        double ref = pars.getSw() / pars.getSf() / 2 + pars.getRef();
-        vec.setRef(ref);
+        vec.setRefValue(pars.getRef());
         vec.setName(name);
         return vec;
     }
@@ -225,7 +224,7 @@ public class SimData {
 
     public static CompoundData genRegions(String cmpdID, String name, SimDataVecPars pars, double refConc, double cmpdConc, Vec vec, List<Region> regions) {
         double refNProtons = 9.0;
-        CompoundData cData = new CompoundData(cmpdID, name, pars.getVref(), pars.getSf(), pars.getSw(), pars.getN(), refConc, cmpdConc, refNProtons);
+        CompoundData cData = new CompoundData(cmpdID, name, pars.getRef(), pars.getSf(), pars.getSw(), pars.getN(), refConc, cmpdConc, refNProtons);
         int n = vec.getSize();
 
         for (Region region : regions) {

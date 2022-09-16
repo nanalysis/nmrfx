@@ -45,7 +45,7 @@ public class DatasetMerger {
                     dimSizes[i] = inputDataset.getSizeTotal(i);
                 }
                 dimSizes[nDim] = nInputFiles;
-                outputDataset = Dataset.createDataset(outFileName, outFile.getName(), dimSizes, false);
+                outputDataset = Dataset.createDataset(outFileName, outFile.getName(), dimSizes, false, true);
                 for (int i = 0; i < outputDataset.getNDim(); i++) {
                     outputDataset.setComplex(i, false);
                     outputDataset.syncPars(i);

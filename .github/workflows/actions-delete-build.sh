@@ -13,7 +13,7 @@ BRANCH=${DELETED_REF##*/}
 echo "Deleted branch: ${BRANCH}"
 
 # delete from remote
-REMOTE_FOLDER=`echo "${BRANCH}" | tr "/" "_"`
+REMOTE_FOLDER=`echo "${BRANCH}" | tr "/" "_" | tr -d [:punct:]`
 REMOTE_PATH="${PARENT_PATH}/${REMOTE_FOLDER}"
 
 $SHAREPOINT "${HOST}" "${SITE}" api "${SHAREPOINT_CLIENT_ID}" "${SHAREPOINT_CLIENT_SECRET}" delete-folder "${REMOTE_PATH}"

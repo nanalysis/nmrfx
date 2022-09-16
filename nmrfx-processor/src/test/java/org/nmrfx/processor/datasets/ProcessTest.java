@@ -1,6 +1,5 @@
 package org.nmrfx.processor.datasets;
 
-import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -13,6 +12,7 @@ import java.io.IOException;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assume.assumeFalse;
 
@@ -21,6 +21,7 @@ public class ProcessTest {
     private static final String VALID_SUBMODULE_LOCATION = "nmrfx-test-data/valid";
     private static final String FID_SUBMODULE_LOCATION = "nmrfx-test-data/testfids/";
     private static final String ERR_MSG = "File doesn't exist: ";
+    private static final long[] ARRAYED_RESULT = {-1, -1, -1};
     public static String scriptHome = "src/test/resources/process_scripts";
     private static String fidHome;
     private static String tmpHome;
@@ -44,7 +45,7 @@ public class ProcessTest {
         tmpHome = tmpFolder.getRoot().toString().replace("\\", "/") + "/";
     }
 
-    public boolean executeScript(String fileName) {
+    public void executeScript(String fileName) {
         Path path = Path.of(scriptHome, fileName + ".py");
         PythonInterpreter interp = new PythonInterpreter();
         interp.exec("from pyproc import *");
@@ -52,12 +53,11 @@ public class ProcessTest {
         interp.exec("TMPHOME='" + tmpHome + "'");
         interp.exec("useProcessor()");  // necessary to reset between processing multiple files
         interp.execfile(path.toString());
-        return true;
     }
 
     boolean testFilesMissing(File testFile) throws FileNotFoundException {
         if (!testFile.exists()) {
-            boolean isBuildEnv = Boolean.parseBoolean(System.getenv("BUILD_ENV"));;
+            boolean isBuildEnv = Boolean.parseBoolean(System.getenv("BUILD_ENV"));
             if (isBuildEnv) {
                 throw new FileNotFoundException("Missing build environment requirement. " + ERR_MSG + testFile);
             }
@@ -67,7 +67,7 @@ public class ProcessTest {
         }
     }
 
-    public long runAndCompare(String fileName) throws IOException {
+    public long[] runAndCompareDetailed(String fileName) throws IOException {
         File refFile;
         File testFile;
         if (fileName.contains("rs2d")) {
@@ -81,30 +81,40 @@ public class ProcessTest {
             refFile=Path.of(validHome, fileName + ".nv").toFile();
             testFile = Path.of(tmpHome, "tst_" + fileName + ".nv").toFile();
         }
+        System.out.println("test file " + testFile);
         // someone running the tests may not have the test files as they take up a lot of disk space
         // so, currently,  if file doesn't exist a message is printed and the test passes
         assumeFalse(ERR_MSG + refFile, testFilesMissing(refFile));
         executeScript(fileName);
-        long result = DatasetCompare.compare(refFile, testFile);
-        return result;
+        if (refFile.getName().endsWith(".nv") || refFile.getName().endsWith(".ucsf")) {
+            return DatasetCompare.compareDetailed(refFile, testFile);
+        } else {
+            long compareValue = DatasetCompare.compare(refFile, testFile);
+            return new long[]{compareValue};
+        }
+    }
+
+    public long runAndCompare(String fileName) throws IOException {
+        long[] detailedResult = runAndCompareDetailed(fileName);
+        return detailedResult[0];
     }
 
     @Test
     public void test_gb1_tract1d() throws IOException {
-        long result = runAndCompare("gb1_tract1d");
-        assertEquals(-1, result);
+        long[] result = runAndCompareDetailed("gb1_tract1d");
+        assertArrayEquals(ARRAYED_RESULT, result);
     }
 
     @Test
     public void test_hnconus_grins_zf() throws IOException {
-        long result = runAndCompare("hnconus_grins_zf");
-        assertEquals(-1, result);
+        long[] result = runAndCompareDetailed("hnconus_grins_zf");
+        assertArrayEquals(ARRAYED_RESULT, result);
     }
 
     @Test
     public void test_hnconus_nesta() throws IOException {
-        long result = runAndCompare("hnconus_nesta");
-        assertEquals(-1, result);
+        long[] result = runAndCompareDetailed("hnconus_nesta");
+        assertArrayEquals(ARRAYED_RESULT, result);
     }
 
     @Test
@@ -127,68 +137,68 @@ public class ProcessTest {
 
     @Test
     public void test_ubiq_cnoesqc() throws IOException {
-        long result = runAndCompare("ubiq_cnoesqc");
-        assertEquals(-1, result);
+        long[] result = runAndCompareDetailed("ubiq_cnoesqc");
+        assertArrayEquals(ARRAYED_RESULT, result);
     }
 
     @Test
     public void test_ubiq_hnca() throws IOException {
-        long result = runAndCompare("ubiq_hnca");
-        assertEquals(-1, result);
+        long[] result = runAndCompareDetailed("ubiq_hnca");
+        assertArrayEquals(ARRAYED_RESULT, result);
     }
 
     @Test
     public void test_ubiq_hnco() throws IOException {
-        long result = runAndCompare("ubiq_hnco");
-        assertEquals(-1, result);
+        long[] result = runAndCompareDetailed("ubiq_hnco");
+        assertArrayEquals(ARRAYED_RESULT, result);
     }
 
     @Test
     public void test_ubiq_hnco_lp() throws IOException {
-        long result = runAndCompare("ubiq_hnco_lp");
-        assertEquals(-1, result);
+        long[] result = runAndCompareDetailed("ubiq_hnco_lp");
+        assertArrayEquals(ARRAYED_RESULT, result);
     }
 
     @Test
     public void test_ubiq_hnco_skip2() throws IOException {
-        long result = runAndCompare("ubiq_hnco_skip2");
-        assertEquals(-1, result);
+        long[] result = runAndCompareDetailed("ubiq_hnco_skip2");
+        assertArrayEquals(ARRAYED_RESULT, result);
     }
 
     @Test
     public void test_ubiq_hnco_skip3() throws IOException {
-        long result = runAndCompare("ubiq_hnco_skip3");
-        assertEquals(-1, result);
+        long[] result = runAndCompareDetailed("ubiq_hnco_skip3");
+        assertArrayEquals(ARRAYED_RESULT, result);
     }
 
     @Test
     public void test_ubiq_hsqc() throws IOException {
-        long result = runAndCompare("ubiq_hsqc");
-        assertEquals(-1, result);
+        long[] result = runAndCompareDetailed("ubiq_hsqc");
+        assertArrayEquals(ARRAYED_RESULT, result);
     }
 
     @Test
     public void test_ubiq_hsqc_ucsf() throws IOException {
-        long result = runAndCompare("ubiq_hsqc_ucsf");
-        assertEquals(-1, result);
+        long[] result = runAndCompareDetailed("ubiq_hsqc_ucsf");
+        assertArrayEquals(ARRAYED_RESULT, result);
     }
 
     @Test
     public void test_ubiq_noe() throws IOException {
-        long result = runAndCompare("ubiq_noe");
-        assertEquals(-1, result);
+        long[] result = runAndCompareDetailed("ubiq_noe");
+        assertArrayEquals(ARRAYED_RESULT, result);
     }
 
     @Test
     public void test_ubiq_t1() throws IOException {
-        long result = runAndCompare("ubiq_t1");
-        assertEquals(-1, result);
+        long[] result = runAndCompareDetailed("ubiq_t1");
+        assertArrayEquals(ARRAYED_RESULT, result);
     }
 
     @Test
     public void test_ubiq_t2() throws IOException {
-        long result = runAndCompare("ubiq_t2");
-        assertEquals(-1, result);
+        long[] result = runAndCompareDetailed("ubiq_t2");
+        assertArrayEquals(ARRAYED_RESULT, result);
     }
 
     @Test

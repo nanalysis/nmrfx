@@ -372,7 +372,6 @@ public class Analyzer {
             }
         }
 
-        int iDim = 0;
         int[] dim = new int[peakList.nDim];
         for (int i = 0; i < dim.length; i++) {
             dim[i] = i;
@@ -380,7 +379,6 @@ public class Analyzer {
         double[][] limits = new double[1][2];
         Set<DatasetRegion> regions = getRegions();
 
-        Set<DatasetRegion> newRegions = new TreeSet<>();
         regions.stream().forEach(region -> {
             limits[0][0] = region.getRegionStart(0);
             limits[0][1] = region.getRegionEnd(0);
@@ -390,9 +388,38 @@ public class Analyzer {
 
             }
         });
+        deletePeaks(peakList.peaks());
+        for (Peak peak : peakList.peaks()) {
+            peak.setStatus(0);
+        }
+    }
 
-        for (int i = 0; i < n; i++) {
-            Peak peak = peakList.getPeak(i);
+    /**
+     * Locates any peaks within region and deletes them/
+     * @param region The DatasetRegion to search
+     */
+    public void removePeaksFromRegion(DatasetRegion region) {
+        int[] dim = new int[peakList.nDim];
+        for (int i = 0; i < dim.length; i++) {
+            dim[i] = i;
+        }
+        double[][] limits = new double[1][2];
+        limits[0][0] = region.getRegionStart(0);
+        limits[0][1] = region.getRegionEnd(0);
+        List<Peak> peaks = locatePeaks(peakList, limits, dim);
+        for (Peak peak : peaks) {
+            peak.setStatus(0);
+        }
+        deletePeaks(peaks);
+    }
+
+    /**
+     * Deletes from peakList any peaks in peaksToDelete that have status of 0. The peak list will be compressed
+     * and renumbered.
+     * @param peaks List of peaks to check deletion status for.
+     */
+    private void deletePeaks(List<Peak> peaks) {
+        for (Peak peak: peaks) {
             if (peak.getStatus() == 0) {
                 List<Peak> lPeaks = PeakList.getLinks(peak);
                 for (Peak lPeak : lPeaks) {
@@ -403,10 +430,6 @@ public class Analyzer {
         }
         peakList.compress();
         peakList.reNumber();
-        for (Peak peak : peakList.peaks()) {
-            peak.setStatus(0);
-        }
-
     }
 
     public void trimRegionsToPeaks() {

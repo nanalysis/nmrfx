@@ -71,6 +71,10 @@ public class SubMatrixFile implements DatasetStorageInterface, Closeable {
         init();
     }
 
+    public DatasetLayout getLayout() {
+        return layout;
+    }
+
     void init() throws IOException {
         fc = raFile.getChannel();
         int blockHeaderSize = layout.getBlockHeaderSize() / BYTES;

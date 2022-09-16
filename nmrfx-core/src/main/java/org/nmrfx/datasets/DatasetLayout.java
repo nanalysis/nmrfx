@@ -21,6 +21,7 @@ package org.nmrfx.datasets;
  * @author brucejohnson
  */
 public class DatasetLayout {
+    public static final int DEFAULT_BLOCK_SIZE = 4096;
 
     public int fileHeaderSize;
     public int blockHeaderSize;
@@ -55,9 +56,13 @@ public class DatasetLayout {
         offsetPoints = new int[nDim];
     }
 
-    public static DatasetLayout createFullMatrix(int[] sizes) {
+    public static int calculateBlockSize(int[] dimSizes) {
+        return DEFAULT_BLOCK_SIZE;
+    }
+
+    public static DatasetLayout createFullMatrix(int headerSize, int[] sizes) {
         DatasetLayout layout = new DatasetLayout(sizes);
-        layout.setFileHeaderSize(0);
+        layout.setFileHeaderSize(headerSize);
         layout.setBlockHeaderSize(0);
         layout.blockPoints = 1;
         layout.totalBlocks = 1;
@@ -67,6 +72,25 @@ public class DatasetLayout {
             layout.blockPoints *= layout.blockSize[i];
         }
         layout.subMatrix = false;
+        return layout;
+    }
+
+    public static DatasetLayout createBlockMatrix(int headerSize, int[] sizes) {
+        DatasetLayout layout = new DatasetLayout(sizes);
+        layout.setFileHeaderSize(headerSize);
+        layout.setBlockHeaderSize(0);
+        layout.setBlockSize(DatasetLayout.calculateBlockSize(sizes));
+        layout.dimDataset();
+        return layout;
+    }
+
+    public static DatasetLayout resize(DatasetLayout source, int[] sizes) {
+        DatasetLayout layout = new DatasetLayout(sizes);
+        layout.setFileHeaderSize(source.getFileHeaderSize());
+        layout.setBlockHeaderSize(source.getBlockHeaderSize());
+        layout.blockPoints = source.blockPoints;
+        layout.setBlockSize(DatasetLayout.calculateBlockSize(sizes));
+        layout.dimDataset();
         return layout;
     }
 

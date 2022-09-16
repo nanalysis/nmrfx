@@ -37,6 +37,10 @@ public class MoleculeFactory {
         return molecules.values();
     }
 
+    public static Collection<String> getMoleculeNames() {
+        return molecules.keySet();
+    }
+
     public static void setMoleculeMap(Map<String, MoleculeBase> newMap) {
         molecules = newMap;
     }
