@@ -107,9 +107,6 @@ public class DragBindings {
             e.consume();
         }
         if (isAccepted) {
-            // fixme
-//                    chart.setStyle("-fx-border-color: green;"
-//                            + "-fx-border-width: 1;");
             e.acceptTransferModes(TransferMode.COPY);
         }
     }
