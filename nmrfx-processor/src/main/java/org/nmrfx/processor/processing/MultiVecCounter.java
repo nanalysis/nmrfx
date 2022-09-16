@@ -18,6 +18,9 @@
 package org.nmrfx.processor.processing;
 
 import org.apache.commons.math3.util.MultidimensionalCounter;
+import org.nmrfx.processor.datasets.Dataset;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -30,6 +33,7 @@ import org.apache.commons.math3.util.MultidimensionalCounter;
  * the indirect dimensions.
  */
 public class MultiVecCounter {
+    private static final Logger log = LoggerFactory.getLogger(MultiVecCounter.class);
 
     public static boolean showDebugInfo = false;
     int[] osizes;
@@ -156,7 +160,9 @@ public class MultiVecCounter {
                 outPhases[i] = inPhases[i];
                 outPoints[i] = inPoints[i];
             }
-            if (isizes.length >= 0) System.arraycopy(isizes, 0, osizes, 0, isizes.length);
+            if (isizes.length >= 0) {
+                System.arraycopy(isizes, 0, osizes, 0, isizes.length);
+            }
         } else {
             for (int i = 0; i < nIDim; i++) {
                 outPhases[i] = 2 * nIDim - 1 - i;
@@ -173,37 +179,41 @@ public class MultiVecCounter {
                 }
             }
         }
-        if (showDebugInfo) {
-            System.out.println("  MultiVecCounter: ");
+        if (log.isDebugEnabled()) {
+            var sBuilder = new StringBuilder();
+
+            sBuilder.append("  MultiVecCounter: ");
             for (int i = 0; i < outPhases.length; i++) {
-                System.out.print("ouPh[" + i + "]=" + outPhases[i] + " ");
+                sBuilder.append("ouPh[").append(i).append("]=").append(outPhases[i]).append(" ");
             }
-            System.out.println();
+            sBuilder.append('\n');
+
 
             for (int i = 0; i < outPoints.length; i++) {
-                System.out.print("ouPt[" + i + "]=" + outPoints[i] + " ");
+                sBuilder.append("ouPt[").append(i).append("]=").append(outPoints[i]).append(" ");
             }
-            System.out.println();
+            sBuilder.append('\n');
 
             for (int i = 0; i < inPhases.length; i++) {
-                System.out.print("inPh[" + i + "]=" + inPhases[i] + " ");
+                sBuilder.append("inPh[").append(i).append("]=").append(inPhases[i]).append(" ");
             }
-            System.out.println();
+            sBuilder.append('\n');
 
             for (int i = 0; i < inPoints.length; i++) {
-                System.out.print("inPt[" + i + "]=" + inPoints[i] + " ");
+                sBuilder.append("inPt[").append(i).append("]=").append(inPoints[i]).append(" ");
             }
-            System.out.println();
+            sBuilder.append('\n');
 
             for (int i = 0; i < isizes.length; i++) {
-                System.out.print(" inSz[" + i + "]=" + isizes[i]);
+                sBuilder.append("inSz[").append(i).append("]=").append(isizes[i]).append(" ");
             }
-            System.out.println();
+            sBuilder.append('\n');
             for (int i = 0; i < osizes.length; i++) {
-                System.out.print(" ouSz[" + i + "]=" + osizes[i]);
+                sBuilder.append("ouSz[").append(i).append("]=").append(osizes[i]).append(" ");
             }
-            System.out.println();
-            System.out.println("groupsize " + groupSize);
+            sBuilder.append('\n');
+            sBuilder.append("groupsize ").append(groupSize);
+            log.debug(sBuilder.toString());
         }
         outCounter = new MultidimensionalCounter(osizes);
         inCounter = new MultidimensionalCounter(isizes);
@@ -373,33 +383,6 @@ public class MultiVecCounter {
 
         }
         return i;
-    }
-
-    /**
-     * Unused
-     *
-     */
-    public void getNextGroup() {
-        int i = 0;
-        while (iterator.hasNext()) {
-            iterator.next();
-            int[] counts = iterator.getCounts();
-            int j = 0;
-            for (int value : counts) {
-                System.out.print(" " + value);
-            }
-            System.out.println();
-            int[] iCounts = outToInCounter(counts);
-            int iCount = outCounter.getCount(counts);
-            for (int value : iCounts) {
-                System.out.print(" " + value);
-            }
-            System.out.println();
-            int inVec = inCounter.getCount(iCounts);
-            System.out.println(" i " + i + " " + inVec);
-            getOffsets(counts);
-            i++;
-        }
     }
 
     /**

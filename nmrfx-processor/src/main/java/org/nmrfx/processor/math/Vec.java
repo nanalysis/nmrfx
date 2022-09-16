@@ -2040,7 +2040,9 @@ public class Vec extends VecBase {
             //is this fine?
             Util.asmooth(w, y, z, a, lambda, vecSize, order);
             if (baselineMode) {
-                if (vecSize >= 0) System.arraycopy(z, 1, rvec, 0, vecSize);
+                if (vecSize >= 0) {
+                    System.arraycopy(z, 1, rvec, 0, vecSize);
+                }
             } else {
                 for (int i = 0; i < vecSize; i++) {
                     rvec[i] -= z[i + 1];
@@ -2490,7 +2492,9 @@ public class Vec extends VecBase {
             y[i + 1] = getReal(i);
         }
         VecUtil.psmooth(y, size, 500);
-        if (size >= 0) System.arraycopy(y, 1, vecY, 0, size);
+        if (size >= 0) {
+            System.arraycopy(y, 1, vecY, 0, size);
+        }
         ArrayList<Integer> xValues = new ArrayList<>();
         ArrayList<Double> yValues = new ArrayList<>();
         for (int i = 0; i < nRegions; i++) {
@@ -2597,7 +2601,9 @@ public class Vec extends VecBase {
             VecUtil.psmooth(z, size, 500);
         }
         if (baselineMode) {
-            if (size >= 0) System.arraycopy(z, 1, rvec, 0, size);
+            if (size >= 0) {
+                System.arraycopy(z, 1, rvec, 0, size);
+            }
         } else {
             for (int i = 0; i < size; i++) {
                 //if (z[i+1] > vec[i]) {
@@ -2905,9 +2911,7 @@ public class Vec extends VecBase {
         for (int i = 0; i < winSize; i++) {
             BR.setEntry(i, 0, x[i]);
         }
-        int nMax = AR.getColumnDimension();
         RealMatrix redAR = AR.copy();
-        //  System.out.println("nCols " + nCols + " rss " + afR.getRss() + " fit max " + afR.getMaxValue() + " indx " + afR.getMaxIndex() + " lw " + lineWidth);
         return nnlsFit(redAR, BR.copy());
     }
 
@@ -2988,7 +2992,9 @@ public class Vec extends VecBase {
             for (int i = 0; i < halfWin; i++) {
                 vec[i] = 0.0;
             }
-            if (size - halfWin >= 0) System.arraycopy(reVec, halfWin - halfWin, vec, halfWin, size - halfWin);
+            if (size - halfWin >= 0) {
+                System.arraycopy(reVec, halfWin - halfWin, vec, halfWin, size - halfWin);
+            }
         }
     }
 

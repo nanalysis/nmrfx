@@ -256,7 +256,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
             }
             if (createFile) {
                 layout = new DatasetLayout(dimSizes);
-                layout.setBlockSize(4096);
+                layout.setBlockSize((DatasetLayout.calculateBlockSize(dimSizes)));
                 layout.dimDataset();
             }
             this.title = title;
@@ -391,13 +391,11 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
     }
 
     public void resize(int directDimSize, int[] idSizes) throws DatasetException {
-        System.out.print("resize " + directDimSize);
         int[] dimSizes = new int[nDim];
         dimSizes[0] = directDimSize;
         for (int i = 1; i < nDim; i++) {
             dimSizes[i] = idSizes[i - 1];
         }
-        System.out.println("");
         try {
             if (memoryMode) {
                 layout = DatasetLayout.createFullMatrix(0, dimSizes);
@@ -417,14 +415,12 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
     }
 
     public void resizeDim(int iDim, int dimSize) throws DatasetException {
-        System.out.println("resize dim " + iDim + " " + dimSize);
         int[] dimSizes = new int[nDim];
         for (int i = 0; i < nDim; i++) {
             dimSizes[i] = getSizeTotal(i);
             if (i == iDim) {
                 dimSizes[i] = dimSize;
             }
-            System.out.println("new size " + i + " " + dimSizes[i]);
         }
         try {
             dataFile = StorageResizer.resizeDim(this, layout, dataFile, dimSizes);
@@ -433,12 +429,11 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
             refPt_r[iDim] = getSizeReal(iDim) / 2;
             memoryMode = dataFile instanceof MemoryFile;
         } catch (IOException ioe) {
-            ioe.printStackTrace();
+            log.error(ioe.getMessage(), ioe);
             throw new DatasetException("Can't resize dataset " + ioe.getMessage());
         }
     }
     public void resizeDims(int[] dimSizes) throws DatasetException {
-        System.out.println("resize dim " + dimSizes[0] + " " + dimSizes[1] + " " + dimSizes[2]);
         try {
             dataFile = StorageResizer.resizeDim(this, layout, dataFile, dimSizes);
             layout = dataFile.getLayout();
@@ -448,7 +443,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
             }
             memoryMode = dataFile instanceof MemoryFile;
         } catch (IOException ioe) {
-            ioe.printStackTrace();
+            log.error(ioe.getMessage(), ioe);
             throw new DatasetException("Can't resize dataset " + ioe.getMessage());
         }
     }

@@ -21,6 +21,7 @@ package org.nmrfx.datasets;
  * @author brucejohnson
  */
 public class DatasetLayout {
+    public static final int DEFAULT_BLOCK_SIZE = 4096;
 
     public int fileHeaderSize;
     public int blockHeaderSize;
@@ -55,6 +56,10 @@ public class DatasetLayout {
         offsetPoints = new int[nDim];
     }
 
+    public static int calculateBlockSize(int[] dimSizes) {
+        return DEFAULT_BLOCK_SIZE;
+    }
+
     public static DatasetLayout createFullMatrix(int headerSize, int[] sizes) {
         DatasetLayout layout = new DatasetLayout(sizes);
         layout.setFileHeaderSize(headerSize);
@@ -74,16 +79,17 @@ public class DatasetLayout {
         DatasetLayout layout = new DatasetLayout(sizes);
         layout.setFileHeaderSize(headerSize);
         layout.setBlockHeaderSize(0);
-        layout.setBlockSize(4096);
+        layout.setBlockSize(DatasetLayout.calculateBlockSize(sizes));
         layout.dimDataset();
         return layout;
     }
+
     public static DatasetLayout resize(DatasetLayout source, int[] sizes) {
         DatasetLayout layout = new DatasetLayout(sizes);
         layout.setFileHeaderSize(source.getFileHeaderSize());
         layout.setBlockHeaderSize(source.getBlockHeaderSize());
         layout.blockPoints = source.blockPoints;
-        layout.setBlockSize(4096);
+        layout.setBlockSize(DatasetLayout.calculateBlockSize(sizes));
         layout.dimDataset();
         return layout;
     }

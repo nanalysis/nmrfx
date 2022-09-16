@@ -157,8 +157,7 @@ public class MatrixTypeService {
     }
 
     private void checkDataset(Dataset dataset, MatrixType matrixType) throws DatasetException {
-        if (matrixType instanceof Vec) {
-            Vec vec = (Vec) matrixType;
+        if (matrixType instanceof Vec vec) {
             checkVector(dataset, vec);
         } else {
             MatrixND matrix = (MatrixND) matrixType;
@@ -186,9 +185,7 @@ public class MatrixTypeService {
                         int[] idNVectors = processor.getIndirectSizes();
                         testSize = testSize < idNVectors[i - 1] ? idNVectors[i - 1] : (int) Math.ceil(testSize / 16.0) * 16;
                     } else {
-                        if (testSize > dataset.getFileDimSize(dim[i])) {
-                            testSize = (int) Math.ceil(testSize / 16.0) * 16;
-                        }
+                        testSize = (int) Math.ceil(testSize / 16.0) * 16;
                     }
                     dataset.resizeDim(dim[i], testSize);
                 }
@@ -199,6 +196,7 @@ public class MatrixTypeService {
             }
         }
     }
+
     private void checkMatrix(Dataset dataset, MatrixND matrix) throws DatasetException {
         int[][] pt = matrix.getPt();
         int[] dim = matrix.getDim();
@@ -242,7 +240,6 @@ public class MatrixTypeService {
                 }
 
                 temp = processedItemQueue.poll(100, TimeUnit.MILLISECONDS);
-//                System.out.println("temp " + temp);
                 if (temp != null) {
                     boolean ok = writeItems(temp);
                     if (!ok) {

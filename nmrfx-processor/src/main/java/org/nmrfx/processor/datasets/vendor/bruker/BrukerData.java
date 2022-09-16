@@ -1465,7 +1465,6 @@ public class BrukerData implements NMRData {
             {
                 throw new ArrayIndexOutOfBoundsException("file index " + i + " out of bounds " + nread + " " + tbytes);
             }
-            //System.out.println("readVecBlock read "+nread+" bytes");
         } catch (EOFException e) {
             log.warn(e.getMessage(), e);
             if (fc != null) {

@@ -230,8 +230,7 @@ public class MemoryFile implements DatasetStorageInterface, Closeable {
             mPoint[i] = sizes[i];
         }
         MultidimensionalCounter counter = new MultidimensionalCounter(mPoint);
-        MultidimensionalCounter.Iterator iter = counter.iterator();
-        return iter;
+        return counter.iterator();
     }
 
 }
