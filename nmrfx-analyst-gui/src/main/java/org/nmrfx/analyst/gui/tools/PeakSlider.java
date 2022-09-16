@@ -12,6 +12,8 @@ import java.util.*;
 import java.util.function.Consumer;
 
 import javafx.beans.InvalidationListener;
+import javafx.collections.ListChangeListener;
+import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.event.Event;
 import javafx.scene.control.*;
@@ -73,6 +75,7 @@ public class PeakSlider implements ControllerTool {
     PeakClusterMatcher[] matchers = new PeakClusterMatcher[2];
     RandomDataGenerator rand = new RandomDataGenerator();
     private InvalidationListener selectedPeaksListener;
+    private ListChangeListener<PolyChart> chartsListener = this::updateKeyBindings;
 
     public PeakSlider(FXMLController controller, Consumer<PeakSlider> closeAction) {
         this.controller = controller;
@@ -172,32 +175,55 @@ public class PeakSlider implements ControllerTool {
         Pane filler5 = new Pane();
         HBox.setHgrow(filler5, Priority.ALWAYS);
 
-        if (sliderToolBar != null) {
-            sliderToolBar.getItems().add(closeButton);
-            sliderToolBar.getItems().add(filler1);
-            sliderToolBar.getItems().add(actionMenu);
-            sliderToolBar.getItems().addAll(buttons);
-            sliderToolBar.getItems().add(filler2);
-            sliderToolBar.getItems().addAll(atomXFieldLabel, atomXLabel, filler3, atomYFieldLabel, atomYLabel, filler4, intensityFieldLabel, intensityLabel);
-            sliderToolBar.getItems().add(filler5);
+        sliderToolBar.getItems().add(closeButton);
+        sliderToolBar.getItems().add(filler1);
+        sliderToolBar.getItems().add(actionMenu);
+        sliderToolBar.getItems().addAll(buttons);
+        sliderToolBar.getItems().add(filler2);
+        sliderToolBar.getItems().addAll(atomXFieldLabel, atomXLabel, filler3, atomYFieldLabel, atomYLabel, filler4, intensityFieldLabel, intensityLabel);
+        sliderToolBar.getItems().add(filler5);
 
-            // The different control items end up with different heights based on font and icon size,
-            // set all the items to use the same height
-            sliderToolBar.heightProperty().addListener((observable, oldValue, newValue) -> GUIUtils.toolbarAdjustHeights(List.of(sliderToolBar)));
-        }
+        // The different control items end up with different heights based on font and icon size,
+        // set all the items to use the same height
+        sliderToolBar.heightProperty().addListener((observable, oldValue, newValue) -> GUIUtils.toolbarAdjustHeights(List.of(sliderToolBar)));
+
+        // Setup listeners
         selectedPeaksListener = event -> setActivePeaks(controller.selPeaks.get());
         controller.selPeaks.addListener(selectedPeaksListener);
         for (PolyChart chart : controller.getCharts()) {
-            KeyBindings keyBindings = chart.getKeyBindings();
-            keyBindings.registerKeyAction("df", this::freezePeaks);
-            keyBindings.registerKeyAction("dt", this::thawPeaks);
-            keyBindings.registerKeyAction("ds", this::tweakPeaks);
-            addSliderToPeakMenu(chart);
+            addKeyBindingsToChart(chart);
         }
+        ((ObservableList<PolyChart>) controller.getCharts()).addListener(chartsListener);
+   }
+
+    /**
+     * Add key bindings to newly added charts.
+     * @param change The change to the FXMLController charts list.
+     */
+    private void updateKeyBindings(ListChangeListener.Change<? extends PolyChart> change) {
+        if (change.next()) {
+            for (PolyChart chart: change.getAddedSubList()) {
+                addKeyBindingsToChart(chart);
+            }
+        }
+    }
+
+    /**
+     * Adds keybindings for df, dt and ds to the provided chart as well as adding the slider
+     * to the chart's peak menu.
+     * @param chart The PolyChart to modify.
+     */
+    private void addKeyBindingsToChart(PolyChart chart) {
+        KeyBindings keyBindings = chart.getKeyBindings();
+        keyBindings.registerKeyAction("df", this::freezePeaks);
+        keyBindings.registerKeyAction("dt", this::thawPeaks);
+        keyBindings.registerKeyAction("ds", this::tweakPeaks);
+        addSliderToPeakMenu(chart);
     }
 
     public void removeListeners() {
         controller.selPeaks.removeListener(selectedPeaksListener);
+        ((ObservableList<PolyChart>) controller.getCharts()).removeListener(chartsListener);
         for (PolyChart chart : controller.getCharts()) {
             KeyBindings keyBindings = chart.getKeyBindings();
             keyBindings.deregisterKeyAction("df");
