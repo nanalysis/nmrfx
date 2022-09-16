@@ -1,8 +1,6 @@
 package org.nmrfx.processor.datasets;
 
 import java.io.*;
-import java.nio.MappedByteBuffer;
-import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 
 public class DatasetCompare {
@@ -20,7 +18,7 @@ public class DatasetCompare {
         return result;
     }
 
-     static long[] compareParts(File refFile, File testFile) throws IOException {
+    static long[] compareParts(File refFile, File testFile) throws IOException {
         long refLen = refFile.length();
         long testLen = testFile.length();
         long fileSizeError = -1;
@@ -33,26 +31,30 @@ public class DatasetCompare {
             RandomAccessFile refRAFile = new RandomAccessFile(refFile, "r");
             RandomAccessFile testRAFile = new RandomAccessFile(testFile, "r");
 
-            MappedByteBuffer refBuffer = refRAFile.getChannel().map(FileChannel.MapMode.READ_ONLY, 0, refLen);
-            MappedByteBuffer testBuffer = testRAFile.getChannel().map(FileChannel.MapMode.READ_ONLY, 0, testLen);
-            if (refBuffer.compareTo(testBuffer) != 0) {
-                int headerSize = refFile.getName().equals("data.dat") ? 0 :
-                        refFile.getName().endsWith(".nv") ? Dataset.NV_HEADER_SIZE : Dataset.UCSF_HEADER_SIZE;
-                refBuffer.position(0);
-                testBuffer.position(0);
-                for (int i = 0; i < headerSize; i++) {
-                    if (refBuffer.get(i) != testBuffer.get(i)) {
-                        headerErrorPosition = i;
-                        break;
-                    }
-                }
-                for (int i = headerSize; i < refLen; i++) {
-                    if (refBuffer.get(i) != testBuffer.get(i)) {
-                        dataErrorPosition = i;
-                        break;
-                    }
+            int headerSize = refFile.getName().equals("data.dat") ? 0 :
+                    refFile.getName().endsWith(".nv") ? Dataset.NV_HEADER_SIZE : Dataset.UCSF_HEADER_SIZE;
+            refRAFile.seek(0);
+            testRAFile.seek(0);
+
+            for (int i = 0; i < headerSize; i++) {
+                byte refByte = refRAFile.readByte();
+                byte testByte = testRAFile.readByte();
+                if (refByte != testByte) {
+                    headerErrorPosition = i;
+                    break;
                 }
             }
+            refRAFile.seek(headerSize);
+            testRAFile.seek(headerSize);
+            for (int i = headerSize; i < refLen; i++) {
+                byte refByte = refRAFile.readByte();
+                byte testByte = testRAFile.readByte();
+                if (refByte != testByte) {
+                    dataErrorPosition = i;
+                    break;
+                }
+            }
+
         }
         return new long[]{fileSizeError, dataErrorPosition, headerErrorPosition};
     }
@@ -86,7 +88,7 @@ public class DatasetCompare {
                 int i = 0;
                 while (refStream.available() > 0) {
                     if (Float.compare(refStream.readFloat(), testStream.readFloat()) != 0) {
-                        result = i == 0? -1 : i;
+                        result = i == 0 ? -1 : i;
                         break;
                     }
                     i++;
