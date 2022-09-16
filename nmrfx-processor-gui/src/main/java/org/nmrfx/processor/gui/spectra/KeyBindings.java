@@ -348,9 +348,9 @@ public class KeyBindings {
         // Handlers should be arranged in highest to lowest priority as the clipboard may contain multiple DataFormats
         DataFormat dfMDCLT = getDataFormat("MDLCT");
         if (clipboard.getContentTypes().contains(getDataFormat("MDLCT")) && dataFormatHandlers.containsKey(dfMDCLT)) {
-            dataFormatHandlers.get(dfMDCLT).handlePaste(clipboard.getContent(dfMDCLT));
+            dataFormatHandlers.get(dfMDCLT).handlePaste(clipboard.getContent(dfMDCLT), chart);
         } else if (clipboard.getContentTypes().contains(DataFormat.PLAIN_TEXT) && dataFormatHandlers.containsKey(DataFormat.PLAIN_TEXT)) {
-            dataFormatHandlers.get(DataFormat.PLAIN_TEXT).handlePaste(clipboard.getContent(DataFormat.PLAIN_TEXT));
+            dataFormatHandlers.get(DataFormat.PLAIN_TEXT).handlePaste(clipboard.getContent(DataFormat.PLAIN_TEXT), chart);
         }
     }
 

@@ -1,6 +1,8 @@
 package org.nmrfx.processor.gui.events;
 
+import org.nmrfx.processor.gui.PolyChart;
+
 public interface DataFormatEventHandler {
 
-    void handlePaste(Object o);
+    boolean handlePaste(Object o, PolyChart chart);
 }
