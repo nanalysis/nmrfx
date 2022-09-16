@@ -611,6 +611,7 @@ public class AnalystApp extends MainApp {
         FXMLController controller = FXMLController.getActiveController();
         controller.removeTool(PeakSlider.class);
         controller.getBottomBox().getChildren().remove(peakSlider.getBox());
+        peakSlider.removeListeners();
     }
 
     public void showPeakPathTool() {

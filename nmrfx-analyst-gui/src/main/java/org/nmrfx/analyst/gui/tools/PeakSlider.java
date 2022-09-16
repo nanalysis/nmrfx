@@ -10,17 +10,15 @@ import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import java.io.IOException;
 import java.util.*;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
+import javafx.beans.InvalidationListener;
 import javafx.event.ActionEvent;
 import javafx.event.Event;
-import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
-import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import org.apache.commons.math3.random.RandomDataGenerator;
@@ -74,6 +72,7 @@ public class PeakSlider implements ControllerTool {
     List<FreezeListener> listeners = new ArrayList<>();
     PeakClusterMatcher[] matchers = new PeakClusterMatcher[2];
     RandomDataGenerator rand = new RandomDataGenerator();
+    private InvalidationListener selectedPeaksListener;
 
     public PeakSlider(FXMLController controller, Consumer<PeakSlider> closeAction) {
         this.controller = controller;
@@ -126,7 +125,7 @@ public class PeakSlider implements ControllerTool {
         unlinkButton.setOnAction(e -> unlinkDims());
         buttons.add(unlinkButton);
 
-        buttons.forEach((button) -> {
+        buttons.forEach(button -> {
             button.getStyleClass().add("toolButton");
         });
 
@@ -186,13 +185,25 @@ public class PeakSlider implements ControllerTool {
             // set all the items to use the same height
             sliderToolBar.heightProperty().addListener((observable, oldValue, newValue) -> GUIUtils.toolbarAdjustHeights(List.of(sliderToolBar)));
         }
-        controller.selPeaks.addListener(e -> setActivePeaks(controller.selPeaks.get()));
+        selectedPeaksListener = event -> setActivePeaks(controller.selPeaks.get());
+        controller.selPeaks.addListener(selectedPeaksListener);
         for (PolyChart chart : controller.getCharts()) {
             KeyBindings keyBindings = chart.getKeyBindings();
             keyBindings.registerKeyAction("df", this::freezePeaks);
             keyBindings.registerKeyAction("dt", this::thawPeaks);
             keyBindings.registerKeyAction("ds", this::tweakPeaks);
             addSliderToPeakMenu(chart);
+        }
+    }
+
+    public void removeListeners() {
+        controller.selPeaks.removeListener(selectedPeaksListener);
+        for (PolyChart chart : controller.getCharts()) {
+            KeyBindings keyBindings = chart.getKeyBindings();
+            keyBindings.deregisterKeyAction("df");
+            keyBindings.deregisterKeyAction("dt");
+            keyBindings.deregisterKeyAction("ds");
+            removeSliderFromPeakMenu(chart);
         }
     }
 
@@ -1270,6 +1281,20 @@ public class PeakSlider implements ControllerTool {
             cascade.getItems().addAll(tweakFreezeItem, thawItem, freezeItem);
         }
 
+    }
+
+    private void removeSliderFromPeakMenu(PolyChart chart) {
+        MenuItem sliderMenuItem = null;
+        ContextMenu menu = chart.getPeakMenu().chartMenu;
+        for (var menuItem : menu.getItems()) {
+            if (menuItem.getText().equals("Slider")) {
+                sliderMenuItem = menuItem;
+                break;
+            }
+        }
+        if (sliderMenuItem != null) {
+            menu.getItems().remove(sliderMenuItem);
+        }
     }
 
 }
