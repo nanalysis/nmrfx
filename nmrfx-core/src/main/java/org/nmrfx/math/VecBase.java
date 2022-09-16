@@ -1368,8 +1368,8 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
      * @param newSize the new size of the vector
      */
     public void adjustRef(double shift, int newSize) {
-        double newCenter = shift + newSize / 2;
-        double deltaPt = size / 2 - newCenter;
+        double newCenter = shift + newSize / 2.0;
+        double deltaPt = size / 2.0 - newCenter;
         double delRef =  ((deltaPt / (dwellTime * centerFreq)) / (size));
         refValue += delRef;
         dwellTime = (dwellTime * size) / (newSize);
@@ -2403,7 +2403,7 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
      * @return position in PPM
      */
     public double pointToPPM(double pt) {
-        return (-(pt - size/2) * ((pt / (centerFreq * dwellTime * size)) + refValue));
+        return (-(pt - size/ 2.0) * ((pt / (centerFreq * dwellTime * size)) + refValue));
     }
 
     /**
@@ -2414,7 +2414,7 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
      * @return position in points
      */
     public double refToPtD(double ref) {
-        return ((refValue - ref) * centerFreq * dwellTime * size) + size /2;
+        return ((refValue - ref) * centerFreq * dwellTime * size) + size / 2.0;
     }
 
     /**

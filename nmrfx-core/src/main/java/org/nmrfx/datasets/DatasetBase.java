@@ -240,8 +240,8 @@ public class DatasetBase {
             sw[i] = 7000.0;
             sw_r[i] = 7000.0;
             sf[i] = 600.0;
-            refPt[i] = getSizeReal(i) / 2;
-            refPt_r[i] = getSizeReal(i) / 2;
+            refPt[i] = getSizeReal(i) / 2.0;
+            refPt_r[i] = getSizeReal(i) / 2.0;
             refValue[i] = 4.73;
             refValue_r[i] = 4.73;
             complex[i] = true;
@@ -1014,7 +1014,7 @@ public class DatasetBase {
         if (vecMat == null) {
             value = refPt[iDim];
         } else {
-            value = vecMat.getSize() / 2;
+            value = vecMat.getSize() / 2.0;
         }
         return value;
     }

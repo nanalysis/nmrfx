@@ -389,7 +389,7 @@ public class Vec extends VecBase {
      * Set the annotation values. Values are typically used for display of
      * apodization.
      *
-     * @param region double array.
+     * @param data double array.
      */
     public void setAnnotation(double[] data) {
         if ((annotationData == null) || (annotationData.length != data.length)) {
@@ -2993,7 +2993,7 @@ public class Vec extends VecBase {
                 vec[i] = 0.0;
             }
             if (size - halfWin >= 0) {
-                System.arraycopy(reVec, halfWin - halfWin, vec, halfWin, size - halfWin);
+                System.arraycopy(reVec, halfWin, vec, halfWin, size - halfWin);
             }
         }
     }

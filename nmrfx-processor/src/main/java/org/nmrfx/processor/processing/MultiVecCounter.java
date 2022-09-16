@@ -18,7 +18,6 @@
 package org.nmrfx.processor.processing;
 
 import org.apache.commons.math3.util.MultidimensionalCounter;
-import org.nmrfx.processor.datasets.Dataset;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -160,7 +159,7 @@ public class MultiVecCounter {
                 outPhases[i] = inPhases[i];
                 outPoints[i] = inPoints[i];
             }
-            if (isizes.length >= 0) {
+            if (isizes.length > 0) {
                 System.arraycopy(isizes, 0, osizes, 0, isizes.length);
             }
         } else {

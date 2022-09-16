@@ -217,8 +217,8 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         ph1[0] = vector.getPH1();
         ph0_r[0] = ph0[0];
         ph1_r[0] = ph1[0];
-        refPt[0] = vector.getSize() / 2;
-        refPt_r[0] = vector.getSize() / 2;
+        refPt[0] = vector.getSize() / 2.0;
+        refPt_r[0] = vector.getSize() / 2.0;
         complex[0] = vector.isComplex();
         complex_r[0] = vector.isComplex();
         freqDomain[0] = vector.freqDomain();
@@ -400,8 +400,8 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
             if (memoryMode) {
                 layout = DatasetLayout.createFullMatrix(0, dimSizes);
                 for (int i = 0; i < nDim; i++) {
-                    refPt[i] = getSizeReal(i) / 2;
-                    refPt_r[i] = getSizeReal(i) / 2;
+                    refPt[i] = getSizeReal(i) / 2.0;
+                    refPt_r[i] = getSizeReal(i) / 2.0;
                 }
                 dataFile = new MemoryFile(this, layout, true);
                 dataFile.zero();
@@ -425,8 +425,8 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         try {
             dataFile = StorageResizer.resizeDim(this, layout, dataFile, dimSizes);
             layout = dataFile.getLayout();
-            refPt[iDim] = getSizeReal(iDim) / 2;
-            refPt_r[iDim] = getSizeReal(iDim) / 2;
+            refPt[iDim] = getSizeReal(iDim) / 2.0;
+            refPt_r[iDim] = getSizeReal(iDim) / 2.0;
             memoryMode = dataFile instanceof MemoryFile;
         } catch (IOException ioe) {
             log.error(ioe.getMessage(), ioe);
@@ -438,8 +438,8 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
             dataFile = StorageResizer.resizeDim(this, layout, dataFile, dimSizes);
             layout = dataFile.getLayout();
             for (int iDim=0;iDim<dimSizes.length;iDim++) {
-                refPt[iDim] = getSizeReal(iDim) / 2;
-                refPt_r[iDim] = getSizeReal(iDim) / 2;
+                refPt[iDim] = getSizeReal(iDim) / 2.0;
+                refPt_r[iDim] = getSizeReal(iDim) / 2.0;
             }
             memoryMode = dataFile instanceof MemoryFile;
         } catch (IOException ioe) {
@@ -2075,7 +2075,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         setSf(dim[0], vector.centerFreq);
         setSw(dim[0], 1.0 / vector.dwellTime);
 
-        double dimRefPoint = vector.freqDomain() ? (vector.getSize() / 2) + pt[0][0] : getSizeReal(dim[0]) / 2;
+        double dimRefPoint = vector.freqDomain() ? (vector.getSize() / 2.0) + pt[0][0] : getSizeReal(dim[0]) / 2.0;
         double dimRefValue = vector.getRefValue();
 
         setRefValue(dim[0], dimRefValue);
