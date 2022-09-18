@@ -49,6 +49,7 @@ public class OperationInfo {
         "FILTER",
         "SIGN",
         "Cascade-TD-Solvent",
+        "SUPPRESS",
         "TDSS",
         "Cascade-Sampling",
         "SCHEDULE",

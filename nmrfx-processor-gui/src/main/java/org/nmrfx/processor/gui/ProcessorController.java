@@ -156,7 +156,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     //PopOver propOver = new PopOver();
     //PropertySheet propSheet = new PropertySheet();
     static String[] basicOps = {"APODIZATION(lb=0.5) ZF FT", "SB ZF FT", "SB(c=0.5) ZF FT", "VECREF GEN"};
-    static String[] commonOps = {"APODIZATION", "TDSS", "ZF", "FT", "BC"};
+    static String[] commonOps = {"APODIZATION", "SUPPRESS", "ZF", "FT", "AUTOPHASE", "EXTRACT", "BC"};
     static String[] eaOps = {"TDCOMB(coef='ea2d')", "SB", "ZF", "FT"};
     ChartProcessor chartProcessor;
     DocWindowController dwc = null;

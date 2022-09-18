@@ -1773,6 +1773,32 @@ def DX(disabled=False, vector=None, process=None):
     op = Dx()
     return op
 
+def SUPPRESS(winSize=31, shift='0.0f',disabled=False, vector=None, process=None):
+    ''' Time domain signal suppression.
+    Parameters
+    ---------
+    winSize : int
+        min : 1
+        max : 128
+        Window size of moving average filter (+/- this value).
+    shift : position
+        min : -0.5
+        max : 0.5
+        Position of frequency to suppress.  Default is in fractional units with zero at center..
+    '''
+    if disabled:
+        return None
+    nPasses = 3
+    process = process or getCurrentProcess()
+    shiftObj = convertUnitStringToObject(shift)
+    op = Tdss(winSize,nPasses,shiftObj)
+    if (vector != None):
+        op.eval(vector)
+    else:
+        process.addOperation(op)
+    return op
+
+
 def TDSS(winSize=31, nPasses=3, shift='0.0f',disabled=False, vector=None, process=None):
     ''' Time domain solvent suppression.
     Parameters
@@ -3687,7 +3713,7 @@ def genScript(arrayed=False):
     sequence = fidInfo.fidObj.getSequence()
     if fidInfo.nd < 2:
         script += 'DIM(1)\n'
-        script += 'EXPD(lb=0.5)\n'
+        script += 'APODIZATION(lb=0.5)\n'
         script += 'ZF()\n'
         script += 'FT()\n'
         trim = fidInfo.fidObj.getTrim()
