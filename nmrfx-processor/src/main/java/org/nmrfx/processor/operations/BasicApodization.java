@@ -27,22 +27,16 @@ import java.util.Arrays;
  */
 public class BasicApodization extends Apodization implements Invertible {
 
+    private static final double END = 1.0;
     final double lb;
     final double gb;
     final double sbOffset;
-    final double end = 1.0;
     final boolean lbOn;
     final boolean gmOn;
     final boolean sbOn;
     final boolean sbSqOn;
     final double c;
     final int apodSize;
-
-    @Override
-    public BasicApodization eval(Vec vector) throws ProcessingException {
-        apodize(vector);
-        return this;
-    }
 
     public BasicApodization(boolean lbOn, double lb, boolean gmOn, double gm, boolean sbOn, boolean sbSqOn,
                             double sbOffset,
@@ -65,6 +59,12 @@ public class BasicApodization extends Apodization implements Invertible {
         this.invertOp = inverse;
     }
 
+    @Override
+    public BasicApodization eval(Vec vector) throws ProcessingException {
+        apodize(vector);
+        return this;
+    }
+
     public void apodize(Vec vector) {
         vector.makeApache();
         int size = Math.min(this.apodSize, vector.getSize());
@@ -79,7 +79,7 @@ public class BasicApodization extends Apodization implements Invertible {
             Arrays.fill(apodVec, 1.0);
 
             double start = sbOffset * Math.PI;
-            double delta = ((end - sbOffset) * Math.PI) / (size - vStart - 1);
+            double delta = ((END - sbOffset) * Math.PI) / (size - vStart - 1);
             double dwellTime = vector.dwellTime;
             if (sbOn) {
                 applySB(size, vStart, start, delta);
