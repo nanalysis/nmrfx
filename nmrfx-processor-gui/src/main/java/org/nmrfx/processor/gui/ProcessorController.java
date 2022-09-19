@@ -466,7 +466,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     }
 
 
-    public void deleteOp(ActionEvent actionEvent) {
+    public void deleteOp() {
         deleteItem();
     }
 
@@ -556,7 +556,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     }
 
     @FXML
-    private void showOpDoc(ActionEvent event) {
+    private void showOpDoc(  ) {
         if (dwc == null) {
             dwc = new DocWindowController();
         }
@@ -585,7 +585,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     }
 
     @FXML
-    private void loadScriptTab(Event event) {
+    private void loadScriptTab() {
         updateScriptDisplay();
     }
 
@@ -619,24 +619,24 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     }
 
     @FXML
-    private void datasetFileAction(ActionEvent event) {
+    private void datasetFileAction() {
         unsetDatasetName();
         fixDatasetName();
     }
 
     @FXML
-    private void openDefaultScriptAction(ActionEvent event) {
+    private void openDefaultScriptAction() {
         File parent = chartProcessor.getScriptDir();
         if (parent != null) {
             File scriptFile = chartProcessor.getDefaultScriptFile();
             openScript(scriptFile);
         } else {
-            openScriptAction(event);
+            openScriptAction();
         }
     }
 
     @FXML
-    private void openScriptAction(ActionEvent event) {
+    private void openScriptAction() {
         File initialDir = chartProcessor.getScriptDir();
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Open Script");
@@ -654,7 +654,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     }
 
     @FXML
-    private void openVecScriptAction(ActionEvent event) {
+    private void openVecScriptAction() {
         File initialDir = chartProcessor.getScriptDir();
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Open Vector Script");
@@ -672,7 +672,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     }
 
     @FXML
-    private void writeVecScriptAction(ActionEvent event) {
+    private void writeVecScriptAction() {
         FileChooser fileChooser = new FileChooser();
         File initialDir = chartProcessor.getScriptDir();
         if (initialDir != null) {
@@ -810,7 +810,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     }
 
     @FXML
-    private void writeDefaultScriptAction(ActionEvent event) {
+    private void writeDefaultScriptAction() {
         File parent = chartProcessor.getScriptDir();
         if (parent != null) {
             File scriptFile = chartProcessor.getDefaultScriptFile();
@@ -821,12 +821,12 @@ public class ProcessorController implements Initializable, ProgressUpdater {
                 GUIUtils.warn("Write Script Error", ex.getMessage());
             }
         } else {
-            writeScriptAction(event);
+            writeScriptAction();
         }
     }
 
     @FXML
-    private void writeScriptAction(ActionEvent event) {
+    private void writeScriptAction() {
         FileChooser fileChooser = new FileChooser();
         File initialDir = chartProcessor.getScriptDir();
         if (initialDir != null) {
@@ -880,7 +880,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     }
 
     @FXML
-    private void processDatasetAction(ActionEvent event) {
+    private void processDatasetAction() {
         processDataset();
     }
 
@@ -899,7 +899,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     }
 
     @FXML
-    private void haltProcessAction(ActionEvent event) {
+    private void haltProcessAction() {
         processDataset.worker.cancel();
         Processor.getProcessor().setProcessorError();
     }
@@ -969,11 +969,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     }
 
     public void setProcessingStatus(String s, boolean ok, Throwable throwable) {
-        if (s == null) {
-            statusBar.setText("");
-        } else {
-            statusBar.setText(s);
-        }
+        statusBar.setText(Objects.requireNonNullElse(s, ""));
         if (ok) {
             statusCircle.setFill(Color.GREEN);
             processingThrowable = null;
