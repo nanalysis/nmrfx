@@ -2159,7 +2159,7 @@ def GMB(gb=0.0, lb=0.0, fPoint=1.0, inverse=False, disabled=False, vector=None, 
         process.addOperation(op)
     return op
     
-def APODIZATION(lbOn=True,lb=0.5, gmOn=False, gm=1.0, sbOn=False, sbSqOn=False, sbOffset=0.5, fPoint=1.0, apodSize=0, inverse=False, disabled=False, vector=None, process=None):
+def APODIZE(lbOn=True,lb=0.5, gmOn=False, gm=1.0, sbOn=False, sbSqOn=False, sbOffset=0.5, fPoint=1.0, apodSize=0, inverse=False, disabled=False, vector=None, process=None):
     '''Lorentz-to-Gauss.
     Parameters
     ---------
@@ -3713,7 +3713,7 @@ def genScript(arrayed=False):
     sequence = fidInfo.fidObj.getSequence()
     if fidInfo.nd < 2:
         script += 'DIM(1)\n'
-        script += 'APODIZATION(lb=0.5)\n'
+        script += 'APODIZE(lb=0.5)\n'
         script += 'ZF()\n'
         script += 'FT()\n'
         trim = fidInfo.fidObj.getTrim()

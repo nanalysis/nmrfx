@@ -161,7 +161,7 @@ def autoGenScript(fidInfo, args=None):
     script = ''
     if fidInfo.nd < 2:
         script += 'DIM(1)\n'
-        script += 'APODIZATION(lb=0.5)\n'
+        script += 'APODIZE(lb=0.5)\n'
         script += 'ZF()\n'
         script += 'FT()\n'
     else:

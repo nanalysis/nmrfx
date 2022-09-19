@@ -148,8 +148,8 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     TextField nLSCatFracField;
     TextField[][] lsTextFields;
 
-    static String[] basicOps = {"APODIZATION(lb=0.5) ZF FT", "SB ZF FT", "SB(c=0.5) ZF FT", "VECREF GEN"};
-    static String[] commonOps = {"APODIZATION", "SUPPRESS", "ZF", "FT", "AUTOPHASE", "EXTRACT", "BC"};
+    static String[] basicOps = {"APODIZE(lb=0.5) ZF FT", "SB ZF FT", "SB(c=0.5) ZF FT", "VECREF GEN"};
+    static String[] commonOps = {"APODIZE", "SUPPRESS", "ZF", "FT", "AUTOPHASE", "EXTRACT", "BC"};
     ChartProcessor chartProcessor;
     DocWindowController dwc = null;
     PolyChart chart;
