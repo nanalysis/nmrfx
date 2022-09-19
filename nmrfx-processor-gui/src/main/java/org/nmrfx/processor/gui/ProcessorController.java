@@ -997,7 +997,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         List<MenuItem> menuItems = new ArrayList<>();
         menuHandler = e -> log.info("menu action ");
 
-        Menu menu = new Menu("Common Operation Groups");
+        Menu menu = new Menu("Commonly Grouped Operations");
         menuItems.add(menu);
         List<MenuItem> subMenuItems = new ArrayList<>();
         for (String op : basicOps) {
