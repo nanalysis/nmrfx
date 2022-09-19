@@ -24,7 +24,6 @@ import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
@@ -61,7 +60,6 @@ import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.DatasetType;
 import org.nmrfx.processor.datasets.vendor.NMRData;
 import org.nmrfx.processor.datasets.vendor.VendorPar;
-import org.nmrfx.processor.gui.controls.ConsoleUtil;
 import org.nmrfx.processor.gui.controls.ProcessingCodeAreaUtil;
 import org.nmrfx.processor.processing.Processor;
 import org.nmrfx.processor.processing.ProcessorAvailableStatusListener;
@@ -97,7 +95,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     private ListView<String> scriptView;
     @FXML
     private StatusBar statusBar;
-    private Circle statusCircle = new Circle(10.0, Color.GREEN);
+    private final Circle statusCircle = new Circle(10.0, Color.GREEN);
 
     @FXML
     private MenuButton opMenuButton;
@@ -110,9 +108,6 @@ public class ProcessorController implements Initializable, ProgressUpdater {
 
     PropertyManager propertyManager;
     RefManager refManager;
-
-    @FXML
-    CheckBox combineFiles;
 
     @FXML
     PropertySheet propertySheet;
@@ -144,7 +139,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     ToggleGroup rowToggleGroup = new ToggleGroup();
     @FXML
     private ChoiceBox<String> realImagChoiceBox;
-    private List<String> realImagChoices = new ArrayList<>();
+    private final List<String> realImagChoices = new ArrayList<>();
     ChangeListener<String> vecNumListener;
     int[] rowIndices;
     int[] vecSizes;
@@ -153,19 +148,15 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     TextField nLSCatFracField;
     TextField[][] lsTextFields;
 
-    //PopOver propOver = new PopOver();
-    //PropertySheet propSheet = new PropertySheet();
     static String[] basicOps = {"APODIZATION(lb=0.5) ZF FT", "SB ZF FT", "SB(c=0.5) ZF FT", "VECREF GEN"};
     static String[] commonOps = {"APODIZATION", "SUPPRESS", "ZF", "FT", "AUTOPHASE", "EXTRACT", "BC"};
-    static String[] eaOps = {"TDCOMB(coef='ea2d')", "SB", "ZF", "FT"};
     ChartProcessor chartProcessor;
     DocWindowController dwc = null;
-    SpecAttrWindowController specAttrWindowController = null;
     PolyChart chart;
     private boolean isProcessing = false;
     private boolean doProcessWhenDone = false;
     private boolean processable = false;
-    private ProcessDataset processDataset = new ProcessDataset();
+    private final ProcessDataset processDataset = new ProcessDataset();
     ListChangeListener<String> opListListener = null;
 
     final ReadOnlyObjectProperty<Worker.State> stateProperty = processDataset.worker.stateProperty();
@@ -178,10 +169,10 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         FXMLLoader loader = new FXMLLoader(SpecAttrWindowController.class.getResource("/fxml/ProcessorScene.fxml"));
         final ProcessorController controller;
         try {
-            Pane pane = (Pane) loader.load();
+            Pane pane = loader.load();
             processorPane.getChildren().add(pane);
 
-            controller = loader.<ProcessorController>getController();
+            controller = loader.getController();
             controller.chart = chart;
             chart.setProcessorController(controller);
             controller.chartProcessor.setChart(chart);
@@ -199,10 +190,9 @@ public class ProcessorController implements Initializable, ProgressUpdater {
             return null;
         }
     }
+
     @FXML
-    private BorderPane mainBox;
-    @FXML
-    private ChoiceBox viewMode;
+    private ChoiceBox<String> viewMode;
     @FXML
     private Button datasetFileButton;
     @FXML
@@ -210,16 +200,9 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     @FXML
     private Button haltProcessButton;
     @FXML
-    private Button viewDatasetButton;
-    @FXML
-    private Button scanDirChooserButton;
-    @FXML
-    private Button processScanDirButton;
-    @FXML
     private Button opDocButton;
 
     ProcessingCodeAreaUtil codeAreaUtil;
-    ConsoleUtil consoleUtil;
 
     public void show() {
         if (processorPane.getChildren().isEmpty()) {
@@ -275,9 +258,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         if (Platform.isFxApplicationThread()) {
             statusBar.setProgress(f);
         } else {
-            Platform.runLater(() -> {
-                statusBar.setProgress(f);
-            });
+            Platform.runLater(() -> statusBar.setProgress(f));
         }
     }
 
@@ -285,9 +266,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         if (Platform.isFxApplicationThread()) {
             setProcessingStatus(s, true);
         } else {
-            Platform.runLater(() -> {
-                setProcessingStatus(s, true);
-            });
+            Platform.runLater(() -> setProcessingStatus(s, true));
         }
     }
 
@@ -386,10 +365,10 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         if (genLSCatalog.isSelected()) {
             boolean ok = true;
             //genLSCatalog(lw, nLw, nKeep, 2)
-            for (int i = 0; i < lsTextFields.length; i++) {
+            for (TextField[] lsTextField : lsTextFields) {
                 for (int j = 0; j < 2; j++) {
                     try {
-                        Double.parseDouble(lsTextFields[i][j].getText());
+                        Double.parseDouble(lsTextField[j].getText());
                     } catch (NumberFormatException nfE) {
                         ok = false;
                         break;
@@ -495,11 +474,10 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         if (!operationList.isEmpty()) {
             int index = scriptView.getSelectionModel().getSelectedIndex();
 
-            /**
-             *
-             * If we are deleting the last element, select the previous,
-             * else select the next element. If this is the first element,
-             * then unselect the scriptView.
+            /*
+              If we are deleting the last element, select the previous,
+              else select the next element. If this is the first element,
+              then unselect the scriptView.
              */
             propertyManager.removeScriptListener();
             operationList.removeListener(opListListener);
@@ -529,7 +507,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
 
     @FXML
     void handleOpKey(KeyEvent event) {
-        if (!(event.getCode() == KeyCode.ESCAPE)) {
+        if (event.getCode() != KeyCode.ESCAPE) {
             TextField textField = (TextField) event.getSource();
             String opString = textField.getText();
             Text text = ((Text) popOver.getContentNode());
@@ -612,7 +590,6 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     }
 
     void updateScriptDisplay() {
-        //textArea.setText(getFullScript());
         String script = getFullScript();
         if (!script.equals(currentText)) {
             textArea.replaceText(script);
@@ -775,7 +752,6 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         refOps.add("acqsize");
         refOps.add("tdsize");
         refOps.add("fixdsp");
-        //textArea.setText(scriptString);
         if (!scriptString.equals(currentText)) {
             textArea.replaceText(scriptString);
             currentText = scriptString;
@@ -889,21 +865,16 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     }
 
     void finishProcessing(Dataset dataset) {
-        Platform.runLater(() -> {
-            //chartProcessor.renameDataset();
-            viewDatasetInApp(dataset);
-        });
+        Platform.runLater(() -> viewDatasetInApp(dataset));
     }
 
     void processIfIdle() {
-        if (autoProcess.isSelected()) {
-            if (processable) {
-                if (isProcessing()) {
-                    doProcessWhenDone();
-                } else {
-                    doProcessWhenDone = false;
-                    processDataset();
-                }
+        if (autoProcess.isSelected() && processable) {
+            if (isProcessing()) {
+                doProcessWhenDone();
+            } else {
+                doProcessWhenDone = false;
+                processDataset();
             }
         }
     }
@@ -914,11 +885,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     }
 
     private void processDataset() {
-        if (SystemUtils.IS_OS_WINDOWS) {
-            Dataset.useCacheFile(true);
-        } else {
-            Dataset.useCacheFile(false);
-        }
+        Dataset.useCacheFile(SystemUtils.IS_OS_WINDOWS);
         setProcessingOn();
         processable = false;
         statusBar.setProgress(0.0);
@@ -943,7 +910,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         public Worker<Integer> worker;
 
         private ProcessDataset() {
-            worker = new Service<Integer>() {
+            worker = new Service<>() {
 
                 protected Task createTask() {
                     return new Task() {
@@ -1023,29 +990,19 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         statusCircle.setFill(Color.GREEN);
     }
 
-    private void setupRefItems() {
-        ObservableList<PropertySheet.Item> newItems = FXCollections.observableArrayList();
-        refSheet.getItems().setAll(newItems);
-    }
-
     @Override
     public void initialize(URL url, ResourceBundle rb) {
         chartProcessor = new ChartProcessor(this);
         scriptView.setItems(operationList);
         List<MenuItem> menuItems = new ArrayList<>();
-        menuHandler = new EventHandler<ActionEvent>() {
-            @Override
-            public void handle(ActionEvent e) {
-                log.info("menu action ");
-            }
-        };
+        menuHandler = e -> log.info("menu action ");
 
         Menu menu = new Menu("Common Operation Groups");
         menuItems.add(menu);
         List<MenuItem> subMenuItems = new ArrayList<>();
         for (String op : basicOps) {
             MenuItem menuItem = new MenuItem(op);
-            menuItem.addEventHandler(ActionEvent.ACTION, event -> opSequenceMenuAction(event));
+            menuItem.addEventHandler(ActionEvent.ACTION, this::opSequenceMenuAction);
             subMenuItems.add(menuItem);
         }
         menu.getItems().addAll(subMenuItems);
@@ -1055,7 +1012,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         List<MenuItem> commonOpMenuItems = new ArrayList<>();
         for (String op : commonOps) {
             MenuItem menuItem = new MenuItem(op);
-            menuItem.addEventHandler(ActionEvent.ACTION, event -> opMenuAction(event));
+            menuItem.addEventHandler(ActionEvent.ACTION, this::opMenuAction);
             commonOpMenuItems.add(menuItem);
         }
         commonOpMenu.getItems().addAll(commonOpMenuItems);
@@ -1075,74 +1032,64 @@ public class ProcessorController implements Initializable, ProgressUpdater {
                 subMenuItems = new ArrayList<>();
             } else {
                 MenuItem menuItem = new MenuItem(op);
-                menuItem.addEventHandler(ActionEvent.ACTION, event -> opMenuAction(event));
+                menuItem.addEventHandler(ActionEvent.ACTION, this::opMenuAction);
                 subMenuItems.add(menuItem);
             }
         }
-        menu.getItems().addAll(subMenuItems);
+        // add last group of items (earlier ones added at each new Cascade item)
+        if (menu != null) {
+            menu.getItems().addAll(subMenuItems);
+        }
 
         opMenuButton.getItems().addAll(menuItems);
         popOver.setContentNode(new Text("hello"));
 
-        scriptView.setOnMousePressed(new EventHandler() {
-            public void handle(Event d) {
-                MouseEvent mEvent = (MouseEvent) d;
-                if (mEvent.getClickCount() == 2) {
-                    Node node = (Node) d.getSource();
+        scriptView.setOnMousePressed((EventHandler) d -> {
+            MouseEvent mEvent = (MouseEvent) d;
+            if (mEvent.getClickCount() == 2) {
+                Node node = (Node) d.getSource();
 
-                }
             }
         });
 
-        opListListener = new ListChangeListener<String>() {
-            @Override
-            public void onChanged(ListChangeListener.Change<? extends String> change) {
-                OperationListCell.updateCells();
-                chartProcessor.updateOpList();
-            }
+        opListListener = change -> {
+            OperationListCell.updateCells();
+            chartProcessor.updateOpList();
         };
         operationList.addListener(opListListener);
 
-        scriptView.setCellFactory(new Callback<ListView<String>, ListCell<String>>() {
+        scriptView.setCellFactory(new Callback<>() {
             @Override
             public ListCell<String> call(ListView<String> p) {
-                OperationListCell<String> olc = new OperationListCell<String>(scriptView) {
+                return new OperationListCell<>(scriptView) {
                     @Override
                     public void updateItem(String s, boolean empty) {
                         super.updateItem(s, empty);
                         setText(s);
                     }
                 };
-                return olc;
             }
 
         });
 
-        dimListener = new ChangeListener<String>() {
-            @Override
-            public void changed(ObservableValue<? extends String> observableValue, String dimName, String dimName2) {
-                chartProcessor.setVecDim(dimName2);
-                try {
-                    if (StringUtils.isNumeric(dimName2.substring(1))) {
-                        int vecDim = Integer.parseInt(dimName2.substring(1));
-                        refManager.setupItems(vecDim - 1);
-                    } else {
-                        refManager.clearItems();
-                    }
-                } catch (NumberFormatException nfE) {
-                    log.warn("Unable to parse vector dimension.", nfE);
+        dimListener = (observableValue, dimName, dimName2) -> {
+            chartProcessor.setVecDim(dimName2);
+            try {
+                if (StringUtils.isNumeric(dimName2.substring(1))) {
+                    int vecDim = Integer.parseInt(dimName2.substring(1));
+                    refManager.setupItems(vecDim - 1);
+                } else {
+                    refManager.clearItems();
                 }
+            } catch (NumberFormatException nfE) {
+                log.warn("Unable to parse vector dimension.", nfE);
             }
         };
         refManager = new RefManager(this, refSheet);
-        refDimListener = new ChangeListener<Number>() {
-            @Override
-            public void changed(ObservableValue<? extends Number> observableValue, Number number, Number number2) {
-                int vecDimOld = (Integer) number;
-                int vecDim = (Integer) number2;
-                log.info("refdim {}", vecDim);
-                refManager.setupItems(vecDim);
-            }
+        refDimListener = (observableValue, number, number2) -> {
+            int vecDim = (Integer) number2;
+            log.info("refdim {}", vecDim);
+            refManager.setupItems(vecDim);
         };
         propertyManager = new PropertyManager(this, scriptView, propertySheet, operationList, opTextField, popOver);
         propertyManager.setupItems();
@@ -1164,11 +1111,6 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         codeAreaUtil = new ProcessingCodeAreaUtil(textArea);
         textArea.setEditable(false);
         textArea.setWrapText(true);
-//        consoleUtil = new ConsoleUtil();
-//        consoleUtil.addHandler(consoleArea, chartProcessor.getInterpreter());
-//        consoleUtil.banner();
-//        consoleUtil.prompt();
-//        consoleArea.setEditable(true);
 
         statusCircle.setOnMousePressed((Event d) -> {
             if (processingThrowable != null) {
@@ -1219,7 +1161,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
 
     public void updateParTable(NMRData data) {
         List<VendorPar> vPars = data.getPars();
-        vPars.sort((o1, o2) -> o1.getName().compareTo(o2.getName()));
+        vPars.sort(Comparator.comparing(VendorPar::getName));
         ObservableList<VendorPar> pars = FXCollections.observableArrayList(vPars);
         fidParTableView.setItems(pars);
     }
@@ -1279,7 +1221,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
 
     Integer getRowChoice() {
         RadioButton radioButton = (RadioButton) rowToggleGroup.getSelectedToggle();
-        Integer iDim;
+        int iDim;
         if (radioButton == null) {
             iDim = 1;
         } else {
@@ -1296,7 +1238,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
             if (rows.length > 0) {
                 int row = rows[iDim - 2];
                 if ((vecNum1 != null) && vecNum1.isVisible()) {
-                    int maxSize = vecSizes[iDim - 1] < 256 ? vecSizes[iDim - 1] : 256;
+                    int maxSize = Math.min(vecSizes[iDim - 1], 256);
                     log.info("{} {} {}", iDim, vecSizes[iDim - 1], maxSize);
                     vecNum1.setMax(maxSize);
                     vecNum1.setValue(row + 1.0);

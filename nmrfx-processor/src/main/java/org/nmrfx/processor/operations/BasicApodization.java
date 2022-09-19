@@ -20,6 +20,8 @@ package org.nmrfx.processor.operations;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.processing.ProcessingException;
 
+import java.util.Arrays;
+
 /**
  * @author johnsonb
  */
@@ -65,53 +67,28 @@ public class BasicApodization extends Apodization implements Invertible {
 
     public void apodize(Vec vector) {
         vector.makeApache();
-        int apodSize = Math.min(this.apodSize, vector.getSize());
-        if (apodSize == 0) {
-            apodSize = vector.getSize();
+        int size = Math.min(this.apodSize, vector.getSize());
+        if (size == 0) {
+            size = vector.getSize();
         }
 
         if (apodVec == null || vector.getSize() != apodVec.length) {
-            resize(apodSize);
+            resize(size);
             int vStart = vector.getStart();
             initApod(vStart);
-            for (int i = 0;i< apodVec.length;i++) {
-                apodVec[i] = 1.0;
-            }
+            Arrays.fill(apodVec, 1.0);
 
             double start = sbOffset * Math.PI;
-            double delta = ((end - sbOffset) * Math.PI) / (apodSize - vStart - 1);
+            double delta = ((end - sbOffset) * Math.PI) / (size - vStart - 1);
             double dwellTime = vector.dwellTime;
             if (sbOn) {
-                if (sbSqOn) {
-                    double power = 2.0;
-                    for (int i = vStart; i < apodSize; i++) {
-                        double deltaPos = i - vStart;
-                        apodVec[i] *= Math.pow(Math.sin(start + (deltaPos * delta)), power);
-                    }
-                } else {
-                    for (int i = vStart; i < apodSize; i++) {
-                        double deltaPos = i - vStart;
-                        apodVec[i] *= Math.sin(start + (deltaPos * delta));
-                    }
-                }
+                applySB(size, vStart, start, delta);
             }
             if (lbOn) {
-                for (int i = vStart; i < apodSize; i++) {
-                    double deltaPos = i - vStart;
-                    double e = Math.PI * lb;
-
-                    double t = deltaPos * dwellTime;
-                    apodVec[i] *= Math.exp(-e * t);
-                }
+                applyLB(size, vStart, dwellTime);
             }
             if (gmOn) {
-                for (int i = vStart; i < apodSize; i++) {
-                    double deltaPos = i - vStart;
-                    double ga = 0.6 * Math.PI * gb;
-
-                    double t = deltaPos * dwellTime;
-                    apodVec[i] *= Math.exp( -(ga * t * t));
-                }
+                applyGM(size, vStart, dwellTime);
 
             }
             apodVec[vStart] *= c;
@@ -120,6 +97,39 @@ public class BasicApodization extends Apodization implements Invertible {
             invertApod(vector);
         } else {
             applyApod(vector);
+        }
+    }
+
+    private void applyGM(int size, int vStart, double dwellTime) {
+        for (int i = vStart; i < size; i++) {
+            int deltaPos = i - vStart;
+            double ga = 0.6 * Math.PI * gb;
+            double t = deltaPos * dwellTime;
+            apodVec[i] *= Math.exp(-(ga * t * t));
+        }
+    }
+
+    private void applyLB(int size, int vStart, double dwellTime) {
+        for (int i = vStart; i < size; i++) {
+            int deltaPos = i - vStart;
+            double e = Math.PI * lb;
+            double t = deltaPos * dwellTime;
+            apodVec[i] *= Math.exp(-e * t);
+        }
+    }
+
+    private void applySB(int size, int vStart, double start, double delta) {
+        if (sbSqOn) {
+            double power = 2.0;
+            for (int i = vStart; i < size; i++) {
+                int deltaPos = i - vStart;
+                apodVec[i] *= Math.pow(Math.sin(start + (deltaPos * delta)), power);
+            }
+        } else {
+            for (int i = vStart; i < size; i++) {
+                int deltaPos = i - vStart;
+                apodVec[i] *= Math.sin(start + (deltaPos * delta));
+            }
         }
     }
 }

@@ -28,12 +28,6 @@ import java.util.ArrayList;
 public class BCAUTO extends Operation {
 
     private final double ratio;
-    private final boolean baselineMode = false;
-    private final double lambda = 5000;
-    private final int winSize = 16;
-    private final int minBase = 12;
-    private final int order = 1;
-    final String mode = "sdev";
 
     public BCAUTO(double ratio) {
         this.ratio = ratio;
@@ -42,26 +36,19 @@ public class BCAUTO extends Operation {
     @Override
     public Operation eval(Vec vector) throws ProcessingException {
         int vecSize = vector.getSize();
-        if ((winSize < 0) || (winSize > vecSize)) {
+        int winSize = 16;
+        if (winSize > vecSize) {
             throw new OperationException("regions: error in winSize");
         }
 
-        ArrayList<Integer> positions = null;
-
         boolean[] isInSignalRegion;
-        if ((positions == null) || (positions.isEmpty())) {
-            if (mode.equals("sdev")) {
-                positions = Util.idBaseLineBySDev(vector, winSize, ratio);
-                isInSignalRegion = Util.getSignalRegion(vecSize, positions);
-            } else if (mode.equals("cwtd")) {
-                isInSignalRegion = Util.getSignalRegionByCWTD(vector, winSize, minBase, ratio, IDBaseline2.ThreshMode.SDEV);
-            } else {
-                isInSignalRegion = Util.getSignalRegionByCWTD(vector, winSize, minBase, ratio, IDBaseline2.ThreshMode.FRACTION);
-            }
-        } else {
-            isInSignalRegion = Util.getSignalRegion(vecSize, positions);
-        }
+
+        ArrayList<Integer> positions = Util.idBaseLineBySDev(vector, winSize, ratio);
+        isInSignalRegion = Util.getSignalRegion(vecSize, positions);
         vector.setSignalRegion(isInSignalRegion);
+        double lambda = 5000;
+        int order = 1;
+        boolean baselineMode = false;
         vector.bcWhit(lambda, order, baselineMode);
         return this;
     }
