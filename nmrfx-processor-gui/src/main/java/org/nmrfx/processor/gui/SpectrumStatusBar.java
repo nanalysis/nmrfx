@@ -692,7 +692,6 @@ public class SpectrumStatusBar {
                 log.warn("Unable to update display mode. No dimensions set.");
                 return;
             }
-            DatasetBase dataset = chart.getDataset();
             DisplayMode selected = modeComboBox.getSelectionModel().getSelectedItem();
             if (selected == DisplayMode.CURVES) {
                 OptionalInt maxRows = chart.getDatasetAttributes().stream().
@@ -701,13 +700,11 @@ public class SpectrumStatusBar {
                     log.warn("Unable to update display mode. No rows set.");
                     return;
                 }
-                dataset.setNFreqDims(1);
-                chart.setDataset(dataset);
+                chart.disDimProp.set(PolyChart.DISDIM.OneDX);
                 set1DArray(maxNDim.getAsInt(), maxRows.getAsInt());
 
             } else if (selected == DisplayMode.CONTOURS) {
-                dataset.setNFreqDims(dataset.getNDim());
-                chart.setDataset(chart.getDataset());
+                chart.disDimProp.set(PolyChart.DISDIM.TwoD);
                 setMode(maxNDim.getAsInt());
             }
             chart.full();
