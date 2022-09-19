@@ -80,6 +80,10 @@ public class KeyBindings {
         keyActionMap.put(keyString, action);
     }
 
+    public void deregisterKeyAction(String keyString) {
+        keyActionMap.remove(keyString);
+    }
+
     public void keyPressed(KeyEvent keyEvent) {
         KeyCode code = keyEvent.getCode();
         if (null != code) {
