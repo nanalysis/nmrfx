@@ -481,9 +481,6 @@ public class ProcessorController implements Initializable, ProgressUpdater {
 
             try {
                 operationList.remove(index);
-                if (operationList.isEmpty()) {
-                    propertyManager.clearPropSheet();
-                }
             } catch (Exception ex) {
                 log.warn(ex.getMessage(), ex);
             } finally {
@@ -497,6 +494,18 @@ public class ProcessorController implements Initializable, ProgressUpdater {
             } else {
                 scriptView.getSelectionModel().select(index);
             }
+            if (operationList.isEmpty()) {
+                propertyManager.clearPropSheet();
+            } else {
+                int currentIndex = scriptView.getSelectionModel().getSelectedIndex();
+                if (currentIndex != -1) {
+                    String selOp = (String) scriptView.getItems().get(currentIndex);
+                    propertyManager.setPropSheet(currentIndex, selOp);
+                } else {
+                    propertyManager.clearPropSheet();
+                }
+            }
+
             chartProcessor.execScript(getScript(), true, false);
             chart.layoutPlotChildren();
         }
