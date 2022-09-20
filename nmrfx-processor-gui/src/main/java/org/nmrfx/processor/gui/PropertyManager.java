@@ -395,6 +395,10 @@ public class PropertyManager {
 
     }
 
+    void clearPropSheet() {
+        propertySheet.getItems().clear();
+    }
+
     void setPropSheet(int scriptIndex, String op) {
         currentIndex = -1;
         String trimOp = OperationInfo.trimOp(op);
