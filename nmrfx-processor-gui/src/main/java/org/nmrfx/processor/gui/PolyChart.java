@@ -1808,6 +1808,25 @@ public class PolyChart extends Region implements PeakListener {
         }
     }
 
+    /**
+     * Gets the draw list from the first Dataset Attribute. If there is more than one dataset
+     * attribute and the draw lists are not the same, a warning is logged.
+     * @return A list of row indices to draw.
+     */
+    public List<Integer> getDrawList() {
+        if (datasetAttributesList.isEmpty()) {
+            log.info("No draw list present.");
+        }
+        List<Integer> drawList = datasetAttributesList.get(0).drawList;
+        for (int i = 1; i < datasetAttributesList.size(); i++ ) {
+            if (!drawList.equals(datasetAttributesList.get(i).drawList)) {
+                log.warn("Dataset draw lists are not equal. Using draw list for: {}", datasetAttributesList.get(0).getFileName());
+                break;
+            }
+        }
+        return drawList;
+    }
+
     public ArrayList<String> getDimNames() {
         ArrayList<String> names = new ArrayList<>();
         if (!datasetAttributesList.isEmpty()) {
