@@ -2208,7 +2208,6 @@ public class FXMLController implements  Initializable, PeakNavigable {
      * @return True if active chart has ProcessorController else returns false.
      */
     public boolean isProcessorControllerAvailable() {
-        PolyChart activeChart = getActiveChart();
-        return activeChart.getProcessorController(false) != null || activeChart.getDataset() == null;
+        return getActiveChart().getProcessorController(false) != null || getActiveChart().getDataset() == null;
     }
 }

@@ -72,7 +72,7 @@ public class ChartProcessor {
     }
 
     public NMRData getNMRData() {
-        return (NMRData) nmrDataProperty().get();
+        return nmrDataProperty().get();
     }
 
     File datasetFile;
