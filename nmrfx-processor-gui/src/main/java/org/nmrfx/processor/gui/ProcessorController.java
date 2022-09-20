@@ -24,7 +24,6 @@ import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
@@ -38,12 +37,10 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.geometry.Point2D;
-import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
-import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
@@ -61,7 +58,6 @@ import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.DatasetType;
 import org.nmrfx.processor.datasets.vendor.NMRData;
 import org.nmrfx.processor.datasets.vendor.VendorPar;
-import org.nmrfx.processor.gui.controls.ConsoleUtil;
 import org.nmrfx.processor.gui.controls.ProcessingCodeAreaUtil;
 import org.nmrfx.processor.processing.Processor;
 import org.nmrfx.processor.processing.ProcessorAvailableStatusListener;
@@ -81,6 +77,8 @@ import java.util.*;
 public class ProcessorController implements Initializable, ProgressUpdater {
 
     private static final Logger log = LoggerFactory.getLogger(ProcessorController.class);
+    private static final String[] basicOps = {"APODIZE(lb=0.5) ZF FT", "SB ZF FT", "SB(c=0.5) ZF FT", "VECREF GEN"};
+    private static final String[] commonOps = {"APODIZE", "SUPPRESS", "ZF", "FT", "AUTOPHASE", "EXTRACT", "BC"};
 
     Pane processorPane;
     Pane pane;
@@ -112,7 +110,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     private ListView<String> scriptView;
     @FXML
     private StatusBar statusBar;
-    private Circle statusCircle = new Circle(10.0, Color.GREEN);
+    private final Circle statusCircle = new Circle(10.0, Color.GREEN);
 
     @FXML
     private MenuButton opMenuButton;
@@ -125,9 +123,6 @@ public class ProcessorController implements Initializable, ProgressUpdater {
 
     PropertyManager propertyManager;
     RefManager refManager;
-
-    @FXML
-    CheckBox combineFiles;
 
     @FXML
     PropertySheet propertySheet;
@@ -159,7 +154,17 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     ToggleGroup rowToggleGroup = new ToggleGroup();
     @FXML
     private ChoiceBox<String> realImagChoiceBox;
-    private List<String> realImagChoices = new ArrayList<>();
+    @FXML
+    private ChoiceBox<String> viewMode;
+    @FXML
+    private Button datasetFileButton;
+    @FXML
+    private Button processDatasetButton;
+    @FXML
+    private Button haltProcessButton;
+    @FXML
+    private Button opDocButton;
+    private final List<String> realImagChoices = new ArrayList<>();
     ChangeListener<String> vecNumListener;
     int[] rowIndices;
     int[] vecSizes;
@@ -168,34 +173,31 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     TextField nLSCatFracField;
     TextField[][] lsTextFields;
 
-    //PopOver propOver = new PopOver();
-    //PropertySheet propSheet = new PropertySheet();
-    static String[] basicOps = {"SB ZF FT", "SB(c=0.5) ZF FT", "EXPD ZF FT", "VECREF GEN"};
-    static String[] eaOps = {"TDCOMB(coef='ea2d')", "SB", "ZF", "FT"};
     ChartProcessor chartProcessor;
     DocWindowController dwc = null;
-    SpecAttrWindowController specAttrWindowController = null;
     PolyChart chart;
     private boolean isProcessing = false;
     private boolean doProcessWhenDone = false;
     private boolean processable = false;
-    private ProcessDataset processDataset = new ProcessDataset();
+    private final ProcessDataset processDataset = new ProcessDataset();
     ListChangeListener<String> opListListener = null;
 
     final ReadOnlyObjectProperty<Worker.State> stateProperty = processDataset.worker.stateProperty();
     private final ObjectProperty<Boolean> processorAvailable = new SimpleObjectProperty<>();
-    private final ProcessorAvailableStatusListener listener = this::processorAvailableStatusUpdated;
+    private final ProcessorAvailableStatusListener processorAvailableStatusListener = this::processorAvailableStatusUpdated;
     Throwable processingThrowable;
     String currentText = "";
+
+    ProcessingCodeAreaUtil codeAreaUtil;
 
     public static ProcessorController create(FXMLController fxmlController, StackPane processorPane, PolyChart chart) {
         FXMLLoader loader = new FXMLLoader(SpecAttrWindowController.class.getResource("/fxml/ProcessorScene.fxml"));
         final ProcessorController controller;
         try {
-            Pane pane = (Pane) loader.load();
+            Pane pane = loader.load();
             processorPane.getChildren().add(pane);
 
-            controller = loader.<ProcessorController>getController();
+            controller = loader.getController();
             controller.chart = chart;
             chart.setProcessorController(controller);
             controller.chartProcessor.setChart(chart);
@@ -213,27 +215,6 @@ public class ProcessorController implements Initializable, ProgressUpdater {
             return null;
         }
     }
-    @FXML
-    private BorderPane mainBox;
-    @FXML
-    private ChoiceBox viewMode;
-    @FXML
-    private Button datasetFileButton;
-    @FXML
-    private Button processDatasetButton;
-    @FXML
-    private Button haltProcessButton;
-    @FXML
-    private Button viewDatasetButton;
-    @FXML
-    private Button scanDirChooserButton;
-    @FXML
-    private Button processScanDirButton;
-    @FXML
-    private Button opDocButton;
-
-    ProcessingCodeAreaUtil codeAreaUtil;
-    ConsoleUtil consoleUtil;
 
     public void show() {
         if (processorPane.getChildren().isEmpty()) {
@@ -289,9 +270,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         if (Platform.isFxApplicationThread()) {
             statusBar.setProgress(f);
         } else {
-            Platform.runLater(() -> {
-                statusBar.setProgress(f);
-            });
+            Platform.runLater(() -> statusBar.setProgress(f));
         }
     }
 
@@ -299,9 +278,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         if (Platform.isFxApplicationThread()) {
             setProcessingStatus(s, true);
         } else {
-            Platform.runLater(() -> {
-                setProcessingStatus(s, true);
-            });
+            Platform.runLater(() -> setProcessingStatus(s, true));
         }
     }
 
@@ -400,10 +377,10 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         if (genLSCatalog.isSelected()) {
             boolean ok = true;
             //genLSCatalog(lw, nLw, nKeep, 2)
-            for (int i = 0; i < lsTextFields.length; i++) {
+            for (TextField[] lsTextField : lsTextFields) {
                 for (int j = 0; j < 2; j++) {
                     try {
-                        Double.parseDouble(lsTextFields[i][j].getText());
+                        Double.parseDouble(lsTextField[j].getText());
                     } catch (NumberFormatException nfE) {
                         ok = false;
                         break;
@@ -496,42 +473,62 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     @FXML
     void handleScriptKey(KeyEvent event) {
         if ((event.getCode() == KeyCode.DELETE) || (event.getCode() == KeyCode.BACK_SPACE)) {
-            if (!operationList.isEmpty()) {
-                int index = scriptView.getSelectionModel().getSelectedIndex();
+            deleteItem();
+        }
+    }
 
-                /**
-                 *
-                 * If we are deleting the last element, select the previous,
-                 * else select the next element. If this is the first element,
-                 * then unselect the scriptView.
-                 */
-                propertyManager.removeScriptListener();
-                operationList.removeListener(opListListener);
 
-                try {
-                    operationList.remove(index);
-                } catch (Exception ex) {
-                    log.warn(ex.getMessage(), ex);
-                } finally {
-                    propertyManager.addScriptListener();
-                    operationList.addListener(opListListener);
-                    OperationListCell.updateCells();
-                    chartProcessor.updateOpList();
-                }
-                if (index == operationList.size()) {
-                    scriptView.getSelectionModel().select(index - 1);
-                } else {
-                    scriptView.getSelectionModel().select(index);
-                }
-                chartProcessor.execScript(getScript(), true, false);
-                chart.layoutPlotChildren();
+    public void deleteOp() {
+        deleteItem();
+    }
+
+    void deleteItem() {
+        if (!operationList.isEmpty()) {
+            int index = scriptView.getSelectionModel().getSelectedIndex();
+
+            /*
+              If we are deleting the last element, select the previous,
+              else select the next element. If this is the first element,
+              then unselect the scriptView.
+             */
+            propertyManager.removeScriptListener();
+            operationList.removeListener(opListListener);
+
+            try {
+                operationList.remove(index);
+            } catch (Exception ex) {
+                log.warn(ex.getMessage(), ex);
+            } finally {
+                propertyManager.addScriptListener();
+                operationList.addListener(opListListener);
+                OperationListCell.updateCells();
+                chartProcessor.updateOpList();
             }
+            if (index == operationList.size()) {
+                scriptView.getSelectionModel().select(index - 1);
+            } else {
+                scriptView.getSelectionModel().select(index);
+            }
+            if (operationList.isEmpty()) {
+                propertyManager.clearPropSheet();
+            } else {
+                int currentIndex = scriptView.getSelectionModel().getSelectedIndex();
+                if (currentIndex != -1) {
+                    String selOp = (String) scriptView.getItems().get(currentIndex);
+                    propertyManager.setPropSheet(currentIndex, selOp);
+                } else {
+                    propertyManager.clearPropSheet();
+                }
+            }
+
+            chartProcessor.execScript(getScript(), true, false);
+            chart.layoutPlotChildren();
         }
     }
 
     @FXML
     void handleOpKey(KeyEvent event) {
-        if (!(event.getCode() == KeyCode.ESCAPE)) {
+        if (event.getCode() != KeyCode.ESCAPE) {
             TextField textField = (TextField) event.getSource();
             String opString = textField.getText();
             Text text = ((Text) popOver.getContentNode());
@@ -580,7 +577,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     }
 
     @FXML
-    private void showOpDoc(ActionEvent event) {
+    private void showOpDoc() {
         if (dwc == null) {
             dwc = new DocWindowController();
         }
@@ -609,12 +606,11 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     }
 
     @FXML
-    private void loadScriptTab(Event event) {
+    private void loadScriptTab() {
         updateScriptDisplay();
     }
 
     void updateScriptDisplay() {
-        //textArea.setText(getFullScript());
         String script = getFullScript();
         if (!script.equals(currentText)) {
             textArea.replaceText(script);
@@ -644,24 +640,24 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     }
 
     @FXML
-    private void datasetFileAction(ActionEvent event) {
+    private void datasetFileAction() {
         unsetDatasetName();
         fixDatasetName();
     }
 
     @FXML
-    private void openDefaultScriptAction(ActionEvent event) {
+    private void openDefaultScriptAction() {
         File parent = chartProcessor.getScriptDir();
         if (parent != null) {
             File scriptFile = chartProcessor.getDefaultScriptFile();
             openScript(scriptFile);
         } else {
-            openScriptAction(event);
+            openScriptAction();
         }
     }
 
     @FXML
-    private void openScriptAction(ActionEvent event) {
+    private void openScriptAction() {
         File initialDir = chartProcessor.getScriptDir();
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Open Script");
@@ -679,7 +675,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     }
 
     @FXML
-    private void openVecScriptAction(ActionEvent event) {
+    private void openVecScriptAction() {
         File initialDir = chartProcessor.getScriptDir();
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Open Vector Script");
@@ -697,7 +693,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     }
 
     @FXML
-    private void writeVecScriptAction(ActionEvent event) {
+    private void writeVecScriptAction() {
         FileChooser fileChooser = new FileChooser();
         File initialDir = chartProcessor.getScriptDir();
         if (initialDir != null) {
@@ -777,7 +773,6 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         refOps.add("acqsize");
         refOps.add("tdsize");
         refOps.add("fixdsp");
-        //textArea.setText(scriptString);
         if (!scriptString.equals(currentText)) {
             textArea.replaceText(scriptString);
             currentText = scriptString;
@@ -836,7 +831,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     }
 
     @FXML
-    private void writeDefaultScriptAction(ActionEvent event) {
+    private void writeDefaultScriptAction() {
         File parent = chartProcessor.getScriptDir();
         if (parent != null) {
             File scriptFile = chartProcessor.getDefaultScriptFile();
@@ -847,12 +842,12 @@ public class ProcessorController implements Initializable, ProgressUpdater {
                 GUIUtils.warn("Write Script Error", ex.getMessage());
             }
         } else {
-            writeScriptAction(event);
+            writeScriptAction();
         }
     }
 
     @FXML
-    private void writeScriptAction(ActionEvent event) {
+    private void writeScriptAction() {
         FileChooser fileChooser = new FileChooser();
         File initialDir = chartProcessor.getScriptDir();
         if (initialDir != null) {
@@ -891,36 +886,27 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     }
 
     void finishProcessing(Dataset dataset) {
-        Platform.runLater(() -> {
-            //chartProcessor.renameDataset();
-            viewDatasetInApp(dataset);
-        });
+        Platform.runLater(() -> viewDatasetInApp(dataset));
     }
 
     void processIfIdle() {
-        if (autoProcess.isSelected()) {
-            if (processable) {
-                if (isProcessing()) {
-                    doProcessWhenDone();
-                } else {
-                    doProcessWhenDone = false;
-                    processDataset();
-                }
+        if (autoProcess.isSelected() && processable) {
+            if (isProcessing()) {
+                doProcessWhenDone();
+            } else {
+                doProcessWhenDone = false;
+                processDataset();
             }
         }
     }
 
     @FXML
-    private void processDatasetAction(ActionEvent event) {
+    private void processDatasetAction() {
         processDataset();
     }
 
     private void processDataset() {
-        if (SystemUtils.IS_OS_WINDOWS) {
-            Dataset.useCacheFile(true);
-        } else {
-            Dataset.useCacheFile(false);
-        }
+        Dataset.useCacheFile(SystemUtils.IS_OS_WINDOWS);
         setProcessingOn();
         processable = false;
         statusBar.setProgress(0.0);
@@ -934,7 +920,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     }
 
     @FXML
-    private void haltProcessAction(ActionEvent event) {
+    private void haltProcessAction() {
         processDataset.worker.cancel();
         Processor.getProcessor().setProcessorError();
     }
@@ -945,7 +931,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         public Worker<Integer> worker;
 
         private ProcessDataset() {
-            worker = new Service<Integer>() {
+            worker = new Service<>() {
 
                 protected Task createTask() {
                     return new Task() {
@@ -1004,11 +990,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     }
 
     public void setProcessingStatus(String s, boolean ok, Throwable throwable) {
-        if (s == null) {
-            statusBar.setText("");
-        } else {
-            statusBar.setText(s);
-        }
+        statusBar.setText(Objects.requireNonNullElse(s, ""));
         if (ok) {
             statusCircle.setFill(Color.GREEN);
             processingThrowable = null;
@@ -1023,11 +1005,6 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     public void clearProcessingTextLabel() {
         statusBar.setText("");
         statusCircle.setFill(Color.GREEN);
-    }
-
-    private void setupRefItems() {
-        ObservableList<PropertySheet.Item> newItems = FXCollections.observableArrayList();
-        refSheet.getItems().setAll(newItems);
     }
 
     /**
@@ -1051,109 +1028,17 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     public void initialize(URL url, ResourceBundle rb) {
         // Disable all real features that should only be enabled if an FID is set in chart processor.
         enableRealFeatures(null);
-
         chartProcessor = new ChartProcessor(this);
-        chartProcessor.nmrDataProperty().addListener((observable, oldValue, newValue) -> enableRealFeatures(newValue));
 
         scriptView.setItems(operationList);
-        List<MenuItem> menuItems = new ArrayList<>();
-        menuHandler = new EventHandler<ActionEvent>() {
-            @Override
-            public void handle(ActionEvent e) {
-                log.info("menu action ");
-            }
-        };
-
-        Menu menu = new Menu("Common Op Lists");
-        menuItems.add(menu);
-        List<MenuItem> subMenuItems = new ArrayList<>();
-        for (String op : basicOps) {
-            MenuItem menuItem = new MenuItem(op);
-            menuItem.addEventHandler(ActionEvent.ACTION, event -> opSequenceMenuAction(event));
-            subMenuItems.add(menuItem);
-        }
-        menu.getItems().addAll(subMenuItems);
-
-        subMenuItems = new ArrayList<>();
-        for (String op : OperationInfo.opOrders) {
-            if (op.startsWith("Cascade-")) {
-                menu.getItems().addAll(subMenuItems);
-                menu = new Menu(op.substring(8));
-                subMenuItems = new ArrayList<>();
-                menuItems.add(menu);
-            } else {
-                MenuItem menuItem = new MenuItem(op);
-                menuItem.addEventHandler(ActionEvent.ACTION, event -> opMenuAction(event));
-                subMenuItems.add(menuItem);
-            }
-        }
-        menu.getItems().addAll(subMenuItems);
+        List<MenuItem> menuItems = getMenuItems();
 
         opMenuButton.getItems().addAll(menuItems);
         popOver.setContentNode(new Text("hello"));
 
-        scriptView.setOnMousePressed(new EventHandler() {
-            public void handle(Event d) {
-                MouseEvent mEvent = (MouseEvent) d;
-                if (mEvent.getClickCount() == 2) {
-                    Node node = (Node) d.getSource();
-
-                }
-            }
-        });
-
-        opListListener = new ListChangeListener<String>() {
-            @Override
-            public void onChanged(ListChangeListener.Change<? extends String> change) {
-                OperationListCell.updateCells();
-                chartProcessor.updateOpList();
-            }
-        };
-        operationList.addListener(opListListener);
-
-        scriptView.setCellFactory(new Callback<ListView<String>, ListCell<String>>() {
-            @Override
-            public ListCell<String> call(ListView<String> p) {
-                OperationListCell<String> olc = new OperationListCell<String>(scriptView) {
-                    @Override
-                    public void updateItem(String s, boolean empty) {
-                        super.updateItem(s, empty);
-                        setText(s);
-                    }
-                };
-                return olc;
-            }
-
-        });
-
-        dimListener = new ChangeListener<String>() {
-            @Override
-            public void changed(ObservableValue<? extends String> observableValue, String dimName, String dimName2) {
-                chartProcessor.setVecDim(dimName2);
-                try {
-                    if (StringUtils.isNumeric(dimName2.substring(1))) {
-                        int vecDim = Integer.parseInt(dimName2.substring(1));
-                        refManager.setupItems(vecDim - 1);
-                    } else {
-                        refManager.clearItems();
-                    }
-                } catch (NumberFormatException nfE) {
-                    log.warn("Unable to parse vector dimension.", nfE);
-                }
-            }
-        };
-        refManager = new RefManager(this, refSheet);
-        refDimListener = new ChangeListener<Number>() {
-            @Override
-            public void changed(ObservableValue<? extends Number> observableValue, Number number, Number number2) {
-                int vecDimOld = (Integer) number;
-                int vecDim = (Integer) number2;
-                log.info("refdim {}", vecDim);
-                refManager.setupItems(vecDim);
-            }
-        };
         propertyManager = new PropertyManager(this, scriptView, propertySheet, operationList, opTextField, popOver);
         propertyManager.setupItems();
+        refManager = new RefManager(this, refSheet);
         refManager.setupItems(0);
         statusBar.setProgress(0.0);
 
@@ -1161,30 +1046,66 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         Tooltip statusBarToolTip = new Tooltip();
         statusBarToolTip.textProperty().bind(statusBar.textProperty());
         statusBar.setTooltip(statusBarToolTip);
-        Processor.getProcessor().addProcessorAvailableStatusListener(listener);
+
+        codeAreaUtil = new ProcessingCodeAreaUtil(textArea);
+        textArea.setEditable(false);
+        textArea.setWrapText(true);
+
+        initTable();
+        setupListeners();
+
+
+    }
+
+    private void setupListeners() {
+        chartProcessor.nmrDataProperty().addListener((observable, oldValue, newValue) -> enableRealFeatures(newValue));
+
+        opListListener = change -> {
+            OperationListCell.updateCells();
+            chartProcessor.updateOpList();
+        };
+        operationList.addListener(opListListener);
+
+        scriptView.setCellFactory(new Callback<>() {
+            @Override
+            public ListCell<String> call(ListView<String> p) {
+                return new OperationListCell<>(scriptView) {
+                    @Override
+                    public void updateItem(String s, boolean empty) {
+                        super.updateItem(s, empty);
+                        setText(s);
+                    }
+                };
+            }
+
+        });
+
+        dimListener = (observableValue, dimName, dimName2) -> {
+            chartProcessor.setVecDim(dimName2);
+            try {
+                if (StringUtils.isNumeric(dimName2.substring(1))) {
+                    int vecDim = Integer.parseInt(dimName2.substring(1));
+                    refManager.setupItems(vecDim - 1);
+                } else {
+                    refManager.clearItems();
+                }
+            } catch (NumberFormatException nfE) {
+                log.warn("Unable to parse vector dimension.", nfE);
+            }
+        };
+        refDimListener = (observableValue, number, number2) -> {
+            int vecDim = (Integer) number2;
+            log.info("refdim {}", vecDim);
+            refManager.setupItems(vecDim);
+        };
+
+        Processor.getProcessor().addProcessorAvailableStatusListener(processorAvailableStatusListener);
         processorAvailable.set(Processor.getProcessor().isProcessorAvailable());
         processDatasetButton.disableProperty()
                 .bind(stateProperty.isEqualTo(Worker.State.RUNNING)
                         .or(chartProcessor.nmrDataProperty().isNull())
                         .or(processorAvailable.isEqualTo(false)));
         haltProcessButton.disableProperty().bind(stateProperty.isNotEqualTo(Worker.State.RUNNING));
-
-        codeAreaUtil = new ProcessingCodeAreaUtil(textArea);
-        textArea.setEditable(false);
-        textArea.setWrapText(true);
-//        consoleUtil = new ConsoleUtil();
-//        consoleUtil.addHandler(consoleArea, chartProcessor.getInterpreter());
-//        consoleUtil.banner();
-//        consoleUtil.prompt();
-//        consoleArea.setEditable(true);
-
-        statusCircle.setOnMousePressed((Event d) -> {
-            if (processingThrowable != null) {
-                ExceptionDialog dialog = new ExceptionDialog(processingThrowable);
-                dialog.showAndWait();
-            }
-        });
-        initTable();
 
         rowToggleGroup.selectedToggleProperty().addListener(e -> handleRowDimChange());
         vecNumListener = (observableValue, string, string2) -> {
@@ -1194,10 +1115,68 @@ public class ProcessorController implements Initializable, ProgressUpdater {
             setFileIndex();
         };
 
+        statusCircle.setOnMousePressed((Event d) -> {
+            if (processingThrowable != null) {
+                ExceptionDialog dialog = new ExceptionDialog(processingThrowable);
+                dialog.showAndWait();
+            }
+        });
+
+    }
+
+    private List<MenuItem> getMenuItems() {
+        List<MenuItem> menuItems = new ArrayList<>();
+        menuHandler = e -> log.info("menu action ");
+
+        Menu menu = new Menu("Commonly Grouped Operations");
+        menuItems.add(menu);
+        List<MenuItem> subMenuItems = new ArrayList<>();
+        for (String op : basicOps) {
+            MenuItem menuItem = new MenuItem(op);
+            menuItem.addEventHandler(ActionEvent.ACTION, this::opSequenceMenuAction);
+            subMenuItems.add(menuItem);
+        }
+        menu.getItems().addAll(subMenuItems);
+
+        Menu commonOpMenu = new Menu("Common Operations");
+        menuItems.add(commonOpMenu);
+        List<MenuItem> commonOpMenuItems = new ArrayList<>();
+        for (String op : commonOps) {
+            MenuItem menuItem = new MenuItem(op);
+            menuItem.addEventHandler(ActionEvent.ACTION, this::opMenuAction);
+            commonOpMenuItems.add(menuItem);
+        }
+        commonOpMenu.getItems().addAll(commonOpMenuItems);
+
+        Menu advancedOpMenu = new Menu("Advanced Operations");
+        menuItems.add(advancedOpMenu);
+
+        subMenuItems = new ArrayList<>();
+        menu = null;
+        for (String op : OperationInfo.opOrders) {
+            if (op.startsWith("Cascade-")) {
+                if (menu != null) {
+                    menu.getItems().addAll(subMenuItems);
+                }
+                menu = new Menu(op.substring(8));
+                advancedOpMenu.getItems().add(menu);
+                subMenuItems = new ArrayList<>();
+            } else {
+                MenuItem menuItem = new MenuItem(op);
+                menuItem.addEventHandler(ActionEvent.ACTION, this::opMenuAction);
+                subMenuItems.add(menuItem);
+            }
+        }
+        // add last group of items (earlier ones added at each new Cascade item)
+        if (menu != null) {
+            menu.getItems().addAll(subMenuItems);
+        }
+        return menuItems;
     }
 
     /**
      * Listener for the Processor availability status and updates the processor available status
+     *
      * @param newStatus the newly updated status
      */
     public void processorAvailableStatusUpdated(boolean newStatus) {
@@ -1208,7 +1187,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
      * Removes the ProcessorAvailable listener.
      */
     public void cleanUp() {
-        Processor.getProcessor().removeProcessorAvailableStatusListener(listener);
+        Processor.getProcessor().removeProcessorAvailableStatusListener(processorAvailableStatusListener);
     }
 
     void initTable() {
@@ -1227,7 +1206,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
 
     public void updateParTable(NMRData data) {
         List<VendorPar> vPars = data.getPars();
-        vPars.sort((o1, o2) -> o1.getName().compareTo(o2.getName()));
+        vPars.sort(Comparator.comparing(VendorPar::getName));
         ObservableList<VendorPar> pars = FXCollections.observableArrayList(vPars);
         fidParTableView.setItems(pars);
     }
@@ -1287,7 +1266,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
 
     Integer getRowChoice() {
         RadioButton radioButton = (RadioButton) rowToggleGroup.getSelectedToggle();
-        Integer iDim;
+        int iDim;
         if (radioButton == null) {
             iDim = 1;
         } else {
@@ -1304,7 +1283,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
             if (rows.length > 0) {
                 int row = rows[iDim - 2];
                 if ((vecNum1 != null) && vecNum1.isVisible()) {
-                    int maxSize = vecSizes[iDim - 1] < 256 ? vecSizes[iDim - 1] : 256;
+                    int maxSize = Math.min(vecSizes[iDim - 1], 256);
                     log.info("{} {} {}", iDim, vecSizes[iDim - 1], maxSize);
                     vecNum1.setMax(maxSize);
                     vecNum1.setValue(row + 1.0);
