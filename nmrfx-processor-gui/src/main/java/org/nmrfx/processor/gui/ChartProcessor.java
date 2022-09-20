@@ -57,11 +57,11 @@ public class ChartProcessor {
 
     public static final DatasetType DEFAULT_DATASET_TYPE = DatasetType.NMRFX;
 
-    private SimpleObjectProperty nmrDataObj;
+    private SimpleObjectProperty<NMRData> nmrDataObj;
 
-    public SimpleObjectProperty nmrDataProperty() {
+    public SimpleObjectProperty<NMRData> nmrDataProperty() {
         if (nmrDataObj == null) {
-            nmrDataObj = new SimpleObjectProperty(null);
+            nmrDataObj = new SimpleObjectProperty<>(null);
         }
         return nmrDataObj;
     }
