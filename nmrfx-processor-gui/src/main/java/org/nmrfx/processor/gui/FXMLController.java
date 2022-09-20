@@ -265,6 +265,8 @@ public class FXMLController implements  Initializable, PeakNavigable {
 
     public void processorCreated(Pane pane) {
         processControllerVisible.bind(pane.parentProperty().isNotNull());
+        isFID = !getActiveChart().getProcessorController(true).isViewingDataset();
+        updateSpectrumStatusBarOptions();
     }
 
     public boolean isPhaseSliderVisible() {
@@ -859,12 +861,8 @@ public class FXMLController implements  Initializable, PeakNavigable {
 
     @FXML
     public void showProcessorAction(ActionEvent event) {
-        ProcessorController processorController = getActiveChart().getProcessorController(false);
-        if (processorController != null) {
-            processorController.show();
-        } else {
-            log.warn("No controller to show.");
-        }
+        ProcessorController processorController = getActiveChart().getProcessorController(true);
+        processorController.show();
     }
 
     @FXML
@@ -2206,10 +2204,11 @@ public class FXMLController implements  Initializable, PeakNavigable {
     }
 
     /**
-     * Checks if the active chart has a processorController instances.
+     * Checks if the active chart has a processorController instances or if the chart is empty.
      * @return True if active chart has ProcessorController else returns false.
      */
     public boolean isProcessorControllerAvailable() {
-        return getActiveChart().getProcessorController(false) != null;
+        PolyChart activeChart = getActiveChart();
+        return activeChart.getProcessorController(false) != null || activeChart.getDataset() == null;
     }
 }
