@@ -56,6 +56,7 @@ public class ChartProcessor {
     private static final Logger log = LoggerFactory.getLogger(ChartProcessor.class);
 
     public static final DatasetType DEFAULT_DATASET_TYPE = DatasetType.NMRFX;
+    private boolean lastWasFreqDomain = false;
 
     private SimpleObjectProperty nmrDataObj;
 
@@ -1415,9 +1416,14 @@ public class ChartProcessor {
                 }
             }
             if (!processorController.isViewingDataset()) {
-                chart.autoScale();
+                Vec loadVec = vectors.get(0);
+                if (loadVec.getFreqDomain() != lastWasFreqDomain) {
+                    chart.autoScale();
+                } else {
+                    chart.refresh();
+                }
+                lastWasFreqDomain = loadVec.getFreqDomain();
             }
-
         }
     }
 
