@@ -136,27 +136,15 @@ public class Analyzer {
     }
 
     public void calculateThreshold() {
-        int size = dataset.getSizeTotal(0);
-        Vec vec = new Vec(size);
-
-        if (dataset.getComplex(0)) {
-            vec.resize(size / 2, true);
-        }
-
-        int dataDim = dataset.getNDim();
-        int[][] pt = new int[dataDim][2];
-        pt[0][0] = 0;
-        pt[0][1] = size - 1;
-        int[] dim = new int[dataDim];
-        dim[0] = 0;
-
+        Vec vec;
         try {
-            dataset.readVectorFromDatasetFile(pt, dim, vec);
+            vec = dataset.readVector(0, 0);
         } catch (IOException ex) {
             log.error("Failed to get dataset vector", ex);
             return;
         }
-        int sdevWin = Math.max(16, vec.getSize() / 64);
+        int size = vec.getSize();
+        int sdevWin = Math.max(16, size / 64);
         sDev = vec.sdev(sdevWin);
         if (scaleToLargest) {
             int nIncr = size / nWin;
