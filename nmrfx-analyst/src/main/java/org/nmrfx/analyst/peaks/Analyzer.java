@@ -139,6 +139,10 @@ public class Analyzer {
         int size = dataset.getSizeTotal(0);
         Vec vec = new Vec(size);
 
+        if (dataset.getComplex(0)) {
+            vec.resize(size / 2, true);
+        }
+
         int dataDim = dataset.getNDim();
         int[][] pt = new int[dataDim][2];
         pt[0][0] = 0;
@@ -705,6 +709,9 @@ public class Analyzer {
     public void autoSetRegions() {
         int size = dataset.getSizeTotal(0);
         Vec vec = new Vec(size);
+        if (dataset.getComplex(0)) {
+            vec.resize(size / 2, true);
+        }
 
         int dataDim = dataset.getNDim();
         int[][] pt = new int[dataDim][2];

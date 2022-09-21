@@ -1115,8 +1115,13 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
 
         int dimSize = pt2 - pt1 + 1;
         specVec.resize(dimSize, false);
-        ptC[0][0] = pt1;
-        ptC[0][1] = pt2;
+        if (theFile.getComplex(dim[0])) {
+            ptC[0][0] = pt1 * 2;
+            ptC[0][1] = (pt2 * 2) + 1;
+        } else {
+            ptC[0][0] = pt1;
+            ptC[0][1] = pt2;
+        }
         if (theFile.getVec() == null) {
             theFile.readVectorFromDatasetFile(ptC, dimC, specVec);
         } else {

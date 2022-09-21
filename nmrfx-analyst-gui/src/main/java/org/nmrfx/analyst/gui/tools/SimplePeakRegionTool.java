@@ -217,7 +217,6 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
         Analyzer analyzer = getAnalyzer();
         if (analyzer != null) {
             analyzer.calculateThreshold();
-            analyzer.getThreshold();
             analyzer.autoSetRegions();
             try {
                 analyzer.integrate();
