@@ -12,9 +12,11 @@ from org.nmrfx.math.units import PPM
 from org.nmrfx.math.units import Point
 from org.nmrfx.math.units import Time
 from org.nmrfx.processor.operations import Add
+from org.nmrfx.processor.operations import BasicApodization
 from org.nmrfx.processor.operations import Asmooth
 from org.nmrfx.processor.operations import AutoPhase
 from org.nmrfx.processor.operations import AutoPhaseDataset
+from org.nmrfx.processor.operations import BCAUTO
 from org.nmrfx.processor.operations import BcMed
 from org.nmrfx.processor.operations import BcPoly
 from org.nmrfx.processor.operations import BcSine
@@ -1161,6 +1163,28 @@ def AUTOREGIONS(mode='sdev', winSize=16, minBase=12, ratio=10.0, disabled=False,
     return op
 
 
+def BC(ratio=10.0, disabled=False, vector=None, process=None):
+    '''Baseline correction using a polynomial fit.
+    Parameters
+    ---------
+    ratio : real
+        amin : 1.0
+        min : 1.0
+        max : 100.0
+        Ratio relative to noise used in determining if region is signal or baseline, or percent baseline in cwtdf mode.
+    ''' 
+    if disabled:
+        return None
+    process = process or getCurrentProcess()
+
+    op = BCAUTO(ratio)
+    if (vector != None):
+        op.eval(vector)
+    else:
+        process.addOperation(op)
+    return op
+
+
 def BCPOLY(order=2, winSize=16, disabled=False, vector=None, process=None):
     '''Baseline correction using a polynomial fit.
     Parameters
@@ -1749,6 +1773,32 @@ def DX(disabled=False, vector=None, process=None):
     op = Dx()
     return op
 
+def SUPPRESS(winSize=31, shift='0.0f',disabled=False, vector=None, process=None):
+    ''' Time domain signal suppression.
+    Parameters
+    ---------
+    winSize : int
+        min : 1
+        max : 128
+        Window size of moving average filter (+/- this value).
+    shift : position
+        min : -0.5
+        max : 0.5
+        Position of frequency to suppress.  Default is in fractional units with zero at center..
+    '''
+    if disabled:
+        return None
+    nPasses = 3
+    process = process or getCurrentProcess()
+    shiftObj = convertUnitStringToObject(shift)
+    op = Tdss(winSize,nPasses,shiftObj)
+    if (vector != None):
+        op.eval(vector)
+    else:
+        process.addOperation(op)
+    return op
+
+
 def TDSS(winSize=31, nPasses=3, shift='0.0f',disabled=False, vector=None, process=None):
     ''' Time domain solvent suppression.
     Parameters
@@ -2109,6 +2159,56 @@ def GMB(gb=0.0, lb=0.0, fPoint=1.0, inverse=False, disabled=False, vector=None, 
         process.addOperation(op)
     return op
     
+def APODIZE(lbOn=False,lb=0.5, gmOn=False, gm=1.0, sbOn=False, sbSqOn=False, sbOffset=0.5, fPoint=1.0, apodSize=0, inverse=False, disabled=False, vector=None, process=None):
+    '''Lorentz-to-Gauss.
+    Parameters
+    ---------
+    lbOn : bool
+        Use exponential line broadening.
+    lb : real
+        amin : -2.0
+        min : -2.0
+        max : 5.0
+        amax : 100.0
+        Line broadening factor.
+    gmOn : bool
+        Use gaussian line broadening.
+    gm : double
+        amin : 0.0
+        min : 0.0
+        max : 20.0
+        g2: Gaussian broadening
+    sbOn : bool
+        Use sine-bell multiplication.
+    sbSqOn : bool
+        Use sine-bell squared multiplication.
+    sbOffset : real
+        amin : 0.0
+        min : 0.0
+        max : 0.5
+        amax : 0.5
+        Offset of sine window.
+    fPoint : double
+        amin : 0.0
+        min : 0.0
+        max : 1.0
+        amax : 5.0
+        fpoint: First point multiplier
+    apodSize : int
+        min : 0
+        max : size
+        Size of apodization window.  Default 0f 0 uses entire FID.
+'''
+    if disabled:
+        return None
+    process = process or getCurrentProcess()
+    op = BasicApodization(lbOn, lb, gmOn, gm, sbOn, sbSqOn, sbOffset, fPoint, apodSize, inverse)
+    if (vector != None):
+        op.eval(vector)
+    else:
+        process.addOperation(op)
+    return op
+
 
 def HFT(disabled=False, vector=None, process=None):
     '''Hilbert Transform
@@ -3613,7 +3713,7 @@ def genScript(arrayed=False):
     sequence = fidInfo.fidObj.getSequence()
     if fidInfo.nd < 2:
         script += 'DIM(1)\n'
-        script += 'EXPD(lb=0.5)\n'
+        script += 'APODIZE(lbOn=True, lb=0.5)\n'
         script += 'ZF()\n'
         script += 'FT()\n'
         trim = fidInfo.fidObj.getTrim()

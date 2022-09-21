@@ -535,9 +535,17 @@ public class SpectrumStatusBar {
             }
         }
         nodes.add(filler2);
+        PolyChart activeChart = controller.getActiveChart();
+        List<Integer> drawList;
         for (int i = 1; i < nDim; i++) {
-            // Set the row menu selection to "First" to display the first spectrum in the array
-            rowMenus[i - 1].getItems().stream().filter(item -> item.getText().equals("First")).findFirst().ifPresent(MenuItem::fire);
+            drawList = activeChart.getDrawList();
+            if (drawList.isEmpty()) {
+                // Set the row menu selection to "First" to display the first spectrum in the array
+                rowMenus[i - 1].getItems().stream().filter(item -> item.getText().equals("First")).findFirst().ifPresent(MenuItem::fire);
+            } else {
+                // Use the current drawlist and update the spinner to the first number
+                updateRowSpinner(drawList.get(0), i);
+            }
             nodes.add(rowMenus[i - 1]);
             nodes.add(planeSpinner[i - 1]);
             Pane nodeFiller = new Pane();
@@ -548,7 +556,6 @@ public class SpectrumStatusBar {
         btoolBar.getItems().clear();
 
         btoolBar.getItems().addAll(nodes);
-        updateRowSpinner(0, 1);
 
     }
 
@@ -685,7 +692,6 @@ public class SpectrumStatusBar {
                 log.warn("Unable to update display mode. No dimensions set.");
                 return;
             }
-            DatasetBase dataset = chart.getDataset();
             DisplayMode selected = modeComboBox.getSelectionModel().getSelectedItem();
             if (selected == DisplayMode.CURVES) {
                 OptionalInt maxRows = chart.getDatasetAttributes().stream().
@@ -694,13 +700,11 @@ public class SpectrumStatusBar {
                     log.warn("Unable to update display mode. No rows set.");
                     return;
                 }
-                dataset.setNFreqDims(1);
-                chart.setDataset(dataset);
+                chart.disDimProp.set(PolyChart.DISDIM.OneDX);
                 set1DArray(maxNDim.getAsInt(), maxRows.getAsInt());
 
             } else if (selected == DisplayMode.CONTOURS) {
-                dataset.setNFreqDims(dataset.getNDim());
-                chart.setDataset(chart.getDataset());
+                chart.disDimProp.set(PolyChart.DISDIM.TwoD);
                 setMode(maxNDim.getAsInt());
             }
             chart.full();

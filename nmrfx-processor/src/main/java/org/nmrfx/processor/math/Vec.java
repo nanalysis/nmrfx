@@ -396,6 +396,13 @@ public class Vec extends VecBase {
             annotationData = new double[data.length];
         }
         System.arraycopy(data, 0, annotationData, 0, data.length);
+        double max = Double.NEGATIVE_INFINITY;
+        for (int i=0;i<annotationData.length;i++) {
+            max = Math.max(max, annotationData[i]);
+        }
+        for (int i=0;i<annotationData.length;i++) {
+            annotationData[i] /= max;
+        }
     }
 
     public void clearAnnotation() {
