@@ -90,7 +90,22 @@ public class ProcessorController implements Initializable, ProgressUpdater {
 
     @FXML
     private ChoiceBox<String> dimChoice;
-
+    @FXML
+    private MenuItem autoGenerateScript;
+    @FXML
+    private MenuItem autoGenerateArrayedScript;
+    @FXML
+    private MenuItem openDefaultScript;
+    @FXML
+    private MenuItem openScript;
+    @FXML
+    private MenuItem saveScript;
+    @FXML
+    private MenuItem saveScriptAs;
+    @FXML
+    private MenuItem openOperations;
+    @FXML
+    private MenuItem saveOperations;
     @FXML
     private ListView<String> scriptView;
     @FXML
@@ -992,9 +1007,29 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         statusCircle.setFill(Color.GREEN);
     }
 
+    /**
+     * Enables/disables a set of features based on whether a dataset is provided. The dataset could
+     * be null if the processor controller is simulating data.
+     * @param dataset The dataset to check.
+     */
+    private void enableRealFeatures(NMRData dataset) {
+        boolean disable = dataset == null;
+        datasetFileButton.setDisable(disable);
+        autoProcess.setDisable(disable);
+        autoGenerateScript.setDisable(disable);
+        autoGenerateArrayedScript.setDisable(disable);
+        openDefaultScript.setDisable(disable);
+        openScript.setDisable(disable);
+        saveScript.setDisable(disable);
+        saveScriptAs.setDisable(disable);
+    }
+
     @Override
     public void initialize(URL url, ResourceBundle rb) {
+        // Disable all real features that should only be enabled if an FID is set in chart processor.
+        enableRealFeatures(null);
         chartProcessor = new ChartProcessor(this);
+        navHBox.getChildren().clear();
         scriptView.setItems(operationList);
         List<MenuItem> menuItems = getMenuItems();
 
@@ -1023,6 +1058,8 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     }
 
     private void setupListeners() {
+        chartProcessor.nmrDataProperty().addListener((observable, oldValue, newValue) -> enableRealFeatures(newValue));
+
         opListListener = change -> {
             OperationListCell.updateCells();
             chartProcessor.updateOpList();
