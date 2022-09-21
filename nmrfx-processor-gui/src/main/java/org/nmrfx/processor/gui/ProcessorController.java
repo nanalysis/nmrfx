@@ -1029,7 +1029,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         // Disable all real features that should only be enabled if an FID is set in chart processor.
         enableRealFeatures(null);
         chartProcessor = new ChartProcessor(this);
-
+        navHBox.getChildren().clear();
         scriptView.setItems(operationList);
         List<MenuItem> menuItems = getMenuItems();
 
