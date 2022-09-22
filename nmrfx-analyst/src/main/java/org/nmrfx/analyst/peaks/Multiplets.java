@@ -29,13 +29,15 @@ import org.nmrfx.peaks.Singlet;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.peaks.PeakFitException;
 import org.nmrfx.processor.math.Vec;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
  * @author Bruce Johnson
  */
 public class Multiplets {
-
+    private static final Logger log = LoggerFactory.getLogger(Multiplet.class);
     public static double DOUBLETRATIO = 3.0;
 
     public static PeakDim getMultipletRoot(Multiplet multiplet) throws IllegalArgumentException {
@@ -1226,9 +1228,13 @@ public class Multiplets {
             return;
         }
         Dataset dataset = Dataset.getDataset(peakList.getDatasetName());
-        Vec vec = new Vec(dataset.getSizeTotal(0));
-        dataset.readVector(vec, 0, 0);
-
+        Vec vec;
+        try {
+            vec = dataset.readVector(0, 0);
+        } catch (IOException ex) {
+            log.error(ex.getMessage(), ex);
+            return;
+        }
         splitRegionsByPeakSep(regions, peakList, vec);
         //splitRegionsByPeakCount(regions, peakList, vec, 24);
         peakList.unLinkPeaks();
