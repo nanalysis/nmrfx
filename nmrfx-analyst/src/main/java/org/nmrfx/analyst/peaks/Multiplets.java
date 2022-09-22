@@ -37,7 +37,7 @@ import org.slf4j.LoggerFactory;
  * @author Bruce Johnson
  */
 public class Multiplets {
-    private static final Logger log = LoggerFactory.getLogger(Multiplet.class);
+    private static final Logger log = LoggerFactory.getLogger(Multiplets.class);
     public static double DOUBLETRATIO = 3.0;
 
     public static PeakDim getMultipletRoot(Multiplet multiplet) throws IllegalArgumentException {

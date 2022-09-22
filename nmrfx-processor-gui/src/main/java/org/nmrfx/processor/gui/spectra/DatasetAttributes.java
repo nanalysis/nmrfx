@@ -24,6 +24,7 @@ import org.apache.commons.beanutils.PropertyUtils;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.datasets.DatasetRegion;
 import org.nmrfx.math.VecBase;
+import org.nmrfx.processor.DatasetUtils;
 import org.nmrfx.processor.datasets.DataCoordTransformer;
 import org.nmrfx.processor.datasets.DataGenerator;
 import org.nmrfx.processor.datasets.Dataset;
@@ -1115,15 +1116,11 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
 
         int dimSize = pt2 - pt1 + 1;
         specVec.resize(dimSize, false);
-        if (theFile.getComplex(dim[0])) {
-            ptC[0][0] = pt1 * 2;
-            ptC[0][1] = (pt2 * 2) + 1;
-        } else {
-            ptC[0][0] = pt1;
-            ptC[0][1] = pt2;
-        }
+        ptC[0][0] = pt1;
+        ptC[0][1] = pt2;
+
         if (theFile.getVec() == null) {
-            theFile.readVectorFromDatasetFile(ptC, dimC, specVec);
+            theFile.readVectorFromDatasetFile(DatasetUtils.generateRawIndices(ptC, theFile.getComplex(dim[0])), dimC, specVec);
         } else {
             int j = 0;
             Vec vec = theFile.getVec();

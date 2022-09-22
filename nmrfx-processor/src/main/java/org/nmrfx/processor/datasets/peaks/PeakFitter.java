@@ -25,6 +25,7 @@ package org.nmrfx.processor.datasets.peaks;
 import org.apache.commons.math3.exception.TooManyEvaluationsException;
 import org.apache.commons.math3.optim.PointValuePair;
 import org.nmrfx.peaks.*;
+import org.nmrfx.processor.DatasetUtils;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.optimization.Fitter;
@@ -438,18 +439,9 @@ public class PeakFitter {
         }
         // The indices must be converted to raw indices to read the file, the real/complex indices are used later in
         // the function so p2 should not be modified.
-        int[][] p2Raw = new int[p2.length][2];
-        if (theFile.getComplex(pdim[0])) {
-            p2Raw[0][0] = p2[0][0] * 2;
-            p2Raw[0][1] = (p2[0][1] * 2) + 1;
-        } else {
-            p2Raw[0][0] = p2[0][0];
-            p2Raw[0][1] = p2[0][1];
-        }
-
         Vec fitVec = new Vec(size);
         try {
-            theFile.readVectorFromDatasetFile(p2Raw, pdim, fitVec);
+            theFile.readVectorFromDatasetFile(DatasetUtils.generateRawIndices(p2, theFile.getComplex(pdim[0])), pdim, fitVec);
         } catch (IOException ioE) {
             throw new IllegalArgumentException(ioE.getMessage());
         }
@@ -895,16 +887,7 @@ public class PeakFitter {
 
         // The indices must be converted to raw indices to read the file, the real/complex indices are used later in
         // the function so pt should not be modified.
-        int[][] ptRaw = new int[pt.length][2];
-        if (theFile.getComplex(pdim[0])) {
-            ptRaw[0][0] = pt[0][0] * 2;
-            ptRaw[0][1] = (pt[0][1] * 2) + 1;
-        } else {
-            ptRaw[0][0] = pt[0][0];
-            ptRaw[0][1] = pt[0][1];
-        }
-
-        theFile.readVectorFromDatasetFile(ptRaw, fitDim, fitVec);
+        theFile.readVectorFromDatasetFile(DatasetUtils.generateRawIndices(pt, theFile.getComplex(pdim[0])), fitDim, fitVec);
 
         //LmdifTest_f77  lmdifTest = new LmdifTest_f77();
         Lmder_f77 lmdifTest = new Lmder_f77();
