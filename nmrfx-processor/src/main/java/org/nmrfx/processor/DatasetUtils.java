@@ -2,6 +2,8 @@ package org.nmrfx.processor;
 
 public class DatasetUtils {
 
+    private DatasetUtils() {}
+
     /**
      * Converts real/complex indices into raw indices and returns a new array.
      * @param pt The real/complex indices to convert.
