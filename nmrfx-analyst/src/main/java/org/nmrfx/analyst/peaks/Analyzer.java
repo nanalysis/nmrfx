@@ -159,7 +159,6 @@ public class Analyzer {
                 maxs.add(Math.max(Math.abs(max), Math.abs(min)));
             }
             Collections.sort(maxs);
-            log.info("{}", maxs);
             int nMax = maxs.size();
             double max = maxs.get(nMax - 3);
 
