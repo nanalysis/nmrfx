@@ -235,10 +235,12 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
                 double threshold = regions.stream().mapToDouble(DatasetRegion::getIntegral).max().orElse(1.0) / 1000.0;
                 OptionalDouble min = regions.stream().mapToDouble(DatasetRegion::getIntegral).filter(r -> r > threshold).min();
                 if (min.isEmpty()) {
-                    // if all the integrals are negative, get the smallest (the highest negative value) one
-                    min = regions.stream().mapToDouble(DatasetRegion::getIntegral).filter(r -> Math.abs(r) > Math.abs(threshold)).max();
+                    // if all the integrals are negative, get the smallest absolute value
+                    min = regions.stream().mapToDouble(r -> Math.abs(r.getIntegral())).filter(r -> r > threshold).min();
                 }
                 if (min.isPresent()) {
+                    // Save absolute value as the norm, so that spectra with all negative integrals will appear consistent
+                    // with mixed and all positive integral spectra
                     dataset.setNorm(min.getAsDouble() * dataset.getScale());
                 }
 
