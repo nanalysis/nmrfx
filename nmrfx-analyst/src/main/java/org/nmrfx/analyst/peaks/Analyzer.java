@@ -399,6 +399,9 @@ public class Analyzer {
      * @param region The DatasetRegion to search
      */
     public void removePeaksFromRegion(DatasetRegion region) {
+        if (peakList == null) {
+            return;
+        }
         int[] dim = new int[peakList.nDim];
         for (int i = 0; i < dim.length; i++) {
             dim[i] = i;
