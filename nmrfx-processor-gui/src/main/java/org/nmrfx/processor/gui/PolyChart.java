@@ -2557,7 +2557,7 @@ public class PolyChart extends Region implements PeakListener {
         double norm = datasetAttr.getDataset().getNorm() / datasetAttr.getDataset().getScale();
         double integralMax = 0.0;
         for (DatasetRegion region : regions) {
-            integralMax = Math.max(integralMax, region.getIntegral());
+                integralMax = Math.abs(integralMax) > Math.abs(region.getIntegral()) ? integralMax : region.getIntegral();
         }
         for (DatasetRegion region : regions) {
             double ppm1 = region.getRegionStart(0);
@@ -2614,7 +2614,8 @@ public class PolyChart extends Region implements PeakListener {
             int hitRange = 10;
             double integralMax = 0.0;
             for (DatasetRegion region : regions) {
-                integralMax = Math.max(integralMax, region.getIntegral());
+                integralMax = Math.abs(integralMax) > Math.abs(region.getIntegral()) ? integralMax : region.getIntegral();
+
             }
             for (DatasetRegion region : regions) {
                 double ppm1 = region.getRegionStart(0);
