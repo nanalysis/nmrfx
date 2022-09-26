@@ -136,23 +136,15 @@ public class Analyzer {
     }
 
     public void calculateThreshold() {
-        int size = dataset.getSizeTotal(0);
-        Vec vec = new Vec(size);
-
-        int dataDim = dataset.getNDim();
-        int[][] pt = new int[dataDim][2];
-        pt[0][0] = 0;
-        pt[0][1] = size - 1;
-        int[] dim = new int[dataDim];
-        dim[0] = 0;
-
+        Vec vec;
         try {
-            dataset.readVectorFromDatasetFile(pt, dim, vec);
+            vec = dataset.readVector(0, 0);
         } catch (IOException ex) {
             log.error("Failed to get dataset vector", ex);
             return;
         }
-        int sdevWin = Math.max(16, vec.getSize() / 64);
+        int size = vec.getSize();
+        int sdevWin = Math.max(16, size / 64);
         sDev = vec.sdev(sdevWin);
         if (scaleToLargest) {
             int nIncr = size / nWin;
@@ -706,28 +698,20 @@ public class Analyzer {
     }
 
     public void autoSetRegions() {
-        int size = dataset.getSizeTotal(0);
-        Vec vec = new Vec(size);
-
-        int dataDim = dataset.getNDim();
-        int[][] pt = new int[dataDim][2];
-        pt[0][0] = 0;
-        pt[0][1] = size - 1;
-        int[] dim = new int[dataDim];
-        dim[0] = 0;
-
+        Vec vec;
         try {
-            dataset.readVectorFromDatasetFile(pt, dim, vec);
+            vec = dataset.readVector(0, 0);
         } catch (IOException ex) {
             log.error(ex.getMessage(), ex);
             return;
         }
+        int size = vec.getSize();
         double sw = dataset.getSw(0);
-        int region = (int) Math.round(1.0 * regionWidth / sw * size);
-        int join = (int) Math.round(1.0 * joinWidth / sw * size);
-        int extend = (int) Math.round(1.0 * regionExtend / sw * size);
+        int region = (int) Math.round(regionWidth / sw * size);
+        int join = (int) Math.round(joinWidth / sw * size);
+        int extend = (int) Math.round(regionExtend / sw * size);
 
-        double minThreshold = manThreshold.isPresent() ? manThreshold.get() : threshold;
+        double minThreshold = manThreshold.orElseGet(() -> threshold);
 
         RealMatrix rM = vec.idIntegrals(regionWindow, regionRatio, region, join, extend, minThreshold);
         Set<DatasetRegion> regions = getRegions();

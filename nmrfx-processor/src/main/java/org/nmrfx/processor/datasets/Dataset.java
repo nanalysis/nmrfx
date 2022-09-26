@@ -1497,7 +1497,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
     /**
      * Read a vector of data values from dataset
      *
-     * @param pt indices specifying range of points to read from
+     * @param pt raw indices specifying range of points to read from
      * @param dim dataset dimensions that are used in pt array
      * @param rwVector the vector to put values in
      * @throws IOException if an I/O error occurs
