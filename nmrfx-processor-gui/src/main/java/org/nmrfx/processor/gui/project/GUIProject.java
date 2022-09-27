@@ -301,7 +301,7 @@ public class GUIProject extends ProjectBase {
         if (MoleculeFactory.getActive() == null) {
             throw new MoleculeIOException("Couldn't open any molecules");
         }
-        log.info("active mol " + MoleculeFactory.getActive().getName());
+        log.info("active mol {}", MoleculeFactory.getActive().getName());
     }
 
     void loadMoleculeEntities(Path directory) throws MoleculeIOException, IOException {
