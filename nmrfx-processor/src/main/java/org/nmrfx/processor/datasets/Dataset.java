@@ -30,6 +30,8 @@ import org.nmrfx.peaks.PeakList;
 import org.nmrfx.processor.datasets.vendor.bruker.BrukerData;
 import org.nmrfx.processor.datasets.vendor.NMRData;
 import org.nmrfx.processor.datasets.vendor.NMRDataUtil;
+import org.nmrfx.processor.datasets.vendor.jcamp.JCAMPData;
+import org.nmrfx.processor.datasets.vendor.rs2d.RS2DData;
 import org.nmrfx.processor.math.Matrix;
 import org.nmrfx.processor.math.MatrixND;
 import org.nmrfx.processor.math.Vec;
@@ -499,15 +501,29 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         return dataset;
     }
 
-    public static Dataset newLinkDataset(String name, String fullName) throws IOException {
+    /**
+     * Create a new dataset file from the provided path by first loading as an NMRData and then converting to a dataset.
+     * @param name The name of the new dataset.
+     * @param fullName The name of the file containing the path to the dataset file.
+     * @return A new dataset or null if no NMRData type was found.
+     * @throws IOException if an IO exception occurs.
+     * @throws DatasetException if there is a problem creating the JCAMP dataset.
+     */
+    public static Dataset newLinkDataset(String name, String fullName) throws IOException, DatasetException {
         File linkFile = new File(fullName);
         log.info(fullName);
         String fileString = Files.readString(linkFile.toPath());
         log.info(fileString);
         NMRData nmrData = NMRDataUtil.getNMRData(fileString);
         log.info("{}", nmrData);
-        BrukerData brukerData = (BrukerData) nmrData;
-        return brukerData.toDataset(name);
+        if (nmrData instanceof BrukerData brukerData) {
+            return brukerData.toDataset(name);
+        } else if (nmrData instanceof RS2DData rs2DData) {
+            return rs2DData.toDataset(name);
+        } else if (nmrData instanceof JCAMPData jcampData) {
+            return jcampData.toDataset(name);
+        }
+        return null;
     }
 
     /**

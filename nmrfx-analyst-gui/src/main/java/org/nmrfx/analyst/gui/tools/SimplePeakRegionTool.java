@@ -229,21 +229,7 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
             Set<DatasetRegion> regions = chart.getDataset().getRegions();
             Dataset dataset = (Dataset) chart.getDataset();
             if (!regions.isEmpty()) {
-                // normalize to the smallest integral, but don't count very small integrals (less than 0.001 of max
-                // to avoid artifacts
-
-                double threshold = regions.stream().mapToDouble(DatasetRegion::getIntegral).max().orElse(1.0) / 1000.0;
-                OptionalDouble min = regions.stream().mapToDouble(DatasetRegion::getIntegral).filter(r -> r > threshold).min();
-                if (min.isEmpty()) {
-                    // if all the integrals are negative, get the smallest absolute value
-                    min = regions.stream().mapToDouble(r -> Math.abs(r.getIntegral())).filter(r -> r > threshold).min();
-                }
-                if (min.isPresent()) {
-                    // Save absolute value as the norm, so that spectra with all negative integrals will appear consistent
-                    // with mixed and all positive integral spectra
-                    dataset.setNorm(min.getAsDouble() * dataset.getScale());
-                }
-
+                dataset.setNormFromRegions(regions);
             }
             chart.refresh();
             chart.chartProps.setRegions(true);

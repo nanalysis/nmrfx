@@ -1661,6 +1661,28 @@ public class DatasetBase {
     }
 
     /**
+     * Set the norm value used to divide intensity values in the dataset by finding the smallest
+     * integral, without count very small integrals (less than 0.001 of max to avoid artifacts.
+     * @param datasetRegions The regions to calculate the norm from.
+     */
+    public void setNormFromRegions(Set<DatasetRegion> datasetRegions) {
+        // normalize to the smallest integral, but don't count very small integrals (less than 0.001 of max
+        // to avoid artifacts
+
+        double threshold = datasetRegions.stream().mapToDouble(DatasetRegion::getIntegral).max().orElse(1.0) / 1000.0;
+        OptionalDouble min = datasetRegions.stream().mapToDouble(DatasetRegion::getIntegral).filter(r -> r > threshold).min();
+        if (min.isEmpty()) {
+            // if all the integrals are negative, get the smallest absolute value
+            min = datasetRegions.stream().mapToDouble(r -> Math.abs(r.getIntegral())).filter(r -> r > threshold).min();
+        }
+        if (min.isPresent()) {
+            // Save absolute value as the norm, so that spectra with all negative integrals will appear consistent
+            // with mixed and all positive integral spectra
+            setNorm(min.getAsDouble() * getScale());
+        }
+    }
+
+    /**
      * Get the default color to be used for positive contours and 1D vectors
      *
      * @return name of color

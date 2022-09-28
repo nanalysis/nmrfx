@@ -7,7 +7,6 @@ import org.nmrfx.peaks.PeakList;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.DatasetException;
 
-import java.io.IOException;
 
 public class AnalyzerTest extends TestCase {
 

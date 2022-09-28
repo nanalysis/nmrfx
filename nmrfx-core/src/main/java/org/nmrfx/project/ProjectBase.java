@@ -440,7 +440,7 @@ public class ProjectBase {
     }
 
     public void loadDatasets(Path directory) throws IOException {
-        Pattern pattern = Pattern.compile("(.+)\\.(nv|ucsf|nvlnk)");
+        Pattern pattern = Pattern.compile("(.+)\\.(nv|ucsf|nvlnk)$");
         Predicate<String> predicate = pattern.asPredicate();
         if (Files.isDirectory(directory)) {
             try (Stream<Path> files = Files.list(directory)) {
@@ -448,20 +448,24 @@ public class ProjectBase {
                         forEach(path -> {
                             String pathName = path.toString();
                             String fileName = path.getFileName().toString();
-
+                            boolean isLinkFile = fileName.endsWith(".nvlnk");
+                            DatasetBase dataset;
                             try {
-                                if (fileName.endsWith(".nvlnk")) {
+                                if (isLinkFile) {
                                     String newName = fileName.substring(0, fileName.length() - 6);
-                                    DatasetBase dataset = DatasetFactory.newLinkDataset(newName, pathName);
+                                    dataset = DatasetFactory.newLinkDataset(newName, pathName);
                                 } else {
-                                    DatasetBase dataset = DatasetFactory.newDataset(pathName, fileName, false, false);
-                                    File regionFile = DatasetRegion.getRegionFile(path.toString());
-                                    if (regionFile.canRead()) {
-                                        TreeSet<DatasetRegion> regions = DatasetRegion.loadRegions(regionFile);
-                                        dataset.setRegions(regions);
+                                    dataset = DatasetFactory.newDataset(pathName, fileName, false, false);
+                                }
+                                File regionFile = DatasetRegion.getRegionFile(path.toString());
+                                if (regionFile.canRead()) {
+                                    TreeSet<DatasetRegion> regions = DatasetRegion.loadRegions(regionFile);
+                                    dataset.setRegions(regions);
+                                    // The link files have no way of saving the integral norm, so recalculate from the regions file.
+                                    if (isLinkFile) {
+                                        dataset.setNormFromRegions(regions);
                                     }
                                 }
-
                             } catch (IOException ex) {
                                 log.error(ex.getMessage(), ex);
                             }
