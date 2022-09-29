@@ -125,6 +125,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
     @FXML
     private GridPane rightBox;
     private Button cancelButton;
+    private Button favoriteButton;
     PopOver popOver = null;
     PopOver attributesPopOver = null;
 
@@ -1464,9 +1465,11 @@ public class FXMLController implements  Initializable, PeakNavigable {
         bButton = GlyphsDude.createIconButton(FontAwesomeIcon.WRENCH, "Attributes", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
         bButton.setOnAction(e -> showSpecAttrAction(e));
         buttons.add(bButton);
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.HEART, "Favorite", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
-        bButton.setOnAction(e -> saveAsFavorite());
-        buttons.add(bButton);
+        favoriteButton = GlyphsDude.createIconButton(FontAwesomeIcon.HEART, "Favorite", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
+        favoriteButton.setOnAction(e -> saveAsFavorite());
+        // Set the initial status of the favorite button
+        enableFavoriteButton();
+        buttons.add(favoriteButton);
         buttons.add(new Separator(Orientation.VERTICAL));
         // bButton.disableProperty().bind(Project.getActive());
 
@@ -1575,6 +1578,10 @@ public class FXMLController implements  Initializable, PeakNavigable {
         statusBar.buildBar(btoolBar);
         MainApp.getMainApp().addStatusBarTools(statusBar);
 
+    }
+
+    public void enableFavoriteButton() {
+        favoriteButton.setDisable(ProjectBase.getActive().getProjectDir() == null);
     }
 
     List<PolyChart> getCharts(boolean all) {

@@ -47,7 +47,7 @@ public class ProjectBase {
     public static final Pattern INDEX2_PATTERN = Pattern.compile("^.*_([0-9]+).*");
     private static final Map<String, SaveframeProcessor> saveframeProcessors = new HashMap<>();
     final String name;
-    public Path projectDir = null;
+    protected Path projectDir = null;
     public Map<String, PeakPaths> peakPaths;
     public Map<String, Compound> compoundMap = new HashMap<>();
 
@@ -289,6 +289,13 @@ public class ProjectBase {
 
     public void setProjectDir(Path projectDir) {
         this.projectDir = projectDir;
+        if (pcs != null ) {
+            pcs.firePropertyChange(new PropertyChangeEvent(this, "project", null, this));
+        }
+    }
+
+    public Path getProjectDir() {
+        return this.projectDir;
     }
 
     // used in subclasses
@@ -337,7 +344,7 @@ public class ProjectBase {
             }
 
         }
-        this.projectDir = projectDir;
+        setProjectDir(projectDir);
         currentProject.setActive();
     }
 

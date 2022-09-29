@@ -55,7 +55,6 @@ import org.nmrfx.processor.gui.project.GUIProject;
 import org.nmrfx.processor.gui.spectra.KeyBindings;
 import org.nmrfx.processor.gui.spectra.WindowIO;
 import org.nmrfx.processor.gui.utils.FxPropertyChangeSupport;
-import org.nmrfx.processor.project.Project;
 import org.nmrfx.processor.utilities.WebConnect;
 import org.nmrfx.project.ProjectBase;
 import org.nmrfx.structure.chemistry.Molecule;
@@ -163,7 +162,8 @@ public class AnalystApp extends MainApp {
         PeakMenuBar.addExtra("Remove Residue Prefix", PeakLabeller::removeSingleResidueChar);
         KeyBindings.registerGlobalKeyAction("pa", this::assignPeak);
         DataFormatHandlerUtil.addHandlersToController();
-        Project.setPCS(new FxPropertyChangeSupport(this));
+        ProjectBase.setPCS(new FxPropertyChangeSupport(this));
+        ProjectBase.addPropertyChangeListener(evt -> FXMLController.getControllers().forEach(FXMLController::enableFavoriteButton));
         PDBFile.setLocalResLibDir(AnalystPrefs.getLocalResidueDirectory());
         runAboutSaveFrameProcessor = new RunAboutSaveFrameProcessor();
         ProjectBase.addSaveframeProcessor("runabout", runAboutSaveFrameProcessor);

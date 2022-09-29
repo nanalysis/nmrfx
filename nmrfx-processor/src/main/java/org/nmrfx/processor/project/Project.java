@@ -90,7 +90,7 @@ public class Project extends ProjectBase {
             Path subDirectory = fileSystem.getPath(projectDir.toString(), subDir);
             Files.createDirectory(subDirectory);
         }
-        this.projectDir = projectDir;
+        setProjectDir(projectDir);
     }
 
 
