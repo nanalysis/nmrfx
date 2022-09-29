@@ -1665,7 +1665,7 @@ public class DatasetBase {
      * integral, without count very small integrals (less than 0.001 of max to avoid artifacts.
      * @param datasetRegions The regions to calculate the norm from.
      */
-    public void setNormFromRegions(Set<DatasetRegion> datasetRegions) {
+    public void setNormFromRegions(Collection<DatasetRegion> datasetRegions) {
         // normalize to the smallest integral, but don't count very small integrals (less than 0.001 of max
         // to avoid artifacts
 

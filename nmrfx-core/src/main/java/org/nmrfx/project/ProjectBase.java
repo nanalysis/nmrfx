@@ -440,7 +440,7 @@ public class ProjectBase {
     }
 
     public void loadDatasets(Path directory) throws IOException {
-        Pattern pattern = Pattern.compile("(.+)\\.(nv|ucsf|nvlnk)$");
+        Pattern pattern = Pattern.compile(".(nv|ucsf|nvlnk)$");
         Predicate<String> predicate = pattern.asPredicate();
         if (Files.isDirectory(directory)) {
             try (Stream<Path> files = Files.list(directory)) {
@@ -452,20 +452,12 @@ public class ProjectBase {
                             DatasetBase dataset;
                             try {
                                 if (isLinkFile) {
-                                    String newName = fileName.substring(0, fileName.length() - 6);
-                                    dataset = DatasetFactory.newLinkDataset(newName, pathName);
+                                    dataset = DatasetFactory.newLinkDataset(fileName.substring(0, fileName.length() - 6), pathName);
                                 } else {
                                     dataset = DatasetFactory.newDataset(pathName, fileName, false, false);
                                 }
-                                File regionFile = DatasetRegion.getRegionFile(path.toString());
-                                if (regionFile.canRead()) {
-                                    TreeSet<DatasetRegion> regions = DatasetRegion.loadRegions(regionFile);
-                                    dataset.setRegions(regions);
-                                    // The link files have no way of saving the integral norm, so recalculate from the regions file.
-                                    if (isLinkFile) {
-                                        dataset.setNormFromRegions(regions);
-                                    }
-                                }
+                                // The link files have no way of saving the integral norm, so recalculate from the regions file.
+                                loadRegions(path.toString(), dataset, isLinkFile);
                             } catch (IOException ex) {
                                 log.error(ex.getMessage(), ex);
                             }
@@ -473,6 +465,25 @@ public class ProjectBase {
             }
         }
         refreshDatasetList();
+    }
+
+    /**
+     * Loads the regions from the provided filename and sets them in the dataset. If resetNorm is true, the
+     * integral norm is calculated from the regions and set in the dataset.
+     * @param regionFileStr The string path of the region file.
+     * @param dataset The dataset to set the regions for.
+     * @param resetNorm Whether to reset the integral norm.
+     * @throws IOException if there is problem loading the regions.
+     */
+    private void loadRegions(String regionFileStr, DatasetBase dataset, boolean resetNorm) throws IOException {
+        File regionFile = DatasetRegion.getRegionFile(regionFileStr);
+        if (regionFile.canRead()) {
+            TreeSet<DatasetRegion> regions = DatasetRegion.loadRegions(regionFile);
+            dataset.setRegions(regions);
+            if (resetNorm) {
+                dataset.setNormFromRegions(regions);
+            }
+        }
     }
 
     public void saveDatasets() throws IOException {
