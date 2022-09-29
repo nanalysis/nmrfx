@@ -33,6 +33,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.OptionalDouble;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -231,10 +232,18 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
                 // normalize to the smallest integral, but don't count very small integrals (less than 0.001 of max
                 // to avoid artifacts
 
-                double threshold = regions.stream().mapToDouble(r -> r.getIntegral()).max().orElse(1.0) / 1000.0;
-                regions.stream().mapToDouble(r -> r.getIntegral()).filter(r -> r > threshold).min().ifPresent(min -> {
-                    dataset.setNorm(min * dataset.getScale() / 1.0);
-                });
+                double threshold = regions.stream().mapToDouble(DatasetRegion::getIntegral).max().orElse(1.0) / 1000.0;
+                OptionalDouble min = regions.stream().mapToDouble(DatasetRegion::getIntegral).filter(r -> r > threshold).min();
+                if (min.isEmpty()) {
+                    // if all the integrals are negative, get the smallest absolute value
+                    min = regions.stream().mapToDouble(r -> Math.abs(r.getIntegral())).filter(r -> r > threshold).min();
+                }
+                if (min.isPresent()) {
+                    // Save absolute value as the norm, so that spectra with all negative integrals will appear consistent
+                    // with mixed and all positive integral spectra
+                    dataset.setNorm(min.getAsDouble() * dataset.getScale());
+                }
+
             }
             chart.refresh();
             chart.chartProps.setRegions(true);

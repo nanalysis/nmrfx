@@ -151,9 +151,12 @@ public class Analyzer {
             List<Double> maxs = new ArrayList<>();
             for (int i = 0; i < size; i += nIncr) {
                 int j = i + nIncr - 1;
-                IndexValue indexVal = vec.maxIndex(i, j);
-                double max = indexVal.getValue();
-                maxs.add(max);
+                IndexValue maxIndexVal = vec.maxIndex(i, j);
+                double max = maxIndexVal.getValue();
+                // Also get the smallest indexes, to account for negative peaks.
+                IndexValue minIndexVal = vec.minIndex(i, j);
+                double min = minIndexVal.getValue();
+                maxs.add(Math.max(Math.abs(max), Math.abs(min)));
             }
             Collections.sort(maxs);
             int nMax = maxs.size();
@@ -1215,7 +1218,6 @@ public class Analyzer {
         // clearRegions
         // auto set regions
         calculateThreshold();
-        double thresh = getThreshold();
         if (getRegions().isEmpty()) {
             autoSetRegions();
             integrate();
