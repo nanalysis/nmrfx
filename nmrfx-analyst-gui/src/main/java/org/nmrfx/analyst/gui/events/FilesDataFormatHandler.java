@@ -11,6 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.List;
 
 public class FilesDataFormatHandler implements DataFormatEventHandler {
@@ -49,19 +50,32 @@ public class FilesDataFormatHandler implements DataFormatEventHandler {
                 MoleculeUtils.addActiveMoleculeToCanvas();
             }
         } else {
-            Platform.runLater(() -> {
-                chart.setActiveChart();
-                boolean isDataset = NMRDataUtil.isDatasetFile(files.get(0).getAbsolutePath()) != null;
-                if (isDataset) {
-                    for (File file : files) {
-                        chart.getController().openDataset(file, true);
-                    }
-                } else {
-                    chart.getController().openFile(files.get(0).getAbsolutePath(), true, false);
-                }
-
-            });
+            Platform.runLater(() -> openDataFiles(files, chart));
         }
         return true;
+    }
+
+    /**
+     * Checks if first file in list is dataset is FID or processed. If it is an FID, the first file is opened, if
+     * it is processed, all the files are opened in  append mode.
+     * @param files The files to open.
+     * @param chart The chart to display the files in.
+     */
+    private void openDataFiles(List<File> files, PolyChart chart) {
+        chart.setActiveChart();
+        boolean isFID;
+        try {
+            isFID = NMRDataUtil.getFID(files.get(0).getAbsolutePath()).isFID();
+        } catch (IOException e) {
+            log.warn("Unable to open datafiles. {}", e.getMessage(), e);
+            return;
+        }
+        if (isFID) {
+            chart.getController().openFile(files.get(0).getAbsolutePath(), true, false);
+        } else {
+            for (File file : files) {
+                chart.getController().openDataset(file, true);
+            }
+        }
     }
 }

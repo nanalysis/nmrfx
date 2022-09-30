@@ -177,6 +177,8 @@ public final class NMRDataUtil {
             return bpath.toString();
         } else if (VarianData.findFID(bpath)) {
             return bpath.toString();
+        } else if (RS2DData.findFID(bpath)) {
+            return bpath.toString();
         } else if (JCAMPData.findFID(bpath)) {
             return bpath.toString();
         } else {
@@ -193,7 +195,8 @@ public final class NMRDataUtil {
      */
     public static String isDatasetFile(String fpath) {
         StringBuilder bpath = new StringBuilder(fpath);
-        if (NMRViewData.findFID(bpath)) {
+        if (NMRViewData.findFID(bpath) || RS2DData.findFID(bpath) || BrukerData.findData(bpath)
+                || VarianData.findFID(bpath) || JCAMPData.findData(bpath)) {
             return bpath.toString();
         } else {
             return null;
