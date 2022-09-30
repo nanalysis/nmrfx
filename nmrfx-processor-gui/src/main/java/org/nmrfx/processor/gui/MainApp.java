@@ -90,7 +90,10 @@ public class MainApp extends Application {
             chart.clearAnnotations();
         }
         Stage mainStage = getMainStage();
-        for (Stage stage : stages) {
+        // Since stages are removed in a separate function after calling stage.close, must make a copy of
+        // the list to avoid concurrent modification
+        List<Stage> stageCopy = new ArrayList<>(stages);
+        for (Stage stage : stageCopy) {
             if (stage != mainStage) {
                 stage.close();
             }
@@ -125,7 +128,7 @@ public class MainApp extends Application {
         if (!stages.contains(stage)) {
             stages.add(stage);
         }
-        stage.setOnCloseRequest(e -> {
+        stage.setOnHidden(e -> {
             controller.close();
             removeStage(stage);
         });
