@@ -110,6 +110,10 @@ public class ProjectMenuActions extends MenuActions {
     }
 
     private void saveProjectAs(ActionEvent event) {
+        saveProjectAs();
+    }
+
+    private void saveProjectAs() {
         FileChooser chooser = new FileChooser();
         chooser.setTitle("Project Creator");
         File directoryFile = chooser.showSaveDialog(null);
@@ -127,7 +131,6 @@ public class ProjectMenuActions extends MenuActions {
                 }
             }
         }
-
     }
 
     private void saveProject(ActionEvent event) {
@@ -139,6 +142,9 @@ public class ProjectMenuActions extends MenuActions {
                 ExceptionDialog dialog = new ExceptionDialog(ex);
                 dialog.showAndWait();
             }
+        } else {
+            // If the project hasn't been saved to a directory yet, call the save as prompt instead.
+            saveProjectAs();
         }
     }
 

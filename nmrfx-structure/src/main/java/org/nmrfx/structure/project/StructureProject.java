@@ -139,7 +139,7 @@ public class StructureProject extends ProjectBase {
 
             }
         }
-        this.projectDir = projectDir;
+        setProjectDir(projectDir);
         currentProject.setActive();
     }
 

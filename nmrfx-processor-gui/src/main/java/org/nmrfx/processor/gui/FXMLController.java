@@ -125,6 +125,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
     @FXML
     private GridPane rightBox;
     private Button cancelButton;
+    private Button favoriteButton;
     PopOver popOver = null;
     PopOver attributesPopOver = null;
 
@@ -265,6 +266,8 @@ public class FXMLController implements  Initializable, PeakNavigable {
 
     public void processorCreated(Pane pane) {
         processControllerVisible.bind(pane.parentProperty().isNotNull());
+        isFID = !getActiveChart().getProcessorController(true).isViewingDataset();
+        updateSpectrumStatusBarOptions();
     }
 
     public boolean isPhaseSliderVisible() {
@@ -859,12 +862,8 @@ public class FXMLController implements  Initializable, PeakNavigable {
 
     @FXML
     public void showProcessorAction(ActionEvent event) {
-        ProcessorController processorController = getActiveChart().getProcessorController(false);
-        if (processorController != null) {
-            processorController.show();
-        } else {
-            log.warn("No controller to show.");
-        }
+        ProcessorController processorController = getActiveChart().getProcessorController(true);
+        processorController.show();
     }
 
     @FXML
@@ -1466,9 +1465,11 @@ public class FXMLController implements  Initializable, PeakNavigable {
         bButton = GlyphsDude.createIconButton(FontAwesomeIcon.WRENCH, "Attributes", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
         bButton.setOnAction(e -> showSpecAttrAction(e));
         buttons.add(bButton);
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.HEART, "Favorite", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
-        bButton.setOnAction(e -> saveAsFavorite());
-        buttons.add(bButton);
+        favoriteButton = GlyphsDude.createIconButton(FontAwesomeIcon.HEART, "Favorite", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
+        favoriteButton.setOnAction(e -> saveAsFavorite());
+        // Set the initial status of the favorite button
+        enableFavoriteButton();
+        buttons.add(favoriteButton);
         buttons.add(new Separator(Orientation.VERTICAL));
         // bButton.disableProperty().bind(Project.getActive());
 
@@ -1577,6 +1578,10 @@ public class FXMLController implements  Initializable, PeakNavigable {
         statusBar.buildBar(btoolBar);
         MainApp.getMainApp().addStatusBarTools(statusBar);
 
+    }
+
+    public void enableFavoriteButton() {
+        favoriteButton.setDisable(ProjectBase.getActive().getProjectDir() == null);
     }
 
     List<PolyChart> getCharts(boolean all) {
@@ -2206,10 +2211,10 @@ public class FXMLController implements  Initializable, PeakNavigable {
     }
 
     /**
-     * Checks if the active chart has a processorController instances.
+     * Checks if the active chart has a processorController instances or if the chart is empty.
      * @return True if active chart has ProcessorController else returns false.
      */
     public boolean isProcessorControllerAvailable() {
-        return getActiveChart().getProcessorController(false) != null;
+        return getActiveChart().getProcessorController(false) != null || getActiveChart().getDataset() == null;
     }
 }

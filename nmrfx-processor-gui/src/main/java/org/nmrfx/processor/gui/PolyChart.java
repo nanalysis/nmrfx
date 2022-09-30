@@ -2555,10 +2555,7 @@ public class PolyChart extends Region implements PeakListener {
         double integralOffset = chartHeight * 0.75;
         integralOffset = 0.0;
         double norm = datasetAttr.getDataset().getNorm() / datasetAttr.getDataset().getScale();
-        double integralMax = 0.0;
-        for (DatasetRegion region : regions) {
-            integralMax = Math.max(integralMax, region.getIntegral());
-        }
+        double integralMax = getIntegralMaxFromRegions(regions);
         for (DatasetRegion region : regions) {
             double ppm1 = region.getRegionStart(0);
             double ppm2 = region.getRegionEnd(0);
@@ -2605,6 +2602,19 @@ public class PolyChart extends Region implements PeakListener {
         return hit;
     }
 
+    /**
+     * Gets the max absolute value of the region integrals.
+     * @param regions The regions to search.
+     * @return The max integral value.
+     */
+    private double getIntegralMaxFromRegions(Set<DatasetRegion> regions) {
+        double integralMax = 0.0;
+        for (DatasetRegion region : regions) {
+            integralMax = Math.max(integralMax, Math.abs(region.getIntegral()));
+        }
+        return integralMax;
+    }
+
     public Optional<IntegralHit> hitIntegral(DatasetAttributes datasetAttr, double pickX, double pickY) {
         Optional<IntegralHit> hit = Optional.empty();
         Set<DatasetRegion> regions = datasetAttr.getDataset().getRegions();
@@ -2612,10 +2622,7 @@ public class PolyChart extends Region implements PeakListener {
             double xMin = xAxis.getLowerBound();
             double xMax = xAxis.getUpperBound();
             int hitRange = 10;
-            double integralMax = 0.0;
-            for (DatasetRegion region : regions) {
-                integralMax = Math.max(integralMax, region.getIntegral());
-            }
+            double integralMax = getIntegralMaxFromRegions(regions);
             for (DatasetRegion region : regions) {
                 double ppm1 = region.getRegionStart(0);
                 double ppm2 = region.getRegionEnd(0);

@@ -58,11 +58,11 @@ public class ChartProcessor {
     public static final DatasetType DEFAULT_DATASET_TYPE = DatasetType.NMRFX;
     private boolean lastWasFreqDomain = false;
 
-    private SimpleObjectProperty nmrDataObj;
+    private SimpleObjectProperty<NMRData> nmrDataObj;
 
-    public SimpleObjectProperty nmrDataProperty() {
+    public SimpleObjectProperty<NMRData> nmrDataProperty() {
         if (nmrDataObj == null) {
-            nmrDataObj = new SimpleObjectProperty(null);
+            nmrDataObj = new SimpleObjectProperty<>(null);
         }
         return nmrDataObj;
     }
@@ -72,7 +72,7 @@ public class ChartProcessor {
     }
 
     public NMRData getNMRData() {
-        return (NMRData) nmrDataProperty().get();
+        return nmrDataProperty().get();
     }
 
     File datasetFile;
