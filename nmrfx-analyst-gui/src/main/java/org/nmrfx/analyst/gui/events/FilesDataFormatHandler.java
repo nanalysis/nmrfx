@@ -57,18 +57,22 @@ public class FilesDataFormatHandler implements DataFormatEventHandler {
 
     /**
      * Checks if first file in list is dataset is FID or processed. If it is an FID, the first file is opened, if
-     * it is processed, all the files are opened in  append mode.
+     * it is processed, all the files are opened in dataset append mode.
      * @param files The files to open.
      * @param chart The chart to display the files in.
      */
     private void openDataFiles(List<File> files, PolyChart chart) {
         chart.setActiveChart();
-        boolean isFID;
+        boolean isFID = false;
         try {
             isFID = NMRDataUtil.getFID(files.get(0).getAbsolutePath()).isFID();
         } catch (IOException e) {
-            log.warn("Unable to open datafiles. {}", e.getMessage(), e);
-            return;
+            // If the file can't be opened as an FID NMRData, check if it is a datafile, since processed Bruker files
+            // will not open with NMRDataUtil.getFID, otherwise return
+            if (NMRDataUtil.isDatasetFile(files.get(0).getAbsolutePath()) == null) {
+                log.warn("Unable to open datafiles. {}", e.getMessage(), e);
+                return;
+            }
         }
         if (isFID) {
             chart.getController().openFile(files.get(0).getAbsolutePath(), true, false);
