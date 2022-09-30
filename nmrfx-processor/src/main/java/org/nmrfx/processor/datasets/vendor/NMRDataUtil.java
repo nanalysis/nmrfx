@@ -181,6 +181,8 @@ public final class NMRDataUtil {
             return bpath.toString();
         } else if (JCAMPData.findFID(bpath)) {
             return bpath.toString();
+        } else if (JeolDelta.findFID(bpath)) {
+            return bpath.toString();
         } else {
             return null;
         }
