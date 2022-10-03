@@ -41,7 +41,7 @@ while [ -h "$pgm" ]; do
 done
 
 dir=`dirname "$pgm"`
-CLASSPATH=${dir}"/lib/Manifest.jar"
+CLASSPATH=${dir}"/lib/*"
 
 if [ -d "${dir}/../jre.bundle/Contents/Home/jre/bin" ] ; then
     JAVA="${dir}/../jre.bundle/Contents/Home/jre/bin/java"
@@ -61,13 +61,13 @@ else
 
     if $ismsys ; then
         nvjdir=`$dir/echopath "$dir"`
-        CLASSPATH="$nvjdir/nmrfx-core-$nvjver.jar;$CLASSPATH"
+        CLASSPATH="$nvjdir/lib/nmrfx-core-$nvjver.jar;$CLASSPATH"
     elif $iscygwin ; then
         CLASSPATH=`cygpath -pu "$CLASSPATH"`
-        CLASSPATH="$dir/nmrfx-core-$nvjver.jar;$CLASSPATH"
+        CLASSPATH="$dir/lib/nmrfx-core-$nvjver.jar;$CLASSPATH"
         CLASSPATH=`cygpath -pw "$CLASSPATH"`
     else
-        CLASSPATH="$dir/nmrfx-core-$nvjver.jar:$CLASSPATH"
+        CLASSPATH="$dir/lib/nmrfx-core-$nvjver.jar:$CLASSPATH"
     fi
 fi
 
