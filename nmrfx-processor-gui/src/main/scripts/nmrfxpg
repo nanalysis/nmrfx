@@ -43,8 +43,8 @@ dir=`dirname "$pgm"`
 CLASSPATH=${dir}"/lib/*"
 
 
-if [ -d "${dir}/../jre.bundle/Contents/Home/jre/bin" ] ; then
-    JAVA="${dir}/../jre.bundle/Contents/Home/jre/bin/java"
+if [ -d "${dir}/../jre.bundle/Contents/Home/bin" ] ; then
+    JAVA="${dir}/../jre.bundle/Contents/Home/bin/java"
     CLASSPATH="$dir/lib/nmrfx-processor-gui-$nvjver.jar:$CLASSPATH"
 elif [ -d "${dir}/jre/bin" ] ; then
     JAVA="${dir}/jre/bin/java"
