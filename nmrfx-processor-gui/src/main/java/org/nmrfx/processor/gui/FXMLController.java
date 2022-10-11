@@ -1298,6 +1298,10 @@ public class FXMLController implements  Initializable, PeakNavigable {
         cursorProperty.addListener( e -> setCursor());
     }
 
+    public BorderPane getMainBox() {
+        return mainBox;
+    }
+
     public void setCursor(Cursor cursor) {
         cursorProperty.set(cursor);
     }
