@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,20 +16,21 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
- /*
+/*
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
 package org.nmrfx.peaks;
 
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
 import org.nmrfx.chemistry.Atom;
 import org.nmrfx.chemistry.MoleculeBase;
 import org.nmrfx.chemistry.Residue;
 
 /**
- *
  * @author brucejohnson
  */
 public class PeakLabeller {
@@ -37,6 +38,24 @@ public class PeakLabeller {
     static Pattern rPat = Pattern.compile("^(.+:)?(([a-zA-Z]+)([0-9\\-]+))\\.(['a-zA-Z0-9u]+)$");
     static Pattern rPat2 = Pattern.compile("^(.+:)?([0-9\\-]+)\\.(['a-zA-Z0-9u]+)$");
     static Pattern rPat3 = Pattern.compile("^(.+:)?([a-zA-Z]+)([0-9\\-]+)\\.(['a-zA-Z0-9u]+)$");
+    static Pattern rPat4 = Pattern.compile("^(.+:)?([a-zA-Z]+)?([0-9\\-]+)\\.(['a-zA-Z0-9u]+)$");
+
+    public record ChainResAtomSpecifier(String chain, String resName, int resNum, String atomName) {
+    }
+
+
+    public static Optional<ChainResAtomSpecifier> parse(String specifier) {
+        Matcher matcher = rPat4.matcher(specifier);
+        ChainResAtomSpecifier chainResAtomSpecifier = null;
+        if (matcher.matches()) {
+            String chain = matcher.group(1);
+            String resName = matcher.group(2);
+            int resNum = Integer.parseInt(matcher.group(3));
+            String aName = matcher.group(4);
+            chainResAtomSpecifier = new ChainResAtomSpecifier(chain, resName, resNum, aName);
+        }
+        return Optional.ofNullable(chainResAtomSpecifier);
+    }
 
     public static void labelWithSingleResidueChar(PeakList peakList) {
         peakList.peaks().stream().forEach(pk -> {
@@ -71,23 +90,23 @@ public class PeakLabeller {
 
     public static void removeSingleResidueChar(PeakList peakList) {
         peakList.peaks().stream().forEach(pk -> {
-            for (PeakDim peakDim : pk.getPeakDims()) {
-                String label = peakDim.getLabel();
-                Matcher matcher1 = rPat3.matcher(label);
-                if (matcher1.matches()) {
-                    String chain = matcher1.group(1);
-                    String resNum = matcher1.group(3);
-                    String aName = matcher1.group(4);
-                    StringBuilder sBuilder = new StringBuilder();
-                    if (chain != null) {
-                        sBuilder.append(chain);
+                    for (PeakDim peakDim : pk.getPeakDims()) {
+                        String label = peakDim.getLabel();
+                        Matcher matcher1 = rPat3.matcher(label);
+                        if (matcher1.matches()) {
+                            String chain = matcher1.group(1);
+                            String resNum = matcher1.group(3);
+                            String aName = matcher1.group(4);
+                            StringBuilder sBuilder = new StringBuilder();
+                            if (chain != null) {
+                                sBuilder.append(chain);
+                            }
+                            sBuilder.append(resNum);
+                            sBuilder.append(".").append(aName);
+                            peakDim.setLabel(sBuilder.toString());
+                        }
                     }
-                    sBuilder.append(resNum);
-                    sBuilder.append(".").append(aName);
-                    peakDim.setLabel(sBuilder.toString());
                 }
-            }
-        }
         );
     }
 }

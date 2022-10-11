@@ -19,31 +19,21 @@ package org.nmrfx.analyst.gui.spectra;
 
 import de.jensd.fx.glyphs.GlyphsDude;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
+
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
+import javafx.collections.FXCollections;
 import javafx.collections.MapChangeListener;
-import javafx.scene.control.Button;
-import javafx.scene.control.ChoiceBox;
-import javafx.scene.control.ContentDisplay;
-import javafx.scene.control.Label;
-import javafx.scene.control.Menu;
-import javafx.scene.control.MenuButton;
-import javafx.scene.control.MenuItem;
-import javafx.scene.control.Slider;
-import javafx.scene.control.Spinner;
-import javafx.scene.control.SpinnerValueFactory;
-import javafx.scene.control.TextField;
-import javafx.scene.control.ToolBar;
+import javafx.collections.ObservableList;
+import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.VBox;
+import org.nmrfx.analyst.gui.tools.StripsTable;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakDim;
@@ -59,6 +49,7 @@ import org.nmrfx.processor.gui.spectra.PeakDisplayParameters;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
 import org.nmrfx.processor.gui.utils.ToolBarUtils;
 import org.nmrfx.processor.project.Project;
+import org.nmrfx.project.ProjectBase;
 
 /**
  *
@@ -66,8 +57,8 @@ import org.nmrfx.processor.project.Project;
  */
 public class StripController implements ControllerTool {
 
-    final static int X = 0;
-    final static int Z = 1;
+    static final int X = 0;
+    static final int Z = 1;
     FXMLController controller;
     Consumer<StripController> closeAction;
     ToolBar toolBar;
@@ -101,6 +92,8 @@ public class StripController implements ControllerTool {
     int currentHigh = 0;
     int frozen = -1;
     double xWidth = 0.2;
+    StripsTable stripsTable;
+    ObservableList<Peak> sortedPeaks;
 
     public StripController(FXMLController controller, Consumer<StripController> closeAction) {
         this.controller = controller;
@@ -146,14 +139,6 @@ public class StripController implements ControllerTool {
         Menu addMenu = new Menu("Add");
         actionMenu.getItems().add(addMenu);
 
-        MenuItem addAllMenuItem = new MenuItem("All");
-        addMenu.getItems().add(addAllMenuItem);
-        addAllMenuItem.setOnAction(e -> addAll());
-
-        MenuItem addAssignedMenuItem = new MenuItem("Assigned");
-        addMenu.getItems().add(addAssignedMenuItem);
-        addAssignedMenuItem.setOnAction(e -> addAssigned());
-
         Menu freezeThawMenu = new Menu("Freeze/Thaw");
         actionMenu.getItems().add(freezeThawMenu);
 
@@ -191,16 +176,9 @@ public class StripController implements ControllerTool {
         nSlider.setMinWidth(100);
         toolBar.getItems().add(nSlider);
 
-        MapChangeListener<String, PeakList> mapChangeListener = (MapChangeListener.Change<? extends String, ? extends PeakList> change) -> {
-            updatePeakListMenu();
-        };
+        MapChangeListener<String, PeakList> mapChangeListener = (MapChangeListener.Change<? extends String, ? extends PeakList> change) -> updatePeakListMenu();
 
-        limitListener = new ChangeListener() {
-            @Override
-            public void changed(ObservableValue observable, Object oldValue, Object newValue) {
-                updateView();
-            }
-        };
+        limitListener = (observable, oldValue, newValue) -> updateView();
 
         Button addButton = GlyphsDude.createIconButton(FontAwesomeIcon.PLUS);
         addButton.setOnAction(e -> addItem());
@@ -233,12 +211,15 @@ public class StripController implements ControllerTool {
                 itemPeakListMenuButton, peakLabel,
                 offsetLabel, offsetBox, rowLabel, rowBox);
 
-        Project.getActive().addPeakListListener(mapChangeListener);
+        ProjectBase.getActive().addPeakListListener(mapChangeListener);
         updatePeakListMenu();
         updateDatasetNames();
         StripItem item = new StripItem();
         items.add(item);
-
+        VBox stripsBox = new VBox();
+        stripsTable = new StripsTable(controller, this, stripsBox);
+        controller.getMainBox().setRight(stripsBox);
+        sortedPeaks = stripsTable.getSortedPeaks();
     }
 
     void updateDimMenus(String rowName, Dataset dataset) {
@@ -248,7 +229,7 @@ public class StripController implements ControllerTool {
         dimMenu.getItems().clear();
         for (int iDim = 0; iDim < nDim; iDim++) {
             String dimName = dataset.getLabel(iDim);
-            MenuItem menuItem = new MenuItem(String.valueOf(iDim + 1) + ":" + dimName);
+            MenuItem menuItem = new MenuItem(iDim + 1 + ":" + dimName);
             menuItem.setOnAction(e -> updateDimMenu(jDim, dimName));
             dimMenu.getItems().add(menuItem);
             System.out.println("add menu item " + rowName + " " + dimName);
@@ -269,22 +250,16 @@ public class StripController implements ControllerTool {
         peakListMenuButton.getItems().clear();
         itemPeakListMenuButton.getItems().clear();
         MenuItem emptyPeakListMenuItem = new MenuItem("");
-        emptyPeakListMenuItem.setOnAction(e -> {
-            setItemPeakList("");
-        });
+        emptyPeakListMenuItem.setOnAction(e -> setItemPeakList(""));
         itemPeakListMenuButton.getItems().add(emptyPeakListMenuItem);
 
         for (String peakListName : Project.getActive().getPeakListNames()) {
             MenuItem menuItem = new MenuItem(peakListName);
-            menuItem.setOnAction(e -> {
-                setPeakList(peakListName);
-            });
+            menuItem.setOnAction(e -> setPeakList(peakListName));
             peakListMenuButton.getItems().add(menuItem);
 
             MenuItem itemPeakListMenuItem = new MenuItem(peakListName);
-            itemPeakListMenuItem.setOnAction(e -> {
-                setItemPeakList(peakListName);
-            });
+            itemPeakListMenuItem.setOnAction(e -> setItemPeakList(peakListName));
             itemPeakListMenuButton.getItems().add(itemPeakListMenuItem);
         }
     }
@@ -296,6 +271,10 @@ public class StripController implements ControllerTool {
             itemDatasetMenuButton.getItems().add(item);
             item.setOnAction(e -> setItemDataset(nm));
         });
+    }
+
+    public PeakList getControlList() {
+        return controlList;
     }
 
     void setPeakList(String peakListName) {
@@ -414,9 +393,7 @@ public class StripController implements ControllerTool {
                 dims[i] = i;
             }
         } else {
-            for (int i = 0; i < dims.length; i++) {
-                dims[i] = -1;
-            }
+            Arrays.fill(dims, -1);
             dims[0] = getDim(dataset, dimNames[X]);
             dims[2] = getDim(dataset, dimNames[Z]);
 
@@ -450,14 +427,21 @@ public class StripController implements ControllerTool {
         return positions;
     }
 
-    void addAll() {
+    public void clear() {
+        if (controlList != null) {
+            addPeaks(Collections.EMPTY_LIST);
+            updateView();
+        }
+    }
+
+    public void addAll() {
         if (controlList != null) {
             addPeaks(controlList.peaks());
             updateView();
         }
     }
 
-    void addAssigned() {
+    public void addAssigned() {
         if (controlList != null) {
             List<Peak> peaks = controlList.peaks().stream().filter(p -> {
                 String label = p.getPeakDim(dimNames[0]).getLabel();
@@ -470,7 +454,15 @@ public class StripController implements ControllerTool {
         }
     }
 
-    public void addPeaks(List<Peak> peaks) {
+    public void addPeaks(List<Peak> sourcePeaks) {
+        ObservableList<Peak> peaks = FXCollections.observableList(sourcePeaks);
+        stripsTable.updatePeaks(peaks);
+        updatePeaks();
+    }
+
+    public void updatePeaks() {
+        System.out.println("update peaks");
+        List<Peak> peaks = stripsTable.getSortedPeaks();
         posSlider.valueProperty().removeListener(limitListener);
         nSlider.valueProperty().removeListener(limitListener);
         cells.clear();
@@ -517,7 +509,7 @@ public class StripController implements ControllerTool {
         currentHigh = 0;
         posSlider.valueProperty().addListener(limitListener);
         nSlider.valueProperty().addListener(limitListener);
-
+        updateView();
     }
 
     void updateCells() {

@@ -15,10 +15,15 @@ import java.util.Optional;
  */
 public class SeqFragment {
     static private double fragmentScoreProbability = 0.02;
+    static private int lastID = -1;
     int id = 0;
     List<SpinSystemMatch> spinSystemMatches = new ArrayList<>();
     ResidueSeqScore resSeqScore = null;
     boolean frozen = false;
+
+    public SeqFragment() {
+        id = ++lastID;
+    }
 
     public static void setFragmentScoreProbability(double value) {
         fragmentScoreProbability = value;
@@ -68,6 +73,11 @@ public class SeqFragment {
     public void setId(int value) {
         id = value;
     }
+
+    public int getId() {
+        return id;
+    }
+
     public boolean isFrozen() {
         return frozen;
     }
