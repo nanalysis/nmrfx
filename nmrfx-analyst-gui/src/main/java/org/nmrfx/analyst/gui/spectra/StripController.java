@@ -19,14 +19,7 @@ package org.nmrfx.analyst.gui.spectra;
 
 import de.jensd.fx.glyphs.GlyphsDude;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
-
-import java.util.*;
-import java.util.function.Consumer;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.MapChangeListener;
 import javafx.collections.ObservableList;
@@ -50,6 +43,12 @@ import org.nmrfx.processor.gui.spectra.PeakListAttributes;
 import org.nmrfx.processor.gui.utils.ToolBarUtils;
 import org.nmrfx.processor.project.Project;
 import org.nmrfx.project.ProjectBase;
+
+import java.util.*;
+import java.util.function.Consumer;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  *
@@ -178,7 +177,7 @@ public class StripController implements ControllerTool {
 
         MapChangeListener<String, PeakList> mapChangeListener = (MapChangeListener.Change<? extends String, ? extends PeakList> change) -> updatePeakListMenu();
 
-        limitListener = (observable, oldValue, newValue) -> updateView();
+        limitListener = (observable, oldValue, newValue) -> updateView(false);
 
         Button addButton = GlyphsDude.createIconButton(FontAwesomeIcon.PLUS);
         addButton.setOnAction(e -> addItem());
@@ -232,7 +231,6 @@ public class StripController implements ControllerTool {
             MenuItem menuItem = new MenuItem(iDim + 1 + ":" + dimName);
             menuItem.setOnAction(e -> updateDimMenu(jDim, dimName));
             dimMenu.getItems().add(menuItem);
-            System.out.println("add menu item " + rowName + " " + dimName);
         }
     }
 
@@ -243,7 +241,7 @@ public class StripController implements ControllerTool {
         currentHigh = -1;
         currentRows = 0;
         currentColumns = 0;
-        updateView();
+        updateView(false);
     }
 
     public void updatePeakListMenu() {
@@ -287,7 +285,7 @@ public class StripController implements ControllerTool {
         item.offset = 0;
         showItem();
         addPeaks(controlList.peaks());
-        updateView();
+        updateView(true);
     }
 
     void setItemPeakList(String peakListName) {
@@ -430,14 +428,14 @@ public class StripController implements ControllerTool {
     public void clear() {
         if (controlList != null) {
             addPeaks(Collections.EMPTY_LIST);
-            updateView();
+            updateView(true);
         }
     }
 
     public void addAll() {
         if (controlList != null) {
             addPeaks(controlList.peaks());
-            updateView();
+            updateView(true);
         }
     }
 
@@ -450,7 +448,7 @@ public class StripController implements ControllerTool {
             }
             ).collect(Collectors.toList());
             addPeaks(peaks);
-            updateView();
+            updateView(true);
         }
     }
 
@@ -461,7 +459,6 @@ public class StripController implements ControllerTool {
     }
 
     public void updatePeaks() {
-        System.out.println("update peaks");
         List<Peak> peaks = stripsTable.getSortedPeaks();
         posSlider.valueProperty().removeListener(limitListener);
         nSlider.valueProperty().removeListener(limitListener);
@@ -509,7 +506,7 @@ public class StripController implements ControllerTool {
         currentHigh = 0;
         posSlider.valueProperty().addListener(limitListener);
         nSlider.valueProperty().addListener(limitListener);
-        updateView();
+        updateView(true);
     }
 
     void updateCells() {
@@ -581,7 +578,7 @@ public class StripController implements ControllerTool {
         }
     }
 
-    public void updateView() {
+    public void updateView(boolean forced) {
         int low = (int) posSlider.getValue();
         int nActive = (int) nSlider.getValue();
         if (nActive > cells.size()) {
@@ -595,7 +592,7 @@ public class StripController implements ControllerTool {
             high = cells.size() - 1;
             low = high - nActive + 1;
         }
-        if ((low != currentLow) || (high != currentHigh)) {
+        if (forced || (low != currentLow) || (high != currentHigh)) {
             controller.setChartDisable(true);
             int nItems = high - low + 1;
             if (frozen >= 0) {
@@ -604,6 +601,9 @@ public class StripController implements ControllerTool {
             int maxOffset = getMaxOffset();
             int maxRow = getMaxRow();
             int nCols = nItems * (maxOffset + 1);
+            if (nCols == 0) {
+                nCols = 1;
+            }
             boolean updated = grid(maxRow + 1, nCols);
             List<PolyChart> charts = controller.getCharts();
             for (int iCell = low; iCell <= high; iCell++) {
@@ -660,14 +660,14 @@ public class StripController implements ControllerTool {
         frozen = controller.getCharts().indexOf(activeChart) / (getMaxOffset() + 1);
         currentLow = -1;
         currentHigh = -1;
-        updateView();
+        updateView(false);
     }
 
     void thawChart() {
         frozen = -1;
         currentLow = -1;
         currentHigh = -1;
-        updateView();
+        updateView(false);
     }
 
     class PeakSortComparator implements Comparator<Cell> {
@@ -702,11 +702,11 @@ public class StripController implements ControllerTool {
 
     void sortPeaksByResidue() {
         Collections.sort(cells, new PeakSortComparator());
-        updateView();
+        updateView(true);
     }
 
     void sortPeaksByIndex() {
         Collections.sort(cells, new PeakIndexSortComparator());
-        updateView();
+        updateView(true);
     }
 }
