@@ -451,6 +451,10 @@ public class AnalystApp extends MainApp {
         proteinMenu.getItems().add(runAboutToolItem);
         runAboutToolItem.setOnAction(e -> showRunAboutTool());
 
+        MenuItem stripsToolItem = new MenuItem("Show Strips Tool");
+        proteinMenu.getItems().add(stripsToolItem);
+        stripsToolItem.setOnAction(e -> showStripsBar());
+
         PluginLoader.getInstance().registerPluginsOnEntryPoint(EntryPoint.STATUS_BAR_TOOLS, statusBar);
 
     }
@@ -678,6 +682,24 @@ public class AnalystApp extends MainApp {
         controller.removeTool(RunAboutGUI.class);
         controller.getBottomBox().getChildren().remove(runaboutTool.getTabPane());
     }
+
+    public void showStripsBar() {
+        FXMLController controller = FXMLController.getActiveController();
+        if (!controller.containsTool(StripController.class)) {
+            VBox vBox = new VBox();
+            controller.getBottomBox().getChildren().add(vBox);
+            StripController stripsController = new StripController(controller, this::removeStripsBar);
+            stripsController.initialize(vBox);
+            controller.addTool(stripsController);
+        }
+    }
+    public void removeStripsBar(StripController stripsController) {
+        FXMLController controller = FXMLController.getActiveController();
+        controller.removeTool(StripController.class);
+        controller.getBottomBox().getChildren().remove(stripsController.getBox());
+    }
+
+
 
     void addPrefs() {
         AnalystPrefs.addPrefs();
