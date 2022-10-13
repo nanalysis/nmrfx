@@ -36,19 +36,19 @@ import org.nmrfx.processor.gui.ControllerTool;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.MainApp;
 import org.nmrfx.processor.gui.PolyChart;
-import org.nmrfx.processor.gui.controls.GridPaneCanvas;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.processor.gui.spectra.PeakDisplayParameters;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
 import org.nmrfx.processor.gui.utils.ToolBarUtils;
-import org.nmrfx.processor.project.Project;
 import org.nmrfx.project.ProjectBase;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.List;
 import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 /**
  *
@@ -188,20 +188,20 @@ public class StripController implements ControllerTool {
 
         dataLabel = new Label();
         dataLabel.setMinWidth(150);
-        itemSpinner = new Spinner(0, 0, 0);
+        itemSpinner = new Spinner<>(0, 0, 0);
         itemSpinner.setMaxWidth(75);
         itemSpinner.getValueFactory().valueProperty().addListener(e -> showItem());
         itemPeakListMenuButton = new MenuButton("List");
         itemDatasetMenuButton = new MenuButton("Dataset");
-        Project.getActive().addDatasetListListener((MapChangeListener) (e -> updateDatasetNames()));
+        ProjectBase.getActive().addDatasetListListener((MapChangeListener) (e -> updateDatasetNames()));
 
         Label offsetLabel = new Label("Offset:");
-        offsetBox = new ChoiceBox();
+        offsetBox = new ChoiceBox<>();
         offsetBox.getItems().addAll(0, 1, 2, 3, 4);
         offsetBox.setValue(0);
         offsetBox.setOnAction(e -> updateItem());
         Label rowLabel = new Label("Row:");
-        rowBox = new ChoiceBox();
+        rowBox = new ChoiceBox<>();
         rowBox.getItems().addAll(0, 1, 2, 3, 4);
         rowBox.setValue(0);
         rowBox.setOnAction(e -> updateItem());
@@ -251,7 +251,7 @@ public class StripController implements ControllerTool {
         emptyPeakListMenuItem.setOnAction(e -> setItemPeakList(""));
         itemPeakListMenuButton.getItems().add(emptyPeakListMenuItem);
 
-        for (String peakListName : Project.getActive().getPeakListNames()) {
+        for (String peakListName : ProjectBase.getActive().getPeakListNames()) {
             MenuItem menuItem = new MenuItem(peakListName);
             menuItem.setOnAction(e -> setPeakList(peakListName));
             peakListMenuButton.getItems().add(menuItem);
@@ -264,7 +264,7 @@ public class StripController implements ControllerTool {
 
     public void updateDatasetNames() {
         itemDatasetMenuButton.getItems().clear();
-        Dataset.names().stream().forEach(nm -> {
+        Dataset.names().forEach(nm -> {
             MenuItem item = new MenuItem(nm);
             itemDatasetMenuButton.getItems().add(item);
             item.setOnAction(e -> setItemDataset(nm));
@@ -399,8 +399,8 @@ public class StripController implements ControllerTool {
                 if (dims[i] == -1) {
                     for (int k = 0; k < dims.length; k++) {
                         boolean unused = true;
-                        for (int j = 0; j < dims.length; j++) {
-                            if (dims[j] == k) {
+                        for (int dim : dims) {
+                            if (dim == k) {
                                 unused = false;
                                 break;
                             }
@@ -425,36 +425,10 @@ public class StripController implements ControllerTool {
         return positions;
     }
 
-    public void clear() {
-        if (controlList != null) {
-            addPeaks(Collections.EMPTY_LIST);
-            updateView(true);
-        }
-    }
-
-    public void addAll() {
-        if (controlList != null) {
-            addPeaks(controlList.peaks());
-            updateView(true);
-        }
-    }
-
-    public void addAssigned() {
-        if (controlList != null) {
-            List<Peak> peaks = controlList.peaks().stream().filter(p -> {
-                String label = p.getPeakDim(dimNames[0]).getLabel();
-                Matcher matcher = resPat.matcher(label);
-                return matcher.matches();
-            }
-            ).collect(Collectors.toList());
-            addPeaks(peaks);
-            updateView(true);
-        }
-    }
-
     public void addPeaks(List<Peak> sourcePeaks) {
         ObservableList<Peak> peaks = FXCollections.observableList(sourcePeaks);
         stripsTable.updatePeaks(peaks);
+        stripsTable.updatePeakSorterPeaks(peaks);
         updatePeaks();
     }
 
@@ -463,14 +437,16 @@ public class StripController implements ControllerTool {
         posSlider.valueProperty().removeListener(limitListener);
         nSlider.valueProperty().removeListener(limitListener);
         cells.clear();
+        int nPeaks = peaks.size();
         posSlider.setMin(0.0);
-        posSlider.setMax(peaks.size() - 1.0);
-        posSlider.setValue(0);
         nSlider.setMin(1);
         nSlider.setMax(30);
-        nSlider.setValue(5);
+        if ((nPeaks - 1) != posSlider.getMax()) {
+            posSlider.setMax(Math.max(0, nPeaks-1));
+            posSlider.setValue(0);
+            nSlider.setValue(5);
+        }
 
-        int nPeaks = peaks.size();
         if (nPeaks < 10) {
             posSlider.setMajorTickUnit(1);
             posSlider.setMinorTickCount(0);
@@ -481,7 +457,6 @@ public class StripController implements ControllerTool {
         int majorTick = peaks.size() < 10 ? peaks.size() - 1 : 10;
         posSlider.setMajorTickUnit(10);
         posSlider.setMinorTickCount(majorTick);
-        double highValue = peaks.size() >= 10 ? 9 : peaks.size() - 1;
         boolean firstPeak = true;
         for (Peak peak : peaks) {
             Dataset dataset = Dataset.getDataset(peak.getPeakList().getDatasetName());
@@ -515,7 +490,7 @@ public class StripController implements ControllerTool {
         }
     }
 
-    class StripItem {
+    static class StripItem {
 
         Dataset dataset;
         PeakList peakList;
@@ -576,6 +551,12 @@ public class StripController implements ControllerTool {
             }
             chart.useImmediateMode(true);
         }
+    }
+
+    public void setCenter(int index) {
+        int nActive = (int) nSlider.getValue();
+        int start = index - nActive / 2;
+        posSlider.setValue(start);
     }
 
     public void updateView(boolean forced) {
@@ -641,7 +622,6 @@ public class StripController implements ControllerTool {
         if ((currentRows != rows) || (currentColumns != columns)) {
             int nCharts = rows * columns;
             if (nCharts > 0) {
-                GridPaneCanvas.ORIENTATION orient = GridPaneCanvas.getOrientation("grid");
                 controller.setNCharts(nCharts);
                 controller.arrange(rows);
                 controller.setBorderState(true);
@@ -701,12 +681,12 @@ public class StripController implements ControllerTool {
     }
 
     void sortPeaksByResidue() {
-        Collections.sort(cells, new PeakSortComparator());
+        cells.sort(new PeakSortComparator());
         updateView(true);
     }
 
     void sortPeaksByIndex() {
-        Collections.sort(cells, new PeakIndexSortComparator());
+        cells.sort(new PeakIndexSortComparator());
         updateView(true);
     }
 }

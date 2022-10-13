@@ -7,6 +7,7 @@ import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
 import javafx.collections.transformation.SortedList;
+import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
@@ -35,18 +36,22 @@ import java.util.Optional;
 public class StripsTable {
     VBox vBox;
     FilteredTableView<Peak> tableView = new FilteredTableView<>();
+    TableView<Peak> sortTable = new TableView<>();
     ToolBar toolBar = new ToolBar();
     FXMLController fxmlController;
     StripController stripController;
     ObservableList<Peak> tablePeaks = FXCollections.observableArrayList();
+    ObservableList<Peak> sortTablePeaks = FXCollections.observableArrayList();
     SortedList<Peak> sortedPeaks;
     FilteredTableColumn<Peak, Number> fragmentColumn;
     FilteredTableColumn<Peak, String> atomNameColumn;
     TextField peakFields = null;
     ChoiceBox<String> fragmentChoice = new ChoiceBox<>();
-    CheckBox assignedCheckBox = new CheckBox();
+    ChoiceBox<String> assignedChoice = new ChoiceBox<>();
     Background errorBackground =  new Background(new BackgroundFill(Color.LIGHTYELLOW, null, null));
-    Background defaultBackground = new Background(new BackgroundFill(Color.WHITE, null, null));;
+    Background defaultBackground = new Background(new BackgroundFill(Color.WHITE, null, null));
+    Peak targetPeak = null;
+    ChoiceBox<String> positionChoiceBox;
 
     public StripsTable(FXMLController fxmlController, StripController stripController, VBox vBox) {
         this.vBox = vBox;
@@ -57,32 +62,23 @@ public class StripsTable {
         sortedPeaks = new SortedList<>(filteredPeaks);
         sortedPeaks.comparatorProperty().bind(tableView.comparatorProperty());
         tableView.setItems(sortedPeaks);
+
+        SortedList<Peak> sortTableSortedPeaks  = new SortedList<>(sortTablePeaks);
+        sortTableSortedPeaks.comparatorProperty().bind(sortTable.comparatorProperty());
+        sortTable.setItems(sortTableSortedPeaks);
         initTools();
         VBox.setVgrow(tableView, Priority.ALWAYS);
-        vBox.getChildren().addAll(tableView);
+        HBox sortBox = initSortTools();
+        vBox.getChildren().addAll(tableView, sortBox, sortTable);
     }
 
     void initTools() {
-        MenuButton addMenu = new MenuButton("Actions");
-
-        MenuItem clearMenuItem = new MenuItem("Clear");
-        addMenu.getItems().add(clearMenuItem);
-        clearMenuItem.setOnAction(e -> stripController.clear());
-
-        MenuItem addAllMenuItem = new MenuItem("All");
-        addMenu.getItems().add(addAllMenuItem);
-        addAllMenuItem.setOnAction(e -> stripController.addAll());
-
-        MenuItem addAssignedMenuItem = new MenuItem("Assigned");
-        addMenu.getItems().add(addAssignedMenuItem);
-        addAssignedMenuItem.setOnAction(e -> stripController.addAssigned());
-
-        addAllMenuItem.setOnAction(e -> stripController.addAll());
 
         fragmentChoice = new ChoiceBox<>();
-        toolBar.getItems().addAll(addMenu, new Label("Assigned:"), assignedCheckBox, new Label("Fragment:"), fragmentChoice);
+        toolBar.getItems().addAll(new Label("Assigned:"), assignedChoice, new Label("Fragment:"), fragmentChoice);
         fragmentChoice.valueProperty().addListener(e -> setFragmentPredicate());
-        assignedCheckBox.selectedProperty().addListener(e -> setAssignedPredicate());
+        assignedChoice.getItems().addAll("All", "Assigned", "Unassigned");
+        assignedChoice.valueProperty().addListener(e -> setAssignedPredicate());
         HBox hBox = new HBox();
         Label peakLabel = new Label("Peaks:");
         peakFields = TextFields.createClearableTextField();
@@ -90,7 +86,56 @@ public class StripsTable {
         hBox.getChildren().addAll(peakLabel, peakFields);
         peakFields.textProperty().addListener(e -> peakFieldChanged());
         vBox.getChildren().addAll(toolBar, hBox);
+    }
 
+    HBox initSortTools() {
+        HBox hBox = new HBox();
+        hBox.setAlignment(Pos.CENTER);
+        hBox.setSpacing(10.0);
+        Label insertLabel = new Label("Replace peak ");
+        positionChoiceBox = new ChoiceBox<>();
+        positionChoiceBox.getItems().addAll("", "before", "after");
+        positionChoiceBox.setValue("");
+        insertLabel.disableProperty().bind(positionChoiceBox.valueProperty().asString().isEqualTo(""));
+        Label peakLabel = new Label();
+        tableView.getSelectionModel().selectedItemProperty().addListener( (observableValue, oldPeak, newPeak) -> {
+            String label = newPeak != null ? newPeak.getName() : "";
+            targetPeak = newPeak;
+            peakLabel.setText(label);
+            if (targetPeak != null) {
+                int index = sortedPeaks.indexOf(targetPeak);
+                stripController.setCenter(index);
+            }
+        });
+
+        hBox.getChildren().addAll(insertLabel, positionChoiceBox,peakLabel);
+        sortTable.getSelectionModel().selectedIndexProperty().addListener(e -> sortedSelectionChanged());
+        return hBox;
+    }
+
+
+    private void sortedSelectionChanged() {
+        if (tableView.getSortOrder().isEmpty()) {
+            Peak selectedPeak = sortTable.getSelectionModel().getSelectedItem();
+            if ((targetPeak != selectedPeak) && (targetPeak != null) && (selectedPeak != null)) {
+                int targetIndex = tablePeaks.indexOf(targetPeak);
+                String positionChoice = positionChoiceBox.getValue();
+                if (positionChoice.equals("before")) {
+                    if (targetIndex == 0) {
+                        tablePeaks.add(0, selectedPeak);
+                    } else {
+                        tablePeaks.set(targetIndex - 1, selectedPeak);
+                    }
+                } else  if (positionChoice.equals("after")) {
+                    if (targetIndex == (tablePeaks.size() - 1)) {
+                        tablePeaks.add(selectedPeak);
+                    } else {
+                        tablePeaks.set(targetIndex + 1, selectedPeak);
+                    }
+
+                }
+            }
+        }
     }
 
     public Integer getResidue(PeakDim peakDim) {
@@ -143,12 +188,16 @@ public class StripsTable {
         return -1;
     }
 
-
     void initTable(int nDim) {
+        initTable(sortTable, nDim);
+        initTable(tableView, nDim);
+    }
+
+    void initTable(TableView<Peak> table, int nDim) {
         TableColumn2<Peak, Number> idColumn = new TableColumn2<>("ID");
         idColumn.setCellValueFactory(e -> new SimpleIntegerProperty(e.getValue().getIdNum()));
-        tableView.getColumns().clear();
-        tableView.getColumns().add(idColumn);
+        table.getColumns().clear();
+        table.getColumns().add(idColumn);
         for (int i = 0; i < nDim; i++) {
             final int iDim = i;
             FilteredTableColumn<Peak, Number> residueColumn = new FilteredTableColumn<>("Res" + (iDim + 1));
@@ -167,21 +216,29 @@ public class StripsTable {
                 }
             });
 
-            tableView.getColumns().add(residueColumn);
+            table.getColumns().add(residueColumn);
 
             FilteredTableColumn<Peak, String> label1Column = new FilteredTableColumn<>("Label" + (iDim + 1));
             label1Column.setCellValueFactory(e -> new SimpleStringProperty(getAtomName(e.getValue().getPeakDim(iDim))));
 
-            tableView.getColumns().add(label1Column);
-            sortedPeaks.addListener((ListChangeListener<? super Peak>) e -> stripController.updatePeaks());
-            if (i == 0) {
-                atomNameColumn = label1Column;
+            table.getColumns().add(label1Column);
+            if (table == tableView) {
+                sortedPeaks.addListener((ListChangeListener<? super Peak>) e -> stripController.updatePeaks());
+                if (i == 0) {
+                    atomNameColumn = label1Column;
+                }
             }
         }
-        fragmentColumn = new FilteredTableColumn<>("Frag");
+        TableColumn2<Peak, Number> column;
+        if (table == tableView) {
+            fragmentColumn = new FilteredTableColumn<>("Frag");
+            column = fragmentColumn;
+        } else {
+            column = new TableColumn2<>("Frag");
+        }
 
-        fragmentColumn.setCellValueFactory(e -> new SimpleIntegerProperty(getFragment(e.getValue())));
-        fragmentColumn.setCellFactory(tableColumn -> new TableCell<>() {
+        column.setCellValueFactory(e -> new SimpleIntegerProperty(getFragment(e.getValue())));
+        column.setCellFactory(tableColumn -> new TableCell<>() {
             @Override
             protected void updateItem(Number item, boolean empty) {
                 super.updateItem(item, empty);
@@ -195,7 +252,7 @@ public class StripsTable {
             }
         });
 
-        tableView.getColumns().add(fragmentColumn);
+        table.getColumns().add(column);
     }
 
     private void setFragmentPredicate() {
@@ -212,16 +269,19 @@ public class StripsTable {
     }
 
     private void setAssignedPredicate() {
-        boolean assignedMode = assignedCheckBox.isSelected();
-        atomNameColumn.setPredicate(e -> !assignedMode || !e.isBlank());
+        String assignedMode = assignedChoice.getValue();
+        atomNameColumn.setPredicate(e -> assignedMode.equals("All") || (assignedMode.equals("Assigned")
+                && !e.isBlank()) || (assignedMode.equals("Unassigned") && e.isBlank()));
     }
 
+    public void updatePeakSorterPeaks(ObservableList<Peak> peaks) {
+        sortTablePeaks.clear();
+        sortTablePeaks.addAll(peaks);
+    }
     public void updatePeaks(ObservableList<Peak> peaks) {
         int currentNColumns = tableView.getColumns().size() - 2;
         if (!peaks.isEmpty()) {
-            Peak peak = peaks.get(0);
-            int nDim = peak.getPeakList().getNDim();
-            nDim = 1;
+            int nDim = 1;
             if ((nDim * 2) != currentNColumns) {
                 initTable(nDim);
             }
@@ -241,7 +301,6 @@ public class StripsTable {
         ObservableList<Peak> peaks = FXCollections.observableArrayList();
 
         PeakList peakList = stripController.getControlList();
-        System.out.println(peakString + " " + fields.length);
         if (peakString.isBlank() || (fields.length == 0)){
             peaks.addAll(peakList.peaks());
         } else {
