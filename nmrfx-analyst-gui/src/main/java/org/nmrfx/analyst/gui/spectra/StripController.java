@@ -82,7 +82,7 @@ public class StripController implements ControllerTool {
 
     List<Cell> cells = new ArrayList<>();
     String[] dimNames = new String[2];
-    ChangeListener limitListener;
+    ChangeListener<Number> limitListener;
     Pattern resPat = Pattern.compile("([A-Z]*)([0-9]+)\\.(.*)");
     PeakList controlList = null;
     int currentRows = 0;
@@ -279,7 +279,6 @@ public class StripController implements ControllerTool {
         controlList = PeakList.get(peakListName);
         StripItem item = getCurrentItem();
         item.peakList = controlList;
-        controlList.getDatasetName();
         item.dataset = Dataset.getDataset(controlList.getDatasetName());
         item.row = 0;
         item.offset = 0;
@@ -428,7 +427,8 @@ public class StripController implements ControllerTool {
     public void addPeaks(List<Peak> sourcePeaks) {
         ObservableList<Peak> peaks = FXCollections.observableList(sourcePeaks);
         stripsTable.updatePeaks(peaks);
-        stripsTable.updatePeakSorterPeaks(peaks);
+        var matchPeaks = peaks.stream().map(peak -> new PeakMatchResult(peak, 0.0)).toList();
+        stripsTable.updatePeakSorterPeaks(FXCollections.observableList(matchPeaks));
         updatePeaks();
     }
 
@@ -590,10 +590,8 @@ public class StripController implements ControllerTool {
             for (int iCell = low; iCell <= high; iCell++) {
                 Cell cell = cells.get(iCell);
                 int jCell = iCell - low;
-                if (frozen >= 0) {
-                    if (jCell >= frozen) {
-                        jCell++;
-                    }
+                if ((frozen >= 0) && (jCell >= frozen)) {
+                    jCell++;
                 }
                 for (StripItem item : items) {
                     int iCol = jCell * (maxOffset + 1) + item.offset;
@@ -633,6 +631,65 @@ public class StripController implements ControllerTool {
             }
         }
         return result;
+    }
+
+    public record PeakMatchResult(Peak peak, double score) {}
+
+    public List<PeakMatchResult> matchPeaks(Peak peak) {
+        var originPeaks = getMatchPeaks(peak);
+        List<PeakMatchResult> result = new ArrayList<>();
+        controlList.peaks().forEach(comparePeak -> {
+            var comparePeaks = getMatchPeaks(comparePeak);
+            double score = scorePeakMatch(originPeaks, comparePeaks);
+            PeakMatchResult matchResult = new PeakMatchResult(comparePeak, score);
+            result.add(matchResult);
+        });
+        result.sort(Comparator.comparing(PeakMatchResult::score).reversed());
+        return result;
+    }
+
+    double scorePeakMatch(List<Peak> originPeaks, List<Peak> comparePeaks) {
+        double tol = 0.6;
+        double sumScore = 0.0;
+        for (Peak originPeak:originPeaks) {
+            for (Peak comparePeak: comparePeaks) {
+                if (originPeak != comparePeak) {
+                    for(PeakDim originPeakDim:originPeak.peakDims) {
+                        String dimName = originPeakDim.getDimName();
+                        if (!dimName.equals(dimNames[X]) && !dimName.equals(dimNames[Z])) {
+                            PeakDim comparePeakDim = comparePeak.getPeakDim(dimName);
+                            double delta = Math.abs(originPeakDim.getAdjustedChemShiftValue() - comparePeakDim.getChemShiftValue());
+                            if (delta < tol) {
+                                 double score = 1.0 - delta/ tol;
+                                 sumScore += score;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return sumScore;
+    }
+
+    public List<Peak> getMatchPeaks(Peak peak) {
+        PeakDim xPeakDim = peak.getPeakDim(dimNames[X]);
+        PeakDim zPeakDim = peak.getPeakDim(dimNames[Z]);
+        double[] searchPPMs = {xPeakDim.getChemShiftValue(), zPeakDim.getChemShiftValue()};
+        double xTol = 0.05;
+        double zTol = 0.3;
+
+        List<Peak> allFoundPeaks = new ArrayList<>();
+        for (var item : items) {
+            PeakList itemList = item.peakList;
+            if (itemList != null) {
+                itemList.clearSearchDims();
+                itemList.addSearchDim(dimNames[X], xTol);
+                itemList.addSearchDim(dimNames[Z], zTol);
+                var foundPeaks = itemList.findPeaks(searchPPMs);
+                allFoundPeaks.addAll(foundPeaks);
+            }
+        }
+        return allFoundPeaks;
     }
 
     void freezeChart() {

@@ -1,5 +1,6 @@
 package org.nmrfx.analyst.gui.tools;
 
+import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
@@ -36,19 +37,19 @@ import java.util.Optional;
 public class StripsTable {
     VBox vBox;
     FilteredTableView<Peak> tableView = new FilteredTableView<>();
-    TableView<Peak> sortTable = new TableView<>();
+    TableView<StripController.PeakMatchResult> sortTable = new TableView<>();
     ToolBar toolBar = new ToolBar();
     FXMLController fxmlController;
     StripController stripController;
     ObservableList<Peak> tablePeaks = FXCollections.observableArrayList();
-    ObservableList<Peak> sortTablePeaks = FXCollections.observableArrayList();
+    ObservableList<StripController.PeakMatchResult> sortTablePeaks = FXCollections.observableArrayList();
     SortedList<Peak> sortedPeaks;
     FilteredTableColumn<Peak, Number> fragmentColumn;
     FilteredTableColumn<Peak, String> atomNameColumn;
     TextField peakFields = null;
     ChoiceBox<String> fragmentChoice = new ChoiceBox<>();
     ChoiceBox<String> assignedChoice = new ChoiceBox<>();
-    Background errorBackground =  new Background(new BackgroundFill(Color.LIGHTYELLOW, null, null));
+    Background errorBackground = new Background(new BackgroundFill(Color.LIGHTYELLOW, null, null));
     Background defaultBackground = new Background(new BackgroundFill(Color.WHITE, null, null));
     Peak targetPeak = null;
     ChoiceBox<String> positionChoiceBox;
@@ -63,7 +64,7 @@ public class StripsTable {
         sortedPeaks.comparatorProperty().bind(tableView.comparatorProperty());
         tableView.setItems(sortedPeaks);
 
-        SortedList<Peak> sortTableSortedPeaks  = new SortedList<>(sortTablePeaks);
+        SortedList<StripController.PeakMatchResult> sortTableSortedPeaks = new SortedList<>(sortTablePeaks);
         sortTableSortedPeaks.comparatorProperty().bind(sortTable.comparatorProperty());
         sortTable.setItems(sortTableSortedPeaks);
         initTools();
@@ -98,7 +99,7 @@ public class StripsTable {
         positionChoiceBox.setValue("");
         insertLabel.disableProperty().bind(positionChoiceBox.valueProperty().asString().isEqualTo(""));
         Label peakLabel = new Label();
-        tableView.getSelectionModel().selectedItemProperty().addListener( (observableValue, oldPeak, newPeak) -> {
+        tableView.getSelectionModel().selectedItemProperty().addListener((observableValue, oldPeak, newPeak) -> {
             String label = newPeak != null ? newPeak.getName() : "";
             targetPeak = newPeak;
             peakLabel.setText(label);
@@ -108,31 +109,43 @@ public class StripsTable {
             }
         });
 
-        hBox.getChildren().addAll(insertLabel, positionChoiceBox,peakLabel);
+        hBox.getChildren().addAll(insertLabel, positionChoiceBox, peakLabel);
         sortTable.getSelectionModel().selectedIndexProperty().addListener(e -> sortedSelectionChanged());
+        Button findMatchButton = new Button("Search");
+        hBox.getChildren().add(findMatchButton);
+        findMatchButton.setOnAction(e -> scoreMatches(targetPeak));
         return hBox;
+    }
+
+    private void scoreMatches(Peak peak) {
+        var matches = stripController.matchPeaks(peak);
+        sortTablePeaks.clear();
+        sortTablePeaks.addAll(matches);
     }
 
 
     private void sortedSelectionChanged() {
         if (tableView.getSortOrder().isEmpty()) {
-            Peak selectedPeak = sortTable.getSelectionModel().getSelectedItem();
-            if ((targetPeak != selectedPeak) && (targetPeak != null) && (selectedPeak != null)) {
-                int targetIndex = tablePeaks.indexOf(targetPeak);
-                String positionChoice = positionChoiceBox.getValue();
-                if (positionChoice.equals("before")) {
-                    if (targetIndex == 0) {
-                        tablePeaks.add(0, selectedPeak);
-                    } else {
-                        tablePeaks.set(targetIndex - 1, selectedPeak);
-                    }
-                } else  if (positionChoice.equals("after")) {
-                    if (targetIndex == (tablePeaks.size() - 1)) {
-                        tablePeaks.add(selectedPeak);
-                    } else {
-                        tablePeaks.set(targetIndex + 1, selectedPeak);
-                    }
+            StripController.PeakMatchResult selectedMatchResult = sortTable.getSelectionModel().getSelectedItem();
+            if (selectedMatchResult != null) {
+                Peak selectedPeak = selectedMatchResult.peak();
+                if ((targetPeak != selectedPeak) && (targetPeak != null) && (selectedPeak != null)) {
+                    int targetIndex = tablePeaks.indexOf(targetPeak);
+                    String positionChoice = positionChoiceBox.getValue();
+                    if (positionChoice.equals("before")) {
+                        if (targetIndex == 0) {
+                            tablePeaks.add(0, selectedPeak);
+                        } else {
+                            tablePeaks.set(targetIndex - 1, selectedPeak);
+                        }
+                    } else if (positionChoice.equals("after")) {
+                        if (targetIndex == (tablePeaks.size() - 1)) {
+                            tablePeaks.add(selectedPeak);
+                        } else {
+                            tablePeaks.set(targetIndex + 1, selectedPeak);
+                        }
 
+                    }
                 }
             }
         }
@@ -189,7 +202,7 @@ public class StripsTable {
     }
 
     void initTable(int nDim) {
-        initTable(sortTable, nDim);
+        initSortTable(sortTable, nDim);
         initTable(tableView, nDim);
     }
 
@@ -255,6 +268,61 @@ public class StripsTable {
         table.getColumns().add(column);
     }
 
+    void initSortTable(TableView<StripController.PeakMatchResult> table, int nDim) {
+        TableColumn2<StripController.PeakMatchResult, Number> idColumn = new TableColumn2<>("ID");
+        idColumn.setCellValueFactory(e -> new SimpleIntegerProperty(e.getValue().peak().getIdNum()));
+        table.getColumns().clear();
+        table.getColumns().add(idColumn);
+        for (int i = 0; i < nDim; i++) {
+            final int iDim = i;
+            FilteredTableColumn<StripController.PeakMatchResult, Number> residueColumn = new FilteredTableColumn<>("Res" + (iDim + 1));
+            residueColumn.setCellValueFactory(e -> new SimpleIntegerProperty(getResidue(e.getValue().peak().getPeakDim(iDim))));
+            residueColumn.setCellFactory(tableColumn -> new TableCell<>() {
+                @Override
+                protected void updateItem(Number item, boolean empty) {
+                    super.updateItem(item, empty);
+
+                    this.setText(null);
+                    this.setGraphic(null);
+
+                    if (!empty && (item.intValue() != Integer.MIN_VALUE)) {
+                        this.setText(String.valueOf(item));
+                    }
+                }
+            });
+
+            table.getColumns().add(residueColumn);
+
+            FilteredTableColumn<StripController.PeakMatchResult, String> label1Column = new FilteredTableColumn<>("Label" + (iDim + 1));
+            label1Column.setCellValueFactory(e -> new SimpleStringProperty(getAtomName(e.getValue().peak().getPeakDim(iDim))));
+
+            table.getColumns().add(label1Column);
+        }
+        TableColumn2<StripController.PeakMatchResult, Number> scoreColumn = new TableColumn2<>("Score");
+        scoreColumn.setCellValueFactory(e -> new SimpleDoubleProperty(e.getValue().score()));
+
+        TableColumn2<StripController.PeakMatchResult, Number> column;
+        column = new TableColumn2<>("Frag");
+        column.setCellValueFactory(e -> new SimpleIntegerProperty(getFragment(e.getValue().peak())));
+        column.setCellFactory(tableColumn -> new TableCell<>() {
+            @Override
+            protected void updateItem(Number item, boolean empty) {
+                super.updateItem(item, empty);
+
+                this.setText(null);
+                this.setGraphic(null);
+
+                if (!empty && (item.intValue() != -1)) {
+                    this.setText(String.valueOf(item));
+                }
+            }
+        });
+
+        table.getColumns().add(column);
+        table.getColumns().add(scoreColumn);
+
+    }
+
     private void setFragmentPredicate() {
         String fragmentStr = fragmentChoice.getValue();
         final int fragmentID;
@@ -274,10 +342,11 @@ public class StripsTable {
                 && !e.isBlank()) || (assignedMode.equals("Unassigned") && e.isBlank()));
     }
 
-    public void updatePeakSorterPeaks(ObservableList<Peak> peaks) {
+    public void updatePeakSorterPeaks(ObservableList<StripController.PeakMatchResult> peaks) {
         sortTablePeaks.clear();
         sortTablePeaks.addAll(peaks);
     }
+
     public void updatePeaks(ObservableList<Peak> peaks) {
         int currentNColumns = tableView.getColumns().size() - 2;
         if (!peaks.isEmpty()) {
@@ -301,7 +370,7 @@ public class StripsTable {
         ObservableList<Peak> peaks = FXCollections.observableArrayList();
 
         PeakList peakList = stripController.getControlList();
-        if (peakString.isBlank() || (fields.length == 0)){
+        if (peakString.isBlank() || (fields.length == 0)) {
             peaks.addAll(peakList.peaks());
         } else {
             for (var field : fields) {
