@@ -303,7 +303,6 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
 
             layout = DatasetLayout.createFullMatrix(0, dimSizes);
             this.title = title;
-            this.fileName = title;
             newHeader();
             dataFile = new MemoryFile(this, layout, true);
             dataFile.zero();

@@ -55,7 +55,7 @@ public class DatasetParameterFile {
     }
 
     public static String getParameterFileName(String fileName) {
-        Pattern pattern = Pattern.compile(".(nv|ucsf|nvlnk)$");
+        Pattern pattern = Pattern.compile("\\.(nv|ucsf|nvlnk)$");
         Matcher matcher = pattern.matcher(fileName);
         int endIndex = matcher.find() ? matcher.start() : fileName.length();
         return fileName.substring(0, endIndex) + ".par";

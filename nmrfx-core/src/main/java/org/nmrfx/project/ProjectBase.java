@@ -447,7 +447,7 @@ public class ProjectBase {
     }
 
     public void loadDatasets(Path directory) throws IOException {
-        Pattern pattern = Pattern.compile(".(nv|ucsf|nvlnk)$");
+        Pattern pattern = Pattern.compile("\\.(nv|ucsf|nvlnk)$");
         Predicate<String> predicate = pattern.asPredicate();
         if (Files.isDirectory(directory)) {
             try (Stream<Path> files = Files.list(directory)) {
