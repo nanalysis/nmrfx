@@ -290,19 +290,24 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
      * written to disk so can't be persisted.
      *
      * @param title Dataset title
+     * @param file The file associated with the dataset, if null, the title will be used as the fileName
      * @param dimSizes Sizes of the dataset dimensions
      * @param addFile Whether to add the dataset to the active projects
      * @throws DatasetException if an I/O error occurs
      */
-    public Dataset(String title, int[] dimSizes, boolean addFile) throws DatasetException {
+    public Dataset(String title, File file, int[] dimSizes, boolean addFile) throws DatasetException {
         try {
             this.nDim = dimSizes.length;
 
-            int i;
             setNDim(nDim);
 
             layout = DatasetLayout.createFullMatrix(0, dimSizes);
             this.title = title;
+            if (file != null) {
+                setFile(file);
+            } else {
+                this.fileName = title;
+            }
             newHeader();
             dataFile = new MemoryFile(this, layout, true);
             dataFile.zero();
@@ -311,7 +316,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
             throw new DatasetException("Can't create dataset " + ioe.getMessage());
         }
         if (addFile) {
-            addFile(title);
+            addFile(this.fileName);
         }
     }
 
