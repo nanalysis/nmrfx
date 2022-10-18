@@ -278,10 +278,12 @@ public class StripController implements ControllerTool {
     void setPeakList(String peakListName) {
         controlList = PeakList.get(peakListName);
         StripItem item = getCurrentItem();
-        item.peakList = controlList;
-        item.dataset = Dataset.getDataset(controlList.getDatasetName());
-        item.row = 0;
-        item.offset = 0;
+        if (item.dataset == null) {
+            item.peakList = controlList;
+            item.dataset = Dataset.getDataset(controlList.getDatasetName());
+            item.row = 0;
+            item.offset = 0;
+        }
         showItem();
         addPeaks(controlList.peaks());
         updateView(true);
@@ -392,7 +394,9 @@ public class StripController implements ControllerTool {
         } else {
             Arrays.fill(dims, -1);
             dims[0] = getDim(dataset, dimNames[X]);
-            dims[2] = getDim(dataset, dimNames[Z]);
+            if (dims.length > 2) {
+                dims[2] = getDim(dataset, dimNames[Z]);
+            }
 
             for (int i = 0; i < dims.length; i++) {
                 if (dims[i] == -1) {
