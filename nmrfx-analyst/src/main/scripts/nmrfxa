@@ -37,11 +37,11 @@ while [ -h "$pgm" ]; do
 done
 
 dir=`dirname "$pgm"`
-CLASSPATH="${dir}/lib/Manifest.jar:${dir}/plugins/*"
+CLASSPATH="${dir}/lib/*:${dir}/plugins/*"
 jreDir=`ls -d ${dir}/*jre* 2>/dev/null`
 
-if [ -d "${dir}/../jre.bundle/Contents/Home/jre/bin" ] ; then
-    JAVA="${dir}/../jre.bundle/Contents/Home/jre/bin/java"
+if [ -d "${dir}/../jre.bundle/Contents/Home/bin" ] ; then
+    JAVA="${dir}/../jre.bundle/Contents/Home/bin/java"
     CLASSPATH="$dir/lib/$nmrfxlib:$CLASSPATH"
 elif [ -d "${dir}/jre/bin" ] ; then
     JAVA="${dir}/jre/bin/java"
@@ -53,7 +53,7 @@ else
     if [ -n "$JAVA_HOME" ] ; then
         JAVA="$JAVA_HOME/bin/java"
     fi
-    CLASSPATH="$dir/$nmrfxlib:$CLASSPATH"
+    CLASSPATH="$dir/lib/$nmrfxlib:$CLASSPATH"
 fi
 
 export CLASSPATH
