@@ -888,7 +888,7 @@ public class JCAMPData implements NMRData {
             datasetName = suggestName(fpath.toFile());
         }
         // Create a dataset in memory
-        Dataset dataset = new Dataset(datasetName + ".nv", dimSizes, true);
+        Dataset dataset = new Dataset(datasetName, file, dimSizes, true);
         dataset.newHeader();
         // Set the processed data into the dataset
         boolean hasImaginaryData = this.imaginary.length != 0;
