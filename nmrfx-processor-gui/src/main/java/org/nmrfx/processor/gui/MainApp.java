@@ -84,15 +84,29 @@ public class MainApp extends Application {
     // The default font size
     public static final String REG_FONT_SIZE_STR = "9pt";
 
+    /**
+     * Closes all stages and controllers except the main stage/first controller.
+     */
     public static void closeAll() {
         for (PolyChart chart : PolyChart.CHARTS) {
             chart.clearDataAndPeaks();
             chart.clearAnnotations();
         }
+        List<FXMLController> controllers = FXMLController.getControllers();
+        // Don't close the first controller that matches with the main stage, Note this first controller is not
+        // necessarily the active controller
+        for (int index = 1; index < controllers.size(); index++) {
+            controllers.get(index).close();
+        }
+
         Stage mainStage = getMainStage();
-        for (Stage stage : stages) {
+        // Since stages are removed in a separate function after calling stage.close, must make a copy of
+        // the list to avoid concurrent modification
+        List<Stage> stageCopy = new ArrayList<>(stages);
+        for (Stage stage : stageCopy) {
             if (stage != mainStage) {
-                stage.close();
+                stage.hide();
+                removeStage(stage);
             }
         }
     }
