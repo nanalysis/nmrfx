@@ -14,8 +14,8 @@
 
     <properties>
         <javafx.version>17.0.2</javafx.version>
-        <nd4j.version>1.0.0-beta7</nd4j.version>
-        <dl4j.version>1.0.0-beta7</dl4j.version>
+        <nd4j.version>1.0.0-M2.1</nd4j.version>
+        <dl4j.version>1.0.0-M2.1</dl4j.version>
     </properties>
 
     <dependencyManagement>
@@ -117,9 +117,22 @@
                 <!-- license: Apache License, Version 2.0 -->
             </dependency>
             <dependency>
+                <groupId>org.deeplearning4j</groupId>
+                <artifactId>deeplearning4j-modelimport</artifactId>
+                <version>${dl4j.version}</version>
+                <!-- license: Apache License, Version 2.0 -->
+            </dependency>
+            <dependency>
                 <groupId>org.nd4j</groupId>
                 <artifactId>nd4j-native-platform</artifactId>
                 <version>${dl4j.version}</version>
+                <!-- license: Apache License, Version 2.0 -->
+            </dependency>
+            <dependency>
+                <groupId>org.nd4j</groupId>
+                <artifactId>nd4j-native</artifactId>
+                <version>${dl4j.version}</version>
+                <classifier>linux-x86_64-compat</classifier>
                 <!-- license: Apache License, Version 2.0 -->
             </dependency>
             <dependency>
@@ -278,7 +291,7 @@
             <dependency>
                 <groupId>org.bytedeco</groupId>
                 <artifactId>openblas-platform</artifactId>
-                <version>0.3.20-1.5.8-SNAPSHOT</version>
+                <version>0.3.19-1.5.7</version>
                 <!-- license: Apache 2 / GPLv2 with ClassPath exception -->
             </dependency>
             <dependency>
