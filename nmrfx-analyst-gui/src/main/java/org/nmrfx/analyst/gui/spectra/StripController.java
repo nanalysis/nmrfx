@@ -62,7 +62,7 @@ public class StripController implements ControllerTool {
     Consumer<StripController> closeAction;
     ToolBar toolBar;
     ToolBar setupToolBar;
-    MenuButton peakListMenuButton;
+    ChoiceBox<PeakList> peakListChoiceBox;
     MenuButton[] dimMenus = new MenuButton[2];
     MenuButton actionMenu = new MenuButton("Actions");
     VBox vBox;
@@ -73,10 +73,8 @@ public class StripController implements ControllerTool {
     Spinner<Integer> itemSpinner;
     ChoiceBox<Integer> offsetBox;
     ChoiceBox<Integer> rowBox;
-    MenuButton itemPeakListMenuButton;
-    MenuButton itemDatasetMenuButton;
-    Label peakLabel;
-    Label dataLabel;
+    ChoiceBox<PeakList> itemPeakListChoiceBox;
+    ChoiceBox<Dataset> itemDatasetChoiceBox;
 
     List<StripItem> items = new ArrayList<>();
 
@@ -117,8 +115,8 @@ public class StripController implements ControllerTool {
         closeButton.setOnAction(e -> close());
         toolBar.getItems().add(closeButton);
 
-        peakListMenuButton = new MenuButton("List");
-        toolBar.getItems().add(peakListMenuButton);
+        peakListChoiceBox = new ChoiceBox<>();
+        toolBar.getItems().addAll(new Label("Control List:"), peakListChoiceBox);
 
         dimMenus[X] = new MenuButton("X");
         dimMenus[Z] = new MenuButton("Z");
@@ -183,16 +181,16 @@ public class StripController implements ControllerTool {
         addButton.setOnAction(e -> addItem());
         Button removeButton = GlyphsDude.createIconButton(FontAwesomeIcon.REMOVE);
         removeButton.setOnAction(e -> removeItem());
-        peakLabel = new Label();
-        peakLabel.setMinWidth(150);
 
-        dataLabel = new Label();
-        dataLabel.setMinWidth(150);
+        itemPeakListChoiceBox = new ChoiceBox<>();
+        itemDatasetChoiceBox = new ChoiceBox<>();
+        itemPeakListChoiceBox.setValue(null);
+        itemDatasetChoiceBox.setValue(null);
+        itemPeakListChoiceBox.setMinWidth(150);
+        itemDatasetChoiceBox.setMinWidth(150);
         itemSpinner = new Spinner<>(0, 0, 0);
         itemSpinner.setMaxWidth(75);
         itemSpinner.getValueFactory().valueProperty().addListener(e -> showItem());
-        itemPeakListMenuButton = new MenuButton("List");
-        itemDatasetMenuButton = new MenuButton("Dataset");
         ProjectBase.getActive().addDatasetListListener((MapChangeListener) (e -> updateDatasetNames()));
 
         Label offsetLabel = new Label("Offset:");
@@ -206,8 +204,8 @@ public class StripController implements ControllerTool {
         rowBox.setValue(0);
         rowBox.setOnAction(e -> updateItem());
         setupToolBar.getItems().addAll(addButton, removeButton, itemSpinner,
-                itemDatasetMenuButton, dataLabel,
-                itemPeakListMenuButton, peakLabel,
+                new Label("Peaklist:"), itemPeakListChoiceBox,
+                new Label("Dataset:"), itemDatasetChoiceBox,
                 offsetLabel, offsetBox, rowLabel, rowBox);
 
         ProjectBase.getActive().addPeakListListener(mapChangeListener);
@@ -245,40 +243,36 @@ public class StripController implements ControllerTool {
     }
 
     public void updatePeakListMenu() {
-        peakListMenuButton.getItems().clear();
-        itemPeakListMenuButton.getItems().clear();
-        MenuItem emptyPeakListMenuItem = new MenuItem("");
-        emptyPeakListMenuItem.setOnAction(e -> setItemPeakList(""));
-        itemPeakListMenuButton.getItems().add(emptyPeakListMenuItem);
+        peakListChoiceBox.getItems().clear();
+        itemPeakListChoiceBox.getItems().clear();
 
-        for (String peakListName : ProjectBase.getActive().getPeakListNames()) {
-            MenuItem menuItem = new MenuItem(peakListName);
-            menuItem.setOnAction(e -> setPeakList(peakListName));
-            peakListMenuButton.getItems().add(menuItem);
+        ProjectBase.getActive().getPeakLists().stream().sorted(Comparator.comparing(PeakList::getName)).
+                forEach(peakList -> {
+                    peakListChoiceBox.getItems().add(peakList);
+                    itemPeakListChoiceBox.getItems().add(peakList);
+                });
+        peakListChoiceBox.setValue(null);
+        itemPeakListChoiceBox.setValue(null);
+        peakListChoiceBox.setOnAction(e -> setPeakList(peakListChoiceBox.getValue()));
+        itemPeakListChoiceBox.setOnAction(e -> setItemPeakList(itemPeakListChoiceBox.getValue()));
 
-            MenuItem itemPeakListMenuItem = new MenuItem(peakListName);
-            itemPeakListMenuItem.setOnAction(e -> setItemPeakList(peakListName));
-            itemPeakListMenuButton.getItems().add(itemPeakListMenuItem);
-        }
     }
 
     public void updateDatasetNames() {
-        itemDatasetMenuButton.getItems().clear();
-        Dataset.names().forEach(nm -> {
-            MenuItem item = new MenuItem(nm);
-            itemDatasetMenuButton.getItems().add(item);
-            item.setOnAction(e -> setItemDataset(nm));
-        });
+        itemDatasetChoiceBox.getItems().clear();
+        Dataset.datasets().stream().forEach(dataset -> itemDatasetChoiceBox.getItems().add((Dataset) dataset));
+        itemDatasetChoiceBox.setValue(null);
+        itemDatasetChoiceBox.setOnAction(e -> setItemDataset(itemDatasetChoiceBox.getValue()));
     }
 
     public PeakList getControlList() {
         return controlList;
     }
 
-    void setPeakList(String peakListName) {
-        controlList = PeakList.get(peakListName);
+    void setPeakList(PeakList peakList) {
+        controlList = peakList;
         StripItem item = getCurrentItem();
-        if (item.dataset == null) {
+        if (item.peakList == null) {
             item.peakList = controlList;
             item.dataset = Dataset.getDataset(controlList.getDatasetName());
             item.row = 0;
@@ -289,14 +283,20 @@ public class StripController implements ControllerTool {
         updateView(true);
     }
 
-    void setItemPeakList(String peakListName) {
-        peakLabel.setText(peakListName);
-        updateItem();
+    void setItemPeakList(PeakList peakList) {
+        StripItem item = getCurrentItem();
+        item.peakList = peakList;
+        if (item.peakList != null) {
+            item.dataset = Dataset.getDataset(item.peakList.getDatasetName());
+        }
+        itemDatasetChoiceBox.setValue(item.dataset);
     }
 
-    void setItemDataset(String datasetName) {
-        dataLabel.setText(datasetName);
-        updateItem();
+    void setItemDataset(Dataset dataset) {
+        StripItem item = getCurrentItem();
+        item.dataset = dataset;
+        item.row = rowBox.getValue();
+        item.offset = offsetBox.getValue();
     }
 
     StripItem getCurrentItem() {
@@ -334,8 +334,8 @@ public class StripController implements ControllerTool {
         item.dataset = null;
         item.row = 0;
         item.offset = 0;
-        peakLabel.setText("");
-        dataLabel.setText("");
+        itemPeakListChoiceBox.setValue(null);
+        itemDatasetChoiceBox.setValue(null);
         rowBox.setValue(0);
         offsetBox.setValue(0);
 
@@ -343,16 +343,16 @@ public class StripController implements ControllerTool {
 
     void showItem() {
         StripItem item = getCurrentItem();
-        dataLabel.setText(item.dataset == null ? "" : item.dataset.getName());
-        peakLabel.setText(item.peakList == null ? "" : item.peakList.getName());
+        itemDatasetChoiceBox.setValue(item.dataset);
+        itemPeakListChoiceBox.setValue(item.peakList);
         rowBox.setValue(item.row);
         offsetBox.setValue(item.offset);
     }
 
     void updateItem() {
         StripItem item = getCurrentItem();
-        item.peakList = PeakList.get(peakLabel.getText());
-        item.dataset = Dataset.getDataset(dataLabel.getText());
+        item.peakList = itemPeakListChoiceBox.getValue();
+        item.dataset = itemDatasetChoiceBox.getValue();
         item.row = rowBox.getValue();
         item.offset = offsetBox.getValue();
     }
@@ -422,8 +422,9 @@ public class StripController implements ControllerTool {
         double[] positions = new double[dimNames.length];
         for (int i = 0; i < positions.length; i++) {
             PeakDim peakDim = peak.getPeakDim(dimNames[i]);
-            positions[i] = peakDim.getChemShiftValue();
-
+            if (peakDim != null) {
+                positions[i] = peakDim.getChemShiftValue();
+            }
         }
         return positions;
     }
