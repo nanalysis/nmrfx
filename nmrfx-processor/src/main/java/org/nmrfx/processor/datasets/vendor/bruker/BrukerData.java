@@ -42,6 +42,7 @@ import java.nio.DoubleBuffer;
 import java.nio.IntBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.util.*;
 import java.util.Map.Entry;
@@ -1834,7 +1835,7 @@ public class BrukerData implements NMRData {
     }
 
     private List<String> scanPulseSequence(Path path) throws IOException {
-        return Files.readAllLines(path, Charset.forName("ISO-8859-1"));
+        return Files.readAllLines(path, StandardCharsets.ISO_8859_1);
     }
 
     // write binary data into text file, using header info
