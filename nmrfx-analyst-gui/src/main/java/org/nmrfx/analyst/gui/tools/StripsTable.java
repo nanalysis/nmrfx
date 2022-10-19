@@ -269,13 +269,13 @@ public class StripsTable {
     }
 
     void initSortTable(TableView<StripController.PeakMatchResult> table, int nDim) {
-        TableColumn2<StripController.PeakMatchResult, Number> idColumn = new TableColumn2<>("ID");
+        TableColumn<StripController.PeakMatchResult, Number> idColumn = new TableColumn<>("ID");
         idColumn.setCellValueFactory(e -> new SimpleIntegerProperty(e.getValue().peak().getIdNum()));
         table.getColumns().clear();
         table.getColumns().add(idColumn);
         for (int i = 0; i < nDim; i++) {
             final int iDim = i;
-            FilteredTableColumn<StripController.PeakMatchResult, Number> residueColumn = new FilteredTableColumn<>("Res" + (iDim + 1));
+            TableColumn<StripController.PeakMatchResult, Number> residueColumn = new TableColumn<>("Res" + (iDim + 1));
             residueColumn.setCellValueFactory(e -> new SimpleIntegerProperty(getResidue(e.getValue().peak().getPeakDim(iDim))));
             residueColumn.setCellFactory(tableColumn -> new TableCell<>() {
                 @Override
@@ -293,16 +293,16 @@ public class StripsTable {
 
             table.getColumns().add(residueColumn);
 
-            FilteredTableColumn<StripController.PeakMatchResult, String> label1Column = new FilteredTableColumn<>("Label" + (iDim + 1));
+            TableColumn<StripController.PeakMatchResult, String> label1Column = new TableColumn<>("Label" + (iDim + 1));
             label1Column.setCellValueFactory(e -> new SimpleStringProperty(getAtomName(e.getValue().peak().getPeakDim(iDim))));
 
             table.getColumns().add(label1Column);
         }
-        TableColumn2<StripController.PeakMatchResult, Number> scoreColumn = new TableColumn2<>("Score");
+        TableColumn<StripController.PeakMatchResult, Number> scoreColumn = new TableColumn<>("Score");
         scoreColumn.setCellValueFactory(e -> new SimpleDoubleProperty(e.getValue().score()));
 
-        TableColumn2<StripController.PeakMatchResult, Number> column;
-        column = new TableColumn2<>("Frag");
+        TableColumn<StripController.PeakMatchResult, Number> column;
+        column = new TableColumn<>("Frag");
         column.setCellValueFactory(e -> new SimpleIntegerProperty(getFragment(e.getValue().peak())));
         column.setCellFactory(tableColumn -> new TableCell<>() {
             @Override
