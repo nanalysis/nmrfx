@@ -103,6 +103,7 @@ public class StripController implements ControllerTool {
     }
 
     public void close() {
+        controller.getMainBox().setRight(null);
         closeAction.accept(this);
     }
 
@@ -264,6 +265,10 @@ public class StripController implements ControllerTool {
         updateView(false);
     }
 
+    public String[] getDimNames() {
+        return dimNames;
+    }
+
     public void updatePeakListMenu() {
         peakListChoiceBox.getItems().clear();
         itemPeakListChoiceBox.getItems().clear();
@@ -282,7 +287,7 @@ public class StripController implements ControllerTool {
 
     public void updateDatasetNames() {
         itemDatasetChoiceBox.getItems().clear();
-        Dataset.datasets().stream().forEach(dataset -> itemDatasetChoiceBox.getItems().add((Dataset) dataset));
+        Dataset.datasets().forEach(dataset -> itemDatasetChoiceBox.getItems().add((Dataset) dataset));
         itemDatasetChoiceBox.setValue(null);
         itemDatasetChoiceBox.setOnAction(e -> setItemDataset(itemDatasetChoiceBox.getValue()));
     }
@@ -794,7 +799,7 @@ public class StripController implements ControllerTool {
         updateView(true);
     }
 
-    void loadFromCharts(PeakList peakList0, String xDim, String zDim) {
+    public void loadFromCharts(PeakList peakList0, String xDim, String zDim) {
         List<PolyChart> charts = controller.getCharts();
         int nRows = controller.arrangeGetRows();
         int nColumns = controller.arrangeGetColumns();
@@ -822,9 +827,11 @@ public class StripController implements ControllerTool {
             }
 
         }
+        showItem();
+        peakListChoiceBox.setValue(peakList0);
         controlList = peakList0;
-        addPeaks(peakList0.peaks());
         dimNames[0] = xDim;
         dimNames[1] = zDim;
+        addPeaks(peakList0.peaks());
     }
 }
