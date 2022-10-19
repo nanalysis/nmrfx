@@ -793,4 +793,38 @@ public class StripController implements ControllerTool {
         cells.sort(new PeakIndexSortComparator());
         updateView(true);
     }
+
+    void loadFromCharts(PeakList peakList0, String xDim, String zDim) {
+        List<PolyChart> charts = controller.getCharts();
+        int nRows = controller.arrangeGetRows();
+        int nColumns = controller.arrangeGetColumns();
+        List<List<Dataset>> allRows = new ArrayList<>();
+        int nItems = 0;
+        items.clear();
+        for (int iRow = 0; iRow < nRows; iRow++) {
+            List<Dataset> datasets = new ArrayList<>();
+            allRows.add(datasets);
+            for (int iCol = 0; iCol < nColumns; iCol++) {
+                int iChart = iRow * nColumns + iCol;
+                PolyChart chart = charts.get(iChart);
+                Dataset dataset = (Dataset) chart.getDataset();
+                PeakList peakList = null;
+                if (!chart.getPeakListAttributes().isEmpty()) {
+                    peakList = chart.getPeakListAttributes().get(0).getPeakList();
+                }
+                if (!datasets.contains(dataset)) {
+                    datasets.add(dataset);
+                    StripItem item = new StripItem(dataset,peakList,iCol, iRow);
+                    items.add(item);
+                } else {
+                    break;
+                }
+            }
+
+        }
+        controlList = peakList0;
+        addPeaks(peakList0.peaks());
+        dimNames[0] = xDim;
+        dimNames[1] = zDim;
+    }
 }
