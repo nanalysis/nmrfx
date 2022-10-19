@@ -165,7 +165,7 @@ public class StripController implements ControllerTool {
         posSlider.setMajorTickUnit(10);
         posSlider.setSnapToTicks(true);
         posSlider.setMinWidth(250);
-        posSlider.setShowTickLabels(true);
+        posSlider.setShowTickMarks(true);
         posSlider.setShowTickLabels(true);
         posField.setMinWidth(50);
         posField.setMaxWidth(50);
