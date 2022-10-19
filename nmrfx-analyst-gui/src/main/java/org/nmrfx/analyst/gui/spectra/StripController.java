@@ -306,8 +306,10 @@ public class StripController implements ControllerTool {
             item.offset = 0;
         }
         showItem();
-        addPeaks(controlList.peaks());
-        updateView(true);
+        if (controlList != null) {
+            addPeaks(controlList.peaks());
+            updateView(true);
+        }
     }
 
     void setItemPeakList(PeakList peakList) {
