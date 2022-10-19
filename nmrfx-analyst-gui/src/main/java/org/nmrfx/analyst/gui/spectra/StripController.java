@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -51,7 +51,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- *
  * @author brucejohnson
  */
 public class StripController implements ControllerTool {
@@ -69,6 +68,8 @@ public class StripController implements ControllerTool {
     TextField widthBox = new TextField();
     Slider posSlider = new Slider();
     Slider nSlider = new Slider();
+    TextField posField = new TextField();
+    TextField nField = new TextField();
 
     Spinner<Integer> itemSpinner;
     ChoiceBox<Integer> offsetBox;
@@ -133,9 +134,6 @@ public class StripController implements ControllerTool {
         toolBar.getItems().add(widthBox);
         toolBar.getItems().add(actionMenu);
 
-        Menu addMenu = new Menu("Add");
-        actionMenu.getItems().add(addMenu);
-
         Menu freezeThawMenu = new Menu("Freeze/Thaw");
         actionMenu.getItems().add(freezeThawMenu);
 
@@ -163,15 +161,25 @@ public class StripController implements ControllerTool {
         Label startLabel = new Label("Start:");
         toolBar.getItems().add(startLabel);
         posSlider.setBlockIncrement(1);
+        posSlider.setMajorTickUnit(10);
         posSlider.setSnapToTicks(true);
         posSlider.setMinWidth(250);
-        toolBar.getItems().add(posSlider);
+        posSlider.setShowTickLabels(true);
+        posSlider.setShowTickLabels(true);
+        posField.setMinWidth(50);
+        posField.setMaxWidth(50);
+        toolBar.getItems().addAll(posSlider, posField);
 
         Label nLabel = new Label("N:");
         toolBar.getItems().add(nLabel);
         nSlider.setBlockIncrement(1);
-        nSlider.setMinWidth(100);
-        toolBar.getItems().add(nSlider);
+        nSlider.setMajorTickUnit(5);
+        nSlider.setMinWidth(120);
+        nSlider.setShowTickMarks(true);
+        nSlider.setShowTickLabels(true);
+        nField.setMinWidth(50);
+        nField.setMaxWidth(50);
+        toolBar.getItems().addAll(nSlider, nField);
 
         MapChangeListener<String, PeakList> mapChangeListener = (MapChangeListener.Change<? extends String, ? extends PeakList> change) -> updatePeakListMenu();
 
@@ -203,10 +211,12 @@ public class StripController implements ControllerTool {
         rowBox.getItems().addAll(0, 1, 2, 3, 4);
         rowBox.setValue(0);
         rowBox.setOnAction(e -> updateItem());
+        Button refresh = new Button("Refresh");
+        refresh.setOnAction(e -> updateView(true));
         setupToolBar.getItems().addAll(addButton, removeButton, itemSpinner,
                 new Label("Peaklist:"), itemPeakListChoiceBox,
                 new Label("Dataset:"), itemDatasetChoiceBox,
-                offsetLabel, offsetBox, rowLabel, rowBox);
+                offsetLabel, offsetBox, rowLabel, rowBox, refresh);
 
         ProjectBase.getActive().addPeakListListener(mapChangeListener);
         updatePeakListMenu();
@@ -217,6 +227,18 @@ public class StripController implements ControllerTool {
         stripsTable = new StripsTable(controller, this, stripsBox);
         controller.getMainBox().setRight(stripsBox);
         sortedPeaks = stripsTable.getSortedPeaks();
+        posField.setOnKeyPressed(e -> {
+                    if (e.getCode() == KeyCode.ENTER) {
+                        updateSliders();
+                    }
+                }
+        );
+        nField.setOnKeyPressed(e -> {
+                    if (e.getCode() == KeyCode.ENTER) {
+                        updateSliders();
+                    }
+                }
+        );
     }
 
     void updateDimMenus(String rowName, Dataset dataset) {
@@ -295,8 +317,6 @@ public class StripController implements ControllerTool {
     void setItemDataset(Dataset dataset) {
         StripItem item = getCurrentItem();
         item.dataset = dataset;
-        item.row = rowBox.getValue();
-        item.offset = offsetBox.getValue();
     }
 
     StripItem getCurrentItem() {
@@ -446,11 +466,15 @@ public class StripController implements ControllerTool {
         posSlider.setMin(0.0);
         nSlider.setMin(1);
         nSlider.setMax(30);
-        if ((nPeaks - 1) != posSlider.getMax()) {
-            posSlider.setMax(Math.max(0, nPeaks-1));
-            posSlider.setValue(0);
-            nSlider.setValue(5);
+        nSlider.setValue(5);
+        int nView = (int) nSlider.getValue();
+        if (nView > nPeaks) {
+            nView = nPeaks;
+            nSlider.setValue(nView);
         }
+        int posMax = nPeaks - nView;
+        posSlider.setMax(Math.max(0, posMax));
+        posSlider.setValue(0);
 
         if (nPeaks < 10) {
             posSlider.setMajorTickUnit(1);
@@ -537,6 +561,7 @@ public class StripController implements ControllerTool {
             if (item.dataset != null) {
                 if (init) {
                     controller.addDataset(item.dataset, false, false);
+                    chart.getCrossHairs().setCrossHairState(0, 0, true);
                 }
                 chart.setDataset(item.dataset);
                 DatasetAttributes dataAttr = chart.getDatasetAttributes().get(0);
@@ -564,9 +589,25 @@ public class StripController implements ControllerTool {
         posSlider.setValue(start);
     }
 
+    private void updateSliders() {
+        try {
+            int pos = Integer.parseInt(posField.getText().trim());
+            posSlider.setValue(pos);
+            int n = Integer.parseInt(nField.getText().trim());
+            nSlider.setValue(n);
+            updateView(false);
+        } catch (NumberFormatException nfe) {
+        }
+    }
+
     public void updateView(boolean forced) {
         int low = (int) posSlider.getValue();
         int nActive = (int) nSlider.getValue();
+        int posMax = stripsTable.getSortedPeaks().size() - nActive;
+        posSlider.setMax(Math.max(0, posMax));
+
+        posField.setText(String.valueOf(low));
+        nField.setText(String.valueOf(nActive));
         if (nActive > cells.size()) {
             nActive = cells.size();
         }
@@ -638,7 +679,8 @@ public class StripController implements ControllerTool {
         return result;
     }
 
-    public record PeakMatchResult(Peak peak, double score) {}
+    public record PeakMatchResult(Peak peak, double score) {
+    }
 
     public List<PeakMatchResult> matchPeaks(Peak peak) {
         var originPeaks = getMatchPeaks(peak);
@@ -656,17 +698,17 @@ public class StripController implements ControllerTool {
     double scorePeakMatch(List<Peak> originPeaks, List<Peak> comparePeaks) {
         double tol = 0.6;
         double sumScore = 0.0;
-        for (Peak originPeak:originPeaks) {
-            for (Peak comparePeak: comparePeaks) {
+        for (Peak originPeak : originPeaks) {
+            for (Peak comparePeak : comparePeaks) {
                 if (originPeak != comparePeak) {
-                    for(PeakDim originPeakDim:originPeak.peakDims) {
+                    for (PeakDim originPeakDim : originPeak.peakDims) {
                         String dimName = originPeakDim.getDimName();
                         if (!dimName.equals(dimNames[X]) && !dimName.equals(dimNames[Z])) {
                             PeakDim comparePeakDim = comparePeak.getPeakDim(dimName);
                             double delta = Math.abs(originPeakDim.getAdjustedChemShiftValue() - comparePeakDim.getChemShiftValue());
                             if (delta < tol) {
-                                 double score = 1.0 - delta/ tol;
-                                 sumScore += score;
+                                double score = 1.0 - delta / tol;
+                                sumScore += score;
                             }
                         }
                     }
