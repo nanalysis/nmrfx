@@ -12,8 +12,11 @@ import javafx.scene.Node;
 import javafx.scene.SnapshotParameters;
 import javafx.scene.control.*;
 import javafx.scene.image.WritableImage;
+import javafx.scene.layout.Background;
+import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
+import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 
@@ -27,12 +30,21 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- *
  * @author brucejohnson
  */
 public class GUIUtils {
+    static final Background ERROR_BACKGROUND = new Background(new BackgroundFill(Color.YELLOW, null, null));
+    static final Background DEFAULT_BACKGROUND = new Background(new BackgroundFill(Color.WHITE, null, null));
 
     private GUIUtils() {
+    }
+
+    public static Background getErrorBackground() {
+        return ERROR_BACKGROUND;
+    }
+
+    public static Background getDefaultBackground() {
+        return DEFAULT_BACKGROUND;
     }
 
     public static boolean affirm(String message) {
@@ -76,9 +88,10 @@ public class GUIUtils {
      * segment. In that case the segment string will be split by character.
      * If the regionWidth is less than the average character list, the segement string will be returned as a list of
      * strings containing a single character only.
+     *
      * @param regionWidth The width of the display region.
-     * @param segment The string segment to be displayed.
-     * @param font The font being used.
+     * @param segment     The string segment to be displayed.
+     * @param font        The font being used.
      * @return A list of strings that fit within the region width.
      */
     public static List<String> splitToWidth(double regionWidth, String segment, Font font) {
@@ -123,11 +136,12 @@ public class GUIUtils {
     /**
      * Splits the portion of the fullString provided between start and end indexes by word. The initial end index is
      * an estimate and will be adjusted to fit within the region width without splitting a word.
-     * @param fullString The string to be split.
-     * @param start The starting index to look at.
-     * @param end The ending index to look at.
+     *
+     * @param fullString  The string to be split.
+     * @param start       The starting index to look at.
+     * @param end         The ending index to look at.
      * @param regionWidth The width of the display region
-     * @param font The font to use.
+     * @param font        The font to use.
      * @return The adjusted end index value for the appropriate width of substring.
      */
     private static int getEndingIndexByWord(String fullString, int start, int end, double regionWidth, Font font) {
@@ -154,18 +168,19 @@ public class GUIUtils {
     /**
      * Splits the portion of the fullString provided between start and end indexes by character. The initial end index is
      * an estimate and will be adjusted to fit within the region width.
-     * @param fullString The string to be split.
-     * @param start The starting index to look at.
-     * @param end The ending index to look at.
+     *
+     * @param fullString  The string to be split.
+     * @param start       The starting index to look at.
+     * @param end         The ending index to look at.
      * @param regionWidth The width of the display region
-     * @param charWidth The average width of a char in the fullString.
-     * @param font The font to use.
+     * @param charWidth   The average width of a char in the fullString.
+     * @param font        The font to use.
      * @return The adjusted end index value for the appropriate width of substring.
      */
     private static int getEndingIndexByCharacter(String fullString, int start, int end, double regionWidth, double charWidth, Font font) {
         double testWidth = GUIUtils.getTextWidth(fullString.substring(start, end), font);
         while (testWidth > regionWidth) {
-           if (end < 2) {
+            if (end < 2) {
                 break;
             }
             end--;
@@ -187,6 +202,7 @@ public class GUIUtils {
      * Utility function to adjust the height of toolbars used in ControllerTools. The height of each toolbar is adjusted
      * to the largest prefHeight. The height of all the toolbar items are adjusted to the prefHeight of the largest
      * item in the first toolbar in the list.
+     *
      * @param toolBarList A list of toolbars to adjust
      */
     public static void toolbarAdjustHeights(List<ToolBar> toolBarList) {
@@ -200,7 +216,7 @@ public class GUIUtils {
         }
 
         List<Node> toolBarsItems = new ArrayList<>();
-        for (ToolBar toolBar: toolBarList) {
+        for (ToolBar toolBar : toolBarList) {
             toolBarsItems.addAll(toolBar.getItems());
         }
         nodeAdjustHeights(toolBarsItems);

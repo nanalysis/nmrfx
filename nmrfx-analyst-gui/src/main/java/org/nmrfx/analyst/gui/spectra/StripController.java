@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -19,31 +19,14 @@ package org.nmrfx.analyst.gui.spectra;
 
 import de.jensd.fx.glyphs.GlyphsDude;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-import java.util.function.Consumer;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
+import javafx.collections.FXCollections;
 import javafx.collections.MapChangeListener;
-import javafx.scene.control.Button;
-import javafx.scene.control.ChoiceBox;
-import javafx.scene.control.ContentDisplay;
-import javafx.scene.control.Label;
-import javafx.scene.control.Menu;
-import javafx.scene.control.MenuButton;
-import javafx.scene.control.MenuItem;
-import javafx.scene.control.Slider;
-import javafx.scene.control.Spinner;
-import javafx.scene.control.SpinnerValueFactory;
-import javafx.scene.control.TextField;
-import javafx.scene.control.ToolBar;
+import javafx.collections.ObservableList;
+import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.VBox;
+import org.nmrfx.analyst.gui.tools.StripsTable;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakDim;
@@ -53,47 +36,51 @@ import org.nmrfx.processor.gui.ControllerTool;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.MainApp;
 import org.nmrfx.processor.gui.PolyChart;
-import org.nmrfx.processor.gui.controls.GridPaneCanvas;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.processor.gui.spectra.PeakDisplayParameters;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
 import org.nmrfx.processor.gui.utils.ToolBarUtils;
-import org.nmrfx.processor.project.Project;
+import org.nmrfx.project.ProjectBase;
+import org.nmrfx.utils.GUIUtils;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.List;
+import java.util.function.Consumer;
 
 /**
- *
  * @author brucejohnson
  */
 public class StripController implements ControllerTool {
 
-    final static int X = 0;
-    final static int Z = 1;
+    static final int X = 0;
+    static final int Z = 1;
     FXMLController controller;
     Consumer<StripController> closeAction;
     ToolBar toolBar;
     ToolBar setupToolBar;
-    MenuButton peakListMenuButton;
-    MenuButton[] dimMenus = new MenuButton[2];
+    ChoiceBox<PeakList> peakListChoiceBox;
+    ChoiceBox<String>[] dimChoiceBoxes = new ChoiceBox[2];
     MenuButton actionMenu = new MenuButton("Actions");
     VBox vBox;
     TextField widthBox = new TextField();
     Slider posSlider = new Slider();
     Slider nSlider = new Slider();
+    TextField posField = new TextField();
+    TextField nField = new TextField();
 
     Spinner<Integer> itemSpinner;
     ChoiceBox<Integer> offsetBox;
     ChoiceBox<Integer> rowBox;
-    MenuButton itemPeakListMenuButton;
-    MenuButton itemDatasetMenuButton;
-    Label peakLabel;
-    Label dataLabel;
+    ChoiceBox<PeakList> itemPeakListChoiceBox;
+    ChoiceBox<Dataset> itemDatasetChoiceBox;
 
     List<StripItem> items = new ArrayList<>();
 
     List<Cell> cells = new ArrayList<>();
     String[] dimNames = new String[2];
-    ChangeListener limitListener;
-    Pattern resPat = Pattern.compile("([A-Z]*)([0-9]+)\\.(.*)");
+    ChangeListener<Number> limitListener;
     PeakList controlList = null;
     int currentRows = 0;
     int currentColumns = 0;
@@ -101,6 +88,8 @@ public class StripController implements ControllerTool {
     int currentHigh = 0;
     int frozen = -1;
     double xWidth = 0.2;
+    StripsTable stripsTable;
+    ObservableList<Peak> sortedPeaks;
 
     public StripController(FXMLController controller, Consumer<StripController> closeAction) {
         this.controller = controller;
@@ -112,6 +101,7 @@ public class StripController implements ControllerTool {
     }
 
     public void close() {
+        controller.getMainBox().setRight(null);
         closeAction.accept(this);
     }
 
@@ -125,11 +115,13 @@ public class StripController implements ControllerTool {
         closeButton.setOnAction(e -> close());
         toolBar.getItems().add(closeButton);
 
-        peakListMenuButton = new MenuButton("List");
-        toolBar.getItems().add(peakListMenuButton);
+        peakListChoiceBox = new ChoiceBox<>();
+        toolBar.getItems().addAll(new Label("Control List:"), peakListChoiceBox);
 
-        dimMenus[X] = new MenuButton("X");
-        dimMenus[Z] = new MenuButton("Z");
+        dimChoiceBoxes[X] = new ChoiceBox<>();
+        dimChoiceBoxes[Z] = new ChoiceBox<>();
+        dimChoiceBoxes[X].setOnAction(e -> updateDimMenu(X));
+        dimChoiceBoxes[Z].setOnAction(e -> updateDimMenu(Z));
         widthBox.setMaxWidth(50);
         widthBox.setText(String.format("%.1f", xWidth));
         widthBox.setOnKeyReleased(e -> {
@@ -137,22 +129,12 @@ public class StripController implements ControllerTool {
                 xWidth = Double.parseDouble(widthBox.getText());
             }
         });
-
-        toolBar.getItems().add(dimMenus[X]);
-        toolBar.getItems().add(dimMenus[Z]);
+        toolBar.getItems().add(new Label("X:"));
+        toolBar.getItems().add(dimChoiceBoxes[X]);
+        toolBar.getItems().add(new Label("Z:"));
+        toolBar.getItems().add(dimChoiceBoxes[Z]);
         toolBar.getItems().add(widthBox);
         toolBar.getItems().add(actionMenu);
-
-        Menu addMenu = new Menu("Add");
-        actionMenu.getItems().add(addMenu);
-
-        MenuItem addAllMenuItem = new MenuItem("All");
-        addMenu.getItems().add(addAllMenuItem);
-        addAllMenuItem.setOnAction(e -> addAll());
-
-        MenuItem addAssignedMenuItem = new MenuItem("Assigned");
-        addMenu.getItems().add(addAssignedMenuItem);
-        addAssignedMenuItem.setOnAction(e -> addAssigned());
 
         Menu freezeThawMenu = new Menu("Freeze/Thaw");
         actionMenu.getItems().add(freezeThawMenu);
@@ -165,160 +147,173 @@ public class StripController implements ControllerTool {
         freezeThawMenu.getItems().add(thawMenuItem);
         thawMenuItem.setOnAction(e -> thawChart());
 
-        Menu sortMenu = new Menu("Sort");
-
-        MenuItem sortByResidueMenuItem = new MenuItem("By Residue");
-        sortMenu.getItems().add(sortByResidueMenuItem);
-        sortByResidueMenuItem.setOnAction(e -> sortPeaksByResidue());
-
-        MenuItem sortByIndex = new MenuItem("By Index");
-        sortMenu.getItems().add(sortByIndex);
-        sortByIndex.setOnAction(e -> sortPeaksByIndex());
-
-        actionMenu.getItems().add(sortMenu);
-
         ToolBarUtils.addFiller(toolBar, 25, 50);
         Label startLabel = new Label("Start:");
         toolBar.getItems().add(startLabel);
         posSlider.setBlockIncrement(1);
+        posSlider.setMajorTickUnit(10);
         posSlider.setSnapToTicks(true);
         posSlider.setMinWidth(250);
-        toolBar.getItems().add(posSlider);
+        posSlider.setShowTickMarks(true);
+        posSlider.setShowTickLabels(true);
+        posField.setMinWidth(50);
+        posField.setMaxWidth(50);
+        posField.textProperty().addListener(e -> fieldChanged(posField));
+
+        toolBar.getItems().addAll(posSlider, posField);
 
         Label nLabel = new Label("N:");
         toolBar.getItems().add(nLabel);
         nSlider.setBlockIncrement(1);
-        nSlider.setMinWidth(100);
-        toolBar.getItems().add(nSlider);
+        nSlider.setMajorTickUnit(5);
+        nSlider.setMinWidth(120);
+        nSlider.setShowTickMarks(true);
+        nSlider.setShowTickLabels(true);
+        nField.setMinWidth(50);
+        nField.setMaxWidth(50);
+        nField.textProperty().addListener(e -> fieldChanged(nField));
 
-        MapChangeListener<String, PeakList> mapChangeListener = (MapChangeListener.Change<? extends String, ? extends PeakList> change) -> {
-            updatePeakListMenu();
-        };
+        toolBar.getItems().addAll(nSlider, nField);
 
-        limitListener = new ChangeListener() {
-            @Override
-            public void changed(ObservableValue observable, Object oldValue, Object newValue) {
-                updateView();
-            }
-        };
+        MapChangeListener<String, PeakList> mapChangeListener = (MapChangeListener.Change<? extends String, ? extends PeakList> change) -> updatePeakListMenu();
+
+        limitListener = (observable, oldValue, newValue) -> updateView(false);
 
         Button addButton = GlyphsDude.createIconButton(FontAwesomeIcon.PLUS);
         addButton.setOnAction(e -> addItem());
         Button removeButton = GlyphsDude.createIconButton(FontAwesomeIcon.REMOVE);
         removeButton.setOnAction(e -> removeItem());
-        peakLabel = new Label();
-        peakLabel.setMinWidth(150);
 
-        dataLabel = new Label();
-        dataLabel.setMinWidth(150);
-        itemSpinner = new Spinner(0, 0, 0);
+        itemPeakListChoiceBox = new ChoiceBox<>();
+        itemDatasetChoiceBox = new ChoiceBox<>();
+        itemPeakListChoiceBox.setValue(null);
+        itemDatasetChoiceBox.setValue(null);
+        itemPeakListChoiceBox.setMinWidth(150);
+        itemDatasetChoiceBox.setMinWidth(150);
+        itemSpinner = new Spinner<>(0, 0, 0);
         itemSpinner.setMaxWidth(75);
         itemSpinner.getValueFactory().valueProperty().addListener(e -> showItem());
-        itemPeakListMenuButton = new MenuButton("List");
-        itemDatasetMenuButton = new MenuButton("Dataset");
-        Project.getActive().addDatasetListListener((MapChangeListener) (e -> updateDatasetNames()));
+        ProjectBase.getActive().addDatasetListListener((MapChangeListener) (e -> updateDatasetNames()));
 
         Label offsetLabel = new Label("Offset:");
-        offsetBox = new ChoiceBox();
+        offsetBox = new ChoiceBox<>();
         offsetBox.getItems().addAll(0, 1, 2, 3, 4);
         offsetBox.setValue(0);
         offsetBox.setOnAction(e -> updateItem());
         Label rowLabel = new Label("Row:");
-        rowBox = new ChoiceBox();
+        rowBox = new ChoiceBox<>();
         rowBox.getItems().addAll(0, 1, 2, 3, 4);
         rowBox.setValue(0);
         rowBox.setOnAction(e -> updateItem());
+        Button refresh = new Button("Refresh");
+        refresh.setOnAction(e -> updateView(true));
         setupToolBar.getItems().addAll(addButton, removeButton, itemSpinner,
-                itemDatasetMenuButton, dataLabel,
-                itemPeakListMenuButton, peakLabel,
-                offsetLabel, offsetBox, rowLabel, rowBox);
+                new Label("Peaklist:"), itemPeakListChoiceBox,
+                new Label("Dataset:"), itemDatasetChoiceBox,
+                offsetLabel, offsetBox, rowLabel, rowBox, refresh);
 
-        Project.getActive().addPeakListListener(mapChangeListener);
+        ProjectBase.getActive().addPeakListListener(mapChangeListener);
         updatePeakListMenu();
         updateDatasetNames();
         StripItem item = new StripItem();
         items.add(item);
-
+        VBox stripsBox = new VBox();
+        stripsTable = new StripsTable(controller, this, stripsBox);
+        controller.getMainBox().setRight(stripsBox);
+        sortedPeaks = stripsTable.getSortedPeaks();
+        posField.setOnKeyPressed(e -> {
+                    if (e.getCode() == KeyCode.ENTER) {
+                        updateSliders();
+                    }
+                }
+        );
+        nField.setOnKeyPressed(e -> {
+                    if (e.getCode() == KeyCode.ENTER) {
+                        updateSliders();
+                    }
+                }
+        );
     }
 
-    void updateDimMenus(String rowName, Dataset dataset) {
-        int nDim = dataset.getNDim();
-        final int jDim = rowName.equals("X") ? X : Z;
-        MenuButton dimMenu = dimMenus[jDim];
-        dimMenu.getItems().clear();
-        for (int iDim = 0; iDim < nDim; iDim++) {
-            String dimName = dataset.getLabel(iDim);
-            MenuItem menuItem = new MenuItem(String.valueOf(iDim + 1) + ":" + dimName);
-            menuItem.setOnAction(e -> updateDimMenu(jDim, dimName));
-            dimMenu.getItems().add(menuItem);
-            System.out.println("add menu item " + rowName + " " + dimName);
+    void updateDimMenus(PeakList peakList) {
+        for (var dimMenu: dimChoiceBoxes) {
+            dimMenu.getItems().clear();
+            for (var sDim:peakList.getSpectralDims()) {
+                dimMenu.getItems().add(sDim.getDimName());
+            }
         }
     }
 
-    void updateDimMenu(int jDim, String dimName) {
-        dimNames[jDim] = dimName;
+    void updateDimMenu(int jDim) {
+        dimNames[jDim] = dimChoiceBoxes[jDim].getValue();
         updateCells();
         currentLow = -1;
         currentHigh = -1;
         currentRows = 0;
         currentColumns = 0;
-        updateView();
+        updateView(false);
+    }
+
+    public String[] getDimNames() {
+        return dimNames;
     }
 
     public void updatePeakListMenu() {
-        peakListMenuButton.getItems().clear();
-        itemPeakListMenuButton.getItems().clear();
-        MenuItem emptyPeakListMenuItem = new MenuItem("");
-        emptyPeakListMenuItem.setOnAction(e -> {
-            setItemPeakList("");
-        });
-        itemPeakListMenuButton.getItems().add(emptyPeakListMenuItem);
+        peakListChoiceBox.getItems().clear();
+        itemPeakListChoiceBox.getItems().clear();
 
-        for (String peakListName : Project.getActive().getPeakListNames()) {
-            MenuItem menuItem = new MenuItem(peakListName);
-            menuItem.setOnAction(e -> {
-                setPeakList(peakListName);
-            });
-            peakListMenuButton.getItems().add(menuItem);
+        ProjectBase.getActive().getPeakLists().stream().sorted(Comparator.comparing(PeakList::getName)).
+                forEach(peakList -> {
+                    peakListChoiceBox.getItems().add(peakList);
+                    itemPeakListChoiceBox.getItems().add(peakList);
+                });
+        peakListChoiceBox.setValue(null);
+        itemPeakListChoiceBox.setValue(null);
+        peakListChoiceBox.setOnAction(e -> setPeakList(peakListChoiceBox.getValue()));
+        itemPeakListChoiceBox.setOnAction(e -> setItemPeakList(itemPeakListChoiceBox.getValue()));
 
-            MenuItem itemPeakListMenuItem = new MenuItem(peakListName);
-            itemPeakListMenuItem.setOnAction(e -> {
-                setItemPeakList(peakListName);
-            });
-            itemPeakListMenuButton.getItems().add(itemPeakListMenuItem);
-        }
     }
 
     public void updateDatasetNames() {
-        itemDatasetMenuButton.getItems().clear();
-        Dataset.names().stream().forEach(nm -> {
-            MenuItem item = new MenuItem(nm);
-            itemDatasetMenuButton.getItems().add(item);
-            item.setOnAction(e -> setItemDataset(nm));
-        });
+        itemDatasetChoiceBox.getItems().clear();
+        DatasetBase.datasets().forEach(dataset -> itemDatasetChoiceBox.getItems().add((Dataset) dataset));
+        itemDatasetChoiceBox.setValue(null);
+        itemDatasetChoiceBox.setOnAction(e -> setItemDataset(itemDatasetChoiceBox.getValue()));
     }
 
-    void setPeakList(String peakListName) {
-        controlList = PeakList.get(peakListName);
+    public PeakList getControlList() {
+        return controlList;
+    }
+
+    void setPeakList(PeakList peakList) {
+        controlList = peakList;
         StripItem item = getCurrentItem();
-        item.peakList = controlList;
-        controlList.getDatasetName();
-        item.dataset = Dataset.getDataset(controlList.getDatasetName());
-        item.row = 0;
-        item.offset = 0;
+        if (item.peakList == null) {
+            item.peakList = controlList;
+            item.dataset = Dataset.getDataset(controlList.getDatasetName());
+            item.row = 0;
+            item.offset = 0;
+        }
         showItem();
-        addPeaks(controlList.peaks());
-        updateView();
+        if (controlList != null) {
+            updateDimMenus(controlList);
+            addPeaks(controlList.peaks());
+            updateView(true);
+        }
     }
 
-    void setItemPeakList(String peakListName) {
-        peakLabel.setText(peakListName);
-        updateItem();
+    void setItemPeakList(PeakList peakList) {
+        StripItem item = getCurrentItem();
+        item.peakList = peakList;
+        if (item.peakList != null) {
+            item.dataset = Dataset.getDataset(item.peakList.getDatasetName());
+        }
+        itemDatasetChoiceBox.setValue(item.dataset);
     }
 
-    void setItemDataset(String datasetName) {
-        dataLabel.setText(datasetName);
-        updateItem();
+    void setItemDataset(Dataset dataset) {
+        StripItem item = getCurrentItem();
+        item.dataset = dataset;
     }
 
     StripItem getCurrentItem() {
@@ -356,8 +351,8 @@ public class StripController implements ControllerTool {
         item.dataset = null;
         item.row = 0;
         item.offset = 0;
-        peakLabel.setText("");
-        dataLabel.setText("");
+        itemPeakListChoiceBox.setValue(null);
+        itemDatasetChoiceBox.setValue(null);
         rowBox.setValue(0);
         offsetBox.setValue(0);
 
@@ -365,16 +360,16 @@ public class StripController implements ControllerTool {
 
     void showItem() {
         StripItem item = getCurrentItem();
-        dataLabel.setText(item.dataset == null ? "" : item.dataset.getName());
-        peakLabel.setText(item.peakList == null ? "" : item.peakList.getName());
+        itemDatasetChoiceBox.setValue(item.dataset);
+        itemPeakListChoiceBox.setValue(item.peakList);
         rowBox.setValue(item.row);
         offsetBox.setValue(item.offset);
     }
 
     void updateItem() {
         StripItem item = getCurrentItem();
-        item.peakList = PeakList.get(peakLabel.getText());
-        item.dataset = Dataset.getDataset(dataLabel.getText());
+        item.peakList = itemPeakListChoiceBox.getValue();
+        item.dataset = itemDatasetChoiceBox.getValue();
         item.row = rowBox.getValue();
         item.offset = offsetBox.getValue();
     }
@@ -414,18 +409,18 @@ public class StripController implements ControllerTool {
                 dims[i] = i;
             }
         } else {
-            for (int i = 0; i < dims.length; i++) {
-                dims[i] = -1;
-            }
+            Arrays.fill(dims, -1);
             dims[0] = getDim(dataset, dimNames[X]);
-            dims[2] = getDim(dataset, dimNames[Z]);
+            if (dims.length > 2) {
+                dims[2] = getDim(dataset, dimNames[Z]);
+            }
 
             for (int i = 0; i < dims.length; i++) {
                 if (dims[i] == -1) {
                     for (int k = 0; k < dims.length; k++) {
                         boolean unused = true;
-                        for (int j = 0; j < dims.length; j++) {
-                            if (dims[j] == k) {
+                        for (int dim : dims) {
+                            if (dim == k) {
                                 unused = false;
                                 break;
                             }
@@ -444,44 +439,40 @@ public class StripController implements ControllerTool {
         double[] positions = new double[dimNames.length];
         for (int i = 0; i < positions.length; i++) {
             PeakDim peakDim = peak.getPeakDim(dimNames[i]);
-            positions[i] = peakDim.getChemShiftValue();
-
+            if (peakDim != null) {
+                positions[i] = peakDim.getChemShiftValue();
+            }
         }
         return positions;
     }
 
-    void addAll() {
-        if (controlList != null) {
-            addPeaks(controlList.peaks());
-            updateView();
-        }
+    public void addPeaks(List<Peak> sourcePeaks) {
+        ObservableList<Peak> peaks = FXCollections.observableList(sourcePeaks);
+        stripsTable.updatePeaks(peaks);
+        var matchPeaks = peaks.stream().map(peak -> new PeakMatchResult(peak, 0.0)).toList();
+        stripsTable.updatePeakSorterPeaks(FXCollections.observableList(matchPeaks));
+        updatePeaks();
     }
 
-    void addAssigned() {
-        if (controlList != null) {
-            List<Peak> peaks = controlList.peaks().stream().filter(p -> {
-                String label = p.getPeakDim(dimNames[0]).getLabel();
-                Matcher matcher = resPat.matcher(label);
-                return matcher.matches();
-            }
-            ).collect(Collectors.toList());
-            addPeaks(peaks);
-            updateView();
-        }
-    }
-
-    public void addPeaks(List<Peak> peaks) {
+    public void updatePeaks() {
+        List<Peak> peaks = stripsTable.getSortedPeaks();
         posSlider.valueProperty().removeListener(limitListener);
         nSlider.valueProperty().removeListener(limitListener);
         cells.clear();
+        int nPeaks = peaks.size();
         posSlider.setMin(0.0);
-        posSlider.setMax(peaks.size() - 1.0);
-        posSlider.setValue(0);
         nSlider.setMin(1);
         nSlider.setMax(30);
         nSlider.setValue(5);
+        int nView = (int) nSlider.getValue();
+        if (nView > nPeaks) {
+            nView = nPeaks;
+            nSlider.setValue(nView);
+        }
+        int posMax = nPeaks - nView;
+        posSlider.setMax(Math.max(0, posMax));
+        posSlider.setValue(0);
 
-        int nPeaks = peaks.size();
         if (nPeaks < 10) {
             posSlider.setMajorTickUnit(1);
             posSlider.setMinorTickCount(0);
@@ -492,14 +483,11 @@ public class StripController implements ControllerTool {
         int majorTick = peaks.size() < 10 ? peaks.size() - 1 : 10;
         posSlider.setMajorTickUnit(10);
         posSlider.setMinorTickCount(majorTick);
-        double highValue = peaks.size() >= 10 ? 9 : peaks.size() - 1;
         boolean firstPeak = true;
         for (Peak peak : peaks) {
             Dataset dataset = Dataset.getDataset(peak.getPeakList().getDatasetName());
             if (dataset != null) {
                 if (firstPeak) {
-                    updateDimMenus("X", dataset);
-                    updateDimMenus("Z", dataset);
                     if (dimNames[0] == null) {
                         dimNames[0] = dataset.getLabel(0);
                     }
@@ -517,7 +505,7 @@ public class StripController implements ControllerTool {
         currentHigh = 0;
         posSlider.valueProperty().addListener(limitListener);
         nSlider.valueProperty().addListener(limitListener);
-
+        updateView(true);
     }
 
     void updateCells() {
@@ -526,7 +514,7 @@ public class StripController implements ControllerTool {
         }
     }
 
-    class StripItem {
+    static class StripItem {
 
         Dataset dataset;
         PeakList peakList;
@@ -568,6 +556,7 @@ public class StripController implements ControllerTool {
             if (item.dataset != null) {
                 if (init) {
                     controller.addDataset(item.dataset, false, false);
+                    chart.getCrossHairs().setCrossHairState(0, 0, true);
                 }
                 chart.setDataset(item.dataset);
                 DatasetAttributes dataAttr = chart.getDatasetAttributes().get(0);
@@ -589,9 +578,42 @@ public class StripController implements ControllerTool {
         }
     }
 
-    public void updateView() {
+    public void setCenter(int index) {
+        int nActive = (int) nSlider.getValue();
+        int start = index - nActive / 2;
+        posSlider.setValue(start);
+    }
+
+    private void fieldChanged(TextField field) {
+        try {
+            Integer.parseInt(field.getText().trim());
+            field.setBackground(GUIUtils.getDefaultBackground());
+        } catch (NumberFormatException nfe) {
+            field.setBackground(GUIUtils.getErrorBackground());
+        }
+    }
+
+    private void updateSliders() {
+        try {
+            int pos = Integer.parseInt(posField.getText().trim());
+            posSlider.setValue(pos);
+            int n = Integer.parseInt(nField.getText().trim());
+            nSlider.setValue(n);
+            posField.setBackground(GUIUtils.getDefaultBackground());
+            updateView(false);
+        } catch (NumberFormatException nfe) {
+            posField.setBackground(GUIUtils.getErrorBackground());
+        }
+    }
+
+    public void updateView(boolean forced) {
         int low = (int) posSlider.getValue();
         int nActive = (int) nSlider.getValue();
+        int posMax = stripsTable.getSortedPeaks().size() - nActive;
+        posSlider.setMax(Math.max(0, posMax));
+
+        posField.setText(String.valueOf(low));
+        nField.setText(String.valueOf(nActive));
         if (nActive > cells.size()) {
             nActive = cells.size();
         }
@@ -603,7 +625,7 @@ public class StripController implements ControllerTool {
             high = cells.size() - 1;
             low = high - nActive + 1;
         }
-        if ((low != currentLow) || (high != currentHigh)) {
+        if (forced || (low != currentLow) || (high != currentHigh)) {
             controller.setChartDisable(true);
             int nItems = high - low + 1;
             if (frozen >= 0) {
@@ -612,15 +634,16 @@ public class StripController implements ControllerTool {
             int maxOffset = getMaxOffset();
             int maxRow = getMaxRow();
             int nCols = nItems * (maxOffset + 1);
+            if (nCols == 0) {
+                nCols = 1;
+            }
             boolean updated = grid(maxRow + 1, nCols);
             List<PolyChart> charts = controller.getCharts();
             for (int iCell = low; iCell <= high; iCell++) {
                 Cell cell = cells.get(iCell);
                 int jCell = iCell - low;
-                if (frozen >= 0) {
-                    if (jCell >= frozen) {
-                        jCell++;
-                    }
+                if ((frozen >= 0) && (jCell >= frozen)) {
+                    jCell++;
                 }
                 for (StripItem item : items) {
                     int iCol = jCell * (maxOffset + 1) + item.offset;
@@ -640,6 +663,7 @@ public class StripController implements ControllerTool {
                 charts.get(frozen).setActiveChart();
             }
             controller.setChartDisable(false);
+            controller.setCursor();
             controller.draw();
         }
     }
@@ -649,7 +673,6 @@ public class StripController implements ControllerTool {
         if ((currentRows != rows) || (currentColumns != columns)) {
             int nCharts = rows * columns;
             if (nCharts > 0) {
-                GridPaneCanvas.ORIENTATION orient = GridPaneCanvas.getOrientation("grid");
                 controller.setNCharts(nCharts);
                 controller.arrange(rows);
                 controller.setBorderState(true);
@@ -663,58 +686,114 @@ public class StripController implements ControllerTool {
         return result;
     }
 
+    public record PeakMatchResult(Peak peak, double score) {
+    }
+
+    public List<PeakMatchResult> matchPeaks(Peak peak) {
+        var originPeaks = getMatchPeaks(peak);
+        List<PeakMatchResult> result = new ArrayList<>();
+        controlList.peaks().forEach(comparePeak -> {
+            var comparePeaks = getMatchPeaks(comparePeak);
+            double score = scorePeakMatch(originPeaks, comparePeaks);
+            PeakMatchResult matchResult = new PeakMatchResult(comparePeak, score);
+            result.add(matchResult);
+        });
+        result.sort(Comparator.comparing(PeakMatchResult::score).reversed());
+        return result;
+    }
+
+    double scorePeakMatch(List<Peak> originPeaks, List<Peak> comparePeaks) {
+        double tol = 0.6;
+        double sumScore = 0.0;
+        for (Peak originPeak : originPeaks) {
+            for (Peak comparePeak : comparePeaks) {
+                if (originPeak != comparePeak) {
+                    for (PeakDim originPeakDim : originPeak.peakDims) {
+                        String dimName = originPeakDim.getDimName();
+                        if (!dimName.equals(dimNames[X]) && !dimName.equals(dimNames[Z])) {
+                            PeakDim comparePeakDim = comparePeak.getPeakDim(dimName);
+                            double delta = Math.abs(originPeakDim.getAdjustedChemShiftValue() - comparePeakDim.getChemShiftValue());
+                            if (delta < tol) {
+                                double score = 1.0 - delta / tol;
+                                sumScore += score;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return sumScore;
+    }
+
+    public List<Peak> getMatchPeaks(Peak peak) {
+        PeakDim xPeakDim = peak.getPeakDim(dimNames[X]);
+        PeakDim zPeakDim = peak.getPeakDim(dimNames[Z]);
+        double[] searchPPMs = {xPeakDim.getChemShiftValue(), zPeakDim.getChemShiftValue()};
+        double xTol = 0.05;
+        double zTol = 0.3;
+
+        List<Peak> allFoundPeaks = new ArrayList<>();
+        for (var item : items) {
+            PeakList itemList = item.peakList;
+            if (itemList != null) {
+                itemList.clearSearchDims();
+                itemList.addSearchDim(dimNames[X], xTol);
+                itemList.addSearchDim(dimNames[Z], zTol);
+                var foundPeaks = itemList.findPeaks(searchPPMs);
+                allFoundPeaks.addAll(foundPeaks);
+            }
+        }
+        return allFoundPeaks;
+    }
+
     void freezeChart() {
         PolyChart activeChart = controller.getActiveChart();
         frozen = controller.getCharts().indexOf(activeChart) / (getMaxOffset() + 1);
         currentLow = -1;
         currentHigh = -1;
-        updateView();
+        updateView(false);
     }
 
     void thawChart() {
         frozen = -1;
         currentLow = -1;
         currentHigh = -1;
-        updateView();
+        updateView(false);
     }
 
-    class PeakSortComparator implements Comparator<Cell> {
-
-        @Override
-        public int compare(Cell o1, Cell o2) {
-            String lab1 = o1.peak.getPeakDim(dimNames[X]).getLabel();
-            String lab2 = o2.peak.getPeakDim(dimNames[X]).getLabel();
-            Matcher match1 = resPat.matcher(lab1);
-            Matcher match2 = resPat.matcher(lab2);
-            int res1 = -9999;
-            int res2 = -9999;
-            if (match1.matches()) {
-                res1 = Integer.parseInt(match1.group(2));
+    public void loadFromCharts(PeakList peakList0, String xDim, String zDim) {
+        List<PolyChart> charts = controller.getCharts();
+        int nRows = controller.arrangeGetRows();
+        int nColumns = controller.arrangeGetColumns();
+        items.clear();
+        for (int iRow = 0; iRow < nRows; iRow++) {
+            List<Dataset> datasets = new ArrayList<>();
+            for (int iCol = 0; iCol < nColumns; iCol++) {
+                int iChart = iRow * nColumns + iCol;
+                PolyChart chart = charts.get(iChart);
+                Dataset dataset = (Dataset) chart.getDataset();
+                PeakList peakList = null;
+                if (!chart.getPeakListAttributes().isEmpty()) {
+                    peakList = chart.getPeakListAttributes().get(0).getPeakList();
+                }
+                if (!datasets.contains(dataset)) {
+                    datasets.add(dataset);
+                    StripItem item = new StripItem(dataset,peakList,iCol, iRow);
+                    items.add(item);
+                } else {
+                    break;
+                }
             }
-            if (match2.matches()) {
-                res2 = Integer.parseInt(match2.group(2));
-            }
-            return Integer.compare(res1, res2);
+
         }
-    }
-
-    class PeakIndexSortComparator implements Comparator<Cell> {
-
-        @Override
-        public int compare(Cell o1, Cell o2) {
-            int i1 = o1.peak.getIdNum();
-            int i2 = o2.peak.getIdNum();
-            return Integer.compare(i1, i2);
-        }
-    }
-
-    void sortPeaksByResidue() {
-        Collections.sort(cells, new PeakSortComparator());
-        updateView();
-    }
-
-    void sortPeaksByIndex() {
-        Collections.sort(cells, new PeakIndexSortComparator());
-        updateView();
+        showItem();
+        peakListChoiceBox.setValue(peakList0);
+        controlList = peakList0;
+        updateDimMenus(peakList0);
+        dimNames[0] = xDim;
+        dimNames[1] = zDim;
+        dimChoiceBoxes[0].setValue(xDim);
+        dimChoiceBoxes[1].setValue(zDim);
+        addPeaks(peakList0.peaks());
     }
 }

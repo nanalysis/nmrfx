@@ -149,7 +149,7 @@ public class AnalystApp extends MainApp {
         interpreter.exec("import os");
         interpreter.exec("import glob");
         interpreter.exec("from pyproc import *\ninitLocal()");
-        interpreter.exec("from gscript import *\nnw=NMRFxWindowScripting()");
+        interpreter.exec("from gscript_adv import *\nnw=NMRFxWindowAdvScripting()");
         interpreter.exec("from dscript import *");
         interpreter.exec("from mscript import *");
         interpreter.exec("from pscript import *");
@@ -451,6 +451,10 @@ public class AnalystApp extends MainApp {
         proteinMenu.getItems().add(runAboutToolItem);
         runAboutToolItem.setOnAction(e -> showRunAboutTool());
 
+        MenuItem stripsToolItem = new MenuItem("Show Strips Tool");
+        proteinMenu.getItems().add(stripsToolItem);
+        stripsToolItem.setOnAction(e -> showStripsBar());
+
         PluginLoader.getInstance().registerPluginsOnEntryPoint(EntryPoint.STATUS_BAR_TOOLS, statusBar);
 
     }
@@ -573,12 +577,6 @@ public class AnalystApp extends MainApp {
         controller.getBottomBox().getChildren().remove(simMolController.getBox());
     }
 
-
-    public StripController getStripsTool() {
-        FXMLController controller = FXMLController.getActiveController();
-        return (StripController) controller.getTool(StripController.class);
-    }
-
     public void showPeakAssignTool() {
         FXMLController controller = FXMLController.getActiveController();
         if (!controller.containsTool(PeakAssignTool.class)) {
@@ -678,6 +676,30 @@ public class AnalystApp extends MainApp {
         controller.removeTool(RunAboutGUI.class);
         controller.getBottomBox().getChildren().remove(runaboutTool.getTabPane());
     }
+
+    public StripController showStripsBar() {
+        FXMLController controller = FXMLController.getActiveController();
+        if (!controller.containsTool(StripController.class)) {
+            VBox vBox = new VBox();
+            controller.getBottomBox().getChildren().add(vBox);
+            StripController stripsController = new StripController(controller, this::removeStripsBar);
+            stripsController.initialize(vBox);
+            controller.addTool(stripsController);
+        }
+        return (StripController) controller.getTool(StripController.class);
+    }
+
+    public void removeStripsBar(StripController stripsController) {
+        FXMLController controller = FXMLController.getActiveController();
+        controller.removeTool(StripController.class);
+        controller.getBottomBox().getChildren().remove(stripsController.getBox());
+    }
+
+    public StripController getStripsTool() {
+        FXMLController controller = FXMLController.getActiveController();
+        return (StripController) controller.getTool(StripController.class);
+    }
+
 
     void addPrefs() {
         AnalystPrefs.addPrefs();

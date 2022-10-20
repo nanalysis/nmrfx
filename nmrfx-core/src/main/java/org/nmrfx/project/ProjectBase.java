@@ -167,6 +167,12 @@ public class ProjectBase {
         extraSaveframes.add(saveframeWriter);
     }
 
+    public void copySaveFrames(ProjectBase newProject) {
+        for (var saveFramewriter : extraSaveframes) {
+            newProject.addSaveframe(saveFramewriter);
+        }
+    }
+
     public static void addSaveframeProcessor(String category, SaveframeProcessor saveframeProcessor) {
         saveframeProcessors.put(category, saveframeProcessor);
     }

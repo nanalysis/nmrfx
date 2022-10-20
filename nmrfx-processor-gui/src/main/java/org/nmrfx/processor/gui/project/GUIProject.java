@@ -68,6 +68,7 @@ public class GUIProject extends ProjectBase {
     public static GUIProject replace(String name, GUIProject project) {
         log.info("replace to {}", name);
         GUIProject newProject = new GUIProject(name);
+        project.copySaveFrames(newProject);
         newProject.datasetMap.putAll(project.datasetMap);
         newProject.peakLists.putAll(project.peakLists);
 

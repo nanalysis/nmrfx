@@ -1298,6 +1298,10 @@ public class FXMLController implements  Initializable, PeakNavigable {
         cursorProperty.addListener( e -> setCursor());
     }
 
+    public BorderPane getMainBox() {
+        return mainBox;
+    }
+
     public void setCursor(Cursor cursor) {
         cursorProperty.set(cursor);
     }
@@ -1310,7 +1314,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
         return canvas.getCursor();
     }
 
-    void setCursor() {
+    public void setCursor() {
         Cursor cursor = cursorProperty.getValue();
         canvas.setCursor(cursor);
         for (PolyChart chart : charts) {
