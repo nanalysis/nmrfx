@@ -47,8 +47,6 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.function.Consumer;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * @author brucejohnson
@@ -62,7 +60,7 @@ public class StripController implements ControllerTool {
     ToolBar toolBar;
     ToolBar setupToolBar;
     ChoiceBox<PeakList> peakListChoiceBox;
-    MenuButton[] dimMenus = new MenuButton[2];
+    ChoiceBox<String>[] dimChoiceBoxes = new ChoiceBox[2];
     MenuButton actionMenu = new MenuButton("Actions");
     VBox vBox;
     TextField widthBox = new TextField();
@@ -82,7 +80,6 @@ public class StripController implements ControllerTool {
     List<Cell> cells = new ArrayList<>();
     String[] dimNames = new String[2];
     ChangeListener<Number> limitListener;
-    Pattern resPat = Pattern.compile("([A-Z]*)([0-9]+)\\.(.*)");
     PeakList controlList = null;
     int currentRows = 0;
     int currentColumns = 0;
@@ -120,8 +117,10 @@ public class StripController implements ControllerTool {
         peakListChoiceBox = new ChoiceBox<>();
         toolBar.getItems().addAll(new Label("Control List:"), peakListChoiceBox);
 
-        dimMenus[X] = new MenuButton("X");
-        dimMenus[Z] = new MenuButton("Z");
+        dimChoiceBoxes[X] = new ChoiceBox<>();
+        dimChoiceBoxes[Z] = new ChoiceBox<>();
+        dimChoiceBoxes[X].setOnAction(e -> updateDimMenu(X));
+        dimChoiceBoxes[Z].setOnAction(e -> updateDimMenu(Z));
         widthBox.setMaxWidth(50);
         widthBox.setText(String.format("%.1f", xWidth));
         widthBox.setOnKeyReleased(e -> {
@@ -129,9 +128,10 @@ public class StripController implements ControllerTool {
                 xWidth = Double.parseDouble(widthBox.getText());
             }
         });
-
-        toolBar.getItems().add(dimMenus[X]);
-        toolBar.getItems().add(dimMenus[Z]);
+        toolBar.getItems().add(new Label("X:"));
+        toolBar.getItems().add(dimChoiceBoxes[X]);
+        toolBar.getItems().add(new Label("Z:"));
+        toolBar.getItems().add(dimChoiceBoxes[Z]);
         toolBar.getItems().add(widthBox);
         toolBar.getItems().add(actionMenu);
 
@@ -145,18 +145,6 @@ public class StripController implements ControllerTool {
         MenuItem thawMenuItem = new MenuItem("Thaw");
         freezeThawMenu.getItems().add(thawMenuItem);
         thawMenuItem.setOnAction(e -> thawChart());
-
-        Menu sortMenu = new Menu("Sort");
-
-        MenuItem sortByResidueMenuItem = new MenuItem("By Residue");
-        sortMenu.getItems().add(sortByResidueMenuItem);
-        sortByResidueMenuItem.setOnAction(e -> sortPeaksByResidue());
-
-        MenuItem sortByIndex = new MenuItem("By Index");
-        sortMenu.getItems().add(sortByIndex);
-        sortByIndex.setOnAction(e -> sortPeaksByIndex());
-
-        actionMenu.getItems().add(sortMenu);
 
         ToolBarUtils.addFiller(toolBar, 25, 50);
         Label startLabel = new Label("Start:");
@@ -242,21 +230,17 @@ public class StripController implements ControllerTool {
         );
     }
 
-    void updateDimMenus(String rowName, Dataset dataset) {
-        int nDim = dataset.getNDim();
-        final int jDim = rowName.equals("X") ? X : Z;
-        MenuButton dimMenu = dimMenus[jDim];
-        dimMenu.getItems().clear();
-        for (int iDim = 0; iDim < nDim; iDim++) {
-            String dimName = dataset.getLabel(iDim);
-            MenuItem menuItem = new MenuItem(iDim + 1 + ":" + dimName);
-            menuItem.setOnAction(e -> updateDimMenu(jDim, dimName));
-            dimMenu.getItems().add(menuItem);
+    void updateDimMenus(PeakList peakList) {
+        for (var dimMenu: dimChoiceBoxes) {
+            dimMenu.getItems().clear();
+            for (var sDim:peakList.getSpectralDims()) {
+                dimMenu.getItems().add(sDim.getDimName());
+            }
         }
     }
 
-    void updateDimMenu(int jDim, String dimName) {
-        dimNames[jDim] = dimName;
+    void updateDimMenu(int jDim) {
+        dimNames[jDim] = dimChoiceBoxes[jDim].getValue();
         updateCells();
         currentLow = -1;
         currentHigh = -1;
@@ -307,6 +291,7 @@ public class StripController implements ControllerTool {
         }
         showItem();
         if (controlList != null) {
+            updateDimMenus(controlList);
             addPeaks(controlList.peaks());
             updateView(true);
         }
@@ -498,8 +483,6 @@ public class StripController implements ControllerTool {
             Dataset dataset = Dataset.getDataset(peak.getPeakList().getDatasetName());
             if (dataset != null) {
                 if (firstPeak) {
-                    updateDimMenus("X", dataset);
-                    updateDimMenus("Z", dataset);
                     if (dimNames[0] == null) {
                         dimNames[0] = dataset.getLabel(0);
                     }
@@ -761,56 +744,13 @@ public class StripController implements ControllerTool {
         updateView(false);
     }
 
-    class PeakSortComparator implements Comparator<Cell> {
-
-        @Override
-        public int compare(Cell o1, Cell o2) {
-            String lab1 = o1.peak.getPeakDim(dimNames[X]).getLabel();
-            String lab2 = o2.peak.getPeakDim(dimNames[X]).getLabel();
-            Matcher match1 = resPat.matcher(lab1);
-            Matcher match2 = resPat.matcher(lab2);
-            int res1 = -9999;
-            int res2 = -9999;
-            if (match1.matches()) {
-                res1 = Integer.parseInt(match1.group(2));
-            }
-            if (match2.matches()) {
-                res2 = Integer.parseInt(match2.group(2));
-            }
-            return Integer.compare(res1, res2);
-        }
-    }
-
-    class PeakIndexSortComparator implements Comparator<Cell> {
-
-        @Override
-        public int compare(Cell o1, Cell o2) {
-            int i1 = o1.peak.getIdNum();
-            int i2 = o2.peak.getIdNum();
-            return Integer.compare(i1, i2);
-        }
-    }
-
-    void sortPeaksByResidue() {
-        cells.sort(new PeakSortComparator());
-        updateView(true);
-    }
-
-    void sortPeaksByIndex() {
-        cells.sort(new PeakIndexSortComparator());
-        updateView(true);
-    }
-
     public void loadFromCharts(PeakList peakList0, String xDim, String zDim) {
         List<PolyChart> charts = controller.getCharts();
         int nRows = controller.arrangeGetRows();
         int nColumns = controller.arrangeGetColumns();
-        List<List<Dataset>> allRows = new ArrayList<>();
-        int nItems = 0;
         items.clear();
         for (int iRow = 0; iRow < nRows; iRow++) {
             List<Dataset> datasets = new ArrayList<>();
-            allRows.add(datasets);
             for (int iCol = 0; iCol < nColumns; iCol++) {
                 int iChart = iRow * nColumns + iCol;
                 PolyChart chart = charts.get(iChart);
@@ -832,8 +772,11 @@ public class StripController implements ControllerTool {
         showItem();
         peakListChoiceBox.setValue(peakList0);
         controlList = peakList0;
+        updateDimMenus(peakList0);
         dimNames[0] = xDim;
         dimNames[1] = zDim;
+        dimChoiceBoxes[0].setValue(xDim);
+        dimChoiceBoxes[1].setValue(zDim);
         addPeaks(peakList0.peaks());
     }
 }
