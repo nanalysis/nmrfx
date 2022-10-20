@@ -7,7 +7,6 @@ import org.nmrfx.peaks.PeakList;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.DatasetException;
 
-import java.io.IOException;
 
 public class AnalyzerTest extends TestCase {
 
@@ -28,7 +27,7 @@ public class AnalyzerTest extends TestCase {
         thirdPeak.getPeakDim(0).setChemShift(4.5F);
         // First and second peak are part of the region
         DatasetRegion region = new DatasetRegion(2, 4);
-        Analyzer analyzer = Analyzer.getAnalyzer(new Dataset("", new int[]{1024}, false));
+        Analyzer analyzer = Analyzer.getAnalyzer(new Dataset("", null, new int[]{1024}, false));
         analyzer.setPeakList(peakList);
 
         // third peak should have id of 2 since it was added third

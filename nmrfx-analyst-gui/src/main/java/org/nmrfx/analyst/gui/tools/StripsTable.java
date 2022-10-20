@@ -10,8 +10,9 @@ import javafx.collections.transformation.FilteredList;
 import javafx.collections.transformation.SortedList;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
-import javafx.scene.layout.*;
-import javafx.scene.paint.Color;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.VBox;
 import org.controlsfx.control.tableview2.FilteredTableColumn;
 import org.controlsfx.control.tableview2.FilteredTableView;
 import org.controlsfx.control.tableview2.TableColumn2;
@@ -28,6 +29,7 @@ import org.nmrfx.peaks.PeakList;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.structure.seqassign.SeqFragment;
 import org.nmrfx.structure.seqassign.SpinSystem;
+import org.nmrfx.utils.GUIUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -49,8 +51,6 @@ public class StripsTable {
     TextField peakFields = null;
     ChoiceBox<String> fragmentChoice = new ChoiceBox<>();
     ChoiceBox<String> assignedChoice = new ChoiceBox<>();
-    Background errorBackground = new Background(new BackgroundFill(Color.LIGHTYELLOW, null, null));
-    Background defaultBackground = new Background(new BackgroundFill(Color.WHITE, null, null));
     Peak targetPeak = null;
     ChoiceBox<String> positionChoiceBox;
 
@@ -224,10 +224,8 @@ public class StripsTable {
                 @Override
                 protected void updateItem(Number item, boolean empty) {
                     super.updateItem(item, empty);
-
                     this.setText(null);
                     this.setGraphic(null);
-
                     if (!empty && (item.intValue() != Integer.MIN_VALUE)) {
                         this.setText(String.valueOf(item));
                     }
@@ -256,10 +254,8 @@ public class StripsTable {
             @Override
             protected void updateItem(Number item, boolean empty) {
                 super.updateItem(item, empty);
-
                 this.setText(null);
                 this.setGraphic(null);
-
                 if (!empty && (item.intValue() != -1)) {
                     this.setText(String.valueOf(item));
                 }
@@ -285,10 +281,8 @@ public class StripsTable {
                 @Override
                 protected void updateItem(Number item, boolean empty) {
                     super.updateItem(item, empty);
-
                     this.setText(null);
                     this.setGraphic(null);
-
                     if (!empty && (item.intValue() != Integer.MIN_VALUE)) {
                         this.setText(String.valueOf(item));
                     }
@@ -304,7 +298,7 @@ public class StripsTable {
             table.getColumns().add(label1Column);
         }
         TableColumn<StripController.PeakMatchResult, Number> scoreColumn = new TableColumn<>("Score");
-        scoreColumn.setCellValueFactory(e -> new SimpleDoubleProperty(e.getValue().score()));
+        scoreColumn.setCellValueFactory(e -> new SimpleDoubleProperty(Math.round(e.getValue().score()*100.0)/100.0));
 
         TableColumn<StripController.PeakMatchResult, Number> column = new TableColumn<>("Fragment");
         column.setPrefWidth(columnWidths);
@@ -313,10 +307,8 @@ public class StripsTable {
             @Override
             protected void updateItem(Number item, boolean empty) {
                 super.updateItem(item, empty);
-
                 this.setText(null);
                 this.setGraphic(null);
-
                 if (!empty && (item.intValue() != -1)) {
                     this.setText(String.valueOf(item));
                 }
@@ -389,7 +381,7 @@ public class StripsTable {
                                 peakIDs.add(iPeak);
                             }
                         } catch (NumberFormatException ignored) {
-                            peakFields.setBackground(errorBackground);
+                            peakFields.setBackground(GUIUtils.getErrorBackground());
                             return;
                         }
                     } else {
@@ -397,7 +389,7 @@ public class StripsTable {
                             int iPeak = Integer.parseInt(field);
                             peakIDs.add(iPeak);
                         } catch (NumberFormatException ignored) {
-                            peakFields.setBackground(errorBackground);
+                            peakFields.setBackground(GUIUtils.getErrorBackground());
                             return;
                         }
                     }
@@ -405,7 +397,7 @@ public class StripsTable {
             }
             peaks.addAll(peakIDs.stream().sorted().distinct().map(peakList::getPeakByID).filter(Objects::nonNull).toList());
         }
-        peakFields.setBackground(defaultBackground);
+        peakFields.setBackground(GUIUtils.getDefaultBackground());
         updatePeaks(peaks);
         peakFields.requestFocus();
     }

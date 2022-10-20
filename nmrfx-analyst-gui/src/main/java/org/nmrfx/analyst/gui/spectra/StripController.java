@@ -41,6 +41,7 @@ import org.nmrfx.processor.gui.spectra.PeakDisplayParameters;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
 import org.nmrfx.processor.gui.utils.ToolBarUtils;
 import org.nmrfx.project.ProjectBase;
+import org.nmrfx.utils.GUIUtils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -157,6 +158,8 @@ public class StripController implements ControllerTool {
         posSlider.setShowTickLabels(true);
         posField.setMinWidth(50);
         posField.setMaxWidth(50);
+        posField.textProperty().addListener(e -> fieldChanged(posField));
+
         toolBar.getItems().addAll(posSlider, posField);
 
         Label nLabel = new Label("N:");
@@ -168,6 +171,8 @@ public class StripController implements ControllerTool {
         nSlider.setShowTickLabels(true);
         nField.setMinWidth(50);
         nField.setMaxWidth(50);
+        nField.textProperty().addListener(e -> fieldChanged(nField));
+
         toolBar.getItems().addAll(nSlider, nField);
 
         MapChangeListener<String, PeakList> mapChangeListener = (MapChangeListener.Change<? extends String, ? extends PeakList> change) -> updatePeakListMenu();
@@ -271,7 +276,7 @@ public class StripController implements ControllerTool {
 
     public void updateDatasetNames() {
         itemDatasetChoiceBox.getItems().clear();
-        Dataset.datasets().forEach(dataset -> itemDatasetChoiceBox.getItems().add((Dataset) dataset));
+        DatasetBase.datasets().forEach(dataset -> itemDatasetChoiceBox.getItems().add((Dataset) dataset));
         itemDatasetChoiceBox.setValue(null);
         itemDatasetChoiceBox.setOnAction(e -> setItemDataset(itemDatasetChoiceBox.getValue()));
     }
@@ -579,14 +584,25 @@ public class StripController implements ControllerTool {
         posSlider.setValue(start);
     }
 
+    private void fieldChanged(TextField field) {
+        try {
+            Integer.parseInt(field.getText().trim());
+            field.setBackground(GUIUtils.getDefaultBackground());
+        } catch (NumberFormatException nfe) {
+            field.setBackground(GUIUtils.getErrorBackground());
+        }
+    }
+
     private void updateSliders() {
         try {
             int pos = Integer.parseInt(posField.getText().trim());
             posSlider.setValue(pos);
             int n = Integer.parseInt(nField.getText().trim());
             nSlider.setValue(n);
+            posField.setBackground(GUIUtils.getDefaultBackground());
             updateView(false);
         } catch (NumberFormatException nfe) {
+            posField.setBackground(GUIUtils.getErrorBackground());
         }
     }
 

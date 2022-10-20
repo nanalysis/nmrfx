@@ -55,18 +55,10 @@ public class DatasetParameterFile {
     }
 
     public static String getParameterFileName(String fileName) {
-        int len = fileName.length();
-        String parFileName;
-        int extLen = 0;
-        if (fileName.endsWith(".nv")) {
-            extLen = 3;
-        } else if (fileName.endsWith(".ucsf")) {
-            extLen = 5;
-        } else if (fileName.endsWith(".nvlnk")) {
-            extLen = 6;
-        }
-        parFileName = fileName.substring(0, len - extLen) + ".par";
-        return parFileName;
+        Pattern pattern = Pattern.compile("\\.(nv|ucsf|nvlnk)$");
+        Matcher matcher = pattern.matcher(fileName);
+        int endIndex = matcher.find() ? matcher.start() : fileName.length();
+        return fileName.substring(0, endIndex) + ".par";
     }
 
     public final boolean remove() {

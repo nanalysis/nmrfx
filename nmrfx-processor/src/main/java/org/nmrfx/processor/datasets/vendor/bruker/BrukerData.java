@@ -42,6 +42,7 @@ import java.nio.DoubleBuffer;
 import java.nio.IntBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.util.*;
 import java.util.Map.Entry;
@@ -800,20 +801,20 @@ public class BrukerData implements NMRData {
     private void openParFile(File parDirFile) throws IOException {
         parMap = new LinkedHashMap<>(200);
         Path pulseSequencePath = parDirFile.toPath().resolve("pulseprogram");
-        String aqSeq = null;
+        String dimPar = null;
         if (pulseSequencePath.toFile().exists()) {
             var lines = scanPulseSequence(pulseSequencePath);
             var optLine = lines.stream().
                     map(line -> line.trim()).
-                    filter(line -> line.startsWith("aqseq")).findFirst();
+                    filter(line -> line.startsWith(";$DIM=")).findFirst();  // ;$DIM=2D
             if (optLine.isPresent()) {
-                String[] aqSeqParts = optLine.get().split(" ");
-                if (aqSeqParts.length == 2) {
-                    aqSeq = aqSeqParts[1];
+                String[] aqSeqParts = optLine.get().split("=");
+                if ((aqSeqParts.length == 2) && (aqSeqParts[1].endsWith("D") && Character.isDigit(aqSeqParts[1].charAt(0)))) {
+                    dimPar = aqSeqParts[1].substring(0,1);
                 }
             }
         }
-        int maxDim = aqSeq == null ? 2 : MAXDIM;
+        int maxDim = dimPar != null ? Integer.parseInt(dimPar) : MAXDIM;
 
             // process proc files if they exist
         File pdataFile = parDirFile.toPath().resolve("pdata").toFile();
@@ -1834,7 +1835,7 @@ public class BrukerData implements NMRData {
     }
 
     private List<String> scanPulseSequence(Path path) throws IOException {
-        return Files.readAllLines(path);
+        return Files.readAllLines(path, StandardCharsets.ISO_8859_1);
     }
 
     // write binary data into text file, using header info
