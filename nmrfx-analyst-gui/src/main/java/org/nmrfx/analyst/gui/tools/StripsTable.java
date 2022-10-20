@@ -125,7 +125,6 @@ public class StripsTable {
         sortTablePeaks.addAll(matches);
     }
 
-
     private void sortedSelectionChanged() {
         if (tableView.getSortOrder().isEmpty()) {
             StripController.PeakMatchResult selectedMatchResult = sortTable.getSelectionModel().getSelectedItem();

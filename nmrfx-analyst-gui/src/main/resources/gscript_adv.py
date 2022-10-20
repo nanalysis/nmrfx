@@ -31,7 +31,6 @@ def parseArgs(argv):
     parser = argparse.ArgumentParser(description="Evaluate NMRFx Command Line Args")
     parser.add_argument("-r", dest="rows",default='1', help="Number of chart rows")
     parser.add_argument("-c", dest="columns",default='1', help="Number of chart columns")
-    #parser.add_argument("-g", dest="groupList",default='', help="Residues to fit in groups")
     parser.add_argument("fileNames",nargs="*")
     args = parser.parse_args(args=argv)
     rows = int(args.rows)
