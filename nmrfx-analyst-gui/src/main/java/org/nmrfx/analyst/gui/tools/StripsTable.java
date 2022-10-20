@@ -210,12 +210,16 @@ public class StripsTable {
 
     void initTable(TableView<Peak> table, int nDim) {
         TableColumn2<Peak, Number> idColumn = new TableColumn2<>("ID");
+        idColumn.setPrefWidth(50);
+        double columnWidths = (vBox.getPrefWidth() - 50 -10) / 3;
         idColumn.setCellValueFactory(e -> new SimpleIntegerProperty(e.getValue().getIdNum()));
         table.getColumns().clear();
         table.getColumns().add(idColumn);
         for (int i = 0; i < nDim; i++) {
             final int iDim = i;
             FilteredTableColumn<Peak, Number> residueColumn = new FilteredTableColumn<>("Residue");
+            residueColumn.setPrefWidth(columnWidths);
+
             residueColumn.setCellValueFactory(e -> new SimpleIntegerProperty(getResidue(e.getValue().getPeakDim(iDim))));
             residueColumn.setCellFactory(tableColumn -> new TableCell<>() {
                 @Override
@@ -234,6 +238,7 @@ public class StripsTable {
             table.getColumns().add(residueColumn);
 
             FilteredTableColumn<Peak, String> label1Column = new FilteredTableColumn<>("Atom");
+            label1Column.setPrefWidth(columnWidths);
             label1Column.setCellValueFactory(e -> new SimpleStringProperty(getAtomName(e.getValue().getPeakDim(iDim))));
 
             table.getColumns().add(label1Column);
@@ -244,13 +249,8 @@ public class StripsTable {
                 }
             }
         }
-        TableColumn2<Peak, Number> column;
-        if (table == tableView) {
-            fragmentColumn = new FilteredTableColumn<>("Fragment");
-            column = fragmentColumn;
-        } else {
-            column = new TableColumn2<>("Fragment");
-        }
+        TableColumn2<Peak, Number> column= new FilteredTableColumn<>("Fragment");
+        column.setPrefWidth(columnWidths);
 
         column.setCellValueFactory(e -> new SimpleIntegerProperty(getFragment(e.getValue())));
         column.setCellFactory(tableColumn -> new TableCell<>() {
@@ -272,12 +272,15 @@ public class StripsTable {
 
     void initSortTable(TableView<StripController.PeakMatchResult> table, int nDim) {
         TableColumn<StripController.PeakMatchResult, Number> idColumn = new TableColumn<>("ID");
+        idColumn.setPrefWidth(50);
         idColumn.setCellValueFactory(e -> new SimpleIntegerProperty(e.getValue().peak().getIdNum()));
         table.getColumns().clear();
         table.getColumns().add(idColumn);
+        double columnWidths = (vBox.getPrefWidth() - 50 -10) / 4;
         for (int i = 0; i < nDim; i++) {
             final int iDim = i;
             TableColumn<StripController.PeakMatchResult, Number> residueColumn = new TableColumn<>("Residue");
+            residueColumn.setPrefWidth(columnWidths);
             residueColumn.setCellValueFactory(e -> new SimpleIntegerProperty(getResidue(e.getValue().peak().getPeakDim(iDim))));
             residueColumn.setCellFactory(tableColumn -> new TableCell<>() {
                 @Override
@@ -296,6 +299,7 @@ public class StripsTable {
             table.getColumns().add(residueColumn);
 
             TableColumn<StripController.PeakMatchResult, String> label1Column = new TableColumn<>("Atom");
+            label1Column.setPrefWidth(columnWidths);
             label1Column.setCellValueFactory(e -> new SimpleStringProperty(getAtomName(e.getValue().peak().getPeakDim(iDim))));
 
             table.getColumns().add(label1Column);
@@ -304,6 +308,7 @@ public class StripsTable {
         scoreColumn.setCellValueFactory(e -> new SimpleDoubleProperty(e.getValue().score()));
 
         TableColumn<StripController.PeakMatchResult, Number> column = new TableColumn<>("Fragment");
+        column.setPrefWidth(columnWidths);
         column.setCellValueFactory(e -> new SimpleIntegerProperty(getFragment(e.getValue().peak())));
         column.setCellFactory(tableColumn -> new TableCell<>() {
             @Override
