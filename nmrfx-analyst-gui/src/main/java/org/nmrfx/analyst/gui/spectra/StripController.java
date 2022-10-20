@@ -647,6 +647,7 @@ public class StripController implements ControllerTool {
                 charts.get(frozen).setActiveChart();
             }
             controller.setChartDisable(false);
+            controller.setCursor();
             controller.draw();
         }
     }

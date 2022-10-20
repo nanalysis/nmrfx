@@ -1314,7 +1314,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
         return canvas.getCursor();
     }
 
-    void setCursor() {
+    public void setCursor() {
         Cursor cursor = cursorProperty.getValue();
         canvas.setCursor(cursor);
         for (PolyChart chart : charts) {
