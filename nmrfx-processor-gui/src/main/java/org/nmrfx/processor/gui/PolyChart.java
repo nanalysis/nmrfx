@@ -1657,7 +1657,7 @@ public class PolyChart extends Region implements PeakListener {
         }
     }
 
-    void updateProjections() {
+    public void updateProjections() {
         boolean has1D = false;
         boolean hasND = false;
         Optional<DatasetAttributes> firstNDAttr = Optional.empty();
@@ -3903,13 +3903,14 @@ public class PolyChart extends Region implements PeakListener {
                 Dataset proj1 = dataset.getProjection(1);
                 if (proj0 != null) {
                     datasetNames.add(proj0.getName());
-                    chartProps.setTopBorderSize(150);
                 }
                 if (proj1 != null) {
                     datasetNames.add(proj1.getName());
-                    chartProps.setRightBorderSize(150);
                 }
                 updateDatasets(datasetNames);
+                updateProjections();
+                updateProjectionBorders();
+                updateProjectionScale();
                 refresh();
             } catch (IOException ex) {
                 log.warn(ex.getMessage(), ex);
@@ -4426,5 +4427,51 @@ public class PolyChart extends Region implements PeakListener {
 
     public void clearPopoverTools() {
         popoverMap.clear();
+    }
+
+    /**
+     * Checks the list of dataset attributes for projections and sets the default projection border size for each
+     * border with a projection.
+     */
+    public void updateProjectionBorders() {
+        List<Integer> projections = getDatasetAttributes().stream().map(DatasetAttributes::projection).filter(projection -> projection >= 0).toList();
+        if (projections.contains(0)) {
+            chartProps.setTopBorderSize(ChartProperties.PROJECTION_BORDER_DEFAULT_SIZE);
+        }
+        if (projections.contains(1)) {
+            chartProps.setRightBorderSize(ChartProperties.PROJECTION_BORDER_DEFAULT_SIZE);
+        }
+    }
+
+    /**
+     * Update the initial scale value for the projections to fit the highest peak to 95% of the available height.
+     * If there are two projections, then the scale for the projection with the higher peak is used for both.
+     * TODO the scale should be adjusted in a better way see NMR-5831
+     */
+    public void updateProjectionScale() {
+        List<Double> scaleValues = new ArrayList<>();
+        Optional<DatasetAttributes> initialDatasetAttr = getFirstDatasetAttributes();
+        if (initialDatasetAttr.isPresent()) {
+            Vec projectionVec = new Vec(32, false);
+            try {
+                List<Integer> borders = Arrays.asList(chartProps.getTopBorderSize(), chartProps.getRightBorderSize());
+                for (int i = 0; i < borders.size(); i++) {
+                    int projectionDim = i;
+                    Optional<DatasetAttributes> projectionDimAttr = getDatasetAttributes().stream().filter(attr -> attr.projection() == projectionDim).findFirst();
+                    if (projectionDimAttr.isPresent()) {
+                        initialDatasetAttr.get().getProjection((Dataset) projectionDimAttr.get().getDataset(), projectionVec, projectionDim);
+                        OptionalDouble maxValue = Arrays.stream(projectionVec.rvec).max();
+                        if (maxValue.isPresent()) {
+                            scaleValues.add((borders.get(i) * 0.95) / maxValue.getAsDouble());
+                        }
+                    }
+                }
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+
+            }
+            Double actualScale = scaleValues.stream().min(Comparator.naturalOrder()).orElse(0.0);
+            sliceAttributes.setScaleValue(actualScale * initialDatasetAttr.get().getLvl());
+        }
     }
 }

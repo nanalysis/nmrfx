@@ -462,7 +462,7 @@ public class DatasetBrowserController implements Initializable {
                 if (!useFID && !rData.getProcessed().isEmpty()) {
                     File localDataset = fileSystem.getPath(getLocalDir().toString(), fileName, rData.getProcessed()).toFile();
                     if (localDataset.exists()) {
-                        controller.openDataset(localDataset, false);
+                        controller.openDataset(localDataset, false, true);
                     }
                 } else {
                     if (!rData.isPresent()) {

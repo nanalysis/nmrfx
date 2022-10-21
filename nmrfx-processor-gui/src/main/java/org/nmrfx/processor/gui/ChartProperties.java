@@ -36,6 +36,7 @@ import java.util.Map;
  */
 public class ChartProperties {
     private static final Logger log = LoggerFactory.getLogger(ChartProperties.class);
+    public static final int PROJECTION_BORDER_DEFAULT_SIZE = 150;
 
     final private PolyChart polyChart;
 
