@@ -1365,6 +1365,13 @@ public class SpecAttrWindowController implements Initializable {
     private void updateChartDatasets() {
         ObservableList<String> datasetTargets = datasetView.getTargetItems();
         chart.updateDatasets(datasetTargets);
+        if (datasetTargets.isEmpty()) {
+            chart.removeProjections();
+        } else {
+            chart.updateProjections();
+            chart.updateProjectionBorders();
+            chart.updateProjectionScale();
+        }
     }
 
     @FXML
