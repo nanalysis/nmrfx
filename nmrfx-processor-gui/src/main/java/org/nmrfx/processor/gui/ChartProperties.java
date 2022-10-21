@@ -37,6 +37,7 @@ import java.util.Map;
 public class ChartProperties {
     private static final Logger log = LoggerFactory.getLogger(ChartProperties.class);
     public static final int PROJECTION_BORDER_DEFAULT_SIZE = 150;
+    public static final int EMPTY_BORDER_DEFAULT_SIZE = 7;
 
     final private PolyChart polyChart;
 
@@ -115,7 +116,7 @@ public class ChartProperties {
 
     public IntegerProperty rightBorderSizeProperty() {
         if (rightBorderSize == null) {
-            rightBorderSize = new SimpleIntegerProperty(polyChart, "rightBorderSize", 7);
+            rightBorderSize = new SimpleIntegerProperty(polyChart, "rightBorderSize", EMPTY_BORDER_DEFAULT_SIZE);
         }
         return rightBorderSize;
     }
@@ -130,7 +131,7 @@ public class ChartProperties {
 
     public IntegerProperty topBorderSizeProperty() {
         if (topBorderSize == null) {
-            topBorderSize = new SimpleIntegerProperty(polyChart, "topBorderSize", 7);
+            topBorderSize = new SimpleIntegerProperty(polyChart, "topBorderSize", EMPTY_BORDER_DEFAULT_SIZE);
         }
         return topBorderSize;
     }

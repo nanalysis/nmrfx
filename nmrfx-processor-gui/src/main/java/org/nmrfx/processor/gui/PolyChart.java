@@ -4474,4 +4474,15 @@ public class PolyChart extends Region implements PeakListener {
             sliceAttributes.setScaleValue(actualScale * initialDatasetAttr.get().getLvl());
         }
     }
+
+    /**
+     * Remove all datasetAttributes that are projections, reset the chart borders back to the empty default
+     * and refresh the chart.
+     */
+    public void removeProjections() {
+        getDatasetAttributes().removeIf(datasetAttributes -> datasetAttributes.projection() != -1);
+        chartProps.setTopBorderSize(ChartProperties.EMPTY_BORDER_DEFAULT_SIZE);
+        chartProps.setRightBorderSize(ChartProperties.EMPTY_BORDER_DEFAULT_SIZE);
+        refresh();
+    }
 }
