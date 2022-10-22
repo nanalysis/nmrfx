@@ -627,6 +627,11 @@ def genNUS(sizes):
     fidObj = fidInfo.fidObj
     fidObj.createUniformSchedule(sizes)
 
+def genZFNUS(sizes,newSizes):
+    global fidInfo
+    fidObj = fidInfo.fidObj
+    fidObj.createZFSchedule(sizes, newSizes)
+
 class genericOperation(object):
     def __init__(self, f):
         self.f = f
@@ -2388,6 +2393,62 @@ def IST(threshold=0.98, iterations=500, alg='std', timeDomain=True, ph0=None, ph
     else:
         process.addOperation(op)
     return op
+
+def EXTEND(factor=1, disabled=False, vector=None, process=None):
+    ''' Experimental implementation of NESTA algorithm for extending data as alternative to Linear Prediction.
+    This version requires that the data be in-phase.  Use the phase argument to provide a list of phase values.
+  
+    Parameters
+    ---------
+    factor : int
+        amin : 0
+        min : 0
+        max : 2
+        amax : 2
+        Zero fill factor 
+    '''
+    nOuter=15
+    nInner=20
+    tolFinal=2.5
+    muFinal=6
+    phase=None
+    logToFile=False
+    zeroAtStart=True
+    threshold=0.0
+
+    if disabled:
+        return None
+    phaseList = ArrayList()
+    if phase == None:
+        pass
+    else:
+        for value in phase:
+            phaseList.add(float(value))
+    tolFinalReal = math.pow(10.0,-tolFinal)
+    muFinalReal = math.pow(10.0,-muFinal)
+    process = process or getCurrentProcess()
+    global fidInfo
+    logFileName = None
+    if fidInfo == None or fidInfo.fidObj == None:
+        schedule = None
+    else:
+        schedule = fidInfo.fidObj.getSampleSchedule()
+        if logToFile:
+            rootdir = fidInfo.fidObj.getFilePath()
+            logDir = os.path.join(rootdir,"nesta")
+            if not os.path.exists(logDir):
+                os.mkdir(logDir)
+            logFileName = os.path.join(logDir,"log")
+
+    op = NESTANMR(nOuter, nInner, tolFinalReal, muFinalReal, phaseList, zeroAtStart, threshold, factor)
+
+    if (vector != None):
+        op.eval(vector)
+    else:
+        process.addOperation(op)
+
+    return op
+
 
 def NESTA(nOuter=15, nInner=20, tolFinal=2.5, muFinal=6,phase=None, logToFile=False, zeroAtStart=True, threshold=0.0, disabled=False, vector=None, process=None):
     ''' Experimental implementation of NESTA algorithm for NUS processing.  This version

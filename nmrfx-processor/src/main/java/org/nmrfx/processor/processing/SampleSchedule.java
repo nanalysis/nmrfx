@@ -258,6 +258,32 @@ public class SampleSchedule {
         return sampleSchedule;
     }
 
+    public static SampleSchedule createZFSchedule(int[] dims, int[] newDims) {
+        SampleSchedule sampleSchedule = new SampleSchedule();
+        int n = 1;
+        for (int i = 0; i < dims.length; i++) {
+            n *= dims[i];
+        }
+        sampleSchedule.demo = true;
+        sampleSchedule.nSamples = n;
+        sampleSchedule.v_samples = new int[n][dims.length - 1];
+        MultidimensionalCounter mCounter = new MultidimensionalCounter(dims);
+        MultidimensionalCounter.Iterator iter = mCounter.iterator();
+        int i = 0;
+        while (iter.hasNext()) {
+            iter.next();
+            int[] pt = iter.getCounts();
+            sampleSchedule.v_samples[i++] = pt;
+        }
+        sampleSchedule.calcDims();
+        sampleSchedule.setDims(newDims);
+        sampleSchedule.calcSampleHash();
+        sampleSchedule.calcSampleIndices();
+        sampleSchedule.dumpSchedule();
+        return sampleSchedule;
+    }
+
+
     public void dumpSchedule() {
         if (log.isDebugEnabled()) {
             StringBuilder scheduleString = new StringBuilder();
@@ -266,8 +292,9 @@ public class SampleSchedule {
                 for (int j = 0; j < v_samples[i].length; j++) {
                     scheduleString.append(" ").append(v_samples[i][j]);
                 }
-                log.debug(scheduleString.toString());
+                scheduleString.append("\n");
             }
+            log.debug(scheduleString.toString());
         }
     }
 

@@ -17,6 +17,7 @@
  */
 package org.nmrfx.processor.operations;
 
+import org.apache.commons.math3.util.MultidimensionalCounter;
 import org.nmrfx.processor.math.Matrix;
 import org.nmrfx.processor.math.MatrixND;
 import org.nmrfx.datasets.MatrixType;
@@ -28,6 +29,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  *
@@ -295,6 +297,38 @@ public class IstMatrix extends MatrixOperation {
             }
         }
         return srcTargetMap;
+    }
+
+    public static int[] genZFList(MatrixND matrixND, int[] origSizes) {
+        int nElems = matrixND.getNElems();
+        int nOrig = 1;
+        for (int sz:origSizes) {
+            nOrig *= sz;
+        }
+        int nZeros = nElems - nOrig;
+        boolean[] validPositions = new boolean[nElems];
+
+        MultidimensionalCounter mdCounter = new MultidimensionalCounter(origSizes);
+        MultidimensionalCounter.Iterator iterator = mdCounter.iterator();
+        int nValid = 0;
+        while (iterator.hasNext()) {
+            iterator.next();
+            int[] counts = iterator.getCounts();
+            int offset = matrixND.getOffset(counts);
+            validPositions[offset] = true;
+            nValid++;
+        }
+
+        int[] zeroList = new int[nZeros];
+        int i = 0;
+        int k = 0;
+        for (boolean valid : validPositions) {
+            if (!valid) {
+                zeroList[k++] = i;
+            }
+            i++;
+        }
+        return zeroList;
     }
 
     public static int[] genZeroList(SampleSchedule sampleSchedule, MatrixND matrix) {

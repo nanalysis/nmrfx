@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
- /*
+/*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
@@ -34,35 +34,30 @@ import java.io.File;
 import java.util.ArrayList;
 
 /**
- *
  * @author Bruce Johnson
  */
 public class NESTANMR extends MatrixOperation {
 
     /**
      * Number of outer iterations (continuations) to iterate over : e.g. 10.
-     *
-     * @see #ist
      */
     private final int outerIterations;
     /**
      * Number of inner iterations to iterate over : e.g. 20.
-     *
-     * @see #ist
      */
     private final int innerIterations;
     /**
      * Sample schedule used for non-uniform sampling. Specifies array elements
      * where data is present.
      *
-     * @see #ist
-     * @see #zero_samples
      * @see SampleSchedule
      */
     private final double tolFinal;
     private final double muFinal;
     private final double threshold;
     private final boolean zeroAtStart;
+    private final boolean extendMode;
+    private final int extendFactor;
     /**
      * 2D phase array: [f1ph0, f1ph1, f2ph0, f2ph1].
      */
@@ -72,7 +67,9 @@ public class NESTANMR extends MatrixOperation {
 
     private final File logHome;
 
-    public NESTANMR(int outerIterations, int innerIterations, double tolFinal, double muFinal, SampleSchedule schedule, ArrayList phaseList, boolean zeroAtStart, double threshold, String logHomeName) throws ProcessingException {
+    public NESTANMR(int outerIterations, int innerIterations, double tolFinal, double muFinal, SampleSchedule schedule,
+                    ArrayList phaseList, boolean zeroAtStart, double threshold,
+                    String logHomeName) throws ProcessingException {
         this.outerIterations = outerIterations;
         this.innerIterations = innerIterations;
         this.sampleSchedule = schedule;
@@ -93,10 +90,70 @@ public class NESTANMR extends MatrixOperation {
         this.muFinal = muFinal;
         this.threshold = threshold;
         this.zeroAtStart = zeroAtStart;
+        this.extendMode = false;
+        this.extendFactor = 0;
+    }
+
+    public NESTANMR(int outerIterations, int innerIterations, double tolFinal, double muFinal,
+                    ArrayList phaseList, boolean zeroAtStart, double threshold, int extendFactor) throws ProcessingException {
+        this.outerIterations = outerIterations;
+        this.innerIterations = innerIterations;
+        this.sampleSchedule = null;
+        if (!phaseList.isEmpty()) {
+            this.phase = new double[phaseList.size()];
+            for (int i = 0; i < phaseList.size(); i++) {
+                this.phase[i] = (Double) phaseList.get(i);
+            }
+        } else {
+            phase = null;
+        }
+        this.logHome = null;
+        this.tolFinal = tolFinal;
+        this.muFinal = muFinal;
+        this.threshold = threshold;
+        this.zeroAtStart = zeroAtStart;
+        this.extendMode = true;
+        this.extendFactor = extendFactor;
     }
 
     @Override
     public Operation eval(Vec vector) throws ProcessingException {
+        if (extendMode) {
+            return evalExtend(vector);
+        } else {
+            return evalNUS(vector);
+        }
+    }
+
+    public Operation evalExtend(Vec vector) throws ProcessingException {
+        try {
+            int origSize = vector.getSize();
+            int zfSize = getZfSize(origSize, extendFactor);
+
+            vector.resize(zfSize);
+
+            MatrixND matrixND = new MatrixND(vector.getSize() * 2);
+            for (int i = 0; i < vector.getSize(); i++) {
+                matrixND.setValue(vector.getReal(i), i * 2);
+                matrixND.setValue(vector.getImag(i), i * 2 + 1);
+            }
+            int[] origSizes = {origSize * 2};
+            int[] zeroList = IstMatrix.genZFList(matrixND, origSizes);
+
+            NESTAMath nesta = new NESTAMath(matrixND, zeroList, outerIterations, innerIterations, tolFinal, muFinal, phase, zeroAtStart, threshold, null);
+            nesta.doNESTA();
+            for (int i = 0; i < vector.getSize(); i++) {
+                double real = matrixND.getValue(i * 2);
+                double imag = matrixND.getValue(i * 2 + 1);
+                vector.set(i, real, imag);
+            }
+        } catch (Exception e) {
+            throw new ProcessingException(e.getLocalizedMessage());
+        }
+        return this;
+    }
+
+    public Operation evalNUS(Vec vector) throws ProcessingException {
         try {
             int origSize = vector.getSize();
             vector.checkPowerOf2();
@@ -133,12 +190,48 @@ public class NESTANMR extends MatrixOperation {
         } catch (Exception e) {
             throw new ProcessingException(e.getLocalizedMessage());
         }
-        //PyObject obj = interpreter.get("a");
         return this;
     }
 
     @Override
     public Operation evalMatrix(MatrixType matrix) {
+        if (extendMode) {
+            return evalZFMatrix(matrix);
+        } else {
+            return evalNUSMatrix(matrix);
+        }
+
+    }
+
+    static int getZfSize(double vecSize, int factor) {
+        int size = (int) (Math.pow(2, Math.ceil((Math.log(vecSize) / Math.log(2)) + factor)));
+        return size;
+    }
+
+    public Operation evalZFMatrix(MatrixType matrix) {
+        try {
+            MatrixND matrixND = (MatrixND) matrix;
+            int[] origSizes = new int[((MatrixND) matrix).getNDim()];
+            int[] newSizes = new int[((MatrixND) matrix).getNDim()];
+            for (int i = 0; i < matrixND.getNDim(); i++) {
+                matrixND.setVSizes(matrixND.getSizes());
+                origSizes[i] = matrixND.getSize(i);
+                newSizes[i] = getZfSize(origSizes[i], extendFactor);
+            }
+            matrixND.zeroFill(newSizes);
+            int[] zeroList = IstMatrix.genZFList(matrixND, origSizes);
+            NESTAMath nesta = new NESTAMath(matrixND, zeroList, outerIterations, innerIterations, tolFinal, muFinal, phase, zeroAtStart, threshold, null);
+            nesta.doNESTA();
+            matrixND.setVSizes(newSizes);
+        } catch (Exception e) {
+            throw new ProcessingException(e.getLocalizedMessage());
+        }
+
+        return this;
+
+    }
+
+    public Operation evalNUSMatrix(MatrixType matrix) {
         if (sampleSchedule == null) {
             throw new ProcessingException("No sample schedule");
         }
