@@ -298,6 +298,24 @@ public class IstMatrix extends MatrixOperation {
         }
         return srcTargetMap;
     }
+    public static int[] genZFSrcTargetMap(MatrixND matrixND, int[] origSizes, boolean constrainEdges) {
+        int nOrig = 1;
+        for (int sz: origSizes) {
+            nOrig *= sz;
+        }
+        int[] srcTargetMap = new int[nOrig];
+
+        MultidimensionalCounter mdCounter = new MultidimensionalCounter(origSizes);
+        MultidimensionalCounter.Iterator iterator = mdCounter.iterator();
+        int i = 0;
+        while (iterator.hasNext()) {
+            iterator.next();
+            int[] counts = iterator.getCounts();
+            int offset = matrixND.getOffset(counts);
+            srcTargetMap[i++] = offset;
+        }
+        return srcTargetMap;
+    }
 
     public static int[] genZFList(MatrixND matrixND, int[] origSizes, boolean constrainEdges) {
         int nElems = matrixND.getNElems();

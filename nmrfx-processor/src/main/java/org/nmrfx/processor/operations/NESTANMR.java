@@ -203,7 +203,7 @@ public class NESTANMR extends MatrixOperation {
 
     }
 
-    static int getZfSize(double vecSize, int factor) {
+    public static int getZfSize(double vecSize, int factor) {
         int size = (int) (Math.pow(2, Math.ceil((Math.log(vecSize) / Math.log(2)) + factor)));
         return size;
     }

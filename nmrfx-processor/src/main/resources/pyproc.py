@@ -2394,12 +2394,14 @@ def IST(threshold=0.98, iterations=500, alg='std', timeDomain=True, ph0=None, ph
         process.addOperation(op)
     return op
 
-def EXTEND(factor=1, disabled=False, vector=None, process=None):
+def EXTEND(alg='nesta', factor=1, disabled=False, vector=None, process=None):
     ''' Experimental implementation of NESTA algorithm for extending data as alternative to Linear Prediction.
     This version requires that the data be in-phase.  Use the phase argument to provide a list of phase values.
   
     Parameters
     ---------
+    alg : {'nesta','grins'}
+        Name of algorithm to use.
     factor : int
         amin : 0
         min : 0
@@ -2416,6 +2418,12 @@ def EXTEND(factor=1, disabled=False, vector=None, process=None):
     zeroAtStart=True
     threshold=0.0
 
+    noise = 0.0
+    phase = None
+    scale = 0.5
+    preserve = False
+    synthetic = False
+
     if disabled:
         return None
     phaseList = ArrayList()
@@ -2428,19 +2436,13 @@ def EXTEND(factor=1, disabled=False, vector=None, process=None):
     muFinalReal = math.pow(10.0,-muFinal)
     process = process or getCurrentProcess()
     global fidInfo
-    logFileName = None
-    if fidInfo == None or fidInfo.fidObj == None:
-        schedule = None
-    else:
-        schedule = fidInfo.fidObj.getSampleSchedule()
-        if logToFile:
-            rootdir = fidInfo.fidObj.getFilePath()
-            logDir = os.path.join(rootdir,"nesta")
-            if not os.path.exists(logDir):
-                os.mkdir(logDir)
-            logFileName = os.path.join(logDir,"log")
 
-    op = NESTANMR(nOuter, nInner, tolFinalReal, muFinalReal, phaseList, zeroAtStart, threshold, factor)
+    if alg == 'nesta':
+        op = NESTANMR(nOuter, nInner, tolFinalReal, muFinalReal, phaseList, zeroAtStart, threshold, factor)
+    elif alg == 'grins':
+        op = GRINSOp(noise, scale, factor, phaseList, preserve)
+    else:
+        raise Exception("Invalid algorithm for EXTEND: " + alg)
 
     if (vector != None):
         op.eval(vector)
@@ -2956,6 +2958,7 @@ def DGRINS(noise=5, logToFile=False, disabled=False, dataset=None, process=None)
     else:
         process.addOperation(op)
     return op
+
 
 def GRINS(noise=0.0, scale=0.5, zf=0, phase=None, preserve=False, synthetic=False, logToFile=False, disabled=False, dataset=None, process=None):
     ''' Experimental GRINS.

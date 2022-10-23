@@ -56,17 +56,17 @@ public class GRINSOp extends MatrixOperation {
      * Sample schedule used for non-uniform sampling. Specifies array elements
      * where data is present.
      *
-     * @see #ist
-     * @see #zero_samples
      * @see SampleSchedule
      */
     private final SampleSchedule sampleSchedule;
 
+    private final boolean extendMode;
+
     private final File logHome;
 
     public GRINSOp(double noise, double scale, int zfFactor,
-            List<Double> phaseList, boolean preserve, boolean synthetic,
-            SampleSchedule schedule, String logHomeName)
+                   List<Double> phaseList, boolean preserve, boolean synthetic,
+                   SampleSchedule schedule, String logHomeName)
             throws ProcessingException {
         this.noise = noise;
         this.scale = scale;
@@ -87,10 +87,81 @@ public class GRINSOp extends MatrixOperation {
         } else {
             phase = null;
         }
+        this.extendMode = false;
+    }
+    public GRINSOp(double noise, double scale, int zfFactor,
+                   List<Double> phaseList, boolean preserve)
+            throws ProcessingException {
+        this.noise = noise;
+        this.scale = scale;
+        this.preserve = preserve;
+        this.zfFactor = zfFactor;
+        this.synthetic = false;
+        this.sampleSchedule = null;
+        this.logHome = null;
+        if (!phaseList.isEmpty()) {
+            this.phase = new double[phaseList.size()];
+            for (int i = 0; i < phaseList.size(); i++) {
+                this.phase[i] = (Double) phaseList.get(i);
+            }
+        } else {
+            phase = null;
+        }
+        this.extendMode = true;
     }
 
     @Override
     public Operation eval(Vec vector) throws ProcessingException {
+        if (extendMode) {
+            return evalExtend(vector);
+        } else {
+            return evalNUS(vector);
+        }
+    }
+
+    @Override
+    public Operation evalMatrix(MatrixType matrix) {
+        if (extendMode) {
+            return evalExtendMatrix(matrix);
+        } else {
+            return evalNUSMatrix(matrix);
+        }
+
+    }
+
+
+    public Operation evalExtend(Vec vector) throws ProcessingException {
+        try {
+            int origSize = vector.getSize();
+            int zfSize = NESTANMR.getZfSize(origSize, zfFactor);
+            vector.resize(zfSize);
+
+            MatrixND matrixND = new MatrixND(vector.getSize() * 2);
+            for (int i = 0; i < vector.getSize(); i++) {
+                matrixND.setValue(vector.getReal(i), i * 2);
+                matrixND.setValue(vector.getImag(i), i * 2 + 1);
+            }
+            matrixND.zeroFill(zfFactor);
+
+            int[] origSizes = {origSize * 2};
+            int[] srcTargetMap = IstMatrix.genZFSrcTargetMap(matrixND, origSizes, false);
+            int[] zeroList = IstMatrix.genZFList(matrixND, origSizes, true);
+
+            GRINS grins = new GRINS(matrixND, noise, scale, phase, preserve, synthetic, zeroList, srcTargetMap, null);
+            grins.exec();
+            for (int i = 0; i < vector.getSize(); i++) {
+                double real = matrixND.getValue(i * 2);
+                double imag = matrixND.getValue(i * 2 + 1);
+                vector.set(i, real, imag);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new ProcessingException(e.getLocalizedMessage());
+        }
+        return this;
+    }
+
+    public Operation evalNUS(Vec vector) throws ProcessingException {
         try {
             MatrixND matrixND = new MatrixND(vector.getSize() * 2);
             for (int i = 0; i < vector.getSize(); i++) {
@@ -126,8 +197,36 @@ public class GRINSOp extends MatrixOperation {
         return this;
     }
 
-    @Override
-    public Operation evalMatrix(MatrixType matrix) {
+    public Operation evalExtendMatrix(MatrixType matrix) {
+        try {
+            MatrixND matrixND = (MatrixND) matrix;
+            int[] origSizes = new int[((MatrixND) matrix).getNDim()];
+            int[] vSizes = new int[((MatrixND) matrix).getNDim()];
+            int[] newSizes = new int[((MatrixND) matrix).getNDim()];
+            for (int i = 0; i < matrixND.getNDim(); i++) {
+                origSizes[i] = matrixND.getSize(i);
+                vSizes[i] = matrixND.getVSizes()[i]; //assumes complex
+                newSizes[i] = NESTANMR.getZfSize(vSizes[i], zfFactor);
+            }
+            matrixND.zeroFill(newSizes);
+            int[] zeroList = IstMatrix.genZFList(matrixND, vSizes, true);
+            int[] srcTargetMap = IstMatrix.genZFSrcTargetMap(matrixND, vSizes, false);
+            String logFile = null;
+            if (logHome != null) {
+                logFile = logHome.toString() + matrixND.getIndex() + ".log";
+            }
+            GRINS grins = new GRINS(matrixND, noise, scale, phase, preserve, synthetic, zeroList, srcTargetMap, logFile);
+            grins.exec();
+            matrixND.setVSizes(newSizes);
+        } catch (Exception e) {
+            throw new ProcessingException(e.getLocalizedMessage());
+        }
+
+        return this;
+
+    }
+
+    public Operation evalNUSMatrix(MatrixType matrix) {
         if (sampleSchedule == null) {
             throw new ProcessingException("No sample schedule");
         }

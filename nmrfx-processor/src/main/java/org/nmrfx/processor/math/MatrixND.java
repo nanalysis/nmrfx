@@ -721,8 +721,10 @@ public class MatrixND implements MatrixType {
         sizes = zfMatrix.sizes;
         strides = zfMatrix.strides;
         nElems = zfMatrix.nElems;
-        for (int i = 0; i < nDim; i++) {
-            pt[i][1] = sizes[i] - 1;
+        if (pt != null) {
+            for (int i = 0; i < nDim; i++) {
+                pt[i][1] = sizes[i] - 1;
+            }
         }
     }
 
