@@ -138,7 +138,7 @@ public class NESTANMR extends MatrixOperation {
                 matrixND.setValue(vector.getImag(i), i * 2 + 1);
             }
             int[] origSizes = {origSize * 2};
-            int[] zeroList = IstMatrix.genZFList(matrixND, origSizes);
+            int[] zeroList = IstMatrix.genZFList(matrixND, origSizes, true);
 
             NESTAMath nesta = new NESTAMath(matrixND, zeroList, outerIterations, innerIterations, tolFinal, muFinal, phase, zeroAtStart, threshold, null);
             nesta.doNESTA();
@@ -196,7 +196,7 @@ public class NESTANMR extends MatrixOperation {
     @Override
     public Operation evalMatrix(MatrixType matrix) {
         if (extendMode) {
-            return evalZFMatrix(matrix);
+            return evalExtendMatrix(matrix);
         } else {
             return evalNUSMatrix(matrix);
         }
@@ -208,18 +208,19 @@ public class NESTANMR extends MatrixOperation {
         return size;
     }
 
-    public Operation evalZFMatrix(MatrixType matrix) {
+    public Operation evalExtendMatrix(MatrixType matrix) {
         try {
             MatrixND matrixND = (MatrixND) matrix;
             int[] origSizes = new int[((MatrixND) matrix).getNDim()];
+            int[] vSizes = new int[((MatrixND) matrix).getNDim()];
             int[] newSizes = new int[((MatrixND) matrix).getNDim()];
             for (int i = 0; i < matrixND.getNDim(); i++) {
-                matrixND.setVSizes(matrixND.getSizes());
                 origSizes[i] = matrixND.getSize(i);
-                newSizes[i] = getZfSize(origSizes[i], extendFactor);
+                vSizes[i] = matrixND.getVSizes()[i]; //assumes complex
+                newSizes[i] = getZfSize(vSizes[i], extendFactor);
             }
             matrixND.zeroFill(newSizes);
-            int[] zeroList = IstMatrix.genZFList(matrixND, origSizes);
+            int[] zeroList = IstMatrix.genZFList(matrixND, vSizes, true);
             NESTAMath nesta = new NESTAMath(matrixND, zeroList, outerIterations, innerIterations, tolFinal, muFinal, phase, zeroAtStart, threshold, null);
             nesta.doNESTA();
             matrixND.setVSizes(newSizes);
@@ -237,6 +238,7 @@ public class NESTANMR extends MatrixOperation {
         }
         try {
             MatrixND matrixND = (MatrixND) matrix;
+            matrixND.ensurePowerOf2();
             for (int i = 0; i < matrixND.getNDim(); i++) {
                 matrixND.setVSizes(matrixND.getSizes());
             }

@@ -668,16 +668,43 @@ public class MatrixND implements MatrixType {
         }
     }
 
+    static int getZfSize(double vecSize, int factor) {
+        int size = (int) (Math.pow(2, Math.ceil((Math.log(vecSize) / Math.log(2)) + factor)));
+        return size;
+    }
+
+    public boolean ensurePowerOf2() {
+        boolean needsZF = false;
+        int[] zfSizes = new int[getNDim()];
+        for (int i = 0; i < getNDim(); i++) {
+            int zfSize = getZfSize(getSize(i), 0);
+            zfSizes[i] = zfSize;
+            if (zfSize != getSize(i)) {
+                needsZF = true;
+            }
+        }
+        if (needsZF) {
+            zeroFill(zfSizes);
+        }
+        return needsZF;
+    }
+
     public void zeroFill(int factor) {
-        if (factor < 1) {
-            return;
+        if (factor < 0) {
+            factor = 0;
         }
         int mult = (int) Math.round(Math.pow(2, factor));
         int[] newSizes = new int[nDim];
+        boolean needsZF = false;
         for (int i = 0; i < nDim; i++) {
-            newSizes[i] = sizes[i] * mult;
+            newSizes[i] = getZfSize(sizes[i], factor);
+            if (newSizes[i] != sizes[i]) {
+                needsZF = true;
+            }
         }
-        zeroFill(newSizes);
+        if (needsZF) {
+            zeroFill(newSizes);
+        }
     }
 
     public void zeroFill(int[] newSizes) {

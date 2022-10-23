@@ -97,6 +97,7 @@ public class GRINSOp extends MatrixOperation {
                 matrixND.setValue(vector.getReal(i), i * 2);
                 matrixND.setValue(vector.getImag(i), i * 2 + 1);
             }
+            matrixND.zeroFill(zfFactor);
             SampleSchedule schedule;
             String logFile = null;
             if (sampleSchedule == null) {
@@ -133,9 +134,7 @@ public class GRINSOp extends MatrixOperation {
 
         try {
             MatrixND matrixND = (MatrixND) matrix;
-            if (zfFactor > 0) {
-                matrixND.zeroFill(zfFactor);
-            }
+            matrixND.zeroFill(zfFactor);
             for (int i = 0; i < matrixND.getNDim(); i++) {
                 matrixND.setVSizes(matrixND.getSizes());
             }

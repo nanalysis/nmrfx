@@ -1045,10 +1045,8 @@ public class Processor {
             int[] vSizes = new int[pt.length - 1];
             for (int i = 0; i < pt.length - 1; i++) {
                 matrixSizes[i] = VecBase.checkPowerOf2(1 + pt[i][1]);
+                matrixSizes[i] = pt[i][1] + 1;
                 vSizes[i] = (pt[i][1] + 1);
-                if (dataset.getComplex(dim[0])) {
-                    vSizes[i] /= 2;
-                }
             }
             for (int i = 0; i < pt.length - 1; i++) {
                 writePt[i][1] = matrixSizes[i] - 1;
@@ -1058,7 +1056,6 @@ public class Processor {
             try {
                 matrix = new MatrixND(writePt, dim, matrixSizes);
                 matrix.setVSizes(vSizes);
-//                printDimPt("getMatrix", dim, matrix.getPt());  // for debug
                 dataset.readMatrixND(pt, dim, matrix);
             } catch (IOException ex) {
                 log.warn(ex.getMessage(), ex);
