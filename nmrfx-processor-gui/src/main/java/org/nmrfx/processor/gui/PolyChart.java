@@ -2519,7 +2519,6 @@ public class PolyChart extends Region implements PeakListener {
         } else if (topY && centerX) {
             border = ChartBorder.TOP;
         }
-
         return border;
     }
 
@@ -4451,7 +4450,6 @@ public class PolyChart extends Region implements PeakListener {
     /**
      * Update the initial scale value for the projections to fit the highest peak to 95% of the available height.
      * If there are two projections, then the scale for the projection with the higher peak is used for both.
-     * TODO the scale should be adjusted in a better way see NMR-5831
      */
     public void updateProjectionScale() {
         Optional<DatasetAttributes> initialDatasetAttr = getFirstDatasetAttributes();
@@ -4474,10 +4472,14 @@ public class PolyChart extends Region implements PeakListener {
             } catch (IOException e) {
                 log.warn("Unable to update projection scale. {}",e.getMessage(), e);
             }
-
         }
     }
 
+    /**
+     * Updates the projection scale value by adding the scaleDelta value for the provided chart border.
+     * @param chartBorder Which chart border to adjust the scale for
+     * @param scaleDelta The amount to adjust the scale
+     */
     public void updateProjectionScale(ChartBorder chartBorder, double scaleDelta) {
         if (chartBorder == ChartBorder.TOP) {
             Optional<DatasetAttributes> projectionAttr = getDatasetAttributes().stream().filter(attr -> attr.projection() == 0).findFirst();

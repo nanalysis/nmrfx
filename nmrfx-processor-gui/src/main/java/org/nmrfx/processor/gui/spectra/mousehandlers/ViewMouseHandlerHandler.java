@@ -53,18 +53,12 @@ public class ViewMouseHandlerHandler extends MouseHandler {
         if ((Math.abs(dx) >= 1.0) || (Math.abs(dy) >= 1.0)) {
             dragStart[0] = x;
             dragStart[1] = y;
-            if (border != ChartBorder.LEFT) {
+            if (border == ChartBorder.BOTTOM) {
                 dy = 0.0;
             }
-            if (border != ChartBorder.BOTTOM) {
+            if (border == ChartBorder.LEFT) {
                 dx = 0.0;
             }
-//            if ((border & 1) == 0) {
-//                dy = 0.0;
-//            }
-//            if ((border & 2) == 0) {
-//                dx = 0.0;
-//            }
             mouseBindings.getChart().scroll(dx, dy);
         }
     }

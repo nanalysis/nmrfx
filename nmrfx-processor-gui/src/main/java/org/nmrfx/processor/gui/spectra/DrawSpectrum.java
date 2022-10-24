@@ -822,7 +822,7 @@ public class DrawSpectrum {
                         (index, intensity) -> axes[1].getDisplayPosition(index), false, false);
             }
         } catch (IOException ioE) {
-            System.out.println(ioE.getMessage());
+            log.warn(ioE.getMessage(), ioE);
         }
     }
 
