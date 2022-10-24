@@ -4472,8 +4472,7 @@ public class PolyChart extends Region implements PeakListener {
                     }
                 }
             } catch (IOException e) {
-                throw new RuntimeException(e);
-
+                log.warn("Unable to update projection scale. {}",e.getMessage(), e);
             }
 
         }
