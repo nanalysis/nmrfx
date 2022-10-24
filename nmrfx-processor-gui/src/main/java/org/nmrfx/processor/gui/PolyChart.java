@@ -4467,8 +4467,7 @@ public class PolyChart extends Region implements PeakListener {
                     }
                 }
             } catch (IOException e) {
-                throw new RuntimeException(e);
-
+                log.warn("Unable to update projection scale. {}",e.getMessage(), e);
             }
             Double actualScale = scaleValues.stream().min(Comparator.naturalOrder()).orElse(0.0);
             sliceAttributes.setScaleValue(actualScale * initialDatasetAttr.get().getLvl());
