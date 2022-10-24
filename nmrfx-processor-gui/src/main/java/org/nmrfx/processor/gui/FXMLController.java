@@ -670,6 +670,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
                 generateScriptAndParse(nmrData, processorController);
             }
             getActiveChart().clearAnnotations();
+            getActiveChart().removeProjections();
             getActiveChart().layoutPlotChildren();
             statusBar.setMode(0);
         } else {
@@ -716,6 +717,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
         getActiveChart().setCrossHairState(true, true, true, true);
         getActiveChart().clearAnnotations();
         getActiveChart().clearPopoverTools();
+        getActiveChart().removeProjections();
         ProcessorController processorController = getActiveChart().processorController;
         if (processorController != null) {
             processorController.viewingDataset(true);
