@@ -180,10 +180,10 @@ public class XYCanvasChart {
             for (DataSeries dataSeries : data) {
                 if (!dataSeries.isEmpty()) {
                     ok = true;
-                    xMin = dataSeries.getMinX();
-                    xMax = dataSeries.getMaxX();
-                    yMin = dataSeries.getMinY();
-                    yMax = dataSeries.getMaxY();
+                    xMin = Math.min(xMin, dataSeries.getMinX());
+                    xMax = Math.max(xMax,dataSeries.getMaxX());
+                    yMin = Math.min(yMin, dataSeries.getMinY());
+                    yMax = Math.max(yMax, dataSeries.getMaxY());
                 }
             }
 
