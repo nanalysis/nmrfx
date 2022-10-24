@@ -1367,6 +1367,7 @@ public class SpecAttrWindowController implements Initializable {
         chart.updateDatasets(datasetTargets);
         if (datasetTargets.isEmpty()) {
             chart.removeProjections();
+            chart.getCrossHairs().hideCrossHairs();
         } else {
             chart.updateProjections();
             chart.updateProjectionBorders();
