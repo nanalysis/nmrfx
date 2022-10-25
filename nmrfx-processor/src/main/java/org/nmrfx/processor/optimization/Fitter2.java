@@ -1,19 +1,11 @@
 package org.nmrfx.processor.optimization;
 
-import java.lang.reflect.InvocationTargetException;
-import java.util.Arrays;
-import java.util.function.BiFunction;
-import java.util.stream.IntStream;
 import org.apache.commons.math3.analysis.MultivariateFunction;
 import org.apache.commons.math3.exception.DimensionMismatchException;
 import org.apache.commons.math3.exception.NotPositiveException;
 import org.apache.commons.math3.exception.NotStrictlyPositiveException;
 import org.apache.commons.math3.exception.TooManyEvaluationsException;
-import org.apache.commons.math3.optim.InitialGuess;
-import org.apache.commons.math3.optim.MaxEval;
-import org.apache.commons.math3.optim.PointValuePair;
-import org.apache.commons.math3.optim.SimpleBounds;
-import org.apache.commons.math3.optim.SimpleValueChecker;
+import org.apache.commons.math3.optim.*;
 import org.apache.commons.math3.optim.nonlinear.scalar.GoalType;
 import org.apache.commons.math3.optim.nonlinear.scalar.ObjectiveFunction;
 import org.apache.commons.math3.optim.nonlinear.scalar.noderiv.CMAESOptimizer;
@@ -27,27 +19,33 @@ import org.codehaus.janino.ExpressionEvaluator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class Fitter {
+import java.util.Arrays;
+import java.util.function.BiFunction;
+import java.util.stream.IntStream;
 
-    private static final Logger log = LoggerFactory.getLogger(Fitter.class);
+// Fitter2 allows multiple yValues per index (compared to Fitter, which allows only 1).
+// we may refactor so Fitter2 extends, or replaces Fitter
+
+public class Fitter2 {
+
+    private static final Logger log = LoggerFactory.getLogger(Fitter2.class);
     static RandomGenerator random = new SynchronizedRandomGenerator(new Well19937c());
 
     boolean reportFitness = false;
     int reportAt = 10;
     double[][] parValues;
     double[][] xValues;
-    double[] yValues;
-    double[] errValues;
+    double[][] yValues;
+    double[][] errValues;
 
     double[] lowerBounds;
     double[] upperBounds;
     double[] start;
     double inputSigma;
-    BiFunction<double[], double[], Double> function;
+    BiFunction<double[], double[], double[]> function;
     BiFunction<double[], double[][], Double> valuesFunction = null;
     ExpressionEvaluator ee = null;
-
-    public Fitter() {
+    private Fitter2() {
 
     }
 
@@ -105,9 +103,9 @@ public class Fitter {
 
     public static double getMinValue(double[] v) {
         double minVal = Double.MAX_VALUE;
-        for (int i = 0; i < v.length; i++) {
-            if (v[i] < minVal) {
-                minVal = v[i];
+        for (double value : v) {
+            if (value < minVal) {
+                minVal = value;
             }
         }
         return minVal;
@@ -127,9 +125,9 @@ public class Fitter {
 
     public static double getMaxValue(double[] v) {
         double maxVal = Double.NEGATIVE_INFINITY;
-        for (int i = 0; i < v.length; i++) {
-            if (v[i] > maxVal) {
-                maxVal = v[i];
+        for (double value : v) {
+            if (value > maxVal) {
+                maxVal = value;
             }
         }
         return maxVal;
@@ -148,9 +146,7 @@ public class Fitter {
     }
 
     public static double getMidY0(double[] x, double[] y) {
-        double yMax = getMaxValue(y);
-        double yMin = getMinValue(y);
-        double hh = (yMin + yMax) / 2.0;
+        double hh = getMaxValue(y) / 2.0;
         double deltaMin = Double.MAX_VALUE;
         double iMid = 0;
 
@@ -169,9 +165,7 @@ public class Fitter {
     }
 
     public static double getMidY0(double[] x, double[] y, int[] indices, int index) {
-        double yMax = getMaxValue(y);
-        double yMin = getMinValue(y);
-        double hh = (yMin + yMax) / 2.0;
+        double hh = getMaxValue(y) / 2.0;
         double deltaMin = Double.MAX_VALUE;
         double iMid = 0;
 
@@ -197,14 +191,14 @@ public class Fitter {
         return fitter;
     }
 
-    public static Fitter getArrayFitter(BiFunction<double[], double[][], Double> function) {
-        Fitter fitter = new Fitter();
+    public static Fitter2 getArrayFitter(BiFunction<double[], double[][], Double> function) {
+        Fitter2 fitter = new Fitter2();
         fitter.valuesFunction = function;
         return fitter;
     }
 
-    public static Fitter getExpressionFitter(String expression, String[] parNames, String[] varNames) throws CompileException {
-        Fitter fitter = new Fitter();
+    public static Fitter2 getExpressionFitter(String expression, String[] parNames, String[] varNames) throws CompileException {
+        Fitter2 fitter = new Fitter2();
 
         ExpressionEvaluator ee = new ExpressionEvaluator();
         Class[] allClasses = new Class[parNames.length + varNames.length];
@@ -220,45 +214,6 @@ public class Fitter {
         return fitter;
     }
 
-    public double evalExpression(double[] pars, double[] vars) {
-        Double[] exprPars = new Double[pars.length + vars.length];
-        for (int i = 0; i < pars.length; i++) {
-            exprPars[i] = pars[i];
-        }
-        for (int i = 0; i < vars.length; i++) {
-            exprPars[i + pars.length] = vars[i];
-        }
-        double value = 0.0;
-        try {
-            value = (Double) ee.evaluate(exprPars);
-        } catch (InvocationTargetException ex) {
-            log.warn(ex.getMessage(), ex);
-        }
-        return value;
-    }
-
-    public double[] evalExpression(double[] pars, double[][] vars) {
-        Double[] exprPars = new Double[pars.length + vars.length];
-        int n = vars[0].length;
-        double[] values = new double[n];
-        for (int j = 0; j < n; j++) {
-            for (int i = 0; i < pars.length; i++) {
-                exprPars[i] = pars[i];
-            }
-            for (int i = 0; i < vars.length; i++) {
-                exprPars[i + pars.length] = vars[i][j];
-            }
-            double value = 0.0;
-            try {
-                value = (Double) ee.evaluate(exprPars);
-            } catch (InvocationTargetException ex) {
-                log.warn(ex.getMessage(), ex);
-            }
-            values[j] = value;
-        }
-        return values;
-    }
-
     public PointValuePair fit(double[] start, double[] lowerBounds, double[] upperBounds, double inputSigma) throws Exception {
         this.start = start;
         this.lowerBounds = lowerBounds.clone();
@@ -266,9 +221,8 @@ public class Fitter {
         this.inputSigma = inputSigma;
         Optimizer opt = new Optimizer();
         opt.setXYE(xValues, yValues, errValues);
-        PointValuePair result = opt.refineCMAES(start, inputSigma);
 
-        return result;
+        return opt.refineCMAES(start, inputSigma);
     }
 
     public double rms(double[] pars) throws Exception {
@@ -277,27 +231,7 @@ public class Fitter {
         return opt.valueWithDenormalized(pars);
     }
 
-    public int maxDevLoc(double[] yCalc, int halfSize) {
-        double maxPosDev = Double.NEGATIVE_INFINITY;
-        int devLoc = 0;
-
-        for (int i = halfSize; i < (yValues.length - halfSize); i++) {
-            double sumDelta = 0.0;
-            for (int j = -halfSize; j <= halfSize; j++) {
-                int k = i + j;
-                if (yValues[k] > yCalc[k]) {
-                    sumDelta += yValues[k] - yCalc[k];
-                }
-            }
-            if (sumDelta > maxPosDev) {
-                maxPosDev = sumDelta;
-                devLoc = (int) xValues[0][i];
-            }
-        }
-        return devLoc;
-    }
-
-    public void setXYE(double[][] xValues, double[] yValues, double[] errValues) {
+    public void setXYE(double[][] xValues, double[][] yValues, double[][] errValues) {
         this.xValues = xValues;
         this.yValues = yValues;
         this.errValues = errValues;
@@ -307,7 +241,7 @@ public class Fitter {
         return xValues;
     }
 
-    public double[] getY() {
+    public double[][] getY() {
         return yValues;
     }
 
@@ -339,8 +273,8 @@ public class Fitter {
         }
 
         double[][] xValues;
-        double[] yValues;
-        double[] errValues;
+        double[][] yValues;
+        double[][] errValues;
         double[][] values;
         long startTime;
         long endTime;
@@ -363,22 +297,20 @@ public class Fitter {
             double sumSq = 0.0;
             double[] ax = new double[xValues.length];
             for (int i = 0; i < yValues.length; i++) {
-                final double value;
+                final double[] value;
                 for (int j = 0; j < xValues.length; j++) {
                     ax[j] = xValues[j][i];
                 }
-                if (ee != null) {
-                    value = evalExpression(par, ax);
-                } else {
-                    value = function.apply(par, ax);
+                value = function.apply(par, ax);
 
+                for (int j=0;j<yValues.length;j++) {
+                    double delta = (value[j] - yValues[j][i]);
+                    if (weightFit) {
+                        delta /= errValues[j][i];
+                    }
+                    sumAbs += FastMath.abs(delta);
+                    sumSq += delta * delta;
                 }
-                double delta = (value - yValues[i]);
-                if (weightFit) {
-                    delta /= errValues[i];
-                }
-                sumAbs += FastMath.abs(delta);
-                sumSq += delta * delta;
             }
             if (absMode) {
                 return sumAbs / (yValues.length - par.length);
@@ -414,19 +346,27 @@ public class Fitter {
             return pars;
         }
 
-        void setXYE(double[][] xValues, double[] yValues, double[] errValues) {
+        void setXYE(double[][] xValues, double[][] yValues, double[][] errValues) {
             this.xValues = xValues;
             this.yValues = yValues;
             this.errValues = errValues;
-            // setup values array in case we've passed in a functin that uses it
+            // setup values array in case we've passed in a function that uses it
 
-            int nA = xValues.length + 2;
+            int nA = xValues.length + yValues.length + errValues.length;
             this.values = new double[nA][];
-            for (int i = 0; i < xValues.length; i++) {
-                this.values[i] = xValues[i];
+            int k = 0;
+            for (double[] xValue : xValues) {
+                this.values[k] = new double[xValue.length];
+                System.arraycopy(xValue, 0, this.values[k++], 0, xValue.length);
             }
-            this.values[nA - 2] = yValues;
-            this.values[nA - 1] = errValues;
+            for (double[] yValue : yValues) {
+                this.values[k] = new double[yValue.length];
+                System.arraycopy(yValue, 0, this.values[k++], 0, yValue.length);
+            }
+            for (double[] errValue : errValues) {
+                this.values[k] = new double[errValue.length];
+                System.arraycopy(errValue, 0, this.values[k++], 0, errValue.length);
+            }
         }
 
         public PointValuePair refineCMAES(double[] guess, double inputSigma) throws Exception {
@@ -447,11 +387,10 @@ public class Fitter {
             double[] normGuess = normalize(guess);
             fixGuesses(normGuess);
 
-            //new Checker(100 * Precision.EPSILON, 100 * Precision.SAFE_MIN, nSteps));
             CMAESOptimizer cmaesOptimizer = new CMAESOptimizer(nSteps, stopFitness, true, diagOnly, 0,
                     random, true,
                     new Checker(tol, tol, nSteps));
-            PointValuePair result = null;
+            PointValuePair result;
 
             try {
                 result = cmaesOptimizer.optimize(
@@ -466,9 +405,7 @@ public class Fitter {
             }
             endTime = System.currentTimeMillis();
             fitTime = endTime - startTime;
-            PointValuePair deNormResult = new PointValuePair(deNormalize(result.getPoint()), result.getValue());
-
-            return deNormResult;
+            return new PointValuePair(deNormalize(result.getPoint()), result.getValue());
         }
     }
 
@@ -478,17 +415,19 @@ public class Fitter {
         parValues = new double[nPar + 1][nSim];
 
         IntStream.range(0, nSim).parallel().forEach(iSim -> {
-            double[][] newX = new double[xValues.length][yValues.length];
-            double[] newY = new double[yValues.length];
-            double[] newErr = new double[yValues.length];
+            double[][] newX = new double[xValues.length][yValues[0].length];
+            double[][] newY = new double[yValues.length][yValues[0].length];
+            double[][] newErr = new double[yValues.length][yValues[0].length];
             Optimizer optimizer = new Optimizer();
-            for (int iValue = 0; iValue < yValues.length; iValue++) {
-                int rI = random.nextInt(yValues.length);
+            for (int iValue = 0; iValue < yValues[0].length; iValue++) {
+                int rI = random.nextInt(yValues[0].length);
                 for (int xIndex = 0; xIndex < newX.length; xIndex++) {
                     newX[xIndex][iValue] = xValues[xIndex][rI];
                 }
-                newY[iValue] = yValues[rI];
-                newErr[iValue] = errValues[rI];
+                for (int iY=0;iY<yValues.length;iY++) {
+                    newY[iY][iValue] = yValues[iY][rI];
+                    newErr[iY][iValue] = errValues[iY][rI];
+                }
             }
 
             // fixme  idNum should be set in above loop
