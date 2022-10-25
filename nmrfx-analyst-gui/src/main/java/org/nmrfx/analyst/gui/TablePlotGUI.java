@@ -35,7 +35,7 @@ import org.nmrfx.analyst.gui.tools.ScanTable;
 import org.nmrfx.chart.*;
 import org.nmrfx.graphicsio.SVGGraphicsContext;
 import org.nmrfx.processor.gui.controls.FileTableItem;
-import org.nmrfx.processor.math.ReactionFit;
+import org.nmrfx.processor.optimization.ReactionFit;
 
 import java.io.File;
 import java.util.ArrayList;

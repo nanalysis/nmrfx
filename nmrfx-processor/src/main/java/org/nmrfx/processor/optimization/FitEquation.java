@@ -1,15 +1,13 @@
-package org.nmrfx.processor.math;
+package org.nmrfx.processor.optimization;
 
 import org.apache.commons.math3.optim.PointValuePair;
-import org.nmrfx.processor.optimization.FitUtils;
-import org.nmrfx.processor.optimization.Fitter2;
 
 import java.util.Arrays;
 
 /**
  * @author brucejohnson
  */
-public class ReactionFit {
+public abstract class FitEquation {
     double[][] xValues;
     double[][] yValues;
     double[][] errValues;
@@ -43,35 +41,14 @@ public class ReactionFit {
         }
     }
 
+    public abstract Guesses guess();
+
+    public abstract double[] calcValue(double[] xA, double[] pars);
+
     public void setXYE(double[][] xValues, double[][] yValues, double[][] errValues) {
         this.xValues = xValues;
         this.yValues = yValues;
         this.errValues = errValues;
-    }
-
-    private Guesses guess() {
-        double yMax0 = FitUtils.getMaxValue(yValues[0]);
-        double yMax1 = FitUtils.getMaxValue(yValues[1]);
-        double midX = FitUtils.getMidY0(xValues[0], yValues[0]);
-        double r0 = -Math.log(0.5) / midX;
-        Fitter2 fitter = Fitter2.getArrayFitter(this::value);
-        double[][] xValues2 = {xValues[0]};
-        fitter.setXYE(xValues2, yValues, errValues);
-        double[] start = {yMax0, yMax1, 0.5, r0};
-        double[] lower = {yMax0 / 5.0, yMax1 / 5.0, 0.0, r0 / 2.0};
-        double[] upper = {yMax0 * 3.0, yMax1 * 3.0, 1.0, r0 * 3.0};
-        return new Guesses(start, lower, upper);
-    }
-
-    private double[] calcValue(double[] xA, double[] pars) {
-        double x = xA[0];
-        double rScale = pars[0];
-        double pScale = pars[1];
-        double fEq = pars[2];
-        double r = pars[3];
-        double rY = (rScale - fEq * rScale) * Math.exp(-r * x) + fEq * rScale;
-        double pY = ((1.0 - fEq) * pScale) * (1.0 - Math.exp(-r * x));
-        return new double[]{rY,pY};
     }
 
     public double[][] getSimValues(double[] first, double[] last, int n) {
@@ -79,16 +56,16 @@ public class ReactionFit {
         double[][] result = new double[m][n];
         double[] xA = new double[xValues.length];
         for (int i = 0; i < n; i++) {
-            for (int iX=0;iX<xA.length;iX++) {
-                double x = first[iX] +  (last[iX] - first[iX]) / (n - 1) * i;
+            for (int iX = 0; iX < xA.length; iX++) {
+                double x = first[iX] + (last[iX] - first[iX]) / (n - 1) * i;
                 xA[iX] = x;
             }
             double[] rpY = calcValue(xA, bestPars);
-            for (int iX=0;iX<xA.length;iX++) {
+            for (int iX = 0; iX < xA.length; iX++) {
                 result[iX][i] = xA[iX];
             }
-            for (int iY=0;iY<rpY.length;iY++) {
-                result[xA.length+iY][i] = rpY[iY];
+            for (int iY = 0; iY < rpY.length; iY++) {
+                result[xA.length + iY][i] = rpY[iY];
             }
         }
         return result;
@@ -99,12 +76,12 @@ public class ReactionFit {
         double sum = 0.0;
         double[] xA = new double[xValues.length];
         for (int i = 0; i < n; i++) {
-            for (int iX=0;iX<xA.length;iX++) {
+            for (int iX = 0; iX < xA.length; iX++) {
                 xA[iX] = values[iX][i];
             }
             double[] rpY = calcValue(xA, pars);
-            for (int j=0;j<rpY.length;j++) {
-                double delta = rpY[j] - values[1+j][i];
+            for (int j = 0; j < rpY.length; j++) {
+                double delta = rpY[j] - values[1 + j][i];
                 sum += delta * delta;
             }
         }
