@@ -1,7 +1,7 @@
 package org.nmrfx.processor.math;
 
 import org.apache.commons.math3.optim.PointValuePair;
-import org.nmrfx.processor.optimization.Fitter;
+import org.nmrfx.processor.optimization.FitUtils;
 import org.nmrfx.processor.optimization.Fitter2;
 
 import java.util.Arrays;
@@ -50,9 +50,9 @@ public class ReactionFit {
     }
 
     private Guesses guess() {
-        double yMax0 = Fitter.getMaxValue(yValues[0]);
-        double yMax1 = Fitter.getMaxValue(yValues[1]);
-        double midX = Fitter.getMidY0(xValues[0], yValues[0]);
+        double yMax0 = FitUtils.getMaxValue(yValues[0]);
+        double yMax1 = FitUtils.getMaxValue(yValues[1]);
+        double midX = FitUtils.getMidY0(xValues[0], yValues[0]);
         double r0 = -Math.log(0.5) / midX;
         Fitter2 fitter = Fitter2.getArrayFitter(this::value);
         double[][] xValues2 = {xValues[0]};
