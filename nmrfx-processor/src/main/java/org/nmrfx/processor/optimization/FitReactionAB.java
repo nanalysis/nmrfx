@@ -4,6 +4,12 @@ package org.nmrfx.processor.optimization;
  * @author brucejohnson
  */
 public class FitReactionAB extends FitEquation {
+    static final String[] parNames = {"A", "B", "f", "k"};
+
+    @Override
+    public String[] parNames() {
+        return parNames;
+    }
 
     @Override
     public int nY() {

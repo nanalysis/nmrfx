@@ -41,6 +41,8 @@ public abstract class FitEquation {
         }
     }
 
+    public  abstract String[] parNames();
+
     public abstract  int nY();
 
     public abstract  int nX();
@@ -105,7 +107,6 @@ public abstract class FitEquation {
         Fitter2 fitter = Fitter2.getArrayFitter(this::value);
         fitter.setXYE(xValues, yValues, errValues);
         var guesses = guess();
-        System.out.println(guesses);
         try {
             PointValuePair result = fitter.fit(guesses.start, guesses.lower, guesses.upper, 10.0);
             bestPars = result.getPoint();

@@ -48,7 +48,7 @@ public class XYChartPane extends Pane {
         return (XYCanvasChart) chart;
     }
 
-    void updateChart() {
+    public void updateChart() {
         canvas.setWidth(getWidth());
         canvas.setHeight(getHeight());
         chart.setWidth(canvas.getWidth());

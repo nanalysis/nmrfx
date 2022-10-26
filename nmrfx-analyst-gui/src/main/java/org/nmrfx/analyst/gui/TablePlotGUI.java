@@ -18,7 +18,11 @@
 package org.nmrfx.analyst.gui;
 
 import javafx.beans.Observable;
+import javafx.beans.property.ReadOnlyObjectWrapper;
+import javafx.beans.value.ObservableValue;
+import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
+import javafx.collections.ObservableList;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
@@ -29,6 +33,7 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+import javafx.util.Callback;
 import org.apache.commons.math3.optim.PointValuePair;
 import org.controlsfx.control.CheckComboBox;
 import org.nmrfx.analyst.gui.tools.ScanTable;
@@ -60,6 +65,8 @@ public class TablePlotGUI {
     Map<String, String> nameMap = new HashMap<>();
     List<DataSeries> fitLineSeries = new ArrayList<>();
     ChoiceBox<String> equationChoice = new ChoiceBox<>();
+    TableView<ParItem> parTable = new TableView<>();
+    boolean showGroup = false;
 
     /**
      * Creates a TablePlotGUI instance
@@ -71,6 +78,9 @@ public class TablePlotGUI {
         this.tableView = tableView;
     }
 
+    record ParItem(String columnName, int group, String parName, double value, double error) {
+    }
+
     /**
      * Creates and populates a new stage for the TablePlotGUI, if not already
      * created. The stage is displayed and raised to front.
@@ -80,6 +90,7 @@ public class TablePlotGUI {
         if (stage == null) {
             stage = new Stage();
             stage.setTitle("Table Plotter");
+            stage.setWidth(500);
             Label typelabel = new Label("  Type:  ");
             Label xlabel = new Label("  X Var:  ");
             Label ylabel = new Label("  Y Var:  ");
@@ -114,30 +125,80 @@ public class TablePlotGUI {
             fileMenu.getItems().add(exportSVGMenuItem);
             exportSVGMenuItem.setOnAction(e -> exportSVGAction());
 
+            ToolBar toolBar2 = new ToolBar();
+
             Button button = new Button("Fit");
             button.setOnAction(e -> analyze());
-            equationChoice.getItems().addAll("ExpAB", "ExpABC", "A<>B");
-            toolBar.getItems().addAll(fileMenu, equationChoice, button);
+            equationChoice.getItems().addAll("ExpAB", "ExpABC", "A<->B");
+            toolBar2.getItems().addAll(equationChoice, button);
             HBox hBox = new HBox();
             HBox.setHgrow(hBox, Priority.ALWAYS);
             hBox.setMinWidth(600);
-            hBox.getChildren().addAll(typelabel, chartTypeChoice,
+            toolBar.getItems().addAll(fileMenu,typelabel, chartTypeChoice,
                     xlabel, xArrayChoice, ylabel, yArrayChoice);
             hBox.setAlignment(Pos.CENTER);
 
             VBox vBox = new VBox();
             vBox.setMinWidth(600);
-            vBox.getChildren().addAll(toolBar, hBox);
+            vBox.getChildren().addAll(toolBar);
+            VBox vBox2 = new VBox();
+            vBox2.setMinWidth(200);
+            vBox2.getChildren().addAll(toolBar2, parTable);
+
             chartPane = new XYChartPane();
             activeChart = chartPane.getChart();
             borderPane.setTop(vBox);
             borderPane.setCenter(chartPane);
+            borderPane.setRight(vBox2);
             stage.setScene(stageScene);
+            setupTable();
         }
         updateAxisChoices();
         stage.show();
         stage.toFront();
         updatePlot();
+    }
+
+    void setupTable() {
+        TableColumn<ParItem, String> columnNameColumn = new TableColumn<>("Column");
+        columnNameColumn.setCellValueFactory(new Callback<TableColumn.CellDataFeatures<ParItem, String>, ObservableValue<String>>() {
+            public ObservableValue<String> call(TableColumn.CellDataFeatures<ParItem, String> p) {
+                return new ReadOnlyObjectWrapper(p.getValue().columnName());
+            }
+        });
+        TableColumn<ParItem, Integer> groupColumn = null;
+        if (showGroup) {
+            groupColumn = new TableColumn<>("Group");
+            groupColumn.setCellValueFactory(new Callback<TableColumn.CellDataFeatures<ParItem, Integer>, ObservableValue<Integer>>() {
+                public ObservableValue<Integer> call(TableColumn.CellDataFeatures<ParItem, Integer> p) {
+                    return new ReadOnlyObjectWrapper(p.getValue().group());
+                }
+            });
+        }
+
+        TableColumn<ParItem, String> parNameColumn = new TableColumn<>("Parameter");
+        parNameColumn.setCellValueFactory(new Callback<TableColumn.CellDataFeatures<ParItem, String>, ObservableValue<String>>() {
+            public ObservableValue<String> call(TableColumn.CellDataFeatures<ParItem, String> p) {
+                return new ReadOnlyObjectWrapper(p.getValue().parName());
+            }
+        });
+        TableColumn<ParItem, Double> valueColumn = new TableColumn<>("Value");
+        valueColumn.setCellValueFactory(new Callback<TableColumn.CellDataFeatures<ParItem, Double>, ObservableValue<Double>>() {
+            public ObservableValue<Double> call(TableColumn.CellDataFeatures<ParItem, Double> p) {
+                return new ReadOnlyObjectWrapper(p.getValue().value());
+            }
+        });
+        TableColumn<ParItem, Double> errorColumn = new TableColumn<>("Error");
+        errorColumn.setCellValueFactory(new Callback<TableColumn.CellDataFeatures<ParItem, Double>, ObservableValue<Double>>() {
+            public ObservableValue<Double> call(TableColumn.CellDataFeatures<ParItem, Double> p) {
+                return new ReadOnlyObjectWrapper(p.getValue().error());
+            }
+        });
+        parTable.getColumns().add(columnNameColumn);
+        if (showGroup) {
+            parTable.getColumns().add(groupColumn);
+        }
+        parTable.getColumns().addAll(parNameColumn, valueColumn, errorColumn);
     }
 
     private Map<Integer, List<FileTableItem>> getGroups() {
@@ -159,7 +220,7 @@ public class TablePlotGUI {
         } else {
             activeChart = chartPane.getBoxChart();
         }
-
+        chartPane.updateChart();
     }
 
 
@@ -339,11 +400,11 @@ public class TablePlotGUI {
         FitEquation fitEquation = switch (equationChoice.getValue()) {
             case "ExpAB" -> new FitExp(false);
             case "ExpABC" -> new FitExp(true);
-            case "A<>B" -> new FitReactionAB();
+            case "A<->B" -> new FitReactionAB();
             default -> null;
         };
         if (fitEquation == null) {
-                return;
+            return;
         }
         int nY = fitEquation.nY();
         if ((nY == 2) && (nY != yElems.size())) {
@@ -351,21 +412,22 @@ public class TablePlotGUI {
             return;
         }
         fitLineSeries.clear();
+        ObservableList<ParItem> allResults = FXCollections.observableArrayList();
         if ((xElem != null) && !yElems.isEmpty()) {
-            if (nY == 2)     {
-                fit(xElem, yElems, fitEquation, nY);
+            if (nY == 2) {
+                allResults.addAll(fit(xElem, yElems, fitEquation, nY));
             } else {
                 for (var yElem : yElems) {
                     List<String> subYElem = new ArrayList<String>(Collections.singleton(yElem));
-                    fit(xElem, subYElem, fitEquation, nY);
+                    allResults.addAll(fit(xElem, subYElem, fitEquation, nY));
                 }
             }
             updatePlotWithFitLines();
+            parTable.getItems().setAll(allResults);
         }
-
     }
 
-    private void fit(String xElem, List<String> yElems, FitEquation fitEquation, int nY) {
+    private List<ParItem> fit(String xElem, List<String> yElems, FitEquation fitEquation, int nY) {
         List<FileTableItem> items = tableView.getItems();
         double[][] xValues = new double[1][items.size()];
         double[][] yValues = new double[nY][items.size()];
@@ -387,9 +449,21 @@ public class TablePlotGUI {
         fitEquation.setXYE(xValues, yValues, errValues);
         PointValuePair result = fitEquation.fit();
         double[] errs = fitEquation.getParErrs();
+        String[] parNames = fitEquation.parNames();
         double[] values = result.getPoint();
+        List<ParItem> results = new ArrayList<>();
         for (int j = 0; j < values.length; j++) {
-            System.out.println(values[j] + " " + errs[j]);
+            double errValue = errs[j];
+            int nSig = (int) Math.floor(Math.log10(errValue)) - 1;
+            nSig = -nSig;
+            if (nSig < 0) {
+                nSig = 0;
+            }
+            double scale = Math.pow(10, nSig);
+            errValue = Math.round(errValue * scale)/ scale;
+            double value = Math.round(values[j] * scale)/ scale;
+            ParItem parItem = new ParItem(yElems.get(0), 0, parNames[j], value, errValue);
+            results.add(parItem);
         }
         double[] first = {0.0};
         double[] last = {maxX};
@@ -400,19 +474,13 @@ public class TablePlotGUI {
             for (int j = 0; j < curve0[0].length; j++) {
                 series.add(new XYValue(curve0[0][j], curve0[xValues.length + iSeries][j]));
             }
+            series.setStroke(ScanTable.getGroupColor(iSeries));
             series.setFill(ScanTable.getGroupColor(iSeries));
             series.drawLine(true);
             series.drawSymbol(false);
             series.fillSymbol(false);
             series.setName(yElems.get(iSeries) + ":Fit");
         }
+        return results;
     }
 }
-//            StringBuilder sBuilder = new StringBuilder();
-//            double r1 = reactionFit.getR1(values);
-//            double e1 = r1 / values[1] * errs[1];
-//            sBuilder.append(String.format("%3s %.1f +/- %.1f    ", "Ra", r1, e1));
-//            sBuilder.append(String.format("%3s %.1f +/- %.1f    ", "Rb", values[1], errs[1]));
-//            sBuilder.append(String.format("%3s %.1f +/- %.1f ns", "tau", values[3], errs[3]));
-//            resultsField.setText(sBuilder.toString());
-//

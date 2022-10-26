@@ -5,6 +5,8 @@ package org.nmrfx.processor.optimization;
  */
 public class FitExp extends FitEquation {
     final boolean fitC;
+    static final String[] abParNames = {"A", "B"};
+    static final String[] abcParNames = {"A", "B", "C"};
 
     public FitExp() {
         this(false);
@@ -12,6 +14,11 @@ public class FitExp extends FitEquation {
 
     public FitExp(boolean fitC) {
         this.fitC = fitC;
+    }
+
+    @Override
+    public String[] parNames() {
+        return fitC ? abcParNames : abParNames;
     }
 
     @Override
