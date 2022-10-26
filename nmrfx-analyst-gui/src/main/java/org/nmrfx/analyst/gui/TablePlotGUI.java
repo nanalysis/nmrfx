@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2018 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -35,16 +35,15 @@ import org.nmrfx.analyst.gui.tools.ScanTable;
 import org.nmrfx.chart.*;
 import org.nmrfx.graphicsio.SVGGraphicsContext;
 import org.nmrfx.processor.gui.controls.FileTableItem;
-import org.nmrfx.processor.optimization.ReactionFit;
+import org.nmrfx.processor.optimization.FitEquation;
+import org.nmrfx.processor.optimization.FitExp;
+import org.nmrfx.processor.optimization.FitReactionAB;
+import org.nmrfx.utils.GUIUtils;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
- *
  * @author brucejohnson
  */
 public class TablePlotGUI {
@@ -59,13 +58,14 @@ public class TablePlotGUI {
     ChoiceBox<String> xArrayChoice = new ChoiceBox<>();
     CheckComboBox<String> yArrayChoice = new CheckComboBox<>();
     Map<String, String> nameMap = new HashMap<>();
-    List<DataSeries>  fitLineSeries = new ArrayList<>();
+    List<DataSeries> fitLineSeries = new ArrayList<>();
+    ChoiceBox<String> equationChoice = new ChoiceBox<>();
 
     /**
      * Creates a TablePlotGUI instance
      *
      * @param tableView the TableView object that will be used to get data to
-     * plot
+     *                  plot
      */
     public TablePlotGUI(TableView<FileTableItem> tableView) {
         this.tableView = tableView;
@@ -116,7 +116,8 @@ public class TablePlotGUI {
 
             Button button = new Button("Fit");
             button.setOnAction(e -> analyze());
-            toolBar.getItems().addAll(fileMenu, button);
+            equationChoice.getItems().addAll("ExpAB", "ExpABC", "A<>B");
+            toolBar.getItems().addAll(fileMenu, equationChoice, button);
             HBox hBox = new HBox();
             HBox.setHgrow(hBox, Priority.ALWAYS);
             hBox.setMinWidth(600);
@@ -164,7 +165,7 @@ public class TablePlotGUI {
 
     void updatePlotWithFitLines() {
         updateScatterPlot();
-        for (var series:fitLineSeries) {
+        for (var series : fitLineSeries) {
             activeChart.getData().add(series);
         }
     }
@@ -333,36 +334,80 @@ public class TablePlotGUI {
     }
 
     void analyze() {
-        ReactionFit reactionFit = new ReactionFit();
         String xElem = xArrayChoice.getValue();
         List<String> yElems = yArrayChoice.getCheckModel().getCheckedItems();
-
+        FitEquation fitEquation = switch (equationChoice.getValue()) {
+            case "ExpAB" -> new FitExp(false);
+            case "ExpABC" -> new FitExp(true);
+            case "A<>B" -> new FitReactionAB();
+            default -> null;
+        };
+        if (fitEquation == null) {
+                return;
+        }
+        int nY = fitEquation.nY();
+        if ((nY == 2) && (nY != yElems.size())) {
+            GUIUtils.warn("Fit Y values", "Need " + nY + " columns");
+            return;
+        }
+        fitLineSeries.clear();
         if ((xElem != null) && !yElems.isEmpty()) {
-            List<FileTableItem> items = tableView.getItems();
-            double[][] xValues = new double[1][items.size()];
-            double[][] yValues = new double[yElems.size()][items.size()];
-            double[][] errValues = new double[2][items.size()];
-            int i = 0;
-            double maxX = 0.0;
-            for (FileTableItem item : items) {
-                double x = item.getDouble(nameMap.get(xElem));
-                xValues[0][i] = x;
-                maxX = Math.max(xValues[0][i], maxX);
-                int j=0;
+            if (nY == 2)     {
+                fit(xElem, yElems, fitEquation, nY);
+            } else {
                 for (var yElem : yElems) {
-                    yValues[j][i] = item.getDouble(nameMap.get(yElem));
-                    errValues[j][i] = 1.0;
-                    j++;
+                    List<String> subYElem = new ArrayList<String>(Collections.singleton(yElem));
+                    fit(xElem, subYElem, fitEquation, nY);
                 }
-                i++;
             }
-            reactionFit.setXYE(xValues, yValues, errValues);
-            PointValuePair result = reactionFit.fit();
-            double[] errs = reactionFit.getParErrs();
-            double[] values = result.getPoint();
-            for (int j=0;j<values.length;j++) {
-                System.out.println(values[j] + " " + errs[j]);
+            updatePlotWithFitLines();
+        }
+
+    }
+
+    private void fit(String xElem, List<String> yElems, FitEquation fitEquation, int nY) {
+        List<FileTableItem> items = tableView.getItems();
+        double[][] xValues = new double[1][items.size()];
+        double[][] yValues = new double[nY][items.size()];
+        double[][] errValues = new double[2][items.size()];
+        int i = 0;
+        double maxX = 0.0;
+        for (FileTableItem item : items) {
+            double x = item.getDouble(nameMap.get(xElem));
+            xValues[0][i] = x;
+            maxX = Math.max(xValues[0][i], maxX);
+            int j = 0;
+            for (var yElem : yElems) {
+                yValues[j][i] = item.getDouble(nameMap.get(yElem));
+                errValues[j][i] = 1.0;
+                j++;
             }
+            i++;
+        }
+        fitEquation.setXYE(xValues, yValues, errValues);
+        PointValuePair result = fitEquation.fit();
+        double[] errs = fitEquation.getParErrs();
+        double[] values = result.getPoint();
+        for (int j = 0; j < values.length; j++) {
+            System.out.println(values[j] + " " + errs[j]);
+        }
+        double[] first = {0.0};
+        double[] last = {maxX};
+        double[][] curve0 = fitEquation.getSimValues(first, last, 200);
+        for (int iSeries = 0; iSeries < yValues.length; iSeries++) {
+            DataSeries series = new DataSeries();
+            fitLineSeries.add(series);
+            for (int j = 0; j < curve0[0].length; j++) {
+                series.add(new XYValue(curve0[0][j], curve0[xValues.length + iSeries][j]));
+            }
+            series.setFill(ScanTable.getGroupColor(iSeries));
+            series.drawLine(true);
+            series.drawSymbol(false);
+            series.fillSymbol(false);
+            series.setName(yElems.get(iSeries) + ":Fit");
+        }
+    }
+}
 //            StringBuilder sBuilder = new StringBuilder();
 //            double r1 = reactionFit.getR1(values);
 //            double e1 = r1 / values[1] * errs[1];
@@ -371,24 +416,3 @@ public class TablePlotGUI {
 //            sBuilder.append(String.format("%3s %.1f +/- %.1f ns", "tau", values[3], errs[3]));
 //            resultsField.setText(sBuilder.toString());
 //
-            double[] first = {0.0};
-            double[] last = {maxX};
-            double[][] curve0 = reactionFit.getSimValues(first, last, 200);
-            fitLineSeries.clear();
-            for (int iSeries = 0; iSeries <yValues.length;iSeries++) {
-                DataSeries series = new DataSeries();
-                fitLineSeries.add(series);
-                for (int j = 0; j < curve0[0].length; j++) {
-                    series.add(new XYValue(curve0[0][j], curve0[xValues.length+iSeries][j]));
-                }
-                series.setFill(ScanTable.getGroupColor(iSeries));
-                series.drawLine(true);
-                series.drawSymbol(false);
-                series.fillSymbol(false);
-                series.setName(yElems.get(iSeries)+":Fit");
-            }
-            updatePlotWithFitLines();
-        }
-
-    }
-}

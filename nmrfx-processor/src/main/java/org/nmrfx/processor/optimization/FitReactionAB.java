@@ -1,11 +1,19 @@
 package org.nmrfx.processor.optimization;
 
-import org.apache.commons.math3.optim.PointValuePair;
-
 /**
  * @author brucejohnson
  */
-public class ReactionFit extends FitEquation {
+public class FitReactionAB extends FitEquation {
+
+    @Override
+    public int nY() {
+        return 2;
+    }
+
+    @Override
+    public int nX() {
+        return 1;
+    }
 
     public Guesses guess() {
         double yMax0 = FitUtils.getMaxValue(yValues[0]);
