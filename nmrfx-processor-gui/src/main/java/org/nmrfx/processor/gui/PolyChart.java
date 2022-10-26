@@ -1613,7 +1613,7 @@ public class PolyChart extends Region implements PeakListener {
             int jData = 0;
             int addAt = -1;
             for (DatasetAttributes datasetAttr : datasetAttrs) {
-                if (datasetAttr.getDataset().getName().equals(s)) {
+                if (datasetAttr.getDataset().getName().equals(s) && !newList.contains(datasetAttr)) {
                     newList.add(datasetAttr);
                     addAt = jData;
                 }
@@ -1675,6 +1675,7 @@ public class PolyChart extends Region implements PeakListener {
             }
         }
         boolean mixedDim = has1D && hasND;
+        List<Integer> alreadyMatchedDims = new ArrayList<>();
         for (DatasetAttributes datasetAttributes : datasetAttributesList) {
             Dataset dataset = (Dataset) datasetAttributes.getDataset();
             if (!mixedDim || (dataset == null) || dataset.getNDim() > 1) {
@@ -1682,7 +1683,13 @@ public class PolyChart extends Region implements PeakListener {
             } else {
                 int[] matchDim = datasetAttributes.getMatchDim(firstNDAttr.get(), true);
                 if (matchDim[0] != -1) {
-                    datasetAttributes.projection(matchDim[0]);
+                    if (!alreadyMatchedDims.contains(matchDim[0])) {
+                        datasetAttributes.projection(matchDim[0]);
+                        alreadyMatchedDims.add(matchDim[0]);
+                    } else {
+                        // If the projection is already set for the other axis of a homonuclear experiment, switch the axis
+                        datasetAttributes.projection(matchDim[0] == 0 ? 1 : 0);
+                    }
                 }
             }
         }
