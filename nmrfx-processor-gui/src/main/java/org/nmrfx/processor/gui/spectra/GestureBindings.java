@@ -77,8 +77,8 @@ public class GestureBindings {
         if (event.isControlDown() && border == ChartBorder.NONE) {
             chart.scaleY(dy);
         } else if (border == ChartBorder.RIGHT || border == ChartBorder.TOP) {
-            // Divide by 100 to make it easier to scale, doesn't change as quickly
-            chart.updateProjectionScale(border, dy / 100);
+            // Divide by 1000 to make it easier to scale, doesn't change as quickly
+            chart.updateProjectionScale(border, dy / 1000);
             chart.refresh();
         } else if ((border == ChartBorder.LEFT || border == ChartBorder.BOTTOM) || (event.isAltDown() && border == ChartBorder.NONE)) {
             chart.zoom(-dy / 50.0 + 1.0);

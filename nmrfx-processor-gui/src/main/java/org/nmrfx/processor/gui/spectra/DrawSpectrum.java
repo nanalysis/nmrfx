@@ -807,8 +807,7 @@ public class DrawSpectrum {
         boolean drawReal = datasetAttr.getDrawReal();
         try {
             datasetAttr.getProjection((Dataset) projectionDatasetAttributes.getDataset(), sliceVec, sliceDim);
-            double level = datasetAttr.lvlProperty().get();
-            double scale = -projectionDatasetAttributes.getProjectionScale() / level;
+            double scale = -projectionDatasetAttributes.getProjectionScale();
             if (sliceDim == 0) {
                 double offset = axes[0].getYOrigin() - axes[1].getHeight() * 1.005;
                 drawVector(sliceVec, orientation, 0, AXMODE.PPM, drawReal, 0.0, 0.0, null,

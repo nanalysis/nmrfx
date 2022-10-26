@@ -4465,7 +4465,7 @@ public class PolyChart extends Region implements PeakListener {
                         OptionalDouble maxValue = Arrays.stream(projectionVec.rvec).max();
                         if (maxValue.isPresent()) {
                             double scaleValue = (borders.get(i) * 0.95) / maxValue.getAsDouble();
-                            projectionDimAttr.get().setProjectionScale(scaleValue * initialDatasetAttr.get().getLvl());
+                            projectionDimAttr.get().setProjectionScale(scaleValue);
                         }
                     }
                 }
@@ -4483,10 +4483,10 @@ public class PolyChart extends Region implements PeakListener {
     public void updateProjectionScale(ChartBorder chartBorder, double scaleDelta) {
         if (chartBorder == ChartBorder.TOP) {
             Optional<DatasetAttributes> projectionAttr = getDatasetAttributes().stream().filter(attr -> attr.projection() == 0).findFirst();
-            projectionAttr.ifPresent(datasetAttributes -> datasetAttributes.setProjectionScale(Math.max(0, datasetAttributes.getProjectionScale() + scaleDelta)));
+            projectionAttr.ifPresent(datasetAttributes -> datasetAttributes.setProjectionScale(Math.max(0, datasetAttributes.getProjectionScale() * (1 + scaleDelta))));
         } else if (chartBorder == ChartBorder.RIGHT) {
             Optional<DatasetAttributes> projectionAttr = getDatasetAttributes().stream().filter(attr -> attr.projection() == 1).findFirst();
-            projectionAttr.ifPresent(datasetAttributes -> datasetAttributes.setProjectionScale(Math.max(0, datasetAttributes.getProjectionScale() + scaleDelta)));}
+            projectionAttr.ifPresent(datasetAttributes -> datasetAttributes.setProjectionScale(Math.max(0, datasetAttributes.getProjectionScale() * (1 + scaleDelta))));}
     }
 
     /**
