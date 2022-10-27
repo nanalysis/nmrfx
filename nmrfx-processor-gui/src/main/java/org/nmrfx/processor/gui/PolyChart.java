@@ -518,6 +518,10 @@ public class PolyChart extends Region implements PeakListener {
         return activeChart.get();
     }
 
+    public static SimpleObjectProperty<PolyChart> getActiveChartProperty() {
+        return activeChart;
+    }
+
     public FXMLController getController() {
         return controller;
     }
@@ -2701,6 +2705,30 @@ public class PolyChart extends Region implements PeakListener {
 
     public void addRegionListener(ChangeListener<DatasetRegion> listener) {
         activeRegion.addListener(listener);
+    }
+
+    public void removeRegionListener(ChangeListener<DatasetRegion> listener) {
+        activeRegion.removeListener(listener);
+    }
+
+    public Optional<IntegralHit> selectIntegral(DatasetRegion datasetRegion) {
+        for (DatasetAttributes datasetAttr : datasetAttributesList) {
+            datasetAttr.setActiveRegion(null);
+        }
+        setActiveRegion(null);
+        Optional<IntegralHit> hit = Optional.empty();
+        if (datasetRegion != null) {
+            for (DatasetAttributes datasetAttr : datasetAttributesList) {
+                if (datasetAttr.getDataset().getRegions().contains(datasetRegion)) {
+                    IntegralHit newHit = new IntegralHit(datasetAttr, datasetRegion, -1);
+                    datasetAttr.setActiveRegion(newHit);
+                    setActiveRegion(datasetRegion);
+                    hit = Optional.of(newHit);
+                    break;
+                }
+            }
+        }
+        return hit;
     }
 
     public Optional<IntegralHit> selectIntegral(double pickX, double pickY) {

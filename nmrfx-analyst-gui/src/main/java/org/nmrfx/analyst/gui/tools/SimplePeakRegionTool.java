@@ -11,6 +11,7 @@ import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.analyst.gui.annotations.AnnoJournalFormat;
 import org.nmrfx.analyst.gui.molecule.MoleculeUtils;
+import org.nmrfx.analyst.gui.regions.RegionsTableController;
 import org.nmrfx.analyst.peaks.Analyzer;
 import org.nmrfx.analyst.peaks.JournalFormat;
 import org.nmrfx.analyst.peaks.JournalFormatPeaks;
@@ -183,6 +184,7 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
             chart.chartProps.setRegions(false);
             chart.chartProps.setIntegrals(false);
             AnalystApp.getAnalystApp().hidePopover(true);
+            RegionsTableController.getRegionsTableController().updateActiveChartRegions();
             chart.refresh();
             return true;
         } else {
@@ -234,6 +236,7 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
             chart.chartProps.setRegions(true);
             chart.chartProps.setIntegrals(true);
             chart.setActiveRegion(null);
+            RegionsTableController.getRegionsTableController().updateActiveChartRegions();
             chart.refresh();
         }
     }
@@ -291,6 +294,7 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
                     analyzer.loadRegions(regionFile);
                     getChart().chartProps.setIntegrals(true);
                     getChart().chartProps.setRegions(true);
+                    RegionsTableController.getRegionsTableController().updateActiveChartRegions();
                     getChart().refresh();
                 } catch (IOException ioE) {
                     GUIUtils.warn("Error reading regions file", ioE.getMessage());
@@ -364,6 +368,7 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
                 chart.chartProps.setRegions(false);
                 chart.chartProps.setIntegrals(true);
                 chart.updatePeakLists(peakListNames);
+                RegionsTableController.getRegionsTableController().updateActiveChartRegions();
                 chart.refresh();
             } catch (IOException ex) {
                 log.error(ex.getMessage(), ex);

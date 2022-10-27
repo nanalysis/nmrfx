@@ -1,5 +1,6 @@
 package org.nmrfx.datasets;
 
+import javafx.beans.property.SimpleDoubleProperty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,7 +17,7 @@ public class DatasetRegion implements Comparator, Comparable {
     private final double[] x;
     private final double[] startIntensity;
     private final double[] endIntensity;
-    double integral;
+    SimpleDoubleProperty integral = new SimpleDoubleProperty();
     double min;
     double max;
     int[] maxLocation;
@@ -73,7 +74,7 @@ public class DatasetRegion implements Comparator, Comparable {
         return regions;
     }
 
-    public static void saveRegions(File file, TreeSet<DatasetRegion> regions) {
+    public static void saveRegions(File file, Collection<DatasetRegion> regions) {
         if (regions != null) {
             try (FileWriter writer = new FileWriter(file)) {
                 boolean firstLine = true;
@@ -142,7 +143,7 @@ public class DatasetRegion implements Comparator, Comparable {
         for (double value : endIntensity) {
             sBuilder.append(value).append(sepChar);
         }
-        sBuilder.append(integral).append(sepChar);
+        sBuilder.append(integral.get()).append(sepChar);
         sBuilder.append(min).append(sepChar);
         sBuilder.append(max).append(sepChar);
         sBuilder.append(isAuto ? 1 : 0);
@@ -361,10 +362,14 @@ public class DatasetRegion implements Comparator, Comparable {
     }
 
     public void setIntegral(double value) {
-        integral = value;
+        integral.set(value);
     }
 
     public double getIntegral() {
+        return integral.get();
+    }
+
+    public SimpleDoubleProperty getIntegralProperty() {
         return integral;
     }
 
@@ -390,6 +395,10 @@ public class DatasetRegion implements Comparator, Comparable {
 
     public boolean isAuto() {
         return isAuto;
+    }
+
+    public String getAutoText() {
+        return isAuto ? "Fitted" : "Manual";
     }
 
     public void setAuto(boolean value) {

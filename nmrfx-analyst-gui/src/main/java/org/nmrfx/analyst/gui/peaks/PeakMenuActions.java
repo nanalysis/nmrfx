@@ -8,7 +8,7 @@ import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.ToolBar;
 import org.nmrfx.analyst.gui.*;
-import org.nmrfx.analyst.gui.tools.RunAboutGUI;
+import org.nmrfx.analyst.gui.regions.RegionsTableController;
 import org.nmrfx.chemistry.MoleculeFactory;
 import org.nmrfx.chemistry.constraints.NoeSet;
 import org.nmrfx.peaks.Peak;
@@ -38,7 +38,10 @@ public class PeakMenuActions extends MenuActions {
 
         MenuItem peakTableMenuItem = new MenuItem("Show Peak Table");
         peakTableMenuItem.setOnAction(e -> showPeakTable());
-        menu.getItems().addAll(peakAttrMenuItem,
+
+        MenuItem integralTableItem = new MenuItem("Show Regions Table");
+        integralTableItem.setOnAction(e -> showRegionsTable());
+        menu.getItems().addAll(peakAttrMenuItem, integralTableItem,
                 peakTableMenuItem);
     }
 
@@ -88,6 +91,11 @@ public class PeakMenuActions extends MenuActions {
         } else {
             System.out.println("Couldn't make peak table controller");
         }
+    }
+
+    private void showRegionsTable() {
+        RegionsTableController rtc = RegionsTableController.getRegionsTableController();
+        rtc.show();
     }
 
     @FXML

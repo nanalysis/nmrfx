@@ -2004,24 +2004,31 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
                     double deltaEnd = oldEnd - r.getRegionStartIntensity(0);
                     r.setRegionStartIntensity(0, newY);
                     r.setRegionEndIntensity(0, newY + deltaEnd);
-                    try {
-                        r.measure(theFile);
-                    } catch (IOException ioE) {
-                        log.warn("Error encountered moving region.", ioE);
-                    }
+                    measureRegion(r, "Error encountered moving region start and end intensity.");
                     break;
                 case 2:
                     r.setRegionEndIntensity(0, newY);
+                    measureRegion(r, "Error encountered moving region end intensity.");
                     break;
                 case 3:
                     r.setRegionEnd(0, newX);
+                    measureRegion(r, "Error encountered moving region end.");
                     break;
                 case 4:
                     r.setRegionStart(0, newX);
+                    measureRegion(r, "Error encountered moving region start.");
                     break;
                 default:
                     break;
             }
+    }
+
+    private void measureRegion(DatasetRegion region, String errMsg) {
+        try {
+            region.measure(getDataset());
+        } catch (IOException e) {
+            log.warn("{} {}", errMsg, e.getMessage(), e);
+        }
     }
 
     public int[] getMatchDim(DatasetAttributes dataAttr2, boolean looseMode) {

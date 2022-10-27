@@ -28,6 +28,7 @@ import javafx.stage.Stage;
 import org.apache.commons.math3.linear.ArrayRealVector;
 import org.apache.commons.math3.linear.RealVector;
 import org.nmrfx.analyst.gui.TablePlotGUI;
+import org.nmrfx.analyst.gui.regions.RegionsTableController;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.datasets.DatasetRegion;
 import org.nmrfx.processor.datasets.Dataset;
@@ -502,6 +503,7 @@ public class ScannerTool implements ControllerTool {
         dataset.setRegions(regions);
         chart.chartProps.setRegions(true);
         chart.chartProps.setIntegrals(false);
+        RegionsTableController.getRegionsTableController().updateActiveChartRegions();
         chart.refresh();
     }
 
@@ -511,6 +513,7 @@ public class ScannerTool implements ControllerTool {
 
         dataset.setRegions(regions);
         chart.chartProps.setRegions(false);
+        RegionsTableController.getRegionsTableController().updateActiveChartRegions();
         chart.refresh();
     }
 

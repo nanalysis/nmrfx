@@ -12,6 +12,7 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import org.controlsfx.control.PopOver;
 import org.nmrfx.analyst.gui.AnalystApp;
+import org.nmrfx.analyst.gui.regions.RegionsTableController;
 import org.nmrfx.analyst.peaks.Analyzer;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.datasets.DatasetRegion;
@@ -108,26 +109,25 @@ public class IntegralTool {
 
     }
 
-    void setIntegralNorm(int iNorm) {
+    void setIntegralNorm(double iNorm) {
         DatasetRegion region = hit.getDatasetRegion();
         double integral = region.getIntegral();
         DatasetBase dataset = hit.getDatasetAttr().getDataset();
         dataset.setNorm(integral * dataset.getScale() / iNorm);
+        RegionsTableController.getRegionsTableController().updateActiveChartRegions();
         chart.refresh();
 
     }
 
     void setIntegralNormToValue() {
-        DatasetRegion region = hit.getDatasetRegion();
-        double integral = region.getIntegral();
-        DatasetBase dataset = hit.getDatasetAttr().getDataset();
         String normString = GUIUtils.input("Integral Norm Value");
+        double norm;
         try {
-            double norm = Double.parseDouble(normString);
-            dataset.setNorm(integral * dataset.getScale() / norm);
-            chart.refresh();
+            norm = Double.parseDouble(normString);
         } catch (NumberFormatException ignored) {
+            return;
         }
+        setIntegralNorm(norm);
     }
 
     public void splitRegion() {
@@ -140,6 +140,7 @@ public class IntegralTool {
             } catch (IOException e) {
                 GUIUtils.warn("Error Splitting Region", e.getMessage());
             }
+            RegionsTableController.getRegionsTableController().removeRegion(this.hit.getDatasetRegion());
             chart.refresh();
         }
 
@@ -153,9 +154,14 @@ public class IntegralTool {
             chart.setActiveRegion(null);
             hit.getDatasetAttr().setActiveRegion(null);
         }
+        RegionsTableController.getRegionsTableController().removeRegion(this.hit.getDatasetRegion());
+        deleteRegion(this.hit.getDatasetRegion());
+    }
+
+    public void deleteRegion(DatasetRegion region) {
         Analyzer analyzer = Analyzer.getAnalyzer((Dataset) chart.getDataset());
-        analyzer.removePeaksFromRegion(this.hit.getDatasetRegion());
-        analyzer.getRegions().remove(this.hit.getDatasetRegion());
+        analyzer.removePeaksFromRegion(region);
+        analyzer.getRegions().remove(region);
         chart.refresh();
         AnalystApp.getAnalystApp().hidePopover(false);
     }
