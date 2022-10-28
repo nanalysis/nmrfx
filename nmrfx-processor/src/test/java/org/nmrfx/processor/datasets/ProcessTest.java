@@ -154,6 +154,18 @@ public class ProcessTest {
     }
 
     @Test
+    public void test_ubiq_hnco_nesta_extend() throws IOException {
+        long[] result = runAndCompareDetailed("ubiq_hnco_nesta_extend");
+        assertArrayEquals(ARRAYED_RESULT, result);
+    }
+
+    @Test
+    public void test_ubiq_hnco_grins_extend() throws IOException {
+        long[] result = runAndCompareDetailed("ubiq_hnco_grins_extend");
+        assertArrayEquals(ARRAYED_RESULT, result);
+    }
+
+    @Test
     public void test_ubiq_hnco_lp() throws IOException {
         long[] result = runAndCompareDetailed("ubiq_hnco_lp");
         assertArrayEquals(ARRAYED_RESULT, result);
