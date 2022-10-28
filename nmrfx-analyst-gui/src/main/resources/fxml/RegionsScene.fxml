@@ -7,7 +7,7 @@
 <?import javafx.scene.layout.GridPane?>
 <?import javafx.scene.layout.HBox?>
 
-<BorderPane fx:id="regionsBorderPane" styleClass="mainFxmlClass" xmlns="http://javafx.com/javafx/18" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.nmrfx.analyst.gui.regions.RegionsTableController">
+<BorderPane fx:id="regionsBorderPane" styleClass="mainFxmlClass" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.nmrfx.analyst.gui.regions.RegionsTableController">
     <center>
         <BorderPane>
             <top>
@@ -27,7 +27,7 @@
       <ToolBar prefHeight="40.0" prefWidth="343.0" BorderPane.alignment="CENTER">
          <items>
             <MenuButton fx:id="fileMenuButton" mnemonicParsing="false" text="File" />
-            <Button fx:id="addRegionButton" mnemonicParsing="false" text="Add CrossHairs Region" />
+            <Button fx:id="addRegionButton" mnemonicParsing="false" text="Add Region" />
             <Button fx:id="removeRegionButton" mnemonicParsing="false" text="Remove Region" />
          </items></ToolBar>
    </top>

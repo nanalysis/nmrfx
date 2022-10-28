@@ -140,7 +140,7 @@ public class IntegralTool {
             } catch (IOException e) {
                 GUIUtils.warn("Error Splitting Region", e.getMessage());
             }
-            RegionsTableController.getRegionsTableController().removeRegion(this.hit.getDatasetRegion());
+            RegionsTableController.getRegionsTableController().updateActiveChartRegions();
             chart.refresh();
         }
 
