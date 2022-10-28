@@ -2394,7 +2394,7 @@ def IST(threshold=0.98, iterations=500, alg='std', timeDomain=True, ph0=None, ph
         process.addOperation(op)
     return op
 
-def EXTEND(alg='nesta', factor=1, disabled=False, vector=None, process=None):
+def EXTEND(alg='nesta', factor=1, phase=None, disabled=False, vector=None, process=None):
     ''' Experimental implementation of NESTA algorithm for extending data as alternative to Linear Prediction.
     This version requires that the data be in-phase.  Use the phase argument to provide a list of phase values.
   
@@ -2407,7 +2407,10 @@ def EXTEND(alg='nesta', factor=1, disabled=False, vector=None, process=None):
         min : 0
         max : 2
         amax : 2
-        Zero fill factor 
+        Zero fill factor
+    phase : []
+        Array of phase values, 2 per indirect dimension.
+
     '''
     nOuter=15
     nInner=20
