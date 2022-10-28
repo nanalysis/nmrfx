@@ -517,17 +517,38 @@ public class ScannerTool implements ControllerTool {
         chart.refresh();
     }
 
+    /**
+     * Prompts the user for a region file and tries to load the contents of that file as regions in the scanner table.
+     */
     void loadRegions() {
         FileChooser chooser = new FileChooser();
         File file = chooser.showOpenDialog(null);
         if (file != null) {
+            try {
+                boolean isLongRegionsFile = DatasetRegion.isLongRegionFile(file);
+                if (isLongRegionsFile) {
+                    loadRegionsLong(file);
+                } else {
+                    loadRegionsShort(file);
+                }
+            } catch (IOException ex) {
+                Alert alert = new Alert(Alert.AlertType.ERROR);
+                alert.setContentText("Couldn't read file");
+                alert.showAndWait();
+            }
+        }
+    }
+
+    /**
+     * Loads the short version of the regions file into the scanner table.
+     * @param file The file to load
+     * @throws IOException
+     */
+    private void loadRegionsShort(File file) throws IOException {
             try (BufferedReader reader = Files.newBufferedReader(file.toPath())) {
-                while (true) {
-                    String s = reader.readLine();
-                    if (s == null) {
-                        break;
-                    }
-                    String[] fields = s.split(" +");
+                String s;
+                while ((s = reader.readLine()) != null) {
+                    String[] fields = s.split("\\s+");
                     if (fields.length > 2) {
                         String name = fields[0];
                         StringBuilder sBuilder = new StringBuilder();
@@ -548,12 +569,21 @@ public class ScannerTool implements ControllerTool {
                         scanTable.addTableColumn(sBuilder.toString(), "D");
                     }
                 }
-            } catch (IOException ex) {
-                Alert alert = new Alert(Alert.AlertType.ERROR);
-                alert.setContentText("Couldn't read file");
-                alert.showAndWait();
             }
+    }
 
+    /**
+     * Loads the long version of the regions file into the Scanner table. The long version regions are assumed to
+     * have a Measure Type of volume and an Offset Type of none.
+     * @param file The file to load
+     * @throws IOException
+     */
+    private void loadRegionsLong(File file) throws IOException {
+        List<DatasetRegion> regions = new ArrayList<>(DatasetRegion.loadRegions(file));
+        for (int index = 0; index < regions.size(); index++) {
+            DatasetRegion region = regions.get(index);
+            String colName = String.format("region%d:%.4f_%.4f_%s%s", (index + 1), region.getRegionStart(0), region.getRegionEnd(0), Measure.MeasureTypes.V.getSymbol(), OffsetTypes.N.getSymbol());
+            scanTable.addTableColumn(colName, "D");
         }
     }
 

@@ -4,6 +4,7 @@ import javafx.beans.property.SimpleDoubleProperty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -23,7 +24,45 @@ public class DatasetRegion implements Comparator, Comparable {
     int[] maxLocation;
     boolean isAuto = true;
 
+    /**
+     * Checks the first line of the file to see if it is the long format of the regions file
+     * @param file The file to check
+     * @return True if it is a long region file, false if it is short or not a region file.
+     * @throws IOException
+     */
+    public static boolean isLongRegionFile(File file) throws IOException {
+        try (BufferedReader reader = Files.newBufferedReader(file.toPath())) {
+            String firstLine = reader.readLine();
+            firstLine = firstLine.trim();
+            String[] fields = firstLine.split("\\s+");
+            // The first line should be a header with at least 8 fields and the first two fields should start with pos
+            return fields.length > 7 && fields[0].contains("pos") && fields[1].contains("pos");
+        }
+    }
+
+    /**
+     * Loads a region file as a set of DatasetRegion.
+     * @param file The file to load.
+     * @return A TreeSet of Dataset Regions
+     * @throws IOException
+     */
     public static TreeSet<DatasetRegion> loadRegions(File file) throws IOException {
+        boolean isLongRegionsFile = isLongRegionFile(file);
+        if (isLongRegionsFile) {
+            return loadRegionsLong(file);
+        } else {
+            return loadRegionsShort(file);
+        }
+
+    }
+
+    /**
+     * Loads the long version of the region file as a set of DatasetRegions.
+     * @param file The file to load.
+     * @return A set of DatasetRegions
+     * @throws IOException
+     */
+    private static TreeSet<DatasetRegion> loadRegionsLong(File file) throws IOException {
         List<String> lines = Files.readAllLines(file.toPath());
         boolean firstLine = true;
         TreeSet<DatasetRegion> regions = new TreeSet<>();
@@ -31,7 +70,7 @@ public class DatasetRegion implements Comparator, Comparable {
         for (String line : lines) {
             line = line.trim();
             if (line.length() > 0) {
-                String[] fields = line.split("\t");
+                String[] fields = line.split("\\s+");
                 if (firstLine) {
                     int nPos = 0;
                     for (String field : fields) {
@@ -70,6 +109,29 @@ public class DatasetRegion implements Comparator, Comparable {
                 }
             }
 
+        }
+        return regions;
+    }
+
+    /**
+     * Loads the short version of the region file as a set of DatasetRegions.
+     * @param file The file to load.
+     * @return A set of DatasetRegions
+     * @throws IOException
+     */
+    public static TreeSet<DatasetRegion> loadRegionsShort (File file) throws IOException {
+        List<String> lines = Files.readAllLines(file.toPath());
+        TreeSet<DatasetRegion> regions = new TreeSet<>();
+
+        for (String line: lines) {
+            line = line.trim();
+            String[] fields = line.split("\\s+");
+            double[]x = new double[2];
+            x[0] = Double.parseDouble(fields[1]);
+            x[1] = Double.parseDouble(fields[2]);
+            DatasetRegion region = new DatasetRegion(x[0], x[1]);
+            // TODO need to call measure but can't do that without a dataset
+            regions.add(region);
         }
         return regions;
     }

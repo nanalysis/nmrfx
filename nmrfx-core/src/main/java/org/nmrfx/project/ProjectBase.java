@@ -492,6 +492,11 @@ public class ProjectBase {
         File regionFile = DatasetRegion.getRegionFile(regionFileStr);
         if (regionFile.canRead()) {
             TreeSet<DatasetRegion> regions = DatasetRegion.loadRegions(regionFile);
+            if (!DatasetRegion.isLongRegionFile(regionFile)) {
+                for (DatasetRegion region: regions) {
+                    region.measure(dataset);
+                }
+            }
             dataset.setRegions(regions);
             if (resetNorm) {
                 dataset.setNormFromRegions(regions);

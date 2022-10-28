@@ -1271,6 +1271,11 @@ public class Analyzer {
     public void loadRegions(File regionFile) throws IOException {
         if (regionFile.canRead()) {
             TreeSet<DatasetRegion> regions = DatasetRegion.loadRegions(regionFile);
+            if (!DatasetRegion.isLongRegionFile(regionFile)) {
+                for (DatasetRegion region: regions) {
+                    region.measure(getDataset());
+                }
+            }
             dataset.setRegions(regions);
         }
     }

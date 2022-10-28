@@ -130,6 +130,11 @@ public class RegionsTableController implements Initializable {
         if (regionFile != null) {
             try {
                 TreeSet<DatasetRegion> regions = DatasetRegion.loadRegions(regionFile);
+                if (!DatasetRegion.isLongRegionFile(regionFile)) {
+                    for (DatasetRegion region: regions) {
+                        region.measure(chart.getDataset());
+                    }
+                }
                 chart.getDataset().setRegions(regions);
                 updateActiveChartRegions();
                 chart.chartProps.setIntegrals(true);
