@@ -72,7 +72,7 @@ public class NESTANMR extends MatrixOperation {
 
     public NESTANMR(int outerIterations, int innerIterations, double tolFinal, double muFinal, SampleSchedule schedule,
                     List phaseList, boolean zeroAtStart, double threshold,
-                    String logHomeName) throws ProcessingException {
+                    String logHomeName, boolean extendMode, int extendFactor) throws ProcessingException {
         this.outerIterations = outerIterations;
         this.innerIterations = innerIterations;
         this.sampleSchedule = schedule;
@@ -93,30 +93,17 @@ public class NESTANMR extends MatrixOperation {
         this.muFinal = muFinal;
         this.threshold = threshold;
         this.zeroAtStart = zeroAtStart;
-        this.extendMode = false;
-        this.extendFactor = 0;
+        this.extendMode = extendMode;
+        this.extendFactor = extendFactor;
     }
-
+    public NESTANMR(int outerIterations, int innerIterations, double tolFinal, double muFinal, SampleSchedule schedule,
+                    List phaseList, boolean zeroAtStart, double threshold,
+                    String logHomeName) throws ProcessingException {
+        this(outerIterations, innerIterations, tolFinal, muFinal, schedule,phaseList,zeroAtStart,threshold,logHomeName, false,0);
+    }
     public NESTANMR(int outerIterations, int innerIterations, double tolFinal, double muFinal,
                     List phaseList, boolean zeroAtStart, double threshold, int extendFactor) throws ProcessingException {
-        this.outerIterations = outerIterations;
-        this.innerIterations = innerIterations;
-        this.sampleSchedule = null;
-        if (!phaseList.isEmpty()) {
-            this.phase = new double[phaseList.size()];
-            for (int i = 0; i < phaseList.size(); i++) {
-                this.phase[i] = (Double) phaseList.get(i);
-            }
-        } else {
-            phase = null;
-        }
-        this.logHome = null;
-        this.tolFinal = tolFinal;
-        this.muFinal = muFinal;
-        this.threshold = threshold;
-        this.zeroAtStart = zeroAtStart;
-        this.extendMode = true;
-        this.extendFactor = extendFactor;
+        this(outerIterations, innerIterations, tolFinal, muFinal, null,phaseList,zeroAtStart,threshold,null,true, extendFactor);
     }
 
     @Override

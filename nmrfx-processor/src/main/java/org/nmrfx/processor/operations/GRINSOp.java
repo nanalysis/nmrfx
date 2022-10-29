@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,13 +17,11 @@
  */
 package org.nmrfx.processor.operations;
 
-import org.nmrfx.processor.math.MatrixND;
 import org.nmrfx.datasets.MatrixType;
 import org.nmrfx.processor.math.GRINS;
+import org.nmrfx.processor.math.MatrixND;
 import org.nmrfx.processor.math.Vec;
-import static org.nmrfx.processor.operations.IstMatrix.genSrcTargetMap;
 import org.nmrfx.processor.processing.ProcessingException;
-import org.nmrfx.processor.processing.Processor;
 import org.nmrfx.processor.processing.SampleSchedule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,8 +29,9 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.util.List;
 
+import static org.nmrfx.processor.operations.IstMatrix.genSrcTargetMap;
+
 /**
- *
  * @author Bruce Johnson
  */
 public class GRINSOp extends MatrixOperation {
@@ -40,7 +39,6 @@ public class GRINSOp extends MatrixOperation {
 
     /**
      * Noise level of dataset
-     *
      */
     private final double noise;
     private final double scale;
@@ -48,12 +46,10 @@ public class GRINSOp extends MatrixOperation {
     private final double[] phase;  // init zero values
     /**
      * Preserve the residual noise
-     *
      */
     private final boolean preserve;
     /**
      * Replace all values with synthetic
-     *
      */
     private final boolean synthetic;
     /**
@@ -69,7 +65,7 @@ public class GRINSOp extends MatrixOperation {
     private final File logHome;
 
     public GRINSOp(double noise, double scale, int zfFactor,
-                   List<Double> phaseList, boolean preserve, boolean synthetic,
+                   List<Double> phaseList, boolean preserve, boolean synthetic, boolean extendMode,
                    SampleSchedule schedule, String logHomeName)
             throws ProcessingException {
         this.noise = noise;
@@ -91,27 +87,22 @@ public class GRINSOp extends MatrixOperation {
         } else {
             phase = null;
         }
-        this.extendMode = false;
+        this.extendMode = extendMode;
     }
+
+    public GRINSOp(double noise, double scale, int zfFactor,
+                   List<Double> phaseList, boolean preserve, boolean synthetic,
+                   SampleSchedule schedule, String logHomeName) {
+        this(noise, scale, zfFactor, phaseList, preserve, synthetic, false,
+                schedule, logHomeName);
+
+    }
+
     public GRINSOp(double noise, double scale, int zfFactor,
                    List<Double> phaseList, boolean preserve)
             throws ProcessingException {
-        this.noise = noise;
-        this.scale = scale;
-        this.preserve = preserve;
-        this.zfFactor = zfFactor;
-        this.synthetic = false;
-        this.sampleSchedule = null;
-        this.logHome = null;
-        if (!phaseList.isEmpty()) {
-            this.phase = new double[phaseList.size()];
-            for (int i = 0; i < phaseList.size(); i++) {
-                this.phase[i] = (Double) phaseList.get(i);
-            }
-        } else {
-            phase = null;
-        }
-        this.extendMode = true;
+        this(noise, scale, zfFactor, phaseList, preserve, false, true,
+                null, null);
     }
 
     @Override
@@ -130,7 +121,6 @@ public class GRINSOp extends MatrixOperation {
         } else {
             return evalNUSMatrix(matrix);
         }
-
     }
 
 
