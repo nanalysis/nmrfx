@@ -1044,7 +1044,6 @@ public class Processor {
             // size in points of valid data (used for apodizatin etc.)
             int[] vSizes = new int[pt.length - 1];
             for (int i = 0; i < pt.length - 1; i++) {
-                matrixSizes[i] = VecBase.checkPowerOf2(1 + pt[i][1]);
                 matrixSizes[i] = pt[i][1] + 1;
                 vSizes[i] = (pt[i][1] + 1);
             }

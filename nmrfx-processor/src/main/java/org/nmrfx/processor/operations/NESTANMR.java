@@ -23,20 +23,23 @@
  */
 package org.nmrfx.processor.operations;
 
-import org.nmrfx.processor.math.MatrixND;
 import org.nmrfx.datasets.MatrixType;
+import org.nmrfx.processor.math.MatrixND;
 import org.nmrfx.processor.math.NESTAMath;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.processing.ProcessingException;
 import org.nmrfx.processor.processing.SampleSchedule;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author Bruce Johnson
  */
 public class NESTANMR extends MatrixOperation {
+    private static final Logger log = LoggerFactory.getLogger(NESTANMR.class);
 
     /**
      * Number of outer iterations (continuations) to iterate over : e.g. 10.
@@ -68,7 +71,7 @@ public class NESTANMR extends MatrixOperation {
     private final File logHome;
 
     public NESTANMR(int outerIterations, int innerIterations, double tolFinal, double muFinal, SampleSchedule schedule,
-                    ArrayList phaseList, boolean zeroAtStart, double threshold,
+                    List phaseList, boolean zeroAtStart, double threshold,
                     String logHomeName) throws ProcessingException {
         this.outerIterations = outerIterations;
         this.innerIterations = innerIterations;
@@ -95,7 +98,7 @@ public class NESTANMR extends MatrixOperation {
     }
 
     public NESTANMR(int outerIterations, int innerIterations, double tolFinal, double muFinal,
-                    ArrayList phaseList, boolean zeroAtStart, double threshold, int extendFactor) throws ProcessingException {
+                    List phaseList, boolean zeroAtStart, double threshold, int extendFactor) throws ProcessingException {
         this.outerIterations = outerIterations;
         this.innerIterations = innerIterations;
         this.sampleSchedule = null;
@@ -148,6 +151,7 @@ public class NESTANMR extends MatrixOperation {
                 vector.set(i, real, imag);
             }
         } catch (Exception e) {
+            log.error("Error in NESTANMR extend", e);
             throw new ProcessingException(e.getLocalizedMessage());
         }
         return this;
@@ -188,6 +192,7 @@ public class NESTANMR extends MatrixOperation {
                 vector.set(i, real, imag);
             }
         } catch (Exception e) {
+            log.error("Error in NESTANMR extend", e);
             throw new ProcessingException(e.getLocalizedMessage());
         }
         return this;
@@ -204,8 +209,7 @@ public class NESTANMR extends MatrixOperation {
     }
 
     public static int getZfSize(double vecSize, int factor) {
-        int size = (int) (Math.pow(2, Math.ceil((Math.log(vecSize) / Math.log(2)) + factor)));
-        return size;
+        return (int) (Math.pow(2, Math.ceil((Math.log(vecSize) / Math.log(2)) + factor)));
     }
 
     public Operation evalExtendMatrix(MatrixType matrix) {
@@ -225,6 +229,7 @@ public class NESTANMR extends MatrixOperation {
             nesta.doNESTA();
             matrixND.setVSizes(newSizes);
         } catch (Exception e) {
+            log.error("Error in NESTANMR extend", e);
             throw new ProcessingException(e.getLocalizedMessage());
         }
 
@@ -251,6 +256,7 @@ public class NESTANMR extends MatrixOperation {
             NESTAMath nesta = new NESTAMath(matrixND, zeroList, outerIterations, innerIterations, tolFinal, muFinal, phase, zeroAtStart, threshold, logFile);
             nesta.doNESTA();
         } catch (Exception e) {
+            log.error("Error in NESTANMR extend", e);
             throw new ProcessingException(e.getLocalizedMessage());
 
         }

@@ -23,7 +23,10 @@ import org.nmrfx.processor.math.GRINS;
 import org.nmrfx.processor.math.Vec;
 import static org.nmrfx.processor.operations.IstMatrix.genSrcTargetMap;
 import org.nmrfx.processor.processing.ProcessingException;
+import org.nmrfx.processor.processing.Processor;
 import org.nmrfx.processor.processing.SampleSchedule;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.util.List;
@@ -33,6 +36,7 @@ import java.util.List;
  * @author Bruce Johnson
  */
 public class GRINSOp extends MatrixOperation {
+    private static final Logger log = LoggerFactory.getLogger(GRINSOp.class);
 
     /**
      * Noise level of dataset
@@ -155,7 +159,7 @@ public class GRINSOp extends MatrixOperation {
                 vector.set(i, real, imag);
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Error in GRINS extend", e);
             throw new ProcessingException(e.getLocalizedMessage());
         }
         return this;
@@ -191,6 +195,7 @@ public class GRINSOp extends MatrixOperation {
                 vector.set(i, real, imag);
             }
         } catch (Exception e) {
+            log.error("Error in GRINS nus", e);
             throw new ProcessingException(e.getLocalizedMessage());
         }
         //PyObject obj = interpreter.get("a");
@@ -219,6 +224,7 @@ public class GRINSOp extends MatrixOperation {
             grins.exec();
             matrixND.setVSizes(newSizes);
         } catch (Exception e) {
+            log.error("Error in GRINS extend", e);
             throw new ProcessingException(e.getLocalizedMessage());
         }
 
@@ -243,14 +249,10 @@ public class GRINSOp extends MatrixOperation {
             if (logHome != null) {
                 logFile = logHome.toString() + matrixND.getIndex() + ".log";
             }
-//            if (matrixND.getIndex() == 381) {
             GRINS grins = new GRINS(matrixND, noise, scale, phase, preserve, synthetic, zeroList, srcTargetMap, logFile);
             grins.exec();
-//            }
-//            if (matrixND.getIndex() == 94) {
-//                matrixND.dump("junk.txt");
-//            }
         } catch (Exception e) {
+            log.error("Error in GRINS extend", e);
             throw new ProcessingException(e.getLocalizedMessage());
         }
 

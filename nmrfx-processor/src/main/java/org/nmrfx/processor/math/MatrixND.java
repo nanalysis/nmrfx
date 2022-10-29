@@ -693,7 +693,6 @@ public class MatrixND implements MatrixType {
         if (factor < 0) {
             factor = 0;
         }
-        int mult = (int) Math.round(Math.pow(2, factor));
         int[] newSizes = new int[nDim];
         boolean needsZF = false;
         for (int i = 0; i < nDim; i++) {
