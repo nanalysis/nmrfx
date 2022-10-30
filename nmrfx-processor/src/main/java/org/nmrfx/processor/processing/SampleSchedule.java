@@ -235,27 +235,7 @@ public class SampleSchedule {
     }
 
     public static SampleSchedule createUniformSchedule(int[] dims) {
-        SampleSchedule sampleSchedule = new SampleSchedule();
-        int n = 1;
-        for (int i = 0; i < dims.length; i++) {
-            n *= dims[i];
-        }
-        sampleSchedule.demo = true;
-        sampleSchedule.nSamples = n;
-        sampleSchedule.v_samples = new int[n][dims.length - 1];
-        MultidimensionalCounter mCounter = new MultidimensionalCounter(dims);
-        MultidimensionalCounter.Iterator iter = mCounter.iterator();
-        int i = 0;
-        while (iter.hasNext()) {
-            iter.next();
-            int[] pt = iter.getCounts();
-            sampleSchedule.v_samples[i++] = pt;
-        }
-        sampleSchedule.calcDims();
-        sampleSchedule.calcSampleHash();
-        sampleSchedule.calcSampleIndices();
-
-        return sampleSchedule;
+        return createZFSchedule(dims, null);
     }
 
     public static SampleSchedule createZFSchedule(int[] dims, int[] newDims) {
@@ -276,10 +256,11 @@ public class SampleSchedule {
             sampleSchedule.v_samples[i++] = pt;
         }
         sampleSchedule.calcDims();
-        sampleSchedule.setDims(newDims);
+        if (newDims != null) {
+            sampleSchedule.setDims(newDims);
+        }
         sampleSchedule.calcSampleHash();
         sampleSchedule.calcSampleIndices();
-        sampleSchedule.dumpSchedule();
         return sampleSchedule;
     }
 
