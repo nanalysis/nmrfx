@@ -179,6 +179,8 @@ public class SpectrumMenu extends ChartMenu {
         projectMenuItem.setOnAction((ActionEvent e) -> {
             chart.projectDataset();
         });
+        MenuItem removeProjectionsItem = new MenuItem("Remove Projections");
+        removeProjectionsItem.setOnAction((ActionEvent e) -> chart.removeProjections());
         MenuItem extractXMenuItem = new MenuItem("Extract-X");
         extractXMenuItem.setOnAction((ActionEvent e) -> {
             chart.extractSlice(0);
@@ -191,7 +193,7 @@ public class SpectrumMenu extends ChartMenu {
         extractZMenuItem.setOnAction((ActionEvent e) -> {
             chart.extractSlice(2);
         });
-        extractMenu.getItems().addAll(projectMenuItem, extractXMenuItem, extractYMenuItem, extractZMenuItem);
+        extractMenu.getItems().addAll(projectMenuItem, removeProjectionsItem, extractXMenuItem, extractYMenuItem, extractZMenuItem);
 
         Menu linkMenu = new Menu("Peak Linking");
         MenuItem linkColumnMenuItem = new MenuItem("Link Selected Column");
