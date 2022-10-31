@@ -91,7 +91,7 @@ public class Kaiser extends Apodization implements Invertible {
 
     public void apply(Vec vector) {
         vector.makeApache();
-        setupApod(vector.getTDSize(), vector.getStart());
+        setupApod(vector.getSize(), vector.getStart());
         if (invertOp) {
             invertApod(vector);
         } else {
