@@ -113,7 +113,7 @@ public class PeakFitting {
         try {
             List<PeakDim> peakDims = new ArrayList<>();
             peakDims.add(peak.peakDims[0]);
-            double[] bounds = Analyzer.getRegionBounds(dataset.getRegions(), 0, peak.peakDims[0].getChemShift());
+            double[] bounds = Analyzer.getRegionBounds(dataset.getReadOnlyRegions(), 0, peak.peakDims[0].getChemShift());
             value = fitPeakDims(peakDims, mode, bounds, fitMode);
         } catch (PeakFitException | IOException | IllegalArgumentException e) {
             System.out.println(e.getMessage());
@@ -159,7 +159,7 @@ public class PeakFitting {
         }
 
         try {
-            double[] bounds = Analyzer.getRegionBounds(dataset.getRegions(), 0, regionShift);
+            double[] bounds = Analyzer.getRegionBounds(dataset.getReadOnlyRegions(), 0, regionShift);
             if ((bounds == null) && (multiplet != null)) {
                 bounds = Multiplets.getBoundsOfPeakDims(multiplet.getAbsComponentList(), 1.5, regionShift);
             }

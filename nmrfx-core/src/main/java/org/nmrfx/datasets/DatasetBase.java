@@ -67,7 +67,9 @@ public class DatasetBase {
     protected int rdims;
     protected Double noiseLevel = null;
     protected double[][] values;
-    TreeSet<DatasetRegion> regions;
+    List<DatasetRegion> regions;
+    // Listeners for changes in the list of regions
+    Set<DatasetRegionsListListener> regionsListListeners = new HashSet<>();
     protected DatasetStorageInterface dataFile = null;
     private boolean lvlSet = false;
     private double norm = 1.0;
@@ -1658,6 +1660,9 @@ public class DatasetBase {
      */
     public void setNorm(double norm) {
         this.norm = norm;
+        // Setting the norm does not directly affect the DatasetRegion list, but listeners of the list may be
+        // calculating the norm value on update, so notify the listeners instead.
+        updateDatasetRegionsListListeners();
     }
 
     /**
@@ -2039,23 +2044,77 @@ public class DatasetBase {
         return null;
     }
 
-    public void setRegions(TreeSet<DatasetRegion> regions) {
-        this.regions = regions;
+    public void addDatasetRegionsListListener(DatasetRegionsListListener listener) {
+        regionsListListeners.add(listener);
     }
 
-    public TreeSet<DatasetRegion> getRegions() {
+    public void removeDatasetRegionsListListener(DatasetRegionsListListener listener) {
+        regionsListListeners.remove(listener);
+    }
+
+    public void updateDatasetRegionsListListeners() {
+        regionsListListeners.forEach(listener -> listener.datasetRegionsListUpdated(getReadOnlyRegions()));
+    }
+
+    /**
+     * Sets the regions with a new list of regions
+     * @param regions
+     */
+    public void setRegions(List<DatasetRegion> regions) {
+        this.regions = regions;
+        updateDatasetRegionsListListeners();
+    }
+
+    /**
+     * Clears the regions list
+     */
+    public void clearRegions() {
+        regions.clear();
+        updateDatasetRegionsListListeners();
+    }
+
+    /**
+     * Gets a list of the regions that cannot be modified.
+     * @return An unmodifiable list of regions
+     */
+    public List<DatasetRegion> getReadOnlyRegions() {
         if (regions == null) {
-            regions = new TreeSet<>();
+            regions = new ArrayList<>();
         }
-        return regions;
+        return Collections.unmodifiableList(regions);
+    }
+
+    /**
+     * Adds a new region to the list of dataset regions and notifies all the listeners. If the region is already
+     * present in the list of regions it will not be added.
+     * @param region The DatasetRegion to add.
+     */
+    public void addRegion(DatasetRegion region) {
+        if (!(regions.contains(region))) {
+            regions.add(region);
+            updateDatasetRegionsListListeners();
+        }
+    }
+
+    /**
+     * Removes the region from the list of regions.
+     * @param region The DatasetRegion to remove
+     */
+    public void removeRegion(DatasetRegion region) {
+        regions.remove(region);
+        updateDatasetRegionsListListeners();
     }
 
     public DatasetRegion addRegion(double min, double max) {
-        TreeSet<DatasetRegion> regions = getRegions();
-        boolean firstRegion = regions.isEmpty();
+        List<DatasetRegion> sortedRegions = regions.stream().sorted().toList();
+        boolean firstRegion = sortedRegions.isEmpty();
 
         DatasetRegion newRegion = new DatasetRegion(min, max);
-        newRegion.removeOverlapping(regions);
+
+        boolean hasOverlapping = newRegion.removeOverlapping(sortedRegions);
+        if (hasOverlapping) {
+            setRegions(sortedRegions);
+        }
         regions.add(newRegion);
         try {
             newRegion.measure(this);
@@ -2066,6 +2125,7 @@ public class DatasetBase {
         } catch (IOException ex) {
             log.error(ex.getMessage(), ex);
         }
+        updateDatasetRegionsListListeners();
         return newRegion;
     }
 

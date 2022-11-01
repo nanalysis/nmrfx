@@ -490,7 +490,7 @@ public class ScannerTool implements ControllerTool {
     void showRegions() {
         DatasetBase dataset = chart.getDataset();
         List<String> headers = scanTable.getHeaders();
-        TreeSet<DatasetRegion> regions = new TreeSet<>();
+        List<DatasetRegion> regions = new ArrayList<>();
 
         for (String header : headers) {
             Optional<Measure> measureOpt = matchHeader(header);
@@ -503,17 +503,15 @@ public class ScannerTool implements ControllerTool {
         dataset.setRegions(regions);
         chart.chartProps.setRegions(true);
         chart.chartProps.setIntegrals(false);
-        RegionsTableController.getRegionsTableController().updateActiveChartRegions();
         chart.refresh();
     }
 
     void clearRegions() {
         DatasetBase dataset = chart.getDataset();
-        TreeSet<DatasetRegion> regions = new TreeSet<>();
+        List<DatasetRegion> regions = new ArrayList<>();
 
         dataset.setRegions(regions);
         chart.chartProps.setRegions(false);
-        RegionsTableController.getRegionsTableController().updateActiveChartRegions();
         chart.refresh();
     }
 

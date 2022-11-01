@@ -11,7 +11,6 @@ import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.analyst.gui.annotations.AnnoJournalFormat;
 import org.nmrfx.analyst.gui.molecule.MoleculeUtils;
-import org.nmrfx.analyst.gui.regions.RegionsTableController;
 import org.nmrfx.analyst.peaks.Analyzer;
 import org.nmrfx.analyst.peaks.JournalFormat;
 import org.nmrfx.analyst.peaks.JournalFormatPeaks;
@@ -35,7 +34,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
-import java.util.TreeSet;
 
 import static org.nmrfx.utils.GUIUtils.affirm;
 import static org.nmrfx.utils.GUIUtils.warn;
@@ -184,7 +182,6 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
             chart.chartProps.setRegions(false);
             chart.chartProps.setIntegrals(false);
             AnalystApp.getAnalystApp().hidePopover(true);
-            RegionsTableController.getRegionsTableController().updateActiveChartRegions();
             chart.refresh();
             return true;
         } else {
@@ -197,7 +194,7 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
         if (!chart.hasData()) {
             return false;
         } else {
-            Set<DatasetRegion> regions = chart.getDataset().getRegions();
+            List<DatasetRegion> regions = chart.getDataset().getReadOnlyRegions();
             return (regions != null) && !regions.isEmpty();
         }
     }
@@ -227,7 +224,7 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
                 eDialog.showAndWait();
                 return;
             }
-            Set<DatasetRegion> regions = chart.getDataset().getRegions();
+            List<DatasetRegion> regions = chart.getDataset().getReadOnlyRegions();
             Dataset dataset = (Dataset) chart.getDataset();
             if (!regions.isEmpty()) {
                 dataset.setNormFromRegions(regions);
@@ -236,7 +233,6 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
             chart.chartProps.setRegions(true);
             chart.chartProps.setIntegrals(true);
             chart.setActiveRegion(null);
-            RegionsTableController.getRegionsTableController().updateActiveChartRegions();
             chart.refresh();
         }
     }
@@ -265,7 +261,7 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
     private void saveRegions() {
         Analyzer analyzer = getAnalyzer();
         if (analyzer != null) {
-            TreeSet<DatasetRegion> regions = analyzer.getDataset().getRegions();
+            List<DatasetRegion> regions = analyzer.getDataset().getReadOnlyRegions();
             if (regions.isEmpty()) {
                 GUIUtils.warn("Regions Save", "No regions to save");
                 return;
@@ -294,7 +290,6 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
                     analyzer.loadRegions(regionFile);
                     getChart().chartProps.setIntegrals(true);
                     getChart().chartProps.setRegions(true);
-                    RegionsTableController.getRegionsTableController().updateActiveChartRegions();
                     getChart().refresh();
                 } catch (IOException ioE) {
                     GUIUtils.warn("Error reading regions file", ioE.getMessage());
@@ -307,7 +302,7 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
         Analyzer analyzer = getAnalyzer();
         if (analyzer != null) {
             PolyChart chart = getChart();
-            Set<DatasetRegion> regions = chart.getDataset().getRegions();
+            List<DatasetRegion> regions = chart.getDataset().getReadOnlyRegions();
             if ((regions == null) || regions.isEmpty()) {
                 analyzer.calculateThreshold();
                 double threshold = analyzer.getThreshold();
@@ -368,7 +363,6 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
                 chart.chartProps.setRegions(false);
                 chart.chartProps.setIntegrals(true);
                 chart.updatePeakLists(peakListNames);
-                RegionsTableController.getRegionsTableController().updateActiveChartRegions();
                 chart.refresh();
             } catch (IOException ex) {
                 log.error(ex.getMessage(), ex);

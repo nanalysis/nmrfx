@@ -41,8 +41,7 @@ public class PeakMenuActions extends MenuActions {
 
         MenuItem integralTableItem = new MenuItem("Show Regions Table");
         integralTableItem.setOnAction(e -> showRegionsTable());
-        menu.getItems().addAll(peakAttrMenuItem, integralTableItem,
-                peakTableMenuItem);
+        menu.getItems().addAll(peakAttrMenuItem, peakTableMenuItem, integralTableItem);
     }
 
     @Override

@@ -123,6 +123,7 @@ public class PolyChart extends Region implements PeakListener {
 
     public static final ObservableList<PolyChart> CHARTS = FXCollections.observableArrayList();
     static final SimpleObjectProperty<PolyChart> activeChart = new SimpleObjectProperty<>(null);
+    private static final SimpleObjectProperty<DatasetBase> currentDatasetProperty = new SimpleObjectProperty<>(null);
     static final SimpleBooleanProperty multipleCharts = new SimpleBooleanProperty(false);
     static Consumer<PeakDeleteEvent> manualPeakDeleteAction = null;
 
@@ -522,6 +523,10 @@ public class PolyChart extends Region implements PeakListener {
         return activeChart;
     }
 
+    public SimpleObjectProperty<DatasetBase> getCurrentDatasetProperty() {
+        return currentDatasetProperty;
+    }
+
     public FXMLController getController() {
         return controller;
     }
@@ -615,7 +620,7 @@ public class PolyChart extends Region implements PeakListener {
             } catch (IOException ex) {
                 log.error(ex.getMessage(), ex);
             }
-            chartProps.setRegions(false);
+            chartProps.setRegions(true);
             chartProps.setIntegrals(true);
             if (newRegionConsumer != null) {
                 newRegionConsumer.accept(newRegion);
@@ -1658,6 +1663,7 @@ public class PolyChart extends Region implements PeakListener {
                 datasetAttrs.clear();
                 datasetAttrs.addAll(newList);
             }
+            currentDatasetProperty.set(getDataset());
         }
     }
 
@@ -1763,6 +1769,7 @@ public class PolyChart extends Region implements PeakListener {
             updateAxisType();
             datasetFileProp.set(dataset.getFile());
             datasetAttributes.drawList.clear();
+            currentDatasetProperty.set(dataset);
         } else {
             //statusBar.sliceStatus.setSelected(false);
             setSliceStatus(false);
@@ -2523,7 +2530,7 @@ public class PolyChart extends Region implements PeakListener {
     }
 
     void drawRegions(DatasetAttributes datasetAttr, GraphicsContextInterface gC) throws GraphicsIOException {
-        Set<DatasetRegion> regions = datasetAttr.getDataset().getRegions();
+        List<DatasetRegion> regions = datasetAttr.getDataset().getReadOnlyRegions();
         if (regions == null) {
             return;
         }
@@ -2549,7 +2556,7 @@ public class PolyChart extends Region implements PeakListener {
     }
 
     void draw1DIntegral(DatasetAttributes datasetAttr, GraphicsContextInterface gC) throws GraphicsIOException {
-        Set<DatasetRegion> regions = datasetAttr.getDataset().getRegions();
+        List<DatasetRegion> regions = datasetAttr.getDataset().getReadOnlyRegions();
         if (regions == null) {
             return;
         }
@@ -2611,7 +2618,7 @@ public class PolyChart extends Region implements PeakListener {
      * @param regions The regions to search.
      * @return The max integral value.
      */
-    private double getIntegralMaxFromRegions(Set<DatasetRegion> regions) {
+    private double getIntegralMaxFromRegions(List<DatasetRegion> regions) {
         double integralMax = 0.0;
         for (DatasetRegion region : regions) {
             integralMax = Math.max(integralMax, Math.abs(region.getIntegral()));
@@ -2621,7 +2628,7 @@ public class PolyChart extends Region implements PeakListener {
 
     public Optional<IntegralHit> hitIntegral(DatasetAttributes datasetAttr, double pickX, double pickY) {
         Optional<IntegralHit> hit = Optional.empty();
-        Set<DatasetRegion> regions = datasetAttr.getDataset().getRegions();
+        List<DatasetRegion> regions = datasetAttr.getDataset().getReadOnlyRegions();
         if (regions != null) {
             double xMin = xAxis.getLowerBound();
             double xMax = xAxis.getUpperBound();
@@ -2719,7 +2726,7 @@ public class PolyChart extends Region implements PeakListener {
         Optional<IntegralHit> hit = Optional.empty();
         if (datasetRegion != null) {
             for (DatasetAttributes datasetAttr : datasetAttributesList) {
-                if (datasetAttr.getDataset().getRegions().contains(datasetRegion)) {
+                if (datasetAttr.getDataset().getReadOnlyRegions().contains(datasetRegion)) {
                     IntegralHit newHit = new IntegralHit(datasetAttr, datasetRegion, -1);
                     datasetAttr.setActiveRegion(newHit);
                     setActiveRegion(datasetRegion);
@@ -2776,7 +2783,7 @@ public class PolyChart extends Region implements PeakListener {
         Optional<IntegralHit> hit = Optional.empty();
         for (DatasetAttributes datasetAttr : datasetAttributesList) {
 
-            Set<DatasetRegion> regions = datasetAttr.getDataset().getRegions();
+            List<DatasetRegion> regions = datasetAttr.getDataset().getReadOnlyRegions();
             if (regions == null) {
                 continue;
             }

@@ -1,6 +1,5 @@
 package org.nmrfx.datasets;
 
-import javafx.beans.property.SimpleDoubleProperty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,11 +17,26 @@ public class DatasetRegion implements Comparator, Comparable {
     private final double[] x;
     private final double[] startIntensity;
     private final double[] endIntensity;
-    SimpleDoubleProperty integral = new SimpleDoubleProperty();
-    double min;
-    double max;
-    int[] maxLocation;
-    boolean isAuto = true;
+    private double integral;
+    private double min;
+    private double max;
+    private int[] maxLocation;
+    private boolean isAuto = true;
+    // Listeners for changes in this DatasetRegion
+    private final Set<DatasetRegionListener> regionChangeListeners = new HashSet<>();
+
+
+    public void addListener(DatasetRegionListener regionListener) {
+        regionChangeListeners.add(regionListener);
+    }
+
+    public void removeListener(DatasetRegionListener regionListener) {
+        regionChangeListeners.remove(regionListener);
+    }
+
+    public void updateAllListeners() {
+        regionChangeListeners.forEach(regionListener -> regionListener.datasetRegionUpdated(this));
+    }
 
     /**
      * Checks the first line of the file to see if it is the long format of the regions file
@@ -41,12 +55,12 @@ public class DatasetRegion implements Comparator, Comparable {
     }
 
     /**
-     * Loads a region file as a set of DatasetRegion.
+     * Loads a region file as a list of DatasetRegion.
      * @param file The file to load.
-     * @return A TreeSet of Dataset Regions
+     * @return A List of Dataset Regions
      * @throws IOException
      */
-    public static TreeSet<DatasetRegion> loadRegions(File file) throws IOException {
+    public static List<DatasetRegion> loadRegions(File file) throws IOException {
         boolean isLongRegionsFile = isLongRegionFile(file);
         if (isLongRegionsFile) {
             return loadRegionsLong(file);
@@ -57,15 +71,15 @@ public class DatasetRegion implements Comparator, Comparable {
     }
 
     /**
-     * Loads the long version of the region file as a set of DatasetRegions.
+     * Loads the long version of the region file as a list of DatasetRegions.
      * @param file The file to load.
-     * @return A set of DatasetRegions
+     * @return A List of DatasetRegions
      * @throws IOException
      */
-    private static TreeSet<DatasetRegion> loadRegionsLong(File file) throws IOException {
+    private static List<DatasetRegion> loadRegionsLong(File file) throws IOException {
         List<String> lines = Files.readAllLines(file.toPath());
         boolean firstLine = true;
-        TreeSet<DatasetRegion> regions = new TreeSet<>();
+        List<DatasetRegion> regions = new ArrayList<>();
         int nDim = 0;
         for (String line : lines) {
             line = line.trim();
@@ -114,14 +128,14 @@ public class DatasetRegion implements Comparator, Comparable {
     }
 
     /**
-     * Loads the short version of the region file as a set of DatasetRegions.
+     * Loads the short version of the region file as a list of DatasetRegions.
      * @param file The file to load.
-     * @return A set of DatasetRegions
+     * @return A list of DatasetRegions
      * @throws IOException
      */
-    public static TreeSet<DatasetRegion> loadRegionsShort (File file) throws IOException {
+    public static List<DatasetRegion> loadRegionsShort (File file) throws IOException {
         List<String> lines = Files.readAllLines(file.toPath());
-        TreeSet<DatasetRegion> regions = new TreeSet<>();
+        List<DatasetRegion> regions = new ArrayList<>();
 
         for (String line: lines) {
             line = line.trim();
@@ -137,10 +151,11 @@ public class DatasetRegion implements Comparator, Comparable {
     }
 
     public static void saveRegions(File file, Collection<DatasetRegion> regions) {
-        if (regions != null) {
+        List<DatasetRegion> sortedRegions = regions.stream().sorted().toList();
+        if (sortedRegions != null) {
             try (FileWriter writer = new FileWriter(file)) {
                 boolean firstLine = true;
-                for (DatasetRegion region : regions) {
+                for (DatasetRegion region : sortedRegions) {
                     if (firstLine) {
                         writer.write(region.getHeader());
                         firstLine = false;
@@ -205,7 +220,7 @@ public class DatasetRegion implements Comparator, Comparable {
         for (double value : endIntensity) {
             sBuilder.append(value).append(sepChar);
         }
-        sBuilder.append(integral.get()).append(sepChar);
+        sBuilder.append(integral).append(sepChar);
         sBuilder.append(min).append(sepChar);
         sBuilder.append(max).append(sepChar);
         sBuilder.append(isAuto ? 1 : 0);
@@ -294,6 +309,7 @@ public class DatasetRegion implements Comparator, Comparable {
             throw new IllegalArgumentException("Invalid dimension");
         }
         x[dim * 2] = value;
+        updateAllListeners();
     }
 
     public double getRegionEnd(int dim) {
@@ -308,6 +324,7 @@ public class DatasetRegion implements Comparator, Comparable {
             throw new IllegalArgumentException("Invalid dimension");
         }
         x[dim * 2 + 1] = value;
+        updateAllListeners();
     }
 
     public double getRegionStartIntensity(int dim) {
@@ -322,6 +339,7 @@ public class DatasetRegion implements Comparator, Comparable {
             throw new IllegalArgumentException("Invalid dimension");
         }
         startIntensity[dim * 2] = value;
+        updateAllListeners();
     }
 
     public double getRegionEndIntensity(int dim) {
@@ -336,6 +354,7 @@ public class DatasetRegion implements Comparator, Comparable {
             throw new IllegalArgumentException("Invalid dimension");
         }
         endIntensity[dim * 2] = value;
+        updateAllListeners();
     }
 
     @Override
@@ -401,8 +420,8 @@ public class DatasetRegion implements Comparator, Comparable {
         return result;
     }
 
-    public boolean removeOverlapping(SortedSet<DatasetRegion> set) {
-        Iterator<DatasetRegion> iter = set.iterator();
+    public boolean removeOverlapping(List<DatasetRegion> regions) {
+        Iterator<DatasetRegion> iter = regions.iterator();
         boolean result = false;
 
         while (iter.hasNext()) {
@@ -420,23 +439,22 @@ public class DatasetRegion implements Comparator, Comparable {
     public DatasetRegion split(double splitPosition0, double splitPosition1) {
         DatasetRegion newRegion = new DatasetRegion(splitPosition1, x[1]);
         x[1] = splitPosition0;
+        updateAllListeners();
         return newRegion;
     }
 
     public void setIntegral(double value) {
-        integral.set(value);
+        integral = value;
+        updateAllListeners();
     }
 
     public double getIntegral() {
-        return integral.get();
-    }
-
-    public SimpleDoubleProperty getIntegralProperty() {
         return integral;
     }
 
     public void setMax(double value) {
         max = value;
+        updateAllListeners();
     }
 
     public double getMax() {
@@ -445,6 +463,7 @@ public class DatasetRegion implements Comparator, Comparable {
 
     public void setMin(double value) {
         min = value;
+        updateAllListeners();
     }
 
     public double getMin() {
@@ -465,6 +484,7 @@ public class DatasetRegion implements Comparator, Comparable {
 
     public void setAuto(boolean value) {
         isAuto = value;
+        updateAllListeners();
     }
 
     public void measure(DatasetBase dataset) throws IOException {
@@ -499,7 +519,7 @@ public class DatasetRegion implements Comparator, Comparable {
         setIntegral(sum);
     }
 
-    public static DatasetRegion findClosest(TreeSet<DatasetRegion> regions, double ppm, int dim) {
+    public static DatasetRegion findClosest(List<DatasetRegion> regions, double ppm, int dim) {
         DatasetRegion closest = null;
         double minDis = Double.MAX_VALUE;
         for (DatasetRegion region : regions) {

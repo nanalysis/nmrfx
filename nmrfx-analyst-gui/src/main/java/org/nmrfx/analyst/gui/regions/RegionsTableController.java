@@ -15,6 +15,7 @@ import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import org.nmrfx.datasets.DatasetRegion;
+import org.nmrfx.datasets.DatasetRegionsListListener;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
@@ -28,7 +29,6 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
-import java.util.TreeSet;
 
 /**
  * Controller for the Regions Table
@@ -49,6 +49,8 @@ public class RegionsTableController implements Initializable {
     private Button removeRegionButton;
 
     private final ChangeListener<DatasetRegion> activeDatasetRegionListener = this::updateActiveRegion;
+    private final DatasetRegionsListListener datasetRegionsListListener = this::setRegions;
+
 
     private ChangeListener<DatasetRegion> selectedRowRegionsTableListener;
 
@@ -86,7 +88,18 @@ public class RegionsTableController implements Initializable {
         regionsBorderPane.setCenter(regionsTable);
         chart = PolyChart.getActiveChart();
         chart.addRegionListener(activeDatasetRegionListener);
-
+        if (chart.getDataset() != null) {
+            chart.getDataset().addDatasetRegionsListListener(datasetRegionsListListener);
+        }
+        chart.getCurrentDatasetProperty().addListener((observable, oldValue, newValue) -> {
+            if( oldValue != null) {
+                oldValue.removeDatasetRegionsListListener(datasetRegionsListListener);
+            }
+            if (newValue != null) {
+                newValue.addDatasetRegionsListListener(datasetRegionsListListener);
+            }
+            updateActiveChartRegions();
+        });
         MenuItem loadRegionsMenuItem = new MenuItem("Load Regions");
         loadRegionsMenuItem.setOnAction(e -> loadRegions());
 
@@ -100,9 +113,15 @@ public class RegionsTableController implements Initializable {
 
         PolyChart.getActiveChartProperty().addListener((observable, oldValue, newValue) -> {
             chart.removeRegionListener(activeDatasetRegionListener);
-            updateActiveChartRegions();
+            if (chart.getDataset() != null) {
+                chart.getDataset().removeDatasetRegionsListListener(datasetRegionsListListener);
+            }
             chart = newValue;
+            updateActiveChartRegions();
             chart.addRegionListener(activeDatasetRegionListener);
+            if (chart.getDataset() != null) {
+                chart.getDataset().addDatasetRegionsListListener(datasetRegionsListListener);
+            }
             if (chart.getActiveRegion().isPresent()) {
                 regionsTable.selectRegion(chart.getActiveRegion().get());
             }
@@ -129,7 +148,7 @@ public class RegionsTableController implements Initializable {
         File regionFile = chooser.showOpenDialog(null);
         if (regionFile != null) {
             try {
-                TreeSet<DatasetRegion> regions = DatasetRegion.loadRegions(regionFile);
+                List<DatasetRegion> regions = DatasetRegion.loadRegions(regionFile);
                 if (!DatasetRegion.isLongRegionFile(regionFile)) {
                     for (DatasetRegion region: regions) {
                         region.measure(chart.getDataset());
@@ -165,7 +184,7 @@ public class RegionsTableController implements Initializable {
         List<DatasetAttributes> datasetAttributes = chart.getDatasetAttributes();
         List<DatasetRegion> regions;
         if (!datasetAttributes.isEmpty()) {
-            regions = new ArrayList<>(datasetAttributes.get(0).getDataset().getRegions());
+            regions = new ArrayList<>(datasetAttributes.get(0).getDataset().getReadOnlyRegions());
         } else {
             regions = new ArrayList<>();
         }
@@ -202,27 +221,10 @@ public class RegionsTableController implements Initializable {
             return;
         }
         region.setAuto(false);
-        dataset.getRegions().add(region);
-        addRegion(region);
+        dataset.addRegion(region);
         chart.chartProps.setRegions(true);
         chart.chartProps.setIntegrals(true);
         chart.refresh();
-    }
-
-    /**
-     * Add a new region to the regions table.
-     * @param region The region to add
-     */
-    public void addRegion(DatasetRegion region) {
-        regionsTable.addRegion(region);
-    }
-
-    /**
-     * Remove a region from the regions table.
-     * @param region The region to remove
-     */
-    public void removeRegion(DatasetRegion region) {
-        regionsTable.removeRegion(region);
     }
 
     /**

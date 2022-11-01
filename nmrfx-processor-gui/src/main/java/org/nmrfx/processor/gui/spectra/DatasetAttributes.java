@@ -1965,7 +1965,7 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
     }
 
     public double[] getRegionAsArray() {
-        Set<DatasetRegion> regions = theFile.getRegions();
+        List<DatasetRegion> regions = theFile.getReadOnlyRegions();
         double[] ppms = null;
         if (regions != null) {
             ppms = new double[regions.size() * 2];
@@ -1980,7 +1980,7 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
     }
 
     public double[] getOffsetsAsArray() {
-        Set<DatasetRegion> regions = theFile.getRegions();
+        List<DatasetRegion> regions = theFile.getReadOnlyRegions();
         double[] offsets = null;
         if (regions != null) {
             offsets = new double[regions.size() * 2];

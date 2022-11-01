@@ -1,9 +1,7 @@
 package org.nmrfx.analyst.gui.regions;
 
-import javafx.beans.Observable;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
-import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.SortedList;
 import javafx.scene.control.Label;
@@ -15,6 +13,7 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.control.cell.TextFieldTableCell;
 import org.nmrfx.analyst.gui.tools.IntegralTool;
 import org.nmrfx.datasets.DatasetRegion;
+import org.nmrfx.datasets.DatasetRegionListener;
 import org.nmrfx.processor.gui.PolyChart;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,6 +39,7 @@ public class RegionsTable extends TableView<DatasetRegion> {
     private PolyChart chart;
     private final ObservableList<DatasetRegion> datasetRegions;
     private final Comparator<DatasetRegion> startingComparator = Comparator.comparing(dr -> dr.getRegionStart(0));
+    private final DatasetRegionListener regionListener;
 
     /**
      * Table cell formatter to format non-editable columns of doubles
@@ -94,18 +94,13 @@ public class RegionsTable extends TableView<DatasetRegion> {
     public RegionsTable() {
         setPlaceholder(new Label("No regions to display"));
 
-        this.datasetRegions = FXCollections.observableList(new ArrayList<>(), (DatasetRegion dr) -> new Observable[]{dr.getIntegralProperty()});
+        this.datasetRegions = FXCollections.observableList(new ArrayList<>());
         SortedList<DatasetRegion> sortedRegions = new SortedList<>(this.datasetRegions);
         sortedRegions.comparatorProperty().bind(comparatorProperty());
-        datasetRegions.addListener((ListChangeListener<DatasetRegion>) change -> {
-            while(change.next()) {
-                // Update the chart if a dataset region object has been modified
-                if (change.wasUpdated()) {
-                    datasetRegions.sort(Comparator.comparing(dr -> dr.getRegionStart(0)));
-                    refresh();
-                }
-            }
-        });
+        regionListener  = updateRegion -> {
+            datasetRegions.sort(Comparator.comparing(dr -> dr.getRegionStart(0)));
+            refresh();
+        };
 
         setEditable(true);
         TableColumn<DatasetRegion, String>  regionsLabelCol = new TableColumn<>("Region");
@@ -193,6 +188,7 @@ public class RegionsTable extends TableView<DatasetRegion> {
      * @param region The region to add
      */
     public void addRegion(DatasetRegion region) {
+        region.addListener(regionListener);
         datasetRegions.add(region);
         datasetRegions.sort(startingComparator);
         getSelectionModel().select(region);
@@ -204,6 +200,7 @@ public class RegionsTable extends TableView<DatasetRegion> {
      */
     public void setRegions(List<DatasetRegion> regions) {
         datasetRegions.clear();
+        regions.forEach(datasetRegion -> datasetRegion.addListener(regionListener));
         datasetRegions.addAll(regions);
         datasetRegions.sort(startingComparator);
     }
@@ -213,7 +210,6 @@ public class RegionsTable extends TableView<DatasetRegion> {
      */
     public void removeSelectedRegion() {
         List<DatasetRegion> selectedRows = getSelectionModel().getSelectedItems();
-        PolyChart.getActiveChart().getDataset().getRegions().contains(datasetRegions.get(5));
         IntegralTool.getTool(chart).deleteRegion(selectedRows.get(0));
         datasetRegions.removeAll(selectedRows);
     }

@@ -33,7 +33,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
@@ -919,7 +918,7 @@ public class DrawSpectrum {
     }
 
     public double[] getRegionAsArray(DatasetBase dataset) {
-        Set<DatasetRegion> regions = dataset.getRegions();
+        List<DatasetRegion> regions = dataset.getReadOnlyRegions();
         double[] ppms = null;
         if (regions != null) {
             ppms = new double[regions.size() * 2];
@@ -934,7 +933,7 @@ public class DrawSpectrum {
     }
 
     public double[] getOffsetsAsArray(DatasetBase dataset) {
-        Set<DatasetRegion> regions = dataset.getRegions();
+        List<DatasetRegion> regions = dataset.getReadOnlyRegions();
         double[] offsets = null;
         if (regions != null) {
             offsets = new double[regions.size() * 2];
@@ -1219,10 +1218,6 @@ public class DrawSpectrum {
 
     public void drawRegion(DatasetAttributes dataAttributes, int orientation, AXMODE axMode) {
         DatasetBase dataset = dataAttributes.getDataset();
-        Set<DatasetRegion> regions = dataset.getRegions();
-        for (DatasetRegion region : regions) {
-
-        }
         if (dataset.getVec() != null) {
             VecBase vec = dataset.getVec();
             NMRAxis indexAxis = orientation == PolyChart.HORIZONTAL ? axes[0] : axes[1];

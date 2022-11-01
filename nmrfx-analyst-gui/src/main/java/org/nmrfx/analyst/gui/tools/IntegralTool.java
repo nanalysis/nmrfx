@@ -114,7 +114,6 @@ public class IntegralTool {
         double integral = region.getIntegral();
         DatasetBase dataset = hit.getDatasetAttr().getDataset();
         dataset.setNorm(integral * dataset.getScale() / iNorm);
-        RegionsTableController.getRegionsTableController().updateActiveChartRegions();
         chart.refresh();
 
     }
@@ -140,7 +139,6 @@ public class IntegralTool {
             } catch (IOException e) {
                 GUIUtils.warn("Error Splitting Region", e.getMessage());
             }
-            RegionsTableController.getRegionsTableController().updateActiveChartRegions();
             chart.refresh();
         }
 
@@ -154,14 +152,13 @@ public class IntegralTool {
             chart.setActiveRegion(null);
             hit.getDatasetAttr().setActiveRegion(null);
         }
-        RegionsTableController.getRegionsTableController().removeRegion(this.hit.getDatasetRegion());
         deleteRegion(this.hit.getDatasetRegion());
     }
 
     public void deleteRegion(DatasetRegion region) {
         Analyzer analyzer = Analyzer.getAnalyzer((Dataset) chart.getDataset());
         analyzer.removePeaksFromRegion(region);
-        analyzer.getRegions().remove(region);
+        analyzer.getDataset().removeRegion(region);
         chart.refresh();
         AnalystApp.getAnalystApp().hidePopover(false);
     }

@@ -1791,7 +1791,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
             rowIndices[i] = i;
         }
         var columnSet = new TreeSet<Integer>();
-        for (var region : getRegions()) {
+        for (var region : getReadOnlyRegions()) {
             double ppm0 = region.getRegionStart(0);
             int pt1 = ppmToPoint(0, ppm0);
             double ppm1 = region.getRegionEnd(0);
