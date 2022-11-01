@@ -2,6 +2,7 @@ import os
 from org.yaml.snakeyaml import Yaml
 from java.io import FileInputStream
 import gscript
+import gscript_adv
 
 def dumpYamlWin(fileName=None):
     if fileName != None:
@@ -47,6 +48,9 @@ def genYamlData():
             pset['name']=peakList
             pset['config']= nw.pconfig(peakList)
             sd['peaklists'].append(pset)
+    strips = nw.strips2()
+    if (strips != None) and ("peaklist" in strips):
+        win['strips'] = strips
 
     yamlDump = yaml.dump(win)
     return yamlDump
@@ -126,5 +130,8 @@ def processYamlData(yamlFile, inputData, createNewStage):
                     cfg = peakList['config']
                     nw.pconfig(peakLists=[name],pars=cfg)
         nw.drawAll()
+    if 'strips' in data:
+        strips = data['strips']
+        nw.strips2(strips["peaklist"], strips["xdim"], strips["zdim"])
 
-nw = gscript.NMRFxWindowScripting()
+nw = gscript_adv.NMRFxWindowAdvScripting()

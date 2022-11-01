@@ -746,6 +746,25 @@ public interface NMRData {
     }
 
     /**
+     * Create a sample schedule corresponding to zero filling
+     *
+     * @param nSizes the sizes of each indirect dimension
+     * @return the SampleSchedule
+     */
+    public default SampleSchedule createZFSchedule(List<Integer> nSizes, List<Integer> newSizes) {
+        int[] nSArray = new int[nSizes.size()];
+        int[] newArray = new int[newSizes.size()];
+        for (int i = 0; i < nSArray.length; i++) {
+            nSArray[i] = nSizes.get(i);
+            newArray[i] = newSizes.get(i);
+        }
+        SampleSchedule schedule = SampleSchedule.createZFSchedule(nSArray, newArray);
+        setSampleSchedule(schedule);
+        return schedule;
+    }
+
+
+    /**
      * Create a sample schedule (with Poisson - Gap sampling)
      *
      * @param z Full size of acquistion

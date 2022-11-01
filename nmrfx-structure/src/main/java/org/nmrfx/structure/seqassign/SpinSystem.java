@@ -25,6 +25,7 @@ public class SpinSystem {
             "Confirmed_previous_ID", "Confirmed_next_ID", "Fragment_ID", "Fragment_index");
     static final List<String> peakLoopTags = List.of("ID", "Spin_system_ID", "Spectral_peak_list_ID", "Peak_ID", "Match_score");
     static final List<String> fragmentLoopTags = List.of("ID",  "Polymer_ID", "First_residue_ID" , "Residue_count", "Score");
+    static final Map<Integer, SpinSystem> peakToSpinSystemMap = new HashMap<>();
 
     SpinSystems spinSystems;
     final Peak rootPeak;
@@ -227,6 +228,11 @@ public class SpinSystem {
         this.spinSystems = spinSystems;
         this.rootPeak = peak;
         addPeak(peak, 1.0);
+        peakToSpinSystemMap.put(peak.getIdNum(), this);
+    }
+
+    public static Optional<SpinSystem> spinSystemFromPeak(Peak peak) {
+        return  Optional.ofNullable(peakToSpinSystemMap.get(peak.getIdNum()));
     }
 
     public Peak getRootPeak() {
