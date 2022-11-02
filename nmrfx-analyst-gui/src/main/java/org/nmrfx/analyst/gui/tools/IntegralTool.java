@@ -12,7 +12,6 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import org.controlsfx.control.PopOver;
 import org.nmrfx.analyst.gui.AnalystApp;
-import org.nmrfx.analyst.gui.regions.RegionsTableController;
 import org.nmrfx.analyst.peaks.Analyzer;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.datasets.DatasetRegion;

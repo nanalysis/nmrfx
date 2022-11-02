@@ -709,16 +709,16 @@ public class Analyzer {
         double minThreshold = manThreshold.orElseGet(() -> threshold);
 
         RealMatrix rM = vec.idIntegrals(regionWindow, regionRatio, region, join, extend, minThreshold);
-        Dataset dataset = getDataset();
-        dataset.clearRegions();
+        Dataset datasetToAdjust = getDataset();
+        datasetToAdjust.clearRegions();
         int nRows = rM.getRowDimension();
         for (int iRow = 0; iRow < nRows; iRow++) {
             double min = rM.getEntry(iRow, 0);
-            min = dataset.pointToPPM(0, min);
+            min = datasetToAdjust.pointToPPM(0, min);
             double max = rM.getEntry(iRow, 1);
-            max = dataset.pointToPPM(0, max);
+            max = datasetToAdjust.pointToPPM(0, max);
             DatasetRegion newRegion = new DatasetRegion(min, max);
-            dataset.addRegion(newRegion);
+            datasetToAdjust.addRegion(newRegion);
         }
     }
 

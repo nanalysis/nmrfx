@@ -1098,7 +1098,7 @@ public class Multiplets {
         return newRegion;
     }
 
-    public static void splitRegionsByPeakSep(List<DatasetRegion> regions, PeakList peakList, Vec vec) {
+    public static void splitRegionsByPeakSep(Iterable<DatasetRegion> regions, PeakList peakList, Vec vec) {
         int[] dim = new int[peakList.nDim];
         for (int i = 0; i < dim.length; i++) {
             dim[i] = i;
@@ -1139,9 +1139,7 @@ public class Multiplets {
                 List<Peak> peaks = locatePeaks(peakList, limits, dim);
                 if (peaks.size() > maxPeaks) {
                     List<PeakDim> peakDims = new ArrayList<>();
-                    peaks.forEach(peak -> {
-                        peakDims.add(peak.peakDims[0]);
-                    });
+                    peaks.forEach(peak -> peakDims.add(peak.peakDims[0]));
                     int nSplits = peaks.size() / maxPeaks;
                     peakDims.sort(comparing(PeakDim::getChemShiftValue));
                     double ppm0 = limits[0][0];
@@ -1170,7 +1168,7 @@ public class Multiplets {
         }
     }
 
-    public static void linkPeaksInRegions(PeakList peakList, List<DatasetRegion> regions) {
+    public static void linkPeaksInRegions(PeakList peakList, Collection<DatasetRegion> regions) {
         regions.stream().forEach(region -> {
             List<PeakDim> peakDims = findPeaksInRegion(peakList, region);
             if (!peakDims.isEmpty()) {

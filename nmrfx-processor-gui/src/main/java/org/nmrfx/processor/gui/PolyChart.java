@@ -87,40 +87,10 @@ import static org.nmrfx.processor.gui.PolyChart.DISDIM.TwoD;
 
 public class PolyChart extends Region implements PeakListener {
     private static final Logger log = LoggerFactory.getLogger(PolyChart.class);
-
-    /**
-     * @return the hasMiddleMouseButton
-     */
-    public boolean getHasMiddleMouseButton() {
-        return hasMiddleMouseButton;
-    }
-
-    /**
-     * @param hasMiddleMouseButton the hasMiddleMouseButton to set
-     */
-    public void setHasMiddleMouseButton(boolean hasMiddleMouseButton) {
-        this.hasMiddleMouseButton = hasMiddleMouseButton;
-    }
-
-    /**
-     * @return the mouseX
-     */
-    public double getMouseX() {
-        return mouseBindings.getMouseX();
-    }
-
-    /**
-     * @return the mouseY
-     */
-    public double getMouseY() {
-        return mouseBindings.getMouseY();
-    }
-
+    static boolean listenToPeaks = true;
     public static final int HORIZONTAL = 0;
     public static final int VERTICAL = 1;
     public static final int CROSSHAIR_TOL = 25;
-    double minMove = 20;
-
     public static final ObservableList<PolyChart> CHARTS = FXCollections.observableArrayList();
     static final SimpleObjectProperty<PolyChart> activeChart = new SimpleObjectProperty<>(null);
     private static final SimpleObjectProperty<DatasetBase> currentDatasetProperty = new SimpleObjectProperty<>(null);
@@ -130,7 +100,10 @@ public class PolyChart extends Region implements PeakListener {
     static {
         CHARTS.addListener((ListChangeListener) (e -> multipleCharts.set(CHARTS.size() > 1)));
     }
-
+    private static int lastId = 0;
+    static int nSyncGroups = 0;
+    public static double overlapScale = 3.0;
+    double minMove = 20;
     ArrayList<Double> dList = new ArrayList<>();
     ArrayList<Double> nList = new ArrayList<>();
     ArrayList<Double> bcList = new ArrayList<>();
@@ -157,7 +130,6 @@ public class PolyChart extends Region implements PeakListener {
     DatasetAttributes lastDatasetAttr = null;
     List<CanvasAnnotation> canvasAnnotations = new ArrayList<>();
     AnnoText parameterText = null;
-    private static int lastId = 0;
     private final int id;
     double leftBorder = 0.0;
     double rightBorder = 0.0;
@@ -197,8 +169,77 @@ public class PolyChart extends Region implements PeakListener {
     boolean useImmediateMode = true;
     private final List<ConnectPeakAttributes> peakPaths = new ArrayList<>();
     Consumer<DatasetRegion> newRegionConsumer = null;
-    static boolean listenToPeaks = true;
 
+    public enum DISDIM {
+        OneDX, OneDY, TwoD;
+    };
+    ObjectProperty<DISDIM> disDimProp = new SimpleObjectProperty(TwoD);
+    ChartMenu specMenu;
+    ChartMenu peakMenu;
+    ChartMenu integralMenu;
+    ChartMenu regionMenu;
+    KeyBindings keyBindings;
+    MouseBindings mouseBindings;
+    GestureBindings gestureBindings;
+    DragBindings dragBindings;
+    CrossHairs crossHairs;
+
+    AXMODE axModes[] = {AXMODE.PPM, AXMODE.PPM};
+    Map<String, Integer> syncGroups = new HashMap<>();
+
+    public PolyChart(FXMLController controller, Pane plotContent, Canvas canvas, Canvas peakCanvas, Canvas annoCanvas) {
+        this(controller, plotContent, canvas, peakCanvas, annoCanvas,
+                new NMRAxis(Orientation.HORIZONTAL, 0, 100, 200, 50),
+                new NMRAxis(Orientation.VERTICAL, 0, 100, 50, 200)
+        );
+
+    }
+
+    public PolyChart(FXMLController controller, Pane plotContent, Canvas canvas, Canvas peakCanvas, Canvas annoCanvas, final NMRAxis... AXIS) {
+        this.canvas = canvas;
+        this.peakCanvas = peakCanvas;
+        this.annoCanvas = annoCanvas;
+        this.controller = controller;
+        xAxis = AXIS[0];
+        yAxis = AXIS[1];
+        plotBackground = new Group();
+        this.plotContent = plotContent;
+        drawSpectrum = new DrawSpectrum(axes, canvas);
+        id = getNextId();
+
+        initChart();
+        drawPeaks = new DrawPeaks(this, peakCanvas);
+        setVisible(false);
+
+    }
+
+    /**
+     * @return the hasMiddleMouseButton
+     */
+    public boolean getHasMiddleMouseButton() {
+        return hasMiddleMouseButton;
+    }
+
+    /**
+     * @param hasMiddleMouseButton the hasMiddleMouseButton to set
+     */
+    public void setHasMiddleMouseButton(boolean hasMiddleMouseButton) {
+        this.hasMiddleMouseButton = hasMiddleMouseButton;
+    }
+
+    /**
+     * @return the mouseX
+     */
+    public double getMouseX() {
+        return mouseBindings.getMouseX();
+    }
+
+    /**
+     * @return the mouseY
+     */
+    public double getMouseY() {
+        return mouseBindings.getMouseY();
+    }
 
     @Override
     public void peakListChanged(final PeakEvent peakEvent) {
@@ -207,8 +248,8 @@ public class PolyChart extends Region implements PeakListener {
                 respondToPeakListChange(peakEvent);
             } else {
                 Platform.runLater(() -> {
-                    respondToPeakListChange(peakEvent);
-                }
+                            respondToPeakListChange(peakEvent);
+                        }
                 );
             }
         }
@@ -257,52 +298,6 @@ public class PolyChart extends Region implements PeakListener {
             drawPeakLists(false);
             drawSelectedPeaks(activeAttr);
         }
-    }
-
-    public enum DISDIM {
-        OneDX, OneDY, TwoD;
-    };
-    ObjectProperty<DISDIM> disDimProp = new SimpleObjectProperty(TwoD);
-    ChartMenu specMenu;
-    ChartMenu peakMenu;
-    ChartMenu integralMenu;
-    ChartMenu regionMenu;
-    KeyBindings keyBindings;
-    MouseBindings mouseBindings;
-    GestureBindings gestureBindings;
-    DragBindings dragBindings;
-    CrossHairs crossHairs;
-
-    AXMODE axModes[] = {AXMODE.PPM, AXMODE.PPM};
-    Map<String, Integer> syncGroups = new HashMap<>();
-    static int nSyncGroups = 0;
-
-    public static double overlapScale = 3.0;
-
-    public PolyChart(FXMLController controller, Pane plotContent, Canvas canvas, Canvas peakCanvas, Canvas annoCanvas) {
-        this(controller, plotContent, canvas, peakCanvas, annoCanvas,
-                new NMRAxis(Orientation.HORIZONTAL, 0, 100, 200, 50),
-                new NMRAxis(Orientation.VERTICAL, 0, 100, 50, 200)
-        );
-
-    }
-
-    public PolyChart(FXMLController controller, Pane plotContent, Canvas canvas, Canvas peakCanvas, Canvas annoCanvas, final NMRAxis... AXIS) {
-        this.canvas = canvas;
-        this.peakCanvas = peakCanvas;
-        this.annoCanvas = annoCanvas;
-        this.controller = controller;
-        xAxis = AXIS[0];
-        yAxis = AXIS[1];
-        plotBackground = new Group();
-        this.plotContent = plotContent;
-        drawSpectrum = new DrawSpectrum(axes, canvas);
-        id = getNextId();
-
-        initChart();
-        drawPeaks = new DrawPeaks(this, peakCanvas);
-        setVisible(false);
-
     }
 
     public boolean isSelectable() {

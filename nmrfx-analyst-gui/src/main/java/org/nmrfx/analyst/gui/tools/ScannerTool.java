@@ -28,7 +28,6 @@ import javafx.stage.Stage;
 import org.apache.commons.math3.linear.ArrayRealVector;
 import org.apache.commons.math3.linear.RealVector;
 import org.nmrfx.analyst.gui.TablePlotGUI;
-import org.nmrfx.analyst.gui.regions.RegionsTableController;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.datasets.DatasetRegion;
 import org.nmrfx.processor.datasets.Dataset;

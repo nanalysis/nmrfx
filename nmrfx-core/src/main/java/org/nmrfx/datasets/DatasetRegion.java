@@ -144,7 +144,6 @@ public class DatasetRegion implements Comparator, Comparable {
             x[0] = Double.parseDouble(fields[1]);
             x[1] = Double.parseDouble(fields[2]);
             DatasetRegion region = new DatasetRegion(x[0], x[1]);
-            // TODO need to call measure but can't do that without a dataset
             regions.add(region);
         }
         return regions;
@@ -420,7 +419,7 @@ public class DatasetRegion implements Comparator, Comparable {
         return result;
     }
 
-    public boolean removeOverlapping(List<DatasetRegion> regions) {
+    public boolean removeOverlapping(Iterable<DatasetRegion> regions) {
         Iterator<DatasetRegion> iter = regions.iterator();
         boolean result = false;
 
@@ -519,7 +518,7 @@ public class DatasetRegion implements Comparator, Comparable {
         setIntegral(sum);
     }
 
-    public static DatasetRegion findClosest(List<DatasetRegion> regions, double ppm, int dim) {
+    public static DatasetRegion findClosest(Iterable<DatasetRegion> regions, double ppm, int dim) {
         DatasetRegion closest = null;
         double minDis = Double.MAX_VALUE;
         for (DatasetRegion region : regions) {
