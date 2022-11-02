@@ -4467,7 +4467,7 @@ public class PolyChart extends Region implements PeakListener {
                     Optional<DatasetAttributes> projectionDimAttr = getDatasetAttributes().stream().filter(attr -> attr.projection() == projectionDim).findFirst();
                     if (projectionDimAttr.isPresent()) {
                         initialDatasetAttr.get().getProjection((Dataset) projectionDimAttr.get().getDataset(), projectionVec, projectionDim);
-                        OptionalDouble maxValue = Arrays.stream(projectionVec.rvec).max();
+                        OptionalDouble maxValue = Arrays.stream(projectionVec.getReal()).max();
                         if (maxValue.isPresent()) {
                             scaleValues.add((borders.get(i) * 0.95) / maxValue.getAsDouble());
                         }
