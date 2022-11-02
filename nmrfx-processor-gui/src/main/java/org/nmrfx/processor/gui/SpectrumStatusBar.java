@@ -705,6 +705,8 @@ public class SpectrumStatusBar {
 
             } else if (selected == DisplayMode.CONTOURS) {
                 chart.disDimProp.set(PolyChart.DISDIM.TwoD);
+                chart.updateProjections();
+                chart.updateProjectionScale();
                 setMode(maxNDim.getAsInt());
             }
             chart.full();

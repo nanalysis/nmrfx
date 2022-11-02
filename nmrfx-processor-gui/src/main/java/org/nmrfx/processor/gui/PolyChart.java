@@ -316,6 +316,10 @@ public class PolyChart extends Region implements PeakListener {
         return chartSelected.get();
     }
 
+    public ObjectProperty getDisDimProperty() {
+        return disDimProp;
+    }
+
     public double[][] getCorners() {
         double[][] corners = new double[4][2];
         double xPos = getLayoutX();
@@ -1782,6 +1786,10 @@ public class PolyChart extends Region implements PeakListener {
     public int setDrawlist(int value) {
         if (!datasetAttributesList.isEmpty()) {
             for (DatasetAttributes datasetAttributes : datasetAttributesList) {
+                if (datasetAttributes.projection() != -1 || datasetAttributes.getDataset().getNDim() < 2) {
+                    datasetAttributes.setDrawListSize(0);
+                    continue;
+                }
                 datasetAttributes.setDrawListSize(1);
                 DatasetBase dataset = datasetAttributes.getDataset();
                 if (value < 0) {
@@ -4486,9 +4494,10 @@ public class PolyChart extends Region implements PeakListener {
      * and refresh the chart.
      */
     public void removeProjections() {
-        getDatasetAttributes().removeIf(datasetAttributes -> datasetAttributes.projection() != -1);
-        chartProps.setTopBorderSize(ChartProperties.EMPTY_BORDER_DEFAULT_SIZE);
-        chartProps.setRightBorderSize(ChartProperties.EMPTY_BORDER_DEFAULT_SIZE);
-        refresh();
+        if (getDatasetAttributes().removeIf(datasetAttributes -> datasetAttributes.projection() != -1)) {
+            chartProps.setTopBorderSize(ChartProperties.EMPTY_BORDER_DEFAULT_SIZE);
+            chartProps.setRightBorderSize(ChartProperties.EMPTY_BORDER_DEFAULT_SIZE);
+            refresh();
+        }
     }
 }
