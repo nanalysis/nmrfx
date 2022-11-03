@@ -248,7 +248,7 @@ public class RS2DData implements NMRData {
             groupDelay = readGroupDelay();
             obsNucleus = header.get(OBSERVED_NUCLEUS).stringValue();
             Double obsFreq = null;
-            double obsSW = header.<NumberValue>get(SPECTRAL_WIDTH).getValueAsHertz(header);
+            double obsSW = getSpectralWidthAsHertz();
 
             if (header.contains(SAMPLE_TEMPERATURE)) {
                 tempK = header.get(SAMPLE_TEMPERATURE).doubleValue();
@@ -379,7 +379,7 @@ public class RS2DData implements NMRData {
             f1coefS[i] = mode.getSymbolicCoefs();
             f1coef[i] = mode.getCoefs();
 
-            if(mode == PhaseMod.TPPI || mode == PhaseMod.ECHO_ANTIECHO) {
+            if (mode == PhaseMod.TPPI || mode == PhaseMod.ECHO_ANTIECHO) {
                 negateImag[i] = true;
             }
 
@@ -409,26 +409,87 @@ public class RS2DData implements NMRData {
         return fpath;
     }
 
+    /**
+     * Get a parameter string value from its name.
+     * May include some implicit conversion for specific parameters (such as SPECTRAL_WIDTH when stored in ppm).
+     *
+     * @param name The parameter name
+     * @return the string representation of its value.
+     */
     @Override
     public String getPar(String name) {
+        Number converted = getConvertedParameterValue(name);
+        if (converted != null) {
+            return converted.toString();
+        }
+
         return header.get(name).stringValue();
     }
 
+    /**
+     * Get a parameter numeric value from its name.
+     * May include some implicit conversion for specific parameters (such as SPECTRAL_WIDTH when stored in ppm).
+     *
+     * @param name The parameter name
+     * @return the floating point representation of its value.
+     */
     @Override
     public Double getParDouble(String name) {
+        Number converted = getConvertedParameterValue(name);
+        if (converted != null) {
+            return converted.doubleValue();
+        }
+
         return header.get(name).doubleValue();
     }
 
+    /**
+     * Get a parameter integer value from its name.
+     * May include some implicit conversion for specific parameters (such as SPECTRAL_WIDTH when stored in ppm).
+     *
+     * @param name The parameter name
+     * @return the integer representation of its value.
+     */
     @Override
     public Integer getParInt(String name) {
+        Number converted = getConvertedParameterValue(name);
+        if (converted != null) {
+            return converted.intValue();
+        }
+
         return header.get(name).intValue();
     }
 
+    /**
+     * List all parameters and their string representation.
+     * Some of them may be converted (ex: from ppm to Hertz) before being returned here.
+     *
+     * @return a list of vendor parameters.
+     */
     @Override
     public List<VendorPar> getPars() {
         return header.all().stream()
-                .map(value -> new VendorPar(value.getName(), value.stringValue()))
+                // it is necessary to call getPar() to convert specific parameters such as SPECTRAL_WIDTH
+                .map(value -> new VendorPar(value.getName(), getPar(value.getName())))
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * Some parameter may need internal conversion before use. The only use case for now is SPECTRAL_WIDTH, which could be stored in Hz or ppm, but can only be used in Hz internally.
+     *
+     * @param name the parameter name
+     * @return a converted value, or null if there is no need for conversion
+     */
+    private Number getConvertedParameterValue(String name) {
+        if (SPECTRAL_WIDTH.name().equals(name)) {
+            return getSpectralWidthAsHertz();
+        }
+
+        return null;
+    }
+
+    private double getSpectralWidthAsHertz() {
+        return header.<NumberValue>get(SPECTRAL_WIDTH).getValueAsHertz(header);
     }
 
     @Override
