@@ -19,6 +19,7 @@ package org.nmrfx.processor.gui;
 
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.stage.FileChooser;
+import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.DatasetType;
 import org.nmrfx.processor.datasets.vendor.NMRData;
@@ -403,28 +404,14 @@ public class ChartProcessor {
         return loadVectors(1, rows);
     }
 
-    public int[] loadVectors(int iDim, int[] rows) {
-        //setFlags();
-        NMRData nmrData = getNMRData();
-        int nPoints = nmrData.getNPoints();
-        if (vecDim != 0) {
-            nPoints = nmrData.getSize(vecDim);
-            if (nmrData.isComplex(vecDim)) {
-                nPoints *= 2;
-            }
-        }
-        ProcessOps process = getProcess();
-        process.clearVectors();
-        vectors.clear();
-        saveVectors.clear();
-        int nVectors = 1;
-        VecIndex vecIndex = null;
+    public VecIndex getNextIndex(NMRData nmrData, int[] rows) {
         int index = 0;
         if (rows.length > 0) {
             index = rows[0];
         }
+        VecIndex vecIndex = null;
         if (vecDim == 0) {
-            nVectors = vectorsPerGroup;
+            int nVectors = vectorsPerGroup;
             if (multiVecCounter != null) {
                 if (rows.length == 1) {
 
@@ -444,6 +431,88 @@ public class ChartProcessor {
                 }
             }
         }
+        return vecIndex;
+    }
+
+    record VecIndexScore(VecIndex vecIndex, int maxIndex, double score) implements  Comparable {
+
+        @Override
+        public int compareTo(Object o) {
+            if (o == null) {
+                return 1;
+            } else if (!(o instanceof VecIndexScore)) {
+                return 1;
+            } else {
+                int compare = Double.compare(score, ((VecIndexScore) o).score());
+                if (compare == 0) {
+                    compare = Integer.compare(maxIndex, ((VecIndexScore) o).maxIndex());
+                }
+                return compare;
+            }
+        }
+    }
+
+    public List<VecIndexScore> scanForCorruption() {
+        int iGroup = 0;
+        NMRData nmrData = getNMRData();
+        int nPoints = nmrData.getNPoints();
+        Vec newVec = new Vec(nPoints, nmrData.isComplex(0));
+        var stats = new DescriptiveStatistics();
+        List<VecIndexScore> vecIndices = new ArrayList<>();
+        while( true) {
+            VecIndex vecIndex = multiVecCounter.getNextGroup(iGroup++);
+            if (vecIndex == null) {
+                break;
+            }
+            double groupMax = Double.NEGATIVE_INFINITY;
+            int maxIndex = -1;
+            for (int j = 0; j < vectorsPerGroup; j++) {
+                newVec.resize(nPoints);
+                nmrData.readVector(vecIndex.getInVec(j), newVec);
+                double norm = newVec.getNorm();
+                if (norm > groupMax) {
+                    groupMax = norm;
+                    maxIndex = j;
+                }
+                groupMax = Math.max(groupMax, norm);
+            }
+            var vecIndexScore = new VecIndexScore(vecIndex, maxIndex, groupMax);
+            stats.addValue(groupMax );
+            vecIndices.add(vecIndexScore);
+        }
+
+        double median = stats.getPercentile(50.0);
+        double max = stats.getMax();
+        double sdev = stats.getStandardDeviation();
+        double threshold= median * 3.0 * sdev;
+        List<VecIndexScore> result = new ArrayList<>();
+        Collections.sort(vecIndices, Collections.reverseOrder());
+        for (int i=0;i<vecIndices.size();i++) {
+            var vecIndexScore = vecIndices.get(i);
+            if (vecIndexScore.score() > threshold) {
+                vecIndexScore.vecIndex().printMe(0,1);
+                result.add(vecIndexScore);
+            }
+         }
+        return result;
+    }
+
+    public int[] loadVectors(int iDim, int[] rows) {
+        //setFlags();
+        NMRData nmrData = getNMRData();
+        int nPoints = nmrData.getNPoints();
+        if (vecDim != 0) {
+            nPoints = nmrData.getSize(vecDim);
+            if (nmrData.isComplex(vecDim)) {
+                nPoints *= 2;
+            }
+        }
+        ProcessOps process = getProcess();
+        process.clearVectors();
+        vectors.clear();
+        saveVectors.clear();
+        VecIndex vecIndex = getNextIndex(nmrData, rows);
+        int nVectors = vecDim == 0 ? vectorsPerGroup : 1;
         int[] fileIndices = new int[nVectors];
         for (int j = 0; j < nVectors; j++) {
             Vec newVec = new Vec(nPoints, nmrData.isComplex(vecDim));
@@ -461,6 +530,10 @@ public class ChartProcessor {
                     nmrData.readVector(vecIndex.getInVec(j), newVec);
                 }
             } else {
+                int index = 0;
+                if (rows.length > 0) {
+                    index = rows[0];
+                }
                 fileIndices[j] = index + j;
                 nmrData.readVector(vecDim, index + j, newVec);
                 if ((acqMode[vecDim] != null) && acqMode[vecDim].equals("echo-antiecho")) {
@@ -520,22 +593,8 @@ public class ChartProcessor {
         chart.setDataset(new Dataset(vec));
     }
 
-    public void vecRow(int iDim, int i) {
+    public void vecRow(int[] rows) {
         if (getNMRData() != null) {
-            int nDim = getNMRData().getNDim();
-            int size = 1;
-            if (nDim > 1) {
-                size = getNMRData().getSize(iDim);
-            }
-
-            if (i >= size) {
-                i = size - 1;
-            }
-            if (i < 0) {
-                i = 0;
-            }
-            processorController.setRowLabel(i + 1, size);
-            int[] rows = processorController.getRows();
             int[] fileIndices = loadVectors(1, rows);
             processorController.setFileIndex(fileIndices);
             try {
@@ -544,7 +603,6 @@ public class ChartProcessor {
             } catch (IncompleteProcessException ipe) {
                 log.warn(ipe.getMessage(), ipe);
             }
-
             chart.layoutPlotChildren();
         }
     }

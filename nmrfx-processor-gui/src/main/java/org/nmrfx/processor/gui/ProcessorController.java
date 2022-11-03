@@ -55,6 +55,7 @@ import org.controlsfx.control.StatusBar;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.fxmisc.richtext.CodeArea;
 import org.nmrfx.processor.datasets.Dataset;
+import org.nmrfx.processor.datasets.DatasetGroupIndex;
 import org.nmrfx.processor.datasets.DatasetType;
 import org.nmrfx.processor.datasets.vendor.NMRData;
 import org.nmrfx.processor.datasets.vendor.VendorPar;
@@ -151,6 +152,8 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     private TextField[] rowTextBoxes = new TextField[0];
     @FXML
     private TextField fileIndexTextBox;
+    @FXML
+    private ListView<DatasetGroupIndex> corruptedIndicesListView;
     ToggleGroup rowToggleGroup = new ToggleGroup();
     @FXML
     private ChoiceBox<String> realImagChoiceBox;
@@ -1010,6 +1013,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     /**
      * Enables/disables a set of features based on whether a dataset is provided. The dataset could
      * be null if the processor controller is simulating data.
+     *
      * @param dataset The dataset to check.
      */
     private void enableRealFeatures(NMRData dataset) {
@@ -1121,6 +1125,8 @@ public class ProcessorController implements Initializable, ProgressUpdater {
                 dialog.showAndWait();
             }
         });
+
+        corruptedIndicesListView.getSelectionModel().selectedItemProperty().addListener(e -> corruptedIndexListener());
 
     }
 
@@ -1292,10 +1298,9 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         }
     }
 
-    protected void setRowLabel(int row, int size) {
-        int iDim = getRowChoice() - 2;
-        if (iDim >= 0) {
-            rowTextBoxes[iDim].setText(row + " / " + size);
+    protected void setRowLabel(int iBox, int row, int size) {
+        if (iBox >= 0) {
+            rowTextBoxes[iBox].setText(row + " / " + size);
         }
     }
 
@@ -1315,12 +1320,54 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         }
     }
 
+    int getRealImaginaryChoice() {
+        String text = realImagChoiceBox.getValue();
+        return realImagChoices.indexOf(text);
+    }
+
     @FXML
     private void handleVecNum(Event event) {
         Slider slider = (Slider) event.getSource();
         int iRow = (int) slider.getValue() - 1;
         int iDim = getRowChoice() - 1;
-        chartProcessor.vecRow(iDim, iRow);
+        updateRowLabels(iDim, iRow);
+        int[] rows = getRows();
+        chartProcessor.vecRow(rows);
+        chart.layoutPlotChildren();
+    }
+
+    private void updateRowLabels(int iDim, int i) {
+        if (getNMRData() != null) {
+            int nDim = getNMRData().getNDim();
+            int size = 1;
+            if (nDim > 1) {
+                size = getNMRData().getSize(iDim);
+            }
+
+            if (i >= size) {
+                i = size - 1;
+            }
+            if (i < 0) {
+                i = 0;
+            }
+            setRowLabel(iDim - 1, i + 1, size);
+        }
+    }
+
+    private void corruptedIndexListener() {
+        DatasetGroupIndex groupIndex = corruptedIndicesListView.getSelectionModel().getSelectedItem();
+        if (groupIndex != null) {
+            int[] indices = groupIndex.getIndices();
+            for (int iDim = 0; iDim < indices.length; iDim++) {
+                updateRowLabels(iDim + 1, indices[iDim]);
+            }
+            int[] rows = getRows();
+            int index = groupIndex.getGroupIndex();
+            if (index >= 0) {
+                realImagChoiceBox.setValue(realImagChoices.get(index));
+            }
+            chartProcessor.vecRow(rows);
+        }
         chart.layoutPlotChildren();
     }
 
@@ -1393,4 +1440,95 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         }
     }
 
+    NMRData getNMRData() {
+        NMRData nmrData = null;
+        if (chartProcessor == null) {
+            chartProcessor = getChartProcessor();
+        }
+        if (chartProcessor != null) {
+            nmrData = chartProcessor.getNMRData();
+        }
+        return nmrData;
+    }
+
+    @FXML
+    private void addCorruptedIndex() {
+        int[] rows = getRows();
+        NMRData nmrData = getNMRData();
+        if (nmrData != null) {
+            nmrData.addSkipGroup(rows, getRealImaginaryChoice());
+        }
+        updateSkipIndices();
+    }
+
+    @FXML
+    private void scanForCorruption() {
+        clearCorruptedIndex();
+        NMRData nmrData = getNMRData();
+        if (nmrData != null) {
+            List<ChartProcessor.VecIndexScore> indices = chartProcessor.scanForCorruption();
+            ObservableList<DatasetGroupIndex> groupList = FXCollections.observableArrayList();
+            for (ChartProcessor.VecIndexScore vecIndexScore : indices) {
+                var vecIndex = vecIndexScore.vecIndex();
+                int maxIndex = vecIndexScore.maxIndex();
+                int[][] outVec = vecIndex.getOutVec(0);
+                int[] groupIndices = new int[outVec.length - 1];
+                for (int i = 0; i < groupIndices.length; i++) {
+                    groupIndices[i] = outVec[i + 1][0] / 2;
+                }
+                DatasetGroupIndex groupIndex = new DatasetGroupIndex(groupIndices, maxIndex);
+                nmrData.addSkipGroup(groupIndex);
+            }
+        }
+        updateSkipIndices();
+    }
+
+    @FXML
+    private void addCorruptedDim() {
+        int[] rows = getRows();
+        int iDim = getRowChoice() - 2;
+        for (int i = 0; i < rows.length; i++) {
+            if (i != iDim) {
+                rows[i] = -1;
+            }
+        }
+        NMRData nmrData = getNMRData();
+        if (nmrData != null) {
+            nmrData.addSkipGroup(rows, -1);
+        }
+        updateSkipIndices();
+    }
+
+    void updateSkipIndices() {
+        corruptedIndicesListView.setItems(getSkipList());
+        updateScriptDisplay();
+    }
+
+    @FXML
+    private void clearCorruptedIndex() {
+        NMRData nmrData = getNMRData();
+        if (nmrData != null) {
+            nmrData.clearSkipGroups();
+        }
+        updateSkipIndices();
+    }
+
+    public Optional<String> getSkipString() {
+        Optional<String> result = Optional.empty();
+        NMRData nmrData = getNMRData();
+        boolean scriptMode = true;
+        if (nmrData != null) {
+            result = DatasetGroupIndex.getSkipString(nmrData.getSkipGroups());
+        }
+        return result;
+    }
+    public ObservableList<DatasetGroupIndex> getSkipList() {
+        ObservableList<DatasetGroupIndex> groupList = FXCollections.observableArrayList();
+        NMRData nmrData = getNMRData();
+        boolean scriptMode = true;
+        if (nmrData != null) {
+            groupList.addAll(nmrData.getSkipGroups());
+        }
+        return groupList;
+    }
 }

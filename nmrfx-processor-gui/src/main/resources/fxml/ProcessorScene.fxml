@@ -102,24 +102,38 @@
                      </HBox>
                      <VBox fx:id="navDetailsVBox" prefHeight="200.0" prefWidth="100.0" spacing="5.0" HBox.hgrow="ALWAYS">
                         <children>
-                           <HBox prefHeight="30.0" prefWidth="200.0">
+                           <HBox prefHeight="30.0" prefWidth="200.0" alignment="CENTER">
                               <children>
                                  <Label prefWidth="100.0" text="Dimension:" />
                                  <VBox fx:id="dimVBox" prefHeight="69.0" prefWidth="236.0" spacing="5.0" HBox.hgrow="ALWAYS" />
                               </children>
                            </HBox>
-                           <HBox prefHeight="30.0" prefWidth="200.0">
+                           <HBox prefHeight="30.0" prefWidth="200.0" alignment="CENTER">
                               <children>
                                  <Label prefWidth="100.0" text="Datatype: " />
                                  <ChoiceBox fx:id="realImagChoiceBox" maxWidth="1.7976931348623157E308" prefWidth="150.0" HBox.hgrow="ALWAYS" />
                               </children>
                            </HBox>
-                           <HBox prefHeight="100.0" prefWidth="200.0">
-                              <children>
-                                 <Label prefWidth="100.0" text="File Index: " />
-                                 <TextField fx:id="fileIndexTextBox" HBox.hgrow="ALWAYS" />
-                              </children>
-                           </HBox>
+                            <HBox prefHeight="30.0" prefWidth="200.0" alignment="CENTER">
+                                <children>
+                                    <Label prefWidth="100.0" text="File Index: " />
+                                    <TextField fx:id="fileIndexTextBox" HBox.hgrow="ALWAYS" />
+                                </children>
+                            </HBox>
+                            <HBox prefHeight="100.0" prefWidth="200.0" alignment="CENTER">
+                                <children>
+                                    <VBox>
+                                        <children>
+                                            <Label prefWidth="100.0" text="Corrupted Indices" />
+                                            <Button  mnemonicParsing="false" onAction="#addCorruptedIndex" text="Add" />
+                                            <Button  mnemonicParsing="false" onAction="#addCorruptedDim" text="Add Dim" />
+                                            <Button  mnemonicParsing="false" onAction="#scanForCorruption" text="Scan" />
+                                            <Button  mnemonicParsing="false" onAction="#clearCorruptedIndex" text="Clear" />
+                                        </children>
+                                    </VBox>
+                                    <ListView fx:id="corruptedIndicesListView" editable="false" HBox.hgrow="ALWAYS" />
+                                </children>
+                            </HBox>
                         </children>
                      </VBox>
                   </children>

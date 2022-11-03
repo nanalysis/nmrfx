@@ -36,10 +36,7 @@ import org.nmrfx.utils.properties.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  *
@@ -208,7 +205,24 @@ public class RefManager {
             sBuilder.append(")");
             sBuilder.append(System.lineSeparator());
         }
+        getSkipString().ifPresent(skipString -> {
+            sBuilder.append(skipString);
+            sBuilder.append(System.lineSeparator());
+        });
         return sBuilder.toString();
+    }
+
+    Optional<String> getSkipString() {
+        Optional<String> result = Optional.empty();
+        NMRData nmrData = getNMRData();
+        if (nmrData != null) {
+            Optional<String> skipString = processorController.getSkipString();
+            if (skipString.isPresent()) {
+                String s = "markrows(" + skipString.get() + ")";
+                result = Optional.of(s);
+            }
+        }
+        return result;
 
     }
 
