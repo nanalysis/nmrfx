@@ -1513,6 +1513,16 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         updateSkipIndices();
     }
 
+    @FXML
+    private void deleteCorruptedIndex() {
+        NMRData nmrData = getNMRData();
+        if (nmrData != null) {
+            int index = corruptedIndicesListView.getSelectionModel().getSelectedIndex();
+            nmrData.getSkipGroups().remove(index);
+        }
+        updateSkipIndices();
+    }
+
     public Optional<String> getSkipString() {
         Optional<String> result = Optional.empty();
         NMRData nmrData = getNMRData();

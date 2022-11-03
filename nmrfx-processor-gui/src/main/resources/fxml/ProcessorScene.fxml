@@ -25,35 +25,46 @@
 <?import org.controlsfx.control.StatusBar?>
 <?import org.fxmisc.richtext.CodeArea?>
 
-<BorderPane fx:id="mainBox" minWidth="400" styleClass="mainFxmlClass" HBox.hgrow="ALWAYS" VBox.vgrow="ALWAYS" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.nmrfx.processor.gui.ProcessorController">
+<?import javafx.scene.control.TitledPane?>
+<BorderPane fx:id="mainBox" minWidth="400" styleClass="mainFxmlClass" HBox.hgrow="ALWAYS" VBox.vgrow="ALWAYS"
+            xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="org.nmrfx.processor.gui.ProcessorController">
     <stylesheets>
-        <URL value="@/styles/Styles.css" />
+        <URL value="@/styles/Styles.css"/>
     </stylesheets>
     <top>
         <ToolBar fx:id="toolBar">
             <items>
                 <MenuButton mnemonicParsing="false" text="Scripts">
                     <items>
-                        <MenuItem fx:id="autoGenerateScript" mnemonicParsing="false" onAction="#genDefaultScript" text="Auto Generate" />
-                        <MenuItem fx:id="autoGenerateArrayedScript" mnemonicParsing="false" onAction="#genDefaultScriptArrayed" text="Auto Generate (Arrayed)" />
-                        <MenuItem fx:id="openDefaultScript" mnemonicParsing="false" onAction="#openDefaultScriptAction" text="Open (process.py)" />
-                        <MenuItem fx:id="openScript" mnemonicParsing="false" onAction="#openScriptAction" text="Open..." />
-                        <MenuItem fx:id="saveScript" mnemonicParsing="false" onAction="#writeDefaultScriptAction" text="Save (process.py)" />
-                        <MenuItem fx:id="saveScriptAs" mnemonicParsing="false" onAction="#writeScriptAction" text="Save As..." />
-                        <MenuItem fx:id="openOperations" mnemonicParsing="false" onAction="#openVecScriptAction" text="Load Operations..." />
-                        <MenuItem fx:id="saveOperations" mnemonicParsing="false" onAction="#writeVecScriptAction" text="Save Operations..." />
+                        <MenuItem fx:id="autoGenerateScript" mnemonicParsing="false" onAction="#genDefaultScript"
+                                  text="Auto Generate"/>
+                        <MenuItem fx:id="autoGenerateArrayedScript" mnemonicParsing="false"
+                                  onAction="#genDefaultScriptArrayed" text="Auto Generate (Arrayed)"/>
+                        <MenuItem fx:id="openDefaultScript" mnemonicParsing="false" onAction="#openDefaultScriptAction"
+                                  text="Open (process.py)"/>
+                        <MenuItem fx:id="openScript" mnemonicParsing="false" onAction="#openScriptAction"
+                                  text="Open..."/>
+                        <MenuItem fx:id="saveScript" mnemonicParsing="false" onAction="#writeDefaultScriptAction"
+                                  text="Save (process.py)"/>
+                        <MenuItem fx:id="saveScriptAs" mnemonicParsing="false" onAction="#writeScriptAction"
+                                  text="Save As..."/>
+                        <MenuItem fx:id="openOperations" mnemonicParsing="false" onAction="#openVecScriptAction"
+                                  text="Load Operations..."/>
+                        <MenuItem fx:id="saveOperations" mnemonicParsing="false" onAction="#writeVecScriptAction"
+                                  text="Save Operations..."/>
                     </items>
                 </MenuButton>
-                <ChoiceBox fx:id="dimChoice" value="" />
+                <ChoiceBox fx:id="dimChoice" value=""/>
                 <ChoiceBox fx:id="viewMode" onAction="#viewMode" value="FID">
                     <items>
                         <FXCollections fx:factory="observableArrayList">
-                            <String fx:value="FID" />
-                            <String fx:value="Dataset" />
+                            <String fx:value="FID"/>
+                            <String fx:value="Dataset"/>
                         </FXCollections>
                     </items>
                 </ChoiceBox>
-                <Pane HBox.hgrow="ALWAYS" />
+                <Pane HBox.hgrow="ALWAYS"/>
             </items>
         </ToolBar>
     </top>
@@ -62,7 +73,7 @@
             <Tab closable="false" text="Parameters">
                 <VBox>
                     <children>
-                        <PropertySheet fx:id="refSheet" minHeight="0.0" prefHeight="0" VBox.vgrow="ALWAYS" />
+                        <PropertySheet fx:id="refSheet" minHeight="0.0" prefHeight="0" VBox.vgrow="ALWAYS"/>
                     </children>
                 </VBox>
             </Tab>
@@ -75,88 +86,117 @@
                                     <items>
                                     </items>
                                 </MenuButton>
-                                <TextField fx:id="opTextField" onAction="#handleNewOp" onKeyReleased="#handleOpKey" HBox.hgrow="ALWAYS" />
-                                <Button fx:id="opDeleteButton" onAction="#deleteOp" text="Delete" />
-                                <Button fx:id="opDocButton" onAction="#showOpDoc" text="Docs" />
+                                <TextField fx:id="opTextField" onAction="#handleNewOp" onKeyReleased="#handleOpKey"
+                                           HBox.hgrow="ALWAYS"/>
+                                <Button fx:id="opDeleteButton" onAction="#deleteOp" text="Delete"/>
+                                <Button fx:id="opDocButton" onAction="#showOpDoc" text="Docs"/>
                             </children>
                         </HBox>
-                        <ListView fx:id="scriptView" minHeight="0.0" onKeyReleased="#handleScriptKey" prefHeight="0.0" VBox.vgrow="ALWAYS" />
-                        <PropertySheet fx:id="propertySheet" minHeight="0.0" minWidth="300.0" prefHeight="0.0" VBox.vgrow="ALWAYS" />
+                        <ListView fx:id="scriptView" minHeight="0.0" onKeyReleased="#handleScriptKey" prefHeight="0.0"
+                                  VBox.vgrow="ALWAYS"/>
+                        <PropertySheet fx:id="propertySheet" minHeight="0.0" minWidth="300.0" prefHeight="0.0"
+                                       VBox.vgrow="ALWAYS"/>
                     </children>
                 </VBox>
             </Tab>
-         <Tab closable="false" text="Navigation">
-            <content>
-               <HBox fx:id="navHBox" prefHeight="100.0" prefWidth="200.0">
-                  <children>
-                     <HBox prefHeight="410.0" prefWidth="59.0">
+            <Tab closable="false" text="Navigation">
+                <content>
+                    <HBox fx:id="navHBox" prefHeight="100.0" prefWidth="200.0">
                         <children>
-                            <Slider fx:id="vecNum1" blockIncrement="1.0" majorTickUnit="16.0" max="64.0" min="1" minorTickCount="4" onMouseReleased="#handleVecRelease" onValueChange="#handleVecNum" orientation="VERTICAL" showTickLabels="true" showTickMarks="true">
-                              <HBox.margin>
-                                 <Insets bottom="5.0" top="5.0" />
-                              </HBox.margin></Slider>
-                        </children>
-                        <HBox.margin>
-                           <Insets left="5.0" />
-                        </HBox.margin>
-                     </HBox>
-                     <VBox fx:id="navDetailsVBox" prefHeight="200.0" prefWidth="100.0" spacing="5.0" HBox.hgrow="ALWAYS">
-                        <children>
-                           <HBox prefHeight="30.0" prefWidth="200.0" alignment="CENTER">
-                              <children>
-                                 <Label prefWidth="100.0" text="Dimension:" />
-                                 <VBox fx:id="dimVBox" prefHeight="69.0" prefWidth="236.0" spacing="5.0" HBox.hgrow="ALWAYS" />
-                              </children>
-                           </HBox>
-                           <HBox prefHeight="30.0" prefWidth="200.0" alignment="CENTER">
-                              <children>
-                                 <Label prefWidth="100.0" text="Datatype: " />
-                                 <ChoiceBox fx:id="realImagChoiceBox" maxWidth="1.7976931348623157E308" prefWidth="150.0" HBox.hgrow="ALWAYS" />
-                              </children>
-                           </HBox>
-                            <HBox prefHeight="30.0" prefWidth="200.0" alignment="CENTER">
+                            <HBox prefHeight="410.0" prefWidth="59.0">
                                 <children>
-                                    <Label prefWidth="100.0" text="File Index: " />
-                                    <TextField fx:id="fileIndexTextBox" HBox.hgrow="ALWAYS" />
+                                    <Slider fx:id="vecNum1" blockIncrement="1.0" majorTickUnit="16.0" max="64.0" min="1"
+                                            minorTickCount="4" onMouseReleased="#handleVecRelease"
+                                            onValueChange="#handleVecNum" orientation="VERTICAL" showTickLabels="true"
+                                            showTickMarks="true">
+                                        <HBox.margin>
+                                            <Insets bottom="5.0" top="5.0"/>
+                                        </HBox.margin>
+                                    </Slider>
                                 </children>
+                                <HBox.margin>
+                                    <Insets left="5.0"/>
+                                </HBox.margin>
                             </HBox>
-                            <HBox prefHeight="100.0" prefWidth="200.0" alignment="CENTER">
+                            <VBox fx:id="navDetailsVBox" prefHeight="200.0" prefWidth="100.0" spacing="5.0"
+                                  HBox.hgrow="ALWAYS">
                                 <children>
-                                    <VBox>
+                                    <HBox prefHeight="30.0" prefWidth="200.0" alignment="CENTER">
                                         <children>
-                                            <Label prefWidth="100.0" text="Corrupted Indices" />
-                                            <Button  mnemonicParsing="false" onAction="#addCorruptedIndex" text="Add" />
-                                            <Button  mnemonicParsing="false" onAction="#addCorruptedDim" text="Add Dim" />
-                                            <Button  mnemonicParsing="false" onAction="#scanForCorruption" text="Scan" />
-                                            <Button  mnemonicParsing="false" onAction="#clearCorruptedIndex" text="Clear" />
+                                            <Label prefWidth="100.0" text="Dimension:"/>
+                                            <VBox fx:id="dimVBox" prefHeight="69.0" prefWidth="236.0" spacing="5.0"
+                                                  HBox.hgrow="ALWAYS"/>
                                         </children>
-                                    </VBox>
-                                    <ListView fx:id="corruptedIndicesListView" editable="false" HBox.hgrow="ALWAYS" />
+                                    </HBox>
+                                    <HBox prefHeight="30.0" prefWidth="200.0" alignment="CENTER">
+                                        <children>
+                                            <Label prefWidth="100.0" text="Datatype: "/>
+                                            <ChoiceBox fx:id="realImagChoiceBox" maxWidth="1.7976931348623157E308"
+                                                       prefWidth="150.0" HBox.hgrow="ALWAYS"/>
+                                        </children>
+                                    </HBox>
+                                    <HBox prefHeight="30.0" prefWidth="200.0" alignment="CENTER">
+                                        <children>
+                                            <Label prefWidth="100.0" text="File Index: "/>
+                                            <TextField fx:id="fileIndexTextBox" HBox.hgrow="ALWAYS"/>
+                                        </children>
+                                    </HBox>
+                                    <TitledPane text="Corrupted Index ID" expanded="false">
+                                        <content>
+                                            <HBox prefHeight="100.0" prefWidth="200.0" alignment="CENTER">
+                                                <children>
+                                                    <VBox prefWidth="100.0">
+                                                        <children>
+                                                            <Button mnemonicParsing="false"
+                                                                    onAction="#addCorruptedIndex"
+                                                                    text="Add"/>
+                                                            <Button mnemonicParsing="false"
+                                                                    onAction="#deleteCorruptedIndex"
+                                                                    text="Delete"/>
+                                                            <Button mnemonicParsing="false"
+                                                                    onAction="#addCorruptedDim"
+                                                                    text="Add Dim"/>
+                                                            <Button mnemonicParsing="false"
+                                                                    onAction="#scanForCorruption"
+                                                                    text="Scan"/>
+                                                            <Button mnemonicParsing="false"
+                                                                    onAction="#clearCorruptedIndex"
+                                                                    text="Clear All"/>
+                                                        </children>
+                                                    </VBox>
+                                                    <VBox>
+                                                        <children>
+                                                            <ListView fx:id="corruptedIndicesListView" editable="false"
+                                                                      HBox.hgrow="ALWAYS"/>
+                                                        </children>
+                                                    </VBox>
+                                                </children>
+                                            </HBox>
+                                        </content>
+                                    </TitledPane>
                                 </children>
-                            </HBox>
+                            </VBox>
                         </children>
-                     </VBox>
-                  </children>
-                  <padding>
-                     <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
-                  </padding>
-               </HBox>
-            </content>
-         </Tab>
+                        <padding>
+                            <Insets bottom="5.0" left="5.0" right="5.0" top="5.0"/>
+                        </padding>
+                    </HBox>
+                </content>
+            </Tab>
             <Tab closable="false" onSelectionChanged="#loadScriptTab" text="Script">
                 <VBox>
                     <children>
-                        <CodeArea fx:id="textArea" minHeight="0.0" prefHeight="0" VBox.vgrow="ALWAYS" />
+                        <CodeArea fx:id="textArea" minHeight="0.0" prefHeight="0" VBox.vgrow="ALWAYS"/>
                     </children>
                 </VBox>
             </Tab>
             <Tab closable="false" onSelectionChanged="#loadScriptTab" text="Vendor-Pars">
                 <BorderPane>
                     <top>
-                        <ToolBar fx:id="fidParToolBar" />
+                        <ToolBar fx:id="fidParToolBar"/>
                     </top>
                     <center>
-                        <TableView fx:id="fidParTableView" />
+                        <TableView fx:id="fidParTableView"/>
                     </center>
                 </BorderPane>
             </Tab>
@@ -166,16 +206,19 @@
         <VBox maxWidth="400.0">
             <HBox>
                 <children>
-                    <Button fx:id="datasetFileButton" mnemonicParsing="false" onAction="#datasetFileAction" text="File..." />
-                    <Button fx:id="processDatasetButton" mnemonicParsing="false" onAction="#processDatasetAction" text="Process" />
-                    <Button fx:id="haltProcessButton" mnemonicParsing="false" onAction="#haltProcessAction" text="Halt" />
-                    <CheckBox fx:id="autoProcess" mnemonicParsing="false" text="Auto Update" />
+                    <Button fx:id="datasetFileButton" mnemonicParsing="false" onAction="#datasetFileAction"
+                            text="File..."/>
+                    <Button fx:id="processDatasetButton" mnemonicParsing="false" onAction="#processDatasetAction"
+                            text="Process"/>
+                    <Button fx:id="haltProcessButton" mnemonicParsing="false" onAction="#haltProcessAction"
+                            text="Halt"/>
+                    <CheckBox fx:id="autoProcess" mnemonicParsing="false" text="Auto Update"/>
 
                 </children>
             </HBox>
             <HBox>
                 <children>
-                    <StatusBar fx:id="statusBar" HBox.hgrow="ALWAYS" />
+                    <StatusBar fx:id="statusBar" HBox.hgrow="ALWAYS"/>
                 </children>
             </HBox>
         </VBox>
