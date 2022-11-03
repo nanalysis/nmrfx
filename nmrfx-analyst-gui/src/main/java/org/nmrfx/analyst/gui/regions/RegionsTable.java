@@ -130,7 +130,7 @@ public class RegionsTable extends TableView<DatasetRegion> {
         TableColumn<DatasetRegion, Double> normalizedIntegralCol = new TableColumn<>(NORMALIZED_INTEGRAL_COLUMN_NAME);
         normalizedIntegralCol.setCellValueFactory(param -> {
             double norm = chart.getDataset().getNorm() / chart.getDataset().getScale();
-            Double normProp = norm != 0 ? param.getValue().getIntegral() / norm : null;
+            Double normProp = norm != 0.0 ? param.getValue().getIntegral() / norm : null;
             return new SimpleObjectProperty<>(normProp);
         });
         normalizedIntegralCol.setCellFactory(column -> new DoubleTableCell());

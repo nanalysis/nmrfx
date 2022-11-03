@@ -83,46 +83,39 @@ public class DatasetRegion implements Comparator, Comparable {
         int nDim = 0;
         for (String line : lines) {
             line = line.trim();
-            if (line.length() > 0) {
-                String[] fields = line.split("\\s+");
-                if (firstLine) {
-                    int nPos = 0;
-                    for (String field : fields) {
-                        if (field.startsWith("pos")) {
-                            nPos++;
-                        } else {
-                            break;
-                        }
-                    }
-                    nDim = nPos / 2;
-                    firstLine = false;
-
-                } else {
-                    double[] x = new double[nDim * 2];
-                    double[] startIntensity = new double[nDim];
-                    double[] endIntensity = new double[nDim];
-                    int k = 0;
-                    for (int i = 0; i < nDim; i++) {
-                        for (int j = 0; j < 2; j++) {
-                            x[k] = Double.parseDouble(fields[k]);
-                            k++;
-                        }
-                    }
-                    for (int i = 0; i < Math.pow(2, nDim - 1); i++) {
-                        startIntensity[i] = Double.parseDouble(fields[k++]);
-                    }
-                    for (int i = 0; i < Math.pow(2, nDim - 1); i++) {
-                        endIntensity[i] = Double.parseDouble(fields[k++]);
-                    }
-                    DatasetRegion region = new DatasetRegion(x, startIntensity, endIntensity);
-                    region.setIntegral(Double.parseDouble(fields[k++]));
-                    region.setMin(Double.parseDouble(fields[k++]));
-                    region.setMax(Double.parseDouble(fields[k++]));
-                    region.setAuto(fields[k].equals("1"));
-                    regions.add(region);
-                }
+            if (line.length() == 0) {
+                // Ignore blank lines
+                continue;
             }
+            String[] fields = line.split("\\s+");
+            if (firstLine) {
+                int nPos = (int) Arrays.stream(fields).filter(field -> field.startsWith("pos")).count();
+                nDim = nPos / 2;
+                firstLine = false;
 
+            } else {
+                double[] x = new double[nDim * 2];
+                double[] startIntensity = new double[nDim];
+                double[] endIntensity = new double[nDim];
+                int k = 0;
+                for (int i = 0; i < nDim * 2; i++) {
+                    x[k] = Double.parseDouble(fields[k]);
+                    k++;
+
+                }
+                for (int i = 0; i < Math.pow(2, nDim - 1); i++) {
+                    startIntensity[i] = Double.parseDouble(fields[k++]);
+                }
+                for (int i = 0; i < Math.pow(2, nDim - 1); i++) {
+                    endIntensity[i] = Double.parseDouble(fields[k++]);
+                }
+                DatasetRegion region = new DatasetRegion(x, startIntensity, endIntensity);
+                region.setIntegral(Double.parseDouble(fields[k++]));
+                region.setMin(Double.parseDouble(fields[k++]));
+                region.setMax(Double.parseDouble(fields[k++]));
+                region.setAuto(fields[k].equals("1"));
+                regions.add(region);
+            }
         }
         return regions;
     }

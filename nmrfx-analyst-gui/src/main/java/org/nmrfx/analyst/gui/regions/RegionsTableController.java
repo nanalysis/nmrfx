@@ -160,6 +160,7 @@ public class RegionsTableController implements Initializable {
                 chart.chartProps.setRegions(true);
                 chart.refresh();
             } catch (IOException ioE) {
+                log.warn(ioE.getMessage(), ioE);
                 GUIUtils.warn("Error reading regions file", ioE.getMessage());
             }
         }
