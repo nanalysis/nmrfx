@@ -21,6 +21,7 @@ import org.apache.commons.math3.complex.Complex;
 import org.apache.commons.math3.util.Precision;
 import org.nmrfx.datasets.DatasetLayout;
 import org.nmrfx.processor.datasets.Dataset;
+import org.nmrfx.processor.datasets.DatasetGroupIndex;
 import org.nmrfx.processor.datasets.DatasetType;
 import org.nmrfx.processor.datasets.parameters.FPMult;
 import org.nmrfx.processor.datasets.parameters.GaussianWt;
@@ -98,6 +99,7 @@ public class BrukerData implements NMRData {
     boolean hasSpectrum = false;
     List<Double> arrayValues = new ArrayList<>();
     File nusFile = null;
+    private final List<DatasetGroupIndex> datasetGroupIndices = new ArrayList<>();
 
     /**
      * Open Bruker parameter and data files.
@@ -1832,6 +1834,11 @@ public class BrukerData implements NMRData {
     @Override
     public void setSampleSchedule(SampleSchedule sampleSchedule) {
         this.sampleSchedule = sampleSchedule;
+    }
+
+    @Override
+    public List<DatasetGroupIndex> getSkipGroups() {
+        return datasetGroupIndices;
     }
 
     private List<String> scanPulseSequence(Path path) throws IOException {

@@ -18,6 +18,7 @@
 package org.nmrfx.processor.datasets.vendor;
 
 import org.apache.commons.math3.complex.Complex;
+import org.nmrfx.processor.datasets.DatasetGroupIndex;
 import org.nmrfx.processor.datasets.DatasetType;
 import org.nmrfx.processor.datasets.parameters.FPMult;
 import org.nmrfx.processor.datasets.parameters.GaussianWt;
@@ -876,4 +877,37 @@ public interface NMRData {
 
     public void setPreferredDatasetType(DatasetType datasetType);
 
+    List<DatasetGroupIndex> getSkipGroups();
+
+    default  List<int[]> getSkipIndices() {
+        List<int[]> result = new ArrayList<>();
+        List<DatasetGroupIndex> groups = getSkipGroups();
+        for(var group:groups) {
+            result.addAll(group.groupToIndices());
+        }
+        return result;
+    }
+
+    public default void addSkipGroup(int[] indices) {
+       addSkipGroup(indices, -1);
+    }
+
+    public default void addSkipGroup(int[] indices, int realImaginaryChoice) {
+        DatasetGroupIndex newGroup = new DatasetGroupIndex(indices, realImaginaryChoice);
+        List<DatasetGroupIndex> currentIndices = getSkipGroups();
+        if (!currentIndices.contains(newGroup)) {
+            currentIndices.add(newGroup);
+        }
+    }
+
+    public default void addSkipGroup(DatasetGroupIndex newGroup) {
+        List<DatasetGroupIndex> currentIndices = getSkipGroups();
+        if (!currentIndices.contains(newGroup)) {
+            currentIndices.add(newGroup);
+        }
+    }
+
+    public default void clearSkipGroups() {
+        getSkipGroups().clear();
+    }
 }
