@@ -316,6 +316,10 @@ public class PolyChart extends Region implements PeakListener {
         return chartSelected.get();
     }
 
+    public ObjectProperty<DISDIM> getDisDimProperty() {
+        return disDimProp;
+    }
+
     public double[][] getCorners() {
         double[][] corners = new double[4][2];
         double xPos = getLayoutX();

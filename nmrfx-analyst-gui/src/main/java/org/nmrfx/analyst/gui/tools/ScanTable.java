@@ -230,7 +230,7 @@ public class ScanTable {
                 curLvl.ifPresent(dataAttr::setLvl);
                 int nDim = dataAttr.nDim;
                 chart.full(nDim - 1);
-                if ((nDim - dataAttr.getDataset().getNFreqDims()) == 1){
+                if (chart.getDisDimProperty().get() == PolyChart.DISDIM.OneDX){
                     chart.setDrawlist(rows);
                 } else{
                     chart.clearDrawlist();
