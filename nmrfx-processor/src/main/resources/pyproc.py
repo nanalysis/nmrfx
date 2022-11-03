@@ -632,6 +632,17 @@ def genZFNUS(sizes,newSizes):
     fidObj = fidInfo.fidObj
     fidObj.createZFSchedule(sizes, newSizes)
 
+def markrows(*args):
+    global fidInfo
+    fidObj = fidInfo.fidObj
+    for row in args:
+        newRow = []
+        for v in row:
+            if v >= 0:
+                v = v -1
+            newRow.append(v)
+        fidObj.addSkipGroup(newRow)
+
 class genericOperation(object):
     def __init__(self, f):
         self.f = f
@@ -2439,11 +2450,13 @@ def EXTEND(alg='nesta', factor=1, phase=None, disabled=False, vector=None, proce
     muFinalReal = math.pow(10.0,-muFinal)
     process = process or getCurrentProcess()
     global fidInfo
+    skipIndices = fidInfo.fidObj.getSkipIndices()
+
 
     if alg == 'nesta':
-        op = NESTANMR(nOuter, nInner, tolFinalReal, muFinalReal, phaseList, zeroAtStart, threshold, factor)
+        op = NESTANMR(nOuter, nInner, tolFinalReal, muFinalReal, phaseList, zeroAtStart, threshold, factor, skipIndices)
     elif alg == 'grins':
-        op = GRINSOp(noise, scale, factor, phaseList, preserve)
+        op = GRINSOp(noise, scale, factor, phaseList, preserve, skipIndices)
     else:
         raise Exception("Invalid algorithm for EXTEND: " + alg)
 
