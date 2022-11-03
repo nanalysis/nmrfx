@@ -21,6 +21,7 @@ import com.nanalysis.spinlab.dataset.Header;
 import com.nanalysis.spinlab.dataset.HeaderParser;
 import com.nanalysis.spinlab.dataset.HeaderWriter;
 import com.nanalysis.spinlab.dataset.enums.Parameter;
+import com.nanalysis.spinlab.dataset.enums.Unit;
 import com.nanalysis.spinlab.dataset.values.ListNumberValue;
 import com.nanalysis.spinlab.dataset.values.NumberValue;
 import com.nanalysis.spinlab.dataset.values.Value;
@@ -418,9 +419,14 @@ public class RS2DData implements NMRData {
      */
     @Override
     public String getPar(String name) {
-        Number converted = getConvertedParameterValue(name);
-        if (converted != null) {
-            return converted.toString();
+        Number convertedNumber = getConvertedNumberValue(name);
+        if (convertedNumber != null) {
+            return convertedNumber.toString();
+        }
+
+        List<? extends Number> convertedListNumber = getConvertedListNumberValue(name);
+        if (convertedListNumber != null) {
+            return convertedListNumber.toString();
         }
 
         return header.get(name).stringValue();
@@ -435,9 +441,14 @@ public class RS2DData implements NMRData {
      */
     @Override
     public Double getParDouble(String name) {
-        Number converted = getConvertedParameterValue(name);
-        if (converted != null) {
-            return converted.doubleValue();
+        Number convertedNumber = getConvertedNumberValue(name);
+        if (convertedNumber != null) {
+            return convertedNumber.doubleValue();
+        }
+
+        List<? extends Number> convertedListNumber = getConvertedListNumberValue(name);
+        if (convertedListNumber != null && convertedListNumber.size() == 1) {
+            return convertedListNumber.get(0).doubleValue();
         }
 
         return header.get(name).doubleValue();
@@ -452,9 +463,14 @@ public class RS2DData implements NMRData {
      */
     @Override
     public Integer getParInt(String name) {
-        Number converted = getConvertedParameterValue(name);
+        Number converted = getConvertedNumberValue(name);
         if (converted != null) {
             return converted.intValue();
+        }
+
+        List<? extends Number> convertedListNumber = getConvertedListNumberValue(name);
+        if (convertedListNumber != null && convertedListNumber.size() == 1) {
+            return convertedListNumber.get(0).intValue();
         }
 
         return header.get(name).intValue();
@@ -477,15 +493,28 @@ public class RS2DData implements NMRData {
     /**
      * Some parameter may need internal conversion before use.
      * This is needed for parameters which could be stored in Hz or ppm, but can only be used in Hz internally.
-     * This includes SPECTRAL_WIDTH, OFFSET_FREQ_n parameters and SR.
+     * This includes SPECTRAL_WIDTH* and OFFSET_FREQ_* parameters.
      *
      * @param name the parameter name
-     * @return a converted value, or null if there is no need for conversion
+     * @return a converted value, or null if there is no need for conversion.
      */
-    private Number getConvertedParameterValue(String name) {
+    private Number getConvertedNumberValue(String name) {
         boolean needsConversion = SW_PARAMS.stream().anyMatch(p -> p.name().equals(name))
                 || OFFSET_FREQ_PARAMS.stream().anyMatch(p -> p.name().equals(name));
         return needsConversion ? getParameterAsHertz(name) : null;
+    }
+
+    /**
+     * Some parameter may need internal conversion before use.
+     * This is needed for parameters which could be stored in Hz or ppm, but can only be used in Hz internally.
+     * This includes only SR (Spectral Reference).
+     *
+     * @param name the parameter name
+     * @return a converted list of values, or null if there is no need for conversion.
+     */
+    private List<? extends Number> getConvertedListNumberValue(String name) {
+        boolean needsConversion = SR.name().equals(name);
+        return needsConversion ? getParameterAsHertzList(name) : null;
     }
 
     @Override
@@ -601,14 +630,20 @@ public class RS2DData implements NMRData {
     }
 
     private double getParameterAsHertz(Parameter param) {
-        return header.<NumberValue>get(param).getValueAsHertz(header);
+        return header.<NumberValue>get(param).getValueAs(Unit.Hertz, header);
     }
 
     private double getParameterAsHertz(String paramName) {
-        return header.<NumberValue>get(paramName).getValueAsHertz(header);
+        return header.<NumberValue>get(paramName).getValueAs(Unit.Hertz, header);
     }
 
-    //TODO SR as hz/ppm
+    private List<Double> getParameterAsHertzList(Parameter param) {
+        return header.<ListNumberValue>get(param).getValueAs(Unit.Hertz, header);
+    }
+
+    private List<Double> getParameterAsHertzList(String paramName) {
+        return header.<ListNumberValue>get(paramName).getValueAs(Unit.Hertz, header);
+    }
 
     @Override
     public double getRef(int iDim) {
@@ -617,10 +652,9 @@ public class RS2DData implements NMRData {
             return Ref[iDim];
         }
 
-        // otherwise, read from header
-        Optional<Double> value = header.optional(SR).map(Value::doubleListValue)
-                .filter(list -> list.size() > iDim)
-                .map(list -> list.get(iDim));
+        // otherwise, read from header if present
+        Optional<List<Double>> srValues = header.contains(SR) ? Optional.of(getParameterAsHertzList(SR)) : Optional.empty();
+        Optional<Double> value = srValues.filter(list -> list.size() > iDim).map(list -> list.get(iDim));
         if (value.isPresent()) {
             double offset = getOffsetAsHertz(iDim);
             double sf = getSF(iDim);
