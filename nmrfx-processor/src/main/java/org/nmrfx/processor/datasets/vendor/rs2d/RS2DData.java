@@ -469,27 +469,23 @@ public class RS2DData implements NMRData {
     @Override
     public List<VendorPar> getPars() {
         return header.all().stream()
-                // it is necessary to call getPar() to convert specific parameters such as SPECTRAL_WIDTH
+                // it is necessary to call getPar() to convert specific parameters such as SPECTRAL_WIDTH or OFFSETs
                 .map(value -> new VendorPar(value.getName(), getPar(value.getName())))
                 .collect(Collectors.toList());
     }
 
     /**
-     * Some parameter may need internal conversion before use. The only use case for now is SPECTRAL_WIDTH, which could be stored in Hz or ppm, but can only be used in Hz internally.
+     * Some parameter may need internal conversion before use.
+     * This is needed for parameters which could be stored in Hz or ppm, but can only be used in Hz internally.
+     * This includes SPECTRAL_WIDTH, OFFSET_FREQ_n parameters and SR.
      *
      * @param name the parameter name
      * @return a converted value, or null if there is no need for conversion
      */
     private Number getConvertedParameterValue(String name) {
-        if (SPECTRAL_WIDTH.name().equals(name)) {
-            return getSpectralWidthAsHertz();
-        }
-
-        return null;
-    }
-
-    private double getSpectralWidthAsHertz() {
-        return header.<NumberValue>get(SPECTRAL_WIDTH).getValueAsHertz(header);
+        boolean needsConversion = SW_PARAMS.stream().anyMatch(p -> p.name().equals(name))
+                || OFFSET_FREQ_PARAMS.stream().anyMatch(p -> p.name().equals(name));
+        return needsConversion ? getParameterAsHertz(name) : null;
     }
 
     @Override
@@ -548,7 +544,7 @@ public class RS2DData implements NMRData {
         Optional<Value<?>> value = header.optional(BASE_FREQ_PARAMS.get(iDim));
         if (value.isPresent()) {
             double baseFreq = value.get().doubleValue();
-            double sf = (baseFreq + getOffset(iDim)) / 1.0e6;
+            double sf = (baseFreq + getOffsetAsHertz(iDim)) / 1.0e6;
             Sf[iDim] = sf;
             return sf;
         }
@@ -596,9 +592,23 @@ public class RS2DData implements NMRData {
         Sw[dim] = null;
     }
 
-    double getOffset(int iDim) {
-        return header.get(OFFSET_FREQ_PARAMS.get(iDim)).doubleValue();
+    private double getSpectralWidthAsHertz() {
+        return getParameterAsHertz(SPECTRAL_WIDTH);
     }
+
+    private double getOffsetAsHertz(int iDim) {
+        return getParameterAsHertz(OFFSET_FREQ_PARAMS.get(iDim));
+    }
+
+    private double getParameterAsHertz(Parameter param) {
+        return header.<NumberValue>get(param).getValueAsHertz(header);
+    }
+
+    private double getParameterAsHertz(String paramName) {
+        return header.<NumberValue>get(paramName).getValueAsHertz(header);
+    }
+
+    //TODO SR as hz/ppm
 
     @Override
     public double getRef(int iDim) {
@@ -612,7 +622,7 @@ public class RS2DData implements NMRData {
                 .filter(list -> list.size() > iDim)
                 .map(list -> list.get(iDim));
         if (value.isPresent()) {
-            double offset = getOffset(iDim);
+            double offset = getOffsetAsHertz(iDim);
             double sf = getSF(iDim);
             double sr = value.get();
             Ref[iDim] = (sr + offset) / (sf - offset / 1.0e6);
