@@ -422,9 +422,7 @@ public class ChartProcessor {
                 }
                 if (nmrData.getSampleSchedule() != null) {
                     vecIndex = nmrData.getSampleSchedule().convertToNUSGroup(vecIndex, index);
-                    if (vecIndex != null) {
-                        vecIndex.printMe(index, 1);
-                    } else {
+                    if (vecIndex == null) {
                         log.info("No vec");
                     }
 
@@ -490,7 +488,6 @@ public class ChartProcessor {
         for (int i=0;i<vecIndices.size();i++) {
             var vecIndexScore = vecIndices.get(i);
             if (vecIndexScore.score() > threshold) {
-                vecIndexScore.vecIndex().printMe(0,1);
                 result.add(vecIndexScore);
             }
          }
