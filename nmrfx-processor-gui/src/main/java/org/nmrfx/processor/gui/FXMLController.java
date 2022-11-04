@@ -57,6 +57,7 @@ import javafx.stage.StageStyle;
 import javafx.util.Callback;
 import org.apache.commons.beanutils.PropertyUtils;
 import org.controlsfx.control.PopOver;
+import org.controlsfx.control.SegmentedButton;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.graphicsio.GraphicsIOException;
@@ -168,6 +169,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
     boolean[][] crossHairStates = new boolean[2][2];
     private BooleanProperty minBorders;
     Phaser phaser;
+    Pane attributesPane;
     Set<ControllerTool> tools = new HashSet<>();
     SimpleBooleanProperty processControllerVisible = new SimpleBooleanProperty(false);
     SimpleObjectProperty<Cursor> cursorProperty = new SimpleObjectProperty<>(Cursor.CROSSHAIR);
@@ -273,6 +275,22 @@ public class FXMLController implements  Initializable, PeakNavigable {
     public boolean isPhaseSliderVisible() {
         return (rightBox.getChildren().size() > 0);
     }
+
+
+    private void toggleSideBarAttributes(ToggleButton phaserButton, ToggleButton attributesButton) {
+        rightBox.getChildren().clear();
+        if (phaserButton.isSelected()) {
+            rightBox.add(phaserBox, 0, 0);
+            phaser.getPhaseOp();
+            if (chartProcessor == null) {
+                phaser.setPH1Slider(activeChart.getDataPH1());
+                phaser.setPH0Slider(activeChart.getDataPH0());
+            }
+        } else if (attributesButton.isSelected()) {
+            rightBox.add(attributesPane, 0, 0);
+        }
+    }
+
 
     public void updatePhaser(boolean state) {
         if (state) {
@@ -1296,6 +1314,9 @@ public class FXMLController implements  Initializable, PeakNavigable {
         phaser = new Phaser(this, phaserBox);
         processorPane.getChildren().addListener(this::updateStageSize);
         cursorProperty.addListener( e -> setCursor());
+        attributesPane = new AnchorPane();
+        AttributesController attributesController =  AttributesController.create(this, attributesPane);
+
     }
 
     public BorderPane getMainBox() {
@@ -1466,9 +1487,6 @@ public class FXMLController implements  Initializable, PeakNavigable {
         bButton = GlyphsDude.createIconButton(FontAwesomeIcon.FILE, "Datasets", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
         bButton.setOnAction(e -> showDatasetsAction(e));
         buttons.add(bButton);
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.WRENCH, "Attributes", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
-        bButton.setOnAction(e -> showSpecAttrAction(e));
-        buttons.add(bButton);
         favoriteButton = GlyphsDude.createIconButton(FontAwesomeIcon.HEART, "Favorite", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
         favoriteButton.setOnAction(e -> saveAsFavorite());
         // Set the initial status of the favorite button
@@ -1571,19 +1589,33 @@ public class FXMLController implements  Initializable, PeakNavigable {
         Image imageIcon = new Image("/images/Icon_NVJ_16.png", true);
         ImageView imageView = new ImageView(imageIcon);
 
+        Pane filler = new Pane();
+        HBox.setHgrow(filler, Priority.ALWAYS);
+        filler.setMinWidth(20);
+        buttons.add(filler);
+
+        ToggleButton phaserButton = new ToggleButton("Phasing");
+        ToggleButton attributesButton = new ToggleButton("Attributes");
+        attributesButton.setOnAction(e -> toggleSideBarAttributes(phaserButton, attributesButton));
+        phaserButton.setOnAction(e -> toggleSideBarAttributes(phaserButton, attributesButton));
+        phaserButton.getStyleClass().add("toolButton");
+        attributesButton.getStyleClass().add("toolButton");
+        SegmentedButton groupButton = new SegmentedButton(phaserButton, attributesButton);
+
+
         for (Node node : buttons) {
             if (node instanceof Button) {
                 node.getStyleClass().add("toolButton");
             }
         }
         toolBar.getItems().addAll(buttons);
+        toolBar.getItems().add(groupButton);
 
         statusBar = new SpectrumStatusBar(this);
         statusBar.buildBar(btoolBar);
         MainApp.getMainApp().addStatusBarTools(statusBar);
 
     }
-
     public void enableFavoriteButton() {
         favoriteButton.setDisable(ProjectBase.getActive().getProjectDir() == null);
     }

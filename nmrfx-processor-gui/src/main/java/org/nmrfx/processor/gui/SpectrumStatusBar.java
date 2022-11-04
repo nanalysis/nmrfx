@@ -96,9 +96,7 @@ public class SpectrumStatusBar {
     static final int maxSpinners = 4;
     CustomNumberTextField[][] crossText = new CustomNumberTextField[2][2];
     FXMLController controller;
-    CheckBox sliceStatus = new CheckBox("Slices");
     CheckBox complexStatus = new CheckBox("Complex");
-    CheckBox phaserStatus = new CheckBox("Phasing");
     MenuButton toolButton = new MenuButton("Tools");
     List<ButtonBase> specialButtons = new ArrayList<>();
     Button peakPickButton;
@@ -242,12 +240,7 @@ public class SpectrumStatusBar {
         filler = new Pane();
         HBox.setHgrow(filler, Priority.ALWAYS);
         btoolBar.getItems().add(filler);
-        phaserStatus.setOnAction(this::phaserStatus);
-        btoolBar.getItems().add(sliceStatus);
         btoolBar.getItems().add(complexStatus);
-        btoolBar.getItems().add(phaserStatus);
-        controller.sliceStatus.bind(sliceStatus.selectedProperty());
-        sliceStatus.setOnAction(this::sliceStatus);
         complexStatus.setOnAction(this::complexStatus);
         cursorChoiceBox.getItems().addAll(Cursor.CROSSHAIR, SEL_CURSOR);
         cursorChoiceBox.setValue(Cursor.CROSSHAIR);
@@ -610,9 +603,7 @@ public class SpectrumStatusBar {
         if (mode == 0) {
             nodes.add(complexStatus);
         } else {
-            nodes.add(sliceStatus);
         }
-        nodes.add(phaserStatus);
         btoolBar.getItems().clear();
 
         btoolBar.getItems().addAll(nodes);

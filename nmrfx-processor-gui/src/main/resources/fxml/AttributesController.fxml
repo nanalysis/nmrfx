@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.lang.*?>
+<?import java.util.*?>
+<?import javafx.scene.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<?import javafx.geometry.Insets?>
+<AnchorPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="org.nmrfx.processor.gui.AttributesController"
+            prefWidth="150.0">
+    <Accordion>
+        <panes>
+            <TitledPane text="Features">
+                <GridPane BorderPane.alignment="CENTER" GridPane.rowIndex="0"
+                          GridPane.columnIndex="1" GridPane.columnSpan="1">
+                    <children>
+                        <CheckBox fx:id="gridCheckBox" mnemonicParsing="false" text="Grid"
+                                  selected="true"
+                                  GridPane.columnIndex="1"
+                                  GridPane.rowIndex="1"/>
+                        <CheckBox fx:id="titlesCheckBox" mnemonicParsing="false" text="Titles"
+                                  selected="false"
+                                  GridPane.columnIndex="1" GridPane.rowIndex="2"/>
+                        <CheckBox fx:id="parametersCheckBox"
+                                  mnemonicParsing="false"
+                                  text="Parameters" selected="false"
+                                  GridPane.columnIndex="1" GridPane.rowIndex="3"/>
+                        <CheckBox fx:id="intensityAxisCheckBox"
+                                  mnemonicParsing="false"
+                                  text="Intensity Axis" selected="false"
+                                  GridPane.columnIndex="1" GridPane.rowIndex="4"/>
+                    </children>
+                </GridPane>
+
+            </TitledPane>
+            <TitledPane text="Fonts">
+                <GridPane BorderPane.alignment="CENTER" GridPane.rowIndex="0"
+                          GridPane.columnIndex="0" GridPane.columnSpan="1">
+                    <children>
+                        <Label text="Tics" GridPane.columnIndex="1"
+                               GridPane.rowIndex="1"/>
+                        <ComboBox fx:id="ticFontSizeComboBox"
+                                  GridPane.columnIndex="2" GridPane.rowIndex="1"
+                                  GridPane.columnSpan="1"/>
+                        <Label text="  Label" GridPane.columnIndex="1"
+                               GridPane.rowIndex="2"/>
+                        <ComboBox fx:id="labelFontSizeComboBox"
+                                  GridPane.columnIndex="2" GridPane.rowIndex="2"
+                                  GridPane.columnSpan="1"/>
+                    </children>
+                </GridPane>
+
+            </TitledPane>
+            <TitledPane text="Peaks">
+            </TitledPane>
+            <TitledPane text="Slices">
+<VBox>
+    <children>
+        <Label text="Slice" GridPane.columnIndex="0" GridPane.rowIndex="4"/>
+        <Label text="On" GridPane.columnIndex="1" GridPane.rowIndex="4"/>
+        <Label text="Color" GridPane.columnIndex="2" GridPane.rowIndex="4"/>
+        <Label text="1" GridPane.columnIndex="0" GridPane.rowIndex="5"/>
+        <Label text="2" GridPane.columnIndex="0" GridPane.rowIndex="6"/>
+        <CheckBox fx:id="slice1StateCheckBox" mnemonicParsing="false"
+                  onAction="#sliceAction" text="" selected="true"
+                  GridPane.columnIndex="1" GridPane.rowIndex="5"/>
+        <CheckBox fx:id="slice2StateCheckBox" mnemonicParsing="false"
+                  onAction="#sliceAction" text="" selected="false"
+                  GridPane.columnIndex="1" GridPane.rowIndex="6"/>
+        <ColorPicker fx:id="slice1ColorPicker" onAction="#sliceAction"
+                     promptText="Slice 1 Color" GridPane.columnIndex="2"
+                     GridPane.rowIndex="5"/>
+        <ColorPicker fx:id="slice2ColorPicker" onAction="#sliceAction"
+                     promptText="Slice 2 Color" GridPane.columnIndex="2"
+                     GridPane.rowIndex="6"/>
+
+    </children>
+</VBox>
+            </TitledPane>
+            <TitledPane text="Borders">
+                <GridPane>
+                    <columnConstraints>
+                        <ColumnConstraints minWidth="20.0" prefWidth="20.0"/>
+                        <ColumnConstraints minWidth="20.0" prefWidth="20.0"/>
+                        <ColumnConstraints minWidth="20.0" prefWidth="20.0"/>
+                        <ColumnConstraints minWidth="20.0" prefWidth="20.0"/>
+                        <ColumnConstraints minWidth="20.0" prefWidth="20.0"/>
+                        <ColumnConstraints minWidth="20.0" prefWidth="20.0"/>
+                        <ColumnConstraints minWidth="20.0" prefWidth="20.0"/>
+                    </columnConstraints>
+
+                    <children>
+                        <ComboBox fx:id="leftBorderSizeComboBox" editable="false"
+                                  prefWidth="75.0"
+                                  GridPane.columnIndex="0" GridPane.rowIndex="2"
+                                  GridPane.columnSpan="3"/>
+                        <ComboBox fx:id="rightBorderSizeComboBox" editable="false"
+                                  prefWidth="75.0"
+                                  GridPane.columnIndex="4" GridPane.rowIndex="2"
+                                  GridPane.columnSpan="3"/>
+                        <ComboBox fx:id="topBorderSizeComboBox" editable="false"
+                                  prefWidth="75.0"
+                                  GridPane.columnIndex="2" GridPane.rowIndex="1"
+                                  GridPane.columnSpan="3"/>
+                        <ComboBox fx:id="bottomBorderSizeComboBox" editable="false"
+                                  prefWidth="75.0"
+                                  GridPane.columnIndex="2" GridPane.rowIndex="3"
+                                  GridPane.columnSpan="3"/>
+                    </children>
+                </GridPane>
+
+            </TitledPane>
+            <TitledPane text="Colors">
+                <GridPane BorderPane.alignment="CENTER">
+                    <padding>
+                        <Insets left="20.0" right="20.0"/>
+                    </padding>
+                    <rowConstraints>
+                        <RowConstraints minHeight="10.0" prefHeight="30.0"/>
+                        <RowConstraints minHeight="10.0" prefHeight="30.0"/>
+                        <RowConstraints minHeight="10.0" prefHeight="30.0"/>
+                        <RowConstraints minHeight="10.0" prefHeight="30.0"/>
+                    </rowConstraints>
+                    <children>
+                        <Label text="Bg" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+                        <ColorPicker fx:id="bgColorPicker" promptText="Background Color"
+                                     GridPane.columnIndex="2" GridPane.rowIndex="1"/>
+                        <CheckBox fx:id="bgColorCheckBox" mnemonicParsing="false" text=""
+                                  selected="false"
+                                  GridPane.columnIndex="3" GridPane.rowIndex="1"/>
+
+                        <Label text="Axis" GridPane.columnIndex="1" GridPane.rowIndex="2"/>
+                        <ColorPicker fx:id="axisColorPicker" promptText="Axis Color"
+                                     GridPane.columnIndex="2" GridPane.rowIndex="2"/>
+                        <CheckBox fx:id="axisColorCheckBox" mnemonicParsing="false" text=""
+                                  selected="false"
+                                  GridPane.columnIndex="3" GridPane.rowIndex="2"/>
+
+                        <Label text="Cross 0" GridPane.columnIndex="1" GridPane.rowIndex="3"/>
+                        <ColorPicker fx:id="cross0ColorPicker" promptText="Crosshair 1 Color"
+                                     GridPane.columnIndex="2" GridPane.rowIndex="3"/>
+                        <CheckBox fx:id="cross0ColorCheckBox" mnemonicParsing="false" text=""
+                                  selected="false"
+                                  GridPane.columnIndex="3" GridPane.rowIndex="3"/>
+
+                        <Label text="Cross 1" GridPane.columnIndex="1" GridPane.rowIndex="4"/>
+                        <ColorPicker fx:id="cross1ColorPicker" promptText="Crosshair 2 Color"
+                                     GridPane.columnIndex="2" GridPane.rowIndex="4"/>
+                        <CheckBox fx:id="cross1ColorCheckBox" mnemonicParsing="false" text=""
+                                  selected="false"
+                                  GridPane.columnIndex="3" GridPane.rowIndex="4"/>
+                        <Button text="Schema..." onAction="#showPosSchema"
+                                GridPane.columnIndex="2" GridPane.rowIndex="5"/>
+
+
+                    </children>
+                </GridPane>
+
+            </TitledPane>
+        </panes>
+    </Accordion>
+</AnchorPane>
