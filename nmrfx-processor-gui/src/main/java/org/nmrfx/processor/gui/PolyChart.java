@@ -844,8 +844,12 @@ public class PolyChart extends Region implements PeakListener {
     }
 
     protected double[] getRange(int axis) {
+        return getRangeFromDatasetAttributesList(datasetAttributesList, axis);
+    }
+
+    private double[] getRangeFromDatasetAttributesList(List<DatasetAttributes> attributes, int axis) {
         double[] limits = {Double.MAX_VALUE, Double.NEGATIVE_INFINITY};
-        for (DatasetAttributes dataAttr : datasetAttributesList) {
+        for (DatasetAttributes dataAttr : attributes) {
             if (dataAttr.projection() == -1) {
                 dataAttr.checkRange(axModes[axis], axis, limits);
             } else {
@@ -1644,17 +1648,41 @@ public class PolyChart extends Region implements PeakListener {
             updated = true;
         }
         if (updated) {
-            if (!newList.isEmpty() && datasetAttrs.isEmpty()) {
-                // if no datsets present already must use addDataset once to set up
-                // various parameters
-                controller.addDataset(newList.get(0).getDataset(), false, false);
-                newList.remove(0);
-                datasetAttrs.addAll(newList);
-            } else {
-                datasetAttrs.clear();
-                datasetAttrs.addAll(newList);
-            }
+            sortDatasetsByDimensions(newList);
         }
+    }
+
+    private void sortDatasetsByDimensions(List<DatasetAttributes> newAttributes) {
+        boolean fullChart = false;
+        if (!newAttributes.isEmpty()) {
+            // Sort the datasets by dimension and by datasets
+            newAttributes.sort(Comparator.comparingInt((DatasetAttributes a )-> a.getDataset().getNDim()).reversed());
+            DISDIM newDISDIM = newAttributes.get(0).getDataset().getNDim() == 1 ? DISDIM.OneDX : TwoD;
+            // If the display has switched dimensions, full the chart otherwise the axis might be much larger than the current dataset
+            fullChart = newDISDIM != disDimProp.get();
+            disDimProp.set(newDISDIM);
+        }
+        ObservableList<DatasetAttributes> datasetAttrs = getDatasetAttributes();
+
+        if (!newAttributes.isEmpty() && datasetAttrs.isEmpty()) {
+            // if no datsets present already must use addDataset once to set up
+            // various parameters
+            controller.addDataset(newAttributes.get(0).getDataset(), false, false);
+            newAttributes.remove(0);
+            datasetAttrs.addAll(newAttributes);
+        } else {
+            datasetAttrs.clear();
+            datasetAttrs.addAll(newAttributes);
+        }
+        if (!newAttributes.isEmpty() && newAttributes.get(0).getDataset().getNDim() > axes.length) {
+            updateAxisType();
+            FXMLController.getActiveController().updateSpectrumStatusBarOptions();
+        }
+        if (fullChart) {
+            autoScale();
+            full();
+        }
+
     }
 
     public void updateProjections() {
@@ -2422,6 +2450,7 @@ public class PolyChart extends Region implements PeakListener {
         }
         boolean finished = true;
         if (!draw2DList.isEmpty()) {
+            removeIncompatibleDatasetAttributes(draw2DList);
             if (chartProps.getTitles()) {
                 double fontSize = chartProps.getTicFontSize();
                 gC.setFont(Font.font(fontSize));
@@ -2454,6 +2483,32 @@ public class PolyChart extends Region implements PeakListener {
             }
         }
         return finished;
+
+    }
+
+    private void removeIncompatibleDatasetAttributes(List<DatasetAttributes> attributes) {
+        if (attributes.size() < 2) {
+            return;
+        }
+        DatasetAttributes firstAttr = attributes.get(0);
+        int[] matchedDims;
+        Iterator<DatasetAttributes> attributesIterator = attributes.iterator();
+        attributesIterator.next();
+        while (attributesIterator.hasNext()) {
+            DatasetAttributes datasetAttributes = attributesIterator.next();
+            matchedDims = firstAttr.getMatchDim(datasetAttributes, true);
+            if (matchedDims[firstAttr.getDim(0)] == -1 || matchedDims[firstAttr.getDim(1)] == -1) {
+                log.info("Mismatched dimensions. Unable to display dataset: {}", datasetAttributes.getDataset().getName());
+                attributesIterator.remove();
+                double[] limits = getRangeFromDatasetAttributesList(attributes, 0);
+
+                setXAxis(limits[0], limits[1]);
+                if (disDimProp.get() == DISDIM.TwoD) {
+                    limits = getRangeFromDatasetAttributesList(attributes, 1);
+                    setYAxis(limits[0], limits[1]);
+                }
+            }
+        }
 
     }
 

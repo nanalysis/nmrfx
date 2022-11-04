@@ -100,9 +100,7 @@ public class FilesDataFormatHandler implements DataFormatEventHandler {
             if (dimensions.size() == 1) {
                 unaddedDatasets.forEach(datasetToAdd -> controller.addDataset(datasetToAdd, true, false));
             } else {
-                // TODO NMR-5731 what to do for dragging 2D datasets onto 1D
                 chart.updateDatasets(datasetNames);
-                chart.autoScale();
                 chart.updateProjections();
                 chart.updateProjectionBorders();
                 chart.updateProjectionScale();

@@ -2026,18 +2026,20 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
 
     public int[] getMatchDim(DatasetAttributes dataAttr2, boolean looseMode) {
         int nMatchDim = dataAttr2.nDim;
-        int[] dim = new int[nDim];
+        int[] dimMatches = new int[nDim];
+        // Assume all dims are initially not matched
+        Arrays.fill(dimMatches, -1);
         int nMatch = 0;
         int nShouldMatch = 0;
         boolean[] used = new boolean[nMatchDim];
         int nAxes = 2;
 
-        for (int i = 0; (i < nAxes) && (i < dim.length); i++) {
-            dim[i] = -1;
+        for (int i = 0; (i < nAxes) && (i < dimMatches.length); i++) {
+            dimMatches[i] = -1;
             nShouldMatch++;
             for (int j = 0; j < nMatchDim; j++) {
                 if (getLabel(i).equals(dataAttr2.getLabel(j))) {
-                    dim[i] = j;
+                    dimMatches[i] = j;
                     nMatch++;
                     used[j] = true;
                     break;
@@ -2046,14 +2048,14 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
         }
 
         if ((nMatch != nShouldMatch) && looseMode) {
-            for (int i = 0; (i < nAxes) && (i < dim.length); i++) {
-                if (dim[i] == -1) {
+            for (int i = 0; (i < nAxes) && (i < dimMatches.length); i++) {
+                if (dimMatches[i] == -1) {
                     for (int j = 0; j < nMatchDim; j++) {
                         if (!used[j]) {
                             String dNuc = getDataset().getNucleus(i).getNumberName();
                             String pNuc = dataAttr2.getDataset().getNucleus(j).getNumberName();
                             if (dNuc.equals(pNuc)) {
-                                dim[i] = j;
+                                dimMatches[i] = j;
                                 used[j] = true;
                                 nMatch++;
                                 break;
@@ -2063,7 +2065,7 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
                 }
             }
         }
-        return dim;
+        return dimMatches;
     }
 
 }
