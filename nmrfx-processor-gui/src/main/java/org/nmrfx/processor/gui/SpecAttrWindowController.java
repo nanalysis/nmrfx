@@ -221,7 +221,7 @@ public class SpecAttrWindowController implements Initializable {
     ListChangeListener<String> peakTargetListener;
     ListChangeListener<String> datasetTargetListener;
     boolean shiftState = false;
-
+    private final ListChangeListener<DatasetAttributes> datasetAttributesListChangeListener = this::chartDatasetAttributesListener;
     ParSliderListener parSliderListener = new ParSliderListener();
 
     public class ParSliderListener implements ChangeListener<Number> {
@@ -287,7 +287,13 @@ public class SpecAttrWindowController implements Initializable {
             }
         });
         peakTargetListener = (ListChangeListener.Change<? extends String> c) -> updateChartPeakLists();
-        datasetTargetListener = (ListChangeListener.Change<? extends String> c) -> updateChartDatasets();
+        datasetTargetListener = (ListChangeListener.Change<? extends String> c) -> {
+            // Must remove this listener since it calls updateDatasetView, which this listener may
+            // already have been triggered from, resulting in an UnsupportedOperationException on the datasetView(ListSelectionView)
+            chart.getDatasetAttributes().removeListener(datasetAttributesListChangeListener);
+            updateChartDatasets();
+            chart.getDatasetAttributes().addListener(datasetAttributesListChangeListener);
+        };
 
         datasetView.getTargetItems().addListener(datasetTargetListener);
         peakView.getTargetItems().addListener(peakTargetListener);
@@ -681,6 +687,10 @@ public class SpecAttrWindowController implements Initializable {
 
     }
 
+    public void chartDatasetAttributesListener(ListChangeListener.Change<? extends DatasetAttributes> change) {
+        updateDatasetView();
+    }
+
     public void updateDatasetTableView() {
         boolean sceneMode = isSceneMode();
         if (datasetTableView == null) {
@@ -763,8 +773,14 @@ public class SpecAttrWindowController implements Initializable {
     }
 
     public void setChart(PolyChart chart) {
+        if (chart != null) {
+            chart.getDatasetAttributes().removeListener(datasetAttributesListChangeListener);
+        }
         this.chart = chart;
         // disDimCombo.valueProperty().addListener(e -> setDisDim());
+        if (chart != null) {
+            chart.getDatasetAttributes().addListener(datasetAttributesListChangeListener);
+        }
         update();
     }
 
