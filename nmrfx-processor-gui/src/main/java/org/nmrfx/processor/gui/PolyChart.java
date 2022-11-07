@@ -2497,7 +2497,7 @@ public class PolyChart extends Region implements PeakListener {
         while (attributesIterator.hasNext()) {
             DatasetAttributes datasetAttributes = attributesIterator.next();
             matchedDims = firstAttr.getMatchDim(datasetAttributes, true);
-            if (matchedDims[firstAttr.getDim(0)] == -1 || matchedDims[firstAttr.getDim(1)] == -1) {
+            if (matchedDims[firstAttr.getDim(0)] == -1 || (matchedDims.length > 1 && matchedDims[firstAttr.getDim(1)] == -1)) {
                 log.info("Mismatched dimensions. Unable to display dataset: {}", datasetAttributes.getDataset().getName());
                 attributesIterator.remove();
                 double[] limits = getRangeFromDatasetAttributesList(attributes, 0);
