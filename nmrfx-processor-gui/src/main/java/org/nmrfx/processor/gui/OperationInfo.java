@@ -52,6 +52,7 @@ public class OperationInfo {
         "SUPPRESS",
         "TDSS",
         "Cascade-Sampling",
+        "EXTEND",
         "SCHEDULE",
         "GRINS",
         "IST",
