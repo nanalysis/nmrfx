@@ -25,7 +25,7 @@ package org.nmrfx.processor.gui;
 
 import java.text.DecimalFormat;
 import java.util.List;
-import javafx.beans.property.StringProperty;
+
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
@@ -60,9 +60,9 @@ public class AxisChangeListener implements ChangeListener<Number> {
             Double oldBound = (Double) oldValue;
             double newBound = newValue.doubleValue();
             if (chart == PolyChart.getActiveChart()) {
-                if (FXMLController.specAttrWindowController != null) {
-                    StringProperty limitProp = FXMLController.specAttrWindowController.limitFields[axNum][endNum];
-                    limitProp.setValue(FORMATTER.format(newBound));
+                FXMLController fxmlController = chart.getFXMLController();
+                if (fxmlController.isSideBarAttributesShowing()) {
+                    fxmlController.attributesController.setViewBound(axNum, endNum, newBound);
                 }
                 if (axNum >= 2) {
                     DatasetAttributes datasetAttributes = chart.getDatasetAttributes().get(0);

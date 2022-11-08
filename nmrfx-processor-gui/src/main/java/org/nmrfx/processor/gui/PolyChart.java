@@ -261,7 +261,7 @@ public class PolyChart extends Region implements PeakListener {
     public enum DISDIM {
         OneDX, OneDY, TwoD;
     };
-    ObjectProperty<DISDIM> disDimProp = new SimpleObjectProperty(TwoD);
+    SimpleObjectProperty<DISDIM> disDimProp = new SimpleObjectProperty(TwoD);
     ChartMenu specMenu;
     ChartMenu peakMenu;
     ChartMenu integralMenu;
@@ -2353,6 +2353,9 @@ public class PolyChart extends Region implements PeakListener {
                     if (disDimProp.get() != DISDIM.TwoD) {
                         if (chartProps.getRegions()) {
                             drawRegions(datasetAttributes, gC);
+                        }
+                        if (!datasetAttributes.getPos()) {
+                            continue;
                         }
                         gC.save();
                         double clipExtra = 1;

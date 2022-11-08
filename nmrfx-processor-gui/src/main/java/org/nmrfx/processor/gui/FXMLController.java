@@ -170,6 +170,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
     private BooleanProperty minBorders;
     Phaser phaser;
     Pane attributesPane;
+    AttributesController attributesController;
     Set<ControllerTool> tools = new HashSet<>();
     SimpleBooleanProperty processControllerVisible = new SimpleBooleanProperty(false);
     SimpleObjectProperty<Cursor> cursorProperty = new SimpleObjectProperty<>(Cursor.CROSSHAIR);
@@ -273,9 +274,12 @@ public class FXMLController implements  Initializable, PeakNavigable {
     }
 
     public boolean isPhaseSliderVisible() {
-        return (rightBox.getChildren().size() > 0);
+        return rightBox.getChildren().contains(phaserBox);
     }
 
+    public boolean isSideBarAttributesShowing() {
+        return rightBox.getChildren().contains(attributesPane);
+    }
 
     private void toggleSideBarAttributes(ToggleButton phaserButton, ToggleButton attributesButton) {
         rightBox.getChildren().clear();
@@ -288,6 +292,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
             }
         } else if (attributesButton.isSelected()) {
             rightBox.add(attributesPane, 0, 0);
+            attributesController.update();
         }
     }
 
@@ -334,6 +339,9 @@ public class FXMLController implements  Initializable, PeakNavigable {
         updateSpectrumStatusBarOptions();
         if (specAttrWindowController != null) {
             specAttrWindowController.setChart(activeChart);
+        }
+        if (attributesController != null) {
+            attributesController.setChart(activeChart);
         }
         if (statusBar != null) {
             statusBar.setChart(activeChart);
@@ -1170,6 +1178,9 @@ public class FXMLController implements  Initializable, PeakNavigable {
         if (specAttrWindowController != null) {
             specAttrWindowController.update();
         }
+        if (attributesController != null) {
+            attributesController.update();
+        }
     }
 
     public static FXMLController getActiveController() {
@@ -1315,7 +1326,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
         processorPane.getChildren().addListener(this::updateStageSize);
         cursorProperty.addListener( e -> setCursor());
         attributesPane = new AnchorPane();
-        AttributesController attributesController =  AttributesController.create(this, attributesPane);
+        attributesController =  AttributesController.create(this, attributesPane);
 
     }
 
