@@ -314,12 +314,6 @@ public class FXMLController implements  Initializable, PeakNavigable {
             }
         }
         updateSpectrumStatusBarOptions();
-        if (specAttrWindowController != null) {
-            specAttrWindowController.setChart(activeChart);
-        }
-        if (statusBar != null) {
-            statusBar.setChart(activeChart);
-        }
     }
 
     public PolyChart getActiveChart() {

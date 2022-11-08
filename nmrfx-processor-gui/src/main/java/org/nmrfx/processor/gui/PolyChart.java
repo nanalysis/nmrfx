@@ -518,6 +518,10 @@ public class PolyChart extends Region implements PeakListener {
         return activeChart.get();
     }
 
+    public static SimpleObjectProperty<PolyChart> getActiveChartProperty() {
+        return activeChart;
+    }
+
     public FXMLController getController() {
         return controller;
     }
@@ -2367,7 +2371,11 @@ public class PolyChart extends Region implements PeakListener {
         updateProjections();
         double xPos = getLayoutX();
         double yPos = getLayoutY();
-        for (DatasetAttributes datasetAttributes : datasetAttributesList) {
+        // Only draw compatible datasets but do not remove incompatible attributes from datasetAttributes as the chart
+        // datasets may only be incombabtible in a certain display mode.
+        List<DatasetAttributes> compatibleAttributes = new ArrayList<>(datasetAttributesList);
+        removeIncompatibleDatasetAttributes(compatibleAttributes);
+        for (DatasetAttributes datasetAttributes : compatibleAttributes) {
             try {
                 DatasetAttributes firstAttr = datasetAttributesList.get(0);
                 DatasetBase dataset = datasetAttributes.getDataset();
@@ -2450,7 +2458,6 @@ public class PolyChart extends Region implements PeakListener {
         }
         boolean finished = true;
         if (!draw2DList.isEmpty()) {
-            removeIncompatibleDatasetAttributes(draw2DList);
             if (chartProps.getTitles()) {
                 double fontSize = chartProps.getTicFontSize();
                 gC.setFont(Font.font(fontSize));
@@ -2490,10 +2497,9 @@ public class PolyChart extends Region implements PeakListener {
         if (attributes.size() < 2) {
             return;
         }
-        DatasetAttributes firstAttr = attributes.get(0);
         int[] matchedDims;
         Iterator<DatasetAttributes> attributesIterator = attributes.iterator();
-        attributesIterator.next();
+        DatasetAttributes firstAttr = attributesIterator.next();
         while (attributesIterator.hasNext()) {
             DatasetAttributes datasetAttributes = attributesIterator.next();
             matchedDims = firstAttr.getMatchDim(datasetAttributes, true);

@@ -579,7 +579,20 @@ public class SpecAttrWindowController implements Initializable {
 
     private void createViewGrid() {
         disDimCombo.getItems().addAll(OneDX, TwoD);
-        //disDimCombo.setValue(OneDX);
+        disDimCombo.setValue(PolyChart.getActiveChart().disDimProp.get());
+        disDimCombo.valueProperty().addListener(((observable, oldValue, newValue) -> {
+            clearDimActions();
+            updateDims();
+            setupDimActions();}));
+        PolyChart.getActiveChart().disDimProp.bindBidirectional(disDimCombo.valueProperty());
+
+        PolyChart.getActiveChartProperty().addListener((observable, oldValue, newValue) -> {
+            oldValue.disDimProp.unbindBidirectional(disDimCombo.valueProperty());
+            DISDIM curDisDim =  newValue.disDimProp.get();
+            disDimCombo.setValue(curDisDim);
+            setChart(newValue);
+            newValue.disDimProp.bindBidirectional(disDimCombo.valueProperty());
+        });
         limitFields = new StringProperty[rowNames.length][2];
         labelFields = new Label[rowNames.length];
         int iRow = 1;
@@ -1613,9 +1626,7 @@ public class SpecAttrWindowController implements Initializable {
         aspectSlider.valueProperty().bindBidirectional(polyChart.chartProps.aspectRatioProperty());
         aspectCheckBox.selectedProperty().bindBidirectional((polyChart.chartProps.aspectProperty()));
 
-        DISDIM curDisDim = polyChart.disDimProp.get();
-        disDimCombo.setValue(curDisDim);
-        // polyChart.disDimProp.bindBidirectional(disDimCombo.valueProperty());
+
     }
 
     void unifyWidth(boolean pos) {

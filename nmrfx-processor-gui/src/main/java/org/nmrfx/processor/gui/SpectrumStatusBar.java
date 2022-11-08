@@ -109,6 +109,13 @@ public class SpectrumStatusBar {
     Spinner[] planeSpinner = new Spinner[maxSpinners];
     MenuButton[] dimMenus = new MenuButton[maxSpinners + 2];
     ComboBox<DisplayMode> displayModeComboBox = null;
+    ChangeListener<PolyChart.DISDIM> displayedDimensionsListener = ((observable, oldValue, newValue) -> {
+        if (newValue == PolyChart.DISDIM.OneDX) {
+            displayModeComboBox.setValue(DisplayMode.CURVES);
+        } else {
+            displayModeComboBox.setValue(DisplayMode.CONTOURS);
+        }
+    });
     MenuButton[] rowMenus = new MenuButton[maxSpinners];
     ChangeListener<Integer>[] planeListeners = new ChangeListener[maxSpinners];
     ToolBar btoolBar;
@@ -284,6 +291,8 @@ public class SpectrumStatusBar {
         cursorChoiceBox.setButtonCell(cellFactory.call(null));
         cursorChoiceBox.setCellFactory(cellFactory);
         cursorChoiceBox.valueProperty().bindBidirectional(controller.getCursorProperty());
+        controller.getActiveChart().disDimProp.addListener(displayedDimensionsListener);
+        PolyChart.getActiveChartProperty().addListener(this::setChart);
     }
 
     public void addToolBarButtons(ButtonBase... buttons) {
@@ -402,20 +411,26 @@ public class SpectrumStatusBar {
         planePPMField[axNum - 2].setText(s);
     }
 
-    public void setChart(PolyChart chart) {
-        DatasetBase dataset = chart.getDataset();
-        if (!chart.getDatasetAttributes().isEmpty()) {
-            DatasetAttributes dataAttr = chart.getDatasetAttributes().get(0);
-            for (int axNum = 2; axNum < dataAttr.nDim; axNum++) {
-                NMRAxis axis = chart.axes[axNum];
-                int indexL = chart.axModes[axNum].getIndex(dataAttr, axNum, axis.getLowerBound());
-                int indexU = chart.axModes[axNum].getIndex(dataAttr, axNum, axis.getUpperBound());
+    public void setChart(ObservableValue<? extends PolyChart> observable, PolyChart oldChart, PolyChart newChart) {
+        if (controller.getCharts().contains(oldChart)) {
+            oldChart.disDimProp.removeListener(displayedDimensionsListener);
+        }
+        else if (controller.getCharts().contains(newChart)) {
+            newChart.disDimProp.removeListener(displayedDimensionsListener);
+            newChart.disDimProp.addListener(displayedDimensionsListener);
+            if (!newChart.getDatasetAttributes().isEmpty()) {
+                DatasetAttributes dataAttr = newChart.getDatasetAttributes().get(0);
+                for (int axNum = 2; axNum < dataAttr.nDim; axNum++) {
+                    NMRAxis axis = newChart.axes[axNum];
+                    int indexL = newChart.axModes[axNum].getIndex(dataAttr, axNum, axis.getLowerBound());
+                    int indexU = newChart.axModes[axNum].getIndex(dataAttr, axNum, axis.getUpperBound());
 
-                int center = (indexL + indexU) / 2;
-                int dDim = dataAttr.dim[axNum];
-                int size = dataAttr.getDataset().getSizeReal(dDim);
-                setPlaneRanges(axNum, size);
-                updatePlaneSpinner(center, axNum);
+                    int center = (indexL + indexU) / 2;
+                    int dDim = dataAttr.dim[axNum];
+                    int size = dataAttr.getDataset().getSizeReal(dDim);
+                    setPlaneRanges(axNum, size);
+                    updatePlaneSpinner(center, axNum);
+                }
             }
         }
     }
@@ -685,7 +700,7 @@ public class SpectrumStatusBar {
      */
     private void displayModeComboBoxAction(ActionEvent event) {
         ComboBox<DisplayMode> modeComboBox = (ComboBox<DisplayMode>) event.getSource();
-        if (modeComboBox.isShowing()) {
+        if (modeComboBox.getParent() != null) {
             PolyChart chart = controller.getActiveChart();
             OptionalInt maxNDim = chart.getDatasetAttributes().stream().mapToInt(d -> d.nDim).max();
             if (maxNDim.isEmpty()) {
