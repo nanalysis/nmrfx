@@ -21,6 +21,7 @@ import com.nanalysis.spinlab.dataset.Header;
 import com.nanalysis.spinlab.dataset.HeaderParser;
 import com.nanalysis.spinlab.dataset.HeaderWriter;
 import com.nanalysis.spinlab.dataset.enums.Parameter;
+import com.nanalysis.spinlab.dataset.enums.Unit;
 import com.nanalysis.spinlab.dataset.values.ListNumberValue;
 import com.nanalysis.spinlab.dataset.values.NumberValue;
 import com.nanalysis.spinlab.dataset.values.Value;
@@ -248,7 +249,7 @@ public class RS2DData implements NMRData {
             groupDelay = readGroupDelay();
             obsNucleus = header.get(OBSERVED_NUCLEUS).stringValue();
             Double obsFreq = null;
-            double obsSW = header.<NumberValue>get(SPECTRAL_WIDTH).getValueAsHertz(header);
+            double obsSW = getSpectralWidthAsHertz();
 
             if (header.contains(SAMPLE_TEMPERATURE)) {
                 tempK = header.get(SAMPLE_TEMPERATURE).doubleValue();
@@ -379,7 +380,7 @@ public class RS2DData implements NMRData {
             f1coefS[i] = mode.getSymbolicCoefs();
             f1coef[i] = mode.getCoefs();
 
-            if(mode == PhaseMod.TPPI || mode == PhaseMod.ECHO_ANTIECHO) {
+            if (mode == PhaseMod.TPPI || mode == PhaseMod.ECHO_ANTIECHO) {
                 negateImag[i] = true;
             }
 
@@ -409,26 +410,111 @@ public class RS2DData implements NMRData {
         return fpath;
     }
 
+    /**
+     * Get a parameter string value from its name.
+     * May include some implicit conversion for specific parameters (such as SPECTRAL_WIDTH when stored in ppm).
+     *
+     * @param name The parameter name
+     * @return the string representation of its value.
+     */
     @Override
     public String getPar(String name) {
+        Number convertedNumber = getConvertedNumberValue(name);
+        if (convertedNumber != null) {
+            return convertedNumber.toString();
+        }
+
+        List<? extends Number> convertedListNumber = getConvertedListNumberValue(name);
+        if (convertedListNumber != null) {
+            return convertedListNumber.toString();
+        }
+
         return header.get(name).stringValue();
     }
 
+    /**
+     * Get a parameter numeric value from its name.
+     * May include some implicit conversion for specific parameters (such as SPECTRAL_WIDTH when stored in ppm).
+     *
+     * @param name The parameter name
+     * @return the floating point representation of its value.
+     */
     @Override
     public Double getParDouble(String name) {
+        Number convertedNumber = getConvertedNumberValue(name);
+        if (convertedNumber != null) {
+            return convertedNumber.doubleValue();
+        }
+
+        List<? extends Number> convertedListNumber = getConvertedListNumberValue(name);
+        if (convertedListNumber != null && convertedListNumber.size() == 1) {
+            return convertedListNumber.get(0).doubleValue();
+        }
+
         return header.get(name).doubleValue();
     }
 
+    /**
+     * Get a parameter integer value from its name.
+     * May include some implicit conversion for specific parameters (such as SPECTRAL_WIDTH when stored in ppm).
+     *
+     * @param name The parameter name
+     * @return the integer representation of its value.
+     */
     @Override
     public Integer getParInt(String name) {
+        Number converted = getConvertedNumberValue(name);
+        if (converted != null) {
+            return converted.intValue();
+        }
+
+        List<? extends Number> convertedListNumber = getConvertedListNumberValue(name);
+        if (convertedListNumber != null && convertedListNumber.size() == 1) {
+            return convertedListNumber.get(0).intValue();
+        }
+
         return header.get(name).intValue();
     }
 
+    /**
+     * List all parameters and their string representation.
+     * Some of them may be converted (ex: from ppm to Hertz) before being returned here.
+     *
+     * @return a list of vendor parameters.
+     */
     @Override
     public List<VendorPar> getPars() {
         return header.all().stream()
-                .map(value -> new VendorPar(value.getName(), value.stringValue()))
+                // it is necessary to call getPar() to convert specific parameters such as SPECTRAL_WIDTH or OFFSETs
+                .map(value -> new VendorPar(value.getName(), getPar(value.getName())))
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * Some parameter may need internal conversion before use.
+     * This is needed for parameters which could be stored in Hz or ppm, but can only be used in Hz internally.
+     * This includes SPECTRAL_WIDTH* and OFFSET_FREQ_* parameters.
+     *
+     * @param name the parameter name
+     * @return a converted value, or null if there is no need for conversion.
+     */
+    private Number getConvertedNumberValue(String name) {
+        boolean needsConversion = SW_PARAMS.stream().anyMatch(p -> p.name().equals(name))
+                || OFFSET_FREQ_PARAMS.stream().anyMatch(p -> p.name().equals(name));
+        return needsConversion ? getParameterAsHertz(name) : null;
+    }
+
+    /**
+     * Some parameter may need internal conversion before use.
+     * This is needed for parameters which could be stored in Hz or ppm, but can only be used in Hz internally.
+     * This includes only SR (Spectral Reference).
+     *
+     * @param name the parameter name
+     * @return a converted list of values, or null if there is no need for conversion.
+     */
+    private List<? extends Number> getConvertedListNumberValue(String name) {
+        boolean needsConversion = SR.name().equals(name);
+        return needsConversion ? getParameterAsHertzList(name) : null;
     }
 
     @Override
@@ -487,7 +573,7 @@ public class RS2DData implements NMRData {
         Optional<Value<?>> value = header.optional(BASE_FREQ_PARAMS.get(iDim));
         if (value.isPresent()) {
             double baseFreq = value.get().doubleValue();
-            double sf = (baseFreq + getOffset(iDim)) / 1.0e6;
+            double sf = (baseFreq + getOffsetAsHertz(iDim)) / 1.0e6;
             Sf[iDim] = sf;
             return sf;
         }
@@ -535,8 +621,28 @@ public class RS2DData implements NMRData {
         Sw[dim] = null;
     }
 
-    double getOffset(int iDim) {
-        return header.get(OFFSET_FREQ_PARAMS.get(iDim)).doubleValue();
+    private double getSpectralWidthAsHertz() {
+        return getParameterAsHertz(SPECTRAL_WIDTH);
+    }
+
+    private double getOffsetAsHertz(int iDim) {
+        return getParameterAsHertz(OFFSET_FREQ_PARAMS.get(iDim));
+    }
+
+    private double getParameterAsHertz(Parameter param) {
+        return header.<NumberValue>get(param).getValueAs(Unit.Hertz, header);
+    }
+
+    private double getParameterAsHertz(String paramName) {
+        return header.<NumberValue>get(paramName).getValueAs(Unit.Hertz, header);
+    }
+
+    private List<Double> getParameterAsHertzList(Parameter param) {
+        return header.<ListNumberValue>get(param).getValueAs(Unit.Hertz, header);
+    }
+
+    private List<Double> getParameterAsHertzList(String paramName) {
+        return header.<ListNumberValue>get(paramName).getValueAs(Unit.Hertz, header);
     }
 
     @Override
@@ -546,12 +652,11 @@ public class RS2DData implements NMRData {
             return Ref[iDim];
         }
 
-        // otherwise, read from header
-        Optional<Double> value = header.optional(SR).map(Value::doubleListValue)
-                .filter(list -> list.size() > iDim)
-                .map(list -> list.get(iDim));
+        // otherwise, read from header if present
+        Optional<List<Double>> srValues = header.contains(SR) ? Optional.of(getParameterAsHertzList(SR)) : Optional.empty();
+        Optional<Double> value = srValues.filter(list -> list.size() > iDim).map(list -> list.get(iDim));
         if (value.isPresent()) {
-            double offset = getOffset(iDim);
+            double offset = getOffsetAsHertz(iDim);
             double sf = getSF(iDim);
             double sr = value.get();
             Ref[iDim] = (sr + offset) / (sf - offset / 1.0e6);
