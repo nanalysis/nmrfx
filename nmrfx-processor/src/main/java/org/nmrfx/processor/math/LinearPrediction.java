@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
- /*
+/*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
@@ -70,21 +70,24 @@ public class LinearPrediction {
     /**
      * Perform linear prediction using singular value decomposition.
      *
-     * @param fitStart First point used for fitting linear prediction coefficients
-     * @param fitEnd Last point used for fitting linear prediction coefficients
-     * @param ncoef Number of coefficients to calculate
-     * @param threshold Include matrix values whose singular values are greater than this threshold
-     * @param startPred First point to predict
-     * @param endPred Last Point to predict
-     * @param nPred Number of points to predict (used if endPred less than or equal to 0)
+     * @param fitStart          First point used for fitting linear prediction coefficients
+     * @param fitEnd            Last point used for fitting linear prediction coefficients
+     * @param ncoef             Number of coefficients to calculate
+     * @param threshold         Include matrix values whose singular values are greater than this threshold
+     * @param startPred         First point to predict
+     * @param endPred           Last Point to predict
+     * @param nPred             Number of points to predict (used if endPred less than or equal to 0)
      * @param calculateBackward Perform fitting in backwards direction
-     * @param calculateForward Perform fitting in forward direction
-     * @param insertion If true, insert predicted points at beginning of vector
-     * @param mirror If true, perform mirror image prediction
+     * @param calculateForward  Perform fitting in forward direction
+     * @param insertion         If true, insert predicted points at beginning of vector
+     * @param mirror            If true, perform mirror image prediction
      * @throws VecException if invalid arguments
      */
     public void svdPredLP(int fitStart, int fitEnd, int ncoef, double threshold, int startPred, int endPred, int nPred,
-            boolean calculateBackward, boolean calculateForward, boolean insertion, int mirror) throws VecException {
+                          boolean calculateBackward, boolean calculateForward, boolean insertion, int mirror) throws VecException {
+        if (!calculateBackward && !calculateForward) {
+            throw new VecException("svdPredLP: must specify at least one of calculateBackward or calculateForward");
+        }
         if (insertion) {
             if (mirror != 0) {
                 throw new VecException("svdPredLP: can't do mirror image prediction in replace (LPR) mode");
@@ -102,9 +105,6 @@ public class LinearPrediction {
             if (fitStart <= 0) {
                 fitStart = endPred + 1;
             }
-            if (calculateBackward && (fitStart < 1)) {
-                fitStart = 1;
-            }
             if (fitEnd < 16) {
                 fitEnd = 16;
             }
@@ -112,7 +112,7 @@ public class LinearPrediction {
                 fitEnd = size - 1;
             }
             if (ncoef <= 0) {
-                ncoef = 1 * (fitEnd - fitStart + 1) / 4;
+                ncoef = (fitEnd - fitStart + 1) / 4;
                 if (ncoef > 16) {
                     ncoef = 16;
                 }
@@ -146,14 +146,11 @@ public class LinearPrediction {
             if (fitStart < 0) {
                 fitStart = 0;
             }
-            if (calculateBackward && (fitStart < 1)) {
-                fitStart = 1;
-            }
             if (fitEnd <= 0) {
                 fitEnd = addPoints + size - 1;
             }
             if (ncoef <= 0) {
-                ncoef = 1 * (fitEnd - fitStart + 1) / 8;
+                ncoef = (fitEnd - fitStart + 1) / 8;
                 if (ncoef > 16) {
                     ncoef = 16;
                 }
@@ -174,7 +171,6 @@ public class LinearPrediction {
             throw new VecException("svdPredLP: m < n");
         }
 
-        //printLocation();
         int startSize = size;
         if (mirror != 0) {
             int addPoints = startSize + (mirror - 2);
@@ -190,17 +186,7 @@ public class LinearPrediction {
         Polynomial polyF = null;
         Polynomial polyB = null;
         if (calculateBackward) {
-            Complex[] coefB = getCoefsByTLS(cvec, fitStart, m, n, threshold, true);
-            for (Complex cmplx : coefB) {
-                if (cmplx.isNaN()) {
-                    System.out.println("NANb");
-                    for (int ii = 0; ii < size; ii++) {
-                        Complex cValue = cvec[ii];
-                        System.out.println(ii + " " + cValue.getReal() + " " + cValue.getImaginary());
-                    }
-                    break;
-                }
-            }
+            Complex[] coefB = getCoefsByTLS(cvec, fitStart + 1, m, n, threshold, true);
             Complex[] ocoefB = new Complex[coefB.length + 1];
             // negate,copy and reverse terms
             for (int i = 0; i < coefB.length; i++) {
@@ -215,17 +201,6 @@ public class LinearPrediction {
 
         if (calculateForward) {
             Complex[] coefF = getCoefsByTLS(cvec, fitStart, m, n, threshold, false);
-            for (Complex cmplx : coefF) {
-                if (cmplx.isNaN()) {
-                    System.out.println("NANf");
-                    for (int ii = 0; ii < size; ii++) {
-                        Complex cValue = cvec[ii];
-                        System.out.println(ii + " " + cValue.getReal() + " " + cValue.getImaginary());
-                    }
-                    break;
-                }
-            }
-
             Complex[] ocoefF = new Complex[coefF.length + 1];
             // negate and copy terms
             for (int i = 0; i < coefF.length; i++) {
@@ -272,24 +247,20 @@ public class LinearPrediction {
             coefFinal = coefB2;
         }
 
-        if ((coefF2 != null) && (coefB2 != null)) {
-            VecUtil.addVector(coefF2, coefF2.length, coefB2, coefF2);
-            for (int i = 0; i < coefF2.length; i++) {
-                coefFinal[i] = new Complex(coefF2[i].getReal() / 2, coefF2[i].getImaginary() / 2);
-            }
-        }
         if (insertion) {
             VecUtil.reverse(coefFinal);
             insertWithPrediction(coefFinal, endPred, startPred, ncoef);
         } else {
-            extendWithPrediction(coefFinal, endPred, startPred, ncoef);
+            if ((coefF2 != null) && (coefB2 != null)) {
+                extendWithPrediction(coefF2, coefB2, endPred, startPred, ncoef);
+            } else {
+                extendWithPrediction(coefFinal, endPred, startPred, ncoef);
+            }
         }
         if (mirror != 0) {
             int addPoints = startSize + (mirror - 2);
             int newSize = size - addPoints;
-            for (int i = 0; i < newSize; i++) {
-                cvec[i] = cvec[i + addPoints];
-            }
+            if (newSize >= 0) System.arraycopy(cvec, addPoints, cvec, 0, newSize);
             resize(newSize, true);
         }
     }
@@ -298,7 +269,7 @@ public class LinearPrediction {
         int nPredict = endPred - startPred + 1;
         if (startPred < 0) {
             System.arraycopy(cvec, 0, cvec, -startPred, cvec.length + startPred);
-            endPred += -startPred;
+            endPred -= startPred;
         }
 
         for (int i = 0; i < nPredict; i++) {
@@ -325,11 +296,39 @@ public class LinearPrediction {
         }
     }
 
+    private void extendWithPrediction(Complex[] coef1, Complex[] coef2, int endPred, int startPred, int ncoef) {
+        int nPredict = endPred - startPred + 1;
+        int newSize = endPred + 1;
+        if (newSize > size) {
+            resize(newSize);
+        }
+        Complex[] cvec1 = new Complex[cvec.length];
+        Complex[] cvec2 = new Complex[cvec.length];
+        System.arraycopy(cvec, 0, cvec1, 0, cvec.length);
+        System.arraycopy(cvec, 0, cvec2, 0, cvec.length);
+        for (int i = 0; i < nPredict; i++) {
+            Complex sum = Complex.ZERO;
+            for (int j = 0; j < ncoef; j++) {
+                sum = sum.add(coef1[j].multiply(cvec1[startPred - ncoef + i + j]));
+            }
+            cvec1[startPred + i] = sum;
+        }
+        for (int i = 0; i < nPredict; i++) {
+            Complex sum = Complex.ZERO;
+            for (int j = 0; j < ncoef; j++) {
+                sum = sum.add(coef2[j].multiply(cvec2[startPred - ncoef + i + j]));
+            }
+            cvec2[startPred + i] = sum;
+        }
+        for (int i = 0; i < cvec.length; ++i) {
+            cvec[i] = cvec1[i].add(cvec2[i]).multiply(0.5);
+        }
+    }
+
     /**
      * Calculate pseudo-inverse of a matrix
      *
-     *
-     * @param A matrix to invert
+     * @param A         matrix to invert
      * @param nSingular number of singular values to use in calculating pseudoInverse
      * @return the pseudo-inverse
      */
@@ -378,12 +377,12 @@ public class LinearPrediction {
     /**
      * Calculate linear prediction coefficients using total least squares
      *
-     * @param cvec Array of complex values to analyze
-     * @param start Starting point in cvec
-     * @param m Number of points to use
-     * @param n Number of coefficients
+     * @param cvec      Array of complex values to analyze
+     * @param start     Starting point in cvec
+     * @param m         Number of points to use
+     * @param n         Number of coefficients
      * @param threshold unused FIXME
-     * @param backward if true perform backwards linear prediction
+     * @param backward  if true perform backwards linear prediction
      * @return a Complex array of coefficients
      * @throws VecException if total least squares fails
      */
@@ -403,8 +402,7 @@ public class LinearPrediction {
         }
         Array2DRowFieldMatrix<Complex> A = new Array2DRowFieldMatrix<>(Ary);
         try {
-            Complex[] coefB = tlsMat(A);
-            return coefB;
+            return tlsMat(A);
         } catch (Exception e) {
             throw new VecException(e.getMessage());
         }
@@ -449,8 +447,7 @@ public class LinearPrediction {
          * @throws Exception if error occurs while calculating
          */
         public FieldMatrix<Complex> qb(FieldMatrix<Complex> B) throws Exception {
-            FieldMatrix<Complex> qb = hqr.qb(B);
-            return qb; //premultiply B with 
+            return hqr.qb(B); //premultiply B with
         }
     }
 
@@ -462,8 +459,7 @@ public class LinearPrediction {
      * @throws Exception if error in svd etc.
      */
     public static Complex[] tlsMat(Array2DRowFieldMatrix<Complex> A) throws Exception {
-        //Zsvd zsvd = null;
-        ComplexSingularValueDecomposition csvd = null;
+        ComplexSingularValueDecomposition csvd;
         Complexqrdthin chqrd = new Complexqrdthin(A);
         try {
             csvd = new ComplexSingularValueDecomposition(chqrd.R);
@@ -567,13 +563,13 @@ public class LinearPrediction {
     /**
      * Generate a decaying sinusoidal signal from the specified parameters
      *
-     * @param v Put signal in this Complex array
+     * @param v            Put signal in this Complex array
      * @param startSignals ??
-     * @param fd Frequency and decay values as Complex numbers
-     * @param amps Amplitudes
-     * @param phases Phases
-     * @param start start adding signals to v at this point
-     * @param end end adding signals to v at this point
+     * @param fd           Frequency and decay values as Complex numbers
+     * @param amps         Amplitudes
+     * @param phases       Phases
+     * @param start        start adding signals to v at this point
+     * @param end          end adding signals to v at this point
      */
     public static void genSignal(Complex[] v, int startSignals, Complex[] fd, double[] amps, double[] phases, int start, int end) {
         if (start < 0) {
@@ -610,14 +606,12 @@ public class LinearPrediction {
 
     private static class ComplexMatrixConjugateTranspose implements FieldMatrixChangingVisitor<Complex> {
 
-        private int rows, columns, startRow, endRow, startColumn, endColumn;
-
         ComplexMatrixConjugateTranspose() {
         }
 
         @Override
         public void start(int rows, int columns, int startRow, int endRow, int startColumn, int endColumn) {
-            //
+
         }
 
         @Override

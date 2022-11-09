@@ -212,7 +212,7 @@ public class ScanTable {
                 if ((dataset == null) || (chart.getDatasetAttributes().size() != 1) || !dataset.getName().equals(datasetName)) {
                     dataset = Dataset.getDataset(datasetName);
                     if (dataset == null) {
-                        FXMLController.getActiveController().openDataset(datasetFile, false);
+                        FXMLController.getActiveController().openDataset(datasetFile, false, true);
                     }
                 }
                 if (!datasetNames.contains(datasetName)) {
@@ -425,7 +425,7 @@ public class ScanTable {
                     }
 
                     // load merged dataset
-                    FXMLController.getActiveController().openDataset(mergedFile, false);
+                    FXMLController.getActiveController().openDataset(mergedFile, false, true);
                     List<Integer> rows = new ArrayList<>();
                     rows.add(0);
                     chart.setDrawlist(rows);
@@ -436,7 +436,7 @@ public class ScanTable {
             } else {
                 // load first output dataset
                 File datasetFile = new File(scanOutputDir, fileRoot + 1 + ".nv");
-                FXMLController.getActiveController().openDataset(datasetFile, false);
+                FXMLController.getActiveController().openDataset(datasetFile, false, true);
             }
             chart.full();
             chart.autoScale();
@@ -561,7 +561,7 @@ public class ScanTable {
         updateDataFrame();
         String firstDatasetName = dataset.getFileName();
         if (firstDatasetName.length() > 0) {
-            FXMLController.getActiveController().openDataset(dataset.getFile(), false);
+            FXMLController.getActiveController().openDataset(dataset.getFile(), false, true);
             List<Integer> rows = new ArrayList<>();
             rows.add(0);
             chart.setDrawlist(rows);
@@ -712,7 +712,7 @@ public class ScanTable {
             if (firstDatasetName.length() > 0) {
                 File parentDir = file.getParentFile();
                 Path path = FileSystems.getDefault().getPath(parentDir.toString(), firstDatasetName);
-                FXMLController.getActiveController().openDataset(path.toFile(), false);
+                FXMLController.getActiveController().openDataset(path.toFile(), false, true);
                 PolyChart chart = scannerTool.getChart();
                 List<Integer> rows = new ArrayList<>();
                 rows.add(0);

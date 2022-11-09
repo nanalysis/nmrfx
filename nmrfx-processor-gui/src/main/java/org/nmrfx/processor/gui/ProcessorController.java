@@ -433,7 +433,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         } else {
             if (chartProcessor.datasetFile != null) {
                 boolean viewingDataset = isViewingDataset();
-                chart.controller.openDataset(chartProcessor.datasetFile, false);
+                chart.controller.openDataset(chartProcessor.datasetFile, false, true);
                 viewMode.getSelectionModel().select(1);
                 if (!viewingDataset) {
                     chart.full();
