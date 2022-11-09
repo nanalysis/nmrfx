@@ -927,8 +927,8 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
         dimC[0] = 0;
         ptC[0][0] = dataset.ppmToPoint(0, ppm0);
         ptC[0][1] = dataset.ppmToPoint(0, ppm1);
-        specVec.resize(ptC[0][1] - ptC[0][0] + 1, dataset.getComplex_r(0));
-        dataset.readVectorFromDatasetFile(DatasetUtils.generateRawIndices(ptC, dataset.getComplex_r(0)), dimC, specVec);
+        specVec.resize(ptC[0][1] - ptC[0][0] + 1, dataset.getComplex(0));
+        dataset.readVectorFromDatasetFile(DatasetUtils.generateRawIndices(ptC, dataset.getComplex(0)), dimC, specVec);
     }
 
     public boolean getSlice(Vec specVec, int iDim, double ppmx, double ppmy) throws IOException {

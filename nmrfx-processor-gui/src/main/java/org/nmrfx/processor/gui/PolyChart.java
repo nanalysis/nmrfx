@@ -316,7 +316,7 @@ public class PolyChart extends Region implements PeakListener {
         return chartSelected.get();
     }
 
-    public ObjectProperty getDisDimProperty() {
+    public ObjectProperty<DISDIM> getDisDimProperty() {
         return disDimProp;
     }
 
