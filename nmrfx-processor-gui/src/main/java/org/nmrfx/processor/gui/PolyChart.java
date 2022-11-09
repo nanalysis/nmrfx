@@ -942,14 +942,24 @@ public class PolyChart extends Region implements PeakListener {
         }
     }
 
-    public void scaleY(double y) {
-        double factor = (y / 200.0 + 1.0);
+    /**
+     * Calculates a scaling factor for the y-axis based on a deltaY change. The scaling factor has a range between
+     * 0.5 and 2.0
+     * @param deltaY A double value of change in the y direction
+     * @return A scaling factor between 0.5 and 2
+     */
+    public double calculateScaleYFactor(double deltaY) {
+        double factor = (deltaY / 200.0 + 1.0);
         if (factor > 2.0) {
             factor = 2.0;
         } else if (factor < 0.5) {
             factor = 0.5;
         }
-        final double scale = factor;
+        return factor;
+    }
+
+    public void scaleY(double y) {
+        final double scale = calculateScaleYFactor(y);
         datasetAttributesList.stream().forEach(dataAttr -> {
             DatasetBase dataset = dataAttr.getDataset();
             if (is1D()) {
@@ -4479,8 +4489,8 @@ public class PolyChart extends Region implements PeakListener {
                         initialDatasetAttr.get().getProjection((Dataset) projectionDimAttr.get().getDataset(), projectionVec, projectionDim);
                         OptionalDouble maxValue = Arrays.stream(projectionVec.getReal()).max();
                         if (maxValue.isPresent()) {
-                            double scaleValue = (borders.get(i) * 0.95) / maxValue.getAsDouble();
-                            projectionDimAttr.get().setProjectionScale(scaleValue);
+                            double scaleValue =  maxValue.getAsDouble() / (borders.get(i) * 0.95);
+                            projectionDimAttr.get().setLvl(scaleValue);
                         }
                     }
                 }
@@ -4496,12 +4506,13 @@ public class PolyChart extends Region implements PeakListener {
      * @param scaleDelta The amount to adjust the scale
      */
     public void updateProjectionScale(ChartBorder chartBorder, double scaleDelta) {
+        double scalingFactor = calculateScaleYFactor(scaleDelta);
         if (chartBorder == ChartBorder.TOP) {
             Optional<DatasetAttributes> projectionAttr = getDatasetAttributes().stream().filter(attr -> attr.projection() == 0).findFirst();
-            projectionAttr.ifPresent(datasetAttributes -> datasetAttributes.setProjectionScale(Math.max(0, datasetAttributes.getProjectionScale() * (1 + scaleDelta))));
+            projectionAttr.ifPresent(datasetAttributes -> datasetAttributes.setLvl(Math.max(0, datasetAttributes.getLvl() * scalingFactor)));
         } else if (chartBorder == ChartBorder.RIGHT) {
             Optional<DatasetAttributes> projectionAttr = getDatasetAttributes().stream().filter(attr -> attr.projection() == 1).findFirst();
-            projectionAttr.ifPresent(datasetAttributes -> datasetAttributes.setProjectionScale(Math.max(0, datasetAttributes.getProjectionScale() * (1 + scaleDelta))));}
+            projectionAttr.ifPresent(datasetAttributes -> datasetAttributes.setLvl(Math.max(0, datasetAttributes.getLvl() * scalingFactor)));}
     }
 
     /**

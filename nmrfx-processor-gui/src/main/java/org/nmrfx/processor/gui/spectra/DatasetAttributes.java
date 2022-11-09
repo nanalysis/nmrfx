@@ -575,14 +575,6 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
         return projectionAxis;
     }
 
-    public void setProjectionScale(double projectionScale) {
-        this.projectionScale = projectionScale;
-    }
-
-    public double getProjectionScale() {
-        return projectionScale;
-    }
-
     private StringProperty fileName;
 
     public StringProperty fileNameProperty() {
@@ -698,7 +690,6 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
     public boolean selected;
     public boolean intSelected;
     private int projectionAxis = -1;
-    private double projectionScale = 1.0;
     public String title = "";
 
     public DatasetAttributes(DatasetBase aFile, String fileName) {
