@@ -20,6 +20,8 @@ package org.nmrfx.processor.datasets.vendor.rs2d;
 import com.nanalysis.spinlab.dataset.Header;
 import com.nanalysis.spinlab.dataset.HeaderParser;
 import com.nanalysis.spinlab.dataset.HeaderWriter;
+import com.nanalysis.spinlab.dataset.enums.NumberType;
+import com.nanalysis.spinlab.dataset.enums.Order;
 import com.nanalysis.spinlab.dataset.enums.Parameter;
 import com.nanalysis.spinlab.dataset.enums.Unit;
 import com.nanalysis.spinlab.dataset.values.ListNumberValue;
@@ -60,7 +62,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.nanalysis.spinlab.dataset.enums.Parameter.*;
 import static org.nmrfx.processor.datasets.vendor.rs2d.XmlUtil.readDocument;
@@ -162,7 +166,8 @@ public class RS2DData implements NMRData {
             dataset.setSw(i, getSW(i));
             dataset.setRefValue(i, getRef(i));
             dataset.setRefPt(i, dataset.getSizeReal(i) / 2.0);
-            dataset.setFreqDomain(i, true);
+            // State can be used to set the freq domain
+            dataset.setFreqDomain(i, getState(i) == 1);
             String nucLabel = getTN(i);
             dataset.setNucleus(i, nucLabel);
             dataset.setLabel(i, nucLabel + (i + 1));
@@ -219,15 +224,19 @@ public class RS2DData implements NMRData {
 
     @Override
     public boolean isFID() {
+        return getState(0) == 0;
+    }
+
+    public int getState(int dim) {
         if (header.contains(STATE)) {
             List<Integer> states = header.get(STATE).intListValue();
             if (states != null && !states.isEmpty()) {
-                return states.get(0) == 0;
+                return states.get(dim);
             }
         }
 
         log.debug("Unable to find state parameter. Setting state to FID.");
-        return true;
+        return 0;
     }
 
     private static boolean findFIDFiles(String dirPath) {
@@ -1241,6 +1250,26 @@ public class RS2DData implements NMRData {
         header.<ListNumberValue>get(PHASE_1).setValue(phase1Values);
     }
 
+    public void setHeaderState(Dataset dataset) {
+        if (!header.contains(STATE)) {
+            header.put(new ListNumberValue(STATE.name(), Collections.emptyList()));
+            ListNumberValue stateParam = header.get(STATE);
+            stateParam.setUuid(UUID.randomUUID().toString());
+            stateParam.setNumberEnum(NumberType.Integer);
+            stateParam.setMinValue(Integer.MIN_VALUE);
+            stateParam.setMaxValue(Integer.MAX_VALUE);
+            Order order = Stream.of(Order.values()).filter(o -> o.toString().equals(dataset.getNDim() + "D")).findFirst().orElse(Order.Unknown);
+            stateParam.setOrder(order);
+        }
+        List<Number> stateValues = new ArrayList<>(Collections.nCopies(4, 0));
+        for (int i = 0; i< dataset.getNDim(); i++) {
+            int state = dataset.getFreqDomain(i) ? 1 : 0;
+            stateValues.set(i, state);
+        }
+        header.<ListNumberValue>get(STATE).setValue(stateValues);
+
+    }
+
     public boolean isValidDatasetPath(Path procNumPath) {
         return StringUtils.isNumeric(procNumPath.getFileName().toString())
                 && procNumPath.getParent().getFileName().toString().equals(PROC_DIR);
@@ -1250,6 +1279,7 @@ public class RS2DData implements NMRData {
         File file = new File(dataset.getFileName());
         try {
             setHeaderMatrixDimensions(dataset);
+            setHeaderState(dataset);
             setHeaderPhases(dataset);
         } catch (XPathExpressionException e) {
             throw new IOException(e.getMessage());
