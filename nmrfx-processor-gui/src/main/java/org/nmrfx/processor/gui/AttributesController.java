@@ -49,6 +49,10 @@ public class AttributesController implements Initializable {
         FORMATTER.setMaximumFractionDigits(3);
     }
     @FXML
+    CheckBox datasetChoiceState;
+    @FXML
+    ChoiceBox<DatasetAttributes> datasetChoiceBox;
+    @FXML
     Accordion attributesAccordion;
     @FXML
     TitledPane contourLevelPane;
@@ -257,6 +261,7 @@ public class AttributesController implements Initializable {
             controller.pane = pane;
             controller.sliceStatusCheckBox.selectedProperty().bindBidirectional(fxmlController.sliceStatus);
             controller.datasetViewController = new DatasetView(fxmlController, controller);
+            controller.datasetChoiceBox.disableProperty().bind(controller.datasetChoiceState.selectedProperty().not());
 
             return controller;
         } catch (IOException ioE) {
@@ -489,6 +494,22 @@ public class AttributesController implements Initializable {
         if (maxNDim.isPresent()) {
             setViewDims(Math.max(2, maxNDim.getAsInt()));
         }
+        datasetChoiceBox.setItems(chart.getDatasetAttributes());
+        if (!datasetChoiceBox.getItems().isEmpty()) {
+            datasetChoiceBox.setValue(datasetChoiceBox.getItems().get(0));
+        }
+    }
+
+    private List<DatasetAttributes> getDatasetAttributes() {
+        if (datasetChoiceState.isSelected()) {
+            if (datasetChoiceBox.getItems().isEmpty()) {
+                return Collections.EMPTY_LIST;
+            } else {
+                return List.of(datasetChoiceBox.getValue());
+            }
+        } else {
+            return chart.getDatasetAttributes();
+        }
     }
 
     private void createViewGrid() {
@@ -648,7 +669,7 @@ public class AttributesController implements Initializable {
         @Override
         public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
             if (active) {
-                List<DatasetAttributes> dataAttrs = chart.getDatasetAttributes();
+                List<DatasetAttributes> dataAttrs = getDatasetAttributes();
                 for (DatasetAttributes dataAttr : dataAttrs) {
                     update(dataAttr, newValue.doubleValue());
                 }
@@ -699,7 +720,7 @@ public class AttributesController implements Initializable {
     }
 
     void updateLvlSlider() {
-        List<DatasetAttributes> dataAttrs = chart.getDatasetAttributes();
+        List<DatasetAttributes> dataAttrs = getDatasetAttributes();
         if (!dataAttrs.isEmpty()) {
             DatasetAttributes dataAttr = dataAttrs.get(0);
             double value = dataAttr.getLvl();
@@ -712,7 +733,7 @@ public class AttributesController implements Initializable {
     }
 
     void updateClmSlider() {
-        List<DatasetAttributes> dataAttrs = chart.getDatasetAttributes();
+        List<DatasetAttributes> dataAttrs = getDatasetAttributes();
         if (!dataAttrs.isEmpty()) {
             DatasetAttributes dataAttr = dataAttrs.get(0);
             double min = 1.01;
@@ -723,7 +744,7 @@ public class AttributesController implements Initializable {
         }
     }
     void updateOffsetsSlider() {
-        List<DatasetAttributes> dataAttrs = chart.getDatasetAttributes();
+        List<DatasetAttributes> dataAttrs = getDatasetAttributes();
         if (!dataAttrs.isEmpty()) {
             DatasetAttributes dataAttr = dataAttrs.get(0);
             double min = 0.0;
@@ -735,7 +756,7 @@ public class AttributesController implements Initializable {
     }
 
     void updateNlvlSlider() {
-        List<DatasetAttributes> dataAttrs = chart.getDatasetAttributes();
+        List<DatasetAttributes> dataAttrs = getDatasetAttributes();
         if (!dataAttrs.isEmpty()) {
             DatasetAttributes dataAttr = dataAttrs.get(0);
             double min = 1.0;
@@ -749,7 +770,7 @@ public class AttributesController implements Initializable {
     }
 
     void updatePosWidthSlider(boolean posMode) {
-        List<DatasetAttributes> dataAttrs = chart.getDatasetAttributes();
+        List<DatasetAttributes> dataAttrs = getDatasetAttributes();
         if (!dataAttrs.isEmpty()) {
             DatasetAttributes dataAttr = dataAttrs.get(0);
             double value = posMode ? dataAttr.getPosWidth() : dataAttr.getNegWidth();
@@ -772,7 +793,7 @@ public class AttributesController implements Initializable {
         @Override
         public void changed(ObservableValue<? extends Color> observable, Color oldValue, Color newValue) {
             if (active) {
-                List<DatasetAttributes> dataAttrs = chart.getDatasetAttributes();
+                List<DatasetAttributes> dataAttrs = getDatasetAttributes();
                 for (DatasetAttributes dataAttr : dataAttrs) {
                     update(dataAttr, newValue);
                 }
@@ -793,7 +814,7 @@ public class AttributesController implements Initializable {
     void updateContourColor(boolean posMode) {
         posColorListener.active = false;
         negColorListener.active = false;
-        List<DatasetAttributes> dataAttrs = chart.getDatasetAttributes();
+        List<DatasetAttributes> dataAttrs = getDatasetAttributes();
         if (!dataAttrs.isEmpty()) {
             DatasetAttributes dataAttr = dataAttrs.get(0);
             if (posMode) {
@@ -816,7 +837,7 @@ public class AttributesController implements Initializable {
         @Override
         public void changed(ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean newValue) {
             if (active) {
-                List<DatasetAttributes> dataAttrs = chart.getDatasetAttributes();
+                List<DatasetAttributes> dataAttrs = getDatasetAttributes();
                 for (DatasetAttributes dataAttr : dataAttrs) {
                     update(dataAttr, newValue);
                 }
@@ -837,7 +858,7 @@ public class AttributesController implements Initializable {
     void updateDrawOn(boolean posMode) {
         posDrawOnListener.active = false;
         negDrawOnListener.active = false;
-        List<DatasetAttributes> dataAttrs = chart.getDatasetAttributes();
+        List<DatasetAttributes> dataAttrs = getDatasetAttributes();
         if (!dataAttrs.isEmpty()) {
             DatasetAttributes dataAttr = dataAttrs.get(0);
             if (posMode) {
@@ -1137,7 +1158,7 @@ public class AttributesController implements Initializable {
         if (bgColorCheckBox.isSelected()) {
             Color color = bgColorPicker.getValue();
             if (!chart.getDatasetAttributes().isEmpty()) {
-                DatasetAttributes dataAttr = chart.getDatasetAttributes().get(0);
+                DatasetAttributes dataAttr = getDatasetAttributes().get(0);
                 Color posColor = dataAttr.getPosColor();
                 if ((posColor != null) && (color != null)) {
                     double diff = Math.abs(posColor.getRed() - color.getRed());

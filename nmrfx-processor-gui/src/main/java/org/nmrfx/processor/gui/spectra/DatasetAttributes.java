@@ -700,6 +700,11 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
         initialize(aFile, aFile.getFileName());
     }
 
+    @Override
+    public String toString() {
+        return getDataset() != null ? getDataset().getName() : "";
+    }
+
     public void copyTo(DatasetAttributes dAttr) {
         dAttr.dim = getDims();
         dAttr.setPosColor(getPosColor());
