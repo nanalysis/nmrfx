@@ -1,8 +1,6 @@
 package org.nmrfx.processor.datasets;
 
 import org.apache.commons.math3.util.MultidimensionalCounter;
-import org.nmrfx.processor.datasets.vendor.NMRData;
-
 import java.util.*;
 
 public class DatasetGroupIndex {
@@ -12,13 +10,6 @@ public class DatasetGroupIndex {
     public DatasetGroupIndex(int[] indices, int groupIndex) {
         this.indices = indices.clone();
         this.groupIndex = groupIndex;
-    }
-
-    // used from Python
-    public DatasetGroupIndex(int[] values) {
-        this.indices = new int[values.length - 1];
-        System.arraycopy(values, 0, indices, 0, indices.length);
-        this.groupIndex = values[values.length -1];
     }
 
     public DatasetGroupIndex(String strValue) {
@@ -87,28 +78,18 @@ public class DatasetGroupIndex {
 
     public static Optional<String> getSkipString(Collection<DatasetGroupIndex> groups) {
         Optional<String> result = Optional.empty();
-        boolean scriptMode = true;
         if (!groups.isEmpty()) {
             StringBuilder sBuilder = new StringBuilder();
-            if (scriptMode) {
-                sBuilder.append("[");
-            }
+            sBuilder.append("[");
             for (DatasetGroupIndex group : groups) {
-                if (scriptMode) {
-                    if (sBuilder.length() != 1) {
-                        sBuilder.append("],[");
-                    }
-                } else {
-                    sBuilder.append(" ");
+                if (sBuilder.length() != 1) {
+                    sBuilder.append("],[");
                 }
                 sBuilder.append(group.toIndexString());
             }
-            if (scriptMode) {
-                sBuilder.append("]");
-            }
+            sBuilder.append("]");
             result = Optional.of(sBuilder.toString());
         }
-
         return result;
     }
 
