@@ -2248,7 +2248,10 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
             pt[0][1] = getSizeTotal(iDim) - 1;
             origSize = pt[0][1];
             int newSize = pt[0][1] - pt[0][0] + 1;
-            vec = new Vec(newSize, false);
+            if (getComplex(iDim)) {
+                newSize /= 2;
+            }
+            vec = new Vec(newSize, getComplex(iDim));
             scanRegion = new ScanRegion(pt, dim, dataset);
         }
 
@@ -2564,7 +2567,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         if (projections == null) {
             projections = new Dataset[getNDim()];
         }
-        Vec projVec = new Vec(getSizeTotal(iDim));
+        Vec projVec = new Vec(getSizeReal(iDim), getComplex(iDim));
         projVec.setName(getName() + DatasetBase.DATASET_PROJECTION_TAG + (iDim + 1) +".nv");
         readVector(projVec, 0, iDim);
         projVec.zeros();
@@ -2573,6 +2576,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
             Vec vec = iter.next();
             projVec.max(vec);
         }
+        projVec.makeReal();
         Dataset projDataset = new Dataset(projVec);
         projDataset.setRefPt(0, getRefPt(iDim));
         projDataset.setLabel(0, getLabel(iDim));
