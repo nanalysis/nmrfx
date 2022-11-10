@@ -466,7 +466,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
                 FileExtensionFilterType.ALL_FILES.getFilter()
         );
         File selectedFile = fileChooser.showOpenDialog(null);
-        openDataset(selectedFile, false);
+        openDataset(selectedFile, false, true);
     }
 
     /**
@@ -493,53 +493,60 @@ public class FXMLController implements  Initializable, PeakNavigable {
         return dataOkay;
     }
 
-    public void openDataset(File selectedFile, boolean append) {
-        if (selectedFile != null) {
-            try {
-                setInitialDirectory(selectedFile.getParentFile());
-                NMRData nmrData = NMRDataUtil.getNMRData(selectedFile.toString());
-                if (!verifyData(nmrData, false, "Use \"Open FID\" to open an fid file")) {
-                    return;
-                }
-                ProcessorController processorController = getActiveChart().getProcessorController(false);
-                if (processorController != null && (!selectedFile.equals(chartProcessor.datasetFile))) {
-                    processorPane.getChildren().clear();
-                    getActiveChart().processorController = null;
-                    processorController.cleanUp();
-                }
-                if (nmrData instanceof NMRViewData) {
-                    PreferencesController.saveRecentDatasets(selectedFile.toString());
-                    NMRViewData nvData = (NMRViewData) nmrData;
-                    Dataset dataset = nvData.getDataset();
-                    addDataset(dataset, append, false);
-                } else if (nmrData instanceof BrukerData) {
-                    PreferencesController.saveRecentDatasets(selectedFile.toString());
-                    BrukerData brukerData = (BrukerData) nmrData;
-                    String suggestedName = brukerData.suggestName(new File(brukerData.getFilePath()));
-                    String datasetName = GUIUtils.input("Dataset name", suggestedName);
-                    Dataset dataset = brukerData.toDataset(datasetName);
-                    addDataset(dataset, append, false);
-                } else if (nmrData instanceof RS2DData) {
-                    PreferencesController.saveRecentDatasets(selectedFile.toString());
-                    RS2DData rs2dData = (RS2DData) nmrData;
-                    String suggestedName = rs2dData.suggestName(new File(rs2dData.getFilePath()));
-                    Dataset dataset = rs2dData.toDataset(suggestedName);
-                    addDataset(dataset, append, false);
-                } else if (nmrData instanceof JCAMPData) {
-                    PreferencesController.saveRecentDatasets(selectedFile.toString());
-                    JCAMPData jcampData = (JCAMPData) nmrData;
-                    String suggestedName = jcampData.suggestName(new File (jcampData.getFilePath()));
-                    Dataset dataset = jcampData.toDataset(suggestedName);
-                    addDataset(dataset, append, false);
-                } else {
-                    log.info("Unable to find a dataset format for: {}", selectedFile);
-                }
-            } catch (IOException | DatasetException ex) {
-                log.warn(ex.getMessage(), ex);
-                GUIUtils.warn("Open Dataset", ex.getMessage());
+    /**
+     * Opens the dataset of the selected file. The dataset is added to the chart if addDatasetToChart is true. If
+     * append is false, the chart is cleared of any datasets before adding the new dataset, if true, the dataset is
+     * added to the chart in addition to any datasets already present.
+     * @param selectedFile The file containing the dataset.
+     * @param append Whether to append the new dataset.
+     * @param addDatasetToChart Whether to add the opened dataset to the chart.
+     * @return The newly opened dataset or null if no dataset was opened
+     */
+    public Dataset openDataset(File selectedFile, boolean append, boolean addDatasetToChart) {
+        if (selectedFile == null) {
+            return null;
+        }
+        Dataset dataset = null;
+        try {
+            setInitialDirectory(selectedFile.getParentFile());
+            NMRData nmrData = NMRDataUtil.getNMRData(selectedFile.toString());
+            if (!verifyData(nmrData, false, "Use \"Open FID\" to open an fid file")) {
+                return null;
             }
+            ProcessorController processorController = getActiveChart().getProcessorController(false);
+            if (processorController != null && (!selectedFile.equals(chartProcessor.datasetFile))) {
+                processorPane.getChildren().clear();
+                getActiveChart().processorController = null;
+                processorController.cleanUp();
+            }
+            if (nmrData instanceof NMRViewData nvData) {
+                PreferencesController.saveRecentDatasets(selectedFile.toString());
+                dataset = nvData.getDataset();
+            } else if (nmrData instanceof BrukerData brukerData) {
+                PreferencesController.saveRecentDatasets(selectedFile.toString());
+                String suggestedName = brukerData.suggestName(new File(brukerData.getFilePath()));
+                String datasetName = GUIUtils.input("Dataset name", suggestedName);
+                dataset = brukerData.toDataset(datasetName);
+            } else if (nmrData instanceof  RS2DData rs2dData) {
+                PreferencesController.saveRecentDatasets(selectedFile.toString());
+                String suggestedName = rs2dData.suggestName(new File(rs2dData.getFilePath()));
+                dataset = rs2dData.toDataset(suggestedName);
+            } else if (nmrData instanceof JCAMPData jcampData) {
+                PreferencesController.saveRecentDatasets(selectedFile.toString());
+                String suggestedName = jcampData.suggestName(new File (jcampData.getFilePath()));
+                dataset = jcampData.toDataset(suggestedName);
+            }
+        } catch (IOException | DatasetException ex) {
+            log.warn(ex.getMessage(), ex);
+            GUIUtils.warn("Open Dataset", ex.getMessage());
+        }
+        if (dataset != null && addDatasetToChart) {
+            addDataset(dataset, append, false);
+        } else if (dataset == null) {
+            log.info("Unable to find a dataset format for: {}", selectedFile);
         }
         stage.setResizable(true);
+        return dataset;
     }
 
     @FXML
@@ -690,6 +697,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
                 generateScriptAndParse(nmrData, processorController);
             }
             getActiveChart().clearAnnotations();
+            getActiveChart().removeProjections();
             getActiveChart().layoutPlotChildren();
             statusBar.setMode(0);
         } else {
@@ -736,6 +744,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
         getActiveChart().setCrossHairState(true, true, true, true);
         getActiveChart().clearAnnotations();
         getActiveChart().clearPopoverTools();
+        getActiveChart().removeProjections();
         ProcessorController processorController = getActiveChart().processorController;
         if (processorController != null) {
             processorController.viewingDataset(true);
