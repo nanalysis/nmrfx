@@ -1036,14 +1036,6 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
                     buffer[j++] = (byte) (intVal & 0xFF);
                 }
             }
-        } else if (useApache && cvec != null) {
-            for (int i = 0; i < size; i++) {
-                int intVal = Float.floatToIntBits((float) cvec[i].getReal());
-                buffer[j++] = (byte) ((intVal >> 24) & 0xFF);
-                buffer[j++] = (byte) ((intVal >> 16) & 0xFF);
-                buffer[j++] = (byte) ((intVal >> 8) & 0xFF);
-                buffer[j++] = (byte) (intVal & 0xFF);
-            }
         } else {
             for (int i = 0; i < size; i++) {
                 int intVal = Float.floatToIntBits((float) rvec[i]);

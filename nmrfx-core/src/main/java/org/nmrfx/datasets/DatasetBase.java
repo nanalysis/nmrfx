@@ -15,11 +15,11 @@ import java.util.*;
 public class DatasetBase {
     private static final Logger log = LoggerFactory.getLogger(DatasetBase.class);
 
-    public final static int NV_HEADER_SIZE = 2048;
-    public final static int UCSF_HEADER_SIZE = 180;
-    public final static int LABEL_MAX_BYTES = 16;
-    public final static int SOLVENT_MAX_BYTES = 24;
-    public final static String DATASET_PROJECTION_TAG = "_proj_";
+    public static final int NV_HEADER_SIZE = 2048;
+    public static final int UCSF_HEADER_SIZE = 180;
+    public static final int LABEL_MAX_BYTES = 16;
+    public static final int SOLVENT_MAX_BYTES = 24;
+    public static final String DATASET_PROJECTION_TAG = "_proj_";
     public DatasetLayout layout = null;
     /**
      *
