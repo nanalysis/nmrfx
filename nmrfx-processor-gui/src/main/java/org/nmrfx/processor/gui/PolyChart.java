@@ -850,7 +850,7 @@ public class PolyChart extends Region implements PeakListener {
     protected double[] getRange(int axis) {
         double[] limits = {Double.MAX_VALUE, Double.NEGATIVE_INFINITY};
         for (DatasetAttributes dataAttr : datasetAttributesList) {
-            if (dataAttr.projection() == -1) {
+            if (!dataAttr.isProjection()) {
                 dataAttr.checkRange(axModes[axis], axis, limits);
             } else {
                 if (dataAttr.projection() == axis) {
@@ -914,9 +914,10 @@ public class PolyChart extends Region implements PeakListener {
 
     protected void adjustScale(double factor) {
         ChartUndoScale undo = new ChartUndoScale(this);
-        datasetAttributesList.stream().forEach(dataAttr -> {
-            adjustScale(dataAttr, factor);
-        });
+        datasetAttributesList.stream().filter(dataAttr -> !dataAttr.isProjection())
+                .forEach(dataAttr -> {
+                    adjustScale(dataAttr, factor);
+                });
         layoutPlotChildren();
         ChartUndoScale redo = new ChartUndoScale(this);
         controller.undoManager.add("ascale", undo, redo);
@@ -960,17 +961,18 @@ public class PolyChart extends Region implements PeakListener {
 
     public void scaleY(double y) {
         final double scale = calculateScaleYFactor(y);
-        datasetAttributesList.stream().forEach(dataAttr -> {
-            DatasetBase dataset = dataAttr.getDataset();
-            if (is1D()) {
-                double oldLevel = dataAttr.getLvl();
-                dataAttr.setLvl(oldLevel * scale);
-                setYAxisByLevel();
-            } else if (dataset != null) {
-                double oldLevel = dataAttr.getLvl();
-                dataAttr.setLvl(oldLevel * scale);
-            }
-        });
+        datasetAttributesList.stream().filter(dataAttr -> !dataAttr.isProjection())
+                .forEach(dataAttr -> {
+                    DatasetBase dataset = dataAttr.getDataset();
+                    if (is1D()) {
+                        double oldLevel = dataAttr.getLvl();
+                        dataAttr.setLvl(oldLevel * scale);
+                        setYAxisByLevel();
+                    } else if (dataset != null) {
+                        double oldLevel = dataAttr.getLvl();
+                        dataAttr.setLvl(oldLevel * scale);
+                    }
+                });
         layoutPlotChildren();
     }
 
@@ -1263,6 +1265,7 @@ public class PolyChart extends Region implements PeakListener {
         datasetAttributesList.stream().forEach(dataAttr -> {
             autoScale(dataAttr);
         });
+        updateProjectionScale();
         layoutPlotChildren();
         ChartUndoScale redo = new ChartUndoScale(this);
         controller.undoManager.add("ascale", undo, redo);
@@ -1796,7 +1799,7 @@ public class PolyChart extends Region implements PeakListener {
     public int setDrawlist(int value) {
         if (!datasetAttributesList.isEmpty()) {
             for (DatasetAttributes datasetAttributes : datasetAttributesList) {
-                if (datasetAttributes.projection() != -1 || datasetAttributes.getDataset().getNDim() < 2) {
+                if (datasetAttributes.isProjection() || datasetAttributes.getDataset().getNDim() < 2) {
                     datasetAttributes.setDrawListSize(0);
                     continue;
                 }
@@ -2361,7 +2364,7 @@ public class PolyChart extends Region implements PeakListener {
             try {
                 DatasetAttributes firstAttr = datasetAttributesList.get(0);
                 DatasetBase dataset = datasetAttributes.getDataset();
-                if (datasetAttributes.projection() != -1) {
+                if (datasetAttributes.isProjection()) {
                     continue;
                 }
                 if (dataset != null) {
@@ -2434,7 +2437,7 @@ public class PolyChart extends Region implements PeakListener {
             }
         }
         for (DatasetAttributes datasetAttributes : datasetAttributesList) {
-            if (datasetAttributes.projection() != -1) {
+            if (datasetAttributes.isProjection()) {
                 drawProjection(gC, datasetAttributes.projection(), datasetAttributes);
             }
         }
@@ -4520,7 +4523,7 @@ public class PolyChart extends Region implements PeakListener {
      * and refresh the chart.
      */
     public void removeProjections() {
-        if (getDatasetAttributes().removeIf(datasetAttributes -> datasetAttributes.projection() != -1)) {
+        if (getDatasetAttributes().removeIf(datasetAttributes -> datasetAttributes.isProjection())) {
             chartProps.setTopBorderSize(ChartProperties.EMPTY_BORDER_DEFAULT_SIZE);
             chartProps.setRightBorderSize(ChartProperties.EMPTY_BORDER_DEFAULT_SIZE);
             refresh();

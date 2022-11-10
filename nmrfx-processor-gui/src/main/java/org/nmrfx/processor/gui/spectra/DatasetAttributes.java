@@ -571,6 +571,10 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
         projectionAxis = value;
     }
 
+    public boolean isProjection() {
+        return projectionAxis != -1;
+    }
+
     public int projection() {
         return projectionAxis;
     }
