@@ -131,7 +131,7 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
     public VecBase(int size, boolean complex, PyType type) {
         super(type);
         this.isComplex = complex;
-        useApache = true;
+        useApache = complex;
         rvec = new double[size];
         freqDomain = false;
 
