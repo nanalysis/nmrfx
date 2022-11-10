@@ -637,11 +637,12 @@ def markrows(*args):
     fidObj = fidInfo.fidObj
     for row in args:
         newRow = []
-        for v in row:
+        for v in row[0:-1]:
             if v >= 0:
                 v = v -1
             newRow.append(v)
-        fidObj.addSkipGroup(newRow)
+        groupIndex = row[-1]
+        fidObj.addSkipGroup(newRow, groupIndex)
 
 class genericOperation(object):
     def __init__(self, f):

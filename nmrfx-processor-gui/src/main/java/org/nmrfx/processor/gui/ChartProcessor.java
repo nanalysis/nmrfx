@@ -450,7 +450,7 @@ public class ChartProcessor {
         }
     }
 
-    public List<VecIndexScore> scanForCorruption() {
+    public List<VecIndexScore> scanForCorruption(double ratio, int maxN) {
         int iGroup = 0;
         NMRData nmrData = getNMRData();
         int nPoints = nmrData.getNPoints();
@@ -467,25 +467,24 @@ public class ChartProcessor {
             for (int j = 0; j < vectorsPerGroup; j++) {
                 newVec.resize(nPoints);
                 nmrData.readVector(vecIndex.getInVec(j), newVec);
-                double norm = newVec.getNorm();
-                if (norm > groupMax) {
-                    groupMax = norm;
+                double max = newVec.maxIndex().getValue();
+                if (max > groupMax) {
+                    groupMax = max;
                     maxIndex = j;
                 }
-                groupMax = Math.max(groupMax, norm);
             }
             var vecIndexScore = new VecIndexScore(vecIndex, maxIndex, groupMax);
             stats.addValue(groupMax );
             vecIndices.add(vecIndexScore);
         }
 
-        double median = stats.getPercentile(50.0);
-        double max = stats.getMax();
+        double mean = stats.getMean();
         double sdev = stats.getStandardDeviation();
-        double threshold= median * 3.0 * sdev;
+        double threshold= mean + ratio * sdev;
         List<VecIndexScore> result = new ArrayList<>();
         Collections.sort(vecIndices, Collections.reverseOrder());
-        for (int i=0;i<vecIndices.size();i++) {
+        int n = Math.min(vecIndices.size(), maxN);
+        for (int i=0;i<n;i++) {
             var vecIndexScore = vecIndices.get(i);
             if (vecIndexScore.score() > threshold) {
                 result.add(vecIndexScore);

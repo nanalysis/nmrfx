@@ -167,6 +167,10 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     private Button haltProcessButton;
     @FXML
     private Button opDocButton;
+    @FXML
+    private ChoiceBox<Integer> scanMaxN;
+    @FXML
+    private ChoiceBox<Double> scanRatio;
     private final List<String> realImagChoices = new ArrayList<>();
     ChangeListener<String> vecNumListener;
     int[] rowIndices;
@@ -820,6 +824,8 @@ public class ProcessorController implements Initializable, ProgressUpdater {
                     dimList.add(line);
                 } else if (refOps.contains(opName)) {
                     headerList.add(line);
+                } else if (opName.equals("markrows")) {
+                    parseMarkRows(args);
                 }
             }
         }
@@ -831,6 +837,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
             currentText = script;
         }
         chartProcessor.setScriptValid(true);
+        updateSkipIndices();
     }
 
     @FXML
@@ -1054,6 +1061,10 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         codeAreaUtil = new ProcessingCodeAreaUtil(textArea);
         textArea.setEditable(false);
         textArea.setWrapText(true);
+        scanRatio.getItems().addAll(0.5, 1.0, 1.5, 2.0, 3.0, 4.0, 5.0, 10.0);
+        scanRatio.setValue(3.0);
+        scanMaxN.getItems().addAll(5, 10, 20, 50, 100, 200);
+        scanMaxN.setValue(50);
 
         initTable();
         setupListeners();
@@ -1466,7 +1477,9 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         clearCorruptedIndex();
         NMRData nmrData = getNMRData();
         if (nmrData != null) {
-            List<ChartProcessor.VecIndexScore> indices = chartProcessor.scanForCorruption();
+            double ratio = scanRatio.getValue();
+            int scanN = scanMaxN.getValue();
+            List<ChartProcessor.VecIndexScore> indices = chartProcessor.scanForCorruption(ratio, scanN);
             ObservableList<DatasetGroupIndex> groupList = FXCollections.observableArrayList();
             for (ChartProcessor.VecIndexScore vecIndexScore : indices) {
                 var vecIndex = vecIndexScore.vecIndex();
@@ -1540,5 +1553,24 @@ public class ProcessorController implements Initializable, ProgressUpdater {
             groupList.addAll(nmrData.getSkipGroups());
         }
         return groupList;
+    }
+
+    void parseMarkRows(String markRowsArg) {
+        NMRData nmrData = getNMRData();
+        if (nmrData != null) {
+            nmrData.getSkipGroups().clear();
+            String[] fields = markRowsArg.split("\\]\\s*,\\s*\\[");
+            for (var field : fields) {
+                field = field.trim();
+                if (field.charAt(0) == '[') {
+                    field = field.substring(1);
+                }
+                if (field.endsWith("]")) {
+                    field = field.substring(0, field.length() - 1);
+                }
+                DatasetGroupIndex datasetGroupIndex = new DatasetGroupIndex(field);
+                nmrData.addSkipGroup(datasetGroupIndex);
+            }
+        }
     }
 }

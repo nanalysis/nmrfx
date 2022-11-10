@@ -888,10 +888,6 @@ public interface NMRData {
         return result;
     }
 
-    public default void addSkipGroup(int[] indices) {
-       addSkipGroup(indices, -1);
-    }
-
     public default void addSkipGroup(int[] indices, int realImaginaryChoice) {
         DatasetGroupIndex newGroup = new DatasetGroupIndex(indices, realImaginaryChoice);
         List<DatasetGroupIndex> currentIndices = getSkipGroups();

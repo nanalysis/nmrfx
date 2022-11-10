@@ -14,6 +14,32 @@ public class DatasetGroupIndex {
         this.groupIndex = groupIndex;
     }
 
+    // used from Python
+    public DatasetGroupIndex(int[] values) {
+        this.indices = new int[values.length - 1];
+        System.arraycopy(values, 0, indices, 0, indices.length);
+        this.groupIndex = values[values.length -1];
+    }
+
+    public DatasetGroupIndex(String strValue) {
+        String[] fields = strValue.split(",");
+        indices = new int[fields.length - 1];
+        int lastValue = -1;
+        for (int i = 0; i < fields.length; i++) {
+            int value = Integer.parseInt(fields[i]);
+            if (i < indices.length) {
+                if (value > 0) {
+                    value--;
+                }
+                indices[i] = value;
+            } else {
+                lastValue = value;
+                break;
+            }
+        }
+        groupIndex = lastValue;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -43,11 +69,12 @@ public class DatasetGroupIndex {
             }
             sBuilder.append(index);
         }
+        sBuilder.append(",").append(groupIndex);
         return sBuilder.toString();
     }
 
     public String toString() {
-        return toIndexString() + " " + groupIndex;
+        return toIndexString();
     }
 
     public int[] getIndices() {
@@ -84,7 +111,8 @@ public class DatasetGroupIndex {
 
         return result;
     }
-    public  List<int[]> groupToIndices() {
+
+    public List<int[]> groupToIndices() {
         List<int[]> result = new ArrayList<>();
         int[] sizes = new int[indices.length];
         for (int i = 0; i < indices.length; i++) {
@@ -92,7 +120,6 @@ public class DatasetGroupIndex {
         }
         MultidimensionalCounter counter = new MultidimensionalCounter(sizes);
         var iterator = counter.iterator();
-        System.out.println("iter");
         while (iterator.hasNext()) {
             iterator.next();
             int[] counts = iterator.getCounts();
@@ -100,7 +127,6 @@ public class DatasetGroupIndex {
             for (int k = 0; k < indices.length; k++) {
                 if (indices[k] >= 0) {
                     cIndices[k] = indices[k] * sizes[k] + counts[k];
-                    System.out.println(k + " " + indices[k] + " " + sizes[k] + " " + counts[k] + " " + cIndices[k]);
                 } else {
                     cIndices[k] = -1;
                 }
