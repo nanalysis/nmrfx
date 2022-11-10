@@ -915,9 +915,7 @@ public class PolyChart extends Region implements PeakListener {
     protected void adjustScale(double factor) {
         ChartUndoScale undo = new ChartUndoScale(this);
         datasetAttributesList.stream().filter(dataAttr -> !dataAttr.isProjection())
-                .forEach(dataAttr -> {
-                    adjustScale(dataAttr, factor);
-                });
+                .forEach(dataAttr -> adjustScale(dataAttr, factor));
         layoutPlotChildren();
         ChartUndoScale redo = new ChartUndoScale(this);
         controller.undoManager.add("ascale", undo, redo);
@@ -4523,7 +4521,7 @@ public class PolyChart extends Region implements PeakListener {
      * and refresh the chart.
      */
     public void removeProjections() {
-        if (getDatasetAttributes().removeIf(datasetAttributes -> datasetAttributes.isProjection())) {
+        if (getDatasetAttributes().removeIf(DatasetAttributes::isProjection)) {
             chartProps.setTopBorderSize(ChartProperties.EMPTY_BORDER_DEFAULT_SIZE);
             chartProps.setRightBorderSize(ChartProperties.EMPTY_BORDER_DEFAULT_SIZE);
             refresh();
