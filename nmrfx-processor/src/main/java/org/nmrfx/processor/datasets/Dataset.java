@@ -2574,6 +2574,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
             projVec.max(vec);
         }
         Dataset projDataset = new Dataset(projVec);
+        projDataset.setRefPt(0, getRefPt(iDim));
         projDataset.setLabel(0, getLabel(iDim));
         projections[iDim] = projDataset;
     }
