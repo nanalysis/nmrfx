@@ -23,7 +23,7 @@
             <dependency>
                 <groupId>com.nanalysis</groupId>
                 <artifactId>spinlab-dataset</artifactId>
-                <version>1.1.0</version>
+                <version>1.2.1</version>
                 <!-- license: GPLv3 + Nanalysis internal license -->
             </dependency>
             <dependency>
