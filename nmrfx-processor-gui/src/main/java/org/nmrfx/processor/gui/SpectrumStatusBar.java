@@ -379,14 +379,17 @@ public class SpectrumStatusBar {
         try {
             if (text.length() > 0) {
                 double planePPM = Double.parseDouble(text);
-                PolyChart chart = controller.getActiveChart();
-                ObservableList<DatasetAttributes> dataAttrList = chart.getDatasetAttributes();
-                if (!dataAttrList.isEmpty()) {
-                    DatasetAttributes dataAttr = dataAttrList.get(0);
-                    int planeIndex = DatasetAttributes.AXMODE.PPM.getIndex(dataAttr, axNum, planePPM);
-                    if (event.getCode() == KeyCode.ENTER) {
-                        updatePlane(axNum, planeIndex);
+                int planeIndex = findPlane(planePPM, axNum);
+                if (planeIndex == -1) {
+                    PolyChart chart = controller.getActiveChart();
+                    ObservableList<DatasetAttributes> dataAttrList = chart.getDatasetAttributes();
+                    if (!dataAttrList.isEmpty()) {
+                        DatasetAttributes dataAttr = dataAttrList.get(0);
+                        planeIndex = DatasetAttributes.AXMODE.PPM.getIndex(dataAttr, axNum, planePPM);
                     }
+                }
+                if ((planeIndex != -1) && (event.getCode() == KeyCode.ENTER)) {
+                    updatePlane(axNum, planeIndex + 1);
                 }
             }
             planeField.setBackground(defaultBackground);
@@ -403,7 +406,6 @@ public class SpectrumStatusBar {
     }
 
     public void setChart(PolyChart chart) {
-        DatasetBase dataset = chart.getDataset();
         if (!chart.getDatasetAttributes().isEmpty()) {
             DatasetAttributes dataAttr = chart.getDatasetAttributes().get(0);
             for (int axNum = 2; axNum < dataAttr.nDim; axNum++) {
@@ -421,6 +423,7 @@ public class SpectrumStatusBar {
     }
 
     public void updateRowSpinner(int row, int axNum) {
+        row++;
         SpinnerValueFactory<Integer> planeFactory = (SpinnerValueFactory<Integer>) planeSpinner[axNum - 1].getValueFactory();
         planeFactory.valueProperty().removeListener(planeListeners[axNum - 1]);
         planeFactory.setValue(row);
@@ -428,16 +431,52 @@ public class SpectrumStatusBar {
 
     }
 
+    private int findPlane(double value, int axNum) {
+        PolyChart chart = controller.getActiveChart();
+        ObservableList<DatasetAttributes> dataAttrList = chart.getDatasetAttributes();
+        int planeIndex = -1;
+        if (!dataAttrList.isEmpty()) {
+            DatasetAttributes dataAttr = dataAttrList.get(0);
+            if (chart.getAxMode(axNum) == DatasetAttributes.AXMODE.PTS) {
+                double[] values = dataAttr.getDataset().getValues(axNum);
+                if (values != null) {
+                    double min = Double.MAX_VALUE;
+                    int iMin = -1;
+                    for (int i = 0; i < values.length; i++) {
+                        double delta = Math.abs(value - values[i]);
+                        if (delta < min) {
+                            min = delta;
+                            iMin = i;
+                        }
+                    }
+                    planeIndex = iMin;
+                }
+            }
+        }
+        return planeIndex;
+    }
+
     public void updatePlaneSpinner(int plane, int axNum) {
         SpinnerValueFactory<Integer> planeFactory = (SpinnerValueFactory<Integer>) planeSpinner[axNum - 2].getValueFactory();
         planeFactory.valueProperty().removeListener(planeListeners[axNum - 2]);
-        planeFactory.setValue(plane);
+        planeFactory.setValue(plane + 1);
         PolyChart chart = controller.getActiveChart();
         ObservableList<DatasetAttributes> dataAttrList = chart.getDatasetAttributes();
         if (!dataAttrList.isEmpty()) {
             DatasetAttributes dataAttr = dataAttrList.get(0);
-            double ppm = DatasetAttributes.AXMODE.PPM.indexToValue(dataAttr, axNum, plane);
-            updatePlanePPM(ppm, axNum);
+            if (chart.getAxMode(axNum) == DatasetAttributes.AXMODE.PTS) {
+                double[] values = dataAttr.getDataset().getValues(axNum);
+                if ((values != null) && (values.length > plane)) {
+                    double value = values[plane];
+                    updatePlanePPM(value, axNum);
+                } else {
+                    int index = plane + 1;
+                    updatePlanePPM(index, axNum);
+                }
+            } else {
+                double ppm = DatasetAttributes.AXMODE.PPM.indexToValue(dataAttr, axNum, plane);
+                updatePlanePPM(ppm, axNum);
+            }
         }
         planeFactory.valueProperty().addListener(planeListeners[axNum - 2]);
 
@@ -455,6 +494,7 @@ public class SpectrumStatusBar {
     }
 
     void updatePlane(int iDim, int plane) {
+        plane--;
         if (arrayMode) {
             int newValue = controller.getActiveChart().setDrawlist(plane);
             controller.getActiveChart().refresh();
@@ -511,7 +551,7 @@ public class SpectrumStatusBar {
     public void setPlaneRanges(int iDim, int max) {
         SpinnerValueFactory.IntegerSpinnerValueFactory planeFactory = (SpinnerValueFactory.IntegerSpinnerValueFactory) planeSpinner[iDim - 2].getValueFactory();
         planeFactory.valueProperty().removeListener(planeListeners[iDim - 2]);
-        planeFactory.setMin(0);
+        planeFactory.setMin(1);
         planeFactory.setMax(max);
         planeFactory.valueProperty().addListener(planeListeners[iDim - 2]);
     }
@@ -606,6 +646,7 @@ public class SpectrumStatusBar {
             Pane nodeFiller = new Pane();
             HBox.setHgrow(nodeFiller, Priority.ALWAYS);
             nodes.add(nodeFiller);
+            setChart(controller.getActiveChart());
         }
         if (mode == 0) {
             nodes.add(complexStatus);
