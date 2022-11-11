@@ -297,9 +297,11 @@ public class FXMLController implements  Initializable, PeakNavigable {
     }
 
     public void setActiveChart(PolyChart chart) {
-        if (activeChart != chart) {
-            deselectCharts();
+        if (activeChart == chart) {
+            return;
         }
+
+        deselectCharts();
         isFID = false;
         activeChart = chart;
         PolyChart.activeChart.set(chart);
