@@ -58,7 +58,6 @@ import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Text;
 import javafx.util.Callback;
 import org.apache.commons.lang3.SystemUtils;
-import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.processor.gui.spectra.NMRAxis;
 import org.nmrfx.processor.gui.undo.ChartUndoLimits;
 import org.slf4j.Logger;
@@ -117,7 +116,8 @@ public class SpectrumStatusBar {
     boolean[][] iconStates = new boolean[2][2];
     Pane filler1 = new Pane();
     Pane filler2 = new Pane();
-    static String[] rowNames = {"X", "Y", "Z", "A", "B", "C", "D", "E"};
+    static String[] dimNames = {"X", "Y", "Z", "A", "B", "C", "D", "E"};
+    static String[] rowNames = {"X", "Row", "Plane", "A", "B", "C", "D", "E"};
     ComboBox<Cursor> cursorChoiceBox = new ComboBox<>();
     HashMap<Cursor, Text> cursorMap = new HashMap<>();
     HashMap<String, Cursor> cursorNameMap = new HashMap<>();
@@ -193,7 +193,7 @@ public class SpectrumStatusBar {
         }
         for (int i = 0; i < dimMenus.length; i++) {
             final int iAxis = i;
-            String rowName = rowNames[iAxis];
+            String rowName = dimNames[iAxis];
 
             MenuButton mButton = new MenuButton(rowName);
             dimMenus[i] = mButton;
@@ -770,7 +770,7 @@ public class SpectrumStatusBar {
         if (!chart.datasetAttributesList.isEmpty()) {
             DatasetAttributes datasetAttr = chart.datasetAttributesList.get(0);
             int nDim = datasetAttr.nDim;
-            String rowName = rowNames[iAxis];
+            String rowName = dimNames[iAxis];
             for (int iDim = 0; iDim < nDim; iDim++) {
                 String dimName = datasetAttr.getDataset().getLabel(iDim);
                 MenuItem menuItem = new MenuItem(iDim + 1 + ":" + dimName);
