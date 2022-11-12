@@ -579,10 +579,7 @@ public class SpectrumStatusBar {
         List<Integer> drawList;
         for (int i = 1; i < nDim; i++) {
             drawList = activeChart.getDrawList();
-            if (drawList.isEmpty()) {
-                // Set the row menu selection to "First" to display the first spectrum in the array
-                rowMenus[i - 1].getItems().stream().filter(item -> item.getText().equals("First")).findFirst().ifPresent(MenuItem::fire);
-            } else {
+            if (!drawList.isEmpty()) {
                 // Use the current drawlist and update the spinner to the first number
                 updateRowSpinner(drawList.get(0), i);
             }
