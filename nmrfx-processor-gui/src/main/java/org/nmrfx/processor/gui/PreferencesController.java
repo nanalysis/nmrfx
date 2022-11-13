@@ -316,7 +316,7 @@ public class PreferencesController implements Initializable {
             // special check to put existing (from previous version of code)
             // FID files  in FID menu
             MenuItem datasetMenuItem = new MenuItem(subPath.toString());
-            datasetMenuItem.setOnAction(e -> FXMLController.getActiveController().openDataset(path.toFile(), false));
+            datasetMenuItem.setOnAction(e -> FXMLController.getActiveController().openDataset(path.toFile(), false, true));
             recentDatasetMenuItem.getItems().add(datasetMenuItem);
 
         }

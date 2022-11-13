@@ -4,7 +4,9 @@ import javafx.application.Platform;
 import org.nmrfx.analyst.gui.molecule.MoleculeUtils;
 import org.nmrfx.chemistry.io.MoleculeIOException;
 import org.nmrfx.chemistry.io.SDFile;
+import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.vendor.NMRDataUtil;
+import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.events.DataFormatEventHandler;
 import org.slf4j.Logger;
@@ -12,7 +14,10 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public class FilesDataFormatHandler implements DataFormatEventHandler {
     private static final Logger log = LoggerFactory.getLogger(FilesDataFormatHandler.class);
@@ -74,12 +79,35 @@ public class FilesDataFormatHandler implements DataFormatEventHandler {
                 return;
             }
         }
+        FXMLController controller = chart.getController();
         if (isFID) {
-            chart.getController().openFile(files.get(0).getAbsolutePath(), true, false);
+            controller.openFile(files.get(0).getAbsolutePath(), true, false);
         } else {
+            List<String> datasetNames = chart.getDatasetAttributes().stream().map(attr ->(Dataset) attr.getDataset()).map(Dataset::getName).collect(Collectors.toList());
+            Set<Integer> dimensions = chart.getDatasetAttributes().stream().map(attr ->(Dataset) attr.getDataset()).map(Dataset::getNDim).collect(Collectors.toSet());
+            Dataset dataset;
+            List<Dataset> unaddedDatasets = new ArrayList<>();
             for (File file : files) {
-                chart.getController().openDataset(file, true);
+                dataset = controller.openDataset(file, true, false);
+                if (dataset == null) {
+                    continue;
+                }
+                unaddedDatasets.add(dataset);
+                dimensions.add(dataset.getNDim());
+                datasetNames.add(dataset.getName());
             }
+            // If all the datasets have the same dimension add them in append mode
+            if (dimensions.size() == 1) {
+                unaddedDatasets.forEach(datasetToAdd -> controller.addDataset(datasetToAdd, true, false));
+            } else {
+                // TODO NMR-5731 what to do for dragging 2D datasets onto 1D
+                chart.updateDatasets(datasetNames);
+                chart.autoScale();
+                chart.updateProjections();
+                chart.updateProjectionBorders();
+                chart.updateProjectionScale();
+            }
+            chart.refresh();
         }
     }
 }

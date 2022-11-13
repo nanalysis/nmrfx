@@ -10,6 +10,11 @@ import org.nmrfx.processor.gui.events.DataFormatEventHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 /**
  * Class to handle clipboard PLAIN_TEXT DataFormat
  */
@@ -70,13 +75,22 @@ public class PlainTextDataFormatHandler implements DataFormatEventHandler {
             if (dataset != null) {
                 Platform.runLater(() -> {
                     chart.setActiveChart();
-                    for (String item : items) {
-                        Dataset dataset1 = Dataset.getDataset(item);
-                        if (dataset1 != null) {
-                            chart.getController().addDataset(dataset1, true, false);
+                    Set<Integer> dimensions = chart.getDatasetAttributes().stream().map(attr ->(Dataset) attr.getDataset()).map(Dataset::getNDim).collect(Collectors.toSet());
+                    List<Dataset> datasetsToAdd = Arrays.stream(items).map(Dataset::getDataset).toList();
+                    datasetsToAdd.forEach(d -> dimensions.add(d.getNDim()));
+                    if (dimensions.size() == 1) {
+                        for (Dataset datasetToAdd: datasetsToAdd) {
+                            chart.getController().addDataset(datasetToAdd, true, false);
                         }
+                    } else {
+                        List<String> datasetNames = chart.getDatasetAttributes().stream().map(attr ->(Dataset) attr.getDataset()).map(Dataset::getName).collect(Collectors.toList());
+                        datasetNames.addAll(Arrays.asList(items));
+                        chart.updateDatasets(datasetNames);
+                        chart.updateProjections();
+                        chart.updateProjectionBorders();
                     }
-
+                    chart.updateProjectionScale();
+                    chart.refresh();
                 });
             return true;
             }

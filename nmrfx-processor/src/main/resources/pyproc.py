@@ -627,6 +627,11 @@ def genNUS(sizes):
     fidObj = fidInfo.fidObj
     fidObj.createUniformSchedule(sizes)
 
+def genZFNUS(sizes,newSizes):
+    global fidInfo
+    fidObj = fidInfo.fidObj
+    fidObj.createZFSchedule(sizes, newSizes)
+
 class genericOperation(object):
     def __init__(self, f):
         self.f = f
@@ -2389,6 +2394,67 @@ def IST(threshold=0.98, iterations=500, alg='std', timeDomain=True, ph0=None, ph
         process.addOperation(op)
     return op
 
+def EXTEND(alg='nesta', factor=1, phase=None, disabled=False, vector=None, process=None):
+    ''' Experimental implementation of NESTA algorithm for extending data as alternative to Linear Prediction.
+    This version requires that the data be in-phase.  Use the phase argument to provide a list of phase values.
+  
+    Parameters
+    ---------
+    alg : {'nesta','grins'}
+        Name of algorithm to use.
+    factor : int
+        amin : 0
+        min : 0
+        max : 2
+        amax : 2
+        Zero fill factor
+    phase : []
+        Array of phase values, 2 per indirect dimension.
+
+    '''
+    nOuter=15
+    nInner=20
+    tolFinal=2.5
+    muFinal=6
+    phase=None
+    logToFile=False
+    zeroAtStart=True
+    threshold=0.0
+
+    noise = 0.0
+    phase = None
+    scale = 0.5
+    preserve = False
+    synthetic = False
+
+    if disabled:
+        return None
+    phaseList = ArrayList()
+    if phase == None:
+        pass
+    else:
+        for value in phase:
+            phaseList.add(float(value))
+    tolFinalReal = math.pow(10.0,-tolFinal)
+    muFinalReal = math.pow(10.0,-muFinal)
+    process = process or getCurrentProcess()
+    global fidInfo
+
+    if alg == 'nesta':
+        op = NESTANMR(nOuter, nInner, tolFinalReal, muFinalReal, phaseList, zeroAtStart, threshold, factor)
+    elif alg == 'grins':
+        op = GRINSOp(noise, scale, factor, phaseList, preserve)
+    else:
+        raise Exception("Invalid algorithm for EXTEND: " + alg)
+
+    if (vector != None):
+        op.eval(vector)
+    else:
+        process.addOperation(op)
+
+    return op
+
+
 def NESTA(nOuter=15, nInner=20, tolFinal=2.5, muFinal=6,phase=None, logToFile=False, zeroAtStart=True, threshold=0.0, disabled=False, vector=None, process=None):
     ''' Experimental implementation of NESTA algorithm for NUS processing.  This version
     requires that the data be in-phase.  Use the phase argument to provide a list of phase values.
@@ -2895,6 +2961,7 @@ def DGRINS(noise=5, logToFile=False, disabled=False, dataset=None, process=None)
     else:
         process.addOperation(op)
     return op
+
 
 def GRINS(noise=0.0, scale=0.5, zf=0, phase=None, preserve=False, synthetic=False, logToFile=False, disabled=False, dataset=None, process=None):
     ''' Experimental GRINS.
