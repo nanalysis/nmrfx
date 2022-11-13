@@ -19,7 +19,6 @@ package org.nmrfx.analyst.gui;
 
 import javafx.beans.Observable;
 import javafx.beans.property.ReadOnlyObjectWrapper;
-import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
@@ -33,7 +32,6 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
-import javafx.util.Callback;
 import org.apache.commons.math3.optim.PointValuePair;
 import org.controlsfx.control.CheckComboBox;
 import org.nmrfx.analyst.gui.tools.ScanTable;
@@ -161,39 +159,19 @@ public class TablePlotGUI {
 
     void setupTable() {
         TableColumn<ParItem, String> columnNameColumn = new TableColumn<>("Column");
-        columnNameColumn.setCellValueFactory(new Callback<TableColumn.CellDataFeatures<ParItem, String>, ObservableValue<String>>() {
-            public ObservableValue<String> call(TableColumn.CellDataFeatures<ParItem, String> p) {
-                return new ReadOnlyObjectWrapper(p.getValue().columnName());
-            }
-        });
+        columnNameColumn.setCellValueFactory(p -> new ReadOnlyObjectWrapper<>(p.getValue().columnName()));
         TableColumn<ParItem, Integer> groupColumn = null;
         if (showGroup) {
             groupColumn = new TableColumn<>("Group");
-            groupColumn.setCellValueFactory(new Callback<TableColumn.CellDataFeatures<ParItem, Integer>, ObservableValue<Integer>>() {
-                public ObservableValue<Integer> call(TableColumn.CellDataFeatures<ParItem, Integer> p) {
-                    return new ReadOnlyObjectWrapper(p.getValue().group());
-                }
-            });
+            groupColumn.setCellValueFactory(p -> new ReadOnlyObjectWrapper<>(p.getValue().group()));
         }
 
         TableColumn<ParItem, String> parNameColumn = new TableColumn<>("Parameter");
-        parNameColumn.setCellValueFactory(new Callback<TableColumn.CellDataFeatures<ParItem, String>, ObservableValue<String>>() {
-            public ObservableValue<String> call(TableColumn.CellDataFeatures<ParItem, String> p) {
-                return new ReadOnlyObjectWrapper(p.getValue().parName());
-            }
-        });
+        parNameColumn.setCellValueFactory(p -> new ReadOnlyObjectWrapper<>(p.getValue().parName()));
         TableColumn<ParItem, Double> valueColumn = new TableColumn<>("Value");
-        valueColumn.setCellValueFactory(new Callback<TableColumn.CellDataFeatures<ParItem, Double>, ObservableValue<Double>>() {
-            public ObservableValue<Double> call(TableColumn.CellDataFeatures<ParItem, Double> p) {
-                return new ReadOnlyObjectWrapper(p.getValue().value());
-            }
-        });
+        valueColumn.setCellValueFactory(p -> new ReadOnlyObjectWrapper<>(p.getValue().value()));
         TableColumn<ParItem, Double> errorColumn = new TableColumn<>("Error");
-        errorColumn.setCellValueFactory(new Callback<TableColumn.CellDataFeatures<ParItem, Double>, ObservableValue<Double>>() {
-            public ObservableValue<Double> call(TableColumn.CellDataFeatures<ParItem, Double> p) {
-                return new ReadOnlyObjectWrapper(p.getValue().error());
-            }
-        });
+        errorColumn.setCellValueFactory(p -> new ReadOnlyObjectWrapper<>(p.getValue().error()));
         parTable.getColumns().add(columnNameColumn);
         if (showGroup) {
             parTable.getColumns().add(groupColumn);
@@ -299,27 +277,29 @@ public class TablePlotGUI {
                 if (yElems.size() == 1) {
                     xAxis.setLabel(xElem);
                     String yElem = yElems.get(0);
-                    yAxis.setLabel(yElem);
-                    xAxis.setZeroIncluded(true);
-                    yAxis.setZeroIncluded(true);
-                    xAxis.setAutoRanging(true);
-                    yAxis.setAutoRanging(true);
-                    activeChart.getData().clear();
-                    //Prepare XYChart.Series objects by setting data
-                    var groups = getGroups();
-                    for (var groupEntry : groups.entrySet()) {
-                        int groupNum = groupEntry.getKey();
-                        var items = groupEntry.getValue();
-                        DataSeries series = new DataSeries();
-                        series.clear();
-                        for (FileTableItem item : items) {
-                            double x = item.getDouble(nameMap.get(xElem));
-                            double y = item.getDouble(nameMap.get(yElem));
-                            series.add(new XYValue(x, y));
-                            series.setFill(ScanTable.getGroupColor(groupNum));
+                    if (yElem != null) {
+                        yAxis.setLabel(yElem);
+                        xAxis.setZeroIncluded(true);
+                        yAxis.setZeroIncluded(true);
+                        xAxis.setAutoRanging(true);
+                        yAxis.setAutoRanging(true);
+                        activeChart.getData().clear();
+                        //Prepare XYChart.Series objects by setting data
+                        var groups = getGroups();
+                        for (var groupEntry : groups.entrySet()) {
+                            int groupNum = groupEntry.getKey();
+                            var items = groupEntry.getValue();
+                            DataSeries series = new DataSeries();
+                            series.clear();
+                            for (FileTableItem item : items) {
+                                double x = item.getDouble(nameMap.get(xElem));
+                                double y = item.getDouble(nameMap.get(yElem));
+                                series.add(new XYValue(x, y));
+                                series.setFill(ScanTable.getGroupColor(groupNum));
+                            }
+                            activeChart.getData().add(series);
+                            activeChart.autoScale(true);
                         }
-                        activeChart.getData().add(series);
-                        activeChart.autoScale(true);
                     }
                 } else {
                     xAxis.setLabel(xElem);
@@ -333,18 +313,20 @@ public class TablePlotGUI {
                     int groupNum = 0;
 
                     for (var yElem : yElems) {
-                        DataSeries series = new DataSeries();
-                        series.setName(yElem);
-                        series.clear();
-                        for (FileTableItem item : tableView.getItems()) {
-                            double x = item.getDouble(nameMap.get(xElem));
-                            double y = item.getDouble(nameMap.get(yElem));
-                            series.add(new XYValue(x, y));
+                        if (yElem != null) {
+                            DataSeries series = new DataSeries();
+                            series.setName(yElem);
+                            series.clear();
+                            for (FileTableItem item : tableView.getItems()) {
+                                double x = item.getDouble(nameMap.get(xElem));
+                                double y = item.getDouble(nameMap.get(yElem));
+                                series.add(new XYValue(x, y));
+                            }
+                            series.setFill(ScanTable.getGroupColor(groupNum));
+                            groupNum++;
+                            activeChart.getData().add(series);
+                            activeChart.autoScale(true);
                         }
-                        series.setFill(ScanTable.getGroupColor(groupNum));
-                        groupNum++;
-                        activeChart.getData().add(series);
-                        activeChart.autoScale(true);
                     }
                     activeChart.setShowLegend(true);
                 }
@@ -352,26 +334,50 @@ public class TablePlotGUI {
         }
     }
 
-    private void updateAxisChoices() {
-        xArrayChoice.getItems().clear();
-        yArrayChoice.getItems().clear();
-        if (tableView != null) {
-            var columns = tableView.getColumns();
-            for (var column : columns) {
-                String text = column.getText();
-                if (text.equals("path") || text.equals("sequence") || text.equals("ndim")) {
-                    continue;
-                }
-                String name = text;
-                if (text.contains(":")) {
-                    name = text.substring(0, text.indexOf(":"));
-                }
-                xArrayChoice.getItems().add(name);
-                yArrayChoice.getItems().add(name);
-                nameMap.put(name, text);
+    List<String> usableColumns() {
+        List<String> columnNames = new ArrayList<>();
+        nameMap.clear();
+        var columns = tableView.getColumns();
+        for (var column : columns) {
+            String text = column.getText();
+            if (text.equals("path") || text.equals("sequence") || text.equals("ndim")) {
+                continue;
             }
+            String name = text;
+            if (text.contains(":")) {
+                name = text.substring(0, text.indexOf(":"));
+            }
+            nameMap.put(name, text);
+            columnNames.add(name);
+        }
+        return columnNames;
+    }
+
+    private void updateAxisChoices() {
+        List<String> currentChecks = new ArrayList<>(yArrayChoice.getCheckModel().getCheckedItems());
+        if (tableView != null) {
+            var items = yArrayChoice.getItems();
+            List<String> columnNames = usableColumns();
+            var iterator = items.listIterator();
+            while (iterator.hasNext()) {
+                String name = iterator.next();
+                if (!columnNames.contains(name)) {
+                    yArrayChoice.getCheckModel().clearCheck(name);
+                    iterator.remove();
+                    currentChecks.remove(name);
+                }
+            }
+            for (String name:columnNames) {
+                if (!items.contains(name)) {
+                    items.add(name);
+                }
+            }
+            xArrayChoice.getItems().addAll(columnNames);
             if (!xArrayChoice.getItems().isEmpty()) {
                 xArrayChoice.setValue(xArrayChoice.getItems().get(0));
+            }
+            for (var item:currentChecks) {
+                yArrayChoice.getCheckModel().check(item);
             }
         }
     }
@@ -418,7 +424,7 @@ public class TablePlotGUI {
                 allResults.addAll(fit(xElem, yElems, fitEquation, nY));
             } else {
                 for (var yElem : yElems) {
-                    List<String> subYElem = new ArrayList<String>(Collections.singleton(yElem));
+                    List<String> subYElem = new ArrayList<>(Collections.singleton(yElem));
                     allResults.addAll(fit(xElem, subYElem, fitEquation, nY));
                 }
             }
