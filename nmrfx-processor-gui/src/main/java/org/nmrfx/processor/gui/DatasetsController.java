@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
- /*
+/*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
@@ -34,6 +34,8 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
+import javafx.geometry.Bounds;
+import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.TableColumn.CellDataFeatures;
@@ -51,6 +53,7 @@ import javafx.util.converter.DoubleStringConverter;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.processor.gui.controls.GridPaneCanvas;
 import org.nmrfx.project.ProjectBase;
+import org.nmrfx.utils.ColumnMath;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -62,9 +65,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.ResourceBundle;
+import java.util.function.Function;
 
 /**
- *
  * @author johnsonb
  */
 public class DatasetsController implements Initializable, PropertyChangeListener {
@@ -144,13 +147,13 @@ public class DatasetsController implements Initializable, PropertyChangeListener
         MenuItem verticalItem = new MenuItem("Vertical");
         verticalItem.setOnAction(e -> gridDataset(GridPaneCanvas.ORIENTATION.VERTICAL));
         drawButton.getItems().addAll(overlayItem, horizontalItem, verticalItem, gridItem);
-        for (var menuItem: drawButton.getItems()) {
+        for (var menuItem : drawButton.getItems()) {
             IntegerBinding sizeProperty = Bindings.size(tableView.getSelectionModel().getSelectedIndices());
             menuItem.disableProperty().bind(sizeProperty.lessThan(2));
         }
         buttons.add(drawButton);
         valueButton = new Button("Values");
-        valueButton.setOnAction(e -> makeValueTable());
+        valueButton.setOnAction(e -> makeValueTable(e));
         buttons.add(valueButton);
         valueButton.setDisable(true);
 
@@ -565,8 +568,12 @@ public class DatasetsController implements Initializable, PropertyChangeListener
         valueTableView.setItems(valueList);
     }
 
-    public void makeValueTable() {
+    public void makeValueTable(ActionEvent event) {
+
         if (valueTableView == null) {
+            Node node = (Node) event.getSource();
+            Bounds buttonBounds = node.localToScreen(node.getBoundsInLocal());
+
             DoubleStringConverter dsConverter = new DoubleStringConverter();
             valueStage = new Stage(StageStyle.DECORATED);
             BorderPane borderPane = new BorderPane();
@@ -577,6 +584,9 @@ public class DatasetsController implements Initializable, PropertyChangeListener
 
             valueTableView = new TableView<>();
             valueTableView.setEditable(true);
+            Button mathButton = new Button("Calculate");
+            mathButton.setOnAction(e -> doMath());
+            borderPane.setTop(mathButton);
             borderPane.setCenter(valueTableView);
             TableColumn<ValueItem, Integer> indexColumn = new TableColumn<>("Index");
             indexColumn.setEditable(false);
@@ -586,13 +596,20 @@ public class DatasetsController implements Initializable, PropertyChangeListener
             indexColumn.setCellValueFactory(new PropertyValueFactory<>("index"));
             valueColumn.setCellValueFactory(new PropertyValueFactory<>("value"));
             valueColumn.setCellFactory(tc -> new ValueItemDoubleFieldTableCell(dsConverter));
-            //valueColumn.setCellFactory(tc -> new DatasetDoubleFieldTableCell(dsConverter));
 
             valueTableView.getColumns().addAll(indexColumn, valueColumn);
+            valueStage.setX(buttonBounds.getCenterX() - 50);
+            valueStage.setY(buttonBounds.getMaxY() + 20);
         }
         valueStage.show();
         valueStage.toFront();
         updateValueTable();
+    }
+
+    void doMath() {
+        ColumnMath columnMath = new ColumnMath();
+        Dialog<Function<Double, Double>> dialog = columnMath.getDialog();
+        dialog.showAndWait().ifPresent(function -> doValues(function));
     }
 
     void savePars() {
@@ -601,6 +618,14 @@ public class DatasetsController implements Initializable, PropertyChangeListener
             dataset.writeParFile();
         }
 
+    }
+
+    void doValues(Function<Double, Double> function) {
+        for (var item : valueTableView.getItems()) {
+            item.setValue(function.apply(item.value));
+        }
+        saveValueTable();
+        valueTableView.refresh();
     }
 
     void closeDatasets() {
