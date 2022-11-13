@@ -42,6 +42,7 @@ import org.nmrfx.processor.gui.utils.ToolBarUtils;
 import org.nmrfx.processor.optimization.FitEquation;
 import org.nmrfx.processor.optimization.FitExp;
 import org.nmrfx.processor.optimization.FitReactionAB;
+import org.nmrfx.processor.optimization.Gaussian;
 import org.nmrfx.utils.GUIUtils;
 
 import java.io.File;
@@ -132,7 +133,7 @@ public class TablePlotGUI {
 
             Button button = new Button("Fit");
             button.setOnAction(e -> analyze());
-            equationChoice.getItems().addAll("ExpAB", "ExpABC", "A<->B");
+            equationChoice.getItems().addAll("ExpAB", "ExpABC", "Gaussian", "A<->B");
             equationChoice.setValue("ExpABC");
             toolBar2.getItems().addAll(equationChoice, button);
             HBox hBox = new HBox();
@@ -424,6 +425,7 @@ public class TablePlotGUI {
         FitEquation fitEquation = switch (equationChoice.getValue()) {
             case "ExpAB" -> new FitExp(false);
             case "ExpABC" -> new FitExp(true);
+            case "Gaussian" -> new Gaussian(false);
             case "A<->B" -> new FitReactionAB();
             default -> null;
         };
