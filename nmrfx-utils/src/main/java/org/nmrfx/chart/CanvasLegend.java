@@ -78,7 +78,11 @@ public class CanvasLegend {
 
             gC.setFill(series.fill);
             gC.setStroke(series.stroke);
-            series.symbol.draw(gC, x, y, series.radius, series.stroke, series.fill);
+            if (series.strokeSymbol || series.fillSymbol) {
+                series.symbol.draw(gC, x, y, series.radius, series.stroke, series.fill);
+            } else {
+                gC.strokeLine(x-5,y, x+5, y);
+            }
             gC.setTextBaseline(VPos.CENTER);
             gC.setTextAlign(TextAlignment.LEFT);
             gC.fillText(name, x + series.radius * 2, y);

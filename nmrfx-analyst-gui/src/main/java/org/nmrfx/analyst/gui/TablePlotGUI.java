@@ -90,7 +90,7 @@ public class TablePlotGUI {
         if (stage == null) {
             stage = new Stage();
             stage.setTitle("Table Plotter");
-            stage.setWidth(700);
+            stage.setWidth(750);
             Label typelabel = new Label("  Type:  ");
             Label xlabel = new Label("  X Var:  ");
             Label ylabel = new Label("  Y Var:  ");
@@ -312,6 +312,7 @@ public class TablePlotGUI {
                                 double y = item.getDouble(nameMap.get(yElem));
                                 series.add(new XYValue(x, y));
                                 series.setFill(ScanTable.getGroupColor(groupNum));
+                                series.setStroke(ScanTable.getGroupColor(groupNum));
                             }
                             activeChart.getData().add(series);
                             activeChart.autoScale(true);
@@ -339,6 +340,7 @@ public class TablePlotGUI {
                                 series.add(new XYValue(x, y));
                             }
                             series.setFill(ScanTable.getGroupColor(groupNum));
+                            series.setStroke(ScanTable.getGroupColor(groupNum));
                             groupNum++;
                             activeChart.getData().add(series);
                             activeChart.autoScale(true);
@@ -436,12 +438,13 @@ public class TablePlotGUI {
         fitLineSeries.clear();
         ObservableList<ParItem> allResults = FXCollections.observableArrayList();
         if ((xElem != null) && !yElems.isEmpty()) {
+            int iGroup = 0;
             if (nY == 2) {
-                allResults.addAll(fit(xElem, yElems, fitEquation, nY));
+                allResults.addAll(fit(xElem, yElems, fitEquation, nY, iGroup));
             } else {
                 for (var yElem : yElems) {
                     List<String> subYElem = new ArrayList<>(Collections.singleton(yElem));
-                    allResults.addAll(fit(xElem, subYElem, fitEquation, nY));
+                    allResults.addAll(fit(xElem, subYElem, fitEquation, nY, iGroup++));
                 }
             }
             updatePlotWithFitLines();
@@ -449,7 +452,7 @@ public class TablePlotGUI {
         }
     }
 
-    private List<ParItem> fit(String xElem, List<String> yElems, FitEquation fitEquation, int nY) {
+    private List<ParItem> fit(String xElem, List<String> yElems, FitEquation fitEquation, int nY, int iGroup) {
         List<FileTableItem> items = tableView.getItems();
         double[][] xValues = new double[1][items.size()];
         double[][] yValues = new double[nY][items.size()];
@@ -496,8 +499,8 @@ public class TablePlotGUI {
             for (int j = 0; j < curve0[0].length; j++) {
                 series.add(new XYValue(curve0[0][j], curve0[xValues.length + iSeries][j]));
             }
-            series.setStroke(ScanTable.getGroupColor(iSeries));
-            series.setFill(ScanTable.getGroupColor(iSeries));
+            series.setStroke(ScanTable.getGroupColor(iGroup));
+            series.setFill(ScanTable.getGroupColor(iGroup));
             series.drawLine(true);
             series.drawSymbol(false);
             series.fillSymbol(false);

@@ -354,6 +354,7 @@ public class XYCanvasChart {
                     double lastXC = 0.0;
                     double lastYC = 0.0;
                     gC.setStroke(series.stroke);
+                    gC.setFill(series.fill);
                     for (XYValue xyValue : series.getValues()) {
                         double x = xyValue.getXValue();
                         double y = xyValue.getYValue();
