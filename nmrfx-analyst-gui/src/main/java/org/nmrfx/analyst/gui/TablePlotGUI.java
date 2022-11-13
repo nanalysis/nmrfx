@@ -38,6 +38,7 @@ import org.nmrfx.analyst.gui.tools.ScanTable;
 import org.nmrfx.chart.*;
 import org.nmrfx.graphicsio.SVGGraphicsContext;
 import org.nmrfx.processor.gui.controls.FileTableItem;
+import org.nmrfx.processor.gui.utils.ToolBarUtils;
 import org.nmrfx.processor.optimization.FitEquation;
 import org.nmrfx.processor.optimization.FitExp;
 import org.nmrfx.processor.optimization.FitReactionAB;
@@ -64,6 +65,7 @@ public class TablePlotGUI {
     List<DataSeries> fitLineSeries = new ArrayList<>();
     ChoiceBox<String> equationChoice = new ChoiceBox<>();
     TableView<ParItem> parTable = new TableView<>();
+    VBox fitVBox;
     boolean showGroup = false;
 
     /**
@@ -88,7 +90,7 @@ public class TablePlotGUI {
         if (stage == null) {
             stage = new Stage();
             stage.setTitle("Table Plotter");
-            stage.setWidth(500);
+            stage.setWidth(700);
             Label typelabel = new Label("  Type:  ");
             Label xlabel = new Label("  X Var:  ");
             Label ylabel = new Label("  Y Var:  ");
@@ -122,32 +124,38 @@ public class TablePlotGUI {
             MenuItem exportSVGMenuItem = new MenuItem("Export SVG...");
             fileMenu.getItems().add(exportSVGMenuItem);
             exportSVGMenuItem.setOnAction(e -> exportSVGAction());
+            CheckBox showFitCheckBox = new CheckBox("Fitting");
+            showFitCheckBox.setSelected(false);
+            showFitCheckBox.setOnAction(e -> toggleFitPane(showFitCheckBox));
 
             ToolBar toolBar2 = new ToolBar();
 
             Button button = new Button("Fit");
             button.setOnAction(e -> analyze());
             equationChoice.getItems().addAll("ExpAB", "ExpABC", "A<->B");
+            equationChoice.setValue("ExpABC");
             toolBar2.getItems().addAll(equationChoice, button);
             HBox hBox = new HBox();
             HBox.setHgrow(hBox, Priority.ALWAYS);
             hBox.setMinWidth(600);
             toolBar.getItems().addAll(fileMenu,typelabel, chartTypeChoice,
                     xlabel, xArrayChoice, ylabel, yArrayChoice);
+            ToolBarUtils.addFiller(toolBar, 20,2000);
+            toolBar.getItems().add(showFitCheckBox);
             hBox.setAlignment(Pos.CENTER);
 
             VBox vBox = new VBox();
             vBox.setMinWidth(600);
             vBox.getChildren().addAll(toolBar);
-            VBox vBox2 = new VBox();
-            vBox2.setMinWidth(200);
-            vBox2.getChildren().addAll(toolBar2, parTable);
+            fitVBox = new VBox();
+            fitVBox.setMinWidth(200);
+            fitVBox.getChildren().addAll(toolBar2, parTable);
 
             chartPane = new XYChartPane();
             activeChart = chartPane.getChart();
             borderPane.setTop(vBox);
             borderPane.setCenter(chartPane);
-            borderPane.setRight(vBox2);
+            borderPane.setRight(null);
             stage.setScene(stageScene);
             setupTable();
         }
@@ -157,6 +165,14 @@ public class TablePlotGUI {
         updatePlot();
     }
 
+    private void toggleFitPane(CheckBox showFitBox) {
+        if (showFitBox.isSelected()) {
+            borderPane.setRight(fitVBox);
+        } else {
+            borderPane.setRight(null);
+        }
+
+    }
     void setupTable() {
         TableColumn<ParItem, String> columnNameColumn = new TableColumn<>("Column");
         columnNameColumn.setCellValueFactory(p -> new ReadOnlyObjectWrapper<>(p.getValue().columnName()));
