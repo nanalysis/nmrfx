@@ -65,7 +65,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.ResourceBundle;
-import java.util.function.Function;
+import java.util.function.DoubleUnaryOperator;
 
 /**
  * @author johnsonb
@@ -153,7 +153,7 @@ public class DatasetsController implements Initializable, PropertyChangeListener
         }
         buttons.add(drawButton);
         valueButton = new Button("Values");
-        valueButton.setOnAction(e -> makeValueTable(e));
+        valueButton.setOnAction(this::makeValueTable);
         buttons.add(valueButton);
         valueButton.setDisable(true);
 
@@ -190,15 +190,9 @@ public class DatasetsController implements Initializable, PropertyChangeListener
             DatasetBase dataset = getTableRow().getItem();
             super.commitEdit(newValue);
             switch (column) {
-                case "level":
-                    dataset.setLvl(newValue);
-                    break;
-                case "scale":
-                    dataset.setScale(newValue);
-                    break;
-                case "ref":
-                    dataset.setRefValue(getDimNum(), newValue);
-                    break;
+                case "level" -> dataset.setLvl(newValue);
+                case "scale" -> dataset.setScale(newValue);
+                case "ref" -> dataset.setRefValue(getDimNum(), newValue);
             }
         }
 
@@ -287,7 +281,6 @@ public class DatasetsController implements Initializable, PropertyChangeListener
             @Override
             public void commitEdit(Color item) {
                 super.commitEdit(item);
-                System.out.println("commit " + item.toString() + " " + getTableRow().getItem());
                 DatasetBase dataset = getTableRow().getItem();
                 dataset.setPosColor(item.toString());
             }
@@ -331,7 +324,6 @@ public class DatasetsController implements Initializable, PropertyChangeListener
             @Override
             public void commitEdit(Color item) {
                 super.commitEdit(item);
-                System.out.println("commit " + item.toString() + " " + getTableRow().getItem());
                 DatasetBase dataset = getTableRow().getItem();
                 dataset.setNegColor(item.toString());
             }
@@ -445,9 +437,7 @@ public class DatasetsController implements Initializable, PropertyChangeListener
     }
 
     public void setDatasetList(ObservableList<DatasetBase> datasets) {
-        if (tableView == null) {
-            System.out.println("null table");
-        } else {
+        if (tableView != null) {
             tableView.setItems(datasets);
         }
     }
@@ -549,7 +539,6 @@ public class DatasetsController implements Initializable, PropertyChangeListener
             for (int i = 0; i < nDim; i++) {
                 double[] values = valueDataset.getValues(i);
                 if ((values != null) && (values.length > 1)) {
-                    System.out.println(i + " " + values.length);
                     for (int j = 0; j < values.length; j++) {
                         ValueItem item = new ValueItem(j, values[j]);
                         valueList.add(item);
@@ -557,11 +546,9 @@ public class DatasetsController implements Initializable, PropertyChangeListener
                     break;
                 }
             }
-            if (valueList.isEmpty()) {
-                if (valueDataset.getNFreqDims() < nDim) {
-                    for (int i = 0; i < valueDataset.getSizeReal(nDim - 1); i++) {
-                        valueList.add(new ValueItem(i, 0.0));
-                    }
+            if (valueList.isEmpty() && (valueDataset.getNFreqDims() < nDim)) {
+                for (int i = 0; i < valueDataset.getSizeReal(nDim - 1); i++) {
+                    valueList.add(new ValueItem(i, 0.0));
                 }
             }
         }
@@ -608,8 +595,8 @@ public class DatasetsController implements Initializable, PropertyChangeListener
 
     void doMath() {
         ColumnMath columnMath = new ColumnMath();
-        Dialog<Function<Double, Double>> dialog = columnMath.getDialog();
-        dialog.showAndWait().ifPresent(function -> doValues(function));
+        Dialog<DoubleUnaryOperator> dialog = columnMath.getDialog();
+        dialog.showAndWait().ifPresent(this::doValues);
     }
 
     void savePars() {
@@ -620,9 +607,9 @@ public class DatasetsController implements Initializable, PropertyChangeListener
 
     }
 
-    void doValues(Function<Double, Double> function) {
+    void doValues(DoubleUnaryOperator function) {
         for (var item : valueTableView.getItems()) {
-            item.setValue(function.apply(item.value));
+            item.setValue(function.applyAsDouble(item.value));
         }
         saveValueTable();
         valueTableView.refresh();

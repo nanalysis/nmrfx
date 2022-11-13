@@ -7,10 +7,10 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.GridPane;
 
-import java.util.function.Function;
+import java.util.function.DoubleUnaryOperator;
 
 public class ColumnMath {
-    Dialog<Function<Double, Double>> dialog = null;
+    Dialog<DoubleUnaryOperator> dialog = null;
     TextField[] varFields = null;
     double[] values;
 
@@ -44,7 +44,7 @@ public class ColumnMath {
         applyButton.setDisable(!ok);
     }
 
-    public Dialog<Function<Double, Double>> getDialog() {
+    public Dialog<DoubleUnaryOperator> getDialog() {
         if (dialog == null) {
             dialog = new Dialog<>();
             dialog.setTitle("Column Equation");
@@ -87,7 +87,7 @@ public class ColumnMath {
         return dialog;
     }
 
-    Function<Double, Double> getFunction() {
+    DoubleUnaryOperator getFunction() {
         getValues();
         return v -> (v+values[0]) * values[1] + values[2];
     }
