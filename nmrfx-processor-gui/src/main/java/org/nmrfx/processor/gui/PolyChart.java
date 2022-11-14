@@ -508,6 +508,7 @@ public class PolyChart extends Region implements PeakListener {
     public void setActiveChart() {
         activeChart.set(this);
         controller.setActiveChart(this);
+        currentDatasetProperty.set(getDataset());
     }
 
     public static PolyChart getActiveChart() {
@@ -518,7 +519,7 @@ public class PolyChart extends Region implements PeakListener {
         return activeChart;
     }
 
-    public SimpleObjectProperty<DatasetBase> getCurrentDatasetProperty() {
+    public static SimpleObjectProperty<DatasetBase> getCurrentDatasetProperty() {
         return currentDatasetProperty;
     }
 

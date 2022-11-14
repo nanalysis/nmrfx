@@ -24,11 +24,13 @@
         <HBox fx:id="typeToolBar" />
     </bottom>
    <top>
-      <ToolBar prefHeight="40.0" prefWidth="343.0" BorderPane.alignment="CENTER">
+      <ToolBar prefHeight="40.0" prefWidth="449.0" BorderPane.alignment="CENTER">
          <items>
             <MenuButton fx:id="fileMenuButton" mnemonicParsing="false" text="File" />
+            <Button fx:id="autoIntegrateButton" mnemonicParsing="false" text="Auto Integrate" />
             <Button fx:id="addRegionButton" mnemonicParsing="false" text="Add Region" />
             <Button fx:id="removeRegionButton" mnemonicParsing="false" text="Remove Region" />
+            <Button fx:id="removeAllButton" mnemonicParsing="false" text="Remove All" />
          </items></ToolBar>
    </top>
 </BorderPane>

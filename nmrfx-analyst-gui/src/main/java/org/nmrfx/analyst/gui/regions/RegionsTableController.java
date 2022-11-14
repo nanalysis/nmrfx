@@ -1,6 +1,8 @@
 package org.nmrfx.analyst.gui.regions;
 
 
+import javafx.beans.binding.Bindings;
+import javafx.beans.binding.BooleanBinding;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.fxml.FXML;
@@ -14,6 +16,7 @@ import javafx.scene.layout.BorderPane;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
+import org.nmrfx.analyst.gui.tools.SimplePeakRegionTool;
 import org.nmrfx.datasets.DatasetRegion;
 import org.nmrfx.datasets.DatasetRegionsListListener;
 import org.nmrfx.processor.datasets.Dataset;
@@ -45,9 +48,13 @@ public class RegionsTableController implements Initializable {
     @FXML
     private MenuButton fileMenuButton;
     @FXML
+    private Button autoIntegrateButton;
+    @FXML
     private Button addRegionButton;
     @FXML
     private Button removeRegionButton;
+    @FXML
+    private Button removeAllButton;
 
     private final ChangeListener<DatasetRegion> activeDatasetRegionListener = this::updateActiveRegion;
     private final DatasetRegionsListListener datasetRegionsListListener = this::setRegions;
@@ -92,7 +99,7 @@ public class RegionsTableController implements Initializable {
         if (chart.getDataset() != null) {
             chart.getDataset().addDatasetRegionsListListener(datasetRegionsListListener);
         }
-        chart.getCurrentDatasetProperty().addListener((observable, oldValue, newValue) -> {
+        PolyChart.getCurrentDatasetProperty().addListener((observable, oldValue, newValue) -> {
             if( oldValue != null) {
                 oldValue.removeDatasetRegionsListListener(datasetRegionsListListener);
             }
@@ -111,6 +118,18 @@ public class RegionsTableController implements Initializable {
         removeRegionButton.disableProperty().bind(regionsTable.getSelectionModel().selectedItemProperty().isNull());
         removeRegionButton.setOnAction(event -> regionsTable.removeSelectedRegion());
         addRegionButton.setOnAction(event -> addRegion());
+        autoIntegrateButton.setOnAction(event -> {
+           SimplePeakRegionTool peakRegionTool = (SimplePeakRegionTool) chart.getController().getTool(SimplePeakRegionTool.class);
+           if (peakRegionTool != null) {
+               peakRegionTool.findRegions();
+           }
+        });
+        removeAllButton.setOnAction(event -> {
+            SimplePeakRegionTool peakRegionTool = (SimplePeakRegionTool) chart.getController().getTool(SimplePeakRegionTool.class);
+            if (peakRegionTool != null) {
+                peakRegionTool.clearAnalysis(false);
+            }
+        });
 
         PolyChart.getActiveChartProperty().addListener((observable, oldValue, newValue) -> {
             chart.removeRegionListener(activeDatasetRegionListener);
@@ -118,6 +137,7 @@ public class RegionsTableController implements Initializable {
                 chart.getDataset().removeDatasetRegionsListListener(datasetRegionsListListener);
             }
             chart = newValue;
+            updateButtonBindings();
             updateActiveChartRegions();
             chart.addRegionListener(activeDatasetRegionListener);
             if (chart.getDataset() != null) {
@@ -128,16 +148,43 @@ public class RegionsTableController implements Initializable {
             }
         });
         updateActiveChartRegions();
-        selectedRowRegionsTableListener = (observable, oldValue, newValue) -> {
-            chart.selectIntegral(newValue);
-            double centre = newValue.getAvgPPM(0);
-            if (!chart.isInView(0, centre, 0.2)) {
+        selectedRowRegionsTableListener = this:: setSelectedRowRegionsTableListener;
+        regionsTable.getSelectionModel().selectedItemProperty().addListener(selectedRowRegionsTableListener);
+        updateButtonBindings();
+    }
+
+    /**
+     * Removes any previous disable property bindings for the buttons fileMenuButton, addRegionButton, autoIntegrateButton and removeAllButton,
+     * and creates a new boolean binding for each disable property using the newChart
+     */
+    private void updateButtonBindings() {
+        fileMenuButton.disableProperty().unbind();
+        addRegionButton.disableProperty().unbind();
+        autoIntegrateButton.disableProperty().unbind();
+        removeAllButton.disableProperty().unbind();
+        BooleanBinding disableButtonBinding = Bindings.createBooleanBinding(() -> PolyChart.getCurrentDatasetProperty().get() == null || PolyChart.getCurrentDatasetProperty().get().getNDim() > 1, PolyChart.getCurrentDatasetProperty());
+        fileMenuButton.disableProperty().bind(disableButtonBinding);
+        addRegionButton.disableProperty().bind(disableButtonBinding);
+        autoIntegrateButton.disableProperty().bind(disableButtonBinding);
+        removeAllButton.disableProperty().bind(disableButtonBinding);
+    }
+
+    /**
+     * Selects the integral in the chart and centres the chart view on the selected region if it is not already in view.
+     * @param observableValue The observable dataset region property from the table selection model.
+     * @param oldRegion The old selected dataset region.
+     * @param newRegion The new selected dataset region
+     */
+    private void setSelectedRowRegionsTableListener(ObservableValue<? extends DatasetRegion> observableValue, DatasetRegion oldRegion, DatasetRegion newRegion) {
+        chart.selectIntegral(newRegion);
+        if (newRegion != null) {
+            double centre = newRegion.getAvgPPM(0);
+            if (!chart.isInView(0, centre, 0.0)) {
                 Double[] positions = {centre};
                 chart.moveTo(positions);
             }
-            chart.refresh();
-        };
-        regionsTable.getSelectionModel().selectedItemProperty().addListener(selectedRowRegionsTableListener);
+        }
+        chart.refresh();
     }
 
     public void setRegions(List<DatasetRegion> regions) {
@@ -218,9 +265,9 @@ public class RegionsTableController implements Initializable {
      * on the active chart.
      */
     public void addRegion() {
+        Dataset dataset = (Dataset) chart.getDataset();
         double[] ppms = chart.getVerticalCrosshairPositions();
         DatasetRegion region = new DatasetRegion(ppms[0], ppms[1]);
-        Dataset dataset = (Dataset) chart.getDataset();
         try {
             region.measure(dataset);
         } catch (IOException e) {

@@ -184,17 +184,6 @@ public class RegionsTable extends TableView<DatasetRegion> {
     }
 
     /**
-     * Adds a region to the table and selects it.
-     * @param region The region to add
-     */
-    public void addRegion(DatasetRegion region) {
-        region.addListener(regionListener);
-        datasetRegions.add(region);
-        datasetRegions.sort(startingComparator);
-        getSelectionModel().select(region);
-    }
-
-    /**
      * Clears the current regions and updates the list with the new values.
      * @param regions The new regions to set
      */
@@ -212,15 +201,6 @@ public class RegionsTable extends TableView<DatasetRegion> {
         List<DatasetRegion> selectedRows = getSelectionModel().getSelectedItems();
         IntegralTool.getTool(chart).deleteRegion(selectedRows.get(0));
         datasetRegions.removeAll(selectedRows);
-    }
-
-    /**
-     * Removes the provided region from the regions table.
-     * @param region The region to remove
-     */
-    public void removeRegion(DatasetRegion region) {
-        datasetRegions.remove(region);
-        refresh();
     }
 
     /**
