@@ -2421,7 +2421,7 @@ public class PolyChart extends Region implements PeakListener {
         }
         for (DatasetAttributes datasetAttributes : datasetAttributesList) {
             if (datasetAttributes.projection() != -1) {
-                drawProjection(gC, datasetAttributes.projection(), (Dataset) datasetAttributes.getDataset());
+                drawProjection(gC, datasetAttributes.projection(), datasetAttributes);
             }
         }
         boolean finished = true;
@@ -2509,8 +2509,8 @@ public class PolyChart extends Region implements PeakListener {
         }
     }
 
-    public int hitBorder(double x, double y) {
-        int border = 0;
+    public ChartBorder hitBorder(double x, double y) {
+        ChartBorder border = ChartBorder.NONE;
         double xPos = getLayoutX();
         double yPos = getLayoutY();
         double width = getWidth();
@@ -2522,9 +2522,13 @@ public class PolyChart extends Region implements PeakListener {
         boolean centerY = (y > yPos + topBorder) && (y < yPos + height - bottomBorder);
         boolean bottomY = (y > yPos + height - bottomBorder) && (y < yPos + height);
         if (leftX && centerY) {
-            border = 1;
+            border = ChartBorder.LEFT;
         } else if (bottomY && centerX) {
-            border = 2;
+            border = ChartBorder.BOTTOM;
+        } else if (rightX && centerY) {
+            border = ChartBorder.RIGHT;
+        } else if (topY && centerX) {
+            border = ChartBorder.TOP;
         }
         return border;
     }
@@ -3956,10 +3960,10 @@ public class PolyChart extends Region implements PeakListener {
         }
     }
 
-    public void drawProjection(GraphicsContextInterface gC, int iAxis, Dataset dataset) {
+    public void drawProjection(GraphicsContextInterface gC, int iAxis, DatasetAttributes projectionDatasetAttributes) {
         DatasetAttributes dataAttr = datasetAttributesList.get(0);
         Bounds bounds = plotBackground.getBoundsInParent();
-        drawSpectrum.drawProjection(dataset, dataAttr, sliceAttributes, iAxis, bounds);
+        drawSpectrum.drawProjection(projectionDatasetAttributes, dataAttr, iAxis, bounds);
         double[][] xy = drawSpectrum.getXY();
         int nPoints = drawSpectrum.getNPoints();
         gC.setStroke(dataAttr.getPosColor());
@@ -4457,10 +4461,8 @@ public class PolyChart extends Region implements PeakListener {
     /**
      * Update the initial scale value for the projections to fit the highest peak to 95% of the available height.
      * If there are two projections, then the scale for the projection with the higher peak is used for both.
-     * TODO the scale should be adjusted in a better way see NMR-5831
      */
     public void updateProjectionScale() {
-        List<Double> scaleValues = new ArrayList<>();
         Optional<DatasetAttributes> initialDatasetAttr = getFirstDatasetAttributes();
         if (initialDatasetAttr.isPresent()) {
             Vec projectionVec = new Vec(32, false);
@@ -4473,16 +4475,29 @@ public class PolyChart extends Region implements PeakListener {
                         initialDatasetAttr.get().getProjection((Dataset) projectionDimAttr.get().getDataset(), projectionVec, projectionDim);
                         OptionalDouble maxValue = Arrays.stream(projectionVec.rvec).max();
                         if (maxValue.isPresent()) {
-                            scaleValues.add((borders.get(i) * 0.95) / maxValue.getAsDouble());
+                            double scaleValue = (borders.get(i) * 0.95) / maxValue.getAsDouble();
+                            projectionDimAttr.get().setProjectionScale(scaleValue);
                         }
                     }
                 }
             } catch (IOException e) {
                 log.warn("Unable to update projection scale. {}",e.getMessage(), e);
             }
-            Double actualScale = scaleValues.stream().min(Comparator.naturalOrder()).orElse(0.0);
-            sliceAttributes.setScaleValue(actualScale * initialDatasetAttr.get().getLvl());
         }
+    }
+
+    /**
+     * Updates the projection scale value by adding the scaleDelta value for the provided chart border.
+     * @param chartBorder Which chart border to adjust the scale for
+     * @param scaleDelta The amount to adjust the scale
+     */
+    public void updateProjectionScale(ChartBorder chartBorder, double scaleDelta) {
+        if (chartBorder == ChartBorder.TOP) {
+            Optional<DatasetAttributes> projectionAttr = getDatasetAttributes().stream().filter(attr -> attr.projection() == 0).findFirst();
+            projectionAttr.ifPresent(datasetAttributes -> datasetAttributes.setProjectionScale(Math.max(0, datasetAttributes.getProjectionScale() * (1 + scaleDelta))));
+        } else if (chartBorder == ChartBorder.RIGHT) {
+            Optional<DatasetAttributes> projectionAttr = getDatasetAttributes().stream().filter(attr -> attr.projection() == 1).findFirst();
+            projectionAttr.ifPresent(datasetAttributes -> datasetAttributes.setProjectionScale(Math.max(0, datasetAttributes.getProjectionScale() * (1 + scaleDelta))));}
     }
 
     /**
