@@ -24,6 +24,7 @@ import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.*;
 import org.nmrfx.processor.gui.controls.ConsoleUtil;
 import org.nmrfx.processor.gui.spectra.CrossHairs;
+import org.nmrfx.processor.gui.utils.FileUtils;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.utils.GUIUtils;
 import org.slf4j.Logger;
@@ -271,7 +272,7 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
             File regionFile = chooser.showSaveDialog(null);
             if (regionFile != null) {
                 try {
-                    analyzer.saveRegions(regionFile);
+                    analyzer.saveRegions(FileUtils.addFileExtensionIfMissing(regionFile, "txt"));
                 } catch (IOException ioE) {
                     GUIUtils.warn("Error writing regions file", ioE.getMessage());
                 }

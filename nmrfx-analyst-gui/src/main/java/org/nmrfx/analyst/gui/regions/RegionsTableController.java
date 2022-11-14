@@ -19,6 +19,7 @@ import org.nmrfx.datasets.DatasetRegionsListListener;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
+import org.nmrfx.processor.gui.utils.FileUtils;
 import org.nmrfx.utils.GUIUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -179,7 +180,7 @@ public class RegionsTableController implements Initializable {
         chooser.setTitle("Save Regions File");
         File regionFile = chooser.showSaveDialog(null);
         if (regionFile != null) {
-            DatasetRegion.saveRegions(regionFile, regionsTable.getItems());
+            DatasetRegion.saveRegions(FileUtils.addFileExtensionIfMissing(regionFile, "txt"), regionsTable.getItems());
         }
     }
 

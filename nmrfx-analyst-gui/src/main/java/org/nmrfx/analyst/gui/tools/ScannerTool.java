@@ -40,6 +40,7 @@ import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.MainApp;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.controls.FileTableItem;
+import org.nmrfx.processor.gui.utils.FileUtils;
 import org.nmrfx.utils.GUIUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -589,6 +590,7 @@ public class ScannerTool implements ControllerTool {
         File file = chooser.showSaveDialog(null);
         if (file != null) {
             try {
+                file = FileUtils.addFileExtensionIfMissing(file, "txt");
                 if (!file.exists()) {
                     boolean created = file.createNewFile();
                     if (!created) {
