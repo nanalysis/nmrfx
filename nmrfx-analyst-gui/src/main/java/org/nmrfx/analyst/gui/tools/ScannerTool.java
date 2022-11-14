@@ -134,8 +134,10 @@ public class ScannerTool implements ControllerTool {
         purgeInactiveItem.setOnAction(e -> purgeInactive());
         MenuItem loadFromDatasetItem = new MenuItem("Load From Dataset");
         loadFromDatasetItem.setOnAction(e -> loadFromDataset());
+        MenuItem loadColumnMenuItem = new MenuItem("Load Column");
+        loadColumnMenuItem.setOnAction(e -> loadColumn());
         menu.getItems().addAll(scanMenuItem, openTableItem, saveTableItem,
-                purgeInactiveItem, loadFromDatasetItem);
+                purgeInactiveItem, loadFromDatasetItem, loadColumnMenuItem);
         return menu;
     }
 
@@ -583,6 +585,89 @@ public class ScannerTool implements ControllerTool {
                 Alert alert = new Alert(Alert.AlertType.ERROR);
                 alert.setContentText("Couldn't save file");
                 alert.showAndWait();
+            }
+        }
+    }
+
+    List<Double> toDoubleList(List<String> values) {
+        List<Double> doubleValues = new ArrayList<>();
+        for (var s:values) {
+            try {
+                double dValue = Double.parseDouble(s);
+                doubleValues.add(dValue);
+            } catch (NumberFormatException nfE) {
+                doubleValues.clear();
+                break;
+            }
+        }
+        return doubleValues;
+    }
+
+    List<Integer> toIntegerList(List<String> values) {
+        List<Integer> intValues = new ArrayList<>();
+        for (var s:values) {
+            try {
+                int iValue = Integer.parseInt(s);
+                intValues.add(iValue);
+            } catch (NumberFormatException nfE) {
+                intValues.clear();
+                break;
+            }
+        }
+        return intValues;
+    }
+
+    private void loadColumn() {
+        FileChooser chooser = new FileChooser();
+        File file = chooser.showOpenDialog(null);
+        if (file != null) {
+            String newColumnName = file.getName();
+            int dot = newColumnName.indexOf(".");
+            if (dot != -1) {
+                newColumnName = newColumnName.substring(0, dot);
+            }
+            newColumnName = GUIUtils.input("New column name", newColumnName);
+            if (newColumnName == null) {
+                return;
+            }
+            List<String> values = new ArrayList<>();
+            try (BufferedReader reader = Files.newBufferedReader(file.toPath())) {
+                while (true) {
+                    String s = reader.readLine();
+                    if (s == null) {
+                        break;
+                    }
+                    s = s.trim();
+                    if (s.startsWith("#")) {
+                        continue;
+                    }
+                    values.add(s);
+                }
+            } catch (IOException ex) {
+                Alert alert = new Alert(Alert.AlertType.ERROR);
+                alert.setContentText("Couldn't read file");
+                alert.showAndWait();
+                return;
+            }
+            List<FileTableItem> items = scanTable.getItems();
+            if (items.size() == values.size()) {
+                List<Double> dValues = toDoubleList(values);
+                List<Integer> iValues = toIntegerList(values);
+                int i = 0;
+                String type = "S";
+                for (FileTableItem item : items) {
+                    if (!dValues.isEmpty()) {
+                        item.setExtra(newColumnName, dValues.get(i++));
+                        type = "D";
+                    } else if (!iValues.isEmpty()) {
+                        item.setExtra(newColumnName, iValues.get(i++));
+                        type = "I";
+                    } else {
+                        item.setExtra(newColumnName, values.get(i++));
+                    }
+                }
+                scanTable.addTableColumn(newColumnName, type);
+                scanTable.refresh();
             }
         }
     }

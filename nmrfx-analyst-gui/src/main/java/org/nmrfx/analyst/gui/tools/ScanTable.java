@@ -951,7 +951,8 @@ public class ScanTable {
 
     private void setColumnGraphic(TableColumn column) {
         String text = column.getText().toLowerCase();
-        if (isGroupable(text)) {
+        String type = columnTypes.get(column.getText());
+        if (!"D".equals(type) && isGroupable(text)) {
             boolean isGrouped = groupNames.contains(text);
             boolean isFiltered = isFiltered(column);
             StackPane stackPane = new StackPane();
@@ -969,7 +970,7 @@ public class ScanTable {
             rect.setOnMouseReleased(Event::consume);
             rect.setOnMouseClicked(Event::consume);
             column.setGraphic(stackPane);
-        } else if (isData(text)) {
+        } else if ("D".equals(type) || isData(text)) {
             StackPane stackPane = new StackPane();
             Rectangle rect = new Rectangle(10, 10);
             Line line1 = new Line(1, 1, 10, 10);
