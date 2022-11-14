@@ -129,6 +129,11 @@ public class RegionsTableController implements Initializable {
         updateActiveChartRegions();
         selectedRowRegionsTableListener = (observable, oldValue, newValue) -> {
             chart.selectIntegral(newValue);
+            double centre = newValue.getAvgPPM(0);
+            if (!chart.isInView(0, centre, 0.2)) {
+                Double[] positions = {centre};
+                chart.moveTo(positions);
+            }
             chart.refresh();
         };
         regionsTable.getSelectionModel().selectedItemProperty().addListener(selectedRowRegionsTableListener);

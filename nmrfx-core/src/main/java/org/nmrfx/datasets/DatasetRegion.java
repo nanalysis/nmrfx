@@ -319,6 +319,10 @@ public class DatasetRegion implements Comparator, Comparable {
         updateAllListeners();
     }
 
+    public double getAvgPPM(int dim) {
+        return (getRegionStart(dim) + getRegionEnd(0)) / 2;
+    }
+
     public double getRegionStartIntensity(int dim) {
         if (dim >= getNDims()) {
             throw new IllegalArgumentException("Invalid dimension");
