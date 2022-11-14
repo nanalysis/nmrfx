@@ -391,6 +391,7 @@ public class TablePlotGUI {
                     items.add(name);
                 }
             }
+            xArrayChoice.getItems().clear();
             xArrayChoice.getItems().addAll(columnNames);
             if (!xArrayChoice.getItems().isEmpty()) {
                 xArrayChoice.setValue(xArrayChoice.getItems().get(0));
