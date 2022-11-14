@@ -821,59 +821,8 @@ public class FXMLController implements  Initializable, PeakNavigable {
         });
     }
 
-    @FXML
-    public void showSpecAttrAction(ActionEvent event) {
-        if (specAttrWindowController == null) {
-            if (popOverMode) {
-                specAttrWindowController = SpecAttrWindowController.createPane();
-            } else {
-                specAttrWindowController = SpecAttrWindowController.create();
-            }
-        }
-        if (specAttrWindowController != null) {
-            if (popOverMode) {
-                showAttributesPopOver(event);
-            } else {
-                specAttrWindowController.getStage().show();
-                stage.setResizable(true);
-                stage.toFront();
-            }
-        } else {
-            log.warn("Couldn't make controller");
-        }
-    }
-
     public void saveAsFavorite() {
         WindowIO.saveFavorite();
-    }
-
-    void showAttributesPopOver(ActionEvent event) {
-        Pane pane = specAttrWindowController.getPane();
-        if (attributesPopOver == null) {
-            attributesPopOver = new PopOver(pane);
-        }
-        specAttrWindowController.setPopOver(attributesPopOver);
-        attributesPopOver.setDetachable(true);
-        attributesPopOver.setTitle("Spectrum Attributes");
-        attributesPopOver.setHeaderAlwaysVisible(true);
-        attributesPopOver.setArrowLocation(PopOver.ArrowLocation.TOP_CENTER);
-        attributesPopOver.detachedProperty().addListener(e -> popOverDetached());
-        specAttrWindowController.hideToolBar();
-        Object obj = event.getSource();
-        if (obj instanceof Node) {
-            attributesPopOver.show((Node) event.getSource());
-        } else {
-            // fixme attributesPopOver.show(getActiveChart());
-
-        }
-    }
-
-    private void popOverDetached() {
-        if (attributesPopOver.isDetached()) {
-            specAttrWindowController.showToolBar();
-        } else {
-            specAttrWindowController.hideToolBar();
-        }
     }
 
     @FXML
