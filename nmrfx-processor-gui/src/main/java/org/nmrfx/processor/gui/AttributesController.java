@@ -1057,6 +1057,26 @@ public class AttributesController implements Initializable {
         disDimCombo.setValue(chart.disDimProp.getValue());
 
     }
+    void updateDims() {
+        // fix me is this right
+        int start = 0;
+        if (!chart.getDatasetAttributes().isEmpty()) {
+            DatasetAttributes datasetAttr = chart.datasetAttributesList.get(0);
+            for (int i = 0; i < chart.getNDim(); i++) {
+                if ((i < 2) && (dimCombos[i] != null)) {
+                    dimCombos[i].getSelectionModel().select(datasetAttr.dim[i]);
+                }
+                axisLabels[i].setText(chart.axModes[i].getDatasetLabel(datasetAttr, i));
+            }
+            start = chart.getNDim();
+        }
+        for (int i = start; i < limitFields.length; i++) {
+            limitFields[i][0].set("");
+            limitFields[i][1].set("");
+            axisLabels[i].setText("");
+
+        }
+    }
 
     public void update() {
         if (isShowing()) {

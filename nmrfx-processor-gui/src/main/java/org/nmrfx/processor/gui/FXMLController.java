@@ -132,7 +132,6 @@ public class FXMLController implements  Initializable, PeakNavigable {
 
     ChartProcessor chartProcessor;
     DocWindowController dwc = null;
-    static SpecAttrWindowController specAttrWindowController = null;
     static boolean popOverMode = false;
     static PeakAttrController peakAttrController = null;
     Stage stage = null;
@@ -337,9 +336,6 @@ public class FXMLController implements  Initializable, PeakNavigable {
             }
         }
         updateSpectrumStatusBarOptions();
-        if (specAttrWindowController != null) {
-            specAttrWindowController.setChart(activeChart);
-        }
         if (attributesController != null) {
             attributesController.setChart(activeChart);
         }
@@ -1012,8 +1008,8 @@ public class FXMLController implements  Initializable, PeakNavigable {
     }
 
     public void updateAttrDims() {
-        if (specAttrWindowController != null) {
-            specAttrWindowController.updateDims();
+        if (attributesController != null) {
+            attributesController.updateDims();
         }
     }
 
@@ -1133,9 +1129,6 @@ public class FXMLController implements  Initializable, PeakNavigable {
 
     public void setActiveController() {
         activeController.set(this);
-        if (specAttrWindowController != null) {
-            specAttrWindowController.update();
-        }
         if (attributesController != null) {
             attributesController.update();
         }
