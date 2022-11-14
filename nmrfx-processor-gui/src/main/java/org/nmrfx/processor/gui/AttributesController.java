@@ -646,10 +646,13 @@ public class AttributesController implements Initializable {
                 }
                 chart.disDimProp.set(PolyChart.DISDIM.OneDX);
                 fxmlController.getStatusBar().set1DArray(maxNDim.getAsInt(), maxRows.getAsInt());
-
+                if (maxRows.isPresent() && (maxRows.getAsInt() > 1)) {
+                    chart.setDrawlist(0);
+                }
             } else if (selected == TwoD) {
                 chart.disDimProp.set(PolyChart.DISDIM.TwoD);
                 fxmlController.getStatusBar().setMode(maxNDim.getAsInt());
+                chart.clearDrawlist();
             }
             chart.full();
             chart.autoScale();
