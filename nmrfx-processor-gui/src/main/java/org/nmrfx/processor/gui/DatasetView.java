@@ -26,14 +26,14 @@ import java.util.Optional;
 
 public class DatasetView {
     FXMLController fxmlController;
-    AttributesController attributesController;
+    ContentController attributesController;
     ListSelectionView<String> datasetView;
     ListChangeListener<String> datasetTargetListener;
     Integer startIndex = null;
     boolean moveItemIsSelected = false;
     Node startNode = null;
 
-    public DatasetView(FXMLController fxmlController, AttributesController controller) {
+    public DatasetView(FXMLController fxmlController, ContentController controller) {
         this.fxmlController = fxmlController;
         this.attributesController = controller;
         datasetView = controller.datasetView;

@@ -18,7 +18,6 @@ import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.util.Duration;
-import org.controlsfx.control.ListSelectionView;
 import org.controlsfx.control.RangeSlider;
 import org.nmrfx.processor.gui.controls.ConsoleUtil;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
@@ -33,10 +32,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.net.URL;
 import java.text.DecimalFormat;
-import java.util.Collections;
-import java.util.List;
-import java.util.OptionalInt;
-import java.util.ResourceBundle;
+import java.util.*;
 
 import static org.nmrfx.processor.gui.PolyChart.DISDIM.OneDX;
 import static org.nmrfx.processor.gui.PolyChart.DISDIM.TwoD;
@@ -48,8 +44,13 @@ public class AttributesController implements Initializable {
     static {
         FORMATTER.setMaximumFractionDigits(3);
     }
+    enum SelectionChoice {
+        DATASET,
+        CHART,
+        SCENE
+    }
     @FXML
-    CheckBox datasetChoiceState;
+    ChoiceBox<SelectionChoice> datasetChoiceState;
     @FXML
     ChoiceBox<DatasetAttributes> datasetChoiceBox;
     @FXML
@@ -62,8 +63,6 @@ public class AttributesController implements Initializable {
     TitledPane oneDPane;
     @FXML
     TitledPane integralsPane;
-    @FXML
-    ListSelectionView<String> datasetView;
     @FXML
     private VBox viewGrid;
     @FXML
@@ -245,7 +244,6 @@ public class AttributesController implements Initializable {
     static String[] rowNames = {"X", "Y", "Z", "A", "B", "C"};
     Label[] axisLabels;
 
-    DatasetView datasetViewController;
     FXMLController fxmlController;
     Pane pane;
 
@@ -260,8 +258,11 @@ public class AttributesController implements Initializable {
             controller.fxmlController = fxmlController;
             controller.pane = pane;
             controller.sliceStatusCheckBox.selectedProperty().bindBidirectional(fxmlController.sliceStatus);
-            controller.datasetViewController = new DatasetView(fxmlController, controller);
-            controller.datasetChoiceBox.disableProperty().bind(controller.datasetChoiceState.selectedProperty().not());
+            controller.datasetChoiceState.getItems().addAll(SelectionChoice.values());
+            controller.datasetChoiceState.setValue(SelectionChoice.CHART);
+            controller.datasetChoiceBox.disableProperty()
+                    .bind(controller.datasetChoiceState.valueProperty().isNotEqualTo(SelectionChoice.DATASET));
+            controller.setChart(fxmlController.getActiveChart());
 
             return controller;
         } catch (IOException ioE) {
@@ -501,15 +502,23 @@ public class AttributesController implements Initializable {
     }
 
     private List<DatasetAttributes> getDatasetAttributes() {
-        if (datasetChoiceState.isSelected()) {
+        List<DatasetAttributes> result;
+        if (datasetChoiceState.getValue() == SelectionChoice.DATASET) {
             if (datasetChoiceBox.getItems().isEmpty()) {
-                return Collections.EMPTY_LIST;
+                result = Collections.EMPTY_LIST;
             } else {
-                return List.of(datasetChoiceBox.getValue());
+                result = List.of(datasetChoiceBox.getValue());
             }
+        } else if (datasetChoiceState.getValue() == SelectionChoice.SCENE) {
+            result = new ArrayList<>();
+            for (var controllerChart : fxmlController.getCharts()) {
+                result.addAll(controllerChart.getDatasetAttributes());
+            }
+
         } else {
-            return chart.getDatasetAttributes();
+            result = chart.getDatasetAttributes();
         }
+        return result;
     }
 
     private void createViewGrid() {
@@ -1079,7 +1088,7 @@ public class AttributesController implements Initializable {
     }
 
     public void update() {
-        if (isShowing()) {
+        if ((chart != null) && isShowing()) {
             updateDim();
             chart = fxmlController.getActiveChart();
             chart.setChartDisabled(true);
@@ -1093,7 +1102,6 @@ public class AttributesController implements Initializable {
             updatePeakColor(true);
             updatePeakColor(false);
             updatePeakDisplayComboBoxes();
-            datasetViewController.updateDatasetView();
             //disDimCombo.setValue(OneDX);
 
 //            updatePeakListTableView(false);

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import org.controlsfx.control.RangeSlider?>
+<?import org.controlsfx.control.ListSelectionView?>
+<VBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="org.nmrfx.processor.gui.ContentController"
+>
+    <children>
+        <Accordion fx:id="contentAccordion" maxWidth="225">
+            <panes>
+                <TitledPane text="Datasets">
+                    <VBox>
+                        <children>
+                            <ListSelectionView fx:id="datasetView" orientation="VERTICAL" prefHeight="400"/>
+                        </children>
+                    </VBox>
+                </TitledPane>
+                <TitledPane text="Peaks">
+                    <VBox>
+                        <children>
+                            <ListSelectionView fx:id="peakView" orientation="VERTICAL" prefHeight="400"/>
+                        </children>
+                    </VBox>
+                </TitledPane>
+            </panes>
+        </Accordion>
+    </children>
+</VBox>

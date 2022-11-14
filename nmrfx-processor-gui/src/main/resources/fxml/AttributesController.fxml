@@ -10,19 +10,17 @@
       fx:controller="org.nmrfx.processor.gui.AttributesController"
 >
     <children>
-        <HBox spacing="5">
-            <CheckBox fx:id="datasetChoiceState" />
+        <VBox spacing="5">
+            <HBox spacing="5" alignment="CENTER">
+                <children>
+                    <Label text="Apply to:"/>
+                    <ChoiceBox fx:id="datasetChoiceState" />
+                </children>
+            </HBox>
             <ChoiceBox fx:id="datasetChoiceBox" maxWidth="225"/>
-        </HBox>
+        </VBox>
         <Accordion fx:id="attributesAccordion" maxWidth="225">
             <panes>
-                <TitledPane text="Datasets">
-                    <VBox>
-                        <children>
-                            <ListSelectionView fx:id="datasetView" orientation="VERTICAL" prefHeight="400"/>
-                        </children>
-                    </VBox>
-                </TitledPane>
                 <TitledPane text="View">
                     <VBox>
                         <children>

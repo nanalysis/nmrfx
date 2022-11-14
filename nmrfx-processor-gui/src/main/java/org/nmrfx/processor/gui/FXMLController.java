@@ -169,7 +169,9 @@ public class FXMLController implements  Initializable, PeakNavigable {
     private BooleanProperty minBorders;
     Phaser phaser;
     Pane attributesPane;
+    Pane contentPane;
     AttributesController attributesController;
+    ContentController contentController;
     Set<ControllerTool> tools = new HashSet<>();
     SimpleBooleanProperty processControllerVisible = new SimpleBooleanProperty(false);
     SimpleObjectProperty<Cursor> cursorProperty = new SimpleObjectProperty<>(Cursor.CROSSHAIR);
@@ -280,7 +282,11 @@ public class FXMLController implements  Initializable, PeakNavigable {
         return rightBox.getChildren().contains(attributesPane);
     }
 
-    private void toggleSideBarAttributes(ToggleButton phaserButton, ToggleButton attributesButton) {
+    public boolean isContentPaneShowing() {
+        return rightBox.getChildren().contains(contentPane);
+    }
+
+    private void toggleSideBarAttributes(ToggleButton phaserButton, ToggleButton attributesButton, ToggleButton contentButton) {
         rightBox.getChildren().clear();
         if (phaserButton.isSelected()) {
             rightBox.add(phaserBox, 0, 0);
@@ -292,6 +298,9 @@ public class FXMLController implements  Initializable, PeakNavigable {
         } else if (attributesButton.isSelected()) {
             rightBox.add(attributesPane, 0, 0);
             attributesController.update();
+        } else if (contentButton.isSelected()) {
+            rightBox.add(contentPane, 0, 0);
+            contentController.update();
         }
     }
 
@@ -338,6 +347,9 @@ public class FXMLController implements  Initializable, PeakNavigable {
         updateSpectrumStatusBarOptions();
         if (attributesController != null) {
             attributesController.setChart(activeChart);
+        }
+        if (contentController != null) {
+            contentController.setChart(activeChart);
         }
         if (statusBar != null) {
             statusBar.setChart(activeChart);
@@ -1279,6 +1291,9 @@ public class FXMLController implements  Initializable, PeakNavigable {
         attributesPane = new AnchorPane();
         attributesController =  AttributesController.create(this, attributesPane);
 
+        contentPane = new AnchorPane();
+        contentController =  ContentController.create(this, contentPane);
+
     }
 
     public BorderPane getMainBox() {
@@ -1558,11 +1573,14 @@ public class FXMLController implements  Initializable, PeakNavigable {
 
         ToggleButton phaserButton = new ToggleButton("Phasing");
         ToggleButton attributesButton = new ToggleButton("Attributes");
-        attributesButton.setOnAction(e -> toggleSideBarAttributes(phaserButton, attributesButton));
-        phaserButton.setOnAction(e -> toggleSideBarAttributes(phaserButton, attributesButton));
+        ToggleButton contentButton = new ToggleButton("Content");
+        attributesButton.setOnAction(e -> toggleSideBarAttributes(phaserButton, attributesButton, contentButton));
+        contentButton.setOnAction(e -> toggleSideBarAttributes(phaserButton, attributesButton, contentButton));
+        phaserButton.setOnAction(e -> toggleSideBarAttributes(phaserButton, attributesButton,contentButton));
         phaserButton.getStyleClass().add("toolButton");
         attributesButton.getStyleClass().add("toolButton");
-        SegmentedButton groupButton = new SegmentedButton(phaserButton, attributesButton);
+        contentButton.getStyleClass().add("toolButton");
+        SegmentedButton groupButton = new SegmentedButton(phaserButton, contentButton, attributesButton);
 
 
         for (Node node : buttons) {
