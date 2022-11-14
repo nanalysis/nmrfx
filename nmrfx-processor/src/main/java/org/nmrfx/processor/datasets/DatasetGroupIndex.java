@@ -65,7 +65,7 @@ public class DatasetGroupIndex {
     }
 
     public String toString() {
-        return toIndexString();
+        return toIndexString().replace("-1", "*");
     }
 
     public int[] getIndices() {
