@@ -250,7 +250,7 @@ public class AttributesController implements Initializable {
     Pane pane;
 
     public static AttributesController create(FXMLController fxmlController, Pane processorPane) {
-        FXMLLoader loader = new FXMLLoader(SpecAttrWindowController.class.getResource("/fxml/AttributesController.fxml"));
+        FXMLLoader loader = new FXMLLoader(AttributesController.class.getResource("/fxml/AttributesController.fxml"));
         final AttributesController controller;
         try {
             Pane pane = loader.load();
