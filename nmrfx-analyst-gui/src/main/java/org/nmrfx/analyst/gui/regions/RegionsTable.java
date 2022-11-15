@@ -170,13 +170,14 @@ public class RegionsTable extends TableView<DatasetRegion> {
      */
     private void regionBoundChanged(TableColumn.CellEditEvent<DatasetRegion, Double> event) {
         double newRegionBound = event.getNewValue() != null ? event.getNewValue() : event.getOldValue();
+        DatasetRegion regionChanged = event.getRowValue();
         if (event.getTableColumn().getText().equals(REGION_START_COLUMN_NAME)) {
-            event.getRowValue().setRegionStart(0, newRegionBound);
+            regionChanged.setRegionStart(0, newRegionBound);
         } else {
-            event.getRowValue().setRegionEnd(0, newRegionBound);
+            regionChanged.setRegionEnd(0, newRegionBound);
         }
         try {
-            event.getRowValue().measure(chart.getDataset());
+            regionChanged.measure(chart.getDataset());
         } catch (IOException e) {
             log.warn("Error measuring new region bounds. {}", e.getMessage(), e);
         }
