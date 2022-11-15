@@ -888,7 +888,7 @@ public interface NMRData {
         return result;
     }
 
-    public default void addSkipGroup(int[] indices, int realImaginaryChoice) {
+    public default void addSkipGroup(int[] indices, String realImaginaryChoice) {
         DatasetGroupIndex newGroup = new DatasetGroupIndex(indices, realImaginaryChoice);
         List<DatasetGroupIndex> currentIndices = getSkipGroups();
         if (!currentIndices.contains(newGroup)) {

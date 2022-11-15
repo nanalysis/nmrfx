@@ -1,30 +1,33 @@
 package org.nmrfx.processor.datasets;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.math3.util.MultidimensionalCounter;
+
 import java.util.*;
 
 public class DatasetGroupIndex {
     final int[] indices;
-    final int groupIndex;
+    final String groupIndex;
 
-    public DatasetGroupIndex(int[] indices, int groupIndex) {
+    public DatasetGroupIndex(int[] indices, String groupIndex) {
         this.indices = indices.clone();
         this.groupIndex = groupIndex;
     }
 
+    // parse DatasetGroupIndex in format like 4,7,"RI"
     public DatasetGroupIndex(String strValue) {
         String[] fields = strValue.split(",");
         indices = new int[fields.length - 1];
-        int lastValue = -1;
+        String lastValue = "";
         for (int i = 0; i < fields.length; i++) {
-            int value = Integer.parseInt(fields[i]);
             if (i < indices.length) {
+                int value = Integer.parseInt(fields[i]);
                 if (value > 0) {
                     value--;
                 }
                 indices[i] = value;
             } else {
-                lastValue = value;
+                lastValue = StringUtils.strip(fields[i],"'\"");
                 break;
             }
         }
@@ -60,7 +63,7 @@ public class DatasetGroupIndex {
             }
             sBuilder.append(index);
         }
-        sBuilder.append(",").append(groupIndex);
+        sBuilder.append(",").append("'").append(groupIndex).append("'");
         return sBuilder.toString();
     }
 
@@ -72,10 +75,13 @@ public class DatasetGroupIndex {
         return indices;
     }
 
-    public int getGroupIndex() {
+    public String getGroupIndex() {
         return groupIndex;
     }
 
+    // build string for putting in process.py script markrows command
+    // looks like "[3,4,"RI"],[5,10,"RR"], where the numbers are row, plane,... and the
+    // string is the real /imaginary state of the vector where highest deviation was found
     public static Optional<String> getSkipString(Collection<DatasetGroupIndex> groups) {
         Optional<String> result = Optional.empty();
         if (!groups.isEmpty()) {

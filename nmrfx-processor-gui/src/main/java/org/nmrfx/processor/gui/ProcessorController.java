@@ -1331,9 +1331,8 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         }
     }
 
-    int getRealImaginaryChoice() {
-        String text = realImagChoiceBox.getValue();
-        return realImagChoices.indexOf(text);
+    String getRealImaginaryChoice() {
+        return realImagChoiceBox.getValue();
     }
 
     @FXML
@@ -1373,9 +1372,9 @@ public class ProcessorController implements Initializable, ProgressUpdater {
                 updateRowLabels(iDim + 1, indices[iDim]);
             }
             int[] rows = getRows();
-            int index = groupIndex.getGroupIndex();
-            if (index >= 0) {
-                realImagChoiceBox.setValue(realImagChoices.get(index));
+            String realImagChoice = groupIndex.getGroupIndex();
+            if (!realImagChoice.equals("")) {
+                realImagChoiceBox.setValue(realImagChoice);
             }
             chartProcessor.vecRow(rows);
         }
@@ -1477,6 +1476,10 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         clearCorruptedIndex();
         NMRData nmrData = getNMRData();
         if (nmrData != null) {
+            if (nmrData.getSampleSchedule() != null) {
+                GUIUtils.warn("Corruption Scan", "Can't scan a NUS dataset");
+                return;
+            }
             double ratio = scanRatio.getValue();
             int scanN = scanMaxN.getValue();
             List<ChartProcessor.VecIndexScore> indices = chartProcessor.scanForCorruption(ratio, scanN);
@@ -1489,7 +1492,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
                 for (int i = 0; i < groupIndices.length; i++) {
                     groupIndices[i] = outVec[i + 1][0] / 2;
                 }
-                DatasetGroupIndex groupIndex = new DatasetGroupIndex(groupIndices, maxIndex);
+                DatasetGroupIndex groupIndex = new DatasetGroupIndex(groupIndices, realImagChoices.get(maxIndex));
                 nmrData.addSkipGroup(groupIndex);
             }
         }
@@ -1507,7 +1510,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         }
         NMRData nmrData = getNMRData();
         if (nmrData != null) {
-            nmrData.addSkipGroup(rows, -1);
+            nmrData.addSkipGroup(rows, "");
         }
         updateSkipIndices();
     }
@@ -1531,7 +1534,9 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         NMRData nmrData = getNMRData();
         if (nmrData != null) {
             int index = corruptedIndicesListView.getSelectionModel().getSelectedIndex();
-            nmrData.getSkipGroups().remove(index);
+            if (index >= 0) {
+                nmrData.getSkipGroups().remove(index);
+            }
         }
         updateSkipIndices();
     }
