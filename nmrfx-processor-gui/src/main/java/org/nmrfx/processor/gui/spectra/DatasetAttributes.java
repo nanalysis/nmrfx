@@ -571,16 +571,12 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
         projectionAxis = value;
     }
 
+    public boolean isProjection() {
+        return projectionAxis != -1;
+    }
+
     public int projection() {
         return projectionAxis;
-    }
-
-    public void setProjectionScale(double projectionScale) {
-        this.projectionScale = projectionScale;
-    }
-
-    public double getProjectionScale() {
-        return projectionScale;
     }
 
     private StringProperty fileName;
@@ -698,7 +694,6 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
     public boolean selected;
     public boolean intSelected;
     private int projectionAxis = -1;
-    private double projectionScale = 1.0;
     public String title = "";
 
     public DatasetAttributes(DatasetBase aFile, String fileName) {
@@ -936,8 +931,8 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
         dimC[0] = 0;
         ptC[0][0] = dataset.ppmToPoint(0, ppm0);
         ptC[0][1] = dataset.ppmToPoint(0, ppm1);
-        specVec.resize(ptC[0][1] - ptC[0][0] + 1, dataset.getComplex_r(0));
-        dataset.readVectorFromDatasetFile(ptC, dimC, specVec);
+        specVec.resize(ptC[0][1] - ptC[0][0] + 1, dataset.getComplex(0));
+        dataset.readVectorFromDatasetFile(DatasetUtils.generateRawIndices(ptC, dataset.getComplex(0)), dimC, specVec);
     }
 
     public boolean getSlice(Vec specVec, int iDim, double ppmx, double ppmy) throws IOException {

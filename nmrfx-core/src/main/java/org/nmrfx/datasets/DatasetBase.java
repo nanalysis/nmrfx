@@ -8,16 +8,18 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.nio.ByteOrder;
 import java.util.*;
 
 public class DatasetBase {
     private static final Logger log = LoggerFactory.getLogger(DatasetBase.class);
 
-    public final static int NV_HEADER_SIZE = 2048;
-    public final static int UCSF_HEADER_SIZE = 180;
-    public final static int LABEL_MAX_BYTES = 16;
-    public final static int SOLVENT_MAX_BYTES = 24;
+    public static final int NV_HEADER_SIZE = 2048;
+    public static final int UCSF_HEADER_SIZE = 180;
+    public static final int LABEL_MAX_BYTES = 16;
+    public static final int SOLVENT_MAX_BYTES = 24;
+    public static final String DATASET_PROJECTION_TAG = "_proj_";
     public DatasetLayout layout = null;
     /**
      *
@@ -777,6 +779,26 @@ public class DatasetBase {
         if (file != null) {
             DatasetParameterFile parFile = new DatasetParameterFile(this, layout);
             parFile.writeFile();
+        }
+    }
+
+    /**
+     * Write the data values to a file. Only works if the dataset values are in
+     * a Vec object (not dataset file)
+     *
+     * @param newFile New file to write to
+     * @throws java.io.IOException if an I/O error ocurrs
+     */
+    public void writeVecMat(File newFile) throws IOException {
+        if (vecMat == null) {
+            log.info("Vector Matrix is null. Unable to write file");
+            return;
+        }
+        try (RandomAccessFile outFile = new RandomAccessFile(newFile, "rw")) {
+            byte[] buffer = vecMat.getBytes();
+            DatasetHeaderIO headerIO = new DatasetHeaderIO(this);
+            headerIO.writeHeader(layout, outFile);
+            DataUtilities.writeBytes(outFile, buffer, layout.getFileHeaderSize(), buffer.length);
         }
     }
 

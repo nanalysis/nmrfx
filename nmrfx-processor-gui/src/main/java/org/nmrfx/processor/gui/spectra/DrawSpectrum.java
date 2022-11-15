@@ -806,17 +806,16 @@ public class DrawSpectrum {
         boolean drawReal = datasetAttr.getDrawReal();
         try {
             datasetAttr.getProjection((Dataset) projectionDatasetAttributes.getDataset(), sliceVec, sliceDim);
-            double scale = -projectionDatasetAttributes.getProjectionScale();
+            double lvlMult = projectionDatasetAttributes.getLvl();
             if (sliceDim == 0) {
                 double offset = axes[0].getYOrigin() - axes[1].getHeight() * 1.005;
                 drawVector(sliceVec, orientation, 0, AXMODE.PPM, drawReal, 0.0, 0.0, null,
                         (index, intensity) -> axes[0].getDisplayPosition(index),
-                        (index, intensity) -> intensity * scale + offset, false, false);
+                        (index, intensity) -> -intensity / lvlMult + offset, false, false);
             } else {
                 double offset = axes[0].getXOrigin() + axes[0].getWidth() * 1.005;
-
                 drawVector(sliceVec, orientation, 0, AXMODE.PPM, drawReal, 0.0, 0.0, null,
-                        (index, intensity) -> -intensity * scale + offset,
+                        (index, intensity) -> intensity / lvlMult + offset,
                         (index, intensity) -> axes[1].getDisplayPosition(index), false, false);
             }
         } catch (IOException ioE) {
