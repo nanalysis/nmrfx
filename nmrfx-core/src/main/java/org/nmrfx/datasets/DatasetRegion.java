@@ -47,6 +47,10 @@ public class DatasetRegion implements Comparator, Comparable {
     public static boolean isLongRegionFile(File file) throws IOException {
         try (BufferedReader reader = Files.newBufferedReader(file.toPath())) {
             String firstLine = reader.readLine();
+            if (firstLine == null) {
+                // The file is empty, can be assumed to be a long region file
+                return true;
+            }
             firstLine = firstLine.trim();
             String[] fields = firstLine.split("\\s+");
             // The first line should be a header with at least 8 fields and the first two fields should start with pos
