@@ -179,7 +179,7 @@ public class RegionsTableController implements Initializable {
         chart.selectIntegral(newRegion);
         if (newRegion != null) {
             double centre = newRegion.getAvgPPM(0);
-            if (!chart.isInView(0, centre, 0.0)) {
+            if (!chart.isInView(0, centre, 0.2)) {
                 Double[] positions = {centre};
                 chart.moveTo(positions);
             }
