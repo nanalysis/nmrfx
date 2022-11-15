@@ -11,6 +11,7 @@ import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.analyst.gui.annotations.AnnoJournalFormat;
 import org.nmrfx.analyst.gui.molecule.MoleculeUtils;
+import org.nmrfx.analyst.gui.regions.RegionsTableController;
 import org.nmrfx.analyst.peaks.Analyzer;
 import org.nmrfx.analyst.peaks.JournalFormat;
 import org.nmrfx.analyst.peaks.JournalFormatPeaks;
@@ -59,6 +60,9 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
         var regionButton = new SplitMenuButton();
         regionButton.setText("Integrate");
 
+        MenuItem openRegionsTableItem = new MenuItem("Show Regions Table");
+        openRegionsTableItem.setOnAction(e -> RegionsTableController.getRegionsTableController().show());
+
         MenuItem clearRegionsItem = new MenuItem("Clear");
         clearRegionsItem.setOnAction(e -> clearAnalysis(true));
 
@@ -74,7 +78,7 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
         MenuItem loadRegionsMenuItem = new MenuItem("Load Regions");
         loadRegionsMenuItem.setOnAction(e -> loadRegions());
 
-        regionButton.getItems().addAll(clearRegionsItem, saveRegionsMenuItem, loadRegionsMenuItem,
+        regionButton.getItems().addAll(openRegionsTableItem, clearRegionsItem, saveRegionsMenuItem, loadRegionsMenuItem,
                 thresholdMenuItem, clearThresholdMenuItem);
         regionButton.setOnAction(e -> findRegions());
 

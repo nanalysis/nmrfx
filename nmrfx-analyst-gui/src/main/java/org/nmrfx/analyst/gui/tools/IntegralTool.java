@@ -74,9 +74,6 @@ public class IntegralTool {
         Button deleteItem = new Button("Delete", IconUtilities.getIcon("editdelete"));
         deleteItem.setOnAction(e -> deleteRegion());
         buttons.add(deleteItem);
-        Button regionsTable = GlyphsDude.createIconButton(FontAwesomeIcon.TABLE, "Table", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
-        regionsTable.setOnAction(e -> RegionsTableController.getRegionsTableController().show());
-        buttons.add(regionsTable);
         for (Button button1 : buttons) {
             button1.setContentDisplay(ContentDisplay.TOP);
             button1.setStyle("-fx-font-size:" + MainApp.ICON_FONT_SIZE_STR);
