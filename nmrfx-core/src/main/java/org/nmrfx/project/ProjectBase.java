@@ -491,7 +491,12 @@ public class ProjectBase {
     private void loadRegions(String regionFileStr, DatasetBase dataset, boolean resetNorm) throws IOException {
         File regionFile = DatasetRegion.getRegionFile(regionFileStr);
         if (regionFile.canRead()) {
-            TreeSet<DatasetRegion> regions = DatasetRegion.loadRegions(regionFile);
+            List<DatasetRegion> regions = DatasetRegion.loadRegions(regionFile);
+            if (!DatasetRegion.isLongRegionFile(regionFile)) {
+                for (DatasetRegion region: regions) {
+                    region.measure(dataset);
+                }
+            }
             dataset.setRegions(regions);
             if (resetNorm) {
                 dataset.setNormFromRegions(regions);
@@ -536,7 +541,7 @@ public class ProjectBase {
             }
             String parFilePath = DatasetParameterFile.getParameterFileName(pathInProject.toString());
             datasetBase.writeParFile(parFilePath);
-            TreeSet<DatasetRegion> regions = datasetBase.getRegions();
+            List<DatasetRegion> regions = datasetBase.getReadOnlyRegions();
             File regionFile = DatasetRegion.getRegionFile(pathInProject.toString());
             DatasetRegion.saveRegions(regionFile, regions);
         }
