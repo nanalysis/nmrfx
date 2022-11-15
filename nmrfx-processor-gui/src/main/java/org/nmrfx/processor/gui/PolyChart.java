@@ -651,9 +651,11 @@ public class PolyChart extends Region implements PeakListener {
                 if (is1D() || (dY > minMove)) {
 
                     ChartUndoLimits undo = new ChartUndoLimits(this);
-                    setAxis(0, limits[0][0], limits[0][1]);
+                    double[] adjustedLimits = getRangeMinimalAdjustment(0, limits[0][0], limits[0][1]);
+                    setAxis(0, adjustedLimits[0], adjustedLimits[1]);
                     if (!is1D()) {
-                        setAxis(1, limits[1][0], limits[1][1]);
+                        adjustedLimits = getRangeMinimalAdjustment(1, limits[1][0], limits[1][1]);
+                        setAxis(1, adjustedLimits[0], adjustedLimits[1]);
                     }
                     ChartUndoLimits redo = new ChartUndoLimits(this);
                     controller.undoManager.add("expand", undo, redo);
@@ -860,6 +862,30 @@ public class PolyChart extends Region implements PeakListener {
             }
         }
         return limits;
+    }
+
+    /**
+     * Given a lower and upper bound, gets a valid range and attempts to keep the range between the original lower
+     * and upper bounds. The new bounds may have a different range than the originally provided bounds if it is not
+     * possible to have a valid range that large.
+     * @param axis The axis to get the range for
+     * @param lowerBound The lower bound to try.
+     * @param upperBound The upper bound to try.
+     * @return A new set of bounds that are within the valid range of the dataset.
+     */
+    private double[] getRangeMinimalAdjustment(int axis, double lowerBound, double upperBound) {
+        double currentRange = Math.abs(upperBound - lowerBound);
+        double [] validLimits = getRange(axis, lowerBound, upperBound);
+        // if one of the limits has changed, adjust the other limit so the range is still the same.
+        if (Double.compare(validLimits[0], lowerBound) != 0) {
+            lowerBound = validLimits[0];
+            upperBound = validLimits[0] + currentRange;
+        } else {
+            upperBound = validLimits[1];
+            lowerBound = validLimits[1] - currentRange;
+        }
+        // Need to check the range again, in case the currentRange value was greater than the valid range.
+        return getRange(axis, lowerBound, upperBound);
     }
 
     public void scroll(double x, double y) {
@@ -1152,7 +1178,8 @@ public class PolyChart extends Region implements PeakListener {
                     double range = Math.abs(upper - lower);
                     double newLower = positions[axis] - range / 2;
                     double newUpper = positions[axis] + range / 2;
-                    setAxis(axis, newLower, newUpper);
+                    double[] bounds = getRangeMinimalAdjustment(axis, newLower, newUpper);
+                    setAxis(axis, bounds[0], bounds[1]);
                 }
             }
         }
