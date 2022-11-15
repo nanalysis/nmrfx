@@ -181,6 +181,8 @@ public class RegionsTable extends TableView<DatasetRegion> {
         } catch (IOException e) {
             log.warn("Error measuring new region bounds. {}", e.getMessage(), e);
         }
+        // If the region bound has changed it is no longer an auto set region
+        regionChanged.setAuto(false);
         chart.refresh();
     }
 

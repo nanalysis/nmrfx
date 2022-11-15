@@ -274,7 +274,6 @@ public class RegionsTableController implements Initializable {
             log.warn("Unable to add region. {}", e.getMessage(), e);
             return;
         }
-        region.setAuto(false);
         dataset.addRegion(region);
         chart.chartProps.setRegions(true);
         chart.chartProps.setIntegrals(true);

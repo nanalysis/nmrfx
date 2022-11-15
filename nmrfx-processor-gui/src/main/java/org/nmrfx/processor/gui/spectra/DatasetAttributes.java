@@ -2038,6 +2038,7 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
         } catch (IOException e) {
             log.warn("{} {}", errMsg, e.getMessage(), e);
         }
+        region.setAuto(false);
     }
 
     public int[] getMatchDim(DatasetAttributes dataAttr2, boolean looseMode) {

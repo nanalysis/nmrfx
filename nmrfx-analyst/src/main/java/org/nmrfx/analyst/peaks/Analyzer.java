@@ -718,6 +718,7 @@ public class Analyzer {
             double max = rM.getEntry(iRow, 1);
             max = datasetToAdjust.pointToPPM(0, max);
             DatasetRegion newRegion = new DatasetRegion(min, max);
+            newRegion.setAuto(true);
             datasetToAdjust.addRegion(newRegion);
         }
     }

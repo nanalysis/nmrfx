@@ -21,7 +21,7 @@ public class DatasetRegion implements Comparator, Comparable {
     private double min;
     private double max;
     private int[] maxLocation;
-    private boolean isAuto = true;
+    private boolean isAuto = false;
     // Listeners for changes in this DatasetRegion
     private final Set<DatasetRegionListener> regionChangeListeners = new HashSet<>();
 
@@ -475,7 +475,7 @@ public class DatasetRegion implements Comparator, Comparable {
     }
 
     public String getAutoText() {
-        return isAuto ? "Fitted" : "Manual";
+        return isAuto ? "Auto" : "Manual";
     }
 
     public void setAuto(boolean value) {
