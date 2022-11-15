@@ -2,6 +2,7 @@ package org.nmrfx.analyst.peaks;
 
 import java.io.File;
 
+import org.apache.commons.math3.util.Precision;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.datasets.Nuclei;
 import org.nmrfx.datasets.DatasetRegion;
@@ -1266,6 +1267,10 @@ public class Analyzer {
                 for (DatasetRegion region: regions) {
                     region.measure(getDataset());
                 }
+            }
+            // Assuming a that a value of 1.0 means the norm hasn't been set
+            if (Precision.equals(dataset.getNorm(), 1.0, 1e-9)) {
+                dataset.setNormFromRegions(regions);
             }
             dataset.setRegions(regions);
         }
