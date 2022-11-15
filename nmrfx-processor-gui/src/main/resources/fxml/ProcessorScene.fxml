@@ -84,7 +84,7 @@
             </Tab>
             <Tab closable="false" text="Navigation">
                 <content>
-                    <HBox fx:id="navHBox" prefHeight="100.0" prefWidth="200.0">
+                    <HBox fx:id="navHBox" prefHeight="100.0">
                         <children>
                             <HBox prefHeight="410.0" prefWidth="59.0">
                                 <children>
@@ -101,7 +101,7 @@
                                     <Insets left="5.0"/>
                                 </HBox.margin>
                             </HBox>
-                            <VBox fx:id="navDetailsVBox" prefHeight="200.0" prefWidth="100.0" spacing="5.0"
+                            <VBox fx:id="navDetailsVBox" prefHeight="200.0" spacing="5.0"
                                   HBox.hgrow="ALWAYS">
                                 <children>
                                     <HBox prefHeight="30.0" prefWidth="200.0" alignment="CENTER">
@@ -135,22 +135,22 @@
                                                     <RowConstraints minHeight="10.0" prefHeight="30.0" maxHeight="30.0"/>
                                                 </rowConstraints>
                                                 <children>
-                                                    <Button mnemonicParsing="false" prefWidth="60"
+                                                    <Button mnemonicParsing="false" minWidth="80" prefWidth="80"
                                                             onAction="#addCorruptedIndex"
                                                             text="Add"
                                                             GridPane.columnIndex="0" GridPane.rowIndex="0"
                                                     />
-                                                    <Button mnemonicParsing="false" prefWidth="60"
+                                                    <Button mnemonicParsing="false" minWidth="80" prefWidth="80"
                                                             onAction="#deleteCorruptedIndex"
                                                             text="Delete"
                                                             GridPane.columnIndex="0" GridPane.rowIndex="1"
                                                     />
-                                                    <Button mnemonicParsing="false" prefWidth="60"
+                                                    <Button mnemonicParsing="false" minWidth="80" prefWidth="80"
                                                             onAction="#addCorruptedDim"
                                                             text="Add Dim"
                                                             GridPane.columnIndex="0" GridPane.rowIndex="2"
                                                     />
-                                                    <Button mnemonicParsing="false" prefWidth="60"
+                                                    <Button mnemonicParsing="false" minWidth="80" prefWidth="80"
                                                             onAction="#clearCorruptedIndex"
                                                             text="Clear All"
                                                             GridPane.columnIndex="0" GridPane.rowIndex="3"
