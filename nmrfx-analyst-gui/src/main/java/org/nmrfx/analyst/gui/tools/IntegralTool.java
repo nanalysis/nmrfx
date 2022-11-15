@@ -1,5 +1,7 @@
 package org.nmrfx.analyst.gui.tools;
 
+import de.jensd.fx.glyphs.GlyphsDude;
+import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import javafx.event.ActionEvent;
 import javafx.geometry.Insets;
 import javafx.scene.control.Button;
@@ -12,6 +14,7 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import org.controlsfx.control.PopOver;
 import org.nmrfx.analyst.gui.AnalystApp;
+import org.nmrfx.analyst.gui.regions.RegionsTableController;
 import org.nmrfx.analyst.peaks.Analyzer;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.datasets.DatasetRegion;
@@ -71,6 +74,9 @@ public class IntegralTool {
         Button deleteItem = new Button("Delete", IconUtilities.getIcon("editdelete"));
         deleteItem.setOnAction(e -> deleteRegion());
         buttons.add(deleteItem);
+        Button regionsTable = GlyphsDude.createIconButton(FontAwesomeIcon.TABLE, "Table", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
+        regionsTable.setOnAction(e -> RegionsTableController.getRegionsTableController().show());
+        buttons.add(regionsTable);
         for (Button button1 : buttons) {
             button1.setContentDisplay(ContentDisplay.TOP);
             button1.setStyle("-fx-font-size:" + MainApp.ICON_FONT_SIZE_STR);
