@@ -739,6 +739,10 @@ public class SpectrumStatusBar {
                     return;
                 }
                 chart.disDimProp.set(PolyChart.DISDIM.OneDX);
+                if (maxRows.isPresent() && (maxRows.getAsInt() > FXMLController.MAX_INITIAL_TRACES)) {
+                    chart.setDrawlist(0);
+                }
+
                 set1DArray(maxNDim.getAsInt(), maxRows.getAsInt());
 
             } else if (selected == DisplayMode.CONTOURS) {

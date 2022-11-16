@@ -103,7 +103,7 @@ import java.util.*;
 public class FXMLController implements  Initializable, PeakNavigable {
     private static final Logger log = LoggerFactory.getLogger(FXMLController.class);
     private static final int PSEUDO_2D_SIZE_THRESHOLD = 100;
-    private static final int MAX_INITIAL_TRACES = 32;
+    public static final int MAX_INITIAL_TRACES = 32;
 
     @FXML
     private VBox topBar;
