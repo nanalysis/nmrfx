@@ -43,6 +43,7 @@ import javafx.scene.control.cell.CheckBoxTableCell;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.HBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Polygon;
 import javafx.stage.Stage;
@@ -61,10 +62,7 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.IOException;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.ResourceBundle;
+import java.util.*;
 import java.util.function.DoubleUnaryOperator;
 
 /**
@@ -73,7 +71,7 @@ import java.util.function.DoubleUnaryOperator;
 public class DatasetsController implements Initializable, PropertyChangeListener {
 
     private static final Logger log = LoggerFactory.getLogger(DatasetsController.class);
-
+    private static final Map<String, double[]> savedValues = new HashMap<>();
     private Stage stage;
     @FXML
     private ToolBar toolBar;
@@ -400,9 +398,7 @@ public class DatasetsController implements Initializable, PropertyChangeListener
         dim1Column = new TableColumn("Dim1");
 
         Polygon polygon = new Polygon();
-        polygon.getPoints().addAll(2.0, 2.0,
-                12.0, 2.0,
-                7.0, 10.0);
+        polygon.getPoints().addAll(2.0, 2.0, 12.0, 2.0, 7.0, 10.0);
         polygon.setFill(Color.BLACK);
         Tooltip tip = new Tooltip("Right click for dimension choice");
         Tooltip.install(polygon, tip);
@@ -519,7 +515,7 @@ public class DatasetsController implements Initializable, PropertyChangeListener
 
     }
 
-    void saveValueTable() {
+    private void saveValueTable() {
         List<ValueItem> items = valueTableView.getItems();
         if (valueDataset != null) {
             double[] values = items.stream().mapToDouble(ValueItem::getValue).toArray();
@@ -528,7 +524,7 @@ public class DatasetsController implements Initializable, PropertyChangeListener
         }
     }
 
-    public void updateValueTable() {
+    private void updateValueTable() {
         ObservableList<DatasetBase> datasets = tableView.getSelectionModel().getSelectedItems();
         ObservableList<ValueItem> valueList = FXCollections.observableArrayList();
         valueDataset = null;
@@ -551,12 +547,41 @@ public class DatasetsController implements Initializable, PropertyChangeListener
                     valueList.add(new ValueItem(i, 0.0));
                 }
             }
+            if (!savedValues.containsKey(valueDataset.getName())) {
+                System.out.println("save " + valueDataset.getName() + " " + valueList);
+                double[] saveValues = valueList.stream().mapToDouble(v -> v.value).toArray();
+                savedValues.put(valueDataset.getName(), saveValues);
+            }
         }
         valueTableView.setItems(valueList);
+        valueTableView.refresh();
+    }
+
+    private ObservableList<ValueItem> toItems(double[] values) {
+        ObservableList<ValueItem> valueList = FXCollections.observableArrayList();
+        if ((values != null) && (values.length > 1)) {
+            for (int j = 0; j < values.length; j++) {
+                ValueItem item = new ValueItem(j, values[j]);
+                valueList.add(item);
+            }
+        }
+        return valueList;
+    }
+
+    private void resetValues() {
+        ObservableList<DatasetBase> datasets = tableView.getSelectionModel().getSelectedItems();
+        valueDataset = null;
+        if (datasets.size() == 1) {
+            valueDataset = datasets.get(0);
+            if (savedValues.containsKey(valueDataset.getName())) {
+                valueTableView.setItems(toItems(savedValues.get(valueDataset.getName())));
+                saveValueTable();
+                valueTableView.refresh();
+            }
+        }
     }
 
     public void makeValueTable(ActionEvent event) {
-
         if (valueTableView == null) {
             Node node = (Node) event.getSource();
             Bounds buttonBounds = node.localToScreen(node.getBoundsInLocal());
@@ -564,6 +589,7 @@ public class DatasetsController implements Initializable, PropertyChangeListener
             DoubleStringConverter dsConverter = new DoubleStringConverter();
             valueStage = new Stage(StageStyle.DECORATED);
             BorderPane borderPane = new BorderPane();
+            borderPane.setPrefWidth(225);
             Scene scene = new Scene(borderPane);
             valueStage.setScene(scene);
             valueStage.setTitle("DatasetBase Values");
@@ -573,7 +599,13 @@ public class DatasetsController implements Initializable, PropertyChangeListener
             valueTableView.setEditable(true);
             Button mathButton = new Button("Calculate");
             mathButton.setOnAction(e -> doMath());
-            borderPane.setTop(mathButton);
+            Button resetButton = new Button("Reset");
+            resetButton.setOnAction(e -> resetValues());
+            HBox hBox = new HBox();
+            hBox.setPrefWidth(225);
+            hBox.setSpacing(5);
+            hBox.getChildren().addAll(mathButton, resetButton);
+            borderPane.setTop(hBox);
             borderPane.setCenter(valueTableView);
             TableColumn<ValueItem, Integer> indexColumn = new TableColumn<>("Index");
             indexColumn.setEditable(false);
@@ -585,6 +617,10 @@ public class DatasetsController implements Initializable, PropertyChangeListener
             valueColumn.setCellFactory(tc -> new ValueItemDoubleFieldTableCell(dsConverter));
 
             valueTableView.getColumns().addAll(indexColumn, valueColumn);
+            valueTableView.setPrefWidth(225);
+            valueTableView.setPrefHeight(400);
+            valueStage.setWidth(225);
+            valueStage.setHeight(425);
             valueStage.setX(buttonBounds.getCenterX() - 50);
             valueStage.setY(buttonBounds.getMaxY() + 20);
         }
