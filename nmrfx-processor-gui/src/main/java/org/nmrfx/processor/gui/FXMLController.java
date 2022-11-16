@@ -103,6 +103,7 @@ import java.util.*;
 public class FXMLController implements  Initializable, PeakNavigable {
     private static final Logger log = LoggerFactory.getLogger(FXMLController.class);
     private static final int PSEUDO_2D_SIZE_THRESHOLD = 100;
+    public static final int MAX_INITIAL_TRACES = 32;
 
     @FXML
     private VBox topBar;
@@ -267,7 +268,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
     public void processorCreated(Pane pane) {
         processControllerVisible.bind(pane.parentProperty().isNotNull());
         isFID = !getActiveChart().getProcessorController(true).isViewingDataset();
-        updateSpectrumStatusBarOptions();
+        updateSpectrumStatusBarOptions(true);
     }
 
     public boolean isPhaseSliderVisible() {
@@ -297,9 +298,11 @@ public class FXMLController implements  Initializable, PeakNavigable {
     }
 
     public void setActiveChart(PolyChart chart) {
-        if (activeChart != chart) {
-            deselectCharts();
+        if (activeChart == chart) {
+            return;
         }
+
+        deselectCharts();
         isFID = false;
         activeChart = chart;
         PolyChart.activeChart.set(chart);
@@ -313,7 +316,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
                 processorController.show();
             }
         }
-        updateSpectrumStatusBarOptions();
+        updateSpectrumStatusBarOptions(false);
         if (specAttrWindowController != null) {
             specAttrWindowController.setChart(activeChart);
         }
@@ -725,7 +728,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
         }
         borderPane.setLeft(null);
         borderPane.setBottom(null);
-        updateSpectrumStatusBarOptions();
+        updateSpectrumStatusBarOptions(true);
 
         phaser.getPhaseOp();
         if (!reload) {
@@ -747,7 +750,7 @@ public class FXMLController implements  Initializable, PeakNavigable {
      * Updates the SpectrumStatusBar menu options based on whether FID mode is on, and the dimensions
      * of the dataset.
      */
-    public void updateSpectrumStatusBarOptions() {
+    public void updateSpectrumStatusBarOptions(boolean initDataset) {
         if (isFIDActive()) {
             statusBar.setMode(0);
         } else {
@@ -757,6 +760,9 @@ public class FXMLController implements  Initializable, PeakNavigable {
                 if (getActiveChart().is1D() && (maxNDim.getAsInt() > 1)) {
                     OptionalInt maxRows = datasetAttrList.stream().
                             mapToInt(d -> d.nDim == 1 ? 1 : d.getDataset().getSizeReal(1)).max();
+                    if (initDataset && maxRows.isPresent() && (maxRows.getAsInt() > MAX_INITIAL_TRACES)) {
+                        getActiveChart().setDrawlist(0);
+                    }
                     statusBar.set1DArray(maxNDim.getAsInt(), maxRows.getAsInt());
                 } else {
                     statusBar.setMode(maxNDim.getAsInt());
