@@ -180,10 +180,10 @@ public class XYCanvasChart {
             for (DataSeries dataSeries : data) {
                 if (!dataSeries.isEmpty()) {
                     ok = true;
-                    xMin = dataSeries.getMinX();
-                    xMax = dataSeries.getMaxX();
-                    yMin = dataSeries.getMinY();
-                    yMax = dataSeries.getMaxY();
+                    xMin = Math.min(xMin, dataSeries.getMinX());
+                    xMax = Math.max(xMax,dataSeries.getMaxX());
+                    yMin = Math.min(yMin, dataSeries.getMinY());
+                    yMax = Math.max(yMax, dataSeries.getMaxY());
                 }
             }
 
@@ -354,6 +354,7 @@ public class XYCanvasChart {
                     double lastXC = 0.0;
                     double lastYC = 0.0;
                     gC.setStroke(series.stroke);
+                    gC.setFill(series.fill);
                     for (XYValue xyValue : series.getValues()) {
                         double x = xyValue.getXValue();
                         double y = xyValue.getYValue();
