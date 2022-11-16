@@ -8,7 +8,6 @@ import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.ToolBar;
 import org.nmrfx.analyst.gui.*;
-import org.nmrfx.analyst.gui.tools.RunAboutGUI;
 import org.nmrfx.chemistry.MoleculeFactory;
 import org.nmrfx.chemistry.constraints.NoeSet;
 import org.nmrfx.peaks.Peak;
@@ -38,8 +37,7 @@ public class PeakMenuActions extends MenuActions {
 
         MenuItem peakTableMenuItem = new MenuItem("Show Peak Table");
         peakTableMenuItem.setOnAction(e -> showPeakTable());
-        menu.getItems().addAll(peakAttrMenuItem,
-                peakTableMenuItem);
+        menu.getItems().addAll(peakAttrMenuItem, peakTableMenuItem);
     }
 
     @Override

@@ -18,6 +18,7 @@
 package org.nmrfx.processor.datasets.vendor.varian;
 
 import org.apache.commons.math3.complex.Complex;
+import org.nmrfx.processor.datasets.DatasetGroupIndex;
 import org.nmrfx.processor.datasets.DatasetType;
 import org.nmrfx.processor.datasets.parameters.FPMult;
 import org.nmrfx.processor.datasets.parameters.GaussianWt;
@@ -82,6 +83,7 @@ public class VarianData implements NMRData {
     double scale = 1.0e6;
     private DatasetType preferredDatasetType = DatasetType.NMRFX;
     List<Double> arrayValues = new ArrayList<>();
+    private final List<DatasetGroupIndex> datasetGroupIndices = new ArrayList<>();
 
     static final String PAR_LIST = "acqdim apptype array arraydim axis axisf procdim "
             + "solvent seqfil pslabel sfrq dfrq dfrq2 dfrq3 sw sw1 sw2 sw3 "
@@ -1520,6 +1522,11 @@ public class VarianData implements NMRData {
     @Override
     public void setSampleSchedule(SampleSchedule sampleSchedule) {
         this.sampleSchedule = sampleSchedule;
+    }
+
+    @Override
+    public List<DatasetGroupIndex> getSkipGroups() {
+        return datasetGroupIndices;
     }
 
     // write binary data into text file, using header info

@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,6 +17,8 @@
  */
 package org.nmrfx.processor.processing;
 
+import java.util.Arrays;
+
 public class VecIndex {
 
     int[] inVecs;       // input Vec indices
@@ -30,8 +32,13 @@ public class VecIndex {
     public int getInVec(int i) {
         return inVecs[i];
     }
+
+    public int[][] getOutVec(int i) {
+        return outVecs[i];
+    }
+
     public void printMe(int vecGroup, int nSteps) {  // for debugging
-        if ((vecGroup + 1) % nSteps == 1 || (vecGroup +1) % nSteps == 0) {
+        if ((vecGroup + 1) % nSteps == 1 || (vecGroup + 1) % nSteps == 0) {
             System.out.printf("group %6d in ", vecGroup);
             for (int k : inVecs) {
                 System.out.printf(" %4d", k);
@@ -45,5 +52,20 @@ public class VecIndex {
             }
             System.out.println("");
         }
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        VecIndex vecIndex = (VecIndex) o;
+        return Arrays.equals(inVecs, vecIndex.inVecs) && Arrays.equals(outVecs, vecIndex.outVecs);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = Arrays.hashCode(inVecs);
+        result = 31 * result + Arrays.hashCode(outVecs);
+        return result;
     }
 }

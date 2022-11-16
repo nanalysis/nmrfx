@@ -265,13 +265,13 @@ public class MouseBindings {
         hidePopOver(false);
 
         boolean altShift = mouseEvent.isShiftDown() && (mouseEvent.isAltDown() || mouseEvent.isControlDown());
-        ChartBorder border = chart.hitBorder(mouseX, mouseY);
         if (chart.isSelected()) {
             Optional<Integer> hitCorner = hitChartCorner(mouseX, mouseY, 10);
             return;
         }
 
         if (!isPopupTrigger(mouseEvent)) {
+            ChartBorder border = chart.hitBorder(mouseX, mouseY);
             if (!(altShift || (border == ChartBorder.LEFT || border == ChartBorder.BOTTOM)) && (mouseEvent.isMetaDown() || chart.getCanvasCursor().toString().equals("CROSSHAIR"))) {
                 if (!chart.getCanvasCursor().toString().equals("CROSSHAIR")) {
                     chart.getCrossHairs().setCrossHairState(true);

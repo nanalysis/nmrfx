@@ -18,6 +18,7 @@
 package org.nmrfx.processor.datasets.vendor.jeol;
 
 import org.apache.commons.math3.complex.Complex;
+import org.nmrfx.processor.datasets.DatasetGroupIndex;
 import org.nmrfx.processor.datasets.DatasetType;
 import org.nmrfx.processor.datasets.parameters.FPMult;
 import org.nmrfx.processor.datasets.parameters.GaussianWt;
@@ -74,6 +75,7 @@ public class JeolDelta implements NMRData {
     private String solvent = "";
     private String sequence = "";
     private double tempK;
+    private final List<DatasetGroupIndex> datasetGroupIndices = new ArrayList<>();
 
     private Map<String, JeolPar> parMap = new HashMap<>();
 
@@ -779,6 +781,11 @@ public class JeolDelta implements NMRData {
         int parStart = JeolPars.Param_Start.getInteger(bytes);
         int parLength = JeolPars.Param_Length.getInteger(bytes);
         loadParams(parStart, parLength);
+    }
+
+    @Override
+    public List<DatasetGroupIndex> getSkipGroups() {
+        return datasetGroupIndices;
     }
 
     String getString(ByteBuffer byteBuffer, int valueStart, int nChars) {

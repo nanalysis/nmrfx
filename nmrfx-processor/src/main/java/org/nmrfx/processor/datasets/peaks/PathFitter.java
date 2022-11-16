@@ -10,6 +10,7 @@ import org.nmrfx.peaks.PeakDistance;
 import org.nmrfx.peaks.PeakPath;
 import org.nmrfx.peaks.PeakPaths;
 import org.nmrfx.peaks.PeakPaths.PATHMODE;
+import org.nmrfx.processor.optimization.FitUtils;
 import org.nmrfx.processor.optimization.Fitter;
 import smile.data.DataFrame;
 import smile.data.formula.Formula;
@@ -78,9 +79,9 @@ public class PathFitter {
 
             double[] result = new double[nPars];
             for (int iPath = 0; iPath < nPaths; iPath++) {
-                double yMax = Fitter.getMaxValue(y, indices, iPath);
-                double yAtMinX = Fitter.getYAtMinX(x, y, indices, iPath);
-                double xMid = Fitter.getMidY0(x, y, indices, iPath);
+                double yMax = FitUtils.getMaxValue(y, indices, iPath);
+                double yAtMinX = FitUtils.getYAtMinX(x, y, indices, iPath);
+                double xMid = FitUtils.getMidY0(x, y, indices, iPath);
                 result[1 + iPath] = yMax;
                 result[0] += fitLog ? Math.log10(xMid) : xMid;
             }

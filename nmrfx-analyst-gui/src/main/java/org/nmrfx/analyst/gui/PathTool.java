@@ -27,7 +27,7 @@ import org.nmrfx.processor.gui.annotations.AnnoPolyLine;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.processor.gui.spectra.PeakDisplayParameters;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
-import org.nmrfx.processor.optimization.Fitter;
+import org.nmrfx.processor.optimization.FitUtils;
 import org.nmrfx.utils.GUIUtils;
 
 import java.io.File;
@@ -875,7 +875,7 @@ checkLists(pp, 0.25, False)
                         fitFields[i].setText(String.format("%s= %.3f +/- %.3f", parNames[i], fitPars[i], fitErrs[i]));
                     }
                     double first = 0.0;
-                    double last = Fitter.getMaxValue(peakPaths.getXValues()[0]);
+                    double last = FitUtils.getMaxValue(peakPaths.getXValues()[0]);
                     if (peakPaths.getPathMode() == PATHMODE.TITRATION) {
                         double[][] xy = fitPath.getSimValues(fitPars, first, last, 100, xValues[1][0]);
                         plotTool.getChart().addLines(xy[0], xy[1], false, color);
@@ -936,7 +936,7 @@ checkLists(pp, 0.25, False)
 //                fitFields[i].setText(String.format("%.3f +/- %.3f", fitPars[i], fitErrs[i]));
 //            }
             double first = 0.0;
-            double last = Fitter.getMaxValue(peakPaths.getXValues()[0]);
+            double last = FitUtils.getMaxValue(peakPaths.getXValues()[0]);
             if (peakPaths.getPathMode() == PATHMODE.TITRATION) {
                 double[][] xy = fitPath.getSimValues(fitPars, first, last, 100, xValues[1][0]);
                 plotTool.getChart().addLines(xy[0], xy[1], false, color);

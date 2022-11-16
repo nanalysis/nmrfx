@@ -32,6 +32,7 @@ import org.apache.commons.math3.complex.Complex;
 import org.apache.commons.math3.util.MultidimensionalCounter;
 import org.nmrfx.datasets.DatasetLayout;
 import org.nmrfx.processor.datasets.Dataset;
+import org.nmrfx.processor.datasets.DatasetGroupIndex;
 import org.nmrfx.processor.datasets.DatasetType;
 import org.nmrfx.processor.datasets.parameters.FPMult;
 import org.nmrfx.processor.datasets.parameters.GaussianWt;
@@ -106,6 +107,7 @@ public class RS2DData implements NMRData {
     private final String[] sfNames = new String[MAXDIM];
     private double groupDelay = 0.0;
     private SampleSchedule sampleSchedule = null;
+    private final List<DatasetGroupIndex> datasetGroupIndices = new ArrayList<>();
     private DatasetType preferredDatasetType = DatasetType.NMRFX;
 
     private String[] acqOrder;
@@ -1164,6 +1166,11 @@ public class RS2DData implements NMRData {
     @Override
     public void setSampleSchedule(SampleSchedule sampleSchedule) {
         this.sampleSchedule = sampleSchedule;
+    }
+
+    @Override
+    public List<DatasetGroupIndex> getSkipGroups() {
+        return datasetGroupIndices;
     }
 
     @Override
