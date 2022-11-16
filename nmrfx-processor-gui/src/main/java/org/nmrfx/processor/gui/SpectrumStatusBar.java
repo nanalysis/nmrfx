@@ -72,7 +72,7 @@ public class SpectrumStatusBar {
     private static final Logger log = LoggerFactory.getLogger(SpectrumStatusBar.class);
 
     private enum DisplayMode {
-        CURVES("Curves (1D)"),
+        TRACES("Traces (1D)"),
         CONTOURS("Contours (2D)");
         private final String strValue;
 
@@ -562,7 +562,7 @@ public class SpectrumStatusBar {
         List<Node> nodes = new ArrayList<>();
         nodes.add(cursorChoiceBox);
         nodes.add(toolButton);
-        displayModeComboBox.getSelectionModel().select(DisplayMode.CURVES);
+        displayModeComboBox.getSelectionModel().select(DisplayMode.TRACES);
         nodes.add(displayModeComboBox);
 
         HBox.setHgrow(filler1, Priority.ALWAYS);
@@ -731,7 +731,7 @@ public class SpectrumStatusBar {
                 return;
             }
             DisplayMode selected = modeComboBox.getSelectionModel().getSelectedItem();
-            if (selected == DisplayMode.CURVES) {
+            if (selected == DisplayMode.TRACES) {
                 OptionalInt maxRows = chart.getDatasetAttributes().stream().
                         mapToInt(d -> d.nDim == 1 ? 1 : d.getDataset().getSizeReal(1)).max();
                 if (maxRows.isEmpty()) {
