@@ -61,6 +61,7 @@ public class Fitter2 {
         return fitter;
     }
 
+    // for runtime compilation of expressions with janino.  Not yet implemented here
     public static Fitter2 getExpressionFitter(String expression, String[] parNames, String[] varNames) throws CompileException {
         Fitter2 fitter = new Fitter2();
 
@@ -89,7 +90,7 @@ public class Fitter2 {
         return opt.refineCMAES(start, inputSigma);
     }
 
-    public double rms(double[] pars) throws Exception {
+    public double rms(double[] pars) {
         Optimizer opt = new Optimizer();
         opt.setXYE(xValues, yValues, errValues);
         return opt.valueWithDenormalized(pars);
@@ -110,7 +111,16 @@ public class Fitter2 {
     }
 
     class Optimizer implements MultivariateFunction {
-
+        double[][] xValues;
+        double[][] yValues;
+        double[][] errValues;
+        double[][] values;
+        long startTime;
+        long endTime;
+        long fitTime;
+        double tol = 1.0e-5;
+        boolean absMode = false;
+        boolean weightFit = false;
         RandomGenerator random = new SynchronizedRandomGenerator(new Well19937c());
 
         public class Checker extends SimpleValueChecker {
@@ -122,30 +132,14 @@ public class Fitter2 {
             @Override
             public boolean converged(final int iteration, final PointValuePair previous, final PointValuePair current) {
                 boolean converged = super.converged(iteration, previous, current);
-                if (reportFitness) {
-                    if (converged) {
-                        System.out.println(previous.getValue() + " " + current.getValue());
-                    }
-                    if (converged || (iteration == 1) || ((iteration % reportAt) == 0)) {
-                        long time = System.currentTimeMillis();
-                        long deltaTime = time - startTime;
-                        System.out.println(deltaTime + " " + iteration + " " + current.getValue());
-                    }
+                if (reportFitness && (converged || (iteration == 1) || ((iteration % reportAt) == 0))) {
+                    long time = System.currentTimeMillis();
+                    long deltaTime = time - startTime;
+                    log.info("Delta {} Iteration {} Value {}", deltaTime, iteration, current.getValue());
                 }
                 return converged;
             }
         }
-
-        double[][] xValues;
-        double[][] yValues;
-        double[][] errValues;
-        double[][] values;
-        long startTime;
-        long endTime;
-        long fitTime;
-        double tol = 1.0e-5;
-        boolean absMode = false;
-        boolean weightFit = false;
 
         @Override
         public double value(double[] normPar) {
@@ -238,7 +232,6 @@ public class Fitter2 {
             random.setSeed(1);
             double lambdaMul = 3.0;
             int lambda = (int) (lambdaMul * FastMath.round(4 + 3 * FastMath.log(guess.length)));
-            //int nSteps = guess.length*1000;
             int nSteps = 2000;
             double stopFitness = 0.0;
             int diagOnly = 0;
@@ -294,7 +287,6 @@ public class Fitter2 {
                 }
             }
 
-            // fixme  idNum should be set in above loop
             optimizer.setXYE(newX, newY, newErr);
 
             PointValuePair result;
