@@ -235,10 +235,14 @@ public class SampleSchedule {
     }
 
     public static SampleSchedule createUniformSchedule(int[] dims) {
-        return createZFSchedule(dims, null);
+        return createSchedule(dims, null, null);
     }
 
     public static SampleSchedule createZFSchedule(int[] dims, int[] newDims) {
+        return createSchedule(dims, newDims, null);
+    }
+
+    public static SampleSchedule createSchedule(int[] dims, int[] newDims, int[][] zeroEntries) {
         SampleSchedule sampleSchedule = new SampleSchedule();
         int n = 1;
         for (int i = 0; i < dims.length; i++) {

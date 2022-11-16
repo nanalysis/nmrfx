@@ -3,6 +3,7 @@ package org.nmrfx.datasets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -16,68 +17,141 @@ public class DatasetRegion implements Comparator, Comparable {
     private final double[] x;
     private final double[] startIntensity;
     private final double[] endIntensity;
-    double integral;
-    double min;
-    double max;
-    int[] maxLocation;
-    boolean isAuto = true;
+    private double integral;
+    private double min;
+    private double max;
+    private int[] maxLocation;
+    private boolean isAuto = false;
+    // Listeners for changes in this DatasetRegion
+    private final Set<DatasetRegionListener> regionChangeListeners = new HashSet<>();
 
-    public static TreeSet<DatasetRegion> loadRegions(File file) throws IOException {
+
+    public void addListener(DatasetRegionListener regionListener) {
+        regionChangeListeners.add(regionListener);
+    }
+
+    public void removeListener(DatasetRegionListener regionListener) {
+        regionChangeListeners.remove(regionListener);
+    }
+
+    public void updateAllListeners() {
+        regionChangeListeners.forEach(regionListener -> regionListener.datasetRegionUpdated(this));
+    }
+
+    /**
+     * Checks the first line of the file to see if it is the long format of the regions file
+     * @param file The file to check
+     * @return True if it is a long region file, false if it is short or not a region file.
+     * @throws IOException
+     */
+    public static boolean isLongRegionFile(File file) throws IOException {
+        try (BufferedReader reader = Files.newBufferedReader(file.toPath())) {
+            String firstLine = reader.readLine();
+            if (firstLine == null) {
+                // The file is empty, can be assumed to be a long region file
+                return true;
+            }
+            firstLine = firstLine.trim();
+            String[] fields = firstLine.split("\\s+");
+            // The first line should be a header with at least 8 fields and the first two fields should start with pos
+            return fields.length > 7 && fields[0].contains("pos") && fields[1].contains("pos");
+        }
+    }
+
+    /**
+     * Loads a region file as a list of DatasetRegion.
+     * @param file The file to load.
+     * @return A List of Dataset Regions
+     * @throws IOException
+     */
+    public static List<DatasetRegion> loadRegions(File file) throws IOException {
+        boolean isLongRegionsFile = isLongRegionFile(file);
+        if (isLongRegionsFile) {
+            return loadRegionsLong(file);
+        } else {
+            return loadRegionsShort(file);
+        }
+
+    }
+
+    /**
+     * Loads the long version of the region file as a list of DatasetRegions.
+     * @param file The file to load.
+     * @return A List of DatasetRegions
+     * @throws IOException
+     */
+    private static List<DatasetRegion> loadRegionsLong(File file) throws IOException {
         List<String> lines = Files.readAllLines(file.toPath());
         boolean firstLine = true;
-        TreeSet<DatasetRegion> regions = new TreeSet<>();
+        List<DatasetRegion> regions = new ArrayList<>();
         int nDim = 0;
         for (String line : lines) {
             line = line.trim();
-            if (line.length() > 0) {
-                String[] fields = line.split("\t");
-                if (firstLine) {
-                    int nPos = 0;
-                    for (String field : fields) {
-                        if (field.startsWith("pos")) {
-                            nPos++;
-                        } else {
-                            break;
-                        }
-                    }
-                    nDim = nPos / 2;
-                    firstLine = false;
-
-                } else {
-                    double[] x = new double[nDim * 2];
-                    double[] startIntensity = new double[nDim];
-                    double[] endIntensity = new double[nDim];
-                    int k = 0;
-                    for (int i = 0; i < nDim; i++) {
-                        for (int j = 0; j < 2; j++) {
-                            x[k] = Double.parseDouble(fields[k]);
-                            k++;
-                        }
-                    }
-                    for (int i = 0; i < Math.pow(2, nDim - 1); i++) {
-                        startIntensity[i] = Double.parseDouble(fields[k++]);
-                    }
-                    for (int i = 0; i < Math.pow(2, nDim - 1); i++) {
-                        endIntensity[i] = Double.parseDouble(fields[k++]);
-                    }
-                    DatasetRegion region = new DatasetRegion(x, startIntensity, endIntensity);
-                    region.setIntegral(Double.parseDouble(fields[k++]));
-                    region.setMin(Double.parseDouble(fields[k++]));
-                    region.setMax(Double.parseDouble(fields[k++]));
-                    region.setAuto(fields[k].equals("1"));
-                    regions.add(region);
-                }
+            if (line.length() == 0) {
+                // Ignore blank lines
+                continue;
             }
+            String[] fields = line.split("\\s+");
+            if (firstLine) {
+                int nPos = (int) Arrays.stream(fields).filter(field -> field.startsWith("pos")).count();
+                nDim = nPos / 2;
+                firstLine = false;
 
+            } else {
+                double[] x = new double[nDim * 2];
+                double[] startIntensity = new double[nDim];
+                double[] endIntensity = new double[nDim];
+                int k = 0;
+                for (int i = 0; i < nDim * 2; i++) {
+                    x[k] = Double.parseDouble(fields[k]);
+                    k++;
+
+                }
+                for (int i = 0; i < Math.pow(2, nDim - 1); i++) {
+                    startIntensity[i] = Double.parseDouble(fields[k++]);
+                }
+                for (int i = 0; i < Math.pow(2, nDim - 1); i++) {
+                    endIntensity[i] = Double.parseDouble(fields[k++]);
+                }
+                DatasetRegion region = new DatasetRegion(x, startIntensity, endIntensity);
+                region.setIntegral(Double.parseDouble(fields[k++]));
+                region.setMin(Double.parseDouble(fields[k++]));
+                region.setMax(Double.parseDouble(fields[k++]));
+                region.setAuto(fields[k].equals("1"));
+                regions.add(region);
+            }
         }
         return regions;
     }
 
-    public static void saveRegions(File file, TreeSet<DatasetRegion> regions) {
-        if (regions != null) {
+    /**
+     * Loads the short version of the region file as a list of DatasetRegions.
+     * @param file The file to load.
+     * @return A list of DatasetRegions
+     * @throws IOException
+     */
+    public static List<DatasetRegion> loadRegionsShort (File file) throws IOException {
+        List<String> lines = Files.readAllLines(file.toPath());
+        List<DatasetRegion> regions = new ArrayList<>();
+
+        for (String line: lines) {
+            line = line.trim();
+            String[] fields = line.split("\\s+");
+            double[]x = new double[2];
+            x[0] = Double.parseDouble(fields[1]);
+            x[1] = Double.parseDouble(fields[2]);
+            DatasetRegion region = new DatasetRegion(x[0], x[1]);
+            regions.add(region);
+        }
+        return regions;
+    }
+
+    public static void saveRegions(File file, Collection<DatasetRegion> regions) {
+        List<DatasetRegion> sortedRegions = regions.stream().sorted().toList();
+        if (sortedRegions != null) {
             try (FileWriter writer = new FileWriter(file)) {
                 boolean firstLine = true;
-                for (DatasetRegion region : regions) {
+                for (DatasetRegion region : sortedRegions) {
                     if (firstLine) {
                         writer.write(region.getHeader());
                         firstLine = false;
@@ -231,6 +305,7 @@ public class DatasetRegion implements Comparator, Comparable {
             throw new IllegalArgumentException("Invalid dimension");
         }
         x[dim * 2] = value;
+        updateAllListeners();
     }
 
     public double getRegionEnd(int dim) {
@@ -245,6 +320,11 @@ public class DatasetRegion implements Comparator, Comparable {
             throw new IllegalArgumentException("Invalid dimension");
         }
         x[dim * 2 + 1] = value;
+        updateAllListeners();
+    }
+
+    public double getAvgPPM(int dim) {
+        return (getRegionStart(dim) + getRegionEnd(0)) / 2;
     }
 
     public double getRegionStartIntensity(int dim) {
@@ -259,6 +339,7 @@ public class DatasetRegion implements Comparator, Comparable {
             throw new IllegalArgumentException("Invalid dimension");
         }
         startIntensity[dim * 2] = value;
+        updateAllListeners();
     }
 
     public double getRegionEndIntensity(int dim) {
@@ -273,6 +354,7 @@ public class DatasetRegion implements Comparator, Comparable {
             throw new IllegalArgumentException("Invalid dimension");
         }
         endIntensity[dim * 2] = value;
+        updateAllListeners();
     }
 
     @Override
@@ -338,8 +420,8 @@ public class DatasetRegion implements Comparator, Comparable {
         return result;
     }
 
-    public boolean removeOverlapping(SortedSet<DatasetRegion> set) {
-        Iterator<DatasetRegion> iter = set.iterator();
+    public boolean removeOverlapping(Iterable<DatasetRegion> regions) {
+        Iterator<DatasetRegion> iter = regions.iterator();
         boolean result = false;
 
         while (iter.hasNext()) {
@@ -357,11 +439,13 @@ public class DatasetRegion implements Comparator, Comparable {
     public DatasetRegion split(double splitPosition0, double splitPosition1) {
         DatasetRegion newRegion = new DatasetRegion(splitPosition1, x[1]);
         x[1] = splitPosition0;
+        updateAllListeners();
         return newRegion;
     }
 
     public void setIntegral(double value) {
         integral = value;
+        updateAllListeners();
     }
 
     public double getIntegral() {
@@ -370,6 +454,7 @@ public class DatasetRegion implements Comparator, Comparable {
 
     public void setMax(double value) {
         max = value;
+        updateAllListeners();
     }
 
     public double getMax() {
@@ -378,6 +463,7 @@ public class DatasetRegion implements Comparator, Comparable {
 
     public void setMin(double value) {
         min = value;
+        updateAllListeners();
     }
 
     public double getMin() {
@@ -392,8 +478,13 @@ public class DatasetRegion implements Comparator, Comparable {
         return isAuto;
     }
 
+    public String getAutoText() {
+        return isAuto ? "Auto" : "Manual";
+    }
+
     public void setAuto(boolean value) {
         isAuto = value;
+        updateAllListeners();
     }
 
     public void measure(DatasetBase dataset) throws IOException {
@@ -428,7 +519,7 @@ public class DatasetRegion implements Comparator, Comparable {
         setIntegral(sum);
     }
 
-    public static DatasetRegion findClosest(TreeSet<DatasetRegion> regions, double ppm, int dim) {
+    public static DatasetRegion findClosest(Iterable<DatasetRegion> regions, double ppm, int dim) {
         DatasetRegion closest = null;
         double minDis = Double.MAX_VALUE;
         for (DatasetRegion region : regions) {

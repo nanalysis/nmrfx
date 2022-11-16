@@ -279,7 +279,7 @@ public class ScanTable {
                 Platform.runLater(() -> {
                     ArrayList<String> nmrFiles = NMRDataUtil.findNMRDirectories(scanDir.getAbsolutePath());
                     String[] headers = {};
-                    updateTable(headers);
+                    initTable();
                     loadScanFiles(nmrFiles);
                 });
             } else {
@@ -329,7 +329,7 @@ public class ScanTable {
         String[] headers = {};
         processingTable = true;
         try {
-            updateTable(headers);
+            initTable();
             fileListItems.clear();
             loadScanFiles(nmrFiles);
         } catch (Exception e) {
@@ -556,9 +556,9 @@ public class ScanTable {
             item.setDate(item.getDate() - firstDate);
             item.setTypes(headers, notDouble, notInteger);
         }
-        updateTable(headers);
+        initTable();
+        addHeaders(headers);
         fileTableFilter.resetFilter();
-        updateDataFrame();
         String firstDatasetName = dataset.getFileName();
         if (firstDatasetName.length() > 0) {
             FXMLController.getActiveController().openDataset(dataset.getFile(), false, true);
@@ -706,9 +706,9 @@ public class ScanTable {
                 item.setDate(item.getDate() - firstDate);
                 item.setTypes(headers, notDouble, notInteger);
             }
-            updateTable(headers);
+            initTable();
+            addHeaders(headers);
             fileTableFilter.resetFilter();
-            updateDataFrame();
             if (firstDatasetName.length() > 0) {
                 File parentDir = file.getParentFile();
                 Path path = FileSystems.getDefault().getPath(parentDir.toString(), firstDatasetName);
@@ -812,29 +812,37 @@ public class ScanTable {
         addTableColumn("group", "I");
     }
 
-    public void addTableColumn(String newName, String type) {
+    private List<String> headersMissing(String[] headerNames) {
+        List<String> missing = new ArrayList<>();
+        for (var headerName:headerNames) {
+            if (!headerPresent(headerName)) {
+                missing.add(headerName);
+            }
+        }
+        return missing;
+    }
+
+    private boolean headerPresent(String headerName) {
         ObservableList<TableColumn<FileTableItem, ?>> columns = tableView.getColumns();
         boolean present = false;
-        String[] headers = new String[columns.size() + 1];
-        int i = 0;
         for (TableColumn column : columns) {
             String name = column.getText();
-            if (name.equals(newName)) {
+            if (name.equals(headerName)) {
                 present = true;
                 break;
             }
-            headers[i++] = name;
         }
-
-        if (!present) {
-            headers[i] = newName;
-            columnTypes.put(headers[i], type);
-            updateTable(headers);
-        }
-
+        return present;
     }
 
-    private void updateTable(String[] headers) {
+    public void addTableColumn(String newName, String type) {
+        if (!headerPresent(newName)) {
+            columnTypes.put(newName, type);
+            addColumn(newName);
+        }
+    }
+
+    private void initTable() {
         TableColumn<FileTableItem, String> fileColumn = new TableColumn<>("path");
         TableColumn<FileTableItem, String> seqColumn = new TableColumn<>("sequence");
         TableColumn<FileTableItem, Number> nDimColumn = new TableColumn<>("ndim");
@@ -871,14 +879,25 @@ public class ScanTable {
 
         tableView.getColumns().clear();
         tableView.getColumns().addAll(fileColumn, seqColumn, nDimColumn, dateColumn, rowColumn, datasetColumn, groupColumn);
-        for (String header : headers) {
-            if (header.equalsIgnoreCase("path") || header.equalsIgnoreCase("Sequence") || header.equalsIgnoreCase("nDim") || header.equalsIgnoreCase("eTime") || header.equalsIgnoreCase("row") || header.equalsIgnoreCase("dataset") || header.equalsIgnoreCase("fid")) {
-                continue;
-            }
-            if (header.equals("group")) {
-                continue;
-            }
+        updateFilter();
+
+        for (TableColumn column : tableView.getColumns()) {
+            setColumnGraphic(column);
+            column.graphicProperty().addListener(e -> graphicChanged(column));
+        }
+    }
+
+    private void addHeaders(String[] headers) {
+        var missingHeaders = headersMissing(headers);
+        for (var header:missingHeaders) {
+            addColumn(header);
+        }
+    }
+
+    private void addColumn(String header) {
+        if (!headerPresent(header)) {
             String type = columnTypes.get(header);
+            final TableColumn newColumn;
             if (type == null) {
                 type = "S";
                 log.info("No type for {}", header);
@@ -886,6 +905,7 @@ public class ScanTable {
             switch (type) {
                 case "D":
                     TableColumn<FileTableItem, Number> doubleExtraColumn = new TableColumn<>(header);
+                    newColumn = doubleExtraColumn;
                     doubleExtraColumn.setCellValueFactory((e) -> new SimpleDoubleProperty(e.getValue().getDoubleExtra(header)));
                     doubleExtraColumn.setCellFactory(col
                             -> new TableCell<FileTableItem, Number>() {
@@ -903,27 +923,22 @@ public class ScanTable {
                     break;
                 case "I":
                     TableColumn<FileTableItem, Number> intExtraColumn = new TableColumn<>(header);
+                    newColumn = intExtraColumn;
                     intExtraColumn.setCellValueFactory((e) -> new SimpleIntegerProperty(e.getValue().getIntegerExtra(header)));
                     tableView.getColumns().add(intExtraColumn);
                     break;
                 default:
                     TableColumn<FileTableItem, String> extraColumn = new TableColumn<>(header);
+                    newColumn = extraColumn;
                     extraColumn.setCellValueFactory((e) -> new SimpleStringProperty(String.valueOf(e.getValue().getExtra(header))));
                     tableView.getColumns().add(extraColumn);
                     break;
             }
+
+            updateFilter();
+            setColumnGraphic(newColumn);
+            newColumn.graphicProperty().addListener(e -> graphicChanged(newColumn));
         }
-        updateFilter();
-        updateDataFrame();
-
-        for (TableColumn column : tableView.getColumns()) {
-            setColumnGraphic(column);
-            column.graphicProperty().addListener(e -> graphicChanged(column));
-        }
-    }
-
-    void updateDataFrame() {
-
     }
 
     private void graphicChanged(TableColumn column) {
@@ -936,7 +951,8 @@ public class ScanTable {
 
     private void setColumnGraphic(TableColumn column) {
         String text = column.getText().toLowerCase();
-        if (isGroupable(text)) {
+        String type = columnTypes.get(column.getText());
+        if (!"D".equals(type) && isGroupable(text)) {
             boolean isGrouped = groupNames.contains(text);
             boolean isFiltered = isFiltered(column);
             StackPane stackPane = new StackPane();
@@ -954,7 +970,7 @@ public class ScanTable {
             rect.setOnMouseReleased(Event::consume);
             rect.setOnMouseClicked(Event::consume);
             column.setGraphic(stackPane);
-        } else if (isData(text)) {
+        } else if ("D".equals(type) || isData(text)) {
             StackPane stackPane = new StackPane();
             Rectangle rect = new Rectangle(10, 10);
             Line line1 = new Line(1, 1, 10, 10);
