@@ -95,12 +95,12 @@ public class TablePlotGUI {
             Label typelabel = new Label("  Type:  ");
             Label xlabel = new Label("  X Var:  ");
             Label ylabel = new Label("  Y Var:  ");
-            chartTypeChoice.setMinWidth(150);
+            chartTypeChoice.setMinWidth(100);
             chartTypeChoice.getItems().addAll("ScatterPlot", "BoxPlot");
             chartTypeChoice.setValue("ScatterPlot");
             xArrayChoice.getItems().clear();
             yArrayChoice.getItems().clear();
-            xArrayChoice.setMinWidth(150);
+            xArrayChoice.setMinWidth(100);
             yArrayChoice.setMinWidth(150);
             try {
                 chartTypeChoice.valueProperty().addListener((Observable x) -> {
@@ -133,28 +133,21 @@ public class TablePlotGUI {
 
             Button button = new Button("Fit");
             button.setOnAction(e -> analyze());
-            equationChoice.getItems().addAll("ExpAB", "ExpABC", "Gaussian", "A<->B");
+            equationChoice.getItems().addAll("ExpAB", "ExpABC", "GaussianAB", "GaussianABC", "A<->B");
             equationChoice.setValue("ExpABC");
             toolBar2.getItems().addAll(equationChoice, button);
-            HBox hBox = new HBox();
-            HBox.setHgrow(hBox, Priority.ALWAYS);
-            hBox.setMinWidth(600);
             toolBar.getItems().addAll(fileMenu,typelabel, chartTypeChoice,
                     xlabel, xArrayChoice, ylabel, yArrayChoice);
-            ToolBarUtils.addFiller(toolBar, 20,2000);
+            ToolBarUtils.addFiller(toolBar, 10,200);
             toolBar.getItems().add(showFitCheckBox);
-            hBox.setAlignment(Pos.CENTER);
 
-            VBox vBox = new VBox();
-            vBox.setMinWidth(600);
-            vBox.getChildren().addAll(toolBar);
             fitVBox = new VBox();
             fitVBox.setMinWidth(200);
             fitVBox.getChildren().addAll(toolBar2, parTable);
 
             chartPane = new XYChartPane();
             activeChart = chartPane.getChart();
-            borderPane.setTop(vBox);
+            borderPane.setTop(toolBar);
             borderPane.setCenter(chartPane);
             borderPane.setRight(null);
             stage.setScene(stageScene);
@@ -350,6 +343,7 @@ public class TablePlotGUI {
                     activeChart.setShowLegend(true);
                 }
             }
+            activeChart.drawChart();
         }
     }
 
@@ -386,15 +380,23 @@ public class TablePlotGUI {
                     currentChecks.remove(name);
                 }
             }
+            if (items.contains(null)) {
+                items.remove(null);
+            }
             for (String name:columnNames) {
                 if (!items.contains(name)) {
                     items.add(name);
                 }
             }
+            String currentX = xArrayChoice.getValue();
             xArrayChoice.getItems().clear();
             xArrayChoice.getItems().addAll(columnNames);
-            if (!xArrayChoice.getItems().isEmpty()) {
-                xArrayChoice.setValue(xArrayChoice.getItems().get(0));
+            if ((currentX != null) && columnNames.contains(currentX)) {
+                xArrayChoice.setValue(currentX);
+            } else {
+                if (!xArrayChoice.getItems().isEmpty()) {
+                    xArrayChoice.setValue(xArrayChoice.getItems().get(0));
+                }
             }
             for (var item:currentChecks) {
                 yArrayChoice.getCheckModel().check(item);
@@ -426,7 +428,8 @@ public class TablePlotGUI {
         FitEquation fitEquation = switch (equationChoice.getValue()) {
             case "ExpAB" -> new FitExp(false);
             case "ExpABC" -> new FitExp(true);
-            case "Gaussian" -> new Gaussian(false);
+            case "GaussianAB" -> new Gaussian(false);
+            case "GaussianABC" -> new Gaussian(true);
             case "A<->B" -> new FitReactionAB();
             default -> null;
         };
