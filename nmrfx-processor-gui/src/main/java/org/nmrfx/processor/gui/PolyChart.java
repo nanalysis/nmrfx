@@ -1763,7 +1763,7 @@ public class PolyChart extends Region implements PeakListener {
                 datasetAttributes.dim[i] = i;
             }
 
-            updateAxisType();
+            updateAxisType(true);
             datasetFileProp.set(dataset.getFile());
             datasetAttributes.drawList.clear();
         } else {
@@ -1917,7 +1917,7 @@ public class PolyChart extends Region implements PeakListener {
         }
     }
 
-    public void updateAxisType() {
+    public void updateAxisType(boolean alwaysUpdate) {
         DatasetBase dataset = getDataset();
         DatasetAttributes datasetAttributes = datasetAttributesList.get(0);
         int nDim = dataset.getNDim();
@@ -1925,7 +1925,7 @@ public class PolyChart extends Region implements PeakListener {
         if (is1D()) {
             nAxes = 2;
         }
-        if (axes.length != nAxes) {
+        if (alwaysUpdate || (axes.length != nAxes)) {
             axes = new NMRAxis[nAxes];
             axes[0] = xAxis;
             axes[1] = yAxis;
@@ -2358,7 +2358,7 @@ public class PolyChart extends Region implements PeakListener {
                     } else {
                         firstOffset = datasetAttributes.getOffset();
                         firstLvl = datasetAttributes.getLvl();
-                        updateAxisType();
+                        updateAxisType(false);
                     }
 
                     if (disDimProp.get() != DISDIM.TwoD) {

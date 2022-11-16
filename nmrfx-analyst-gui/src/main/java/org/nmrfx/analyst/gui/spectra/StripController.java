@@ -652,7 +652,7 @@ public class StripController implements ControllerTool {
                     PolyChart chart = charts.get(iChart);
                     cell.updateChart(chart, item, updated && (iCol == 0));
                     if (iCol == 0) {
-                        chart.updateAxisType();
+                        chart.updateAxisType(false);
                     }
                 }
                 updated = false;
