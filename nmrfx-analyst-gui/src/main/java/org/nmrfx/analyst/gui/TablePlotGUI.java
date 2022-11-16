@@ -479,6 +479,10 @@ public class TablePlotGUI {
         }
         fitEquation.setXYE(xValues, yValues, errValues);
         PointValuePair result = fitEquation.fit();
+        if (result == null) {
+            GUIUtils.warn("Fitting", "Error fitting data");
+            return Collections.EMPTY_LIST;
+        }
         double[] errs = fitEquation.getParErrs();
         String[] parNames = fitEquation.parNames();
         double[] values = result.getPoint();

@@ -41,11 +41,11 @@ public abstract class FitEquation {
         }
     }
 
-    public  abstract String[] parNames();
+    public abstract String[] parNames();
 
-    public abstract  int nY();
+    public abstract int nY();
 
-    public abstract  int nX();
+    public abstract int nX();
 
     public abstract Guesses guess();
 
@@ -107,15 +107,16 @@ public abstract class FitEquation {
         Fitter2 fitter = Fitter2.getArrayFitter(this::value);
         fitter.setXYE(xValues, yValues, errValues);
         var guesses = guess();
-        try {
-            PointValuePair result = fitter.fit(guesses.start, guesses.lower, guesses.upper, 10.0);
+        var optResult = fitter.fit(guesses.start, guesses.lower, guesses.upper, 10.0);
+        if (optResult.isPresent()) {
+            PointValuePair result = optResult.get();
             bestPars = result.getPoint();
-            parErrs = fitter.bootstrap(result.getPoint(), 100);
-            return result;
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            return null;
+            var errResult = fitter.bootstrap(result.getPoint(), 100);
+            if (errResult.isPresent()) {
+                parErrs = errResult.get();
+                return result;
+            }
         }
-
+        return null;
     }
 }

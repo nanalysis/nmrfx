@@ -1,10 +1,7 @@
 package org.nmrfx.processor.optimization;
 
 import org.apache.commons.math3.analysis.MultivariateFunction;
-import org.apache.commons.math3.exception.DimensionMismatchException;
-import org.apache.commons.math3.exception.NotPositiveException;
-import org.apache.commons.math3.exception.NotStrictlyPositiveException;
-import org.apache.commons.math3.exception.TooManyEvaluationsException;
+import org.apache.commons.math3.exception.*;
 import org.apache.commons.math3.optim.*;
 import org.apache.commons.math3.optim.nonlinear.scalar.GoalType;
 import org.apache.commons.math3.optim.nonlinear.scalar.ObjectiveFunction;
@@ -20,6 +17,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
 import java.util.stream.IntStream;
 
@@ -79,7 +78,7 @@ public class Fitter2 {
         return fitter;
     }
 
-    public PointValuePair fit(double[] start, double[] lowerBounds, double[] upperBounds, double inputSigma) throws Exception {
+    public Optional<PointValuePair> fit(double[] start, double[] lowerBounds, double[] upperBounds, double inputSigma)  {
         this.start = start;
         this.lowerBounds = lowerBounds.clone();
         this.upperBounds = upperBounds.clone();
@@ -227,7 +226,7 @@ public class Fitter2 {
             }
         }
 
-        public PointValuePair refineCMAES(double[] guess, double inputSigma) throws Exception {
+        public Optional<PointValuePair> refineCMAES(double[] guess, double inputSigma)  {
             startTime = System.currentTimeMillis();
             random.setSeed(1);
             double lambdaMul = 3.0;
@@ -257,20 +256,21 @@ public class Fitter2 {
                         new ObjectiveFunction(this), GoalType.MINIMIZE,
                         new SimpleBounds(normLower, normUpper),
                         new InitialGuess(normGuess));
-            } catch (DimensionMismatchException | NotPositiveException | NotStrictlyPositiveException | TooManyEvaluationsException e) {
-                throw new Exception("failure to fit data " + e.getMessage());
+            } catch (DimensionMismatchException | NotPositiveException | NotStrictlyPositiveException | MaxCountExceededException e) {
+                log.error("Failure in refineCMAES", e);
+                return Optional.empty();
             }
             endTime = System.currentTimeMillis();
             fitTime = endTime - startTime;
-            return new PointValuePair(deNormalize(result.getPoint()), result.getValue());
+            return Optional.of(new PointValuePair(deNormalize(result.getPoint()), result.getValue()));
         }
     }
 
-    public double[] bootstrap(double[] guess, int nSim) {
+    public Optional<double[]> bootstrap(double[] guess, int nSim) {
         reportFitness = false;
         int nPar = start.length;
         parValues = new double[nPar + 1][nSim];
-
+        AtomicInteger nCount = new AtomicInteger();
         IntStream.range(0, nSim).parallel().forEach(iSim -> {
             double[][] newX = new double[xValues.length][yValues[0].length];
             double[][] newY = new double[yValues.length][yValues[0].length];
@@ -289,24 +289,28 @@ public class Fitter2 {
 
             optimizer.setXYE(newX, newY, newErr);
 
-            PointValuePair result;
-            try {
-                result = optimizer.refineCMAES(guess, inputSigma);
-            } catch (Exception ex) {
+
+            var optResult = optimizer.refineCMAES(guess, inputSigma);
+            if (optResult.isPresent()) {
+                PointValuePair result = optResult.get();
+                double[] rPoint = result.getPoint();
+                for (int j = 0; j < nPar; j++) {
+                    parValues[j][iSim] = rPoint[j];
+                }
+                parValues[nPar][iSim] = result.getValue();
+                nCount.incrementAndGet();
+            } else {
                 return;
             }
-            double[] rPoint = result.getPoint();
-            for (int j = 0; j < nPar; j++) {
-                parValues[j][iSim] = rPoint[j];
-            }
-            parValues[nPar][iSim] = result.getValue();
         });
-
-        double[] parSDev = new double[nPar];
-        for (int i = 0; i < nPar; i++) {
-            DescriptiveStatistics dStat = new DescriptiveStatistics(parValues[i]);
-            parSDev[i] = dStat.getStandardDeviation();
+        if (nCount.get() == nSim) {
+            double[] parSDev = new double[nPar];
+            for (int i = 0; i < nPar; i++) {
+                DescriptiveStatistics dStat = new DescriptiveStatistics(parValues[i]);
+                parSDev[i] = dStat.getStandardDeviation();
+            }
+            return Optional.of(parSDev);
         }
-        return parSDev;
+        return Optional.empty();
     }
 }
