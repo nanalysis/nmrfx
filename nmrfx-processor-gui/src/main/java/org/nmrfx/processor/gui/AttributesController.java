@@ -156,6 +156,15 @@ public class AttributesController implements Initializable {
     TextField lvlField1D;
 
     @FXML
+    Slider stackXSlider;
+    @FXML
+    TextField stackXField;
+    @FXML
+    Slider stackYSlider;
+    @FXML
+    TextField stackYField;
+
+    @FXML
     Slider clmSlider;
     @FXML
     TextField clmField;
@@ -324,6 +333,22 @@ public class AttributesController implements Initializable {
         aspectSlider.setBlockIncrement(0.01);
         aspectSlider.setOnMousePressed(e -> shiftState = e.isShiftDown());
         aspectSlider.valueProperty().addListener(e -> updateAspectRatio());
+
+        stackXSlider.setMin(0.0);
+        stackXSlider.setMax(1.00);
+        stackXSlider.setValue(0.0);
+        stackXSlider.setBlockIncrement(0.01);
+        stackXSlider.setOnMousePressed(e -> shiftState = e.isShiftDown());
+        stackXSlider.valueProperty().addListener(e -> updateStackValues());
+
+        stackYSlider.setMin(0.0);
+        stackYSlider.setMax(1.0);
+        stackYSlider.setValue(0.0);
+        stackYSlider.setBlockIncrement(0.01);
+        stackYSlider.setOnMousePressed(e -> shiftState = e.isShiftDown());
+        stackYSlider.valueProperty().addListener(e -> updateStackValues());
+
+
         lvlSlider.valueProperty().addListener(lvlSliderListener);
         lvlSlider.setOnMouseReleased(e -> setLvlSlider());
         GUIUtils.bindSliderField(lvlSlider, lvlField);
@@ -1191,6 +1216,19 @@ public class AttributesController implements Initializable {
         PauseTransition wait = new PauseTransition(Duration.millis(5.0));
         wait.setOnFinished(e -> ConsoleUtil.runOnFxThread(this::updateChartsNow));
         wait.play();
+    }
+
+    void updateStackValues() {
+        List<PolyChart> applyCharts = getCharts(shiftState);
+        for (PolyChart applyChart : applyCharts) {
+            double stackX = stackXSlider.getValue();
+            applyChart.chartProps.setStackX(stackX);
+            stackXField.setText(String.format("%.2f", stackX));
+            double stackY = stackYSlider.getValue();
+            applyChart.chartProps.setStackY(stackY);
+            stackYField.setText(String.format("%.2f", stackY));
+            applyChart.refresh();
+        }
     }
 
     private void updateChartsNow() {

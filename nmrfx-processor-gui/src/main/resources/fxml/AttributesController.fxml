@@ -105,6 +105,24 @@
                                     <TextField fx:id="offsetField" text="" prefWidth="50"
                                                GridPane.columnIndex="2" GridPane.rowIndex="5"
                                     />
+                                    <Label text="Stack X Value"
+                                           GridPane.columnIndex="0" GridPane.rowIndex="6"
+                                    />
+                                    <Slider fx:id="stackXSlider" min="1" max="20" prefWidth="150"
+                                            GridPane.columnIndex="0" GridPane.rowIndex="7" GridPane.columnSpan="2"
+                                    />
+                                    <TextField fx:id="stackXField" text="" prefWidth="50"
+                                               GridPane.columnIndex="2" GridPane.rowIndex="7"
+                                    />
+                                    <Label text="Stack Y Value"
+                                           GridPane.columnIndex="0" GridPane.rowIndex="8"
+                                    />
+                                    <Slider fx:id="stackYSlider" min="1" max="20" prefWidth="150"
+                                            GridPane.columnIndex="0" GridPane.rowIndex="9" GridPane.columnSpan="2"
+                                    />
+                                    <TextField fx:id="stackYField" text="" prefWidth="50"
+                                               GridPane.columnIndex="2" GridPane.rowIndex="9"
+                                    />
                                 </children>
                             </GridPane>
                         </children>

@@ -2344,15 +2344,17 @@ public class PolyChart extends Region implements PeakListener {
             bottomBorder = borders[2];
             topBorder = borders[3];
             stackWidth = 0.0;
+            double axWidth = width - leftBorder - rightBorder;
             if (disDimProp.get() != DISDIM.TwoD) {
                 int n1D = datasetAttributesList.stream().filter(d -> (d.projection() == -1) && d.getPos())
                         .mapToInt(d -> d.getLastChunk(0) + 1).sum();
                 if (n1D > 1) {
-                    stackWidth = (width - leftBorder - rightBorder) * chartProps.getStackX();
+                    double fWidth = 0.9 * axWidth / n1D; 
+                    stackWidth = (axWidth - fWidth) * chartProps.getStackX();
                 }
             }
 
-            xAxis.setWidth(width - leftBorder - rightBorder - stackWidth);
+            xAxis.setWidth(axWidth - stackWidth);
             xAxis.setHeight(bottomBorder);
             xAxis.setOrigin(xPos + leftBorder, yPos + getHeight() - bottomBorder);
 
