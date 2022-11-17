@@ -81,6 +81,22 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     private static final String[] basicOps = {"APODIZE(lb=0.5) ZF FT", "SB ZF FT", "SB(c=0.5) ZF FT", "VECREF GEN"};
     private static final String[] commonOps = {"APODIZE", "SUPPRESS", "ZF", "FT", "AUTOPHASE", "EXTRACT", "BC"};
 
+    private enum DisplayMode {
+        FID("FID"),
+        FID_OPS("FID w/ OPs"),
+        SPECTRUM("Spectrum");
+        private final String strValue;
+
+        DisplayMode(String strValue) {
+            this.strValue = strValue;
+        }
+
+        @Override
+        public String toString() {
+            return this.strValue;
+        }
+    }
+
     Pane processorPane;
     Pane pane;
 
@@ -158,7 +174,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     @FXML
     private ChoiceBox<String> realImagChoiceBox;
     @FXML
-    private ChoiceBox<String> viewMode;
+    private ChoiceBox<DisplayMode> viewMode;
     @FXML
     private Button datasetFileButton;
     @FXML
@@ -421,12 +437,14 @@ public class ProcessorController implements Initializable, ProgressUpdater {
 
     @FXML
     void viewMode() {
-        if (viewMode.getSelectionModel().getSelectedIndex() == 1) {
+        if (viewMode.getValue() == DisplayMode.SPECTRUM) {
             if (chart.controller.isFIDActive()) {
                 viewDatasetInApp(null);
             }
-        } else if (!chart.controller.isFIDActive()) {
+        } else if (viewMode.getValue() == DisplayMode.FID_OPS) {
             viewFID();
+        } else if (viewMode.getValue() == DisplayMode.FID) {
+            viewRawFID();
         }
     }
 
@@ -438,7 +456,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
             if (chartProcessor.datasetFile != null) {
                 boolean viewingDataset = isViewingDataset();
                 chart.controller.openDataset(chartProcessor.datasetFile, false, true);
-                viewMode.getSelectionModel().select(1);
+                viewMode.setValue(DisplayMode.SPECTRUM);
                 if (!viewingDataset) {
                     chart.full();
                     chart.autoScale();
@@ -449,21 +467,34 @@ public class ProcessorController implements Initializable, ProgressUpdater {
 
     void viewingDataset(boolean state) {
         if (state) {
-            viewMode.getSelectionModel().select(1);
+            viewMode.setValue(DisplayMode.SPECTRUM);
         } else {
-            viewMode.getSelectionModel().select(0);
+            viewMode.setValue(DisplayMode.FID_OPS);
         }
     }
 
     public boolean isViewingDataset() {
-        return viewMode.getSelectionModel().getSelectedIndex() == 1;
+        return viewMode.getValue() == DisplayMode.SPECTRUM;
+    }
+
+    public boolean isViewingFID() {
+        return viewMode.getValue() == DisplayMode.FID_OPS;
     }
 
     @FXML
     void viewFID() {
         dimChoice.getSelectionModel().select(0);
         chartProcessor.setVecDim("D1");
-        viewMode.setValue("FID");
+        viewMode.setValue(DisplayMode.FID_OPS);
+        chart.controller.undoManager.clear();
+        chart.controller.updateSpectrumStatusBarOptions(false);
+    }
+
+    @FXML
+    void viewRawFID() {
+        dimChoice.getSelectionModel().select(0);
+        chartProcessor.setVecDim("D1");
+        viewMode.setValue(DisplayMode.FID);
         chart.controller.undoManager.clear();
         chart.controller.updateSpectrumStatusBarOptions(false);
     }
@@ -1065,6 +1096,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         scanRatio.setValue(3.0);
         scanMaxN.getItems().addAll(5, 10, 20, 50, 100, 200);
         scanMaxN.setValue(50);
+        viewMode.getItems().addAll(DisplayMode.values());
 
         initTable();
         setupListeners();

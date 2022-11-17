@@ -40,12 +40,6 @@
                 </MenuButton>
                 <ChoiceBox fx:id="dimChoice" value=""/>
                 <ChoiceBox fx:id="viewMode" onAction="#viewMode" value="FID">
-                    <items>
-                        <FXCollections fx:factory="observableArrayList">
-                            <String fx:value="FID"/>
-                            <String fx:value="Dataset"/>
-                        </FXCollections>
-                    </items>
                 </ChoiceBox>
                 <Pane HBox.hgrow="ALWAYS"/>
             </items>

@@ -1409,7 +1409,9 @@ public class ChartProcessor {
             if (reloadData) {
                 loadVectors(0);
             }
-            interpreter.exec(script);
+            if (processorController.isViewingFID()) {
+                interpreter.exec(script);
+            }
         } catch (Exception pE) {
             if (pE instanceof IncompleteProcessException) {
                 OperationListCell.failedOperation(((IncompleteProcessException) pE).index);
