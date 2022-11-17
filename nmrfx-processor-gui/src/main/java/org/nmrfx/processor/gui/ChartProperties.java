@@ -425,7 +425,7 @@ public class ChartProperties {
     }
 
     public void setStackX(double value) {
-        value = Math.min(0.95, Math.max(0.0, value));
+        value = Math.min(1.00, Math.max(0.0, value));
         stackXProperty().set(value);
     }
 
@@ -441,7 +441,7 @@ public class ChartProperties {
     }
 
     public void setStackY(double value) {
-        value = Math.min(0.95, Math.max(0.0, value));
+        value = Math.min(1.00, Math.max(0.0, value));
         stackYProperty().set(value);
     }
 

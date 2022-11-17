@@ -927,7 +927,7 @@ public class DrawSpectrum {
     }
 
     public void setStackY(double value) {
-        stackY = Math.min(0.95, Math.max(0.0, value));
+        stackY = Math.min(1.00, Math.max(0.0, value));
     }
 
     public double[] getOffset(DatasetAttributes dataAttributes, double firstOffset, int i1D, int n1D) {
@@ -936,6 +936,9 @@ public class DrawSpectrum {
         double dataOffset = height * (dataAttributes.getOffset() - firstOffset);
         double fraction = getOffsetFraction(dataAttributes, i1D, n1D);
         double delta = height * fraction * stackY;
+        if (n1D > 0) {
+            delta *= (1.0 - firstOffset) * (n1D - 1.0) / n1D;
+        }
         double yOffset = dataOffset + mapOffset + delta;
         double xOffset = stackWidth * fraction;
         double[] result = {xOffset, yOffset};

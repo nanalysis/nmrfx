@@ -156,6 +156,15 @@ public class AttributesController implements Initializable {
     TextField lvlField1D;
 
     @FXML
+    Slider stackXSlider;
+    @FXML
+    TextField stackXField;
+    @FXML
+    Slider stackYSlider;
+    @FXML
+    TextField stackYField;
+
+    @FXML
     Slider clmSlider;
     @FXML
     TextField clmField;
@@ -189,6 +198,8 @@ public class AttributesController implements Initializable {
     ParSliderListener offsetSliderListener = new OffsetSliderListener();
     ParSliderListener posWidthSliderListener = new PosWidthSliderListener();
     ParSliderListener negWidthSliderListener = new NegWidthSliderListener();
+    ChartSliderListener stackXListener = new StackXSliderListener();
+    ChartSliderListener stackYListener = new StackYSliderListener();
 
     PosColorListener posColorListener = new PosColorListener();
     NegColorListener negColorListener = new NegColorListener();
@@ -324,6 +335,27 @@ public class AttributesController implements Initializable {
         aspectSlider.setBlockIncrement(0.01);
         aspectSlider.setOnMousePressed(e -> shiftState = e.isShiftDown());
         aspectSlider.valueProperty().addListener(e -> updateAspectRatio());
+
+        stackXSlider.setMin(0.0);
+        stackXSlider.setMax(1.00);
+        stackXSlider.setValue(0.0);
+        stackXSlider.setBlockIncrement(0.01);
+        stackXSlider.setOnMousePressed(e -> shiftState = e.isShiftDown());
+        stackXSlider.valueProperty().addListener(stackXListener);
+        stackXSlider.setOnMouseReleased(e -> setStackXSlider());
+        GUIUtils.bindSliderField(stackXSlider, stackXField);
+
+
+        stackYSlider.setMin(0.0);
+        stackYSlider.setMax(1.0);
+        stackYSlider.setValue(0.0);
+        stackYSlider.setBlockIncrement(0.01);
+        stackYSlider.setOnMousePressed(e -> shiftState = e.isShiftDown());
+        stackYSlider.valueProperty().addListener(stackYListener);
+        stackYSlider.setOnMouseReleased(e -> setStackYSlider());
+        GUIUtils.bindSliderField(stackYSlider, stackYField);
+
+
         lvlSlider.valueProperty().addListener(lvlSliderListener);
         lvlSlider.setOnMouseReleased(e -> setLvlSlider());
         GUIUtils.bindSliderField(lvlSlider, lvlField);
@@ -410,6 +442,9 @@ public class AttributesController implements Initializable {
         titlesCheckBox.selectedProperty().unbindBidirectional(polyChart.chartProps.titlesProperty());
         parametersCheckBox.selectedProperty().unbindBidirectional(polyChart.chartProps.parametersProperty());
 
+        stackXSlider.valueProperty().unbindBidirectional(polyChart.chartProps.stackXProperty());
+        stackYSlider.valueProperty().unbindBidirectional(polyChart.chartProps.stackYProperty());
+
         aspectSlider.valueProperty().unbindBidirectional(polyChart.chartProps.aspectRatioProperty());
         aspectCheckBox.selectedProperty().unbindBidirectional((polyChart.chartProps.aspectProperty()));
         chart.getDatasetAttributes().removeListener((ListChangeListener<? super DatasetAttributes>) e -> datasetsChanged());
@@ -477,6 +512,9 @@ public class AttributesController implements Initializable {
 
         titlesCheckBox.selectedProperty().bindBidirectional(polyChart.chartProps.titlesProperty());
         parametersCheckBox.selectedProperty().bindBidirectional(polyChart.chartProps.parametersProperty());
+
+        stackXSlider.valueProperty().bindBidirectional(polyChart.chartProps.stackXProperty());
+        stackYSlider.valueProperty().bindBidirectional(polyChart.chartProps.stackYProperty());
 
         aspectSlider.valueProperty().bindBidirectional(polyChart.chartProps.aspectRatioProperty());
         aspectCheckBox.selectedProperty().bindBidirectional((polyChart.chartProps.aspectProperty()));
@@ -580,6 +618,50 @@ public class AttributesController implements Initializable {
     private void updateSlices() {
         final boolean status = sliceStatusCheckBox.isSelected();
         fxmlController.charts.forEach(c -> c.setSliceStatus(status));
+    }
+
+    abstract class ChartSliderListener implements ChangeListener<Number> {
+
+        boolean active = true;
+
+        abstract void update(PolyChart chart, double value);
+
+        @Override
+        public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
+            if (active) {
+                List<PolyChart> aCharts = getCharts(allCharts());
+                for (PolyChart aChart : aCharts) {
+                    update(aChart, newValue.doubleValue());
+                }
+                refreshCharts();
+            }
+        }
+    }
+
+    public class StackXSliderListener extends ChartSliderListener {
+        void update(PolyChart aChart, double value) {
+            aChart.chartProps.setStackX(value);
+        }
+    }
+
+    public class StackYSliderListener extends ChartSliderListener {
+        void update(PolyChart aChart, double value) {
+            aChart.chartProps.setStackY(value);
+        }
+    }
+
+    void setChartSlider(ChartSliderListener sliderListener, Slider slider, double value) {
+        sliderListener.active = false;
+        slider.setValue(value);
+        sliderListener.active = true;
+    }
+
+    void setStackXSlider() {
+        setChartSlider(stackXListener, stackXSlider, chart.chartProps.getStackX());
+    }
+
+    void setStackYSlider() {
+        setChartSlider(stackYListener, stackYSlider, chart.chartProps.getStackY());
     }
 
     abstract class ParSliderListener implements ChangeListener<Number> {
@@ -1023,6 +1105,8 @@ public class AttributesController implements Initializable {
         setContourColorControls(false);
         setDrawOnControls(true);
         setDrawOnControls(false);
+        setStackXSlider();
+        setStackYSlider();
     }
 
     private void setPeakControls() {
@@ -1191,6 +1275,19 @@ public class AttributesController implements Initializable {
         PauseTransition wait = new PauseTransition(Duration.millis(5.0));
         wait.setOnFinished(e -> ConsoleUtil.runOnFxThread(this::updateChartsNow));
         wait.play();
+    }
+
+    void updateStackValues() {
+        List<PolyChart> applyCharts = getCharts(shiftState);
+        for (PolyChart applyChart : applyCharts) {
+            double stackX = stackXSlider.getValue();
+            applyChart.chartProps.setStackX(stackX);
+          //  stackXField.setText(String.format("%.2f", stackX));
+            double stackY = stackYSlider.getValue();
+            applyChart.chartProps.setStackY(stackY);
+         //   stackYField.setText(String.format("%.2f", stackY));
+            applyChart.refresh();
+        }
     }
 
     private void updateChartsNow() {

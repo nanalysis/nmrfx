@@ -64,6 +64,7 @@ public class SpectrumStatusBar {
 
     private enum DisplayMode {
         TRACES("Traces (1D)"),
+        STACKPLOT("Stack Plot"),
         CONTOURS("Contours (2D)");
         private final String strValue;
 
@@ -606,7 +607,11 @@ public class SpectrumStatusBar {
         List<Node> nodes = new ArrayList<>();
         nodes.add(cursorChoiceBox);
         nodes.add(toolButton);
-        displayModeComboBox.getSelectionModel().select(DisplayMode.TRACES);
+        if (isStacked()) {
+            displayModeComboBox.getSelectionModel().select(DisplayMode.STACKPLOT);
+        } else {
+            displayModeComboBox.getSelectionModel().select(DisplayMode.TRACES);
+        }
         nodes.add(displayModeComboBox);
 
         HBox.setHgrow(filler1, Priority.ALWAYS);
@@ -776,7 +781,7 @@ public class SpectrumStatusBar {
             return;
         }
         DisplayMode selected = displayModeComboBox.getSelectionModel().getSelectedItem();
-        if (selected == DisplayMode.TRACES) {
+        if ((selected == DisplayMode.TRACES) || (selected == DisplayMode.STACKPLOT)) {
             OptionalInt maxRows = chart.getDatasetAttributes().stream().
                     mapToInt(d -> d.nDim == 1 ? 1 : d.getDataset().getSizeReal(1)).max();
             if (maxRows.isEmpty()) {
@@ -788,8 +793,17 @@ public class SpectrumStatusBar {
                 chart.setDrawlist(0);
             }
 
+            if (selected == DisplayMode.STACKPLOT) {
+                chart.clearDrawlist();
+                if (!isStacked()) {
+                    chart.chartProps.setStackX(0.2);
+                    chart.chartProps.setStackY(1.0);
+                }
+            } else {
+                chart.chartProps.setStackX(0.0);
+                chart.chartProps.setStackY(0.0);
+            }
             set1DArray(maxNDim.getAsInt(), maxRows.getAsInt());
-
         } else if (selected == DisplayMode.CONTOURS) {
             chart.disDimProp.set(PolyChart.DISDIM.TwoD);
             chart.getDatasetAttributes().get(0).drawList.clear();
@@ -800,6 +814,12 @@ public class SpectrumStatusBar {
         chart.updateAxisType(true);
         chart.full();
         chart.autoScale();
+    }
+
+    private boolean isStacked() {
+        PolyChart chart = controller.getActiveChart();
+        return (chart.chartProps.getStackX() > 0.01) ||
+                (chart.chartProps.getStackY() > 0.01);
     }
 
     private void dimAction(String rowName, String dimName) {
