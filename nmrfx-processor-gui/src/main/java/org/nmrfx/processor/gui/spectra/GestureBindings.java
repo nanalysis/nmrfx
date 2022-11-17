@@ -71,12 +71,15 @@ public class GestureBindings {
     public void scroll(ScrollEvent event) {
         double x = chart.getMouseBindings().getMouseX();
         double y = chart.getMouseBindings().getMouseY();
-        int border = chart.hitBorder(x, y);
+        ChartBorder border = chart.hitBorder(x, y);
         double dx = event.getDeltaX();
         double dy = event.getDeltaY();
-        if (event.isControlDown()) {
+        if (event.isControlDown() && border == ChartBorder.NONE) {
             chart.scaleY(dy);
-        } else if ((border != 0) || event.isAltDown()) {
+        } else if (border == ChartBorder.RIGHT || border == ChartBorder.TOP) {
+            chart.updateProjectionScale(border, dy);
+            chart.refresh();
+        } else if ((border == ChartBorder.LEFT || border == ChartBorder.BOTTOM) || (event.isAltDown() && border == ChartBorder.NONE)) {
             chart.zoom(-dy / 50.0 + 1.0);
         } else {
             chart.scroll(dx, dy);

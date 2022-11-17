@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2018 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,43 +17,38 @@
  */
 package org.nmrfx.analyst.gui;
 
-import java.io.File;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import javafx.beans.Observable;
+import javafx.beans.property.ReadOnlyObjectWrapper;
+import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
+import javafx.collections.ObservableList;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
-import javafx.scene.control.Alert;
-import javafx.scene.control.ChoiceBox;
-import javafx.scene.control.Label;
-import javafx.scene.control.MenuButton;
-import javafx.scene.control.MenuItem;
-import javafx.scene.control.TableView;
-import javafx.scene.control.ToolBar;
+import javafx.scene.control.*;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
-import org.controlsfx.dialog.ExceptionDialog;
+import org.apache.commons.math3.optim.PointValuePair;
+import org.controlsfx.control.CheckComboBox;
 import org.nmrfx.analyst.gui.tools.ScanTable;
-import org.nmrfx.chart.Axis;
-import org.nmrfx.chart.BoxPlotData;
-import org.nmrfx.chart.DataSeries;
-import org.nmrfx.chart.XYCanvasChart;
-import org.nmrfx.chart.XYChartPane;
-import org.nmrfx.chart.XYValue;
-import org.nmrfx.graphicsio.GraphicsIOException;
+import org.nmrfx.chart.*;
 import org.nmrfx.graphicsio.SVGGraphicsContext;
 import org.nmrfx.processor.gui.controls.FileTableItem;
+import org.nmrfx.processor.gui.utils.ToolBarUtils;
+import org.nmrfx.processor.optimization.FitEquation;
+import org.nmrfx.processor.optimization.FitExp;
+import org.nmrfx.processor.optimization.FitReactionAB;
+import org.nmrfx.processor.optimization.Gaussian;
+import org.nmrfx.utils.GUIUtils;
+
+import java.io.File;
+import java.util.*;
 
 /**
- *
  * @author brucejohnson
  */
 public class TablePlotGUI {
@@ -66,16 +61,25 @@ public class TablePlotGUI {
     XYChartPane chartPane;
     ChoiceBox<String> chartTypeChoice = new ChoiceBox<>();
     ChoiceBox<String> xArrayChoice = new ChoiceBox<>();
-    ChoiceBox<String> yArrayChoice = new ChoiceBox<>();
+    CheckComboBox<String> yArrayChoice = new CheckComboBox<>();
+    Map<String, String> nameMap = new HashMap<>();
+    List<DataSeries> fitLineSeries = new ArrayList<>();
+    ChoiceBox<String> equationChoice = new ChoiceBox<>();
+    TableView<ParItem> parTable = new TableView<>();
+    VBox fitVBox;
+    boolean showGroup = false;
 
     /**
      * Creates a TablePlotGUI instance
      *
      * @param tableView the TableView object that will be used to get data to
-     * plot
+     *                  plot
      */
     public TablePlotGUI(TableView<FileTableItem> tableView) {
         this.tableView = tableView;
+    }
+
+    record ParItem(String columnName, int group, String parName, double value, double error) {
     }
 
     /**
@@ -87,15 +91,16 @@ public class TablePlotGUI {
         if (stage == null) {
             stage = new Stage();
             stage.setTitle("Table Plotter");
+            stage.setWidth(750);
             Label typelabel = new Label("  Type:  ");
             Label xlabel = new Label("  X Var:  ");
             Label ylabel = new Label("  Y Var:  ");
-            chartTypeChoice.setMinWidth(150);
+            chartTypeChoice.setMinWidth(100);
             chartTypeChoice.getItems().addAll("ScatterPlot", "BoxPlot");
             chartTypeChoice.setValue("ScatterPlot");
             xArrayChoice.getItems().clear();
             yArrayChoice.getItems().clear();
-            xArrayChoice.setMinWidth(150);
+            xArrayChoice.setMinWidth(100);
             yArrayChoice.setMinWidth(150);
             try {
                 chartTypeChoice.valueProperty().addListener((Observable x) -> {
@@ -103,12 +108,8 @@ public class TablePlotGUI {
                     updateAxisChoices();
                 });
 
-                xArrayChoice.valueProperty().addListener((Observable x) -> {
-                    updatePlot();
-                });
-                yArrayChoice.valueProperty().addListener((Observable y) -> {
-                    updatePlot();
-                });
+                xArrayChoice.valueProperty().addListener((Observable x) -> updatePlot());
+                yArrayChoice.getCheckModel().getCheckedItems().addListener((Observable y) -> updatePlot());
             } catch (NullPointerException npEmc1) {
                 Alert alert = new Alert(Alert.AlertType.ERROR);
                 alert.setContentText("Error: Fit must first be performed.");
@@ -116,9 +117,7 @@ public class TablePlotGUI {
                 return;
             }
             tableView.getColumns().
-                    addListener((ListChangeListener) (c -> {
-                        updateAxisChoices();
-                    }));
+                    addListener((ListChangeListener) (c -> updateAxisChoices()));
 
             ToolBar toolBar = new ToolBar();
             MenuButton fileMenu = new MenuButton("File");
@@ -126,29 +125,68 @@ public class TablePlotGUI {
             MenuItem exportSVGMenuItem = new MenuItem("Export SVG...");
             fileMenu.getItems().add(exportSVGMenuItem);
             exportSVGMenuItem.setOnAction(e -> exportSVGAction());
+            CheckBox showFitCheckBox = new CheckBox("Fitting");
+            showFitCheckBox.setSelected(false);
+            showFitCheckBox.setOnAction(e -> toggleFitPane(showFitCheckBox));
 
-            toolBar.getItems().addAll(fileMenu);
+            ToolBar toolBar2 = new ToolBar();
 
-            HBox hBox = new HBox();
-            HBox.setHgrow(hBox, Priority.ALWAYS);
-            hBox.setMinWidth(600);
-            hBox.getChildren().addAll(typelabel, chartTypeChoice,
+            Button button = new Button("Fit");
+            button.setOnAction(e -> analyze());
+            equationChoice.getItems().addAll("ExpAB", "ExpABC", "GaussianAB", "GaussianABC", "A<->B");
+            equationChoice.setValue("ExpABC");
+            toolBar2.getItems().addAll(equationChoice, button);
+            toolBar.getItems().addAll(fileMenu,typelabel, chartTypeChoice,
                     xlabel, xArrayChoice, ylabel, yArrayChoice);
-            hBox.setAlignment(Pos.CENTER);
+            ToolBarUtils.addFiller(toolBar, 10,200);
+            toolBar.getItems().add(showFitCheckBox);
 
-            VBox vBox = new VBox();
-            vBox.setMinWidth(600);
-            vBox.getChildren().addAll(toolBar, hBox);
+            fitVBox = new VBox();
+            fitVBox.setMinWidth(200);
+            fitVBox.getChildren().addAll(toolBar2, parTable);
+
             chartPane = new XYChartPane();
             activeChart = chartPane.getChart();
-            borderPane.setTop(vBox);
+            borderPane.setTop(toolBar);
             borderPane.setCenter(chartPane);
+            borderPane.setRight(null);
             stage.setScene(stageScene);
+            setupTable();
         }
         updateAxisChoices();
         stage.show();
         stage.toFront();
         updatePlot();
+    }
+
+    private void toggleFitPane(CheckBox showFitBox) {
+        if (showFitBox.isSelected()) {
+            borderPane.setRight(fitVBox);
+        } else {
+            borderPane.setRight(null);
+        }
+
+    }
+    void setupTable() {
+        TableColumn<ParItem, String> columnNameColumn = new TableColumn<>("Column");
+        columnNameColumn.setCellValueFactory(p -> new ReadOnlyObjectWrapper<>(p.getValue().columnName()));
+        TableColumn<ParItem, Integer> groupColumn = null;
+        if (showGroup) {
+            groupColumn = new TableColumn<>("Group");
+            groupColumn.setCellValueFactory(p -> new ReadOnlyObjectWrapper<>(p.getValue().group()));
+        }
+
+        TableColumn<ParItem, String> parNameColumn = new TableColumn<>("Parameter");
+        parNameColumn.setCellValueFactory(p -> new ReadOnlyObjectWrapper<>(p.getValue().parName()));
+        TableColumn<ParItem, Double> valueColumn = new TableColumn<>("Value");
+        valueColumn.setCellValueFactory(p -> new ReadOnlyObjectWrapper<>(p.getValue().value()));
+        TableColumn<ParItem, Double> errorColumn = new TableColumn<>("Error");
+        errorColumn.setCellValueFactory(p -> new ReadOnlyObjectWrapper<>(p.getValue().error()));
+        parTable.getColumns().add(columnNameColumn);
+        if (showGroup) {
+            parTable.getColumns().add(groupColumn);
+        }
+        parTable.getColumns().addAll(parNameColumn, valueColumn, errorColumn);
     }
 
     private Map<Integer, List<FileTableItem>> getGroups() {
@@ -170,18 +208,23 @@ public class TablePlotGUI {
         } else {
             activeChart = chartPane.getBoxChart();
         }
+        chartPane.updateChart();
+    }
 
+
+    void updatePlotWithFitLines() {
+        updateScatterPlot();
+        for (var series : fitLineSeries) {
+            activeChart.getData().add(series);
+        }
     }
 
     private void updatePlot() {
         switch (chartTypeChoice.getValue()) {
-            case "ScatterPlot":
-                updateScatterPlot();
-                break;
-            case "BoxPlot":
-                updateBoxPlot();
-                break;
-            default:
+            case "ScatterPlot" -> updateScatterPlot();
+            case "BoxPlot" -> updateBoxPlot();
+            default -> {
+            }
         }
 
     }
@@ -191,10 +234,11 @@ public class TablePlotGUI {
             Axis xAxis = activeChart.getXAxis();
             Axis yAxis = activeChart.getYAxis();
             String xElem = xArrayChoice.getValue();
-            String yElem = yArrayChoice.getValue();
+            List<String> yElems = yArrayChoice.getCheckModel().getCheckedItems();
             activeChart.setShowLegend(false);
 
-            if ((xElem != null) && (yElem != null)) {
+            if ((xElem != null) && !yElems.isEmpty()) {
+                String yElem = yElems.get(0);
                 xAxis.setLabel(xElem);
                 yAxis.setLabel(yElem);
                 xAxis.setZeroIncluded(true);
@@ -215,8 +259,7 @@ public class TablePlotGUI {
                     double[] ddata = new double[items.size()];
                     int i = 0;
                     for (FileTableItem item : items) {
-                        double x = item.getDouble(xElem);
-                        double y = item.getDouble(yElem);
+                        double y = item.getDouble(nameMap.get(yElem));
                         ddata[i++] = y;
                     }
                     BoxPlotData fiveNum = new BoxPlotData(ddata);
@@ -237,55 +280,126 @@ public class TablePlotGUI {
             Axis xAxis = activeChart.getXAxis();
             Axis yAxis = activeChart.getYAxis();
             String xElem = xArrayChoice.getValue();
-            String yElem = yArrayChoice.getValue();
+            List<String> yElems = yArrayChoice.getCheckModel().getCheckedItems();
             activeChart.setShowLegend(false);
 
-            if ((xElem != null) && (yElem != null)) {
-                xAxis.setLabel(xElem);
-                yAxis.setLabel(yElem);
-                xAxis.setZeroIncluded(true);
-                yAxis.setZeroIncluded(true);
-                xAxis.setAutoRanging(true);
-                yAxis.setAutoRanging(true);
-                activeChart.getData().clear();
-                //Prepare XYChart.Series objects by setting data
-                var groups = getGroups();
-                for (var groupEntry : groups.entrySet()) {
-                    int groupNum = groupEntry.getKey();
-                    var items = groupEntry.getValue();
-                    DataSeries series = new DataSeries();
-                    series.clear();
-                    for (FileTableItem item : items) {
-                        double x = item.getDouble(xElem);
-                        double y = item.getDouble(yElem);
-                        series.add(new XYValue(x, y));
-                        series.setFill(ScanTable.getGroupColor(groupNum));
+            if ((xElem != null) && !yElems.isEmpty()) {
+                if (yElems.size() == 1) {
+                    xAxis.setLabel(xElem);
+                    String yElem = yElems.get(0);
+                    if (yElem != null) {
+                        yAxis.setLabel(yElem);
+                        xAxis.setZeroIncluded(true);
+                        yAxis.setZeroIncluded(true);
+                        xAxis.setAutoRanging(true);
+                        yAxis.setAutoRanging(true);
+                        activeChart.getData().clear();
+                        //Prepare XYChart.Series objects by setting data
+                        var groups = getGroups();
+                        for (var groupEntry : groups.entrySet()) {
+                            int groupNum = groupEntry.getKey();
+                            var items = groupEntry.getValue();
+                            DataSeries series = new DataSeries();
+                            series.clear();
+                            for (FileTableItem item : items) {
+                                double x = item.getDouble(nameMap.get(xElem));
+                                double y = item.getDouble(nameMap.get(yElem));
+                                series.add(new XYValue(x, y));
+                                series.setFill(ScanTable.getGroupColor(groupNum));
+                                series.setStroke(ScanTable.getGroupColor(groupNum));
+                            }
+                            activeChart.getData().add(series);
+                            activeChart.autoScale(true);
+                        }
                     }
-                    activeChart.getData().add(series);
-                    activeChart.autoScale(true);
+                } else {
+                    xAxis.setLabel(xElem);
+                    yAxis.setLabel("Intensity");
+                    xAxis.setZeroIncluded(true);
+                    yAxis.setZeroIncluded(true);
+                    xAxis.setAutoRanging(true);
+                    yAxis.setAutoRanging(true);
+                    activeChart.getData().clear();
+                    //Prepare XYChart.Series objects by setting data
+                    int groupNum = 0;
+
+                    for (var yElem : yElems) {
+                        if (yElem != null) {
+                            DataSeries series = new DataSeries();
+                            series.setName(yElem);
+                            series.clear();
+                            for (FileTableItem item : tableView.getItems()) {
+                                double x = item.getDouble(nameMap.get(xElem));
+                                double y = item.getDouble(nameMap.get(yElem));
+                                series.add(new XYValue(x, y));
+                            }
+                            series.setFill(ScanTable.getGroupColor(groupNum));
+                            series.setStroke(ScanTable.getGroupColor(groupNum));
+                            groupNum++;
+                            activeChart.getData().add(series);
+                            activeChart.autoScale(true);
+                        }
+                    }
+                    activeChart.setShowLegend(true);
                 }
             }
+            activeChart.drawChart();
         }
     }
 
+    List<String> usableColumns() {
+        List<String> columnNames = new ArrayList<>();
+        nameMap.clear();
+        var columns = tableView.getColumns();
+        for (var column : columns) {
+            String text = column.getText();
+            if (text.equals("path") || text.equals("sequence") || text.equals("ndim")) {
+                continue;
+            }
+            String name = text;
+            if (text.contains(":")) {
+                name = text.substring(0, text.indexOf(":"));
+            }
+            nameMap.put(name, text);
+            columnNames.add(name);
+        }
+        return columnNames;
+    }
+
     private void updateAxisChoices() {
-        xArrayChoice.getItems().clear();
-        yArrayChoice.getItems().clear();
+        List<String> currentChecks = new ArrayList<>(yArrayChoice.getCheckModel().getCheckedItems());
         if (tableView != null) {
-            var columns = tableView.getColumns();
-            for (var column : columns) {
-                String text = column.getText();
-                if (text.equals("path") || text.equals("sequence") || text.equals("ndim")) {
-                    continue;
+            var items = yArrayChoice.getItems();
+            List<String> columnNames = usableColumns();
+            var iterator = items.listIterator();
+            while (iterator.hasNext()) {
+                String name = iterator.next();
+                if (!columnNames.contains(name)) {
+                    yArrayChoice.getCheckModel().clearCheck(name);
+                    iterator.remove();
+                    currentChecks.remove(name);
                 }
-                xArrayChoice.getItems().add(text);
-                yArrayChoice.getItems().add(text);
             }
-            if (!xArrayChoice.getItems().isEmpty()) {
-                xArrayChoice.setValue(xArrayChoice.getItems().get(0));
+            if (items.contains(null)) {
+                items.remove(null);
             }
-            if (!yArrayChoice.getItems().isEmpty()) {
-                yArrayChoice.setValue(yArrayChoice.getItems().get(0));
+            for (String name:columnNames) {
+                if (!items.contains(name)) {
+                    items.add(name);
+                }
+            }
+            String currentX = xArrayChoice.getValue();
+            xArrayChoice.getItems().clear();
+            xArrayChoice.getItems().addAll(columnNames);
+            if ((currentX != null) && columnNames.contains(currentX)) {
+                xArrayChoice.setValue(currentX);
+            } else {
+                if (!xArrayChoice.getItems().isEmpty()) {
+                    xArrayChoice.setValue(xArrayChoice.getItems().get(0));
+                }
+            }
+            for (var item:currentChecks) {
+                yArrayChoice.getCheckModel().check(item);
             }
         }
     }
@@ -293,24 +407,115 @@ public class TablePlotGUI {
     private void exportSVGAction() {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Export to SVG");
-        //fileChooser.setInitialDirectory(pyController.getInitialDirectory());
         File selectedFile = fileChooser.showSaveDialog(null);
         if (selectedFile != null) {
             SVGGraphicsContext svgGC = new SVGGraphicsContext();
-            try {
-                Canvas canvas = activeChart.getCanvas();
-                svgGC.create(true, canvas.getWidth(), canvas.getHeight(), selectedFile.toString());
-                exportChart(svgGC);
-                svgGC.saveFile();
-            } catch (GraphicsIOException ex) {
-                ExceptionDialog eDialog = new ExceptionDialog(ex);
-                eDialog.showAndWait();
-            }
+            Canvas canvas = activeChart.getCanvas();
+            svgGC.create(true, canvas.getWidth(), canvas.getHeight(), selectedFile.toString());
+            exportChart(svgGC);
+            svgGC.saveFile();
         }
     }
 
-    private void exportChart(SVGGraphicsContext svgGC) throws GraphicsIOException {
+    private void exportChart(SVGGraphicsContext svgGC) {
         svgGC.beginPath();
         activeChart.drawChart(svgGC);
+    }
+
+    void analyze() {
+        String xElem = xArrayChoice.getValue();
+        List<String> yElems = yArrayChoice.getCheckModel().getCheckedItems();
+        FitEquation fitEquation = switch (equationChoice.getValue()) {
+            case "ExpAB" -> new FitExp(false);
+            case "ExpABC" -> new FitExp(true);
+            case "GaussianAB" -> new Gaussian(false);
+            case "GaussianABC" -> new Gaussian(true);
+            case "A<->B" -> new FitReactionAB();
+            default -> null;
+        };
+        if (fitEquation == null) {
+            return;
+        }
+        int nY = fitEquation.nY();
+        if ((nY == 2) && (nY != yElems.size())) {
+            GUIUtils.warn("Fit Y values", "Need " + nY + " columns");
+            return;
+        }
+        fitLineSeries.clear();
+        ObservableList<ParItem> allResults = FXCollections.observableArrayList();
+        if ((xElem != null) && !yElems.isEmpty()) {
+            int iGroup = 0;
+            if (nY == 2) {
+                allResults.addAll(fit(xElem, yElems, fitEquation, nY, iGroup));
+            } else {
+                for (var yElem : yElems) {
+                    List<String> subYElem = new ArrayList<>(Collections.singleton(yElem));
+                    allResults.addAll(fit(xElem, subYElem, fitEquation, nY, iGroup++));
+                }
+            }
+            updatePlotWithFitLines();
+            parTable.getItems().setAll(allResults);
+        }
+    }
+
+    private List<ParItem> fit(String xElem, List<String> yElems, FitEquation fitEquation, int nY, int iGroup) {
+        List<FileTableItem> items = tableView.getItems();
+        double[][] xValues = new double[1][items.size()];
+        double[][] yValues = new double[nY][items.size()];
+        double[][] errValues = new double[2][items.size()];
+        int i = 0;
+        double maxX = 0.0;
+        for (FileTableItem item : items) {
+            double x = item.getDouble(nameMap.get(xElem));
+            xValues[0][i] = x;
+            maxX = Math.max(xValues[0][i], maxX);
+            int j = 0;
+            for (var yElem : yElems) {
+                yValues[j][i] = item.getDouble(nameMap.get(yElem));
+                errValues[j][i] = 1.0;
+                j++;
+            }
+            i++;
+        }
+        fitEquation.setXYE(xValues, yValues, errValues);
+        PointValuePair result = fitEquation.fit();
+        if (result == null) {
+            GUIUtils.warn("Fitting", "Error fitting data");
+            return Collections.EMPTY_LIST;
+        }
+        double[] errs = fitEquation.getParErrs();
+        String[] parNames = fitEquation.parNames();
+        double[] values = result.getPoint();
+        List<ParItem> results = new ArrayList<>();
+        for (int j = 0; j < values.length; j++) {
+            double errValue = errs[j];
+            int nSig = (int) Math.floor(Math.log10(errValue)) - 1;
+            nSig = -nSig;
+            if (nSig < 0) {
+                nSig = 0;
+            }
+            double scale = Math.pow(10, nSig);
+            errValue = Math.round(errValue * scale)/ scale;
+            double value = Math.round(values[j] * scale)/ scale;
+            ParItem parItem = new ParItem(yElems.get(0), 0, parNames[j], value, errValue);
+            results.add(parItem);
+        }
+        double[] first = {0.0};
+        double[] last = {maxX};
+        double[][] curve0 = fitEquation.getSimValues(first, last, 200);
+        for (int iSeries = 0; iSeries < yValues.length; iSeries++) {
+            DataSeries series = new DataSeries();
+            fitLineSeries.add(series);
+            for (int j = 0; j < curve0[0].length; j++) {
+                series.add(new XYValue(curve0[0][j], curve0[xValues.length + iSeries][j]));
+            }
+            series.setStroke(ScanTable.getGroupColor(iGroup));
+            series.setFill(ScanTable.getGroupColor(iGroup));
+            series.drawLine(true);
+            series.drawSymbol(false);
+            series.fillSymbol(false);
+            series.setName(yElems.get(iSeries) + ":Fit");
+        }
+        return results;
     }
 }

@@ -571,6 +571,10 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
         projectionAxis = value;
     }
 
+    public boolean isProjection() {
+        return projectionAxis != -1;
+    }
+
     public int projection() {
         return projectionAxis;
     }
@@ -927,8 +931,8 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
         dimC[0] = 0;
         ptC[0][0] = dataset.ppmToPoint(0, ppm0);
         ptC[0][1] = dataset.ppmToPoint(0, ppm1);
-        specVec.resize(ptC[0][1] - ptC[0][0] + 1, dataset.getComplex_r(0));
-        dataset.readVectorFromDatasetFile(ptC, dimC, specVec);
+        specVec.resize(ptC[0][1] - ptC[0][0] + 1, dataset.getComplex(0));
+        dataset.readVectorFromDatasetFile(DatasetUtils.generateRawIndices(ptC, dataset.getComplex(0)), dimC, specVec);
     }
 
     public boolean getSlice(Vec specVec, int iDim, double ppmx, double ppmy) throws IOException {
@@ -1965,7 +1969,7 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
     }
 
     public double[] getRegionAsArray() {
-        Set<DatasetRegion> regions = theFile.getRegions();
+        List<DatasetRegion> regions = theFile.getReadOnlyRegions();
         double[] ppms = null;
         if (regions != null) {
             ppms = new double[regions.size() * 2];
@@ -1980,7 +1984,7 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
     }
 
     public double[] getOffsetsAsArray() {
-        Set<DatasetRegion> regions = theFile.getRegions();
+        List<DatasetRegion> regions = theFile.getReadOnlyRegions();
         double[] offsets = null;
         if (regions != null) {
             offsets = new double[regions.size() * 2];
@@ -2004,24 +2008,32 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
                     double deltaEnd = oldEnd - r.getRegionStartIntensity(0);
                     r.setRegionStartIntensity(0, newY);
                     r.setRegionEndIntensity(0, newY + deltaEnd);
-                    try {
-                        r.measure(theFile);
-                    } catch (IOException ioE) {
-                        log.warn("Error encountered moving region.", ioE);
-                    }
+                    measureRegion(r, "Error encountered moving region start and end intensity.");
                     break;
                 case 2:
                     r.setRegionEndIntensity(0, newY);
+                    measureRegion(r, "Error encountered moving region end intensity.");
                     break;
                 case 3:
                     r.setRegionEnd(0, newX);
+                    measureRegion(r, "Error encountered moving region end.");
                     break;
                 case 4:
                     r.setRegionStart(0, newX);
+                    measureRegion(r, "Error encountered moving region start.");
                     break;
                 default:
                     break;
             }
+    }
+
+    private void measureRegion(DatasetRegion region, String errMsg) {
+        try {
+            region.measure(getDataset());
+        } catch (IOException e) {
+            log.warn("{} {}", errMsg, e.getMessage(), e);
+        }
+        region.setAuto(false);
     }
 
     public int[] getMatchDim(DatasetAttributes dataAttr2, boolean looseMode) {

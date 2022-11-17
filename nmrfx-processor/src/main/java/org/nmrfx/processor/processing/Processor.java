@@ -66,6 +66,8 @@ import java.util.concurrent.atomic.AtomicReference;
 public class Processor {
     private static final Logger log = LoggerFactory.getLogger(Processor.class);
     private static long MEMORY_MODE_LIMIT = 536870912L;
+    private static boolean TEST_CORRUPTION_MODE = false;
+
 
     private String fileName;
     private Dataset dataset;
@@ -1177,6 +1179,13 @@ public class Processor {
                             for (NMRData nmrData : nmrDataSets) {
                                 temp = new Vec(vectorSize, nmrData.isComplex(dim[0]));
                                 nmrData.readVector(vecIndex.inVecs[j], temp);
+                                if (TEST_CORRUPTION_MODE) {
+                                    for (int[] rowSkip : nmrData.getSkipIndices()) {
+                                        if (rowSkip[0] == vecIndex.getOutVec(j)[1][0]) {
+                                            temp.rand();
+                                        }
+                                    }
+                                }
                                 temp.setPt(vecIndex.outVecs[j], dim);
                                 vectors.add(temp);
                             }
@@ -1757,5 +1766,9 @@ public class Processor {
 
     public boolean isProcessorAvailable() {
         return processorAvailable.get();
+    }
+
+    public static void setTestCorruptionMode(boolean state) {
+        TEST_CORRUPTION_MODE = state;
     }
 }

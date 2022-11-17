@@ -29,6 +29,7 @@ import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.MainApp;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.annotations.AnnoText;
+import org.nmrfx.processor.gui.spectra.ChartBorder;
 import org.nmrfx.processor.gui.spectra.IntegralHit;
 import org.nmrfx.processor.gui.spectra.MultipletSelection;
 
@@ -159,11 +160,11 @@ public class MouseBindings {
         mouseX = mouseEvent.getX();
         mouseY = mouseEvent.getY();
         Optional<MultipletSelection> hit = PeakMouseHandlerHandler.handlerOverMultiplet(this);
-        int border = chart.hitBorder(mouseX, mouseY);
-        if (border == 1) {
+        ChartBorder border = chart.hitBorder(mouseX, mouseY);
+        if (border == ChartBorder.LEFT ) {
             setCursor(Cursor.V_RESIZE);
             return;
-        } else if (border == 2) {
+        } else if (border == ChartBorder.BOTTOM) {
             setCursor(Cursor.H_RESIZE);
             return;
         } else {
@@ -264,14 +265,14 @@ public class MouseBindings {
         hidePopOver(false);
 
         boolean altShift = mouseEvent.isShiftDown() && (mouseEvent.isAltDown() || mouseEvent.isControlDown());
-        int border = chart.hitBorder(mouseX, mouseY);
         if (chart.isSelected()) {
             Optional<Integer> hitCorner = hitChartCorner(mouseX, mouseY, 10);
             return;
         }
 
         if (!isPopupTrigger(mouseEvent)) {
-            if (!(altShift || (border != 0)) && (mouseEvent.isMetaDown() || chart.getCanvasCursor().toString().equals("CROSSHAIR"))) {
+            ChartBorder border = chart.hitBorder(mouseX, mouseY);
+            if (!(altShift || (border == ChartBorder.LEFT || border == ChartBorder.BOTTOM)) && (mouseEvent.isMetaDown() || chart.getCanvasCursor().toString().equals("CROSSHAIR"))) {
                 if (!chart.getCanvasCursor().toString().equals("CROSSHAIR")) {
                     chart.getCrossHairs().setCrossHairState(true);
                 }
