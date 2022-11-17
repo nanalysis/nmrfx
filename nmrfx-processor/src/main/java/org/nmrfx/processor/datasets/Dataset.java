@@ -193,6 +193,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         title = fileName;
         nDim = 1;
         vsize = new int[1];
+        vsize[0] = vector.getSize();
         vsize_r = new int[1];
         tdSize = new int[1];
         zfSize = new int[1];
@@ -200,7 +201,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         extLast = new int[1];
         tdSize[0] = vector.getTDSize();
         fileSize = vector.getSize();
-        layout = DatasetLayout.createFullMatrix(0, vsize);
+        layout = DatasetLayout.createFullMatrix(getFileHeaderSize(title), vsize);
         newHeader();
         memoryMode = false;
 
@@ -1327,22 +1328,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         return Math.max(Math.abs(maxValue), Math.abs(minValue));
     }
 
-    /**
-     * Write the data values to a file. Only works if the dataset values are in
-     * a Vec object (not dataset file)
-     *
-     * @param fullName Name of file to write
-     * @throws java.io.IOException if an I/O error ocurrs
-     */
-    public void writeVecMat(String fullName) throws IOException {
-        File newFile = new File(fullName);
-        try (RandomAccessFile outFile = new RandomAccessFile(newFile, "rw")) {
-            byte[] buffer = vecMat.getBytes();
-            DatasetHeaderIO headerIO = new DatasetHeaderIO(this);
-            headerIO.writeHeader(layout, outFile);
-            DataUtilities.writeBytes(outFile, buffer, layout.getFileHeaderSize(), buffer.length);
-        }
-    }
+
 
     /**
      * Write a matrix of values to the dataset
@@ -1574,6 +1560,12 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         }
         if (vecMat != null) {
             int j = 0;
+            // If the vectors are complex, convert the raw indices to real since the complex can be read from the
+            // vecMat in one loop iteration (when reading from the file, it takes 2 loop iterations)
+            if (rwVector.isComplex() && vecMat.isComplex()) {
+                pt[0][0] /= 2;
+                pt[0][1] /= 2;
+            }
             for (int i = pt[0][0]; i <= pt[0][1]; i++) {
                 if (rwVector.isComplex()) {
                     rwVector.set(j, vecMat.getComplex(i));
@@ -1791,7 +1783,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
             rowIndices[i] = i;
         }
         var columnSet = new TreeSet<Integer>();
-        for (var region : getRegions()) {
+        for (var region : getReadOnlyRegions()) {
             double ppm0 = region.getRegionStart(0);
             int pt1 = ppmToPoint(0, ppm0);
             double ppm1 = region.getRegionEnd(0);
@@ -2256,7 +2248,10 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
             pt[0][1] = getSizeTotal(iDim) - 1;
             origSize = pt[0][1];
             int newSize = pt[0][1] - pt[0][0] + 1;
-            vec = new Vec(newSize, false);
+            if (getComplex(iDim)) {
+                newSize /= 2;
+            }
+            vec = new Vec(newSize, getComplex(iDim));
             scanRegion = new ScanRegion(pt, dim, dataset);
         }
 
@@ -2572,8 +2567,8 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         if (projections == null) {
             projections = new Dataset[getNDim()];
         }
-        Vec projVec = new Vec(getSizeTotal(iDim));
-        projVec.setName(getName() + "_proj_" + (iDim + 1));
+        Vec projVec = new Vec(getSizeReal(iDim), getComplex(iDim));
+        projVec.setName(getName() + DatasetBase.DATASET_PROJECTION_TAG + (iDim + 1) +".nv");
         readVector(projVec, 0, iDim);
         projVec.zeros();
         Iterator<Vec> iter = vectors(iDim);
@@ -2581,7 +2576,9 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
             Vec vec = iter.next();
             projVec.max(vec);
         }
+        projVec.makeReal();
         Dataset projDataset = new Dataset(projVec);
+        projDataset.setRefPt(0, getRefPt(iDim));
         projDataset.setLabel(0, getLabel(iDim));
         projections[iDim] = projDataset;
     }

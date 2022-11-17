@@ -299,7 +299,12 @@ public class MultiVecCounter {
         int[][][] outVecs = new int[groupSize][datasetNDim][2]; // output 4 vecs per group, 3 dimensions, pt
 
         for (int i = 0; i < groupSize; i++) {
-            int[] counts = outCounter.getCounts(groupSize * vecNum + i);
+            int[] counts;
+            try {
+                counts = outCounter.getCounts(groupSize * vecNum + i);
+            } catch (Exception ex) {
+                return null;
+            }
             int[] iCounts = outToInCounter(counts);
             inVecs[i] = inCounter.getCount(iCounts);
             int[] offsets = getOffsets(counts);

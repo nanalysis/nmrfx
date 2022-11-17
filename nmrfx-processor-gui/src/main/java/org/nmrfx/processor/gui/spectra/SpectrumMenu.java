@@ -176,6 +176,7 @@ public class SpectrumMenu extends ChartMenu {
             chart.projectDataset();
         });
         MenuItem removeProjectionsItem = new MenuItem("Remove Projections");
+        removeProjectionsItem.visibleProperty().bind(chart.getDisDimProperty().isEqualTo(PolyChart.DISDIM.TwoD));
         removeProjectionsItem.setOnAction((ActionEvent e) -> chart.removeProjections());
         MenuItem extractXMenuItem = new MenuItem("Extract-X");
         extractXMenuItem.setOnAction((ActionEvent e) -> {

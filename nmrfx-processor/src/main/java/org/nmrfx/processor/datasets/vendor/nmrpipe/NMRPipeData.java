@@ -20,6 +20,7 @@ package org.nmrfx.processor.datasets.vendor.nmrpipe;
 import org.apache.commons.collections4.map.LRUMap;
 import org.apache.commons.math3.complex.Complex;
 import org.nmrfx.processor.datasets.Dataset;
+import org.nmrfx.processor.datasets.DatasetGroupIndex;
 import org.nmrfx.processor.datasets.DatasetType;
 import org.nmrfx.processor.datasets.parameters.FPMult;
 import org.nmrfx.processor.datasets.parameters.GaussianWt;
@@ -63,6 +64,7 @@ public class NMRPipeData implements NMRData {
     private Double[] Ref = new Double[MAXDIM];
     private Double[] Sw = new Double[MAXDIM];
     private Double[] Sf = new Double[MAXDIM];
+    private final List<DatasetGroupIndex> datasetGroupIndices = new ArrayList<>();
 
     Header fileHeader;
     private DatasetType preferredDatasetType = DatasetType.NMRFX;
@@ -839,6 +841,11 @@ public class NMRPipeData implements NMRData {
 //            }
 //        }
 
+    }
+
+    @Override
+    public List<DatasetGroupIndex> getSkipGroups() {
+        return datasetGroupIndices;
     }
 
     String getTemplateFile(int index) {

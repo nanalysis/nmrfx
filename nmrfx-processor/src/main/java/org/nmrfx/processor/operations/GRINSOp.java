@@ -27,6 +27,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.util.Collections;
 import java.util.List;
 
 import static org.nmrfx.processor.operations.IstMatrix.genSrcTargetMap;
@@ -60,6 +61,8 @@ public class GRINSOp extends MatrixOperation {
      */
     private final SampleSchedule sampleSchedule;
 
+    private List<int[]> skipList = null;
+
     private final boolean extendMode;
 
     private final File logHome;
@@ -74,6 +77,7 @@ public class GRINSOp extends MatrixOperation {
         this.zfFactor = zfFactor;
         this.synthetic = synthetic;
         this.sampleSchedule = schedule;
+
         if (logHomeName == null) {
             this.logHome = null;
         } else {
@@ -99,10 +103,11 @@ public class GRINSOp extends MatrixOperation {
     }
 
     public GRINSOp(double noise, double scale, int zfFactor,
-                   List<Double> phaseList, boolean preserve)
+                   List<Double> phaseList, boolean preserve, List<int[]> skipList)
             throws ProcessingException {
         this(noise, scale, zfFactor, phaseList, preserve, false, true,
                 null, null);
+        this.skipList = skipList;
     }
 
     @Override
@@ -139,7 +144,7 @@ public class GRINSOp extends MatrixOperation {
 
             int[] origSizes = {origSize * 2};
             int[] srcTargetMap = IstMatrix.genZFSrcTargetMap(matrixND, origSizes, false);
-            int[] zeroList = IstMatrix.genZFList(matrixND, origSizes, true);
+            int[] zeroList = IstMatrix.genZFList(matrixND, origSizes, true, skipList);
 
             GRINS grins = new GRINS(matrixND, noise, scale, phase, preserve, synthetic, zeroList, srcTargetMap, null);
             grins.exec();
@@ -204,7 +209,7 @@ public class GRINSOp extends MatrixOperation {
                 newSizes[i] = NESTANMR.getZfSize(vSizes[i], zfFactor);
             }
             matrixND.zeroFill(newSizes);
-            int[] zeroList = IstMatrix.genZFList(matrixND, vSizes, true);
+            int[] zeroList = IstMatrix.genZFList(matrixND, vSizes, true, skipList);
             int[] srcTargetMap = IstMatrix.genZFSrcTargetMap(matrixND, vSizes, false);
             String logFile = null;
             if (logHome != null) {

@@ -463,6 +463,7 @@ public class AnalystApp extends MainApp {
         var controller = statusBar.getController();
         SimplePeakRegionTool simplePeakRegionTool = new SimplePeakRegionTool(controller);
         simplePeakRegionTool.addButtons(statusBar);
+        controller.addTool(simplePeakRegionTool);
     }
 
     public static void addMultipletPopOver(FXMLController controller) {

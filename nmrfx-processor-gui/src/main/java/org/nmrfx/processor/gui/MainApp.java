@@ -92,7 +92,7 @@ public class MainApp extends Application {
             chart.clearDataAndPeaks();
             chart.clearAnnotations();
         }
-        List<FXMLController> controllers = FXMLController.getControllers();
+        List<FXMLController> controllers = new ArrayList<>(FXMLController.getControllers());
         // Don't close the first controller that matches with the main stage, Note this first controller is not
         // necessarily the active controller
         for (int index = 1; index < controllers.size(); index++) {

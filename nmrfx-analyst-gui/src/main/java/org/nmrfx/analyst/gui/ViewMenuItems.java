@@ -4,6 +4,7 @@ import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
+import org.nmrfx.analyst.gui.regions.RegionsTableController;
 import org.nmrfx.processor.gui.DatasetsController;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.MainApp;
@@ -32,7 +33,11 @@ public class ViewMenuItems extends MenuActions {
         MenuItem logConsoleMenuItem = new MenuItem("Show Log Console");
         logConsoleMenuItem.setOnAction(e -> showLogConsole());
 
-        menu.getItems().addAll(consoleMenuItem, logConsoleMenuItem, dataMenuItem, procMenuItem);
+
+        MenuItem integralTableItem = new MenuItem("Show Regions Table");
+        integralTableItem.setOnAction(e -> showRegionsTable());
+
+        menu.getItems().addAll(consoleMenuItem, logConsoleMenuItem, dataMenuItem,  integralTableItem, procMenuItem);
         menu.onShowingProperty().set(e -> verifyMenuItems());
     }
 
@@ -66,6 +71,11 @@ public class ViewMenuItems extends MenuActions {
         datasetController.setDatasetList(datasetObs);
         datasetController.getStage().show();
         datasetController.getStage().toFront();
+    }
+
+    private void showRegionsTable() {
+        RegionsTableController rtc = RegionsTableController.getRegionsTableController();
+        rtc.show();
     }
 
 }

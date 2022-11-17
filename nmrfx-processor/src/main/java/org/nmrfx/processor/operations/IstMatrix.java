@@ -317,7 +317,26 @@ public class IstMatrix extends MatrixOperation {
         return srcTargetMap;
     }
 
-    public static int[] genZFList(MatrixND matrixND, int[] origSizes, boolean constrainEdges) {
+    static boolean isInSkipList(List<int[]> skipList, int[] counts) {
+       for (int[] skip:skipList) {
+           boolean inList = true;
+           for (int i=0;i<counts.length;i++) {
+               if (skip[i] < 0)  {
+                   continue;
+               }
+               if (skip[i] != counts[i]) {
+                   inList = false;
+                   break;
+               }
+           }
+           if (inList) {
+               return true;
+           }
+       }
+       return false;
+    }
+
+    public static int[] genZFList(MatrixND matrixND, int[] origSizes, boolean constrainEdges, List<int[]> skipList) {
         int nElems = matrixND.getNElems();
         boolean[] validPositions = new boolean[nElems];
 
@@ -326,8 +345,10 @@ public class IstMatrix extends MatrixOperation {
         while (iterator.hasNext()) {
             iterator.next();
             int[] counts = iterator.getCounts();
-            int offset = matrixND.getOffset(counts);
-            validPositions[offset] = true;
+            if (skipList.isEmpty() || !isInSkipList(skipList, counts)) {
+                int offset = matrixND.getOffset(counts);
+                validPositions[offset] = true;
+            }
         }
         if (constrainEdges) {
             int[] edge = new int[matrixND.getNDim()];

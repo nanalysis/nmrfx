@@ -33,6 +33,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -70,6 +71,8 @@ public class NESTANMR extends MatrixOperation {
 
     private final File logHome;
 
+    private List<int[]> skipList = null;
+
     public NESTANMR(int outerIterations, int innerIterations, double tolFinal, double muFinal, SampleSchedule schedule,
                     List phaseList, boolean zeroAtStart, double threshold,
                     String logHomeName, boolean extendMode, int extendFactor) throws ProcessingException {
@@ -102,8 +105,9 @@ public class NESTANMR extends MatrixOperation {
         this(outerIterations, innerIterations, tolFinal, muFinal, schedule,phaseList,zeroAtStart,threshold,logHomeName, false,0);
     }
     public NESTANMR(int outerIterations, int innerIterations, double tolFinal, double muFinal,
-                    List phaseList, boolean zeroAtStart, double threshold, int extendFactor) throws ProcessingException {
+                    List phaseList, boolean zeroAtStart, double threshold, int extendFactor, List<int[]> skipList) throws ProcessingException {
         this(outerIterations, innerIterations, tolFinal, muFinal, null,phaseList,zeroAtStart,threshold,null,true, extendFactor);
+        this.skipList = skipList;
     }
 
     @Override
@@ -128,7 +132,7 @@ public class NESTANMR extends MatrixOperation {
                 matrixND.setValue(vector.getImag(i), i * 2 + 1);
             }
             int[] origSizes = {origSize * 2};
-            int[] zeroList = IstMatrix.genZFList(matrixND, origSizes, true);
+            int[] zeroList = IstMatrix.genZFList(matrixND, origSizes, true, skipList);
 
             NESTAMath nesta = new NESTAMath(matrixND, zeroList, outerIterations, innerIterations, tolFinal, muFinal, phase, zeroAtStart, threshold, null);
             nesta.doNESTA();
@@ -211,7 +215,7 @@ public class NESTANMR extends MatrixOperation {
                 newSizes[i] = getZfSize(vSizes[i], extendFactor);
             }
             matrixND.zeroFill(newSizes);
-            int[] zeroList = IstMatrix.genZFList(matrixND, vSizes, true);
+            int[] zeroList = IstMatrix.genZFList(matrixND, vSizes, true, skipList);
             NESTAMath nesta = new NESTAMath(matrixND, zeroList, outerIterations, innerIterations, tolFinal, muFinal, phase, zeroAtStart, threshold, null);
             nesta.doNESTA();
             matrixND.setVSizes(newSizes);

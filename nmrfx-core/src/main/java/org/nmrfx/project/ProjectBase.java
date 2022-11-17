@@ -491,7 +491,12 @@ public class ProjectBase {
     private void loadRegions(String regionFileStr, DatasetBase dataset, boolean resetNorm) throws IOException {
         File regionFile = DatasetRegion.getRegionFile(regionFileStr);
         if (regionFile.canRead()) {
-            TreeSet<DatasetRegion> regions = DatasetRegion.loadRegions(regionFile);
+            List<DatasetRegion> regions = DatasetRegion.loadRegions(regionFile);
+            if (!DatasetRegion.isLongRegionFile(regionFile)) {
+                for (DatasetRegion region: regions) {
+                    region.measure(dataset);
+                }
+            }
             dataset.setRegions(regions);
             if (resetNorm) {
                 dataset.setNormFromRegions(regions);
@@ -507,32 +512,38 @@ public class ProjectBase {
 
         for (DatasetBase datasetBase : datasetMap.values()) {
             File datasetFile = datasetBase.getFile();
-            if (datasetFile != null) {
-                Path currentPath = datasetFile.toPath();
-                Path fileNameAsPath = currentPath.getFileName();
-                String fileName = fileNameAsPath.toString();
-                Path pathInProject;
-
-                if (fileName.endsWith(".nv") || fileName.endsWith(".ucsf")) {
-                    pathInProject = datasetDir.resolve(fileNameAsPath);
-                    if (!Files.exists(pathInProject)) {
-                        try {
-                            Files.createLink(pathInProject, currentPath);
-                        } catch (IOException | UnsupportedOperationException | SecurityException ex) {
-                            Files.createSymbolicLink(pathInProject, currentPath);
-                        }
-                    }
-                } else {
-                    String fileLinkName = datasetBase.getName() + ".nvlnk";
-                    pathInProject = datasetDir.resolve(fileLinkName);
-                    Files.writeString(pathInProject, datasetFile.getAbsolutePath());
+            if (datasetFile == null) {
+                // Save any extracted projection datasets that are vec matrix based
+                if (datasetBase.getFileName().contains(DatasetBase.DATASET_PROJECTION_TAG) && datasetBase.getVec() != null) {
+                    File newFile = new File(datasetDir.toFile(), datasetBase.getName());
+                    datasetBase.writeVecMat(newFile);
                 }
-                String parFilePath = DatasetParameterFile.getParameterFileName(pathInProject.toString());
-                datasetBase.writeParFile(parFilePath);
-                TreeSet<DatasetRegion> regions = datasetBase.getRegions();
-                File regionFile = DatasetRegion.getRegionFile(pathInProject.toString());
-                DatasetRegion.saveRegions(regionFile, regions);
+                continue;
             }
+            Path currentPath = datasetFile.toPath();
+            Path fileNameAsPath = currentPath.getFileName();
+            String fileName = fileNameAsPath.toString();
+            Path pathInProject;
+
+            if (fileName.endsWith(".nv") || fileName.endsWith(".ucsf")) {
+                pathInProject = datasetDir.resolve(fileNameAsPath);
+                if (!Files.exists(pathInProject)) {
+                    try {
+                        Files.createLink(pathInProject, currentPath);
+                    } catch (IOException | UnsupportedOperationException | SecurityException ex) {
+                        Files.createSymbolicLink(pathInProject, currentPath);
+                    }
+                }
+            } else {
+                String fileLinkName = datasetBase.getName() + ".nvlnk";
+                pathInProject = datasetDir.resolve(fileLinkName);
+                Files.writeString(pathInProject, datasetFile.getAbsolutePath());
+            }
+            String parFilePath = DatasetParameterFile.getParameterFileName(pathInProject.toString());
+            datasetBase.writeParFile(parFilePath);
+            List<DatasetRegion> regions = datasetBase.getReadOnlyRegions();
+            File regionFile = DatasetRegion.getRegionFile(pathInProject.toString());
+            DatasetRegion.saveRegions(regionFile, regions);
         }
     }
 
