@@ -85,6 +85,9 @@
                                     <ColorPicker fx:id="posColorPicker1D" promptText=" Color" styleClass="button"
                                                  GridPane.columnIndex="0" GridPane.rowIndex="1" GridPane.columnSpan="1"
                                     />
+                                    <Button text="Schema..." onAction="#showPosSchema"
+                                            GridPane.columnIndex="1" GridPane.rowIndex="1" GridPane.columnSpan="2"
+                                    />
                                     <Label text="Vertical Scale"
                                            GridPane.columnIndex="0" GridPane.rowIndex="2"
                                     />
