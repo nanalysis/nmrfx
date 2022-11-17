@@ -24,6 +24,7 @@ import org.apache.commons.math3.complex.Complex;
 import org.codehaus.commons.nullanalysis.Nullable;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.DatasetException;
+import org.nmrfx.processor.datasets.DatasetGroupIndex;
 import org.nmrfx.processor.datasets.DatasetType;
 import org.nmrfx.processor.datasets.parameters.*;
 import org.nmrfx.processor.datasets.vendor.NMRData;
@@ -116,6 +117,7 @@ public class JCAMPData implements NMRData {
     private final Map<Integer, Double> sw = new HashMap<>();
     private final Map<Integer, Double> ref = new HashMap<>();
     private final Map<Integer, Integer> size = new HashMap<>();
+    private final List<DatasetGroupIndex> datasetGroupIndices = new ArrayList<>();
 
     public JCAMPData(String path) throws IOException {
         this.path = path;
@@ -735,6 +737,11 @@ public class JCAMPData implements NMRData {
     @Override
     public void setSampleSchedule(SampleSchedule sampleSchedule) {
         this.sampleSchedule = sampleSchedule;
+    }
+
+    @Override
+    public List<DatasetGroupIndex> getSkipGroups() {
+        return datasetGroupIndices;
     }
 
     @Override
