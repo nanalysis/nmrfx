@@ -501,6 +501,16 @@ public class AttributesController implements Initializable {
         }
     }
 
+    private void refreshCharts() {
+        if (datasetChoiceState.getValue() == SelectionChoice.WINDOW) {
+            for (var controllerChart : fxmlController.getCharts()) {
+                controllerChart.refresh();
+            }
+        } else {
+            chart.refresh();
+        }
+    }
+
     private List<DatasetAttributes> getDatasetAttributes() {
         List<DatasetAttributes> result;
         if (datasetChoiceState.getValue() == SelectionChoice.DATASET) {
@@ -685,7 +695,7 @@ public class AttributesController implements Initializable {
                 for (DatasetAttributes dataAttr : dataAttrs) {
                     update(dataAttr, newValue.doubleValue());
                 }
-                chart.refresh();
+                refreshCharts();
             }
         }
     }
@@ -809,7 +819,7 @@ public class AttributesController implements Initializable {
                 for (DatasetAttributes dataAttr : dataAttrs) {
                     update(dataAttr, newValue);
                 }
-                chart.refresh();
+                refreshCharts();
             }
         }
     }
@@ -853,7 +863,7 @@ public class AttributesController implements Initializable {
                 for (DatasetAttributes dataAttr : dataAttrs) {
                     update(dataAttr, newValue);
                 }
-                chart.refresh();
+                refreshCharts();
             }
         }
     }
