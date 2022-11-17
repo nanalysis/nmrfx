@@ -47,7 +47,7 @@ public class AttributesController implements Initializable {
     enum SelectionChoice {
         DATASET,
         CHART,
-        SCENE
+        WINDOW
     }
     @FXML
     ChoiceBox<SelectionChoice> datasetChoiceState;
@@ -509,7 +509,7 @@ public class AttributesController implements Initializable {
             } else {
                 result = List.of(datasetChoiceBox.getValue());
             }
-        } else if (datasetChoiceState.getValue() == SelectionChoice.SCENE) {
+        } else if (datasetChoiceState.getValue() == SelectionChoice.WINDOW) {
             result = new ArrayList<>();
             for (var controllerChart : fxmlController.getCharts()) {
                 result.addAll(controllerChart.getDatasetAttributes());
