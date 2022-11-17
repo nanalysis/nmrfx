@@ -67,6 +67,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  *
@@ -230,7 +231,7 @@ public class ScanTable {
                 curLvl.ifPresent(dataAttr::setLvl);
                 int nDim = dataAttr.nDim;
                 chart.full(nDim - 1);
-                if (chart.getDisDimProperty().get() == PolyChart.DISDIM.OneDX){
+                if ((nDim - dataAttr.getDataset().getNFreqDims()) == 1){
                     chart.setDrawlist(rows);
                 } else{
                     chart.clearDrawlist();
@@ -561,9 +562,18 @@ public class ScanTable {
         fileTableFilter.resetFilter();
         String firstDatasetName = dataset.getFileName();
         if (firstDatasetName.length() > 0) {
-            FXMLController.getActiveController().openDataset(dataset.getFile(), false, true);
+            FXMLController controller = FXMLController.getActiveController();
+            controller.openDataset(dataset.getFile(), false, false);
+            DatasetBase datasetReloaded = chart.getDataset();
             List<Integer> rows = new ArrayList<>();
             rows.add(0);
+            // Load from Dataset assumes an arrayed dataset
+            datasetReloaded.setNFreqDims(datasetReloaded.getNDim() - 1);
+            if (datasetReloaded.getNDim() > 2) {
+                chart.getDisDimProperty().set(PolyChart.DISDIM.TwoD);
+            } else {
+                chart.getDisDimProperty().set(PolyChart.DISDIM.OneDX);
+            }
             chart.setDrawlist(rows);
             chart.full();
             chart.autoScale();
@@ -712,7 +722,12 @@ public class ScanTable {
             if (firstDatasetName.length() > 0) {
                 File parentDir = file.getParentFile();
                 Path path = FileSystems.getDefault().getPath(parentDir.toString(), firstDatasetName);
-                FXMLController.getActiveController().openDataset(path.toFile(), false, true);
+                Dataset firstDataset = FXMLController.getActiveController().openDataset(path.toFile(), false, true);
+                // If there is only one unique dataset name, assume an arrayed experiment
+                List<String> uniqueDatasetNames = new ArrayList<>(fileListItems.stream().map(FileTableItem::getDatasetName).collect(Collectors.toSet()));
+                if (uniqueDatasetNames.size() == 1 && uniqueDatasetNames.get(0) != null && !uniqueDatasetNames.get(0).equals("")) {
+                    firstDataset.setNFreqDims(firstDataset.getNDim() - 1);
+                }
                 PolyChart chart = scannerTool.getChart();
                 List<Integer> rows = new ArrayList<>();
                 rows.add(0);

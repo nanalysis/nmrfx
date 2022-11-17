@@ -161,6 +161,7 @@ public class RS2DData implements NMRData {
         Dataset dataset = new Dataset(path.toString(), datasetName, layout,
                 false, ByteOrder.BIG_ENDIAN, 0);
         dataset.newHeader();
+        int numFreqDomain = 0;
         for (int i = 0; i < nDim; i++) {
             resetSW(i);
             dataset.setComplex(i, i == 0);
@@ -170,11 +171,15 @@ public class RS2DData implements NMRData {
             dataset.setRefPt(i, dataset.getSizeReal(i) / 2.0);
             // State can be used to set the freq domain
             dataset.setFreqDomain(i, getState(i) == 1);
+            if (dataset.getFreqDomain(i)) {
+                numFreqDomain++;
+            }
             String nucLabel = getTN(i);
             dataset.setNucleus(i, nucLabel);
             dataset.setLabel(i, nucLabel + (i + 1));
             dataset.syncPars(i);
         }
+        dataset.setNFreqDims(numFreqDomain);
         if (nDim > 1) {
             dataset.setAxisReversed(1, true);
         }
