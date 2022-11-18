@@ -79,8 +79,8 @@ public class ScanTable {
 
     ScannerTool scannerTool;
     TableView<FileTableItem> tableView;
-    TableFilter fileTableFilter;
-    TableFilter.Builder builder = null;
+    TableFilter<FileTableItem> fileTableFilter;
+    TableFilter.Builder<FileTableItem> builder = null;
     File scanDir = null;
 
     PopOver popOver = new PopOver();
@@ -91,10 +91,11 @@ public class ScanTable {
     Set<String> groupNames = new TreeSet<>();
     Map<String, Map<String, Integer>> groupMap = new HashMap<>();
     int groupSize = 1;
-    ListChangeListener filterItemListener = (ListChangeListener.Change c) -> {
+    ListChangeListener<FileTableItem> filterItemListener = c -> {
         getGroups();
         selectionChanged();
     };
+    ListChangeListener<Integer> selectionListener;
 
     static final List<String> standardHeaders = List.of("path", "sequence", "row", "etime", "ndim");
 
@@ -136,7 +137,7 @@ public class ScanTable {
         tableView.getColumns().addAll(fileColumn, seqColumn, nDimColumn, dateColumn);
         setDragHandlers(tableView);
         tableView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
-        ListChangeListener selectionListener = (ListChangeListener.Change c) -> selectionChanged();
+        selectionListener = c -> selectionChanged();
         tableView.getSelectionModel().getSelectedIndices().addListener(selectionListener);
         columnTypes.put("path", "S");
         columnTypes.put("sequence", "S");
@@ -520,6 +521,18 @@ public class ScanTable {
     public void loadFromDataset() {
         PolyChart chart = scannerTool.getChart();
         DatasetBase dataset = chart.getDataset();
+        if (dataset == null) {
+            log.warn("Unable to load dataset, dataset is null.");
+            return;
+        }
+        if (dataset.getNDim() < 2) {
+            log.warn("Unable to load dataset, dataset only has 1 dimension.");
+            return;
+        }
+        // Need to disconnect listeners before updating fileListItem or the selectionListener and filterItemListeners
+        // will be triggered during every iteration of the loop, greatly reducing performance
+        tableView.getSelectionModel().getSelectedIndices().removeListener(selectionListener);
+        tableView.getItems().removeListener(filterItemListener);
         fileListItems.clear();
         int nRows = dataset.getSizeTotal(1);
         HashMap<String, String> fieldMap = new HashMap();
@@ -532,6 +545,8 @@ public class ScanTable {
             long eTime = (long) (value * 1000);
             fileListItems.add(new FileTableItem(dataset.getName(), "", 1, eTime, iRow + 1, dataset.getName(), fieldMap));
         }
+        tableView.getSelectionModel().getSelectedIndices().addListener(selectionListener);
+        tableView.getItems().addListener(filterItemListener);
         String[] headers = {};
         boolean[] notDouble = new boolean[0];
         boolean[] notInteger = new boolean[0];
@@ -560,24 +575,18 @@ public class ScanTable {
         initTable();
         addHeaders(headers);
         fileTableFilter.resetFilter();
-        String firstDatasetName = dataset.getFileName();
-        if (firstDatasetName.length() > 0) {
-            FXMLController controller = FXMLController.getActiveController();
-            controller.openDataset(dataset.getFile(), false, false);
-            DatasetBase datasetReloaded = chart.getDataset();
-            List<Integer> rows = new ArrayList<>();
-            rows.add(0);
-            // Load from Dataset assumes an arrayed dataset
-            datasetReloaded.setNFreqDims(datasetReloaded.getNDim() - 1);
-            if (datasetReloaded.getNDim() > 2) {
-                chart.getDisDimProperty().set(PolyChart.DISDIM.TwoD);
-            } else {
-                chart.getDisDimProperty().set(PolyChart.DISDIM.OneDX);
-            }
-            chart.setDrawlist(rows);
-            chart.full();
-            chart.autoScale();
+        List<Integer> rows = new ArrayList<>();
+        rows.add(0);
+        // Load from Dataset assumes an arrayed dataset
+        dataset.setNFreqDims(dataset.getNDim() - 1);
+        if (dataset.getNDim() > 2) {
+            chart.getDisDimProperty().set(PolyChart.DISDIM.TwoD);
+        } else {
+            chart.getDisDimProperty().set(PolyChart.DISDIM.OneDX);
         }
+        chart.setDrawlist(rows);
+        chart.full();
+        chart.autoScale();
     }
 
     private void loadScanTable(File file) {
@@ -1055,11 +1064,12 @@ public class ScanTable {
     }
 
     public void updateFilter() {
+        // Old listener must be removed before setting the items!
+        tableView.getItems().removeListener(filterItemListener);
         tableView.setItems(fileListItems);
         builder = TableFilter.forTableView(tableView);
         fileTableFilter = builder.apply();
         fileTableFilter.resetFilter();
-        tableView.getItems().removeListener(filterItemListener);
         tableView.getItems().addListener(filterItemListener);
         getGroups();
     }
