@@ -71,6 +71,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
     Dataset[] projections = null;
     private Object analyzerObject = null;
     boolean memoryMode = false;
+    String script = "";
 
     /**
      * Create a new Dataset object that refers to an existing random access file
@@ -2594,5 +2595,13 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
 
     public void setAnalyzerObject(Object analyzerObject) {
         this.analyzerObject = analyzerObject;
+    }
+
+    public void script(String script) {
+        this.script = script;
+    }
+
+    public String script() {
+        return script;
     }
 }
