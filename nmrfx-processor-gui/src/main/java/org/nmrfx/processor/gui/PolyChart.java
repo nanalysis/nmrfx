@@ -860,7 +860,7 @@ public class PolyChart extends Region implements PeakListener {
 
     private double[] getRangeFromDatasetAttributesList(List<DatasetAttributes> attributes, int axis) {
         double[] limits = {Double.MAX_VALUE, Double.NEGATIVE_INFINITY};
-        for (DatasetAttributes dataAttr : datasetAttributesList) {
+        for (DatasetAttributes dataAttr : attributes) {
             if (!dataAttr.isProjection()) {
                 dataAttr.checkRange(axModes[axis], axis, limits);
             } else {
@@ -2307,6 +2307,16 @@ public class PolyChart extends Region implements PeakListener {
 
             }
             gC.setLineWidth(xAxis.getLineWidth());
+
+            // Draw the datasets before the axis since drawing the datasets may adjust the axis range
+            if (!drawDatasets(gC)) {
+                // if we used immediate mode and didn't finish in time try again
+                // useImmediate mode will have been set to false
+                Platform.runLater(() -> layoutPlotChildren());
+                gC.restore();
+                return;
+            }
+
             xAxis.draw(gC);
             if (!is1D() || chartProps.getIntensityAxis()) {
                 yAxis.draw(gC);
@@ -2326,15 +2336,6 @@ public class PolyChart extends Region implements PeakListener {
 //            GraphicsContext annoGC = annoCanvas.getGraphicsContext2D();
 //            annoGC.clearRect(0, 0, width, height);
 //        }
-
-            if (!drawDatasets(gC)) {
-                // if we used immediate mode and didn't finish in time try again
-                // useImmediate mode will have been set to false
-                Platform.runLater(() -> layoutPlotChildren());
-                gC.restore();
-                return;
-            }
-
             if (!datasetAttributesList.isEmpty()) {
                 drawPeakLists(true);
             }
@@ -2559,14 +2560,16 @@ public class PolyChart extends Region implements PeakListener {
             if (matchedDims[firstAttr.getDim(0)] == -1 || (matchedDims.length > 1 && matchedDims[firstAttr.getDim(1)] == -1)) {
                 log.info("Mismatched dimensions. Unable to display dataset: {}", datasetAttributes.getDataset().getName());
                 attributesIterator.remove();
-                double[] limits = getRangeFromDatasetAttributesList(attributes, 0);
-
-                setXAxis(limits[0], limits[1]);
-                if (disDimProp.get() == DISDIM.TwoD) {
-                    limits = getRangeFromDatasetAttributesList(attributes, 1);
-                    setYAxis(limits[0], limits[1]);
-                }
             }
+        }
+        if (attributes.size() == getDatasetAttributes().size()) {
+            return;
+        }
+        double[] limits = getRangeFromDatasetAttributesList(attributes, 0);
+        setXAxis(limits[0], limits[1]);
+        if (disDimProp.get() == DISDIM.TwoD) {
+            limits = getRangeFromDatasetAttributesList(attributes, 1);
+            setYAxis(limits[0], limits[1]);
         }
 
     }
