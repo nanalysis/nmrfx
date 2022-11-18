@@ -343,15 +343,16 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
      * @param nDim Number of dataset dimensions
      * @throws DatasetException if an I/O error occurs
      */
-    public Dataset(String title, int nDim) throws DatasetException {
+    public Dataset(String fullName, int nDim) throws DatasetException {
         this.nDim = nDim;
+        file = new File(fullName);
 
         int i;
         setNDim(nDim);
 
         layout = null;
-        this.title = title;
-        this.fileName = title;
+        this.fileName = file.getName();
+        this.title = this.fileName;
         newHeader();
         dataFile = null;
         memoryMode = true;
@@ -623,6 +624,10 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
 
     private void addFile(String datasetName) {
         ProjectBase.getActive().addDataset(this, datasetName);
+    }
+
+    public void rename(String newName) {
+        ProjectBase.getActive().renameDataset(this, newName);
     }
 
     /**
@@ -2142,7 +2147,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
 
     public void saveMemoryFile() throws IOException, DatasetException {
         if (isMemoryFile()) {
-            copyDataset(fileName);
+            copyDataset(file.getCanonicalPath());
         }
     }
 

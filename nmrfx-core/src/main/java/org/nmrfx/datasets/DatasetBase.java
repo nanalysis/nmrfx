@@ -531,6 +531,10 @@ public class DatasetBase {
         return fileName;
     }
 
+    public void setFileName(String newName) {
+        this.fileName = newName;
+    }
+
     /**
      * Get the type of the data values. At present, only single precision float
      * values are used in the dataset. This is indicated with a return value of

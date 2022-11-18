@@ -200,6 +200,12 @@ public class ProjectBase {
         refreshDatasetList();
     }
 
+    public void renameDataset(DatasetBase dataset, String newName) {
+        datasetMap.remove(dataset.getFileName());
+        dataset.setFileName(newName);
+        addDataset(dataset, newName);
+    }
+
     public boolean isDatasetPresent(File file) {
         return !getDatasetsWithFile(file).isEmpty();
     }
