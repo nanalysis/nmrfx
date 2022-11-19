@@ -74,12 +74,14 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class ProcessorController implements Initializable, ProgressUpdater {
 
     private static final Logger log = LoggerFactory.getLogger(ProcessorController.class);
     private static final String[] basicOps = {"APODIZE(lb=0.5) ZF FT", "SB ZF FT", "SB(c=0.5) ZF FT", "VECREF GEN"};
     private static final String[] commonOps = {"APODIZE", "SUPPRESS", "ZF", "FT", "AUTOPHASE", "EXTRACT", "BC"};
+    private static int iDataNum = 0;
 
     private enum DisplayMode {
         FID("FID"),
@@ -199,9 +201,9 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     ChartProcessor chartProcessor;
     DocWindowController dwc = null;
     PolyChart chart;
-    private boolean isProcessing = false;
-    private boolean doProcessWhenDone = false;
-    private boolean processable = false;
+    private AtomicBoolean idleMode = new AtomicBoolean(false);
+    private AtomicBoolean isProcessing = new AtomicBoolean(false);
+    private AtomicBoolean doProcessWhenDone = new AtomicBoolean(false);
     private final ProcessDataset processDataset = new ProcessDataset();
     ListChangeListener<String> opListListener = null;
 
@@ -451,7 +453,11 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     @FXML
     public void viewDatasetInApp(Dataset dataset) {
         if (dataset != null) {
+            Dataset currentDataset = (Dataset) chart.getDataset();
             chart.controller.addDataset(dataset, false, false);
+            if ((currentDataset != null) && (currentDataset != dataset)) {
+                currentDataset.close();
+            }
         } else {
             if (chartProcessor.datasetFile != null) {
                 boolean viewingDataset = isViewingDataset();
@@ -909,49 +915,33 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         return textArea.getText();
     }
 
-    synchronized void setProcessingOn() {
-        isProcessing = true;
-        doProcessWhenDone = false;
-    }
-
-    synchronized void setProcessingOff() {
-        isProcessing = false;
-    }
-
-    boolean isProcessing() {
-        return isProcessing;
-    }
-
-    void doProcessWhenDone() {
-        doProcessWhenDone = true;
-    }
-
     void finishProcessing(Dataset dataset) {
         Platform.runLater(() -> viewDatasetInApp(dataset));
     }
 
     void processIfIdle() {
-        if (autoProcess.isSelected() && processable) {
-            if (isProcessing()) {
-                doProcessWhenDone();
+        if (autoProcess.isSelected()) {
+            if (isProcessing.get()) {
+                doProcessWhenDone.set(true);
             } else {
-                doProcessWhenDone = false;
-                processDataset();
+                doProcessWhenDone.set(false);
+                processDataset(true);
             }
         }
     }
 
     @FXML
     private void processDatasetAction() {
-        processDataset();
+        processDataset(false);
     }
 
-    private void processDataset() {
+    private void processDataset(boolean idleModeValue) {
         Dataset.useCacheFile(SystemUtils.IS_OS_WINDOWS);
-        setProcessingOn();
-        processable = false;
+        doProcessWhenDone.set(false);
+        isProcessing.set(true);
+        idleMode.set(idleModeValue);
         statusBar.setProgress(0.0);
-        Processor.setUpdater(this);
+        Processor.setUpdater(null);
         if (!chartProcessor.isScriptValid()) {
             updateScriptDisplay();
         }
@@ -977,13 +967,15 @@ public class ProcessorController implements Initializable, ProgressUpdater {
                 protected Task createTask() {
                     return new Task() {
                         protected Object call() {
+                            doProcessWhenDone.set(false);
+                            isProcessing.set(true);
                             script = textArea.getText();
                             try (PythonInterpreter processInterp = new PythonInterpreter()) {
                                 updateStatus("Start processing");
                                 updateTitle("Start Processing");
                                 processInterp.exec("from pyproc import *");
                                 processor = Processor.getProcessor();
-                                processor.keepDatasetOpen(false);
+                                processor.keepDatasetOpen(idleMode.get());
                                 processor.clearDataset();
                                 processInterp.exec("useProcessor(inNMRFx=True)");
                                 processInterp.exec(script);
@@ -995,28 +987,39 @@ public class ProcessorController implements Initializable, ProgressUpdater {
             };
 
             ((Service<Integer>) worker).setOnSucceeded(event -> {
-                processable = true;
-                finishProcessing(processor.getDataset());
-                try {
-                    writeScript(script);
-                } catch (IOException ex) {
-                    GUIUtils.warn("Write Script Error", ex.getMessage());
+                Dataset processedDataset;
+                if (idleMode.get()) {
+                     String oldName = processor.getDataset().getFileName();
+                     processedDataset = processor.releaseDataset(oldName + iDataNum++);
+                } else {
+                    processedDataset = processor.getDataset();
                 }
-                setProcessingOff();
-                if (doProcessWhenDone) {
+                if (processedDataset != null) {
+                    processedDataset.script(script);
+                }
+                processor.getNMRData();
+                finishProcessing(processedDataset);
+//                try {
+//                    writeScript(script);
+//                } catch (IOException ex) {
+//                    GUIUtils.warn("Write Script Error", ex.getMessage());
+//                }
+                isProcessing.set(false);
+                if (doProcessWhenDone.get()) {
                     processIfIdle();
                 }
             });
             ((Service<Integer>) worker).setOnCancelled(event -> {
-                setProcessingOff();
+                processor.clearDataset();
+                isProcessing.set(false);
                 setProcessingStatus("cancelled", false);
-                Processor.getProcessor().closeDataset(false);
+              //  Processor.getProcessor().closeDataset(false);
             });
             ((Service<Integer>) worker).setOnFailed(event -> {
-                setProcessingOff();
+                processor.clearDataset();
+                isProcessing.set(false);
                 final Throwable exception = worker.getException();
                 setProcessingStatus(exception.getMessage(), false, exception);
-
             });
 
         }

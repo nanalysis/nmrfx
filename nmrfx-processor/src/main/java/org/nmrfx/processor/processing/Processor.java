@@ -1469,6 +1469,13 @@ public class Processor {
         }
     }
 
+    public Dataset releaseDataset(String newName) {
+        Dataset releasedDataset = dataset;
+        releasedDataset.rename(newName);
+        dataset = null;
+        return releasedDataset;
+    }
+
     public void closeDataset(boolean saveDataset) {
         if (dataset != null) {
             if (dataset.isMemoryFile() && saveDataset) {
@@ -1509,7 +1516,6 @@ public class Processor {
      * @param p
      */
     public void run(ProcessOps p) {
-        System.out.println("run " + p.getDim());
         if (processor.getProcessorError()) {
             setProcessorAvailableStatus(true);
             return;
