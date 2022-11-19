@@ -665,7 +665,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
      * @return true if this dataset has a data file associated with it.
      */
     public boolean isMemoryFile() {
-        return file == null;
+        return memoryMode;
     }
 
     double[] optCenter(int[] maxPoint, int[] dim) throws IOException {
