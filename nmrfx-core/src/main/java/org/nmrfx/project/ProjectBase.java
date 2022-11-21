@@ -134,6 +134,12 @@ public class ProjectBase {
         return result;
     }
 
+    public boolean removeDataset(String datasetName, DatasetBase dataset) {
+        boolean result = datasetMap.remove(datasetName, dataset);
+        refreshDatasetList();
+        return result;
+    }
+
     public Map<String, DatasetBase> getDatasetMap() {
         return datasetMap;
     }

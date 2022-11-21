@@ -547,7 +547,7 @@ public class DatasetBase {
     }
 
     protected void removeFile(String datasetName) {
-        ProjectBase.getActive().removeDataset(datasetName);
+        ProjectBase.getActive().removeDataset(datasetName, this);
     }
 
     /**
