@@ -67,6 +67,7 @@ public class Processor {
     private static final Logger log = LoggerFactory.getLogger(Processor.class);
     private static long MEMORY_MODE_LIMIT = 536870912L;
     private static boolean TEST_CORRUPTION_MODE = false;
+    private static int iDataNum = 0;
 
 
     private String fileName;
@@ -231,6 +232,7 @@ public class Processor {
 
     private final List<ProcessorAvailableStatusListener> listeners = new ArrayList<>();
     private final AtomicBoolean processorAvailable = new AtomicBoolean(true);
+    private boolean tempFileMode = false;
 
     private void resetVecReadCount() {
         vecReadCount.set(0);
@@ -411,6 +413,10 @@ public class Processor {
         }
 
         return false;
+    }
+
+    public void setTempFileMode(boolean value) {
+        tempFileMode = value;
     }
 
     public void adjustSizes() {
@@ -871,6 +877,9 @@ public class Processor {
         this.acqSizesToUse = useSizes;
         try {
             if (inMemory) {
+                if (tempFileMode) {
+                    outputFile = outputFile + ".tmp."+iDataNum++;
+                }
                 this.dataset = new Dataset(outputFile, nDimToUse);
             } else {
                 int[] idSizes = getIndirectSizes();
@@ -1471,7 +1480,9 @@ public class Processor {
 
     public Dataset releaseDataset(String newName) {
         Dataset releasedDataset = dataset;
-        releasedDataset.rename(newName);
+        if (newName != null) {
+            releasedDataset.rename(newName);
+        }
         dataset = null;
         return releasedDataset;
     }
