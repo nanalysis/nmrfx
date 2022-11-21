@@ -59,11 +59,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -163,7 +159,7 @@ public class RS2DData implements NMRData {
         dataset.newHeader();
         for (int i = 0; i < nDim; i++) {
             resetSW(i);
-            dataset.setComplex(i, i == 0);
+            dataset.setComplex(i, isComplex(i));
             dataset.setSf(i, getSF(i));
             dataset.setSw(i, getSW(i));
             dataset.setRefValue(i, getRef(i));
